@@ -1,0 +1,25 @@
+<center><H3><font color='007700'>libwebserver Info</font></H3></center><BR><BR>
+<A name=what><B><font color='000077'>What's libwebserver for?</font></B><BR>
+<UL>This lib is intended to add webserver functionality to programs instead of using an external webserver.<BR>
+	Two examples for embedded webservers that i know of are simple (shoutcast (i guess), and webTV (teletext as a webpage (from pinnacle)); and many others probably do the same.
+</UL>
+<HR>
+<A name=who><B><font color='000077'>Who's supposed to use libwebserver?</font></B>
+<UL>This is mainly developed for developers to make it easier to write a web interface to their software, (note a webbrowser is commonly available in most operating
+             systems) so it is like a portable "terminal" that can be accessed from any computer (with a browser of course...).</UL>
+<HR>
+<A name=when><B><font color='000077'>When am i supposed to use libwebserver?</font></B>
+<UL>For example, imagine that you are developing a daemon and want to check stats or re-configure at run-time;
+                  with this library you can add a listen port for runtime, and connect with whatever browser (via HTML interface)
+                  without dependencies of an external webserver.<BR>
+                  You can even do a webserver (of course), just use your imagination.<BR>
+                  Another quite simple example, a sound recorder (using only local connections for security reasons) uses a web interface to control
+                  /dev/dsp reading/writing (via HTML interface).
+                  there are many other things you can do ...</UL>
+
+<HR>
+<A name=server_scripts><B><font color='000077'>Is there support for server scripts such as .php .cgi .asp?</font></B>
+<UL> Well, this library only provides web server functions that make a server running, server scripts can be supported if you want to do it:
+      you can develop a handler for type ".something" or whatever, this package provides a .cgi handler as an example, (use at your own risk or make it better).</UL>
+
+

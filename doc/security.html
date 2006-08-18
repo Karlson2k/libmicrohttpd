@@ -1,0 +1,67 @@
+<center><H3><font color='007700'>libwebserver Security</font></H3></center><BR><BR>
+
+<A name=what><B><font color='000077'>Is it safe to use?</font></B><BR>
+<UL>Well, I can't promise that it's a secure software since that not only depends on the software, 
+         but all i can say is that wasn't found any security bug yet, this was developed intended to be secure,  
+		 you can use openssl (encrypted streams) to protect information that passes from webserver(lib) to client</UL>
+	
+<A name=certificate><B><font color='000077'>How do I create my own certificate?</font></B><BR>
+<UL>You can either buy one from one of the big vendors (see your browser's stored certificates
+	for their addresses) or self-sign a self-created one. The upside of the bought
+	certificates is, that the webbrowser doesn't ask if the user wants to
+	accept that certificate, but instead checks with the certification authority
+	you bought your certificate from.<br>
+	The downside is that it costs quite a lot of money.<br>
+	To create your own certificate use openssl like that:
+	<ul><li>create a key and request:<br>
+		<pre><b>openssl req -new > foo-cert.csr</b></pre><br>
+		As "Common Name" you have to type in the name part of
+		your URL, i.e. if your web site will be
+		"https://www.libwebserver.rules:443/" the Common Name is
+		"www.libwebserver.rules".
+	<li> remove the passphrase from the key:<br>
+		<pre><b>openssl rsa -in privkey.pem -out foo-cert.key</b></pre><br>
+	<li>convert request into a signed certificate:<br>
+		<pre><b>openssl x509 -in foo-cert.csr -out foo-cert.cert -req -signkey foo-cert.key -days 356</b></pre><br>
+	<li>create .pem file:<br>
+		<pre><b>cat foo-cert.cert foo-cert.key >foo-cert.pem</b></pre><br>
+	</ul>
+</ul>
+
+
+<A name=tips><B><font size=4 color='770077'>Security tips</font></B><BR><HR>
+
+<A name=racecondition><B><font color='000077'>Avoid race condition problems</font></B><BR>
+<UL>
+	<B> What is race condition?</B>
+		<UL>A race condition occurs when two or more operations occur in an 
+      undefined manner (McKusick et al. 1996). Specifically in file 
+      system races the attacker attempts to change the state of the 
+      file system in between two file system operations on the part 
+      of the program.</UL><BR> 
+	<B> How the lib determine temporary file name?</B>
+	<UL> 
+	<li>generate file name (note: keep generating until it doesn't exists)<BR></li>
+	<li>check if file exists<BR>
+	-<small>attacker can create the file now, if he knows the right filename</small><BR></li>
+	<li>check if symlink exists<BR>
+	-<small>attacker can create the symlink now, if he knows the right filename</small><BR></li>
+	<li>create the file and redirect stdout to it <BR>
+	-<small>attacker can open the file and write to it</small><BR></li>
+	<li>places a lock into file (note: not in win98)<BR> </li>
+	<li>users operations, write, flush, read<BR></li>
+	<li>unlink the filename from the OS<BR></li>
+	</UL><BR>
+	
+	
+	libwebserver uses temporary filenames to hold and process data before send it to client, it uses the ambient variables to 
+	determine temporary directory by following order "$TEMP,$TMP,$TMPDIR and the stdio.h P_tmpdir", libwebserver have several checks
+	and it locks file for avoid attackers from messing with temporary files, meanwhile is safely to change the tempdir (setting the ambient variable)
+	to an directory that is not writable for everyone and writable to lib (setenv("TEMP","/safedir"); you can do it before the web_server_run function
+
+	
+
+</UL>
+
+
+

@@ -1,0 +1,355 @@
+<center><H3><font color='007700'>libwebserver Functions</font></H3></center><BR><BR>
+<font face='Verdana'>
+
+<A name=web_server_init><B><font color='000077'>web_server_init()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_init - Initialize webserver</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_server_init(struct web_server *<U>server</U>, int <U>port</U>, const char *<U>logfile</U>, int <U>flags</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_init() function initializes the server handler <U>server</U>, start a listen socket at port <U>port</U>, with the logfile <U>logfile</U> to produce the webserver log<BR> if WS_USEEXTCONF flag is used, the <U>logfile</U> will be the config file <BR>
+<U>flags</U> <BR>
+WS_USESSL for openssl connections (https support)<BR>
+WS_USEEXTCONF for using a external config file<BR>
+WS_LOCAL only accepts 127.0.0.1 (local) connections
+</UL>
+
+<B>RETURN VALUE</B>
+<UL>On success, 1 is returned, On error, 0 is returned</UL>
+<HR><BR>
+ 
+
+<A name=web_server_addhandler><B><font color='000077'>web_server_addhandler()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_addhandler - adds a request handler</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_server_addhandler(struct web_server *<U>server</U>, const char *<U>mstr</U>, void (*<U>func</U>)(), int <U>flags</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_addhandler() function adds a request handler <U>mstr</U> to the server handler <U>server</U> through the function <U>func</U>.<BR>
+<U>mstr</U> is a string containing expressions (as matching files) to match with the client request (GET /<B>blah.html</B>?id=1 HTTP/1.0, will be matched by <U>mstr</U>="* /blah.html")<BR>
+<U>flags:</U> <BR>
+WS_LOCAL - only local connections are handled<BR>
+WS_DYNVAR - treat dynamic variables on output (Atention: this disables "Content-range" and "Content-length" header, responding "501 not implemented")<BR>
+WS_USELEN - With this flag, library calculate the header "Content-length" and "Content-range" it self, useful for resuming, content-length can be miscalculated if the file added by (web_client_addfile) changes the size of contents, between calculating and output<BR>
+</UL>
+<B>RETURN VALUE</B>
+<UL>On success, 1 is returned, On error, 0 is returned</UL>
+<HR><BR>
+
+<A name=web_server_aliasdir><B><font color='000077'>web_server_aliasdir()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_aliasdir - Generates a directory list, and use file based server</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_server_aliasdir(struct web_server *<U>server</U>, const char *<U>alias</U>, char *<U>path</U>, int <U>flags</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_aliasdir() function adds an alias <U>alias</U> to the server handler <U>server</U> and use files from <U>path</U>.<BR>
+<U>flags:</U> <BR>
+WS_LOCAL - only local connections are handled<BR>
+WS_DYNVAR - treat dynamic variables on output (Atention: this disables "Content-range" and "Content-length" header, responding "501 not implemented")<BR>
+WS_USELEN - With this flag, library calculate the header "Content-length" and "Content-range" it self, useful for resuming, content-length can be miscalculated if the file added by (web_client_addfile) changes the size of contents, between calculating and output<BR>
+</UL>
+<B>RETURN VALUE</B>
+<UL>On success, 1 is returned, On error, 0 is returned</UL>
+<HR><BR>
+
+<A name=web_server_run><B><font color='000077'>web_server_run()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_run - run the server</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_server_run(struct web_server *<U>server</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_run() function processes requests to the server <U>server</U>. This function must be called from the main application loop (the functions doesn't loop it self)</UL>
+<B>RETURN VALUE</B>
+<UL>On success, greater than 0, is returned (2 if there wasn't client, 1 if some request was processed), On error, 0 is returned</UL>
+<HR><BR>
+
+<A name=web_server_getconf><B><font color='000077'>web_server_getconf()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_getconf - get data from config filer</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>char *web_server_getconf(struct web_server *<U>server</U>,char *<U>topic</U>,char *<U>key</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_getconf() function allocates and return a string from config file related to <U>topic</U> and <U>key</U> (see <a href="/?help=functions#configfile">config file help</a>) This function must be called after the init of the var <U>server</U></UL>
+<B>RETURN VALUE</B>
+<UL>returns allocated string, (you should free after use) or null if nothing related to arguments found</UL>
+<HR><BR>
+
+<A name=web_server_useSSLcert><B><font color='000077'>web_server_useSSLcert()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_useSSLcert - use certificate</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_server_useSSLcert(struct web_server *<U>server</U>, const char *<U>file</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_useSSLcert() function tells server <U>server</U> to use certificate file <U>file</U> on ssl connections (initializated w/ flag WS_USESSL)</UL>
+<HR><BR>
+
+<A name=web_server_useMIMEfile><B><font color='000077'>web_server_useMIMEfile()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_server_useMIMEfile - use mime types file</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_server_useMIMEfile(struct web_server *<U>server</U>, const char *<U>file</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_server_useMIMEfile() function tells server <U>server</U> to use mimes type file <U>file</U> for determining mime type by extension used by function <a href="/?help=functions#web_client_contenttype">web_client_contenttype()</a></UL>
+<HR><BR>
+
+
+<A name=web_client_addstream><B><font color='000077'>web_client_addstream()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_addstream - add an output stream to the client struct on webserver</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_addstream(FILE *<U>stream</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_addstream() function adds the stream <U>stream</U> to the output stream list in the current client node</UL>
+ <B>NOTE</B>
+<UL>The web_client_addstream() function can <B>only</B> be called from functions called by gethandlers registered by <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<UL>The web_client_addstream() function is obsolete and no longer in use on 0.3.4 versions, use web_client_addfile instead</ul>
+<B>RETURN VALUE</B>
+<UL>On success, 1 is returned, On error, 0 is returned</UL>
+<HR><BR>
+
+<A name=web_client_addfile><B><font color='000077'>web_client_addfile()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_addfile - add a file to the output stream of the client struct on the webserver</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_addfile(const char *<U>file</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_addfile() function opens the file <U>file</U> and adds it as stream to the output stream list in the current client node</UL>
+ <B>NOTE</B>
+<UL>The web_client_addfile() function can be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<B>RETURN VALUE</B>
+<UL>On Success, 1 is returned, On error, 0 is returned</UL>
+<HR><BR>
+
+<A name=web_client_gifoutput><B><font color='000077'>web_client_gifoutput()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_gifoutput - export data as gif</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_gifoutput(char *<U>data</U>,int <U>w</U>,int <U>h</u>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_gifoutput() function prints to stdout a gif header (with width <U>w</U> and height <U>h</U>) and the image pointed by <U>data</U>.<BR>
+The allocated memory <U>data</U> points to mustn't be smaller than <U>w</U>*<U>h</U>.<BR>
+The gif palette is described by <a href='/?help=functions#web_client_gifsetpalette'>web_client_gifsetpalette</a>
+</UL>
+<B>NOTE</B>
+<UL>The web_client_gifoutput() function can be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<B>RETURN VALUE</B>
+<UL>On Success, 0 is returned, On error, non zero is returned.</UL>
+<HR><BR>
+
+<A name=web_client_gifsetpalette><B><font color='000077'>web_client_gifsetpalette()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_gifsetpalette - Setup the gif palette</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_client_gifsetpalette(char *<U>file</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_gifsetpalette() function loads raw palette (.act) from <U>file</U> or if <U>file</U> is "EGA" then this function setups the palette to EGA mode<BR>
+</UL>
+<HR><BR>
+
+
+<A name=web_client_setcookie><B><font color='000077'>web_client_setcookie()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_setcookie - set a cookie</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_client_setcookie(char *<U>key</U>, char *<U>value</U>, char *<U>timeoffset</U>, char *<U>path</U>,char *<U>domain</U>,int <U>secure</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_setcookie() function sets a cookie on client browser with key <U>key</U>, value <U>value</U> and expires at <U>timeoffset</U>.<BR>
+timeoffset format is one like <U>sign</U>, <U>number offset</U> and <U>directive</U> <small> (i.e +10m, 10 months)</small>
+	<UL><U>sign</U> is on like '-' or '+'</UL>
+	<UL><U>number offset</U> is like +<U>5</U>M means expires at next 5 minutes </UL>
+	<UL><U>directive</U> is:
+		<UL>S - seconds</UL>
+		<UL>M - minutes</UL>
+		<UL>H - hours</UL>
+		<UL>d - days</UL>
+		<UL>m - months</UL>
+		<UL>y - years</UL>
+	</UL>
+	path - Subset of URLs in a domain for which the cookie is valid
+           (If the path is not specified (path == NULL), it as assumed to be
+            the same path as the document being described by the header which
+            contains the cookie.)<BR>
+    domain = Domain the cookie is valid for
+             (If the domain is not set (domain == NULL), the default value of
+             domain is the host name of the server which generated the cookie
+             response.)<BR>
+	secure = If a cookie is marked secure (secure == 1), it will only be
+             transmitted if the communications channel with the host is a
+             secure one. Currently this means that secure cookies will only be
+             sent to HTTPS (HTTP over SSL) servers.
+             (If secure is not specified (secure == 0), a cookie is considered
+              safe to be sent in the clear over unsecured channels. )<BR>
+ 
+</UL>
+<B>NOTE</B>
+<UL> The web_client_setcookie() function should be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a><BR></UL>
+<HR><BR>
+
+
+<A name=web_client_deletecookie><B><font color='000077'>web_client_deletecookie()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_deletecookie - delete a cookie</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_client_deletecookie(char *<U>key</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_deletecookie() function delete a cookie on client browser with key <U>key</U><BR>
+
+</UL>
+<B>NOTE</B>
+<UL> The web_client_deletecookie() function should be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a><BR></UL>
+<HR><BR>
+
+<A name=web_client_setvar><B><font color='000077'>web_client_setvar()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_setvar - sets a variable</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_setvar(char *<U>name</U>, char *<U>value</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_setvar() function sets an variable named <U>name</U> with value <U>value</U> in a connection, to be used in output (only available if WS_DYNVAR flag used)<BR>
+	 web_client_setvar("bgc","#ff00dd");<BR>
+     printf("&lt;BODY bgcolor='$bgc;'&gt;");  - will exchange the string $bgc; to #ff00dd on output</UL>
+
+<B>NOTE</B>
+<UL>The web_client_setvar() function <B>should</B> be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<HR><BR>
+
+<A name=web_client_getvar><B><font color='000077'>web_client_getvar()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_getvar - gets a variable value</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_getvar(char *<U>name</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_getvar() function gets the value of variable <U>name</U>, (see also <a href=/?help=functions#web_client_setvar>web_client_setvar()</a>)<BR></UL>
+<B>NOTE</B>
+<UL>The web_client_getvar() function <B>should</B> be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<HR><BR>
+
+<A name=web_client_delvar><B><font color='000077'>web_client_delvar()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_delvar - delete a variable</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>int web_client_delvar(char *<U>name</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_delvar() function deletes a variable with name <U>name</U><BR></UL>
+<B>NOTE</B>
+<UL>The web_client_delvar() function <B>should</B> be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<HR><BR>
+
+
+<A name=web_client_HTTPdirective><B><font color='000077'>web_client_HTTPdirective()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_HTTPdirective - Change the HTTP header status</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_client_HTTPdirective(char *<U>directive</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_HTTPdirective() function changes the HTTP header status (i.e. "HTTP/1.1 200 OK") to the string <U>directive</U><BR>
+<small><i>useful for "HTTP/1.1 401 Authorization Required" (to require a password), redirection or similar actions on the client side</i></small>.</UL>
+ <B>NOTE</B>
+<UL>The web_client_HTTPdirective() function can be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<HR><BR>
+
+<A name=web_client_contenttype><B><font color='000077'>web_client_contenttype()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_client_contenttype - prints to stdout the header "Content-type: */*"</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_client_contenttype(char *<U>extension</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_client_contenttype() prints to stdout the header "Content-type: */*", where '*/*' is determined by <U>extension</U> (i.e. "html" based on mimefile produces "Content-type: text/html\r\n\r\n" and "jpg" produces "Content-type: image/jpeg\r\n\r\n")<BR>
+<small>this function is used on <a href="/?help=functions#web_server_aliasdir">web_server_aliasdir()</a></small></UL>
+ <B>NOTE</B>
+<UL>This function uses mime types loaded at <a href="/?help=functions#web_server_useMIMEfile">web_server_useMIMEfile()</a> else it will print only "Content-type: text/plain\r\n\r\n"</UL>
+<HR><BR>
+
+<A name=web_log><B><font color='000077'>web_log()</font></B><BR><BR>
+<B>NAME</B>
+<UL>web_log - write to logfile</UL>
+<B>SYNOPSIS</B>
+<UL>#include "web_server.h"<BR><BR>void web_log(const char *<U>format</U>,<U>...</U>);</UL>
+<B>DESCRIPTION</B>
+<UL>The web_log() is similar to printf, but writes to a logfile (specified in <a href=/?help=functions#web_server_init>web_server_init()</a>). Just as printf, it doesn't add a newline at the end.</UL>
+ <B>NOTE</B>
+<UL>The web_log() function <B>should</B> be called <B>only</B> from functions called by gethandlers registered via <a href='/?help=functions#web_server_addhandler'>web_server_addhandler()</a>.</UL>
+<HR><BR>
+
+<A name=ClientInfo><B><font color='000077'>ClientInfo</font></B><BR><BR>
+<B>NAME</B>
+<UL>ClientInfo - a struct to control client Header</UL>
+<B>SYNOPSIS</B>
+<UL> Declared in web_server.h <BR><BR>
+extern struct ClientInfo {<BR>
+<UL>
+        int <U>outfd</U>;<BR>
+        char *<U>inetname</U>;<BR>
+        char *<U>request</U>;<BR>
+        char *<U>method</U>;<BR>
+        char *<U>user</U>;<BR>
+        char *<U>pass</U>;<BR>
+		char *(*<U>Header</U>)(char *handle);<BR>
+        char *(*<U>Query</U>)(char *handle);<BR>
+        char *(*<U>Post</U>)(char *handle);<BR>
+        char *(*<U>Cookie</U>)(char *handle);<BR>
+		char *(*<U>Conf</U>)(char *handle);<BR>
+        struct _MultiPart (*<U>MultiPart</U>)(char *handle);<BR>
+        void *__pad[5];<BR>
+</UL>
+} *<U>ClientInfo</U>;
+</UL>
+<B>DESCRIPTION</B>
+<UL>
+<B>ClientInfo-&gt;<U>outfd</U></B> <UL>is the filedescriptor of the current output stream (useful for cgi handlers and friends).</UL><BR>
+<B>ClientInfo-&gt;<U>inetname</U></B> <UL>a string to inetname (i.e. "127.0.0.1")</UL> <BR>
+<B>ClientInfo-&gt;<U>request</U></B> <UL>is the requested 'file' (i.e. for "GET /index.html HTTP/1.0\r\n" the ClientInfo-&gt;request is "/index.html")</UL><BR>
+<B>ClientInfo-&gt;<U>method</U></B> <UL>is the request method ("GET" or "POST" etc..)</UL><BR>
+<B>ClientInfo-&gt;<U>user</U></B> <UL>AuthRealm username</UL><BR>
+<B>ClientInfo-&gt;<U>pass</U></B> <UL>AuthRealm password</UL><BR>
+<B>ClientInfo-&gt;<U>Header(</U>char *<U>handle</U>)</B> <UL>Function to parse the header, and returns Header information (i.e. for "Host: http://127.0.0.1:81" the result of ClientInfo-&gt;Header("Host") is "http://127.0.0.1:81") if argument <U>handle</U> is NULL then this function returns whole Header from client</UL><BR>
+<B>ClientInfo-&gt;<U>Query(</U>char *<U>handle</U>)</B> <UL>A function that returns the query value from the browser (i.e for the request "http://somehost.net/req.html?id=5&f=1", ClientInfo-&gt;Query("id") is "5".if argument <U>handle</U> is NULL then this function returns whole Query string from client<BR>if the handle have the char # first (like "#handle") it returns the number of variables (usefull for checkboxes and etc...) Check <a href='/?help=examples#checkbox'>checkbox example</a></UL><BR>
+<B>ClientInfo-&gt;<U>Post(</U>char *<U>handle</U>)</B> <UL>A function that returns the Post data from the forms with method 'POST'. <U>handle</U> is the name of some &lt;input&gt; tag.if argument <U>handle</U> is NULL then this function returns whole Post data from client<BR>if the handle have the char # first (like "#handle") it returns the number of variables (usefull for checkboxes and etc...) Check <a href='/?help=examples#checkbox'>checkbox example</a></UL><BR>
+<B>ClientInfo-&gt;<U>Cookie(</U>char *<U>handle</U>)</B> <UL>A function that returns the Cookie data from browser. if argument <U>handle</U> is NULL then this function returns whole Cookiestring from client</UL><BR>
+<B>ClientInfo-&gt;<U>Conf(</U>char * <U>topic</U>,char *<U>handle</U>)</B> <UL>A function that returns an value from a <U>key</U> in <U>topic</U> in the config file if used</UL><BR>
+<B>ClientInfo-&gt;<U>MultiPart(</U>char *<U>handle</U>)</B> <UL>A function that returns a data structure from the forms with method 'POST' and enctype='multipart/form-data' (useful for uploading files). <U>handle</U> is the name of some &lt;input&gt; tag.<BR><BR>
+the structure is<BR>
+struct _MultiPart {
+<UL>
+char *<U>id</u>;<BR>
+char *<U>data</U>;<BR>
+unsigned int <U>size</U>;<BR>
+char *<U>filename</U>;<BR>
+void *<U>pad</U>;<BR>
+</UL>
+};<BR>
+to be used as ClientInfo-&gt;<U>MultiPart</U>("file1").<U>data</U>; ClientInfo-&gt;<U>MultiPart</U>("file1").<U>size</U>; ClientInfo-&gt;<U>MultiPart</U>("file1").<U>filename</U>;
+</UL>
+
+</UL>
+<HR><BR>
+<A name=configfile><B><font color='000077'>The config file</font></B><BR><BR>
+<UL>the config file is used as<BR><BR>
+<PRE>
+[TOPIC]
+KEY=VALUE
+
+libwebserver configurations must be in topic LIBWEBSERVER as:
+[LIBWEBSERVER]
+LOG=help.log 
+PORT=80
+USESSL=1
+CERTFILE=foocert.pm
+MIMEFILE=/etc/mime.types
+LOCAL=1
+
+LOG -> the log file
+PORT -> the listen port that will be used for tcp connections
+
+USESSL -> the ssl flag if you want to use openssl for secure server (https)
+CERTFILE -> the file that contains certificate for ssl connections
+MIMEFILE -> the file that contains mime.types similer to apache mimefile
+LOCAL -> only accept connections from 127.0.0.1
+
+</PRE>
+</UL>
+
+</font>
+
+
+

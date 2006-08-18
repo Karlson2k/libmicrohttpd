@@ -1,0 +1,7 @@
+This is an adaptation of libwebserver for GNUnet.
+
+Non-essential code from old libwebserver library
+was moved to contrib/, documentation was moved
+to doc/.  
+
+The build system was changed to use automake.

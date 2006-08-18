@@ -1,0 +1,51 @@
+
+
+
+
+
+
+try to make just makefile for win instead of project file
+
+check for integer overflow
+do a webserver stresser
+
+
+
+
+CORRECT: netbsd dont free's the memory (linux's free) // i don't know why!
+
+
+DONE: WS_USECONF is completed just make test and turn it better
+DONE: WS_DYNVAR ( for using web_client_setvar("color","#FFFFFF")), printf("<BODY bgcolor='$color;>"); ) usefull for web_client_addfile();) <- DONE
+DONE: there is some mem buffer that is not freeing on logfile example something related to web_client_addfile (corrected)
+DONE: upload is missing somethind debug ok, but release is crashing (was related to writetemp[WRITEMAX+1])
+DONE: faster way to upload and download! remove newdata ( is delaying operation) 
+DONE: content-range header (for resuming)
+DONE: logging (put it on process_client)
+DONE: Find a better way to manage "tmpfname" (using flocks)
+DONE: make web_client_setcookie works called in whatever where in the handle function, (keep on an database maybe as varlist);
+DONE: remove wrotesize and varsize from client to outstream
+DONE: The war beguns, and i'm coding :o), reduce error mensaging to one file (reduce static mem space);
+DONE: similar: maybe make the web_server_MIMEfile(server,"const char *");, to next do the web_server_adddir(server,"/home/users/www",WS_LISTING);
+
+MAYBE DONE: Well something wrong about downloading several imgs, sometimes apears the 'X' image! figure why (requires intensive tests)
+DONE: lib isn't close files well, probably is that becouse the Ximage
+DONE: do the freebsd port by Hilobok Andrew (han@km.if.ua)
+DONE: URGENT: Change names of internal functions, we don't want conflits with other ppl functions (such as already defined symbols)
+
+
+TODO: The flag WS_USECGI, act as a cgi using env instead ClientInfo
+TODO: better to do is web_server_addcgi("* /*",execfile.exe,0);
+
+
+TODO: make the web_client_addurl function (web_client_addurl("http://127.0.0.1"); as web_client_addfile("path/to/file");)
+TODO: WS_USEMOD (modulated system to use) /(maybe need WS_USECONF, for describe modules)
+
+
+IMPROVE: Find a way to manage dll (stdout,stdin,etc)	 
+IMPROVE: WS_DYNVAR
+
+
+
+
+
