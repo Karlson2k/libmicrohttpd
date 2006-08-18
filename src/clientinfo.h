@@ -16,23 +16,13 @@
 #ifndef _CLIENTINFO_H_
 #define _CLIENTINFO_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
-
-#include "outstream.h"
 #include "client.h"
 #include "utils.h"
 #include "memory.h"
-#include "server.h"
-#include "error.h"
 
-
- 
 /*
  * Next's structs are redudant but it is an case of logic (spell)
  */
@@ -70,8 +60,7 @@ struct _Cookie {
 	struct _Cookie *next;
 };
 
-
-extern struct ClientInfo {
+struct ClientInfo {
 	int outfd;
 	char *inetname;
 	char *request;
@@ -83,7 +72,6 @@ extern struct ClientInfo {
 	char *(*Query)(char *);
 	char *(*Post)(char *);
 	char *(*Cookie)(char *); // TODO
-	char *(*Conf)(const char *,const char *); // new on 0.5.0
 	struct _MultiPart (*MultiPart)(char *); 
 	// not necessary for web_server.h
 	char *QueryString;
@@ -95,24 +83,21 @@ extern struct ClientInfo {
 	struct _Post *PostList; // Not necessary for web_server.h
 	struct _MultiPart *MultiPartList; // Not necessary for web_server.h
 	struct _Cookie *CookieList; // Not necessary for web_server.h
-} *ClientInfo;      //tochange
+};
 
 
-void __ILWS_init_clientinfo();
-void __ILWS_free_clientinfo();
-char *__ILWS_clientinfo_getauthuser();
-char *__ILWS_clientinfo_getauthpass();
-char *__ILWS_clientinfo_getquerystring();
-char *__ILWS_clientinfo_getpostdata();
-char *__ILWS_clientinfo_getcookiestring();
-char *__ILWS_clientinfo_getmethod();
-char *__ILWS_clientinfo_getreqname();
-char *__ILWS_Header(char *);
-char *__ILWS_Query(char *);
-char *__ILWS_Post(char *);
-struct _MultiPart __ILWS_MultiPart(char *);
-char *__ILWS_Cookie(char *);
-char *__ILWS_Conf(const char *,const char *);
+void __ILWS_init_clientinfo(struct ClientInfo *ClientInfo);
+void __ILWS_free_clientinfo(struct ClientInfo *ClientInfo);
+char *__ILWS_clientinfo_getquerystring(struct ClientInfo *ClientInfo);
+char *__ILWS_clientinfo_getpostdata(struct ClientInfo *ClientInfo);
+char *__ILWS_clientinfo_getcookiestring(struct ClientInfo *ClientInfo);
+char *__ILWS_clientinfo_getmethod(struct ClientInfo *ClientInfo);
+char *__ILWS_clientinfo_getreqname(struct ClientInfo *ClientInfo);
+char *__ILWS_Header(struct ClientInfo *ClientInfo, char *);
+char *__ILWS_Query(struct ClientInfo *ClientInfo, char *);
+char *__ILWS_Post(struct ClientInfo *ClientInfo, char *);
+struct _MultiPart __ILWS_MultiPart(struct ClientInfo *ClientInfo, char *);
+char *__ILWS_Cookie(struct ClientInfo *ClientInfo, char *);
 
 #endif
 

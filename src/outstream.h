@@ -26,13 +26,7 @@
 #include <unistd.h>
 #endif
 
-#include "debug.h"
 #include "memory.h"
-#include "error.h"
-
-
-
-
 
 struct outstream {
 	FILE *fstream;

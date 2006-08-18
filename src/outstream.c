@@ -24,7 +24,6 @@ int __ILWS_add_outstream(struct outstream *list,char *fname,FILE* stream,int ist
 	while(temp->next!=NULL)temp=temp->next;
 	
 	if(!(temp->next=__ILWS_malloc(sizeof(struct outstream)))) {
-		LWSERR(LE_MEMORY);
 		return 0;
 	};
 	// file check (0.5.3);
@@ -41,7 +40,6 @@ int __ILWS_add_outstream(struct outstream *list,char *fname,FILE* stream,int ist
 		if(!(temp->next->fname=__ILWS_malloc(strlen(fname)+1))) {
 			__ILWS_free(temp->next);
 			temp->next=NULL;
-			LWSERR(LE_MEMORY);
 			return 0;
 		};
 		memcpy(temp->next->fname,fname,strlen(fname));
@@ -66,7 +64,6 @@ struct outstream *__ILWS_init_outstream_list() {
 	
 	
 	if(!(ret=__ILWS_malloc(sizeof(struct outstream)))) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 	ret->todelete=0;
@@ -87,7 +84,6 @@ void __ILWS_delete_outstream(struct outstream *node) { // Changed
 	if(node->todelete) { // is temporary file
 		rt=unlink(node->fname);
 		if(rt==-1) {
-			LWSERR(LE_FILESYS);
 		};
 		
 	};

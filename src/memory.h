@@ -14,33 +14,27 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif         
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h> // Johannes E. Schindelin
+#include <errno.h> 
 
-#include "debug.h"
+#define __ILWS_malloc malloc
+#define __ILWS_calloc calloc
+#define __ILWS_realloc realloc
+#define __ILWS_free free
 
-extern int errno;
+struct memrequest;
 
-void *__ILWS_malloc(size_t);
-void *__ILWS_calloc(size_t,size_t);
-void *__ILWS_realloc(void *,size_t);
-void __ILWS_free(void *);
-
-struct memrequest {
-	char *ptr;
-	struct memrequest *next;
-};
 struct memrequest *__ILWS_init_buffer_list();
-void *__ILWS_add_buffer(struct memrequest *,unsigned int);
+
+void *__ILWS_add_buffer(struct memrequest *,
+			unsigned int);
+
 void __ILWS_delete_buffer(struct memrequest *);
+
 void __ILWS_delete_next_buffer(struct memrequest *);
+
 void __ILWS_delete_buffer_list(struct memrequest *);
 
 #endif

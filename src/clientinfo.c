@@ -14,20 +14,16 @@
 
 #include "clientinfo.h"
 
-
-struct ClientInfo *ClientInfo; // tochange
-
 /*********************************************************************************************************/
 /*
  * Initialize ClientInfo structure
  */
-void __ILWS_init_clientinfo() { 
+void __ILWS_init_clientinfo(struct ClientInfo *ClientInfo) { 
 	char *t;
 	struct outstream *tstream=current_web_client->outstream;
 	
 	ClientInfo=__ILWS_malloc(sizeof(struct ClientInfo));
 	if(ClientInfo==NULL) {
-		LWSERR(LE_MEMORY);
 		return;
 	};
 	
@@ -74,26 +70,24 @@ void __ILWS_init_clientinfo() {
 	
 }                      
 
-/*********************************************************************************************************/
 /*
  * Free ClientInfo structure
  */
-void __ILWS_free_clientinfo() {
-	if(ClientInfo==NULL) {	
-		return;
-	};
-	__ILWS_delete_buffer_list(ClientInfo->mem); 
-	
-	__ILWS_free(ClientInfo);
-	ClientInfo=NULL;
+void __ILWS_free_clientinfo(struct ClientInfo *ClientInfo) {
+  if(ClientInfo==NULL) {	
+    return;
+  };
+  __ILWS_delete_buffer_list(ClientInfo->mem); 
+  
+  __ILWS_free(ClientInfo);
+  ClientInfo=NULL;
 }
 
 
-/*********************************************************************************************************/
 /*
  * Header function for ClientInfo->Header("x")
  */
-char *__ILWS_Header(char *str) {
+char *__ILWS_Header(struct ClientInfo *ClientInfo, char *str) {
 	char *tmp1,*tmp2,*tmp3,*ret;
 	struct _Header *hl=ClientInfo->HeaderList;
 	char *defret="";
@@ -106,7 +100,6 @@ char *__ILWS_Header(char *str) {
 		
 		ClientInfo->HeaderList=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Header));
 		if(ClientInfo->HeaderList==NULL) {
-			LWSERR(LE_MEMORY);
 			return defret;
 		};
 		ClientInfo->HeaderList->next=NULL;
@@ -129,11 +122,9 @@ char *__ILWS_Header(char *str) {
 	/* Doesn't exists	 */
 	strsize=strlen(str);
 	if(!(hl->next=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Header)))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	if(!(hl->next->id=__ILWS_add_buffer(ClientInfo->mem,strsize+1))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	
@@ -143,7 +134,6 @@ char *__ILWS_Header(char *str) {
 	hl->next->next=NULL;
 
 	if(!(tmp3=__ILWS_malloc(strsize+3))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	snprintf(tmp3,strsize+3,"%s: ",str);
@@ -169,13 +159,10 @@ char *__ILWS_Header(char *str) {
 	return ret;
 }                                
 
-
-
-/*********************************************************************************************************/
 /*
  * Function for Querydata
  */
-char *__ILWS_Query(char *handle) {
+char *__ILWS_Query(struct ClientInfo *ClientInfo, char *handle) {
     char *tmp1,*tmp2,*tmp3,*tmp4,*ret;
 	char *defret="";
 	size_t strsize;
@@ -198,7 +185,6 @@ char *__ILWS_Query(char *handle) {
 	if(ClientInfo->QueryList==NULL) {                                                              
 		ClientInfo->QueryList=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Query));                   
 		if(ClientInfo->QueryList==NULL) {                                                          
-			LWSERR(LE_MEMORY);
 			if(rw) return 0;
 			return defret;
 		};
@@ -301,13 +287,11 @@ char *__ILWS_Query(char *handle) {
 		// Working here ^
 		ql->next=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Query));
 		if(ql->next==NULL) {
-			LWSERR(LE_MEMORY);
 			if(handle[0]=='#') rw=1;
 			return defret;
 		};
 		ql->next->id=__ILWS_add_buffer(ClientInfo->mem,strsize+1);
 		if(ql->next->id==NULL) {
-			LWSERR(LE_MEMORY);
 			if(handle[0]=='#') rw=1;
 			return defret;
 		};
@@ -339,7 +323,6 @@ char *__ILWS_Query(char *handle) {
 		
 		ql->next->data=__ILWS_add_buffer(ClientInfo->mem,size+1);
 		if(ql->next->data==NULL) {
-			LWSERR(LE_MEMORY);
 			if(handle[0]=='#') rw=1;
 			return defret;
 		};
@@ -353,7 +336,6 @@ char *__ILWS_Query(char *handle) {
 				
 				tmp1=__ILWS_malloc(3);
 				if(tmp1==NULL) {
-					LWSERR(LE_MEMORY);
 					if(rw) return 0;
 					return defret;
 				};
@@ -378,13 +360,10 @@ char *__ILWS_Query(char *handle) {
 	return ret;
 }                                                                                          
 
-
-
-/*********************************************************************************************************/
 /*
  * Function for Postdata
  */
-char *__ILWS_Post(char *handle) {
+char *__ILWS_Post(struct ClientInfo *ClientInfo, char *handle) {
 	char *tmp1,*tmp2,*tmp3,*ret;
 	struct _Post *pl=ClientInfo->PostList;
 	char *defret="";
@@ -408,7 +387,6 @@ char *__ILWS_Post(char *handle) {
 	/* Allocate the list */
 	if(ClientInfo->PostList==NULL) {
 		if(!(ClientInfo->PostList=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Post)))) {
-			LWSERR(LE_MEMORY);
 			if(rw) return 0;
 			return defret;
 		};
@@ -491,13 +469,11 @@ char *__ILWS_Post(char *handle) {
 		
 		pl->next=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Post));
 		if(pl->next==NULL) {
-			LWSERR(LE_MEMORY);
 			if(rw) return 0;
 			return defret;
 		};
 		pl->next->id=__ILWS_add_buffer(ClientInfo->mem,strsize+1);
 		if(pl->next->id==NULL) {
-			LWSERR(LE_MEMORY);
 			if(rw) return 0;
 			return defret;
 		};
@@ -526,7 +502,6 @@ char *__ILWS_Post(char *handle) {
 		
 		pl->next->data=__ILWS_add_buffer(ClientInfo->mem,size+1);
 		if(pl->next->data==NULL) {
-			LWSERR(LE_MEMORY);
 			return defret;
 		};
 		j=0;
@@ -539,7 +514,6 @@ char *__ILWS_Post(char *handle) {
 					
 					tmp1=__ILWS_malloc(3);             
 					if(tmp1==NULL) {
-						LWSERR(LE_MEMORY);
 						if(rw) return 0;
 						return defret;
 					};
@@ -566,13 +540,10 @@ char *__ILWS_Post(char *handle) {
 	return ret;
 }                                                        
 
-
-
-/*********************************************************************************************************/
 /*
  * Function for MultiPart formdata
  */
-struct _MultiPart __ILWS_MultiPart(char *handle) {
+struct _MultiPart __ILWS_MultiPart(struct ClientInfo *ClientInfo, char *handle) {
 	char *tmp1,*tmp2,*tmp3;	
 	int i;
 	char *name;
@@ -588,7 +559,6 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 	if(ClientInfo->MultiPartList==NULL) {
 		ClientInfo->MultiPartList=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _MultiPart));
 		if(ClientInfo->MultiPartList==NULL) {
-			LWSERR(LE_MEMORY);
 			return defret;
 		};
 		ClientInfo->MultiPartList->next=NULL;
@@ -613,12 +583,10 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 	strsize=strlen(handle);
 	ml->next=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _MultiPart));
 	if(ml->next==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	ml->next->id=__ILWS_add_buffer(ClientInfo->mem,strsize+1);
 	if(ml->next->id==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(ml->next->id,handle,strsize);
@@ -637,7 +605,6 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 	boundarysize=tmp2-tmp1;
 	boundary=__ILWS_add_buffer(ClientInfo->mem,boundarysize+3);
 	if(boundary==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(boundary,tmp1,boundarysize);
@@ -648,7 +615,6 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 	namesize=boundarysize+41+strlen(handle);
 	name=__ILWS_add_buffer(ClientInfo->mem,namesize+1);
 	if(name==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	snprintf(name,namesize,"%s\r\nContent-Disposition: form-data; name=",boundary);	
@@ -681,7 +647,6 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 		tmp3=strstr(tmp2,"\r\n");
 		ml->next->filename=__ILWS_add_buffer(ClientInfo->mem,(tmp3-tmp2)+1);
 		if(ml->next->filename==NULL) {
-			LWSERR(LE_MEMORY);
 			return defret;
 		};
 		memcpy(ml->next->filename,tmp2,tmp3-tmp2);
@@ -704,7 +669,6 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 
 	// copy data to node	
 	if(!(ml->next->data=__ILWS_add_buffer(ClientInfo->mem,(tmp3-tmp2)+1))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(ml->next->data,tmp2,tmp3-tmp2);
@@ -718,11 +682,10 @@ struct _MultiPart __ILWS_MultiPart(char *handle) {
 
 };
 
-/*********************************************************************************************************/
 /*
  * Function for CookieData
  */
-char *__ILWS_Cookie(char *handle) {
+char *__ILWS_Cookie(struct ClientInfo *ClientInfo, char *handle) {
 	char *defret="";
 	char *tmp1,*tmp2,*ret;
 	int size;
@@ -743,7 +706,6 @@ char *__ILWS_Cookie(char *handle) {
 		
 		ClientInfo->CookieList=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Cookie));
 		if(ClientInfo->CookieList==NULL) {
-			LWSERR(LE_MEMORY);
 			return defret;
 		};
 		ClientInfo->CookieList->next=NULL;
@@ -764,11 +726,9 @@ char *__ILWS_Cookie(char *handle) {
 	
 	strsize=strlen(handle);
 	if(!(cl->next=__ILWS_add_buffer(ClientInfo->mem,sizeof(struct _Cookie)))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	if(!(cl->next->id=__ILWS_add_buffer(ClientInfo->mem,strsize+1))) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(cl->next->id,handle,strsize);
@@ -801,7 +761,6 @@ char *__ILWS_Cookie(char *handle) {
 	
 	ret=__ILWS_add_buffer(ClientInfo->mem,size+1);
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	
@@ -811,13 +770,10 @@ char *__ILWS_Cookie(char *handle) {
 	return cl->next->data;	
 };
 
-
-
-/*********************************************************************************************************/
 /*
  * get whole query string
  */
-char *__ILWS_clientinfo_getquerystring() {
+char *__ILWS_clientinfo_getquerystring(struct ClientInfo *ClientInfo) {
 	char *tmp1,*tmp2,*ret;
 	char *defret="";
 	size_t size;
@@ -830,7 +786,6 @@ char *__ILWS_clientinfo_getquerystring() {
 	size=(tmp2-tmp1)-1;
 	ret=__ILWS_add_buffer(ClientInfo->mem,size+1);
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(ret,tmp1,size);
@@ -838,12 +793,10 @@ char *__ILWS_clientinfo_getquerystring() {
 	return ret;
 };
 
-
-/*********************************************************************************************************/
 /*
  * get whole post data
  */ 
-char *__ILWS_clientinfo_getpostdata() {
+char *__ILWS_clientinfo_getpostdata(struct ClientInfo *ClientInfo) {
 	char *tmp1,*ret;
 	char *defret="";
 	size_t size;
@@ -855,7 +808,6 @@ char *__ILWS_clientinfo_getpostdata() {
 	size=(current_web_client->rbuf+current_web_client->rbufsize)-tmp1;
 	ret=__ILWS_add_buffer(ClientInfo->mem,size+1);
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(ret,tmp1,size);
@@ -863,126 +815,10 @@ char *__ILWS_clientinfo_getpostdata() {
 	return ret;
 }
 
-
-/*********************************************************************************************************/
-/* 
- * Get authorization username
- */
-char *__ILWS_clientinfo_getauthuser() {
-	char *tmp1,*tmp2,*ret, *out=NULL;
-	char *defret="";
-	size_t size;
-	
-	tmp1=strstr(current_web_client->rbuf,"Authorization: Basic");
-	if(tmp1==NULL) {
-		
-		return defret;
-	};
-	
-	tmp1+=21;
-	tmp2=strstr(tmp1,"\r\n");
-	if(tmp2==NULL) return defret;
-	size=(int)(tmp2-tmp1);
-	
-	ret=__ILWS_malloc(size+1);
-	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
-		return defret;
-	};
-	memcpy(ret,tmp1,size);
-	ret[size]=0;
-	
-	out=__ILWS_malloc(size+1);
-	if(out==NULL) {
-		LWSERR(LE_MEMORY);
-		__ILWS_free(ret);
-		return defret;
-	};
-	
-	size=__ILWS_base64decode(out,ret);
-	out[size]='\0';
-	
-	
-	__ILWS_free(ret);
-	tmp2=strstr(out,":");
-	if(tmp2==NULL) return defret;
-	
-	ret=__ILWS_add_buffer(ClientInfo->mem,(tmp2-out)+1);
-	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
-		__ILWS_free(out);
-		return defret;
-	};
-	memcpy(ret,out,tmp2-out);
-	ret[tmp2-out]=0;
-	
-	__ILWS_free(out);
-	return ret;
-}
-
-
-/*********************************************************************************************************/
-/*
- * get authorization password
- */
-char *__ILWS_clientinfo_getauthpass() {
-	char *tmp1,*tmp2,*ret, *out=NULL;
-	char *defret="";
-	size_t size;
-	
-	tmp1=strstr(current_web_client->rbuf,"Authorization: Basic");
-	if(tmp1==NULL) {
-		
-		return defret;
-	};
-	
-	tmp1+=21;
-	tmp2=strstr(tmp1,"\r\n");
-	if(tmp2==NULL) return defret;
-	size=(int)(tmp2-tmp1);
-	
-	ret=__ILWS_malloc(size+1);
-	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
-		return defret;
-	};
-	memcpy(ret,tmp1,size);
-	ret[size]=0;
-	
-	out=__ILWS_malloc(size+1);
-	if(out==NULL) {
-		LWSERR(LE_MEMORY);
-		__ILWS_free(ret);
-		return defret;
-	};
-	
-	size=__ILWS_base64decode(out,ret);
-	out[size]='\0';
-	
-	
-	__ILWS_free(ret);
-	tmp1=strstr(out,":")+1;
-	tmp2=out+strlen(out);
-	
-	ret=__ILWS_add_buffer(ClientInfo->mem,(tmp2-tmp1)+1);
-	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
-		__ILWS_free(out);
-		return defret;
-	};
-	memcpy(ret,tmp1,tmp2-tmp1);
-	ret[tmp2-tmp1]=0;
-	
-	__ILWS_free(out);
-	return ret;
-}
-
-
-/*********************************************************************************************************/
 /*
  * get method (GET POST HEAD etc)
  */
-char *__ILWS_clientinfo_getmethod() {
+char *__ILWS_clientinfo_getmethod(struct ClientInfo *ClientInfo) {
 	char *tmp1,*ret;
 	char *defret="";
 	size_t size;
@@ -993,7 +829,6 @@ char *__ILWS_clientinfo_getmethod() {
 	size=tmp1-current_web_client->rbuf;
 	ret=__ILWS_add_buffer(ClientInfo->mem,size+1);
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	memcpy(ret,current_web_client->rbuf,size);
@@ -1001,12 +836,10 @@ char *__ILWS_clientinfo_getmethod() {
 	return ret;
 }
 
-
-/*********************************************************************************************************/
 /*
  * get request name (GET /taltal HTTP/1.0) returning /taltal
  */
-char *__ILWS_clientinfo_getreqname() {
+char *__ILWS_clientinfo_getreqname(struct ClientInfo *ClientInfo) {
 	char *ret;
 	char *tmp1=strstr(current_web_client->rbuf,"/"); // Must have /
 	char *tmp2=strstr(tmp1,"?");
@@ -1025,7 +858,6 @@ char *__ILWS_clientinfo_getreqname() {
 		return defret;
 	ret=__ILWS_add_buffer(ClientInfo->mem,size+1);
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return defret;
 	};
 	j=0;
@@ -1038,7 +870,6 @@ char *__ILWS_clientinfo_getreqname() {
 				
 				tmp2=__ILWS_malloc(3);             
 				if(tmp2==NULL) {
-					LWSERR(LE_MEMORY);
 					return defret;
 				};
 				strncpy(tmp2,&tmp1[j+1],2);
@@ -1058,67 +889,5 @@ char *__ILWS_clientinfo_getreqname() {
 	ret[size]=0;
 	return ret;
 }         
-/*********************************************************************************************************/
-/*
- *	Get config entry (new on 0.5.0)
- */
-char *__ILWS_Conf(const char *topic,const char *key) {
-	struct web_server *server=current_web_server;
-	FILE *tmpf;
-	struct stat statf; // tested only on WIN
-	char *defret="";
-	char *dataconf;
-	char *tmp1,*tmp2,*tmp3;
-	long tmpsize=0;
-	int sizec;
-	// Config revive tested only on WIN
-	if(server->conffile!=NULL) {
-		stat(server->conffile,&statf);	
-		if(statf.st_mtime>server->conffiletime) {
-			tmpf=fopen(server->conffile,"r");
-			if(tmpf!=NULL) {
-				free(server->dataconf);
-				fseek(tmpf,SEEK_SET,SEEK_END);
-				sizec=ftell(tmpf);
-				fseek(tmpf,0,SEEK_SET);
-				server->dataconf=malloc(sizec+1);
-				fread(server->dataconf,sizec,1,tmpf);
-				server->dataconf[sizec-9]=0; // 9 is temporary
-				server->conffiletime=statf.st_mtime;
-				fclose(tmpf);
-			};
-		};
-	};
-	
-	dataconf=__ILWS_stristr(server->dataconf,topic);
-	if(dataconf==NULL) {
-		return defret;
-	};
-	dataconf+=strlen(topic);
-	
-	do {
-		tmp1=__ILWS_stristr(dataconf,key);
-		dataconf+=1;
-		if(dataconf[0]==0) { 
-			return defret;
-		};
-		if(dataconf[0]=='[' && dataconf[-1]=='\n') { 
-			return defret;
-		};
-	}while(!(tmp1!=NULL && tmp1[-1]=='\n' && tmp1[strlen(key)]=='='));
-	
-	
-	tmp1+=strlen(key)+1;
-	tmp2=__ILWS_stristr(tmp1,"\n");
-	if(tmp2==NULL) {
-		tmp2=tmp1+strlen(tmp1);
-	};
-	tmpsize=tmp2-tmp1;
-	tmp3=__ILWS_add_buffer(ClientInfo->mem,tmpsize+1);
-	memcpy(tmp3,tmp1,tmpsize);
-	tmp3[tmpsize]=0;
-	return tmp3;
-	
-		
-		
-};    
+
+

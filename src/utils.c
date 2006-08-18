@@ -55,9 +55,7 @@ char *__ILWS_tmpfname() {
 	if(tmpdir==NULL) {
 		tmpdir=P_tmpdir;  // defined in stdio.h
 	};
-	IFDEBUG(fprintf(stderr,"utils.c: Allocating temporary file name: "));
 	if(!(ret=__ILWS_malloc(strlen(tmpdir)+strlen(_tmpnameprefix)+TMPNAMESIZE+2))) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 	srand(time(NULL)); // seed
@@ -68,7 +66,6 @@ char *__ILWS_tmpfname() {
 		}
 		nam[i]=0;
 		snprintf(ret,strlen(tmpdir)+strlen(_tmpnameprefix)+TMPNAMESIZE+2,"%s/%s%s",tmpdir,_tmpnameprefix,nam); // include '0'
-		IFDEBUG(fprintf(stderr,"Temporary filename is: %s, stat:%d\n",ret,stat(ret,&foostat)));
 	}while((stat(ret,&foostat)!=-1) && (lstat(ret,&foostat)!=-1)); // redundancy if win32 // <- race condition?
 	return ret;
 };

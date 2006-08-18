@@ -16,10 +16,6 @@
 #ifndef _UTILS_H_ 
 #define _UTILS_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif         
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,19 +28,14 @@
 #include <time.h>
 #endif
 
-#include "debug.h"
-#include "error.h"
 #include "memory.h"
 
 #ifdef WIN32
-
 #define strncasecmp strnicmp
 #define snprintf _snprintf
 #define lstat stat
 #define vsnprintf _vsnprintf
-
 #endif
-
 
 #define TMPNAMESIZE 8
 extern char *_tmpnameprefix;

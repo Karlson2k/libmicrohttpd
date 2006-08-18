@@ -14,12 +14,9 @@
 
 
 #include "client.h"
+#include "outstream.h"
+#include "clientinfo.h"
 
-
-extern char *_libwebserver_version; // Defined in server.c
-
-
-struct web_client *current_web_client;
 int WEBTIMEOUT=10000;
 
 /*********************************************************************************************************/
@@ -30,7 +27,6 @@ struct web_client *__ILWS_init_client_list() {
 	struct web_client *ret;
 	ret=__ILWS_malloc(sizeof(struct web_client));
 	if(ret==NULL) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 #ifdef HAVE_OPENSSL
@@ -182,7 +178,7 @@ void __ILWS_read_client(struct web_client *node) {
 			} else {
 				datasize=node->rbufsize-node->headersize;
 				if(node->contentlength==0) { // well if it 0 read all at once
-					__ILWS_init_clientinfo(); // always call this?
+				  __ILWS_init_clientinfo(); // always call this?
 					node->contentlength=atol(ClientInfo->Header("Content-Length"));
 					// range for resuming
 					if((tmp3=strstr(ClientInfo->Header("Range"),"bytes="))) { // if it is in bytes (i hope, always)
@@ -212,7 +208,6 @@ void __ILWS_read_client(struct web_client *node) {
 		node->rbufsize+=tmp;
 		tmp2=__ILWS_realloc(node->rbuf,node->rbufsize+1);
 		if(tmp2==NULL) {
-			LWSERR(LE_MEMORY);
 			node->stat=5;
 			
 			return;
@@ -420,10 +415,7 @@ void __ILWS_process_client(struct web_client *node,struct gethandler *list) {
 				return;
 			};
 
-		}else {
-			LWSERR(LE_FILESYS);
-			
-		}; 
+		}
 		node->stat=4;   
 		if(node->HTTPdirective==NULL) {
 			if(node->range>0) {
@@ -475,7 +467,6 @@ void __ILWS_output_client(struct web_client *node) {
 		if(tstream->next->fname!=NULL) {
 			if(tstream->next->fstream==NULL) {
 				if((tstream->next->fstream=fopen(tstream->next->fname,"rb"))==NULL) {
-					LWSERR(LE_FILESYS);
 					__ILWS_delete_next_outstream(tstream);
 					//node->outstream->next=tstream->next;
 					return;
@@ -506,7 +497,6 @@ void __ILWS_output_client(struct web_client *node) {
 					if(namesize>0) {
 						if(namesize==1) { // this is $; for sure
 							if(!(tmp3=__ILWS_malloc(2))) {
-								LWSERR(LE_MEMORY);
 								node->stat=5;
 								return;
 							};
@@ -514,7 +504,6 @@ void __ILWS_output_client(struct web_client *node) {
 							tmp3[namesize]=0;
 						} else {
 							if(!(tmp3=__ILWS_malloc(namesize))) {
-								LWSERR(LE_MEMORY);
 								node->stat=5;
 								return;
 							};
@@ -547,7 +536,6 @@ void __ILWS_output_client(struct web_client *node) {
 							tstream->next->rsize=(beginsize+varsize);
 							tstream->next->varsize+=(varsize-namesize)-1;
 						} else {
-							LWSERR(LE_MEMORY);
 							__ILWS_free(tmp3);
 							node->stat=5;
 							return;
@@ -655,7 +643,6 @@ char *__ILWS_web_client_getreq() {
 	if(size<1) return NULL;
 	
 	if(!(ret=__ILWS_malloc(size+1))) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 	memcpy(ret,current_web_client->rbuf,size);
@@ -677,7 +664,6 @@ char *__ILWS_web_client_getreqline() {
 	if(size<1) return NULL;
 	
 	if(!(ret=__ILWS_malloc(size+1))) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 	memcpy(ret,current_web_client->rbuf,size);
@@ -704,7 +690,6 @@ int web_client_addfile(char *in) {
 		nfd=dup(fileno(stdout));
 		nfile=fdopen(nfd,"wb+");
 		if(!__ILWS_add_outstream(current_web_client->outstream,fname,nfile,1)) {
-			LWSERR(LE_MEMORY);
 			return 0;
 		};
 	};
@@ -913,7 +898,6 @@ int web_client_delvar(char *name) {
 struct web_var *__ILWS_init_var_list() {
 	struct web_var *ret;
 	if(!(ret=__ILWS_malloc(sizeof(struct web_var)))) {
-		LWSERR(LE_MEMORY);
 		return NULL;
 	};
 	ret->name=NULL;
@@ -934,19 +918,16 @@ int __ILWS_add_var(struct web_var *list, char *name, char *value) {
 	};
 	
 	if(!(node->next=__ILWS_malloc(sizeof(struct web_var)))) {
-		LWSERR(LE_MEMORY);
 		return 0;
 	};
 	
 	if(!(node->next->name=__ILWS_malloc(namesize+1))) {
-		LWSERR(LE_MEMORY);
 		return 0;
 	};
 	memcpy(node->next->name,name,namesize);
 	node->next->name[namesize]=0;
 
 	if(!(node->next->value=__ILWS_malloc(valuesize+1))) {
-		LWSERR(LE_MEMORY);
 		return 0;
 	};
 	memcpy(node->next->value,value,valuesize);
