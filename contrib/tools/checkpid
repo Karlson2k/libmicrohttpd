@@ -1,4 +1,0 @@
-
-echo "checking pid $1";
-
-while true; do echo -e "\33[2J\33[0;0H";cat /proc/$1/status ;done
