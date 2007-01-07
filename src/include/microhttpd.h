@@ -277,7 +277,6 @@ MHD_register_handler(struct MHD_Daemon * daemon,
  * @return MHD_NO if a handler for this exact prefix
  *         is not known for this daemon
  */
- */
 int 
 MHD_unregister_handler(struct MHD_Daemon * daemon,
 		       const char * uri_prefix,
