@@ -1,0 +1,117 @@
+# This file is part of libmicrohttpd.
+# (C) 2006, 2007 Christian Grothoff (and other contributing authors)
+#
+# libmicrohttpd is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; either version 2, or (at your
+# option) any later version.
+#
+# libmicrohttpd is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with libmicrohttpd; see the file COPYING.  If not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+#
+#
+# Process this file with autoconf to produce a configure script.
+#
+#
+AC_PREREQ(2.57)
+AC_INIT([libmicrohttpd], [0.0.0],[libmicrohttpd@cs.du.edu])
+AM_INIT_AUTOMAKE([libmicrohttpd], [0.0.0])
+AM_CONFIG_HEADER([config.h])
+
+AH_TOP([#define _GNU_SOURCE  1])
+
+# Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_CANONICAL_HOST
+AM_PROG_LIBTOOL
+
+CFLAGS="-Wall -Werror $CFLAGS"
+# use '-fno-strict-aliasing', but only if the compiler can take it
+if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1; 
+then
+ CFLAGS="-fno-strict-aliasing $CFLAGS"
+fi
+
+# Check system type
+case "$host_os" in
+*darwin* | *rhapsody* | *macosx*)
+     AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
+     CFLAGS="-no-cpp-precomp $CFLAGS"
+     LDFLAGS="-flat_namespace -undefined suppress $LDFLAGS"
+     ;;
+linux*)
+     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     ;;
+freebsd*)
+     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
+     CFLAGS="-D_THREAD_SAFE $CFLAGS"
+     ;;
+openbsd*)
+     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
+     ;;
+netbsd*)
+     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
+     ;;
+*solaris*)
+     AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
+     AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
+     ;;
+*arm-linux*)
+     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
+     ;;
+*cygwin*)
+     AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
+     AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
+     LDFLAGS="$LDFLAGS -no-undefined"
+     ;;
+*mingw*)
+     AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
+     AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
+     LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32"
+     ;;
+*)
+     AC_MSG_RESULT(Unrecognised OS $host_os)
+     AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
+;;
+esac
+
+CHECK_PTHREAD
+AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(PTHREAD_LDFLAGS)
+AC_SUBST(PTHREAD_CPPFLAGS)
+
+# pthread_t is a struct since 11/2004
+AC_CHECK_MEMBER(pthread_t.p, AC_DEFINE(HAVE_NEW_PTHREAD_T, 1,
+  [Define if you have a post 11/2004 pthread library]), , [#include <pthread.h>])
+
+# large file support
+AC_SYS_LARGEFILE
+AC_FUNC_FSEEKO
+
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LIBS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(EXT_LIB_PATH)
+AC_SUBST(EXT_LIBS)
+
+AC_CONFIG_FILES([ 
+Makefile
+doc/Makefile
+src/Makefile])
+AC_OUTPUT
