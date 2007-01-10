@@ -22,6 +22,7 @@
  * @file microhttpd.h
  * @brief public interface to libmicrohttpd
  * @author Christian Grothoff
+ * @author Chris GauthierDickey
  *
  * All symbols defined in this header start with MHD.  MHD is a
  * micro-httpd library.  As such, it does not have any API for logging
@@ -34,6 +35,12 @@
  * - proper API for file uploads via HTTP
  * - We probably need a significantly more extensive API for
  *   proper SSL support (set local certificate, etc.)
+ *
+ *
+ *
+ * Students are encouraged to add additional HTTP status codes to this
+ * file, but should not change anything else.  If you think something
+ * needs to be changed, talk to your instructor first.
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -123,27 +130,27 @@ enum MHD_ValueKind {
   /**
    * Response header
    */
-  MHD_RESPONSE_HEADER_KIND = 0;
+  MHD_RESPONSE_HEADER_KIND = 0,
 
   /**
    * HTTP header
    */
-  MHD_HEADER_KIND = 1;
+  MHD_HEADER_KIND = 1,
 
   /**
    * Cookies
    */
-  MHD_COOKIE_KIND = 2;
+  MHD_COOKIE_KIND = 2,
 
   /**
    * POST data
    */
-  MHD_POSTDATA_KIND = 4;
+  MHD_POSTDATA_KIND = 4,
 
   /**
    * GET (URI) arguments
    */
-  MHD_GET_ARGUMENT_KIND = 8;
+  MHD_GET_ARGUMENT_KIND = 8,
 
 };
 

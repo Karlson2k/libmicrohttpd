@@ -1,0 +1,33 @@
+Run "autoreconf -f -i" to create configure.
+
+Talk to Christian or Chris if you have problems
+with the build system or do not understand the 
+API.  We can also help discuss implementation 
+choices.
+
+
+
+Your project will be graded using the following
+criteria:
+
+1) correctness
+   a) HTTP 1.1 compliance
+   b) no bugs / crashes
+   c) interoperability (firefox, IE, konqueror,
+      squid, libcurl, wget)
+   d) memory leaks
+2) completeness
+   a) all API functions
+   b) all options (except SSL)
+   c) portability (Linux, Solaris)
+2) performance 
+   a) memory consumption
+   b) throughput (small and large transfers)
+   c) latency
+   d) performance with 1000 parallel sessions
+3) software engineering practice (subjective)
+   a) code quality
+   b) comprehensive testcases
+   c) documentation
+
+	
