@@ -57,6 +57,11 @@ extern "C" {
 
 #define MHD_NO 0
 
+#define MHD_HTTP_OK 200
+
+#define MHD_HTTP_NOT_FOUND 404
+
+
 /**
  * Options for the MHD daemon.  Note that if neither
  * MHD_USER_THREAD_PER_CONNECTION nor MHD_USE_SELECT_INTERNALLY are
@@ -110,6 +115,39 @@ enum MHD_OPTION {
   MHD_USE_IPv6 = 32,
 };
 
+/**
+ * The MHD_ValueKind specifies the source of
+ * the key-value pairs in the HTTP protocol.
+ */
+enum MHD_ValueKind {
+
+  /**
+   * Response header
+   */
+  MHD_RESPONSE_HEADER_KIND = 0;
+
+  /**
+   * HTTP header
+   */
+  MHD_HEADER_KIND = 1;
+
+  /**
+   * Cookies
+   */
+  MHD_COOKIE_KIND = 2;
+
+  /**
+   * POST data
+   */
+  MHD_POSTDATA_KIND = 4;
+
+  /**
+   * GET (URI) arguments
+   */
+  MHD_GET_ARGUMENT_KIND = 8;
+
+};
+
 struct MHD_Daemon;
 
 struct MHD_Session;
@@ -131,9 +169,9 @@ typedef int
 
 /**
  * A client has requested the given url using the given method ("GET",
- * "PUT" or "POST").  The callback must call MHS callbacks to provide
- * content to give back to the client and return an HTTP status code
- * (i.e. 200 for OK, 404, etc.).
+ * "PUT", "DELETE", "POST", etc).  The callback must call MHS
+ * callbacks to provide content to give back to the client and return
+ * an HTTP status code (i.e. 200 for OK, 404, etc.).
  *
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serios
@@ -157,6 +195,7 @@ typedef int
  */
 typedef int
 (*MHD_KeyValueIterator)(void * cls,
+			enum MHD_ValueKind kind,
 			const char * key,
 			const char * value);
 
@@ -239,7 +278,7 @@ int
 MHD_get_fdset(struct MHD_Daemon * daemon,
 	      fd_set * read_fd_set,
 	      fd_set * write_fd_set,
-	      fd_set * exc_fd_set,
+	      fd_set * except_fd_set,
 	      int * max_fd);
 
 /**
@@ -292,42 +331,22 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
  * @return number of entries iterated over
  */ 
 int
-MHD_get_session_headers(struct MHD_Session * session,
-			MHD_KeyValueIterator * iterator,
-			void * iterator_cls);
+MHD_get_session_values(struct MHD_Session * session,
+		       enum MHD_ValueKind kind,
+		       MHD_KeyValueIterator * iterator,
+		       void * iterator_cls);
 
 /**
- * Get a particular header value.
+ * Get a particular header value.  If multiple
+ * values match the kind, return any one of them.
  *
  * @param key the header to look for
  * @return NULL if no such item was found
  */ 
 const char *
-MHD_lookup_session_header(struct MHD_Session * session,
-			  const char * key);
-
-/**
- * Get all of the form fields from POST.
- *
- * @param iterator callback to call on each header;
- *        maybe NULL (then just count headers)
- * @param iterator_cls extra argument to iterator
- * @return number of entries iterated over
- */ 
-int
-MHD_get_post_items(struct MHD_Session * session,
-		   MHD_KeyValueIterator * iterator,
-		   void * iterator_cls);
-
-/**
- * Get a particular form field from POST.
- *
- * @param key the field to look for
- * @return NULL if no such item was found
- */ 
-const char *
-MHD_lookup_post_item(struct MHD_Session * session,
-		     const char * key);
+MHD_lookup_session_value(struct MHD_Session * session,
+			 enum MHD_ValueKind kind,
+			 const char * key);
 
 /**
  * Queue a response to be transmitted to the client (as soon as
@@ -343,6 +362,7 @@ int
 MHD_queue_response(struct MHD_Session * session,
 		   unsigned int status_code,
 		   struct MHD_Response * response);
+
 	       
 /**
  * Create a response object.  The response object can be extended with
@@ -419,6 +439,18 @@ int
 MHD_get_response_headers(struct MHD_Response * response,
 			 MHD_KeyValueIterator * iterator,
 			 void * iterator_cls);
+
+/**
+ * FIXME-CHRIS
+ * @return -1 if no data uploaded; otherwise number of bytes
+ *            read into buf; 0 for end of transmission
+ */
+int 
+MHD_read_file_upload(struct MHD_Session * session,
+		     void * buf,
+		     size_t len);
+
+
 
 #if 0 /* keep Emacsens' auto-indent happy */
 {
