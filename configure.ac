@@ -37,6 +37,7 @@ AC_PROG_MAKE_SET
 AC_CANONICAL_HOST
 AM_PROG_LIBTOOL
 
+# set GCC options
 CFLAGS="-Wall -Werror $CFLAGS"
 # use '-fno-strict-aliasing', but only if the compiler can take it
 if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1; 
@@ -100,7 +101,15 @@ AC_SUBST(PTHREAD_CPPFLAGS)
 AC_CHECK_MEMBER(pthread_t.p, AC_DEFINE(HAVE_NEW_PTHREAD_T, 1,
   [Define if you have a post 11/2004 pthread library]), , [#include <pthread.h>])
 
-# large file support
+
+# libcurl (required for testing)
+SAVE_LIBS=$LIBS
+LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
+AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
+$LIBS=$SAVE_LIBS
+
+
+# large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
@@ -113,5 +122,12 @@ AC_SUBST(EXT_LIBS)
 AC_CONFIG_FILES([ 
 Makefile
 doc/Makefile
-src/Makefile])
+src/Makefile
+src/include/Makefile
+src/daemon/Makefile])
 AC_OUTPUT
+
+if test "$curl" != 1
+then
+ AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
+fi

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2006 Christian Grothoff (and other contributing authors)
+     (C) 2006, 2007 Christian Grothoff (and other contributing authors)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -31,8 +31,7 @@
  * thread-safe.<p>
  *
  * TODO:
- * - Is it ok to treat POST data and GET-URI arguments (a=4&b=5) equally,
- *   or do we need an extra pair of methods? 
+ * - proper API for file uploads via HTTP
  * - We probably need a significantly more extensive API for
  *   proper SSL support (set local certificate, etc.)
  */
