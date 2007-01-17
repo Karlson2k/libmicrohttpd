@@ -1,0 +1,3 @@
+#!/bin/sh
+export WANT_AUTOMAKE="1.8"
+autoreconf -f -i
