@@ -121,6 +121,7 @@ AC_SUBST(EXT_LIBS)
 AC_CONFIG_FILES([ 
 Makefile
 doc/Makefile
+m4/Makefile
 src/Makefile
 src/include/Makefile
 src/daemon/Makefile])
