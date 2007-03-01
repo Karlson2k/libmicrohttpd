@@ -92,6 +92,7 @@ netbsd*)
 esac
 
 CHECK_PTHREAD
+LIBS="$PTHREAD_LIBS $LIBS"
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_LDFLAGS)
 AC_SUBST(PTHREAD_CPPFLAGS)
@@ -99,6 +100,11 @@ AC_SUBST(PTHREAD_CPPFLAGS)
 # pthread_t is a struct since 11/2004
 AC_CHECK_MEMBER(pthread_t.p, AC_DEFINE(HAVE_NEW_PTHREAD_T, 1,
   [Define if you have a post 11/2004 pthread library]), , [#include <pthread.h>])
+
+AC_CHECK_FUNCS(pthread_equal)
+
+# Check for headers that are ALWAYS required
+AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 
 # libcurl (required for testing)
