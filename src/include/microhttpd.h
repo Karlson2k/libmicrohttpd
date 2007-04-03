@@ -187,7 +187,9 @@ typedef int
 (*MHD_AccessHandlerCallback)(void * cls,
 			     struct MHD_Session * session,
 			     const char * url,
-			     const char * method);
+			     const char * method,
+			     const char * upload_data,
+			     unsigned int * upload_data_size);
 
 /**
  * Iterator over key-value pairs.  This iterator
@@ -445,17 +447,6 @@ int
 MHD_get_response_headers(struct MHD_Response * response,
 			 MHD_KeyValueIterator * iterator,
 			 void * iterator_cls);
-
-/**
- * FIXME-CHRIS
- * @return -1 if no data uploaded; otherwise number of bytes
- *            read into buf; 0 for end of transmission
- */
-int 
-MHD_read_file_upload(struct MHD_Session * session,
-		     void * buf,
-		     size_t len);
-
 
 
 #if 0 /* keep Emacsens' auto-indent happy */
