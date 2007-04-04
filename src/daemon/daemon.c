@@ -276,7 +276,7 @@ MHD_create_connection(struct MHD_Daemon * daemon) {
 	
 	daemon->connections[first_free]->id = first_free;
 	daemon->connections[first_free]->daemon = daemon;
-	daemon->connections[first_free]->pid = NULL;
+	daemon->connections[first_free]->pid = (pthread_t)-1;
 	daemon->connections[first_free]->bufPos = 0;
 	daemon->connections[first_free]->messagePos= 0;
 	daemon->connections[first_free]->responsePending = 0;
@@ -1384,7 +1384,7 @@ MHD_start_daemon(unsigned int options,
 	 retVal->dh = dh;
 	 retVal->dh_cls = dh_cls;
 	 retVal->shutdown = 0;
-	 retVal->pid = NULL;
+	 retVal->pid = (pthread_t)-1;
 
 	 retVal->firstFreeHandler = 0;
 	 for(i = 0; i < MHD_MAX_HANDLERS; i++) {
@@ -1475,13 +1475,13 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
 
 	daemon->shutdown = 1;
 
-	if(daemon->pid != NULL) {
+	if(daemon->pid != (pthread_t)-1) {
 		pthread_join(daemon->pid, NULL);
 	}
 
 	for(i = 0; i < MHD_MAX_CONNECTIONS; i++) {
 		if(daemon->connections[i] != NULL) {
-			if(daemon->connections[i]->pid != NULL) {
+			if(daemon->connections[i]->pid != (pthread_t)-1) {
 				pthread_join(daemon->connections[i]->pid, NULL);
 			}
 
