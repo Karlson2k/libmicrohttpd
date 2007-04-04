@@ -32,7 +32,15 @@
 #include <string.h>
 
 static int testStartError() {
-  return NULL != MHD_start_daemon(0, 0, NULL, NULL, NULL, NULL);
+  struct MHD_Daemon * d;
+
+  d = MHD_start_daemon(MHD_USE_DEBUG, 0, NULL, NULL, NULL, NULL);
+
+  if(d == NULL) {
+     return 0;
+  } else {
+     return 1;
+  }
 }
 
 static int apc_nothing(void * cls,
@@ -99,41 +107,122 @@ static int ahc_echo(void * cls,
 static int testStartStop() {
   struct MHD_Daemon * d;
 
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4,
+  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4 | MHD_USE_DEBUG,
 		       1080,
 		       &apc_nothing,
 		       NULL,
 		       &ahc_nothing,
 		       NULL);
-  if (d == NULL)
+  if (d == NULL) {
     return 1;
+  }
   MHD_stop_daemon(d);
   return 0;
 }
 
-static int testGet() {
+static int testRun() {
+  struct MHD_Daemon * d;
+  fd_set read;
+  int maxfd;
+  int i;
+
+  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG,
+		       1080,
+		       &apc_all,
+		       NULL,
+		       &ahc_nothing,
+		       NULL);
+
+  if(d == NULL) {
+	  return 1;
+  }
+  fprintf(stderr, "Testing external select!\n");
+  i = 0;
+  while(i < 15) {
+     MHD_get_fdset(d, &read, &read, &read, &maxfd);
+     if(MHD_run(d) == MHD_NO) {
+        MHD_stop_daemon(d);
+        return 1;
+     }
+	  sleep(1);
+	  i++;
+  }
+  return 0;
+}
+
+static int testThread() {
+  struct MHD_Daemon * d;
+  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
+		       1081,
+		       &apc_all,
+		       NULL,
+		       &ahc_nothing,
+		       NULL);
+
+  if(d == NULL) {
+	  return 1;
+  }
+
+  fprintf(stderr, "Testing internal select!\n");  
+  if (MHD_run(d) == MHD_NO) {
+     return 1;
+  } else {
+	  sleep(15);
+	  MHD_stop_daemon(d);
+  }
+  return 0;
+}
+
+static int testMultithread() {
+  struct MHD_Daemon * d;
+  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
+		       1082,
+		       &apc_all,
+		       NULL,
+		       &ahc_nothing,
+		       NULL);
+
+  if(d == NULL) {
+	  return 1;
+  }
+
+  fprintf(stderr, "Testing thread per connection!\n");  
+  if (MHD_run(d) == MHD_NO) {
+     return 1;
+  } else {
+	  sleep(15);
+	  MHD_stop_daemon(d);
+  }
+  return 0;
+}
+
+static int testInternalGet() {
   struct MHD_Daemon * d;
   CURL * c;
-  int ret;
   char buf[2048];
   struct CBC cbc;
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  ret = 0;
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4,
-		       1080,
+  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4 | MHD_USE_DEBUG,
+		       1083,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
 		       "GET");
   if (d == NULL)
     return 1;
+
+  if(MHD_run(d) == MHD_NO) {
+    MHD_stop_daemon(d);
+    return 2;
+  }
+  
   c = curl_easy_init();
   curl_easy_setopt(c,
 		   CURLOPT_URL,
-		   "http://localhost:1080/hello_world");
+		   "http://localhost:1083/hello_world");
   curl_easy_setopt(c,
 		   CURLOPT_WRITEFUNCTION,
 		   &copyBuffer);
@@ -146,31 +235,123 @@ static int testGet() {
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   15L);
-  /* NOTE: use of CONNECTTIMEOUT without also
-     setting NOSIGNAL results in really weird
-     crashes on my system! */
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
   curl_easy_setopt(c,
 		   CURLOPT_NOSIGNAL,
 		   1);  
   if (CURLE_OK != curl_easy_perform(c))
-    ret = 1;
+    return 3;
+    
   curl_easy_cleanup(c);
+  
   if (cbc.pos != strlen("hello_world"))
-    ret = 2;
+    return 4;
+  
   if (0 != strncmp("hello_world",
 		   cbc.buf,
 		   strlen("hello_world")))
-    ret = 3;
+    return 5;
+  
   MHD_stop_daemon(d);
-  return ret;
+  
+  return 0;
+}
+
+static int testMultithreadedGet() {
+  struct MHD_Daemon * d;
+  CURL * c;
+  char buf[2048];
+  struct CBC cbc;
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_IPv4 | MHD_USE_DEBUG,
+		       1084,
+		       &apc_all,
+		       NULL,
+		       &ahc_echo,
+		       "GET");
+  if (d == NULL)
+    return 1;
+
+  if(MHD_run(d) == MHD_NO)
+    return 2;
+ 
+  
+  c = curl_easy_init();
+  curl_easy_setopt(c,
+		   CURLOPT_URL,
+		   "http://localhost:1084/hello_world");
+  curl_easy_setopt(c,
+		   CURLOPT_WRITEFUNCTION,
+		   &copyBuffer);
+  curl_easy_setopt(c,
+		   CURLOPT_WRITEDATA,
+		   &cbc);
+  curl_easy_setopt(c,
+		   CURLOPT_FAILONERROR,
+		   1);
+  curl_easy_setopt(c,
+		   CURLOPT_CONNECTTIMEOUT,
+		   15L);
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
+  curl_easy_setopt(c,
+		   CURLOPT_NOSIGNAL,
+		   1);  
+  if (CURLE_OK != curl_easy_perform(c))
+    return 3;
+  curl_easy_cleanup(c);
+  if (cbc.pos != strlen("hello_world"))
+    return 4;
+  
+  if (0 != strncmp("hello_world",
+		   cbc.buf,
+		   strlen("hello_world")))
+    return 5;
+    
+  MHD_stop_daemon(d);
+  
+  return 0;
 }
 
 int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
-  
+  fprintf(stderr, "***testStartError()***\n");
+  fprintf(stderr, "***This test verifies the start function responds to bad arguments correctly***\n");
   errorCount += testStartError();
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testStartStop()***\n");
+  fprintf(stderr, "***This test verifies that the daemon can be started and stopped normally***\n");
   errorCount += testStartStop();
-  errorCount += testGet();
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testInternalGet()***\n");  
+  fprintf(stderr, "***This test verifies the functionality of internal select using a canned request***\n");  
+  errorCount += testInternalGet();
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testMultithreadedGet()***\n");  
+  fprintf(stderr, "***This test verifies the functionality of multithreaded connections using a canned request***\n");  
+  errorCount += testMultithreadedGet();
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testRun()***\n");
+  fprintf(stderr, "***This test verifies the functionality of external select***\n");
+  fprintf(stderr, "***The sever will sit on the announced port for 15 seconds and wait for external messages***\n");  
+  errorCount += testRun();
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testThread()***\n");
+  fprintf(stderr, "***This test verifies the functionality of internal select***\n");  
+  fprintf(stderr, "***The sever will sit on the announced port for 15 seconds and wait for external messages***\n");  
+  errorCount += testThread();  
+  fprintf(stderr, "errorCount is %i\n", errorCount);
+  fprintf(stderr, "***testMultithread()***\n");
+  fprintf(stderr, "***This test verifies the functionality of multithreaded connections***\n");  
+  fprintf(stderr, "***The sever will sit on the announced port for 15 seconds and wait for external messages***\n");  
+  errorCount += testMultithread();  
+  fprintf(stderr, "errorCount is %i\n", errorCount);
   return errorCount != 0; /* 0 == pass */
 }
