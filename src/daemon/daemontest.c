@@ -58,7 +58,9 @@ static int apc_all(void * cls,
 static int ahc_nothing(void * cls,
 		       struct MHD_Session * session,
 		       const char * url,
-		       const char * method) {
+		       const char * method,
+               const char * upload_data,
+               unsigned int * upload_data_size) {
   return MHD_NO;
 }
 
@@ -86,7 +88,9 @@ static size_t copyBuffer(void * ptr,
 static int ahc_echo(void * cls,
 		    struct MHD_Session * session,
 		    const char * url,
-		    const char * method) {
+		    const char * method,
+            const char * upload_data,
+            unsigned int * upload_data_size) {
   const char * me = cls;
   struct MHD_Response * response;
   int ret;
