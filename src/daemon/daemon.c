@@ -161,23 +161,26 @@ MHD_add_response_header(struct MHD_Response * response,
 	if(response == NULL || header == NULL || content == NULL || strlen(header) == 0 || strlen(content) == 0) {
 		return MHD_NO;
 	}
-
+	/* CG: use linked list to avoid limitation and over-allocation! */
 	if(response->firstFreeHeader >= MHD_MAX_HEADERS) {
 		return MHD_NO;
 	}
 
 	newHeader = (char *)malloc(strlen(header)+1);
 	newContent = (char *)malloc(strlen(content)+1);
-
+	/* CG: useless check! */
 	if(newHeader == NULL || newContent == NULL) {
+	  /* CG: printf! */
 	       fprintf(stderr, "Error allocating memory!\n");
 	       return MHD_NO;
 	}
 
+	/* CG: do you mean strcpy/strdup? defer allocation
+	   until you need to  (after malformed checks!) */
 	sprintf(newHeader, "%s", header);
 	sprintf(newContent, "%s", content);
 
-
+	/* CG: why not use strstr? */
 	if(strtok_r(newHeader, " \t\r\n", &saveptr) !=  NULL) {
 		fprintf(stderr, "Malformed header!\n"); 
 		free(newContent);
@@ -185,6 +188,7 @@ MHD_add_response_header(struct MHD_Response * response,
 		return MHD_NO;
 	}
 
+	/* CG: why not use strstr? */
 	if(strtok_r(newContent, "\n", &saveptr) !=  NULL) {
 		fprintf(stderr, "Malformed content!\n"); 
 		free(newContent);
@@ -192,21 +196,30 @@ MHD_add_response_header(struct MHD_Response * response,
 		return MHD_NO;
 	}	
 
+	/* CG: this is not C++ -- no need to cast after malloc! */
 	struct MHD_HTTP_Header * newHTTPHeader = (struct MHD_HTTP_Header *)malloc(sizeof(struct MHD_HTTP_Header));
 
 	if(newHTTPHeader == NULL) {
+	  /* CG: useless check, printf */
 	       fprintf(stderr, "Error allocating memory!\n");
 	       free(newContent);
 	       free(newHeader);
 	       return MHD_NO;
 	}
 
+	/* CG: strdup here, avoids free's above! */
 	response->headers[response->firstFreeHeader]->header = newHeader;
 	response->headers[response->firstFreeHeader]->headerContent = newContent;
 
 	//For now, everything is a HTTP Header... this needs to be improved!
+	/* CG: what else are you thinking about? Cookies?
+	   sounds like you are proposing an API change!!! */
+
 	response->headers[response->firstFreeHeader]->kind = MHD_HEADER_KIND;
-	
+
+	/* CG: YUCK! Yet another reason for linked lists...
+	   Why bother with the firstFreeHandler field if
+	   you're O(n) anyway!? */
 	response->firstFreeHeader=MHD_MAX_HEADERS;
 	for(i = 0; i < MHD_MAX_HEADERS; i++) {
 		if(response->headers[i] == NULL) {
@@ -241,9 +254,12 @@ MHD_create_connection(struct MHD_Daemon * daemon) {
 	if(first_free == -1) 
 		return -1;
 
+	/* CG: delay allocation until at accept has succeeded! */
 	daemon->connections[first_free] = (struct MHD_Session *)malloc(sizeof(struct MHD_Session));
 
 	if(daemon->connections[first_free] == NULL) {
+	  /* CG: use MACRO or (static) helper function
+	     instead of writing this option check everywhere! */
 		if((daemon->options & MHD_USE_DEBUG) != 0)
 	        	fprintf(stderr, "Error allocating memory!\n");
 	        return -1;
@@ -251,7 +267,7 @@ MHD_create_connection(struct MHD_Daemon * daemon) {
 	
 	size = sizeof(struct sockaddr);
 	daemon->connections[first_free]->socket_fd = 
-
+	 
 	accept(daemon->socket_fd, (struct sockaddr *)&daemon->connections[first_free]->addr, 
 		(socklen_t *)&size); 
 	
@@ -291,7 +307,9 @@ MHD_create_connection(struct MHD_Daemon * daemon) {
 	for(i = 0; i < MHD_MAX_RESPONSE; i++) {
 		daemon->connections[first_free]->currentResponses[i] = NULL;
 	}
-
+	/* CG: maybe better to re-compute max_fd closer to select;
+	   also handles deletion mo re graceful, need to iterate over
+	   all connections anyway for FD_SET... */
 	if(daemon->max_fd < daemon->connections[first_free]->socket_fd) {
 		daemon->max_fd = daemon->connections[first_free]->socket_fd;
 	}
@@ -320,12 +338,14 @@ MHD_create_response_from_callback(size_t size,
 
 
 	if(crc == NULL) {
+	  /* CG: printf! */
             fprintf(stderr, "A ContentReaderCallback must be provided to MHD_create_response_from_callback!\n");
 	    return NULL;
 	}
 
 	retVal = (struct MHD_Response *) malloc(sizeof(struct MHD_Response));
 	if(retVal == NULL) {
+	  /* CG: printf, useless check, useless cast */
            fprintf(stderr, "Error allocating memory!\n");
 	   return NULL;
 	}
@@ -353,7 +373,7 @@ MHD_create_response_from_callback(size_t size,
            free(retVal);
 	   return NULL;
 	}
-
+	/* CG: use memset? linked list!!? */
 	for(i = 0; i < MHD_MAX_HEADERS; i++) {
 		retVal->headers[i] = NULL;
 	}
