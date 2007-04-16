@@ -890,7 +890,7 @@ MHD_handle_write(int connection_id, struct MHD_Daemon * daemon) {
 				    return MHD_NO;
 				}					
 			}
-			sprintf(responseMessage, "Content-length: %i\r\n\r\n", response->size);
+			sprintf(responseMessage, "Content-length: %llu\r\n\r\n", (unsigned long long)response->size);
 			fprintf(stderr, "%s\n", responseMessage);
 			if(send(session->socket_fd, responseMessage, strlen(responseMessage),0)!= strlen(responseMessage)) {
 				fprintf(stderr, "Error! could not send an entire header in one call to send! unable to handle this case as of this time.\n");
@@ -902,7 +902,7 @@ MHD_handle_write(int connection_id, struct MHD_Daemon * daemon) {
 		i = send(session->socket_fd, response->data+response->bytesSentSoFar, response->size-response->bytesSentSoFar,0);
 		response->bytesSentSoFar += i;
 
-		fprintf(stderr, "Sent %i bytes of data\nTotal to send is %i bytes\n", i, response->size);
+		fprintf(stderr, "Sent %i bytes of data\nTotal to send is %llu bytes\n", i, (unsigned long long)response->size);
 
 		if(response->bytesSentSoFar == response->size) {
 			session->currentResponses[session->currentResponse] = NULL;
