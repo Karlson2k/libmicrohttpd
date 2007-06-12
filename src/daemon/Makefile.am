@@ -10,7 +10,10 @@ libmicrohttpd_la_LDFLAGS = \
 # libmicrohttpd_la_LIBADD = \
 #  -lm
 libmicrohttpd_la_SOURCES = \
-  daemon.c 
+  daemon.c  \
+  internal.h \
+  response.c response.h \
+  session.c session.h
 
 # No curl, not testcases
 if HAVE_CURL
