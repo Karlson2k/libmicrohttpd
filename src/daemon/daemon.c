@@ -44,8 +44,6 @@
 
 #define MHD_MAX_CONNECTIONS FD_SETSIZE -4 
 
-#define MHD_MAX_BUF_SIZE 2048
-
 
 /**
  * fprintf-like helper function for logging debug
@@ -490,6 +488,10 @@ MHD_start_daemon(unsigned int options,
   retVal->dh = dh;
   retVal->dh_cls = dh_cls;
   retVal->socket_fd = socket_fd;
+  retVal->default_handler.dh = dh;
+  retVal->default_handler.dh_cls = dh_cls;
+  retVal->default_henader.uri_prefix = "";
+  retVal->default_handler.next = NULL;
   if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
 	 (0 != (options & MHD_USE_SELECT_INTERNALLY)) ) &&
        (0 != pthread_create(&daemon->pid,

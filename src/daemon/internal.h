@@ -43,6 +43,9 @@
 #include "microhttpd.h"
 #include "config.h"
 
+#define MHD_MAX_BUF_SIZE 2048
+
+
 
 /**
  * Header or cookie in HTTP request or response.
@@ -73,12 +76,10 @@ struct MHD_Daemon {
 
   struct MHD_Access_Handler * handlers;
 
-  MHD_AccessHandlerCallback default_handler;
+  struct MHD_Access_Handler default_handler;
 
   struct MHD_Session * connections;
   
-  void * dh_cls;
-
   MHD_AcceptPolicyCallback apc;
 
   void * apc_cls;

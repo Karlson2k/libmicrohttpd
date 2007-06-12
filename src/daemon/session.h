@@ -39,7 +39,9 @@ struct MHD_Session {
   
   struct MHD_Response * response;
 
-  char * requestType;
+  char * method;
+
+  char * url;
 
   /**
    * Buffer for reading requests.
@@ -76,6 +78,13 @@ struct MHD_Session {
    * while sending headers).
    */
   size_t messagePos;
+
+  /**
+   * Remaining (!) number of bytes in the upload.
+   * Set to -1 for unknown (connection will close
+   * to indicate end of upload).
+   */
+  size_t uploadSize;
 
   /**
    * Length of the foreign address.

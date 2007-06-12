@@ -179,6 +179,9 @@ typedef int
  * callbacks to provide content to give back to the client and return
  * an HTTP status code (i.e. 200 for OK, 404, etc.).
  *
+ * @param upload_data_size set initially to the size of the
+ *        upload_data provided; the method must update this
+ *        value to the number of bytes NOT processed
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serios
  *         error while handling the request
