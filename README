@@ -10,7 +10,6 @@ In general:
 ===========
 daemon.c:
 - MHD_cleanup_session: major memory leaks (headers!)
-- add additional LOG messages for debugging
 
 session.c:
 - MHD_session_get_fdset (essentially not implemented)

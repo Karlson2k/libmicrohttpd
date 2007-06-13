@@ -175,7 +175,9 @@ MHD_get_next_header_line(struct MHD_Session * session) {
 	session->read_buffer_size *= 2;
       } else {
 	/* die, header far too long to be reasonable */
-	/* FIXME: log */
+	MHD_DLOG(session->daemon,
+		 "Received excessively long header line (>%u), closing connection.\n",
+		 4 * MHD_MAX_BUF_SIZE);
 	close(session->socket_fd);
 	session->socket_fd = -1;
       }
@@ -251,7 +253,8 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     colon = strstr(line, ": ");
     if (colon == NULL) {
       /* error in header line, die hard */
-      /* FIXME: log */
+      MHD_DLOG(session->daemon,
+	       "Received malformed line (no colon), closing connection.\n");
       goto DIE;
     }
     /* zero-terminate header */
@@ -297,7 +300,9 @@ MHD_session_handle_read(struct MHD_Session * session) {
   unsigned int processed;
 
   if (session->bodyReceived) {
-    /* FIXME: LOG: why are we in select set? */
+    MHD_DLOG(session->daemon,
+	     "Unexpected call to %s.\n",
+	     __FUNCTION__);
     return MHD_NO; 
   }
   if (session->readLoc >= session->read_buffer_size) {
@@ -315,7 +320,9 @@ MHD_session_handle_read(struct MHD_Session * session) {
   if (bytes_read < 0) {
     if (errno == EINTR)
       return MHD_NO;
-    /* FIXME: log error */
+    MHD_DLOG(session->daemon,
+	     "Failed to receive data: %s\n",
+	     strerror(errno));
     return MHD_NO;
   }
   if (bytes_read == 0) {
@@ -409,7 +416,9 @@ MHD_session_handle_write(struct MHD_Session * session) {
 
   response = session->response;
   if(response == NULL) {
-    /* FIXME: LOG: why are we here? */
+    MHD_DLOG(session->daemon,
+	     "Unexpected call to %s.\n",
+	     __FUNCTION__);
     return MHD_NO;
   }
   if (! session->headersSent) {
@@ -422,7 +431,9 @@ MHD_session_handle_write(struct MHD_Session * session) {
     if (ret < 0) {
       if (errno == EINTR)
 	return MHD_YES;
-      /* FIXME: log error */
+      MHD_DLOG(session->daemon,
+	       "Failed to send data: %s\n",
+	       strerror(errno));
       close(session->socket_fd);
       session->socket_fd = -1;
       return MHD_NO;
@@ -480,7 +491,9 @@ MHD_session_handle_write(struct MHD_Session * session) {
   if (ret == -1) {
     if (errno == EINTR)
       return MHD_YES;
-    /* FIXME: log */
+    MHD_DLOG(session->daemon,
+	     "Failed to send data: %s\n",
+	     strerror(errno));
     return MHD_NO;
   }
   session->messagePos += ret;

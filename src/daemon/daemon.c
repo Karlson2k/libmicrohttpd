@@ -415,8 +415,6 @@ MHD_start_daemon(unsigned int options,
 		 void * dh_cls) {
   struct MHD_Daemon * retVal;
   int socket_fd;
-  int opt;
-  int res;
   struct sockaddr_in servaddr;	
 
   if ((options & MHD_USE_SSL) != 0) 
@@ -430,7 +428,10 @@ MHD_start_daemon(unsigned int options,
     return NULL;
   socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    /* FIXME: log error */
+    if ((options & MHD_USE_DEBUG) != 0)
+      fprintf(stderr,
+	      "Call to socket failed: %s\n",
+	      strerror(errno));
     return NULL;
   }
   memset(&servaddr,
@@ -441,22 +442,22 @@ MHD_start_daemon(unsigned int options,
   if (bind(socket_fd, 
 	   (struct sockaddr *)&servaddr, 
 	   sizeof(struct sockaddr_in)) < 0) {
-    /* FIXME: log error */
+    if ( (options & MHD_USE_DEBUG) != 0)
+      fprintf(stderr,
+	      "Failed to bind to port %u: %s\n",
+	      port,
+	      strerror(errno));
     close(socket_fd);
     return NULL;
   }	
   if (listen(socket_fd, 20) < 0) {
-    /* FIXME: log error */
+    if ((options & MHD_USE_DEBUG) != 0)
+      fprintf(stderr,
+	      "Failed to listen for connections: %s\n",
+	      strerror(errno));
+    close(socket_fd);
     return NULL;	 
   }	
-  opt = fcntl(socket_fd, F_GETFL, 0);
-  res = fcntl(socket_fd, F_SETFL, opt | O_NONBLOCK);
-  if (res < 0) {
-    /* FIXME: log error */
-    close(socket_fd);
-    return NULL;
-  }
-
   retVal = malloc(sizeof(struct MHD_Daemon));
   memset(retVal,
 	 0,
@@ -476,7 +477,9 @@ MHD_start_daemon(unsigned int options,
 			    NULL, 
 			    &MHD_select_thread, 
 			    daemon)) ) {
-    /* FIXME: log error */
+    MHD_DLOG(retVal,
+	     "Failed to create listen thread: %s\n",
+	     strerror(errno));
     free(retVal);
     close(socket_fd);
     return NULL;    
@@ -512,3 +515,4 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
   free(daemon);
 }
 
+/* end of daemon.c */
