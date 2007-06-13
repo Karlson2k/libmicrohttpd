@@ -1,18 +1,19 @@
 Run "autoreconf -f -i" to create configure.
 
 This is still pre-alpha software.  The following
-things need to be implemented before it can be used
-at all:
+things need to be implemented (in list of importance)
+before certain features can be used at all:
 
 
-
-In general:
-===========
+For ANYTHING:
+=============
 session.c:
 - MHD_session_get_fdset (essentially not implemented)
-- MHD_find_access_handler (not implemented)
-- add additional LOG messages for debugging
 
+For GET args:
+=============
+session.c:
+- MHD_parse_session_headers: take URL apart
 
 For PUT/POST:
 =============
@@ -20,27 +21,17 @@ session.c:
 - MHD_parse_session_headers (determine upload size)
 - MHD_session_handle_read (proper handling of upload end)
 
-
 For COOKIES:
 ============
 session.c:
 - MHD_parse_session_headers: take cookie header apart
 
-
-For GET args:
-=============
-session.c:
-- MHD_parse_session_headers: take URL apart
-
-
 For IPv6:
 =========
-
 daemon.c:
 - fix start daemon and accept handlers
   (tricky bit will be supporting both on 
    the same socket / port!)
-
 
 For SSL:
 ========

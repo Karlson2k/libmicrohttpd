@@ -282,7 +282,15 @@ MHD_parse_session_headers(struct MHD_Session * session) {
  */ 
 static struct MHD_Access_Handler * 
 MHD_find_access_handler(struct MHD_Session * session) {
-  /* FIXME: do real lookup based on URI! */
+  struct MHD_Access_Handler * pos;
+
+  pos = session->daemon->handlers;
+  while (pos != NULL) {
+    if (0 == strcmp(session->url,
+		    pos->uri_prefix))
+      return pos;
+    pos = pos->next;
+  }
   return &session->daemon->default_handler;
 }
 
