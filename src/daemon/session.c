@@ -109,7 +109,9 @@ MHD_queue_response(struct MHD_Session * session,
 		   struct MHD_Response * response) {
   if ( (session == NULL) || 
        (response == NULL) ||
-       (session->response != NULL) )
+       (session->response != NULL) ||
+       (session->bodyReceived == 0) ||
+       (session->headers_received == 0) )
     return MHD_NO;	
   MHD_increment_response_rc(response);
   session->response = response;
@@ -129,13 +131,15 @@ MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * write_fd_set,
 		      fd_set * except_fd_set,
 		      int * max_fd) {
-  /* FIXME: need to be VERY careful here
-     determining when the socket is ready for
-     reading/writing; plenty of cases to handle!
-     (the current code is one big bug) */
-  FD_SET(session->socket_fd, read_fd_set);
-  FD_SET(session->socket_fd, write_fd_set);
-  if (session->socket_fd > *max_fd)
+  if ( (session->headers_received == 0) ||
+       (session->readLoc < session->read_buffer_size) )
+    FD_SET(session->socket_fd, read_fd_set);
+  if (session->response != NULL) 
+    FD_SET(session->socket_fd, write_fd_set);
+  if ( (session->socket_fd > *max_fd) &&
+       ( (session->headers_received == 0) ||
+	 (session->readLoc < session->read_buffer_size) ||
+	 (session->response != NULL) ) )
     *max_fd = session->socket_fd;
   return MHD_YES;
 }
@@ -233,6 +237,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
       httpType = strstr(uri, " ");
       if (httpType != NULL)
 	httpType[0] = '\0';
+      /* FIXME: parse URI some more here */
       session->url = strdup(uri);
       /* do we want to do anything with httpType? */
       free(line);
@@ -267,9 +272,9 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     hdr->kind = MHD_HEADER_KIND;
     session->headers_received = hdr;
   }
+  /* FIXME: here: find cookie header and parse that! */
   if (session->bodyReceived == 0)
     return;
-  /* FIXME: here: find cookie header and parse that! */
   return;
  DIE:
   close(session->socket_fd);
@@ -295,6 +300,48 @@ MHD_find_access_handler(struct MHD_Session * session) {
 }
 
 /**
+ * Call the handler of the application for this
+ * session. 
+ */
+void
+MHD_call_session_handler(struct MHD_Session * session) {
+  struct MHD_Access_Handler * ah;
+  unsigned int processed;
+
+  if (session->headers_received == 0)
+    abort(); /* bad timing... */
+  ah = MHD_find_access_handler(session);
+  processed = session->readLoc;
+  if (MHD_NO == ah->dh(ah->dh_cls,
+		       session,
+		       session->url,
+		       session->method,
+		       session->read_buffer,
+		       &processed)) {
+    /* serios internal error, close connection */
+    MHD_DLOG(session->daemon,
+	     "Internal application error, closing connection.");
+    close(session->socket_fd);
+    session->socket_fd = -1;
+    return;
+  }
+  /* dh left "processed" bytes in buffer for next time... */
+  memmove(session->read_buffer,
+	  &session->read_buffer[session->readLoc - processed],
+	  processed);
+  session->readLoc = processed;
+  session->uploadSize -= processed;
+  if (session->uploadSize == 0) {
+    session->bodyReceived = 1;
+    session->readLoc = 0;
+    session->read_buffer_size = 0;
+    free(session->read_buffer);
+    session->read_buffer = NULL;
+  }
+}
+
+
+/**
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All implementations
  * (multithreaded, external select, internal select) call this function
@@ -304,22 +351,22 @@ int
 MHD_session_handle_read(struct MHD_Session * session) {
   int bytes_read;
   void * tmp;
-  struct MHD_Access_Handler * ah;
-  unsigned int processed;
+ 
 
-  if (session->bodyReceived) {
-    MHD_DLOG(session->daemon,
-	     "Unexpected call to %s.\n",
-	     __FUNCTION__);
-    return MHD_NO; 
-  }
-  if (session->readLoc >= session->read_buffer_size) {
+  if ( (session->readLoc >= session->read_buffer_size) &&
+       (session->headers_received == 0) ) {
     /* need to grow read buffer */
     tmp = malloc(session->read_buffer_size * 2 + MHD_MAX_BUF_SIZE);
     memcpy(tmp,
 	   session->read_buffer,
 	   session->read_buffer_size);
     session->read_buffer_size = session->read_buffer_size * 2 + MHD_MAX_BUF_SIZE;
+  }
+  if (session->readLoc >= session->read_buffer_size) {
+    MHD_DLOG(session->daemon,
+	     "Unexpected call to %s.\n",
+	     __FUNCTION__);
+    return MHD_NO; 
   }
   bytes_read = recv(session->socket_fd,
 		    &session->read_buffer[session->readLoc],
@@ -331,39 +378,24 @@ MHD_session_handle_read(struct MHD_Session * session) {
     MHD_DLOG(session->daemon,
 	     "Failed to receive data: %s\n",
 	     strerror(errno));
-    return MHD_NO;
+    close(session->socket_fd);
+    session->socket_fd = -1;
+    return MHD_YES;
   }
   if (bytes_read == 0) {
     /* other side closed connection */
+    /* FIXME: proper handling of end of upload!
+       If we were receiving an unbounded upload,
+       we should finish up nicely now! */
     close(session->socket_fd);
     session->socket_fd = -1;
-    return MHD_NO;
+    return MHD_YES;
   }
   session->readLoc += bytes_read;
   if (session->headersReceived == 0) 
     MHD_parse_session_headers(session);
-  if (session->headersReceived == 1) {
-    ah = MHD_find_access_handler(session);
-    processed = session->readLoc;
-    if (MHD_NO == ah->dh(ah->dh_cls,
-			 session,
-			 session->url,
-			 session->method,
-			 session->read_buffer,
-			 &processed)) {
-      /* serios error, close connection */
-      close(session->socket_fd);
-      session->socket_fd = -1;
-      return MHD_NO;
-    }
-    /* dh left "processed" bytes in buffer for next time... */
-    memmove(session->read_buffer,
-	    &session->read_buffer[session->readLoc - processed],
-	    processed);
-    session->readLoc = processed;
-    session->uploadSize -= processed;
-    /* FIXME: proper handling of end of upload! */
-  }
+  if (session->headersReceived == 1) 
+    MHD_call_session_handler(session);
   return MHD_YES;
 }
 
@@ -447,7 +479,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
 	       strerror(errno));
       close(session->socket_fd);
       session->socket_fd = -1;
-      return MHD_NO;
+      return MHD_YES;
     }
     session->writeLoc += ret;
     if (session->writeLoc == session->write_buffer_size) {
@@ -489,7 +521,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
     response->data_start = session->messagePos;
     response->data_size = ret;
     if (ret == 0)
-      return MHD_YES; /* or NO? */
+      return MHD_YES; 
   }
   
   /* transmit */
@@ -499,17 +531,23 @@ MHD_session_handle_write(struct MHD_Session * session) {
 	     0);
   if (response->crc != NULL)
     pthread_mutex_unlock(&response->mutex);    
-  if (ret == -1) {
+  if (ret < 0) {
     if (errno == EINTR)
       return MHD_YES;
     MHD_DLOG(session->daemon,
 	     "Failed to send data: %s\n",
 	     strerror(errno));
-    return MHD_NO;
+    close(session->socket_fd);
+    session->socket_fd = -1;
+    return MHD_YES;
   }
   session->messagePos += ret;
+  if (session->messagePos > response->data_size) 
+    abort(); /* internal error */
   if (session->messagePos == response->data_size) {
-    /* reset session, wait for next request! */
+    if ( (session->bodyReceived == 0) ||
+	 (session->headers_received == 0) )
+      abort(); /* internal error */
     MHD_destroy_response(response);
     session->responseCode = 0;
     session->response = NULL;

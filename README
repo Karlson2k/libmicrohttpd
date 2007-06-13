@@ -5,11 +5,6 @@ things need to be implemented (in list of importance)
 before certain features can be used at all:
 
 
-For ANYTHING:
-=============
-session.c:
-- MHD_session_get_fdset (essentially not implemented)
-
 For GET args:
 =============
 session.c:
@@ -25,6 +20,13 @@ For COOKIES:
 ============
 session.c:
 - MHD_parse_session_headers: take cookie header apart
+
+For http-compliance:
+====================
+session.c:
+- send proper error code back if headers are too long
+  (investigate what we should do with those headers,
+   read?  give user control?)
 
 For IPv6:
 =========

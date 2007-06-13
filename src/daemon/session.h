@@ -44,6 +44,13 @@ MHD_session_get_fdset(struct MHD_Session * session,
 
 
 /**
+ * Call the handler of the application for this
+ * session. 
+ */
+void
+MHD_call_session_handler(struct MHD_Session * session);
+
+/**
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All implementations
  * (multithreaded, external select, internal select) call this function

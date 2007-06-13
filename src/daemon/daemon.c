@@ -163,7 +163,8 @@ MHD_handle_connection(void * data) {
   
   if (con == NULL)
     abort();
-  while (! con->daemon->shutdown) {    
+  while ( (! con->daemon->shutdown) &&
+	  (con->socket_fd != -1) ) {    
     FD_ZERO(&rs);
     FD_ZERO(&ws);    
     FD_ZERO(&es);    
@@ -189,8 +190,10 @@ MHD_handle_connection(void * data) {
 	   (MHD_YES != MHD_session_handle_write(con)) ) )
       break;
   } 
-  close(con->socket_fd);
-  con->socket_fd = -1;
+  if (con->socket_fd != -1) {
+    close(con->socket_fd);
+    con->socket_fd = -1;
+  }
   return NULL;
 }
 
@@ -260,6 +263,11 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
  * Free resources associated with all closed sessions.
  * (destroy responses, free buffers, etc.).  A session
  * is known to be closed if the socket_fd is -1.
+ *
+ * Also performs session actions that need to be run
+ * even if the session is not selectable (such as
+ * calling the application again with upload data when
+ * the upload data buffer is full).
  */
 static void 
 MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
@@ -295,6 +303,13 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	MHD_destroy_response(pos->response);
       free(pos);
     }
+    
+    if ( (pos->headersReceived == 1) &&
+	 (pos->read_buffer_size == pos->readLoc) &&
+	 (pos->readLoc > 0) )
+      MHD_call_session_handler(pos);
+
+
     prev = pos;
     pos = pos->next;
   }
