@@ -8,9 +8,6 @@ at all:
 
 In general:
 ===========
-daemon.c:
-- MHD_cleanup_session: major memory leaks (headers!)
-
 session.c:
 - MHD_session_get_fdset (essentially not implemented)
 - MHD_find_access_handler (not implemented)
