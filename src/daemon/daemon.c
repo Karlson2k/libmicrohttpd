@@ -504,7 +504,7 @@ MHD_start_daemon(unsigned int options,
        (0 != pthread_create(&retVal->pid,
 			    NULL, 
 			    &MHD_select_thread, 
-			    daemon)) ) {
+			    retVal)) ) {
     MHD_DLOG(retVal,
 	     "Failed to create listen thread: %s\n",
 	     strerror(errno));

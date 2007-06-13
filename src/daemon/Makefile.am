@@ -15,7 +15,18 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h \
   session.c session.h
 
-# No curl, not testcases
+
+# example programs
+
+noinst_PROGRAMS = minimal_example
+
+minimal_example_SOURCES = \
+ minimal_example.c 
+minimal_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+
+# No curl, no testcases
 if HAVE_CURL
 
 check_PROGRAMS = \
