@@ -158,6 +158,8 @@ MHD_get_next_header_line(struct MHD_Session * session) {
   size_t pos;
   size_t start;
 
+  if (session->readLoc == 0)
+    return NULL;
   start = 0;
   pos = 0;
   rbuf = session->read_buffer;
@@ -189,11 +191,11 @@ MHD_get_next_header_line(struct MHD_Session * session) {
     return NULL;
   }
   /* found, check if we have proper CRLF */
-  rbuf = malloc(pos);
+  rbuf = malloc(pos + 1);
   memcpy(rbuf,
 	 session->read_buffer,
-	 pos-1);
-  rbuf[pos-1] = '\0';
+	 pos);
+  rbuf[pos] = '\0';
   if ( (session->read_buffer[pos] == '\r') &&       
        (session->read_buffer[pos+1] == '\n') )
     pos++; /* skip both r and n */
