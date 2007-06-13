@@ -344,7 +344,7 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
 int
 MHD_get_session_values(struct MHD_Session * session,
 		       enum MHD_ValueKind kind,
-		       MHD_KeyValueIterator * iterator,
+		       MHD_KeyValueIterator iterator,
 		       void * iterator_cls);
 
 /**
@@ -448,7 +448,7 @@ MHD_del_response_header(struct MHD_Response * response,
  */ 
 int
 MHD_get_response_headers(struct MHD_Response * response,
-			 MHD_KeyValueIterator * iterator,
+			 MHD_KeyValueIterator iterator,
 			 void * iterator_cls);
 
 
