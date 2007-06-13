@@ -26,30 +26,11 @@
  * @version 0.1.0
  */
 
-#include "microhttpd.h"
 #include "internal.h"
 #include "response.h"
 #include "session.h"
-#include "config.h"
 
 #define MHD_MAX_CONNECTIONS FD_SETSIZE -4 
-
-
-/**
- * fprintf-like helper function for logging debug
- * messages.
- */
-static void DLOG(const struct MHD_Daemon * daemon,
-		 const char * format,
-		 ...) {
-  va_list va;
-  
-  if ( (daemon->options & MHD_USE_DEBUG) == 0)
-    return;
-  va_start(va, format);
-  vfprintf(stderr, format, va);
-  va_end(va);
-}
 
 
 /**
@@ -234,9 +215,9 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 			 &addr,
 			 &addrlen))) ||
        (addrlen <= 0) ) {
-    DLOG(daemon,
-	 "Error accepting connection: %s\n",
-	 strerror(errno));
+    MHD_DLOG(daemon,
+	     "Error accepting connection: %s\n",
+	     strerror(errno));
     return MHD_NO;
   }
   if (MHD_NO == daemon->apc(daemon->apc_cls,
@@ -261,9 +242,9 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 			    NULL, 
 			    &MHD_handle_connection, 
 			    session)) ) {
-    DLOG(daemon,
-	 "Failed to create a thread: %s\n",
-	 strerror(errno));
+    MHD_DLOG(daemon,
+	     "Failed to create a thread: %s\n",
+	     strerror(errno));
     free(session->addr);
     close(s);
     free(session);
@@ -354,9 +335,9 @@ MHD_select(struct MHD_Daemon * daemon) {
   if (num_ready < 0) {    
     if (errno == EINTR)
       return MHD_YES;
-    DLOG(daemon,
-	 "Select failed: %s\n",
-	 strerror(errno));
+    MHD_DLOG(daemon,
+	     "Select failed: %s\n",
+	     strerror(errno));
     return MHD_NO;    
   }
   if (FD_ISSET(daemon->socket_fd,

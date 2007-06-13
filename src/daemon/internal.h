@@ -48,6 +48,16 @@
 
 #define MAX(a,b) ((a)<(b)) ? (b) : (a)
 
+
+/**
+ * fprintf-like helper function for logging debug
+ * messages.
+ */
+void MHD_DLOG(const struct MHD_Daemon * daemon,
+	      const char * format,
+	      ...);
+
+
 /**
  * Header or cookie in HTTP request or response.
  */

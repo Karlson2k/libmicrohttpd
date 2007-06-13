@@ -26,11 +26,9 @@
  * @version 0.1.0
  */
 
-#include "microhttpd.h"
+#include "internal.h"
 #include "session.h"
 #include "response.h"
-#include "internal.h"
-#include "config.h"
 
 
 /**

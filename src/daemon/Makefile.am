@@ -11,7 +11,7 @@ libmicrohttpd_la_LDFLAGS = \
 #  -lm
 libmicrohttpd_la_SOURCES = \
   daemon.c  \
-  internal.h \
+  internal.c internal.h \
   response.c response.h \
   session.c session.h
 

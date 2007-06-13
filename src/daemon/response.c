@@ -26,10 +26,8 @@
  * @version 0.1.0
  */
 
-#include "microhttpd.h"
-#include "response.h"
 #include "internal.h"
-#include "config.h"
+#include "response.h"
 
 /**
  * Add a header line to the response.
