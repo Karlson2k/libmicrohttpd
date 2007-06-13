@@ -1,33 +1,54 @@
 Run "autoreconf -f -i" to create configure.
 
-Talk to Christian or Chris if you have problems
-with the build system or do not understand the 
-API.  We can also help discuss implementation 
-choices.
+This is still pre-alpha software.  The following
+things need to be implemented before it can be used
+at all:
 
 
 
-Your project will be graded using the following
-criteria:
+In general:
+===========
+daemon.c:
+- MHD_cleanup_session: major memory leaks (headers!)
+- add additional LOG messages for debugging
 
-1) correctness
-   a) HTTP 1.1 compliance
-   b) no bugs / crashes
-   c) interoperability (firefox, IE, konqueror,
-      squid, libcurl, wget)
-   d) memory leaks
-2) completeness
-   a) all API functions
-   b) all options (except SSL)
-   c) portability (Linux, Solaris)
-2) performance 
-   a) memory consumption
-   b) throughput (small and large transfers)
-   c) latency
-   d) performance with 1000 parallel sessions
-3) software engineering practice (subjective)
-   a) code quality
-   b) comprehensive testcases
-   c) documentation
+session.c:
+- MHD_session_get_fdset (essentially not implemented)
+- MHD_find_access_handler (not implemented)
+- add additional LOG messages for debugging
 
-	
+
+For PUT/POST:
+=============
+session.c:
+- MHD_parse_session_headers (determine upload size)
+- MHD_session_handle_read (proper handling of upload end)
+
+
+For COOKIES:
+============
+session.c:
+- MHD_parse_session_headers: take cookie header apart
+
+
+For GET args:
+=============
+session.c:
+- MHD_parse_session_headers: take URL apart
+
+
+For IPv6:
+=========
+
+daemon.c:
+- fix start daemon and accept handlers
+  (tricky bit will be supporting both on 
+   the same socket / port!)
+
+
+For SSL:
+========
+microhttpd.h:
+- define appropriate APIs
+- everything else
+

@@ -284,7 +284,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
       if (pos->read_buffer != NULL)
 	free(pos->read_buffer);
       /* FIXME: free headers_received here! */
-      /* FIXME: more to free here! */
+      /* FIXME: more to free here: response, more? */
       free(pos);
     }
     prev = pos;
