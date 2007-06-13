@@ -165,7 +165,7 @@ MHD_get_next_header_line(struct MHD_Session * session) {
 	  (rbuf[pos] != '\r') &&
 	  (rbuf[pos] != '\n') )
     pos++;
-  if (pos == session->readLoc) {
+  if (pos == session->readLoc - 1) {
     /* not found, consider growing... */
     if (session->readLoc == session->read_buffer_size) {
       /* grow buffer to read larger header or die... */
@@ -194,8 +194,8 @@ MHD_get_next_header_line(struct MHD_Session * session) {
 	 session->read_buffer,
 	 pos-1);
   rbuf[pos-1] = '\0';
-  if ( (rbuf[pos] == '\r') &&
-       (rbuf[pos+1] == '\n') )
+  if ( (session->read_buffer[pos] == '\r') &&       
+       (session->read_buffer[pos+1] == '\n') )
     pos++; /* skip both r and n */
   pos++; 
   memmove(session->read_buffer,

@@ -58,7 +58,7 @@ MHD_register_handler(struct MHD_Daemon * daemon,
       return MHD_NO;
     ah = ah->next;
   }
-  ah = malloc(sizeof(struct MHD_AccessHandler));
+  ah = malloc(sizeof(struct MHD_Access_Handler));
   ah->next = daemon->handlers;
   ah->uri_prefix = strdup(uri_prefix);
   ah->dh = dh;
