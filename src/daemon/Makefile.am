@@ -19,13 +19,20 @@ libmicrohttpd_la_SOURCES = \
 if HAVE_CURL
 
 check_PROGRAMS = \
-  daemontest
+  daemontest \
+  daemontest1
 
 TESTS = $(check_PROGRAMS)
 
 daemontest_SOURCES = \
   daemontest.c
 daemontest_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest1_SOURCES = \
+  daemontest1.c
+daemontest1_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
