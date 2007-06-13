@@ -58,7 +58,7 @@ MHD_register_handler(struct MHD_Daemon * daemon,
       return MHD_NO;
     ah = ah->next;
   }
-  ah = malloc(sizeof(MHD_AccessHandlerCallback));
+  ah = malloc(sizeof(struct MHD_AccessHandler));
   ah->next = daemon->handlers;
   ah->uri_prefix = strdup(uri_prefix);
   ah->dh = dh;
@@ -186,7 +186,8 @@ MHD_handle_connection(void * data) {
     }
     if ( ( (FD_ISSET(con->socket_fd, &rs)) &&
 	   (MHD_YES != MHD_session_handle_read(con)) ) ||
-	 ( (FD_ISSET(con->socket_fd, &ws)) &&
+	 ( (con->socket_fd != -1) &&
+	   (FD_ISSET(con->socket_fd, &ws)) &&
 	   (MHD_YES != MHD_session_handle_write(con)) ) )
       break;
   } 
@@ -214,9 +215,10 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
   memset(&addr, 
 	 0,
 	 sizeof(struct sockaddr));
-  if ( (0 != (s = accept(daemon->socket_fd, 
-			 &addr,
-			 &addrlen))) ||
+  s = accept(daemon->socket_fd, 
+	     &addr,
+	     &addrlen);
+  if ( (s < 0) ||
        (addrlen <= 0) ) {
     MHD_DLOG(daemon,
 	     "Error accepting connection: %s\n",
@@ -298,20 +300,23 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	free(hpos->header);
 	free(hpos->value);
       }
-
       if (pos->response != NULL)
 	MHD_destroy_response(pos->response);
       free(pos);
-    }
-    
+      if (prev == NULL)
+	pos = daemon->connections;
+      else
+	pos = prev->next;
+      continue;
+    } 
+
     if ( (pos->headersReceived == 1) &&
 	 (pos->read_buffer_size == pos->readLoc) &&
 	 (pos->readLoc > 0) )
       MHD_call_session_handler(pos);
 
-
     prev = pos;
-    pos = pos->next;
+    pos = pos->next;    
   }
 }
 

@@ -361,6 +361,9 @@ MHD_session_handle_read(struct MHD_Session * session) {
 	   session->read_buffer,
 	   session->read_buffer_size);
     session->read_buffer_size = session->read_buffer_size * 2 + MHD_MAX_BUF_SIZE;
+    if (session->read_buffer != NULL)
+      free(session->read_buffer);
+    session->read_buffer = tmp;
   }
   if (session->readLoc >= session->read_buffer_size) {
     MHD_DLOG(session->daemon,
