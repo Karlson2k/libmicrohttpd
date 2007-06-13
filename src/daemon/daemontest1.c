@@ -19,14 +19,15 @@
 */
 
 /**
- * @file daemontest.c
+ * @file daemontest1.c
  * @brief  Testcase for libmicrohttpd GET operations
+ *         TODO: external select
  * @author Christian Grothoff
  */
 
 #include "config.h"
-#include "curl/curl.h"
-#include "microhttpd.h"
+#include <curl/curl.h>
+#include <microhttpd.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -92,23 +93,17 @@ static int testInternalGet() {
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4 | MHD_USE_DEBUG,
-		       1083,
+		       1080,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
 		       "GET");
   if (d == NULL)
     return 1;
-
-  if (MHD_run(d) == MHD_NO) {
-    MHD_stop_daemon(d);
-    return 2;
-  }
-  
   c = curl_easy_init();
   curl_easy_setopt(c,
 		   CURLOPT_URL,
-		   "http://localhost:1083/hello_world");
+		   "http://localhost:1080/hello_world");
   curl_easy_setopt(c,
 		   CURLOPT_WRITEFUNCTION,
 		   &copyBuffer);
@@ -120,28 +115,33 @@ static int testInternalGet() {
 		   1);
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
-		   15L);
+		   2L);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
-		   15L);
+		   2L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
   curl_easy_setopt(c,
 		   CURLOPT_NOSIGNAL,
 		   1);  
-  if (CURLE_OK != curl_easy_perform(c))
-    return 3;
-    
-  curl_easy_cleanup(c);
-  
-  if (cbc.pos != strlen("hello_world"))
+  if (CURLE_OK != curl_easy_perform(c)) {
+    curl_easy_cleanup(c);  
+    MHD_stop_daemon(d);  
+    return 2;
+  }    
+  curl_easy_cleanup(c);  
+  if (cbc.pos != strlen("hello_world")) {
+    MHD_stop_daemon(d);
     return 4;
+  }
   
   if (0 != strncmp("hello_world",
 		   cbc.buf,
-		   strlen("hello_world")))
-    return 5;
+		   strlen("hello_world"))) {
+    MHD_stop_daemon(d);
+    return 8;
+  }
   
   MHD_stop_daemon(d);
   
@@ -158,22 +158,17 @@ static int testMultithreadedGet() {
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_IPv4 | MHD_USE_DEBUG,
-		       1084,
+		       1081,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
 		       "GET");
   if (d == NULL)
-    return 1;
-
-  if(MHD_run(d) == MHD_NO)
-    return 2;
- 
-  
+    return 16;
   c = curl_easy_init();
   curl_easy_setopt(c,
 		   CURLOPT_URL,
-		   "http://localhost:1084/hello_world");
+		   "http://localhost:1081/hello_world");
   curl_easy_setopt(c,
 		   CURLOPT_WRITEFUNCTION,
 		   &copyBuffer);
@@ -184,8 +179,11 @@ static int testMultithreadedGet() {
 		   CURLOPT_FAILONERROR,
 		   1);
   curl_easy_setopt(c,
+		   CURLOPT_TIMEOUT,
+		   2L);
+  curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
-		   15L);
+		   2L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -193,16 +191,18 @@ static int testMultithreadedGet() {
 		   CURLOPT_NOSIGNAL,
 		   1);  
   if (CURLE_OK != curl_easy_perform(c))
-    return 3;
+    return 32;
   curl_easy_cleanup(c);
-  if (cbc.pos != strlen("hello_world"))
-    return 4;
-  
+  if (cbc.pos != strlen("hello_world")) {
+    MHD_stop_daemon(d);  
+    return 64;
+  }  
   if (0 != strncmp("hello_world",
 		   cbc.buf,
-		   strlen("hello_world")))
-    return 5;
-    
+		   strlen("hello_world"))) {
+    MHD_stop_daemon(d);
+    return 128;
+  }
   MHD_stop_daemon(d);
   
   return 0;
@@ -211,11 +211,15 @@ static int testMultithreadedGet() {
 int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
+
+  if (0 != curl_global_init(CURL_GLOBAL_WIN32)) 
+    return 2;  
   errorCount += testInternalGet();
   errorCount += testMultithreadedGet();  
   if (errorCount != 0)
     fprintf(stderr, 
 	    "Error (code: %u)\n", 
 	    errorCount);
+  curl_global_cleanup();
   return errorCount != 0; /* 0 == pass */
 }

@@ -25,7 +25,6 @@
  */
 
 #include "config.h"
-#include "curl/curl.h"
 #include "microhttpd.h"
 #include <stdlib.h>
 #include <unistd.h>

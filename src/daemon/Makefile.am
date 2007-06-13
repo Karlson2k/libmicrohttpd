@@ -27,8 +27,7 @@ TESTS = $(check_PROGRAMS)
 daemontest_SOURCES = \
   daemontest.c
 daemontest_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@ 
+  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 daemontest1_SOURCES = \
   daemontest1.c
