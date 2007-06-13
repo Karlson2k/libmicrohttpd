@@ -142,36 +142,64 @@ MHD_session_get_fdset(struct MHD_Session * session,
   return MHD_YES;
 }
 
-
-
-/* FIXME: implement/fix code below this line! */
-
-
 /**
- * This function needs to do a lot more (i.e. break up get arguments)
- * but for now just seperates the prefix of the url from the document
- * portion.
+ * Parse a single line of the HTTP header.  Remove it
+ * from the read buffer.  If the current line does not
+ * fit, consider growing the buffer.  If the line is
+ * far too long, close the connection.  If no line is
+ * found (incomplete, buffer too small, line too long),
+ * return NULL.  Otherwise return a copy of the line.
  */
-static void
-MHD_parse_URL(struct MHD_Session * session) {
-#if 0
-	char * working;
-	int pos,i;
+static char * 
+MHD_get_next_header_line(struct MHD_Session * session) {
+  char * rbuf;
+  size_t pos;
+  size_t start;
 
-	working = session->headers[0]->value;
-
-	pos = 0;
-	for(i = 0; i < strlen(working); i++) {
-		if(working[i] == '/')
-			pos = i+1;
-	}
-	if(pos >= strlen(working))
-			pos = 0;
-
-	session->documentName = session->headers[0]->value+pos;
-#endif
+  start = 0;
+  pos = 0;
+  rbuf = session->read_buffer;
+  while ( (pos < session->readLoc - 1) &&
+	  (rbuf[pos] != '\r') &&
+	  (rbuf[pos] != '\n') )
+    pos++;
+  if (pos == session->readLoc) {
+    /* not found, consider growing... */
+    if (session->readLoc == session->read_buffer_size) {
+      /* grow buffer to read larger header or die... */
+      if (session->read_buffer_size < 4 * MHD_MAX_BUF_SIZE) {
+	rbuf = malloc(session->read_buffer_size * 2);
+	memcpy(rbuf,
+	       session->read_buffer,
+	       session->readLoc);
+	free(session->read_buffer);
+	session->read_buffer = rbuf;
+	session->read_buffer_size *= 2;
+      } else {
+	/* die, header far too long to be reasonable */
+	/* FIXME: log */
+	close(session->socket_fd);
+	session->socket_fd = -1;
+      }
+    }
+    return NULL;
+  }
+  /* found, check if we have proper CRLF */
+  rbuf = malloc(pos);
+  memcpy(rbuf,
+	 session->read_buffer,
+	 pos-1);
+  rbuf[pos-1] = '\0';
+  if ( (rbuf[pos] == '\r') &&
+       (rbuf[pos+1] == '\n') )
+    pos++; /* skip both r and n */
+  pos++; 
+  memmove(session->read_buffer,
+	  &session->read_buffer[pos],
+	  session->readLoc - pos);
+  session->readLoc -= pos;
+  return rbuf;
 }
-
 
 /**
  * This function is designed to parse the input buffer of a given session.
@@ -185,62 +213,66 @@ MHD_parse_URL(struct MHD_Session * session) {
  */
 static void
 MHD_parse_session_headers(struct MHD_Session * session) {
-#if 0
-  const char * crlfcrlf = "\r\n\r\n";
-  const char * crlf = "\r\n";
+  char * line;
+  char * colon;
+  char * uri;
+  char * httpType;
+  struct MHD_HTTP_Header * hdr;
 
-	char * saveptr;
-  	char * saveptr1;
-
-	struct MHD_HTTP_Header * newHeader;
-	char * curTok;
-   char * curTok1;
-
-	int numBytes;
-
-	curTok = strstr(session->inbuf, crlfcrlf);
-
-	if(curTok == NULL) {
-		return -1;
-	} 
-
-	memset(curTok+2, 0, 2);
-
-	numBytes = strlen(session->inbuf) + 2;
-
-	curTok = strtok_r(session->inbuf, crlf, &saveptr);
-
-	session->requestType = strtok_r(curTok, " ", &saveptr1);
-	
-	newHeader = (struct MHD_HTTP_Header *)malloc(sizeof(struct MHD_HTTP_Header));
-	if(newHeader == NULL) {
-		if(session->daemon->options & MHD_USE_DEBUG)
-			fprintf(stderr, "Error allocating memory!\n");
-		return -1;
-	}		
-	newHeader->kind = MHD_GET_ARGUMENT_KIND;
-	newHeader->header = session->requestType;
-	newHeader->value = strtok_r(NULL, " ", &saveptr1);
-
-	session->headers[session->firstFreeHeader++] = newHeader;
-
-	curTok = strtok_r(NULL, crlf, &saveptr);
-	while(curTok != NULL && session->firstFreeHeader < MHD_MAX_HEADERS) {
-		curTok1 = strtok_r(curTok, ":", &saveptr1);
-		newHeader = (struct MHD_HTTP_Header *)malloc(sizeof(struct MHD_HTTP_Header));
-		if(newHeader == NULL) {
-			if(session->daemon->options & MHD_USE_DEBUG)
-				fprintf(stderr, "Error allocating memory!\n");
-			return -1;
-		}			
-		newHeader->header = curTok1;
-		newHeader->value = curTok + strlen(curTok1) + 2;
-		//For now, everything is a get!
-		newHeader->kind = MHD_GET_ARGUMENT_KIND;
-		session->headers[session->firstFreeHeader++] = newHeader;
-		curTok = strtok_r(NULL, crlf, &saveptr);
-	}	
-#endif
+  if (session->bodyReceived == 1)
+    abort();
+  while (NULL != (line = MHD_get_next_header_line(session))) {    
+    if (session->url == NULL) {
+      /* line must be request line */
+      uri = strstr(line, " ");
+      if (uri == NULL)
+	goto DIE;
+      uri[0] = '\0';
+      session->method = strdup(line);
+      uri++;
+      httpType = strstr(uri, " ");
+      if (httpType != NULL)
+	httpType[0] = '\0';
+      session->url = strdup(uri);
+      /* do we want to do anything with httpType? */
+      free(line);
+      continue;
+    }
+    /* check if this is the end of the header */
+    if (strlen(line) == 0) {
+      /* end of header */
+      session->headersReceived = 1;
+      /* FIXME: check with methods may have a body,
+	 check headers to find out upload size */
+      session->uploadSize = 0;
+      session->bodyReceived = 1;
+      free(line);
+      break; 
+    }
+    /* ok, line should be normal header line, find colon */
+    colon = strstr(line, ": ");
+    if (colon == NULL) {
+      /* error in header line, die hard */
+      /* FIXME: log */
+      goto DIE;
+    }
+    /* zero-terminate header */
+    colon[0] = '\0';
+    colon += 2; /* advance to value */
+    hdr = malloc(sizeof(struct MHD_HTTP_Header));
+    hdr->next = session->headers_received;
+    hdr->header = line;
+    hdr->value = strdup(colon);
+    hdr->kind = MHD_HEADER_KIND;
+    session->headers_received = hdr;
+  }
+  if (session->bodyReceived == 0)
+    return;
+  /* FIXME: here: find cookie header and parse that! */
+  return;
+ DIE:
+  close(session->socket_fd);
+  session->socket_fd = -1;
 }
 
 
@@ -463,6 +495,10 @@ MHD_session_handle_write(struct MHD_Session * session) {
     session->headersSent = 0;
     session->bodyReceived = 0;
     session->messagePos = 0;
+    free(session->method);
+    session->method = NULL;
+    free(session->url);
+    session->url = NULL;
     free(session->write_buffer);
     session->write_buffer = NULL;
     session->write_buffer_size = 0;

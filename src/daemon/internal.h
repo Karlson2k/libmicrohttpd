@@ -150,8 +150,14 @@ struct MHD_Session {
   
   struct MHD_Response * response;
 
+  /**
+   * Request method.  Should be GET/POST/etc.
+   */
   char * method;
 
+  /**
+   * Requested URL (everything after "GET" only).
+   */
   char * url;
 
   /**

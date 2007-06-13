@@ -294,6 +294,15 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
       else
 	prev->next = pos->next;
       free(pos->addr);
+      if (pos->url != NULL)
+	free(pos->url);
+      if (pos->method != NULL)
+	free(pos->method);
+      if (pos->write_buffer != NULL)
+	free(pos->write_buffer);
+      if (pos->read_buffer != NULL)
+	free(pos->read_buffer);
+      /* FIXME: free headers_received here! */
       /* FIXME: more to free here! */
       free(pos);
     }
