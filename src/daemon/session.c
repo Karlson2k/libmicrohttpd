@@ -384,7 +384,7 @@ MHD_build_header_response(struct MHD_Session * session) {
     pos = pos->next;
   }
   /* produce data */
-  data = malloc(size);
+  data = malloc(size + 1);
   memcpy(data,
 	 code,
 	 off);
@@ -397,6 +397,9 @@ MHD_build_header_response(struct MHD_Session * session) {
     off += strlen(pos->header) + strlen(pos->value) + 4;
     pos = pos->next;
   }
+  sprintf(&data[off],
+	  "\r\n");
+  off += 2;
   if (off != size) 
     abort();
   session->write_buffer = data;

@@ -265,6 +265,7 @@ static void
 MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
   struct MHD_Session * pos;
   struct MHD_Session * prev;
+  struct MHD_HTTP_Header * hpos;
 
   pos = daemon->connections;
   prev = NULL;
@@ -283,8 +284,15 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	free(pos->write_buffer);
       if (pos->read_buffer != NULL)
 	free(pos->read_buffer);
-      /* FIXME: free headers_received here! */
-      /* FIXME: more to free here: response, more? */
+      while (pos->headers_received != NULL) {
+	hpos = pos->headers_received;
+	pos->headers_received = hpos->next;
+	free(hpos->header);
+	free(hpos->value);
+      }
+
+      if (pos->response != NULL)
+	MHD_destroy_response(pos->response);
       free(pos);
     }
     prev = pos;
