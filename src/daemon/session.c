@@ -26,17 +26,6 @@
  * @version 0.1.0
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg>
-#include <fcntl.h>
-#include <pthread.h>
-#include <netinet/in.h>
-
 #include "microhttpd.h"
 #include "session.h"
 #include "response.h"
@@ -55,7 +44,7 @@
 int
 MHD_get_session_values(struct MHD_Session * session,
 		       enum MHD_ValueKind kind,
-		       MHD_KeyValueIterator * iterator,
+		       MHD_KeyValueIterator iterator,
 		       void * iterator_cls) {
   int ret;
   struct MHD_HTTP_Header * pos;
@@ -95,7 +84,6 @@ MHD_lookup_session_value(struct MHD_Session * session,
 
   if (session == NULL) 
     return NULL;
-  ret = 0;
   pos = session->headers_received;
   while (pos != NULL) {
     if ( (0 != (pos->kind & kind)) &&
@@ -145,7 +133,8 @@ MHD_session_get_fdset(struct MHD_Session * session,
 		      int * max_fd) {
   /* FIXME: need to be VERY careful here
      determining when the socket is ready for
-     reading/writing; plenty of cases to handle! */
+     reading/writing; plenty of cases to handle!
+     (the current code is one big bug) */
   FD_SET(session->socket_fd, read_fd_set);
   FD_SET(session->socket_fd, write_fd_set);
   if (session->socket_fd > *max_fd)
@@ -165,6 +154,7 @@ MHD_session_get_fdset(struct MHD_Session * session,
  */
 static void
 MHD_parse_URL(struct MHD_Session * session) {
+#if 0
 	char * working;
 	int pos,i;
 
@@ -179,8 +169,8 @@ MHD_parse_URL(struct MHD_Session * session) {
 			pos = 0;
 
 	session->documentName = session->headers[0]->value+pos;
+#endif
 }
-
 
 
 /**
@@ -195,6 +185,7 @@ MHD_parse_URL(struct MHD_Session * session) {
  */
 static void
 MHD_parse_session_headers(struct MHD_Session * session) {
+#if 0
   const char * crlfcrlf = "\r\n\r\n";
   const char * crlf = "\r\n";
 
@@ -249,8 +240,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 		session->headers[session->firstFreeHeader++] = newHeader;
 		curTok = strtok_r(NULL, crlf, &saveptr);
 	}	
-
-	return numBytes;
+#endif
 }
 
 
@@ -269,7 +259,7 @@ MHD_find_access_handler(struct MHD_Session * session) {
  * (multithreaded, external select, internal select) call this function
  * to handle reads. 
  */
-static int
+int
 MHD_session_handle_read(struct MHD_Session * session) {
   int bytes_read;
   void * tmp;
@@ -322,8 +312,8 @@ MHD_session_handle_read(struct MHD_Session * session) {
       return MHD_NO;
     }
     /* dh left "processed" bytes in buffer for next time... */
-    memmove(session->readBuffer,
-	    &session->readBuffer[session->readLoc - processed],
+    memmove(session->read_buffer,
+	    &session->read_buffer[session->readLoc - processed],
 	    processed);
     session->readLoc = processed;
     session->uploadSize -= processed;
@@ -332,157 +322,154 @@ MHD_session_handle_read(struct MHD_Session * session) {
   return MHD_YES;
 }
 
+/**
+ * Allocate the session's write buffer and
+ * fill it with all of the headers from the
+ * HTTPd's response.
+ */
+static void
+MHD_build_header_response(struct MHD_Session * session) {
+  size_t size;
+  size_t off;
+  struct MHD_HTTP_Header * pos;
+  char code[32];
+  char * data;
+
+  sprintf(code,
+	  "HTTP/1.1 %u\r\n", 
+	  session->responseCode);
+  off = strlen(code);
+  /* estimate size */
+  size = off + 2; /* extra \r\n at the end */
+  pos = session->response->first_header;
+  while (pos != NULL) {
+    size += strlen(pos->header) + strlen(pos->value) + 4; /* colon, space, linefeeds */
+    pos = pos->next;
+  }
+  /* produce data */
+  data = malloc(size);
+  memcpy(data,
+	 code,
+	 off);
+  pos = session->response->first_header;
+  while (pos != NULL) {
+    sprintf(&data[off],
+	    "%s: %s\r\n",
+	    pos->header,
+	    pos->value);
+    off += strlen(pos->header) + strlen(pos->value) + 4;
+    pos = pos->next;
+  }
+  if (off != size) 
+    abort();
+  session->write_buffer = data;
+  session->write_buffer_size = size;  
+}
 
 /**
- * This function was created to handle writes to sockets when it has been
- * determined that the socket can be written to. If there is no data
- * to be written, however, the function call does nothing. All implementations
- * (multithreaded, external select, internal select) call this function
+ * This function was created to handle writes to sockets when it has
+ * been determined that the socket can be written to. All
+ * implementations (multithreaded, external select, internal select)
+ * call this function
  */
 int
 MHD_session_handle_write(struct MHD_Session * session) {
   struct MHD_Response * response;
-  int i;
-  char * buffer[2048];
-  char * responseMessage;
-  int numBytesInMessage;
+  int ret;
 
   response = session->response;
   if(response == NULL) {
     /* FIXME: LOG: why are we here? */
     return MHD_NO;
   }
-  numBytesInMessage = 25;
-  responseMessage = malloc(25);
+  if (! session->headersSent) {
+    if (session->write_buffer == NULL)
+      MHD_build_header_response(session);
+    ret = send(session->socket_fd, 
+	       &session->write_buffer[session->writeLoc],
+	       session->write_buffer_size - session->writeLoc,
+	       0);
+    if (ret < 0) {
+      if (errno == EINTR)
+	return MHD_YES;
+      /* FIXME: log error */
+      close(session->socket_fd);
+      session->socket_fd = -1;
+      return MHD_NO;
+    }
+    session->writeLoc += ret;
+    if (session->writeLoc == session->write_buffer_size) {
+      session->writeLoc = 0;
+      free(session->write_buffer);
+      session->write_buffer = NULL;
+      session->write_buffer_size = 0;
+      session->headersSent = 1;
+    }
+    return MHD_YES;
+  }
+  if (response->total_size <= session->messagePos) 
+    abort(); /* internal error */
+  if (response->crc != NULL)
+    pthread_mutex_lock(&response->mutex);    
 
-	pthread_mutex_lock(&response->mutex);	
-
-	if(!response->headersSent) {
-		sprintf(responseMessage, "HTTP/1.1 %i Go to hell!\r\n", response->responseCode);
-		fprintf(stderr, "%s\n", responseMessage);
-		if(send(session->socket_fd, responseMessage, strlen(responseMessage), 0) != strlen(responseMessage)) {
-			fprintf(stderr, "Error! could not send an entire header in one call to send! unable to handle this case as of this time.\n");
-			pthread_mutex_unlock(&response->mutex);
-			return MHD_NO;
-		}
-
-		for(i = 0; i < MHD_MAX_HEADERS; i++) {
-			if(response->headers[i] == NULL)
-				continue;
-
-			if(strlen(response->headers[i]->header) + strlen(response->headers[i]->value) + 5 > numBytesInMessage) {
-				free(responseMessage);
-				responseMessage = malloc(strlen(response->headers[i]->header) + strlen(response->headers[i]->value) + 5);
-				if(responseMessage == NULL) {
-					 if(daemon->options & MHD_USE_DEBUG)
-				       fprintf(stderr, "Error allocating memory!\n");
-	    			 pthread_mutex_unlock(&response->mutex);
-				    return MHD_NO;
-				}				
-				numBytesInMessage = strlen(response->headers[i]->header) + strlen(response->headers[i]->value) + 5;
-			}
-			sprintf(responseMessage, "%s: %s\r\n", response->headers[i]->header, response->headers[i]->value);
-			fprintf(stderr, "%s\n", responseMessage);
-			if(send(session->socket_fd, responseMessage, strlen(responseMessage), 0) != strlen(responseMessage)) {
-				fprintf(stderr, "Error! could not send an entire header in one call to send! unable to handle this case as of this time.\n");
-				pthread_mutex_unlock(&response->mutex);
-				return MHD_NO;
-			}
-		}
-		
-		response->headersSent = 1;
-	}
-
-	if(response->data != NULL) {
-		if(response->bytesSentSoFar == 0) {
-			if(numBytesInMessage < 32) {
-				free(responseMessage);
-				responseMessage = malloc(32);	
-				if(responseMessage == NULL) {
-					 if(daemon->options & MHD_USE_DEBUG)
-				       fprintf(stderr, "Error allocating memory!\n");
-	    			 pthread_mutex_unlock(&response->mutex);
-				    return MHD_NO;
-				}					
-			}
-			sprintf(responseMessage, "Content-length: %llu\r\n\r\n", (unsigned long long)response->size);
-			fprintf(stderr, "%s\n", responseMessage);
-			if(send(session->socket_fd, responseMessage, strlen(responseMessage),0)!= strlen(responseMessage)) {
-				fprintf(stderr, "Error! could not send an entire header in one call to send! unable to handle this case as of this time.\n");
-				pthread_mutex_unlock(&response->mutex);
-				return MHD_NO;
-			}			
-		}
-		
-		i = send(session->socket_fd, response->data+response->bytesSentSoFar, response->size-response->bytesSentSoFar,0);
-		response->bytesSentSoFar += i;
-
-		fprintf(stderr, "Sent %i bytes of data\nTotal to send is %llu bytes\n", i, (unsigned long long)response->size);
-
-		if(response->bytesSentSoFar == response->size) {
-			session->currentResponses[session->currentResponse] = NULL;
-			session->currentResponse = (session->currentResponse + 1) % MHD_MAX_RESPONSE;
-			response->currentSession = NULL;		
-
-			if(response->freeWhenFinished) {
-				pthread_mutex_unlock(&response->mutex);				
-				MHD_destroy_response(response); 
-			}
-			/*THIS NEEDS TO BE HANDLED ANOTHER WAY!!! TIMEOUT, ect..., as of now this is the only way to get test case to work
-			 * since client never disconnects on their own!
-			 */
-			if(session->currentResponses[session->currentResponse] == NULL) {
-				MHD_destroy_session(session);
-				daemon->connections[connection_id] = NULL;
-				return MHD_NO;
-			}						
-		}
-	} else {
-		if(response->crc == NULL) {
-			pthread_mutex_unlock(&response->mutex);
-			return MHD_NO;
-		}
-
-		if(response->bytesSentSoFar == 0) {
-			if(send(session->socket_fd, "\r\n", response->size,0) != 2) {
-				fprintf(stderr, "Error! could not send an entire header in one call to send! unable to handle this case as of this time.\n");
-				pthread_mutex_unlock(&response->mutex);
-				return MHD_NO;
-			}					
-		}
-		memset(buffer, 0, 2048);
-
-		i = response->crc(response->crc_cls, response->bytesSentSoFar, (char *)buffer, 2048);
-
-		if(i == -1) {
-			pthread_mutex_unlock(&response->mutex);
-				
-			session->currentResponses[session->currentResponse] = NULL;
-			session->currentResponse = (session->currentResponse + 1) % MHD_MAX_RESPONSE;		
-			response->currentSession = NULL;			
-
-			if(response->freeWhenFinished) {
-				pthread_mutex_unlock(&response->mutex);
-				MHD_destroy_response(response);
-			}
-			/*THIS NEEDS TO BE HANDLED ANOTHER WAY!!! TIMEOUT, ect..., as of now this is the only way to get test case to work
-			 * since client never disconnects on their own!
-			 */
-			if(session->currentResponses[session->currentResponse] == NULL) {
-				MHD_destroy_session(session);
-				daemon->connections[connection_id] = NULL;
-				return MHD_NO;
-			}
-
-		} else {
-			i = send(session->socket_fd, buffer, i,0);
-			response->bytesSentSoFar += i;				
-		}
-	}
-	pthread_mutex_unlock(&response->mutex);	
-	return MHD_YES;	
+  /* prepare send buffer */
+  if ( (response->data == NULL) ||
+       (response->data_start > session->messagePos) ||
+       (response->data_start + response->data_size < session->messagePos) ) {
+    if (response->data_size == 0) {
+      if (response->data != NULL)
+	free(response->data);
+      response->data = malloc(MHD_MAX_BUF_SIZE);
+      response->data_size = MHD_MAX_BUF_SIZE;
+    }
+    ret = response->crc(response->crc_cls,
+			session->messagePos,
+			response->data,
+			MAX(MHD_MAX_BUF_SIZE,
+			    response->data_size - session->messagePos));
+    if (ret == -1) {
+      /* end of message, signal other side by closing! */
+      response->data_size = session->messagePos;
+      close(session->socket_fd);
+      session->socket_fd = -1;
+      return MHD_YES;
+    }
+    response->data_start = session->messagePos;
+    response->data_size = ret;
+    if (ret == 0)
+      return MHD_YES; /* or NO? */
+  }
+  
+  /* transmit */
+  ret = send(session->socket_fd, 
+	     &response->data[session->messagePos - response->data_start],
+	     response->data_size - (session->messagePos - response->data_start),
+	     0);
+  if (response->crc != NULL)
+    pthread_mutex_unlock(&response->mutex);    
+  if (ret == -1) {
+    if (errno == EINTR)
+      return MHD_YES;
+    /* FIXME: log */
+    return MHD_NO;
+  }
+  session->messagePos += ret;
+  if (session->messagePos == response->data_size) {
+    /* reset session, wait for next request! */
+    MHD_destroy_response(response);
+    session->responseCode = 0;
+    session->response = NULL;
+    session->headersReceived = 0;
+    session->headersSent = 0;
+    session->bodyReceived = 0;
+    session->messagePos = 0;
+    free(session->write_buffer);
+    session->write_buffer = NULL;
+    session->write_buffer_size = 0;
+  }
+  return MHD_YES;
 }
 
-
+/* end of session.c */
 
 

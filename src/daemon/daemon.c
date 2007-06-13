@@ -26,16 +26,6 @@
  * @version 0.1.0
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg>
-#include <fcntl.h>
-#include <pthread.h>
-#include <netinet/in.h>
-
 #include "microhttpd.h"
 #include "internal.h"
 #include "response.h"
@@ -120,10 +110,10 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
   pos = daemon->handlers;
   prev = NULL;
   while (pos != NULL) {
-    if ( (dh == ah->dh) &&
-	 (dh_cls == ah->dh_cls) &&
+    if ( (dh == pos->dh) &&
+	 (dh_cls == pos->dh_cls) &&
 	 (0 == strcmp(uri_prefix,
-		      ah->uri_prefix)) ) {
+		      pos->uri_prefix)) ) {
       if (prev == NULL)
 	daemon->handlers = pos->next;
       else
@@ -160,10 +150,10 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
        ( (daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0) )
     return MHD_NO;	
   FD_SET(daemon->socket_fd, 
-	 &daemon->read_fd_set);
+	 read_fd_set);
   if ( (*max_fd) < daemon->socket_fd)
     *max_fd = daemon->socket_fd;
-  pos = daemon->session;
+  pos = daemon->connections;
   while (pos != NULL) {
     if (MHD_YES != MHD_session_get_fdset(pos,
 					 read_fd_set,
@@ -249,7 +239,7 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 	 strerror(errno));
     return MHD_NO;
   }
-  if (MHD_NO == daemon->apc(mhd->apc_cls,
+  if (MHD_NO == daemon->apc(daemon->apc_cls,
 			    &addr,
 			    addrlen)) {
     close(s);
@@ -485,16 +475,14 @@ MHD_start_daemon(unsigned int options,
   retVal->port = port;
   retVal->apc = apc;
   retVal->apc_cls = apc_cls;
-  retVal->dh = dh;
-  retVal->dh_cls = dh_cls;
   retVal->socket_fd = socket_fd;
   retVal->default_handler.dh = dh;
   retVal->default_handler.dh_cls = dh_cls;
-  retVal->default_henader.uri_prefix = "";
+  retVal->default_handler.uri_prefix = "";
   retVal->default_handler.next = NULL;
   if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
 	 (0 != (options & MHD_USE_SELECT_INTERNALLY)) ) &&
-       (0 != pthread_create(&daemon->pid,
+       (0 != pthread_create(&retVal->pid,
 			    NULL, 
 			    &MHD_select_thread, 
 			    daemon)) ) {

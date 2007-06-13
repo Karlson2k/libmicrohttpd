@@ -26,90 +26,10 @@
  * @version 0.1.0
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg>
-#include <fcntl.h>
-#include <pthread.h>
-#include <netinet/in.h>
-
 #include "microhttpd.h"
 #include "response.h"
 #include "internal.h"
 #include "config.h"
-
-
-/**
- * Representation of a response.
- */ 
-struct MHD_Response {
-
-  /**
-   * Headers to send for the response.  Initially
-   * the linked list is created in inverse order;
-   * the order should be inverted before sending!
-   */
-  struct MHD_HTTP_Header * first_header;
-
-  /**
-   * Buffer pointing to data that we are supposed
-   * to send as a response.
-   */
-  void * data;
-
-  /**
-   * Closure to give to the content reader
-   * free callback.
-   */ 
-  void * crc_cls;
- 
-  /**
-   * How do we get more data?  NULL if we are
-   * given all of the data up front.
-   */
-  MHD_ContentReaderCallback crc;
-
-  /**
-   * NULL if data must not be freed, otherwise
-   * either user-specified callback or "&free".
-   */
-  MHD_ContentReaderFreeCallback crfc;
-
-  /**
-   * Mutex to synchronize access to data/size and
-   * reference counts.
-   */
-  pthread_mutex_t mutex;
-
-  /**
-   * Reference count for this response.  Free
-   * once the counter hits zero.
-   */
-  unsigned int reference_count;
-  
-  /**
-   * Set to -1 if size is not known.
-   */
-  size_t total_size;
-
-  /**
-   * Size of data.
-   */
-  size_t data_size;
-
-  /**
-   * At what offset in the stream is the
-   * beginning of data located?
-   */
-  size_t data_start;
-  
-};
-
-
 
 /**
  * Add a header line to the response.
@@ -134,9 +54,9 @@ MHD_add_response_header(struct MHD_Response * response,
        (NULL != strstr(content, "\r")) ||
        (NULL != strstr(content, "\n")) )
     return MHD_NO;
-  hdr = malloc(sizeof(MHD_HTTP_Header));
-  hdr->header = STRDUP(header);
-  hdr->value = STRDUP(content);
+  hdr = malloc(sizeof(struct MHD_HTTP_Header));
+  hdr->header = strdup(header);
+  hdr->value = strdup(content);
   hdr->kind = MHD_HEADER_KIND;
   hdr->next = response->first_header;
   response->first_header = hdr;
@@ -188,7 +108,7 @@ MHD_del_response_header(struct MHD_Response * response,
  */ 
 int
 MHD_get_response_headers(struct MHD_Response * response,
-			 MHD_KeyValueIterator * iterator,
+			 MHD_KeyValueIterator iterator,
 			 void * iterator_cls) {
   struct MHD_HTTP_Header * pos;
   int numHeaders = 0;
