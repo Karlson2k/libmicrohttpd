@@ -319,17 +319,22 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 /**
  * Main select call.
  *
+ * @param may_block YES if blocking, NO if non-blocking
  * @return MHD_NO on serious errors, MHD_YES on success
  */
 static int
-MHD_select(struct MHD_Daemon * daemon) {
+MHD_select(struct MHD_Daemon * daemon,
+	   int may_block) {
   struct MHD_Session * pos;
   int num_ready;
   fd_set rs;
   fd_set ws;
   fd_set es;
   int max;
+  struct timeval timeout;
   
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
   if(daemon == NULL) 
     abort();
   FD_ZERO(&rs);
@@ -354,7 +359,7 @@ MHD_select(struct MHD_Daemon * daemon) {
 		     &rs,
 		     &ws,
 		     &es,
-		     NULL);  
+		     may_block == MHD_NO ? &timeout : NULL);  
   if (num_ready < 0) {    
     if (errno == EINTR)
       return MHD_YES;
@@ -397,7 +402,7 @@ MHD_run(struct MHD_Daemon * daemon) {
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
     return MHD_NO;
-  MHD_select(daemon);
+  MHD_select(daemon, MHD_NO);
   MHD_cleanup_sessions(daemon);
   return MHD_YES;
 }
@@ -411,7 +416,7 @@ static void *
 MHD_select_thread(void * cls) {
   struct MHD_Daemon * daemon = cls;
   while (daemon->shutdown == 0) {
-    MHD_select(daemon);
+    MHD_select(daemon, MHD_YES);
     MHD_cleanup_sessions(daemon);
   }
   return NULL;

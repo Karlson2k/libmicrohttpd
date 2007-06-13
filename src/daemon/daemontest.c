@@ -78,7 +78,7 @@ static int testStartStop() {
 
 static int testExternalRun() {
   struct MHD_Daemon * d;
-  fd_set read;
+  fd_set rs;
   int maxfd;
   int i;
 
@@ -93,13 +93,16 @@ static int testExternalRun() {
     return 4;  
   i = 0;
   while(i < 15) {
-    MHD_get_fdset(d, &read, &read, &read, &maxfd);
+    maxfd = 0;
+    FD_ZERO(&rs);
+    MHD_get_fdset(d, &rs, &rs, &rs, &maxfd);
     if (MHD_run(d) == MHD_NO) {
       MHD_stop_daemon(d);
       return 8;
     }
     i++;
   }
+  MHD_stop_daemon(d);
   return 0;
 }
 
@@ -114,7 +117,7 @@ static int testThread() {
 
   if (d == NULL) 
     return 16;  
-  if (MHD_run(d) == MHD_NO) 
+  if (MHD_run(d) != MHD_NO) 
     return 32;
   MHD_stop_daemon(d);
   return 0;
@@ -131,8 +134,8 @@ static int testMultithread() {
 
   if (d == NULL) 
     return 64; 
-  if (MHD_run(d) == MHD_NO) 
-     return 128;
+  if (MHD_run(d) != MHD_NO) 
+    return 128;
   MHD_stop_daemon(d);  
   return 0;
 }
