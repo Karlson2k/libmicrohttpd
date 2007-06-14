@@ -286,8 +286,10 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	daemon->connections = pos->next;
       else
 	prev->next = pos->next;
-      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) 
+      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) {
+	pthread_kill(pos->pid, SIGALRM);
 	pthread_join(pos->pid, &unused);
+      }
       free(pos->addr);
       if (pos->url != NULL)
 	free(pos->url);
@@ -545,9 +547,10 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
   close(daemon->socket_fd);
   daemon->socket_fd = -1;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||       
-       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
+       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) ) {
+    pthread_kill(daemon->pid, SIGALRM);
     pthread_join(daemon->pid, &unused);
-
+  }
   while (daemon->connections != NULL) {
     if (-1 != daemon->connections->socket_fd) {
       close(daemon->connections->socket_fd);
@@ -556,6 +559,29 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
     MHD_cleanup_sessions(daemon);
   }
   free(daemon);
+}
+
+static struct sigaction sig;
+
+static struct sigaction old;
+
+static void sigalrmHandler(int sig) {
+}
+
+/**
+ * Initialize the signal handler for SIGALRM.
+ */
+void __attribute__ ((constructor)) pthread_handlers_ltdl_init() {
+  /* make sure SIGALRM does not kill us */
+  memset(&sig, 0, sizeof(struct sigaction));
+  memset(&old, 0, sizeof(struct sigaction));
+  sig.sa_flags = SA_NODEFER;
+  sig.sa_handler =  &sigalrmHandler;
+  sigaction(SIGALRM, &sig, &old);
+}
+
+void __attribute__ ((destructor)) pthread_handlers_ltdl_fini() {
+  sigaction(SIGALRM, &old, &sig);
 }
 
 /* end of daemon.c */

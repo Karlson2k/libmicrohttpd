@@ -142,7 +142,6 @@ static int testInternalGet() {
     MHD_stop_daemon(d);
     return 8;
   }
-  
   MHD_stop_daemon(d);
   
   return 0;
