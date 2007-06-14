@@ -250,6 +250,8 @@ MHD_destroy_response(struct MHD_Response * response) {
   }
   pthread_mutex_unlock(&response->mutex);
   pthread_mutex_destroy(&response->mutex);
+  if (response->crfc != NULL)
+    response->crfc(response->crc_cls);
   while (response->first_header != NULL) {
     pos = response->first_header;    
     response->first_header = pos->next;

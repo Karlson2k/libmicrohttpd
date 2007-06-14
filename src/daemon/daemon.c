@@ -276,6 +276,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
   struct MHD_Session * pos;
   struct MHD_Session * prev;
   struct MHD_HTTP_Header * hpos;
+  void * unused;
 
   pos = daemon->connections;
   prev = NULL;
@@ -285,6 +286,8 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	daemon->connections = pos->next;
       else
 	prev->next = pos->next;
+      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) 
+	pthread_join(pos->pid, &unused);
       free(pos->addr);
       if (pos->url != NULL)
 	free(pos->url);
@@ -299,6 +302,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 	pos->headers_received = hpos->next;
 	free(hpos->header);
 	free(hpos->value);
+	free(hpos);
       }
       if (pos->response != NULL)
 	MHD_destroy_response(pos->response);
@@ -337,6 +341,7 @@ MHD_select(struct MHD_Daemon * daemon,
   fd_set es;
   int max;
   struct timeval timeout;
+  int ds;
   
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -373,16 +378,22 @@ MHD_select(struct MHD_Daemon * daemon,
 	     strerror(errno));
     return MHD_NO;    
   }
-  if (FD_ISSET(daemon->socket_fd,
+  ds = daemon->socket_fd;
+  if (ds == -1)
+    return MHD_YES;
+  if (FD_ISSET(ds,
 	       &rs))
     MHD_accept_connection(daemon);  
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) {
     /* do not have a thread per connection, process all connections now */
     pos = daemon->connections;
     while (pos != NULL) {
-      if (FD_ISSET(pos->socket_fd, &rs)) 
+      ds = pos->socket_fd;
+      if (ds == -1)
+	continue;
+      if (FD_ISSET(ds, &rs)) 
 	MHD_session_handle_read(pos);
-      if (FD_ISSET(pos->socket_fd, &ws))
+      if (FD_ISSET(ds, &ws))
 	MHD_session_handle_write(pos);
       pos = pos->next;
     }
@@ -542,9 +553,6 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
       close(daemon->connections->socket_fd);
       daemon->connections->socket_fd = -1;
     }
-    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-      pthread_join(daemon->connections->pid, &unused);
-
     MHD_cleanup_sessions(daemon);
   }
   free(daemon);

@@ -275,8 +275,6 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     session->headers_received = hdr;
   }
   /* FIXME: here: find cookie header and parse that! */
-  if (session->bodyReceived == 0)
-    return;
   return;
  DIE:
   close(session->socket_fd);
