@@ -5,11 +5,6 @@ things need to be implemented (in list of importance)
 before certain features can be used at all:
 
 
-For GET args:
-=============
-session.c:
-- MHD_parse_session_headers: take URL apart
-
 For PUT/POST:
 =============
 session.c:
@@ -29,9 +24,6 @@ session.c:
    read?  give user control?)
 - http 1.0 compatibility (if 1.0, force connection
   close at the end!)
-
-
-
 
 For IPv6:
 =========

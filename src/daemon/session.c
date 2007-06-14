@@ -207,6 +207,69 @@ MHD_get_next_header_line(struct MHD_Session * session) {
   return rbuf;
 }
 
+static void 
+MHD_session_add_header(struct MHD_Session * session,
+		       const char * key,
+		       const char * value,
+		       enum MHD_ValueKind kind) {
+  struct MHD_HTTP_Header * hdr;
+
+  hdr = malloc(sizeof(struct MHD_HTTP_Header));
+  hdr->next = session->headers_received;
+  hdr->header = strdup(key);
+  hdr->value = strdup(value);
+  hdr->kind = kind;
+  session->headers_received = hdr;
+}
+
+static void 
+MHD_http_unescape(char * val) {
+  char * esc;
+  unsigned int num;
+
+  while (NULL != (esc = strstr(val, "%"))) {
+    if ( (1 == sscanf(&esc[1],
+		    "%2x",
+		    &num)) ||
+	 (1 == sscanf(&esc[1],
+		      "%2X",
+		      &num)) ) {
+      esc[0] = (unsigned char) num;
+      memmove(&esc[1],
+	      &esc[3],
+	      strlen(&esc[3]));
+    }
+    val = esc+1;
+  }
+}
+
+static void 
+MHD_parse_arguments(struct MHD_Session * session,
+		    char * args) {
+  char * equals;
+  char * amper;
+
+  while (args != NULL) {
+    equals = strstr(args, "=");
+    if (equals == NULL)
+      return; /* invalid, ignore */
+    equals[0] = '\0';
+    equals++;
+    amper = strstr(equals, "&");
+    if (amper != NULL) {
+      amper[0] = '\0';
+      amper++;
+    }    
+    MHD_http_unescape(args);
+    MHD_http_unescape(equals);
+    MHD_session_add_header(session,
+			   args,
+			   equals,
+			   MHD_GET_ARGUMENT_KIND);
+    args = amper;
+  }
+}
+
 /**
  * This function is designed to parse the input buffer of a given session.
  *
@@ -223,7 +286,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
   char * colon;
   char * uri;
   char * httpType;
-  struct MHD_HTTP_Header * hdr;
+  char * args;
 
   if (session->bodyReceived == 1)
     abort();
@@ -239,6 +302,13 @@ MHD_parse_session_headers(struct MHD_Session * session) {
       httpType = strstr(uri, " ");
       if (httpType != NULL)
 	httpType[0] = '\0';
+      args = strstr(uri, "?");
+      if (args != NULL) {
+	args[0] = '\0';
+	args++;
+	MHD_parse_arguments(session,
+			    args);
+      }
       /* FIXME: parse URI some more here */
       session->url = strdup(uri);
       /* do we want to do anything with httpType? */
@@ -249,7 +319,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     if (strlen(line) == 0) {
       /* end of header */
       session->headersReceived = 1;
-      /* FIXME: check with methods may have a body,
+      /* FIXME: check which methods may have a body,
 	 check headers to find out upload size */
       session->uploadSize = 0;
       session->bodyReceived = 1;
@@ -267,12 +337,11 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     /* zero-terminate header */
     colon[0] = '\0';
     colon += 2; /* advance to value */
-    hdr = malloc(sizeof(struct MHD_HTTP_Header));
-    hdr->next = session->headers_received;
-    hdr->header = line;
-    hdr->value = strdup(colon);
-    hdr->kind = MHD_HEADER_KIND;
-    session->headers_received = hdr;
+    MHD_session_add_header(session,
+			   line,
+			   colon,
+			   MHD_HEADER_KIND);
+    free(line);
   }
   /* FIXME: here: find cookie header and parse that! */
   return;
