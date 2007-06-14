@@ -27,6 +27,11 @@ session.c:
 - send proper error code back if headers are too long
   (investigate what we should do with those headers,
    read?  give user control?)
+- http 1.0 compatibility (if 1.0, force connection
+  close at the end!)
+
+
+
 
 For IPv6:
 =========
@@ -40,4 +45,14 @@ For SSL:
 microhttpd.h:
 - define appropriate APIs
 - everything else
+
+
+Other:
+======
+- allow client to determine http 1.0 vs. 1.1
+  (API extension)
+- allow client to control size of input/output
+  buffers
+
+
 

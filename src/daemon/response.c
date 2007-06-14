@@ -126,6 +126,27 @@ MHD_get_response_headers(struct MHD_Response * response,
 
 
 /**
+ * Get a particular header from the response.
+ *
+ * @param key which header to get
+ * @return NULL if header does not exist
+ */ 
+const char *
+MHD_get_response_header(struct MHD_Response * response,
+			const char * key) {
+  struct MHD_HTTP_Header * pos;
+  pos = response->first_header;
+  while (pos != NULL) {
+    if (0 == strcmp(key,
+		    pos->header))
+      return pos->value;
+    pos = pos->next;
+  }
+  return NULL;
+}
+
+
+/**
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *

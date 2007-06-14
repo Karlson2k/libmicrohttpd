@@ -507,6 +507,17 @@ MHD_get_response_headers(struct MHD_Response * response,
 			 void * iterator_cls);
 
 
+/**
+ * Get a particular header from the response.
+ *
+ * @param key which header to get
+ * @return NULL if header does not exist
+ */ 
+const char *
+MHD_get_response_header(struct MHD_Response * response,
+			const char * key);
+
+
 #if 0 /* keep Emacsens' auto-indent happy */
 {
 #endif

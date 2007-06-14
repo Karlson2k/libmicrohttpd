@@ -111,7 +111,7 @@ MHD_queue_response(struct MHD_Session * session,
        (response == NULL) ||
        (session->response != NULL) ||
        (session->bodyReceived == 0) ||
-       (session->headers_received == 0) )
+       (session->headersReceived == 0) )
     return MHD_NO;	
   MHD_increment_response_rc(response);
   session->response = response;
@@ -131,13 +131,13 @@ MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * write_fd_set,
 		      fd_set * except_fd_set,
 		      int * max_fd) {
-  if ( (session->headers_received == 0) ||
+  if ( (session->headersReceived == 0) ||
        (session->readLoc < session->read_buffer_size) )
     FD_SET(session->socket_fd, read_fd_set);
   if (session->response != NULL) 
     FD_SET(session->socket_fd, write_fd_set);
   if ( (session->socket_fd > *max_fd) &&
-       ( (session->headers_received == 0) ||
+       ( (session->headersReceived == 0) ||
 	 (session->readLoc < session->read_buffer_size) ||
 	 (session->response != NULL) ) )
     *max_fd = session->socket_fd;
@@ -310,7 +310,7 @@ MHD_call_session_handler(struct MHD_Session * session) {
   struct MHD_Access_Handler * ah;
   unsigned int processed;
 
-  if (session->headers_received == 0)
+  if (session->headersReceived == 0)
     abort(); /* bad timing... */
   ah = MHD_find_access_handler(session);
   processed = session->readLoc;
@@ -356,7 +356,7 @@ MHD_session_handle_read(struct MHD_Session * session) {
  
 
   if ( (session->readLoc >= session->read_buffer_size) &&
-       (session->headers_received == 0) ) {
+       (session->headersReceived == 0) ) {
     /* need to grow read buffer */
     tmp = malloc(session->read_buffer_size * 2 + MHD_MAX_BUF_SIZE);
     memcpy(tmp,
@@ -405,6 +405,34 @@ MHD_session_handle_read(struct MHD_Session * session) {
 }
 
 /**
+ * Check if we need to set some additional headers
+ * for http-compiliance.
+ */
+static void 
+MHD_add_extra_headers(struct MHD_Session * session) {
+  const char * have;
+  char buf[128];
+
+  if (session->response->total_size == -1) {
+    have = MHD_get_response_header(session->response,
+				   "Connection");
+    if (have == NULL)
+      MHD_add_response_header(session->response,
+			      "Connection",
+			      "close");
+  } else if (NULL == MHD_get_response_header(session->response,
+					     "Content-length")) {
+    snprintf(buf,
+	     128,
+	     "%llu",
+	     (unsigned long long) session->response->total_size);
+    MHD_add_response_header(session->response,
+			    "Content-length",
+			    buf);
+  }
+}
+
+/**
  * Allocate the session's write buffer and
  * fill it with all of the headers from the
  * HTTPd's response.
@@ -417,6 +445,7 @@ MHD_build_header_response(struct MHD_Session * session) {
   char code[32];
   char * data;
 
+  MHD_add_extra_headers(session);
   sprintf(code,
 	  "HTTP/1.1 %u\r\n", 
 	  session->responseCode);
@@ -551,7 +580,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
     abort(); /* internal error */
   if (session->messagePos == response->data_size) {
     if ( (session->bodyReceived == 0) ||
-	 (session->headers_received == 0) )
+	 (session->headersReceived == 0) )
       abort(); /* internal error */
     MHD_destroy_response(response);
     session->responseCode = 0;

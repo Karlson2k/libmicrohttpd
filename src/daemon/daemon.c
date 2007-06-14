@@ -467,6 +467,7 @@ MHD_start_daemon(unsigned int options,
 	      strerror(errno));
     return NULL;
   }
+  /* FIXME: setsockopt: SO_REUSEADDR? */
   memset(&servaddr,
 	 0,
 	 sizeof(struct sockaddr_in));  
@@ -541,7 +542,8 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
       close(daemon->connections->socket_fd);
       daemon->connections->socket_fd = -1;
     }
-    pthread_join(daemon->connections->pid, &unused);
+    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      pthread_join(daemon->connections->pid, &unused);
 
     MHD_cleanup_sessions(daemon);
   }

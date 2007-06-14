@@ -49,7 +49,7 @@ static int ahc_echo(void * cls,
   struct MHD_Response * response;
   int ret;
 
-  if (0 != strcmp(me, "GET"))
+  if (0 != strcmp(method, "GET"))
     return MHD_NO; /* unexpected method */
   response = MHD_create_response_from_data(strlen(me),
 					   (void*) me,
