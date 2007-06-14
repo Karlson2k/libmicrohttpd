@@ -309,7 +309,6 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 	MHD_parse_arguments(session,
 			    args);
       }
-      /* FIXME: parse URI some more here */
       session->url = strdup(uri);
       /* do we want to do anything with httpType? */
       free(line);

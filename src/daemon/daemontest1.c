@@ -21,7 +21,7 @@
 /**
  * @file daemontest1.c
  * @brief  Testcase for libmicrohttpd GET operations
- *         TODO: external select
+ *         TODO: external select, parsing of query
  * @author Christian Grothoff
  */
 
