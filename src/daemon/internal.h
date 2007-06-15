@@ -40,6 +40,7 @@
 #include <signal.h>
 
 #include "config.h"
+#include "plibc.h"
 #include "microhttpd.h"
 
 #ifndef MINGW
