@@ -32,18 +32,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <pthread.h>
-#include <netinet/in.h>
 
-#include "microhttpd.h"
 #include "config.h"
+#include "microhttpd.h"
+
+#ifndef MINGW
+#include <netdb.h>
+#include <netinet/in.h>
+#endif
+
+#include <pthread.h>
 
 #define MHD_MAX_BUF_SIZE 2048
 

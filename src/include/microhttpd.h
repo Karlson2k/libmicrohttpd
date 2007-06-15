@@ -47,8 +47,12 @@
 #define MHD_MICROHTTPD_H
 
 #include <sys/types.h>
+#ifndef MINGW
 #include <sys/select.h>
 #include <sys/socket.h>
+#else
+#include "plibc.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

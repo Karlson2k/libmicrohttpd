@@ -561,6 +561,8 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
   free(daemon);
 }
 
+#ifndef WINDOWS
+
 static struct sigaction sig;
 
 static struct sigaction old;
@@ -583,5 +585,7 @@ void __attribute__ ((constructor)) pthread_handlers_ltdl_init() {
 void __attribute__ ((destructor)) pthread_handlers_ltdl_fini() {
   sigaction(SIGALRM, &old, &sig);
 }
+
+#endif
 
 /* end of daemon.c */

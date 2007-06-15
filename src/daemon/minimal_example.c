@@ -27,7 +27,9 @@
 #include "config.h"
 #include <microhttpd.h>
 #include <stdlib.h>
+#ifndef MINGW
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 
