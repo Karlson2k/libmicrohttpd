@@ -41,7 +41,7 @@ void MHD_DLOG(const struct MHD_Daemon * daemon,
   if ( (daemon->options & MHD_USE_DEBUG) == 0)
     return;
   va_start(va, format);
-  vfprintf(stderr, format, va);
+  VFPRINTF(stderr, format, va);
   va_end(va);
 }
 

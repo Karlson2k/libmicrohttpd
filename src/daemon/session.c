@@ -184,7 +184,7 @@ MHD_get_next_header_line(struct MHD_Session * session) {
 	MHD_DLOG(session->daemon,
 		 "Received excessively long header line (>%u), closing connection.\n",
 		 4 * MHD_MAX_BUF_SIZE);
-	close(session->socket_fd);
+	CLOSE(session->socket_fd);
 	session->socket_fd = -1;
       }
     }
@@ -345,7 +345,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
   /* FIXME: here: find cookie header and parse that! */
   return;
  DIE:
-  close(session->socket_fd);
+  CLOSE(session->socket_fd);
   session->socket_fd = -1;
 }
 
@@ -389,7 +389,7 @@ MHD_call_session_handler(struct MHD_Session * session) {
     /* serios internal error, close connection */
     MHD_DLOG(session->daemon,
 	     "Internal application error, closing connection.");
-    close(session->socket_fd);
+    CLOSE(session->socket_fd);
     session->socket_fd = -1;
     return;
   }
@@ -439,7 +439,7 @@ MHD_session_handle_read(struct MHD_Session * session) {
 	     __FUNCTION__);
     return MHD_NO; 
   }
-  bytes_read = recv(session->socket_fd,
+  bytes_read = RECV(session->socket_fd,
 		    &session->read_buffer[session->readLoc],
 		    session->read_buffer_size - session->readLoc,
 		    0);
@@ -448,8 +448,8 @@ MHD_session_handle_read(struct MHD_Session * session) {
       return MHD_NO;
     MHD_DLOG(session->daemon,
 	     "Failed to receive data: %s\n",
-	     strerror(errno));
-    close(session->socket_fd);
+	     STRERROR(errno));
+    CLOSE(session->socket_fd);
     session->socket_fd = -1;
     return MHD_YES;
   }
@@ -458,7 +458,7 @@ MHD_session_handle_read(struct MHD_Session * session) {
     /* FIXME: proper handling of end of upload!
        If we were receiving an unbounded upload,
        we should finish up nicely now! */
-    close(session->socket_fd);
+    CLOSE(session->socket_fd);
     session->socket_fd = -1;
     return MHD_YES;
   }
@@ -488,7 +488,7 @@ MHD_add_extra_headers(struct MHD_Session * session) {
 			      "close");
   } else if (NULL == MHD_get_response_header(session->response,
 					     "Content-length")) {
-    snprintf(buf,
+    SNPRINTF(buf,
 	     128,
 	     "%llu",
 	     (unsigned long long) session->response->total_size);
@@ -512,7 +512,7 @@ MHD_build_header_response(struct MHD_Session * session) {
   char * data;
 
   MHD_add_extra_headers(session);
-  sprintf(code,
+  SPRINTF(code,
 	  "HTTP/1.1 %u\r\n", 
 	  session->responseCode);
   off = strlen(code);
@@ -530,7 +530,7 @@ MHD_build_header_response(struct MHD_Session * session) {
 	 off);
   pos = session->response->first_header;
   while (pos != NULL) {
-    sprintf(&data[off],
+    SPRINTF(&data[off],
 	    "%s: %s\r\n",
 	    pos->header,
 	    pos->value);
@@ -567,7 +567,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
   if (! session->headersSent) {
     if (session->write_buffer == NULL)
       MHD_build_header_response(session);
-    ret = send(session->socket_fd, 
+    ret = SEND(session->socket_fd, 
 	       &session->write_buffer[session->writeLoc],
 	       session->write_buffer_size - session->writeLoc,
 	       0);
@@ -576,8 +576,8 @@ MHD_session_handle_write(struct MHD_Session * session) {
 	return MHD_YES;
       MHD_DLOG(session->daemon,
 	       "Failed to send data: %s\n",
-	       strerror(errno));
-      close(session->socket_fd);
+	       STRERROR(errno));
+      CLOSE(session->socket_fd);
       session->socket_fd = -1;
       return MHD_YES;
     }
@@ -614,7 +614,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
     if (ret == -1) {
       /* end of message, signal other side by closing! */
       response->data_size = session->messagePos;
-      close(session->socket_fd);
+      CLOSE(session->socket_fd);
       session->socket_fd = -1;
       return MHD_YES;
     }
@@ -625,7 +625,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
   }
   
   /* transmit */
-  ret = send(session->socket_fd, 
+  ret = SEND(session->socket_fd, 
 	     &response->data[session->messagePos - response->data_start],
 	     response->data_size - (session->messagePos - response->data_start),
 	     0);
@@ -636,8 +636,8 @@ MHD_session_handle_write(struct MHD_Session * session) {
       return MHD_YES;
     MHD_DLOG(session->daemon,
 	     "Failed to send data: %s\n",
-	     strerror(errno));
-    close(session->socket_fd);
+	     STRERROR(errno));
+    CLOSE(session->socket_fd);
     session->socket_fd = -1;
     return MHD_YES;
   }

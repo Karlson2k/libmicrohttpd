@@ -174,7 +174,7 @@ MHD_handle_connection(void * data) {
 			  &ws,
 			  &es,
 			  &max);
-    num_ready = select(max + 1,
+    num_ready = SELECT(max + 1,
 		       &rs, 
 		       &ws,
 		       &es, 
@@ -192,7 +192,7 @@ MHD_handle_connection(void * data) {
       break;
   } 
   if (con->socket_fd != -1) {
-    close(con->socket_fd);
+    CLOSE(con->socket_fd);
     con->socket_fd = -1;
   }
   return NULL;
@@ -215,20 +215,20 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
   memset(&addr, 
 	 0,
 	 sizeof(struct sockaddr));
-  s = accept(daemon->socket_fd, 
+  s = ACCEPT(daemon->socket_fd, 
 	     &addr,
 	     &addrlen);
   if ( (s < 0) ||
        (addrlen <= 0) ) {
     MHD_DLOG(daemon,
 	     "Error accepting connection: %s\n",
-	     strerror(errno));
+	     STRERROR(errno));
     return MHD_NO;
   }
   if (MHD_NO == daemon->apc(daemon->apc_cls,
 			    &addr,
 			    addrlen)) {
-    close(s);
+    CLOSE(s);
     return MHD_YES;
   }
   session = malloc(sizeof(struct MHD_Session));
@@ -249,9 +249,9 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 			    session)) ) {
     MHD_DLOG(daemon,
 	     "Failed to create a thread: %s\n",
-	     strerror(errno));
+	     STRERROR(errno));
     free(session->addr);
-    close(s);
+    CLOSE(s);
     free(session);
     return MHD_NO;
   }
@@ -367,7 +367,7 @@ MHD_select(struct MHD_Daemon * daemon,
     max = daemon->socket_fd;
     FD_SET(daemon->socket_fd, &rs);
   }
-  num_ready = select(max + 1,
+  num_ready = SELECT(max + 1,
 		     &rs,
 		     &ws,
 		     &es,
@@ -377,7 +377,7 @@ MHD_select(struct MHD_Daemon * daemon,
       return MHD_YES;
     MHD_DLOG(daemon,
 	     "Select failed: %s\n",
-	     strerror(errno));
+	     STRERROR(errno));
     return MHD_NO;    
   }
   ds = daemon->socket_fd;
@@ -472,12 +472,12 @@ MHD_start_daemon(unsigned int options,
   if ( (port == 0) ||
        (dh == NULL) )
     return NULL;
-  socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+  socket_fd = SOCKET(AF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     if ((options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
 	      "Call to socket failed: %s\n",
-	      strerror(errno));
+	      STRERROR(errno));
     return NULL;
   }
   /* FIXME: setsockopt: SO_REUSEADDR? */
@@ -486,23 +486,23 @@ MHD_start_daemon(unsigned int options,
 	 sizeof(struct sockaddr_in));  
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons(port);
-  if (bind(socket_fd, 
+  if (BIND(socket_fd, 
 	   (struct sockaddr *)&servaddr, 
 	   sizeof(struct sockaddr_in)) < 0) {
     if ( (options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
 	      "Failed to bind to port %u: %s\n",
 	      port,
-	      strerror(errno));
-    close(socket_fd);
+	      STRERROR(errno));
+    CLOSE(socket_fd);
     return NULL;
   }	
-  if (listen(socket_fd, 20) < 0) {
+  if (LISTEN(socket_fd, 20) < 0) {
     if ((options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
 	      "Failed to listen for connections: %s\n",
-	      strerror(errno));
-    close(socket_fd);
+	      STRERROR(errno));
+    CLOSE(socket_fd);
     return NULL;	 
   }	
   retVal = malloc(sizeof(struct MHD_Daemon));
@@ -526,9 +526,9 @@ MHD_start_daemon(unsigned int options,
 			    retVal)) ) {
     MHD_DLOG(retVal,
 	     "Failed to create listen thread: %s\n",
-	     strerror(errno));
+	     STRERROR(errno));
     free(retVal);
-    close(socket_fd);
+    CLOSE(socket_fd);
     return NULL;    
   }
   return retVal;
@@ -544,7 +544,7 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
   if (daemon == NULL) 
     return; 
   daemon->shutdown = 1;
-  close(daemon->socket_fd);
+  CLOSE(daemon->socket_fd);
   daemon->socket_fd = -1;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||       
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) ) {
@@ -553,7 +553,7 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
   }
   while (daemon->connections != NULL) {
     if (-1 != daemon->connections->socket_fd) {
-      close(daemon->connections->socket_fd);
+      CLOSE(daemon->connections->socket_fd);
       daemon->connections->socket_fd = -1;
     }
     MHD_cleanup_sessions(daemon);
