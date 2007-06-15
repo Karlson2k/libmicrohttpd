@@ -488,7 +488,7 @@ MHD_add_extra_headers(struct MHD_Session * session) {
 			      "close");
   } else if (NULL == MHD_get_response_header(session->response,
 					     "Content-length")) {
-    SNPRINTF(buf,
+    _REAL_SNPRINTF(buf,
 	     128,
 	     "%llu",
 	     (unsigned long long) session->response->total_size);
