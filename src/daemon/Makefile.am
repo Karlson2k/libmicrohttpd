@@ -7,8 +7,6 @@ lib_LTLIBRARIES = \
 
 libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 0:0:0 
-# libmicrohttpd_la_LIBADD = \
-#  -lm
 libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \

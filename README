@@ -5,9 +5,9 @@ things need to be implemented (in list of importance)
 before certain features can be used at all:
 
 
-For PUT/POST:
-=============
-testing!
+For POST:
+=========
+- Decoding of POST data, testing thereof
 
 For http-compliance:
 ====================
