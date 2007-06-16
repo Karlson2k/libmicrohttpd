@@ -190,6 +190,9 @@ MHD_handle_connection(void * data) {
 	   (FD_ISSET(con->socket_fd, &ws)) &&
 	   (MHD_YES != MHD_session_handle_write(con)) ) )
       break;
+    if ( (con->headersReceived == 1) &&
+	 (con->response == NULL) )
+      MHD_call_session_handler(con);
   } 
   if (con->socket_fd != -1) {
     CLOSE(con->socket_fd);
