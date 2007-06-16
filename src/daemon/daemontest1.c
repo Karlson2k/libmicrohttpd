@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 static int apc_all(void * cls,
 		   const struct sockaddr * addr,
@@ -209,6 +210,152 @@ static int testMultithreadedGet() {
   return 0;
 }
 
+
+static int testExternalGet() {
+  struct MHD_Daemon * d;
+  CURL * c;
+  char buf[2048];
+  struct CBC cbc;
+  CURLM * multi;
+  CURLMcode mret;
+  fd_set rs;
+  fd_set ws;
+  fd_set es;
+  int max;
+  int running;
+  struct CURLMsg * msg;
+  time_t start;
+  struct timeval tv;
+
+  multi = NULL;
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG,
+		       1082,
+		       &apc_all,
+		       NULL,
+		       &ahc_echo,
+		       "GET");
+  if (d == NULL)
+    return 256;
+  c = curl_easy_init();
+  curl_easy_setopt(c,
+		   CURLOPT_URL,
+		   "http://localhost:1082/hello_world");
+  curl_easy_setopt(c,
+		   CURLOPT_WRITEFUNCTION,
+		   &copyBuffer);
+  curl_easy_setopt(c,
+		   CURLOPT_WRITEDATA,
+		   &cbc);
+  curl_easy_setopt(c,
+		   CURLOPT_FAILONERROR,
+		   1);
+  curl_easy_setopt(c,
+		   CURLOPT_TIMEOUT,
+		   5L);
+  curl_easy_setopt(c,
+		   CURLOPT_CONNECTTIMEOUT,
+		   5L);
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
+  curl_easy_setopt(c,
+		   CURLOPT_NOSIGNAL,
+		   1);  
+
+
+  multi = curl_multi_init();
+  if (multi == NULL) {
+    curl_easy_cleanup(c);  
+    MHD_stop_daemon(d);  
+    return 512;
+  }
+  mret = curl_multi_add_handle(multi, c);
+  if (mret != CURLM_OK) {
+    curl_multi_cleanup(multi);
+    curl_easy_cleanup(c);  
+    MHD_stop_daemon(d);  
+    return 1024;
+  }
+  start = time(NULL);
+  while ( (time(NULL) - start < 5) &&
+	  (multi != NULL) ) {
+    max = 0;
+    FD_ZERO(&rs);
+    FD_ZERO(&ws);
+    FD_ZERO(&es);
+    curl_multi_perform(multi, &running);
+    mret = curl_multi_fdset(multi,
+			    &rs,
+			    &ws,
+			    &es,
+			    &max);
+    if (mret != CURLM_OK) {
+      curl_multi_remove_handle(multi, c);
+      curl_multi_cleanup(multi);
+      curl_easy_cleanup(c);  
+      MHD_stop_daemon(d);  
+      return 2048;    
+    }
+    if (MHD_YES != MHD_get_fdset(d,
+				 &rs,
+				 &ws,
+				 &es,
+				 &max)) {
+      curl_multi_remove_handle(multi, c);
+      curl_multi_cleanup(multi);
+      curl_easy_cleanup(c);        
+      MHD_stop_daemon(d);  
+      return 4096;
+    }
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000;
+    select(max + 1,
+	   &rs,
+	   &ws,
+	   &es,
+	   &tv);  
+    curl_multi_perform(multi, &running);
+    if (running == 0) {
+      msg = curl_multi_info_read(multi,
+				 &running);
+      if (msg == NULL)
+	break;
+      if (msg->msg == CURLMSG_DONE) {
+	if (msg->data.result != CURLE_OK)
+	  printf("%s failed at %s:%d: `%s'\n",
+		 "curl_multi_perform",
+		 __FILE__,
+		 __LINE__,
+		 curl_easy_strerror(msg->data.result));
+	curl_multi_remove_handle(multi, c);
+	curl_multi_cleanup(multi);
+	curl_easy_cleanup(c);
+	c = NULL;
+	multi = NULL;
+      }
+    }	
+    MHD_run(d);
+  }
+  if (multi != NULL) {
+    curl_multi_remove_handle(multi, c);
+    curl_easy_cleanup(c);  
+    curl_multi_cleanup(multi);
+  }
+  MHD_stop_daemon(d);
+  if (cbc.pos != strlen("/hello_world")) 
+    return 8192;
+  if (0 != strncmp("/hello_world",
+		   cbc.buf,
+		   strlen("/hello_world"))) 
+    return 16384;
+  return 0;
+}
+
+
+
 int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
@@ -217,6 +364,7 @@ int main(int argc,
     return 2;  
   errorCount += testInternalGet();
   errorCount += testMultithreadedGet();  
+  errorCount += testExternalGet();
   if (errorCount != 0)
     fprintf(stderr, 
 	    "Error (code: %u)\n", 

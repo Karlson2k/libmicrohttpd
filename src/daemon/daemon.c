@@ -383,8 +383,8 @@ MHD_select(struct MHD_Daemon * daemon,
   if (ds == -1)
     return MHD_YES;
   if (FD_ISSET(ds,
-	       &rs))
-    MHD_accept_connection(daemon);  
+	       &rs)) 
+    MHD_accept_connection(daemon);    
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) {
     /* do not have a thread per connection, process all connections now */
     pos = daemon->connections;

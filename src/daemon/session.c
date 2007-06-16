@@ -506,7 +506,6 @@ MHD_session_handle_read(struct MHD_Session * session) {
   int bytes_read;
   void * tmp;
  
-
   if ( (session->readLoc >= session->read_buffer_size) &&
        (session->headersReceived == 0) ) {
     /* need to grow read buffer */
