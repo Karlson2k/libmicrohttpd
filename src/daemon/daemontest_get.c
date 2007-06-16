@@ -125,18 +125,18 @@ static int testInternalGet() {
   //   crashes on my system!
   curl_easy_setopt(c,
 		   CURLOPT_NOSIGNAL,
-		   1);  
+		   1);
   if (CURLE_OK != curl_easy_perform(c)) {
-    curl_easy_cleanup(c);  
-    MHD_stop_daemon(d);  
+    curl_easy_cleanup(c);
+    MHD_stop_daemon(d);
     return 2;
-  }    
-  curl_easy_cleanup(c);  
+  }
+  curl_easy_cleanup(c);
   if (cbc.pos != strlen("/hello_world")) {
     MHD_stop_daemon(d);
     return 4;
   }
-  
+
   if (0 != strncmp("/hello_world",
 		   cbc.buf,
 		   strlen("/hello_world"))) {
@@ -144,7 +144,7 @@ static int testInternalGet() {
     return 8;
   }
   MHD_stop_daemon(d);
-  
+
   return 0;
 }
 
@@ -189,16 +189,16 @@ static int testMultithreadedGet() {
   //   crashes on my system!
   curl_easy_setopt(c,
 		   CURLOPT_NOSIGNAL,
-		   1);  
+		   1);
   if (CURLE_OK != curl_easy_perform(c)) {
-    MHD_stop_daemon(d);  
+    MHD_stop_daemon(d);
     return 32;
   }
   curl_easy_cleanup(c);
   if (cbc.pos != strlen("/hello_world")) {
-    MHD_stop_daemon(d);  
+    MHD_stop_daemon(d);
     return 64;
-  }  
+  }
   if (0 != strncmp("/hello_world",
 		   cbc.buf,
 		   strlen("/hello_world"))) {
@@ -206,7 +206,7 @@ static int testMultithreadedGet() {
     return 128;
   }
   MHD_stop_daemon(d);
-  
+
   return 0;
 }
 
@@ -263,20 +263,20 @@ static int testExternalGet() {
   //   crashes on my system!
   curl_easy_setopt(c,
 		   CURLOPT_NOSIGNAL,
-		   1);  
+		   1);
 
 
   multi = curl_multi_init();
   if (multi == NULL) {
-    curl_easy_cleanup(c);  
-    MHD_stop_daemon(d);  
+    curl_easy_cleanup(c);
+    MHD_stop_daemon(d);
     return 512;
   }
   mret = curl_multi_add_handle(multi, c);
   if (mret != CURLM_OK) {
     curl_multi_cleanup(multi);
-    curl_easy_cleanup(c);  
-    MHD_stop_daemon(d);  
+    curl_easy_cleanup(c);
+    MHD_stop_daemon(d);
     return 1024;
   }
   start = time(NULL);
@@ -295,9 +295,9 @@ static int testExternalGet() {
     if (mret != CURLM_OK) {
       curl_multi_remove_handle(multi, c);
       curl_multi_cleanup(multi);
-      curl_easy_cleanup(c);  
-      MHD_stop_daemon(d);  
-      return 2048;    
+      curl_easy_cleanup(c);
+      MHD_stop_daemon(d);
+      return 2048;
     }
     if (MHD_YES != MHD_get_fdset(d,
 				 &rs,
@@ -306,8 +306,8 @@ static int testExternalGet() {
 				 &max)) {
       curl_multi_remove_handle(multi, c);
       curl_multi_cleanup(multi);
-      curl_easy_cleanup(c);        
-      MHD_stop_daemon(d);  
+      curl_easy_cleanup(c);
+      MHD_stop_daemon(d);
       return 4096;
     }
     tv.tv_sec = 0;
@@ -316,7 +316,7 @@ static int testExternalGet() {
 	   &rs,
 	   &ws,
 	   &es,
-	   &tv);  
+	   &tv);
     curl_multi_perform(multi, &running);
     if (running == 0) {
       msg = curl_multi_info_read(multi,
@@ -341,15 +341,15 @@ static int testExternalGet() {
   }
   if (multi != NULL) {
     curl_multi_remove_handle(multi, c);
-    curl_easy_cleanup(c);  
+    curl_easy_cleanup(c);
     curl_multi_cleanup(multi);
   }
   MHD_stop_daemon(d);
-  if (cbc.pos != strlen("/hello_world")) 
+  if (cbc.pos != strlen("/hello_world"))
     return 8192;
   if (0 != strncmp("/hello_world",
 		   cbc.buf,
-		   strlen("/hello_world"))) 
+		   strlen("/hello_world")))
     return 16384;
   return 0;
 }
@@ -360,14 +360,14 @@ int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
 
-  if (0 != curl_global_init(CURL_GLOBAL_WIN32)) 
-    return 2;  
+  if (0 != curl_global_init(CURL_GLOBAL_WIN32))
+    return 2;
   errorCount += testInternalGet();
-  errorCount += testMultithreadedGet();  
+  errorCount += testMultithreadedGet();
   errorCount += testExternalGet();
   if (errorCount != 0)
-    fprintf(stderr, 
-	    "Error (code: %u)\n", 
+    fprintf(stderr,
+	    "Error (code: %u)\n",
 	    errorCount);
   curl_global_cleanup();
   return errorCount != 0; /* 0 == pass */

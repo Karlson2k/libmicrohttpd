@@ -29,26 +29,26 @@
 #include "response.h"
 #include "session.h"
 
-#define MHD_MAX_CONNECTIONS FD_SETSIZE -4 
+#define MHD_MAX_CONNECTIONS FD_SETSIZE -4
 
 
 /**
  * Register an access handler for all URIs beginning with uri_prefix.
  *
- * @param uri_prefix 
+ * @param uri_prefix
  * @return MRI_NO if a handler for this exact prefix
  *         already exists
  */
-int 
+int
 MHD_register_handler(struct MHD_Daemon * daemon,
 		     const char * uri_prefix,
 		     MHD_AccessHandlerCallback dh,
 		     void * dh_cls) {
   struct MHD_Access_Handler * ah;
 
-  if ( (daemon == NULL) || 
+  if ( (daemon == NULL) ||
        (uri_prefix == NULL) ||
-       (dh == NULL) ) 
+       (dh == NULL) )
     return MHD_NO;	
   ah = daemon->handlers;
   while (ah != NULL) {
@@ -71,11 +71,11 @@ MHD_register_handler(struct MHD_Daemon * daemon,
  * Unregister an access handler for the URIs beginning with
  * uri_prefix.
  *
- * @param uri_prefix 
+ * @param uri_prefix
  * @return MHD_NO if a handler for this exact prefix
  *         is not known for this daemon
  */
-int 
+int
 MHD_unregister_handler(struct MHD_Daemon * daemon,
 		       const char * uri_prefix,
 		       MHD_AccessHandlerCallback dh,
@@ -83,9 +83,9 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
   struct MHD_Access_Handler * prev;
   struct MHD_Access_Handler * pos;
 
-  if ( (daemon == NULL) || 
+  if ( (daemon == NULL) ||
        (uri_prefix == NULL) ||
-       (dh == NULL) ) 
+       (dh == NULL) )
     return MHD_NO;	
   pos = daemon->handlers;
   prev = NULL;
@@ -114,7 +114,7 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
  *         daemon was not started with the right
  *         options for this call.
  */
-int 
+int
 MHD_get_fdset(struct MHD_Daemon * daemon,
 	      fd_set * read_fd_set,
 	      fd_set * write_fd_set,
@@ -123,13 +123,13 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
   struct MHD_Session * pos;
 
   if ( (daemon == NULL) ||
-       (read_fd_set == NULL) || 
+       (read_fd_set == NULL) ||
        (write_fd_set == NULL) ||
        (except_fd_set == NULL) ||
        (max_fd == NULL) ||
        ( (daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0) )
     return MHD_NO;	
-  FD_SET(daemon->socket_fd, 
+  FD_SET(daemon->socket_fd,
 	 read_fd_set);
   if ( (*max_fd) < daemon->socket_fd)
     *max_fd = daemon->socket_fd;
@@ -159,14 +159,14 @@ MHD_handle_connection(void * data) {
   fd_set ws;
   fd_set es;
   int max;
-  
+
   if (con == NULL)
     abort();
   while ( (! con->daemon->shutdown) &&
-	  (con->socket_fd != -1) ) {    
+	  (con->socket_fd != -1) ) {
     FD_ZERO(&rs);
-    FD_ZERO(&ws);    
-    FD_ZERO(&es);    
+    FD_ZERO(&ws);
+    FD_ZERO(&es);
     max = 0;
     MHD_session_get_fdset(con,
 			  &rs,
@@ -174,9 +174,9 @@ MHD_handle_connection(void * data) {
 			  &es,
 			  &max);
     num_ready = SELECT(max + 1,
-		       &rs, 
+		       &rs,
 		       &ws,
-		       &es, 
+		       &es,
 		       NULL);
     if (num_ready <= 0) {
       if (errno == EINTR)
@@ -192,7 +192,7 @@ MHD_handle_connection(void * data) {
     if ( (con->headersReceived == 1) &&
 	 (con->response == NULL) )
       MHD_call_session_handler(con);
-  } 
+  }
   if (con->socket_fd != -1) {
     CLOSE(con->socket_fd);
     con->socket_fd = -1;
@@ -214,10 +214,10 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
   int s;
 
   addrlen = sizeof(struct sockaddr);
-  memset(&addr, 
+  memset(&addr,
 	 0,
 	 sizeof(struct sockaddr));
-  s = ACCEPT(daemon->socket_fd, 
+  s = ACCEPT(daemon->socket_fd,
 	     &addr,
 	     &addrlen);
   if ( (s < 0) ||
@@ -246,8 +246,8 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
   session->daemon = daemon;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) ) &&
        (0 != pthread_create(&session->pid,
-			    NULL, 
-			    &MHD_handle_connection, 
+			    NULL,
+			    &MHD_handle_connection,
 			    session)) ) {
     MHD_DLOG(daemon,
 	     "Failed to create a thread: %s\n",
@@ -273,7 +273,7 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
  * calling the application again with upload data when
  * the upload data buffer is full).
  */
-static void 
+static void
 MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
   struct MHD_Session * pos;
   struct MHD_Session * prev;
@@ -316,14 +316,14 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
       else
 	pos = prev->next;
       continue;
-    } 
+    }
 
     if ( (pos->headersReceived == 1) &&
 	 (pos->response == NULL) )
       MHD_call_session_handler(pos);
-    
+
     prev = pos;
-    pos = pos->next;    
+    pos = pos->next;
   }
 }
 
@@ -345,14 +345,14 @@ MHD_select(struct MHD_Daemon * daemon,
   int max;
   struct timeval timeout;
   int ds;
-  
+
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-  if(daemon == NULL) 
+  if(daemon == NULL)
     abort();
   FD_ZERO(&rs);
-  FD_ZERO(&ws);    
-  FD_ZERO(&es);      
+  FD_ZERO(&ws);
+  FD_ZERO(&es);
   max = 0;
 
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) {
@@ -372,21 +372,21 @@ MHD_select(struct MHD_Daemon * daemon,
 		     &rs,
 		     &ws,
 		     &es,
-		     may_block == MHD_NO ? &timeout : NULL);  
-  if (num_ready < 0) {    
+		     may_block == MHD_NO ? &timeout : NULL);
+  if (num_ready < 0) {
     if (errno == EINTR)
       return MHD_YES;
     MHD_DLOG(daemon,
 	     "Select failed: %s\n",
 	     STRERROR(errno));
-    return MHD_NO;    
+    return MHD_NO;
   }
   ds = daemon->socket_fd;
   if (ds == -1)
     return MHD_YES;
   if (FD_ISSET(ds,
-	       &rs)) 
-    MHD_accept_connection(daemon);    
+	       &rs))
+    MHD_accept_connection(daemon);
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) {
     /* do not have a thread per connection, process all connections now */
     pos = daemon->connections;
@@ -396,7 +396,7 @@ MHD_select(struct MHD_Daemon * daemon,
 	pos = pos->next;
 	continue;
       }
-      if (FD_ISSET(ds, &rs)) 
+      if (FD_ISSET(ds, &rs))
 	MHD_session_handle_read(pos);
       if (FD_ISSET(ds, &ws))
 	MHD_session_handle_write(pos);
@@ -411,7 +411,7 @@ MHD_select(struct MHD_Daemon * daemon,
  * Run webserver operations (without blocking unless
  * in client callbacks).  This method should be called
  * by clients in combination with MHD_get_fdset
- * if the client-controlled select method is used. 
+ * if the client-controlled select method is used.
  *
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
@@ -466,12 +466,12 @@ MHD_start_daemon(unsigned int options,
   int socket_fd;
   struct sockaddr_in servaddr;	
 
-  if ((options & MHD_USE_SSL) != 0) 
-    return NULL;   
-  if ((options & MHD_USE_IPv6) != 0) 
-    return NULL;  
-  if ((options & MHD_USE_IPv4) == 0) 
-    return NULL;  
+  if ((options & MHD_USE_SSL) != 0)
+    return NULL;
+  if ((options & MHD_USE_IPv6) != 0)
+    return NULL;
+  if ((options & MHD_USE_IPv4) == 0)
+    return NULL;
   if ( (port == 0) ||
        (dh == NULL) )
     return NULL;
@@ -486,11 +486,11 @@ MHD_start_daemon(unsigned int options,
   /* FIXME: setsockopt: SO_REUSEADDR? */
   memset(&servaddr,
 	 0,
-	 sizeof(struct sockaddr_in));  
+	 sizeof(struct sockaddr_in));
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons(port);
-  if (BIND(socket_fd, 
-	   (struct sockaddr *)&servaddr, 
+  if (BIND(socket_fd,
+	   (struct sockaddr *)&servaddr,
 	   sizeof(struct sockaddr_in)) < 0) {
     if ( (options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
@@ -506,7 +506,7 @@ MHD_start_daemon(unsigned int options,
 	      "Failed to listen for connections: %s\n",
 	      STRERROR(errno));
     CLOSE(socket_fd);
-    return NULL;	 
+    return NULL;	
   }	
   retVal = malloc(sizeof(struct MHD_Daemon));
   memset(retVal,
@@ -524,15 +524,15 @@ MHD_start_daemon(unsigned int options,
   if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
 	 (0 != (options & MHD_USE_SELECT_INTERNALLY)) ) &&
        (0 != pthread_create(&retVal->pid,
-			    NULL, 
-			    &MHD_select_thread, 
+			    NULL,
+			    &MHD_select_thread,
 			    retVal)) ) {
     MHD_DLOG(retVal,
 	     "Failed to create listen thread: %s\n",
 	     STRERROR(errno));
     free(retVal);
     CLOSE(socket_fd);
-    return NULL;    
+    return NULL;
   }
   return retVal;
 }
@@ -544,12 +544,12 @@ void
 MHD_stop_daemon(struct MHD_Daemon * daemon) {	
   void * unused;
 
-  if (daemon == NULL) 
-    return; 
+  if (daemon == NULL)
+    return;
   daemon->shutdown = 1;
   CLOSE(daemon->socket_fd);
   daemon->socket_fd = -1;
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||       
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) ) {
     pthread_kill(daemon->pid, SIGALRM);
     pthread_join(daemon->pid, &unused);

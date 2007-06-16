@@ -38,11 +38,11 @@ MHD_add_response_header(struct MHD_Response * response,
 			const char * header,
 			const char * content) {
   struct MHD_HTTP_Header * hdr;
-  
-  if ( (response == NULL) || 
-       (header == NULL) || 
+
+  if ( (response == NULL) ||
+       (header == NULL) ||
        (content == NULL) ||
-       (strlen(header) == 0) || 
+       (strlen(header) == 0) ||
        (strlen(content) == 0) ||
        (NULL != strstr(header, "\t")) ||
        (NULL != strstr(header, "\r")) ||
@@ -72,14 +72,14 @@ MHD_del_response_header(struct MHD_Response * response,
   struct MHD_HTTP_Header * pos;
   struct MHD_HTTP_Header * prev;
 
-  if ( (header == NULL) || 
-       (content == NULL) ) 
-    return MHD_NO;       
+  if ( (header == NULL) ||
+       (content == NULL) )
+    return MHD_NO;
   prev = NULL;
   pos = response->first_header;
   while (pos != NULL) {
-    if ( (0 == strcmp(header, pos->header)) &&	  
-	 (0 == strcmp(content, pos->value)) ) {      
+    if ( (0 == strcmp(header, pos->header)) &&	
+	 (0 == strcmp(content, pos->value)) ) {
       free(pos->header);
       free(pos->value);
       if (prev == NULL)
@@ -102,7 +102,7 @@ MHD_del_response_header(struct MHD_Response * response,
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
- */ 
+ */
 int
 MHD_get_response_headers(struct MHD_Response * response,
 			 MHD_KeyValueIterator iterator,
@@ -129,7 +129,7 @@ MHD_get_response_headers(struct MHD_Response * response,
  *
  * @param key which header to get
  * @return NULL if header does not exist
- */ 
+ */
 const char *
 MHD_get_response_header(struct MHD_Response * response,
 			const char * key) {
@@ -162,7 +162,7 @@ MHD_create_response_from_callback(size_t size,
 				  MHD_ContentReaderFreeCallback crfc) {
   struct MHD_Response * retVal;
 
-  if (crc == NULL) 
+  if (crc == NULL)
     return NULL;
   retVal = malloc(sizeof(struct MHD_Response));
   memset(retVal,
@@ -187,7 +187,7 @@ MHD_create_response_from_callback(size_t size,
  * @param size size of the data portion of the response
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
- * @param must_copy libmicrohttpd must make a copy of data 
+ * @param must_copy libmicrohttpd must make a copy of data
  *        right away, the data maybe released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
@@ -199,7 +199,7 @@ MHD_create_response_from_data(size_t size,
 			      int must_copy) {
   struct MHD_Response * retVal;
   void * tmp;
-  
+
   if ( (data == NULL) &&
        (size > 0) )
     return NULL;
@@ -215,11 +215,11 @@ MHD_create_response_from_data(size_t size,
        (size > 0) ) {
     tmp = malloc(size);
     memcpy(tmp,
-	   data, 
+	   data,
 	   size);
     must_free = 1;
     data = tmp;
-  } 
+  }
   retVal->crc = NULL;
   retVal->crfc = must_free ? &free : NULL;
   retVal->crc_cls = must_free ? data : NULL;
@@ -240,10 +240,10 @@ void
 MHD_destroy_response(struct MHD_Response * response) {
   struct MHD_HTTP_Header * pos;
 
-  if (response == NULL) 
+  if (response == NULL)
     return;	
   pthread_mutex_lock(&response->mutex);
-  if (0 != --response->reference_count) { 
+  if (0 != --response->reference_count) {
     pthread_mutex_unlock(&response->mutex);
     return;
   }
@@ -252,7 +252,7 @@ MHD_destroy_response(struct MHD_Response * response) {
   if (response->crfc != NULL)
     response->crfc(response->crc_cls);
   while (response->first_header != NULL) {
-    pos = response->first_header;    
+    pos = response->first_header;
     response->first_header = pos->next;
     free(pos->header);
     free(pos->value);

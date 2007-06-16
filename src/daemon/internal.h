@@ -90,7 +90,7 @@ struct MHD_Access_Handler {
 
 /**
  * Representation of a response.
- */ 
+ */
 struct MHD_Response {
 
   /**
@@ -109,9 +109,9 @@ struct MHD_Response {
   /**
    * Closure to give to the content reader
    * free callback.
-   */ 
+   */
   void * crc_cls;
- 
+
   /**
    * How do we get more data?  NULL if we are
    * given all of the data up front.
@@ -135,7 +135,7 @@ struct MHD_Response {
    * once the counter hits zero.
    */
   unsigned int reference_count;
-  
+
   /**
    * Set to -1 if size is not known.
    */
@@ -151,7 +151,7 @@ struct MHD_Response {
    * beginning of data located?
    */
   size_t data_start;
-  
+
 };
 
 
@@ -162,7 +162,7 @@ struct MHD_Session {
   struct MHD_Daemon * daemon;
 
   struct MHD_HTTP_Header * headers_received;
-  
+
   struct MHD_Response * response;
 
   /**
@@ -184,7 +184,7 @@ struct MHD_Session {
    * Buffer for writing response.
    */
   char * write_buffer;
-  
+
   /**
    * Foreign address (of length addr_len).
    */
@@ -237,19 +237,19 @@ struct MHD_Session {
    * we are done sending our response.
    */
   int read_close;
-  
+
   /**
    * Have we finished receiving all of the headers yet?
    * Set to 1 once we are done processing all of the
    * headers.  Note that due to pipelining, it is
-   * possible that the NEXT request is already 
+   * possible that the NEXT request is already
    * (partially) waiting in the read buffer.
    */
   int headersReceived;
 
   /**
    * Have we finished receiving the data from a
-   * potential file-upload? 
+   * potential file-upload?
    */
   int bodyReceived;
 
@@ -275,7 +275,7 @@ struct MHD_Daemon {
   struct MHD_Access_Handler default_handler;
 
   struct MHD_Session * connections;
-  
+
   MHD_AcceptPolicyCallback apc;
 
   void * apc_cls;

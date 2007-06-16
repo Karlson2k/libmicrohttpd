@@ -34,7 +34,7 @@
  *
  * @return MHD_YES on success
  */
-int 
+int
 MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * read_fd_set,
 		      fd_set * write_fd_set,
@@ -44,7 +44,7 @@ MHD_session_get_fdset(struct MHD_Session * session,
 
 /**
  * Call the handler of the application for this
- * session. 
+ * session.
  */
 void
 MHD_call_session_handler(struct MHD_Session * session);
@@ -53,11 +53,11 @@ MHD_call_session_handler(struct MHD_Session * session);
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All implementations
  * (multithreaded, external select, internal select) call this function
- * to handle reads. 
+ * to handle reads.
  */
 int
 MHD_session_handle_read(struct MHD_Session * session);
-  
+
 
 /**
  * This function was created to handle writes to sockets when it has been

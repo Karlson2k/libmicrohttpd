@@ -37,7 +37,7 @@
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
- */ 
+ */
 int
 MHD_get_session_values(struct MHD_Session * session,
 		       enum MHD_ValueKind kind,
@@ -46,7 +46,7 @@ MHD_get_session_values(struct MHD_Session * session,
   int ret;
   struct MHD_HTTP_Header * pos;
 
-  if (session == NULL) 
+  if (session == NULL)
     return -1;
   ret = 0;
   pos = session->headers_received;
@@ -54,11 +54,11 @@ MHD_get_session_values(struct MHD_Session * session,
     if (0 != (pos->kind & kind)) {
       ret++;
       if ( (iterator != NULL) &&
-	   (MHD_YES != iterator(iterator_cls, 
-				kind, 
-				pos->header, 
-				pos->value)) ) 
-	return ret; 
+	   (MHD_YES != iterator(iterator_cls,
+				kind,
+				pos->header,
+				pos->value)) )
+	return ret;
     }
     pos = pos->next;
   }
@@ -72,14 +72,14 @@ MHD_get_session_values(struct MHD_Session * session,
  *
  * @param key the header to look for
  * @return NULL if no such item was found
- */ 
+ */
 const char *
 MHD_lookup_session_value(struct MHD_Session * session,
 			 enum MHD_ValueKind kind,
 			 const char * key) {
   struct MHD_HTTP_Header * pos;
 
-  if (session == NULL) 
+  if (session == NULL)
     return NULL;
   pos = session->headers_received;
   while (pos != NULL) {
@@ -95,18 +95,18 @@ MHD_lookup_session_value(struct MHD_Session * session,
 /**
  * Queue a response to be transmitted to the client (as soon as
  * possible).
- * 
+ *
  * @param session the session identifying the client
  * @param status_code HTTP status code (i.e. 200 for OK)
  * @param response response to transmit
  * @return MHD_NO on error (i.e. reply already sent),
  *         MHD_YES on success or if message has been queued
  */
-int 
+int
 MHD_queue_response(struct MHD_Session * session,
 		   unsigned int status_code,
 		   struct MHD_Response * response) {
-  if ( (session == NULL) || 
+  if ( (session == NULL) ||
        (response == NULL) ||
        (session->response != NULL) ||
        (session->bodyReceived == 0) ||
@@ -124,7 +124,7 @@ MHD_queue_response(struct MHD_Session * session,
  *
  * @return MHD_YES on success
  */
-int 
+int
 MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * read_fd_set,
 		      fd_set * write_fd_set,
@@ -135,11 +135,11 @@ MHD_session_get_fdset(struct MHD_Session * session,
   fd = session->socket_fd;
   if (fd == -1)
     return MHD_YES;
-  if ( (session->read_close == 0) && 
+  if ( (session->read_close == 0) &&
        ( (session->headersReceived == 0) ||
 	 (session->readLoc < session->read_buffer_size) ) )
     FD_SET(fd, read_fd_set);
-  if (session->response != NULL) 
+  if (session->response != NULL)
     FD_SET(fd, write_fd_set);
   if ( (fd > *max_fd) &&
        ( (session->headersReceived == 0) ||
@@ -157,7 +157,7 @@ MHD_session_get_fdset(struct MHD_Session * session,
  * found (incomplete, buffer too small, line too long),
  * return NULL.  Otherwise return a copy of the line.
  */
-static char * 
+static char *
 MHD_get_next_header_line(struct MHD_Session * session) {
   char * rbuf;
   size_t pos;
@@ -201,10 +201,10 @@ MHD_get_next_header_line(struct MHD_Session * session) {
 	 session->read_buffer,
 	 pos);
   rbuf[pos] = '\0';
-  if ( (session->read_buffer[pos] == '\r') &&       
+  if ( (session->read_buffer[pos] == '\r') &&
        (session->read_buffer[pos+1] == '\n') )
     pos++; /* skip both r and n */
-  pos++; 
+  pos++;
   memmove(session->read_buffer,
 	  &session->read_buffer[pos],
 	  session->readLoc - pos);
@@ -212,7 +212,7 @@ MHD_get_next_header_line(struct MHD_Session * session) {
   return rbuf;
 }
 
-static void 
+static void
 MHD_session_add_header(struct MHD_Session * session,
 		       const char * key,
 		       const char * value,
@@ -227,7 +227,7 @@ MHD_session_add_header(struct MHD_Session * session,
   session->headers_received = hdr;
 }
 
-static void 
+static void
 MHD_http_unescape(char * val) {
   char * esc;
   unsigned int num;
@@ -248,7 +248,7 @@ MHD_http_unescape(char * val) {
   }
 }
 
-static void 
+static void
 MHD_parse_arguments(struct MHD_Session * session,
 		    char * args) {
   char * equals;
@@ -264,7 +264,7 @@ MHD_parse_arguments(struct MHD_Session * session,
     if (amper != NULL) {
       amper[0] = '\0';
       amper++;
-    }    
+    }
     MHD_http_unescape(args);
     MHD_http_unescape(equals);
     MHD_session_add_header(session,
@@ -278,7 +278,7 @@ MHD_parse_arguments(struct MHD_Session * session,
 /**
  * Parse the cookie header (see RFC 2109).
  */
-static void 
+static void
 MHD_parse_cookie_header(struct MHD_Session * session) {
   const char * hdr;
   char * cpy;
@@ -336,7 +336,7 @@ MHD_parse_cookie_header(struct MHD_Session * session) {
  * This function is designed to parse the input buffer of a given session.
  *
  * Once the header is complete, it should have set the
- * headers_received, url and method values and set 
+ * headers_received, url and method values and set
  * headersReceived to 1.  If no body is expected, it should
  * also set "bodyReceived" to 1.  Otherwise, it should
  * set "uploadSize" to the expected size of the body.  If the
@@ -354,7 +354,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 
   if (session->bodyReceived == 1)
     abort();
-  while (NULL != (line = MHD_get_next_header_line(session))) {    
+  while (NULL != (line = MHD_get_next_header_line(session))) {
     if (session->url == NULL) {
       /* line must be request line */
       uri = strstr(line, " ");
@@ -387,7 +387,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 				      MHD_HEADER_KIND,
 				      "Content-Length");
       if (clen != NULL) {
-	if (1 != sscanf(clen, 
+	if (1 != sscanf(clen,
 			"%llu",
 			&cval)) {
 	  MHD_DLOG(session->daemon,
@@ -409,7 +409,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 	  session->bodyReceived = 0;
 	}
       }
-      break; 
+      break;
     }
     /* line should be normal header line, find colon */
     colon = strstr(line, ": ");
@@ -438,8 +438,8 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 
 /**
  * Find the handler responsible for this request.
- */ 
-static struct MHD_Access_Handler * 
+ */
+static struct MHD_Access_Handler *
 MHD_find_access_handler(struct MHD_Session * session) {
   struct MHD_Access_Handler * pos;
 
@@ -455,7 +455,7 @@ MHD_find_access_handler(struct MHD_Session * session) {
 
 /**
  * Call the handler of the application for this
- * session. 
+ * session.
  */
 void
 MHD_call_session_handler(struct MHD_Session * session) {
@@ -484,7 +484,7 @@ MHD_call_session_handler(struct MHD_Session * session) {
 	  &session->read_buffer[session->readLoc - processed],
 	  processed);
   if (session->uploadSize != -1)
-    session->uploadSize -= (session->readLoc - processed); 
+    session->uploadSize -= (session->readLoc - processed);
   session->readLoc = processed;
   if ( (session->uploadSize == 0) ||
        ( (session->readLoc == 0) &&
@@ -503,13 +503,13 @@ MHD_call_session_handler(struct MHD_Session * session) {
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All implementations
  * (multithreaded, external select, internal select) call this function
- * to handle reads. 
+ * to handle reads.
  */
 int
 MHD_session_handle_read(struct MHD_Session * session) {
   int bytes_read;
   void * tmp;
- 
+
   if ( (session->readLoc >= session->read_buffer_size) &&
        (session->headersReceived == 0) ) {
     /* need to grow read buffer */
@@ -526,7 +526,7 @@ MHD_session_handle_read(struct MHD_Session * session) {
     MHD_DLOG(session->daemon,
 	     "Unexpected call to %s.\n",
 	     __FUNCTION__);
-    return MHD_NO; 
+    return MHD_NO;
   }
   bytes_read = RECV(session->socket_fd,
 		    &session->read_buffer[session->readLoc],
@@ -544,15 +544,15 @@ MHD_session_handle_read(struct MHD_Session * session) {
   }
   if (bytes_read == 0) {
     /* other side closed connection */
-    if (session->readLoc > 0) 
-      MHD_call_session_handler(session);    
+    if (session->readLoc > 0)
+      MHD_call_session_handler(session);
     shutdown(session->socket_fd, SHUT_RD);
     return MHD_YES;
   }
   session->readLoc += bytes_read;
-  if (session->headersReceived == 0) 
+  if (session->headersReceived == 0)
     MHD_parse_session_headers(session);
-  if (session->headersReceived == 1) 
+  if (session->headersReceived == 1)
     MHD_call_session_handler(session);
   return MHD_YES;
 }
@@ -561,7 +561,7 @@ MHD_session_handle_read(struct MHD_Session * session) {
  * Check if we need to set some additional headers
  * for http-compiliance.
  */
-static void 
+static void
 MHD_add_extra_headers(struct MHD_Session * session) {
   const char * have;
   char buf[128];
@@ -600,7 +600,7 @@ MHD_build_header_response(struct MHD_Session * session) {
 
   MHD_add_extra_headers(session);
   SPRINTF(code,
-	  "HTTP/1.1 %u\r\n", 
+	  "HTTP/1.1 %u\r\n",
 	  session->responseCode);
   off = strlen(code);
   /* estimate size */
@@ -627,10 +627,10 @@ MHD_build_header_response(struct MHD_Session * session) {
   sprintf(&data[off],
 	  "\r\n");
   off += 2;
-  if (off != size) 
+  if (off != size)
     abort();
   session->write_buffer = data;
-  session->write_buffer_size = size;  
+  session->write_buffer_size = size;
 }
 
 /**
@@ -654,7 +654,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
   if (! session->headersSent) {
     if (session->write_buffer == NULL)
       MHD_build_header_response(session);
-    ret = SEND(session->socket_fd, 
+    ret = SEND(session->socket_fd,
 	       &session->write_buffer[session->writeLoc],
 	       session->write_buffer_size - session->writeLoc,
 	       0);
@@ -678,10 +678,10 @@ MHD_session_handle_write(struct MHD_Session * session) {
     }
     return MHD_YES;
   }
-  if (response->total_size <= session->messagePos) 
+  if (response->total_size <= session->messagePos)
     abort(); /* internal error */
   if (response->crc != NULL)
-    pthread_mutex_lock(&response->mutex);    
+    pthread_mutex_lock(&response->mutex);
 
   /* prepare send buffer */
   if ( (response->data == NULL) ||
@@ -708,16 +708,16 @@ MHD_session_handle_write(struct MHD_Session * session) {
     response->data_start = session->messagePos;
     response->data_size = ret;
     if (ret == 0)
-      return MHD_YES; 
+      return MHD_YES;
   }
-  
+
   /* transmit */
-  ret = SEND(session->socket_fd, 
+  ret = SEND(session->socket_fd,
 	     &response->data[session->messagePos - response->data_start],
 	     response->data_size - (session->messagePos - response->data_start),
 	     0);
   if (response->crc != NULL)
-    pthread_mutex_unlock(&response->mutex);    
+    pthread_mutex_unlock(&response->mutex);
   if (ret < 0) {
     if (errno == EINTR)
       return MHD_YES;
@@ -729,7 +729,7 @@ MHD_session_handle_write(struct MHD_Session * session) {
     return MHD_YES;
   }
   session->messagePos += ret;
-  if (session->messagePos > response->data_size) 
+  if (session->messagePos > response->data_size)
     abort(); /* internal error */
   if (session->messagePos == response->data_size) {
     if ( (session->bodyReceived == 0) ||

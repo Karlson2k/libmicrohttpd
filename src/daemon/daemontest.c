@@ -35,7 +35,7 @@ static int testStartError() {
   struct MHD_Daemon * d;
 
   d = MHD_start_daemon(MHD_USE_DEBUG, 0, NULL, NULL, NULL, NULL);
-  if (d != NULL) 
+  if (d != NULL)
     return 1;
   return 0;
 }
@@ -70,8 +70,8 @@ static int testStartStop() {
 		       NULL,
 		       &ahc_nothing,
 		       NULL);
-  if (d == NULL) 
-    return 2;  
+  if (d == NULL)
+    return 2;
   MHD_stop_daemon(d);
   return 0;
 }
@@ -89,8 +89,8 @@ static int testExternalRun() {
 		       &ahc_nothing,
 		       NULL);
 
-  if (d == NULL) 
-    return 4;  
+  if (d == NULL)
+    return 4;
   i = 0;
   while(i < 15) {
     maxfd = 0;
@@ -115,9 +115,9 @@ static int testThread() {
 		       &ahc_nothing,
 		       NULL);
 
-  if (d == NULL) 
-    return 16;  
-  if (MHD_run(d) != MHD_NO) 
+  if (d == NULL)
+    return 16;
+  if (MHD_run(d) != MHD_NO)
     return 32;
   MHD_stop_daemon(d);
   return 0;
@@ -132,11 +132,11 @@ static int testMultithread() {
 		       &ahc_nothing,
 		       NULL);
 
-  if (d == NULL) 
-    return 64; 
-  if (MHD_run(d) != MHD_NO) 
+  if (d == NULL)
+    return 64;
+  if (MHD_run(d) != MHD_NO)
     return 128;
-  MHD_stop_daemon(d);  
+  MHD_stop_daemon(d);
   return 0;
 }
 
@@ -149,8 +149,8 @@ int main(int argc,
   errorCount += testThread();
   errorCount += testMultithread();
   if (errorCount != 0)
-    fprintf(stderr, 
-	    "Error (code: %u)\n", 
+    fprintf(stderr,
+	    "Error (code: %u)\n",
 	    errorCount);
   return errorCount != 0; /* 0 == pass */
 }

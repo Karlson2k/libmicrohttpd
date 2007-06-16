@@ -82,7 +82,7 @@ int main(int argc,
   if (d == NULL)
     return 1;
   sleep(atoi(argv[2]));
-  MHD_stop_daemon(d); 
+  MHD_stop_daemon(d);
   return 0;
 }
 
