@@ -23,7 +23,6 @@
  * @brief  Methods for managing sessions
  * @author Daniel Pittman
  * @author Christian Grothoff
- * @version 0.1.0
  */
 
 #include "internal.h"

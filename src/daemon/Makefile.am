@@ -14,7 +14,6 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h \
   session.c session.h
 
-
 # example programs
 
 noinst_PROGRAMS = minimal_example

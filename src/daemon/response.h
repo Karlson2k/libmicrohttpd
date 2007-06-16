@@ -23,7 +23,6 @@
  * @brief  Methods for managing response objects
  * @author Daniel Pittman
  * @author Christian Grothoff
- * @version 0.1.0
  */
 
 #ifndef RESPONSE_H
