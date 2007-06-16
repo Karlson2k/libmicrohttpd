@@ -7,14 +7,7 @@ before certain features can be used at all:
 
 For PUT/POST:
 =============
-session.c:
-- MHD_parse_session_headers (determine upload size)
-- MHD_session_handle_read (proper handling of upload end)
-
-For COOKIES:
-============
-session.c:
-- MHD_parse_session_headers: take cookie header apart
+testing!
 
 For http-compliance:
 ====================
@@ -45,6 +38,5 @@ Other:
   (API extension)
 - allow client to control size of input/output
   buffers
-
 
 

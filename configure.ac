@@ -21,7 +21,7 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.0.0],[libmicrohttpd@cs.du.edu])
+AC_INIT([libmicrohttpd], [0.0.0],[libmicrohttpd@gnunet.org])
 AM_INIT_AUTOMAKE([libmicrohttpd], [0.0.0])
 AM_CONFIG_HEADER([config.h])
 
@@ -37,7 +37,6 @@ AC_CANONICAL_HOST
 AM_PROG_LIBTOOL
 
 # set GCC options
-CFLAGS="-Wall -Werror $CFLAGS"
 # use '-fno-strict-aliasing', but only if the compiler can take it
 if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1; 
 then

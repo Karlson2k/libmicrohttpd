@@ -131,8 +131,9 @@ MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * write_fd_set,
 		      fd_set * except_fd_set,
 		      int * max_fd) {
-  if ( (session->headersReceived == 0) ||
-       (session->readLoc < session->read_buffer_size) )
+  if ( (session->read_close == 0) && 
+       ( (session->headersReceived == 0) ||
+	 (session->readLoc < session->read_buffer_size) ) )
     FD_SET(session->socket_fd, read_fd_set);
   if (session->response != NULL) 
     FD_SET(session->socket_fd, write_fd_set);
@@ -271,6 +272,63 @@ MHD_parse_arguments(struct MHD_Session * session,
 }
 
 /**
+ * Parse the cookie header (see RFC 2109).
+ */
+static void 
+MHD_parse_cookie_header(struct MHD_Session * session) {
+  const char * hdr;
+  char * cpy;
+  char * pos;
+  char * semicolon;
+  char * equals;
+  int quotes;
+
+  hdr = MHD_lookup_session_value(session,
+				 MHD_HEADER_KIND,
+				 "Cookie");
+  if (hdr == NULL)
+    return;
+  cpy = strdup(hdr);
+  pos = cpy;
+  while (pos != NULL) {
+    equals = strstr(pos, "=");
+    if (equals == NULL)
+      break;
+    equals[0] = '\0';
+    equals++;
+    quotes = 0;
+    semicolon = equals;
+    while ( (semicolon[0] != '\0') &&
+	    ( (quotes != 0) ||
+	      ( (semicolon[0] != ';') &&
+		(semicolon[0] != ',') ) ) ) {
+      if (semicolon[0] == '"')
+	quotes = (quotes + 1) & 1;
+      semicolon++;
+    }
+    if (semicolon[0] == '\0')
+      semicolon = NULL;
+    if (semicolon != NULL) {
+      semicolon[0] = '\0';
+      semicolon++;
+    }
+    /* remove quotes */
+    if ( (equals[0] == '"') &&
+	 (equals[strlen(equals)-1] == '"') ) {
+      equals[strlen(equals)-1] = '\0';
+      equals++;
+    }
+    MHD_session_add_header(session,
+			   pos,
+			   equals,
+			   MHD_COOKIE_KIND);
+    pos = semicolon;
+  }
+  free(cpy);
+}
+
+
+/**
  * This function is designed to parse the input buffer of a given session.
  *
  * Once the header is complete, it should have set the
@@ -287,6 +345,8 @@ MHD_parse_session_headers(struct MHD_Session * session) {
   char * uri;
   char * httpType;
   char * args;
+  const char * clen;
+  unsigned long long cval;
 
   if (session->bodyReceived == 1)
     abort();
@@ -316,16 +376,38 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     }
     /* check if this is the end of the header */
     if (strlen(line) == 0) {
+      free(line);
       /* end of header */
       session->headersReceived = 1;
-      /* FIXME: check which methods may have a body,
-	 check headers to find out upload size */
-      session->uploadSize = 0;
-      session->bodyReceived = 1;
-      free(line);
+      clen = MHD_lookup_session_value(session,
+				      MHD_HEADER_KIND,
+				      "Content-Length");
+      if (clen != NULL) {
+	if (1 != sscanf(clen, 
+			"%llu",
+			&cval)) {
+	  MHD_DLOG(session->daemon,
+		   "Failed to parse Content-Length header `%s', closing connection.\n",
+		   clen);
+	  goto DIE;
+	}
+	session->uploadSize = cval;
+	session->bodyReceived = cval == 0 ? 1 : 0;
+      } else {
+	if (NULL == MHD_lookup_session_value(session,
+					     MHD_HEADER_KIND,
+					     "Transfer-Encoding")) {
+	  /* this request does not have a body */
+	  session->uploadSize = 0;
+	  session->bodyReceived = 1;
+	} else {
+	  session->uploadSize = -1; /* unknown size */
+	  session->bodyReceived = 0;
+	}
+      }
       break; 
     }
-    /* ok, line should be normal header line, find colon */
+    /* line should be normal header line, find colon */
     colon = strstr(line, ": ");
     if (colon == NULL) {
       /* error in header line, die hard */
@@ -342,7 +424,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 			   MHD_HEADER_KIND);
     free(line);
   }
-  /* FIXME: here: find cookie header and parse that! */
+  MHD_parse_cookie_header(session);
   return;
  DIE:
   CLOSE(session->socket_fd);
@@ -398,8 +480,12 @@ MHD_call_session_handler(struct MHD_Session * session) {
 	  &session->read_buffer[session->readLoc - processed],
 	  processed);
   session->readLoc = processed;
-  session->uploadSize -= processed;
-  if (session->uploadSize == 0) {
+  if (session->uploadSize != -1)
+    session->uploadSize -= processed;
+  if ( (session->uploadSize == 0) ||
+       ( (session->readLoc == 0) &&
+	 (session->uploadSize == -1) &&
+	 (session->socket_fd == -1) ) ) {
     session->bodyReceived = 1;
     session->readLoc = 0;
     session->read_buffer_size = 0;
@@ -455,11 +541,9 @@ MHD_session_handle_read(struct MHD_Session * session) {
   }
   if (bytes_read == 0) {
     /* other side closed connection */
-    /* FIXME: proper handling of end of upload!
-       If we were receiving an unbounded upload,
-       we should finish up nicely now! */
-    CLOSE(session->socket_fd);
-    session->socket_fd = -1;
+    if (session->readLoc > 0) 
+      MHD_call_session_handler(session);    
+    shutdown(session->socket_fd, SHUT_RD);
     return MHD_YES;
   }
   session->readLoc += bytes_read;
@@ -487,13 +571,13 @@ MHD_add_extra_headers(struct MHD_Session * session) {
 			      "Connection",
 			      "close");
   } else if (NULL == MHD_get_response_header(session->response,
-					     "Content-length")) {
+					     "Content-Length")) {
     _REAL_SNPRINTF(buf,
 	     128,
 	     "%llu",
 	     (unsigned long long) session->response->total_size);
     MHD_add_response_header(session->response,
-			    "Content-length",
+			    "Content-Length",
 			    buf);
   }
 }
@@ -662,6 +746,11 @@ MHD_session_handle_write(struct MHD_Session * session) {
     free(session->write_buffer);
     session->write_buffer = NULL;
     session->write_buffer_size = 0;
+    if (session->read_close != 0) {
+      /* closed for reading => close for good! */
+      CLOSE(session->socket_fd);
+      session->socket_fd = -1;
+    }
   }
   return MHD_YES;
 }

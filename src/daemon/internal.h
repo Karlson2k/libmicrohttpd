@@ -230,6 +230,14 @@ struct MHD_Session {
    * up in that case).
    */
   int socket_fd;
+
+  /**
+   * Has this socket been closed for reading (i.e.
+   * other side closed the connection)?  If so,
+   * we must completely close the connection once
+   * we are done sending our response.
+   */
+  int read_close;
   
   /**
    * Have we finished receiving all of the headers yet?

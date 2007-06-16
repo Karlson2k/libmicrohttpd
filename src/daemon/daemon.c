@@ -317,10 +317,9 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
     } 
 
     if ( (pos->headersReceived == 1) &&
-	 (pos->read_buffer_size == pos->readLoc) &&
 	 (pos->readLoc > 0) )
       MHD_call_session_handler(pos);
-
+    
     prev = pos;
     pos = pos->next;    
   }
