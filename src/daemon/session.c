@@ -131,17 +131,22 @@ MHD_session_get_fdset(struct MHD_Session * session,
 		      fd_set * write_fd_set,
 		      fd_set * except_fd_set,
 		      int * max_fd) {
+  int fd;
+
+  fd = session->socket_fd;
+  if (fd == -1)
+    return MHD_YES;
   if ( (session->read_close == 0) && 
        ( (session->headersReceived == 0) ||
 	 (session->readLoc < session->read_buffer_size) ) )
-    FD_SET(session->socket_fd, read_fd_set);
+    FD_SET(fd, read_fd_set);
   if (session->response != NULL) 
-    FD_SET(session->socket_fd, write_fd_set);
-  if ( (session->socket_fd > *max_fd) &&
+    FD_SET(fd, write_fd_set);
+  if ( (fd > *max_fd) &&
        ( (session->headersReceived == 0) ||
 	 (session->readLoc < session->read_buffer_size) ||
 	 (session->response != NULL) ) )
-    *max_fd = session->socket_fd;
+    *max_fd = fd;
   return MHD_YES;
 }
 
@@ -479,9 +484,9 @@ MHD_call_session_handler(struct MHD_Session * session) {
   memmove(session->read_buffer,
 	  &session->read_buffer[session->readLoc - processed],
 	  processed);
-  session->readLoc = processed;
   if (session->uploadSize != -1)
-    session->uploadSize -= processed;
+    session->uploadSize -= (session->readLoc - processed); 
+  session->readLoc = processed;
   if ( (session->uploadSize == 0) ||
        ( (session->readLoc == 0) &&
 	 (session->uploadSize == -1) &&

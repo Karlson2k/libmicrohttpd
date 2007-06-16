@@ -317,7 +317,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
     } 
 
     if ( (pos->headersReceived == 1) &&
-	 (pos->readLoc > 0) )
+	 (pos->response == NULL) )
       MHD_call_session_handler(pos);
     
     prev = pos;
@@ -390,8 +390,10 @@ MHD_select(struct MHD_Daemon * daemon,
     pos = daemon->connections;
     while (pos != NULL) {
       ds = pos->socket_fd;
-      if (ds == -1)
+      if (ds == -1) {
+	pos = pos->next;
 	continue;
+      }
       if (FD_ISSET(ds, &rs)) 
 	MHD_session_handle_read(pos);
       if (FD_ISSET(ds, &ws))

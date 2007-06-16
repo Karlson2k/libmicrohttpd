@@ -19,9 +19,13 @@
 */
 
 /**
- * @file daemontest1.c
- * @brief  Testcase for libmicrohttpd GET operations
- *         TODO: test parsing of query
+ * @file daemontest_post.c
+ * @brief  Testcase for libmicrohttpd POST operations
+ *         TODO: use curl_formadd to produce POST data and 
+ *               add that to the CURL operation; then check
+ *               on the server side if the headers arrive
+ *               nicely (need to implement parsing POST data
+ *               first!)
  * @author Christian Grothoff
  */
 
@@ -66,12 +70,14 @@ static int ahc_echo(void * cls,
 		    const char * method,
 		    const char * upload_data,
 		    unsigned int * upload_data_size) {
-  const char * me = cls;
   struct MHD_Response * response;
   int ret;
 
-  if (0 != strcmp(me, method))
+  if (0 != strcmp("POST", method)) {
+    printf("METHOD: %s\n", method);
     return MHD_NO; /* unexpected method */
+  }
+  /* FIXME: check session headers... */
   response = MHD_create_response_from_data(strlen(url),
 					   (void*) url,
 					   MHD_NO,
@@ -84,7 +90,7 @@ static int ahc_echo(void * cls,
 }
 
 
-static int testInternalGet() {
+static int testInternalPost() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
@@ -98,7 +104,7 @@ static int testInternalGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       NULL);
   if (d == NULL)
     return 1;
   c = curl_easy_init();
@@ -111,6 +117,12 @@ static int testInternalGet() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
+  curl_easy_setopt(c,
+		   CURLOPT_HTTPPOST,
+		   NULL); /* FIXME! */
+  curl_easy_setopt(c,
+		   CURLOPT_POST,
+		   1L);
   curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
@@ -148,7 +160,7 @@ static int testInternalGet() {
   return 0;
 }
 
-static int testMultithreadedGet() {
+static int testMultithreadedPost() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
@@ -162,7 +174,7 @@ static int testMultithreadedGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       NULL);
   if (d == NULL)
     return 16;
   c = curl_easy_init();
@@ -175,6 +187,12 @@ static int testMultithreadedGet() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
+  curl_easy_setopt(c,
+		   CURLOPT_HTTPPOST,
+		   NULL); /* FIXME! */
+  curl_easy_setopt(c,
+		   CURLOPT_POST,
+		   1L);
   curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
@@ -191,6 +209,7 @@ static int testMultithreadedGet() {
 		   CURLOPT_NOSIGNAL,
 		   1);  
   if (CURLE_OK != curl_easy_perform(c)) {
+    curl_easy_cleanup(c);
     MHD_stop_daemon(d);  
     return 32;
   }
@@ -211,7 +230,7 @@ static int testMultithreadedGet() {
 }
 
 
-static int testExternalGet() {
+static int testExternalPost() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
@@ -236,7 +255,7 @@ static int testExternalGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       NULL);
   if (d == NULL)
     return 256;
   c = curl_easy_init();
@@ -249,6 +268,12 @@ static int testExternalGet() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
+  curl_easy_setopt(c,
+		   CURLOPT_HTTPPOST,
+		   NULL); /* FIXME! */
+  curl_easy_setopt(c,
+		   CURLOPT_POST,
+		   1L);
   curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
@@ -362,9 +387,9 @@ int main(int argc,
 
   if (0 != curl_global_init(CURL_GLOBAL_WIN32)) 
     return 2;  
-  errorCount += testInternalGet();
-  errorCount += testMultithreadedGet();  
-  errorCount += testExternalGet();
+  errorCount += testInternalPost();
+  errorCount += testMultithreadedPost();  
+  errorCount += testExternalPost();
   if (errorCount != 0)
     fprintf(stderr, 
 	    "Error (code: %u)\n", 

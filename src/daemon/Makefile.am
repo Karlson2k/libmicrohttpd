@@ -32,7 +32,9 @@ if HAVE_CURL
 
 check_PROGRAMS = \
   daemontest \
-  daemontest1
+  daemontest1 \
+  daemontest_post \
+  daemontest_put
 
 TESTS = $(check_PROGRAMS)
 
@@ -44,6 +46,20 @@ daemontest_LDADD = \
 daemontest1_SOURCES = \
   daemontest1.c
 daemontest1_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+
+daemontest_post_SOURCES = \
+  daemontest_post.c
+daemontest_post_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+
+daemontest_put_SOURCES = \
+  daemontest_put.c
+daemontest_put_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

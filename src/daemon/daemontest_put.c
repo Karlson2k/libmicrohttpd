@@ -19,9 +19,8 @@
 */
 
 /**
- * @file daemontest1.c
- * @brief  Testcase for libmicrohttpd GET operations
- *         TODO: test parsing of query
+ * @file daemontest_put.c
+ * @brief  Testcase for libmicrohttpd PUT operations
  * @author Christian Grothoff
  */
 
@@ -45,6 +44,23 @@ struct CBC {
   size_t size;
 };
 
+static size_t putBuffer(void * stream,
+			size_t size,
+			size_t nmemb,
+			void * ptr) {
+  unsigned int * pos = ptr;
+  unsigned int wrt;
+
+  wrt = size * nmemb;
+  if (wrt > 8 - (*pos))
+    wrt = 8 - (*pos);
+  memcpy(stream,
+	 &("Hello123"[*pos]),
+	 wrt);
+  (*pos) += wrt;
+  return wrt;
+}
+
 static size_t copyBuffer(void * ptr,
 			 size_t size,
 			 size_t nmemb,
@@ -66,12 +82,27 @@ static int ahc_echo(void * cls,
 		    const char * method,
 		    const char * upload_data,
 		    unsigned int * upload_data_size) {
-  const char * me = cls;
+  int * done = cls;
   struct MHD_Response * response;
   int ret;
 
-  if (0 != strcmp(me, method))
-    return MHD_NO; /* unexpected method */
+  if (0 != strcmp("PUT", method)) 
+    return MHD_NO; /* unexpected method */  
+  if ((*done) == 0) {
+    if (*upload_data_size != 8) 
+      return MHD_YES; /* not yet ready */    
+    if (0 == memcmp(upload_data,
+		    "Hello123",
+		    8)) {
+      *upload_data_size = 0;
+    } else {	
+      printf("Invalid upload data `%8s'!\n",
+	     upload_data);
+      return MHD_NO;
+    }
+    *done = 1;
+    return MHD_YES;
+  }
   response = MHD_create_response_from_data(strlen(url),
 					   (void*) url,
 					   MHD_NO,
@@ -84,11 +115,13 @@ static int ahc_echo(void * cls,
 }
 
 
-static int testInternalGet() {
+static int testInternalPut() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
   struct CBC cbc;
+  unsigned int pos = 0;
+  int done_flag = 0;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -98,7 +131,7 @@ static int testInternalGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       &done_flag);
   if (d == NULL)
     return 1;
   c = curl_easy_init();
@@ -112,14 +145,26 @@ static int testInternalGet() {
 		   CURLOPT_WRITEDATA,
 		   &cbc);
   curl_easy_setopt(c,
+		   CURLOPT_READFUNCTION,
+		   &putBuffer);
+  curl_easy_setopt(c,
+		   CURLOPT_READDATA,
+		   &pos);
+  curl_easy_setopt(c,
+		   CURLOPT_UPLOAD,
+		   1L);
+  curl_easy_setopt(c,
+		   CURLOPT_INFILESIZE_LARGE,
+		   (curl_off_t) 8L);
+  curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
-		   2L);
+		   15L);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
-		   2L);
+		   15L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -148,11 +193,13 @@ static int testInternalGet() {
   return 0;
 }
 
-static int testMultithreadedGet() {
+static int testMultithreadedPut() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
   struct CBC cbc;
+  unsigned int pos = 0;
+  int done_flag = 0;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -162,7 +209,7 @@ static int testMultithreadedGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       &done_flag);
   if (d == NULL)
     return 16;
   c = curl_easy_init();
@@ -176,14 +223,26 @@ static int testMultithreadedGet() {
 		   CURLOPT_WRITEDATA,
 		   &cbc);
   curl_easy_setopt(c,
+		   CURLOPT_READFUNCTION,
+		   &putBuffer);
+  curl_easy_setopt(c,
+		   CURLOPT_READDATA,
+		   &pos);
+  curl_easy_setopt(c,
+		   CURLOPT_UPLOAD,
+		   1L);
+  curl_easy_setopt(c,
+		   CURLOPT_INFILESIZE_LARGE,
+		   (curl_off_t) 8L);
+  curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
-		   2L);
+		   15L);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
-		   2L);
+		   15L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -191,6 +250,7 @@ static int testMultithreadedGet() {
 		   CURLOPT_NOSIGNAL,
 		   1);  
   if (CURLE_OK != curl_easy_perform(c)) {
+    curl_easy_cleanup(c);
     MHD_stop_daemon(d);  
     return 32;
   }
@@ -211,7 +271,7 @@ static int testMultithreadedGet() {
 }
 
 
-static int testExternalGet() {
+static int testExternalPut() {
   struct MHD_Daemon * d;
   CURL * c;
   char buf[2048];
@@ -226,6 +286,8 @@ static int testExternalGet() {
   struct CURLMsg * msg;
   time_t start;
   struct timeval tv;
+  unsigned int pos = 0;
+  int done_flag = 0;
 
   multi = NULL;
   cbc.buf = buf;
@@ -236,7 +298,7 @@ static int testExternalGet() {
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       &done_flag);
   if (d == NULL)
     return 256;
   c = curl_easy_init();
@@ -250,14 +312,26 @@ static int testExternalGet() {
 		   CURLOPT_WRITEDATA,
 		   &cbc);
   curl_easy_setopt(c,
+		   CURLOPT_READFUNCTION,
+		   &putBuffer);
+  curl_easy_setopt(c,
+		   CURLOPT_READDATA,
+		   &pos);
+  curl_easy_setopt(c,
+		   CURLOPT_UPLOAD,
+		   1L);
+  curl_easy_setopt(c,
+		   CURLOPT_INFILESIZE_LARGE,
+		   (curl_off_t) 8L);
+  curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
-		   5L);
+		   15L);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
-		   5L);
+		   15L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -362,9 +436,9 @@ int main(int argc,
 
   if (0 != curl_global_init(CURL_GLOBAL_WIN32)) 
     return 2;  
-  errorCount += testInternalGet();
-  errorCount += testMultithreadedGet();  
-  errorCount += testExternalGet();
+  errorCount += testInternalPut();
+  errorCount += testMultithreadedPut();  
+  errorCount += testExternalPut();
   if (errorCount != 0)
     fprintf(stderr, 
 	    "Error (code: %u)\n", 
