@@ -703,12 +703,17 @@ MHD_session_handle_write(struct MHD_Session * session) {
       response->data_size = session->messagePos;
       CLOSE(session->socket_fd);
       session->socket_fd = -1;
+      if (response->crc != NULL)
+	pthread_mutex_unlock(&response->mutex);
       return MHD_YES;
     }
     response->data_start = session->messagePos;
     response->data_size = ret;
-    if (ret == 0)
+    if (ret == 0) {
+      if (response->crc != NULL)
+	pthread_mutex_unlock(&response->mutex);
       return MHD_YES;
+    }
   }
 
   /* transmit */
