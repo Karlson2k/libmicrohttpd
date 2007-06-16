@@ -162,7 +162,7 @@ enum MHD_OPTION {
   /**
    * Run using one thread per connection.
    */
-  MHD_USE_THREAD_PER_CONNECTION = 4,  
+  MHD_USE_THREAD_PER_CONNECTION = 4,
 
   /**
    * Run using an internal thread doing SELECT.
@@ -221,13 +221,13 @@ struct MHD_Response;
 
 /**
  * Allow or deny a client to connect.
- * 
+ *
  *
  * @param addr address information from the client
  * @param addrlen length of the address information
  * @return MHD_YES if connection is allowed, MHD_NO if not
  */
-typedef int 
+typedef int
 (*MHD_AcceptPolicyCallback)(void * cls,
 			    const struct sockaddr * addr,
 			    socklen_t addrlen);
@@ -260,7 +260,7 @@ typedef int
  * also to iterate over the headers that have been
  * added to a response.
  *
- * @return MHD_YES to continue iterating, 
+ * @return MHD_YES to continue iterating,
  *         MHD_NO to abort the iteration
  */
 typedef int
@@ -289,11 +289,11 @@ typedef int
  *        be queried multiple times for the same data;
  *        however, if an MHD_Response is not re-used,
  *        libmicrohttpd guarantees that "pos" will be
- *        the sum of all non-negative return values 
+ *        the sum of all non-negative return values
  *        obtained from the content reader so far.
  * @return -1 on error (libmicrohttpd will no longer
  *  try to read content and instead close the connection
- *  with the client). 
+ *  with the client).
  */
 typedef int
 (*MHD_ContentReaderCallback)(void * cls,
@@ -344,7 +344,7 @@ MHD_stop_daemon(struct MHD_Daemon * daemon);
  *         daemon was not started with the right
  *         options for this call.
  */
-int 
+int
 MHD_get_fdset(struct MHD_Daemon * daemon,
 	      fd_set * read_fd_set,
 	      fd_set * write_fd_set,
@@ -355,7 +355,7 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
  * Run webserver operations (without blocking unless
  * in client callbacks).  This method should be called
  * by clients in combination with MHD_get_fdset
- * if the client-controlled select method is used. 
+ * if the client-controlled select method is used.
  *
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
@@ -368,11 +368,11 @@ MHD_run(struct MHD_Daemon * daemon);
 /**
  * Register an access handler for all URIs beginning with uri_prefix.
  *
- * @param uri_prefix 
+ * @param uri_prefix
  * @return MRI_NO if a handler for this exact prefix
  *         already exists
  */
-int 
+int
 MHD_register_handler(struct MHD_Daemon * daemon,
 		     const char * uri_prefix,
 		     MHD_AccessHandlerCallback dh,
@@ -382,11 +382,11 @@ MHD_register_handler(struct MHD_Daemon * daemon,
  * Unregister an access handler for the URIs beginning with
  * uri_prefix.
  *
- * @param uri_prefix 
+ * @param uri_prefix
  * @return MHD_NO if a handler for this exact prefix
  *         is not known for this daemon
  */
-int 
+int
 MHD_unregister_handler(struct MHD_Daemon * daemon,
 		       const char * uri_prefix,
 		       MHD_AccessHandlerCallback dh,
@@ -399,7 +399,7 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
- */ 
+ */
 int
 MHD_get_session_values(struct MHD_Session * session,
 		       enum MHD_ValueKind kind,
@@ -412,7 +412,7 @@ MHD_get_session_values(struct MHD_Session * session,
  *
  * @param key the header to look for
  * @return NULL if no such item was found
- */ 
+ */
 const char *
 MHD_lookup_session_value(struct MHD_Session * session,
 			 enum MHD_ValueKind kind,
@@ -421,19 +421,19 @@ MHD_lookup_session_value(struct MHD_Session * session,
 /**
  * Queue a response to be transmitted to the client (as soon as
  * possible).
- * 
+ *
  * @param session the session identifying the client
  * @param status_code HTTP status code (i.e. 200 for OK)
  * @param response response to transmit
  * @return MHD_NO on error (i.e. reply already sent),
  *         MHD_YES on success or if message has been queued
  */
-int 
+int
 MHD_queue_response(struct MHD_Session * session,
 		   unsigned int status_code,
 		   struct MHD_Response * response);
 
-	       
+	
 /**
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
@@ -457,7 +457,7 @@ MHD_create_response_from_callback(size_t size,
  * @param size size of the data portion of the response
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
- * @param must_copy libmicrohttpd must make a copy of data 
+ * @param must_copy libmicrohttpd must make a copy of data
  *        right away, the data maybe released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
@@ -504,7 +504,7 @@ MHD_del_response_header(struct MHD_Response * response,
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
- */ 
+ */
 int
 MHD_get_response_headers(struct MHD_Response * response,
 			 MHD_KeyValueIterator iterator,
@@ -516,7 +516,7 @@ MHD_get_response_headers(struct MHD_Response * response,
  *
  * @param key which header to get
  * @return NULL if header does not exist
- */ 
+ */
 const char *
 MHD_get_response_header(struct MHD_Response * response,
 			const char * key);
