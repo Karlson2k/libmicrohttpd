@@ -504,12 +504,13 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
        loop since we need to be able to inspect
        the *next* header line (in case it starts
        with a space...) */
+    last = line;
   }
   if (last != NULL) {
     MHD_connection_add_header(connection,
-			   last,
-			   colon,
-			   MHD_HEADER_KIND);
+			      last,
+			      colon,
+			      MHD_HEADER_KIND);
     free(last);
   }
   MHD_parse_cookie_header(connection);
