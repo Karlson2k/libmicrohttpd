@@ -27,7 +27,7 @@
 
 #include "internal.h"
 #include "response.h"
-#include "session.h"
+#include "connection.h"
 
 #define MHD_MAX_CONNECTIONS FD_SETSIZE -4
 
@@ -120,7 +120,7 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
 	      fd_set * write_fd_set,
 	      fd_set * except_fd_set,
 	      int * max_fd) {
-  struct MHD_Session * pos;
+  struct MHD_Connection * pos;
 
   if ( (daemon == NULL) ||
        (read_fd_set == NULL) ||
@@ -135,7 +135,7 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
     *max_fd = daemon->socket_fd;
   pos = daemon->connections;
   while (pos != NULL) {
-    if (MHD_YES != MHD_session_get_fdset(pos,
+    if (MHD_YES != MHD_connection_get_fdset(pos,
 					 read_fd_set,
 					 write_fd_set,
 					 except_fd_set,
@@ -153,7 +153,7 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
  */
 static void *
 MHD_handle_connection(void * data) {
-  struct MHD_Session * con = data;
+  struct MHD_Connection * con = data;
   int num_ready;
   fd_set rs;
   fd_set ws;
@@ -168,7 +168,7 @@ MHD_handle_connection(void * data) {
     FD_ZERO(&ws);
     FD_ZERO(&es);
     max = 0;
-    MHD_session_get_fdset(con,
+    MHD_connection_get_fdset(con,
 			  &rs,
 			  &ws,
 			  &es,
@@ -184,14 +184,14 @@ MHD_handle_connection(void * data) {
       break;
     }
     if ( ( (FD_ISSET(con->socket_fd, &rs)) &&
-	   (MHD_YES != MHD_session_handle_read(con)) ) ||
+	   (MHD_YES != MHD_connection_handle_read(con)) ) ||
 	 ( (con->socket_fd != -1) &&
 	   (FD_ISSET(con->socket_fd, &ws)) &&
-	   (MHD_YES != MHD_session_handle_write(con)) ) )
+	   (MHD_YES != MHD_connection_handle_write(con)) ) )
       break;
     if ( (con->headersReceived == 1) &&
 	 (con->response == NULL) )
-      MHD_call_session_handler(con);
+      MHD_call_connection_handler(con);
   }
   if (con->socket_fd != -1) {
     CLOSE(con->socket_fd);
@@ -202,13 +202,13 @@ MHD_handle_connection(void * data) {
 
 
 /**
- * Accept an incoming connection and create the MHD_Session object for
+ * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
  * accept policy callback.
  */
 static int
 MHD_accept_connection(struct MHD_Daemon * daemon) {
-  struct MHD_Session * session;
+  struct MHD_Connection * connection;
   struct sockaddr addr;
   socklen_t addrlen;
   int s;
@@ -233,50 +233,50 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
     CLOSE(s);
     return MHD_YES;
   }
-  session = malloc(sizeof(struct MHD_Session));
-  memset(session,
+  connection = malloc(sizeof(struct MHD_Connection));
+  memset(connection,
 	 0,
-	 sizeof(struct MHD_Session));
-  session->addr = malloc(addrlen);
-  memcpy(session->addr,
+	 sizeof(struct MHD_Connection));
+  connection->addr = malloc(addrlen);
+  memcpy(connection->addr,
 	 &addr,
 	 addrlen);
-  session->addr_len = addrlen;
-  session->socket_fd = s;
-  session->daemon = daemon;
+  connection->addr_len = addrlen;
+  connection->socket_fd = s;
+  connection->daemon = daemon;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) ) &&
-       (0 != pthread_create(&session->pid,
+       (0 != pthread_create(&connection->pid,
 			    NULL,
 			    &MHD_handle_connection,
-			    session)) ) {
+			    connection)) ) {
     MHD_DLOG(daemon,
 	     "Failed to create a thread: %s\n",
 	     STRERROR(errno));
-    free(session->addr);
+    free(connection->addr);
     CLOSE(s);
-    free(session);
+    free(connection);
     return MHD_NO;
   }
-  session->next = daemon->connections;
-  daemon->connections = session;
+  connection->next = daemon->connections;
+  daemon->connections = connection;
   return MHD_YES;
 }
 
 
 /**
- * Free resources associated with all closed sessions.
- * (destroy responses, free buffers, etc.).  A session
+ * Free resources associated with all closed connections.
+ * (destroy responses, free buffers, etc.).  A connection
  * is known to be closed if the socket_fd is -1.
  *
- * Also performs session actions that need to be run
- * even if the session is not selectable (such as
+ * Also performs connection actions that need to be run
+ * even if the connection is not selectable (such as
  * calling the application again with upload data when
  * the upload data buffer is full).
  */
 static void
-MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
-  struct MHD_Session * pos;
-  struct MHD_Session * prev;
+MHD_cleanup_connections(struct MHD_Daemon * daemon) {
+  struct MHD_Connection * pos;
+  struct MHD_Connection * prev;
   struct MHD_HTTP_Header * hpos;
   void * unused;
 
@@ -320,7 +320,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 
     if ( (pos->headersReceived == 1) &&
 	 (pos->response == NULL) )
-      MHD_call_session_handler(pos);
+      MHD_call_connection_handler(pos);
 
     prev = pos;
     pos = pos->next;
@@ -337,7 +337,7 @@ MHD_cleanup_sessions(struct MHD_Daemon * daemon) {
 static int
 MHD_select(struct MHD_Daemon * daemon,
 	   int may_block) {
-  struct MHD_Session * pos;
+  struct MHD_Connection * pos;
   int num_ready;
   fd_set rs;
   fd_set ws;
@@ -397,9 +397,9 @@ MHD_select(struct MHD_Daemon * daemon,
 	continue;
       }
       if (FD_ISSET(ds, &rs))
-	MHD_session_handle_read(pos);
+	MHD_connection_handle_read(pos);
       if (FD_ISSET(ds, &ws))
-	MHD_session_handle_write(pos);
+	MHD_connection_handle_write(pos);
       pos = pos->next;
     }
   }
@@ -424,7 +424,7 @@ MHD_run(struct MHD_Daemon * daemon) {
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
     return MHD_NO;
   MHD_select(daemon, MHD_NO);
-  MHD_cleanup_sessions(daemon);
+  MHD_cleanup_connections(daemon);
   return MHD_YES;
 }
 
@@ -438,7 +438,7 @@ MHD_select_thread(void * cls) {
   struct MHD_Daemon * daemon = cls;
   while (daemon->shutdown == 0) {
     MHD_select(daemon, MHD_YES);
-    MHD_cleanup_sessions(daemon);
+    MHD_cleanup_connections(daemon);
   }
   return NULL;
 }
@@ -559,7 +559,7 @@ MHD_stop_daemon(struct MHD_Daemon * daemon) {
       CLOSE(daemon->connections->socket_fd);
       daemon->connections->socket_fd = -1;
     }
-    MHD_cleanup_sessions(daemon);
+    MHD_cleanup_connections(daemon);
   }
   free(daemon);
 }

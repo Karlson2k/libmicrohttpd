@@ -133,19 +133,15 @@ extern "C" {
  * used, the client wants control over the process and will call the
  * appropriate microhttpd callbacks.<p>
  *
- * Note that it is legal to specify that both IPv4 and IPv6
- * should be used.  However, if neither IPv4 nor IPv6 is
- * specified, starting the daemon will fail.<p>
- *
  * Starting the daemon may also fail if a particular option is not
  * implemented or not supported on the target platform (i.e. no
  * support for SSL, threads or IPv6).
  */
-enum MHD_OPTION {
+enum MHD_FLAG {
   /**
    * No options selected.
    */
-  MHD_NO_OPTION = 0,
+  MHD_NO_FLAG = 0,
 
   /**
    * Run in debug mode.  If this flag is used, the
@@ -170,14 +166,29 @@ enum MHD_OPTION {
   MHD_USE_SELECT_INTERNALLY = 8,
 
   /**
-   * Run using the IPv4 protocol
+   * Run using the IPv6 protocol (otherwise, MHD will
+   * just support IPv4).
    */
-  MHD_USE_IPv4 = 16,
+  MHD_USE_IPv6 = 16,
+
+};
+
+/**
+ * MHD options.  Passed in the varargs portion 
+ * of MHD_start_daemon.
+ */
+enum MHD_OPTION {
 
   /**
-   * Run using the IPv6 protocol
+   * No more options / last option.  This is used
+   * to terminate the VARARGs list.
    */
-  MHD_USE_IPv6 = 32,
+  MHD_OPTION_END = 0,
+
+  /**
+   * FIXME: add options for buffer sizes here...
+   */
+
 };
 
 /**
@@ -215,7 +226,7 @@ enum MHD_ValueKind {
 
 struct MHD_Daemon;
 
-struct MHD_Session;
+struct MHD_Connection;
 
 struct MHD_Response;
 
@@ -238,6 +249,9 @@ typedef int
  * callbacks to provide content to give back to the client and return
  * an HTTP status code (i.e. 200 for OK, 404, etc.).
  *
+ * @param url the requested url
+ * @param method the HTTP method used ("GET", "PUT", etc.)
+ * @param version the HTTP version string (i.e. "HTTP/1.1")
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
  *        value to the number of bytes NOT processed
@@ -247,9 +261,10 @@ typedef int
  */
 typedef int
 (*MHD_AccessHandlerCallback)(void * cls,
-			     struct MHD_Session * session,
+			     struct MHD_Connection * connection,
 			     const char * url,
 			     const char * method,
+			     const char * version,
 			     const char * upload_data,
 			     unsigned int * upload_data_size);
 
@@ -312,21 +327,25 @@ typedef void
 
 /**
  * Start a webserver on the given port.
+ * @param flags combination of MHD_FLAG values
  * @param port port to bind to
  * @param apc callback to call to check which clients
  *        will be allowed to connect
  * @param apc_cls extra argument to apc
  * @param dh default handler for all URIs
  * @param dh_cls extra argument to dh
+ * @param ... list of options (type-value pairs,
+ *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *
-MHD_start_daemon(unsigned int options,
+MHD_start_daemon(unsigned int flags,
 		 unsigned short port,
 		 MHD_AcceptPolicyCallback apc,
 		 void * apc_cls,
 		 MHD_AccessHandlerCallback dh,
-		 void * dh_cls);
+		 void * dh_cls,
+		 ...);
 
 
 
@@ -401,10 +420,10 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
  * @return number of entries iterated over
  */
 int
-MHD_get_session_values(struct MHD_Session * session,
-		       enum MHD_ValueKind kind,
-		       MHD_KeyValueIterator iterator,
-		       void * iterator_cls);
+MHD_get_connection_values(struct MHD_Connection * connection,
+			  enum MHD_ValueKind kind,
+			  MHD_KeyValueIterator iterator,
+			  void * iterator_cls);
 
 /**
  * Get a particular header value.  If multiple
@@ -414,22 +433,22 @@ MHD_get_session_values(struct MHD_Session * session,
  * @return NULL if no such item was found
  */
 const char *
-MHD_lookup_session_value(struct MHD_Session * session,
-			 enum MHD_ValueKind kind,
-			 const char * key);
+MHD_lookup_connection_value(struct MHD_Connection * connection,
+			    enum MHD_ValueKind kind,
+			    const char * key);
 
 /**
  * Queue a response to be transmitted to the client (as soon as
  * possible).
  *
- * @param session the session identifying the client
+ * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. 200 for OK)
  * @param response response to transmit
  * @return MHD_NO on error (i.e. reply already sent),
  *         MHD_YES on success or if message has been queued
  */
 int
-MHD_queue_response(struct MHD_Session * session,
+MHD_queue_response(struct MHD_Connection * connection,
 		   unsigned int status_code,
 		   struct MHD_Response * response);
 

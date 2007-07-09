@@ -14,7 +14,10 @@ For http-compliance:
 session.c:
 - send proper error code back if headers are too long
   (investigate what we should do with those headers,
-   read?  give user control?)
+   read?  give user control?) 
+  ALSO: should this limit be per-line or for the
+  entire header? (currently,  we enforce per-line,
+  but the entire header might make more sense!)
 - http 1.0 compatibility (if 1.0, force connection
   close at the end!)
 
@@ -22,8 +25,7 @@ For IPv6:
 =========
 daemon.c:
 - fix start daemon and accept handlers
-  (tricky bit will be supporting both on 
-   the same socket / port!)
+
 
 For SSL:
 ========
@@ -38,5 +40,7 @@ Other:
   (API extension)
 - allow client to control size of input/output
   buffers
+- allow client to limit total number of connections
+
 
 

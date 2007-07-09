@@ -8,11 +8,11 @@ lib_LTLIBRARIES = \
 libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 0:0:0 
 libmicrohttpd_la_SOURCES = \
+  connection.c connection.h \
   daemon.c  \
   internal.c internal.h \
   plibc.h \
-  response.c response.h \
-  session.c session.h
+  response.c response.h 
 
 # example programs
 

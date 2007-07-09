@@ -19,23 +19,23 @@
 */
 
 /**
- * @file session.h
- * @brief  Methods for managing sessions
+ * @file connection.h
+ * @brief  Methods for managing connections
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
 
-#ifndef SESSION_H
-#define SESSION_H
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
 
 /**
- * Obtain the select sets for this session.
+ * Obtain the select sets for this connection.
  *
  * @return MHD_YES on success
  */
 int
-MHD_session_get_fdset(struct MHD_Session * session,
+MHD_connection_get_fdset(struct MHD_Connection * connection,
 		      fd_set * read_fd_set,
 		      fd_set * write_fd_set,
 		      fd_set * except_fd_set,
@@ -44,10 +44,10 @@ MHD_session_get_fdset(struct MHD_Session * session,
 
 /**
  * Call the handler of the application for this
- * session.
+ * connection.
  */
 void
-MHD_call_session_handler(struct MHD_Session * session);
+MHD_call_connection_handler(struct MHD_Connection * connection);
 
 /**
  * This function handles a particular connection when it has been
@@ -56,7 +56,7 @@ MHD_call_session_handler(struct MHD_Session * session);
  * to handle reads.
  */
 int
-MHD_session_handle_read(struct MHD_Session * session);
+MHD_connection_handle_read(struct MHD_Connection * connection);
 
 
 /**
@@ -66,7 +66,7 @@ MHD_session_handle_read(struct MHD_Session * session);
  * (multithreaded, external select, internal select) call this function
  */
 int
-MHD_session_handle_write(struct MHD_Session * session);
+MHD_connection_handle_write(struct MHD_Connection * connection);
 
 
 #endif
