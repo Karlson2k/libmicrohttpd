@@ -458,13 +458,14 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
       connection->headersReceived = 1;
       clen = MHD_lookup_connection_value(connection,
 					 MHD_HEADER_KIND,
-					 "Content-Length");
+					 MHD_HTTP_HEADER_CONTENT_LENGTH);
       if (clen != NULL) {
 	if (1 != sscanf(clen,
 			"%llu",
 			&cval)) {
 	  MHD_DLOG(connection->daemon,
-		   "Failed to parse Content-Length header `%s', closing connection.\n",
+		   "Failed to parse `%s' header `%s', closing connection.\n",
+		   MHD_HTTP_HEADER_CONTENT_LENGTH,
 		   clen);
 	  goto DIE;
 	}
@@ -472,8 +473,8 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
 	connection->bodyReceived = cval == 0 ? 1 : 0;
       } else {
 	if (NULL == MHD_lookup_connection_value(connection,
-					     MHD_HEADER_KIND,
-					     "Transfer-Encoding")) {
+						MHD_HEADER_KIND,
+						MHD_HTTP_HEADER_TRANSFER_ENCODING)) {
 	  /* this request does not have a body */
 	  connection->uploadSize = 0;
 	  connection->bodyReceived = 1;
@@ -660,13 +661,13 @@ MHD_add_extra_headers(struct MHD_Connection * connection) {
 			      "Connection",
 			      "close");
   } else if (NULL == MHD_get_response_header(connection->response,
-					     "Content-Length")) {
+					     MHD_HTTP_HEADER_CONTENT_LENGTH)) {
     _REAL_SNPRINTF(buf,
 	     128,
 	     "%llu",
 	     (unsigned long long) connection->response->total_size);
     MHD_add_response_header(connection->response,
-			    "Content-Length",
+			    MHD_HTTP_HEADER_CONTENT_LENGTH,
 			    buf);
   }
 }
@@ -686,7 +687,8 @@ MHD_build_header_response(struct MHD_Connection * connection) {
 
   MHD_add_extra_headers(connection);
   SPRINTF(code,
-	  "HTTP/1.1 %u\r\n",
+	  "%s %u\r\n",
+	  MHD_HTTP_VERSION_1_1,
 	  connection->responseCode);
   off = strlen(code);
   /* estimate size */
@@ -841,7 +843,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     connection->write_buffer = NULL;
     connection->write_buffer_size = 0;
     if ( (connection->read_close != 0) ||
-	 (0 != strcasecmp("HTTP/1.1",
+	 (0 != strcasecmp(MHD_HTTP_VERSION_1_1,
 			  connection->version)) ) {
       /* closed for reading => close for good! */
       CLOSE(connection->socket_fd);

@@ -26,21 +26,18 @@
  *
  * All symbols defined in this header start with MHD.  MHD is a
  * micro-httpd library.  As such, it does not have any API for logging
- * errors.<p>
+ * errors.  Also, it may not support all of the HTTP features directly,
+ * where applicable, portions of HTTP may have to be handled by 
+ * clients of the library (the library is supposed to handle
+ * everything that it must handle, such as basic connection
+ * management; however, detailed interpretations of headers
+ * and methods are left to clients).<p>
  *
  * All functions are guaranteed to be completely reentrant and
  * thread-safe.<p>
  *
  * TODO:
- * - proper API for file uploads via HTTP
- * - We probably need a significantly more extensive API for
- *   proper SSL support (set local certificate, etc.)
- *
- *
- *
- * Students are encouraged to add additional HTTP status codes to this
- * file, but should not change anything else.  If you think something
- * needs to be changed, talk to your instructor first.
+ * - Add option codes for buffer sizes and SSL support
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -61,12 +58,21 @@ extern "C" {
 #endif
 #endif
 
+/**
+ * Current version of the library.
+ */
 #define MHD_VERSION 0x00000000
 
+/**
+ * MHD-internal return codes.
+ */
 #define MHD_YES 1
 
 #define MHD_NO 0
 
+/**
+ * HTTP response codes.
+ */
 #define MHD_HTTP_CONTINUE 100
 #define MHD_HTTP_SWITCHING_PROTOCOLS 101
 #define MHD_HTTP_PROCESSING 102
@@ -124,6 +130,62 @@ extern "C" {
 #define MHD_HTTP_INSUFFICIENT_STORAGE 507
 #define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED 509
 #define MHD_HTTP_NOT_EXTENDED 510
+
+/* See also: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html */
+#define MHD_HTTP_HEADER_ACCEPT "Accept"
+#define MHD_HTTP_HEADER_ACCEPT_CHARSET "Accept-Charset"
+#define MHD_HTTP_HEADER_ACCEPT_ENCODING "Accept-Encoding"
+#define MHD_HTTP_HEADER_ACCEPT_LANGUAGE "Accept-Language"
+#define MHD_HTTP_HEADER_ACCEPT_RANGES "Accept-Ranges"
+#define MHD_HTTP_HEADER_AGE "Age"
+#define MHD_HTTP_HEADER_ALLOW "Allow"
+#define MHD_HTTP_HEADER_AUTHORIZATION "Authorization"
+#define MHD_HTTP_HEADER_CACHE_CONTROL "Cache-Control"
+#define MHD_HTTP_HEADER_CONNECTION "Connection"
+#define MHD_HTTP_HEADER_CONTENT_ENCODING "Content-Encoding"
+#define MHD_HTTP_HEADER_CONTENT_LANGUAGE "Content-Language"
+#define MHD_HTTP_HEADER_CONTENT_LENGTH "Content-Length"
+#define MHD_HTTP_HEADER_CONTENT_LOCATION "Content-Location"
+#define MHD_HTTP_HEADER_CONTENT_MD5 "Content-MD5"
+#define MHD_HTTP_HEADER_CONTENT_RANGE "Content-Range"
+#define MHD_HTTP_HEADER_CONTENT_TYPE "Content-Type"
+#define MHD_HTTP_HEADER_DATE "Date"
+#define MHD_HTTP_HEADER_ETAG "ETag"
+#define MHD_HTTP_HEADER_EXPECT "Expect"
+#define MHD_HTTP_HEADER_EXPIRES "Expires"
+#define MHD_HTTP_HEADER_FROM "From"
+#define MHD_HTTP_HEADER_HOST "Host"
+#define MHD_HTTP_HEADER_IF_MATCH "If-Match"
+#define MHD_HTTP_HEADER_IF_MODIFIED_SINCE "If-Modified-Since"
+#define MHD_HTTP_HEADER_IF_NONE_MATCH "If-None-Match"
+#define MHD_HTTP_HEADER_IF_RANGE "If-Range"
+#define MHD_HTTP_HEADER_IF_UNMODIFIED_SINCE "If-Unmodified-Since"
+#define MHD_HTTP_HEADER_LAST_MODIFIED "Last-Modified"
+#define MHD_HTTP_HEADER_LOCATION "Location"
+#define MHD_HTTP_HEADER_MAX_FORWARDS "Max-Forwards"
+#define MHD_HTTP_HEADER_PRAGMA "Pragma"
+#define MHD_HTTP_HEADER_PROXY_AUTHENTICATE "Proxy-Authenticate"
+#define MHD_HTTP_HEADER_PROXY_AUTHORIZATION "Proxy-Authorization"
+#define MHD_HTTP_HEADER_RANGE "Range"
+#define MHD_HTTP_HEADER_REFERER "Referer"
+#define MHD_HTTP_HEADER_RETRY_AFTER "Retry-After"
+#define MHD_HTTP_HEADER_SERVER "Server"
+#define MHD_HTTP_HEADER_TE "TE"
+#define MHD_HTTP_HEADER_TRAILER "Trailer"
+#define MHD_HTTP_HEADER_TRANSFER_ENCODING "Transfer-Encoding"
+#define MHD_HTTP_HEADER_UPGRADE "Upgrade"
+#define MHD_HTTP_HEADER_USER_AGENT "User-Agent"
+#define MHD_HTTP_HEADER_VARY "Vary"
+#define MHD_HTTP_HEADER_VIA "Via"
+#define MHD_HTTP_HEADER_WARNING "Warning"
+#define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
+
+/**
+ * HTTP versions (used to match against the first line of the
+ * HTTP header as well as in the response code).
+ */
+#define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
+#define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
 
 
 
@@ -224,10 +286,22 @@ enum MHD_ValueKind {
 
 };
 
+/**
+ * Handle for the daemon (listening on a socket for HTTP traffic).
+ */
 struct MHD_Daemon;
 
+/**
+ * Handle for a connection / HTTP request.  With HTTP/1.1, multiple
+ * requests can be run over the same connection.  However, MHD will
+ * only show one request per TCP connection to the client at any given
+ * time.
+ */
 struct MHD_Connection;
 
+/**
+ * Handle for a response.
+ */
 struct MHD_Response;
 
 /**

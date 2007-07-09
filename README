@@ -8,6 +8,7 @@ before certain features can be used at all:
 For POST:
 =========
 - Decoding of POST data, testing thereof
+- POST testcase currently fails (blocks!)
 
 For http-compliance:
 ====================
