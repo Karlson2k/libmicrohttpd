@@ -56,20 +56,22 @@ static int ahc_nothing(void * cls,
 		       struct MHD_Session * session,
 		       const char * url,
 		       const char * method,
-               const char * upload_data,
-               unsigned int * upload_data_size) {
+		       const char * upload_data,
+		       const char * version,
+		       unsigned int * upload_data_size) {
   return MHD_NO;
 }
 
 static int testStartStop() {
   struct MHD_Daemon * d;
 
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
 		       1080,
 		       &apc_nothing,
 		       NULL,
 		       &ahc_nothing,
-		       NULL);
+		       NULL,
+		       MHD_OPTION_END);
   if (d == NULL)
     return 2;
   MHD_stop_daemon(d);
@@ -82,12 +84,13 @@ static int testExternalRun() {
   int maxfd;
   int i;
 
-  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_DEBUG,
 		       1081,
 		       &apc_all,
 		       NULL,
 		       &ahc_nothing,
-		       NULL);
+		       NULL,
+		       MHD_OPTION_END);
 
   if (d == NULL)
     return 4;
@@ -108,12 +111,13 @@ static int testExternalRun() {
 
 static int testThread() {
   struct MHD_Daemon * d;
-  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
+  d = MHD_start_daemon(MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
 		       1082,
 		       &apc_all,
 		       NULL,
 		       &ahc_nothing,
-		       NULL);
+		       NULL,
+		       MHD_OPTION_END);
 
   if (d == NULL)
     return 16;
@@ -125,12 +129,13 @@ static int testThread() {
 
 static int testMultithread() {
   struct MHD_Daemon * d;
-  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
+  d = MHD_start_daemon(MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
 		       1083,
 		       &apc_all,
 		       NULL,
 		       &ahc_nothing,
-		       NULL);
+		       NULL,
+		       MHD_OPTION_END);
 
   if (d == NULL)
     return 64;
