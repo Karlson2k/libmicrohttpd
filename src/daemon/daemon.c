@@ -209,16 +209,20 @@ MHD_handle_connection(void * data) {
 static int
 MHD_accept_connection(struct MHD_Daemon * daemon) {
   struct MHD_Connection * connection;
-  struct sockaddr addr;
+  struct sockaddr_in6 addr6;
+  struct sockaddr * addr = (struct sockaddr*) &addr6;
   socklen_t addrlen;
   int s;
 
-  addrlen = sizeof(struct sockaddr);
-  memset(&addr,
+
+  if (sizeof(struct sockaddr) > sizeof(struct sockaddr_in6))
+    abort(); /* fatal, serious error */
+  addrlen = sizeof(struct sockaddr_in6);
+  memset(addr,
 	 0,
-	 sizeof(struct sockaddr));
+	 sizeof(struct sockaddr_in6));
   s = ACCEPT(daemon->socket_fd,
-	     &addr,
+	     addr,
 	     &addrlen);
   if ( (s < 0) ||
        (addrlen <= 0) ) {
@@ -228,7 +232,7 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
     return MHD_NO;
   }
   if (MHD_NO == daemon->apc(daemon->apc_cls,
-			    &addr,
+			    addr,
 			    addrlen)) {
     CLOSE(s);
     return MHD_YES;
@@ -239,7 +243,7 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 	 sizeof(struct MHD_Connection));
   connection->addr = malloc(addrlen);
   memcpy(connection->addr,
-	 &addr,
+	 addr,
 	 addrlen);
   connection->addr_len = addrlen;
   connection->socket_fd = s;
@@ -463,18 +467,23 @@ MHD_start_daemon(unsigned int options,
 		 MHD_AccessHandlerCallback dh,
 		 void * dh_cls,
 		 ...) {
+  const int on = 1;
   struct MHD_Daemon * retVal;
   int socket_fd;
-  struct sockaddr_in servaddr;	
-
+  struct sockaddr_in servaddr4;	
+  struct sockaddr_in6 servaddr6;	
+  const struct sockaddr * servaddr;
+  socklen_t addrlen;
+ 
   if ((options & MHD_USE_SSL) != 0)
-    return NULL;
-  if ((options & MHD_USE_IPv6) != 0)
     return NULL;
   if ( (port == 0) ||
        (dh == NULL) )
     return NULL;
-  socket_fd = SOCKET(AF_INET, SOCK_STREAM, 0);
+  if ((options & MHD_USE_IPv6) != 0)
+    socket_fd = SOCKET(PF_INET6, SOCK_STREAM, 0);
+  else
+    socket_fd = SOCKET(PF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     if ((options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
@@ -482,15 +491,35 @@ MHD_start_daemon(unsigned int options,
 	      STRERROR(errno));
     return NULL;
   }
-  /* FIXME: setsockopt: SO_REUSEADDR? */
-  memset(&servaddr,
-	 0,
-	 sizeof(struct sockaddr_in));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_port = htons(port);
+  if ( (SETSOCKOPT(socket_fd,
+		   SOL_SOCKET,
+		   SO_REUSEADDR,
+		   &on,
+		   sizeof(on)) < 0) &&
+       (options & MHD_USE_DEBUG) != 0)
+    fprintf(stderr,
+	    "setsockopt failed: %s\n",
+	    STRERROR(errno));
+  if ((options & MHD_USE_IPv6) != 0) {
+    memset(&servaddr6,
+	   0,
+	   sizeof(struct sockaddr_in6));
+    servaddr6.sin6_family = AF_INET6;
+    servaddr6.sin6_port = htons(port);
+    servaddr = (struct sockaddr*) &servaddr6;
+    addrlen = sizeof(struct sockaddr_in6);
+  } else {
+    memset(&servaddr4,
+	   0,
+	   sizeof(struct sockaddr_in));
+    servaddr4.sin_family = AF_INET;
+    servaddr4.sin_port = htons(port);
+    servaddr = (struct sockaddr*) &servaddr4;
+    addrlen = sizeof(struct sockaddr_in);
+  }
   if (BIND(socket_fd,
-	   (struct sockaddr *)&servaddr,
-	   sizeof(struct sockaddr_in)) < 0) {
+	   servaddr,
+	   addrlen) < 0) {
     if ( (options & MHD_USE_DEBUG) != 0)
       fprintf(stderr,
 	      "Failed to bind to port %u: %s\n",

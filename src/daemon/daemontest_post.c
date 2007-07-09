@@ -402,7 +402,7 @@ int main(int argc,
     return 2;
   errorCount += testInternalPost();
   errorCount += testMultithreadedPost();
-  errorCount += testExternalPost();
+  errorCount += testExternalPost();  
   if (errorCount != 0)
     fprintf(stderr,
 	    "Error (code: %u)\n",

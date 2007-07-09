@@ -837,16 +837,18 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     connection->method = NULL;
     free(connection->url);
     connection->url = NULL;
-    free(connection->version);
-    connection->version = NULL;
     free(connection->write_buffer);
     connection->write_buffer = NULL;
     connection->write_buffer_size = 0;
-    if (connection->read_close != 0) {
+    if ( (connection->read_close != 0) ||
+	 (0 != strcasecmp("HTTP/1.1",
+			  connection->version)) ) {
       /* closed for reading => close for good! */
       CLOSE(connection->socket_fd);
       connection->socket_fd = -1;
     }
+    free(connection->version);
+    connection->version = NULL;
   }
   return MHD_YES;
 }
