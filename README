@@ -30,17 +30,16 @@ daemon.c:
 For SSL:
 ========
 microhttpd.h:
-- define appropriate APIs
-- everything else
+- define appropriate MHD_OPTIONs
+- actual implementation
 
 
 Other:
 ======
-- allow client to determine http 1.0 vs. 1.1
-  (API extension)
 - allow client to control size of input/output
-  buffers
+  buffers (add MHD_OPTION)
 - allow client to limit total number of connections
+  (add MHD_OPTION)
 
 
 

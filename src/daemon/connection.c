@@ -254,8 +254,9 @@ MHD_http_unescape(char * val) {
 }
 
 static void
-MHD_parse_arguments(struct MHD_Connection * connection,
-		    char * args) {
+parse_arguments(enum MHD_ValueKind kind,
+		struct MHD_Connection * connection,
+		char * args) {
   char * equals;
   char * amper;
 
@@ -273,9 +274,9 @@ MHD_parse_arguments(struct MHD_Connection * connection,
     MHD_http_unescape(args);
     MHD_http_unescape(equals);
     MHD_connection_add_header(connection,
-			   args,
-			   equals,
-			   MHD_GET_ARGUMENT_KIND);
+			      args,
+			      equals,
+			      kind);
     args = amper;
   }
 }
@@ -336,6 +337,49 @@ MHD_parse_cookie_header(struct MHD_Connection * connection) {
   free(cpy);
 }
 
+/**
+ * Parse the first line of the HTTP HEADER.
+ *
+ * @param connection the connection (updated)
+ * @param line the first line
+ * @return MHD_YES if the line is ok, MHD_NO if it is malformed
+ */
+static int
+parse_initial_message_line(struct MHD_Connection * connection,
+			   char * line) {
+  char * uri;
+  char * httpVersion;
+  char * args;
+
+  uri = strstr(line, " ");
+  if (uri == NULL)
+    return MHD_NO; /* serious error */
+  uri[0] = '\0';
+  connection->method = strdup(line);
+  uri++;
+  while (uri[0] == ' ')
+    uri++;
+  httpVersion = strstr(uri, " ");
+  if (httpVersion != NULL) {
+    httpVersion[0] = '\0';
+    httpVersion++;
+  }
+  args = strstr(uri, "?");
+  if (args != NULL) {
+    args[0] = '\0';
+    args++;
+    parse_arguments(MHD_GET_ARGUMENT_KIND,
+		    connection,
+		    args);
+  }
+  connection->url = strdup(uri);
+  if (httpVersion == NULL)
+    connection->version = strdup("");
+  else
+    connection->version = strdup(httpVersion);
+  return MHD_YES;
+}
+
 
 /**
  * This function is designed to parse the input buffer of a given connection.
@@ -352,9 +396,6 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
   char * last;
   char * line;
   char * colon;
-  char * uri;
-  char * httpType;
-  char * args;
   char * tmp;
   const char * clen;
   unsigned long long cval;
@@ -401,30 +442,12 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
       }
     }
     if (connection->url == NULL) {
-      /* line must be request line */
-      uri = strstr(line, " ");
-      if (uri == NULL)
+      /* line must be request line (first line of header) */
+      if (MHD_NO == parse_initial_message_line(connection,
+					       line)) {
+	free(line);
 	goto DIE;
-      uri[0] = '\0';
-      connection->method = strdup(line);
-      uri++;
-      httpType = strstr(uri, " ");
-      if (httpType != NULL) {
-	httpType[0] = '\0';
-	httpType++;
       }
-      args = strstr(uri, "?");
-      if (args != NULL) {
-	args[0] = '\0';
-	args++;
-	MHD_parse_arguments(connection,
-			    args);
-      }
-      connection->url = strdup(uri);
-      if (httpType == NULL)
-	connection->version = strdup("");
-      else
-	connection->version = strdup(httpType);
       free(line);
       continue;
     }
@@ -434,8 +457,8 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
       /* end of header */
       connection->headersReceived = 1;
       clen = MHD_lookup_connection_value(connection,
-				      MHD_HEADER_KIND,
-				      "Content-Length");
+					 MHD_HEADER_KIND,
+					 "Content-Length");
       if (clen != NULL) {
 	if (1 != sscanf(clen,
 			"%llu",
