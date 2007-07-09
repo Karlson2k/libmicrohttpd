@@ -132,6 +132,9 @@ static int testInternalPost() {
 		   CURLOPT_TIMEOUT,
 		   2L);
   curl_easy_setopt(c,
+		   CURLOPT_HTTP_VERSION,
+		   CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
   // NOTE: use of CONNECTTIMEOUT without also
@@ -202,6 +205,9 @@ static int testMultithreadedPost() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   2L);
+  curl_easy_setopt(c,
+		   CURLOPT_HTTP_VERSION,
+		   CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
@@ -284,6 +290,9 @@ static int testExternalPost() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   5L);
+  curl_easy_setopt(c,
+		   CURLOPT_HTTP_VERSION,
+		   CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   5L);
