@@ -176,6 +176,11 @@ struct MHD_Session {
   char * url;
 
   /**
+   * HTTP version string (i.e. http/1.1)
+   */
+  char * version;
+
+  /**
    * Buffer for reading requests.
    */
   char * read_buffer;

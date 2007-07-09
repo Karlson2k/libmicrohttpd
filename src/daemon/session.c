@@ -84,8 +84,8 @@ MHD_lookup_session_value(struct MHD_Session * session,
   pos = session->headers_received;
   while (pos != NULL) {
     if ( (0 != (pos->kind & kind)) &&
-	 (0 == strcmp(key,
-		      pos->header)) )
+	 (0 == strcasecmp(key,
+			  pos->header)) )
       return pos->value;
     pos = pos->next;
   }
@@ -227,11 +227,16 @@ MHD_session_add_header(struct MHD_Session * session,
   session->headers_received = hdr;
 }
 
+/**
+ * Process escape sequences ('+'=space, %HH)
+ */ 
 static void
 MHD_http_unescape(char * val) {
   char * esc;
   unsigned int num;
 
+  while (NULL != (esc = strstr(val, "+"))) 
+    *esc = ' ';  
   while (NULL != (esc = strstr(val, "%"))) {
     if ( (1 == sscanf(&esc[1],
 		    "%2x",
@@ -344,17 +349,57 @@ MHD_parse_cookie_header(struct MHD_Session * session) {
  */
 static void
 MHD_parse_session_headers(struct MHD_Session * session) {
+  char * last;
   char * line;
   char * colon;
   char * uri;
   char * httpType;
   char * args;
+  char * tmp;
   const char * clen;
   unsigned long long cval;
 
   if (session->bodyReceived == 1)
     abort();
+  last = NULL;
   while (NULL != (line = MHD_get_next_header_line(session))) {
+    if (last != NULL) {
+      if ( (line[0] == ' ') ||
+	   (line[0] == '\t') ) {
+	/* value was continued on the next line, see
+	   http://www.jmarshall.com/easy/http/ */
+	if ( (strlen(line) + strlen(last) >
+	      4 * MHD_MAX_BUF_SIZE) ) {
+	  free(line);
+	  free(last);
+	  last = NULL;
+	  MHD_DLOG(session->daemon,
+		   "Received excessively long header line (>%u), closing connection.\n",
+		   4 * MHD_MAX_BUF_SIZE);
+	  CLOSE(session->socket_fd);
+	  session->socket_fd = -1;
+  	  break;
+	}
+	tmp = malloc(strlen(line) + strlen(last) + 1);
+	strcpy(tmp, last);
+	free(last);
+	last = tmp;
+	tmp = line;
+	while ( (tmp[0] == ' ') ||
+		(tmp[0] == '\t') )
+	  tmp++; /* skip whitespace at start of 2nd line */
+	strcat(last, tmp);
+	free(line);
+	continue; /* possibly more than 2 lines... */
+      } else {
+	MHD_session_add_header(session,
+			       last,
+			       colon,
+			       MHD_HEADER_KIND);
+	free(last);
+	last = NULL;    
+      }
+    }
     if (session->url == NULL) {
       /* line must be request line */
       uri = strstr(line, " ");
@@ -364,8 +409,10 @@ MHD_parse_session_headers(struct MHD_Session * session) {
       session->method = strdup(line);
       uri++;
       httpType = strstr(uri, " ");
-      if (httpType != NULL)
+      if (httpType != NULL) {
 	httpType[0] = '\0';
+	httpType++;
+      }
       args = strstr(uri, "?");
       if (args != NULL) {
 	args[0] = '\0';
@@ -374,7 +421,10 @@ MHD_parse_session_headers(struct MHD_Session * session) {
 			    args);
       }
       session->url = strdup(uri);
-      /* do we want to do anything with httpType? */
+      if (httpType == NULL)
+	session->version = strdup("");
+      else
+	session->version = strdup(httpType);
       free(line);
       continue;
     }
@@ -412,7 +462,7 @@ MHD_parse_session_headers(struct MHD_Session * session) {
       break;
     }
     /* line should be normal header line, find colon */
-    colon = strstr(line, ": ");
+    colon = strstr(line, ":");
     if (colon == NULL) {
       /* error in header line, die hard */
       MHD_DLOG(session->daemon,
@@ -421,12 +471,23 @@ MHD_parse_session_headers(struct MHD_Session * session) {
     }
     /* zero-terminate header */
     colon[0] = '\0';
-    colon += 2; /* advance to value */
+    colon++; /* advance to value */
+    while ( (colon[0] != '\0') &&
+	    ( (colon[0] == ' ') ||
+	      (colon[0] == '\t') ) )
+      colon++;
+    /* we do the actual adding of the session
+       header at the beginning of the while
+       loop since we need to be able to inspect
+       the *next* header line (in case it starts
+       with a space...) */
+  }
+  if (last != NULL) {
     MHD_session_add_header(session,
-			   line,
+			   last,
 			   colon,
 			   MHD_HEADER_KIND);
-    free(line);
+    free(last);
   }
   MHD_parse_cookie_header(session);
   return;
@@ -751,6 +812,8 @@ MHD_session_handle_write(struct MHD_Session * session) {
     session->method = NULL;
     free(session->url);
     session->url = NULL;
+    free(session->version);
+    session->version = NULL;
     free(session->write_buffer);
     session->write_buffer = NULL;
     session->write_buffer_size = 0;
