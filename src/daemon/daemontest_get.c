@@ -61,9 +61,10 @@ static size_t copyBuffer(void * ptr,
 }
 
 static int ahc_echo(void * cls,
-		    struct MHD_Session * session,
+		    struct MHD_Connection * connection,
 		    const char * url,
 		    const char * method,
+		    const char * version,
 		    const char * upload_data,
 		    unsigned int * upload_data_size) {
   const char * me = cls;
@@ -76,7 +77,7 @@ static int ahc_echo(void * cls,
 					   (void*) url,
 					   MHD_NO,
 					   MHD_YES);
-  ret = MHD_queue_response(session,
+  ret = MHD_queue_response(connection,
 			   MHD_HTTP_OK,
 			   response);
   MHD_destroy_response(response);
@@ -93,12 +94,13 @@ static int testInternalGet() {
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
 		       1080,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       "GET",
+		       MHD_OPTION_END);
   if (d == NULL)
     return 1;
   c = curl_easy_init();
@@ -157,12 +159,13 @@ static int testMultithreadedGet() {
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
 		       1081,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       "GET",
+		       MHD_OPTION_END);
   if (d == NULL)
     return 16;
   c = curl_easy_init();
@@ -231,12 +234,13 @@ static int testExternalGet() {
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon(MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_DEBUG,
 		       1082,
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       "GET");
+		       "GET",
+		       MHD_OPTION_END);
   if (d == NULL)
     return 256;
   c = curl_easy_init();

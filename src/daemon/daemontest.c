@@ -53,11 +53,11 @@ static int apc_all(void * cls,
 }
 
 static int ahc_nothing(void * cls,
-		       struct MHD_Session * session,
+		       struct MHD_Connection * connection,
 		       const char * url,
 		       const char * method,
-		       const char * upload_data,
 		       const char * version,
+		       const char * upload_data,
 		       unsigned int * upload_data_size) {
   return MHD_NO;
 }
