@@ -42,10 +42,11 @@ static int apc_all(void * cls,
 }
 
 static int ahc_echo(void * cls,
-		    struct MHD_Session * session,
+		    struct MHD_Connection * connection,
 		    const char * url,
 		    const char * method,
 		    const char * upload_data,
+		    const char * version,
 		    unsigned int * upload_data_size) {
   const char * me = cls;
   struct MHD_Response * response;
@@ -57,7 +58,7 @@ static int ahc_echo(void * cls,
 					   (void*) me,
 					   MHD_NO,
 					   MHD_NO);
-  ret = MHD_queue_response(session,
+  ret = MHD_queue_response(connection,
 			   MHD_HTTP_OK,
 			   response);
   MHD_destroy_response(response);
@@ -73,12 +74,13 @@ int main(int argc,
 	   argv[0]);
     return 1;
   }
-  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_IPv4 | MHD_USE_DEBUG,
+  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
 		       atoi(argv[1]),
 		       &apc_all,
 		       NULL,
 		       &ahc_echo,
-		       PAGE);
+		       PAGE,
+		       MHD_OPTION_END);
   if (d == NULL)
     return 1;
   sleep(atoi(argv[2]));

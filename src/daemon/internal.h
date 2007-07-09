@@ -156,8 +156,8 @@ struct MHD_Response {
 
 
 
-struct MHD_Session {
-  struct MHD_Session * next;
+struct MHD_Connection {
+  struct MHD_Connection * next;
 
   struct MHD_Daemon * daemon;
 
@@ -196,7 +196,7 @@ struct MHD_Session {
   struct sockaddr_in * addr;
 
   /**
-   * Thread for this session (if we are using
+   * Thread for this connection (if we are using
    * one thread per connection).
    */
   pthread_t pid;
@@ -279,7 +279,7 @@ struct MHD_Daemon {
 
   struct MHD_Access_Handler default_handler;
 
-  struct MHD_Session * connections;
+  struct MHD_Connection * connections;
 
   MHD_AcceptPolicyCallback apc;
 

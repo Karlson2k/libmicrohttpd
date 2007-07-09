@@ -461,7 +461,8 @@ MHD_start_daemon(unsigned int options,
 		 MHD_AcceptPolicyCallback apc,
 		 void * apc_cls,
 		 MHD_AccessHandlerCallback dh,
-		 void * dh_cls) {
+		 void * dh_cls,
+		 ...) {
   struct MHD_Daemon * retVal;
   int socket_fd;
   struct sockaddr_in servaddr;	
@@ -469,8 +470,6 @@ MHD_start_daemon(unsigned int options,
   if ((options & MHD_USE_SSL) != 0)
     return NULL;
   if ((options & MHD_USE_IPv6) != 0)
-    return NULL;
-  if ((options & MHD_USE_IPv4) == 0)
     return NULL;
   if ( (port == 0) ||
        (dh == NULL) )

@@ -531,6 +531,7 @@ MHD_call_connection_handler(struct MHD_Connection * connection) {
 		       connection,
 		       connection->url,
 		       connection->method,
+		       connection->version,
 		       connection->read_buffer,
 		       &processed)) {
     /* serios internal error, close connection */
