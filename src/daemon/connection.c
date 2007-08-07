@@ -111,7 +111,7 @@ MHD_queue_response(struct MHD_Connection * connection,
        (connection->response != NULL) ||
        (connection->bodyReceived == 0) ||
        (connection->headersReceived == 0) )
-    return MHD_NO;	
+    return MHD_NO; 
   MHD_increment_response_rc(response);
   connection->response = response;
   connection->responseCode = status_code;
@@ -552,6 +552,9 @@ MHD_call_connection_handler(struct MHD_Connection * connection) {
     abort(); /* bad timing... */
   ah = MHD_find_access_handler(connection);
   processed = connection->readLoc;
+  /* FIXME: in case of POST, we need to
+     process the POST data here as well
+     (adding to the header list! */
   if (MHD_NO == ah->dh(ah->dh_cls,
 		       connection,
 		       connection->url,
@@ -766,7 +769,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     }
     return MHD_YES;
   }
-  if (response->total_size <= connection->messagePos)
+  if (response->total_size < connection->messagePos)
     abort(); /* internal error */
   if (response->crc != NULL)
     pthread_mutex_lock(&response->mutex);

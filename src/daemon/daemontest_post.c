@@ -37,6 +37,9 @@
 #include <string.h>
 #include <time.h>
 
+#define POST_DATA "name=daniel&project=curl"
+
+
 static int apc_all(void * cls,
 		   const struct sockaddr * addr,
 		   socklen_t addrlen) {
@@ -77,6 +80,25 @@ static int ahc_echo(void * cls,
   if (0 != strcmp("POST", method)) {
     printf("METHOD: %s\n", method);
     return MHD_NO; /* unexpected method */
+  }
+  if ( (*upload_data_size < 24) &&
+       (*upload_data_size > 0) ) 
+    return MHD_YES; /* continue */
+  if (*upload_data_size == 24) {
+    *upload_data_size = 0;
+    if ( (0 != strcmp("daniel",
+		      MHD_lookup_connection_value(connection,
+						  MHD_POSTDATA_KIND,
+						  "name"))) ||
+	 (0 != strcmp("curl",
+		      MHD_lookup_connection_value(connection,
+						  MHD_POSTDATA_KIND,
+						  "project"))) ) {
+      printf("POST DATA not processed correctly!\n");
+      return MHD_NO;
+    }   
+	 
+    return MHD_YES; /* continue */
   }
   /* FIXME: check connection headers... */
   response = MHD_create_response_from_data(strlen(url),
@@ -119,9 +141,12 @@ static int testInternalPost() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTPPOST,
-		   NULL); /* FIXME! */
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDS, 
+		   POST_DATA);
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDSIZE, 
+		   strlen(POST_DATA));
   curl_easy_setopt(c,
 		   CURLOPT_POST,
 		   1L);
@@ -193,9 +218,12 @@ static int testMultithreadedPost() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTPPOST,
-		   NULL); /* FIXME! */
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDS, 
+		   POST_DATA);
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDSIZE, 
+		   strlen(POST_DATA));
   curl_easy_setopt(c,
 		   CURLOPT_POST,
 		   1L);
@@ -278,9 +306,12 @@ static int testExternalPost() {
   curl_easy_setopt(c,
 		   CURLOPT_WRITEDATA,
 		   &cbc);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTPPOST,
-		   NULL); /* FIXME! */
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDS, 
+		   POST_DATA);
+  curl_easy_setopt(c, 
+		   CURLOPT_POSTFIELDSIZE, 
+		   strlen(POST_DATA));
   curl_easy_setopt(c,
 		   CURLOPT_POST,
 		   1L);
