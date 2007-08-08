@@ -6,24 +6,25 @@ reasonably complete.  #XXXX refers to the respective Mantis bug report
 (or feature request).  ARCH indicates that implementing this feature
 may require non-trivial ARCHitectural changes in the code.  API
 indicates that implementing the feature will require API changes.
-TRIV indicates that implementing this feature should be TRIVial.
+TRIV indicates that implementing this feature should be TRIVial.  TEST
+indicates that a testcase should be written before implementing the
+feature.
 
 
 For http/1.1-compliance:
 ========================
 connection.c:
-- support responding immediately with "100 CONTINUE" (http 1.1) (#1263, ARCH)
 - send proper error code back if headers are too long
-  (currently, we just close the connection) (#1222, ARCH)
-- support chunked requests from clients (#1260, ARCH)
+  (currently, we just close the connection) (#1222, ARCH, TEST)
+- support chunked requests from clients (#1260, TEST, TEST)
 - send proper error code back if client forgot the "Host" header (#1264, TRIV)
 - automatically add MHD_HTTP_HEADER_DATE if client "forgot" to add one (#1261, TRIV)
 - automatically drop body from responses to "HEAD" requests (#1262, TRIV)
 
 For POST:
 =========
-- find better way to handle POST data that does not fit into memory (#1221, API)
-- add support to decode multipart/form-data (#1221)
+- find better way to handle POST data that does not fit into memory (#1221, API, TEST)
+- add support to decode multipart/form-data (#1221, TEST)
 
 For SSL:
 ========

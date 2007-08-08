@@ -33,6 +33,8 @@
 #include <string.h>
 #include <time.h>
 
+static int oneone;
+
 static int apc_all(void * cls,
 		   const struct sockaddr * addr,
 		   socklen_t addrlen) {
@@ -122,7 +124,15 @@ static int testInternalGet() {
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
-  // NOTE: use of CONNECTTIMEOUT without also
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
+   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
   curl_easy_setopt(c,
@@ -184,7 +194,15 @@ static int testMultithreadedGet() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   2L);
-  curl_easy_setopt(c,
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
+   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
   // NOTE: use of CONNECTTIMEOUT without also
@@ -256,7 +274,15 @@ static int testExternalGet() {
   curl_easy_setopt(c,
 		   CURLOPT_FAILONERROR,
 		   1);
-  curl_easy_setopt(c,
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
+   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   5L);
   curl_easy_setopt(c,
@@ -364,6 +390,7 @@ int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
 
+  oneone = NULL != strstr(argv[0], "11");
   if (0 != curl_global_init(CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalGet();

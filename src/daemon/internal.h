@@ -272,6 +272,12 @@ struct MHD_Connection {
   size_t uploadSize;
 
   /**
+   * Position in the 100 CONTINUE message that
+   * we need to send when receiving http 1.1 requests.
+   */
+  size_t continuePos;
+
+  /**
    * Length of the foreign address.
    */
   socklen_t addr_len;

@@ -35,6 +35,10 @@
  */
 #define MHD_BUF_INC_SIZE 2048
 
+/**
+ * Message to transmit when http 1.1 request is received
+ */
+#define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
 
 /**
  * Get all of the headers from the request.
@@ -170,7 +174,11 @@ MHD_connection_get_fdset(struct MHD_Connection * connection,
       }
     }
   } 
-  if (connection->response != NULL) {
+  if ( (connection->response != NULL) ||
+       ( (connection->version != NULL) &&
+	 (0 == strcasecmp(connection->version,
+			  MHD_HTTP_VERSION_1_1)) &&
+	 (connection->continuePos < strlen(HTTP_100_CONTINUE)) ) ) {
     FD_SET(fd, write_fd_set);
     if (fd > *max_fd) 
       *max_fd = fd;
@@ -921,6 +929,27 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
   struct MHD_Response * response;
   int ret;
 
+  if ( (connection->version != NULL) &&
+       (0 == strcasecmp(connection->version,
+			MHD_HTTP_VERSION_1_1)) &&
+       (connection->continuePos < strlen(HTTP_100_CONTINUE)) ) {
+    ret = SEND(connection->socket_fd,
+	       &HTTP_100_CONTINUE[connection->continuePos],
+	       strlen(HTTP_100_CONTINUE) - connection->continuePos,
+	       0);
+    if (ret < 0) {
+      if (errno == EINTR)
+	return MHD_YES;
+      MHD_DLOG(connection->daemon,
+	       "Failed to send data: %s\n",
+	       STRERROR(errno));
+      CLOSE(connection->socket_fd);
+      connection->socket_fd = -1;
+      return MHD_YES;
+    }
+    connection->continuePos += ret;
+    return MHD_YES; 
+  }
   response = connection->response;
   if(response == NULL) {
     MHD_DLOG(connection->daemon,
@@ -1027,6 +1056,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
 	 (connection->headersReceived == 0) )
       abort(); /* internal error */
     MHD_destroy_response(response);
+    connection->continuePos = 0;
     connection->responseCode = 0;
     connection->response = NULL;
     connection->headersReceived = 0;

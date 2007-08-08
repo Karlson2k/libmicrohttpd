@@ -33,6 +33,7 @@ check_PROGRAMS = \
   daemontest_get \
   daemontest_post \
   daemontest_put \
+  daemontest_get11 \
   daemontest_post11 \
   daemontest_put11
 
@@ -58,6 +59,12 @@ daemontest_post_LDADD = \
 daemontest_put_SOURCES = \
   daemontest_put.c
 daemontest_put_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_get11_SOURCES = \
+  daemontest_get.c
+daemontest_get11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
