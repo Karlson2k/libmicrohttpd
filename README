@@ -1,34 +1,44 @@
 Run "autoreconf -fi" to create configure.
 
-This is still pre-alpha software.  The following things should be
+This is still pre-alpha software.  Below we list things that should be
 implemented (in order of importance) before we can claim to be
-reasonably complete:
+reasonably complete.  #XXXX refers to the respective Mantis bug report
+(or feature request).  ARCH indicates that implementing this feature
+may require non-trivial ARCHitectural changes in the code.  API
+indicates that implementing the feature will require API changes.
+TRIV indicates that implementing this feature should be TRIVial.
 
 
 For http/1.1-compliance:
 ========================
 connection.c:
-- support responding immediately with "100 CONTINUE" (http 1.1)!
+- support responding immediately with "100 CONTINUE" (http 1.1) (#1263, ARCH)
 - send proper error code back if headers are too long
-  (currently, we just close the connection)
-- support chunked requests from clients
-- send proper error code back if client forgot the "Host" header (?)
-- automatically add MHD_HTTP_HEADER_DATE if client "forgot" to add one (?)
-- automatically drop body from responses to "HEAD" requests?
+  (currently, we just close the connection) (#1222, ARCH)
+- support chunked requests from clients (#1260, ARCH)
+- send proper error code back if client forgot the "Host" header (#1264, TRIV)
+- automatically add MHD_HTTP_HEADER_DATE if client "forgot" to add one (#1261, TRIV)
+- automatically drop body from responses to "HEAD" requests (#1262, TRIV)
 
 For POST:
 =========
-- find better way to handle POST data that does not fit into memory
-- add support to decode multipart/form-data 
+- find better way to handle POST data that does not fit into memory (#1221, API)
+- add support to decode multipart/form-data (#1221)
 
 For SSL:
 ========
 microhttpd.h:
-- define appropriate MHD_OPTIONs
-- actual implementation
+- define appropriate MHD_OPTIONs (#1225, API)
+- actual implementation (#1225, ARCH)
 
 Missing Testcases:
 ==================
 - add testcases for http/1.1 pipelining (need
   to figure out how to ensure curl pipelines)
 - add testcases for resource limit enforcement
+
+Documentation:
+==============
+- manual (texinfo, man)
+- tutorial
+- web page
