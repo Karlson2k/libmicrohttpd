@@ -39,6 +39,7 @@
 
 #define POST_DATA "name=daniel&project=curl"
 
+static int oneone;
 
 static int apc_all(void * cls,
 		   const struct sockaddr * addr,
@@ -76,40 +77,36 @@ static int ahc_echo(void * cls,
 		    unsigned int * upload_data_size) {
   struct MHD_Response * response;
   int ret;
+  const char * r1;
+  const char * r2;
 
   if (0 != strcmp("POST", method)) {
     printf("METHOD: %s\n", method);
     return MHD_NO; /* unexpected method */
   }
-  if ( (*upload_data_size < 24) &&
-       (*upload_data_size > 0) ) 
-    return MHD_YES; /* continue */
-  if (*upload_data_size == 24) {
-    *upload_data_size = 0;
-    if ( (0 != strcmp("daniel",
-		      MHD_lookup_connection_value(connection,
-						  MHD_POSTDATA_KIND,
-						  "name"))) ||
-	 (0 != strcmp("curl",
-		      MHD_lookup_connection_value(connection,
-						  MHD_POSTDATA_KIND,
-						  "project"))) ) {
-      printf("POST DATA not processed correctly!\n");
-      return MHD_NO;
-    }   
-	 
-    return MHD_YES; /* continue */
+  r1 = MHD_lookup_connection_value(connection,
+				   MHD_POSTDATA_KIND,
+				   "name");
+  r2 = MHD_lookup_connection_value(connection,
+				   MHD_POSTDATA_KIND,
+				   "project");
+  if ( (r1 != NULL) &&
+       (r2 != NULL) &&
+       (0 == strcmp("daniel",
+		    r1)) &&
+       (0 == strcmp("curl",
+		    r2)) ) {
+    response = MHD_create_response_from_data(strlen(url),
+					     (void*) url,
+					     MHD_NO,
+					     MHD_YES);
+    ret = MHD_queue_response(connection,
+			     MHD_HTTP_OK,
+			     response);
+    MHD_destroy_response(response);
+    return MHD_YES; /* done */
   }
-  /* FIXME: check connection headers... */
-  response = MHD_create_response_from_data(strlen(url),
-					   (void*) url,
-					   MHD_NO,
-					   MHD_YES);
-  ret = MHD_queue_response(connection,
-			   MHD_HTTP_OK,
-			   response);
-  MHD_destroy_response(response);
-  return ret;
+  return MHD_YES;
 }
 
 
@@ -118,7 +115,7 @@ static int testInternalPost() {
   CURL * c;
   char buf[2048];
   struct CBC cbc;
-
+ 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
@@ -156,9 +153,14 @@ static int testInternalPost() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   2L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
@@ -233,9 +235,14 @@ static int testMultithreadedPost() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   2L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   2L);
@@ -321,9 +328,14 @@ static int testExternalPost() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   5L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   5L);
@@ -429,11 +441,12 @@ int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
 
+  oneone = NULL != strstr(argv[0], "11");
   if (0 != curl_global_init(CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalPost();
   errorCount += testMultithreadedPost();
-  errorCount += testExternalPost();  
+  errorCount += testExternalPost();    
   if (errorCount != 0)
     fprintf(stderr,
 	    "Error (code: %u)\n",

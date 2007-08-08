@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/mman.h>
 
 #include "config.h"
 #include "plibc.h"
@@ -48,8 +49,6 @@
 #endif
 
 #include <pthread.h>
-
-#define MHD_MAX_BUF_SIZE 2048
 
 #define MAX(a,b) ((a)<(b)) ? (b) : (a)
 
@@ -157,41 +156,72 @@ struct MHD_Response {
 
 
 struct MHD_Connection {
+
+  /**
+   * This is a linked list.
+   */
   struct MHD_Connection * next;
 
+  /**
+   * Reference to the MHD_Daemon struct.
+   */
   struct MHD_Daemon * daemon;
 
+  /**
+   * Linked list of parsed headers.
+   */
   struct MHD_HTTP_Header * headers_received;
 
+  /**
+   * Response to transmit (initially NULL).
+   */
   struct MHD_Response * response;
 
   /**
-   * Request method.  Should be GET/POST/etc.
+   * The memory pool is created whenever we first read
+   * from the TCP stream and destroyed at the end of
+   * each request (and re-created for the next request).
+   * In the meantime, this pointer is NULL.  The
+   * pool is used for all connection-related data
+   * except for the response (which maybe shared between
+   * connections) and the IP address (which persists
+   * across individual requests).
+   */
+  struct MemoryPool * pool;
+
+  /**
+   * Request method.  Should be GET/POST/etc.  Allocated
+   * in pool.
    */
   char * method;
 
   /**
-   * Requested URL (everything after "GET" only).
+   * Requested URL (everything after "GET" only).  Allocated
+   * in pool.
    */
   char * url;
 
   /**
-   * HTTP version string (i.e. http/1.1)
+   * HTTP version string (i.e. http/1.1).  Allocated
+   * in pool.
    */
   char * version;
 
   /**
-   * Buffer for reading requests.
+   * Buffer for reading requests.   Allocated
+   * in pool.
    */
   char * read_buffer;
 
   /**
-   * Buffer for writing response.
+   * Buffer for writing response (headers only).  Allocated
+   * in pool.
    */
   char * write_buffer;
 
   /**
-   * Foreign address (of length addr_len).
+   * Foreign address (of length addr_len).  MALLOCED (not
+   * in pool!).
    */
   struct sockaddr_in * addr;
 
@@ -201,12 +231,30 @@ struct MHD_Connection {
    */
   pthread_t pid;
 
+  /**
+   * Size of read_buffer (in bytes).
+   */
   size_t read_buffer_size;
 
+  /**
+   * Position where we currently append data in
+   * read_buffer (last valid position).
+   */
   size_t readLoc;
 
+  /**
+   * Size of write_buffer (in bytes).
+   */
   size_t write_buffer_size;
 
+  /**
+   * Offset where we are with sending from write_buffer.
+   */
+  size_t writePos;
+
+  /**
+   * Last valid location in write_buffer.
+   */
   size_t writeLoc;
 
   /**
@@ -264,6 +312,11 @@ struct MHD_Connection {
   int headersSent;
 
   /**
+   * Are we processing the POST data?
+   */
+  int post_processed;
+
+  /**
    * HTTP response code.  Only valid if response object
    * is already set.
    */
@@ -279,6 +332,9 @@ struct MHD_Daemon {
 
   struct MHD_Access_Handler default_handler;
 
+  /**
+   * Linked list of our current connections.
+   */
   struct MHD_Connection * connections;
 
   MHD_AcceptPolicyCallback apc;
@@ -301,11 +357,24 @@ struct MHD_Daemon {
   int shutdown;
 
   /**
+   * Size of the per-connection memory pools.
+   */
+  unsigned int pool_size;
+
+  /**
+   * Limit on the number of parallel connections.
+   */
+  unsigned int max_connections;
+
+  /**
    * Daemon's options.
    */
   enum MHD_OPTION options;
 
-  unsigned short port;
+  /**
+   * Listen port.
+   */
+  unsigned short port;  
 
 };
 

@@ -32,6 +32,8 @@
 #include <string.h>
 #include <time.h>
 
+static int oneone;
+
 static int apc_all(void * cls,
 		   const struct sockaddr * addr,
 		   socklen_t addrlen) {
@@ -164,9 +166,14 @@ static int testInternalPut() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   15L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   15L);
@@ -246,9 +253,14 @@ static int testMultithreadedPut() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   15L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   15L);
@@ -339,9 +351,14 @@ static int testExternalPut() {
   curl_easy_setopt(c,
 		   CURLOPT_TIMEOUT,
 		   15L);
-  curl_easy_setopt(c,
-		   CURLOPT_HTTP_VERSION,
-		   CURL_HTTP_VERSION_1_0);
+  if (oneone)
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt(c,
+		     CURLOPT_HTTP_VERSION,
+		     CURL_HTTP_VERSION_1_0);
   curl_easy_setopt(c,
 		   CURLOPT_CONNECTTIMEOUT,
 		   15L);
@@ -447,6 +464,7 @@ int main(int argc,
 	 char * const * argv) {
   unsigned int errorCount = 0;
 
+  oneone = NULL != strstr(argv[0], "11");
   if (0 != curl_global_init(CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalPut();

@@ -187,7 +187,24 @@ extern "C" {
 #define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
 #define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
 
+/**
+ * HTTP methods
+ */
+#define MHD_HTTP_METHOD_CONNECT "CONNECT"
+#define MHD_HTTP_METHOD_DELETE "DELETE"
+#define MHD_HTTP_METHOD_GET "GET"
+#define MHD_HTTP_METHOD_HEAD "HEAD"
+#define MHD_HTTP_METHOD_OPTIONS "OPTIONS"
+#define MHD_HTTP_METHOD_POST "POST"
+#define MHD_HTTP_METHOD_PUT "PUT"
+#define MHD_HTTP_METHOD_TRACE "TRACE"
 
+/**
+ * HTTP POST encodings, see also
+ * http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
+ */
+#define MHD_HTTP_POST_ENCODING_FORM_URLENCODED "application/x-www-form-urlencoded"
+#define MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA "multipart/form-data"
 
 /**
  * Options for the MHD daemon.  Note that if neither
@@ -248,8 +265,16 @@ enum MHD_OPTION {
   MHD_OPTION_END = 0,
 
   /**
-   * FIXME: add options for buffer sizes here...
+   * Maximum memory size per connection (followed by an
+   * unsigned int).
    */
+  MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
+
+  /**
+   * Maximum number of concurrenct connections to
+   * accept (followed by an unsigned int).
+   */
+  MHD_OPTION_CONNECTION_LIMIT = 2,
 
 };
 
@@ -265,22 +290,28 @@ enum MHD_ValueKind {
   MHD_RESPONSE_HEADER_KIND = 0,
 
   /**
-   * HTTP header
+   * HTTP header.
    */
   MHD_HEADER_KIND = 1,
 
   /**
-   * Cookies
+   * Cookies.  Note that the original HTTP header containing
+   * the cookie(s) will still be available and intact.
    */
   MHD_COOKIE_KIND = 2,
 
   /**
-   * POST data
+   * POST data.  This is available only if a content encoding
+   * supported by MHD is used (currently only URL encoding),
+   * and only if the posted content fits within the available
+   * memory pool.  Note that in that case, the upload data
+   * given to the MHD_AccessHandlerCallback will be
+   * empty (since it has already been processed).
    */
   MHD_POSTDATA_KIND = 4,
 
   /**
-   * GET (URI) arguments
+   * GET (URI) arguments.
    */
   MHD_GET_ARGUMENT_KIND = 8,
 
@@ -326,9 +357,16 @@ typedef int
  * @param url the requested url
  * @param method the HTTP method used ("GET", "PUT", etc.)
  * @param version the HTTP version string (i.e. "HTTP/1.1")
+ * @param upload_data the data being uploaded (excluding HEADERS,
+ *        for a POST that fits into memory and that is encoded
+ *        with a supported encoding, the POST data will NOT be
+ *        given in upload_data and is instead available as 
+ *        part of MHD_get_connection_values; very large POST
+ *        data *will* be made available incrementally in
+ *        upload_data)
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
- *        value to the number of bytes NOT processed
+ *        value to the number of bytes NOT processed;
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serios
  *         error while handling the request

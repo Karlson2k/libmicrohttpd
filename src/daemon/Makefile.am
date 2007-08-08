@@ -11,6 +11,7 @@ libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   daemon.c  \
   internal.c internal.h \
+  memorypool.c memorypool.h \
   plibc.h \
   response.c response.h 
 
@@ -31,7 +32,9 @@ check_PROGRAMS = \
   daemontest \
   daemontest_get \
   daemontest_post \
-  daemontest_put
+  daemontest_put \
+  daemontest_post11 \
+  daemontest_put11
 
 TESTS = $(check_PROGRAMS)
 
@@ -46,17 +49,28 @@ daemontest_get_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-
 daemontest_post_SOURCES = \
   daemontest_post.c
 daemontest_post_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-
 daemontest_put_SOURCES = \
   daemontest_put.c
 daemontest_put_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_post11_SOURCES = \
+  daemontest_post.c
+daemontest_post11_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+
+daemontest_put11_SOURCES = \
+  daemontest_put.c
+daemontest_put11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

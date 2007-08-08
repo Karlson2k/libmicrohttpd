@@ -1,2 +1,6 @@
+Wed Aug  8 01:46:06 MDT 2007
+	 Added pool allocation and connection limitations (total
+	 number and memory size).
+
 Tue Jan  9 20:52:48 MST 2007
 	 Created project build files and updated API. - CG

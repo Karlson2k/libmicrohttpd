@@ -28,9 +28,17 @@
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
+#include "memorypool.h"
 
-#define MHD_MAX_CONNECTIONS FD_SETSIZE -4
+/**
+ * Default connection limit.
+ */
+#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE -4
 
+/**
+ * Default memory allowed per connection.
+ */
+#define MHD_POOL_SIZE_DEFAULT (1024 * 1024)
 
 /**
  * Register an access handler for all URIs beginning with uri_prefix.
@@ -229,6 +237,13 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
     MHD_DLOG(daemon,
 	     "Error accepting connection: %s\n",
 	     STRERROR(errno));
+    if (s != -1) 
+      CLOSE(s); /* just in case */    
+    return MHD_NO;
+  }
+  if (daemon->max_connections == 0) {
+    /* above connection limit - reject */
+    CLOSE(s);
     return MHD_NO;
   }
   if (MHD_NO == daemon->apc(daemon->apc_cls,
@@ -241,7 +256,13 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
   memset(connection,
 	 0,
 	 sizeof(struct MHD_Connection));
+  connection->pool = NULL;
   connection->addr = malloc(addrlen);
+  if (connection->addr == NULL) {
+    CLOSE(s);
+    free(connection);
+    return MHD_NO;
+  }
   memcpy(connection->addr,
 	 addr,
 	 addrlen);
@@ -258,11 +279,13 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
 	     STRERROR(errno));
     free(connection->addr);
     CLOSE(s);
+    free(connection->addr);
     free(connection);
     return MHD_NO;
   }
   connection->next = daemon->connections;
   daemon->connections = connection;
+  daemon->max_connections--;    
   return MHD_YES;
 }
 
@@ -281,7 +304,6 @@ static void
 MHD_cleanup_connections(struct MHD_Daemon * daemon) {
   struct MHD_Connection * pos;
   struct MHD_Connection * prev;
-  struct MHD_HTTP_Header * hpos;
   void * unused;
 
   pos = daemon->connections;
@@ -296,25 +318,12 @@ MHD_cleanup_connections(struct MHD_Daemon * daemon) {
 	pthread_kill(pos->pid, SIGALRM);
 	pthread_join(pos->pid, &unused);
       }
-      free(pos->addr);
-      if (pos->url != NULL)
-	free(pos->url);
-      if (pos->method != NULL)
-	free(pos->method);
-      if (pos->write_buffer != NULL)
-	free(pos->write_buffer);
-      if (pos->read_buffer != NULL)
-	free(pos->read_buffer);
-      while (pos->headers_received != NULL) {
-	hpos = pos->headers_received;
-	pos->headers_received = hpos->next;
-	free(hpos->header);
-	free(hpos->value);
-	free(hpos);
-      }
       if (pos->response != NULL)
 	MHD_destroy_response(pos->response);
+      MHD_pool_destroy(pos->pool);
+      free(pos->addr);
       free(pos);
+      daemon->max_connections++;
       if (prev == NULL)
 	pos = daemon->connections;
       else
@@ -474,6 +483,8 @@ MHD_start_daemon(unsigned int options,
   struct sockaddr_in6 servaddr6;	
   const struct sockaddr * servaddr;
   socklen_t addrlen;
+  va_list ap;
+  enum MHD_OPTION opt;
  
   if ((options & MHD_USE_SSL) != 0)
     return NULL;
@@ -549,6 +560,24 @@ MHD_start_daemon(unsigned int options,
   retVal->default_handler.dh_cls = dh_cls;
   retVal->default_handler.uri_prefix = "";
   retVal->default_handler.next = NULL;
+  retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
+  retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
+  va_start(ap, dh_cls);
+  while (MHD_OPTION_END != (opt = va_arg(ap, enum MHD_OPTION))) {
+    switch (opt) {
+    case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+      retVal->pool_size = va_arg(ap, unsigned int);
+      break;
+    case MHD_OPTION_CONNECTION_LIMIT:
+      retVal->max_connections = va_arg(ap, unsigned int);
+      break;
+    default:
+      fprintf(stderr,
+	      "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+      abort();
+    }
+  }
+  va_end(ap);
   if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
 	 (0 != (options & MHD_USE_SELECT_INTERNALLY)) ) &&
        (0 != pthread_create(&retVal->pid,

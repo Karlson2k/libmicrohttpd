@@ -1,32 +1,25 @@
-Run "autoreconf -f -i" to create configure.
+Run "autoreconf -fi" to create configure.
 
-This is still pre-alpha software.  The following
-things need to be implemented (in list of importance)
-before certain features can be used at all:
+This is still pre-alpha software.  The following things should be
+implemented (in order of importance) before we can claim to be
+reasonably complete:
 
+
+For http/1.1-compliance:
+========================
+connection.c:
+- support responding immediately with "100 CONTINUE" (http 1.1)!
+- send proper error code back if headers are too long
+  (currently, we just close the connection)
+- support chunked requests from clients
+- send proper error code back if client forgot the "Host" header (?)
+- automatically add MHD_HTTP_HEADER_DATE if client "forgot" to add one (?)
+- automatically drop body from responses to "HEAD" requests?
 
 For POST:
 =========
-- Decoding of POST data, testing thereof
-- POST testcase currently fails (blocks!)
-
-For http-compliance:
-====================
-session.c:
-- send proper error code back if headers are too long
-  (investigate what we should do with those headers,
-   read?  give user control?) 
-  ALSO: should this limit be per-line or for the
-  entire header? (currently,  we enforce per-line,
-  but the entire header might make more sense!)
-- http 1.0 compatibility (if 1.0, force connection
-  close at the end!)
-
-For IPv6:
-=========
-daemon.c:
-- fix start daemon and accept handlers
-
+- find better way to handle POST data that does not fit into memory
+- add support to decode multipart/form-data 
 
 For SSL:
 ========
@@ -34,13 +27,8 @@ microhttpd.h:
 - define appropriate MHD_OPTIONs
 - actual implementation
 
-
-Other:
-======
-- allow client to control size of input/output
-  buffers (add MHD_OPTION)
-- allow client to limit total number of connections
-  (add MHD_OPTION)
-
-
-
+Missing Testcases:
+==================
+- add testcases for http/1.1 pipelining (need
+  to figure out how to ensure curl pipelines)
+- add testcases for resource limit enforcement
