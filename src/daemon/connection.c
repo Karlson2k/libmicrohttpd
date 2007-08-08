@@ -131,6 +131,13 @@ MHD_queue_response(struct MHD_Connection * connection,
   MHD_increment_response_rc(response);
   connection->response = response;
   connection->responseCode = status_code;
+  if ( (connection->method != NULL) &&
+       (0 == strcasecmp(connection->method,
+			MHD_HTTP_METHOD_HEAD)) ) {
+    /* if this is a "HEAD" request, pretend that we
+       have already sent the full message body */
+    connection->messagePos = response->total_size;  
+  }
   return MHD_YES;
 }
 
