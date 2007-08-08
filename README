@@ -14,9 +14,7 @@ feature.
 For http/1.1-compliance:
 ========================
 connection.c:
-- send proper error code back if headers are too long
-  (currently, we just close the connection) (#1222, ARCH, TEST)
-- support chunked requests from clients (#1260, TEST, TEST)
+- support chunked requests from clients (#1260, ARCH, TEST)
 - send proper error code back if client forgot the "Host" header (#1264, TRIV)
 - automatically add MHD_HTTP_HEADER_DATE if client "forgot" to add one (#1261, TRIV)
 - automatically drop body from responses to "HEAD" requests (#1262, TRIV)

@@ -41,6 +41,12 @@
 #define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
 
 /**
+ * Response used when the request (http header) is too big to
+ * be processed.
+ */
+#define REQUEST_TOO_BIG ""
+
+/**
  * Get all of the headers from the request.
  *
  * @param iterator callback to call on each header;
@@ -146,16 +152,14 @@ MHD_connection_get_fdset(struct MHD_Connection * connection,
   fd = connection->socket_fd;
   if (fd == -1)
     return MHD_YES;
-  if ( (connection->read_close == 0) &&
+  if ( (connection->read_close == MHD_NO) &&
        ( (connection->headersReceived == 0) ||
 	 (connection->readLoc < connection->read_buffer_size) ) ) {  
     FD_SET(fd, read_fd_set);
     if (fd > *max_fd) 
       *max_fd = fd;
   } else {
-
-
-    if ( (connection->read_close == 0) &&
+    if ( (connection->read_close == MHD_NO) &&
 	 ( (connection->headersReceived == 1) &&
 	   (connection->post_processed == MHD_NO) &&
 	   (connection->readLoc == connection->read_buffer_size) ) ) {
@@ -188,17 +192,32 @@ MHD_connection_get_fdset(struct MHD_Connection * connection,
 
 /**
  * We ran out of memory processing the
- * header.  Handle it properly.
+ * header.  Handle it properly by stopping to read data
+ * and sending a HTTP 413 or HTTP 414 response.
+ * 
+ * @param status_code the response code to send (413 or 414)
  */
 static void
-MHD_excessive_header_handler(struct MHD_Connection * connection) {
+MHD_excessive_data_handler(struct MHD_Connection * connection,
+			   unsigned int status_code) {
+  struct MHD_Response * response;
+
   /* die, header far too long to be reasonable;
      FIXME: send proper response to client
      (stop reading, queue proper response) */
+  connection->read_close = MHD_YES;
+  connection->headersReceived = MHD_YES;
+  connection->bodyReceived = MHD_YES;
   MHD_DLOG(connection->daemon,
-	   "Received excessively long header line, closing connection.\n");
-  CLOSE(connection->socket_fd);
-  connection->socket_fd = -1;
+	   "Received excessively long header, closing connection.\n");
+  response = MHD_create_response_from_data(strlen(REQUEST_TOO_BIG),
+					   REQUEST_TOO_BIG,
+					   MHD_NO,
+					   MHD_NO);
+  MHD_queue_response(connection,
+		     status_code,
+		     response);
+  MHD_destroy_response(response);
 }
 
 /**
@@ -230,7 +249,10 @@ MHD_get_next_header_line(struct MHD_Connection * connection) {
 				 connection->read_buffer_size,
 				 connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE);
       if (rbuf == NULL) {
-	MHD_excessive_header_handler(connection);
+	MHD_excessive_data_handler(connection,
+				   (connection->url != NULL) 
+				   ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
+				   : MHD_HTTP_REQUEST_URI_TOO_LONG);
       } else {
 	connection->read_buffer_size = connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE;
 	connection->read_buffer = rbuf;
@@ -265,7 +287,8 @@ MHD_connection_add_header(struct MHD_Connection * connection,
   if (hdr == NULL) {
     MHD_DLOG(connection->daemon,
 	     "Not enough memory to allocate header record!\n");
-    MHD_excessive_header_handler(connection);
+    MHD_excessive_data_handler(connection,
+			       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
     return MHD_NO;
   }
   hdr->next = connection->headers_received;
@@ -360,7 +383,8 @@ MHD_parse_cookie_header(struct MHD_Connection * connection) {
   if (cpy == NULL) {
     MHD_DLOG(connection->daemon,
 	     "Not enough memory to parse cookies!\n");
-    MHD_excessive_header_handler(connection);
+    MHD_excessive_data_handler(connection,
+			       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
     return MHD_NO;
   }
   memcpy(cpy,
@@ -483,7 +507,8 @@ MHD_parse_connection_headers(struct MHD_Connection * connection) {
 				   strlen(last)+1,
 				   strlen(line) + strlen(last) + 1);
 	if (last == NULL) {
-	  MHD_excessive_header_handler(connection);
+	  MHD_excessive_data_handler(connection,
+				     MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
   	  break;
 	}
 	tmp = line;
@@ -620,8 +645,10 @@ MHD_test_post_data(struct MHD_Connection * connection) {
   const char * encoding;
   void * buf;
 
-  if (0 != strcasecmp(connection->method,
-		      MHD_HTTP_METHOD_POST))
+  if ( (connection->method == NULL) ||
+       (connection->response != NULL) ||
+       (0 != strcasecmp(connection->method,
+			MHD_HTTP_METHOD_POST)) )
     return MHD_NO;
   encoding = MHD_lookup_connection_value(connection,
 					 MHD_HEADER_KIND,
@@ -711,6 +738,8 @@ MHD_call_connection_handler(struct MHD_Connection * connection) {
   struct MHD_Access_Handler * ah;
   unsigned int processed;
 
+  if (connection->response != NULL)
+    return; /* already queued a response */
   if (connection->headersReceived == 0)
     abort(); /* bad timing... */
   ah = MHD_find_access_handler(connection);
@@ -778,7 +807,8 @@ MHD_connection_handle_read(struct MHD_Connection * connection) {
     if (tmp == NULL) {
       MHD_DLOG(connection->daemon,
 	       "Not enough memory for reading headers!\n");
-      MHD_excessive_header_handler(connection);
+      MHD_excessive_data_handler(connection,
+				 MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
       return MHD_NO;
     }
     connection->read_buffer = tmp;
@@ -824,8 +854,9 @@ MHD_connection_handle_read(struct MHD_Connection * connection) {
 	 (connection->uploadSize == connection->readLoc) )
       if (MHD_NO == MHD_parse_post_data(connection)) 
 	connection->post_processed = MHD_NO;      
-    if ( (connection->post_processed == MHD_NO) ||
-	 (connection->read_buffer_size == connection->readLoc) )
+    if ( ( (connection->post_processed == MHD_NO) ||
+	   (connection->read_buffer_size == connection->readLoc) ) &&
+	 (connection->method != NULL) )
       MHD_call_connection_handler(connection);
   }
   return MHD_YES;
@@ -1065,7 +1096,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     connection->messagePos = 0;
     connection->method = NULL;
     connection->url = NULL;
-    if ( (connection->read_close != 0) ||
+    if ( (connection->read_close == MHD_YES) ||
 	 (0 != strcasecmp(MHD_HTTP_VERSION_1_1,
 			  connection->version)) ) {
       /* closed for reading => close for good! */
