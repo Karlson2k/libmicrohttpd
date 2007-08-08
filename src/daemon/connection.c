@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Daniel Pittman
+     (C) 2007 Daniel Pittman and Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -880,10 +880,10 @@ MHD_add_extra_headers(struct MHD_Connection * connection) {
 
   if (connection->response->total_size == -1) {
     have = MHD_get_response_header(connection->response,
-				   "Connection");
+				   MHD_HTTP_HEADER_CONNECTION);
     if (have == NULL)
       MHD_add_response_header(connection->response,
-			      "Connection",
+			      MHD_HTTP_HEADER_CONNECTION,
 			      "close");
   } else if (NULL == MHD_get_response_header(connection->response,
 					     MHD_HTTP_HEADER_CONTENT_LENGTH)) {
@@ -894,7 +894,28 @@ MHD_add_extra_headers(struct MHD_Connection * connection) {
     MHD_add_response_header(connection->response,
 			    MHD_HTTP_HEADER_CONTENT_LENGTH,
 			    buf);
-  }
+  }  
+}
+
+static void get_date_string(char * date,
+			    unsigned int max) {
+  static const char * days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+  static const char * mons[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+  struct tm now;
+  time_t t;
+
+  time(&t);
+  gmtime_r(&t, &now);
+  snprintf(date,
+	   max-1,
+	   "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+	   days[now.tm_wday % 7],
+	   now.tm_mday,
+	   mons[now.tm_mon % 12],
+	   now.tm_year,
+	   now.tm_hour,
+	   now.tm_min,
+	   now.tm_sec);
 }
 
 /**
@@ -908,6 +929,7 @@ MHD_build_header_response(struct MHD_Connection * connection) {
   size_t off;
   struct MHD_HTTP_Header * pos;
   char code[32];
+  char date[128];
   char * data;
 
   MHD_add_extra_headers(connection);
@@ -923,6 +945,12 @@ MHD_build_header_response(struct MHD_Connection * connection) {
     size += strlen(pos->header) + strlen(pos->value) + 4; /* colon, space, linefeeds */
     pos = pos->next;
   }
+  if (NULL == MHD_get_response_header(connection->response,
+				      MHD_HTTP_HEADER_DATE)) 
+    get_date_string(date, sizeof(date));
+  else
+    date[0] = '\0';  
+  size += strlen(date);
   /* produce data */
   data = MHD_pool_allocate(connection->pool,
 			   size + 1,
@@ -944,6 +972,9 @@ MHD_build_header_response(struct MHD_Connection * connection) {
     off += strlen(pos->header) + strlen(pos->value) + 4;
     pos = pos->next;
   }
+  strcpy(&data[off],
+	 date);
+  off += strlen(date);
   sprintf(&data[off],
 	  "\r\n");
   off += 2;
