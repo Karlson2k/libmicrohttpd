@@ -633,7 +633,7 @@ static void sigalrmHandler(int sig) {
 /**
  * Initialize the signal handler for SIGALRM.
  */
-void __attribute__ ((constructor)) pthread_handlers_ltdl_init() {
+void __attribute__ ((constructor)) MHD_pthread_handlers_ltdl_init() {
   /* make sure SIGALRM does not kill us */
   memset(&sig, 0, sizeof(struct sigaction));
   memset(&old, 0, sizeof(struct sigaction));
@@ -642,7 +642,7 @@ void __attribute__ ((constructor)) pthread_handlers_ltdl_init() {
   sigaction(SIGALRM, &sig, &old);
 }
 
-void __attribute__ ((destructor)) pthread_handlers_ltdl_fini() {
+void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini() {
   sigaction(SIGALRM, &old, &sig);
 }
 
