@@ -1,6 +1,6 @@
 Run "autoreconf -fi" to create configure.
 
-This is still pre-alpha software.  Below we list things that should be
+This is still alpha software.  Below we list things that should be
 implemented (in order of importance) before we can claim to be
 reasonably complete.  #XXXX refers to the respective Mantis bug report
 (or feature request).  ARCH indicates that implementing this feature

@@ -1128,6 +1128,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     connection->continuePos = 0;
     connection->responseCode = 0;
     connection->response = NULL;
+    connection->headers_received = NULL;
     connection->headersReceived = 0;
     connection->headersSent = 0;
     connection->bodyReceived = 0;
