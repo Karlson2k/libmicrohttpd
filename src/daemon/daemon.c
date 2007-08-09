@@ -277,7 +277,6 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
     MHD_DLOG(daemon,
 	     "Failed to create a thread: %s\n",
 	     STRERROR(errno));
-    free(connection->addr);
     CLOSE(s);
     free(connection->addr);
     free(connection);
