@@ -1,6 +1,11 @@
+Fri Aug 10 17:31:23 MDT 2007
+	 Fixed problems with handling of responses created from
+	 callbacks.  Allowing accept policy callback to be NULL
+	 (to accept from all).  Added minimal fileserver example. -CG
+
 Wed Aug  8 01:46:06 MDT 2007
 	 Added pool allocation and connection limitations (total
-	 number and memory size).
+	 number and memory size).  Released libmicrohttpd 0.0.0. - CG
 
 Tue Jan  9 20:52:48 MST 2007
 	 Created project build files and updated API. - CG

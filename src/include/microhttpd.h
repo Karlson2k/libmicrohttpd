@@ -442,7 +442,9 @@ typedef void
  * @param flags combination of MHD_FLAG values
  * @param port port to bind to
  * @param apc callback to call to check which clients
- *        will be allowed to connect
+ *        will be allowed to connect; you can pass NULL
+ *        in which case connections from any IP will be
+ *        accepted
  * @param apc_cls extra argument to apc
  * @param dh default handler for all URIs
  * @param dh_cls extra argument to dh
