@@ -246,9 +246,10 @@ MHD_accept_connection(struct MHD_Daemon * daemon) {
     CLOSE(s);
     return MHD_NO;
   }
-  if (MHD_NO == daemon->apc(daemon->apc_cls,
-			    addr,
-			    addrlen)) {
+  if ( (daemon->apc != NULL) &&
+       (MHD_NO == daemon->apc(daemon->apc_cls,
+			      addr,
+			      addrlen)) ) {
     CLOSE(s);
     return MHD_YES;
   }

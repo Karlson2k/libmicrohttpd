@@ -1070,7 +1070,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
   /* prepare send buffer */
   if ( (response->data == NULL) ||
        (response->data_start > connection->messagePos) ||
-       (response->data_start + response->data_size < connection->messagePos) ) {
+       (response->data_start + response->data_size <= connection->messagePos) ) {
     if (response->data_size == 0) {
       if (response->data != NULL)
 	free(response->data);
@@ -1080,8 +1080,8 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     ret = response->crc(response->crc_cls,
 			connection->messagePos,
 			response->data,
-			MAX(MHD_BUF_INC_SIZE,
-			    response->data_size - connection->messagePos));
+			MIN(response->data_size,
+			    response->total_size - connection->messagePos));
     if (ret == -1) {
       /* end of message, signal other side by closing! */
       response->data_size = connection->messagePos;
@@ -1099,7 +1099,6 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
       return MHD_YES;
     }
   }
-
   /* transmit */
   ret = SEND(connection->socket_fd,
 	     &response->data[connection->messagePos - response->data_start],
@@ -1118,9 +1117,9 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
     return MHD_YES;
   }
   connection->messagePos += ret;
-  if (connection->messagePos > response->data_size)
+  if (connection->messagePos > response->total_size)
     abort(); /* internal error */
-  if (connection->messagePos == response->data_size) {
+  if (connection->messagePos == response->total_size) {
     if ( (connection->bodyReceived == 0) ||
 	 (connection->headersReceived == 0) )
       abort(); /* internal error */

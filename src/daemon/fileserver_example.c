@@ -19,21 +19,36 @@
 */
 
 /**
- * @file minimal_example.c
- * @brief minimal example for how to use libmicrohttpd
+ * @file fileserver_example.c
+ * @brief minimal example for how to use libmicrohttpd to server files
  * @author Christian Grothoff
  */
 
 #include "config.h"
 #include <microhttpd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #ifndef MINGW
 #include <unistd.h>
 #endif
 #include <string.h>
 #include <stdio.h>
 
-#define PAGE "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
+#define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
+
+static int file_reader(void * cls,
+		       size_t pos,
+		       char * buf,
+		       int max) {
+  FILE * file = cls;
+
+  fseek(file, pos, SEEK_SET);
+  return fread(buf,
+	       1,
+	       max,	       
+	       file);
+}
 
 static int ahc_echo(void * cls,
 		    struct MHD_Connection * connection,
@@ -42,20 +57,35 @@ static int ahc_echo(void * cls,
 		    const char * upload_data,
 		    const char * version,
 		    unsigned int * upload_data_size) {
-  const char * me = cls;
   struct MHD_Response * response;
   int ret;
+  FILE * file;
+  struct stat buf;
 
   if (0 != strcmp(method, "GET"))
     return MHD_NO; /* unexpected method */
-  response = MHD_create_response_from_data(strlen(me),
-					   (void*) me,
-					   MHD_NO,
-					   MHD_NO);
-  ret = MHD_queue_response(connection,
-			   MHD_HTTP_OK,
-			   response);
-  MHD_destroy_response(response);
+  file = fopen(&url[1], "r");
+  if (file == NULL) {
+    response = MHD_create_response_from_data(strlen(PAGE),
+					     (void*) PAGE,
+					     MHD_NO,
+					     MHD_NO);
+    ret = MHD_queue_response(connection,
+			     MHD_HTTP_NOT_FOUND,
+			     response);
+    MHD_destroy_response(response);
+  } else {
+    stat(&url[1],
+	 &buf);
+    response = MHD_create_response_from_callback(buf.st_size,
+						 &file_reader,
+						 file,
+						 (MHD_ContentReaderFreeCallback) &fclose);
+    ret = MHD_queue_response(connection,
+			     MHD_HTTP_OK,
+			     response);
+    MHD_destroy_response(response);
+  }
   return ret;
 }
 

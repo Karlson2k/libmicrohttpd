@@ -34,12 +34,6 @@
 
 static int oneone;
 
-static int apc_all(void * cls,
-		   const struct sockaddr * addr,
-		   socklen_t addrlen) {
-  return MHD_YES;
-}
-
 struct CBC {
   char * buf;
   size_t pos;
@@ -131,7 +125,7 @@ static int testInternalPut() {
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
 		       1080,
-		       &apc_all,
+		       NULL,
 		       NULL,
 		       &ahc_echo,
 		       &done_flag,
