@@ -31,11 +31,6 @@
 #include "response.h"
 
 /**
- * Size by which MHD usually tries to increment read/write buffers.
- */
-#define MHD_BUF_INC_SIZE 2048
-
-/**
  * Message to transmit when http 1.1 request is received
  */
 #define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
@@ -141,6 +136,25 @@ MHD_queue_response(struct MHD_Connection * connection,
   return MHD_YES;
 }
 
+/**
+ * Do we (still) need to send a 100 continue
+ * message for this connection?
+ */
+static int 
+MHD_need_100_continue(struct MHD_Connection * connection) {
+  const char * expect;
+
+  return ( (connection->version != NULL) &&
+	   (0 == strcasecmp(connection->version,
+			    MHD_HTTP_VERSION_1_1)) &&
+	   (connection->headersReceived == 1) &&
+	   (NULL != (expect = MHD_lookup_connection_value(connection,
+							  MHD_HEADER_KIND,
+							  MHD_HTTP_HEADER_EXPECT))) &&
+	   (0 == strcasecmp(expect,
+			    "100-continue")) &&
+	   (connection->continuePos < strlen(HTTP_100_CONTINUE)) );
+}
 
 /**
  * Obtain the select sets for this connection
@@ -186,10 +200,7 @@ MHD_connection_get_fdset(struct MHD_Connection * connection,
     }
   } 
   if ( (connection->response != NULL) ||
-       ( (connection->version != NULL) &&
-	 (0 == strcasecmp(connection->version,
-			  MHD_HTTP_VERSION_1_1)) &&
-	 (connection->continuePos < strlen(HTTP_100_CONTINUE)) ) ) {
+       MHD_need_100_continue(connection) ) {
     FD_SET(fd, write_fd_set);
     if (fd > *max_fd) 
       *max_fd = fd;
@@ -998,10 +1009,7 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
   struct MHD_Response * response;
   int ret;
 
-  if ( (connection->version != NULL) &&
-       (0 == strcasecmp(connection->version,
-			MHD_HTTP_VERSION_1_1)) &&
-       (connection->continuePos < strlen(HTTP_100_CONTINUE)) ) {
+  if (MHD_need_100_continue(connection)) {
     ret = SEND(connection->socket_fd,
 	       &HTTP_100_CONTINUE[connection->continuePos],
 	       strlen(HTTP_100_CONTINUE) - connection->continuePos,
@@ -1067,24 +1075,18 @@ MHD_connection_handle_write(struct MHD_Connection * connection) {
   if (response->crc != NULL)
     pthread_mutex_lock(&response->mutex);
 
-  /* prepare send buffer */
-  if ( (response->data == NULL) ||
-       (response->data_start > connection->messagePos) ||
-       (response->data_start + response->data_size <= connection->messagePos) ) {
-    if (response->data_size == 0) {
-      if (response->data != NULL)
-	free(response->data);
-      response->data = malloc(MHD_BUF_INC_SIZE);
-      response->data_size = MHD_BUF_INC_SIZE;
-    }
+  /* prepare send buffer */  
+  if ( (response->crc != NULL) &&
+       ( (response->data_start > connection->messagePos) ||
+	 (response->data_start + response->data_size <= connection->messagePos) ) ) {
     ret = response->crc(response->crc_cls,
 			connection->messagePos,
 			response->data,
-			MIN(response->data_size,
+			MIN(response->data_buffer_size,
 			    response->total_size - connection->messagePos));
     if (ret == -1) {
       /* end of message, signal other side by closing! */
-      response->data_size = connection->messagePos;
+      response->total_size = connection->messagePos;
       CLOSE(connection->socket_fd);
       connection->socket_fd = -1;
       if (response->crc != NULL)

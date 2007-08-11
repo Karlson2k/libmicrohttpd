@@ -53,6 +53,10 @@
 #define MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MIN(a,b) ((a)<(b)) ? (a) : (b)
 
+/**
+ * Size by which MHD usually tries to increment read/write buffers.
+ */
+#define MHD_BUF_INC_SIZE 2048
 
 /**
  * fprintf-like helper function for logging debug
@@ -145,6 +149,11 @@ struct MHD_Response {
    * Size of data.
    */
   size_t data_size;
+
+  /**
+   * Size of the data buffer.
+   */
+  size_t data_buffer_size;
 
   /**
    * At what offset in the stream is the

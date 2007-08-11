@@ -168,7 +168,14 @@ MHD_create_response_from_callback(size_t size,
   memset(retVal,
 	 0,
 	 sizeof(struct MHD_Response));
+  retVal->data = malloc(MHD_BUF_INC_SIZE);
+  if (retVal->data == NULL) {
+    free(retVal);
+    return NULL;
+  }
+  retVal->data_buffer_size = MHD_BUF_INC_SIZE;
   if (pthread_mutex_init(&retVal->mutex, NULL) != 0) {
+    free(retVal->data);
     free(retVal);
     return NULL;
   }
@@ -258,6 +265,8 @@ MHD_destroy_response(struct MHD_Response * response) {
     free(pos->value);
     free(pos);
   }
+  if (response->crc != NULL) 
+    free(response->data);
   free(response);
 }
 

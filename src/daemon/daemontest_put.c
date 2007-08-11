@@ -212,8 +212,7 @@ static int testMultithreadedPut() {
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
 		       1081,
-		       &apc_all,
-		       NULL,
+		       NULL,		       NULL,
 		       &ahc_echo,
 		       &done_flag,
 		       MHD_OPTION_END);
@@ -310,7 +309,7 @@ static int testExternalPut() {
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_DEBUG,
 		       1082,
-		       &apc_all,
+		       NULL,
 		       NULL,
 		       &ahc_echo,
 		       &done_flag,

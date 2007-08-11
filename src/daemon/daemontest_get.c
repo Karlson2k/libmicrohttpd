@@ -165,7 +165,7 @@ static int testMultithreadedGet() {
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
 		       1081,
-		       &apc_all,
+		       NULL,
 		       NULL,
 		       &ahc_echo,
 		       "GET",
@@ -248,7 +248,7 @@ static int testExternalGet() {
   cbc.pos = 0;
   d = MHD_start_daemon(MHD_USE_DEBUG,
 		       1082,
-		       &apc_all,
+		       NULL,
 		       NULL,
 		       &ahc_echo,
 		       "GET",

@@ -1,7 +1,8 @@
 Fri Aug 10 17:31:23 MDT 2007
 	 Fixed problems with handling of responses created from
 	 callbacks.  Allowing accept policy callback to be NULL
-	 (to accept from all).  Added minimal fileserver example. -CG
+	 (to accept from all).  Added minimal fileserver example.
+	 Only send 100 continue header when specifically requested. - CG
 
 Wed Aug  8 01:46:06 MDT 2007
 	 Added pool allocation and connection limitations (total
