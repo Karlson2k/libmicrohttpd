@@ -37,78 +37,69 @@
 
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
-static int file_reader(void * cls,
-		       size_t pos,
-		       char * buf,
-		       int max) {
-  FILE * file = cls;
+static int
+file_reader (void *cls, size_t pos, char *buf, int max)
+{
+  FILE *file = cls;
 
-  fseek(file, pos, SEEK_SET);
-  return fread(buf,
-	       1,
-	       max,	       
-	       file);
+  fseek (file, pos, SEEK_SET);
+  return fread (buf, 1, max, file);
 }
 
-static int ahc_echo(void * cls,
-		    struct MHD_Connection * connection,
-		    const char * url,
-		    const char * method,
-		    const char * upload_data,
-		    const char * version,
-		    unsigned int * upload_data_size) {
-  struct MHD_Response * response;
+static int
+ahc_echo (void *cls,
+          struct MHD_Connection *connection,
+          const char *url,
+          const char *method,
+          const char *upload_data,
+          const char *version, unsigned int *upload_data_size)
+{
+  struct MHD_Response *response;
   int ret;
-  FILE * file;
+  FILE *file;
   struct stat buf;
 
-  if (0 != strcmp(method, "GET"))
-    return MHD_NO; /* unexpected method */
-  file = fopen(&url[1], "r");
-  if (file == NULL) {
-    response = MHD_create_response_from_data(strlen(PAGE),
-					     (void*) PAGE,
-					     MHD_NO,
-					     MHD_NO);
-    ret = MHD_queue_response(connection,
-			     MHD_HTTP_NOT_FOUND,
-			     response);
-    MHD_destroy_response(response);
-  } else {
-    stat(&url[1],
-	 &buf);
-    response = MHD_create_response_from_callback(buf.st_size,
-						 &file_reader,
-						 file,
-						 (MHD_ContentReaderFreeCallback) &fclose);
-    ret = MHD_queue_response(connection,
-			     MHD_HTTP_OK,
-			     response);
-    MHD_destroy_response(response);
-  }
+  if (0 != strcmp (method, "GET"))
+    return MHD_NO;              /* unexpected method */
+  file = fopen (&url[1], "r");
+  if (file == NULL)
+    {
+      response = MHD_create_response_from_data (strlen (PAGE),
+                                                (void *) PAGE,
+                                                MHD_NO, MHD_NO);
+      ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
+      MHD_destroy_response (response);
+    }
+  else
+    {
+      stat (&url[1], &buf);
+      response = MHD_create_response_from_callback (buf.st_size,
+                                                    &file_reader,
+                                                    file,
+                                                    (MHD_ContentReaderFreeCallback)
+                                                    & fclose);
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      MHD_destroy_response (response);
+    }
   return ret;
 }
 
-int main(int argc,
-	 char * const * argv) {
-  struct MHD_Daemon * d;
+int
+main (int argc, char *const *argv)
+{
+  struct MHD_Daemon *d;
 
-  if (argc != 3) {
-    printf("%s PORT SECONDS-TO-RUN\n",
-	   argv[0]);
-    return 1;
-  }
-  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-		       atoi(argv[1]),
-		       NULL,
-		       NULL,
-		       &ahc_echo,
-		       PAGE,
-		       MHD_OPTION_END);
+  if (argc != 3)
+    {
+      printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
+      return 1;
+    }
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+                        atoi (argv[1]),
+                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  sleep(atoi(argv[2]));
-  MHD_stop_daemon(d);
+  sleep (atoi (argv[2]));
+  MHD_stop_daemon (d);
   return 0;
 }
-

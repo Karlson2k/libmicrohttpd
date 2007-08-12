@@ -34,26 +34,25 @@
  * @return MHD_NO on error (i.e. invalid header or content format).
  */
 int
-MHD_add_response_header(struct MHD_Response * response,
-			const char * header,
-			const char * content) {
-  struct MHD_HTTP_Header * hdr;
+MHD_add_response_header (struct MHD_Response *response,
+                         const char *header, const char *content)
+{
+  struct MHD_HTTP_Header *hdr;
 
-  if ( (response == NULL) ||
-       (header == NULL) ||
-       (content == NULL) ||
-       (strlen(header) == 0) ||
-       (strlen(content) == 0) ||
-       (NULL != strstr(header, "\t")) ||
-       (NULL != strstr(header, "\r")) ||
-       (NULL != strstr(header, "\n")) ||
-       (NULL != strstr(content, "\t")) ||
-       (NULL != strstr(content, "\r")) ||
-       (NULL != strstr(content, "\n")) )
+  if ((response == NULL) ||
+      (header == NULL) ||
+      (content == NULL) ||
+      (strlen (header) == 0) ||
+      (strlen (content) == 0) ||
+      (NULL != strstr (header, "\t")) ||
+      (NULL != strstr (header, "\r")) ||
+      (NULL != strstr (header, "\n")) ||
+      (NULL != strstr (content, "\t")) ||
+      (NULL != strstr (content, "\r")) || (NULL != strstr (content, "\n")))
     return MHD_NO;
-  hdr = malloc(sizeof(struct MHD_HTTP_Header));
-  hdr->header = strdup(header);
-  hdr->value = strdup(content);
+  hdr = malloc (sizeof (struct MHD_HTTP_Header));
+  hdr->header = strdup (header);
+  hdr->value = strdup (content);
   hdr->kind = MHD_HEADER_KIND;
   hdr->next = response->first_header;
   response->first_header = hdr;
@@ -66,32 +65,33 @@ MHD_add_response_header(struct MHD_Response * response,
  * @return MHD_NO on error (no such header known)
  */
 int
-MHD_del_response_header(struct MHD_Response * response,
-			const char * header,
-			const char * content) {
-  struct MHD_HTTP_Header * pos;
-  struct MHD_HTTP_Header * prev;
+MHD_del_response_header (struct MHD_Response *response,
+                         const char *header, const char *content)
+{
+  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Header *prev;
 
-  if ( (header == NULL) ||
-       (content == NULL) )
+  if ((header == NULL) || (content == NULL))
     return MHD_NO;
   prev = NULL;
   pos = response->first_header;
-  while (pos != NULL) {
-    if ( (0 == strcmp(header, pos->header)) &&	
-	 (0 == strcmp(content, pos->value)) ) {
-      free(pos->header);
-      free(pos->value);
-      if (prev == NULL)
-	response->first_header = pos->next;
-      else
-	prev->next = pos->next;
-      free(pos);
-      return MHD_YES;
+  while (pos != NULL)
+    {
+      if ((0 == strcmp (header, pos->header)) &&
+          (0 == strcmp (content, pos->value)))
+        {
+          free (pos->header);
+          free (pos->value);
+          if (prev == NULL)
+            response->first_header = pos->next;
+          else
+            prev->next = pos->next;
+          free (pos);
+          return MHD_YES;
+        }
+      prev = pos;
+      pos = pos->next;
     }
-    prev = pos;
-    pos = pos->next;
-  }
   return MHD_NO;
 }
 
@@ -104,22 +104,21 @@ MHD_del_response_header(struct MHD_Response * response,
  * @return number of entries iterated over
  */
 int
-MHD_get_response_headers(struct MHD_Response * response,
-			 MHD_KeyValueIterator iterator,
-			 void * iterator_cls) {
-  struct MHD_HTTP_Header * pos;
+MHD_get_response_headers (struct MHD_Response *response,
+                          MHD_KeyValueIterator iterator, void *iterator_cls)
+{
+  struct MHD_HTTP_Header *pos;
   int numHeaders = 0;
   pos = response->first_header;
-  while (pos != NULL) {
-    numHeaders++;
-    if ( (iterator != NULL) &&
-	 (MHD_YES != iterator(iterator_cls,
-			      pos->kind,
-			      pos->header,
-			      pos->value)) )
-      break;
-    pos = pos->next;
-  }
+  while (pos != NULL)
+    {
+      numHeaders++;
+      if ((iterator != NULL) &&
+          (MHD_YES != iterator (iterator_cls,
+                                pos->kind, pos->header, pos->value)))
+        break;
+      pos = pos->next;
+    }
   return numHeaders;
 }
 
@@ -131,16 +130,16 @@ MHD_get_response_headers(struct MHD_Response * response,
  * @return NULL if header does not exist
  */
 const char *
-MHD_get_response_header(struct MHD_Response * response,
-			const char * key) {
-  struct MHD_HTTP_Header * pos;
+MHD_get_response_header (struct MHD_Response *response, const char *key)
+{
+  struct MHD_HTTP_Header *pos;
   pos = response->first_header;
-  while (pos != NULL) {
-    if (0 == strcmp(key,
-		    pos->header))
-      return pos->value;
-    pos = pos->next;
-  }
+  while (pos != NULL)
+    {
+      if (0 == strcmp (key, pos->header))
+        return pos->value;
+      pos = pos->next;
+    }
   return NULL;
 }
 
@@ -156,29 +155,30 @@ MHD_get_response_header(struct MHD_Response * response,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *
-MHD_create_response_from_callback(size_t size,
-				  MHD_ContentReaderCallback crc,
-				  void * crc_cls,
-				  MHD_ContentReaderFreeCallback crfc) {
-  struct MHD_Response * retVal;
+MHD_create_response_from_callback (size_t size,
+                                   MHD_ContentReaderCallback crc,
+                                   void *crc_cls,
+                                   MHD_ContentReaderFreeCallback crfc)
+{
+  struct MHD_Response *retVal;
 
   if (crc == NULL)
     return NULL;
-  retVal = malloc(sizeof(struct MHD_Response));
-  memset(retVal,
-	 0,
-	 sizeof(struct MHD_Response));
-  retVal->data = malloc(MHD_BUF_INC_SIZE);
-  if (retVal->data == NULL) {
-    free(retVal);
-    return NULL;
-  }
+  retVal = malloc (sizeof (struct MHD_Response));
+  memset (retVal, 0, sizeof (struct MHD_Response));
+  retVal->data = malloc (MHD_BUF_INC_SIZE);
+  if (retVal->data == NULL)
+    {
+      free (retVal);
+      return NULL;
+    }
   retVal->data_buffer_size = MHD_BUF_INC_SIZE;
-  if (pthread_mutex_init(&retVal->mutex, NULL) != 0) {
-    free(retVal->data);
-    free(retVal);
-    return NULL;
-  }
+  if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
+    {
+      free (retVal->data);
+      free (retVal);
+      return NULL;
+    }
   retVal->crc = crc;
   retVal->crfc = crfc;
   retVal->crc_cls = crc_cls;
@@ -200,33 +200,28 @@ MHD_create_response_from_callback(size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *
-MHD_create_response_from_data(size_t size,
-			      void * data,
-			      int must_free,
-			      int must_copy) {
-  struct MHD_Response * retVal;
-  void * tmp;
+MHD_create_response_from_data (size_t size,
+                               void *data, int must_free, int must_copy)
+{
+  struct MHD_Response *retVal;
+  void *tmp;
 
-  if ( (data == NULL) &&
-       (size > 0) )
+  if ((data == NULL) && (size > 0))
     return NULL;
-  retVal = malloc(sizeof(struct MHD_Response));
-  memset(retVal,
-	 0,
-	 sizeof(struct MHD_Response));
-  if (pthread_mutex_init(&retVal->mutex, NULL) != 0) {
-    free(retVal);
-    return NULL;
-  }
-  if ( (must_copy) &&
-       (size > 0) ) {
-    tmp = malloc(size);
-    memcpy(tmp,
-	   data,
-	   size);
-    must_free = 1;
-    data = tmp;
-  }
+  retVal = malloc (sizeof (struct MHD_Response));
+  memset (retVal, 0, sizeof (struct MHD_Response));
+  if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
+    {
+      free (retVal);
+      return NULL;
+    }
+  if ((must_copy) && (size > 0))
+    {
+      tmp = malloc (size);
+      memcpy (tmp, data, size);
+      must_free = 1;
+      data = tmp;
+    }
   retVal->crc = NULL;
   retVal->crfc = must_free ? &free : NULL;
   retVal->crc_cls = must_free ? data : NULL;
@@ -244,38 +239,42 @@ MHD_create_response_from_data(size_t size,
  * necessarily be freed immediatley.
  */
 void
-MHD_destroy_response(struct MHD_Response * response) {
-  struct MHD_HTTP_Header * pos;
+MHD_destroy_response (struct MHD_Response *response)
+{
+  struct MHD_HTTP_Header *pos;
 
   if (response == NULL)
-    return;	
-  pthread_mutex_lock(&response->mutex);
-  if (0 != --response->reference_count) {
-    pthread_mutex_unlock(&response->mutex);
     return;
-  }
-  pthread_mutex_unlock(&response->mutex);
-  pthread_mutex_destroy(&response->mutex);
+  pthread_mutex_lock (&response->mutex);
+  if (0 != --response->reference_count)
+    {
+      pthread_mutex_unlock (&response->mutex);
+      return;
+    }
+  pthread_mutex_unlock (&response->mutex);
+  pthread_mutex_destroy (&response->mutex);
   if (response->crfc != NULL)
-    response->crfc(response->crc_cls);
-  while (response->first_header != NULL) {
-    pos = response->first_header;
-    response->first_header = pos->next;
-    free(pos->header);
-    free(pos->value);
-    free(pos);
-  }
-  if (response->crc != NULL) 
-    free(response->data);
-  free(response);
+    response->crfc (response->crc_cls);
+  while (response->first_header != NULL)
+    {
+      pos = response->first_header;
+      response->first_header = pos->next;
+      free (pos->header);
+      free (pos->value);
+      free (pos);
+    }
+  if (response->crc != NULL)
+    free (response->data);
+  free (response);
 }
 
 
 void
-MHD_increment_response_rc(struct MHD_Response * response) {
-  pthread_mutex_lock(&response->mutex);
+MHD_increment_response_rc (struct MHD_Response *response)
+{
+  pthread_mutex_lock (&response->mutex);
   response->reference_count++;
-  pthread_mutex_unlock(&response->mutex);
+  pthread_mutex_unlock (&response->mutex);
 }
 
 

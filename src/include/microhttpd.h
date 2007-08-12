@@ -52,8 +52,9 @@
 #endif
 
 #ifdef __cplusplus
-extern "C" {
-#if 0 /* keep Emacsens' auto-indent happy */
+extern "C"
+{
+#if 0                           /* keep Emacsens' auto-indent happy */
 }
 #endif
 #endif
@@ -216,7 +217,8 @@ extern "C" {
  * implemented or not supported on the target platform (i.e. no
  * support for SSL, threads or IPv6).
  */
-enum MHD_FLAG {
+enum MHD_FLAG
+{
   /**
    * No options selected.
    */
@@ -256,7 +258,8 @@ enum MHD_FLAG {
  * MHD options.  Passed in the varargs portion 
  * of MHD_start_daemon.
  */
-enum MHD_OPTION {
+enum MHD_OPTION
+{
 
   /**
    * No more options / last option.  This is used
@@ -282,7 +285,8 @@ enum MHD_OPTION {
  * The MHD_ValueKind specifies the source of
  * the key-value pairs in the HTTP protocol.
  */
-enum MHD_ValueKind {
+enum MHD_ValueKind
+{
 
   /**
    * Response header
@@ -344,9 +348,9 @@ struct MHD_Response;
  * @return MHD_YES if connection is allowed, MHD_NO if not
  */
 typedef int
-(*MHD_AcceptPolicyCallback)(void * cls,
-			    const struct sockaddr * addr,
-			    socklen_t addrlen);
+  (*MHD_AcceptPolicyCallback) (void *cls,
+                               const struct sockaddr * addr,
+                               socklen_t addrlen);
 
 /**
  * A client has requested the given url using the given method ("GET",
@@ -372,13 +376,13 @@ typedef int
  *         error while handling the request
  */
 typedef int
-(*MHD_AccessHandlerCallback)(void * cls,
-			     struct MHD_Connection * connection,
-			     const char * url,
-			     const char * method,
-			     const char * version,
-			     const char * upload_data,
-			     unsigned int * upload_data_size);
+  (*MHD_AccessHandlerCallback) (void *cls,
+                                struct MHD_Connection * connection,
+                                const char *url,
+                                const char *method,
+                                const char *version,
+                                const char *upload_data,
+                                unsigned int *upload_data_size);
 
 /**
  * Iterator over key-value pairs.  This iterator
@@ -391,10 +395,9 @@ typedef int
  *         MHD_NO to abort the iteration
  */
 typedef int
-(*MHD_KeyValueIterator)(void * cls,
-			enum MHD_ValueKind kind,
-			const char * key,
-			const char * value);
+  (*MHD_KeyValueIterator) (void *cls,
+                           enum MHD_ValueKind kind,
+                           const char *key, const char *value);
 
 /**
  * Callback used by libmicrohttpd in order to obtain content.  The
@@ -423,10 +426,7 @@ typedef int
  *  with the client).
  */
 typedef int
-(*MHD_ContentReaderCallback)(void * cls,
-			     size_t pos,
-			     char * buf,
-			     int max);
+  (*MHD_ContentReaderCallback) (void *cls, size_t pos, char *buf, int max);
 
 /**
  * This method is called by libmicrohttpd if we
@@ -434,8 +434,7 @@ typedef int
  * be used to free resources associated with the
  * content reader.
  */
-typedef void
-(*MHD_ContentReaderFreeCallback)(void * cls);
+typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
 
 /**
  * Start a webserver on the given port.
@@ -452,22 +451,19 @@ typedef void
  *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
-struct MHD_Daemon *
-MHD_start_daemon(unsigned int flags,
-		 unsigned short port,
-		 MHD_AcceptPolicyCallback apc,
-		 void * apc_cls,
-		 MHD_AccessHandlerCallback dh,
-		 void * dh_cls,
-		 ...);
+struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
+                                     unsigned short port,
+                                     MHD_AcceptPolicyCallback apc,
+                                     void *apc_cls,
+                                     MHD_AccessHandlerCallback dh,
+                                     void *dh_cls, ...);
 
 
 
 /**
  * Shutdown an http daemon.
  */
-void
-MHD_stop_daemon(struct MHD_Daemon * daemon);
+void MHD_stop_daemon (struct MHD_Daemon *daemon);
 
 
 /**
@@ -478,11 +474,9 @@ MHD_stop_daemon(struct MHD_Daemon * daemon);
  *         options for this call.
  */
 int
-MHD_get_fdset(struct MHD_Daemon * daemon,
-	      fd_set * read_fd_set,
-	      fd_set * write_fd_set,
-	      fd_set * except_fd_set,
-	      int * max_fd);
+MHD_get_fdset (struct MHD_Daemon *daemon,
+               fd_set * read_fd_set,
+               fd_set * write_fd_set, fd_set * except_fd_set, int *max_fd);
 
 /**
  * Run webserver operations (without blocking unless
@@ -494,8 +488,7 @@ MHD_get_fdset(struct MHD_Daemon * daemon,
  *         daemon was not started with the right
  *         options for this call.
  */
-int
-MHD_run(struct MHD_Daemon * daemon);
+int MHD_run (struct MHD_Daemon *daemon);
 
 
 /**
@@ -506,10 +499,9 @@ MHD_run(struct MHD_Daemon * daemon);
  *         already exists
  */
 int
-MHD_register_handler(struct MHD_Daemon * daemon,
-		     const char * uri_prefix,
-		     MHD_AccessHandlerCallback dh,
-		     void * dh_cls);
+MHD_register_handler (struct MHD_Daemon *daemon,
+                      const char *uri_prefix,
+                      MHD_AccessHandlerCallback dh, void *dh_cls);
 
 /**
  * Unregister an access handler for the URIs beginning with
@@ -520,10 +512,9 @@ MHD_register_handler(struct MHD_Daemon * daemon,
  *         is not known for this daemon
  */
 int
-MHD_unregister_handler(struct MHD_Daemon * daemon,
-		       const char * uri_prefix,
-		       MHD_AccessHandlerCallback dh,
-		       void * dh_cls);
+MHD_unregister_handler (struct MHD_Daemon *daemon,
+                        const char *uri_prefix,
+                        MHD_AccessHandlerCallback dh, void *dh_cls);
 
 /**
  * Get all of the headers from the request.
@@ -534,10 +525,9 @@ MHD_unregister_handler(struct MHD_Daemon * daemon,
  * @return number of entries iterated over
  */
 int
-MHD_get_connection_values(struct MHD_Connection * connection,
-			  enum MHD_ValueKind kind,
-			  MHD_KeyValueIterator iterator,
-			  void * iterator_cls);
+MHD_get_connection_values (struct MHD_Connection *connection,
+                           enum MHD_ValueKind kind,
+                           MHD_KeyValueIterator iterator, void *iterator_cls);
 
 /**
  * Get a particular header value.  If multiple
@@ -546,10 +536,9 @@ MHD_get_connection_values(struct MHD_Connection * connection,
  * @param key the header to look for
  * @return NULL if no such item was found
  */
-const char *
-MHD_lookup_connection_value(struct MHD_Connection * connection,
-			    enum MHD_ValueKind kind,
-			    const char * key);
+const char *MHD_lookup_connection_value (struct MHD_Connection *connection,
+                                         enum MHD_ValueKind kind,
+                                         const char *key);
 
 /**
  * Queue a response to be transmitted to the client (as soon as
@@ -562,11 +551,10 @@ MHD_lookup_connection_value(struct MHD_Connection * connection,
  *         MHD_YES on success or if message has been queued
  */
 int
-MHD_queue_response(struct MHD_Connection * connection,
-		   unsigned int status_code,
-		   struct MHD_Response * response);
+MHD_queue_response (struct MHD_Connection *connection,
+                    unsigned int status_code, struct MHD_Response *response);
 
-	
+
 /**
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
@@ -577,11 +565,11 @@ MHD_queue_response(struct MHD_Connection * connection,
  * @param crfc callback to call to free crc_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
-struct MHD_Response *
-MHD_create_response_from_callback(size_t size,
-				  MHD_ContentReaderCallback crc,
-				  void * crc_cls,
-				  MHD_ContentReaderFreeCallback crfc);
+struct MHD_Response *MHD_create_response_from_callback (size_t size,
+                                                        MHD_ContentReaderCallback
+                                                        crc, void *crc_cls,
+                                                        MHD_ContentReaderFreeCallback
+                                                        crfc);
 
 /**
  * Create a response object.  The response object can be extended with
@@ -595,11 +583,10 @@ MHD_create_response_from_callback(size_t size,
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
-struct MHD_Response *
-MHD_create_response_from_data(size_t size,
-			      void * data,
-			      int must_free,
-			      int must_copy);
+struct MHD_Response *MHD_create_response_from_data (size_t size,
+                                                    void *data,
+                                                    int must_free,
+                                                    int must_copy);
 
 /**
  * Destroy a response object and associated resources.  Note that
@@ -607,8 +594,7 @@ MHD_create_response_from_data(size_t size,
  * is still in the queue for some clients, so the memory may not
  * necessarily be freed immediatley.
  */
-void
-MHD_destroy_response(struct MHD_Response * response);
+void MHD_destroy_response (struct MHD_Response *response);
 
 /**
  * Add a header line to the response.
@@ -616,9 +602,8 @@ MHD_destroy_response(struct MHD_Response * response);
  * @return MHD_NO on error (i.e. invalid header or content format).
  */
 int
-MHD_add_response_header(struct MHD_Response * response,
-			const char * header,
-			const char * content);
+MHD_add_response_header (struct MHD_Response *response,
+                         const char *header, const char *content);
 
 /**
  * Delete a header line from the response.
@@ -626,9 +611,8 @@ MHD_add_response_header(struct MHD_Response * response,
  * @return MHD_NO on error (no such header known)
  */
 int
-MHD_del_response_header(struct MHD_Response * response,
-			const char * header,
-			const char * content);
+MHD_del_response_header (struct MHD_Response *response,
+                         const char *header, const char *content);
 
 /**
  * Get all of the headers added to a response.
@@ -639,9 +623,8 @@ MHD_del_response_header(struct MHD_Response * response,
  * @return number of entries iterated over
  */
 int
-MHD_get_response_headers(struct MHD_Response * response,
-			 MHD_KeyValueIterator iterator,
-			 void * iterator_cls);
+MHD_get_response_headers (struct MHD_Response *response,
+                          MHD_KeyValueIterator iterator, void *iterator_cls);
 
 
 /**
@@ -650,12 +633,11 @@ MHD_get_response_headers(struct MHD_Response * response,
  * @param key which header to get
  * @return NULL if header does not exist
  */
-const char *
-MHD_get_response_header(struct MHD_Response * response,
-			const char * key);
+const char *MHD_get_response_header (struct MHD_Response *response,
+                                     const char *key);
 
 
-#if 0 /* keep Emacsens' auto-indent happy */
+#if 0                           /* keep Emacsens' auto-indent happy */
 {
 #endif
 #ifdef __cplusplus

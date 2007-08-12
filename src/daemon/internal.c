@@ -32,15 +32,14 @@
  * fprintf-like helper function for logging debug
  * messages.
  */
-void MHD_DLOG(const struct MHD_Daemon * daemon,
-	      const char * format,
-	      ...) {
+void
+MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
+{
   va_list va;
 
-  if ( (daemon->options & MHD_USE_DEBUG) == 0)
+  if ((daemon->options & MHD_USE_DEBUG) == 0)
     return;
-  va_start(va, format);
-  VFPRINTF(stderr, format, va);
-  va_end(va);
+  va_start (va, format);
+  VFPRINTF (stderr, format, va);
+  va_end (va);
 }
-

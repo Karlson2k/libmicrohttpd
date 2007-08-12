@@ -31,131 +31,128 @@
 #include <string.h>
 #include <stdio.h>
 
-static int testStartError() {
-  struct MHD_Daemon * d;
+static int
+testStartError ()
+{
+  struct MHD_Daemon *d;
 
-  d = MHD_start_daemon(MHD_USE_DEBUG, 0, NULL, NULL, NULL, NULL);
+  d = MHD_start_daemon (MHD_USE_DEBUG, 0, NULL, NULL, NULL, NULL);
   if (d != NULL)
     return 1;
   return 0;
 }
 
-static int apc_nothing(void * cls,
-		       const struct sockaddr * addr,
-		       socklen_t addrlen) {
+static int
+apc_nothing (void *cls, const struct sockaddr *addr, socklen_t addrlen)
+{
   return MHD_NO;
 }
 
-static int apc_all(void * cls,
-		   const struct sockaddr * addr,
-		   socklen_t addrlen) {
+static int
+apc_all (void *cls, const struct sockaddr *addr, socklen_t addrlen)
+{
   return MHD_YES;
 }
 
-static int ahc_nothing(void * cls,
-		       struct MHD_Connection * connection,
-		       const char * url,
-		       const char * method,
-		       const char * version,
-		       const char * upload_data,
-		       unsigned int * upload_data_size) {
+static int
+ahc_nothing (void *cls,
+             struct MHD_Connection *connection,
+             const char *url,
+             const char *method,
+             const char *version,
+             const char *upload_data, unsigned int *upload_data_size)
+{
   return MHD_NO;
 }
 
-static int testStartStop() {
-  struct MHD_Daemon * d;
+static int
+testStartStop ()
+{
+  struct MHD_Daemon *d;
 
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-		       1080,
-		       &apc_nothing,
-		       NULL,
-		       &ahc_nothing,
-		       NULL,
-		       MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+                        1080,
+                        &apc_nothing,
+                        NULL, &ahc_nothing, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 2;
-  MHD_stop_daemon(d);
+  MHD_stop_daemon (d);
   return 0;
 }
 
-static int testExternalRun() {
-  struct MHD_Daemon * d;
+static int
+testExternalRun ()
+{
+  struct MHD_Daemon *d;
   fd_set rs;
   int maxfd;
   int i;
 
-  d = MHD_start_daemon(MHD_USE_DEBUG,
-		       1081,
-		       &apc_all,
-		       NULL,
-		       &ahc_nothing,
-		       NULL,
-		       MHD_OPTION_END);
+  d = MHD_start_daemon (MHD_USE_DEBUG,
+                        1081,
+                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
   if (d == NULL)
     return 4;
   i = 0;
-  while(i < 15) {
-    maxfd = 0;
-    FD_ZERO(&rs);
-    MHD_get_fdset(d, &rs, &rs, &rs, &maxfd);
-    if (MHD_run(d) == MHD_NO) {
-      MHD_stop_daemon(d);
-      return 8;
+  while (i < 15)
+    {
+      maxfd = 0;
+      FD_ZERO (&rs);
+      MHD_get_fdset (d, &rs, &rs, &rs, &maxfd);
+      if (MHD_run (d) == MHD_NO)
+        {
+          MHD_stop_daemon (d);
+          return 8;
+        }
+      i++;
     }
-    i++;
-  }
-  MHD_stop_daemon(d);
+  MHD_stop_daemon (d);
   return 0;
 }
 
-static int testThread() {
-  struct MHD_Daemon * d;
-  d = MHD_start_daemon(MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
-		       1082,
-		       &apc_all,
-		       NULL,
-		       &ahc_nothing,
-		       NULL,
-		       MHD_OPTION_END);
+static int
+testThread ()
+{
+  struct MHD_Daemon *d;
+  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
+                        1082,
+                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
   if (d == NULL)
     return 16;
-  if (MHD_run(d) != MHD_NO)
+  if (MHD_run (d) != MHD_NO)
     return 32;
-  MHD_stop_daemon(d);
+  MHD_stop_daemon (d);
   return 0;
 }
 
-static int testMultithread() {
-  struct MHD_Daemon * d;
-  d = MHD_start_daemon(MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
-		       1083,
-		       &apc_all,
-		       NULL,
-		       &ahc_nothing,
-		       NULL,
-		       MHD_OPTION_END);
+static int
+testMultithread ()
+{
+  struct MHD_Daemon *d;
+  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
+                        1083,
+                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
   if (d == NULL)
     return 64;
-  if (MHD_run(d) != MHD_NO)
+  if (MHD_run (d) != MHD_NO)
     return 128;
-  MHD_stop_daemon(d);
+  MHD_stop_daemon (d);
   return 0;
 }
 
-int main(int argc,
-	 char * const * argv) {
+int
+main (int argc, char *const *argv)
+{
   unsigned int errorCount = 0;
-  errorCount += testStartError();
-  errorCount += testStartStop();
-  errorCount += testExternalRun();
-  errorCount += testThread();
-  errorCount += testMultithread();
+  errorCount += testStartError ();
+  errorCount += testStartStop ();
+  errorCount += testExternalRun ();
+  errorCount += testThread ();
+  errorCount += testMultithread ();
   if (errorCount != 0)
-    fprintf(stderr,
-	    "Error (code: %u)\n",
-	    errorCount);
-  return errorCount != 0; /* 0 == pass */
+    fprintf (stderr, "Error (code: %u)\n", errorCount);
+  return errorCount != 0;       /* 0 == pass */
 }

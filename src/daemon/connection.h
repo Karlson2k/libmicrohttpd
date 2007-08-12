@@ -35,19 +35,17 @@
  * @return MHD_YES on success
  */
 int
-MHD_connection_get_fdset(struct MHD_Connection * connection,
-		      fd_set * read_fd_set,
-		      fd_set * write_fd_set,
-		      fd_set * except_fd_set,
-		      int * max_fd);
+MHD_connection_get_fdset (struct MHD_Connection *connection,
+                          fd_set * read_fd_set,
+                          fd_set * write_fd_set,
+                          fd_set * except_fd_set, int *max_fd);
 
 
 /**
  * Call the handler of the application for this
  * connection.
  */
-void
-MHD_call_connection_handler(struct MHD_Connection * connection);
+void MHD_call_connection_handler (struct MHD_Connection *connection);
 
 /**
  * This function handles a particular connection when it has been
@@ -55,8 +53,7 @@ MHD_call_connection_handler(struct MHD_Connection * connection);
  * (multithreaded, external select, internal select) call this function
  * to handle reads.
  */
-int
-MHD_connection_handle_read(struct MHD_Connection * connection);
+int MHD_connection_handle_read (struct MHD_Connection *connection);
 
 
 /**
@@ -65,8 +62,7 @@ MHD_connection_handle_read(struct MHD_Connection * connection);
  * to be written, however, the function call does nothing. All implementations
  * (multithreaded, external select, internal select) call this function
  */
-int
-MHD_connection_handle_write(struct MHD_Connection * connection);
+int MHD_connection_handle_write (struct MHD_Connection *connection);
 
 
 #endif

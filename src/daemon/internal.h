@@ -62,59 +62,60 @@
  * fprintf-like helper function for logging debug
  * messages.
  */
-void MHD_DLOG(const struct MHD_Daemon * daemon,
-	      const char * format,
-	      ...);
+void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
 
 
 /**
  * Header or cookie in HTTP request or response.
  */
-struct MHD_HTTP_Header {
-  struct MHD_HTTP_Header * next;
+struct MHD_HTTP_Header
+{
+  struct MHD_HTTP_Header *next;
 
-  char * header;
+  char *header;
 
-  char * value;
+  char *value;
 
   enum MHD_ValueKind kind;
 };
 
 
-struct MHD_Access_Handler {
-  struct MHD_Access_Handler * next;
+struct MHD_Access_Handler
+{
+  struct MHD_Access_Handler *next;
 
-  char * uri_prefix;
+  char *uri_prefix;
 
   MHD_AccessHandlerCallback dh;
 
-  void * dh_cls;
+  void *dh_cls;
 };
 
 
 /**
  * Representation of a response.
  */
-struct MHD_Response {
+struct MHD_Response
+{
 
   /**
    * Headers to send for the response.  Initially
    * the linked list is created in inverse order;
    * the order should be inverted before sending!
    */
-  struct MHD_HTTP_Header * first_header;
+  struct MHD_HTTP_Header *first_header;
 
   /**
    * Buffer pointing to data that we are supposed
    * to send as a response.
    */
-  char * data;
+  char *data;
 
   /**
    * Closure to give to the content reader
    * free callback.
    */
-  void * crc_cls;
+  void *crc_cls;
 
   /**
    * How do we get more data?  NULL if we are
@@ -165,27 +166,28 @@ struct MHD_Response {
 
 
 
-struct MHD_Connection {
+struct MHD_Connection
+{
 
   /**
    * This is a linked list.
    */
-  struct MHD_Connection * next;
+  struct MHD_Connection *next;
 
   /**
    * Reference to the MHD_Daemon struct.
    */
-  struct MHD_Daemon * daemon;
+  struct MHD_Daemon *daemon;
 
   /**
    * Linked list of parsed headers.
    */
-  struct MHD_HTTP_Header * headers_received;
+  struct MHD_HTTP_Header *headers_received;
 
   /**
    * Response to transmit (initially NULL).
    */
-  struct MHD_Response * response;
+  struct MHD_Response *response;
 
   /**
    * The memory pool is created whenever we first read
@@ -197,43 +199,43 @@ struct MHD_Connection {
    * connections) and the IP address (which persists
    * across individual requests).
    */
-  struct MemoryPool * pool;
+  struct MemoryPool *pool;
 
   /**
    * Request method.  Should be GET/POST/etc.  Allocated
    * in pool.
    */
-  char * method;
+  char *method;
 
   /**
    * Requested URL (everything after "GET" only).  Allocated
    * in pool.
    */
-  char * url;
+  char *url;
 
   /**
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */
-  char * version;
+  char *version;
 
   /**
    * Buffer for reading requests.   Allocated
    * in pool.
    */
-  char * read_buffer;
+  char *read_buffer;
 
   /**
    * Buffer for writing response (headers only).  Allocated
    * in pool.
    */
-  char * write_buffer;
+  char *write_buffer;
 
   /**
    * Foreign address (of length addr_len).  MALLOCED (not
    * in pool!).
    */
-  struct sockaddr_in * addr;
+  struct sockaddr_in *addr;
 
   /**
    * Thread for this connection (if we are using
@@ -342,20 +344,21 @@ struct MHD_Connection {
 
 
 
-struct MHD_Daemon {
+struct MHD_Daemon
+{
 
-  struct MHD_Access_Handler * handlers;
+  struct MHD_Access_Handler *handlers;
 
   struct MHD_Access_Handler default_handler;
 
   /**
    * Linked list of our current connections.
    */
-  struct MHD_Connection * connections;
+  struct MHD_Connection *connections;
 
   MHD_AcceptPolicyCallback apc;
 
-  void * apc_cls;
+  void *apc_cls;
 
   /**
    * PID of the select thread (if we have internal select)
@@ -390,7 +393,7 @@ struct MHD_Daemon {
   /**
    * Listen port.
    */
-  unsigned short port;  
+  unsigned short port;
 
 };
 

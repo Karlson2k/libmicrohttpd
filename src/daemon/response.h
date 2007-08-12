@@ -32,7 +32,7 @@
  * Increment response RC.  Should this be part of the
  * public API?
  */
-void MHD_increment_response_rc(struct MHD_Response * response);
+void MHD_increment_response_rc (struct MHD_Response *response);
 
 
 #endif
