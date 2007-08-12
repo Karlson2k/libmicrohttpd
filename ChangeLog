@@ -1,3 +1,6 @@
+Sun Aug 12 00:09:26 MDT 2007
+	 Released libmicrohttpd 0.0.1. - CG
+
 Fri Aug 10 17:31:23 MDT 2007
 	 Fixed problems with handling of responses created from
 	 callbacks.  Allowing accept policy callback to be NULL
