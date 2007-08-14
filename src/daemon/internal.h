@@ -37,13 +37,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/mman.h>
 
 #include "config.h"
 #include "plibc.h"
 #include "microhttpd.h"
 
 #ifndef MINGW
+#include <sys/mman.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #endif

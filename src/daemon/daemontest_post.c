@@ -33,9 +33,12 @@
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <time.h>
+
+#ifndef WINDOWS
+#include <unistd.h>
+#endif
 
 #define POST_DATA "name=daniel&project=curl"
 
