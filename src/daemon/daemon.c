@@ -620,7 +620,16 @@ void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini ()
 {
   sigaction (SIGALRM, &old, &sig);
 }
+#else
+void __attribute__ ((constructor)) MHD_win_ltdl_init ()
+{
+  plibc_init("CRISP", "libmicrohttpd");
+}
 
+void __attribute__ ((destructor)) MHD_win_ltdl_fini ()
+{
+  plibc_shutdown();
+}
 #endif
 
 /* end of daemon.c */
