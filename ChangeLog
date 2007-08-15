@@ -2,7 +2,8 @@ Wed Aug 15 01:46:44 MDT 2007
 	 Extending API to allow timeout of connections.
 	 Changed API (MHD_create_response_from_callback) to
 	 allow user to specify IO buffer size.	 
-	 Improved error handling.  - CG
+	 Improved error handling.  
+         Released libmicrohttpd 0.0.3. - CG
 
 Tue Aug 14 19:45:49 MDT 2007
 	 Changed license to LGPL (with consent from all contributors).
