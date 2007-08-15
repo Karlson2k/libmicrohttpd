@@ -438,8 +438,9 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
     {
       /* accept only, have one thread per connection */
       max = daemon->socket_fd;
-      if (max != -1)
-	FD_SET (max, &rs);
+      if (max == -1)
+	return MHD_NO;
+      FD_SET (max, &rs);
     }
   if (may_block == MHD_NO) {
     timeout.tv_usec = 0;
