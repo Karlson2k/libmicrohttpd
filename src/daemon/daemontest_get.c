@@ -112,9 +112,9 @@ testInternalGet ()
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
-      fprintf(stderr, 
-	      "curl_easy_perform failed: `%s'\n",
-	      curl_easy_strerror(errornum));
+      fprintf (stderr,
+               "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 2;
@@ -169,9 +169,9 @@ testMultithreadedGet ()
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
-      fprintf(stderr, 
-	      "curl_easy_perform failed: `%s'\n",
-	      curl_easy_strerror(errornum));
+      fprintf (stderr,
+               "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 32;
@@ -321,13 +321,11 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  //  int i;
 
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalGet ();
-  //  for (i=0;i<10000;i++) 
   errorCount += testMultithreadedGet ();
   errorCount += testExternalGet ();
   if (errorCount != 0)

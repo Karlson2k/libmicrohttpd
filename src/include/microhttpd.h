@@ -27,7 +27,7 @@
  * All symbols defined in this header start with MHD.  MHD is a
  * micro-httpd library.  As such, it does not have any API for logging
  * errors.  Also, it may not support all of the HTTP features directly,
- * where applicable, portions of HTTP may have to be handled by 
+ * where applicable, portions of HTTP may have to be handled by
  * clients of the library (the library is supposed to handle
  * everything that it must handle, such as basic connection
  * management; however, detailed interpretations of headers
@@ -255,7 +255,7 @@ enum MHD_FLAG
 };
 
 /**
- * MHD options.  Passed in the varargs portion 
+ * MHD options.  Passed in the varargs portion
  * of MHD_start_daemon.
  */
 enum MHD_OPTION
@@ -280,7 +280,7 @@ enum MHD_OPTION
   MHD_OPTION_CONNECTION_LIMIT = 2,
 
   /**
-   * After how many seconds of inactivity should a 
+   * After how many seconds of inactivity should a
    * connection automatically be timed out? (followed
    * by an unsigned int; use zero for no timeout).
    */
@@ -371,7 +371,7 @@ typedef int
  * @param upload_data the data being uploaded (excluding HEADERS,
  *        for a POST that fits into memory and that is encoded
  *        with a supported encoding, the POST data will NOT be
- *        given in upload_data and is instead available as 
+ *        given in upload_data and is instead available as
  *        part of MHD_get_connection_values; very large POST
  *        data *will* be made available incrementally in
  *        upload_data)
@@ -490,15 +490,13 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * (only needed if connection timeout is used).  The
  * returned value is how long select should at most
  * block, not the timeout value set for connections.
- * 
+ *
  * @param timeout set to the timeout (in milliseconds)
  * @return MHD_YES on success, MHD_NO if timeouts are
  *        not used (or no connections exist that would
  *        necessiate the use of a timeout right now).
  */
-int 
-MHD_get_timeout(struct MHD_Daemon * daemon,
-		unsigned long long * timeout);
+int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout);
 
 
 /**
@@ -594,7 +592,8 @@ MHD_queue_response (struct MHD_Connection *connection,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *MHD_create_response_from_callback (size_t size,
-							unsigned int block_size,
+                                                        unsigned int
+                                                        block_size,
                                                         MHD_ContentReaderCallback
                                                         crc, void *crc_cls,
                                                         MHD_ContentReaderFreeCallback

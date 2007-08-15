@@ -1,8 +1,8 @@
 /*
      This file is part of libmicrohttpd
      (C) 2007 Daniel Pittman and Christian Grothoff
-    
-     
+
+
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
      License as published by the Free Software Foundation; either
@@ -218,7 +218,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
  * We ran out of memory processing the
  * header.  Handle it properly by stopping to read data
  * and sending a HTTP 413 or HTTP 414 response.
- * 
+ *
  * @param status_code the response code to send (413 or 414)
  */
 static void
@@ -383,7 +383,7 @@ parse_arguments (enum MHD_ValueKind kind,
 
 /**
  * Parse the cookie header (see RFC 2109).
- * 
+ *
  * @return MHD_YES for success, MHD_NO for failure (malformed, out of memory)
  */
 static int
@@ -597,7 +597,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                                              MHD_HTTP_HEADER_CONNECTION);
           if ((end != NULL) && (0 == strcasecmp (end, "close")))
             {
-              /* other side explicitly requested 
+              /* other side explicitly requested
                  that we close the connection after
                  this request */
               connection->read_close = MHD_YES;
@@ -662,7 +662,7 @@ MHD_find_access_handler (struct MHD_Connection *connection)
  * content encoding of the POST data.  And of course,
  * this requires that the request is actually a
  * POST request.
- * 
+ *
  * @return MHD_YES if so
  */
 static int
@@ -701,12 +701,12 @@ MHD_test_post_data (struct MHD_Connection *connection)
  *
  * Needs to first check POST encoding and then do
  * the right thing (TM).  The POST data is in the
- * connection's post_data buffer between the postPos 
+ * connection's post_data buffer between the postPos
  * and postLoc offsets.  The POST message maybe
  * incomplete.  The existing buffer (allocated from
  * the pool) can be used and modified but must then
  * be properly removed from the struct.
- * 
+ *
  * @return MHD_YES on success, MHD_NO on error (i.e. out of
  *         memory).
  */
@@ -728,7 +728,7 @@ MHD_parse_post_data (struct MHD_Connection *connection)
       /* invalidate read buffer for other uses --
          in particular, do not give it to the
          client; if this were to be needed, we would
-         have to make a copy, which would double memory 
+         have to make a copy, which would double memory
          requirements */
       connection->read_buffer_size = 0;
       connection->readLoc = 0;
@@ -932,7 +932,8 @@ get_date_string (char *date, unsigned int max)
     { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
   static const char *mons[] =
     { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
-"Nov", "Dec" };
+    "Nov", "Dec"
+  };
   struct tm now;
   time_t t;
 

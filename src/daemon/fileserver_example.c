@@ -73,8 +73,7 @@ ahc_echo (void *cls,
   else
     {
       stat (&url[1], &buf);
-      response = MHD_create_response_from_callback (buf.st_size,
-						    32 * 1024, /* 32k page size */				    
+      response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k page size */
                                                     &file_reader,
                                                     file,
                                                     (MHD_ContentReaderFreeCallback)

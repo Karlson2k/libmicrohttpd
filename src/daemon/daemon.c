@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      (C) 2007 Daniel Pittman and Christian Grothoff
-     
+
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
      License as published by the Free Software Foundation; either
@@ -64,6 +64,12 @@ MHD_register_handler (struct MHD_Daemon *daemon,
       ah = ah->next;
     }
   ah = malloc (sizeof (struct MHD_Access_Handler));
+  if (ah == NULL)
+    {
+      MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+      return MHD_NO;
+    }
+
   ah->next = daemon->handlers;
   ah->uri_prefix = strdup (uri_prefix);
   ah->dh = dh;
@@ -133,7 +139,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       (write_fd_set == NULL) ||
       (except_fd_set == NULL) ||
       (max_fd == NULL) ||
-      (fd == -1) || 
+      (fd == -1) ||
       (daemon->shutdown == MHD_YES) ||
       ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0))
     return MHD_NO;
@@ -174,11 +180,10 @@ MHD_handle_connection (void *data)
   if (con == NULL)
     abort ();
   timeout = con->daemon->connection_timeout;
-  now = time(NULL);
-  while ( (!con->daemon->shutdown) && 
-	  (con->socket_fd != -1) &&
-	  ( (timeout == 0) ||
-	    (now - timeout > con->last_activity) ) )
+  now = time (NULL);
+  while ((!con->daemon->shutdown) &&
+         (con->socket_fd != -1) &&
+         ((timeout == 0) || (now - timeout > con->last_activity)))
     {
       FD_ZERO (&rs);
       FD_ZERO (&ws);
@@ -187,16 +192,15 @@ MHD_handle_connection (void *data)
       MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
       tv.tv_usec = 0;
       tv.tv_sec = timeout - (now - con->last_activity);
-      num_ready = SELECT (max + 1, 
-			  &rs, 
-			  &ws,
-			  &es,
-			  (tv.tv_sec != 0) ? &tv : NULL);
-      now = time(NULL);
+      num_ready = SELECT (max + 1,
+                          &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
+      now = time (NULL);
       if (num_ready < 0)
         {
-          if (errno == EINTR) 
+          if (errno == EINTR)
             continue;
+          MHD_DLOG (con->daemon, "Error during select (%d): `%s'\n",
+                    max, STRERROR (errno));
           break;
         }
       if (((FD_ISSET (con->socket_fd, &rs)) &&
@@ -207,10 +211,10 @@ MHD_handle_connection (void *data)
         break;
       if ((con->headersReceived == 1) && (con->response == NULL))
         MHD_call_connection_handler (con);
-      if ( (con->socket_fd != -1) &&
-	   ( (FD_ISSET (con->socket_fd, &rs)) ||
-	     (FD_ISSET (con->socket_fd, &ws)) ) )
-	con->last_activity = now;
+      if ((con->socket_fd != -1) &&
+          ((FD_ISSET (con->socket_fd, &rs)) ||
+           (FD_ISSET (con->socket_fd, &ws))))
+        con->last_activity = now;
     }
   if (con->socket_fd != -1)
     {
@@ -251,6 +255,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (daemon->max_connections == 0)
     {
       /* above connection limit - reject */
+      MHD_DLOG (daemon,
+                "Server reached connection limit (closing inbound connection)\n");
       CLOSE (s);
       return MHD_NO;
     }
@@ -261,11 +267,18 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       return MHD_YES;
     }
   connection = malloc (sizeof (struct MHD_Connection));
+  if (connection == NULL)
+    {
+      MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+      CLOSE (s);
+      return MHD_NO;
+    }
   memset (connection, 0, sizeof (struct MHD_Connection));
   connection->pool = NULL;
   connection->addr = malloc (addrlen);
   if (connection->addr == NULL)
     {
+      MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
       CLOSE (s);
       free (connection);
       return MHD_NO;
@@ -284,7 +297,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       free (connection);
       return MHD_NO;
     }
-  connection->last_activity = time(NULL);
+  connection->last_activity = time (NULL);
   connection->next = daemon->connections;
   daemon->connections = connection;
   daemon->max_connections--;
@@ -310,7 +323,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   void *unused;
   time_t timeout;
 
-  timeout = time(NULL);
+  timeout = time (NULL);
   if (daemon->connection_timeout != 0)
     timeout -= daemon->connection_timeout;
   else
@@ -319,11 +332,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   prev = NULL;
   while (pos != NULL)
     {
-      if ( (pos->last_activity < timeout) &&
-	   (pos->socket_fd != -1) ) {
-	CLOSE(pos->socket_fd);
-	pos->socket_fd = -1;
-      }
+      if ((pos->last_activity < timeout) && (pos->socket_fd != -1))
+        {
+          CLOSE (pos->socket_fd);
+          pos->socket_fd = -1;
+        }
       if (pos->socket_fd == -1)
         {
           if (prev == NULL)
@@ -361,33 +374,33 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * (only needed if connection timeout is used).  The
  * returned value is how long select should at most
  * block, not the timeout value set for connections.
- * 
+ *
  * @param timeout set to the timeout (in milliseconds)
  * @return MHD_YES on success, MHD_NO if timeouts are
  *        not used (or no connections exist that would
  *        necessiate the use of a timeout right now).
  */
-int 
-MHD_get_timeout(struct MHD_Daemon * daemon,
-		unsigned long long * timeout) {
+int
+MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
+{
   time_t earliest_deadline;
   time_t now;
   struct MHD_Connection *pos;
   unsigned int dto;
-  
+
   dto = daemon->connection_timeout;
   if (0 == dto)
     return MHD_NO;
   pos = daemon->connections;
   if (pos == NULL)
-    return MHD_NO; /* no connections */
-  now = time(NULL);
+    return MHD_NO;              /* no connections */
+  now = time (NULL);
   /* start with conservative estimate */
   earliest_deadline = now + dto;
   while (pos != NULL)
     {
       if (earliest_deadline > pos->last_activity + dto)
-	earliest_deadline = pos->last_activity + dto;
+        earliest_deadline = pos->last_activity + dto;
       pos = pos->next;
     }
   if (earliest_deadline < now)
@@ -419,7 +432,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-  if (daemon == NULL) 
+  if (daemon == NULL)
     abort ();
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
@@ -439,20 +452,24 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
       /* accept only, have one thread per connection */
       max = daemon->socket_fd;
       if (max == -1)
-	return MHD_NO;
+        return MHD_NO;
       FD_SET (max, &rs);
     }
-  if (may_block == MHD_NO) {
-    timeout.tv_usec = 0;
-    timeout.tv_sec = 0;
-  } else {
-    /* ltimeout is in ms */
-    if (MHD_YES == MHD_get_timeout(daemon, &ltimeout)) {
-      timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000; 
-      timeout.tv_sec = ltimeout / 1000; 
-      may_block = MHD_NO;  
-    }    
-  }
+  if (may_block == MHD_NO)
+    {
+      timeout.tv_usec = 0;
+      timeout.tv_sec = 0;
+    }
+  else
+    {
+      /* ltimeout is in ms */
+      if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
+        {
+          timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000;
+          timeout.tv_sec = ltimeout / 1000;
+          may_block = MHD_NO;
+        }
+    }
   num_ready = SELECT (max + 1,
                       &rs, &ws, &es, may_block == MHD_NO ? &timeout : NULL);
   if (daemon->shutdown == MHD_YES)
@@ -472,24 +489,24 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* do not have a thread per connection, process all connections now */
-      now = time(NULL);
+      now = time (NULL);
       pos = daemon->connections;
       while (pos != NULL)
         {
           ds = pos->socket_fd;
-          if (ds == -1)
+          if (ds != -1)
             {
-              pos = pos->next;
-              continue;
+              if (FD_ISSET (ds, &rs))
+                {
+                  pos->last_activity = now;
+                  MHD_connection_handle_read (pos);
+                }
+              if (FD_ISSET (ds, &ws))
+                {
+                  pos->last_activity = now;
+                  MHD_connection_handle_write (pos);
+                }
             }
-          if (FD_ISSET (ds, &rs)) {
-	    pos->last_activity = now;
-            MHD_connection_handle_read (pos);
-	  }
-          if (FD_ISSET (ds, &ws)) {
-	    pos->last_activity = now;
-            MHD_connection_handle_write (pos);
-	  }
           pos = pos->next;
         }
     }
@@ -629,7 +646,7 @@ MHD_start_daemon (unsigned int options,
   retVal->default_handler.next = NULL;
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
-  retVal->connection_timeout = 0; /* no timeout */
+  retVal->connection_timeout = 0;       /* no timeout */
   va_start (ap, dh_cls);
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
     {
@@ -641,9 +658,9 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_CONNECTION_LIMIT:
           retVal->max_connections = va_arg (ap, unsigned int);
           break;
-	case MHD_OPTION_CONNECTION_TIMEOUT:
+        case MHD_OPTION_CONNECTION_TIMEOUT:
           retVal->connection_timeout = va_arg (ap, unsigned int);
-	  break;
+          break;
         default:
           fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
@@ -728,12 +745,12 @@ void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini ()
 #else
 void __attribute__ ((constructor)) MHD_win_ltdl_init ()
 {
-  plibc_init("CRISP", "libmicrohttpd");
+  plibc_init ("CRISP", "libmicrohttpd");
 }
 
 void __attribute__ ((destructor)) MHD_win_ltdl_fini ()
 {
-  plibc_shutdown();
+  plibc_shutdown ();
 }
 #endif
 

@@ -160,21 +160,20 @@ MHD_get_response_header (struct MHD_Response *response, const char *key)
  */
 struct MHD_Response *
 MHD_create_response_from_callback (size_t size,
-				   unsigned int block_size,
+                                   unsigned int block_size,
                                    MHD_ContentReaderCallback crc,
                                    void *crc_cls,
                                    MHD_ContentReaderFreeCallback crfc)
 {
   struct MHD_Response *retVal;
 
-  if ( (crc == NULL) ||
-       (block_size == 0) )
+  if ((crc == NULL) || (block_size == 0))
     return NULL;
   retVal = malloc (sizeof (struct MHD_Response) + block_size);
   if (retVal == NULL)
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
-  retVal->data = (void*) &retVal[1];
+  retVal->data = (void *) &retVal[1];
   retVal->data_buffer_size = MHD_BUF_INC_SIZE;
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
     {

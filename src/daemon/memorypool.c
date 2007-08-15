@@ -56,7 +56,7 @@ struct MemoryPool
 
 /**
  * Create a memory pool.
- * 
+ *
  * @param max maximum size of the pool
  */
 struct MemoryPool *
@@ -133,16 +133,16 @@ MHD_pool_allocate (struct MemoryPool *pool, unsigned int size, int from_end)
  * Reallocate a block of memory obtained from the pool.
  * This is particularly efficient when growing or
  * shrinking the block that was last (re)allocated.
- * If the given block is not the most recenlty 
+ * If the given block is not the most recenlty
  * (re)allocated block, the memory of the previous
- * allocation may be leaked until the pool is 
+ * allocation may be leaked until the pool is
  * destroyed (and copying the data maybe required).
  *
  * @param old the existing block
  * @param old_size the size of the existing block
  * @param new_size the new size of the block
- * @return new address of the block, or 
- *         NULL if the pool cannot support new_size 
+ * @return new address of the block, or
+ *         NULL if the pool cannot support new_size
  *         bytes (old continues to be valid for old_size)
  */
 void *
