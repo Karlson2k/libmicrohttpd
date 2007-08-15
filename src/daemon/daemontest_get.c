@@ -321,11 +321,13 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  //  int i;
 
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalGet ();
+  //  for (i=0;i<10000;i++) 
   errorCount += testMultithreadedGet ();
   errorCount += testExternalGet ();
   if (errorCount != 0)

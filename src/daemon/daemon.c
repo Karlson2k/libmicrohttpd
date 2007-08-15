@@ -125,17 +125,21 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set * write_fd_set, fd_set * except_fd_set, int *max_fd)
 {
   struct MHD_Connection *pos;
+  int fd;
 
+  fd = daemon->socket_fd;
   if ((daemon == NULL) ||
       (read_fd_set == NULL) ||
       (write_fd_set == NULL) ||
       (except_fd_set == NULL) ||
       (max_fd == NULL) ||
+      (fd == -1) || 
+      (daemon->shutdown == MHD_YES) ||
       ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0))
     return MHD_NO;
-  FD_SET (daemon->socket_fd, read_fd_set);
-  if ((*max_fd) < daemon->socket_fd)
-    *max_fd = daemon->socket_fd;
+  FD_SET (fd, read_fd_set);
+  if ((*max_fd) < fd)
+    *max_fd = fd;
   pos = daemon->connections;
   while (pos != NULL)
     {
@@ -352,6 +356,46 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
     }
 }
 
+/**
+ * Obtain timeout value for select for this daemon
+ * (only needed if connection timeout is used).  The
+ * returned value is how long select should at most
+ * block, not the timeout value set for connections.
+ * 
+ * @param timeout set to the timeout (in milliseconds)
+ * @return MHD_YES on success, MHD_NO if timeouts are
+ *        not used (or no connections exist that would
+ *        necessiate the use of a timeout right now).
+ */
+int 
+MHD_get_timeout(struct MHD_Daemon * daemon,
+		unsigned long long * timeout) {
+  time_t earliest_deadline;
+  time_t now;
+  struct MHD_Connection *pos;
+  unsigned int dto;
+  
+  dto = daemon->connection_timeout;
+  if (0 == dto)
+    return MHD_NO;
+  pos = daemon->connections;
+  if (pos == NULL)
+    return MHD_NO; /* no connections */
+  now = time(NULL);
+  /* start with conservative estimate */
+  earliest_deadline = now + dto;
+  while (pos != NULL)
+    {
+      if (earliest_deadline > pos->last_activity + dto)
+	earliest_deadline = pos->last_activity + dto;
+      pos = pos->next;
+    }
+  if (earliest_deadline < now)
+    *timeout = 0;
+  else
+    *timeout = (earliest_deadline - now);
+  return MHD_YES;
+}
 
 /**
  * Main select call.
@@ -369,13 +413,16 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   fd_set es;
   int max;
   struct timeval timeout;
+  unsigned long long ltimeout;
   int ds;
   time_t now;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-  if (daemon == NULL)
+  if (daemon == NULL) 
     abort ();
+  if (daemon->shutdown == MHD_YES)
+    return MHD_NO;
   FD_ZERO (&rs);
   FD_ZERO (&ws);
   FD_ZERO (&es);
@@ -391,10 +438,24 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
     {
       /* accept only, have one thread per connection */
       max = daemon->socket_fd;
-      FD_SET (daemon->socket_fd, &rs);
+      if (max != -1)
+	FD_SET (max, &rs);
     }
+  if (may_block == MHD_NO) {
+    timeout.tv_usec = 0;
+    timeout.tv_sec = 0;
+  } else {
+    /* ltimeout is in ms */
+    if (MHD_YES == MHD_get_timeout(daemon, &ltimeout)) {
+      timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000; 
+      timeout.tv_sec = ltimeout / 1000; 
+      may_block = MHD_NO;  
+    }    
+  }
   num_ready = SELECT (max + 1,
                       &rs, &ws, &es, may_block == MHD_NO ? &timeout : NULL);
+  if (daemon->shutdown == MHD_YES)
+    return MHD_NO;
   if (num_ready < 0)
     {
       if (errno == EINTR)
@@ -448,7 +509,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 int
 MHD_run (struct MHD_Daemon *daemon)
 {
-  if ((daemon->shutdown != 0) ||
+  if ((daemon->shutdown != MHD_NO) ||
       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)))
     return MHD_NO;
@@ -466,7 +527,7 @@ static void *
 MHD_select_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
-  while (daemon->shutdown == 0)
+  while (daemon->shutdown == MHD_NO)
     {
       MHD_select (daemon, MHD_YES);
       MHD_cleanup_connections (daemon);
@@ -609,12 +670,14 @@ void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
   void *unused;
+  int fd;
 
   if (daemon == NULL)
     return;
-  daemon->shutdown = 1;
-  CLOSE (daemon->socket_fd);
+  daemon->shutdown = MHD_YES;
+  fd = daemon->socket_fd;
   daemon->socket_fd = -1;
+  CLOSE (fd);
   if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)))
     {
