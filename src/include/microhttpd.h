@@ -62,7 +62,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000000
+#define MHD_VERSION 0x00000003
 
 /**
  * MHD-internal return codes.
@@ -278,6 +278,13 @@ enum MHD_OPTION
    * accept (followed by an unsigned int).
    */
   MHD_OPTION_CONNECTION_LIMIT = 2,
+
+  /**
+   * After how many seconds of inactivity should a 
+   * connection automatically be timed out? (followed
+   * by an unsigned int; use zero for no timeout).
+   */
+  MHD_OPTION_CONNECTION_TIMEOUT = 3,
 
 };
 
@@ -560,12 +567,18 @@ MHD_queue_response (struct MHD_Connection *connection,
  * header information and then be used any number of times.
  *
  * @param size size of the data portion of the response, -1 for unknown
+ * @param block_size preferred block size for querying crc (advisory only,
+ *                   MHD may still call crc using smaller chunks); this
+ *                   is essentially the buffer size used for IO, clients
+ *                   should pick a value that is appropriate for IO and
+ *                   memory performance requirements
  * @param crc callback to use to obtain response data
  * @param crc_cls extra argument to crc
  * @param crfc callback to call to free crc_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *MHD_create_response_from_callback (size_t size,
+							unsigned int block_size,
                                                         MHD_ContentReaderCallback
                                                         crc, void *crc_cls,
                                                         MHD_ContentReaderFreeCallback

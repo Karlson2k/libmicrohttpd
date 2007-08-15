@@ -86,6 +86,7 @@ testInternalGet ()
   CURL *c;
   char buf[2048];
   struct CBC cbc;
+  CURLcode errornum;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -109,8 +110,11 @@ testInternalGet ()
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK != curl_easy_perform (c))
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
+      fprintf(stderr, 
+	      "curl_easy_perform failed: `%s'\n",
+	      curl_easy_strerror(errornum));
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 2;
@@ -139,6 +143,7 @@ testMultithreadedGet ()
   CURL *c;
   char buf[2048];
   struct CBC cbc;
+  CURLcode errornum;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -162,8 +167,12 @@ testMultithreadedGet ()
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK != curl_easy_perform (c))
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
+      fprintf(stderr, 
+	      "curl_easy_perform failed: `%s'\n",
+	      curl_easy_strerror(errornum));
+      curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 32;
     }

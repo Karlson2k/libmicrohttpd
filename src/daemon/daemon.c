@@ -163,20 +163,35 @@ MHD_handle_connection (void *data)
   fd_set ws;
   fd_set es;
   int max;
+  struct timeval tv;
+  unsigned int timeout;
+  time_t now;
 
   if (con == NULL)
     abort ();
-  while ((!con->daemon->shutdown) && (con->socket_fd != -1))
+  timeout = con->daemon->connection_timeout;
+  now = time(NULL);
+  while ( (!con->daemon->shutdown) && 
+	  (con->socket_fd != -1) &&
+	  ( (timeout == 0) ||
+	    (now - timeout > con->last_activity) ) )
     {
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
       max = 0;
       MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
-      num_ready = SELECT (max + 1, &rs, &ws, &es, NULL);
-      if (num_ready <= 0)
+      tv.tv_usec = 0;
+      tv.tv_sec = timeout - (now - con->last_activity);
+      num_ready = SELECT (max + 1, 
+			  &rs, 
+			  &ws,
+			  &es,
+			  (tv.tv_sec != 0) ? &tv : NULL);
+      now = time(NULL);
+      if (num_ready < 0)
         {
-          if (errno == EINTR)
+          if (errno == EINTR) 
             continue;
           break;
         }
@@ -188,6 +203,10 @@ MHD_handle_connection (void *data)
         break;
       if ((con->headersReceived == 1) && (con->response == NULL))
         MHD_call_connection_handler (con);
+      if ( (con->socket_fd != -1) &&
+	   ( (FD_ISSET (con->socket_fd, &rs)) ||
+	     (FD_ISSET (con->socket_fd, &ws)) ) )
+	con->last_activity = now;
     }
   if (con->socket_fd != -1)
     {
@@ -261,6 +280,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       free (connection);
       return MHD_NO;
     }
+  connection->last_activity = time(NULL);
   connection->next = daemon->connections;
   daemon->connections = connection;
   daemon->max_connections--;
@@ -284,11 +304,22 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   struct MHD_Connection *prev;
   void *unused;
+  time_t timeout;
 
+  timeout = time(NULL);
+  if (daemon->connection_timeout != 0)
+    timeout -= daemon->connection_timeout;
+  else
+    timeout = 0;
   pos = daemon->connections;
   prev = NULL;
   while (pos != NULL)
     {
+      if ( (pos->last_activity < timeout) &&
+	   (pos->socket_fd != -1) ) {
+	CLOSE(pos->socket_fd);
+	pos->socket_fd = -1;
+      }
       if (pos->socket_fd == -1)
         {
           if (prev == NULL)
@@ -339,6 +370,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   int max;
   struct timeval timeout;
   int ds;
+  time_t now;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -378,6 +410,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* do not have a thread per connection, process all connections now */
+      now = time(NULL);
       pos = daemon->connections;
       while (pos != NULL)
         {
@@ -387,10 +420,14 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
               pos = pos->next;
               continue;
             }
-          if (FD_ISSET (ds, &rs))
+          if (FD_ISSET (ds, &rs)) {
+	    pos->last_activity = now;
             MHD_connection_handle_read (pos);
-          if (FD_ISSET (ds, &ws))
+	  }
+          if (FD_ISSET (ds, &ws)) {
+	    pos->last_activity = now;
             MHD_connection_handle_write (pos);
+	  }
           pos = pos->next;
         }
     }
@@ -530,6 +567,7 @@ MHD_start_daemon (unsigned int options,
   retVal->default_handler.next = NULL;
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
+  retVal->connection_timeout = 0; /* no timeout */
   va_start (ap, dh_cls);
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
     {
@@ -541,6 +579,9 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_CONNECTION_LIMIT:
           retVal->max_connections = va_arg (ap, unsigned int);
           break;
+	case MHD_OPTION_CONNECTION_TIMEOUT:
+          retVal->connection_timeout = va_arg (ap, unsigned int);
+	  break;
         default:
           fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");

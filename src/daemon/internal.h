@@ -54,6 +54,8 @@
 
 /**
  * Size by which MHD usually tries to increment read/write buffers.
+ * TODO: we should probably get rid of this magic constant and
+ * put in code to automatically determine a good value.
  */
 #define MHD_BUF_INC_SIZE 2048
 
@@ -294,6 +296,12 @@ struct MHD_Connection
   socklen_t addr_len;
 
   /**
+   * Last time this connection had any activity
+   * (reading or writing).
+   */
+  time_t last_activity;
+
+  /**
    * Socket for this connection.  Set to -1 if
    * this connection has died (daemon should clean
    * up in that case).
@@ -383,6 +391,12 @@ struct MHD_Daemon
    * Limit on the number of parallel connections.
    */
   unsigned int max_connections;
+
+  /**
+   * After how many seconds of inactivity should
+   * connections time out?  Zero for no timeout.
+   */
+  unsigned int connection_timeout;
 
   /**
    * Daemon's options.

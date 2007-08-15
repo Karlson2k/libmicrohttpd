@@ -148,6 +148,11 @@ MHD_get_response_header (struct MHD_Response *response, const char *key)
  * header information and then be used any number of times.
  *
  * @param size size of the data portion of the response, -1 for unknown
+ * @param block_size preferred block size for querying crc (advisory only,
+ *                   MHD may still call crc using smaller chunks); this
+ *                   is essentially the buffer size used for IO, clients
+ *                   should pick a value that is appropriate for IO and
+ *                   memory performance requirements
  * @param crc callback to use to obtain response data
  * @param crc_cls extra argument to crc
  * @param crfc callback to call to free crc_cls resources
@@ -155,26 +160,24 @@ MHD_get_response_header (struct MHD_Response *response, const char *key)
  */
 struct MHD_Response *
 MHD_create_response_from_callback (size_t size,
+				   unsigned int block_size,
                                    MHD_ContentReaderCallback crc,
                                    void *crc_cls,
                                    MHD_ContentReaderFreeCallback crfc)
 {
   struct MHD_Response *retVal;
 
-  if (crc == NULL)
+  if ( (crc == NULL) ||
+       (block_size == 0) )
     return NULL;
-  retVal = malloc (sizeof (struct MHD_Response));
+  retVal = malloc (sizeof (struct MHD_Response) + block_size);
+  if (retVal == NULL)
+    return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
-  retVal->data = malloc (MHD_BUF_INC_SIZE);
-  if (retVal->data == NULL)
-    {
-      free (retVal);
-      return NULL;
-    }
+  retVal->data = (void*) &retVal[1];
   retVal->data_buffer_size = MHD_BUF_INC_SIZE;
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
     {
-      free (retVal->data);
       free (retVal);
       return NULL;
     }
@@ -262,8 +265,6 @@ MHD_destroy_response (struct MHD_Response *response)
       free (pos->value);
       free (pos);
     }
-  if (response->crc != NULL)
-    free (response->data);
   free (response);
 }
 
