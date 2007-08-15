@@ -2,20 +2,19 @@
      This file is part of libmicrohttpd
      (C) 2006, 2007 Christian Grothoff (and other contributing authors)
 
-     libmicrohttpd is free software; you can redistribute it and/or modify
-     it under the terms of the GNU General Public License as published
-     by the Free Software Foundation; either version 2, or (at your
-     option) any later version.
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 2.1 of the License, or (at your option) any later version.
 
-     libmicrohttpd is distributed in the hope that it will be useful, but
-     WITHOUT ANY WARRANTY; without even the implied warranty of
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     General Public License for more details.
+     Lesser General Public License for more details.
 
-     You should have received a copy of the GNU General Public License
-     along with libmicrohttpd; see the file COPYING.  If not, write to the
-     Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-     Boston, MA 02111-1307, USA.
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /**
@@ -24,20 +23,43 @@
  * @author Christian Grothoff
  * @author Chris GauthierDickey
  *
- * All symbols defined in this header start with MHD.  MHD is a
- * micro-httpd library.  As such, it does not have any API for logging
- * errors.  Also, it may not support all of the HTTP features directly,
- * where applicable, portions of HTTP may have to be handled by
- * clients of the library (the library is supposed to handle
- * everything that it must handle, such as basic connection
- * management; however, detailed interpretations of headers
- * and methods are left to clients).<p>
+ * All symbols defined in this header start with MHD.  MHD is a small
+ * HTTP daemon library.  As such, it does not have any API for logging
+ * errors (you can only enable or disable logging to stderr).  Also,
+ * it may not support all of the HTTP features directly, where
+ * applicable, portions of HTTP may have to be handled by clients of
+ * the library.<p>
+ *
+ * The library is supposed to handle everything that it must handle
+ * (because the API would not allow clients to do this), such as basic
+ * connection management; however, detailed interpretations of headers
+ * -- such as range requests -- and HTTP methods are left to clients.
+ * The library does understand HEAD and will only send the headers of
+ * the response and not the body, even if the client supplied a body.
+ * The library also understands headers that control connection
+ * management (specifically, "Connection: close" and "Expect: 100
+ * continue" are understood and handled automatically).<p>
+ * 
+ * MHD understands POST data and is able to decode certain formats
+ * (at the moment only "application/x-www-form-urlencoded") if the
+ * entire data fits into the allowed amount of memory for the 
+ * connection.  Unsupported encodings and large POST submissions are
+ * provided as a stream to the main application (and thus can be
+ * processed, just not conveniently by MHD).<p>
+ *
+ * The header file defines various constants used by the HTTP protocol.
+ * This does not mean that MHD actually interprets all of these
+ * values.  The provided constants are exported as a convenience
+ * for users of the library.  MHD does not verify that transmitted
+ * HTTP headers are part of the standard specification; users of the
+ * library are free to define their own extensions of the HTTP
+ * standard and use those with MHD.<p>
  *
  * All functions are guaranteed to be completely reentrant and
  * thread-safe.<p>
  *
  * TODO:
- * - Add option codes for buffer sizes and SSL support
+ * - Add option codes for SSL support
  */
 
 #ifndef MHD_MICROHTTPD_H
