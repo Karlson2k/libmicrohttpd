@@ -1,3 +1,8 @@
+Sat Aug 18 03:06:09 MDT 2007
+	 Check for out of memory when adding headers to
+	 responses.  Check for NULL key when looking
+	 for headers. - CG
+
 Wed Aug 15 01:46:44 MDT 2007
 	 Extending API to allow timeout of connections.
 	 Changed API (MHD_create_response_from_callback) to

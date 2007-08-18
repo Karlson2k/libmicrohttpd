@@ -50,8 +50,19 @@ MHD_add_response_header (struct MHD_Response *response,
       (NULL != strstr (content, "\r")) || (NULL != strstr (content, "\n")))
     return MHD_NO;
   hdr = malloc (sizeof (struct MHD_HTTP_Header));
+  if (hdr == NULL)
+    return MHD_NO;
   hdr->header = strdup (header);
+  if (hdr->header == NULL) {
+    free(hdr);
+    return MHD_NO;
+  }
   hdr->value = strdup (content);
+  if (hdr->value == NULL) {
+    free(hdr->header);
+    free(hdr);
+    return MHD_NO;
+  }
   hdr->kind = MHD_HEADER_KIND;
   hdr->next = response->first_header;
   response->first_header = hdr;
@@ -132,6 +143,9 @@ const char *
 MHD_get_response_header (struct MHD_Response *response, const char *key)
 {
   struct MHD_HTTP_Header *pos;
+
+  if (key == NULL)
+    return NULL;
   pos = response->first_header;
   while (pos != NULL)
     {
