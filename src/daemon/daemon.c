@@ -429,6 +429,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   unsigned long long ltimeout;
   int ds;
   time_t now;
+  int go_again;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -436,78 +437,87 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
     abort ();
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
-  FD_ZERO (&rs);
-  FD_ZERO (&ws);
-  FD_ZERO (&es);
-  max = 0;
+  go_again = MHD_YES;
+  while (go_again == MHD_YES)
+    {
+      go_again = MHD_NO;
+      FD_ZERO (&rs);
+      FD_ZERO (&ws);
+      FD_ZERO (&es);
+      max = 0;
 
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* single-threaded, go over everything */
-      if (MHD_NO == MHD_get_fdset (daemon, &rs, &ws, &es, &max))
-        return MHD_NO;
-    }
-  else
-    {
-      /* accept only, have one thread per connection */
-      max = daemon->socket_fd;
-      if (max == -1)
-        return MHD_NO;
-      FD_SET (max, &rs);
-    }
-  if (may_block == MHD_NO)
-    {
-      timeout.tv_usec = 0;
-      timeout.tv_sec = 0;
-    }
-  else
-    {
-      /* ltimeout is in ms */
-      if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
         {
-          timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000;
-          timeout.tv_sec = ltimeout / 1000;
-          may_block = MHD_NO;
+          /* single-threaded, go over everything */
+          if (MHD_NO == MHD_get_fdset (daemon, &rs, &ws, &es, &max))
+            return MHD_NO;
         }
-    }
-  num_ready = SELECT (max + 1,
-                      &rs, &ws, &es, may_block == MHD_NO ? &timeout : NULL);
-  if (daemon->shutdown == MHD_YES)
-    return MHD_NO;
-  if (num_ready < 0)
-    {
-      if (errno == EINTR)
-        return MHD_YES;
-      MHD_DLOG (daemon, "Select failed: %s\n", STRERROR (errno));
-      return MHD_NO;
-    }
-  ds = daemon->socket_fd;
-  if (ds == -1)
-    return MHD_YES;
-  if (FD_ISSET (ds, &rs))
-    MHD_accept_connection (daemon);
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* do not have a thread per connection, process all connections now */
-      now = time (NULL);
-      pos = daemon->connections;
-      while (pos != NULL)
+      else
         {
-          ds = pos->socket_fd;
-          if (ds != -1)
+          /* accept only, have one thread per connection */
+          max = daemon->socket_fd;
+          if (max == -1)
+            return MHD_NO;
+          FD_SET (max, &rs);
+        }
+      if (may_block == MHD_NO)
+        {
+          timeout.tv_usec = 0;
+          timeout.tv_sec = 0;
+        }
+      else
+        {
+          /* ltimeout is in ms */
+          if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
             {
-              if (FD_ISSET (ds, &rs))
-                {
-                  pos->last_activity = now;
-                  MHD_connection_handle_read (pos);
-                }
-              if (FD_ISSET (ds, &ws))
-                {
-                  pos->last_activity = now;
-                  MHD_connection_handle_write (pos);
-                }
+              timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000;
+              timeout.tv_sec = ltimeout / 1000;
+              may_block = MHD_NO;
             }
-          pos = pos->next;
+        }
+      num_ready = SELECT (max + 1,
+                          &rs, &ws, &es,
+                          may_block == MHD_NO ? &timeout : NULL);
+      if (daemon->shutdown == MHD_YES)
+        return MHD_NO;
+      if (num_ready < 0)
+        {
+          if (errno == EINTR)
+            return MHD_YES;
+          MHD_DLOG (daemon, "Select failed: %s\n", STRERROR (errno));
+          return MHD_NO;
+        }
+      ds = daemon->socket_fd;
+      if (ds == -1)
+        return MHD_YES;
+      if (FD_ISSET (ds, &rs))
+        {
+          MHD_accept_connection (daemon);
+          go_again = MHD_YES;
+        }
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        {
+          /* do not have a thread per connection, process all connections now */
+          now = time (NULL);
+          pos = daemon->connections;
+          while (pos != NULL)
+            {
+              ds = pos->socket_fd;
+              if (ds != -1)
+                {
+                  if (FD_ISSET (ds, &rs))
+                    {
+                      pos->last_activity = now;
+                      MHD_connection_handle_read (pos);
+                    }
+                  if (FD_ISSET (ds, &ws))
+                    {
+                      pos->last_activity = now;
+                      MHD_connection_handle_write (pos);
+                    }
+                }
+              pos = pos->next;
+            }
         }
     }
   return MHD_YES;

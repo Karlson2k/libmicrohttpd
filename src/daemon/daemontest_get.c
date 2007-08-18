@@ -120,19 +120,11 @@ testInternalGet ()
       return 2;
     }
   curl_easy_cleanup (c);
-  if (cbc.pos != strlen ("/hello_world"))
-    {
-      MHD_stop_daemon (d);
-      return 4;
-    }
-
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    {
-      MHD_stop_daemon (d);
-      return 8;
-    }
   MHD_stop_daemon (d);
-
+  if (cbc.pos != strlen ("/hello_world"))
+    return 4;
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
+    return 8;
   return 0;
 }
 
@@ -177,18 +169,11 @@ testMultithreadedGet ()
       return 32;
     }
   curl_easy_cleanup (c);
-  if (cbc.pos != strlen ("/hello_world"))
-    {
-      MHD_stop_daemon (d);
-      return 64;
-    }
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    {
-      MHD_stop_daemon (d);
-      return 128;
-    }
   MHD_stop_daemon (d);
-
+  if (cbc.pos != strlen ("/hello_world"))
+    return 64;
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
+    return 128;
   return 0;
 }
 

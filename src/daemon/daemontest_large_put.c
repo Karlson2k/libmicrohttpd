@@ -37,6 +37,15 @@
 
 static int oneone;
 
+/**
+ * Do not make this much larger since we will hit the
+ * MHD default buffer limit and the test code is not
+ * written for incremental upload processing...
+ */
+#define PUT_SIZE (512 * 1024)
+
+static char *put_buffer;
+
 struct CBC
 {
   char *buf;
@@ -51,9 +60,9 @@ putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
   unsigned int wrt;
 
   wrt = size * nmemb;
-  if (wrt > 8 - (*pos))
-    wrt = 8 - (*pos);
-  memcpy (stream, &("Hello123"[*pos]), wrt);
+  if (wrt > PUT_SIZE - (*pos))
+    wrt = PUT_SIZE - (*pos);
+  memcpy (stream, &put_buffer[*pos], wrt);
   (*pos) += wrt;
   return wrt;
 }
@@ -86,15 +95,15 @@ ahc_echo (void *cls,
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
     {
-      if (*upload_data_size != 8)
+      if (*upload_data_size != PUT_SIZE)
         return MHD_YES;         /* not yet ready */
-      if (0 == memcmp (upload_data, "Hello123", 8))
+      if (0 == memcmp (upload_data, put_buffer, PUT_SIZE))
         {
           *upload_data_size = 0;
         }
       else
         {
-          printf ("Invalid upload data `%8s'!\n", upload_data);
+          printf ("Invalid upload data!\n");
           return MHD_NO;
         }
       *done = 1;
@@ -113,11 +122,11 @@ testInternalPut ()
 {
   struct MHD_Daemon *d;
   CURL *c;
-  char buf[2048];
   struct CBC cbc;
   unsigned int pos = 0;
   int done_flag = 0;
   CURLcode errornum;
+  char buf[2048];
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -134,9 +143,9 @@ testInternalPut ()
   curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+  curl_easy_setopt (c, CURLOPT_INFILESIZE, (long) PUT_SIZE);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -169,11 +178,11 @@ testMultithreadedPut ()
 {
   struct MHD_Daemon *d;
   CURL *c;
-  char buf[2048];
   struct CBC cbc;
   unsigned int pos = 0;
   int done_flag = 0;
   CURLcode errornum;
+  char buf[2048];
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -182,7 +191,10 @@ testMultithreadedPut ()
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
-    return 16;
+    {
+      free (cbc.buf);
+      return 16;
+    }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -190,9 +202,9 @@ testMultithreadedPut ()
   curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+  curl_easy_setopt (c, CURLOPT_INFILESIZE, (long) PUT_SIZE);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -217,7 +229,6 @@ testMultithreadedPut ()
     return 64;
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
     return 128;
-
   return 0;
 }
 
@@ -227,7 +238,6 @@ testExternalPut ()
 {
   struct MHD_Daemon *d;
   CURL *c;
-  char buf[2048];
   struct CBC cbc;
   CURLM *multi;
   CURLMcode mret;
@@ -241,11 +251,12 @@ testExternalPut ()
   struct timeval tv;
   unsigned int pos = 0;
   int done_flag = 0;
+  char buf[2048];
 
-  multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
+  multi = NULL;
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         1082,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
@@ -258,9 +269,9 @@ testExternalPut ()
   curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+  curl_easy_setopt (c, CURLOPT_INFILESIZE, (long) PUT_SIZE);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -345,9 +356,9 @@ testExternalPut ()
     }
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
-    return 8192;
+    return 64;
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 16384;
+    return 128;
   return 0;
 }
 
@@ -361,9 +372,15 @@ main (int argc, char *const *argv)
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  errorCount += testInternalPut ();
-  errorCount += testMultithreadedPut ();
+  put_buffer = malloc (PUT_SIZE);
+  memset (put_buffer, 1, PUT_SIZE);
+  if (0)
+    {
+      errorCount += testInternalPut ();
+      errorCount += testMultithreadedPut ();
+    }
   errorCount += testExternalPut ();
+  free (put_buffer);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

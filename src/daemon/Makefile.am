@@ -38,9 +38,11 @@ check_PROGRAMS = \
   daemontest_get \
   daemontest_post \
   daemontest_put \
+  daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
   daemontest_put11 \
+  daemontest_large_put11 \
   daemontest_long_header
 
 TESTS = $(check_PROGRAMS)
@@ -83,6 +85,19 @@ daemontest_post11_LDADD = \
 daemontest_put11_SOURCES = \
   daemontest_put.c
 daemontest_put11_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+
+daemontest_large_put_SOURCES = \
+  daemontest_large_put.c
+daemontest_large_put_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_large_put11_SOURCES = \
+  daemontest_large_put.c
+daemontest_large_put11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
