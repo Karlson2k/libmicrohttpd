@@ -53,16 +53,18 @@ MHD_add_response_header (struct MHD_Response *response,
   if (hdr == NULL)
     return MHD_NO;
   hdr->header = strdup (header);
-  if (hdr->header == NULL) {
-    free(hdr);
-    return MHD_NO;
-  }
+  if (hdr->header == NULL)
+    {
+      free (hdr);
+      return MHD_NO;
+    }
   hdr->value = strdup (content);
-  if (hdr->value == NULL) {
-    free(hdr->header);
-    free(hdr);
-    return MHD_NO;
-  }
+  if (hdr->value == NULL)
+    {
+      free (hdr->header);
+      free (hdr);
+      return MHD_NO;
+    }
   hdr->kind = MHD_HEADER_KIND;
   hdr->next = response->first_header;
   response->first_header = hdr;

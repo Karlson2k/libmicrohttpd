@@ -347,6 +347,15 @@ struct MHD_Connection
    */
   unsigned int responseCode;
 
+  /**
+   * Set to MHD_YES if the response's content reader
+   * callback failed to provide data the last time
+   * we tried to read from it.  In that case, the 
+   * write socket should be marked as unready until
+   * the CRC call succeeds.
+   */
+  int response_unready;
+
 };
 
 

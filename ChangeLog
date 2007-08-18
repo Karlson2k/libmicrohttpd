@@ -1,7 +1,11 @@
 Sat Aug 18 03:06:09 MDT 2007
 	 Check for out of memory when adding headers to
 	 responses.  Check for NULL key when looking
-	 for headers. - CG
+	 for headers.   If a content reader callback
+	 for a response returns zero (has no data yet),
+	 do not possibly fall into busy waiting when
+	 using external select (with internal selects
+	 we have no choice).  - CG
 
 Wed Aug 15 01:46:44 MDT 2007
 	 Extending API to allow timeout of connections.

@@ -156,6 +156,58 @@ MHD_need_100_continue (struct MHD_Connection *connection)
 }
 
 /**
+ * Prepare the response buffer of this connection for
+ * sending.  Assumes that the response mutex is 
+ * already held.  If the transmission is complete,
+ * this function may close the socket (and return
+ * MHD_NO).
+ * 
+ * @return MHD_NO if readying the response failed
+ */
+static int
+ready_response (struct MHD_Connection *connection)
+{
+  int ret;
+  struct MHD_Response *response;
+
+  response = connection->response;
+  ret = response->crc (response->crc_cls,
+                       connection->messagePos,
+                       response->data,
+                       MIN (response->data_buffer_size,
+                            response->total_size - connection->messagePos));
+  if (ret == -1)
+    {
+      /* end of message, signal other side by closing! */
+      response->total_size = connection->messagePos;
+      CLOSE (connection->socket_fd);
+      connection->socket_fd = -1;
+      return MHD_NO;
+    }
+  response->data_start = connection->messagePos;
+  response->data_size = ret;
+  if (ret == 0)
+    {
+      /* avoid busy-waiting when using external select
+         (we assume that the main application will 
+         wake up the external select once more data
+         is ready).  With internal selects, we
+         have no choice; if the app uses a thread
+         per connection, ret==0 is likely a bug --
+         the application should block until data
+         is ready! */
+      if ((0 ==
+           (connection->daemon->
+            options & (MHD_USE_SELECT_INTERNALLY |
+                       MHD_USE_THREAD_PER_CONNECTION))))
+        connection->response_unready = MHD_YES;
+      return MHD_NO;
+    }
+  connection->response_unready = MHD_NO;
+  return MHD_YES;
+}
+
+/**
  * Obtain the select sets for this connection
  *
  * @return MHD_YES on success
@@ -205,7 +257,16 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
             }
         }
     }
-  if ((connection->response != NULL) || MHD_need_100_continue (connection))
+  if ((connection->response != NULL) &&
+      (connection->response_unready == MHD_YES))
+    {
+      pthread_mutex_lock (&connection->response->mutex);
+      ready_response (connection);
+      pthread_mutex_unlock (&connection->response->mutex);
+    }
+  if (((connection->response != NULL) &&
+       (connection->response_unready == MHD_NO)) ||
+      MHD_need_100_continue (connection))
     {
       FD_SET (fd, write_fd_set);
       if (fd > *max_fd)
@@ -1090,32 +1151,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   if ((response->crc != NULL) &&
       ((response->data_start > connection->messagePos) ||
        (response->data_start + response->data_size <=
-        connection->messagePos)))
+        connection->messagePos)) && (MHD_YES != ready_response (connection)))
     {
-      ret = response->crc (response->crc_cls,
-                           connection->messagePos,
-                           response->data,
-                           MIN (response->data_buffer_size,
-                                response->total_size -
-                                connection->messagePos));
-      if (ret == -1)
-        {
-          /* end of message, signal other side by closing! */
-          response->total_size = connection->messagePos;
-          CLOSE (connection->socket_fd);
-          connection->socket_fd = -1;
-          if (response->crc != NULL)
-            pthread_mutex_unlock (&response->mutex);
-          return MHD_YES;
-        }
-      response->data_start = connection->messagePos;
-      response->data_size = ret;
-      if (ret == 0)
-        {
-          if (response->crc != NULL)
-            pthread_mutex_unlock (&response->mutex);
-          return MHD_YES;
-        }
+      pthread_mutex_unlock (&response->mutex);
+      return MHD_YES;
     }
   /* transmit */
   ret = SEND (connection->socket_fd,
