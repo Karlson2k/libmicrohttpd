@@ -43,6 +43,19 @@
 #define REQUEST_TOO_BIG ""
 
 /**
+ * Add extra debug messages with reasons for closing connections
+ * (non-error reasons).
+ */ 
+#define DEBUG_CLOSE 0
+
+
+/**
+ * Should all data send be printed to stderr?
+ */
+#define DEBUG_SEND_DATA 0
+
+
+/**
  * Get all of the headers from the request.
  *
  * @param iterator callback to call on each header;
@@ -179,6 +192,10 @@ ready_response (struct MHD_Connection *connection)
   if (ret == -1)
     {
       /* end of message, signal other side by closing! */
+#if DEBUG_CLOSE
+      MHD_DLOG (connection->daemon,
+		"Closing connection (end of response)\n");
+#endif
       response->total_size = connection->messagePos;
       CLOSE (connection->socket_fd);
       connection->socket_fd = -1;
@@ -693,6 +710,8 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   MHD_parse_cookie_header (connection);
   return;
 DIE:
+  MHD_DLOG (connection->daemon,
+	    "Closing connection (problem parsing headers)\n");
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
 }
@@ -930,6 +949,10 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       connection->read_close = MHD_YES;
       if (connection->readLoc > 0)
         MHD_call_connection_handler (connection);
+#if DEBUG_CLOSE
+      MHD_DLOG (connection->daemon,
+                "Shutting down connection for reading (other side closed connection)\n");
+#endif
       shutdown (connection->socket_fd, SHUT_RD);
       return MHD_YES;
     }
@@ -1096,7 +1119,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           connection->socket_fd = -1;
           return MHD_YES;
         }
-      connection->continuePos += ret;
+#if DEBUG_SEND_DATA
+      fprintf(stderr,
+	      "Sent 100 continue response: `%.*s'\n",
+	      ret,
+	      &HTTP_100_CONTINUE[connection->continuePos]);
+#endif
       return MHD_YES;
     }
   response = connection->response;
@@ -1111,6 +1139,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (MHD_NO == MHD_build_header_response (connection)))
         {
           /* oops - close! */
+	  MHD_DLOG (connection->daemon, 
+		    "Closing connection (failed to create response header)\n");
           CLOSE (connection->socket_fd);
           connection->socket_fd = -1;
           return MHD_NO;
@@ -1128,6 +1158,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           connection->socket_fd = -1;
           return MHD_YES;
         }
+#if DEBUG_SEND_DATA
+      fprintf(stderr,
+	      "Sent HEADER response: `%.*s'\n",
+	      ret,
+	      &connection->write_buffer[connection->writePos]);
+#endif
       connection->writePos += ret;
       if (connection->writeLoc == connection->writePos)
         {
@@ -1173,6 +1209,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       connection->socket_fd = -1;
       return MHD_YES;
     }
+#if DEBUG_SEND_DATA
+  fprintf(stderr,
+	  "Sent DATA response: `%.*s'\n",
+	  ret,
+	  &response->data[connection->messagePos - response->data_start]);
+#endif
   connection->messagePos += ret;
   if (connection->messagePos > response->total_size)
     abort ();                   /* internal error */
@@ -1196,8 +1238,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
         {
           /* closed for reading => close for good! */
-          if (connection->socket_fd != -1)
+          if (connection->socket_fd != -1) {
+#if DEBUG_CLOSE
+	    MHD_DLOG (connection->daemon,
+		      "Closing connection (http 1.0 or end-of-stream for unknown content length)\n");
+#endif
             CLOSE (connection->socket_fd);
+	  }
           connection->socket_fd = -1;
         }
       connection->version = NULL;

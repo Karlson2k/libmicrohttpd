@@ -41,6 +41,12 @@
 #define MHD_POOL_SIZE_DEFAULT (1024 * 1024)
 
 /**
+ * Print extra messages with reasons for closing
+ * sockets? (only adds non-error messages). 
+ */
+#define DEBUG_CLOSE 0
+
+/**
  * Register an access handler for all URIs beginning with uri_prefix.
  *
  * @param uri_prefix
@@ -218,6 +224,10 @@ MHD_handle_connection (void *data)
     }
   if (con->socket_fd != -1)
     {
+#if DEBUG_CLOSE
+      MHD_DLOG (con->daemon, 
+		"Processing thread terminating, closing connection\n");
+#endif
       CLOSE (con->socket_fd);
       con->socket_fd = -1;
     }
@@ -263,6 +273,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if ((daemon->apc != NULL) &&
       (MHD_NO == daemon->apc (daemon->apc_cls, addr, addrlen)))
     {
+#if DEBUG_CLOSE
+      MHD_DLOG (daemon, 
+		"Connection rejected, closing connection\n");
+#endif
       CLOSE (s);
       return MHD_YES;
     }
@@ -334,6 +348,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
     {
       if ((pos->last_activity < timeout) && (pos->socket_fd != -1))
         {
+#if DEBUG_CLOSE
+	  MHD_DLOG (daemon, 
+		    "Connection timed out, closing connection\n");
+#endif
           CLOSE (pos->socket_fd);
           pos->socket_fd = -1;
         }
@@ -470,7 +488,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
           /* ltimeout is in ms */
           if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
             {
-              timeout.tv_usec = (ltimeout % 1000) * 1000 * 1000;
+              timeout.tv_usec = (ltimeout % 1000) * 1000;
               timeout.tv_sec = ltimeout / 1000;
               may_block = MHD_NO;
             }
@@ -705,6 +723,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
   daemon->socket_fd = -1;
+#if DEBUG_CLOSE
+  MHD_DLOG (daemon, 
+	    "MHD shutdown, closing listen socket\n");
+#endif
   CLOSE (fd);
   if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)))
@@ -716,6 +738,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     {
       if (-1 != daemon->connections->socket_fd)
         {
+#if DEBUG_CLOSE
+	  MHD_DLOG (daemon, 
+		    "MHD shutdown, closing active connections\n");
+#endif
           CLOSE (daemon->connections->socket_fd);
           daemon->connections->socket_fd = -1;
         }
