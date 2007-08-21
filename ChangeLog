@@ -1,3 +1,8 @@
+Tue Aug 21 01:01:46 MDT 2007
+	 Fixing assertion failure that occured when a client
+	 closed the connection after sending some data but
+	 not the full headers.
+
 Sat Aug 18 03:06:09 MDT 2007
 	 Check for out of memory when adding headers to
 	 responses.  Check for NULL key when looking

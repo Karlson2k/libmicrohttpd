@@ -947,7 +947,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     {
       /* other side closed connection */
       connection->read_close = MHD_YES;
-      if (connection->readLoc > 0)
+      if ( (connection->headersReceived == 1) &&
+	   (connection->readLoc > 0) )
         MHD_call_connection_handler (connection);
 #if DEBUG_CLOSE
       MHD_DLOG (connection->daemon,
