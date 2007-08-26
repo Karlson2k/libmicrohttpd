@@ -37,10 +37,22 @@
 #define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
 
 /**
- * Response used when the request (http header) is too big to
+ * Response text used when the request (http header) is too big to
  * be processed.
+ *
+ * Intentionally empty here to keep our memory footprint 
+ * minimal.
  */
 #define REQUEST_TOO_BIG ""
+
+/**
+ * Response text used when the request (http header) does not
+ * contain a "Host:" header and still claims to be HTTP 1.1.
+ *
+ * Intentionally empty here to keep our memory footprint 
+ * minimal.
+ */
+#define REQUEST_LACKS_HOST ""
 
 /**
  * Add extra debug messages with reasons for closing connections
@@ -305,9 +317,7 @@ MHD_excessive_data_handler (struct MHD_Connection *connection,
 {
   struct MHD_Response *response;
 
-  /* die, header far too long to be reasonable;
-     FIXME: send proper response to client
-     (stop reading, queue proper response) */
+  /* die, header far too long to be reasonable */
   connection->read_close = MHD_YES;
   connection->headersReceived = MHD_YES;
   connection->bodyReceived = MHD_YES;
@@ -589,6 +599,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   const char *clen;
   const char *end;
   unsigned long long cval;
+  struct MHD_Response * response;
 
   if (connection->bodyReceived == 1)
     abort ();
@@ -638,7 +649,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
       if (strlen (line) == 0)
         {
           /* end of header */
-          connection->headersReceived = 1;
+          connection->headersReceived = MHD_YES;
           clen = MHD_lookup_connection_value (connection,
                                               MHD_HEADER_KIND,
                                               MHD_HTTP_HEADER_CONTENT_LENGTH);
@@ -680,6 +691,29 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                  this request */
               connection->read_close = MHD_YES;
             }
+	  
+	  if ( (0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options)) &&
+	       (NULL != connection->version) &&
+	       (0 == strcasecmp(MHD_HTTP_VERSION_1_1,
+				connection->version)) &&
+	       (NULL == MHD_lookup_connection_value(connection,
+						    MHD_HEADER_KIND,
+						    MHD_HTTP_HEADER_HOST)) ) {
+	    /* die, http 1.1 request without host and we are pedantic */
+	    connection->bodyReceived = MHD_YES;
+	    connection->read_close = MHD_YES;
+	    MHD_DLOG (connection->daemon,
+		      "Received `%s' request without `%s' header.\n",
+		      MHD_HTTP_VERSION_1_1,
+		      MHD_HTTP_HEADER_HOST);
+	    response = MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
+						      REQUEST_LACKS_HOST, MHD_NO, MHD_NO);
+	    MHD_queue_response (connection,
+				MHD_HTTP_BAD_REQUEST,
+				response);
+	    MHD_destroy_response (response);
+	  }
+			      
           break;
         }
       /* line should be normal header line, find colon */

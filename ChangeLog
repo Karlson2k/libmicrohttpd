@@ -1,3 +1,8 @@
+Sun Aug 26 03:11:46 MDT 2007
+	 Added MHD_USE_PEDANTIC_CHECKS option which enforces
+	 receiving a "Host:" header in HTTP 1.1 (and sends a
+	 HTTP 400 status back if this is violated).
+
 Tue Aug 21 01:01:46 MDT 2007
 	 Fixing assertion failure that occured when a client
 	 closed the connection after sending some data but

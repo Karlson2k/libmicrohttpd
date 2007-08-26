@@ -274,6 +274,17 @@ enum MHD_FLAG
    */
   MHD_USE_IPv6 = 16,
 
+  /**
+   * Be pedantic about the protocol (as opposed to as tolerant as
+   * possible).  Specifically, at the moment, this flag causes MHD to
+   * reject http 1.1 connections without a "Host" header.  This is
+   * required by the standard, but of course in violation of the "be
+   * as liberal as possible in what you accept" norm.  It is
+   * recommended to turn this ON if you are testing clients against
+   * MHD, and OFF in production.
+   */
+  MHD_USE_PEDANTIC_CHECKS = 32,
+
 };
 
 /**

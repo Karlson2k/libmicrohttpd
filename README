@@ -15,7 +15,6 @@ For http/1.1-compliance:
 ========================
 connection.c:
 - support chunked requests from clients (#1260, ARCH, TEST)
-- send proper error code back if client forgot the "Host" header (#1264, TRIV)
 
 For POST:
 =========
