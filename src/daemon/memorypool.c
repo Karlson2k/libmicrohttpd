@@ -25,6 +25,11 @@
 
 #include "memorypool.h"
 
+// define MAP_ANONYMOUS for Mac OS X
+#if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 struct MemoryPool
 {
 
