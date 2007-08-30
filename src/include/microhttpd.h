@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000003
+#define MHD_VERSION 0x00000004
 
 /**
  * MHD-internal return codes.
@@ -319,6 +319,20 @@ enum MHD_OPTION
    */
   MHD_OPTION_CONNECTION_TIMEOUT = 3,
 
+  /**
+   * Register a function that should be called whenever a request has
+   * been completed (this can be used for application-specific clean
+   * up).  Requests that have never been presented to the application
+   * (via MHD_AccessHandlerCallback) will not result in
+   * notifications.<p>
+   * 
+   * This option should be followed by TWO pointers.  First a pointer
+   * to a function of type "MHD_RequestCompletedCallback" and second a
+   * pointer to a closure to pass to the request completed callback.
+   * The second pointer maybe NULL.
+   */
+  MHD_OPTION_NOTIFY_COMPLETED = 4,
+
 };
 
 /**
@@ -362,6 +376,40 @@ enum MHD_ValueKind
 };
 
 /**
+ * The MHD_RequestTerminationCode specifies reasons
+ * why a request has been terminated (or completed).
+ */
+enum MHD_RequestTerminationCode
+{
+
+  /**
+   * We finished sending the response.
+   */
+  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0,
+
+  /**
+   * Error handling the connection (resources
+   * exhausted, other side closed connection,
+   * application error accepting request, etc.)
+   */
+  MHD_REQUEST_TERMINATED_WITH_ERROR = 1,
+
+  /**
+   * No activity on the connection for the number
+   * of seconds specified using
+   * MHD_OPTION_CONNECTION_TIMEOUT.
+   */
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 2,
+
+  /**
+   * We had to close the session since MHD was being 
+   * shut down.
+   */
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
+
+};
+
+/**
  * Handle for the daemon (listening on a socket for HTTP traffic).
  */
 struct MHD_Daemon;
@@ -398,6 +446,8 @@ typedef int
  * callbacks to provide content to give back to the client and return
  * an HTTP status code (i.e. 200 for OK, 404, etc.).
  *
+ * @param cls argument given together with the function
+ *        pointer when the handler was registered with MHD
  * @param url the requested url
  * @param method the HTTP method used ("GET", "PUT", etc.)
  * @param version the HTTP version string (i.e. "HTTP/1.1")
@@ -411,6 +461,16 @@ typedef int
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
+ * @param con_cls pointer that the callback can set to some
+ *        address and that will be preserved by MHD for future
+ *        calls for this request; since the access handler may
+ *        be called many times (i.e., for a PUT/POST operation
+ *        with plenty of upload data) this allows the application
+ *        to easily associate some request-specific state.
+ *        If necessary, this state can be cleaned up in the
+ *        global "MHD_RequestCompleted" callback (which
+ *        can be set with the MHD_OPTION_NOTIFY_COMPLETED).
+ *        Initially, <tt>*con_cls</tt> will be NULL.
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serios
  *         error while handling the request
@@ -422,7 +482,25 @@ typedef int
                                 const char *method,
                                 const char *version,
                                 const char *upload_data,
-                                unsigned int *upload_data_size);
+                                unsigned int *upload_data_size,
+				void ** con_cls);
+
+/**
+ * Signature of the callback used by MHD to notify the
+ * application about completed requests.  
+ *
+ * @param cls client-defined closure
+ * @param connection connection handle
+ * @param con_cls value as set by the last call to
+ *        the MHD_AccessHandlerCallback
+ * @param toe reason for request termination 
+ * @see MHD_OPTION_NOTIFY_COMPLETED
+ */
+typedef void
+  (*MHD_RequestCompletedCallback) (void *cls,
+				   struct MHD_Connection * connection,
+				   void ** con_cls,
+				   enum MHD_RequestTerminationCode toe);
 
 /**
  * Iterator over key-value pairs.  This iterator

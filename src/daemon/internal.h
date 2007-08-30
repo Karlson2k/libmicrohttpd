@@ -203,6 +203,14 @@ struct MHD_Connection
   struct MemoryPool *pool;
 
   /**
+   * We allow the main application to associate some
+   * pointer with the connection.  Here is where we
+   * store it.  (MHD does not know or care what it
+   * is).
+   */
+  void * client_context;
+
+  /**
    * Request method.  Should be GET/POST/etc.  Allocated
    * in pool.
    */
@@ -375,6 +383,10 @@ struct MHD_Daemon
   MHD_AcceptPolicyCallback apc;
 
   void *apc_cls;
+
+  MHD_RequestCompletedCallback notify_completed;
+
+  void * notify_completed_cls;
 
   /**
    * PID of the select thread (if we have internal select)

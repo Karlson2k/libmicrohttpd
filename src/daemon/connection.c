@@ -181,6 +181,22 @@ MHD_need_100_continue (struct MHD_Connection *connection)
 }
 
 /**
+ * A serious error occured, close the
+ * connection (and notify the application).
+ */
+static void 
+connection_close_error(struct MHD_Connection * connection) 
+{
+  CLOSE (connection->socket_fd);
+  connection->socket_fd = -1;
+  if (connection->daemon->notify_completed != NULL) 
+    connection->daemon->notify_completed(connection->daemon->notify_completed_cls,
+					 connection,
+					 &connection->client_context,
+					 MHD_REQUEST_TERMINATED_WITH_ERROR);
+}
+
+/**
  * Prepare the response buffer of this connection for
  * sending.  Assumes that the response mutex is 
  * already held.  If the transmission is complete,
@@ -209,8 +225,7 @@ ready_response (struct MHD_Connection *connection)
 		"Closing connection (end of response)\n");
 #endif
       response->total_size = connection->messagePos;
-      CLOSE (connection->socket_fd);
-      connection->socket_fd = -1;
+      connection_close_error(connection);
       return MHD_NO;
     }
   response->data_start = connection->messagePos;
@@ -746,8 +761,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
 DIE:
   MHD_DLOG (connection->daemon,
 	    "Closing connection (problem parsing headers)\n");
-  CLOSE (connection->socket_fd);
-  connection->socket_fd = -1;
+  connection_close_error(connection);
 }
 
 
@@ -889,13 +903,13 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
                         connection->url,
                         connection->method,
                         connection->version,
-                        connection->read_buffer, &processed))
+                        connection->read_buffer, &processed,
+			&connection->client_context))
     {
       /* serios internal error, close connection */
       MHD_DLOG (connection->daemon,
                 "Internal application error, closing connection.\n");
-      CLOSE (connection->socket_fd);
-      connection->socket_fd = -1;
+      connection_close_error(connection);
       return;
     }
   /* dh left "processed" bytes in buffer for next time... */
@@ -934,8 +948,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (connection->pool == NULL)
     {
       MHD_DLOG (connection->daemon, "Failed to create memory pool!\n");
-      CLOSE (connection->socket_fd);
-      connection->socket_fd = -1;
+      connection_close_error(connection);
       return MHD_NO;
     }
   if ((connection->readLoc >= connection->read_buffer_size) &&
@@ -973,8 +986,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
         return MHD_NO;
       MHD_DLOG (connection->daemon,
                 "Failed to receive data: %s\n", STRERROR (errno));
-      CLOSE (connection->socket_fd);
-      connection->socket_fd = -1;
+      connection_close_error(connection);
       return MHD_YES;
     }
   if (bytes_read == 0)
@@ -1150,8 +1162,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             return MHD_YES;
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
-          CLOSE (connection->socket_fd);
-          connection->socket_fd = -1;
+	  connection_close_error(connection);
           return MHD_YES;
         }
 #if DEBUG_SEND_DATA
@@ -1176,8 +1187,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           /* oops - close! */
 	  MHD_DLOG (connection->daemon, 
 		    "Closing connection (failed to create response header)\n");
-          CLOSE (connection->socket_fd);
-          connection->socket_fd = -1;
+	  connection_close_error(connection);
           return MHD_NO;
         }
       ret = SEND (connection->socket_fd,
@@ -1189,8 +1199,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             return MHD_YES;
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
-          CLOSE (connection->socket_fd);
-          connection->socket_fd = -1;
+	  connection_close_error(connection);
           return MHD_YES;
         }
 #if DEBUG_SEND_DATA
@@ -1240,8 +1249,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         return MHD_YES;
       MHD_DLOG (connection->daemon,
                 "Failed to send data: %s\n", STRERROR (errno));
-      CLOSE (connection->socket_fd);
-      connection->socket_fd = -1;
+      connection_close_error(connection);
       return MHD_YES;
     }
 #if DEBUG_SEND_DATA
@@ -1259,6 +1267,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (connection->headersReceived == 0))
         abort ();               /* internal error */
       MHD_destroy_response (response);
+      if (connection->daemon->notify_completed != NULL) 
+	connection->daemon->notify_completed(connection->daemon->notify_completed_cls,
+					     connection,
+					     &connection->client_context,
+					     MHD_REQUEST_TERMINATED_COMPLETED_OK);      
+      connection->client_context = NULL;
       connection->continuePos = 0;
       connection->responseCode = 0;
       connection->response = NULL;

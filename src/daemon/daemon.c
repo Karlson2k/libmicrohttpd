@@ -354,6 +354,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #endif
           CLOSE (pos->socket_fd);
           pos->socket_fd = -1;
+	  if (pos->daemon->notify_completed != NULL) 
+	    pos->daemon->notify_completed(pos->daemon->notify_completed_cls,
+					  pos,
+					  &pos->client_context,
+					  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
         }
       if (pos->socket_fd == -1)
         {
@@ -680,6 +685,10 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_CONNECTION_TIMEOUT:
           retVal->connection_timeout = va_arg (ap, unsigned int);
           break;
+	case MHD_OPTION_NOTIFY_COMPLETED:
+	  retVal->notify_completed = va_arg(ap, MHD_RequestCompletedCallback);
+	  retVal->notify_completed_cls = va_arg(ap, void *);
+	  break;
         default:
           fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
@@ -733,7 +742,12 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  MHD_DLOG (daemon, 
 		    "MHD shutdown, closing active connections\n");
 #endif
-          CLOSE (daemon->connections->socket_fd);
+	  if (daemon->notify_completed != NULL) 
+	    daemon->notify_completed(daemon->notify_completed_cls,
+				     daemon->connections,
+				     &daemon->connections->client_context,
+				     MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+         CLOSE (daemon->connections->socket_fd);
           daemon->connections->socket_fd = -1;
         }
       MHD_cleanup_connections (daemon);
