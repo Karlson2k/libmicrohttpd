@@ -1171,6 +1171,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 	      ret,
 	      &HTTP_100_CONTINUE[connection->continuePos]);
 #endif
+      connection->continuePos += ret;
       return MHD_YES;
     }
   response = connection->response;
