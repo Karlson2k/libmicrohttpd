@@ -813,11 +813,11 @@ MHD_test_post_data (struct MHD_Connection *connection)
     {
       buf = MHD_pool_reallocate (connection->pool,
                                  connection->read_buffer,
-                                 connection->read_buffer_size,
+                                 (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
                                  connection->uploadSize + 1);
       if (buf == NULL)
         return MHD_NO;
-      connection->read_buffer_size = connection->uploadSize + 1;
+      connection->read_buffer_size = connection->uploadSize;
       connection->read_buffer = buf;
       return MHD_YES;
     }
@@ -851,6 +851,9 @@ MHD_parse_post_data (struct MHD_Connection *connection)
     return MHD_NO;
   if (0 == strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, encoding))
     {
+      /* add 0-termination, that's why the actual buffer size 
+	 is always 1 more than what is actually required for the data! */
+      connection->read_buffer[connection->readLoc] = '\0';
       ret = parse_arguments (MHD_POSTDATA_KIND,
                              connection, connection->read_buffer);
       /* invalidate read buffer for other uses --
@@ -924,6 +927,10 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
        (connection->uploadSize == -1) && (connection->socket_fd == -1)))
     {
       connection->bodyReceived = 1;
+      MHD_pool_reallocate(connection->pool,
+			  (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
+			  connection->read_buffer_size,
+			  0);
       connection->readLoc = 0;
       connection->read_buffer_size = 0;
       connection->read_buffer = NULL;
@@ -959,7 +966,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                                  connection->read_buffer,
                                  connection->read_buffer_size,
                                  connection->read_buffer_size * 2 +
-                                 MHD_BUF_INC_SIZE);
+                                 MHD_BUF_INC_SIZE + 1);
       if (tmp == NULL)
         {
           MHD_DLOG (connection->daemon,

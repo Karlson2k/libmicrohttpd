@@ -230,7 +230,9 @@ struct MHD_Connection
 
   /**
    * Buffer for reading requests.   Allocated
-   * in pool.
+   * in pool.  Actually one byte larger than
+   * read_buffer_size (if non-NULL) to allow for
+   * 0-termination.
    */
   char *read_buffer;
 
@@ -253,7 +255,10 @@ struct MHD_Connection
   pthread_t pid;
 
   /**
-   * Size of read_buffer (in bytes).
+   * Size of read_buffer (in bytes).  This value indicates
+   * how many bytes we're willing to read into the buffer;
+   * the real buffer is one byte longer to allow for 
+   * adding zero-termination (when needed).
    */
   size_t read_buffer_size;
 
