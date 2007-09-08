@@ -228,6 +228,7 @@ MHD_handle_connection (void *data)
       MHD_DLOG (con->daemon, 
 		"Processing thread terminating, closing connection\n");
 #endif
+      SHUTDOWN (con->socket_fd, SHUT_RDWR);
       CLOSE (con->socket_fd);
       con->socket_fd = -1;
     }
@@ -258,8 +259,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if ((s < 0) || (addrlen <= 0))
     {
       MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
-      if (s != -1)
+      if (s != -1) {
+	SHUTDOWN (s, SHUT_RDWR);
         CLOSE (s);              /* just in case */
+      }
       return MHD_NO;
     }
   if (daemon->max_connections == 0)
@@ -267,6 +270,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       /* above connection limit - reject */
       MHD_DLOG (daemon,
                 "Server reached connection limit (closing inbound connection)\n");
+      SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       return MHD_NO;
     }
@@ -277,6 +281,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       MHD_DLOG (daemon, 
 		"Connection rejected, closing connection\n");
 #endif
+      SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       return MHD_YES;
     }
@@ -284,6 +289,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (connection == NULL)
     {
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+      SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       return MHD_NO;
     }
@@ -293,6 +299,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (connection->addr == NULL)
     {
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+      SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       free (connection);
       return MHD_NO;
@@ -306,6 +313,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                             NULL, &MHD_handle_connection, connection)))
     {
       MHD_DLOG (daemon, "Failed to create a thread: %s\n", STRERROR (errno));
+      SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       free (connection->addr);
       free (connection);
@@ -352,6 +360,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	  MHD_DLOG (daemon, 
 		    "Connection timed out, closing connection\n");
 #endif
+	  SHUTDOWN (pos->socket_fd, SHUT_RDWR);
           CLOSE (pos->socket_fd);
           pos->socket_fd = -1;
 	  if (pos->daemon->notify_completed != NULL) 
@@ -747,7 +756,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 				     daemon->connections,
 				     &daemon->connections->client_context,
 				     MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
-         CLOSE (daemon->connections->socket_fd);
+	  SHUTDOWN (daemon->connections->socket_fd, SHUT_RDWR);
+	  CLOSE (daemon->connections->socket_fd);
           daemon->connections->socket_fd = -1;
         }
       MHD_cleanup_connections (daemon);

@@ -187,6 +187,7 @@ MHD_need_100_continue (struct MHD_Connection *connection)
 static void 
 connection_close_error(struct MHD_Connection * connection) 
 {
+  SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
   if (connection->daemon->notify_completed != NULL) 
@@ -1301,6 +1302,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 	    MHD_DLOG (connection->daemon,
 		      "Closing connection (http 1.0 or end-of-stream for unknown content length)\n");
 #endif
+	    SHUTDOWN (connection->socket_fd, SHUT_RDWR);
             CLOSE (connection->socket_fd);
 	  }
           connection->socket_fd = -1;
