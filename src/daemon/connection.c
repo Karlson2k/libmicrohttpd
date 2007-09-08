@@ -297,7 +297,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
               connection->read_buffer_size =
                 connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE;
               FD_SET (fd, read_fd_set);
-              if (fd > *max_fd)
+	      if (fd > *max_fd)
                 *max_fd = fd;
             }
         }
