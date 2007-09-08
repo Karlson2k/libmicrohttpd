@@ -927,10 +927,11 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
        (connection->uploadSize == -1) && (connection->socket_fd == -1)))
     {
       connection->bodyReceived = 1;
-      MHD_pool_reallocate(connection->pool,
-			  (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
-			  connection->read_buffer_size,
-			  0);
+      if (connection->read_buffer != NULL)
+	MHD_pool_reallocate(connection->pool,
+			    connection->read_buffer,
+			    (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
+			    0);
       connection->readLoc = 0;
       connection->read_buffer_size = 0;
       connection->read_buffer = NULL;
