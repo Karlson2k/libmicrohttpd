@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000005
+#define MHD_VERSION 0x00000004
 
 /**
  * MHD-internal return codes.
@@ -562,15 +562,19 @@ typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
 /**
  * Iterator over key-value pairs where the value
  * maybe made available in increments and/or may
- * not be zero-terminated.
+ * not be zero-terminated.  Used for processing
+ * POST data.
  *
  * @param cls user-specified closure
  * @param kind type of the value
- * @param 0-terminated key for the value
- * @param value pointer to size bytes of data at the
+ * @param key 0-terminated key for the value
+ * @param filename name of the uploaded file, NULL if not known
+ * @param content_type mime-type of the data, NULL if not known
+ * @param transfer_encoding encoding of the data, NULL if not known
+ * @param data pointer to size bytes of data at the
  *              specified offset
- * @param off offset of value in the overall data
- * @param size number of bytes in value available 
+ * @param off offset of data in the overall value
+ * @param size number of bytes in data available 
  * @return MHD_YES to continue iterating,
  *         MHD_NO to abort the iteration
  */
@@ -578,7 +582,10 @@ typedef int
   (*MHD_IncrementalKeyValueIterator) (void *cls,
                                       enum MHD_ValueKind kind,
                                       const char *key,
-                                      const char *value,
+				      const char *filename,
+				      const char *content_type,
+				      const char *transfer_encoding,
+                                      const char *data,
                                       size_t off, size_t size);
 
 /**
