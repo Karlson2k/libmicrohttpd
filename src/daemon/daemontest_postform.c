@@ -20,7 +20,7 @@
 
 /**
  * @file daemontest_post.c
- * @brief  Testcase for libmicrohttpd POST operations
+ * @brief  Testcase for libmicrohttpd POST operations using multipart/postform data
  * @author Christian Grothoff
  */
 
@@ -107,6 +107,8 @@ ahc_echo (void *cls,
     {
       eok = 0;
       pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
+      if (pp == NULL)
+	abort();
       *unused = pp;
     }
   MHD_post_process (pp, upload_data, *upload_data_size);
@@ -161,7 +163,6 @@ testInternalPost ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form();
   curl_easy_setopt(c, CURLOPT_HTTPPOST, pd);
-  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
   if (oneone)

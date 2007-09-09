@@ -20,12 +20,7 @@
 
 /**
  * @file daemontest_post.c
- * @brief  Testcase for libmicrohttpd POST operations
- *         TODO: use curl_formadd to produce POST data and
- *               add that to the CURL operation; then check
- *               on the server side if the headers arrive
- *               nicely (need to implement parsing POST data
- *               first!)
+ * @brief  Testcase for libmicrohttpd POST operations using URL-encoding
  * @author Christian Grothoff
  */
 

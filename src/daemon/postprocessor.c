@@ -30,34 +30,20 @@
  */
 enum PP_State
 {
-
   PP_Init = 0,
-
   PP_HaveKey = 1,
-
   PP_ExpectNewLine = 2,
-
   PP_ExpectNewLineR = 3,
-
   PP_ExpectNewLineN = 4,
-
-  PP_Headers = 5,
-
-  PP_SkipRNRN = 6,
-
-  PP_SkipNRN = 7,
-
-  PP_SkipRN = 8,
-
-  PP_SkipN = 9,
-
-  PP_ValueToBoundary = 10,
-
-  PP_FinalDash = 11,
-
+  PP_ExpectNewLineNOPT = 5,
+  PP_Headers = 6,
+  PP_SkipRN = 7,
+  PP_SkipN = 8,
+  PP_ValueToBoundary = 9,
+  PP_FinalDash = 10,
+  PP_FinalRN = 11,
+  PP_FinalN = 12,
   PP_Error = 9999,
-
-
 };
 
 /**
@@ -177,7 +163,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
     return NULL;
   if ((0 != strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                         encoding)) &&
-      (0 != strcasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding)))
+      (0 != strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
+			 strlen(MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA))))
     return NULL;
   ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   if (ret == NULL)
@@ -352,8 +339,6 @@ try_match_header (const char *prefix, char *line, char **suffix)
  * apart and give them to the callback individually (will require some
  * additional states & state).
  *
- * TODO: this code has never been tested...
- * 
  * See http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4 
  */
 static int
@@ -386,16 +371,16 @@ post_process_multipart (struct MHD_PostProcessor *pp,
     {
       /* first, move data to our internal buffer */
       max = pp->buffer_size - pp->buffer_pos;
-      if ((max < ioff) && (max < post_data_len))
+      if ((max < ioff) && (max < post_data_len - poff))
         {
           memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
           pp->buffer_pos -= ioff;
           ioff = 0;
           max = pp->buffer_size - pp->buffer_pos;
         }
-      if (max > post_data_len)
-        max = post_data_len;
-      memcpy (&buf[pp->buffer_pos], post_data, max);
+      if (max > post_data_len - poff)
+        max = post_data_len - poff;
+      memcpy (&buf[pp->buffer_pos], &post_data[poff], max);
       poff += max;
       pp->buffer_pos += max;
 
@@ -426,7 +411,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           if (buf[ioff] == '\r')
             {
               ioff++;
-              pp->state = PP_ExpectNewLineN;
+              pp->state = PP_ExpectNewLineNOPT;
               break;
             }
           /* fall through! */
@@ -438,6 +423,14 @@ post_process_multipart (struct MHD_PostProcessor *pp,
               break;
             }
           return MHD_NO;
+        case PP_ExpectNewLineNOPT:
+          if (buf[ioff] == '\n')
+            {
+              ioff++;
+              pp->state = PP_Headers;
+              break;
+            }
+          /* fall through! */	  
         case PP_Headers:
           newline = 0;
           while ((newline + ioff < pp->buffer_pos) &&
@@ -456,7 +449,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
             }
           if (newline == 0)
             {
-              pp->state = PP_SkipRNRN;
+              pp->state = PP_SkipRN;
               break;
             }
           buf[ioff + newline] = '\0';
@@ -483,23 +476,9 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           try_match_header ("Content-Type: ", &buf[ioff], &pp->content_type);
           try_match_header ("Content-Transfer-Encoding: ",
                             &buf[ioff], &pp->transfer_encoding);
+	  ioff += newline + 1;
+	  pp->state = PP_ExpectNewLineNOPT;
           break;
-        case PP_SkipRNRN:
-          if (buf[ioff] == '\r')
-            {
-              ioff++;
-              pp->state = PP_SkipNRN;
-              break;
-            }
-          /* fall through! */
-        case PP_SkipNRN:
-          if (buf[ioff] == '\n')
-            {
-              ioff++;
-              pp->state = PP_SkipRN;
-              break;
-            }
-          return MHD_NO;        /* parse error */
         case PP_SkipRN:
           if (buf[ioff] == '\r')
             {
@@ -605,6 +584,22 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           if (buf[ioff] == '-')
             {
               /* last boundary ends with "--" */
+              ioff++;
+              pp->state = PP_FinalRN;
+              break;
+            }
+          return MHD_NO;        /* parse error */
+        case PP_FinalRN:
+          if (buf[ioff] == '\r')
+            {
+              ioff++;
+              pp->state = PP_FinalN;
+              break;
+            }
+          /* fall through! */
+        case PP_FinalN:
+          if (buf[ioff] == '\n')
+            {
               ioff++;
               pp->state = PP_Error;
               break;
