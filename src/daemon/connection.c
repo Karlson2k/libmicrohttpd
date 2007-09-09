@@ -594,7 +594,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
 
   if (connection->bodyReceived == 1)
     abort ();
-  colon = NULL; /* make gcc happy */
+  colon = NULL;                 /* make gcc happy */
   last = NULL;
   while (NULL != (line = MHD_get_next_header_line (connection)))
     {

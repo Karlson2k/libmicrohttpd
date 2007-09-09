@@ -488,7 +488,7 @@ typedef int
                                 const char *version,
                                 const char *upload_data,
                                 unsigned int *upload_data_size,
-				void ** con_cls);
+                                void **con_cls);
 
 /**
  * Signature of the callback used by MHD to notify the
@@ -503,9 +503,9 @@ typedef int
  */
 typedef void
   (*MHD_RequestCompletedCallback) (void *cls,
-				   struct MHD_Connection * connection,
-				   void ** con_cls,
-				   enum MHD_RequestTerminationCode toe);
+                                   struct MHD_Connection * connection,
+                                   void **con_cls,
+                                   enum MHD_RequestTerminationCode toe);
 
 /**
  * Iterator over key-value pairs.  This iterator
@@ -576,11 +576,10 @@ typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
  */
 typedef int
   (*MHD_IncrementalKeyValueIterator) (void *cls,
-				      enum MHD_ValueKind kind,
-				      const char *key,
-				      const char *value,
-				      size_t off,
-				      size_t size);
+                                      enum MHD_ValueKind kind,
+                                      const char *key,
+                                      const char *value,
+                                      size_t off, size_t size);
 
 /**
  * Start a webserver on the given port.
@@ -823,11 +822,11 @@ const char *MHD_get_response_header (struct MHD_Response *response,
  * @return  NULL on error (out of memory, unsupported encoding),
             otherwise a PP handle
  */
-struct MHD_PostProcessor *
-MHD_create_post_processor(struct MHD_Connection * connection,
-			  unsigned int buffer_size,
-			  MHD_IncrementalKeyValueIterator ikvi,
-			  void * cls);
+struct MHD_PostProcessor *MHD_create_post_processor (struct MHD_Connection
+                                                     *connection,
+                                                     unsigned int buffer_size,
+                                                     MHD_IncrementalKeyValueIterator
+                                                     ikvi, void *cls);
 
 /**
  * Parse and process POST data.
@@ -844,15 +843,13 @@ MHD_create_post_processor(struct MHD_Connection * connection,
  *         (out-of-memory, iterator aborted, parse error)
  */
 int
-MHD_post_process(struct MHD_PostProcessor * pp,
-		 const char * post_data,
-		 unsigned int post_data_len);
+MHD_post_process (struct MHD_PostProcessor *pp,
+                  const char *post_data, unsigned int post_data_len);
 
 /**
  * Release PostProcessor resources.
  */
-void 
-MHD_destroy_post_processor(struct MHD_PostProcessor * pp);
+void MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
 #if 0                           /* keep Emacsens' auto-indent happy */
