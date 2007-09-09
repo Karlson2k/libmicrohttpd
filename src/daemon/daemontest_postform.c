@@ -35,8 +35,6 @@
 #include <unistd.h>
 #endif
 
-#define POST_DATA "name=daniel&project=curl"
-
 static int oneone;
 
 struct CBC
