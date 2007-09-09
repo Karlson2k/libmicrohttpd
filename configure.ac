@@ -34,7 +34,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CANONICAL_HOST
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
@@ -49,44 +49,54 @@ case "$host_os" in
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp $CFLAGS"
      LDFLAGS="-flat_namespace -undefined suppress $LDFLAGS"
+     AM_CONDITIONAL(HAVE_GNU_LD, false)    
      ;;
 linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      CFLAGS="-D_THREAD_SAFE $CFLAGS"
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
+     AM_CONDITIONAL(HAVE_GNU_LD, false)    
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
+     AM_CONDITIONAL(HAVE_GNU_LD, false)    
      LDFLAGS="$LDFLAGS -no-undefined"
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32 -lplibc"
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
      ;;
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
+     AM_CONDITIONAL(HAVE_GNU_LD, false)    
 ;;
 esac
 
@@ -95,12 +105,6 @@ LIBS="$PTHREAD_LIBS $LIBS"
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_LDFLAGS)
 AC_SUBST(PTHREAD_CPPFLAGS)
-
-# pthread_t is a struct since 11/2004
-AC_CHECK_MEMBER(pthread_t.p, AC_DEFINE(HAVE_NEW_PTHREAD_T, 1,
-  [Define if you have a post 11/2004 pthread library]), , [#include <pthread.h>])
-
-AC_CHECK_FUNCS(pthread_equal)
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
@@ -116,6 +120,20 @@ LIBS=$SAVE_LIBS
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
+
+
+# optional: have error messages?
+AC_MSG_CHECKING(--enable-messages argument)
+AC_ARG_ENABLE(messages,
+   [  --enable-messages 	Enable MHD error messages],
+   [enable_messages=$enableval],
+   [enable_messages="no"])
+AC_MSG_RESULT($enable_messages)
+if test "$enable_messages" = "yes"
+then
+ AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
+fi
+
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)

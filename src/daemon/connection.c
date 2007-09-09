@@ -221,8 +221,10 @@ ready_response (struct MHD_Connection *connection)
   if (ret == -1)
     {
       /* end of message, signal other side by closing! */
-#if DEBUG_CLOSE
+#if DEBUG_CLOSE 
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Closing connection (end of response)\n");
+#endif
 #endif
       response->total_size = connection->messagePos;
       connection_close_error (connection);
@@ -335,8 +337,10 @@ MHD_excessive_data_handler (struct MHD_Connection *connection,
   connection->read_close = MHD_YES;
   connection->headersReceived = MHD_YES;
   connection->bodyReceived = MHD_YES;
+#if HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             "Received excessively long header, closing connection.\n");
+#endif
   response = MHD_create_response_from_data (strlen (REQUEST_TOO_BIG),
                                             REQUEST_TOO_BIG, MHD_NO, MHD_NO);
   MHD_queue_response (connection, status_code, response);
@@ -413,8 +417,10 @@ MHD_connection_add_header (struct MHD_Connection *connection,
                            sizeof (struct MHD_HTTP_Header), MHD_YES);
   if (hdr == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory to allocate header record!\n");
+#endif
       MHD_excessive_data_handler (connection,
                                   MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
       return MHD_NO;
@@ -481,7 +487,9 @@ MHD_parse_cookie_header (struct MHD_Connection *connection)
   cpy = MHD_pool_allocate (connection->pool, strlen (hdr) + 1, MHD_YES);
   if (cpy == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Not enough memory to parse cookies!\n");
+#endif
       MHD_excessive_data_handler (connection,
                                   MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
       return MHD_NO;
@@ -649,9 +657,11 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
             {
               if (1 != sscanf (clen, "%llu", &cval))
                 {
+#if HAVE_MESSAGES
                   MHD_DLOG (connection->daemon,
                             "Failed to parse `%s' header `%s', closing connection.\n",
                             MHD_HTTP_HEADER_CONTENT_LENGTH, clen);
+#endif
                   goto DIE;
                 }
               connection->uploadSize = cval;
@@ -694,9 +704,11 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
               /* die, http 1.1 request without host and we are pedantic */
               connection->bodyReceived = MHD_YES;
               connection->read_close = MHD_YES;
+#if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Received `%s' request without `%s' header.\n",
                         MHD_HTTP_VERSION_1_1, MHD_HTTP_HEADER_HOST);
+#endif
               response =
                 MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
                                                REQUEST_LACKS_HOST, MHD_NO,
@@ -712,8 +724,10 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
       if (colon == NULL)
         {
           /* error in header line, die hard */
+#if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Received malformed line (no colon), closing connection.\n");
+#endif
           goto DIE;
         }
       /* zero-terminate header */
@@ -735,8 +749,10 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   MHD_parse_cookie_header (connection);
   return;
 DIE:
+#if HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             "Closing connection (problem parsing headers)\n");
+#endif
   connection_close_error (connection);
 }
 
@@ -785,8 +801,10 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
                         &connection->client_context))
     {
       /* serios internal error, close connection */
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Internal application error, closing connection.\n");
+#endif
       connection_close_error (connection);
       return;
     }
@@ -831,7 +849,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     connection->pool = MHD_pool_create (connection->daemon->pool_size);
   if (connection->pool == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Failed to create memory pool!\n");
+#endif
       connection_close_error (connection);
       return MHD_NO;
     }
@@ -846,8 +866,10 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                                  MHD_BUF_INC_SIZE + 1);
       if (tmp == NULL)
         {
+#if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Not enough memory for reading headers!\n");
+#endif
           MHD_excessive_data_handler (connection,
                                       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
           return MHD_NO;
@@ -858,7 +880,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     }
   if (connection->readLoc >= connection->read_buffer_size)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Unexpected call to %s.\n", __FUNCTION__);
+#endif
       return MHD_NO;
     }
   bytes_read = RECV (connection->socket_fd,
@@ -868,8 +892,10 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     {
       if (errno == EINTR)
         return MHD_NO;
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Failed to receive data: %s\n", STRERROR (errno));
+#endif
       connection_close_error (connection);
       return MHD_YES;
     }
@@ -880,8 +906,10 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       if ((connection->headersReceived == 1) && (connection->readLoc > 0))
         MHD_call_connection_handler (connection);
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Shutting down connection for reading (other side closed connection)\n");
+#endif
 #endif
       shutdown (connection->socket_fd, SHUT_RD);
       return MHD_YES;
@@ -983,7 +1011,9 @@ MHD_build_header_response (struct MHD_Connection *connection)
   data = MHD_pool_allocate (connection->pool, size + 1, MHD_YES);
   if (data == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Not enough memory for write!\n");
+#endif
       return MHD_NO;
     }
   memcpy (data, code, off);
@@ -1028,8 +1058,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         {
           if (errno == EINTR)
             return MHD_YES;
+#if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
+#endif
           connection_close_error (connection);
           return MHD_YES;
         }
@@ -1044,7 +1076,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   response = connection->response;
   if (response == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Unexpected call to %s.\n", __FUNCTION__);
+#endif
       return MHD_NO;
     }
   if (!connection->headersSent)
@@ -1053,8 +1087,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (MHD_NO == MHD_build_header_response (connection)))
         {
           /* oops - close! */
+#if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Closing connection (failed to create response header)\n");
+#endif
           connection_close_error (connection);
           return MHD_NO;
         }
@@ -1065,8 +1101,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         {
           if (errno == EINTR)
             return MHD_YES;
+#if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
+#endif
           connection_close_error (connection);
           return MHD_YES;
         }
@@ -1114,8 +1152,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     {
       if (errno == EINTR)
         return MHD_YES;
+#if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Failed to send data: %s\n", STRERROR (errno));
+#endif
       connection_close_error (connection);
       return MHD_YES;
     }
@@ -1158,8 +1198,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (connection->socket_fd != -1)
             {
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Closing connection (http 1.0 or end-of-stream for unknown content length)\n");
+#endif
 #endif
               SHUTDOWN (connection->socket_fd, SHUT_RDWR);
               CLOSE (connection->socket_fd);

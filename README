@@ -1,6 +1,36 @@
-Run "autoreconf -fi" to create configure.
+About
+=====
 
-This is still alpha software.  Below we list things that should be
+libmicrohttpd is a library written in C that provides a compact
+API and implementation of an HTTP 1.1 web server.  libmicrohttpd
+only implements the HTTP 1.1 protocol.  The main application must
+still provide the content.
+
+
+Installation
+============
+
+If you are using Subversion, run "autoreconf -fi" to create configure.
+
+In order to run the testcases, you need a recent version of libcurl.
+libcurl is not required if you just want to install the library.
+
+
+Configure options
+=================
+
+Especially for development, use "--enable-messages" to enable error
+reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
+default to reduce the size of the library (error messages take
+space!).  If you are concerned about space, you should set "CFLAGS" to
+"-Os --fomit-frame-pointer" to have gcc generate tight code.  The
+resulting binary should be less than 25k (on x86).
+
+
+Development Status
+==================
+
+This is a beta release.  Below we list things that should be
 implemented (in order of importance) before we can claim to be
 reasonably complete.  #XXXX refers to the respective Mantis bug report
 (or feature request).  ARCH indicates that implementing this feature

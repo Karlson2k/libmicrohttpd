@@ -26,7 +26,7 @@
 
 #include "internal.h"
 
-
+#if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug
  * messages.
@@ -42,6 +42,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
   VFPRINTF (stderr, format, va);
   va_end (va);
 }
+#endif
 
 /**
  * Process escape sequences ('+'=space, %HH)

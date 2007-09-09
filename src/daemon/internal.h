@@ -59,11 +59,13 @@
  */
 #define MHD_BUF_INC_SIZE 2048
 
+#if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug
  * messages.
  */
 void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
+#endif
 
 /**
  * Process escape sequences ('+'=space, %HH).

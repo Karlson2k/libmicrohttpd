@@ -72,7 +72,9 @@ MHD_register_handler (struct MHD_Daemon *daemon,
   ah = malloc (sizeof (struct MHD_Access_Handler));
   if (ah == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+#endif
       return MHD_NO;
     }
 
@@ -204,8 +206,10 @@ MHD_handle_connection (void *data)
         {
           if (errno == EINTR)
             continue;
+#if HAVE_MESSAGES
           MHD_DLOG (con->daemon, "Error during select (%d): `%s'\n",
                     max, STRERROR (errno));
+#endif
           break;
         }
       if (((FD_ISSET (con->socket_fd, &rs)) &&
@@ -224,8 +228,10 @@ MHD_handle_connection (void *data)
   if (con->socket_fd != -1)
     {
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
       MHD_DLOG (con->daemon,
                 "Processing thread terminating, closing connection\n");
+#endif
 #endif
       SHUTDOWN (con->socket_fd, SHUT_RDWR);
       CLOSE (con->socket_fd);
@@ -257,7 +263,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   s = ACCEPT (daemon->socket_fd, addr, &addrlen);
   if ((s < 0) || (addrlen <= 0))
     {
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
+#endif
       if (s != -1)
         {
           SHUTDOWN (s, SHUT_RDWR);
@@ -268,8 +276,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (daemon->max_connections == 0)
     {
       /* above connection limit - reject */
+#if HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "Server reached connection limit (closing inbound connection)\n");
+#endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       return MHD_NO;
@@ -278,7 +288,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       (MHD_NO == daemon->apc (daemon->apc_cls, addr, addrlen)))
     {
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Connection rejected, closing connection\n");
+#endif
 #endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
@@ -287,7 +299,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection = malloc (sizeof (struct MHD_Connection));
   if (connection == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+#endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       return MHD_NO;
@@ -297,7 +311,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->addr = malloc (addrlen);
   if (connection->addr == NULL)
     {
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
+#endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       free (connection);
@@ -311,7 +327,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       (0 != pthread_create (&connection->pid,
                             NULL, &MHD_handle_connection, connection)))
     {
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Failed to create a thread: %s\n", STRERROR (errno));
+#endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
       free (connection->addr);
@@ -356,7 +374,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ((pos->last_activity < timeout) && (pos->socket_fd != -1))
         {
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
           MHD_DLOG (daemon, "Connection timed out, closing connection\n");
+#endif
 #endif
           SHUTDOWN (pos->socket_fd, SHUT_RDWR);
           CLOSE (pos->socket_fd);
@@ -508,7 +528,9 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
     {
       if (errno == EINTR)
         return MHD_YES;
+#if HAVE_MESSAGES
       MHD_DLOG (daemon, "Select failed: %s\n", STRERROR (errno));
+#endif
       return MHD_NO;
     }
   ds = daemon->socket_fd;
@@ -622,15 +644,20 @@ MHD_start_daemon (unsigned int options,
     socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0)
     {
+#if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
         fprintf (stderr, "Call to socket failed: %s\n", STRERROR (errno));
+#endif
       return NULL;
     }
   if ((SETSOCKOPT (socket_fd,
                    SOL_SOCKET,
                    SO_REUSEADDR,
-                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0)
+                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0) {
+#if HAVE_MESSAGES
     fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
+#endif
+  }
   if ((options & MHD_USE_IPv6) != 0)
     {
       memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
@@ -649,17 +676,21 @@ MHD_start_daemon (unsigned int options,
     }
   if (BIND (socket_fd, servaddr, addrlen) < 0)
     {
+#if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
         fprintf (stderr,
                  "Failed to bind to port %u: %s\n", port, STRERROR (errno));
+#endif
       CLOSE (socket_fd);
       return NULL;
     }
   if (LISTEN (socket_fd, 20) < 0)
     {
+#if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
         fprintf (stderr,
                  "Failed to listen for connections: %s\n", STRERROR (errno));
+#endif
       CLOSE (socket_fd);
       return NULL;
     }
@@ -697,8 +728,10 @@ MHD_start_daemon (unsigned int options,
           retVal->notify_completed_cls = va_arg (ap, void *);
           break;
         default:
+#if HAVE_MESSAGES
           fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+#endif
           abort ();
         }
     }
@@ -707,8 +740,10 @@ MHD_start_daemon (unsigned int options,
        (0 != (options & MHD_USE_SELECT_INTERNALLY))) &&
       (0 != pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
     {
+#if HAVE_MESSAGES
       MHD_DLOG (retVal,
                 "Failed to create listen thread: %s\n", STRERROR (errno));
+#endif
       free (retVal);
       CLOSE (socket_fd);
       return NULL;
@@ -731,7 +766,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   fd = daemon->socket_fd;
   daemon->socket_fd = -1;
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
   MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
+#endif
 #endif
   CLOSE (fd);
   if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
@@ -745,7 +782,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       if (-1 != daemon->connections->socket_fd)
         {
 #if DEBUG_CLOSE
+#if HAVE_MESSAGES
           MHD_DLOG (daemon, "MHD shutdown, closing active connections\n");
+#endif
 #endif
           if (daemon->notify_completed != NULL)
             daemon->notify_completed (daemon->notify_completed_cls,

@@ -2,11 +2,17 @@ SUBDIRS  = .
 
 INCLUDES = -I$(top_srcdir)/src/include
 
+if HAVE_GNU_LD
+ retaincommand=-Wl,--retain-symbols-file -Wl,SYMBOLS
+endif
+
+EXTRA_DIST = SYMBOLS
+
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 2:0:0 
+  -export-dynamic -version-info 2:0:0 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   daemon.c  \

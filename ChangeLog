@@ -1,3 +1,10 @@
+Sun Sep  9 14:32:23 MDT 2007
+	 Added option to compile debug/warning messages;
+	 error messages are now disabled by default.  
+	 Modified linker option for GNU LD to not export
+	 non-public symbols (further reduces binary size).
+	 Releasing libmicrohttpd 0.1.0. - CG
+
 Sat Sep  8 21:54:04 MDT 2007
 	 Extended API to allow for incremental POST 
 	 processing.  The new API is binary-compatible
