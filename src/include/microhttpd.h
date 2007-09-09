@@ -579,14 +579,13 @@ typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
  *         MHD_NO to abort the iteration
  */
 typedef int
-  (*MHD_IncrementalKeyValueIterator) (void *cls,
-                                      enum MHD_ValueKind kind,
-                                      const char *key,
-				      const char *filename,
-				      const char *content_type,
-				      const char *transfer_encoding,
-                                      const char *data,
-                                      size_t off, size_t size);
+  (*MHD_PostDataIterator) (void *cls,
+                           enum MHD_ValueKind kind,
+                           const char *key,
+                           const char *filename,
+                           const char *content_type,
+                           const char *transfer_encoding,
+                           const char *data, size_t off, size_t size);
 
 /**
  * Start a webserver on the given port.
@@ -822,8 +821,8 @@ const char *MHD_get_response_header (struct MHD_Response *response,
  *        internal buffering (used only for the parsing,
  *        specifically the parsing of the keys).  A
  *        tiny value (256-1024) should be sufficient.
- *        Do NOT use 0.
- * @param ikvi iterator to be called with the parsed data,
+ *        Do NOT use a value smaller than 256.
+ * @param iter iterator to be called with the parsed data,
  *        Must NOT be NULL.
  * @param cls first argument to ikvi
  * @return  NULL on error (out of memory, unsupported encoding),
@@ -832,8 +831,8 @@ const char *MHD_get_response_header (struct MHD_Response *response,
 struct MHD_PostProcessor *MHD_create_post_processor (struct MHD_Connection
                                                      *connection,
                                                      unsigned int buffer_size,
-                                                     MHD_IncrementalKeyValueIterator
-                                                     ikvi, void *cls);
+                                                     MHD_PostDataIterator
+                                                     iter, void *cls);
 
 /**
  * Parse and process POST data.
