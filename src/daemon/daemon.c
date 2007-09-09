@@ -139,13 +139,12 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   int fd;
 
-  fd = daemon->socket_fd;
   if ((daemon == NULL) ||
       (read_fd_set == NULL) ||
       (write_fd_set == NULL) ||
       (except_fd_set == NULL) ||
       (max_fd == NULL) ||
-      (fd == -1) ||
+      (-1 == (fd = daemon->socket_fd)) ||
       (daemon->shutdown == MHD_YES) ||
       ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0))
     return MHD_NO;

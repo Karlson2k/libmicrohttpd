@@ -18,7 +18,8 @@ connection.c:
 
 For POST:
 =========
-- add support to decode multipart/form-data (#1221, TEST)
+- add support to decode multipart/form-data with 
+  nesting (used for files) -- #1221, TEST
 
 For SSL:
 ========
