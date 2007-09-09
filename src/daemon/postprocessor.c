@@ -374,6 +374,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
   poff = 0;
   boundary =
     &pp->encoding[strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
+  /* Q: should this be "strcasestr"? */
   if (NULL != strstr (boundary, "boundary="))
     boundary = strstr (boundary, "boundary=") + strlen ("boundary=");
   else
