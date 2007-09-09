@@ -41,8 +41,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *upload_data,
-          const char *version, unsigned int *upload_data_size,
-	  void ** unused)
+          const char *version, unsigned int *upload_data_size, void **unused)
 {
   const char *me = cls;
   struct MHD_Response *response;

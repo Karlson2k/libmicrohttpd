@@ -77,7 +77,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, unsigned int *upload_data_size,
-	  void ** unused)
+          void **unused)
 {
   int *done = cls;
   struct MHD_Response *response;
@@ -363,10 +363,11 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalPut ();
-  if (0) {
-    errorCount += testMultithreadedPut ();
-    errorCount += testExternalPut ();
-  }
+  if (0)
+    {
+      errorCount += testMultithreadedPut ();
+      errorCount += testExternalPut ();
+    }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

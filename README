@@ -18,16 +18,7 @@ connection.c:
 
 For POST:
 =========
-- find better way to handle POST data that does not fit into memory (#1221, API, TEST)
 - add support to decode multipart/form-data (#1221, TEST)
-
-API Improvements:
-=================
-- allow clients to associate a void * with each connection (for easier client state
-  management)
-- allow clients to register callback to be invoked when connection is
-  timed out or otherwise completed / aborted / closed (for easier client
-  state clean up)
 
 For SSL:
 ========

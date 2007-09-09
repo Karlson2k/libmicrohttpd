@@ -42,3 +42,26 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
   VFPRINTF (stderr, format, va);
   va_end (va);
 }
+
+/**
+ * Process escape sequences ('+'=space, %HH)
+ */
+void
+MHD_http_unescape (char *val)
+{
+  char *esc;
+  unsigned int num;
+
+  while (NULL != (esc = strstr (val, "+")))
+    *esc = ' ';
+  while (NULL != (esc = strstr (val, "%")))
+    {
+      if ((1 == sscanf (&esc[1],
+                        "%2x", &num)) || (1 == sscanf (&esc[1], "%2X", &num)))
+        {
+          esc[0] = (unsigned char) num;
+          memmove (&esc[1], &esc[3], strlen (&esc[3]));
+        }
+      val = esc + 1;
+    }
+}

@@ -6,13 +6,14 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 1:0:0 
+  -export-dynamic -version-info 2:0:0 
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
   plibc.h \
+  postprocessor.c \
   response.c response.h 
 
 # example programs

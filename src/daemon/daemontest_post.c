@@ -63,6 +63,27 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
+/**
+ * Note that this post_iterator is not perfect
+ * in that it fails to support incremental processing.
+ * (to be fixed in the future)
+ */
+static int
+post_iterator (void *cls,
+               enum MHD_ValueKind kind,
+               const char *key, const char *value, size_t off, size_t size)
+{
+  int *eok = cls;
+
+  if ((0 == strcmp (key, "name")) &&
+      (size == strlen ("daniel")) && (0 == strncmp (value, "daniel", size)))
+    (*eok) |= 1;
+  if ((0 == strcmp (key, "project")) &&
+      (size == strlen ("curl")) && (0 == strncmp (value, "curl", size)))
+    (*eok) |= 2;
+  return MHD_YES;
+}
+
 static int
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
@@ -70,31 +91,38 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, unsigned int *upload_data_size,
-	  void ** unused)
+          void **unused)
 {
+  static int eok;
   struct MHD_Response *response;
+  struct MHD_PostProcessor *pp;
   int ret;
-  const char *r1;
-  const char *r2;
 
   if (0 != strcmp ("POST", method))
     {
       printf ("METHOD: %s\n", method);
       return MHD_NO;            /* unexpected method */
     }
-  r1 = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, "name");
-  r2 = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, "project");
-  if ((r1 != NULL) &&
-      (r2 != NULL) &&
-      (0 == strcmp ("daniel", r1)) && (0 == strcmp ("curl", r2)))
+  pp = *unused;
+  if (pp == NULL)
+    {
+      eok = 0;
+      pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
+      *unused = pp;
+    }
+  MHD_post_process (pp, upload_data, *upload_data_size);
+  if ((eok == 3) && (0 == *upload_data_size))
     {
       response = MHD_create_response_from_data (strlen (url),
                                                 (void *) url,
                                                 MHD_NO, MHD_YES);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
-      return MHD_YES;           /* done */
+      MHD_destroy_post_processor (pp);
+      *unused = NULL;
+      return ret;
     }
+  *upload_data_size = 0;
   return MHD_YES;
 }
 

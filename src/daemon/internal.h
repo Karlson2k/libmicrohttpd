@@ -65,6 +65,11 @@
  */
 void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
 
+/**
+ * Process escape sequences ('+'=space, %HH).
+ * Updates val in place.
+ */
+void MHD_http_unescape (char *val);
 
 /**
  * Header or cookie in HTTP request or response.
@@ -208,7 +213,7 @@ struct MHD_Connection
    * store it.  (MHD does not know or care what it
    * is).
    */
-  void * client_context;
+  void *client_context;
 
   /**
    * Request method.  Should be GET/POST/etc.  Allocated
@@ -350,11 +355,6 @@ struct MHD_Connection
   int headersSent;
 
   /**
-   * Are we processing the POST data?
-   */
-  int post_processed;
-
-  /**
    * HTTP response code.  Only valid if response object
    * is already set.
    */
@@ -391,7 +391,7 @@ struct MHD_Daemon
 
   MHD_RequestCompletedCallback notify_completed;
 
-  void * notify_completed_cls;
+  void *notify_completed_cls;
 
   /**
    * PID of the select thread (if we have internal select)

@@ -225,8 +225,8 @@ MHD_handle_connection (void *data)
   if (con->socket_fd != -1)
     {
 #if DEBUG_CLOSE
-      MHD_DLOG (con->daemon, 
-		"Processing thread terminating, closing connection\n");
+      MHD_DLOG (con->daemon,
+                "Processing thread terminating, closing connection\n");
 #endif
       SHUTDOWN (con->socket_fd, SHUT_RDWR);
       CLOSE (con->socket_fd);
@@ -259,10 +259,11 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if ((s < 0) || (addrlen <= 0))
     {
       MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
-      if (s != -1) {
-	SHUTDOWN (s, SHUT_RDWR);
-        CLOSE (s);              /* just in case */
-      }
+      if (s != -1)
+        {
+          SHUTDOWN (s, SHUT_RDWR);
+          CLOSE (s);            /* just in case */
+        }
       return MHD_NO;
     }
   if (daemon->max_connections == 0)
@@ -278,8 +279,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       (MHD_NO == daemon->apc (daemon->apc_cls, addr, addrlen)))
     {
 #if DEBUG_CLOSE
-      MHD_DLOG (daemon, 
-		"Connection rejected, closing connection\n");
+      MHD_DLOG (daemon, "Connection rejected, closing connection\n");
 #endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
@@ -357,17 +357,16 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ((pos->last_activity < timeout) && (pos->socket_fd != -1))
         {
 #if DEBUG_CLOSE
-	  MHD_DLOG (daemon, 
-		    "Connection timed out, closing connection\n");
+          MHD_DLOG (daemon, "Connection timed out, closing connection\n");
 #endif
-	  SHUTDOWN (pos->socket_fd, SHUT_RDWR);
+          SHUTDOWN (pos->socket_fd, SHUT_RDWR);
           CLOSE (pos->socket_fd);
           pos->socket_fd = -1;
-	  if (pos->daemon->notify_completed != NULL) 
-	    pos->daemon->notify_completed(pos->daemon->notify_completed_cls,
-					  pos,
-					  &pos->client_context,
-					  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+          if (pos->daemon->notify_completed != NULL)
+            pos->daemon->notify_completed (pos->daemon->notify_completed_cls,
+                                           pos,
+                                           &pos->client_context,
+                                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
         }
       if (pos->socket_fd == -1)
         {
@@ -472,19 +471,19 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   FD_ZERO (&ws);
   FD_ZERO (&es);
   max = 0;
-  
+
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* single-threaded, go over everything */
       if (MHD_NO == MHD_get_fdset (daemon, &rs, &ws, &es, &max))
-	return MHD_NO;
+        return MHD_NO;
     }
   else
     {
       /* accept only, have one thread per connection */
       max = daemon->socket_fd;
       if (max == -1)
-	return MHD_NO;
+        return MHD_NO;
       FD_SET (max, &rs);
     }
   if (may_block == MHD_NO)
@@ -496,21 +495,20 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
     {
       /* ltimeout is in ms */
       if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
-	{
-	  timeout.tv_usec = (ltimeout % 1000) * 1000;
-	  timeout.tv_sec = ltimeout / 1000;
-	  may_block = MHD_NO;
-	}
+        {
+          timeout.tv_usec = (ltimeout % 1000) * 1000;
+          timeout.tv_sec = ltimeout / 1000;
+          may_block = MHD_NO;
+        }
     }
   num_ready = SELECT (max + 1,
-		      &rs, &ws, &es,
-		      may_block == MHD_NO ? &timeout : NULL);
+                      &rs, &ws, &es, may_block == MHD_NO ? &timeout : NULL);
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
   if (num_ready < 0)
     {
       if (errno == EINTR)
-	return MHD_YES;
+        return MHD_YES;
       MHD_DLOG (daemon, "Select failed: %s\n", STRERROR (errno));
       return MHD_NO;
     }
@@ -525,23 +523,23 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
       now = time (NULL);
       pos = daemon->connections;
       while (pos != NULL)
-	{
-	  ds = pos->socket_fd;
-	  if (ds != -1)
-	    {
-	      if (FD_ISSET (ds, &rs))
-		{
-		  pos->last_activity = now;
-		  MHD_connection_handle_read (pos);
-		}
-	      if (FD_ISSET (ds, &ws))
-		{
-		  pos->last_activity = now;
-		  MHD_connection_handle_write (pos);
-		}
-	    }
-	  pos = pos->next;
-	}
+        {
+          ds = pos->socket_fd;
+          if (ds != -1)
+            {
+              if (FD_ISSET (ds, &rs))
+                {
+                  pos->last_activity = now;
+                  MHD_connection_handle_read (pos);
+                }
+              if (FD_ISSET (ds, &ws))
+                {
+                  pos->last_activity = now;
+                  MHD_connection_handle_write (pos);
+                }
+            }
+          pos = pos->next;
+        }
     }
   return MHD_YES;
 }
@@ -694,10 +692,11 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_CONNECTION_TIMEOUT:
           retVal->connection_timeout = va_arg (ap, unsigned int);
           break;
-	case MHD_OPTION_NOTIFY_COMPLETED:
-	  retVal->notify_completed = va_arg(ap, MHD_RequestCompletedCallback);
-	  retVal->notify_completed_cls = va_arg(ap, void *);
-	  break;
+        case MHD_OPTION_NOTIFY_COMPLETED:
+          retVal->notify_completed =
+            va_arg (ap, MHD_RequestCompletedCallback);
+          retVal->notify_completed_cls = va_arg (ap, void *);
+          break;
         default:
           fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
@@ -733,8 +732,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   fd = daemon->socket_fd;
   daemon->socket_fd = -1;
 #if DEBUG_CLOSE
-  MHD_DLOG (daemon, 
-	    "MHD shutdown, closing listen socket\n");
+  MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
 #endif
   CLOSE (fd);
   if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
@@ -748,16 +746,15 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       if (-1 != daemon->connections->socket_fd)
         {
 #if DEBUG_CLOSE
-	  MHD_DLOG (daemon, 
-		    "MHD shutdown, closing active connections\n");
+          MHD_DLOG (daemon, "MHD shutdown, closing active connections\n");
 #endif
-	  if (daemon->notify_completed != NULL) 
-	    daemon->notify_completed(daemon->notify_completed_cls,
-				     daemon->connections,
-				     &daemon->connections->client_context,
-				     MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
-	  SHUTDOWN (daemon->connections->socket_fd, SHUT_RDWR);
-	  CLOSE (daemon->connections->socket_fd);
+          if (daemon->notify_completed != NULL)
+            daemon->notify_completed (daemon->notify_completed_cls,
+                                      daemon->connections,
+                                      &daemon->connections->client_context,
+                                      MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+          SHUTDOWN (daemon->connections->socket_fd, SHUT_RDWR);
+          CLOSE (daemon->connections->socket_fd);
           daemon->connections->socket_fd = -1;
         }
       MHD_cleanup_connections (daemon);

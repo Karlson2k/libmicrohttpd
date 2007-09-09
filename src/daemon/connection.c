@@ -57,7 +57,7 @@
 /**
  * Add extra debug messages with reasons for closing connections
  * (non-error reasons).
- */ 
+ */
 #define DEBUG_CLOSE 0
 
 
@@ -184,17 +184,17 @@ MHD_need_100_continue (struct MHD_Connection *connection)
  * A serious error occured, close the
  * connection (and notify the application).
  */
-static void 
-connection_close_error(struct MHD_Connection * connection) 
+static void
+connection_close_error (struct MHD_Connection *connection)
 {
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
-  if (connection->daemon->notify_completed != NULL) 
-    connection->daemon->notify_completed(connection->daemon->notify_completed_cls,
-					 connection,
-					 &connection->client_context,
-					 MHD_REQUEST_TERMINATED_WITH_ERROR);
+  if (connection->daemon->notify_completed != NULL)
+    connection->daemon->notify_completed (connection->daemon->
+                                          notify_completed_cls, connection,
+                                          &connection->client_context,
+                                          MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
 /**
@@ -222,11 +222,10 @@ ready_response (struct MHD_Connection *connection)
     {
       /* end of message, signal other side by closing! */
 #if DEBUG_CLOSE
-      MHD_DLOG (connection->daemon,
-		"Closing connection (end of response)\n");
+      MHD_DLOG (connection->daemon, "Closing connection (end of response)\n");
 #endif
       response->total_size = connection->messagePos;
-      connection_close_error(connection);
+      connection_close_error (connection);
       return MHD_NO;
     }
   response->data_start = connection->messagePos;
@@ -281,7 +280,6 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
     {
       if ((connection->read_close == MHD_NO) &&
           ((connection->headersReceived == 1) &&
-           (connection->post_processed == MHD_NO) &&
            (connection->readLoc == connection->read_buffer_size)))
         {
           /* try growing the read buffer, just in case */
@@ -297,7 +295,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
               connection->read_buffer_size =
                 connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE;
               FD_SET (fd, read_fd_set);
-	      if (fd > *max_fd)
+              if (fd > *max_fd)
                 *max_fd = fd;
             }
         }
@@ -427,29 +425,6 @@ MHD_connection_add_header (struct MHD_Connection *connection,
   hdr->kind = kind;
   connection->headers_received = hdr;
   return MHD_YES;
-}
-
-/**
- * Process escape sequences ('+'=space, %HH)
- */
-static void
-MHD_http_unescape (char *val)
-{
-  char *esc;
-  unsigned int num;
-
-  while (NULL != (esc = strstr (val, "+")))
-    *esc = ' ';
-  while (NULL != (esc = strstr (val, "%")))
-    {
-      if ((1 == sscanf (&esc[1],
-                        "%2x", &num)) || (1 == sscanf (&esc[1], "%2X", &num)))
-        {
-          esc[0] = (unsigned char) num;
-          memmove (&esc[1], &esc[3], strlen (&esc[3]));
-        }
-      val = esc + 1;
-    }
 }
 
 /**
@@ -615,10 +590,11 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   const char *clen;
   const char *end;
   unsigned long long cval;
-  struct MHD_Response * response;
+  struct MHD_Response *response;
 
   if (connection->bodyReceived == 1)
     abort ();
+  colon = NULL; /* make gcc happy */
   last = NULL;
   while (NULL != (line = MHD_get_next_header_line (connection)))
     {
@@ -707,29 +683,28 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                  this request */
               connection->read_close = MHD_YES;
             }
-	  
-	  if ( (0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options)) &&
-	       (NULL != connection->version) &&
-	       (0 == strcasecmp(MHD_HTTP_VERSION_1_1,
-				connection->version)) &&
-	       (NULL == MHD_lookup_connection_value(connection,
-						    MHD_HEADER_KIND,
-						    MHD_HTTP_HEADER_HOST)) ) {
-	    /* die, http 1.1 request without host and we are pedantic */
-	    connection->bodyReceived = MHD_YES;
-	    connection->read_close = MHD_YES;
-	    MHD_DLOG (connection->daemon,
-		      "Received `%s' request without `%s' header.\n",
-		      MHD_HTTP_VERSION_1_1,
-		      MHD_HTTP_HEADER_HOST);
-	    response = MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
-						      REQUEST_LACKS_HOST, MHD_NO, MHD_NO);
-	    MHD_queue_response (connection,
-				MHD_HTTP_BAD_REQUEST,
-				response);
-	    MHD_destroy_response (response);
-	  }
-			      
+
+          if ((0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options))
+              && (NULL != connection->version)
+              && (0 == strcasecmp (MHD_HTTP_VERSION_1_1, connection->version))
+              && (NULL ==
+                  MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
+                                               MHD_HTTP_HEADER_HOST)))
+            {
+              /* die, http 1.1 request without host and we are pedantic */
+              connection->bodyReceived = MHD_YES;
+              connection->read_close = MHD_YES;
+              MHD_DLOG (connection->daemon,
+                        "Received `%s' request without `%s' header.\n",
+                        MHD_HTTP_VERSION_1_1, MHD_HTTP_HEADER_HOST);
+              response =
+                MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
+                                               REQUEST_LACKS_HOST, MHD_NO,
+                                               MHD_NO);
+              MHD_queue_response (connection, MHD_HTTP_BAD_REQUEST, response);
+              MHD_destroy_response (response);
+            }
+
           break;
         }
       /* line should be normal header line, find colon */
@@ -761,8 +736,8 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   return;
 DIE:
   MHD_DLOG (connection->daemon,
-	    "Closing connection (problem parsing headers)\n");
-  connection_close_error(connection);
+            "Closing connection (problem parsing headers)\n");
+  connection_close_error (connection);
 }
 
 
@@ -784,107 +759,6 @@ MHD_find_access_handler (struct MHD_Connection *connection)
   return &connection->daemon->default_handler;
 }
 
-/**
- * Test if we are able to process the POST data.
- * This depends on available memory (enough to load
- * all of the POST data into the pool) and the
- * content encoding of the POST data.  And of course,
- * this requires that the request is actually a
- * POST request.
- *
- * @return MHD_YES if so
- */
-static int
-MHD_test_post_data (struct MHD_Connection *connection)
-{
-  const char *encoding;
-  void *buf;
-
-  if ((connection->method == NULL) ||
-      (connection->response != NULL) ||
-      (0 != strcasecmp (connection->method, MHD_HTTP_METHOD_POST)))
-    return MHD_NO;
-  encoding = MHD_lookup_connection_value (connection,
-                                          MHD_HEADER_KIND,
-                                          MHD_HTTP_HEADER_CONTENT_TYPE);
-  if (encoding == NULL)
-    return MHD_NO;
-  if ((0 == strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
-                        encoding)) && (connection->uploadSize != -1))
-    {
-      buf = MHD_pool_reallocate (connection->pool,
-                                 connection->read_buffer,
-                                 (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
-                                 connection->uploadSize + 1);
-      if (buf == NULL)
-        return MHD_NO;
-      connection->read_buffer_size = connection->uploadSize;
-      connection->read_buffer = buf;
-      return MHD_YES;
-    }
-  return MHD_NO;
-}
-
-/**
- * Process the POST data here (adding to headers).
- *
- * Needs to first check POST encoding and then do
- * the right thing (TM).  The POST data is in the
- * connection's post_data buffer between the postPos
- * and postLoc offsets.  The POST message maybe
- * incomplete.  The existing buffer (allocated from
- * the pool) can be used and modified but must then
- * be properly removed from the struct.
- *
- * @return MHD_YES on success, MHD_NO on error (i.e. out of
- *         memory).
- */
-static int
-MHD_parse_post_data (struct MHD_Connection *connection)
-{
-  const char *encoding;
-  int ret;
-
-  encoding = MHD_lookup_connection_value (connection,
-                                          MHD_HEADER_KIND,
-                                          MHD_HTTP_HEADER_CONTENT_TYPE);
-  if (encoding == NULL)
-    return MHD_NO;
-  if (0 == strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, encoding))
-    {
-      /* add 0-termination, that's why the actual buffer size 
-	 is always 1 more than what is actually required for the data! */
-      connection->read_buffer[connection->readLoc] = '\0';
-      ret = parse_arguments (MHD_POSTDATA_KIND,
-                             connection, connection->read_buffer);
-      /* invalidate read buffer for other uses --
-         in particular, do not give it to the
-         client; if this were to be needed, we would
-         have to make a copy, which would double memory
-         requirements */
-      connection->read_buffer_size = 0;
-      connection->readLoc = 0;
-      connection->uploadSize = 0;
-      connection->read_buffer = NULL;
-      return ret;
-    }
-  if (0 == strcasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding))
-    {
-      /* this code should never been reached right now,
-         since the test_post_data function would already
-         return MHD_NO; code is here only for future
-         extensions... */
-      /* see http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4 */
-      MHD_DLOG (connection->daemon,
-                "Unsupported multipart encoding of POST data specified, not processing POST data.\n");
-      return MHD_NO;
-    }
-  /* this should never be reached, just here for
-     error checking */
-  MHD_DLOG (connection->daemon,
-            "Unknown encoding of POST data specified, not processing POST data.\n");
-  return MHD_NO;
-}
 
 /**
  * Call the handler of the application for this
@@ -908,12 +782,12 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
                         connection->method,
                         connection->version,
                         connection->read_buffer, &processed,
-			&connection->client_context))
+                        &connection->client_context))
     {
       /* serios internal error, close connection */
       MHD_DLOG (connection->daemon,
                 "Internal application error, closing connection.\n");
-      connection_close_error(connection);
+      connection_close_error (connection);
       return;
     }
   /* dh left "processed" bytes in buffer for next time... */
@@ -929,10 +803,11 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
     {
       connection->bodyReceived = 1;
       if (connection->read_buffer != NULL)
-	MHD_pool_reallocate(connection->pool,
-			    connection->read_buffer,
-			    (connection->read_buffer == NULL) ? 0 : connection->read_buffer_size + 1,
-			    0);
+        MHD_pool_reallocate (connection->pool,
+                             connection->read_buffer,
+                             (connection->read_buffer ==
+                              NULL) ? 0 : connection->read_buffer_size + 1,
+                             0);
       connection->readLoc = 0;
       connection->read_buffer_size = 0;
       connection->read_buffer = NULL;
@@ -957,7 +832,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (connection->pool == NULL)
     {
       MHD_DLOG (connection->daemon, "Failed to create memory pool!\n");
-      connection_close_error(connection);
+      connection_close_error (connection);
       return MHD_NO;
     }
   if ((connection->readLoc >= connection->read_buffer_size) &&
@@ -995,15 +870,14 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
         return MHD_NO;
       MHD_DLOG (connection->daemon,
                 "Failed to receive data: %s\n", STRERROR (errno));
-      connection_close_error(connection);
+      connection_close_error (connection);
       return MHD_YES;
     }
   if (bytes_read == 0)
     {
       /* other side closed connection */
       connection->read_close = MHD_YES;
-      if ( (connection->headersReceived == 1) &&
-	   (connection->readLoc > 0) )
+      if ((connection->headersReceived == 1) && (connection->readLoc > 0))
         MHD_call_connection_handler (connection);
 #if DEBUG_CLOSE
       MHD_DLOG (connection->daemon,
@@ -1014,24 +888,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     }
   connection->readLoc += bytes_read;
   if (connection->headersReceived == 0)
-    {
-      MHD_parse_connection_headers (connection);
-      if (connection->headersReceived == 1)
-        {
-          connection->post_processed = MHD_test_post_data (connection);
-        }
-    }
-  if (connection->headersReceived == 1)
-    {
-      if ((connection->post_processed == MHD_YES) &&
-          (connection->uploadSize == connection->readLoc))
-        if (MHD_NO == MHD_parse_post_data (connection))
-          connection->post_processed = MHD_NO;
-      if (((connection->post_processed == MHD_NO) ||
-           (connection->read_buffer_size == connection->readLoc)) &&
-          (connection->method != NULL))
-        MHD_call_connection_handler (connection);
-    }
+    MHD_parse_connection_headers (connection);
+  if ((connection->headersReceived == 1) && (connection->method != NULL))
+    MHD_call_connection_handler (connection);
   return MHD_YES;
 }
 
@@ -1171,14 +1030,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             return MHD_YES;
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
-	  connection_close_error(connection);
+          connection_close_error (connection);
           return MHD_YES;
         }
 #if DEBUG_SEND_DATA
-      fprintf(stderr,
-	      "Sent 100 continue response: `%.*s'\n",
-	      ret,
-	      &HTTP_100_CONTINUE[connection->continuePos]);
+      fprintf (stderr,
+               "Sent 100 continue response: `%.*s'\n",
+               ret, &HTTP_100_CONTINUE[connection->continuePos]);
 #endif
       connection->continuePos += ret;
       return MHD_YES;
@@ -1195,9 +1053,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (MHD_NO == MHD_build_header_response (connection)))
         {
           /* oops - close! */
-	  MHD_DLOG (connection->daemon, 
-		    "Closing connection (failed to create response header)\n");
-	  connection_close_error(connection);
+          MHD_DLOG (connection->daemon,
+                    "Closing connection (failed to create response header)\n");
+          connection_close_error (connection);
           return MHD_NO;
         }
       ret = SEND (connection->socket_fd,
@@ -1209,14 +1067,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             return MHD_YES;
           MHD_DLOG (connection->daemon,
                     "Failed to send data: %s\n", STRERROR (errno));
-	  connection_close_error(connection);
+          connection_close_error (connection);
           return MHD_YES;
         }
 #if DEBUG_SEND_DATA
-      fprintf(stderr,
-	      "Sent HEADER response: `%.*s'\n",
-	      ret,
-	      &connection->write_buffer[connection->writePos]);
+      fprintf (stderr,
+               "Sent HEADER response: `%.*s'\n",
+               ret, &connection->write_buffer[connection->writePos]);
 #endif
       connection->writePos += ret;
       if (connection->writeLoc == connection->writePos)
@@ -1259,14 +1116,14 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         return MHD_YES;
       MHD_DLOG (connection->daemon,
                 "Failed to send data: %s\n", STRERROR (errno));
-      connection_close_error(connection);
+      connection_close_error (connection);
       return MHD_YES;
     }
 #if DEBUG_SEND_DATA
-  fprintf(stderr,
-	  "Sent DATA response: `%.*s'\n",
-	  ret,
-	  &response->data[connection->messagePos - response->data_start]);
+  fprintf (stderr,
+           "Sent DATA response: `%.*s'\n",
+           ret,
+           &response->data[connection->messagePos - response->data_start]);
 #endif
   connection->messagePos += ret;
   if (connection->messagePos > response->total_size)
@@ -1277,11 +1134,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (connection->headersReceived == 0))
         abort ();               /* internal error */
       MHD_destroy_response (response);
-      if (connection->daemon->notify_completed != NULL) 
-	connection->daemon->notify_completed(connection->daemon->notify_completed_cls,
-					     connection,
-					     &connection->client_context,
-					     MHD_REQUEST_TERMINATED_COMPLETED_OK);      
+      if (connection->daemon->notify_completed != NULL)
+        connection->daemon->notify_completed (connection->daemon->
+                                              notify_completed_cls,
+                                              connection,
+                                              &connection->client_context,
+                                              MHD_REQUEST_TERMINATED_COMPLETED_OK);
       connection->client_context = NULL;
       connection->continuePos = 0;
       connection->responseCode = 0;
@@ -1297,14 +1155,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
         {
           /* closed for reading => close for good! */
-          if (connection->socket_fd != -1) {
+          if (connection->socket_fd != -1)
+            {
 #if DEBUG_CLOSE
-	    MHD_DLOG (connection->daemon,
-		      "Closing connection (http 1.0 or end-of-stream for unknown content length)\n");
+              MHD_DLOG (connection->daemon,
+                        "Closing connection (http 1.0 or end-of-stream for unknown content length)\n");
 #endif
-	    SHUTDOWN (connection->socket_fd, SHUT_RDWR);
-            CLOSE (connection->socket_fd);
-	  }
+              SHUTDOWN (connection->socket_fd, SHUT_RDWR);
+              CLOSE (connection->socket_fd);
+            }
           connection->socket_fd = -1;
         }
       connection->version = NULL;

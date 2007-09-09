@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000004
+#define MHD_VERSION 0x00000005
 
 /**
  * MHD-internal return codes.
@@ -428,6 +428,11 @@ struct MHD_Connection;
 struct MHD_Response;
 
 /**
+ * Handle for POST processing.
+ */
+struct MHD_PostProcessor;
+
+/**
  * Allow or deny a client to connect.
  *
  *
@@ -553,6 +558,29 @@ typedef int
  * content reader.
  */
 typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
+
+/**
+ * Iterator over key-value pairs where the value
+ * maybe made available in increments and/or may
+ * not be zero-terminated.
+ *
+ * @param cls user-specified closure
+ * @param kind type of the value
+ * @param 0-terminated key for the value
+ * @param value pointer to size bytes of data at the
+ *              specified offset
+ * @param off offset of value in the overall data
+ * @param size number of bytes in value available 
+ * @return MHD_YES to continue iterating,
+ *         MHD_NO to abort the iteration
+ */
+typedef int
+  (*MHD_IncrementalKeyValueIterator) (void *cls,
+				      enum MHD_ValueKind kind,
+				      const char *key,
+				      const char *value,
+				      size_t off,
+				      size_t size);
 
 /**
  * Start a webserver on the given port.
@@ -774,6 +802,57 @@ MHD_get_response_headers (struct MHD_Response *response,
  */
 const char *MHD_get_response_header (struct MHD_Response *response,
                                      const char *key);
+
+
+/**
+ * Create a PostProcessor.
+ * 
+ * A PostProcessor can be used to (incrementally)
+ * parse the data portion of a POST request.
+ *
+ * @param connection the connection on which the POST is
+ *        happening (used to determine the POST format)
+ * @param buffer_size maximum number of bytes to use for
+ *        internal buffering (used only for the parsing,
+ *        specifically the parsing of the keys).  A
+ *        tiny value (256-1024) should be sufficient.
+ *        Do NOT use 0.
+ * @param ikvi iterator to be called with the parsed data,
+ *        Must NOT be NULL.
+ * @param cls first argument to ikvi
+ * @return  NULL on error (out of memory, unsupported encoding),
+            otherwise a PP handle
+ */
+struct MHD_PostProcessor *
+MHD_create_post_processor(struct MHD_Connection * connection,
+			  unsigned int buffer_size,
+			  MHD_IncrementalKeyValueIterator ikvi,
+			  void * cls);
+
+/**
+ * Parse and process POST data.
+ * Call this function when POST data is available
+ * (usually during an MHD_AccessHandlerCallback)
+ * with the upload_data and upload_data_size.  
+ * Whenever possible, this will then cause calls
+ * to the MHD_IncrementalKeyValueIterator.  
+ *
+ * @param pp the post processor
+ * @param post_data post_data_len bytes of POST data
+ * @param post_data_len length of post_data
+ * @return MHD_YES on success, MHD_NO on error
+ *         (out-of-memory, iterator aborted, parse error)
+ */
+int
+MHD_post_process(struct MHD_PostProcessor * pp,
+		 const char * post_data,
+		 unsigned int post_data_len);
+
+/**
+ * Release PostProcessor resources.
+ */
+void 
+MHD_destroy_post_processor(struct MHD_PostProcessor * pp);
 
 
 #if 0                           /* keep Emacsens' auto-indent happy */
