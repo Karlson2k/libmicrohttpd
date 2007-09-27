@@ -61,7 +61,7 @@ MHD_http_unescape (char *val)
                         "%2x", &num)) || (1 == sscanf (&esc[1], "%2X", &num)))
         {
           esc[0] = (unsigned char) num;
-          memmove (&esc[1], &esc[3], strlen (&esc[3]));
+          memmove (&esc[1], &esc[3], strlen (&esc[3]) + 1);
         }
       val = esc + 1;
     }
