@@ -1,3 +1,6 @@
+Thu Sep 27 10:19:46 MDT 2007
+	 Fixing parsing of "%xx" in URLs with GET arguments. - eglaysher
+
 Sun Sep  9 14:32:23 MDT 2007
 	 Added option to compile debug/warning messages;
 	 error messages are now disabled by default.  
