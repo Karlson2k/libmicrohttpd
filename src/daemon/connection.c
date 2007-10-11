@@ -30,6 +30,7 @@
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
+#include "reason_phrase.h"
 
 /**
  * Message to transmit when http 1.1 request is received
@@ -986,12 +987,14 @@ MHD_build_header_response (struct MHD_Connection *connection)
   size_t size;
   size_t off;
   struct MHD_HTTP_Header *pos;
-  char code[32];
+  char code[128];
   char date[128];
   char *data;
 
   MHD_add_extra_headers (connection);
-  SPRINTF (code, "%s %u\r\n", MHD_HTTP_VERSION_1_1, connection->responseCode);
+  const char* reason_phrase = MHD_get_reason_phrase_for(connection->responseCode);
+  _REAL_SNPRINTF (code, 128, "%s %u %s\r\n", MHD_HTTP_VERSION_1_1, 
+                  connection->responseCode, reason_phrase);
   off = strlen (code);
   /* estimate size */
   size = off + 2;               /* extra \r\n at the end */

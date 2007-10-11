@@ -15,6 +15,7 @@ libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 2:0:0 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
+  reason_phrase.c reason_phrase.h \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
