@@ -1,3 +1,6 @@
+Thu Oct 11 10:09:12 MDT 2007
+	 Fixing response to include HTTP status message. - EG 
+
 Thu Sep 27 10:19:46 MDT 2007
 	 Fixing parsing of "%xx" in URLs with GET arguments. - eglaysher
 
