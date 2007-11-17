@@ -91,6 +91,7 @@ struct MHD_Reason_Block {
 #define BLOCK(m) { (sizeof(m) / sizeof(char*)), m }
 
 static const struct MHD_Reason_Block reasons[] = {
+  BLOCK(invalid_hundred),
   BLOCK(one_hundred),
   BLOCK(two_hundred),
   BLOCK(three_hundred),
