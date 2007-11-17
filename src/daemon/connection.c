@@ -32,6 +32,10 @@
 #include "response.h"
 #include "reason_phrase.h"
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 /**
  * Message to transmit when http 1.1 request is received
  */
@@ -888,7 +892,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     }
   bytes_read = RECV (connection->socket_fd,
                      &connection->read_buffer[connection->readLoc],
-                     connection->read_buffer_size - connection->readLoc, 0);
+                     connection->read_buffer_size - connection->readLoc, 
+		     MSG_NOSIGNAL);
   if (bytes_read < 0)
     {
       if (errno == EINTR)
@@ -1056,7 +1061,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     {
       ret = SEND (connection->socket_fd,
                   &HTTP_100_CONTINUE[connection->continuePos],
-                  strlen (HTTP_100_CONTINUE) - connection->continuePos, 0);
+                  strlen (HTTP_100_CONTINUE) - connection->continuePos, 
+		  MSG_NOSIGNAL);
       if (ret < 0)
         {
           if (errno == EINTR)
@@ -1099,7 +1105,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         }
       ret = SEND (connection->socket_fd,
                   &connection->write_buffer[connection->writePos],
-                  connection->writeLoc - connection->writePos, 0);
+                  connection->writeLoc - connection->writePos, 
+		  MSG_NOSIGNAL);
       if (ret < 0)
         {
           if (errno == EINTR)
@@ -1148,7 +1155,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   ret = SEND (connection->socket_fd,
               &response->data[connection->messagePos - response->data_start],
               response->data_size - (connection->messagePos -
-                                     response->data_start), 0);
+                                     response->data_start), 
+	      MSG_NOSIGNAL);
   if (response->crc != NULL)
     pthread_mutex_unlock (&response->mutex);
   if (ret < 0)

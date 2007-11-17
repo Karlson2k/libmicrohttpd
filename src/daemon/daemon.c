@@ -254,6 +254,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   struct sockaddr *addr = (struct sockaddr *) &addr6;
   socklen_t addrlen;
   int s;
+#if OSX
+  static int on=1;
+#endif
 
 
   if (sizeof (struct sockaddr) > sizeof (struct sockaddr_in6))
@@ -296,6 +299,17 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       CLOSE (s);
       return MHD_YES;
     }
+#if OSX
+#ifdef SOL_SOCKET
+#ifdef SO_NOSIGPIPE
+  setsockopt(s,
+	     SOL_SOCKET,
+	     SO_NOSIGPIPE,
+	     &on,
+	     sizeof(on));
+#endif
+#endif
+#endif
   connection = malloc (sizeof (struct MHD_Connection));
   if (connection == NULL)
     {

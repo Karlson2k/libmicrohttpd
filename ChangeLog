@@ -1,3 +1,9 @@
+Sat Nov 17 00:55:24 MST 2007
+	 Fixed off-by-one in error message string matching.
+	 Added code to avoid generating SIGPIPE on platforms
+	 where this is possible (everywhere else, the main
+	 application should install a handler for SIGPIPE).
+
 Thu Oct 11 11:02:06 MDT 2007
 	 Releasing libmicrohttpd 0.1.1. - CG
 

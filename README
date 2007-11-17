@@ -27,6 +27,15 @@ space!).  If you are concerned about space, you should set "CFLAGS" to
 resulting binary should be less than 25k (on x86).
 
 
+Portability
+===========
+
+The latest version of libmicrohttpd will try to avoid SIGPIPE on its
+sockets.  This should work on OS X, Linux and recent BSD systems (at
+least).  On other systems that may trigger a SIGPIPE on send/recv, the
+main application should install a signal handler to handle SIGPIPE.
+
+
 Development Status
 ==================
 
@@ -67,3 +76,5 @@ Documentation:
 ==============
 - manual (texinfo, man)
 - tutorial
+
+
