@@ -32,9 +32,12 @@
 #include "response.h"
 #include "reason_phrase.h"
 
+#ifndef LINUX
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
+#endif
+
 
 /**
  * Message to transmit when http 1.1 request is received
