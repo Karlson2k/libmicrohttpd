@@ -298,7 +298,7 @@ testExternalPost ()
 	FD_ZERO (&rs);
 	FD_ZERO (&ws);
 	FD_ZERO (&es);
-	curl_multi_perform (multi, &running);
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform (multi, &running));
 	mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
 	if (mret != CURLM_OK)
 	  {
@@ -322,19 +322,10 @@ testExternalPost ()
 	     (ctimeout < timeout) &&
 	     (ctimeout >= 0) )
 	  timeout = ctimeout;
-	if (timeout > 0)
-	  timeout = 0; /* this line is needed since CURL seems to have
-			   a bug -- it returns a timeout of -1 even though
-			   it should be attempting to connect -- and the
-			   socket for doing the connection is not yet
-			   in the write-set!  If the timeout is too high,
-			   no progress would happen! Even a timeout of
-			   1 would cause my system to be mostly idle instead
-			   of processing at maximum speed... */
 	tv.tv_sec = timeout / 1000;
 	tv.tv_usec = (timeout % 1000) * 1000;
 	select (max + 1, &rs, &ws, &es, &tv);
-	curl_multi_perform (multi, &running);
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform (multi, &running));
 	if (running == 0)
 	  {
 	    msg = curl_multi_info_read (multi, &running);
