@@ -54,7 +54,7 @@ struct MemoryPool
   unsigned int end;
 
   /**
-   * 0 if pool was malloc'ed, 1 if mmapped.
+   * MHD_NO if pool was malloc'ed, MHD_YES if mmapped.
    */
   int is_mmap;
 };
@@ -82,11 +82,11 @@ MHD_pool_create (unsigned int max)
           free (pool);
           return NULL;
         }
-      pool->is_mmap = 0;
+      pool->is_mmap = MHD_NO;
     }
   else
     {
-      pool->is_mmap = 1;
+      pool->is_mmap = MHD_YES;
     }
   pool->pos = 0;
   pool->end = max;
@@ -102,7 +102,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
 {
   if (pool == NULL)
     return;
-  if (pool->is_mmap == 0)
+  if (pool->is_mmap == MHD_NO)
     free (pool->memory);
   else
     MUNMAP (pool->memory, pool->size);

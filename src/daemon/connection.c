@@ -153,7 +153,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   if ((connection == NULL) ||
       (response == NULL) ||
       (connection->response != NULL) ||
-      (connection->bodyReceived == 0) || (connection->headersReceived == 0))
+      (connection->bodyReceived == MHD_NO) || (connection->headersReceived == MHD_NO))
     return MHD_NO;
   MHD_increment_response_rc (response);
   connection->response = response;
@@ -180,7 +180,7 @@ MHD_need_100_continue (struct MHD_Connection *connection)
   return ((connection->version != NULL) &&
           (0 == strcasecmp (connection->version,
                             MHD_HTTP_VERSION_1_1)) &&
-          (connection->headersReceived == 1) &&
+          (connection->headersReceived == MHD_YES) &&
           (NULL != (expect = MHD_lookup_connection_value (connection,
                                                           MHD_HEADER_KIND,
                                                           MHD_HTTP_HEADER_EXPECT)))
@@ -279,7 +279,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
   if (fd == -1)
     return MHD_YES;
   if ((connection->read_close == MHD_NO) &&
-      ((connection->headersReceived == 0) ||
+      ((connection->headersReceived == MHD_NO) ||
        (connection->readLoc < connection->read_buffer_size)))
     {
       FD_SET (fd, read_fd_set);
@@ -289,7 +289,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
   else
     {
       if ((connection->read_close == MHD_NO) &&
-          ((connection->headersReceived == 1) &&
+          ((connection->headersReceived == MHD_YES) &&
            (connection->readLoc == connection->read_buffer_size)))
         {
           /* try growing the read buffer, just in case */
@@ -591,8 +591,8 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
  *
  * Once the header is complete, it should have set the
  * headers_received, url and method values and set
- * headersReceived to 1.  If no body is expected, it should
- * also set "bodyReceived" to 1.  Otherwise, it should
+ * headersReceived to MHD_YES.  If no body is expected, it should
+ * also set "bodyReceived" to MHD_YES.  Otherwise, it should
  * set "uploadSize" to the expected size of the body.  If the
  * size of the body is unknown, it should be set to -1.
  */
@@ -608,7 +608,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   unsigned long long cval;
   struct MHD_Response *response;
 
-  if (connection->bodyReceived == 1)
+  if (connection->bodyReceived == MHD_YES)
     abort ();
   colon = NULL;                 /* make gcc happy */
   last = NULL;
@@ -673,7 +673,7 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                   goto DIE;
                 }
               connection->uploadSize = cval;
-              connection->bodyReceived = cval == 0 ? 1 : 0;
+              connection->bodyReceived = cval == 0 ? MHD_YES : MHD_NO;
             }
           else
             {
@@ -683,12 +683,12 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                 {
                   /* this request does not have a body */
                   connection->uploadSize = 0;
-                  connection->bodyReceived = 1;
+                  connection->bodyReceived = MHD_YES;
                 }
               else
                 {
                   connection->uploadSize = -1;  /* unknown size */
-                  connection->bodyReceived = 0;
+                  connection->bodyReceived = MHD_NO;
                 }
             }
           end = MHD_lookup_connection_value (connection,
@@ -796,7 +796,7 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
 
   if (connection->response != NULL)
     return;                     /* already queued a response */
-  if (connection->headersReceived == 0)
+  if (connection->headersReceived == MHD_NO)
     abort ();                   /* bad timing... */
   ah = MHD_find_access_handler (connection);
   processed = connection->readLoc;
@@ -827,7 +827,7 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
       ((connection->readLoc == 0) &&
        (connection->uploadSize == -1) && (connection->socket_fd == -1)))
     {
-      connection->bodyReceived = 1;
+      connection->bodyReceived = MHD_YES;
       if (connection->read_buffer != NULL)
         MHD_pool_reallocate (connection->pool,
                              connection->read_buffer,
@@ -864,7 +864,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       return MHD_NO;
     }
   if ((connection->readLoc >= connection->read_buffer_size) &&
-      (connection->headersReceived == 0))
+      (connection->headersReceived == MHD_NO))
     {
       /* need to grow read buffer */
       tmp = MHD_pool_reallocate (connection->pool,
@@ -912,7 +912,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     {
       /* other side closed connection */
       connection->read_close = MHD_YES;
-      if ((connection->headersReceived == 1) && (connection->readLoc > 0))
+      if ((connection->headersReceived == MHD_YES) && (connection->readLoc > 0))
         MHD_call_connection_handler (connection);
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
@@ -924,9 +924,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       return MHD_YES;
     }
   connection->readLoc += bytes_read;
-  if (connection->headersReceived == 0)
+  if (connection->headersReceived == MHD_NO)
     MHD_parse_connection_headers (connection);
-  if ((connection->headersReceived == 1) && (connection->method != NULL))
+  if ((connection->headersReceived == MHD_YES) && (connection->method != NULL))
     MHD_call_connection_handler (connection);
   return MHD_YES;
 }
@@ -1093,7 +1093,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #endif
       return MHD_NO;
     }
-  if (!connection->headersSent)
+  if (MHD_NO == connection->headersSent)
     {
       if ((connection->write_buffer == NULL) &&
           (MHD_NO == MHD_build_header_response (connection)))
@@ -1131,7 +1131,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         {
           connection->writeLoc = 0;
           connection->writePos = 0;
-          connection->headersSent = 1;
+          connection->headersSent = MHD_YES;
           MHD_pool_reallocate (connection->pool,
                                connection->write_buffer,
                                connection->write_buffer_size, 0);
@@ -1184,8 +1184,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     abort ();                   /* internal error */
   if (connection->messagePos == response->total_size)
     {
-      if ((connection->bodyReceived == 0) ||
-          (connection->headersReceived == 0))
+      if ((connection->bodyReceived == MHD_NO) ||
+          (connection->headersReceived == MHD_NO))
         abort ();               /* internal error */
       MHD_destroy_response (response);
       if (connection->daemon->notify_completed != NULL)
@@ -1199,9 +1199,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       connection->responseCode = 0;
       connection->response = NULL;
       connection->headers_received = NULL;
-      connection->headersReceived = 0;
-      connection->headersSent = 0;
-      connection->bodyReceived = 0;
+      connection->headersReceived = MHD_NO;
+      connection->headersSent = MHD_NO;
+      connection->bodyReceived = MHD_NO;
       connection->messagePos = 0;
       connection->method = NULL;
       connection->url = NULL;
