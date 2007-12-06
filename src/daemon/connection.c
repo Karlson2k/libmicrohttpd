@@ -66,13 +66,12 @@
  * Add extra debug messages with reasons for closing connections
  * (non-error reasons).
  */
-#define DEBUG_CLOSE 0
-
+#define DEBUG_CLOSE MHD_NO
 
 /**
  * Should all data send be printed to stderr?
  */
-#define DEBUG_SEND_DATA 0
+#define DEBUG_SEND_DATA MHD_NO
 
 
 /**
@@ -604,11 +603,11 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
   char *colon;
   char *tmp;
   const char *clen;
-  const char *end;
   unsigned long long cval;
   struct MHD_Response *response;
 
-  if (connection->bodyReceived == MHD_YES)
+  if ( (connection->bodyReceived == MHD_YES) ||
+       (connection->headersReceived == MHD_YES) )
     abort ();
   colon = NULL;                 /* make gcc happy */
   last = NULL;
@@ -691,17 +690,6 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
                   connection->bodyReceived = MHD_NO;
                 }
             }
-          end = MHD_lookup_connection_value (connection,
-                                             MHD_HEADER_KIND,
-                                             MHD_HTTP_HEADER_CONNECTION);
-          if ((end != NULL) && (0 == strcasecmp (end, "close")))
-            {
-              /* other side explicitly requested
-                 that we close the connection after
-                 this request */
-              connection->read_close = MHD_YES;
-            }
-
           if ((0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options))
               && (NULL != connection->version)
               && (0 == strcasecmp (MHD_HTTP_VERSION_1_1, connection->version))
@@ -724,7 +712,6 @@ MHD_parse_connection_headers (struct MHD_Connection *connection)
               MHD_queue_response (connection, MHD_HTTP_BAD_REQUEST, response);
               MHD_destroy_response (response);
             }
-
           break;
         }
       /* line should be normal header line, find colon */
@@ -808,7 +795,7 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
                         connection->read_buffer, &processed,
                         &connection->client_context))
     {
-      /* serios internal error, close connection */
+      /* serious internal error, close connection */
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Internal application error, closing connection.\n");
@@ -820,8 +807,8 @@ MHD_call_connection_handler (struct MHD_Connection *connection)
   memmove (connection->read_buffer,
            &connection->read_buffer[connection->readLoc - processed],
            processed);
-  if (connection->uploadSize != -1)
-    connection->uploadSize -= (connection->readLoc - processed);
+  if (connection->uploadSize != -1) 
+    connection->uploadSize -= (connection->readLoc - processed);  
   connection->readLoc = processed;
   if ((connection->uploadSize == 0) ||
       ((connection->readLoc == 0) &&
@@ -921,6 +908,12 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
 #endif
 #endif
       shutdown (connection->socket_fd, SHUT_RD);
+      if ( (connection->headersReceived == MHD_NO) ||
+	   (connection->bodyReceived == MHD_NO) ) {
+	/* no request => no response! */
+	CLOSE (connection->socket_fd);
+	connection->socket_fd = -1;
+      }
       return MHD_YES;
     }
   connection->readLoc += bytes_read;
@@ -1059,6 +1052,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
   int ret;
+  const char * end;
 
   if (MHD_need_100_continue (connection))
     {
@@ -1194,6 +1188,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                               connection,
                                               &connection->client_context,
                                               MHD_REQUEST_TERMINATED_COMPLETED_OK);
+      end = MHD_lookup_connection_value (connection,
+					 MHD_HEADER_KIND,
+					 MHD_HTTP_HEADER_CONNECTION);
       connection->client_context = NULL;
       connection->continuePos = 0;
       connection->responseCode = 0;
@@ -1204,7 +1201,14 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       connection->bodyReceived = MHD_NO;
       connection->messagePos = 0;
       connection->method = NULL;
-      connection->url = NULL;
+      connection->url = NULL;      
+      if ((end != NULL) && (0 == strcasecmp (end, "close")))
+	{
+	  /* other side explicitly requested
+	     that we close the connection after
+	     this request */
+	  connection->read_close = MHD_YES;
+	}
       if ((connection->read_close == MHD_YES) ||
           (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
         {

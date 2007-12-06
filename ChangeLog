@@ -1,3 +1,9 @@
+Wed Dec  5 21:39:35 MST 2007
+	 Fixed race in multi-threaded server mode.
+	 Fixed handling of POST data when receiving a
+	 "Connection: close" header (#1296).
+	 Releasing libmicrohttpd 0.1.2. - CG
+
 Sat Nov 17 00:55:24 MST 2007
 	 Fixed off-by-one in error message string matching.
 	 Added code to avoid generating SIGPIPE on platforms

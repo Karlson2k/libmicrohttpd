@@ -37,7 +37,7 @@
 
 #define POST_DATA "<?xml version='1.0' ?>\n<xml>\n<data-id>1</data-id>\n</xml>\n"
 
-#define LOOPCOUNT 100
+#define LOOPCOUNT 10
 
 static int oneone;
 
@@ -67,8 +67,9 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, unsigned int *upload_data_size,
-          void **unused)
+          void **mptr)
 {
+  static int marker;
   struct MHD_Response *response;
   int ret;
 
@@ -77,15 +78,23 @@ ahc_echo (void *cls,
       printf ("METHOD: %s\n", method);
       return MHD_NO;            /* unexpected method */
     }
+  if ( (*mptr != NULL) &&
+       (0 == *upload_data_size) ) {
+    if (*mptr != &marker)
+      abort();
+    response = MHD_create_response_from_data (2,
+					      "OK",
+					      MHD_NO, MHD_NO);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+    *mptr = NULL;
+    return ret;
+  }
   if (strlen(POST_DATA) != *upload_data_size)
-    return MHD_NO;
+    return MHD_YES;
   *upload_data_size = 0;
-  response = MHD_create_response_from_data (2,
-					    "OK",
-					    MHD_NO, MHD_NO);
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-  MHD_destroy_response (response);
-  return ret;
+  *mptr = &marker;
+  return MHD_YES;
 }
 
 
@@ -98,18 +107,22 @@ testInternalPost ()
   struct CBC cbc;
   CURLcode errornum;
   int i;
+  char url[1024];
 
   cbc.buf = buf;
   cbc.size = 2048;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-                        8008, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        1080, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   for (i=0;i<LOOPCOUNT;i++) {
+    if (0 == i % 100)
+      fprintf(stderr, ".");
     c = curl_easy_init ();
     cbc.pos = 0;
     buf[0] = '\0';
-    curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+    sprintf(url, "http://localhost:1080/hw%d", i);
+    curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
     curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -143,6 +156,7 @@ testInternalPost ()
     }
   }
   MHD_stop_daemon (d);
+  fprintf(stderr, "\n");
   return 0;
 }
 
@@ -155,18 +169,22 @@ testMultithreadedPost ()
   struct CBC cbc;
   CURLcode errornum;
   int i;
+  char url[1024];
 
   cbc.buf = buf;
   cbc.size = 2048;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                        8009, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        1081, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   for (i=0;i<LOOPCOUNT;i++) {
+    if (0 == i % 100)
+      fprintf(stderr, ".");
     c = curl_easy_init ();
     cbc.pos = 0;
     buf[0] = '\0';
-    curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+    sprintf(url, "http://localhost:1081/hw%d", i);
+    curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
     curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -200,6 +218,7 @@ testMultithreadedPost ()
     }
   }
   MHD_stop_daemon (d);
+  fprintf(stderr, "\n");
   return 0;
 }
 
@@ -222,6 +241,9 @@ testExternalPost ()
   time_t start;
   struct timeval tv;
   int i;
+  unsigned long long timeout;
+  long ctimeout;
+  char url[1024];
 
   multi = NULL;
   cbc.buf = buf;
@@ -238,10 +260,13 @@ testExternalPost ()
       return 512;
     }
   for (i=0;i<LOOPCOUNT;i++) {
+    if (0 == i % 100)
+      fprintf(stderr, ".");
     c = curl_easy_init ();
     cbc.pos = 0;
     buf[0] = '\0';
-    curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
+    sprintf(url, "http://localhost:1082/hw%d", i);
+    curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
     curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -291,8 +316,23 @@ testExternalPost ()
 	    MHD_stop_daemon (d);
 	    return 4096;
 	  }
-	tv.tv_sec = 0;
-	tv.tv_usec = 1000;
+	if (MHD_NO == MHD_get_timeout(d, &timeout))
+	  timeout = 1000000; /* 1000s == INFTY */
+	if ( (CURLM_OK == curl_multi_timeout(multi, &ctimeout)) &&
+	     (ctimeout < timeout) &&
+	     (ctimeout >= 0) )
+	  timeout = ctimeout;
+	if (timeout > 0)
+	  timeout = 0; /* this line is needed since CURL seems to have
+			   a bug -- it returns a timeout of -1 even though
+			   it should be attempting to connect -- and the
+			   socket for doing the connection is not yet
+			   in the write-set!  If the timeout is too high,
+			   no progress would happen! Even a timeout of
+			   1 would cause my system to be mostly idle instead
+			   of processing at maximum speed... */
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
 	select (max + 1, &rs, &ws, &es, &tv);
 	curl_multi_perform (multi, &running);
 	if (running == 0)
@@ -308,25 +348,26 @@ testExternalPost ()
 			  __FILE__,
 			  __LINE__, curl_easy_strerror (msg->data.result));
 		curl_multi_remove_handle (multi, c);
-		curl_multi_cleanup (multi);
 		curl_easy_cleanup (c);
 		c = NULL;
-		multi = NULL;
 	      }
 	  }
 	MHD_run (d);
       }
+    if (c != NULL) {
       curl_multi_remove_handle (multi, c);
       curl_easy_cleanup (c);
+    }
     if ( (buf[0] != 'O') ||
 	 (buf[1] != 'K') ) {
       curl_multi_cleanup (multi);  
       MHD_stop_daemon (d);
       return 8192;
-    }
+    }  
   }
   curl_multi_cleanup (multi);  
   MHD_stop_daemon (d);
+  fprintf(stderr, "\n");
   return 0;
 }
 

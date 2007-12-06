@@ -3,7 +3,7 @@ SUBDIRS  = .
 INCLUDES = -I$(top_srcdir)/src/include
 
 if HAVE_GNU_LD
- retaincommand=-Wl,--retain-symbols-file -Wl,SYMBOLS
+ retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
 endif
 
 EXTRA_DIST = SYMBOLS
@@ -12,7 +12,7 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 2:0:0 $(retaincommand)
+  -export-dynamic -version-info 2:1:1 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   reason_phrase.c reason_phrase.h \
@@ -46,11 +46,13 @@ check_PROGRAMS = \
   daemontest_get \
   daemontest_post \
   daemontest_postform \
+  daemontest_post_loop \
   daemontest_put \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
   daemontest_postform11 \
+  daemontest_post_loop11 \
   daemontest_put11 \
   daemontest_large_put11 \
   daemontest_long_header
@@ -80,6 +82,12 @@ daemontest_postform_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
+daemontest_post_loop_SOURCES = \
+  daemontest_post_loop.c
+daemontest_post_loop_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
 daemontest_put_SOURCES = \
   daemontest_put.c
 daemontest_put_LDADD = \
@@ -101,6 +109,12 @@ daemontest_post11_LDADD = \
 daemontest_postform11_SOURCES = \
   daemontest_postform.c
 daemontest_postform11_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_post_loop11_SOURCES = \
+  daemontest_post_loop.c
+daemontest_post_loop11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

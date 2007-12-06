@@ -44,7 +44,13 @@
  * Print extra messages with reasons for closing
  * sockets? (only adds non-error messages). 
  */
-#define DEBUG_CLOSE 0
+#define DEBUG_CLOSE MHD_NO
+
+/**
+ * Print extra messages when establishing
+ * connections? (only adds non-error messages). 
+ */
+#define DEBUG_CONNECT MHD_NO
 
 /**
  * Register an access handler for all URIs beginning with uri_prefix.
@@ -163,6 +169,9 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
         return MHD_NO;
       pos = pos->next;
     }
+#if DEBUG_CONNECT
+  MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
+#endif  
   return MHD_YES;
 }
 
@@ -276,6 +285,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
+#if DEBUG_CONNECT
+  MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
+#endif  
   if (daemon->max_connections == 0)
     {
       /* above connection limit - reject */
@@ -425,7 +437,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           continue;
         }
 
-      if ((pos->headersReceived == MHD_YES) && (pos->response == NULL))
+      if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+	   ((pos->headersReceived == MHD_YES) && (pos->response == NULL)) )
         MHD_call_connection_handler (pos);
 
       prev = pos;
