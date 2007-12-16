@@ -48,6 +48,7 @@ check_PROGRAMS = \
   daemontest_postform \
   daemontest_post_loop \
   daemontest_put \
+  daemontest_put_chunked \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
@@ -91,6 +92,12 @@ daemontest_post_loop_LDADD = \
 daemontest_put_SOURCES = \
   daemontest_put.c
 daemontest_put_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_put_chunked_SOURCES = \
+  daemontest_put_chunked.c
+daemontest_put_chunked_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

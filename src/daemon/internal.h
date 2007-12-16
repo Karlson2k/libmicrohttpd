@@ -273,7 +273,7 @@ struct MHD_Connection
    * Position where we currently append data in
    * read_buffer (last valid position).
    */
-  size_t readLoc;
+  size_t read_buffer_offset;
 
   /**
    * Size of write_buffer (in bytes).
@@ -283,32 +283,33 @@ struct MHD_Connection
   /**
    * Offset where we are with sending from write_buffer.
    */
-  size_t writePos;
+  size_t write_buffer_send_offset;
 
   /**
-   * Last valid location in write_buffer.
+   * Last valid location in write_buffer (where do we
+   * append and up to where is it safe to send?)
    */
-  size_t writeLoc;
+  size_t write_buffer_append_offset;
 
   /**
    * Current write position in the actual response
    * (excluding headers, content only; should be 0
    * while sending headers).
    */
-  size_t messagePos;
+  size_t response_write_position;
 
   /**
    * Remaining (!) number of bytes in the upload.
    * Set to -1 for unknown (connection will close
    * to indicate end of upload).
    */
-  size_t uploadSize;
+  size_t remaining_upload_size;
 
   /**
    * Position in the 100 CONTINUE message that
    * we need to send when receiving http 1.1 requests.
    */
-  size_t continuePos;
+  size_t continue_message_write_offset;
 
   /**
    * Length of the foreign address.
@@ -343,18 +344,18 @@ struct MHD_Connection
    * possible that the NEXT request is already
    * (partially) waiting in the read buffer.
    */
-  int headersReceived;
+  int have_received_headers;
 
   /**
    * Have we finished receiving the data from a
    * potential file-upload?
    */
-  int bodyReceived;
+  int have_received_body;
 
   /**
    * Have we finished sending all of the headers yet?
    */
-  int headersSent;
+  int have_sent_headers;
 
   /**
    * HTTP response code.  Only valid if response object
@@ -370,6 +371,29 @@ struct MHD_Connection
    * the CRC call succeeds.
    */
   int response_unready;
+
+  /**
+   * Are we receiving with chunked encoding?  This will be set to
+   * MHD_YES after we parse the headers and are processing the body
+   * with chunks.  After we are done with the body and we are
+   * processing the footers; once the footers are also done, this will
+   * be set to MHD_NO again (before the final call to the handler).
+   */
+  int have_chunked_upload;
+
+  /**
+   * If we are receiving with chunked encoding, where are we right
+   * now?  Set to 0 if we are waiting to receive the chunk size;
+   * otherwise, this is the size of the current chunk.  A value of
+   * zero is also used when we're at the end of the chunks.
+   */
+  unsigned int current_chunk_size;
+
+  /**
+   * If we are receiving with chunked encoding, where are we currently
+   * with respect to the current chunk (at what offset / position)?
+   */
+  unsigned int current_chunk_offset;
 
 };
 

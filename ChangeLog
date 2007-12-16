@@ -1,3 +1,11 @@
+Sun Dec 16 03:24:13 MST 2007
+	 Implemented handling of chunked (HTTP 1.1) uploads.
+	 Note that the upload callback must be able to 
+	 process chunks in the size uploaded by the client,
+	 MHD will not "join" small chunks into a big 
+	 contiguous block of memory (even if buffer space
+	 would be available).  - CG
+
 Wed Dec  5 21:39:35 MST 2007
 	 Fixed race in multi-threaded server mode.
 	 Fixed handling of POST data when receiving a

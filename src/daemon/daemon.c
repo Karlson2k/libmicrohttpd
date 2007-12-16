@@ -227,7 +227,7 @@ MHD_handle_connection (void *data)
            (FD_ISSET (con->socket_fd, &ws)) &&
            (MHD_YES != MHD_connection_handle_write (con))))
         break;
-      if ((con->headersReceived == MHD_YES) && (con->response == NULL))
+      if ((con->have_received_headers == MHD_YES) && (con->response == NULL))
         MHD_call_connection_handler (con);
       if ((con->socket_fd != -1) &&
           ((FD_ISSET (con->socket_fd, &rs)) ||
@@ -438,7 +438,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
         }
 
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   ((pos->headersReceived == MHD_YES) && (pos->response == NULL)) )
+	   ((pos->have_received_headers == MHD_YES) && (pos->response == NULL)) )
         MHD_call_connection_handler (pos);
 
       prev = pos;
