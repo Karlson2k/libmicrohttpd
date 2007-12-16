@@ -53,7 +53,7 @@ feature.
 For http/1.1-compliance:
 ========================
 connection.c:
-- support sending of chunked responses (#1260, TEST)
+- support sending of chunked responses (#1302, TEST, ARCH)
 
 For POST:
 =========
