@@ -106,7 +106,7 @@ ahc_echo (void *cls,
       eok = 0;
       pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
       if (pp == NULL)
-	abort();
+        abort ();
       *unused = pp;
     }
   MHD_post_process (pp, upload_data, *upload_data_size);
@@ -125,15 +125,16 @@ ahc_echo (void *cls,
   return MHD_YES;
 }
 
-static struct curl_httppost * 
-make_form() {
-  struct curl_httppost* post = NULL;
-  struct curl_httppost* last = NULL;
- 
-  curl_formadd(&post, &last, CURLFORM_COPYNAME, "name",
-               CURLFORM_COPYCONTENTS, "daniel", CURLFORM_END);
-  curl_formadd(&post, &last, CURLFORM_COPYNAME, "project",
-               CURLFORM_COPYCONTENTS, "curl", CURLFORM_END);
+static struct curl_httppost *
+make_form ()
+{
+  struct curl_httppost *post = NULL;
+  struct curl_httppost *last = NULL;
+
+  curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
+                CURLFORM_COPYCONTENTS, "daniel", CURLFORM_END);
+  curl_formadd (&post, &last, CURLFORM_COPYNAME, "project",
+                CURLFORM_COPYCONTENTS, "curl", CURLFORM_END);
   return post;
 }
 
@@ -146,7 +147,7 @@ testInternalPost ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  struct curl_httppost * pd;
+  struct curl_httppost *pd;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -159,8 +160,8 @@ testInternalPost ()
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  pd = make_form();
-  curl_easy_setopt(c, CURLOPT_HTTPPOST, pd);
+  pd = make_form ();
+  curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
   if (oneone)
@@ -178,12 +179,12 @@ testInternalPost ()
                "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      curl_formfree(pd);
+      curl_formfree (pd);
       MHD_stop_daemon (d);
       return 2;
     }
   curl_easy_cleanup (c);
-  curl_formfree(pd);
+  curl_formfree (pd);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 4;
@@ -200,7 +201,7 @@ testMultithreadedPost ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  struct curl_httppost * pd;
+  struct curl_httppost *pd;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -213,8 +214,8 @@ testMultithreadedPost ()
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  pd = make_form();
-  curl_easy_setopt(c, CURLOPT_HTTPPOST, pd);
+  pd = make_form ();
+  curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
   if (oneone)
@@ -232,12 +233,12 @@ testMultithreadedPost ()
                "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      curl_formfree(pd);
+      curl_formfree (pd);
       MHD_stop_daemon (d);
       return 32;
     }
   curl_easy_cleanup (c);
-  curl_formfree(pd);
+  curl_formfree (pd);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 64;
@@ -264,7 +265,7 @@ testExternalPost ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  struct curl_httppost * pd;
+  struct curl_httppost *pd;
 
   multi = NULL;
   cbc.buf = buf;
@@ -278,8 +279,8 @@ testExternalPost ()
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  pd = make_form();
-  curl_easy_setopt(c, CURLOPT_HTTPPOST, pd);
+  pd = make_form ();
+  curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
   if (oneone)
@@ -297,7 +298,7 @@ testExternalPost ()
   if (multi == NULL)
     {
       curl_easy_cleanup (c);
-      curl_formfree(pd);
+      curl_formfree (pd);
       MHD_stop_daemon (d);
       return 512;
     }
@@ -305,7 +306,7 @@ testExternalPost ()
   if (mret != CURLM_OK)
     {
       curl_multi_cleanup (multi);
-      curl_formfree(pd);
+      curl_formfree (pd);
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 1024;
@@ -325,7 +326,7 @@ testExternalPost ()
           curl_multi_cleanup (multi);
           curl_easy_cleanup (c);
           MHD_stop_daemon (d);
-	  curl_formfree(pd);
+          curl_formfree (pd);
           return 2048;
         }
       if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
@@ -333,7 +334,7 @@ testExternalPost ()
           curl_multi_remove_handle (multi, c);
           curl_multi_cleanup (multi);
           curl_easy_cleanup (c);
-	  curl_formfree(pd);
+          curl_formfree (pd);
           MHD_stop_daemon (d);
           return 4096;
         }
@@ -368,7 +369,7 @@ testExternalPost ()
       curl_easy_cleanup (c);
       curl_multi_cleanup (multi);
     }
-  curl_formfree(pd);      
+  curl_formfree (pd);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 8192;
@@ -388,10 +389,11 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalPost ();
-  if (0) {
-    errorCount += testMultithreadedPost ();
-    errorCount += testExternalPost ();
-  }
+  if (0)
+    {
+      errorCount += testMultithreadedPost ();
+      errorCount += testExternalPost ();
+    }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

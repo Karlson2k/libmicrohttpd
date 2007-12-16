@@ -28,15 +28,15 @@
 
 #include "reason_phrase.h"
 
-static const char * invalid_hundred[] = { };
+static const char *invalid_hundred[] = { };
 
-static const char * one_hundred[] = {
+static const char *one_hundred[] = {
   "Continue",
   "Switching Protocols",
   "Processing"
 };
 
-static const char* two_hundred[] = {
+static const char *two_hundred[] = {
   "OK",
   "Created",
   "Accepted",
@@ -46,7 +46,7 @@ static const char* two_hundred[] = {
   "Partial Content"
 };
 
-static const char* three_hundred[] = {
+static const char *three_hundred[] = {
   "Multiple Choices",
   "Moved Permanently",
   "Moved Temporarily",
@@ -55,7 +55,7 @@ static const char* three_hundred[] = {
   "Use Proxy"
 };
 
-static const char* four_hundred[] = {
+static const char *four_hundred[] = {
   "Bad Request",
   "Unauthorized",
   "Payment Required",
@@ -74,7 +74,7 @@ static const char* four_hundred[] = {
   "Unsupported Media Type"
 };
 
-static const char* five_hundred[] = {
+static const char *five_hundred[] = {
   "Internal Server Error",
   "Bad Gateway",
   "Service Unavailable",
@@ -83,27 +83,27 @@ static const char* five_hundred[] = {
 };
 
 
-struct MHD_Reason_Block {
+struct MHD_Reason_Block
+{
   unsigned int max;
-  const char ** data;
+  const char **data;
 };
 
 #define BLOCK(m) { (sizeof(m) / sizeof(char*)), m }
 
 static const struct MHD_Reason_Block reasons[] = {
-  BLOCK(invalid_hundred),
-  BLOCK(one_hundred),
-  BLOCK(two_hundred),
-  BLOCK(three_hundred),
-  BLOCK(four_hundred),
-  BLOCK(five_hundred),
+  BLOCK (invalid_hundred),
+  BLOCK (one_hundred),
+  BLOCK (two_hundred),
+  BLOCK (three_hundred),
+  BLOCK (four_hundred),
+  BLOCK (five_hundred),
 };
 
-const char * 
-MHD_get_reason_phrase_for(unsigned int code)
+const char *
+MHD_get_reason_phrase_for (unsigned int code)
 {
-  if ( (code >= 100 && code < 600) &&
-       (reasons[code / 100].max > code % 100) )
+  if ((code >= 100 && code < 600) && (reasons[code / 100].max > code % 100))
     return reasons[code / 100].data[code % 100];
   return "Unknown";
 }

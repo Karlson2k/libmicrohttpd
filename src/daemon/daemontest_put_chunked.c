@@ -53,7 +53,7 @@ putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
   if (wrt > 8 - (*pos))
     wrt = 8 - (*pos);
   if (wrt > 4)
-    wrt = 4; /* only send half at first => force multiple chunks! */
+    wrt = 4;                    /* only send half at first => force multiple chunks! */
   memcpy (stream, &("Hello123"[*pos]), wrt);
   (*pos) += wrt;
   return wrt;
@@ -91,19 +91,17 @@ ahc_echo (void *cls,
     {
       have = *upload_data_size;
       if (have + *done > 8)
-	{
+        {
           printf ("Invalid upload data `%8s'!\n", upload_data);
           return MHD_NO;
-	}
-      if (0 == memcmp(upload_data,
-		      &"Hello123"[*done],
-		      have))
-	{
-	  *done += have;
-	  *upload_data_size = 0;
-	}
+        }
+      if (0 == memcmp (upload_data, &"Hello123"[*done], have))
+        {
+          *done += have;
+          *upload_data_size = 0;
+        }
       else
-	{
+        {
           printf ("Invalid upload data `%8s'!\n", upload_data);
           return MHD_NO;
         }
@@ -144,9 +142,9 @@ testInternalPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   /*
-    // by not giving the file size, we force chunking!
-    curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  */
+     // by not giving the file size, we force chunking!
+     curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+   */
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -200,9 +198,9 @@ testMultithreadedPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   /*
-    // by not giving the file size, we force chunking!
-    curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  */
+     // by not giving the file size, we force chunking!
+     curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+   */
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -268,9 +266,9 @@ testExternalPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   /*
-    // by not giving the file size, we force chunking!
-    curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  */
+     // by not giving the file size, we force chunking!
+     curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+   */
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);

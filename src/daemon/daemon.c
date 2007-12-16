@@ -171,7 +171,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
     }
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
-#endif  
+#endif
   return MHD_YES;
 }
 
@@ -264,7 +264,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   socklen_t addrlen;
   int s;
 #if OSX
-  static int on=1;
+  static int on = 1;
 #endif
 
 
@@ -287,7 +287,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
-#endif  
+#endif
   if (daemon->max_connections == 0)
     {
       /* above connection limit - reject */
@@ -314,11 +314,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if OSX
 #ifdef SOL_SOCKET
 #ifdef SO_NOSIGPIPE
-  setsockopt(s,
-	     SOL_SOCKET,
-	     SO_NOSIGPIPE,
-	     &on,
-	     sizeof(on));
+  setsockopt (s, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof (on));
 #endif
 #endif
 #endif
@@ -437,8 +433,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           continue;
         }
 
-      if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   ((pos->have_received_headers == MHD_YES) && (pos->response == NULL)) )
+      if ((0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+          ((pos->have_received_headers == MHD_YES)
+           && (pos->response == NULL)))
         MHD_call_connection_handler (pos);
 
       prev = pos;
@@ -680,11 +677,12 @@ MHD_start_daemon (unsigned int options,
   if ((SETSOCKOPT (socket_fd,
                    SOL_SOCKET,
                    SO_REUSEADDR,
-                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0) {
+                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0)
+    {
 #if HAVE_MESSAGES
-    fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
+      fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
 #endif
-  }
+    }
   if ((options & MHD_USE_IPv6) != 0)
     {
       memset (&servaddr6, 0, sizeof (struct sockaddr_in6));

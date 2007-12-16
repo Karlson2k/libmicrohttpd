@@ -164,7 +164,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   if ((0 != strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                         encoding)) &&
       (0 != strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
-			 strlen(MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA))))
+                         strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA))))
     return NULL;
   ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   if (ret == NULL)
@@ -430,7 +430,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
               pp->state = PP_Headers;
               break;
             }
-          /* fall through! */	  
+          /* fall through! */
         case PP_Headers:
           newline = 0;
           while ((newline + ioff < pp->buffer_pos) &&
@@ -476,8 +476,8 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           try_match_header ("Content-Type: ", &buf[ioff], &pp->content_type);
           try_match_header ("Content-Transfer-Encoding: ",
                             &buf[ioff], &pp->transfer_encoding);
-	  ioff += newline + 1;
-	  pp->state = PP_ExpectNewLineNOPT;
+          ioff += newline + 1;
+          pp->state = PP_ExpectNewLineNOPT;
           break;
         case PP_SkipRN:
           if (buf[ioff] == '\r')

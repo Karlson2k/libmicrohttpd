@@ -32,7 +32,6 @@
  * If we don't have a string for a status code, we give the first
  * message in that status code class.
  */
-const char* 
-MHD_get_reason_phrase_for(unsigned int code);
+const char *MHD_get_reason_phrase_for (unsigned int code);
 
 #endif

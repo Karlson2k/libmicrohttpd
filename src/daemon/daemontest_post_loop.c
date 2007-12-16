@@ -78,19 +78,17 @@ ahc_echo (void *cls,
       printf ("METHOD: %s\n", method);
       return MHD_NO;            /* unexpected method */
     }
-  if ( (*mptr != NULL) &&
-       (0 == *upload_data_size) ) {
-    if (*mptr != &marker)
-      abort();
-    response = MHD_create_response_from_data (2,
-					      "OK",
-					      MHD_NO, MHD_NO);
-    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-    MHD_destroy_response (response);
-    *mptr = NULL;
-    return ret;
-  }
-  if (strlen(POST_DATA) != *upload_data_size)
+  if ((*mptr != NULL) && (0 == *upload_data_size))
+    {
+      if (*mptr != &marker)
+        abort ();
+      response = MHD_create_response_from_data (2, "OK", MHD_NO, MHD_NO);
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      MHD_destroy_response (response);
+      *mptr = NULL;
+      return ret;
+    }
+  if (strlen (POST_DATA) != *upload_data_size)
     return MHD_YES;
   *upload_data_size = 0;
   *mptr = &marker;
@@ -115,48 +113,49 @@ testInternalPost ()
                         1080, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  for (i=0;i<LOOPCOUNT;i++) {
-    if (0 == i % 100)
-      fprintf(stderr, ".");
-    c = curl_easy_init ();
-    cbc.pos = 0;
-    buf[0] = '\0';
-    sprintf(url, "http://localhost:1080/hw%d", i);
-    curl_easy_setopt (c, CURLOPT_URL, url);
-    curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-    curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
-    curl_easy_setopt (c, CURLOPT_POST, 1L);
-    curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-    curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
-    if (oneone)
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-    else
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-    curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
-    // NOTE: use of CONNECTTIMEOUT without also
-    //   setting NOSIGNAL results in really weird
-    //   crashes on my system!
-    curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-    if (CURLE_OK != (errornum = curl_easy_perform (c)))
-      {
-	fprintf (stderr,
-		 "curl_easy_perform failed: `%s'\n",
-		 curl_easy_strerror (errornum));
-	curl_easy_cleanup (c);
-	MHD_stop_daemon (d);
-	return 2;
-      }
-    curl_easy_cleanup (c);
-    if ( (buf[0] != 'O') ||
-	 (buf[1] != 'K') ) {
-      MHD_stop_daemon (d);
-      return 4;
+  for (i = 0; i < LOOPCOUNT; i++)
+    {
+      if (0 == i % 100)
+        fprintf (stderr, ".");
+      c = curl_easy_init ();
+      cbc.pos = 0;
+      buf[0] = '\0';
+      sprintf (url, "http://localhost:1080/hw%d", i);
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
+      curl_easy_setopt (c, CURLOPT_POST, 1L);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      if (CURLE_OK != (errornum = curl_easy_perform (c)))
+        {
+          fprintf (stderr,
+                   "curl_easy_perform failed: `%s'\n",
+                   curl_easy_strerror (errornum));
+          curl_easy_cleanup (c);
+          MHD_stop_daemon (d);
+          return 2;
+        }
+      curl_easy_cleanup (c);
+      if ((buf[0] != 'O') || (buf[1] != 'K'))
+        {
+          MHD_stop_daemon (d);
+          return 4;
+        }
     }
-  }
   MHD_stop_daemon (d);
-  fprintf(stderr, "\n");
+  fprintf (stderr, "\n");
   return 0;
 }
 
@@ -177,48 +176,49 @@ testMultithreadedPost ()
                         1081, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  for (i=0;i<LOOPCOUNT;i++) {
-    if (0 == i % 100)
-      fprintf(stderr, ".");
-    c = curl_easy_init ();
-    cbc.pos = 0;
-    buf[0] = '\0';
-    sprintf(url, "http://localhost:1081/hw%d", i);
-    curl_easy_setopt (c, CURLOPT_URL, url);
-    curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-    curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
-    curl_easy_setopt (c, CURLOPT_POST, 1L);
-    curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-    curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
-    if (oneone)
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-    else
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-    curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
-    // NOTE: use of CONNECTTIMEOUT without also
-    //   setting NOSIGNAL results in really weird
-    //   crashes on my system!
-    curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-    if (CURLE_OK != (errornum = curl_easy_perform (c)))
-      {
-	fprintf (stderr,
-		 "curl_easy_perform failed: `%s'\n",
-		 curl_easy_strerror (errornum));
-	curl_easy_cleanup (c);
-	MHD_stop_daemon (d);
-	return 32;
-      }
-    curl_easy_cleanup (c);
-    if ( (buf[0] != 'O') ||
-	 (buf[1] != 'K') ) {
-      MHD_stop_daemon (d);
-      return 64;
+  for (i = 0; i < LOOPCOUNT; i++)
+    {
+      if (0 == i % 100)
+        fprintf (stderr, ".");
+      c = curl_easy_init ();
+      cbc.pos = 0;
+      buf[0] = '\0';
+      sprintf (url, "http://localhost:1081/hw%d", i);
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
+      curl_easy_setopt (c, CURLOPT_POST, 1L);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      if (CURLE_OK != (errornum = curl_easy_perform (c)))
+        {
+          fprintf (stderr,
+                   "curl_easy_perform failed: `%s'\n",
+                   curl_easy_strerror (errornum));
+          curl_easy_cleanup (c);
+          MHD_stop_daemon (d);
+          return 32;
+        }
+      curl_easy_cleanup (c);
+      if ((buf[0] != 'O') || (buf[1] != 'K'))
+        {
+          MHD_stop_daemon (d);
+          return 64;
+        }
     }
-  }
   MHD_stop_daemon (d);
-  fprintf(stderr, "\n");
+  fprintf (stderr, "\n");
   return 0;
 }
 
@@ -259,106 +259,109 @@ testExternalPost ()
       MHD_stop_daemon (d);
       return 512;
     }
-  for (i=0;i<LOOPCOUNT;i++) {
-    if (0 == i % 100)
-      fprintf(stderr, ".");
-    c = curl_easy_init ();
-    cbc.pos = 0;
-    buf[0] = '\0';
-    sprintf(url, "http://localhost:1082/hw%d", i);
-    curl_easy_setopt (c, CURLOPT_URL, url);
-    curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-    curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
-    curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
-    curl_easy_setopt (c, CURLOPT_POST, 1L);
-    curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-    curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
-    if (oneone)
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-    else
-      curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-    curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
-    // NOTE: use of CONNECTTIMEOUT without also
-    //   setting NOSIGNAL results in really weird
-    //   crashes on my system!
-    curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-    mret = curl_multi_add_handle (multi, c);
-    if (mret != CURLM_OK)
-      {
-	curl_multi_cleanup (multi);
-	curl_easy_cleanup (c);
-	MHD_stop_daemon (d);
-	return 1024;
-      }
-    start = time (NULL);
-    while ((time (NULL) - start < 5) && (multi != NULL))
-      {
-	max = 0;
-	FD_ZERO (&rs);
-	FD_ZERO (&ws);
-	FD_ZERO (&es);
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform (multi, &running));
-	mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
-	if (mret != CURLM_OK)
-	  {
-	    curl_multi_remove_handle (multi, c);
-	    curl_multi_cleanup (multi);
-	    curl_easy_cleanup (c);
-	    MHD_stop_daemon (d);
-	    return 2048;
-	  }
-	if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
-	  {
-	    curl_multi_remove_handle (multi, c);
-	    curl_multi_cleanup (multi);
-	    curl_easy_cleanup (c);
-	    MHD_stop_daemon (d);
-	    return 4096;
-	  }
-	if (MHD_NO == MHD_get_timeout(d, &timeout))
-	  timeout = 1000000; /* 1000s == INFTY */
-	if ( (CURLM_OK == curl_multi_timeout(multi, &ctimeout)) &&
-	     (ctimeout < timeout) &&
-	     (ctimeout >= 0) )
-	  timeout = ctimeout;
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
-	select (max + 1, &rs, &ws, &es, &tv);
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform (multi, &running));
-	if (running == 0)
-	  {
-	    msg = curl_multi_info_read (multi, &running);
-	    if (msg == NULL)
-	      break;
-	    if (msg->msg == CURLMSG_DONE)
-	      {
-		if (msg->data.result != CURLE_OK)
-		  printf ("%s failed at %s:%d: `%s'\n",
-			  "curl_multi_perform",
-			  __FILE__,
-			  __LINE__, curl_easy_strerror (msg->data.result));
-		curl_multi_remove_handle (multi, c);
-		curl_easy_cleanup (c);
-		c = NULL;
-	      }
-	  }
-	MHD_run (d);
-      }
-    if (c != NULL) {
-      curl_multi_remove_handle (multi, c);
-      curl_easy_cleanup (c);
+  for (i = 0; i < LOOPCOUNT; i++)
+    {
+      if (0 == i % 100)
+        fprintf (stderr, ".");
+      c = curl_easy_init ();
+      cbc.pos = 0;
+      buf[0] = '\0';
+      sprintf (url, "http://localhost:1082/hw%d", i);
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
+      curl_easy_setopt (c, CURLOPT_POST, 1L);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      mret = curl_multi_add_handle (multi, c);
+      if (mret != CURLM_OK)
+        {
+          curl_multi_cleanup (multi);
+          curl_easy_cleanup (c);
+          MHD_stop_daemon (d);
+          return 1024;
+        }
+      start = time (NULL);
+      while ((time (NULL) - start < 5) && (multi != NULL))
+        {
+          max = 0;
+          FD_ZERO (&rs);
+          FD_ZERO (&ws);
+          FD_ZERO (&es);
+          while (CURLM_CALL_MULTI_PERFORM ==
+                 curl_multi_perform (multi, &running));
+          mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
+          if (mret != CURLM_OK)
+            {
+              curl_multi_remove_handle (multi, c);
+              curl_multi_cleanup (multi);
+              curl_easy_cleanup (c);
+              MHD_stop_daemon (d);
+              return 2048;
+            }
+          if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
+            {
+              curl_multi_remove_handle (multi, c);
+              curl_multi_cleanup (multi);
+              curl_easy_cleanup (c);
+              MHD_stop_daemon (d);
+              return 4096;
+            }
+          if (MHD_NO == MHD_get_timeout (d, &timeout))
+            timeout = 1000000;  /* 1000s == INFTY */
+          if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
+              (ctimeout < timeout) && (ctimeout >= 0))
+            timeout = ctimeout;
+          tv.tv_sec = timeout / 1000;
+          tv.tv_usec = (timeout % 1000) * 1000;
+          select (max + 1, &rs, &ws, &es, &tv);
+          while (CURLM_CALL_MULTI_PERFORM ==
+                 curl_multi_perform (multi, &running));
+          if (running == 0)
+            {
+              msg = curl_multi_info_read (multi, &running);
+              if (msg == NULL)
+                break;
+              if (msg->msg == CURLMSG_DONE)
+                {
+                  if (msg->data.result != CURLE_OK)
+                    printf ("%s failed at %s:%d: `%s'\n",
+                            "curl_multi_perform",
+                            __FILE__,
+                            __LINE__, curl_easy_strerror (msg->data.result));
+                  curl_multi_remove_handle (multi, c);
+                  curl_easy_cleanup (c);
+                  c = NULL;
+                }
+            }
+          MHD_run (d);
+        }
+      if (c != NULL)
+        {
+          curl_multi_remove_handle (multi, c);
+          curl_easy_cleanup (c);
+        }
+      if ((buf[0] != 'O') || (buf[1] != 'K'))
+        {
+          curl_multi_cleanup (multi);
+          MHD_stop_daemon (d);
+          return 8192;
+        }
     }
-    if ( (buf[0] != 'O') ||
-	 (buf[1] != 'K') ) {
-      curl_multi_cleanup (multi);  
-      MHD_stop_daemon (d);
-      return 8192;
-    }  
-  }
-  curl_multi_cleanup (multi);  
+  curl_multi_cleanup (multi);
   MHD_stop_daemon (d);
-  fprintf(stderr, "\n");
+  fprintf (stderr, "\n");
   return 0;
 }
 
