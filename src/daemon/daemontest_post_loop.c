@@ -115,7 +115,7 @@ testInternalPost ()
     return 1;
   for (i = 0; i < LOOPCOUNT; i++)
     {
-      if (0 == i % 100)
+      if (99 == i % 100)
         fprintf (stderr, ".");
       c = curl_easy_init ();
       cbc.pos = 0;
@@ -155,7 +155,8 @@ testInternalPost ()
         }
     }
   MHD_stop_daemon (d);
-  fprintf (stderr, "\n");
+  if (LOOPCOUNT >= 99)
+    fprintf (stderr, "\n");
   return 0;
 }
 
@@ -178,7 +179,7 @@ testMultithreadedPost ()
     return 16;
   for (i = 0; i < LOOPCOUNT; i++)
     {
-      if (0 == i % 100)
+      if (99 == i % 100)
         fprintf (stderr, ".");
       c = curl_easy_init ();
       cbc.pos = 0;
@@ -218,7 +219,8 @@ testMultithreadedPost ()
         }
     }
   MHD_stop_daemon (d);
-  fprintf (stderr, "\n");
+  if (LOOPCOUNT >= 99)
+    fprintf (stderr, "\n");
   return 0;
 }
 
@@ -261,8 +263,7 @@ testExternalPost ()
     }
   for (i = 0; i < LOOPCOUNT; i++)
     {
-      if (0 == i % 100)
-        fprintf (stderr, ".");
+      fprintf (stderr, ".");
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
@@ -310,7 +311,7 @@ testExternalPost ()
               MHD_stop_daemon (d);
               return 2048;
             }
-          if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
+	  if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
             {
               curl_multi_remove_handle (multi, c);
               curl_multi_cleanup (multi);
@@ -319,7 +320,7 @@ testExternalPost ()
               return 4096;
             }
           if (MHD_NO == MHD_get_timeout (d, &timeout))
-            timeout = 1000000;  /* 1000s == INFTY */
+            timeout = 100;  /* 100ms == INFTY -- CURL bug... */
           if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
               (ctimeout < timeout) && (ctimeout >= 0))
             timeout = ctimeout;
