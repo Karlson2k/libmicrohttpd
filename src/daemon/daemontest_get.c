@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest1.c
+ * @file daemontest_get.c
  * @brief  Testcase for libmicrohttpd GET operations
  *         TODO: test parsing of query
  * @author Christian Grothoff
@@ -101,8 +101,8 @@ testInternalGet ()
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
