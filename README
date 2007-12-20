@@ -24,7 +24,7 @@ reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
 default to reduce the size of the library (error messages take
 space!).  If you are concerned about space, you should set "CFLAGS" to
 "-Os --fomit-frame-pointer" to have gcc generate tight code.  The
-resulting binary should be less than 25k (on x86).
+resulting binary should be about 25k (on x86).
 
 
 Portability
@@ -50,11 +50,6 @@ indicates that a testcase should be written before implementing the
 feature.
 
 
-For http/1.1-compliance:
-========================
-connection.c:
-- support sending of chunked responses (#1302, TEST, ARCH)
-
 For POST:
 =========
 - add support to decode multipart/form-data with 
@@ -71,6 +66,10 @@ Missing Testcases:
 - add testcases for http/1.1 pipelining (need
   to figure out how to ensure curl pipelines)
 - add testcases for resource limit enforcement
+- add testcases for client queuing early response,
+  suppressing 100 CONTINUE
+- extend testcase for chunked encoding to validate
+  handling of footers
 
 Documentation:
 ==============

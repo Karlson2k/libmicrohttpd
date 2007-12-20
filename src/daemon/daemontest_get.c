@@ -66,16 +66,24 @@ ahc_echo (void *cls,
           const char *upload_data, unsigned int *upload_data_size,
           void **unused)
 {
+  static int ptr;
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
+  if (&ptr != *unused) {
+    *unused = &ptr;
+    return MHD_YES;
+  }
+  *unused = NULL;
   response = MHD_create_response_from_data (strlen (url),
                                             (void *) url, MHD_NO, MHD_YES);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
+  if (ret == MHD_NO)
+    abort();
   return ret;
 }
 
@@ -93,11 +101,11 @@ testInternalGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-                        1080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -150,12 +158,12 @@ testMultithreadedGet ()
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -214,8 +222,8 @@ testExternalGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!

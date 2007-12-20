@@ -41,14 +41,22 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **unused)
+          const char *version, unsigned int *upload_data_size, void **ptr)
 {
+  static int aptr;
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
+  if (&aptr != *ptr) 
+    {
+      /* do never respond on first call */
+      *ptr = &aptr;
+      return MHD_YES;
+    }
+  *ptr = NULL; /* reset when done */
   response = MHD_create_response_from_data (strlen (me),
                                             (void *) me, MHD_NO, MHD_NO);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);

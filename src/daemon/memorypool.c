@@ -188,4 +188,33 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   return NULL;
 }
 
+/**
+ * Clear all entries from the memory pool except
+ * for "keep" of the given "size".
+ * 
+ * @param keep pointer to the entry to keep (maybe NULL)
+ * @param size how many bytes need to be kept at this address
+ * @return addr new address of "keep" (if it had to change)
+ */
+void *MHD_pool_reset(struct MemoryPool * pool,
+		     void * keep,
+		     unsigned int size) 
+{
+  if (keep != NULL)
+    {
+      if (keep != pool->memory)
+	{
+	  memmove(pool->memory,
+		  keep,
+		  size);
+	  keep = pool->memory;
+	}
+      pool->pos = size;
+    }
+  pool->end = pool->size;
+  return keep;
+}
+
+
+
 /* end of memorypool.c */

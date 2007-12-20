@@ -105,6 +105,11 @@ ahc_echo (void *cls,
           printf ("Invalid upload data `%8s'!\n", upload_data);
           return MHD_NO;
         }
+#if 0
+      fprintf(stderr,
+	      "Not ready for response: %u/%u\n",
+	      *done, 8);
+#endif
       return MHD_YES;
     }
   response = MHD_create_response_from_data (strlen (url),

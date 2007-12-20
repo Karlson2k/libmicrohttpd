@@ -85,20 +85,8 @@ struct MHD_HTTP_Header
   char *value;
 
   enum MHD_ValueKind kind;
+
 };
-
-
-struct MHD_Access_Handler
-{
-  struct MHD_Access_Handler *next;
-
-  char *uri_prefix;
-
-  MHD_AccessHandlerCallback dh;
-
-  void *dh_cls;
-};
-
 
 /**
  * Representation of a response.
@@ -172,7 +160,129 @@ struct MHD_Response
 
 };
 
+/**
+ * States in a state machine for a connection.
+ *
+ * Transitions are any-state to CLOSED, any state to state+1,
+ * FOOTERS_SENT to INIT.  CLOSED is the terminal state and
+ * INIT the initial state.
+ *
+ * Note that transitions for *reading* happen only after
+ * the input has been processed; transitions for
+ * *writing* happen after the respective data has been
+ * put into the write buffer (the write does not have
+ * to be completed yet).  A transition to CLOSED or INIT
+ * requires the write to be complete.
+ */
+enum MHD_CONNECTION_STATE
+{
+  /**
+   * Connection just started (no headers received).
+   * Waiting for the line with the request type, URL and version.
+   */
+  MHD_CONNECTION_INIT = 0,
 
+  /**
+   * 1: We got the URL (and request type and version).  Wait for a header line.
+   */
+  MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_INIT + 1,
+
+  /**
+   * 2: We got part of a multi-line request header.  Wait for the rest.
+   */
+  MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_URL_RECEIVED + 1,
+
+  /**
+   * 3: We got the request headers.  Process them.
+   */
+  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_HEADER_PART_RECEIVED + 1,
+
+  /**
+   * 4: We have processed the request headers.  Send 100 continue.
+   */
+  MHD_CONNECTION_HEADERS_PROCESSED = MHD_CONNECTION_HEADERS_RECEIVED + 1,
+
+  /**
+   * 5: We have processed the headers and need to send 100 CONTINUE.
+   */
+  MHD_CONNECTION_CONTINUE_SENDING = MHD_CONNECTION_HEADERS_PROCESSED + 1,
+
+  /**
+   * 6: We have sent 100 CONTINUE (or do not need to).  Read the message body.
+   */
+  MHD_CONNECTION_CONTINUE_SENT = MHD_CONNECTION_CONTINUE_SENDING + 1,
+
+  /**
+   * 7: We got the request body.  Wait for a line of the footer.
+   */
+  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_CONTINUE_SENT + 1,
+
+  /**
+   * 8: We got part of a line of the footer.  Wait for the
+   * rest.
+   */
+  MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
+
+  /**
+   * 9: We received the entire footer.  Wait for a response to be queued
+   * and prepare the response headers.
+   */
+  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTER_PART_RECEIVED + 1,
+
+  /**
+   * 10: We have prepared the response headers in the writ buffer.
+   * Send the response headers.
+   */
+  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
+
+  /**
+   * 11: We have sent the response headers.  Get ready to send the body.
+   */
+  MHD_CONNECTION_HEADERS_SENT = MHD_CONNECTION_HEADERS_SENDING + 1,
+  
+  /**
+   * 12: We are ready to send a part of a non-chunked body.  Send it.
+   */
+  MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_HEADERS_SENT + 1,
+  
+  /**
+   * 13: We are waiting for the client to provide more
+   * data of a non-chunked body.
+   */
+  MHD_CONNECTION_NORMAL_BODY_UNREADY = MHD_CONNECTION_NORMAL_BODY_READY + 1,
+
+  /**
+   * 14: We are ready to send a chunk.
+   */
+  MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_NORMAL_BODY_UNREADY + 1,
+
+  /**
+   * 15: We are waiting for the client to provide a chunk of the body.
+   */
+  MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
+  
+  /**
+   * 16: We have sent the response body. Prepare the footers.
+   */
+  MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
+  
+  /**
+   * 17: We have prepared the response footer.  Send it.
+   */
+  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,  
+
+  /**
+   * 18: We have sent the response footer.  Shutdown or restart.
+   */
+  MHD_CONNECTION_FOOTERS_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
+
+  /**
+   * 19: This connection is closed (no more activity
+   * allowed).
+   */
+  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
+  
+};
 
 struct MHD_Connection
 {
@@ -250,6 +360,21 @@ struct MHD_Connection
   char *write_buffer;
 
   /**
+   * Last incomplete header line during parsing of headers.
+   * Allocated in pool.  Only valid if state is
+   * either HEADER_PART_RECEIVED or FOOTER_PART_RECEIVED.
+   */
+  char *last;
+
+  /**
+   * Position after the colon on the last incomplete header 
+   * line during parsing of headers.
+   * Allocated in pool.  Only valid if state is
+   * either HEADER_PART_RECEIVED or FOOTER_PART_RECEIVED.
+   */
+  char *colon;
+
+  /**
    * Foreign address (of length addr_len).  MALLOCED (not
    * in pool!).
    */
@@ -292,18 +417,17 @@ struct MHD_Connection
   size_t write_buffer_append_offset;
 
   /**
+   * How many more bytes of the body do we expect
+   * to read? "-1" for unknown.
+   */ 
+  size_t remaining_upload_size;
+
+  /**
    * Current write position in the actual response
    * (excluding headers, content only; should be 0
    * while sending headers).
    */
   size_t response_write_position;
-
-  /**
-   * Remaining (!) number of bytes in the upload.
-   * Set to -1 for unknown (connection will close
-   * to indicate end of upload).
-   */
-  size_t remaining_upload_size;
 
   /**
    * Position in the 100 CONTINUE message that
@@ -333,29 +457,15 @@ struct MHD_Connection
    * Has this socket been closed for reading (i.e.
    * other side closed the connection)?  If so,
    * we must completely close the connection once
-   * we are done sending our response.
+   * we are done sending our response (and stop
+   * trying to read from this socket).
    */
-  int read_close;
+  int read_closed;
 
   /**
-   * Have we finished receiving all of the headers yet?
-   * Set to 1 once we are done processing all of the
-   * headers.  Note that due to pipelining, it is
-   * possible that the NEXT request is already
-   * (partially) waiting in the read buffer.
+   * State in the FSM for this connection.
    */
-  int have_received_headers;
-
-  /**
-   * Have we finished receiving the data from a
-   * potential file-upload?
-   */
-  int have_received_body;
-
-  /**
-   * Have we finished sending all of the headers yet?
-   */
-  int have_sent_headers;
+  enum MHD_CONNECTION_STATE state;
 
   /**
    * HTTP response code.  Only valid if response object
@@ -371,6 +481,11 @@ struct MHD_Connection
    * the CRC call succeeds.
    */
   int response_unready;
+
+  /**
+   * Are we sending with chunked encoding?
+   */
+  int have_chunked_response;
 
   /**
    * Are we receiving with chunked encoding?  This will be set to
@@ -402,9 +517,15 @@ struct MHD_Connection
 struct MHD_Daemon
 {
 
-  struct MHD_Access_Handler *handlers;
+  /**
+   * Callback function for all requests.
+   */
+  MHD_AccessHandlerCallback default_handler;
 
-  struct MHD_Access_Handler default_handler;
+  /**
+   * Closure argument to default_handler.
+   */
+  void * default_handler_cls;
 
   /**
    * Linked list of our current connections.

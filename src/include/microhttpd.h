@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000100
+#define MHD_VERSION 0x00000200
 
 /**
  * MHD-internal return codes.
@@ -373,6 +373,11 @@ enum MHD_ValueKind
    */
   MHD_GET_ARGUMENT_KIND = 8,
 
+  /**
+   * HTTP footer (only for http 1.1 chunked encodings).
+   */
+  MHD_FOOTER_KIND = 16,
+
 };
 
 /**
@@ -544,9 +549,15 @@ typedef int
  *        libmicrohttpd guarantees that "pos" will be
  *        the sum of all non-negative return values
  *        obtained from the content reader so far.
- * @return -1 on error (libmicrohttpd will no longer
- *  try to read content and instead close the connection
- *  with the client).
+ * @return -1 for the end of transmission (or on error);
+ *  if a content transfer size was pre-set and the callback
+ *  has provided fewer than that amount of data, 
+ *  MHD will close the connection with the client;
+ *  if no content size was specified and this is an
+ *  http 1.1 connection using chunked encoding, MHD will 
+ *  interpret "-1" as the normal end of the transfer
+ *  (possibly allowing the client to perform additional
+ *  requests using the same TCP connection).
  */
 typedef int
   (*MHD_ContentReaderCallback) (void *cls, size_t pos, char *buf, int max);
@@ -596,7 +607,7 @@ typedef int
  *        in which case connections from any IP will be
  *        accepted
  * @param apc_cls extra argument to apc
- * @param dh default handler for all URIs
+ * @param dh handler called for all requests (repeatedly)
  * @param dh_cls extra argument to dh
  * @param ... list of options (type-value pairs,
  *        terminated with MHD_OPTION_END).
@@ -654,32 +665,6 @@ int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout);
  *         options for this call.
  */
 int MHD_run (struct MHD_Daemon *daemon);
-
-
-/**
- * Register an access handler for all URIs beginning with uri_prefix.
- *
- * @param uri_prefix
- * @return MRI_NO if a handler for this exact prefix
- *         already exists
- */
-int
-MHD_register_handler (struct MHD_Daemon *daemon,
-                      const char *uri_prefix,
-                      MHD_AccessHandlerCallback dh, void *dh_cls);
-
-/**
- * Unregister an access handler for the URIs beginning with
- * uri_prefix.
- *
- * @param uri_prefix
- * @return MHD_NO if a handler for this exact prefix
- *         is not known for this daemon
- */
-int
-MHD_unregister_handler (struct MHD_Daemon *daemon,
-                        const char *uri_prefix,
-                        MHD_AccessHandlerCallback dh, void *dh_cls);
 
 /**
  * Get all of the headers from the request.

@@ -72,6 +72,13 @@ post_iterator (void *cls,
 {
   int *eok = cls;
 
+#if 0
+  fprintf(stderr,
+	  "PI sees %s-%.*s\n",
+	  key,
+	  size,
+	  value);
+#endif
   if ((0 == strcmp (key, "name")) &&
       (size == strlen ("daniel")) && (0 == strncmp (value, "daniel", size)))
     (*eok) |= 1;
@@ -95,7 +102,7 @@ ahc_echo (void *cls,
   struct MHD_PostProcessor *pp;
   int ret;
 
-  if (0 != strcmp ("POST", method))
+  if (0 != strcmp ("POST", method)) 
     {
       printf ("METHOD: %s\n", method);
       return MHD_NO;            /* unexpected method */

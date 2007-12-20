@@ -39,18 +39,14 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                           fd_set * write_fd_set,
                           fd_set * except_fd_set, int *max_fd);
 
-
-/**
- * Call the handler of the application for this
- * connection.
- */
-void MHD_call_connection_handler (struct MHD_Connection *connection);
-
 /**
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All implementations
  * (multithreaded, external select, internal select) call this function
  * to handle reads.
+ * 
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
  */
 int MHD_connection_handle_read (struct MHD_Connection *connection);
 
@@ -60,8 +56,23 @@ int MHD_connection_handle_read (struct MHD_Connection *connection);
  * determined that the socket can be written to. If there is no data
  * to be written, however, the function call does nothing. All implementations
  * (multithreaded, external select, internal select) call this function
+ * 
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
  */
 int MHD_connection_handle_write (struct MHD_Connection *connection);
 
 
+/**
+ * This function was created to handle per-connection processing that
+ * has to happen even if the socket cannot be read or written to.  All
+ * implementations (multithreaded, external select, internal select)
+ * call this function.
+ * 
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */
+int
+MHD_connection_handle_idle (struct MHD_Connection *connection);
+  
 #endif

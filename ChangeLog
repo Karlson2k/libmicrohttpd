@@ -1,3 +1,12 @@
+Wed Dec 19 21:12:04 MST 2007
+	 Implemented chunked (HTTP 1.1) downloads (including
+	 sending of HTTP footers).  Also allowed queuing of
+	 a response early to suppress the otherwise automatic
+	 "100 CONTINUE" response.  Removed the mostly useless
+	 "(un)register handler" methods from the API.  Changed
+	 the internal implementation to use a finite state
+	 machine (cleaner code, slightly less memory consumption). - CG
+	
 Sun Dec 16 03:24:13 MST 2007
 	 Implemented handling of chunked (HTTP 1.1) uploads.
 	 Note that the upload callback must be able to 

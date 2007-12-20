@@ -96,8 +96,16 @@ ahc_echo (void *cls,
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
     {
-      if (*upload_data_size != PUT_SIZE)
-        return MHD_YES;         /* not yet ready */
+      if (*upload_data_size != PUT_SIZE) 
+	{
+#if 0
+	  fprintf(stderr,
+		  "Waiting for more data (%u/%u)...\n",
+		  *upload_data_size,
+		  PUT_SIZE);
+#endif
+	  return MHD_YES;         /* not yet ready */
+	}
       if (0 == memcmp (upload_data, put_buffer, PUT_SIZE))
         {
           *upload_data_size = 0;
@@ -227,7 +235,13 @@ testMultithreadedPut ()
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
-    return 64;
+    {
+      fprintf(stderr,
+	      "Got invalid response `%.*s'\n",
+	      cbc.pos,
+	      cbc.buf);
+      return 64;
+    }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
     return 128;
   return 0;
@@ -260,7 +274,10 @@ testExternalPut ()
   multi = NULL;
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         1082,
-                        NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, &done_flag, 
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+			PUT_SIZE * 4,
+			MHD_OPTION_END);
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
@@ -357,9 +374,15 @@ testExternalPut ()
     }
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
-    return 64;
+    {
+      fprintf(stderr,
+	      "Got invalid response `%.*s'\n",
+	      cbc.pos,
+	      cbc.buf);
+      return 8192;
+    }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 128;
+    return 16384;
   return 0;
 }
 
@@ -380,7 +403,7 @@ main (int argc, char *const *argv)
       errorCount += testInternalPut ();
       errorCount += testMultithreadedPut ();
     }
-  errorCount += testExternalPut ();
+  errorCount += testExternalPut (); 
   free (put_buffer);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

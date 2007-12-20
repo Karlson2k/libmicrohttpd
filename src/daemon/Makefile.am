@@ -12,7 +12,7 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 2:1:1 $(retaincommand)
+  -export-dynamic -version-info 3:0:0 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   reason_phrase.c reason_phrase.h \
@@ -48,7 +48,6 @@ check_PROGRAMS = \
   daemontest_postform \
   daemontest_post_loop \
   daemontest_put \
-  daemontest_put_chunked \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
@@ -56,7 +55,9 @@ check_PROGRAMS = \
   daemontest_post_loop11 \
   daemontest_put11 \
   daemontest_large_put11 \
-  daemontest_long_header
+  daemontest_long_header \
+  daemontest_get_chunked \
+  daemontest_put_chunked 
 
 TESTS = $(check_PROGRAMS)
 
@@ -68,6 +69,12 @@ daemontest_LDADD = \
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_get_chunked_SOURCES = \
+  daemontest_get_chunked.c
+daemontest_get_chunked_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

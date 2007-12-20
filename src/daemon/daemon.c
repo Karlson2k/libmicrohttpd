@@ -52,85 +52,6 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
-/**
- * Register an access handler for all URIs beginning with uri_prefix.
- *
- * @param uri_prefix
- * @return MRI_NO if a handler for this exact prefix
- *         already exists
- */
-int
-MHD_register_handler (struct MHD_Daemon *daemon,
-                      const char *uri_prefix,
-                      MHD_AccessHandlerCallback dh, void *dh_cls)
-{
-  struct MHD_Access_Handler *ah;
-
-  if ((daemon == NULL) || (uri_prefix == NULL) || (dh == NULL))
-    return MHD_NO;
-  ah = daemon->handlers;
-  while (ah != NULL)
-    {
-      if (0 == strcmp (uri_prefix, ah->uri_prefix))
-        return MHD_NO;
-      ah = ah->next;
-    }
-  ah = malloc (sizeof (struct MHD_Access_Handler));
-  if (ah == NULL)
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
-#endif
-      return MHD_NO;
-    }
-
-  ah->next = daemon->handlers;
-  ah->uri_prefix = strdup (uri_prefix);
-  ah->dh = dh;
-  ah->dh_cls = dh_cls;
-  daemon->handlers = ah;
-  return MHD_YES;
-}
-
-
-/**
- * Unregister an access handler for the URIs beginning with
- * uri_prefix.
- *
- * @param uri_prefix
- * @return MHD_NO if a handler for this exact prefix
- *         is not known for this daemon
- */
-int
-MHD_unregister_handler (struct MHD_Daemon *daemon,
-                        const char *uri_prefix,
-                        MHD_AccessHandlerCallback dh, void *dh_cls)
-{
-  struct MHD_Access_Handler *prev;
-  struct MHD_Access_Handler *pos;
-
-  if ((daemon == NULL) || (uri_prefix == NULL) || (dh == NULL))
-    return MHD_NO;
-  pos = daemon->handlers;
-  prev = NULL;
-  while (pos != NULL)
-    {
-      if ((dh == pos->dh) &&
-          (dh_cls == pos->dh_cls) &&
-          (0 == strcmp (uri_prefix, pos->uri_prefix)))
-        {
-          if (prev == NULL)
-            daemon->handlers = pos->next;
-          else
-            prev->next = pos->next;
-          free (pos);
-          return MHD_YES;
-        }
-      prev = pos;
-      pos = pos->next;
-    }
-  return MHD_NO;
-}
 
 /**
  * Obtain the select sets for this daemon.
@@ -175,7 +96,6 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   return MHD_YES;
 }
 
-
 /**
  * Main function of the thread that handles an individual
  * connection.
@@ -191,26 +111,27 @@ MHD_handle_connection (void *data)
   int max;
   struct timeval tv;
   unsigned int timeout;
-  time_t now;
+  unsigned int now;
 
   if (con == NULL)
     abort ();
   timeout = con->daemon->connection_timeout;
-  now = time (NULL);
-  while ((!con->daemon->shutdown) &&
-         (con->socket_fd != -1) &&
-         ((timeout == 0) || (now - timeout > con->last_activity)))
+  while ( (!con->daemon->shutdown) &&
+	  (con->socket_fd != -1) )
     {
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
       max = 0;
       MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
+      now = time(NULL);      
       tv.tv_usec = 0;
-      tv.tv_sec = timeout - (now - con->last_activity);
+      if ( timeout > (now - con->last_activity) )
+	tv.tv_sec = timeout - (now - con->last_activity);
+      else
+	tv.tv_sec = 0;
       num_ready = SELECT (max + 1,
                           &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
-      now = time (NULL);
       if (num_ready < 0)
         {
           if (errno == EINTR)
@@ -221,18 +142,13 @@ MHD_handle_connection (void *data)
 #endif
           break;
         }
-      if (((FD_ISSET (con->socket_fd, &rs)) &&
-           (MHD_YES != MHD_connection_handle_read (con))) ||
-          ((con->socket_fd != -1) &&
-           (FD_ISSET (con->socket_fd, &ws)) &&
-           (MHD_YES != MHD_connection_handle_write (con))))
-        break;
-      if ((con->have_received_headers == MHD_YES) && (con->response == NULL))
-        MHD_call_connection_handler (con);
+      if (FD_ISSET (con->socket_fd, &rs))
+	   MHD_connection_handle_read (con);
       if ((con->socket_fd != -1) &&
-          ((FD_ISSET (con->socket_fd, &rs)) ||
-           (FD_ISSET (con->socket_fd, &ws))))
-        con->last_activity = now;
+          (FD_ISSET (con->socket_fd, &ws)) )
+	MHD_connection_handle_write (con);
+      if (con->socket_fd != -1) 
+	MHD_connection_handle_idle (con);
     }
   if (con->socket_fd != -1)
     {
@@ -370,11 +286,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
  * Free resources associated with all closed connections.
  * (destroy responses, free buffers, etc.).  A connection
  * is known to be closed if the socket_fd is -1.
- *
- * Also performs connection actions that need to be run
- * even if the connection is not selectable (such as
- * calling the application again with upload data when
- * the upload data buffer is full).
  */
 static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon)
@@ -382,33 +293,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   struct MHD_Connection *prev;
   void *unused;
-  time_t timeout;
 
-  timeout = time (NULL);
-  if (daemon->connection_timeout != 0)
-    timeout -= daemon->connection_timeout;
-  else
-    timeout = 0;
   pos = daemon->connections;
   prev = NULL;
   while (pos != NULL)
     {
-      if ((pos->last_activity < timeout) && (pos->socket_fd != -1))
-        {
-#if DEBUG_CLOSE
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Connection timed out, closing connection\n");
-#endif
-#endif
-          SHUTDOWN (pos->socket_fd, SHUT_RDWR);
-          CLOSE (pos->socket_fd);
-          pos->socket_fd = -1;
-          if (pos->daemon->notify_completed != NULL)
-            pos->daemon->notify_completed (pos->daemon->notify_completed_cls,
-                                           pos,
-                                           &pos->client_context,
-                                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-        }
       if (pos->socket_fd == -1)
         {
           if (prev == NULL)
@@ -420,8 +309,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
               pthread_kill (pos->pid, SIGALRM);
               pthread_join (pos->pid, &unused);
             }
-          if (pos->response != NULL)
-            MHD_destroy_response (pos->response);
+	  MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
           free (pos->addr);
           free (pos);
@@ -432,12 +320,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
             pos = prev->next;
           continue;
         }
-
-      if ((0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-          ((pos->have_received_headers == MHD_YES)
-           && (pos->response == NULL)))
-        MHD_call_connection_handler (pos);
-
       prev = pos;
       pos = pos->next;
     }
@@ -573,15 +455,12 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
           if (ds != -1)
             {
               if (FD_ISSET (ds, &rs))
-                {
-                  pos->last_activity = now;
-                  MHD_connection_handle_read (pos);
-                }
-              if (FD_ISSET (ds, &ws))
-                {
-                  pos->last_activity = now;
-                  MHD_connection_handle_write (pos);
-                }
+		MHD_connection_handle_read (pos); 
+	      if ( (pos->socket_fd != -1) &&
+		   (FD_ISSET (ds, &ws)) )
+		MHD_connection_handle_write (pos);
+	      if (pos->socket_fd != -1)
+		MHD_connection_handle_idle(pos); 
             }
           pos = pos->next;
         }
@@ -726,10 +605,8 @@ MHD_start_daemon (unsigned int options,
   retVal->apc = apc;
   retVal->apc_cls = apc_cls;
   retVal->socket_fd = socket_fd;
-  retVal->default_handler.dh = dh;
-  retVal->default_handler.dh_cls = dh_cls;
-  retVal->default_handler.uri_prefix = "";
-  retVal->default_handler.next = NULL;
+  retVal->default_handler = dh;
+  retVal->default_handler_cls = dh_cls;
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
