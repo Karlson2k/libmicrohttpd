@@ -73,17 +73,18 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused) {
-    *unused = &ptr;
-    return MHD_YES;
-  }
+  if (&ptr != *unused)
+    {
+      *unused = &ptr;
+      return MHD_YES;
+    }
   *unused = NULL;
   response = MHD_create_response_from_data (strlen (url),
                                             (void *) url, MHD_NO, MHD_YES);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
-    abort();
+    abort ();
   return ret;
 }
 

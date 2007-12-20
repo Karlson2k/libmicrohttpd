@@ -50,13 +50,13 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr) 
+  if (&aptr != *ptr)
     {
       /* do never respond on first call */
       *ptr = &aptr;
       return MHD_YES;
     }
-  *ptr = NULL; /* reset when done */
+  *ptr = NULL;                  /* reset when done */
   response = MHD_create_response_from_data (strlen (me),
                                             (void *) me, MHD_NO, MHD_NO);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);

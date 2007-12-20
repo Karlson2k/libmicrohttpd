@@ -42,13 +42,13 @@
 
 /**
  * Print extra messages with reasons for closing
- * sockets? (only adds non-error messages). 
+ * sockets? (only adds non-error messages).
  */
 #define DEBUG_CLOSE MHD_NO
 
 /**
  * Print extra messages when establishing
- * connections? (only adds non-error messages). 
+ * connections? (only adds non-error messages).
  */
 #define DEBUG_CONNECT MHD_NO
 
@@ -116,20 +116,19 @@ MHD_handle_connection (void *data)
   if (con == NULL)
     abort ();
   timeout = con->daemon->connection_timeout;
-  while ( (!con->daemon->shutdown) &&
-	  (con->socket_fd != -1) )
+  while ((!con->daemon->shutdown) && (con->socket_fd != -1))
     {
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
       max = 0;
       MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
-      now = time(NULL);      
+      now = time (NULL);
       tv.tv_usec = 0;
-      if ( timeout > (now - con->last_activity) )
-	tv.tv_sec = timeout - (now - con->last_activity);
+      if (timeout > (now - con->last_activity))
+        tv.tv_sec = timeout - (now - con->last_activity);
       else
-	tv.tv_sec = 0;
+        tv.tv_sec = 0;
       num_ready = SELECT (max + 1,
                           &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
       if (num_ready < 0)
@@ -143,12 +142,11 @@ MHD_handle_connection (void *data)
           break;
         }
       if (FD_ISSET (con->socket_fd, &rs))
-	   MHD_connection_handle_read (con);
-      if ((con->socket_fd != -1) &&
-          (FD_ISSET (con->socket_fd, &ws)) )
-	MHD_connection_handle_write (con);
-      if (con->socket_fd != -1) 
-	MHD_connection_handle_idle (con);
+        MHD_connection_handle_read (con);
+      if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &ws)))
+        MHD_connection_handle_write (con);
+      if (con->socket_fd != -1)
+        MHD_connection_handle_idle (con);
     }
   if (con->socket_fd != -1)
     {
@@ -309,7 +307,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
               pthread_kill (pos->pid, SIGALRM);
               pthread_join (pos->pid, &unused);
             }
-	  MHD_destroy_response (pos->response);
+          MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
           free (pos->addr);
           free (pos);
@@ -455,12 +453,11 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
           if (ds != -1)
             {
               if (FD_ISSET (ds, &rs))
-		MHD_connection_handle_read (pos); 
-	      if ( (pos->socket_fd != -1) &&
-		   (FD_ISSET (ds, &ws)) )
-		MHD_connection_handle_write (pos);
-	      if (pos->socket_fd != -1)
-		MHD_connection_handle_idle(pos); 
+                MHD_connection_handle_read (pos);
+              if ((pos->socket_fd != -1) && (FD_ISSET (ds, &ws)))
+                MHD_connection_handle_write (pos);
+              if (pos->socket_fd != -1)
+                MHD_connection_handle_idle (pos);
             }
           pos = pos->next;
         }

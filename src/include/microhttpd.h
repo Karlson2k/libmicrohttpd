@@ -39,10 +39,10 @@
  * The library also understands headers that control connection
  * management (specifically, "Connection: close" and "Expect: 100
  * continue" are understood and handled automatically).<p>
- * 
+ *
  * MHD understands POST data and is able to decode certain formats
  * (at the moment only "application/x-www-form-urlencoded") if the
- * entire data fits into the allowed amount of memory for the 
+ * entire data fits into the allowed amount of memory for the
  * connection.  Unsupported encodings and large POST submissions are
  * provided as a stream to the main application (and thus can be
  * processed, just not conveniently by MHD).<p>
@@ -325,7 +325,7 @@ enum MHD_OPTION
    * up).  Requests that have never been presented to the application
    * (via MHD_AccessHandlerCallback) will not result in
    * notifications.<p>
-   * 
+   *
    * This option should be followed by TWO pointers.  First a pointer
    * to a function of type "MHD_RequestCompletedCallback" and second a
    * pointer to a closure to pass to the request completed callback.
@@ -407,7 +407,7 @@ enum MHD_RequestTerminationCode
   MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 2,
 
   /**
-   * We had to close the session since MHD was being 
+   * We had to close the session since MHD was being
    * shut down.
    */
   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
@@ -497,13 +497,13 @@ typedef int
 
 /**
  * Signature of the callback used by MHD to notify the
- * application about completed requests.  
+ * application about completed requests.
  *
  * @param cls client-defined closure
  * @param connection connection handle
  * @param con_cls value as set by the last call to
  *        the MHD_AccessHandlerCallback
- * @param toe reason for request termination 
+ * @param toe reason for request termination
  * @see MHD_OPTION_NOTIFY_COMPLETED
  */
 typedef void
@@ -551,10 +551,10 @@ typedef int
  *        obtained from the content reader so far.
  * @return -1 for the end of transmission (or on error);
  *  if a content transfer size was pre-set and the callback
- *  has provided fewer than that amount of data, 
+ *  has provided fewer than that amount of data,
  *  MHD will close the connection with the client;
  *  if no content size was specified and this is an
- *  http 1.1 connection using chunked encoding, MHD will 
+ *  http 1.1 connection using chunked encoding, MHD will
  *  interpret "-1" as the normal end of the transfer
  *  (possibly allowing the client to perform additional
  *  requests using the same TCP connection).
@@ -585,7 +585,7 @@ typedef void (*MHD_ContentReaderFreeCallback) (void *cls);
  * @param data pointer to size bytes of data at the
  *              specified offset
  * @param off offset of data in the overall value
- * @param size number of bytes in data available 
+ * @param size number of bytes in data available
  * @return MHD_YES to continue iterating,
  *         MHD_NO to abort the iteration
  */
@@ -796,7 +796,7 @@ const char *MHD_get_response_header (struct MHD_Response *response,
 
 /**
  * Create a PostProcessor.
- * 
+ *
  * A PostProcessor can be used to (incrementally)
  * parse the data portion of a POST request.
  *
@@ -823,9 +823,9 @@ struct MHD_PostProcessor *MHD_create_post_processor (struct MHD_Connection
  * Parse and process POST data.
  * Call this function when POST data is available
  * (usually during an MHD_AccessHandlerCallback)
- * with the upload_data and upload_data_size.  
+ * with the upload_data and upload_data_size.
  * Whenever possible, this will then cause calls
- * to the MHD_IncrementalKeyValueIterator.  
+ * to the MHD_IncrementalKeyValueIterator.
  *
  * @param pp the post processor
  * @param post_data post_data_len bytes of POST data

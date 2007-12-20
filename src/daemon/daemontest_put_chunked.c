@@ -106,9 +106,7 @@ ahc_echo (void *cls,
           return MHD_NO;
         }
 #if 0
-      fprintf(stderr,
-	      "Not ready for response: %u/%u\n",
-	      *done, 8);
+      fprintf (stderr, "Not ready for response: %u/%u\n", *done, 8);
 #endif
       return MHD_YES;
     }

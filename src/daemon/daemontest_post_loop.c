@@ -311,7 +311,7 @@ testExternalPost ()
               MHD_stop_daemon (d);
               return 2048;
             }
-	  if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
+          if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
             {
               curl_multi_remove_handle (multi, c);
               curl_multi_cleanup (multi);
@@ -320,7 +320,7 @@ testExternalPost ()
               return 4096;
             }
           if (MHD_NO == MHD_get_timeout (d, &timeout))
-            timeout = 100;  /* 100ms == INFTY -- CURL bug... */
+            timeout = 100;      /* 100ms == INFTY -- CURL bug... */
           if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
               (ctimeout < timeout) && (ctimeout >= 0))
             timeout = ctimeout;

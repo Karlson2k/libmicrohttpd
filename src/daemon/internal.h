@@ -239,12 +239,12 @@ enum MHD_CONNECTION_STATE
    * 11: We have sent the response headers.  Get ready to send the body.
    */
   MHD_CONNECTION_HEADERS_SENT = MHD_CONNECTION_HEADERS_SENDING + 1,
-  
+
   /**
    * 12: We are ready to send a part of a non-chunked body.  Send it.
    */
   MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_HEADERS_SENT + 1,
-  
+
   /**
    * 13: We are waiting for the client to provide more
    * data of a non-chunked body.
@@ -260,16 +260,16 @@ enum MHD_CONNECTION_STATE
    * 15: We are waiting for the client to provide a chunk of the body.
    */
   MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
-  
+
   /**
    * 16: We have sent the response body. Prepare the footers.
    */
   MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
-  
+
   /**
    * 17: We have prepared the response footer.  Send it.
    */
-  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,  
+  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,
 
   /**
    * 18: We have sent the response footer.  Shutdown or restart.
@@ -281,7 +281,7 @@ enum MHD_CONNECTION_STATE
    * allowed).
    */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
-  
+
 };
 
 struct MHD_Connection
@@ -367,7 +367,7 @@ struct MHD_Connection
   char *last;
 
   /**
-   * Position after the colon on the last incomplete header 
+   * Position after the colon on the last incomplete header
    * line during parsing of headers.
    * Allocated in pool.  Only valid if state is
    * either HEADER_PART_RECEIVED or FOOTER_PART_RECEIVED.
@@ -389,7 +389,7 @@ struct MHD_Connection
   /**
    * Size of read_buffer (in bytes).  This value indicates
    * how many bytes we're willing to read into the buffer;
-   * the real buffer is one byte longer to allow for 
+   * the real buffer is one byte longer to allow for
    * adding zero-termination (when needed).
    */
   size_t read_buffer_size;
@@ -419,7 +419,7 @@ struct MHD_Connection
   /**
    * How many more bytes of the body do we expect
    * to read? "-1" for unknown.
-   */ 
+   */
   size_t remaining_upload_size;
 
   /**
@@ -476,7 +476,7 @@ struct MHD_Connection
   /**
    * Set to MHD_YES if the response's content reader
    * callback failed to provide data the last time
-   * we tried to read from it.  In that case, the 
+   * we tried to read from it.  In that case, the
    * write socket should be marked as unready until
    * the CRC call succeeds.
    */
@@ -525,7 +525,7 @@ struct MHD_Daemon
   /**
    * Closure argument to default_handler.
    */
-  void * default_handler_cls;
+  void *default_handler_cls;
 
   /**
    * Linked list of our current connections.

@@ -130,7 +130,7 @@ struct MHD_PostProcessor
 
 /**
  * Create a PostProcessor.
- * 
+ *
  * A PostProcessor can be used to (incrementally)
  * parse the data portion of a POST request.
  *
@@ -260,7 +260,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           else if ((delta > 1) && (xbuf[delta - 2] == '%'))
             delta -= 2;
 
-          /* if we have an incomplete escape sequence, save it to 
+          /* if we have an incomplete escape sequence, save it to
              pp->xbuf for later */
           if (delta < xoff)
             {
@@ -332,14 +332,14 @@ try_match_header (const char *prefix, char *line, char **suffix)
 }
 
 /**
- * Decode multipart POST data. 
+ * Decode multipart POST data.
  *
  * TODO: If the content-type is multipart/mixed, we do not do anything
  * special.  However, we should probably break the individual values
  * apart and give them to the callback individually (will require some
  * additional states & state).
  *
- * See http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4 
+ * See http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,
@@ -507,7 +507,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
                 newline++;
               if (newline + blen + 4 > pp->buffer_size)
                 {
-                  /* boundary not in sight -- 
+                  /* boundary not in sight --
                      process data, then make room for more! */
                   if (MHD_NO == pp->ikvi (pp->cls,
                                           MHD_POSTDATA_KIND,
@@ -622,9 +622,9 @@ END:
  * Parse and process POST data.
  * Call this function when POST data is available
  * (usually during an MHD_AccessHandlerCallback)
- * with the upload_data and upload_data_size.  
+ * with the upload_data and upload_data_size.
  * Whenever possible, this will then cause calls
- * to the MHD_IncrementalKeyValueIterator.  
+ * to the MHD_IncrementalKeyValueIterator.
  *
  * @param pp the post processor
  * @param post_data post_data_len bytes of POST data
