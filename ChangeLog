@@ -5,7 +5,8 @@ Wed Dec 19 21:12:04 MST 2007
 	 "100 CONTINUE" response.  Removed the mostly useless
 	 "(un)register handler" methods from the API.  Changed
 	 the internal implementation to use a finite state
-	 machine (cleaner code, slightly less memory consumption). - CG
+	 machine (cleaner code, slightly less memory consumption). 
+	 Releasing libmicrohttpd 0.2.0. - CG
 	
 Sun Dec 16 03:24:13 MST 2007
 	 Implemented handling of chunked (HTTP 1.1) uploads.
