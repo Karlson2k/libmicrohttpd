@@ -1,0 +1,1198 @@
+@setfilename microhttpd.info
+
+@macro gnu{}
+@acronym{GNU}
+@end macro
+
+@macro gpl{}
+@acronym{GPL}
+@end macro
+
+@macro http{}
+@acronym{HTTP}
+@end macro
+
+@macro tcp{}
+@acronym{TCP}
+@end macro
+
+@macro api{}
+@acronym{API}
+@end macro
+
+@macro urloc{}
+@acronym{URL}
+@end macro
+
+@macro uri{}
+@acronym{URI}
+@end macro
+
+@macro ascii{}
+@acronym{ASCII}
+@end macro
+
+@c ............................................................
+
+@macro cfunction{NAME}
+@code{\NAME\()}
+@end macro
+
+@macro null{}
+@code{NULL}
+@end macro
+
+@c ............................................................
+
+@macro glibcref{NODE, NODE}
+@pxref{\NODE\, \NODE\, \NODE\, libc}
+@end macro
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+@c ------------------------------------------------------------
+@node microhttpd
+@appendix Libmicrohttpd documentation
+
+
+@macro mhd{}
+@acronym{MHD}
+@end macro
+
+
+@noindent
+This appendix documents Libmicrohttpd version 0.1.2. It is built upon
+the documentation in the header file @file{microhttpd.h}.
+
+@menu
+* microhttpd intro::            Introduction.
+* microhttpd const::            Constants.
+* microhttpd struct::           Structures type definition.
+* microhttpd cb::               Callback functions definition.
+* microhttpd init::             Starting and stopping the server.
+* microhttpd inspect::          Inspection.
+* microhttpd requests::         Handling requests.
+* microhttpd responses::        Building responses to requests.
+* microhttpd post::             Adding a @code{POST} processor.
+@end menu
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd intro
+@appendixsec Introduction
+
+
+@noindent
+All symbols defined in the public @api{} start with @code{MHD_}.  @mhd{}
+is a small @http{} daemon library.  As such, it does not have any @api{}
+for logging errors (you can only enable or disable logging to stderr).
+Also, it may not support all of the @http{} features directly, where
+applicable, portions of @http{} may have to be handled by clients of the
+library.
+
+The library is supposed to handle everything that it must handle
+(because the @api{} would not allow clients to do this), such as basic
+connection management; however, detailed interpretations of headers ---
+such as range requests --- and @http{} methods are left to clients.  The
+library does understand @code{HEAD} and will only send the headers of
+the response and not the body, even if the client supplied a body.  The
+library also understands headers that control connection management
+(specifically, @code{Connection: close} and @code{Expect: 100 continue}
+are understood and handled automatically).
+
+@mhd{} understands @code{POST} data and is able to decode certain
+formats (at the moment only @code{application/x-www-form-urlencoded}) if
+the entire data fits into the allowed amount of memory for the
+connection.  Unsupported encodings and large @code{POST} submissions are
+provided as a stream to the main application (and thus can be processed,
+just not conveniently by @mhd{}).
+
+The header file defines various constants used by the @http{} protocol.
+This does not mean that @mhd{} actually interprets all of these values.
+The provided constants are exported as a convenience for users of the
+library.  @mhd{} does not verify that transmitted @http{} headers are
+part of the standard specification; users of the library are free to
+define their own extensions of the @http{} standard and use those with
+@mhd{}.
+
+All functions are guaranteed to be completely reentrant and
+thread--safe.
+
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd const
+@appendixsec Constants
+
+
+@deftp {Enumeration} MHD_FLAG
+Options for the @mhd{} daemon.
+
+Note that if neither @code{MHD_USER_THREAD_PER_CONNECTION} nor
+@code{MHD_USE_SELECT_INTERNALLY} are used, the client wants control over
+the process and will call the appropriate microhttpd callbacks.
+
+Starting the daemon may also fail if a particular option is not
+implemented or not supported on the target platform (i.e. no support for
+@acronym{SSL}, threads or IPv6).
+
+@table @code
+@item MHD_NO_FLAG
+No options selected.
+
+@item MHD_USE_DEBUG
+Run in debug mode.  If this flag is used, the library should print error
+messages and warnings to stderr.
+
+@item MHD_USE_SSL
+Run in https mode.
+
+@item MHD_USE_THREAD_PER_CONNECTION
+Run using one thread per connection.
+
+@item MHD_USE_SELECT_INTERNALLY
+Run using an internal thread doing @code{SELECT}.
+
+@item MHD_USE_IPv6
+Run using the IPv6 protocol (otherwise, @mhd{} will just support IPv4).
+
+
+@item MHD_USE_PEDANTIC_CHECKS
+Be pedantic about the protocol (as opposed to as tolerant as possible).
+Specifically, at the moment, this flag causes @mhd{} to reject @http{}
+1.1 connections without a @code{Host} header.  This is required by the
+standard, but of course in violation of the ``be as liberal as possible
+in what you accept'' norm.  It is recommended to turn this @strong{ON}
+if you are testing clients against @mhd{}, and @strong{OFF} in
+production.
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_OPTION
+@mhd{} options.  Passed in the varargs portion of
+@cfunction{MHD_start_daemon}.
+
+@table @code
+@item MHD_OPTION_END
+No more options / last option.  This is used to terminate the VARARGs
+list.
+  
+@item MHD_OPTION_CONNECTION_MEMORY_LIMIT
+Maximum memory size per connection (followed by an @code{unsigned int}).
+
+@item MHD_OPTION_CONNECTION_LIMIT
+Maximum number of concurrenct connections to accept (followed by an
+@code{unsigned int}).
+
+@item MHD_OPTION_CONNECTION_TIMEOUT
+After how many seconds of inactivity should a connection automatically
+be timed out? (followed by an @code{unsigned int}; use zero for no
+timeout).
+
+@item MHD_OPTION_NOTIFY_COMPLETED
+Register a function that should be called whenever a request has been
+completed (this can be used for application--specific clean up).
+Requests that have never been presented to the application (via
+@cfunction{MHD_AccessHandlerCallback}) will not result in
+notifications.
+
+This option should be followed by @strong{TWO} pointers.  First a
+pointer to a function of type @cfunction{MHD_RequestCompletedCallback}
+and second a pointer to a closure to pass to the request completed
+callback.  The second pointer maybe @null{}.
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_ValueKind
+The @code{MHD_ValueKind} specifies the source of the key--value pairs in
+the @http{} protocol.
+
+@table @code
+@item MHD_RESPONSE_HEADER_KIND
+Response header.
+
+@item MHD_HEADER_KIND
+@http{} header.
+
+@item MHD_COOKIE_KIND
+Cookies.  Note that the original @http{} header containing the cookie(s)
+will still be available and intact.
+
+@item MHD_POSTDATA_KIND
+@code{POST} data.  This is available only if a content encoding
+supported by @mhd{} is used (currently only @acronym{URL} encoding), and
+only if the posted content fits within the available memory pool.  Note
+that in that case, the upload data given to the
+@cfunction{MHD_AccessHandlerCallback} will be empty (since it has
+already been processed).
+
+@item MHD_GET_ARGUMENT_KIND
+@code{GET} (@uri{}) arguments.
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_RequestTerminationCode
+The @code{MHD_RequestTerminationCode} specifies reasons why a request
+has been terminated (or completed).
+
+@table @code
+@item MHD_REQUEST_TERMINATED_COMPLETED_OK
+We finished sending the response.
+
+@item MHD_REQUEST_TERMINATED_WITH_ERROR
+Error handling the connection (resources exhausted, other side closed
+connection, application error accepting request, etc.)
+
+@item MHD_REQUEST_TERMINATED_TIMEOUT_REACHED
+No activity on the connection for the number of seconds specified using
+@code{MHD_OPTION_CONNECTION_TIMEOUT}.
+
+@item MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN
+We had to close the session since @mhd{} was being shut down.
+@end table
+@end deftp
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd struct
+@appendixsec Structures type definition
+
+
+@deftp {C Struct} MHD_Daemon
+Handle for the daemon (listening on a socket for @http{} traffic).
+@end deftp
+
+
+@deftp {C Struct} MHD_Connection
+Handle for a connection / @http{} request.  With @http{}/1.1, multiple
+requests can be run over the same connection.  However, @mhd{} will only
+show one request per @tcp{} connection to the client at any given time.
+@end deftp
+
+
+@deftp {C Struct} MHD_Response
+Handle for a response.
+@end deftp
+
+
+@deftp {C Struct} MHD_PostProcessor
+Handle for @code{POST} processing.
+@end deftp
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd cb
+@appendixsec Callback functions definition
+
+
+@deftypefn {Function Pointer} int {*MHD_AcceptPolicyCallback} (void *cls, const struct sockaddr * addr, socklen_t addrlen)
+Invoked in the context of a connection to allow or deny a client to
+connect.  This callback return @code{MHD_YES} if connection is allowed,
+@code{MHD_NO} if not.
+
+@table @var
+@item cls
+custom value selected at callback registration time;
+@item addr
+address information from the client;
+@item addrlen
+length of the address information.
+@end table
+@end deftypefn
+
+
+@deftypefn {Function Pointer} int {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+Invoked in the context of a connection to answer a request from the
+client.  This callback must call @mhd{} functions (example: the
+@code{MHD_Response} ones) to provide content to give back to the client
+and return an @http{} status code (i.e. @code{200} for OK, @code{404},
+etc.).
+
+@ref{microhttpd post}, for details on how to code this callback.
+
+Must return @code{MHD_YES} if the connection was handled successfully,
+@code{MHD_NO} if the socket must be closed due to a serious error while
+handling the request
+
+@table @var
+@item cls
+custom value selected at callback registration time;
+
+@item url
+the @urloc{} requested by the client;
+
+@item method
+the @http{} method used by the client (@code{GET}, @code{PUT},
+@code{DELETE}, @code{POST}, etc.);
+
+@item version
+the @http{} version string (i.e. @code{HTTP/1.1});
+
+@item upload_data
+the data being uploaded (excluding headers):
+
+@itemize
+@item
+for a @code{POST} that fits into memory and that is encoded with a
+supported encoding, the @code{POST} data will @strong{NOT} be given in
+@var{upload_data} and is instead available as part of
+@cfunction{MHD_get_connection_values};
+
+@item
+very large @code{POST} data @strong{will} be made available
+incrementally in @var{upload_data};
+@end itemize
+
+@item upload_data_size
+set initially to the size of the @var{upload_data} provided; this
+callback must update this value to the number of bytes @strong{NOT}
+processed;
+
+@item con_cls
+reference to a pointer, initially set to @null{}, that this callback can
+set to some address and that will be preserved by @mhd{} for future
+calls for this request;
+
+since the access handler may be called many times (i.e., for a
+@code{PUT}/@code{POST} operation with plenty of upload data) this allows
+the application to easily associate some request--specific state;
+
+if necessary, this state can be cleaned up in the global
+@code{MHD_RequestCompletedCallback} (which can be set with the
+@code{MHD_OPTION_NOTIFY_COMPLETED}).
+@end table
+@end deftypefn
+
+
+@deftypefn {Function Pointer} void {*MHD_RequestCompletedCallback} (void *cls, struct MHD_Connectionconnection, void **con_cls, enum MHD_RequestTerminationCode toe)
+Signature of the callback used by @mhd{} to notify the application about
+completed requests.
+
+@table @var
+@item cls
+custom value selected at callback registration time;
+
+@item connection
+connection handle;
+
+@item con_cls
+value as set by the last call to the
+@code{MHD_AccessHandlerCallback};
+
+@item toe
+reason for request termination see @code{MHD_OPTION_NOTIFY_COMPLETED}.
+@end table
+@end deftypefn
+
+
+@deftypefn {Function Pointer} int {*MHD_KeyValueIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+Iterator over key--value pairs.  This iterator can be used to iterate
+over all of the cookies, headers, or @code{POST}--data fields of a
+request, and also to iterate over the headers that have been added to a
+response.
+
+Return @code{MHD_YES} to continue iterating, @code{MHD_NO} to abort the
+iteration.
+@end deftypefn
+
+
+@deftypefn {Function Pointer} int {*MHD_ContentReaderCallback} (void *cls, size_t pos, char *buf, int max)
+Callback used by @mhd{} in order to obtain content.  The callback has to
+copy at most @var{max} bytes of content into @var{buf}.  The total
+number of bytes that has been placed into @var{buf} should be returned.
+
+Note that returning zero will cause @mhd{} to try again, either
+``immediately'' if in multi--threaded mode (in which case the callback
+may want to do blocking operations) or in the next round if MHD_run is
+used.  Returning zero for a daemon that runs in internal
+@cfunction{select} mode is an error (since it would result in busy
+waiting) and will cause the program to be aborted (@cfunction{abort}).
+
+@table @var
+@item cls
+custom value selected at callback registration time;
+
+@item pos
+position in the datastream to access; note that if an
+@code{MHD_Response} object is re--used, it is possible for the same
+content reader to be queried multiple times for the same data; however,
+if an @code{MHD_Response} is not re--used, @mhd{} guarantees that
+@var{pos} will be the sum of all non--negative return values obtained
+from the content reader so far.
+@end table
+
+Return @code{-1} on error (@mhd{} will no longer try to read content and
+instead close the connection with the client).
+@end deftypefn
+
+
+@deftypefn {Function Pointer} void {*MHD_ContentReaderFreeCallback} (void *cls)
+This method is called by @mhd{} if we are done with a content reader.
+It should be used to free resources associated with the content reader.
+@end deftypefn
+
+
+@deftypefn {Function Pointer} int {*MHD_PostDataIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *filename, const char *content_type, const char *transfer_encoding, const char *data, size_t off, size_t size)
+Iterator over key--value pairs where the value maybe made available in
+increments and/or may not be zero--terminated.  Used for processing
+@code{POST} data.
+
+@table @var
+@item cls
+custom value selected at callback registration time;
+
+@item kind
+type of the value;
+
+@item key
+zero--terminated key for the value;
+
+@item filename
+name of the uploaded file, @null{} if not known;
+
+@item content_type
+mime--type of the data, @null{} if not known;
+
+@item transfer_encoding
+encoding of the data, @null{} if not known;
+
+@item data
+pointer to size bytes of data at the specified offset;
+
+@item off
+offset of data in the overall value;
+
+@item size
+number of bytes in data available.
+@end table
+
+Return @code{MHD_YES} to continue iterating, @code{MHD_NO} to abort the
+iteration.
+@end deftypefn
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd init
+@appendixsec Starting and stopping the server
+
+
+@deftypefun {struct MHD_Daemon *} MHD_start_daemon (unsigned int flags, unsigned short port, MHD_AcceptPolicyCallback apc, void *apc_cls, MHD_AccessHandlerCallback dh, void *dh_cls, ...)
+Start a webserver on the given port.
+
+@table @var
+@item flags
+OR--ed combination of @code{MHD_FLAG} values;
+
+@item port
+port to bind to;
+
+@item apc
+callback to call to check which clients will be allowed to connect; you
+can pass @null{} in which case connections from any @acronym{IP} will be
+accepted;
+
+@item apc_cls
+extra argument to @var{apc};
+
+@item dh
+default handler for all @uri{}s;
+
+@item dh_cls
+extra argument to @var{dh}.
+@end table
+
+Additional arguments are a list of options (type--value pairs,
+terminated with @code{MHD_OPTION_END}). It is mandatory to use
+@code{MHD_OPTION_END} as last argument, even when there are no
+additional arguments.
+
+Return @null{} on error, handle to daemon on success.
+@end deftypefun
+
+
+@deftypefun void MHD_stop_daemon (struct MHD_Daemon *daemon)
+Shutdown an @http{} daemon.
+@end deftypefun
+
+
+@deftypefun int MHD_run (struct MHD_Daemon *daemon)
+Run webserver operations (without blocking unless in client callbacks).
+This method should be called by clients in combination with
+@cfunction{MHD_get_fdset} if the client--controlled @cfunction{select}
+method is used.
+
+Return @code{MHD_YES} on success, @code{MHD_NO} if this daemon was not
+started with the right options for this call.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd inspect
+@appendixsec Inspection
+
+
+@deftypefun int MHD_get_fdset (struct MHD_Daemon *daemon, fd_set * read_fd_set, fd_set * write_fd_set, fd_set * except_fd_set, int *max_fd)
+Obtain the @cfunction{select} sets for this daemon. The daemon's socket
+is added to @var{read_fd_set}. The list of currently existent
+connections is scanned and their file descriptors added to the correct
+set.
+
+@glibcref{Waiting for I/O}, for details on file descriptor sets.
+
+After the call completed successfully: the variable referenced by
+@var{max_fd} references the file descriptor with highest integer
+identifier. The variable must be set to zero before invoking this
+function.
+
+Return @code{MHD_YES} on success, @code{MHD_NO} if: the arguments are
+invalid (example: @null{} pointers); this daemon was not started with
+the right options for this call.
+@end deftypefun
+
+
+@deftypefun int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
+Obtain timeout value for select for this daemon (only needed if
+connection timeout is used).  The returned value is how long
+@cfunction{select} should at most block, not the timeout value set for
+connections.
+
+@table @var
+@item timeout
+set to the timeout (in milliseconds).
+@end table
+
+Return @code{MHD_YES} on success, @code{MHD_NO} if timeouts are not used
+(or no connections exist that would necessiate the use of a timeout
+right now).
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd requests
+@appendixsec Handling requests
+
+
+@menu
+* microhttpd handlers::         @uri{} specific handlers.
+* microhttpd values::           Connection headers and small
+                                @code{POST} data.
+@end menu
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd handlers
+@appendixsubsec @uri{} specific handlers
+
+
+@noindent
+A set of callbacks can be registered in the state of a daemon
+(@code{MHD_Daemon}) to handle request for specific sets of
+resources.  The set is selected by specifying the prefix string of the
+@uri{}, example:
+
+@example
+/bookcase
+@end example
+
+@noindent
+matches all of the following:
+
+@example
+/bookcase/book.html
+/bookcase/pencil.html
+/bookcase/strawberry.html
+@end example
+
+Handlers are stored in a linked list (managed with @cfunction{malloc}
+and @cfunction{free}). Prefixes are compared with @cfunction{strcmp}.
+
+
+@deftypefun int MHD_register_handler (struct MHD_Daemon *daemon, const char *uri_prefix, MHD_AccessHandlerCallback dh, void *dh_cls)
+Register an access handler for all @uri{}s beginning with
+@var{uri_prefix}, a zero--terminated @ascii{}--coded string.
+
+Return @code{MRI_NO} if: the arguments are invalid (example: @null{}
+pointers); a handler for this exact prefix already exists; an error
+allocating memory happens.
+@end deftypefun
+
+
+@deftypefun int MHD_unregister_handler (struct MHD_Daemon *daemon, const char *uri_prefix, MHD_AccessHandlerCallback dh, void *dh_cls)
+Unregister an access handler for the @uri{}s beginning with
+@var{uri_prefix}.
+
+Return @code{MHD_NO} if: the arguments are invalid (example: @null{}
+pointers); a handler for this exact prefix is not known for this daemon.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd values
+@appendixsubsec Connection headers and small @code{POST} data
+
+
+@deftypefun int MHD_get_connection_values (struct MHD_Connection *connection, enum MHD_ValueKind kind, MHD_KeyValueIterator iterator, void *iterator_cls)
+Get all the headers matching @var{kind} from the request.
+
+The @var{iterator} callback is invoked once for each header, with
+@var{iterator_cls} as first argument. Return the number of entries
+iterated over; this can be less than the number of headers if, while
+iterating, @var{iterator} returns @code{MHD_NO}.
+
+@var{iterator} can be @null{}: in this case this function just counts
+and returns the number of headers.
+@end deftypefun
+
+
+@deftypefun {const char *} MHD_lookup_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char *key)
+Get a particular header value.  If multiple values match the @var{kind},
+return one of them (the ``first'', whatever that means).  @var{key} must
+reference a zero--terminated @ascii{}--coded string representing the
+header to look for: it is compared against the headers using
+@cfunction{strcasecmp}, so case is ignored.  Return @null{} if no such
+item was found.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd responses
+@appendixsec Building answers to responses
+
+
+@menu
+* microhttpd response enqueue:: Enqueuing a response.
+* microhttpd response create::  Creating a response object.
+* microhttpd response headers:: Adding headers to a response.
+* microhttpd response inspect:: Inspecting a response object.
+@end menu
+
+
+@noindent
+Response objects handling by @mhd{} is asynchronous with respect to the
+application execution flow. Instances of the @code{MHD_Response}
+structure are not associated to a daemon and neither to a client
+connection: they are managed with reference counting.
+
+In the simplest case: we allocate a new @code{MHD_Response} structure
+for each response, we use it once and finally we destroy it.
+
+@mhd{} allows more efficient resources usages.
+
+Example: we allocate a new @code{MHD_Response} structure for each
+response @strong{kind}, we use it every time we have to give that
+responce and we finally destroy it only when the daemon shuts down.
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd response enqueue
+@appendixsubsec Enqueuing a response
+
+
+@deftypefun int MHD_queue_response (struct MHD_Connection *connection, unsigned int status_code, struct MHD_Response *response)
+Queue a response to be transmitted to the client as soon as possible
+(increment the reference counter).
+
+@table @var
+@item connection
+the connection identifying the client;
+
+@item status_code
+@http{} status code (i.e. @code{200} for OK);
+
+@item response
+response to transmit.
+@end table
+
+Return @code{MHD_YES} on success or if message has been queued.  Return
+@code{MHD_NO}: if arguments are invalid (example: @null{} pointer); on
+error (i.e. reply already sent).
+@end deftypefun
+
+
+@deftypefun void MHD_destroy_response (struct MHD_Response *response)
+Destroy a response object and associated resources (decrement the
+reference counter).  Note that @mhd{} may keep some of the resources
+around if the response is still in the queue for some clients, so the
+memory may not necessarily be freed immediatley.
+@end deftypefun
+
+
+An explanation of reference counting@footnote{Note to readers acquainted
+to the Tcl @api{}: reference counting on @code{MHD_Connection}
+structures is handled in the same way as Tcl handles @code{Tcl_Obj}
+structures through @cfunction{Tcl_IncrRefCount} and
+@cfunction{Tcl_DecrRefCount}.}:
+
+@enumerate
+@item
+a @code{MHD_Response} object is allocated:
+
+@example
+struct MHD_Response * response = MHD_create_response_from_data(...);
+/* here: reference counter = 1 */
+@end example
+
+@item
+the @code{MHD_Response} object is enqueued in a @code{MHD_Connection}:
+
+@example
+MHD_queue_response(connection, , response);
+/* here: reference counter = 2 */
+@end example
+
+@item
+the creator of the response object discharges responsibility for it:
+
+@example
+MHD_destroy_response(response);
+/* here: reference counter = 1 */
+@end example
+
+@item
+the daemon handles the connection sending the response's data to the
+client then decrements the reference counter by calling
+@cfunction{MHD_destroy_response}: the counter's value drops to zero and
+the @code{MHD_Response} object is released.
+@end enumerate
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd response create
+@appendixsubsec Creating response objects
+
+
+@deftypefun {struct MHD_Response *} MHD_create_response_from_callback (size_t size, unsigned int block_size, MHD_ContentReaderCallback crc, void *crc_cls, MHD_ContentReaderFreeCallback crfc)
+Create a response object.  The response object can be extended with
+header information and then it can be used any number of times.
+
+@table @var
+@item size
+size of the data portion of the response, @code{-1} for unknown;
+
+@item block_size
+preferred block size for querying @var{crc} (advisory only, @mhd{} may
+still call @var{crc} using smaller chunks); this is essentially the
+buffer size used for @acronym{IO}, clients should pick a value that is
+appropriate for @acronym{IO} and memory performance requirements;
+
+@item crc
+callback to use to obtain response data;
+
+@item crc_cls
+extra argument to @var{crc};
+
+@item crfc
+callback to call to free @var{crc_cls} resources.
+@end table
+
+Return @null{} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
+
+@deftypefun {struct MHD_Response *} MHD_create_response_from_data (size_t size, void *data, int must_free, int must_copy)
+Create a response object.  The response object can be extended with
+header information and then it can be used any number of times.
+
+@table @var
+@item size
+size of the data portion of the response;
+
+@item data
+the data itself;
+
+@item must_free
+if true: @mhd{} should free data when done;
+
+@item must_copy
+if true: @mhd{} allocates a block of memory and use it to make a copy of
+@var{data} embedded in the returned @code{MHD_Response} structure;
+handling of the embedded memory is responsibility of @mhd{}; @var{data}
+can be released anytime after this call returns.
+@end table
+
+Return @null{} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
+
+Example: create a response from a statically allocated string:
+
+@example
+const char * data = "<html><body><p>Error!</p></body></html>";
+
+struct MHD_Connection * connection = ...;
+struct MHD_Response *   response;
+
+response = MHD_create_response_from_data(strlen(data), data,
+                                         MHD_NO, MHD_NO);
+MHD_queue_response(connection, 404, response);
+MHD_destroy_response(response);
+@end example
+
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd response headers
+@appendixsubsec Adding headers to a response
+
+
+@deftypefun int MHD_add_response_header (struct MHD_Response *response, const char *header, const char *content)
+Add a header line to the response. The strings referenced by
+@var{header} and @var{content} must be zero--terminated and they are
+duplicated into memory blocks embedded in @var{response}.
+
+Notice that the strings must not hold newlines, carriage returns or tab
+chars.
+
+Return @code{MHD_NO} on error (i.e. invalid header or content format or
+memory allocation error).
+@end deftypefun
+
+
+@deftypefun int MHD_del_response_header (struct MHD_Response *response, const char *header, const char *content)
+Delete a header line from the response.  Return @code{MHD_NO} on error
+(arguments are invalid or no such header known).
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd response inspect
+@appendixsubsec Inspecting a response object
+
+
+@deftypefun int MHD_get_response_headers (struct MHD_Response *response, MHD_KeyValueIterator iterator, void *iterator_cls)
+Get all of the headers added to a response.
+
+Invoke the @var{iterator} callback for each header in the response,
+using @var{iterator_cls} as first argument. Return number of entries
+iterated over.  @var{iterator} can be @null{}: in this case the function
+just counts headers.
+
+@var{iterator} should not modify the its key and value arguments, unless
+we know what we are doing.
+@end deftypefun
+
+
+@deftypefun {const char *} MHD_get_response_header (struct MHD_Response *response, const char *key)
+Find and return a pointer to the value of a particular header from the
+response.  @var{key} must reference a zero--terminated string
+representing the header to look for. The search is case sensitive.
+Return @null{} if header does not exist or @var{key} is @null{}.
+
+We should not modify the value, unless we know what we are doing.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd post
+@appendixsec Adding a @code{POST} processor
+
+
+@menu
+* microhttpd post api::         Programming interface for the
+                                @code{POST} processor.
+@end menu
+
+
+@noindent
+When a small amount of data comes from a client's @code{POST} request:
+the data is available through the values interface. @ref{microhttpd
+values}, for details. In this case @mhd{} invokes
+@code{MHD_AccessHandlerCallback} only once and the callback must process
+all the data during that invocation.
+
+When a big amount of data comes from a client's @code{POST} request: the
+@code{MHD_AccessHandlerCallback} will be invoked multiple times to
+process data as it arrives; at each invocation a new chunk of data must
+be processed. The arguments @var{upload_data} and @var{upload_data_size}
+are used to reference the chunk of data.
+
+When @code{MHD_AccessHandlerCallback} is invoked for a new connection:
+its @code{*@var{con_cls}} argument is set to @null{}. When @code{POST}
+data comes in the upload buffer it is @strong{mandatory} to use the
+@var{con_cls} to hold data or to mark an ongoing process.
+
+To detect that a new connection has come with the @code{POST} method:
+
+@example
+int
+access_handler (void *cls,
+                struct MHD_Connection * connection,
+                const char *url,
+                const char *method, const char *version,
+                const char *upload_data, unsigned int *upload_data_size,
+                void **con_cls)
+@{
+  static int old_connection_marker;
+  int new_connection = (NULL == *con_cls);
+  int method_is_post = strcmp("POST",method);
+
+  if (new_connection && method_is_post)
+    @{
+      /* new connection with POST */
+      *con_cls = &old_connection_marker;
+    @}
+
+  ...
+@}
+@end example
+
+@noindent
+in this example the value of @code{*con_cls} is just an unused pointer
+to an unused integer: its purpose is to make @code{*con_cls} different
+from @null{}. When serious processing of @code{POST} data is needed: it
+can be a pointer to a dynamically allocated data structure.
+
+To detect that @code{POST} data is in the upload buffer:
+
+@example
+int
+access_handler (void *cls,
+                struct MHD_Connection * connection,
+                const char *url,
+                const char *method, const char *version,
+                const char *upload_data, unsigned int *upload_data_size,
+                void **con_cls)
+@{
+  static int old_connection_marker;
+  int new_connection = (NULL == *con_cls);
+  int method_is_post = strcmp("POST",method);
+
+  if (new_connection && method_is_post)
+    @{
+      int data_in_upload_buffer = (0 != *upload_data_size);
+
+      if (data_in_upload_buffer)
+        @{
+          *con_cls = &old_connection_marker;
+          /* POST data in the buffer */
+        @}
+      else
+        /* POST data accessible with the values API */
+    @}
+
+  ...
+@}
+@end example
+
+
+At each invocation there are two options:
+
+@enumerate
+@item
+the callback can process the whole chunk by itself; every time @mhd{}
+invokes it a new chunk is fully processed; with this mode the callback
+has to @code{*upload_data_size = 0} before returning @code{MHD_YES};
+
+@item
+the callback can process a section of the chunk by itself; every time
+@mhd{} invokes it the buffer holds the old data as well as new data
+coming from the client; with this mode the callback has to set
+@code{*upload_data_size} to the numbe of bytes still to process before
+returning @code{MHD_YES};
+
+example: @mhd{} invokes the callback with @code{100 ==
+*upload_data_size}; the callback processes the first 80 bytes and before
+returning the callback sets @code{*upload_data_size = 20}; the last
+unprocessed 20 bytes will be the first 20 at the next invocation;
+
+@item
+when a new connection with @code{POST} data in the buffer comes: the
+callback allocates a PostProcessor and hand to it the responsibility of
+processing data; a pointer to the PostProcessor structure is saved in
+@code{*con_cls}, so that it is available at each subsequent invocation;
+
+the post processor data can be freed by a later invocation to an
+appropriate callback.
+@end enumerate
+
+
+Let's see how to implement strategy 1:
+
+@example
+int
+access_handler (void *cls,
+                struct MHD_Connection * connection,
+                const char *url,
+                const char *method, const char *version,
+                const char *upload_data, unsigned int *upload_data_size,
+                void **con_cls)
+@{
+  static int old_connection_marker;
+  int new_connection = (NULL == *con_cls);
+  int method_is_post = strcmp("POST",method);
+
+  if (new_connection && method_is_post)
+    @{
+      int data_in_upload_buffer = (0 != *upload_data_size);
+
+      if (data_in_upload_buffer)
+        @{
+          *con_cls = &old_connection_marker;
+        @}
+      else
+        @{
+          /* POST data accessible with the values API */
+          return MHD_YES;
+        @}
+    @}
+
+  if (&old_connection_marker == *con_cls)
+    @{
+      consume_data(upload_data, *upload_data_size);
+      *upload_data_size = 0;
+      return MHD_YES;
+    @}
+
+  /* process other methods */
+  return MHD_YES;
+@}
+@end example
+
+Let's see how to implement strategy 2:
+
+@example
+int
+access_handler (void *cls,
+                struct MHD_Connection * connection,
+                const char *url,
+                const char *method, const char *version,
+                const char *upload_data, unsigned int *upload_data_size,
+                void **con_cls)
+@{
+  static int old_connection_marker;
+  int new_connection = (NULL == *con_cls);
+  int method_is_post = strcmp("POST",method);
+
+  if (new_connection && method_is_post)
+    @{
+      int data_in_upload_buffer = (0 != *upload_data_size);
+
+      if (data_in_upload_buffer)
+        @{
+          *con_cls = &old_connection_marker;
+        @}
+      else
+        @{
+          /* POST data accessible with the values API */
+          return MHD_YES;
+        @}
+    @}
+
+  if (&old_connection_marker == *con_cls)
+    @{
+      int number_of_bytes_to_consume = 100;
+
+      if (number_of_bytes_to_consume > *upload_data_size)
+        number_of_bytes_to_consume = *upload_data_size;
+
+      consume_some_data(upload_data, number_of_bytes_to_consume);
+      *upload_data_size -= number_of_bytes_to_consume;
+      return MHD_YES;
+    @}
+
+  /* process other methods */
+  return MHD_YES;
+@}
+
+@end example
+
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd post api
+@appendixsubsec Programming interface for the @code{POST} processor
+
+
+
+@deftypefun {struct MHD_PostProcessor *} MHD_create_post_processor (struct MHD_Connection *connection, unsigned int buffer_size, MHD_PostDataIterator iterator, void *iterator_cls)
+Create a PostProcessor.  A PostProcessor can be used to (incrementally)
+parse the data portion of a @code{POST} request.
+
+@table @var
+@item connection
+the connection on which the @code{POST} is happening (used to determine
+the @code{POST} format);
+
+@item buffer_size
+maximum number of bytes to use for internal buffering (used only for the
+parsing, specifically the parsing of the keys).  A tiny value (256-1024)
+should be sufficient; do @strong{NOT} use a value smaller than 256;
+
+@item iterator
+iterator to be called with the parsed data; must @strong{NOT} be
+@null{};
+
+@item iterator_cls
+custom value to be used as first argument to @var{iterator}.
+@end table
+
+Return @null{} on error (out of memory, unsupported encoding), otherwise
+a PP handle.
+@end deftypefun
+
+
+@deftypefun int MHD_post_process (struct MHD_PostProcessor *pp, const char *post_data, unsigned int post_data_len)
+Parse and process @code{POST} data.  Call this function when @code{POST}
+data is available (usually during an @code{MHD_AccessHandlerCallback})
+with the @var{upload_data} and @var{upload_data_size}.  Whenever
+possible, this will then cause calls to the
+@code{MHD_IncrementalKeyValueIterator}.
+
+@table @var
+@item pp
+the post processor;
+
+@item post_data
+@var{post_data_len} bytes of @code{POST} data;
+
+@item post_data_len
+length of @var{post_data}.
+@end table
+
+Return @code{MHD_YES} on success, @code{MHD_NO} on error
+(out--of--memory, iterator aborted, parse error).
+@end deftypefun
+
+
+@deftypefun void MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
+Release PostProcessor resources.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
