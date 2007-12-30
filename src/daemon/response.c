@@ -226,6 +226,8 @@ MHD_create_response_from_data (size_t size,
   if ((data == NULL) && (size > 0))
     return NULL;
   retVal = malloc (sizeof (struct MHD_Response));
+  if (retVal == NULL)
+    return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
     {
@@ -235,6 +237,11 @@ MHD_create_response_from_data (size_t size,
   if ((must_copy) && (size > 0))
     {
       tmp = malloc (size);
+      if (tmp == NULL)
+	{
+	  free(retVal);
+	  return NULL;
+	}
       memcpy (tmp, data, size);
       must_free = 1;
       data = tmp;

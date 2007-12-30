@@ -596,6 +596,11 @@ MHD_start_daemon (unsigned int options,
       return NULL;
     }
   retVal = malloc (sizeof (struct MHD_Daemon));
+  if (retVal == NULL)
+    {
+      CLOSE(socket_fd);
+      return NULL;
+    }
   memset (retVal, 0, sizeof (struct MHD_Daemon));
   retVal->options = options;
   retVal->port = port;
