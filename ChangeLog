@@ -1,3 +1,6 @@
+Wed Jan  2 16:41:05 MST 2008
+	 Improvements and bugfixes to post processor implementation. - AS
+
 Wed Dec 19 21:12:04 MST 2007
 	 Implemented chunked (HTTP 1.1) downloads (including
 	 sending of HTTP footers).  Also allowed queuing of

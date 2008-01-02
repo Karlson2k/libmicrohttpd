@@ -323,10 +323,14 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
 static int
 try_match_header (const char *prefix, char *line, char **suffix)
 {
-  if (0 == strncasecmp (prefix, line, strlen (prefix)))
+  while(*line != 0)
     {
-      *suffix = strdup (&line[strlen (prefix)]);
-      return MHD_YES;
+    if (0 == strncasecmp (prefix, line, strlen (prefix)))
+      {
+        *suffix = strdup (&line[strlen (prefix)]);
+        return MHD_YES;
+      }
+    ++line;
     }
   return MHD_NO;
 }
@@ -467,7 +471,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
                 endquote++;
               pp->content_disposition[endquote++] = '\0';       /* remove end-quote */
               if ((MHD_YES
-                   == try_match_header (" filename=",
+                   == try_match_header (" filename=\"",
                                         &pp->content_disposition[endquote],
                                         &pp->filename)) &&
                   (pp->filename != NULL) && (0 < strlen (pp->filename)))
@@ -525,6 +529,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
                   ioff += newline;
                   memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
                   pp->buffer_pos -= ioff;
+                  ioff = 0;
                   break;
                 }
               if (newline + blen + 4 < pp->buffer_pos)
@@ -576,8 +581,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
                   newline += 4;
                   continue;
                 }
-
-
+              goto END;
             }
           break;
         case PP_FinalDash:
