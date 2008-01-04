@@ -1,3 +1,7 @@
+Fri Jan  4 16:02:08 MST 2008
+	 Fix to properly close connection if application signals
+	 problem handling the request. - AS
+
 Wed Jan  2 16:41:05 MST 2008
 	 Improvements and bugfixes to post processor implementation. - AS
 
