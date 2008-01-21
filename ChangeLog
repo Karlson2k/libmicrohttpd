@@ -1,3 +1,7 @@
+Mon Jan 21 11:59:46 MST 2008
+	 Added option to limit number of concurrent connections 
+	 accepted from the same IP address. -CG
+
 Fri Jan  4 16:02:08 MST 2008
 	 Fix to properly close connection if application signals
 	 problem handling the request. - AS

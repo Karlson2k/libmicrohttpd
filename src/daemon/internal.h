@@ -572,6 +572,12 @@ struct MHD_Daemon
   unsigned int connection_timeout;
 
   /**
+   * Maximum number of connections per IP, or 0 for
+   * unlimited.
+   */
+  unsigned int per_ip_connection_limit;
+
+  /**
    * Daemon's options.
    */
   enum MHD_OPTION options;

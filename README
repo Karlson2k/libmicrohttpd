@@ -54,6 +54,9 @@ For POST:
 =========
 - add support to decode multipart/form-data with 
   nesting (used for files) -- #1221, TEST
+- http://en.wikipedia.org/wiki/HTTP_pipelining: 
+  "Only idempotent requests should be pipelined, such as GET and HEAD requests."
+  We should make sure that we force a close after POSTs, PUTs and DELETEs.
 
 For SSL:
 ========
@@ -64,7 +67,9 @@ microhttpd.h:
 Missing Testcases:
 ==================
 - add testcases for http/1.1 pipelining (need
-  to figure out how to ensure curl pipelines)
+  to figure out how to ensure curl pipelines 
+  -- and it seems libcurl has issues with pipelining, 
+  see http://curl.haxx.se/mail/lib-2007-12/0248.html)
 - add testcases for resource limit enforcement
 - add testcases for client queuing early response,
   suppressing 100 CONTINUE

@@ -172,10 +172,12 @@ MHD_handle_connection (void *data)
 static int
 MHD_accept_connection (struct MHD_Daemon *daemon)
 {
+  struct MHD_Connection *pos;  
   struct MHD_Connection *connection;
   struct sockaddr_in6 addr6;
   struct sockaddr *addr = (struct sockaddr *) &addr6;
   socklen_t addrlen;
+  unsigned int have;
   int s;
 #if OSX
   static int on = 1;
@@ -202,7 +204,42 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
 #endif
-  if (daemon->max_connections == 0)
+  have = 0;  
+  if ( (daemon->per_ip_connection_limit != 0) &&
+       (daemon->max_connections > 0) )
+    {
+      pos = daemon->connections;
+      while (pos != NULL) 
+	{
+	  if ( (pos->addr != NULL) &&
+	       (pos->addr_len == addrlen) ) 
+	    {
+	      if (addrlen == sizeof(struct sockaddr_in)) 
+		{
+		  const struct sockaddr_in * a1 = (const struct sockaddr_in *) &addr;
+		  const struct sockaddr_in * a2 = (const struct sockaddr_in *) pos->addr;
+		  if (0 == memcmp(&a1->sin_addr,
+				  &a2->sin_addr,
+				  sizeof(struct in_addr)))
+		    have++;
+		}
+	      if (addrlen == sizeof(struct sockaddr_in6)) 
+		{
+		  const struct sockaddr_in6 * a1 = (const struct sockaddr_in6 *) &addr;
+		  const struct sockaddr_in6 * a2 = (const struct sockaddr_in6 *) pos->addr;
+		  if (0 == memcmp(&a1->sin6_addr,
+				  &a2->sin6_addr,
+				  sizeof(struct in6_addr)))
+		    have++;
+		}
+	    }
+	  pos = pos->next;
+	}
+    }
+
+  if ( (daemon->max_connections == 0) ||
+       ( (daemon->per_ip_connection_limit != 0) &&
+	 (daemon->per_ip_connection_limit <= have) ) )
     {
       /* above connection limit - reject */
 #if HAVE_MESSAGES
@@ -631,6 +668,10 @@ MHD_start_daemon (unsigned int options,
             va_arg (ap, MHD_RequestCompletedCallback);
           retVal->notify_completed_cls = va_arg (ap, void *);
           break;
+	case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
+	  retVal->per_ip_connection_limit
+	    = va_arg (ap, unsigned int);
+	  break;
         default:
 #if HAVE_MESSAGES
           fprintf (stderr,

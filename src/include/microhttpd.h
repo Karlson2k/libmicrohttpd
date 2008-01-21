@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000200
+#define MHD_VERSION 0x00000201
 
 /**
  * MHD-internal return codes.
@@ -332,6 +332,18 @@ enum MHD_OPTION
    * The second pointer maybe NULL.
    */
   MHD_OPTION_NOTIFY_COMPLETED = 4,
+
+  /**
+   * Limit on the number of (concurrent) connections made to the
+   * server from the same IP address.  Can be used to prevent one
+   * IP from taking over all of the allowed connections.  If the
+   * same IP tries to establish more than the specified number of
+   * connections, they will be immediately rejected.  The option
+   * should be followed by an "unsigned int".  The default is
+   * zero, which means no limit on the number of connections
+   * from the same IP address.
+   */
+  MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
 };
 
