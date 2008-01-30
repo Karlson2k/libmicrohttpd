@@ -42,6 +42,7 @@ fileserver_example_LDADD = \
 if HAVE_CURL
 
 check_PROGRAMS = \
+  postprocessor_test \
   daemontest \
   daemontest_get \
   daemontest_post \
@@ -64,6 +65,11 @@ TESTS = $(check_PROGRAMS)
 daemontest_SOURCES = \
   daemontest.c
 daemontest_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+postprocessor_test_SOURCES = \
+  postprocessor_test.c
+postprocessor_test_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 daemontest_get_SOURCES = \
