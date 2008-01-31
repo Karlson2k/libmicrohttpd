@@ -24,8 +24,8 @@ reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
 default to reduce the size of the library (error messages take
 space!).  If you are concerned about space, you should set "CFLAGS" to
 "-Os -fomit-frame-pointer" to have gcc generate tight code.  The
-resulting binary should be about 27k (on x86).
-
+resulting binary should be about 25k depending on the platform (I 
+got 25884 bytes using "-march=pentium4").
 
 Portability
 ===========
