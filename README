@@ -23,7 +23,7 @@ Especially for development, use "--enable-messages" to enable error
 reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
 default to reduce the size of the library (error messages take
 space!).  If you are concerned about space, you should set "CFLAGS" to
-"-Os --fomit-frame-pointer" to have gcc generate tight code.  The
+"-Os -fomit-frame-pointer" to have gcc generate tight code.  The
 resulting binary should be about 25k (on x86).
 
 
