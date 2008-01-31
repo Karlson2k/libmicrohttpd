@@ -2,7 +2,7 @@ Wed Jan 30 23:15:44 MST 2008
 	 Added support for nested multiparts to post processor. 
 	 Made sure that MHD does not allow pipelining for methods
 	 other than HEAD and GET (and of course still also only 
-	 allows it for http 1.1). -CG
+	 allows it for http 1.1).  Releasing libmicrohttpd 0.2.1.  -CG
 
 Mon Jan 21 11:59:46 MST 2008
 	 Added option to limit number of concurrent connections 
