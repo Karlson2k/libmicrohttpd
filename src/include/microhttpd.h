@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00000201
+#define MHD_VERSION 0x00020100
 
 /**
  * MHD-internal return codes.

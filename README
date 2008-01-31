@@ -50,14 +50,6 @@ indicates that a testcase should be written before implementing the
 feature.
 
 
-For POST:
-=========
-- add support to decode multipart/form-data with 
-  nesting (used for files) -- #1221, TEST
-- http://en.wikipedia.org/wiki/HTTP_pipelining: 
-  "Only idempotent requests should be pipelined, such as GET and HEAD requests."
-  We should make sure that we force a close after POSTs, PUTs and DELETEs.
-
 For SSL:
 ========
 microhttpd.h:

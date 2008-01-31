@@ -1795,8 +1795,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (((MHD_YES == connection->read_closed) &&
                (0 == connection->read_buffer_offset)) ||
               (connection->version == NULL) ||
-              (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
+	      (connection->method == NULL) ||
+	      ( (0 != strcasecmp (MHD_HTTP_METHOD_HEAD, connection->method)) &&
+		(0 != strcasecmp (MHD_HTTP_METHOD_GET, connection->method)) ) ||
+	      (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
             {
+	      /* http 1.0, version-less or non-HEAD/GET requests cannot be
+		 pipelined */
               connection->state = MHD_CONNECTION_CLOSED;
               MHD_pool_destroy (connection->pool);
               connection->pool = NULL;
