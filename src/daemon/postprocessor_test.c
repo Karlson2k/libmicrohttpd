@@ -85,9 +85,11 @@ value_checker(void * cls,
   int * want_off = cls;
   int idx = *want_off;
 
+#if 0
   fprintf(stderr,
 	  "VC: `%s' `%s' `%s' `%s' `%.*s'\n",
 	  key, filename, content_type, transfer_encoding, size, data);
+#endif
   if (size == 0)
     return MHD_YES;
   if ( (idx < 0) ||
@@ -213,8 +215,9 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+
   errorCount += test_urlencoding();
-  errorCount += test_multipart();
+  errorCount += test_multipart();  
   errorCount += test_nested_multipart();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

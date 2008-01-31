@@ -26,28 +26,87 @@
 #include "internal.h"
 
 /**
+ * Size of on-stack buffer that we use for un-escaping of the value.
+ */
+#define XBUF_SIZE 1024
+
+/**
  * States in the PP parser's state machine.
  */
 enum PP_State
 {
-  PP_Init = 0,
-  PP_HaveKey = 1,
-  PP_ExpectNewLine = 2,
-  PP_ExpectNewLineR = 3,
-  PP_ExpectNewLineN = 4,
-  PP_ExpectNewLineNOPT = 5,
-  PP_Headers = 6,
-  PP_SkipRN = 7,
-  PP_SkipN = 8,
-  PP_ValueToBoundary = 9,
-  PP_FinalDash = 10,
-  PP_FinalRN = 11,
-  PP_FinalN = 12,
-  PP_Error = 9999,
+  /* general states */
+  PP_Error,
+  PP_Done,
+  PP_Init,
+
+  /* url encoding-states*/
+  PP_ProcessValue, 
+  PP_ExpectNewLine, 
+
+  /* post encoding-states  */
+  PP_ProcessEntryHeaders,
+  PP_PerformCheckMultipart, 
+  PP_ProcessValueToBoundary,
+  PP_PerformCleanup,
+
+  /* nested post-encoding states */
+  PP_Nested_Init,
+  PP_Nested_PerformMarking,
+  PP_Nested_ProcessEntryHeaders,
+  PP_Nested_ProcessValueToBoundary,
+  PP_Nested_PerformCleanup,
+  
+};
+
+enum RN_State
+{
+  /**
+   * No RN-preprocessing in this state.
+   */
+  RN_Inactive = 0,
+
+  /**
+   * If the next character is '\n', skip it.  Otherwise,
+   * just go inactive.
+   */
+  RN_OptN = 1,
+
+  /**
+   * Expect '\r\n' (and only '\r\n').  As always, we also
+   * expect only '\r' or only '\n'.
+   */
+  RN_Full = 2,  
+
+  /**
+   * Expect either '\r\n' or '--\r\n'.  If '--\r\n', transition into dash-state
+   * for the main state machine 
+   */
+  RN_Dash = 3,
+
+  /**
+   * Got a single dash, expect second dash.
+   */
+  RN_Dash2 = 4,
 };
 
 /**
- * Internal state of the post-processor.
+ * Bits for the globally known fields that
+ * should not be deleted when we exit the
+ * nested state.
+ */ 
+enum NE_State 
+{
+  NE_none = 0,
+  NE_content_name = 1,
+  NE_content_type = 2,
+  NE_content_filename = 4,
+  NE_content_transfer_encoding = 8,
+};
+
+/**
+ * Internal state of the post-processor.  Note that the fields
+ * are sorted by type to enable optimal packing by the compiler.
  */
 struct MHD_PostProcessor
 {
@@ -75,9 +134,19 @@ struct MHD_PostProcessor
   const char *encoding;
 
   /**
+   * Primary boundary (points into encoding string)
+   */
+  const char * boundary;
+
+  /**
+   * Nested boundary (if we have multipart/mixed encoding). 
+   */
+  char * nested_boundary;
+
+  /**
    * Pointer to the name given in disposition.
    */
-  char *content_disposition;
+  char *content_name;
 
   /**
    * Pointer to the (current) content type.
@@ -87,12 +156,12 @@ struct MHD_PostProcessor
   /**
    * Pointer to the (current) filename.
    */
-  char *filename;
+  char *content_filename;
 
   /**
    * Pointer to the (current) encoding.
    */
-  char *transfer_encoding;
+  char *content_transfer_encoding;
 
   /**
    * Unprocessed value bytes due to escape
@@ -121,9 +190,39 @@ struct MHD_PostProcessor
   unsigned int value_offset;
 
   /**
+   * strlen(boundary) -- if boundary != NULL.
+   */
+  size_t blen;
+
+  /**
+   * strlen(nested_boundary) -- if nested_boundary != NULL.
+   */
+  size_t nlen;
+
+  /**
    * State of the parser.
    */
   enum PP_State state;
+
+  /**
+   * Side-state-machine: skip '\r\n' (or just '\n').
+   * Set to 0 if we are not in skip mode.  Set to 2
+   * if a '\r\n' is expected, set to 1 if a '\n' should
+   * be skipped if it is the next character.
+   */
+  enum RN_State skip_rn;
+
+  /**
+   * If we are in skip_rn with "dash" mode and
+   * do find 2 dashes, what state do we go into?
+   */
+  enum PP_State dash_state;
+
+  /**
+   * Which headers are global? (used to tell which
+   * headers were only valid for the nested multipart).
+   */
+  enum NE_State have;
 
 };
 
@@ -153,6 +252,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
 {
   struct MHD_PostProcessor *ret;
   const char *encoding;
+  const char *boundary;
+  size_t blen;
 
   if ((buffer_size < 256) || (connection == NULL) || (ikvi == NULL))
     abort ();
@@ -161,28 +262,40 @@ MHD_create_post_processor (struct MHD_Connection *connection,
                                           MHD_HTTP_HEADER_CONTENT_TYPE);
   if (encoding == NULL)
     return NULL;
-  if ((0 != strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
-                        encoding)) &&
-      (0 != strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
-                         strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA))))
-    return NULL;
+  boundary = NULL;
+  if (0 != strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
+		       encoding)) 
+    {
+      if (0 != strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
+			    strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
+	return NULL;
+      boundary =
+	&encoding[strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
+      /* Q: should this be "strcasestr"? */
+      if (NULL != strstr (boundary, "boundary="))
+	boundary = strstr (boundary, "boundary=") + strlen ("boundary=");
+      else
+	return NULL; /* failed to determine boundary */
+      blen = strlen (boundary);
+      if ( (blen == 0) ||
+	   (blen * 2 + 2 > buffer_size) )
+	return NULL;  /* (will be) out of memory or invalid boundary */
+    }
   ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   if (ret == NULL)
     return NULL;
-  memset (ret, 0, sizeof (struct MHD_PostProcessor));
+  memset (ret, 0, sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   ret->connection = connection;
   ret->ikvi = ikvi;
   ret->cls = cls;
   ret->encoding = encoding;
   ret->buffer_size = buffer_size;
   ret->state = PP_Init;
+  ret->blen = blen;
+  ret->boundary = boundary;
+  ret->skip_rn = RN_Inactive;
   return ret;
 }
-
-/**
- * On-stack buffer that we use for un-escaping of the value.
- */
-#define XBUF_SIZE 1024
 
 /**
  * Process url-encoded POST data.
@@ -205,6 +318,12 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     {
       switch (pp->state)
         {
+        case PP_Error:
+          return MHD_NO;
+	case PP_Done:
+	  /* did not expect to receive more data */
+	  pp->state = PP_Error;
+	  return MHD_NO;
         case PP_Init:
           equals = 0;
           while ((equals + poff < post_data_len) &&
@@ -223,10 +342,10 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           pp->buffer_pos = 0;   /* reset for next key */
           MHD_http_unescape (buf);
           poff += equals + 1;
-          pp->state = PP_HaveKey;
+          pp->state = PP_ProcessValue;
           pp->value_offset = 0;
           break;
-        case PP_HaveKey:
+        case PP_ProcessValue:
           /* obtain rest of value from previous iteration */
           memcpy (xbuf, pp->xbuf, pp->xbuf_pos);
           xoff = pp->xbuf_pos;
@@ -301,11 +420,9 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
             {
               poff++;
               /* we are done, report error if we receive any more... */
-              pp->state = PP_Error;
+              pp->state = PP_Done;
               return MHD_YES;
             }
-          return MHD_NO;
-        case PP_Error:
           return MHD_NO;
         default:
           abort ();             /* should never happen! */
@@ -323,6 +440,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
 static int
 try_match_header (const char *prefix, char *line, char **suffix)
 {
+  if (NULL != *suffix)
+    return MHD_NO;
   while(*line != 0)
     {
     if (0 == strncasecmp (prefix, line, strlen (prefix)))
@@ -335,290 +454,534 @@ try_match_header (const char *prefix, char *line, char **suffix)
   return MHD_NO;
 }
 
+static int
+find_boundary(struct MHD_PostProcessor * pp,
+	      const char * boundary,
+	      size_t blen,
+	      unsigned int * ioffptr,
+	      enum PP_State next_state,
+	      enum PP_State next_dash_state)
+{
+  char * buf = (char*) &pp[1];
+
+  if (pp->buffer_pos < 2 + blen)
+    {
+      if (pp->buffer_pos == pp->buffer_size)
+	pp->state = PP_Error; /* out of memory */
+      return MHD_NO; /* not enough data */
+    }  
+  if ( (0 != memcmp ("--", buf, 2)) ||
+       (0 != memcmp (&buf[2], boundary, blen)))
+    {
+      pp->state = PP_Error;
+      return MHD_NO;      /* expected boundary */
+    }
+  /* remove boundary from buffer */
+  (*ioffptr) += 2 + blen;
+  /* next: start with headers */
+  pp->skip_rn = RN_Dash;
+  pp->state = next_state;
+  pp->dash_state = next_dash_state;
+  return MHD_YES;
+}
+
+/**
+ * In buf, there maybe an expression
+ * '$key="$value"'.  If that is the case,
+ * copy a copy of $value to destination.
+ * 
+ * If destination is already non-NULL,
+ * do nothing.
+ */
+static void
+try_get_value(const char * buf,
+	      const char * key,
+	      char ** destination) 
+{
+  const char * spos;
+  const char * bpos;
+  const char * endv;
+  size_t klen;
+  size_t vlen;
+
+  if (NULL != *destination)
+    return;
+  bpos = buf;
+  klen = strlen(key);
+  while (NULL != (spos = strstr(bpos, key)))
+    {
+      if ( (spos[klen] != '=') ||
+	   ( (spos != buf) &&
+	     (spos[-1] != ' ') ) )
+	{
+	  /* no match */
+	  bpos = spos + 1;
+	  continue;
+	}
+      if (spos[klen + 1] != '"')
+	return; /* not quoted */
+      if (NULL == (endv = strstr(&spos[klen+2], "\"")))
+	return; /* no end-quote */
+      vlen = endv - spos - klen - 1;
+      *destination = malloc(vlen);
+      if (NULL == *destination)
+	return; /* out of memory */
+      (*destination)[vlen - 1] = '\0';
+      memcpy(*destination,
+	     &spos[klen + 2],
+	     vlen - 1);
+      return; /* success */
+    }  
+}
+
+/**
+ * Go over the headers of the part and update
+ * the fields in "pp" according to what we find.
+ * If we are at the end of the headers (as indicated
+ * by an empty line), transition into next_state.
+ * 
+ * @param ioffptr set to how many bytes have been
+ *                processed
+ * @return MHD_YES if we can continue processing,
+ *         MHD_NO on error or if we do not have
+ *                enough data yet
+ */ 
+static int
+process_multipart_headers(struct MHD_PostProcessor * pp,
+			  unsigned int * ioffptr,
+			  enum PP_State next_state) 
+{
+  char * buf = (char*) &pp[1];
+  unsigned int newline;
+
+  newline = 0;
+  while ((newline < pp->buffer_pos) &&
+	 (buf[newline] != '\r') &&
+	 (buf[newline] != '\n'))
+    newline++;
+  if (newline == pp->buffer_size)
+    {
+      pp->state = PP_Error;
+      return MHD_NO; /* out of memory */
+    }
+  if (newline == pp->buffer_pos)
+    return MHD_NO; /* will need more data */
+  if (newline == 0)
+    {
+      /* empty line - end of headers */
+      pp->skip_rn = RN_Full;	      
+      pp->state = next_state;
+      return MHD_YES;
+    }
+  /* got an actual header */
+  if (buf[newline] == '\r')
+    pp->skip_rn = RN_OptN;
+  buf[newline] = '\0';
+  if (0 == strncasecmp("Content-disposition: ",
+		       buf,
+		       strlen("Content-disposition: ")))
+    {      
+      try_get_value(&buf[strlen("Content-disposition: ")],
+		    "name",
+		    &pp->content_name);
+      try_get_value(&buf[strlen("Content-disposition: ")],
+		    "filename",
+		    &pp->content_filename);
+    }
+  else 
+    {
+      try_match_header ("Content-type: ", buf, &pp->content_type);
+      try_match_header ("Content-Transfer-Encoding: ",
+			buf, &pp->content_transfer_encoding);
+}
+  (*ioffptr) += newline + 1;  
+  return MHD_YES;
+}
+
+/**
+ * We have the value until we hit the given boundary;
+ * process accordingly.
+ *
+ * @param boundary the boundary to look for
+ * @param blen strlen(boundary)
+ * @param next_state what state to go into after the
+ *        boundary was found
+ * @param next_dash_state state to go into if the next
+ *        boundary ends with "--"
+ * @return MHD_YES if we can continue processing,
+ *         MHD_NO on error or if we do not have
+ *                enough data yet
+ */
+static int
+process_value_to_boundary(struct MHD_PostProcessor * pp,
+			  unsigned int * ioffptr,
+			  const char * boundary,
+			  size_t blen,
+			  enum PP_State next_state,
+			  enum PP_State next_dash_state) 
+{
+  char * buf = (char*) &pp[1];
+  unsigned int newline;
+
+  /* all data in buf until the boundary
+     (\r\n--+boundary) is part of the value */
+  newline = 0;
+  while (1)
+    {
+      while ((newline + 4 < pp->buffer_pos) &&
+	     (0 != memcmp ("\r\n--", &buf[newline], 4)))
+	newline++;
+      if (newline + pp->blen + 4 <= pp->buffer_pos) 
+	{
+	  /* can check boundary */
+	  if (0 != memcmp (&buf[newline + 4], boundary, pp->blen))	    
+	    {
+	      /* no boundary, "\r\n--" is part of content, skip */
+	      newline += 4;
+	      continue;
+	    }
+	  else
+	    {
+	      /* boundary found, process until newline then
+		 skip boundary and go back to init */
+	      pp->skip_rn = RN_Dash;
+	      pp->state = next_state;
+	      pp->dash_state = next_dash_state;
+	      (*ioffptr) += pp->blen + 4; /* skip boundary as well */
+	      break;
+	    }
+	}
+      else
+	{
+	  /* cannot check for boundary, process content that
+	     we have and check again later; except, if we have
+	     no content, abort (out of memory) */
+	  if ( (newline == 0) &&
+	       (pp->buffer_pos == pp->buffer_size) )
+	    {
+	      pp->state = PP_Error;
+	      return MHD_NO;
+	    }
+	  return MHD_NO;
+	}
+    }
+  /* newline is either at beginning of boundary or
+     at least at the last character that we are sure
+     is not part of the boundary */
+  if (MHD_NO == pp->ikvi (pp->cls,
+			  MHD_POSTDATA_KIND,
+			  pp->content_name,
+			  pp->content_filename,
+			  pp->content_type,
+			  pp->content_transfer_encoding,
+			  buf,
+			  pp->value_offset, newline))
+    {
+      pp->state = PP_Error;
+      return MHD_NO;
+    }
+  pp->value_offset += newline;
+  (*ioffptr) += newline;
+  return MHD_YES;
+}
+
+static void
+free_unmarked(struct MHD_PostProcessor * pp)
+{
+  if ( (pp->content_name != NULL) &&
+       (0 == (pp->have & NE_content_name)) )
+    {
+      free(pp->content_name);
+      pp->content_name = NULL;
+    }
+  if ( (pp->content_type != NULL) &&
+       (0 == (pp->have & NE_content_type)) )
+    {
+      free(pp->content_type);
+      pp->content_type = NULL;
+    }
+  if ( (pp->content_filename != NULL) &&
+       (0 == (pp->have & NE_content_filename)) )
+    {
+      free(pp->content_filename);
+      pp->content_filename = NULL;
+    }
+  if ( (pp->content_transfer_encoding != NULL) &&
+       (0 == (pp->have & NE_content_transfer_encoding)) )
+    {
+      free(pp->content_transfer_encoding);
+      pp->content_transfer_encoding = NULL;
+    }
+}
+
 /**
  * Decode multipart POST data.
- *
- * TODO: If the content-type is multipart/mixed, we do not do anything
- * special.  However, we should probably break the individual values
- * apart and give them to the callback individually (will require some
- * additional states & state).
- *
- * See http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,
                         const char *post_data, unsigned int post_data_len)
 {
   char *buf;
-  const char *boundary;
   unsigned int max;
   unsigned int ioff;
   unsigned int poff;
-  unsigned int newline;
-  unsigned int endquote;
-  size_t blen;
 
   buf = (char *) &pp[1];
   ioff = 0;
   poff = 0;
-  boundary =
-    &pp->encoding[strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
-  /* Q: should this be "strcasestr"? */
-  if (NULL != strstr (boundary, "boundary="))
-    boundary = strstr (boundary, "boundary=") + strlen ("boundary=");
-  else
-    return MHD_NO;              /* failed to determine boundary */
-  blen = strlen (boundary);
-  if (blen * 2 + 2 > pp->buffer_size)
-    return MHD_NO;              /* (will be) out of memory */
-  while ((poff < post_data_len) || (pp->buffer_pos > ioff))
+  max = 1;
+  while ( (poff < post_data_len) ||
+	  ( (pp->buffer_pos > 0) &&
+	    (max != 0) ) )
     {
-      /* first, move data to our internal buffer */
+      /* first, move as much input data 
+	 as possible to our internal buffer */
       max = pp->buffer_size - pp->buffer_pos;
-      if ((max < ioff) && (max < post_data_len - poff))
-        {
-          memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
-          pp->buffer_pos -= ioff;
-          ioff = 0;
-          max = pp->buffer_size - pp->buffer_pos;
-        }
       if (max > post_data_len - poff)
         max = post_data_len - poff;
       memcpy (&buf[pp->buffer_pos], &post_data[poff], max);
       poff += max;
       pp->buffer_pos += max;
+      if ( (max == 0) &&
+	   (poff < post_data_len) )
+	{
+	  pp->state = PP_Error;
+	  return MHD_NO; /* out of memory */
+	}
 
+      /* first state machine for '\r'-'\n' and '--' handling */
+      switch (pp->skip_rn)
+	{
+	case RN_Inactive:
+	  break;
+	case RN_OptN:
+	  if (buf[0] == '\n')
+	    {
+	      ioff++;
+	      pp->skip_rn = RN_Inactive;
+	      goto AGAIN;
+	    }
+	case RN_Dash:
+	  if (buf[0] == '-')
+	    {
+	      ioff++;
+	      pp->skip_rn = RN_Dash2;
+	      goto AGAIN;
+	    }
+	  pp->skip_rn = RN_Full;
+	  /* fall-through! */
+	case RN_Full:
+	  if (buf[0] == '\r')
+	    {
+	      if ( (pp->buffer_pos > 1) &&
+		   (buf[1] == '\n') ) 
+		{
+		  pp->skip_rn = RN_Inactive;
+		  ioff += 2;
+		}
+	      else
+		{
+		  pp->skip_rn = RN_OptN;
+		  ioff++;
+		}
+	      goto AGAIN;
+	    }
+	  if (buf[0] == '\n')
+	    {
+	      ioff++;
+	      pp->skip_rn = RN_Inactive;
+	      goto AGAIN;
+	    }
+	  pp->skip_rn = RN_Inactive;
+	  pp->state = PP_Error;
+	  return MHD_NO; /* no '\r\n' */
+	case RN_Dash2:
+	  if (buf[0] == '-')
+	    {
+	      ioff++;
+	      pp->skip_rn = RN_Full;
+	      pp->state = pp->dash_state;
+	      goto AGAIN;
+	    }
+	  pp->state = PP_Error;
+	  break;
+	}
+
+      /* main state engine */
       switch (pp->state)
-        {
-        case PP_Init:
-          /* we're looking for the boundary */
-          if (pp->buffer_pos < 2 + blen + ioff)
-            goto END;
-          if ((0 != memcmp ("--", &buf[ioff], 2)) ||
-              (0 != memcmp (&buf[ioff + 2], boundary, blen)))
-            return MHD_NO;      /* expected boundary */
-
-          /* remove boundary from buffer */
-          ioff += 2 + blen;
-
-          /* next: start with headers */
-          pp->state = PP_ExpectNewLineR;
-          break;
-        case PP_ExpectNewLineR:
-          if (buf[ioff] == '-')
-            {
-              /* last boundary ends with "--" */
-              ioff++;
-              pp->state = PP_FinalDash;
-              break;
-            }
-          if (buf[ioff] == '\r')
-            {
-              ioff++;
-              pp->state = PP_ExpectNewLineNOPT;
-              break;
-            }
-          /* fall through! */
-        case PP_ExpectNewLineN:
-          if (buf[ioff] == '\n')
-            {
-              ioff++;
-              pp->state = PP_Headers;
-              break;
-            }
-          return MHD_NO;
-        case PP_ExpectNewLineNOPT:
-          if (buf[ioff] == '\n')
-            {
-              ioff++;
-              pp->state = PP_Headers;
-              break;
-            }
-          /* fall through! */
-        case PP_Headers:
-          newline = 0;
-          while ((newline + ioff < pp->buffer_pos) &&
-                 (buf[newline + ioff] != '\r') &&
-                 (buf[newline + ioff] != '\n'))
-            newline++;
-          if (newline == pp->buffer_size)
-            return MHD_NO;      /* out of memory */
-          if (newline + ioff == pp->buffer_pos)
-            {
-              /* try to make more room */
-              memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
-              pp->buffer_pos -= ioff;
-              ioff = 0;
-              break;
-            }
-          if (newline == 0)
-            {
-              pp->state = PP_SkipRN;
-              break;
-            }
-          buf[ioff + newline] = '\0';
-          if ((MHD_YES
-               == try_match_header ("Content-Disposition: form-data; name=\"",
-                                    &buf[ioff],
-                                    &pp->content_disposition)) &&
-              (pp->content_disposition != NULL) &&
-              (0 < strlen (pp->content_disposition)))
-            {
-              /* find end-quote; then check if we also have a filename! */
-              endquote = 0;
-              while ((pp->content_disposition[endquote] != '\"') &&
-                     (pp->content_disposition[endquote] != '\0'))
-                endquote++;
-              pp->content_disposition[endquote++] = '\0';       /* remove end-quote */
-              if ((MHD_YES
-                   == try_match_header (" filename=\"",
-                                        &pp->content_disposition[endquote],
-                                        &pp->filename)) &&
-                  (pp->filename != NULL) && (0 < strlen (pp->filename)))
-                pp->filename[strlen (pp->filename) - 1] = '\0'; /* remove end-quote */
-            }
-          try_match_header ("Content-Type: ", &buf[ioff], &pp->content_type);
-          try_match_header ("Content-Transfer-Encoding: ",
-                            &buf[ioff], &pp->transfer_encoding);
-          ioff += newline + 1;
-          pp->state = PP_ExpectNewLineNOPT;
-          break;
-        case PP_SkipRN:
-          if (buf[ioff] == '\r')
-            {
-              ioff++;
-              pp->state = PP_SkipN;
-              break;
-            }
-          /* fall through! */
-        case PP_SkipN:
-          if (buf[ioff] == '\n')
-            {
-              ioff++;
-              pp->state = PP_ValueToBoundary;
-              pp->value_offset = 0;
-              break;
-            }
-          return MHD_NO;        /* parse error */
-        case PP_ValueToBoundary:
-          /* all data in buf until the boundary
-             (\r\n--+boundary) is part of the value */
-          newline = 0;
-          while (1)
-            {
-              while ((newline + ioff + 4 < pp->buffer_pos) &&
-                     (0 != memcmp ("\r\n--", &buf[newline + ioff], 4)))
-                newline++;
-              if (newline + blen + 4 > pp->buffer_size)
-                {
-                  /* boundary not in sight --
-                     process data, then make room for more! */
-                  if (MHD_NO == pp->ikvi (pp->cls,
-                                          MHD_POSTDATA_KIND,
-                                          pp->content_disposition,
-                                          pp->filename,
-                                          pp->content_type,
-                                          pp->transfer_encoding,
-                                          &buf[ioff],
-                                          pp->value_offset, newline))
-                    {
-                      pp->state = PP_Error;
-                      break;
-                    }
-                  pp->value_offset += newline;
-                  ioff += newline;
-                  memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
-                  pp->buffer_pos -= ioff;
-                  ioff = 0;
-                  break;
-                }
-              if (newline + blen + 4 < pp->buffer_pos)
-                {
-                  /* can check for boundary right now! */
-                  if (0 == memcmp (&buf[newline + ioff + 4], boundary, blen))
-                    {
-                      /* found: process data, then look for more */
-                      if (MHD_NO == pp->ikvi (pp->cls,
-                                              MHD_POSTDATA_KIND,
-                                              pp->content_disposition,
-                                              pp->filename,
-                                              pp->content_type,
-                                              pp->transfer_encoding,
-                                              &buf[ioff],
-                                              pp->value_offset, newline))
-                        {
-                          pp->state = PP_Error;
-                          break;
-                        }
-
-                      /* clean up! */
-                      if (pp->content_type != NULL)
-                        {
-                          free (pp->content_type);
-                          pp->content_type = NULL;
-                        }
-                      if (pp->content_disposition != NULL)
-                        {
-                          free (pp->content_disposition);
-                          pp->content_disposition = NULL;
-                        }
-                      if (pp->filename != NULL)
-                        {
-                          free (pp->filename);
-                          pp->filename = NULL;
-                        }
-                      if (pp->transfer_encoding != NULL)
-                        {
-                          free (pp->transfer_encoding);
-                          pp->transfer_encoding = NULL;
-                        }
-                      pp->value_offset = 0;
-                      ioff += newline + 2;      /* skip data + new line */
-                      pp->state = PP_Init;
-                      break;
-                    }
-                  /* not the boundary, look further! */
-                  newline += 4;
-                  continue;
-                }
-              goto END;
-            }
-          break;
-        case PP_FinalDash:
-          if (buf[ioff] == '-')
-            {
-              /* last boundary ends with "--" */
-              ioff++;
-              pp->state = PP_FinalRN;
-              break;
-            }
-          return MHD_NO;        /* parse error */
-        case PP_FinalRN:
-          if (buf[ioff] == '\r')
-            {
-              ioff++;
-              pp->state = PP_FinalN;
-              break;
-            }
-          /* fall through! */
-        case PP_FinalN:
-          if (buf[ioff] == '\n')
-            {
-              ioff++;
-              pp->state = PP_Error;
-              break;
-            }
-          return MHD_NO;        /* parse error */
+	{
         case PP_Error:
-          return MHD_NO;
+          return MHD_NO;	  
+	case PP_Done:
+	  /* did not expect to receive more data */
+	  pp->state = PP_Error;
+	  return MHD_NO;
+	case PP_Init:
+	  if (MHD_NO == find_boundary(pp,
+				      pp->boundary,
+				      pp->blen,
+				      &ioff,
+				      PP_ProcessEntryHeaders,
+				      PP_Done))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      goto END;
+	    }
+	  break;
+	case PP_ProcessEntryHeaders:
+	  if (MHD_NO == process_multipart_headers(pp, &ioff, PP_PerformCheckMultipart))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      else
+		goto END;
+	    }
+	  max = 1;
+          break;
+        case PP_PerformCheckMultipart:
+	  if ( (pp->content_type != NULL) &&
+	       (0 == strncasecmp(pp->content_type,
+				 "multipart/mixed",
+				 strlen("multipart/mixed")) ) )
+	    {
+	      pp->nested_boundary = strstr(pp->content_type,
+					   "boundary=");
+	      if (pp->nested_boundary == NULL)
+		{
+		  pp->state = PP_Error;
+		  return MHD_NO;
+		}		  
+	      pp->nested_boundary = strdup(&pp->nested_boundary[strlen("boundary=")]);
+	      if (pp->nested_boundary == NULL)
+		{
+		  /* out of memory */
+		  pp->state = PP_Error;
+		  return MHD_NO;		  
+		}
+	      /* free old content type, we will need that field
+		 for the content type of the nested elements */
+	      free(pp->content_type);
+	      pp->content_type = NULL;
+	      pp->nlen = strlen(pp->nested_boundary);
+	      pp->state = PP_Nested_Init;
+	      max = 1;
+	      break;
+	    }
+	  pp->state = PP_ProcessValueToBoundary;
+	  pp->value_offset = 0;
+	  max = 1;
+	  break;	
+        case PP_ProcessValueToBoundary:
+	  if (MHD_NO == process_value_to_boundary(pp,
+						  &ioff,
+						  pp->boundary,
+						  pp->blen,
+						  PP_PerformCleanup,
+						  PP_Done))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      break;
+	    }		
+	  break;
+	case PP_PerformCleanup:
+	  /* clean up state of one multipart form-data element! */
+	  pp->have = NE_none;
+	  free_unmarked(pp);
+	  if (pp->nested_boundary != NULL) 
+	    {
+	      free (pp->nested_boundary);
+	      pp->nested_boundary = NULL;
+	    }
+	  pp->state = PP_ProcessEntryHeaders;
+	  max = 1;
+	  break;
+	case PP_Nested_Init:
+	  if (pp->nested_boundary == NULL)
+	    {
+	      pp->state = PP_Error;
+	      return MHD_NO;
+	    }
+	  if (MHD_NO == find_boundary(pp,
+				      pp->nested_boundary,
+				      pp->nlen,
+				      &ioff,
+				      PP_Nested_PerformMarking,
+				      PP_Init /* or PP_Error? */))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      goto END;
+	    }
+	  break;
+	case PP_Nested_PerformMarking:
+	  /* remember what headers were given
+	     globally */
+	  pp->have = NE_none;
+	  if (pp->content_name != NULL)
+	    pp->have |= NE_content_name;
+	  if (pp->content_type != NULL)
+	    pp->have |= NE_content_type;
+	  if (pp->content_filename != NULL)
+	    pp->have |= NE_content_filename;
+	  if (pp->content_transfer_encoding != NULL)
+	    pp->have |= NE_content_transfer_encoding;
+	  pp->state = PP_Nested_ProcessEntryHeaders;
+	  max = 1;	      
+	  break;
+	case PP_Nested_ProcessEntryHeaders:
+	  pp->value_offset = 0;
+	  if (MHD_NO == process_multipart_headers(pp, &ioff, PP_Nested_ProcessValueToBoundary))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      else
+		goto END;
+	    }
+	  max = 1;
+          break;
+	case PP_Nested_ProcessValueToBoundary:
+	  if (MHD_NO == process_value_to_boundary(pp,
+						  &ioff,
+						  pp->nested_boundary,
+						  pp->nlen,
+						  PP_Nested_PerformCleanup,
+						  PP_Init))
+	    {
+	      if (pp->state == PP_Error)
+		return MHD_NO;
+	      break;
+	    }		
+	  break;
+	case PP_Nested_PerformCleanup:
+	  free_unmarked(pp);
+	  pp->state = PP_Nested_ProcessEntryHeaders;
+	  max = 1;
+	  break;
         default:
-          abort ();             /* should never happen! */
-
+          abort ();             /* should never happen! */ 
         }
+AGAIN:
+      if (ioff > 0) 
+        {
+          memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
+          pp->buffer_pos -= ioff;
+          ioff = 0;
+	  max = 1;
+	}
     }
 END:
-  memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
-  pp->buffer_pos -= ioff;
+  if (ioff != 0)
+    {
+      memmove (buf, &buf[ioff], pp->buffer_pos - ioff);
+      pp->buffer_pos -= ioff;
+    }
+  if (poff < post_data_len) 
+    {
+      pp->state = PP_Error;
+      return MHD_NO; /* serious error */
+    }
   return MHD_YES;
 }
 
@@ -661,14 +1024,10 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
   /* These internal strings need cleaning up since
      the post-processing may have been interrupted
      at any stage */
-  if (pp->content_type != NULL)
-    free (pp->content_type);
-  if (pp->content_disposition != NULL)
-    free (pp->content_disposition);
-  if (pp->filename != NULL)
-    free (pp->filename);
-  if (pp->transfer_encoding != NULL)
-    free (pp->transfer_encoding);
+  pp->have = NE_none;
+  free_unmarked(pp);
+  if (pp->nested_boundary != NULL)
+    free(pp->nested_boundary);
   free (pp);
 }
 

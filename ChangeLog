@@ -1,3 +1,6 @@
+Wed Jan 30 23:15:44 MST 2008
+	 Added support for nested multiparts to post processor. -CG
+
 Mon Jan 21 11:59:46 MST 2008
 	 Added option to limit number of concurrent connections 
 	 accepted from the same IP address. -CG
