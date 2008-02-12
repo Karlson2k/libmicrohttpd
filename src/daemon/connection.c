@@ -1830,7 +1830,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       break;
     }
   timeout = connection->daemon->connection_timeout;
-  if ((timeout != 0) && (time (NULL) - timeout > connection->last_activity))
+  if ( (connection->socket_fd != -1) &&
+       (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
     {
       connection_close_error (connection);
       return MHD_NO;

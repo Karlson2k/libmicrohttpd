@@ -281,6 +281,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
 	   (blen * 2 + 2 > buffer_size) )
 	return NULL;  /* (will be) out of memory or invalid boundary */
     }
+  else
+    blen = 0;
   ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   if (ret == NULL)
     return NULL;
