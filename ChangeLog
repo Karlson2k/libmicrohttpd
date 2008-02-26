@@ -1,3 +1,7 @@
+Mon Feb 25 19:13:53 MST 2008
+	 Fixed a problem with sockets closed for reading ending up
+	 in the read set under certain circumstances. -CG
+
 Wed Jan 30 23:15:44 MST 2008
 	 Added support for nested multiparts to post processor. 
 	 Made sure that MHD does not allow pipelining for methods
