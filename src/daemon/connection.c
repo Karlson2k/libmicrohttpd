@@ -654,8 +654,9 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
             try_grow_read_buffer (connection);
-          if (connection->read_buffer_offset < connection->read_buffer_size)
-            do_fd_set (fd, read_fd_set, max_fd);
+          if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
+	       (MHD_NO == connection->read_closed) )
+	      do_fd_set (fd, read_fd_set, max_fd);
           break;
         case MHD_CONNECTION_BODY_RECEIVED:
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
