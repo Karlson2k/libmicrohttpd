@@ -1,3 +1,6 @@
+Sat Mar 22 01:12:38 MDT 2008
+	 Releasing libmicrohttpd 0.2.2. -CG
+
 Mon Feb 25 19:13:53 MST 2008
 	 Fixed a problem with sockets closed for reading ending up
 	 in the read set under certain circumstances. -CG
