@@ -1,3 +1,21 @@
+Tue Mar 25 13:40:53 MDT 2008
+	 Prevent multi-part post-processor from going to error 
+	 state when the input buffer is full and current token 
+	 just changes processor state without consuming any data.
+	 Also, the original implementation would not consume any 
+	 input in process_value_to_boundary if there is no new 
+	 line character in sight. -AS
+
+	 Remove checks for request method after it finished writing
+	 response footers as it's only _pipelined_ requests that 
+	 should not be allowed after POST or PUT requests.  Reusing 
+	 the existing connection is perfectly ok though.  And there 
+	 is no reliable way to detect pipelining on server side
+	 anyway so it is the client's responsibility to not send new 
+	 data before it gets a response after a POST operation. -AS
+
+	 Clarified license in man page. -CG
+
 Sat Mar 22 01:12:38 MDT 2008
 	 Releasing libmicrohttpd 0.2.2. -CG
 

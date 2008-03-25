@@ -238,10 +238,10 @@ MHD_create_response_from_data (size_t size,
     {
       tmp = malloc (size);
       if (tmp == NULL)
-	{
-	  free(retVal);
-	  return NULL;
-	}
+        {
+          free (retVal);
+          return NULL;
+        }
       memcpy (tmp, data, size);
       must_free = 1;
       data = tmp;

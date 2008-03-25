@@ -654,9 +654,9 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
             try_grow_read_buffer (connection);
-          if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
-	       (MHD_NO == connection->read_closed) )
-	      do_fd_set (fd, read_fd_set, max_fd);
+          if ((connection->read_buffer_offset < connection->read_buffer_size)
+              && (MHD_NO == connection->read_closed))
+            do_fd_set (fd, read_fd_set, max_fd);
           break;
         case MHD_CONNECTION_BODY_RECEIVED:
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
@@ -1797,13 +1797,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (((MHD_YES == connection->read_closed) &&
                (0 == connection->read_buffer_offset)) ||
               (connection->version == NULL) ||
-	      (connection->method == NULL) ||
-	      ( (0 != strcasecmp (MHD_HTTP_METHOD_HEAD, connection->method)) &&
-		(0 != strcasecmp (MHD_HTTP_METHOD_GET, connection->method)) ) ||
-	      (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
+              (0 != strcasecmp (MHD_HTTP_VERSION_1_1, connection->version)))
             {
-	      /* http 1.0, version-less or non-HEAD/GET requests cannot be
-		 pipelined */
+              /* http 1.0, version-less requests cannot be pipelined */
               connection->state = MHD_CONNECTION_CLOSED;
               MHD_pool_destroy (connection->pool);
               connection->pool = NULL;
@@ -1832,8 +1828,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       break;
     }
   timeout = connection->daemon->connection_timeout;
-  if ( (connection->socket_fd != -1) &&
-       (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
+  if ((connection->socket_fd != -1) &&
+      (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
     {
       connection_close_error (connection);
       return MHD_NO;
