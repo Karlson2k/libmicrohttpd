@@ -5,7 +5,7 @@
 @end macro
 
 @macro gpl{}
-@acronym{GPL}
+@acronym{LGPL}
 @end macro
 
 @macro http{}
