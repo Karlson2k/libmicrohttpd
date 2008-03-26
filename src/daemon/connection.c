@@ -1220,8 +1220,10 @@ process_broken_line (struct MHD_Connection *connection,
       connection->last = last;
       return;                   /* possibly more than 2 lines... */
     }
-  if (MHD_NO == connection_add_header (connection,
-                                       last, connection->colon, kind))
+  if ( (last != NULL) &&
+       (connection->colon != NULL) &&
+       (MHD_NO == connection_add_header (connection,
+					 last, connection->colon, kind)) )
     {
       excessive_data_handler (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE);
       return;
