@@ -1626,7 +1626,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_INIT:
           line = get_next_header_line (connection);
           if (line == NULL)
-            break;
+	    {
+	      if (connection->read_closed)
+		{
+		  connection->state = MHD_CONNECTION_CLOSED;
+		  continue;
+		}
+	      break;
+	    }
           if (MHD_NO == parse_initial_message_line (connection, line))
             connection->state = MHD_CONNECTION_CLOSED;
           else
@@ -1635,7 +1642,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_URL_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-            break;
+	    {
+	      if (connection->read_closed)
+		{
+		  connection->state = MHD_CONNECTION_CLOSED;
+		  continue;
+		}
+	      break;
+	    }
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
@@ -1653,7 +1667,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-            break;
+	    {
+	      if (connection->read_closed)
+		{
+		  connection->state = MHD_CONNECTION_CLOSED;
+		  continue;
+		}
+	      break;
+	    }
           if (MHD_NO == 
 	      process_broken_line (connection, line, MHD_HEADER_KIND))
 	    continue;	    
@@ -1712,7 +1733,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_BODY_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-            break;
+	    {
+	      if (connection->read_closed)
+		{
+		  connection->state = MHD_CONNECTION_CLOSED;
+		  continue;
+		}
+	      break;
+	    }
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
@@ -1730,7 +1758,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-            break;
+	    {
+	      if (connection->read_closed)
+		{
+		  connection->state = MHD_CONNECTION_CLOSED;
+		  continue;
+		}
+	      break;
+	    }
           if (MHD_NO == 
 	      process_broken_line (connection, line, MHD_FOOTER_KIND))
 	    continue;
