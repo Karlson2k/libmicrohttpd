@@ -1091,6 +1091,8 @@ Release PostProcessor resources.
 @c *******************  Appendices  *************************
 @c **********************************************************
 
+@node Copying
+@unnumbered Copying
 @include lgpl.texi
 
 @node Concept Index
