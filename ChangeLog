@@ -1,3 +1,10 @@
+Sat Mar 29 22:36:09 MDT 2008
+	 Fixed bugs in handling of malformed HTTP requests
+	 (causing either NULl dereferences or connections to
+	 persist until time-out, if any). -CG
+
+	 Updated and integrated TexInfo documentation. -CG
+
 Tue Mar 25 13:40:53 MDT 2008
 	 Prevent multi-part post-processor from going to error 
 	 state when the input buffer is full and current token 
@@ -14,7 +21,8 @@ Tue Mar 25 13:40:53 MDT 2008
 	 anyway so it is the client's responsibility to not send new 
 	 data before it gets a response after a POST operation. -AS
 
-	 Clarified license in man page. -CG
+	 Clarified license in man page. Releasing 
+         libmicrohttpd 0.2.3 -CG
 
 Sat Mar 22 01:12:38 MDT 2008
 	 Releasing libmicrohttpd 0.2.2. -CG
