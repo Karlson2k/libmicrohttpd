@@ -3,8 +3,6 @@ SUBDIRS  = .
 INCLUDES = -I$(top_srcdir)/src/include
 
 check_PROGRAMS = \
-  postprocessor_test \
-  daemontest \
   daemontest_get \
   daemontest_post \
   daemontest_postform \
@@ -22,16 +20,6 @@ check_PROGRAMS = \
   daemontest_put_chunked 
 
 TESTS = $(check_PROGRAMS)
-
-daemontest_SOURCES = \
-  daemontest.c
-daemontest_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
-
-postprocessor_test_SOURCES = \
-  postprocessor_test.c
-postprocessor_test_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 daemontest_get_SOURCES = \
   daemontest_get.c
