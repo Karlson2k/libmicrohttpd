@@ -1,11 +1,11 @@
 \input texinfo
 @setfilename microhttpd.info
 @include version.texi
-@settitle The libmicrohttpd Reference Manual
+@settitle The GNU libmicrohttpd Reference Manual
 @c Unify some of the indices.
 @c %**end of header
 @copying
-This manual documents libmicrohttpd version @value{VERSION}, last
+This manual documents GNU libmicrohttpd version @value{VERSION}, last
 updated @value{UPDATED}. It is built upon the documentation in the
 header file @file{microhttpd.h}.
 
@@ -14,7 +14,12 @@ header file @file{microhttpd.h}.
 Copyright @copyright{} 2007, 2008 Christian Grothoff
 
 @quotation
-FIXME: add license terms here!
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".
 @end quotation
 @end copying
 
@@ -28,7 +33,7 @@ FIXME: add license terms here!
 @c
 @setchapternewpage odd
 @titlepage
-@title The libmicrohttpd Reference Manual
+@title The GNU libmicrohttpd Reference Manual
 @subtitle Version @value{VERSION}
 @subtitle @value{UPDATED}
 @author Marco Maggi (@email{marco.maggi-ipsu@@poste.it})
@@ -102,7 +107,7 @@ FIXME: add license terms here!
 @c ------------------------------------------------------------
 @ifnottex
 @node Top
-@top The libmicrohttpd Library
+@top The GNU libmicrohttpd Library
 @insertcopying
 @end ifnottex
 
@@ -121,6 +126,8 @@ Appendices
 
 * Copying::                     The GNU Lesser General Public License says how you
                                 can copy and share some parts of `libmicrohttpd'.
+* GNU-FDL::                     The GNU Free Documentation License says how you
+                                can copy and share the documentation of `libmicrohttpd'.
 
 Indices
 
@@ -128,6 +135,8 @@ Indices
 * Function and Data Index::     Index of functions, variables and data types.
 * Type Index::                  Index of data types.
 @end menu
+
+GNU libmicrohttpd is part of the GNU project.
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1094,6 +1103,10 @@ Release PostProcessor resources.
 @node Copying
 @unnumbered Copying
 @include lgpl.texi
+
+@node GNU-FDL
+@unnumbered GNU-FDL
+@include fdl-1.2.texi
 
 @node Concept Index
 @unnumbered Concept Index
