@@ -24,14 +24,14 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h 
 
 check_PROGRAMS = \
-  postprocessor_test 
-  daemontest 
+  postprocessor_test \
+  daemon_test 
 
 TESTS = $(check_PROGRAMS)
 
-daemontest_SOURCES = \
-  daemontest.c
-daemontest_LDADD = \
+daemon_test_SOURCES = \
+  daemon_test.c
+daemon_test_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 postprocessor_test_SOURCES = \
