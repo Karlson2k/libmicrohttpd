@@ -134,6 +134,12 @@ then
  AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
 fi
 
+# optional: have zzuf, socat?
+AC_CHECK_PROG([HAVE_ZZUF],[zzuf], 1, 0)
+AC_CHECK_PROG([HAVE_SOCAT],[socat], 1, 0)
+
+AM_CONDITIONAL(HAVE_ZZUF, test 0 != $HAVE_ZZUF)
+AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
@@ -147,7 +153,10 @@ doc/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
-src/daemon/Makefile])
+src/daemon/Makefile
+src/examples/Makefile
+src/testcurl/Makefile
+src/testzzuf/Makefile])
 AC_OUTPUT
 
 if test "$curl" != 1
