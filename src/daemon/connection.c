@@ -50,7 +50,11 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
+#if HAVE_MESSAGES
+#define REQUEST_TOO_BIG "<html><head><title>Request too big</title></head><body>Your HTTP header was too big for the memory constraints of this webserver.</body></html>"
+#else
 #define REQUEST_TOO_BIG ""
+#endif
 
 /**
  * Response text used when the request (http header) does not
@@ -59,7 +63,11 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
+#if HAVE_MESSAGES
+#define REQUEST_LACKS_HOST "<html><head><title>&quot;Host:&quot; header required</title></head><body>In HTTP 1.1, requests must include a &quot;Host:&quot; header, and your HTTP 1.1 request lacked such a header.</body></html>"
+#else
 #define REQUEST_LACKS_HOST ""
+#endif
 
 /**
  * Response text used when the request (http header) is
@@ -68,7 +76,11 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
+#if HAVE_MESSAGES
+#define REQUEST_MALFORMED "<html><head><title>Request malformed</title></head><body>Your HTTP request was syntactically incorrect.</body></html>"
+#else
 #define REQUEST_MALFORMED ""
+#endif
 
 #define EXTRA_CHECKS MHD_YES
 
@@ -1627,6 +1639,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           line = get_next_header_line (connection);
           if (line == NULL)
 	    {
+	      if (connection->state != MHD_CONNECTION_INIT)
+		continue;
 	      if (connection->read_closed)
 		{
 		  connection->state = MHD_CONNECTION_CLOSED;
@@ -1643,6 +1657,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           line = get_next_header_line (connection);
           if (line == NULL)
 	    {
+	      if (connection->state != MHD_CONNECTION_URL_RECEIVED)
+		continue;
 	      if (connection->read_closed)
 		{
 		  connection->state = MHD_CONNECTION_CLOSED;
@@ -1668,6 +1684,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           line = get_next_header_line (connection);
           if (line == NULL)
 	    {
+	      if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
+		continue;
 	      if (connection->read_closed)
 		{
 		  connection->state = MHD_CONNECTION_CLOSED;
@@ -1734,6 +1752,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           line = get_next_header_line (connection);
           if (line == NULL)
 	    {
+	      if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
+		continue;
 	      if (connection->read_closed)
 		{
 		  connection->state = MHD_CONNECTION_CLOSED;
@@ -1759,6 +1779,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           line = get_next_header_line (connection);
           if (line == NULL)
 	    {
+	      if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
+		continue;
 	      if (connection->read_closed)
 		{
 		  connection->state = MHD_CONNECTION_CLOSED;

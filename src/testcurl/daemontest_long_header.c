@@ -99,7 +99,7 @@ testLongUrlGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */ ,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */,
                         1080,
                         &apc_all,
                         NULL,
@@ -219,7 +219,7 @@ testLongHeaderGet ()
   MHD_stop_daemon (d);
   free (url);
   if (code != MHD_HTTP_REQUEST_ENTITY_TOO_LARGE)
-    return 128;
+    return 128;    
   return 0;
 }
 

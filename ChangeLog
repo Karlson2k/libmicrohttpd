@@ -1,3 +1,15 @@
+Sat Apr 12 15:14:05 MDT 2008
+	 Restructured the code (curl-testcases and zzuf testcases
+	 are now in different directories; code examples are in
+	 src/examples/).
+	 Fixed a problem (introduced in 0.2.3) with handling very 
+	 large requests (the code did not return proper error code).
+	 If "--enable-messages" is specified, the code now includes
+	 reasonable default HTML webpages for various build-in
+	 errors (such as request too large and malformed requests).
+	 Without that flag, the webpages returned will still be
+	 empty.
+
 Fri Apr 11 20:20:34 MDT 2008
 	 I hereby dub libmicrohttpd a GNU package. -Richard Stallman
 
