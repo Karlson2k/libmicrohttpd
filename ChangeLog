@@ -1,3 +1,6 @@
+Fri Apr 11 20:20:34 MDT 2008
+	 I hereby dub libmicrohttpd a GNU package. -Richard Stallman
+
 Sat Mar 29 22:36:09 MDT 2008
 	 Fixed bugs in handling of malformed HTTP requests
 	 (causing either NULl dereferences or connections to

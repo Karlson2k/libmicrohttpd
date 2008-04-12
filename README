@@ -1,10 +1,10 @@
 About
 =====
 
-libmicrohttpd is a library written in C that provides a compact
-API and implementation of an HTTP 1.1 web server.  libmicrohttpd
-only implements the HTTP 1.1 protocol.  The main application must
-still provide the content.
+libmicrohttpd is a GNU library (part of the GNU project) written in C
+that provides a compact API and implementation of an HTTP 1.1 web
+server.  libmicrohttpd only implements the HTTP 1.1 protocol.  The
+main application must still provide the content.
 
 
 Installation
