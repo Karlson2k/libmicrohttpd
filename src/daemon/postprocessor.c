@@ -990,6 +990,8 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 {
   if (post_data_len == 0)
     return MHD_YES;
+  if (pp == NULL)
+    return MHD_NO;
   if (0 == strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, pp->encoding))
     return post_process_urlencoded (pp, post_data, post_data_len);
   if (0 ==
