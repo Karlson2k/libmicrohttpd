@@ -38,16 +38,6 @@
 
 #include "socat.c"
 
-/**
- * A larger loop count will run more random tests --
- * which would be good, except that it may take too
- * long for most user's patience.  So this small
- * value is the default.
- */
-#define LOOP_COUNT 10
-
-#define CURL_TIMEOUT 50L
-
 struct CBC
 {
   char *buf;

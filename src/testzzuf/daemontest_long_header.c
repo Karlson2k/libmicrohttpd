@@ -38,16 +38,6 @@
 #include "socat.c"
 
 /**
- * A larger loop count will run more random tests --
- * which would be good, except that it may take too
- * long for most user's patience.  So this small
- * value is the default.
- */
-#define LOOP_COUNT 10
-
-#define CURL_TIMEOUT 50L
-
-/**
  * We will set the memory available per connection to
  * half of this value, so the actual value does not have
  * to be big at all...
@@ -186,14 +176,12 @@ testLongHeaderGet ()
   for (i = 0; i < LOOP_COUNT; i++)
     {
       fprintf (stderr, ".");
-
-
       c = curl_easy_init ();
       url = malloc (VERY_LONG);
       memset (url, 'a', VERY_LONG);
       url[VERY_LONG - 1] = '\0';
       url[VERY_LONG / 2] = ':';
-      url[VERY_LONG / 2 + 1] = ':';
+      url[VERY_LONG / 2 + 1] = ' ';
       header = curl_slist_append (header, url);
 
       curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
@@ -213,6 +201,7 @@ testLongHeaderGet ()
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_slist_free_all (header);
+      header = NULL;
       curl_easy_cleanup (c);
     }
   fprintf (stderr, "\n");
