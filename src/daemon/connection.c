@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2008 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -80,6 +80,18 @@
 #define REQUEST_MALFORMED "<html><head><title>Request malformed</title></head><body>Your HTTP request was syntactically incorrect.</body></html>"
 #else
 #define REQUEST_MALFORMED ""
+#endif
+
+/**
+ * Response text used when there is an internal server error.
+ *
+ * Intentionally empty here to keep our memory footprint
+ * minimal.
+ */
+#if HAVE_MESSAGES
+#define INTERNAL_ERROR "<html><head><title>Internal server error</title></head><body>Some programmer needs to study the manual more carefully.</body></html>"
+#else
+#define INTERNAL_ERROR ""
 #endif
 
 #define EXTRA_CHECKS MHD_YES
@@ -676,7 +688,29 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
           break;
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
-            try_grow_read_buffer (connection);
+            {
+              if ((MHD_YES != try_grow_read_buffer (connection)) &&
+                  (0 != (connection->daemon->options &
+                         (MHD_USE_SELECT_INTERNALLY |
+                          MHD_USE_THREAD_PER_CONNECTION))))
+                {
+                  /* failed to grow the read buffer, and the 
+                     client which is supposed to handle the
+                     received data in a *blocking* fashion
+                     (in this mode) did not handle the data as
+                     it was supposed to!
+                     => we would either have to do busy-waiting 
+                     (on the client, which would likely fail),
+                     or if we do nothing, we would just timeout
+                     on the connection (if a timeout is even
+                     set!).
+                     Solution: we kill the connection with an error */
+                  transmit_error_response (connection,
+                                           MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                           INTERNAL_ERROR);
+                  continue;
+                }
+            }
           if ((connection->read_buffer_offset < connection->read_buffer_size)
               && (MHD_NO == connection->read_closed))
             do_fd_set (fd, read_fd_set, max_fd);

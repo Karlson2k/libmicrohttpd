@@ -1,3 +1,8 @@
+Sat Apr 12 21:34:26 MDT 2008
+	 Generate an internal server error if the programmer fails
+	 to handle upload data correctly.  Tweaked testcases to
+	 avoid running into the problem in the testcases. -CG
+
 Sat Apr 12 15:14:05 MDT 2008
 	 Restructured the code (curl-testcases and zzuf testcases
 	 are now in different directories; code examples are in
@@ -9,8 +14,8 @@ Sat Apr 12 15:14:05 MDT 2008
 	 errors (such as request too large and malformed requests).
 	 Without that flag, the webpages returned will still be
 	 empty.
-	 Added zzuf-based fuzzing-testcases (these require the
-	 zzuf and socat binaries to be installed).
+	 Started to add zzuf-based fuzzing-testcases (these require 
+	 the zzuf and socat binaries to be installed). -CG
 
 Fri Apr 11 20:20:34 MDT 2008
 	 I hereby dub libmicrohttpd a GNU package. -Richard Stallman
