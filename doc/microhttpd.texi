@@ -442,7 +442,15 @@ incrementally in @var{upload_data};
 @item upload_data_size
 set initially to the size of the @var{upload_data} provided; this
 callback must update this value to the number of bytes @strong{NOT}
-processed;
+processed; unless external select is used, the callback maybe
+required to process at least some data.  If the callback fails to
+process data in multi-threaded or internal-select mode and if the
+read-buffer is already at the maximum size that MHD is willing to
+use for reading (about half of the maximum amount of memory allowed
+for the connection), then MHD will abort handling the connection
+and return an internal server error to the client.  In order to
+avoid this, clients must be able to process upload data incrementally
+and reduce the value of @code{upload_data_size}.
 
 @item con_cls
 reference to a pointer, initially set to @mynull{}, that this callback can

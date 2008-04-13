@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2006, 2007 Christian Grothoff (and other contributing authors)
+     (C) 2006, 2007, 2008 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -84,7 +84,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00020200
+#define MHD_VERSION 0x00030000
 
 /**
  * MHD-internal return codes.

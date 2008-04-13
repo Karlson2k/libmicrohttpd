@@ -1,3 +1,6 @@
+Sun Apr 13 01:06:20 MDT 2008
+	 Releasing GNU libmicrohttpd 0.3.0. -CG
+
 Sat Apr 12 21:34:26 MDT 2008
 	 Generate an internal server error if the programmer fails
 	 to handle upload data correctly.  Tweaked testcases to
