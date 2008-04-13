@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Christian Grothoff
+     (C) 2007, 2008 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -34,6 +34,18 @@
 #ifndef WINDOWS
 #include <unistd.h>
 #endif
+
+#include "socat.c"
+
+/**
+ * A larger loop count will run more random tests --
+ * which would be good, except that it may take too
+ * long for most user's patience.  So this small
+ * value is the default.
+ */
+#define LOOP_COUNT 10
+
+#define CURL_TIMEOUT 50L
 
 static int oneone;
 
@@ -133,8 +145,8 @@ testInternalPut ()
   struct CBC cbc;
   unsigned int pos = 0;
   int done_flag = 0;
-  CURLcode errornum;
   char buf[2048];
+  int i;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -144,40 +156,34 @@ testInternalPut ()
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
-  curl_easy_setopt (c, CURLOPT_READDATA, &pos);
-  curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt (c, CURLOPT_INFILESIZE, (long) PUT_SIZE);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  if (oneone)
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  else
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+  for (i = 0; i < LOOP_COUNT; i++)
     {
-      fprintf (stderr,
-               "curl_easy_perform failed: `%s'\n",
-               curl_easy_strerror (errornum));
+      fprintf (stderr, ".");
+
+      c = curl_easy_init ();
+      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
+      curl_easy_setopt (c, CURLOPT_READDATA, &pos);
+      curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
+      curl_easy_setopt (c, CURLOPT_INFILESIZE, (long) PUT_SIZE);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT_MS, CURL_TIMEOUT);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      curl_easy_perform (c);
       curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
-      return 2;
     }
-  curl_easy_cleanup (c);
+  fprintf (stderr, "\n");
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
-    return 4;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 8;
   return 0;
 }
 

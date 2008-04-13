@@ -353,7 +353,7 @@ main (int argc, char *const *argv)
     return 2;
   errorCount += testInternalGet ();
   errorCount += testMultithreadedGet ();
-  errorCount += testExternalGet ();   
+  errorCount += testExternalGet ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

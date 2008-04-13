@@ -563,8 +563,7 @@ build_header_response (struct MHD_Connection *connection)
  */
 static void
 transmit_error_response (struct MHD_Connection *connection,
-			 unsigned int status_code,
-			 const char * message)
+                         unsigned int status_code, const char *message)
 {
   struct MHD_Response *response;
 
@@ -574,11 +573,10 @@ transmit_error_response (struct MHD_Connection *connection,
 #if HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             "Error %u (`%s') processing request, closing connection.\n",
-	    status_code,
-	    message);
+            status_code, message);
 #endif
   response = MHD_create_response_from_data (strlen (message),
-                                            (void*)message, MHD_NO, MHD_NO);
+                                            (void *) message, MHD_NO, MHD_NO);
   MHD_queue_response (connection, status_code, response);
   EXTRA_CHECK (connection->response != NULL);
   MHD_destroy_response (response);
@@ -657,10 +655,10 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
               && (MHD_NO == try_grow_read_buffer (connection)))
             {
               transmit_error_response (connection,
-				       (connection->url != NULL)
-				       ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
-				       : MHD_HTTP_REQUEST_URI_TOO_LONG,
-				       REQUEST_TOO_BIG);
+                                       (connection->url != NULL)
+                                       ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
+                                       : MHD_HTTP_REQUEST_URI_TOO_LONG,
+                                       REQUEST_TOO_BIG);
               continue;
             }
           if (MHD_NO == connection->read_closed)
@@ -774,10 +772,10 @@ get_next_header_line (struct MHD_Connection *connection)
           if (rbuf == NULL)
             {
               transmit_error_response (connection,
-                                      (connection->url != NULL)
-                                      ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
-				       : MHD_HTTP_REQUEST_URI_TOO_LONG,
-				       REQUEST_TOO_BIG);
+                                       (connection->url != NULL)
+                                       ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
+                                       : MHD_HTTP_REQUEST_URI_TOO_LONG,
+                                       REQUEST_TOO_BIG);
             }
           else
             {
@@ -816,7 +814,7 @@ connection_add_header (struct MHD_Connection *connection,
                 "Not enough memory to allocate header record!\n");
 #endif
       transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
-			       REQUEST_TOO_BIG);
+                               REQUEST_TOO_BIG);
       return MHD_NO;
     }
   hdr->next = connection->headers_received;
@@ -884,7 +882,7 @@ parse_cookie_header (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon, "Not enough memory to parse cookies!\n");
 #endif
       transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
-			       REQUEST_TOO_BIG);
+                               REQUEST_TOO_BIG);
       return MHD_NO;
     }
   memcpy (cpy, hdr, strlen (hdr) + 1);
@@ -1240,8 +1238,8 @@ process_broken_line (struct MHD_Connection *connection,
       if (last == NULL)
         {
           transmit_error_response (connection,
-				   MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
-				   REQUEST_TOO_BIG);
+                                   MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+                                   REQUEST_TOO_BIG);
           return MHD_NO;
         }
       tmp = line;
@@ -1251,24 +1249,23 @@ process_broken_line (struct MHD_Connection *connection,
       connection->last = last;
       return MHD_YES;           /* possibly more than 2 lines... */
     }
-  EXTRA_CHECK ( (last != NULL) && (connection->colon != NULL) );
-  if ( (MHD_NO == connection_add_header (connection,
-					 last, connection->colon, kind)) )
+  EXTRA_CHECK ((last != NULL) && (connection->colon != NULL));
+  if ((MHD_NO == connection_add_header (connection,
+                                        last, connection->colon, kind)))
     {
       transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
-			       REQUEST_TOO_BIG);
+                               REQUEST_TOO_BIG);
       return MHD_NO;
     }
   /* we still have the current line to deal with... */
   if (strlen (line) != 0)
     {
       if (MHD_NO == process_header_line (connection, line))
-	{
-	  transmit_error_response(connection,
-				  MHD_HTTP_BAD_REQUEST,
-				  REQUEST_MALFORMED);
-	  return MHD_NO;
-	}
+        {
+          transmit_error_response (connection,
+                                   MHD_HTTP_BAD_REQUEST, REQUEST_MALFORMED);
+          return MHD_NO;
+        }
     }
   return MHD_YES;
 }
@@ -1638,16 +1635,16 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_INIT:
           line = get_next_header_line (connection);
           if (line == NULL)
-	    {
-	      if (connection->state != MHD_CONNECTION_INIT)
-		continue;
-	      if (connection->read_closed)
-		{
-		  connection->state = MHD_CONNECTION_CLOSED;
-		  continue;
-		}
-	      break;
-	    }
+            {
+              if (connection->state != MHD_CONNECTION_INIT)
+                continue;
+              if (connection->read_closed)
+                {
+                  connection->state = MHD_CONNECTION_CLOSED;
+                  continue;
+                }
+              break;
+            }
           if (MHD_NO == parse_initial_message_line (connection, line))
             connection->state = MHD_CONNECTION_CLOSED;
           else
@@ -1656,46 +1653,46 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_URL_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-	    {
-	      if (connection->state != MHD_CONNECTION_URL_RECEIVED)
-		continue;
-	      if (connection->read_closed)
-		{
-		  connection->state = MHD_CONNECTION_CLOSED;
-		  continue;
-		}
-	      break;
-	    }
+            {
+              if (connection->state != MHD_CONNECTION_URL_RECEIVED)
+                continue;
+              if (connection->read_closed)
+                {
+                  connection->state = MHD_CONNECTION_CLOSED;
+                  continue;
+                }
+              break;
+            }
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
               continue;
             }
           if (MHD_NO == process_header_line (connection, line))
-	    {
-	      transmit_error_response(connection,
-				      MHD_HTTP_BAD_REQUEST,
-				      REQUEST_MALFORMED);
-	      break;
-	    }
+            {
+              transmit_error_response (connection,
+                                       MHD_HTTP_BAD_REQUEST,
+                                       REQUEST_MALFORMED);
+              break;
+            }
           connection->state = MHD_CONNECTION_HEADER_PART_RECEIVED;
           continue;
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-	    {
-	      if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
-		continue;
-	      if (connection->read_closed)
-		{
-		  connection->state = MHD_CONNECTION_CLOSED;
-		  continue;
-		}
-	      break;
-	    }
-          if (MHD_NO == 
-	      process_broken_line (connection, line, MHD_HEADER_KIND))
-	    continue;	    
+            {
+              if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
+                continue;
+              if (connection->read_closed)
+                {
+                  connection->state = MHD_CONNECTION_CLOSED;
+                  continue;
+                }
+              break;
+            }
+          if (MHD_NO ==
+              process_broken_line (connection, line, MHD_HEADER_KIND))
+            continue;
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
@@ -1751,46 +1748,46 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_BODY_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-	    {
-	      if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
-		continue;
-	      if (connection->read_closed)
-		{
-		  connection->state = MHD_CONNECTION_CLOSED;
-		  continue;
-		}
-	      break;
-	    }
+            {
+              if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
+                continue;
+              if (connection->read_closed)
+                {
+                  connection->state = MHD_CONNECTION_CLOSED;
+                  continue;
+                }
+              break;
+            }
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
               continue;
             }
           if (MHD_NO == process_header_line (connection, line))
-	    {
-	      transmit_error_response(connection,
-				      MHD_HTTP_BAD_REQUEST,
-				      REQUEST_MALFORMED);
-	      break;
-	    }
+            {
+              transmit_error_response (connection,
+                                       MHD_HTTP_BAD_REQUEST,
+                                       REQUEST_MALFORMED);
+              break;
+            }
           connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
           continue;
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
           line = get_next_header_line (connection);
           if (line == NULL)
-	    {
-	      if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
-		continue;
-	      if (connection->read_closed)
-		{
-		  connection->state = MHD_CONNECTION_CLOSED;
-		  continue;
-		}
-	      break;
-	    }
-          if (MHD_NO == 
-	      process_broken_line (connection, line, MHD_FOOTER_KIND))
-	    continue;
+            {
+              if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
+                continue;
+              if (connection->read_closed)
+                {
+                  connection->state = MHD_CONNECTION_CLOSED;
+                  continue;
+                }
+              break;
+            }
+          if (MHD_NO ==
+              process_broken_line (connection, line, MHD_FOOTER_KIND))
+            continue;
           if (strlen (line) == 0)
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;

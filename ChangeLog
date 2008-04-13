@@ -9,6 +9,8 @@ Sat Apr 12 15:14:05 MDT 2008
 	 errors (such as request too large and malformed requests).
 	 Without that flag, the webpages returned will still be
 	 empty.
+	 Added zzuf-based fuzzing-testcases (these require the
+	 zzuf and socat binaries to be installed).
 
 Fri Apr 11 20:20:34 MDT 2008
 	 I hereby dub libmicrohttpd a GNU package. -Richard Stallman
