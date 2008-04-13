@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Christian Grothoff
+     (C) 2007, 2008 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -34,6 +34,18 @@
 #ifndef WINDOWS
 #include <unistd.h>
 #endif
+
+#include "socat.c"
+
+/**
+ * A larger loop count will run more random tests --
+ * which would be good, except that it may take too
+ * long for most user's patience.  So this small
+ * value is the default.
+ */
+#define LOOP_COUNT 10
+
+#define CURL_TIMEOUT 50L
 
 /**
  * We will set the memory available per connection to
@@ -94,13 +106,13 @@ testLongUrlGet ()
   char buf[2048];
   struct CBC cbc;
   char *url;
-  long code;
+  int i;
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */ ,
-                        1080,
+                        11080,
                         &apc_all,
                         NULL,
                         &ahc_echo,
@@ -109,44 +121,39 @@ testLongUrlGet ()
                         VERY_LONG / 2, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  c = curl_easy_init ();
-  url = malloc (VERY_LONG);
-  memset (url, 'a', VERY_LONG);
-  url[VERY_LONG - 1] = '\0';
-  memcpy (url, "http://localhost:1080/", strlen ("http://localhost:1080/"));
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  if (oneone)
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  else
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK == curl_easy_perform (c))
+  zzuf_socat_start ();
+  for (i = 0; i < LOOP_COUNT; i++)
     {
+      fprintf (stderr, ".");
+
+      c = curl_easy_init ();
+      url = malloc (VERY_LONG);
+      memset (url, 'a', VERY_LONG);
+      url[VERY_LONG - 1] = '\0';
+      memcpy (url, "http://localhost:11081/",
+              strlen ("http://localhost:11081/"));
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT_MS, CURL_TIMEOUT);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      curl_easy_perform (c);
       curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
-      free (url);
-      return 2;
     }
-  if (CURLE_OK != curl_easy_getinfo (c, CURLINFO_RESPONSE_CODE, &code))
-    {
-      curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
-      free (url);
-      return 4;
-    }
-  curl_easy_cleanup (c);
+  fprintf (stderr, "\n");
+  zzuf_socat_stop ();
+
   MHD_stop_daemon (d);
   free (url);
-  if (code != MHD_HTTP_REQUEST_URI_TOO_LONG)
-    return 8;
   return 0;
 }
 
@@ -159,8 +166,8 @@ testLongHeaderGet ()
   char buf[2048];
   struct CBC cbc;
   char *url;
-  long code;
   struct curl_slist *header = NULL;
+  int i;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -175,51 +182,44 @@ testLongHeaderGet ()
                         VERY_LONG / 2, MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  c = curl_easy_init ();
-  url = malloc (VERY_LONG);
-  memset (url, 'a', VERY_LONG);
-  url[VERY_LONG - 1] = '\0';
-  url[VERY_LONG / 2] = ':';
-  url[VERY_LONG / 2 + 1] = ':';
-  header = curl_slist_append (header, url);
+  zzuf_socat_start ();
+  for (i = 0; i < LOOP_COUNT; i++)
+    {
+      fprintf (stderr, ".");
 
-  curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  if (oneone)
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  else
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK == curl_easy_perform (c))
-    {
-      curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
+
+      c = curl_easy_init ();
+      url = malloc (VERY_LONG);
+      memset (url, 'a', VERY_LONG);
+      url[VERY_LONG - 1] = '\0';
+      url[VERY_LONG / 2] = ':';
+      url[VERY_LONG / 2 + 1] = ':';
+      header = curl_slist_append (header, url);
+
+      curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
+      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT_MS, CURL_TIMEOUT);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      curl_easy_perform (c);
       curl_slist_free_all (header);
-      free (url);
-      return 32;
-    }
-  if (CURLE_OK != curl_easy_getinfo (c, CURLINFO_RESPONSE_CODE, &code))
-    {
-      curl_slist_free_all (header);
       curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
-      free (url);
-      return 64;
     }
-  curl_slist_free_all (header);
-  curl_easy_cleanup (c);
+  fprintf (stderr, "\n");
+  zzuf_socat_stop ();
+
   MHD_stop_daemon (d);
   free (url);
-  if (code != MHD_HTTP_REQUEST_ENTITY_TOO_LARGE)
-    return 128;
   return 0;
 }
 

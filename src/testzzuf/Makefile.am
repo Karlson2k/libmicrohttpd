@@ -8,13 +8,11 @@ check_PROGRAMS = \
   daemontest_get \
   daemontest_post \
   daemontest_postform \
-  daemontest_post_loop \
   daemontest_put \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
   daemontest_postform11 \
-  daemontest_post_loop11 \
   daemontest_put11 \
   daemontest_large_put11 \
   daemontest_long_header \
@@ -47,12 +45,6 @@ daemontest_postform_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_post_loop_SOURCES = \
-  daemontest_post_loop.c
-daemontest_post_loop_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@ 
-
 daemontest_put_SOURCES = \
   daemontest_put.c
 daemontest_put_LDADD = \
@@ -80,12 +72,6 @@ daemontest_post11_LDADD = \
 daemontest_postform11_SOURCES = \
   daemontest_postform.c
 daemontest_postform11_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@ 
-
-daemontest_post_loop11_SOURCES = \
-  daemontest_post_loop.c
-daemontest_post_loop11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

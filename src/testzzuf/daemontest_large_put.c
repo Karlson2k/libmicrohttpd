@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_put.c
+ * @file daemontest_large_put.c
  * @brief  Testcase for libmicrohttpd PUT operations
  * @author Christian Grothoff
  */
@@ -54,7 +54,7 @@ static int oneone;
  * MHD default buffer limit and the test code is not
  * written for incremental upload processing...
  */
-#define PUT_SIZE (512 * 1024)
+#define PUT_SIZE (256 * 1024)
 
 static char *put_buffer;
 
@@ -123,7 +123,6 @@ ahc_echo (void *cls,
         }
       else
         {
-          printf ("Invalid upload data!\n");
           return MHD_NO;
         }
       *done = 1;
@@ -151,8 +150,8 @@ testInternalPut ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-                        1080,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */ ,
+                        11080,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -162,7 +161,7 @@ testInternalPut ()
       fprintf (stderr, ".");
 
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
@@ -184,6 +183,7 @@ testInternalPut ()
       curl_easy_cleanup (c);
     }
   fprintf (stderr, "\n");
+  zzuf_socat_stop ();
   MHD_stop_daemon (d);
   return 0;
 }
@@ -202,14 +202,11 @@ testMultithreadedPut ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION /* | MHD_USE_DEBUG */ ,
                         11080,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
-    {
-      free (cbc.buf);
-      return 16;
-    }
+    return 16;
   zzuf_socat_start ();
   for (i = 0; i < LOOP_COUNT; i++)
     {
@@ -268,7 +265,7 @@ testExternalPut ()
   cbc.size = 2048;
   cbc.pos = 0;
   multi = NULL;
-  d = MHD_start_daemon (MHD_NO_FLAG | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_NO_FLAG /* | MHD_USE_DEBUG */ ,
                         11080,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
@@ -278,7 +275,6 @@ testExternalPut ()
   multi = curl_multi_init ();
   if (multi == NULL)
     {
-      curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 512;
     }
@@ -319,7 +315,7 @@ testExternalPut ()
           return 1024;
         }
       start = time (NULL);
-      while ((time (NULL) - start < 5) && (multi != NULL))
+      while ((time (NULL) - start < 5) && (c != NULL))
         {
           max = 0;
           FD_ZERO (&rs);

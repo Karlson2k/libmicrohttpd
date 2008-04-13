@@ -218,7 +218,6 @@ testExternalGet ()
   multi = curl_multi_init ();
   if (multi == NULL)
     {
-      curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       return 512;
     }
