@@ -352,11 +352,8 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalGet ();
-  if (0)
-    {
-      errorCount += testMultithreadedGet ();
-      errorCount += testExternalGet ();
-    }
+  errorCount += testMultithreadedGet ();
+  errorCount += testExternalGet ();   
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
