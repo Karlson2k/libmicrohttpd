@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Christian Grothoff
+     (C) 2007, 2008 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_put.c
+ * @file daemontest_large_put.c
  * @brief  Testcase for libmicrohttpd PUT operations
  * @author Christian Grothoff
  */
@@ -203,10 +203,7 @@ testMultithreadedPut ()
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
-    {
-      free (cbc.buf);
-      return 16;
-    }
+    return 16;    
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
