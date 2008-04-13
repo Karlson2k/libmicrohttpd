@@ -203,7 +203,7 @@ testMultithreadedPut ()
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
-    return 16;    
+    return 16;
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);

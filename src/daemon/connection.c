@@ -694,12 +694,12 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                          (MHD_USE_SELECT_INTERNALLY |
                           MHD_USE_THREAD_PER_CONNECTION))))
                 {
-                  /* failed to grow the read buffer, and the 
+                  /* failed to grow the read buffer, and the
                      client which is supposed to handle the
                      received data in a *blocking* fashion
                      (in this mode) did not handle the data as
                      it was supposed to!
-                     => we would either have to do busy-waiting 
+                     => we would either have to do busy-waiting
                      (on the client, which would likely fail),
                      or if we do nothing, we would just timeout
                      on the connection (if a timeout is even

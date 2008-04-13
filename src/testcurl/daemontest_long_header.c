@@ -180,7 +180,7 @@ testLongHeaderGet ()
   memset (url, 'a', VERY_LONG);
   url[VERY_LONG - 1] = '\0';
   url[VERY_LONG / 2] = ':';
-  url[VERY_LONG / 2 + 1] = ':';
+  url[VERY_LONG / 2 + 1] = ' ';
   header = curl_slist_append (header, url);
 
   curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);

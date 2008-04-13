@@ -1,7 +1,8 @@
 Sat Apr 12 21:34:26 MDT 2008
 	 Generate an internal server error if the programmer fails
 	 to handle upload data correctly.  Tweaked testcases to
-	 avoid running into the problem in the testcases. -CG
+	 avoid running into the problem in the testcases.
+	 Completed zzuf-based fuzzing testcases.  -CG
 
 Sat Apr 12 15:14:05 MDT 2008
 	 Restructured the code (curl-testcases and zzuf testcases
