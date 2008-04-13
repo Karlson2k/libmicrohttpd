@@ -163,7 +163,7 @@ testLongHeaderGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */ ,
-                        1080,
+                        11080,
                         &apc_all,
                         NULL,
                         &ahc_echo,
@@ -185,7 +185,7 @@ testLongHeaderGet ()
       header = curl_slist_append (header, url);
 
       curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
