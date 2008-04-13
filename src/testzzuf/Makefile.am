@@ -2,6 +2,8 @@ SUBDIRS  = .
 
 INCLUDES = -I$(top_srcdir)/src/include
 
+EXTRA_DIST = README socat.c
+
 check_PROGRAMS = \
   daemontest_get \
   daemontest_post \
