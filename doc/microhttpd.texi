@@ -740,7 +740,7 @@ responce and we finally destroy it only when the daemon shuts down.
 
 @c ------------------------------------------------------------
 @node microhttpd-response enqueue,microhttpd-responses
-@@section Enqueuing a response
+@section Enqueuing a response
 
 
 @deftypefun int MHD_queue_response (struct MHD_Connection *connection, unsigned int status_code, struct MHD_Response *response)
@@ -815,7 +815,7 @@ the @code{MHD_Response} object is released.
 
 @c ------------------------------------------------------------
 @node microhttpd-response create,microhttpd-responses
-@@section Creating response objects
+@section Creating response objects
 
 
 @deftypefun {struct MHD_Response *} MHD_create_response_from_callback (size_t size, unsigned int block_size, MHD_ContentReaderCallback crc, void *crc_cls, MHD_ContentReaderFreeCallback crfc)
@@ -891,7 +891,7 @@ MHD_destroy_response(response);
 
 @c ------------------------------------------------------------
 @node microhttpd-response headers,microhttpd-responses
-@@section Adding headers to a response
+@section Adding headers to a response
 
 
 @deftypefun int MHD_add_response_header (struct MHD_Response *response, const char *header, const char *content)
@@ -917,7 +917,7 @@ Delete a header line from the response.  Return @code{MHD_NO} on error
 
 @c ------------------------------------------------------------
 @node microhttpd-response inspect,microhttpd-responses
-@@section Inspecting a response object
+@section Inspecting a response object
 
 
 @deftypefun int MHD_get_response_headers (struct MHD_Response *response, MHD_KeyValueIterator iterator, void *iterator_cls)
@@ -1042,7 +1042,7 @@ always terminate normally.
 
 @c ------------------------------------------------------------
 @node microhttpd-post api,microhttpd-post
-@@section Programming interface for the @code{POST} processor
+@section Programming interface for the @code{POST} processor
 
 
 
