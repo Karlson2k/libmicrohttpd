@@ -111,6 +111,8 @@ Free Documentation License".
 @insertcopying
 @end ifnottex
 
+GNU libmicrohttpd is a GNU package.
+
 @menu
 * microhttpd-intro::            Introduction.
 * microhttpd-const::            Constants.
@@ -135,8 +137,6 @@ Indices
 * Function and Data Index::     Index of functions, variables and data types.
 * Type Index::                  Index of data types.
 @end menu
-
-GNU libmicrohttpd is part of the GNU project.
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -712,14 +712,6 @@ item was found.
 @chapter Building answers to responses
 
 
-@menu
-* microhttpd-response enqueue:: Enqueuing a response.
-* microhttpd-response create::  Creating a response object.
-* microhttpd-response headers:: Adding headers to a response.
-* microhttpd-response inspect:: Inspecting a response object.
-@end menu
-
-
 @noindent
 Response objects handling by @mhd{} is asynchronous with respect to the
 application execution flow. Instances of the @code{MHD_Response}
@@ -735,11 +727,17 @@ Example: we allocate a new @code{MHD_Response} structure for each
 response @strong{kind}, we use it every time we have to give that
 responce and we finally destroy it only when the daemon shuts down.
 
+@menu
+* microhttpd-response enqueue:: Enqueuing a response.
+* microhttpd-response create::  Creating a response object.
+* microhttpd-response headers:: Adding headers to a response.
+* microhttpd-response inspect:: Inspecting a response object.
+@end menu
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @c ------------------------------------------------------------
-@node microhttpd-response enqueue,microhttpd-responses
+@node microhttpd-response enqueue
 @section Enqueuing a response
 
 
@@ -814,7 +812,7 @@ the @code{MHD_Response} object is released.
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @c ------------------------------------------------------------
-@node microhttpd-response create,microhttpd-responses
+@node microhttpd-response create
 @section Creating response objects
 
 
@@ -890,7 +888,7 @@ MHD_destroy_response(response);
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @c ------------------------------------------------------------
-@node microhttpd-response headers,microhttpd-responses
+@node microhttpd-response headers
 @section Adding headers to a response
 
 
@@ -916,7 +914,7 @@ Delete a header line from the response.  Return @code{MHD_NO} on error
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @c ------------------------------------------------------------
-@node microhttpd-response inspect,microhttpd-responses
+@node microhttpd-response inspect
 @section Inspecting a response object
 
 
@@ -1041,7 +1039,7 @@ always terminate normally.
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 @c ------------------------------------------------------------
-@node microhttpd-post api,microhttpd-post
+@node microhttpd-post api
 @section Programming interface for the @code{POST} processor
 
 
