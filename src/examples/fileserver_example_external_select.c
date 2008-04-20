@@ -131,10 +131,10 @@ main (int argc, char *const *argv)
 	  if (tv.tv_sec * 1000 < mhd_timeout) 
 	    {
 	      tv.tv_sec = mhd_timeout  / 1000;
-	      tv.tv_usec = (mhd_timout - (tv.tv_sec * 1000)) * 1000;
+	      tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
 	    }
 	}
-      SELECT(max+1, &rs, &ws, &es, &tv);
+      select(max+1, &rs, &ws, &es, &tv);
       MHD_run(d);
     }  
   MHD_stop_daemon (d);
