@@ -60,7 +60,7 @@ ahc_echo (void *cls,
   FILE *file;
   struct stat buf;
 
-  if (0 != strcmp (method, "GET"))
+  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
   if (&aptr != *ptr)
     {
