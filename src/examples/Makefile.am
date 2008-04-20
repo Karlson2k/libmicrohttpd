@@ -4,7 +4,7 @@ INCLUDES = -I$(top_srcdir)/src/include
 
 # example programs
 
-noinst_PROGRAMS = minimal_example querystring_example fileserver_example
+noinst_PROGRAMS = minimal_example querystring_example fileserver_example fileserver_example_external
 
 minimal_example_SOURCES = \
  minimal_example.c 
