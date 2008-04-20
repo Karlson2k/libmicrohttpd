@@ -21,3 +21,9 @@ fileserver_example_SOURCES = \
 fileserver_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
+
+fileserver_example_external_select_SOURCES = \
+ fileserver_example_external_select.c 
+fileserver_example_external_select_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
