@@ -453,7 +453,7 @@ get_date_string (char *date, unsigned int max)
             days[now.tm_wday % 7],
             now.tm_mday,
             mons[now.tm_mon % 12],
-            now.tm_year, now.tm_hour, now.tm_min, now.tm_sec);
+            1900 + now.tm_year, now.tm_hour, now.tm_min, now.tm_sec);
 }
 
 /**
