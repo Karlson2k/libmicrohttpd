@@ -1,3 +1,6 @@
+Mon May  5 09:18:29 MDT 2008
+	 Fixed date header (was off by 1900 years). -JP
+
 Sun Apr 13 01:06:20 MDT 2008
 	 Releasing GNU libmicrohttpd 0.3.0. -CG
 
