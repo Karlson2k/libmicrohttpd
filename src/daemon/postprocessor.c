@@ -310,6 +310,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   unsigned int poff;
   unsigned int xoff;
   unsigned int delta;
+  int end_of_value_found;
   char *buf;
   char xbuf[XBUF_SIZE + 1];
 
@@ -355,11 +356,14 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           /* find last position in input buffer that is part of the value */
           amper = 0;
           while ((amper + poff < post_data_len) &&
+		 (amper < XBUF_SIZE) && 
                  (post_data[amper + poff] != '&') &&
                  (post_data[amper + poff] != '\n') &&
                  (post_data[amper + poff] != '\r'))
             amper++;
-
+	  end_of_value_found = ( (post_data[amper + poff] == '&') ||
+				 (post_data[amper + poff] == '\n') ||
+				 (post_data[amper + poff] == '\r') );
           /* compute delta, the maximum number of bytes that we will be able to
              process right now (either amper-limited of xbuf-size limited) */
           delta = amper;
@@ -400,12 +404,17 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           MHD_http_unescape (xbuf);
 
           /* finally: call application! */
-          pp->ikvi (pp->cls, MHD_POSTDATA_KIND, (const char *) &pp[1],  /* key */
-                    NULL, NULL, NULL, xbuf, pp->value_offset, xoff);
+          if (MHD_NO ==
+	      pp->ikvi (pp->cls, MHD_POSTDATA_KIND, (const char *) &pp[1],  /* key */
+			NULL, NULL, NULL, xbuf, pp->value_offset, xoff))
+	    {
+	      pp->state = PP_Error;
+	      return MHD_NO;
+	    }
           pp->value_offset += xoff;
 
           /* are we done with the value? */
-          if (poff < post_data_len)
+          if (end_of_value_found)
             {
               /* we found the end of the value! */
               pp->state = PP_Init;
