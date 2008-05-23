@@ -1,3 +1,7 @@
+Fri May 23 16:54:41 MDT 2008
+	 Fixed issue with postprocessor not handling URI-encoded
+	 values of more than 1024 bytes correctly. -CG
+	
 Mon May  5 09:18:29 MDT 2008
 	 Fixed date header (was off by 1900 years). -JP
 

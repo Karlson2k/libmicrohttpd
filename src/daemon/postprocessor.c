@@ -361,9 +361,10 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
                  (post_data[amper + poff] != '\n') &&
                  (post_data[amper + poff] != '\r'))
             amper++;
-	  end_of_value_found = ( (post_data[amper + poff] == '&') ||
-				 (post_data[amper + poff] == '\n') ||
-				 (post_data[amper + poff] == '\r') );
+	  end_of_value_found = ( (amper + poff < post_data_len) &&
+				 ( (post_data[amper + poff] == '&') ||
+				   (post_data[amper + poff] == '\n') ||
+				   (post_data[amper + poff] == '\r') ) );
           /* compute delta, the maximum number of bytes that we will be able to
              process right now (either amper-limited of xbuf-size limited) */
           delta = amper;
@@ -417,12 +418,16 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           if (end_of_value_found)
             {
               /* we found the end of the value! */
-              pp->state = PP_Init;
-              poff++;           /* skip '&' or new-lines */
-
-              if ((post_data[poff - 1] == '\n') ||
-                  (post_data[poff - 1] == '\r'))
-                pp->state = PP_ExpectNewLine;
+              if ((post_data[poff] == '\n') ||
+                  (post_data[poff] == '\r'))
+		{
+		  pp->state = PP_ExpectNewLine;
+		}
+	      else
+		{
+		  poff++;           /* skip '&' */
+		  pp->state = PP_Init;
+		}
             }
           break;
         case PP_ExpectNewLine:

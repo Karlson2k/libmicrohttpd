@@ -25,6 +25,7 @@ libmicrohttpd_la_SOURCES = \
 
 check_PROGRAMS = \
   postprocessor_test \
+  postprocessor_large_test \
   daemon_test 
 
 TESTS = $(check_PROGRAMS)
@@ -37,4 +38,10 @@ daemon_test_LDADD = \
 postprocessor_test_SOURCES = \
   postprocessor_test.c
 postprocessor_test_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+
+postprocessor_large_test_SOURCES = \
+  postprocessor_large_test.c
+postprocessor_large_test_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
