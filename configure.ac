@@ -141,6 +141,37 @@ AC_CHECK_PROG([HAVE_SOCAT],[socat], 1, 0)
 AM_CONDITIONAL(HAVE_ZZUF, test 0 != $HAVE_ZZUF)
 AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
+# GNUtls linkage
+AC_ARG_WITH(gnutls,
+  [  --with-gnutls=PFX   Base of GNU TLS installation],
+  [AC_MSG_RESULT("$with_gnutls")
+   case $with_gnutls in
+   no)
+     ;;
+   yes)
+	AC_CHECK_HEADERS(gnutls.h,gnutls=true)
+     ;;
+   *)
+    LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
+    CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
+    AC_CHECK_HEADERS(gnutls/gnutls.h,
+     # check for 'gnutls_global_init' in gnutls.so
+     AC_CHECK_LIB(gnutls,gnutls_global_init,
+       GNUTLS_LIB_PATH="$with_gnutls/lib"
+       GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+       GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+       gnutls=true))
+    LDFLAGS=$SAVE_LDFLAGS
+    CPPFLAGS=$SAVE_CPPFLAGS
+    ;;
+   esac
+  ],
+  [AC_MSG_RESULT([--with-gnutls not specified])])
+  
+AC_SUBST(GNUTLS_LIB_PATH)
+AC_SUBST(GNUTLS_LDFLAGS)
+AC_SUBST(GNUTLS_CPPFLAGS)
+
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(LDFLAGS)
