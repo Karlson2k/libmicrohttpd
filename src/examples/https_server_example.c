@@ -165,9 +165,9 @@ main (int argc, char *const *argv)
   gnutls_anon_set_server_dh_params (anoncred, dh_params);
 
   TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
-                                  | MHD_USE_DEBUG | MHD_USE_SSL,
-                                  atoi (argv[3]), NULL, NULL, &TLS_echo, NULL,
-                                  MHD_OPTION_END);
+                                 | MHD_USE_DEBUG | MHD_USE_SSL,
+                                 atoi (argv[3]), NULL, NULL, &TLS_echo, NULL,
+                                 MHD_OPTION_END);
 
   if (TLS_daemon == NULL)
     return 1;

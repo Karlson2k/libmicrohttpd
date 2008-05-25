@@ -115,28 +115,28 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  end = time(NULL) + atoi (argv[2]);
-  while ( (t = time(NULL)) < end) 
+  end = time (NULL) + atoi (argv[2]);
+  while ((t = time (NULL)) < end)
     {
       tv.tv_sec = end - t;
       tv.tv_usec = 0;
       max = 0;
-      FD_ZERO(&rs);
-      FD_ZERO(&ws);
-      FD_ZERO(&es);
-      MHD_get_fdset(d, &rs, &ws, &es, &max);
-      if (MHD_get_timeout(d, &mhd_timeout) == MHD_YES)
+      FD_ZERO (&rs);
+      FD_ZERO (&ws);
+      FD_ZERO (&es);
+      MHD_get_fdset (d, &rs, &ws, &es, &max);
+      if (MHD_get_timeout (d, &mhd_timeout) == MHD_YES)
 
-	{
-	  if (tv.tv_sec * 1000 < mhd_timeout) 
-	    {
-	      tv.tv_sec = mhd_timeout  / 1000;
-	      tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
-	    }
-	}
-      select(max+1, &rs, &ws, &es, &tv);
-      MHD_run(d);
-    }  
+        {
+          if (tv.tv_sec * 1000 < mhd_timeout)
+            {
+              tv.tv_sec = mhd_timeout / 1000;
+              tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
+            }
+        }
+      select (max + 1, &rs, &ws, &es, &tv);
+      MHD_run (d);
+    }
   MHD_stop_daemon (d);
   return 0;
 }

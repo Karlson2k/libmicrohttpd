@@ -48,7 +48,7 @@ value_checker (void *cls,
 #if 0
   fprintf (stderr,
            "VC: %u %u `%s' `%s' `%s' `%s' `%.*s'\n",
-	   off, size,
+           off, size,
            key, filename, content_type, transfer_encoding, size, data);
 #endif
   if (size == 0)
@@ -72,17 +72,16 @@ test_simple_large ()
   unsigned int pos;
 
   pos = 0;
-  memset (data, 'A', sizeof(data));
+  memset (data, 'A', sizeof (data));
   memcpy (data, "key=", 4);
-  data[sizeof(data)-1] = '\0';
+  data[sizeof (data) - 1] = '\0';
   memset (&connection, 0, sizeof (struct MHD_Connection));
   memset (&header, 0, sizeof (struct MHD_HTTP_Header));
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
   header.kind = MHD_HEADER_KIND;
-  pp = MHD_create_post_processor (&connection,
-                                  1024, &value_checker, &pos);
+  pp = MHD_create_post_processor (&connection, 1024, &value_checker, &pos);
   i = 0;
   size = strlen (data);
   while (i < size)
@@ -92,7 +91,7 @@ test_simple_large ()
       i += delta;
     }
   MHD_destroy_post_processor (pp);
-  if (pos != sizeof(data) - 5) /* minus 0-termination and 'key=' */
+  if (pos != sizeof (data) - 5) /* minus 0-termination and 'key=' */
     return 1;
   return 0;
 }
