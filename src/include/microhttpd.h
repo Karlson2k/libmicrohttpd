@@ -851,8 +851,13 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 
 /**
  * Release PostProcessor resources.
+ * 
+ * @return MHD_YES if processing completed nicely,
+ *         MHD_NO if there were spurious characters / formatting
+ *                problems; it is common to ignore the return 
+ *                value of this function
  */
-void MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
+int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
 #if 0                           /* keep Emacsens' auto-indent happy */

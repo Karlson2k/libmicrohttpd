@@ -1025,6 +1025,7 @@ access_handler (void *cls,
     @}
   else
     @{
+      MHD_destroy_post_processor(pp);
       return MHD_queue_response(...);
     @}
 @}
@@ -1094,8 +1095,19 @@ Return @code{MHD_YES} on success, @code{MHD_NO} on error
 @end deftypefun
 
 
-@deftypefun void MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
-Release PostProcessor resources.
+@deftypefun int MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
+Release PostProcessor resources.  After this function is being called,
+the PostProcessor is guaranteed to no longer call its iterator.  There
+is no special call to the iterator to indicate the end of the post processing
+stream.  After destroying the PostProcessor, the programmer should
+perform any necessary work to complete the processing of the iterator.
+
+Return @code{MHD_YES} if processing completed nicely, @code{MHD_NO} 
+if there were spurious characters or formatting problems with
+the post request.  It is common to ignore the return value
+of this function.
+
+
 @end deftypefun
 
 

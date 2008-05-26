@@ -1018,17 +1018,25 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 /**
  * Release PostProcessor resources.
  */
-void
+int
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
 {
+  int ret;
+
   /* These internal strings need cleaning up since
      the post-processing may have been interrupted
      at any stage */
+  if ( (pp->xbuf_pos > 0) ||
+       (pp->state != PP_Done) )
+    ret = MHD_NO;
+  else
+    ret = MHD_YES;
   pp->have = NE_none;
   free_unmarked (pp);
   if (pp->nested_boundary != NULL)
     free (pp->nested_boundary);
   free (pp);
+  return ret;
 }
 
 /* end of postprocessor.c */

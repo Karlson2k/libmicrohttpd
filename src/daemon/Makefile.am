@@ -12,7 +12,7 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 4:2:0 $(retaincommand)
+  -export-dynamic -version-info 4:3:0 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   reason_phrase.c reason_phrase.h \
