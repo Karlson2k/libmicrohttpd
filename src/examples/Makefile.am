@@ -34,7 +34,8 @@ fileserver_example_external_select_LDADD = \
 
 https_server_example_CPPFLAGS = \
  $(GNUTLS_CPPFLAGS) \
- -I$(top_srcdir)/src/daemon
+ -I$(top_srcdir)/src/daemon \
+ -I$(top_srcdir)/src/include 
 https_server_example_SOURCES = \
  https_server_example.c
 https_server_example_LDADD = \
@@ -45,7 +46,8 @@ https_server_example_LDFLAGS = \
  
 https_echo_client_example_CPPFLAGS = \
  $(GNUTLS_CPPFLAGS) \
- -I$(top_srcdir)/src/daemon
+ -I$(top_srcdir)/src/daemon \
+ -I$(top_srcdir)/src/include 
 https_echo_client_example_SOURCES = \
  https_echo_client_example.c
 https_echo_client_example_LDADD = \
@@ -53,3 +55,5 @@ https_echo_client_example_LDADD = \
 https_echo_client_example_LDFLAGS = \
  -L$(GNUTLS_LIB_PATH) \
  -lgnutls
+
+
