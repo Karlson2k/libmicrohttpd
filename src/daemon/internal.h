@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <gnutls/gnutls.h>
 
 #include "config.h"
 #include "plibc.h"
@@ -57,6 +58,9 @@
  * put in code to automatically determine a good value.
  */
 #define MHD_BUF_INC_SIZE 2048
+
+/* TLS Diffie-Hellman parameter */
+#define DH_BITS 1024
 
 #if HAVE_MESSAGES
 /**
@@ -606,6 +610,22 @@ struct MHD_Daemon
      */
   unsigned short port;
 
+  /* server credintials */
+  gnutls_certificate_credentials_t x509_cret;
+
+  /* cipher priority cache */
+  gnutls_priority_t priority_cache;
+
+  /* Diffie-Hellman parameters */
+  gnutls_dh_params_t dh_params;
+
+  // TODO consider switching to variadic length paths
+  /* server root path used while serving http pages */
+  char doc_root[255];
+
+  char https_key_path[255];
+
+  char https_cert_path[255];
 };
 
 #endif

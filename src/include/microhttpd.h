@@ -345,6 +345,14 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
+  /* server root path used while serving http pages */
+  MHD_OPTION_DOC_ROOT = 6,
+
+  /* private key path used by the HTTPS daemon */
+  MHD_OPTION_HTTPS_KEY_PATH = 7,
+
+  /* certificate path used by the HTTPS daemon */
+  MHD_OPTION_HTTPS_CERT_PATH = 8,
 };
 
 /**

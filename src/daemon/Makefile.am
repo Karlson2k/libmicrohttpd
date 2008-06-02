@@ -11,8 +11,6 @@ EXTRA_DIST = SYMBOLS
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
-libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 4:3:0 $(retaincommand)
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   reason_phrase.c reason_phrase.h \
@@ -21,7 +19,13 @@ libmicrohttpd_la_SOURCES = \
   memorypool.c memorypool.h \
   plibc.h \
   postprocessor.c \
-  response.c response.h 
+  response.c response.h
+libmicrohttpd_la_LDFLAGS = \
+  -export-dynamic -version-info 4:3:0 $(retaincommand) \
+  -L$(GNUTLS_LIB_PATH) \
+  -lgnutls
+libmicrohttpd_la_CPPFLAGS = \
+  $(GNUTLS_CPPFLAGS) 
 
 check_PROGRAMS = \
   postprocessor_test \

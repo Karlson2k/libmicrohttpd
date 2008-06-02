@@ -6,6 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/include
 
 noinst_PROGRAMS = \
 https_server_example \
+https_echo_server_example \
 https_echo_client_example \
 minimal_example \
 querystring_example \
@@ -41,6 +42,18 @@ https_server_example_SOURCES = \
 https_server_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la
 https_server_example_LDFLAGS = \
+ -L$(GNUTLS_LIB_PATH) \
+ -lgnutls
+
+https_echo_server_example_CPPFLAGS = \
+ $(GNUTLS_CPPFLAGS) \
+ -I$(top_srcdir)/src/daemon \
+ -I$(top_srcdir)/src/include 
+https_echo_server_example_SOURCES = \
+ https_echo_server_example.c
+https_echo_server_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la
+https_echo_server_example_LDFLAGS = \
  -L$(GNUTLS_LIB_PATH) \
  -lgnutls
  

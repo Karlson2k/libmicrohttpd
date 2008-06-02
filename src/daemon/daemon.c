@@ -29,6 +29,7 @@
 #include "response.h"
 #include "connection.h"
 #include "memorypool.h"
+#include <gnutls/gnutls.h>
 
 /**
  * Default connection limit.
@@ -51,6 +52,12 @@
  * connections? (only adds non-error messages).
  */
 #define DEBUG_CONNECT MHD_NO
+
+// TODO rm
+/* HTTPS file path limit, leaving room for file name */
+#define MHD_PATH_LEN 240
+
+int MHDS_init (struct MHD_Daemon *daemon);
 
 /**
  * Obtain the select sets for this daemon.
@@ -173,6 +180,8 @@ MHDS_handle_connection (void *data)
 
   if (con == NULL)
     abort ();
+
+  // TODO add connection time out code
 
   /* forward call to handler */
   con->daemon->default_handler (NULL, con, NULL, NULL, NULL, NULL, NULL,
@@ -690,6 +699,13 @@ MHD_start_daemon (unsigned int options,
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
 
+  /* set server default document root path */
+  getcwd (retVal->doc_root, MHD_PATH_LEN);
+
+  /* initialize ssl path parameters to the local path */
+  strcpy (retVal->https_cert_path, "cert.pem");
+  strcpy (retVal->https_key_path, "key.pem");
+
   /* initializes the argument pointer variable */
   va_start (ap, dh_cls);
 
@@ -717,6 +733,22 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
+        case MHD_OPTION_DOC_ROOT:
+          strncpy (retVal->doc_root, va_arg (ap, char *), MHD_PATH_LEN);
+          break;
+        case MHD_OPTION_HTTPS_KEY_PATH:
+          strncpy (retVal->https_key_path, va_arg (ap, char *), MHD_PATH_LEN);
+          strcat (retVal->https_key_path, DIR_SEPARATOR_STR);
+          strcat (retVal->https_key_path, "key.pem");
+          break;
+        case MHD_OPTION_HTTPS_CERT_PATH:
+
+          strncpy (retVal->https_cert_path,
+                   va_arg (ap, char *), MHD_PATH_LEN);
+          strcat (retVal->https_cert_path, DIR_SEPARATOR_STR);
+          strcat (retVal->https_cert_path, "cert.pem");
+          break;
+
         default:
 #if HAVE_MESSAGES
           fprintf (stderr,
@@ -725,6 +757,29 @@ MHD_start_daemon (unsigned int options,
           abort ();
         }
     }
+
+  /* initialize HTTPS daemon certificate aspects */
+  if (options & MHD_USE_SSL)
+    {
+      /* test for private key & certificate file exsitance */
+      FILE *cert_file = fopen (retVal->https_cert_path, "r");
+      FILE *key_file = fopen (retVal->https_key_path, "r");
+      if (key_file == NULL || cert_file == NULL)
+        {
+          printf ("missing cert files");
+#if HAVE_MESSAGES
+          MHD_DLOG (retVal, "Missing X.509 key or certificate file\n");
+#endif
+          free (retVal);
+          CLOSE (socket_fd);
+          return NULL;
+        }
+
+      fclose (cert_file);
+      fclose (key_file);
+      MHDS_init (retVal);
+    }
+
   va_end (ap);
   if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
                                                                   &
@@ -793,7 +848,49 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         }
       MHD_cleanup_connections (daemon);
     }
+
+  /* TLS clean up */
+  if (daemon->options & MHD_USE_SSL)
+    {
+      gnutls_priority_deinit (daemon->priority_cache);
+      gnutls_global_deinit ();
+    }
+
   free (daemon);
+}
+
+int
+MHDS_init (struct MHD_Daemon *daemon)
+{
+  gnutls_global_init ();
+  /* Generate Diffie Hellman parameters - for use with DHE kx algorithms. */
+  gnutls_dh_params_init (&daemon->dh_params);
+  gnutls_dh_params_generate2 (daemon->dh_params, DH_BITS);
+
+  // TODO make room for cipher settings adjustment
+  gnutls_priority_init (&daemon->priority_cache,
+                        "NORMAL:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
+
+  /* setup server certificate */
+  gnutls_certificate_allocate_credentials (&daemon->x509_cret);
+
+  // TODO remove if unused
+  /* add trusted CAs to certificate */
+  // gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
+
+  /* add Certificate revocation list to certificate */
+  //gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM);
+
+  /* sets a certificate private key pair */
+  gnutls_certificate_set_x509_key_file (daemon->x509_cret,
+                                        daemon->https_cert_path,
+                                        daemon->https_key_path,
+                                        GNUTLS_X509_FMT_PEM);
+
+  gnutls_certificate_set_dh_params (daemon->x509_cret, daemon->dh_params);
+
+  // TODO address error case return value
+  return 0;
 }
 
 #ifndef WINDOWS
