@@ -6,7 +6,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/include
 
 noinst_PROGRAMS = \
 https_server_example \
-https_echo_client_example \
 minimal_example \
 querystring_example \
 fileserver_example \
