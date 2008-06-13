@@ -141,6 +141,52 @@ AC_CHECK_PROG([HAVE_SOCAT],[socat], 1, 0)
 AM_CONDITIONAL(HAVE_ZZUF, test 0 != $HAVE_ZZUF)
 AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
+# optional: HTTPS support. Included by default
+AC_MSG_CHECKING(--enable-HTTPS argument)
+AC_ARG_ENABLE([HTTPS],
+   [  --enable-HTTPS          Enable MHD HTTPS support],
+   [enable_HTTPS=$enableval],
+   [enable_HTTPS="yes"])
+AC_MSG_RESULT($enable_HTTPS)
+if test "$enable_messages" = "yes"
+then
+ AC_DEFINE([HTTPS_SUPPORT],[0],[Include HTTPS support])
+else
+ AC_DEFINE([HTTPS_SUPPORT],[1],[Include HTTPS support]) 
+fi
+
+
+# Libgcrypt linkage
+AC_ARG_WITH(libgcrypt,
+  [  --with-libgcrypt=PFX   Base of libgcrypt installation],
+  [AC_MSG_RESULT("$with_libgcrypt")
+   case $with_libgcrypt in
+   no)
+     ;;
+   yes)
+	AC_CHECK_HEADERS(gcrypt.h,gcrypt=true)
+     ;;
+   *)
+    LDFLAGS="-L$with_libgcrypt/lib $LDFLAGS"
+    CPPFLAGS="-I$with_libgcrypt/include $CPPFLAGS"
+    AC_CHECK_HEADERS(gcrypt.h,
+     # check for 'gnutls_global_init' in gnutls.so
+     AC_CHECK_LIB(gcrypt,gcry_prime_generate,
+       GCRYPT_LIB_PATH="$with_libgcrypt/lib"
+       GCRYPT_LDFLAGS="-L$with_libgcrypt/lib"
+       GCRYPT_CPPFLAGS="-I$with_libgcrypt/include"
+       gnutls=true))
+    LDFLAGS=$SAVE_LDFLAGS
+    CPPFLAGS=$SAVE_CPPFLAGS
+    ;;
+   esac
+  ],
+  [AC_MSG_RESULT([--with_libgcrypt not specified])])
+  
+AC_SUBST(GCRYPT_LIB_PATH)
+AC_SUBST(GCRYPT_LDFLAGS)
+AC_SUBST(GCRYPT_CPPFLAGS)
+
 # GNUtls linkage
 AC_ARG_WITH(gnutls,
   [  --with-gnutls=PFX   Base of GNU TLS installation],
