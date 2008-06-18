@@ -57,6 +57,7 @@
 /* HTTPS file path limit, leaving room for file name */
 #define MHD_PATH_LEN 240
 
+/* initialize security aspects of the HTTPS daemon */
 int MHDS_init (struct MHD_Daemon *daemon);
 
 /**
@@ -170,24 +171,62 @@ MHD_handle_connection (void *data)
   return NULL;
 }
 
+/* gnutls parameter adapter */
+long
+gnutls_pull_param_adapter (void *con, void *other, int i)
+{
+  return MHD_handle_connection (con);
+}
+
 /**
  * Handle an individual TLS connection.
  */
 static void *
 MHDS_handle_connection (void *data)
 {
+  // TODO check compatibility with socket_fd
+  gnutls_session_t session;
   struct MHD_Connection *con = data;
+  int ret;
 
   if (con == NULL)
     abort ();
 
-  // TODO add connection time out code
+  con->tls_session = &session;
 
-  /* forward call to handler */
-  con->daemon->default_handler (NULL, con, NULL, NULL, NULL, NULL, NULL,
-                                NULL);
+  gnutls_init (&session, GNUTLS_SERVER);
 
-  return NULL;
+  /* sets cipher priorities */
+  gnutls_priority_set (session, con->daemon->priority_cache);
+
+  /* set needed credentials for certificate authentication. */
+  gnutls_credentials_set (session, GNUTLS_CRD_CERTIFICATE,
+                          con->daemon->x509_cret);
+
+  gnutls_transport_set_pull_function (session, &gnutls_pull_param_adapter);
+
+  gnutls_transport_set_ptr (session, con);
+
+  ret = gnutls_handshake (session);
+  if (ret == 0)
+    {
+      con->state = MHDS_HANDSHAKE_COMPLETE;
+    }
+  else
+    {
+      /* set connection as closed */
+      fprintf (stderr, "*** Handshake has failed (%s)\n\n",
+               gnutls_strerror (ret));
+      gnutls_deinit (session);
+      con->state = MHDS_HANDSHAKE_FAILED;
+      con->socket_fd = 1;
+      return MHD_NO;
+    }
+
+  // printf ("TLS Handshake completed\n");
+  con->state = MHDS_HANDSHAKE_COMPLETE;
+
+  MHD_handle_connection (data);
 }
 
 /**
@@ -326,6 +365,18 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->socket_fd = s;
   connection->daemon = daemon;
 
+  /* set default connection handlers  */
+  connection->recv_cls = &http_con_read;
+  connection->send_cls = &http_con_write;
+
+#if HTTPS_SUPPORT
+  if (daemon->options & MHD_USE_SSL)
+    {
+      connection->recv_cls = &https_con_read;
+      connection->send_cls = &https_con_write;
+    }
+#endif
+
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -355,6 +406,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 
   connection->last_activity = time (NULL);
   connection->next = daemon->connections;
+
   daemon->connections = connection;
   daemon->max_connections--;
   return MHD_YES;
@@ -757,8 +809,8 @@ MHD_start_daemon (unsigned int options,
           abort ();
         }
     }
-
-  /* initialize HTTPS daemon certificate aspects */
+#if HTTPS_SUPPORT
+  /* initialize HTTPS daemon certificate aspects & send / recv functions */
   if (options & MHD_USE_SSL)
     {
       /* test for private key & certificate file exsitance */
@@ -779,7 +831,7 @@ MHD_start_daemon (unsigned int options,
       fclose (key_file);
       MHDS_init (retVal);
     }
-
+#endif
   va_end (ap);
   if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
                                                                   &
@@ -867,9 +919,7 @@ MHDS_init (struct MHD_Daemon *daemon)
   gnutls_dh_params_init (&daemon->dh_params);
   gnutls_dh_params_generate2 (daemon->dh_params, DH_BITS);
 
-  // TODO make room for cipher settings adjustment
-  gnutls_priority_init (&daemon->priority_cache,
-                        "NORMAL:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
+  gnutls_priority_init (&daemon->priority_cache, "NORMAL", NULL);
 
   /* setup server certificate */
   gnutls_certificate_allocate_credentials (&daemon->x509_cret);

@@ -294,11 +294,11 @@ enum MHDS_CONNECTION_STATE
     /**
      * 1: We got the URL (and request type and version).  Wait for a header line.
      */
-  MHDS_HANDSHAKE_COMPLETE = MHDS_CONNECTION_INIT + 1,
+  MHDS_HANDSHAKE_FAILED,
+  
+  MHDS_HANDSHAKE_COMPLETE,
 
-  MHDS_CONNECTION_CONTINUE_SENDING = MHDS_HANDSHAKE_COMPLETE + 1,
-
-  MHDS_CONNECTION_CLOSED = MHDS_CONNECTION_CONTINUE_SENDING + 1
+  MHDS_CONNECTION_CLOSED
 };
 
 struct MHD_Connection
@@ -527,6 +527,18 @@ struct MHD_Connection
      */
   unsigned int current_chunk_offset;
 
+  /*  
+   * function pointers to the appropriate send & receive funtions
+   * according to whether this is a HTTPS / HTTP daemon
+   */
+  int (* recv_cls) (struct MHD_Connection *connection);
+    
+  int (* send_cls) (struct MHD_Connection *connection);
+  
+#if HTTPS_SUPPORT
+  gnutls_session_t * tls_session;
+#endif
+  
 };
 
 typedef struct MHD_Connection MHD_Connection_t;
@@ -610,6 +622,7 @@ struct MHD_Daemon
      */
   unsigned short port;
 
+#if HTTPS_SUPPORT
   /* server credintials */
   gnutls_certificate_credentials_t x509_cret;
 
@@ -626,6 +639,7 @@ struct MHD_Daemon
   char https_key_path[255];
 
   char https_cert_path[255];
+#endif
 };
 
 #endif
