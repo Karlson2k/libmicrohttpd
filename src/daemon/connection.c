@@ -1181,10 +1181,9 @@ do_read (struct MHD_Connection *connection)
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return MHD_NO;
-  bytes_read = RECV (connection->socket_fd,
-                     &connection->read_buffer[connection->read_buffer_offset],
-                     connection->read_buffer_size -
-                     connection->read_buffer_offset, MSG_NOSIGNAL);
+
+  bytes_read = connection->recv_cls (connection);
+
   if (bytes_read < 0)
     {
       if (errno == EINTR)
@@ -1206,6 +1205,28 @@ do_read (struct MHD_Connection *connection)
   connection->read_buffer_offset += bytes_read;
   return MHD_YES;
 }
+
+int
+http_con_read (struct MHD_Connection *connection)
+{
+  return RECV (connection->socket_fd,
+               &connection->read_buffer[connection->read_buffer_offset],
+               connection->read_buffer_size -
+               connection->read_buffer_offset, MSG_NOSIGNAL);
+}
+
+#if HTTPS_SUPPORT
+int
+https_con_read (struct MHD_Connection *connection)
+{
+  return gnutls_record_recv (connection->tls_session,
+                             &connection->write_buffer[connection->
+                                                       write_buffer_send_offset],
+                             connection->write_buffer_append_offset
+                             - connection->write_buffer_send_offset);
+
+}
+#endif
 
 /**
  * We have received (possibly the beginning of) a line in the
@@ -1390,6 +1411,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
+  int num_bytes;
   connection->last_activity = time (NULL);
   if (connection->state == MHD_CONNECTION_CLOSED)
     return MHD_NO;
@@ -1435,6 +1457,42 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+// TODO rm
+int
+attemptLoopBackConnection (struct MHD_Connection *connection, int port)
+{
+  /* loopback HTTP socket */
+  int *loopback_sd;
+  int err;
+  struct sockaddr_in servaddr4;
+  const struct sockaddr *servaddr;
+  struct sockaddr_in loopback_sa;
+  socklen_t addrlen;
+
+  /* initialize loopback socket */
+  loopback_sd = socket (AF_LOCAL, SOCK_STREAM, 0);
+
+  memset (&loopback_sa, '\0', sizeof (loopback_sa));
+
+  loopback_sa.sin_family = AF_LOCAL;
+
+  // TODO solve magic number issue - the http's daemons port must be shared with the https daemon - rosolve data sharing point
+  loopback_sa.sin_port = htons (port);
+  inet_pton (AF_LOCAL, "127.0.0.1", &loopback_sa.sin_addr);
+
+  /* connect loopback socket */
+  err = connect (loopback_sd, (struct sockaddr *) &loopback_sa,
+                 sizeof (loopback_sa));
+  if (err < 0)
+    {
+      // TODO err handle
+      fprintf (stderr, "Error : failed to create TLS loopback socket\n");
+      return MHD_NO;
+    }
+  return loopback_sd;
+
+}
+
 /**
  * Try writing data to the socket from the
  * write buffer of the connection.
@@ -1446,12 +1504,9 @@ static int
 do_write (struct MHD_Connection *connection)
 {
   int ret;
+  
+  ret = connection->send_cls (connection);
 
-  ret = SEND (connection->socket_fd,
-              &connection->write_buffer[connection->
-                                        write_buffer_send_offset],
-              connection->write_buffer_append_offset -
-              connection->write_buffer_send_offset, MSG_NOSIGNAL);
   if (ret < 0)
     {
       if (errno == EINTR)
@@ -1472,6 +1527,29 @@ do_write (struct MHD_Connection *connection)
   connection->write_buffer_send_offset += ret;
   return MHD_YES;
 }
+
+int
+http_con_write (struct MHD_Connection *connection)
+{
+  return SEND (connection->socket_fd,
+               &connection->write_buffer[connection->
+                                         write_buffer_send_offset],
+               connection->write_buffer_append_offset -
+               connection->write_buffer_send_offset, MSG_NOSIGNAL);
+}
+
+#if HTTPS_SUPPORT
+int
+https_con_write (struct MHD_Connection *connection)
+{
+  return gnutls_record_send (connection->tls_session,
+                             &connection->write_buffer[connection->
+                                                       write_buffer_send_offset],
+                             connection->write_buffer_append_offset
+                             - connection->write_buffer_send_offset);
+
+}
+#endif
 
 /**
  * Check if we are done sending the write-buffer.
@@ -1578,6 +1656,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
+          // TODO clean
           ret = SEND (connection->socket_fd,
                       &response->data[connection->response_write_position -
                                       response->data_start],
