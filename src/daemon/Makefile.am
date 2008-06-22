@@ -1,6 +1,15 @@
-SUBDIRS  = .
+SUBDIRS  = https .
 
-INCLUDES = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/src/include \
+-I$(top_srcdir)/src/daemon \
+-I$(top_srcdir)/src/daemon/https/lgl \
+-I$(top_srcdir)/src/daemon/https/x509 \
+-I$(top_srcdir)/src/daemon/https/openpgp \
+-I$(top_srcdir)/src/daemon/https/opencdk \
+-I$(top_srcdir)/src/daemon/https/tls \
+-I$(top_srcdir)/src/daemon/https/includes \
+-I$(top_srcdir)/src/daemon/https/cfg \
+-I$(GCRYPT_CPPFLAGS)
 
 if HAVE_GNU_LD
  retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
@@ -12,21 +21,21 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_SOURCES = \
-  connection.c connection.h \
-  reason_phrase.c reason_phrase.h \
-  daemon.c  \
-  internal.c internal.h \
-  memorypool.c memorypool.h \
-  plibc.h \
-  postprocessor.c \
-  response.c response.h
+connection.c connection.h \
+reason_phrase.c reason_phrase.h \
+daemon.c  \
+internal.c internal.h \
+memorypool.c memorypool.h \
+plibc.h \
+postprocessor.c \
+response.c response.h
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 4:3:0 $(retaincommand) \
-  -L$(GNUTLS_LIB_PATH) \
-  -lgnutls
-libmicrohttpd_la_CPPFLAGS = \
-  $(GNUTLS_CPPFLAGS) 
+  -export-dynamic -version-info 4:3:0 $(retaincommand)
+libmicrohttpd_la_LIBADD = \
+https/libhttps.la 
 
+
+ 
 check_PROGRAMS = \
   postprocessor_test \
   postprocessor_large_test \
@@ -43,7 +52,6 @@ postprocessor_test_SOURCES = \
   postprocessor_test.c
 postprocessor_test_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
-
 
 postprocessor_large_test_SOURCES = \
   postprocessor_large_test.c

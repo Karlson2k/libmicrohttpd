@@ -121,7 +121,6 @@ LIBS=$SAVE_LIBS
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-
 # optional: have error messages?
 AC_MSG_CHECKING(--enable-messages argument)
 AC_ARG_ENABLE(messages,
@@ -148,12 +147,28 @@ AC_ARG_ENABLE([HTTPS],
    [enable_HTTPS=$enableval],
    [enable_HTTPS="yes"])
 AC_MSG_RESULT($enable_HTTPS)
-if test "$enable_messages" = "yes"
+if test "$enable_HTTPS" = "no"
 then
- AC_DEFINE([HTTPS_SUPPORT],[0],[Include HTTPS support])
+ AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
 else
  AC_DEFINE([HTTPS_SUPPORT],[1],[Include HTTPS support]) 
 fi
+
+# Symbols required by GNU_TLS 
+AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
+AC_DEFINE([ENABLE_OPENPGP],[1],[Include ENABLE_OPENPGP support])
+AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
+AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
+AC_DEFINE([ENABLE_PKI],[1],[Include ENABLE_OPENPGP support])
+AC_DEFINE([ENABLE_INCLUDED_OPENCDK],[1],[Include ENABLE_INCLUDED_OPENCDK support])
+# gnutls debug support
+AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
+AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
+
+
+AC_DEFINE([ENABLE_OPENSSL],[0],[Include ENABLE_OPENSSL support])
+AC_DEFINE([HAVE_LD_OUTPUT_DEF],[0],[Include HAVE_LD_OUTPUT_DEF support])
+AC_DEFINE([HAVE_LD_VERSION_SCRIPT],[0],[Include HAVE_LD_VERSION_SCRIPT support])
 
 
 # Libgcrypt linkage
@@ -170,12 +185,12 @@ AC_ARG_WITH(libgcrypt,
     LDFLAGS="-L$with_libgcrypt/lib $LDFLAGS"
     CPPFLAGS="-I$with_libgcrypt/include $CPPFLAGS"
     AC_CHECK_HEADERS(gcrypt.h,
-     # check for 'gnutls_global_init' in gnutls.so
+     # check for 'gcry_prime_generate' in gcrypt.la
      AC_CHECK_LIB(gcrypt,gcry_prime_generate,
        GCRYPT_LIB_PATH="$with_libgcrypt/lib"
        GCRYPT_LDFLAGS="-L$with_libgcrypt/lib"
        GCRYPT_CPPFLAGS="-I$with_libgcrypt/include"
-       gnutls=true))
+       libgcrypt=true))
     LDFLAGS=$SAVE_LDFLAGS
     CPPFLAGS=$SAVE_CPPFLAGS
     ;;
@@ -201,11 +216,11 @@ AC_ARG_WITH(gnutls,
     LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
     CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
     AC_CHECK_HEADERS(gnutls/gnutls.h,
-     # check for 'gnutls_global_init' in gnutls.so
+     # check for 'gnutls_global_init' in gnutls.la
      AC_CHECK_LIB(gnutls,gnutls_global_init,
        GNUTLS_LIB_PATH="$with_gnutls/lib"
        GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-       GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+       GNUTLS_CPPFLAGS="-I$with_gnutls/include/gnutls"
        gnutls=true))
     LDFLAGS=$SAVE_LDFLAGS
     CPPFLAGS=$SAVE_CPPFLAGS
@@ -231,6 +246,14 @@ m4/Makefile
 src/Makefile
 src/include/Makefile
 src/daemon/Makefile
+src/daemon/https/Makefile
+src/daemon/https/tls/Makefile
+src/daemon/https/x509/Makefile
+src/daemon/https/lgl/Makefile
+src/daemon/https/openpgp/Makefile
+src/daemon/https/opencdk/Makefile
+src/daemon/https/minitasn1/Makefile
+src/daemon/https/includes/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testzzuf/Makefile])
@@ -240,3 +263,10 @@ if test "$curl" != 1
 then
  AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
 fi
+
+AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
+AM_CONDITIONAL(ENABLE_OPENPGP,  [test -n " " ] )
+AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
+AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
+AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
+AM_CONDITIONAL(ENABLE_INCLUDED_OPENCDK,  [test -n "" ] )
