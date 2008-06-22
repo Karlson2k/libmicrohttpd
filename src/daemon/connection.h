@@ -74,13 +74,15 @@ int MHD_connection_handle_write (struct MHD_Connection *connection);
  */
 int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
-int http_con_read(struct MHD_Connection *connection);
-int http_con_write(struct MHD_Connection *connection);
+int MHD_con_read(struct MHD_Connection *connection);
+int MHD_con_write(struct MHD_Connection *connection);
 
-// TODO rm static
-#if HTTPS_SUPPORT
-int https_con_read(struct MHD_Connection *connection);
-int https_con_write(struct MHD_Connection *connection);
+#ifdef HTTPS_SUPPORT
+int MHDS_connection_handle_read(struct MHD_Connection *connection);
+int MHDS_connection_handle_write(struct MHD_Connection *connection);
+int MHDS_connection_handle_idle(struct MHD_Connection *connection);
+
+ssize_t MHDS_con_read(struct MHD_Connection *connection);
+ssize_t MHDS_con_write(struct MHD_Connection *connection);
 #endif
-
 #endif

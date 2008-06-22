@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <gnutls/gnutls.h>
+#include "gnutls.h"
 
 #include "config.h"
 #include "plibc.h"
@@ -49,6 +49,7 @@
 
 #include <pthread.h>
 
+// TODO unify with other dec
 #define MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MIN(a,b) ((a)<(b)) ? (a) : (b)
 
@@ -289,14 +290,24 @@ enum MHD_CONNECTION_STATE
 
 enum MHDS_CONNECTION_STATE
 {
+  /* initial HTTPS state */
   MHDS_CONNECTION_INIT = 0,
 
-    /**
-     * 1: We got the URL (and request type and version).  Wait for a header line.
-     */
   MHDS_HANDSHAKE_FAILED,
-  
+
   MHDS_HANDSHAKE_COMPLETE,
+
+  /* while receiving an HTTP request through the encrypted channel */
+  MHDS_REQUEST_READING,
+
+  /* msg waiting to be forwarded to the internal HTTP daemon */
+  MHDS_REQUEST_READ,
+
+  /* http msg waiting to be sent */
+  MHDS_REPLY_READY,
+
+  /* while receiving an HTTP request through the encrypted channel */
+  MHDS_REPLY_SENDING,
 
   MHDS_CONNECTION_CLOSED
 };
@@ -484,6 +495,8 @@ struct MHD_Connection
      */
   enum MHD_CONNECTION_STATE state;
 
+  enum MHDS_CONNECTION_STATE s_state;
+
     /**
      * HTTP response code.  Only valid if response object
      * is already set.
@@ -527,18 +540,25 @@ struct MHD_Connection
      */
   unsigned int current_chunk_offset;
 
+  /* handlers used for processing read, write & idle connection operations */
+  int (*read_handler) (struct MHD_Connection * connection);
+
+  int (*write_handler) (struct MHD_Connection * connection);
+
+  int (*idle_handler) (struct MHD_Connection * connection);
+
   /*  
    * function pointers to the appropriate send & receive funtions
    * according to whether this is a HTTPS / HTTP daemon
    */
-  int (* recv_cls) (struct MHD_Connection *connection);
-    
-  int (* send_cls) (struct MHD_Connection *connection);
-  
+  int (*recv_cls) (struct MHD_Connection * connection);
+
+  int (*send_cls) (struct MHD_Connection * connection);
+
 #if HTTPS_SUPPORT
-  gnutls_session_t * tls_session;
+  gnutls_session_t tls_session;
 #endif
-  
+
 };
 
 typedef struct MHD_Connection MHD_Connection_t;

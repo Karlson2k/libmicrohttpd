@@ -31,12 +31,19 @@
 #include "response.h"
 #include "reason_phrase.h"
 
+// get opaque type
+#include "gnutls_int.h"
+// TODO clean
+#undef MAX
+#define MAX(a,b) ((a)<(b)) ? (b) : (a)
+#undef MIN
+#define MIN(a,b) ((a)<(b)) ? (a) : (b)
+
 #ifndef LINUX
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
 #endif
-
 
 /**
  * Message to transmit when http 1.1 request is received
@@ -1207,7 +1214,7 @@ do_read (struct MHD_Connection *connection)
 }
 
 int
-http_con_read (struct MHD_Connection *connection)
+MHD_con_read (struct MHD_Connection *connection)
 {
   return RECV (connection->socket_fd,
                &connection->read_buffer[connection->read_buffer_offset],
@@ -1216,15 +1223,14 @@ http_con_read (struct MHD_Connection *connection)
 }
 
 #if HTTPS_SUPPORT
-int
-https_con_read (struct MHD_Connection *connection)
+ssize_t
+MHDS_con_read (struct MHD_Connection * connection)
 {
-  return gnutls_record_recv (connection->tls_session,
-                             &connection->write_buffer[connection->
-                                                       write_buffer_send_offset],
-                             connection->write_buffer_append_offset
-                             - connection->write_buffer_send_offset);
-
+  ssize_t size = gnutls_record_recv (connection->tls_session,
+                        connection->read_buffer[connection->
+                                                read_buffer_offset],
+                        connection->read_buffer_size);
+  return size;
 }
 #endif
 
@@ -1457,41 +1463,62 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
-// TODO rm
+#if HTTPS_SUPPORT
 int
-attemptLoopBackConnection (struct MHD_Connection *connection, int port)
+MHDS_connection_handle_read (struct MHD_Connection *connection)
 {
-  /* loopback HTTP socket */
-  int *loopback_sd;
-  int err;
-  struct sockaddr_in servaddr4;
-  const struct sockaddr *servaddr;
-  struct sockaddr_in loopback_sa;
-  socklen_t addrlen;
+  connection->last_activity = time (NULL);
 
-  /* initialize loopback socket */
-  loopback_sd = socket (AF_LOCAL, SOCK_STREAM, 0);
+  if (connection->s_state == MHDS_CONNECTION_CLOSED)
+    return MHD_NO;
 
-  memset (&loopback_sa, '\0', sizeof (loopback_sa));
+  if (MHD_NO == do_read (connection))
+    return MHD_YES;
 
-  loopback_sa.sin_family = AF_LOCAL;
-
-  // TODO solve magic number issue - the http's daemons port must be shared with the https daemon - rosolve data sharing point
-  loopback_sa.sin_port = htons (port);
-  inet_pton (AF_LOCAL, "127.0.0.1", &loopback_sa.sin_addr);
-
-  /* connect loopback socket */
-  err = connect (loopback_sd, (struct sockaddr *) &loopback_sa,
-                 sizeof (loopback_sa));
-  if (err < 0)
+  while (1)
     {
-      // TODO err handle
-      fprintf (stderr, "Error : failed to create TLS loopback socket\n");
-      return MHD_NO;
-    }
-  return loopback_sd;
+      switch (connection->s_state)
+        {
+        case MHDS_CONNECTION_INIT:
+        case MHDS_HANDSHAKE_COMPLETE:
+        case MHDS_REQUEST_READ:
+          if (MHD_YES == connection->read_closed)
+            {
+              connection->state = MHD_CONNECTION_CLOSED;
+              continue;
+            }
+          break;
+        case MHDS_REQUEST_READING:
+          do_read (connection);
+          break;
 
+          /* thest cases shouldn't occur */
+        case MHDS_REPLY_READY:
+        case MHDS_REPLY_SENDING:
+        case MHDS_HANDSHAKE_FAILED:
+#if HAVE_MESSAGES
+          MHD_DLOG (connection->daemon, "MHDS reached case: %d\n",
+                    connection->s_state);
+#endif
+          return MHD_NO;
+
+        case MHD_CONNECTION_CLOSED:
+          if (connection->socket_fd != -1)
+            connection_close_error (connection);
+          return MHD_NO;
+
+        default:
+          /* shrink read buffer to how much is actually used */
+          MHD_pool_reallocate (connection->pool, connection->read_buffer,
+                               connection->read_buffer_size + 1,
+                               connection->read_buffer_offset);
+          break;
+        }
+      break;
+    }
+  return MHD_YES;
 }
+#endif
 
 /**
  * Try writing data to the socket from the
@@ -1504,7 +1531,7 @@ static int
 do_write (struct MHD_Connection *connection)
 {
   int ret;
-  
+
   ret = connection->send_cls (connection);
 
   if (ret < 0)
@@ -1529,7 +1556,7 @@ do_write (struct MHD_Connection *connection)
 }
 
 int
-http_con_write (struct MHD_Connection *connection)
+MHD_con_write (struct MHD_Connection *connection)
 {
   return SEND (connection->socket_fd,
                &connection->write_buffer[connection->
@@ -1539,8 +1566,8 @@ http_con_write (struct MHD_Connection *connection)
 }
 
 #if HTTPS_SUPPORT
-int
-https_con_write (struct MHD_Connection *connection)
+ssize_t
+MHDS_con_write (struct MHD_Connection * connection)
 {
   return gnutls_record_send (connection->tls_session,
                              &connection->write_buffer[connection->
@@ -1566,8 +1593,7 @@ check_write_done (struct MHD_Connection *connection,
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
   connection->state = next_state;
-  MHD_pool_reallocate (connection->pool,
-                       connection->write_buffer,
+  MHD_pool_reallocate (connection->pool, connection->write_buffer,
                        connection->write_buffer_size, 0);
   connection->write_buffer = NULL;
   connection->write_buffer_size = 0;
@@ -1721,6 +1747,36 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     }
   return MHD_YES;
 }
+
+#if HTTPS_SUPPORT
+int
+MHDS_connection_handle_write (struct MHD_Connection *connection)
+{
+  while (1)
+    {
+      switch (connection->s_state)
+        {
+
+        case MHDS_CONNECTION_INIT:
+        case MHDS_HANDSHAKE_FAILED:
+        case MHDS_HANDSHAKE_COMPLETE:
+          abort ();
+          break;
+
+        case MHDS_CONNECTION_CLOSED:
+          do_write (connection);
+          break;
+
+        case MHDS_REPLY_READY:
+          return MHD_connection_handle_idle (connection);
+
+          break;
+
+        }
+    }
+  return MHD_YES;
+}
+#endif
 
 /**
  * This function was created to handle per-connection processing that
@@ -2049,6 +2105,61 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   return MHD_YES;
 
+}
+
+int
+MHDS_connection_handle_idle (struct MHD_Connection *connection)
+{
+  unsigned int timeout;
+  const char *end;
+  char *line;
+
+  while (1)
+    {
+#if DEBUG_STATES
+      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+#endif
+      switch (connection->s_state)
+        {
+        case MHDS_CONNECTION_INIT:
+          break;
+        case MHDS_REQUEST_READ:
+          /* pipe data to HTTP state machine */
+
+          memcpy (connection->tls_session->internals.application_data_buffer.
+                  data, connection->read_buffer,
+                  connection->tls_session->internals.application_data_buffer.
+                  length);
+          break;
+
+        case MHDS_REPLY_READY:
+          /* send data for encryption */
+          memcpy (connection->write_buffer,
+                  connection->tls_session->internals.application_data_buffer.
+                  data, connection->write_buffer_size);
+          break;
+
+        case MHDS_CONNECTION_CLOSED:
+          if (connection->socket_fd != -1)
+            connection_close_error (connection);
+          break;
+
+        default:
+          EXTRA_CHECK (0);
+          break;
+        }
+      break;
+    }
+
+  timeout = connection->daemon->connection_timeout;
+
+  if ((connection->socket_fd != -1) && (timeout != 0)
+      && (time (NULL) - timeout > connection->last_activity))
+    {
+      connection_close_error (connection);
+      return MHD_NO;
+    }
+  return MHD_YES;
 }
 
 /* end of connection.c */

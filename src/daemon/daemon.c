@@ -24,12 +24,13 @@
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
-
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
 #include "memorypool.h"
-#include <gnutls/gnutls.h>
+#include "gnutls.h"
+
+// TODO rm #include <unistd.h>
 
 /**
  * Default connection limit.
@@ -149,12 +150,13 @@ MHD_handle_connection (void *data)
 #endif
           break;
         }
+      /* call appropriate connection handler if necessary */
       if (FD_ISSET (con->socket_fd, &rs))
-        MHD_connection_handle_read (con);
+        con->read_handler (con);
       if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &ws)))
-        MHD_connection_handle_write (con);
+        con->write_handler (con);
       if (con->socket_fd != -1)
-        MHD_connection_handle_idle (con);
+        con->idle_handler (con);
     }
   if (con->socket_fd != -1)
     {
@@ -171,11 +173,29 @@ MHD_handle_connection (void *data)
   return NULL;
 }
 
-/* gnutls parameter adapter */
+/* TODO rm if unused - gnutls parameter adapter , used to set gnutls pull function */
 long
-gnutls_pull_param_adapter (void *con, void *other, int i)
+gnutls_pull_param_adapter (void *connection, void *other, unsigned long i)
 {
-  return MHD_handle_connection (con);
+  ssize_t bytes;
+  bytes = ((struct MHD_Connection *) connection)->read_buffer_offset;
+  MHD_handle_connection (connection);
+  bytes = ((struct MHD_Connection *) connection)->read_buffer_offset - bytes;
+  return bytes;
+
+}
+
+long
+gnutls_push_param_adapter (void *connection,
+                           const void *other, unsigned long i)
+{
+  ssize_t bytes;
+  bytes = ((struct MHD_Connection *) connection)->write_buffer_send_offset;
+  MHD_handle_connection (connection);
+  bytes = ((struct MHD_Connection *) connection)->write_buffer_send_offset
+    - bytes;
+  return bytes;
+
 }
 
 /**
@@ -184,30 +204,32 @@ gnutls_pull_param_adapter (void *con, void *other, int i)
 static void *
 MHDS_handle_connection (void *data)
 {
-  // TODO check compatibility with socket_fd
-  gnutls_session_t session;
+  gnutls_session_t tls_session;
   struct MHD_Connection *con = data;
   int ret;
 
   if (con == NULL)
     abort ();
 
-  con->tls_session = &session;
+  gnutls_init (&tls_session, GNUTLS_SERVER);
 
-  gnutls_init (&session, GNUTLS_SERVER);
+  con->tls_session = tls_session;
 
   /* sets cipher priorities */
-  gnutls_priority_set (session, con->daemon->priority_cache);
+  gnutls_priority_set (tls_session, con->daemon->priority_cache);
 
   /* set needed credentials for certificate authentication. */
-  gnutls_credentials_set (session, GNUTLS_CRD_CERTIFICATE,
+  gnutls_credentials_set (tls_session, GNUTLS_CRD_CERTIFICATE,
                           con->daemon->x509_cret);
 
-  gnutls_transport_set_pull_function (session, &gnutls_pull_param_adapter);
+  /* avoid gnutls blocking recv / write calls */
+  // gnutls_transport_set_pull_function(tls_session, &recv);
+  // gnutls_transport_set_push_function(tls_session, &send);
 
-  gnutls_transport_set_ptr (session, con);
+  gnutls_transport_set_ptr (tls_session, con->socket_fd);
 
-  ret = gnutls_handshake (session);
+  ret = gnutls_handshake (tls_session);
+
   if (ret == 0)
     {
       con->state = MHDS_HANDSHAKE_COMPLETE;
@@ -217,10 +239,11 @@ MHDS_handle_connection (void *data)
       /* set connection as closed */
       fprintf (stderr, "*** Handshake has failed (%s)\n\n",
                gnutls_strerror (ret));
-      gnutls_deinit (session);
+      gnutls_deinit (tls_session);
       con->state = MHDS_HANDSHAKE_FAILED;
       con->socket_fd = 1;
       return MHD_NO;
+
     }
 
   // printf ("TLS Handshake completed\n");
@@ -366,14 +389,21 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->daemon = daemon;
 
   /* set default connection handlers  */
-  connection->recv_cls = &http_con_read;
-  connection->send_cls = &http_con_write;
+  connection->recv_cls = &MHD_con_read;
+  connection->send_cls = &MHD_con_write;
+  connection->read_handler = &MHD_connection_handle_read;
+  connection->write_handler = &MHD_connection_handle_write;
+  connection->idle_handler = &MHD_connection_handle_idle;
 
 #if HTTPS_SUPPORT
   if (daemon->options & MHD_USE_SSL)
     {
-      connection->recv_cls = &https_con_read;
-      connection->send_cls = &https_con_write;
+      /* set HTTPS connection handlers  */
+      connection->recv_cls = &MHDS_con_read;
+      connection->send_cls = &MHDS_con_write;
+      connection->read_handler = &MHDS_connection_handle_read;
+      connection->write_handler = &MHDS_connection_handle_write;
+      connection->idle_handler = &MHDS_connection_handle_idle;
     }
 #endif
 
@@ -760,7 +790,6 @@ MHD_start_daemon (unsigned int options,
 
   /* initializes the argument pointer variable */
   va_start (ap, dh_cls);
-
   /*
    * loop through daemon options 
    */
@@ -911,11 +940,24 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   free (daemon);
 }
 
+// TODO rm
+static void
+tls_log_func (int level, const char *str)
+{
+  fprintf (stdout, "|<%d>| %s", level, str);
+}
+
 int
 MHDS_init (struct MHD_Daemon *daemon)
 {
+  // TODO rm
+  gnutls_global_set_log_level (11);
+  gnutls_global_set_log_function (tls_log_func);
+
   gnutls_global_init ();
+
   /* Generate Diffie Hellman parameters - for use with DHE kx algorithms. */
+  // TODO should we be initializing RSA params or DH params ? 
   gnutls_dh_params_init (&daemon->dh_params);
   gnutls_dh_params_generate2 (daemon->dh_params, DH_BITS);
 
