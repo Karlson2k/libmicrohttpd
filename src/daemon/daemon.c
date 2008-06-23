@@ -201,6 +201,7 @@ gnutls_push_param_adapter (void *connection,
 /**
  * Handle an individual TLS connection.
  */
+#if HTTPS_SUPPORT
 static void *
 MHDS_handle_connection (void *data)
 {
@@ -251,6 +252,7 @@ MHDS_handle_connection (void *data)
 
   MHD_handle_connection (data);
 }
+#endif
 
 /**
  * Accept an incoming connection and create the MHD_Connection object for
@@ -410,11 +412,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
+#if HTTPS_SUPPORT
       if (daemon->options & MHD_USE_SSL)
         res_thread_create = pthread_create (&connection->pid, NULL,
                                             &MHDS_handle_connection,
                                             connection);
       else
+#endif        
         {
           res_thread_create = pthread_create (&connection->pid, NULL,
                                               &MHD_handle_connection,
@@ -931,11 +935,13 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
 
   /* TLS clean up */
+#if HTTPS_SUPPORT  
   if (daemon->options & MHD_USE_SSL)
     {
       gnutls_priority_deinit (daemon->priority_cache);
       gnutls_global_deinit ();
     }
+#endif  
 
   free (daemon);
 }
@@ -947,6 +953,7 @@ tls_log_func (int level, const char *str)
   fprintf (stdout, "|<%d>| %s", level, str);
 }
 
+#if HTTPS_SUPPORT
 int
 MHDS_init (struct MHD_Daemon *daemon)
 {
@@ -984,6 +991,7 @@ MHDS_init (struct MHD_Daemon *daemon)
   // TODO address error case return value
   return 0;
 }
+#endif
 
 #ifndef WINDOWS
 

@@ -642,7 +642,7 @@ struct MHD_Daemon
      */
   unsigned short port;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /* server credintials */
   gnutls_certificate_credentials_t x509_cret;
 

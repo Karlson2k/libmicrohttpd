@@ -44,7 +44,7 @@
 #endif
 #include <string.h>
 #include <stdio.h>
-#include <gnutls/gnutls.h>
+#include "gnutls.h"
 #include <gcrypt.h>
 
 #define BUF_SIZE 1024

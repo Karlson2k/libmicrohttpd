@@ -1,4 +1,8 @@
-SUBDIRS  = https .
+SUBDIRS  = .
+
+if ENABLE_HTTPS
+	SUBDIRS += https
+endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon \
@@ -31,10 +35,10 @@ postprocessor.c \
 response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 4:3:0 $(retaincommand)
-libmicrohttpd_la_LIBADD = \
-https/libhttps.la 
-
-
+ 
+if ENABLE_HTTPS
+	libmicrohttpd_la_LIBADD = https/libhttps.la 
+endif
  
 check_PROGRAMS = \
   postprocessor_test \

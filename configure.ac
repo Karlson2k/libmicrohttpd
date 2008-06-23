@@ -153,6 +153,7 @@ then
 else
  AC_DEFINE([HTTPS_SUPPORT],[1],[Include HTTPS support]) 
 fi
+AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_HTTPS" = "yes")
 
 # Symbols required by GNU_TLS 
 AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])

@@ -77,7 +77,7 @@ int MHD_connection_handle_idle (struct MHD_Connection *connection);
 int MHD_con_read(struct MHD_Connection *connection);
 int MHD_con_write(struct MHD_Connection *connection);
 
-#ifdef HTTPS_SUPPORT
+#if HTTPS_SUPPORT
 int MHDS_connection_handle_read(struct MHD_Connection *connection);
 int MHDS_connection_handle_write(struct MHD_Connection *connection);
 int MHDS_connection_handle_idle(struct MHD_Connection *connection);
