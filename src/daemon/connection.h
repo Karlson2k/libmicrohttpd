@@ -27,6 +27,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
+#include "config.h"
 
 /**
  * Obtain the select sets for this connection.

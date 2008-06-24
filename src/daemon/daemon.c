@@ -248,7 +248,7 @@ MHDS_handle_connection (void *data)
     }
 
   // printf ("TLS Handshake completed\n");
-  con->state = MHDS_HANDSHAKE_COMPLETE;
+  con->s_state = MHDS_HANDSHAKE_COMPLETE;
 
   MHD_handle_connection (data);
 }
@@ -343,6 +343,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       CLOSE (s);
       return MHD_NO;
     }
+  
+  /* apply connection acceptance policy if present */
   if ((daemon->apc != NULL)
       && (MHD_NO == daemon->apc (daemon->apc_cls, addr, addrlen)))
     {
@@ -609,6 +611,8 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   ds = daemon->socket_fd;
   if (ds == -1)
     return MHD_YES;
+  
+  /* select connection thread handling type */
   if (__FD_ISSET (ds, &rs))
     MHD_accept_connection (daemon);
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -621,6 +625,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
           ds = pos->socket_fd;
           if (ds != -1)
             {
+              // TODO call con->read handler
               if (FD_ISSET (ds, &rs))
                 MHD_connection_handle_read (pos);
               if ((pos->socket_fd != -1) && (FD_ISSET (ds, &ws)))

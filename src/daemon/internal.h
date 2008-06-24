@@ -308,6 +308,8 @@ enum MHDS_CONNECTION_STATE
 
   /* while receiving an HTTP request through the encrypted channel */
   MHDS_REPLY_SENDING,
+  
+  MHDS_REPLY_SENT,
 
   MHDS_CONNECTION_CLOSED
 };

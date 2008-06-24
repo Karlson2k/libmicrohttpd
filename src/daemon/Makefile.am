@@ -1,9 +1,3 @@
-SUBDIRS  = .
-
-if ENABLE_HTTPS
-	SUBDIRS += https
-endif
-
 AM_CPPFLAGS = -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon \
 -I$(top_srcdir)/src/daemon/https/lgl \
@@ -24,6 +18,14 @@ EXTRA_DIST = SYMBOLS
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
+SUBDIRS =
+libmicrohttpd_la_LIBADD = 
+
+if ENABLE_HTTPS
+SUBDIRS += https .
+libmicrohttpd_la_LIBADD += https/libhttps.la 
+endif
+
 libmicrohttpd_la_SOURCES = \
 connection.c connection.h \
 reason_phrase.c reason_phrase.h \
@@ -35,10 +37,6 @@ postprocessor.c \
 response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 4:3:0 $(retaincommand)
- 
-if ENABLE_HTTPS
-	libmicrohttpd_la_LIBADD = https/libhttps.la 
-endif
  
 check_PROGRAMS = \
   postprocessor_test \

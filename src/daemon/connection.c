@@ -1477,10 +1477,19 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
 
   while (1)
     {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
+                connection->s_state, __LINE__, __FUNCTION__);
+#endif
       switch (connection->s_state)
         {
+        /* thest cases shouldn't occur */
         case MHDS_CONNECTION_INIT:
-        case MHDS_HANDSHAKE_COMPLETE:
+        case MHDS_HANDSHAKE_FAILED:
+          return MHD_NO;
+
+        case MHDS_REPLY_READY:
+          /* req read & another came in */
         case MHDS_REQUEST_READ:
           if (MHD_YES == connection->read_closed)
             {
@@ -1488,19 +1497,16 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
               continue;
             }
           break;
-        case MHDS_REQUEST_READING:
+          /* switch to reading state */
+        case MHDS_HANDSHAKE_COMPLETE:
+        case MHDS_REPLY_SENT:
+          connection->s_state = MHDS_REQUEST_READING;
           do_read (connection);
           break;
-
-          /* thest cases shouldn't occur */
-        case MHDS_REPLY_READY:
+        case MHDS_REQUEST_READING:
+          /* req comes in while sending previous reply - wait until reply sent */
         case MHDS_REPLY_SENDING:
-        case MHDS_HANDSHAKE_FAILED:
-#if HAVE_MESSAGES
-          MHD_DLOG (connection->daemon, "MHDS reached case: %d\n",
-                    connection->s_state);
-#endif
-          return MHD_NO;
+          break;
 
         case MHD_CONNECTION_CLOSED:
           if (connection->socket_fd != -1)
@@ -1752,26 +1758,41 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 int
 MHDS_connection_handle_write (struct MHD_Connection *connection)
 {
+  connection->last_activity = time (NULL);
+
   while (1)
     {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
+                connection->s_state, __LINE__, __FUNCTION__);
+#endif
       switch (connection->s_state)
         {
 
+          /* these cases shouldn't occur */
         case MHDS_CONNECTION_INIT:
+          // TODO do we have to write back a responce ?
         case MHDS_HANDSHAKE_FAILED:
-        case MHDS_HANDSHAKE_COMPLETE:
-          abort ();
+          /* we should first exit MHDS_REPLY_SENDING */
+        case MHDS_REQUEST_READING:
+          /* these should go through the idle state at first */
+        case MHDS_REQUEST_READ:
           break;
 
         case MHDS_CONNECTION_CLOSED:
+          if (connection->socket_fd != -1)
+            connection_close_error (connection);
+          return MHD_NO;
+        case MHDS_HANDSHAKE_COMPLETE:
+
+        case MHDS_REPLY_SENDING:
           do_write (connection);
+          // TODO check write done
           break;
 
         case MHDS_REPLY_READY:
-          return MHD_connection_handle_idle (connection);
-
+          /* switch to MHDS_REPLY_SENDING through idle */
           break;
-
         }
     }
   return MHD_YES;
@@ -2107,29 +2128,31 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 
 }
 
+#if HTTPS_SUPPORT
 int
 MHDS_connection_handle_idle (struct MHD_Connection *connection)
 {
   unsigned int timeout;
   const char *end;
   char *line;
+  ssize_t msgLength;
 
   while (1)
     {
-#if DEBUG_STATES
-      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
+                connection->s_state, __LINE__, __FUNCTION__);
 #endif
       switch (connection->s_state)
         {
+        case MHDS_HANDSHAKE_FAILED:
+          connection->socket_fd = -1;
         case MHDS_CONNECTION_INIT:
-          break;
-        case MHDS_REQUEST_READ:
-          /* pipe data to HTTP state machine */
+          /* wait for request */
+        case MHDS_HANDSHAKE_COMPLETE:
 
-          memcpy (connection->tls_session->internals.application_data_buffer.
-                  data, connection->read_buffer,
-                  connection->tls_session->internals.application_data_buffer.
-                  length);
+        case MHDS_REPLY_SENDING:
+          connection->s_state = MHDS_REPLY_SENT;
           break;
 
         case MHDS_REPLY_READY:
@@ -2137,6 +2160,25 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
           memcpy (connection->write_buffer,
                   connection->tls_session->internals.application_data_buffer.
                   data, connection->write_buffer_size);
+          connection->s_state = MHDS_REPLY_SENDING;
+          break;
+
+        case MHDS_REQUEST_READING:
+          // TODO mv handshake here
+          connection->s_state = MHDS_REQUEST_READ;
+
+        case MHDS_REQUEST_READ:
+          /* pipe data to HTTP state machine */
+
+          msgLength
+            =
+            connection->tls_session->internals.application_data_buffer.length;
+          memcpy (connection->tls_session->internals.application_data_buffer.
+                  data, connection->read_buffer, msgLength);
+          connection->read_buffer_offset = msgLength;
+          /* pass connection to MHD */
+          MHD_connection_handle_idle (connection);
+
           break;
 
         case MHDS_CONNECTION_CLOSED:
@@ -2161,5 +2203,6 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
     }
   return MHD_YES;
 }
+#endif
 
 /* end of connection.c */
