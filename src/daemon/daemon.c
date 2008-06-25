@@ -233,7 +233,8 @@ MHDS_handle_connection (void *data)
 
   if (ret == 0)
     {
-      con->state = MHDS_HANDSHAKE_COMPLETE;
+      con->s_state = MHDS_HANDSHAKE_COMPLETE;
+      con->state = MHD_CONNECTION_INIT;
     }
   else
     {
@@ -241,14 +242,14 @@ MHDS_handle_connection (void *data)
       fprintf (stderr, "*** Handshake has failed (%s)\n\n",
                gnutls_strerror (ret));
       gnutls_deinit (tls_session);
-      con->state = MHDS_HANDSHAKE_FAILED;
+      con->s_state = MHDS_HANDSHAKE_FAILED;
       con->socket_fd = 1;
       return MHD_NO;
 
     }
 
   // printf ("TLS Handshake completed\n");
-  con->s_state = MHDS_HANDSHAKE_COMPLETE;
+  
 
   MHD_handle_connection (data);
 }
@@ -405,9 +406,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       /* set HTTPS connection handlers  */
       connection->recv_cls = &MHDS_con_read;
       connection->send_cls = &MHDS_con_write;
-      connection->read_handler = &MHDS_connection_handle_read;
-      connection->write_handler = &MHDS_connection_handle_write;
-      connection->idle_handler = &MHDS_connection_handle_idle;
     }
 #endif
 
@@ -480,6 +478,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           free (pos->addr);
           free (pos);
           daemon->max_connections++;
+          // TODO add tls con cleanup
           if (prev == NULL)
             pos = daemon->connections;
           else

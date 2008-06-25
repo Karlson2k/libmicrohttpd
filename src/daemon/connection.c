@@ -1213,6 +1213,42 @@ do_read (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+/**
+ * Try writing data to the socket from the
+ * write buffer of the connection.
+ *
+ * @return MHD_YES if something changed,
+ *         MHD_NO if we were interrupted
+ */
+static int
+do_write (struct MHD_Connection *connection)
+{
+  int ret;
+
+  ret = connection->send_cls (connection);
+
+  if (ret < 0)
+    {
+      if (errno == EINTR)
+        return MHD_NO;
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Failed to send data: %s\n", STRERROR (errno));
+#endif
+      connection_close_error (connection);
+      return MHD_YES;
+    }
+#if DEBUG_SEND_DATA
+  fprintf (stderr,
+           "Sent HEADER response: `%.*s'\n",
+           ret,
+           &connection->write_buffer[connection->write_buffer_send_offset]);
+#endif
+  connection->write_buffer_send_offset += ret;
+  return MHD_YES;
+}
+
+
 int
 MHD_con_read (struct MHD_Connection *connection)
 {
@@ -1227,12 +1263,34 @@ ssize_t
 MHDS_con_read (struct MHD_Connection * connection)
 {
   ssize_t size = gnutls_record_recv (connection->tls_session,
-                        connection->read_buffer[connection->
-                                                read_buffer_offset],
-                        connection->read_buffer_size);
+                                     &connection->read_buffer[connection->
+                                                              read_buffer_offset],
+                                     connection->read_buffer_size);
   return size;
 }
 #endif
+
+/**
+ * Check if we are done sending the write-buffer.
+ * If so, transition into "next_state".
+ * @return MHY_NO if we are not done, MHD_YES if we are
+ */
+static int
+check_write_done (struct MHD_Connection *connection,
+                  enum MHD_CONNECTION_STATE next_state)
+{
+  if (connection->write_buffer_append_offset !=
+      connection->write_buffer_send_offset)
+    return MHD_NO;
+  connection->write_buffer_append_offset = 0;
+  connection->write_buffer_send_offset = 0;
+  connection->state = next_state;
+  MHD_pool_reallocate (connection->pool, connection->write_buffer,
+                       connection->write_buffer_size, 0);
+  connection->write_buffer = NULL;
+  connection->write_buffer_size = 0;
+  return MHD_YES;
+}
 
 /**
  * We have received (possibly the beginning of) a line in the
@@ -1483,7 +1541,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
 #endif
       switch (connection->s_state)
         {
-        /* thest cases shouldn't occur */
+          /* thest cases shouldn't occur */
         case MHDS_CONNECTION_INIT:
         case MHDS_HANDSHAKE_FAILED:
           return MHD_NO;
@@ -1493,7 +1551,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
         case MHDS_REQUEST_READ:
           if (MHD_YES == connection->read_closed)
             {
-              connection->state = MHD_CONNECTION_CLOSED;
+              connection->s_state = MHDS_CONNECTION_CLOSED;
               continue;
             }
           break;
@@ -1501,7 +1559,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
         case MHDS_HANDSHAKE_COMPLETE:
         case MHDS_REPLY_SENT:
           connection->s_state = MHDS_REQUEST_READING;
-          do_read (connection);
+          // do_read (connection);
           break;
         case MHDS_REQUEST_READING:
           /* req comes in while sending previous reply - wait until reply sent */
@@ -1526,40 +1584,6 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
 }
 #endif
 
-/**
- * Try writing data to the socket from the
- * write buffer of the connection.
- *
- * @return MHD_YES if something changed,
- *         MHD_NO if we were interrupted
- */
-static int
-do_write (struct MHD_Connection *connection)
-{
-  int ret;
-
-  ret = connection->send_cls (connection);
-
-  if (ret < 0)
-    {
-      if (errno == EINTR)
-        return MHD_NO;
-#if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                "Failed to send data: %s\n", STRERROR (errno));
-#endif
-      connection_close_error (connection);
-      return MHD_YES;
-    }
-#if DEBUG_SEND_DATA
-  fprintf (stderr,
-           "Sent HEADER response: `%.*s'\n",
-           ret,
-           &connection->write_buffer[connection->write_buffer_send_offset]);
-#endif
-  connection->write_buffer_send_offset += ret;
-  return MHD_YES;
-}
 
 int
 MHD_con_write (struct MHD_Connection *connection)
@@ -1575,36 +1599,14 @@ MHD_con_write (struct MHD_Connection *connection)
 ssize_t
 MHDS_con_write (struct MHD_Connection * connection)
 {
-  return gnutls_record_send (connection->tls_session,
-                             &connection->write_buffer[connection->
-                                                       write_buffer_send_offset],
-                             connection->write_buffer_append_offset
-                             - connection->write_buffer_send_offset);
-
+  ssize_t sent = gnutls_record_send (connection->tls_session,
+                                     &connection->write_buffer[connection->
+                                                               write_buffer_send_offset],
+                                     connection->write_buffer_append_offset
+                                     - connection->write_buffer_send_offset);
+  return sent;
 }
 #endif
-
-/**
- * Check if we are done sending the write-buffer.
- * If so, transition into "next_state".
- * @return MHY_NO if we are not done, MHD_YES if we are
- */
-static int
-check_write_done (struct MHD_Connection *connection,
-                  enum MHD_CONNECTION_STATE next_state)
-{
-  if (connection->write_buffer_append_offset !=
-      connection->write_buffer_send_offset)
-    return MHD_NO;
-  connection->write_buffer_append_offset = 0;
-  connection->write_buffer_send_offset = 0;
-  connection->state = next_state;
-  MHD_pool_reallocate (connection->pool, connection->write_buffer,
-                       connection->write_buffer_size, 0);
-  connection->write_buffer = NULL;
-  connection->write_buffer_size = 0;
-  return MHD_YES;
-}
 
 /**
  * This function was created to handle writes to sockets when it has
@@ -1688,13 +1690,28 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
-          // TODO clean
-          ret = SEND (connection->socket_fd,
-                      &response->data[connection->response_write_position -
-                                      response->data_start],
-                      response->data_size -
-                      (connection->response_write_position -
-                       response->data_start), MSG_NOSIGNAL);
+          // TODO clean - missing MSG_NOSIGNAL on gnutls record send call
+          if (connection->daemon->options & MHD_USE_SSL)
+            {
+              ret = gnutls_record_send (connection->tls_session,
+                                        &connection->response->
+                                        data[connection->
+                                             response_write_position -
+                                             response->data_start],
+                                        response->data_size -
+                                        (connection->response_write_position -
+                                         response->data_start));
+            }
+          else
+            {
+              ret = SEND (connection->socket_fd,
+                          &response->data[connection->
+                                          response_write_position -
+                                          response->data_start],
+                          response->data_size -
+                          (connection->response_write_position -
+                           response->data_start), MSG_NOSIGNAL);
+            }
 #if DEBUG_SEND_DATA
           if (ret > 0)
             fprintf (stderr,
@@ -1777,6 +1794,8 @@ MHDS_connection_handle_write (struct MHD_Connection *connection)
         case MHDS_REQUEST_READING:
           /* these should go through the idle state at first */
         case MHDS_REQUEST_READ:
+          connection->s_state = MHDS_REPLY_SENDING;
+          do_write (connection);
           break;
 
         case MHDS_CONNECTION_CLOSED:
@@ -2157,10 +2176,10 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
 
         case MHDS_REPLY_READY:
           /* send data for encryption */
-          memcpy (connection->write_buffer,
-                  connection->tls_session->internals.application_data_buffer.
-                  data, connection->write_buffer_size);
-          connection->s_state = MHDS_REPLY_SENDING;
+          //memcpy (connection->write_buffer,
+          //connection->tls_session->internals.application_data_buffer.
+          //        data, connection->write_buffer_size);
+          //connection->s_state = MHDS_REPLY_SENDING;
           break;
 
         case MHDS_REQUEST_READING:
@@ -2170,12 +2189,9 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
         case MHDS_REQUEST_READ:
           /* pipe data to HTTP state machine */
 
-          msgLength
-            =
-            connection->tls_session->internals.application_data_buffer.length;
-          memcpy (connection->tls_session->internals.application_data_buffer.
-                  data, connection->read_buffer, msgLength);
-          connection->read_buffer_offset = msgLength;
+          // msgLength = connection->tls_session->internals.application_data_buffer.length;
+          // memcpy (connection->tls_session->internals.application_data_buffer.data, connection->read_buffer, msgLength);
+          // connection->read_buffer_offset = msgLength;
           /* pass connection to MHD */
           MHD_connection_handle_idle (connection);
 
