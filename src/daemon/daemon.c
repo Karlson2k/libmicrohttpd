@@ -406,6 +406,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       /* set HTTPS connection handlers  */
       connection->recv_cls = &MHDS_con_read;
       connection->send_cls = &MHDS_con_write;
+      connection->read_handler = &MHDS_connection_handle_read;
+      connection->write_handler = &MHD_connection_handle_write;
+      connection->idle_handler = &MHD_connection_handle_idle;
     }
 #endif
 

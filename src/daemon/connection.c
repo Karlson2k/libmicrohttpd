@@ -1530,56 +1530,55 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
   if (connection->s_state == MHDS_CONNECTION_CLOSED)
     return MHD_NO;
 
-  if (MHD_NO == do_read (connection))
-    return MHD_YES;
-
-  while (1)
+  /* discover content type */
+  unsigned char msg_type[7];
+  if (recv (connection->socket_fd, msg_type, 1, MSG_PEEK) == -1)
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
-                connection->s_state, __LINE__, __FUNCTION__);
+      MHD_DLOG (connection->daemon, "Failed to peek into TLS content type\n");
 #endif
-      switch (connection->s_state)
+      return MHD_NO;
+    }
+
+  switch (msg_type[0])
+    {
+    case GNUTLS_CHANGE_CIPHER_SPEC:
+
+      break;
+    case GNUTLS_ALERT:
+      /* find out if alert is fatal */
+      if (recv (connection->socket_fd, msg_type, 7, MSG_PEEK) == -1)
         {
-          /* thest cases shouldn't occur */
-        case MHDS_CONNECTION_INIT:
-        case MHDS_HANDSHAKE_FAILED:
+#if HAVE_MESSAGES
+          MHD_DLOG (connection->daemon,
+                    "Failed to peek into TLS alert level\n");
+#endif
           return MHD_NO;
-
-        case MHDS_REPLY_READY:
-          /* req read & another came in */
-        case MHDS_REQUEST_READ:
-          if (MHD_YES == connection->read_closed)
-            {
-              connection->s_state = MHDS_CONNECTION_CLOSED;
-              continue;
-            }
-          break;
-          /* switch to reading state */
-        case MHDS_HANDSHAKE_COMPLETE:
-        case MHDS_REPLY_SENT:
-          connection->s_state = MHDS_REQUEST_READING;
-          // do_read (connection);
-          break;
-        case MHDS_REQUEST_READING:
-          /* req comes in while sending previous reply - wait until reply sent */
-        case MHDS_REPLY_SENDING:
-          break;
-
-        case MHD_CONNECTION_CLOSED:
-          if (connection->socket_fd != -1)
-            connection_close_error (connection);
-          return MHD_NO;
-
-        default:
-          /* shrink read buffer to how much is actually used */
-          MHD_pool_reallocate (connection->pool, connection->read_buffer,
-                               connection->read_buffer_size + 1,
-                               connection->read_buffer_offset);
-          break;
         }
+
+      if (msg_type[5] == GNUTLS_AL_FATAL)
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (connection->daemon, "Received TLS alert: %s\n",
+                    gnutls_alert_get_name ((int) msg_type[6]));
+#endif
+          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+          connection->socket_fd = -1;
+          gnutls_deinit (connection->tls_session);
+          return MHD_NO;
+        }
+
+      /* forward application level content to MHD */
+    case GNUTLS_APPLICATION_DATA:
+      return MHD_connection_handle_read (connection);
+    
+    // TODO impl  
+    case GNUTLS_HANDSHAKE:
+      break;
+    case GNUTLS_INNER_APPLICATION:
       break;
     }
+
   return MHD_YES;
 }
 #endif
