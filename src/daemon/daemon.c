@@ -54,10 +54,6 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
-// TODO rm
-/* HTTPS file path limit, leaving room for file name */
-#define MHD_PATH_LEN 240
-
 /* initialize security aspects of the HTTPS daemon */
 int MHDS_init (struct MHD_Daemon *daemon);
 
@@ -792,12 +788,9 @@ MHD_start_daemon (unsigned int options,
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
 
-  /* set server default document root path */
-  getcwd (retVal->doc_root, MHD_PATH_LEN);
-
   /* initialize ssl path parameters to the local path */
-  strcpy (retVal->https_cert_path, "cert.pem");
-  strcpy (retVal->https_key_path, "key.pem");
+  retVal->https_cert_path = "cert.pem";
+  retVal->https_key_path = "key.pem";
 
   /* initializes the argument pointer variable */
   va_start (ap, dh_cls);
@@ -825,22 +818,12 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
-        case MHD_OPTION_DOC_ROOT:
-          strncpy (retVal->doc_root, va_arg (ap, char *), MHD_PATH_LEN);
-          break;
         case MHD_OPTION_HTTPS_KEY_PATH:
-          strncpy (retVal->https_key_path, va_arg (ap, char *), MHD_PATH_LEN);
-          strcat (retVal->https_key_path, DIR_SEPARATOR_STR);
-          strcat (retVal->https_key_path, "key.pem");
+	  retVal->https_key_path = va_arg (ap, const char *);
           break;
         case MHD_OPTION_HTTPS_CERT_PATH:
-
-          strncpy (retVal->https_cert_path,
-                   va_arg (ap, char *), MHD_PATH_LEN);
-          strcat (retVal->https_cert_path, DIR_SEPARATOR_STR);
-          strcat (retVal->https_cert_path, "cert.pem");
+          retVal->https_cert_path = va_arg (ap, const char* );
           break;
-
         default:
 #if HAVE_MESSAGES
           fprintf (stderr,

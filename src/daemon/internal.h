@@ -654,13 +654,9 @@ struct MHD_Daemon
   /* Diffie-Hellman parameters */
   gnutls_dh_params_t dh_params;
 
-  // TODO consider switching to variadic length paths
-  /* server root path used while serving http pages */
-  char doc_root[255];
+  const char * https_key_path;
 
-  char https_key_path[255];
-
-  char https_cert_path[255];
+  const char * https_cert_path;
 #endif
 };
 

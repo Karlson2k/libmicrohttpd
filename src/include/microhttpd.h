@@ -345,14 +345,21 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
-  /* server root path used while serving http pages */
-  MHD_OPTION_DOC_ROOT = 6,
+  /**
+   * Filename for the private key (key.pem) to be used by the 
+   * HTTPS daemon.  This option should be followed by an
+   * "const char*" argument.  The memory of the filename must
+   * not be released until the application terminates.
+   */
+  MHD_OPTION_HTTPS_KEY_PATH = 6,
 
-  /* private key path used by the HTTPS daemon */
-  MHD_OPTION_HTTPS_KEY_PATH = 7,
-
-  /* certificate path used by the HTTPS daemon */
-  MHD_OPTION_HTTPS_CERT_PATH = 8,
+  /**
+   * Filename for the certificate (cert.pem) to be used by the 
+   * HTTPS daemon.  This option should be followed by an
+   * "const char*" argument.  The memory of the filename must
+   * not be released until the application terminates.
+   */
+  MHD_OPTION_HTTPS_CERT_PATH = 7,
 };
 
 /**
