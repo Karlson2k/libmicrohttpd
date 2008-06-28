@@ -211,7 +211,6 @@ http_ahc (void *cls,
           const char *version, unsigned int *upload_data_size, void **ptr)
 {
   static int aptr;
-  static char full_url[MAX_URL_LEN];
   struct MHD_Response *response;
   int ret;
   FILE *file;
@@ -227,12 +226,7 @@ http_ahc (void *cls,
     }
   *ptr = NULL;                  /* reset when done */
 
-  /* assemble full url */
-  strcpy (full_url, connection->daemon->doc_root);
-  strncat (full_url, url,
-           MAX_URL_LEN - strlen (connection->daemon->doc_root) - 1);
-
-  file = fopen (full_url, "r");
+  file = fopen (url, "r");
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (PAGE_NOT_FOUND),
@@ -263,10 +257,10 @@ main (int argc, char *const *argv)
   struct MHD_Daemon *TLS_daemon;
 
   /* look for HTTPS arguments */
-  if (argc < 5)
+  if (argc < 6)
     {
       printf
-        ("Usage : %s HTTP-PORT SECONDS-TO-RUN HTTPS-PORT X.509_FILE_PATH\n",
+        ("Usage : %s HTTP-PORT SECONDS-TO-RUN HTTPS-PORT KEY-FILE CERT-FILE\n",
          argv[0]);
       return 1;
     }
@@ -276,7 +270,7 @@ main (int argc, char *const *argv)
 
   HTTP_daemon =
     MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                      atoi (argv[1]), NULL, NULL, &http_ahc, MHD_OPTION_END);
+                      atoi (argv[1]), NULL, NULL, &http_ahc, NULL, MHD_OPTION_END);
 
   if (HTTP_daemon == NULL)
     {
@@ -290,7 +284,7 @@ main (int argc, char *const *argv)
                                  NULL, &https_ahc,
                                  NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
                                  MHD_OPTION_HTTPS_KEY_PATH, argv[4],
-                                 MHD_OPTION_HTTPS_CERT_PATH, argv[4],
+                                 MHD_OPTION_HTTPS_CERT_PATH, argv[5],
                                  MHD_OPTION_END);
 
   if (TLS_daemon == NULL)
