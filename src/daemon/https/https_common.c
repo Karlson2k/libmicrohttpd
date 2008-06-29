@@ -246,7 +246,6 @@ print_x509_info (gnutls_session_t session, const char *hostname)
 }
 
 #ifdef ENABLE_OPENPGP
-
 void
 print_openpgp_info (gnutls_session_t session, const char *hostname)
 {
@@ -356,7 +355,6 @@ print_openpgp_info (gnutls_session_t session, const char *hostname)
 
     }
 }
-
 #endif
 
 void
@@ -660,179 +658,6 @@ print_license (void)
          "along with this program; if not, write to the Free Software \n"
          "Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.\n\n",
          stdout);
-}
-
-static int depr_printed = 0;
-#define DEPRECATED if (depr_printed==0) { \
-  fprintf(stderr, "This method of specifying algorithms is deprecated. Please use the --priority option.\n"); \
-  depr_printed = 1; \
-  }
-
-void
-parse_protocols (char **protocols, int protocols_size, int *protocol_priority)
-{
-  int i, j;
-
-  if (protocols != NULL && protocols_size > 0)
-    {
-      DEPRECATED;
-
-      for (j = i = 0; i < protocols_size; i++)
-        {
-          if (strncasecmp (protocols[i], "SSL", 3) == 0)
-            protocol_priority[j++] = GNUTLS_SSL3;
-          else if (strncasecmp (protocols[i], "TLS1.1", 6) == 0)
-            protocol_priority[j++] = GNUTLS_TLS1_1;
-          else if (strncasecmp (protocols[i], "TLS1.2", 6) == 0)
-            protocol_priority[j++] = GNUTLS_TLS1_2;
-          else if (strncasecmp (protocols[i], "TLS", 3) == 0)
-            protocol_priority[j++] = GNUTLS_TLS1_0;
-          else
-            fprintf (stderr, "Unknown protocol: '%s'\n", protocols[i]);
-        }
-      protocol_priority[j] = 0;
-    }
-}
-
-void
-parse_ciphers (char **ciphers, int nciphers, int *cipher_priority)
-{
-  int j, i;
-
-  if (ciphers != NULL && nciphers > 0)
-    {
-      DEPRECATED;
-      for (j = i = 0; i < nciphers; i++)
-        {
-          if (strncasecmp (ciphers[i], "AES-2", 5) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_AES_256_CBC;
-          else if (strncasecmp (ciphers[i], "AES", 3) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_AES_128_CBC;
-          else if (strncasecmp (ciphers[i], "3DE", 3) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_3DES_CBC;
-          else if (strcasecmp (ciphers[i], "ARCFOUR-40") == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_ARCFOUR_40;
-          else if (strcasecmp (ciphers[i], "ARCFOUR") == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_ARCFOUR_128;
-#ifdef	ENABLE_CAMELLIA
-          else if (strncasecmp (ciphers[i], "CAMELLIA-2", 10) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_CAMELLIA_256_CBC;
-          else if (strncasecmp (ciphers[i], "CAM", 3) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_CAMELLIA_128_CBC;
-#endif
-          else if (strncasecmp (ciphers[i], "NUL", 3) == 0)
-            cipher_priority[j++] = GNUTLS_CIPHER_NULL;
-          else
-            fprintf (stderr, "Unknown cipher: '%s'\n", ciphers[i]);
-        }
-      cipher_priority[j] = 0;
-    }
-}
-
-void
-parse_macs (char **macs, int nmacs, int *mac_priority)
-{
-  int i, j;
-
-  if (macs != NULL && nmacs > 0)
-    {
-      DEPRECATED;
-      for (j = i = 0; i < nmacs; i++)
-        {
-          if (strncasecmp (macs[i], "MD5", 3) == 0)
-            mac_priority[j++] = GNUTLS_MAC_MD5;
-          else if (strncasecmp (macs[i], "SHA256", 6) == 0)
-            mac_priority[j++] = GNUTLS_MAC_SHA256;
-          else if (strncasecmp (macs[i], "SHA", 3) == 0)
-            mac_priority[j++] = GNUTLS_MAC_SHA1;
-          else
-            fprintf (stderr, "Unknown MAC: '%s'\n", macs[i]);
-        }
-      mac_priority[j] = 0;
-    }
-}
-
-void
-parse_ctypes (char **ctype, int nctype, int *cert_type_priority)
-{
-  int i, j;
-
-  if (ctype != NULL && nctype > 0)
-    {
-      DEPRECATED;
-      for (j = i = 0; i < nctype; i++)
-        {
-          if (strncasecmp (ctype[i], "OPE", 3) == 0)
-            cert_type_priority[j++] = GNUTLS_CRT_OPENPGP;
-          else if (strncasecmp (ctype[i], "X", 1) == 0)
-            cert_type_priority[j++] = GNUTLS_CRT_X509;
-          else
-            fprintf (stderr, "Unknown certificate type: '%s'\n", ctype[i]);
-        }
-      cert_type_priority[j] = 0;
-    }
-}
-
-void
-parse_kx (char **kx, int nkx, int *kx_priority)
-{
-  int i, j;
-
-  if (kx != NULL && nkx > 0)
-    {
-      DEPRECATED;
-      for (j = i = 0; i < nkx; i++)
-        {
-          if (strcasecmp (kx[i], "SRP") == 0)
-            kx_priority[j++] = GNUTLS_KX_SRP;
-          else if (strcasecmp (kx[i], "SRP-RSA") == 0)
-            kx_priority[j++] = GNUTLS_KX_SRP_RSA;
-          else if (strcasecmp (kx[i], "SRP-DSS") == 0)
-            kx_priority[j++] = GNUTLS_KX_SRP_DSS;
-          else if (strcasecmp (kx[i], "RSA") == 0)
-            kx_priority[j++] = GNUTLS_KX_RSA;
-          else if (strcasecmp (kx[i], "PSK") == 0)
-            kx_priority[j++] = GNUTLS_KX_PSK;
-          else if (strcasecmp (kx[i], "DHE-PSK") == 0)
-            kx_priority[j++] = GNUTLS_KX_DHE_PSK;
-          else if (strcasecmp (kx[i], "RSA-EXPORT") == 0)
-            kx_priority[j++] = GNUTLS_KX_RSA_EXPORT;
-          else if (strncasecmp (kx[i], "DHE-RSA", 7) == 0)
-            kx_priority[j++] = GNUTLS_KX_DHE_RSA;
-          else if (strncasecmp (kx[i], "DHE-DSS", 7) == 0)
-            kx_priority[j++] = GNUTLS_KX_DHE_DSS;
-          else if (strncasecmp (kx[i], "ANON", 4) == 0)
-            kx_priority[j++] = GNUTLS_KX_ANON_DH;
-          else
-            fprintf (stderr, "Unknown key exchange: '%s'\n", kx[i]);
-        }
-      kx_priority[j] = 0;
-    }
-}
-
-void
-parse_comp (char **comp, int ncomp, int *comp_priority)
-{
-  int i, j;
-
-  if (comp != NULL && ncomp > 0)
-    {
-      DEPRECATED;
-      for (j = i = 0; i < ncomp; i++)
-        {
-          if (strncasecmp (comp[i], "NUL", 3) == 0)
-            comp_priority[j++] = GNUTLS_COMP_NULL;
-          else if (strncasecmp (comp[i], "ZLI", 3) == 0)
-            comp_priority[j++] = GNUTLS_COMP_DEFLATE;
-          else if (strncasecmp (comp[i], "DEF", 3) == 0)
-            comp_priority[j++] = GNUTLS_COMP_DEFLATE;
-          else if (strncasecmp (comp[i], "LZO", 3) == 0)
-            comp_priority[j++] = GNUTLS_COMP_LZO;
-          else
-            fprintf (stderr, "Unknown compression: '%s'\n", comp[i]);
-        }
-      comp_priority[j] = 0;
-    }
 }
 
 void

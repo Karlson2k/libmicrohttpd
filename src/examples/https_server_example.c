@@ -36,7 +36,7 @@
 
 #include "config.h"
 #include <microhttpd.h>
-#include "internal.h"
+#include <sys/stat.h>
 
 #include <stdlib.h>
 #ifndef MINGW
@@ -53,28 +53,12 @@
 #define KEYFILE "key.pem"
 #define CERTFILE "cert.pem"
 
+
 // TODO remove if unused
 #define CAFILE "ca.pem"
 #define CRLFILE "crl.pem"
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
-
-gnutls_session_t
-initialize_tls_session (struct MHD_Connection *connection)
-{
-  gnutls_session_t session;
-
-  gnutls_init (&session, GNUTLS_SERVER);
-
-  /* sets cipher priorities */
-  gnutls_priority_set (session, connection->daemon->priority_cache);
-
-  /* set needed credentials for certificate authentication. */
-  gnutls_credentials_set (session, GNUTLS_CRD_CERTIFICATE,
-                          connection->daemon->x509_cret);
-
-  return session;
-}
 
 static int
 file_reader (void *cls, size_t pos, char *buf, int max)
@@ -83,122 +67,6 @@ file_reader (void *cls, size_t pos, char *buf, int max)
 
   fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
-}
-
-/* HTTPS access handler call back */
-static int
-https_ahc (void *cls,
-           struct MHD_Connection *connection,
-           const char *url,
-           const char *method,
-           const char *upload_data,
-           const char *version, unsigned int *upload_data_size, void **ptr)
-{
-  /* loopback HTTP socket */
-  int loopback_sd, err;
-  ssize_t ret;
-  struct sockaddr_in servaddr4;
-  const struct sockaddr *servaddr;
-  struct sockaddr_in loopback_sa;
-  socklen_t addrlen;
-
-  gnutls_session_t session;
-  static int aptr;
-  struct MHD_Response *response;
-  char buffer[BUF_SIZE];
-
-  printf ("accepted connection from %d\n", connection->addr->sin_addr);
-
-  session = initialize_tls_session (connection);
-
-  gnutls_transport_set_ptr (session, connection->socket_fd);
-
-  ret = gnutls_handshake (session);
-
-  if (ret < 0)
-    {
-      /* set connection as closed */
-      connection->socket_fd = 1;
-      gnutls_deinit (session);
-      fprintf (stderr, "*** Handshake has failed (%s)\n\n",
-               gnutls_strerror (ret));
-      return MHD_NO;
-    }
-
-  printf ("TLS Handshake completed\n");
-  connection->state = MHDS_HANDSHAKE_COMPLETE;
-
-  /* initialize loopback socket */
-  loopback_sd = socket (AF_INET, SOCK_STREAM, 0);
-  memset (&loopback_sa, '\0', sizeof (loopback_sa));
-  loopback_sa.sin_family = AF_INET;
-
-  // TODO solve magic number issue - the http's daemons port must be shared with the https daemon - rosolve data sharing point
-  loopback_sa.sin_port = htons (50000);
-  inet_pton (AF_INET, "127.0.0.1", &loopback_sa.sin_addr);
-
-  /* connect loopback socket */
-  err = connect (loopback_sd, (struct sockaddr *) &loopback_sa,
-                 sizeof (loopback_sa));
-  if (err < 0)
-    {
-      // TODO err handle
-      fprintf (stderr, "Error : failed to create TLS loopback socket\n");
-      exit (1);
-    }
-
-  /* 
-   * This loop pipes data received through the TLS tunnel into the loopback connection.  
-   * message encryption/decryption is acheived via 'gnutls_record_send' & gnutls_record_recv calls.
-   */
-  memset (buffer, 0, BUF_SIZE);
-  if (gnutls_record_recv (session, buffer, BUF_SIZE) < 0)
-    {
-      fprintf (stderr, "\n*** Received corrupted "
-               "data(%d). Closing the connection.\n\n", ret);
-      connection->socket_fd = -1;
-      gnutls_deinit (session);
-      return MHD_NO;
-    }
-
-  if (write (loopback_sd, buffer, BUF_SIZE) < 0)
-    {
-      printf ("failed to write to TLS loopback socket\n");
-      connection->socket_fd = -1;
-      gnutls_deinit (session);
-      return MHD_NO;
-    }
-
-  for (;;)
-    {
-      memset (buffer, 0, BUF_SIZE);
-
-      ret = read (loopback_sd, buffer, BUF_SIZE);
-
-      if (ret < 0)
-        {
-          printf ("failed to read from TLS loopback socket\n");
-          break;
-        }
-
-      if (ret == 0)
-        {
-          break;
-        }
-
-      /* echo data back to the client */
-      ret = gnutls_record_send (session, buffer, ret);
-      if (ret < 0)
-        {
-          printf ("failed to write to TLS socket\n");
-          break;
-        }
-    }
-  /* mark connection as closed */
-  connection->socket_fd = -1;
-  gnutls_deinit (session);
-
-  return MHD_YES;
 }
 
 /* HTTP access handler call back */
@@ -225,7 +93,7 @@ http_ahc (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-
+  
   file = fopen (url, "r");
   if (file == NULL)
     {
@@ -247,17 +115,16 @@ http_ahc (void *cls,
     }
   return ret;
 }
-
+ 
 int
 main (int argc, char *const *argv)
 {
   char keyfile[255] = KEYFILE;
   char certfile[255] = CERTFILE;
-  struct MHD_Daemon *HTTP_daemon;
   struct MHD_Daemon *TLS_daemon;
 
   /* look for HTTPS arguments */
-  if (argc < 6)
+  if (argc < 5)
     {
       printf
         ("Usage : %s HTTP-PORT SECONDS-TO-RUN HTTPS-PORT KEY-FILE CERT-FILE\n",
@@ -268,20 +135,10 @@ main (int argc, char *const *argv)
   // TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
   // gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 
-  HTTP_daemon =
-    MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                      atoi (argv[1]), NULL, NULL, &http_ahc, NULL, MHD_OPTION_END);
-
-  if (HTTP_daemon == NULL)
-    {
-      printf ("Error: failed to start HTTP_daemon");
-      return 1;
-    }
-
   TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG
                                  | MHD_USE_SSL, atoi (argv[3]),
                                  NULL,
-                                 NULL, &https_ahc,
+                                 NULL, &http_ahc,
                                  NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
                                  MHD_OPTION_HTTPS_KEY_PATH, argv[4],
                                  MHD_OPTION_HTTPS_CERT_PATH, argv[5],
@@ -294,8 +151,6 @@ main (int argc, char *const *argv)
     }
 
   sleep (atoi (argv[2]));
-
-  MHD_stop_daemon (HTTP_daemon);
 
   MHD_stop_daemon (TLS_daemon);
 

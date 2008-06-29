@@ -447,6 +447,7 @@ typedef struct
     int read_eof; /* non-zero if we have received a closure alert. */
 
     int last_alert; /* last alert received */
+    int last_alert_level; /* last alert level */
 
     /* The last handshake messages sent or received.
      */

@@ -237,15 +237,13 @@ MHDS_handle_connection (void *data)
       /* set connection as closed */
       fprintf (stderr, "*** Handshake has failed (%s)\n\n",
                gnutls_strerror (ret));
-      gnutls_deinit (tls_session);
       con->s_state = MHDS_HANDSHAKE_FAILED;
+      gnutls_bye (con->tls_session, GNUTLS_SHUT_WR);
+      gnutls_deinit (tls_session);
       con->socket_fd = 1;
       return MHD_NO;
-
+      
     }
-
-  // printf ("TLS Handshake completed\n");
-  
 
   MHD_handle_connection (data);
 }
@@ -958,7 +956,9 @@ MHDS_init (struct MHD_Daemon *daemon)
   gnutls_dh_params_init (&daemon->dh_params);
   gnutls_dh_params_generate2 (daemon->dh_params, DH_BITS);
 
-  gnutls_priority_init (&daemon->priority_cache, "NORMAL", NULL);
+  gnutls_priority_init (&daemon->priority_cache,
+      "NONE:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL",
+      NULL);
 
   /* setup server certificate */
   gnutls_certificate_allocate_credentials (&daemon->x509_cret);

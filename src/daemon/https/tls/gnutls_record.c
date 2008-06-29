@@ -657,6 +657,7 @@ static int record_check_type(gnutls_session_t session,
             data[0], data[1], gnutls_alert_get_name ((int) data[1]));
 
         session->internals.last_alert = data[1];
+        session->internals.last_alert_level = data[0];
 
         /* if close notify is received and
          * the alert is not fatal
@@ -674,7 +675,6 @@ static int record_check_type(gnutls_session_t session,
             /* if the alert is FATAL or WARNING
              * return the apropriate message
              */
-
             gnutls_assert ();
             ret = GNUTLS_E_WARNING_ALERT_RECEIVED;
             if (data[0] == GNUTLS_AL_FATAL)
@@ -968,8 +968,7 @@ ssize_t _gnutls_recv_int(gnutls_session_t session,
       return ret;
     }
 
-  /* decrypt the data we got. 
-   */
+  /* decrypt the data we got. */
   ret = _gnutls_decrypt(session, ciphertext, length, tmp.data, tmp.size,
                         recv_type);
   if (ret < 0)
@@ -1015,6 +1014,7 @@ ssize_t _gnutls_recv_int(gnutls_session_t session,
       return GNUTLS_E_RECORD_LIMIT_REACHED;
     }
 
+  /* check type - this will also invalidate sessions if a fatal alert has been received */
   ret = record_check_type(session, recv_type, type, htype, tmp.data,
                           decrypted_length);
   if (ret < 0)

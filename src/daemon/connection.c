@@ -1531,8 +1531,8 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
     return MHD_NO;
 
   /* discover content type */
-  unsigned char msg_type[7];
-  if (recv (connection->socket_fd, msg_type, 1, MSG_PEEK) == -1)
+  unsigned char msg_type;
+  if (recv (connection->socket_fd, &msg_type, 1, MSG_PEEK) == -1)
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Failed to peek into TLS content type\n");
@@ -1540,39 +1540,68 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
       return MHD_NO;
     }
 
-  switch (msg_type[0])
+  switch (msg_type)
     {
     case GNUTLS_CHANGE_CIPHER_SPEC:
 
       break;
     case GNUTLS_ALERT:
-      /* find out if alert is fatal */
-      if (recv (connection->socket_fd, msg_type, 7, MSG_PEEK) == -1)
+      /* 
+       * this call of _gnutls_recv_int expects 0 bytes read.
+       * done to decrypt alert message
+       */
+      _gnutls_recv_int (connection->tls_session, GNUTLS_ALERT,
+                        GNUTLS_HANDSHAKE_FINISHED, 0);
+
+      /* CLOSE_NOTIFY */
+      if (connection->tls_session->internals.last_alert ==
+          GNUTLS_A_CLOSE_NOTIFY)
+        {
+          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+          connection->tls_session->internals.read_eof = 1;
+          connection->socket_fd = -1;
+          gnutls_deinit (connection->tls_session);
+          return MHD_YES;
+        }
+      /* non FATAL or WARNING */
+      else if (connection->tls_session->internals.last_alert !=
+               GNUTLS_AL_FATAL)
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
-                    "Failed to peek into TLS alert level\n");
+                    "Received TLS alert: %s\n",
+                    gnutls_alert_get_name ((int) connection->tls_session->
+                                           internals.last_alert));
+#endif
+          return MHD_YES;
+        }
+      /* FATAL */
+      else if (connection->tls_session->internals.last_alert ==
+               GNUTLS_AL_FATAL)
+        {
+          connection->tls_session->internals.resumable = RESUME_FALSE;
+          connection->tls_session->internals.valid_connection = VALID_FALSE;
+          connection->socket_fd = -1;
+          gnutls_deinit (connection->tls_session);
+
+          return MHD_NO;
+        }
+      /* this should never execut */
+      else
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (connection->daemon,
+                    "Received unrecognized alert: %s\n",
+                    connection->tls_session->internals.last_alert);
 #endif
           return MHD_NO;
         }
 
-      if (msg_type[5] == GNUTLS_AL_FATAL)
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (connection->daemon, "Received TLS alert: %s\n",
-                    gnutls_alert_get_name ((int) msg_type[6]));
-#endif
-          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
-          connection->socket_fd = -1;
-          gnutls_deinit (connection->tls_session);
-          return MHD_NO;
-        }
 
       /* forward application level content to MHD */
     case GNUTLS_APPLICATION_DATA:
       return MHD_connection_handle_read (connection);
-    
-    // TODO impl  
+      // TODO impl  
     case GNUTLS_HANDSHAKE:
       break;
     case GNUTLS_INNER_APPLICATION:
@@ -1621,7 +1650,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
   int ret;
-
   connection->last_activity = time (NULL);
   while (1)
     {
@@ -1775,7 +1803,6 @@ int
 MHDS_connection_handle_write (struct MHD_Connection *connection)
 {
   connection->last_activity = time (NULL);
-
   while (1)
     {
 #if HAVE_MESSAGES
@@ -1796,7 +1823,7 @@ MHDS_connection_handle_write (struct MHD_Connection *connection)
           connection->s_state = MHDS_REPLY_SENDING;
           do_write (connection);
           break;
-
+          
         case MHDS_CONNECTION_CLOSED:
           if (connection->socket_fd != -1)
             connection_close_error (connection);
@@ -1832,7 +1859,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   unsigned int timeout;
   const char *end;
   char *line;
-
   while (1)
     {
 #if DEBUG_STATES
@@ -2154,7 +2180,6 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
   const char *end;
   char *line;
   ssize_t msgLength;
-
   while (1)
     {
 #if HAVE_MESSAGES
