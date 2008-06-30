@@ -52,7 +52,6 @@ zzuf_socat_start ()
     "-n",
     "-A",
     "socat",
-    "--",
     "-lf",
     "/dev/null",
     "TCP4-LISTEN:11081,reuseaddr,fork",
