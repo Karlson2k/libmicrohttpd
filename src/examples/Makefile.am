@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 
 # example programs
 noinst_PROGRAMS = \
+authorization_example \
 minimal_example \
 querystring_example \
 fileserver_example \
@@ -18,6 +19,11 @@ endif
 minimal_example_SOURCES = \
  minimal_example.c 
 minimal_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+authorization_example_SOURCES = \
+ authorization_example.c 
+authorization_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 querystring_example_SOURCES = \
