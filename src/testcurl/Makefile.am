@@ -1,4 +1,4 @@
-SUBDIRS  = https .
+SUBDIRS  = . https
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon \
