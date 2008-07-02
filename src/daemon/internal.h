@@ -308,7 +308,7 @@ enum MHDS_CONNECTION_STATE
 
   /* while receiving an HTTP request through the encrypted channel */
   MHDS_REPLY_SENDING,
-  
+
   MHDS_REPLY_SENT,
 
   MHDS_CONNECTION_CLOSED
@@ -549,7 +549,7 @@ struct MHD_Connection
 
   int (*idle_handler) (struct MHD_Connection * connection);
 
-  /*  
+  /*
    * function pointers to the appropriate send & receive funtions
    * according to whether this is a HTTPS / HTTP daemon
    */
@@ -586,7 +586,7 @@ struct MHD_Daemon
     /**
      * Linked list of our current connections.
      */
-  // TODO switch to a dedicated tls connection struct 
+  // TODO switch to a dedicated tls connection struct
   struct MHD_Connection *tls_connections;
 
   MHD_AcceptPolicyCallback apc;
@@ -657,6 +657,10 @@ struct MHD_Daemon
   const char * https_key_path;
 
   const char * https_cert_path;
+
+  const char * https_mem_key;
+
+  const char * https_mem_cert;
 #endif
 };
 

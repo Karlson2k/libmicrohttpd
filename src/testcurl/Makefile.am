@@ -1,6 +1,8 @@
-SUBDIRS  = .
+SUBDIRS  = https .
 
-INCLUDES = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/daemon \
+-I$(top_srcdir)/src/include 
 
 check_PROGRAMS = \
   daemontest_get \
@@ -92,7 +94,6 @@ daemontest_put11_SOURCES = \
 daemontest_put11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
-
 
 daemontest_large_put_SOURCES = \
   daemontest_large_put.c

@@ -227,7 +227,7 @@ extern "C"
 				 */
 
     /* Those are extra information about the verification
-     * process. Will be set only if the certificate was 
+     * process. Will be set only if the certificate was
      * not verified.
      */
     GNUTLS_CERT_SIGNER_NOT_FOUND = 64,
@@ -494,7 +494,7 @@ extern "C"
   const char *gnutls_supplemental_get_name
   (gnutls_supplemental_data_format_type_t type);
 
-/* functions to set priority of cipher suites 
+/* functions to set priority of cipher suites
  */
   int gnutls_cipher_set_priority (gnutls_session_t session, const int *list);
   int gnutls_mac_set_priority (gnutls_session_t session, const int *list);
@@ -510,7 +510,7 @@ extern "C"
  */
   int gnutls_priority_init( gnutls_priority_t*, const char *priority, const char** err_pos);
   void gnutls_priority_deinit( gnutls_priority_t);
-  
+
   int gnutls_priority_set(gnutls_session_t session, gnutls_priority_t);
   int gnutls_priority_set_direct(gnutls_session_t session, const char *priority, const char** err_pos);
 
@@ -533,7 +533,7 @@ extern "C"
   const char *gnutls_protocol_get_name (gnutls_protocol_t version);
 
 
-/* get/set session 
+/* get/set session
  */
   int gnutls_session_set_data (gnutls_session_t session,
 			       const void *session_data,
@@ -548,7 +548,7 @@ extern "C"
   int gnutls_session_get_id (gnutls_session_t session, void *session_id,
 			     size_t * session_id_size);
 
-/* returns security values. 
+/* returns security values.
  * Do not use them unless you know what you're doing.
  */
 #define TLS_MASTER_SIZE 48
@@ -557,7 +557,7 @@ extern "C"
   const void *gnutls_session_get_client_random (gnutls_session_t session);
   const void *gnutls_session_get_master_secret (gnutls_session_t session);
 
-/* checks if this session is a resumed one 
+/* checks if this session is a resumed one
  */
   int gnutls_session_is_resumed (gnutls_session_t session);
 
@@ -583,7 +583,7 @@ extern "C"
   typedef int (*gnutls_handshake_post_client_hello_func)(gnutls_session_t);
   void gnutls_handshake_set_post_client_hello_function(gnutls_session_t,
       gnutls_handshake_post_client_hello_func);
-  
+
   void gnutls_handshake_set_max_packet_length (gnutls_session_t session,
 					       size_t max);
 
@@ -684,7 +684,7 @@ extern "C"
 
   void gnutls_certificate_send_x509_rdn_sequence (gnutls_session_t session,
                                              int status);
-                                             
+
 
   extern int
     gnutls_certificate_set_x509_simple_pkcs12_file
@@ -769,7 +769,7 @@ extern "C"
   int gnutls_dh_params_cpy (gnutls_dh_params_t dst, gnutls_dh_params_t src);
 
 
-/* RSA params 
+/* RSA params
  */
   int gnutls_rsa_params_init (gnutls_rsa_params_t * rsa_params);
   void gnutls_rsa_params_deinit (gnutls_rsa_params_t rsa_params);
@@ -825,7 +825,7 @@ extern "C"
   void gnutls_transport_set_errno (gnutls_session_t session, int err);
   void gnutls_transport_set_global_errno (int err);
 
-/* session specific 
+/* session specific
  */
   void gnutls_session_set_ptr (gnutls_session_t session, void *ptr);
   void *gnutls_session_get_ptr (gnutls_session_t session);
@@ -833,7 +833,7 @@ extern "C"
   void gnutls_openpgp_send_cert (gnutls_session_t session,
 				gnutls_openpgp_crt_status_t status);
 
-/* fingerprint 
+/* fingerprint
  * Actually this function returns the hash of the given data.
  */
   int gnutls_fingerprint (gnutls_digest_algorithm_t algo,
@@ -841,7 +841,7 @@ extern "C"
 			  size_t * result_size);
 
 
-/* SRP 
+/* SRP
  */
 
   typedef struct gnutls_srp_server_credentials_st
@@ -1117,7 +1117,7 @@ extern "C"
 				      gnutls_datum_t * result);
 
   int gnutls_global_init (void);
-  
+
   /* key_usage will be an OR of the following values:
    */
 

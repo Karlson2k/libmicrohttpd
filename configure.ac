@@ -257,6 +257,7 @@ src/daemon/https/minitasn1/Makefile
 src/daemon/https/includes/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
+src/testcurl/https/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 

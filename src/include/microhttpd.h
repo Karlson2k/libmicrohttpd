@@ -307,7 +307,7 @@ enum MHD_OPTION
   MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
 
   /**
-   * Maximum number of concurrenct connections to
+   * Maximum number of concurrent connections to
    * accept (followed by an unsigned int).
    */
   MHD_OPTION_CONNECTION_LIMIT = 2,
@@ -345,21 +345,40 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
+  // TODO rename
   /**
-   * Filename for the private key (key.pem) to be used by the 
+   * Filename for the private key (key.pem) to be used by the
    * HTTPS daemon.  This option should be followed by an
    * "const char*" argument.  The memory of the filename must
    * not be released until the application terminates.
+   * This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
    */
   MHD_OPTION_HTTPS_KEY_PATH = 6,
 
   /**
-   * Filename for the certificate (cert.pem) to be used by the 
+   * Filename for the certificate (cert.pem) to be used by the
    * HTTPS daemon.  This option should be followed by an
    * "const char*" argument.  The memory of the filename must
    * not be released until the application terminates.
+   * This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
    */
   MHD_OPTION_HTTPS_CERT_PATH = 7,
+
+  /**
+     * Memory pointer for the private key (key.pem) to be used by the
+     * HTTPS daemon.  This option should be followed by an
+     * "const char*" argument.
+     * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
+     */
+  MHD_OPTION_HTTPS_MEM_KEY = 8,
+
+  /**
+  * Memory pointer for the certificate (cert.pem) to be used by the
+  * HTTPS daemon.  This option should be followed by an
+  * "const char*" argument.
+  * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
+  */
+  MHD_OPTION_HTTPS_MEM_CERT = 9,
 };
 
 /**
@@ -866,10 +885,10 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 
 /**
  * Release PostProcessor resources.
- * 
+ *
  * @return MHD_YES if processing completed nicely,
  *         MHD_NO if there were spurious characters / formatting
- *                problems; it is common to ignore the return 
+ *                problems; it is common to ignore the return
  *                value of this function
  */
 int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
