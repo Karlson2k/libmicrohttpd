@@ -157,7 +157,7 @@ test_HTTPS_Get ()
   char url[255];
   char **file_path;
   /* currently use hard coded certificate as test file - consider better alternatives */
-  char *test_file_name = "cert.pem";
+  const char *test_file_name = "cert.pem";
   struct stat test_file_stat;
   int key_file, cert_file, test_file;
 
@@ -170,11 +170,18 @@ test_HTTPS_Get ()
   test_file = open (test_file_name, O_RDONLY);
   if (!test_file)
     {
-      fprintf (stderr, "Error : failed to open test_file. errno:%d\n", errno);
+      fprintf (stderr, "Error: failed to open `%s': %s\n",
+	       test_file_name,
+	       strerror(errno));
       return 1;
     }
   if (stat (test_file_name, &test_file_stat) == -1)
-    return 1;
+    {
+      fprintf (stderr, "Error: failed to stat `%s': %s\n", 
+	       test_file_name,
+	       strerror(errno));
+      return 2;
+    }
   mem_test_file_local = malloc (sizeof (char) * test_file_stat.st_size);
   if (read (test_file, mem_test_file_local, test_file_stat.st_size)
       != test_file_stat.st_size)
@@ -182,12 +189,12 @@ test_HTTPS_Get ()
       close (test_file);
       fprintf (stderr, "Error: failed to read test file\n",
                curl_easy_strerror (errornum));
-      return 1;
+      return 4;
     }
   close (test_file);
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * test_file_stat.st_size)))
-    return 1;
+    return 8;
   cbc.size = test_file_stat.st_size;
   cbc.pos = 0;
 
@@ -198,7 +205,7 @@ test_HTTPS_Get ()
                         MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
 
   if (d == NULL)
-    return 1;
+    return 16;
 
   /* construct url - this might use doc_path */
   sprintf (url, "%s%s/%s", "https://localhost:42433", doc_path,
@@ -230,8 +237,8 @@ test_HTTPS_Get ()
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      //MHD_stop_daemon (d);
-      return 2;
+      MHD_stop_daemon (d);
+      return 32;
     }
 
   curl_easy_cleanup (c);
@@ -240,7 +247,7 @@ test_HTTPS_Get ()
   if (memcmp (cbc.buf, mem_test_file_local, test_file_stat.st_size) != 0)
     {
       // TODO find proper error code
-      return 1;
+      return 64;
     }
   return 0;
 }
@@ -260,8 +267,6 @@ main (int argc, char *const *argv)
   errorCount += test_HTTPS_Get ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
-  else
-    fprintf (stdout, "looks ok\n", errorCount);
   curl_global_cleanup ();
-  return errorCount == 0;       /* 0 == pass */
+  return errorCount != 0;
 }

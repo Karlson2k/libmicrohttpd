@@ -4,7 +4,7 @@ AM_CPPFLAGS = -ggdb \
 -I$(top_srcdir)/src/daemon \
 -I$(top_srcdir)/src/include 
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
   daemon_https_test_get
 
 TESTS = $(check_PROGRAMS)
