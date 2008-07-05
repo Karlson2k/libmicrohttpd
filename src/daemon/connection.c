@@ -33,6 +33,7 @@
 
 // get opaque type
 #include "gnutls_int.h"
+
 // TODO clean
 #undef MAX
 #define MAX(a,b) ((a)<(b)) ? (b) : (a)
@@ -159,6 +160,23 @@ MHD_get_connection_values (struct MHD_Connection *connection,
     }
   return ret;
 }
+
+#if HTTPS_SUPPORT
+/* get cipher spec for this connection */
+gnutls_cipher_algorithm_t MHDS_get_session_cipher (struct MHD_Connection * session ){
+  return gnutls_cipher_get(session->tls_session);
+}
+
+gnutls_mac_algorithm_t MHDS_get_session_mac (struct MHD_Connection * session ){
+  return gnutls_mac_get(session->tls_session);
+}
+gnutls_compression_method_t MHDS_get_session_compression (struct MHD_Connection * session ){
+  return gnutls_compression_get(session->tls_session);
+}
+gnutls_certificate_type_t MHDS_get_session_cert_type (struct MHD_Connection * session ){
+  return gnutls_certificate_type_get(session->tls_session);
+}
+#endif
 
 /**
  * Get a particular header value.  If multiple
@@ -1546,7 +1564,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
 
       break;
     case GNUTLS_ALERT:
-      /* 
+      /*
        * this call of _gnutls_recv_int expects 0 bytes read.
        * done to decrypt alert message
        */
@@ -1601,7 +1619,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
       /* forward application level content to MHD */
     case GNUTLS_APPLICATION_DATA:
       return MHD_connection_handle_read (connection);
-      // TODO impl  
+      // TODO impl
     case GNUTLS_HANDSHAKE:
       break;
     case GNUTLS_INNER_APPLICATION:
@@ -1823,7 +1841,7 @@ MHDS_connection_handle_write (struct MHD_Connection *connection)
           connection->s_state = MHDS_REPLY_SENDING;
           do_write (connection);
           break;
-          
+
         case MHDS_CONNECTION_CLOSED:
           if (connection->socket_fd != -1)
             connection_close_error (connection);

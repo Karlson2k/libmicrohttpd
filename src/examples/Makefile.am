@@ -2,7 +2,7 @@ SUBDIRS  = .
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/https/includes
+-I$(top_srcdir)/src/daemon/https/includes
 
 # example programs
 noinst_PROGRAMS = \

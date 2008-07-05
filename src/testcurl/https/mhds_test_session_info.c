@@ -19,7 +19,7 @@
  */
 
 /**
- * @file daemon_HTTPS_test_get.c
+ * @file mhds_test_session_info.c
  * @brief  Testcase for libmicrohttpd GET operations
  * @author lv-426
  */
@@ -33,15 +33,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 #define BUF_SIZE 1024
 #define MAX_URL_LEN 255
 
-#define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
+#define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
 
 /* Test Certificate */
 const char cert_pem[] =
@@ -91,9 +89,7 @@ const char key_pem[] =
   "eRJ6DxULPxABytJrYCRrNqmXi5TCiqR2mtfalEMOPxz8rUU8dYyx\n"
   "-----END RSA PRIVATE KEY-----\n";
 
-const char *test_file_name = "https_test_file";
-
-const char test_file_data[] = "Hello World\n";
+struct MHD_Daemon *d;
 
 struct CBC
 {
@@ -114,130 +110,88 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-static int
-file_reader (void *cls, size_t pos, char *buf, int max)
-{
-  FILE *file = cls;
-  fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
-}
-
 /* HTTP access handler call back */
 static int
-http_ahc (void *cls, struct MHD_Connection *connection,
-          const char *url, const char *method, const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
+query_session_ahc (void *cls, struct MHD_Connection *connection,
+                   const char *url, const char *method,
+                   const char *upload_data, const char *version,
+                   unsigned int *upload_data_size, void **ptr)
 {
-  static int aptr;
-  static char full_url[MAX_URL_LEN];
   struct MHD_Response *response;
   int ret;
-  FILE *file;
-  struct stat buf;
 
-  // TODO never respond on first call
-  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
-    return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  /* assert actual connection cipher is the one negotiated */
+  if (MHDS_get_session_cipher (connection) != GNUTLS_CIPHER_AES_256_CBC)
     {
-      /* do never respond on first call */
-      *ptr = &aptr;
-      return MHD_YES;
-    }
-  *ptr = NULL;                  /* reset when done */
-
-  file = fopen (url, "r");
-  if (file == NULL)
-    {
-      response = MHD_create_response_from_data (strlen (PAGE_NOT_FOUND),
-                                                (void *) PAGE_NOT_FOUND,
-                                                MHD_NO, MHD_NO);
-      ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
-      MHD_destroy_response (response);
-    }
-  else
-    {
-      stat (&url[1], &buf);
-      response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
-                                                    &file_reader, file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-      MHD_destroy_response (response);
-    }
-  return ret;
-}
-
-/*
- * test HTTPS transfer
- * @param test_fd: file to attempt transfering
- */
-static int
-test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
-{
-  struct MHD_Daemon *d;
-  CURL *c;
-  struct CBC cbc;
-  CURLcode errornum;
-  char *doc_path;
-  char url[255];
-  size_t len = fseek (test_fd, 0, SEEK_END);
-
-
-  /* used to memcmp local copy & deamon supplied copy */
-  unsigned char *mem_test_file_local;
-
-  /* setup test file path, url */
-  doc_path = get_current_dir_name ();
-
-  mem_test_file_local = malloc (len);
-  fseek (test_fd, 0, SEEK_SET);
-  if (fread (mem_test_file_local, sizeof(char), len, test_fd) != len)
-    {
-      fclose (test_fd);
-      fprintf (stderr, "Error: failed to read test file. %s\n",
+      fprintf (stderr, "Error: requested cipher mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
+  // TODO should these be hard coded into the server ?
+  if (MHDS_get_session_mac (connection) != GNUTLS_MAC_SHA1)
     {
-         fclose (test_fd);
-         fprintf (stderr, "Error: failed to read test file. %s\n",
-                  strerror (errno));
-         return -1;
-       }
-  cbc.size = len;
+      fprintf (stderr, "Error: requested mac algorithm mismatch. %s\n",
+               strerror (errno));
+      return -1;
+    }
+  if (MHDS_get_session_compression (connection) != GNUTLS_COMP_NULL)
+    {
+      fprintf (stderr, "Error: requested compression mismatch. %s\n",
+               strerror (errno));
+      return -1;
+    }
+  if (MHDS_get_session_cert_type (connection) != GNUTLS_CRT_X509)
+    {
+      fprintf (stderr, "Error: requested certificate mismatch. %s\n",
+               strerror (errno));
+      return -1;
+    }
+
+  response = MHD_create_response_from_data (strlen (EMPTY_PAGE),
+                                            (void *) EMPTY_PAGE,
+                                            MHD_NO, MHD_NO);
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  MHD_destroy_response (response);
+  return ret;
+}
+
+static int
+test_query_session ()
+{
+
+  CURL *c;
+  struct CBC cbc;
+  CURLcode errornum;
+  char url[] = "https://localhost:42433/";
+
+  if (NULL == (cbc.buf = malloc (sizeof (char) * 255)))
+    return 16;
+  cbc.size = 255;
   cbc.pos = 0;
 
   /* setup test */
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
+                        NULL, NULL, &query_session_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
 
   if (d == NULL)
     return 2;
 
-  /* construct url - this might use doc_path */
-  sprintf (url, "%s%s/%s", "https://localhost:42433",
-           doc_path, test_file_name);
-
   c = curl_easy_init ();
   //curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
-
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
-
-  // TODO rm : currently skip any peer authentication */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, "AES256-SHA");
+  /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -259,42 +213,7 @@ test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
 
-  if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
-    {
-      fprintf (stderr, "Error: local file & received file differ. %s\n");
-      return 8;
-    }
-
   return 0;
-}
-
-/* setup a temporary transfer test file */
-FILE *
-setupTestFile ()
-{
-  FILE *test_fd;
-
-  if ( NULL == (test_fd = fopen (test_file_name, "w+")))
-    {
-      fprintf (stderr, "Error: failed to open `%s': %s\n",
-               test_file_name, strerror (errno));
-      return NULL;
-    }
-  if (fwrite (test_file_data, sizeof(char), strlen (test_file_data), test_fd) !=
-      strlen (test_file_data))
-    {
-      fprintf (stderr, "Error: failed to write `%s. %s'\n",
-               test_file_name, strerror (errno));
-      return NULL;
-    }
-  if (fflush (test_fd))
-    {
-      fprintf (stderr, "Error: failed to flush test file stream. %s\n",
-               strerror (errno));
-      return NULL;
-    }
-
-  return test_fd;
 }
 
 int
@@ -302,26 +221,18 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
-  if ((test_fd = setupTestFile ()) == NULL )
-    {
-      return 16;
-    }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
-      return 32;
+      return 8;
     }
 
-  errorCount += test_HTTPS_Get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  errorCount += test_HTTPS_Get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-
+  errorCount += test_query_session (test_fd);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
 
   curl_global_cleanup ();
-  fclose (test_fd);
 
-  
   return errorCount != 0;
 }

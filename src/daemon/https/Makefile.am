@@ -6,6 +6,7 @@ AM_CPPFLAGS = -I./includes \
 -I$(top_srcdir)/src/daemon/https/openpgp \
 -I$(top_srcdir)/src/daemon/https/opencdk \
 -I$(top_srcdir)/src/daemon/https/tls \
+-I$(top_srcdir)/src/daemon/https/includes \
 -I$(top_srcdir)/src/daemon/https/cfg 
 
 noinst_LTLIBRARIES = libhttps.la

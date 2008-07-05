@@ -1,6 +1,7 @@
 SUBDIRS  = . https
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/daemon/https/includes \
 -I$(top_srcdir)/src/daemon \
 -I$(top_srcdir)/src/include 
 

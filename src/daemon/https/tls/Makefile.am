@@ -64,10 +64,8 @@ gnutls_state.c \
 gnutls_str.c \
 gnutls_supplemental.c \
 gnutls_ui.c \
-gnutls_v2_compat.c \
 gnutls_x509.c \
 pkix_asn1_tab.c \
 x509_b64.c
 
-# gnutlsxx.cpp
 

@@ -73,6 +73,10 @@
 #include "plibc.h"
 #endif
 
+#if HTTPS_SUPPORT
+#include "gnutls.h"
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -725,6 +729,20 @@ MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
                            MHD_KeyValueIterator iterator, void *iterator_cls);
 
+#if HTTPS_SUPPORT
+/* get cipher spec for this connection */
+gnutls_cipher_algorithm_t MHDS_get_session_cipher (struct MHD_Connection * session );
+
+gnutls_kx_algorithm_t MHDS_get_session_kx (struct MHD_Connection * session );
+gnutls_mac_algorithm_t MHDS_get_session_mac (struct MHD_Connection * session );
+gnutls_compression_method_t MHDS_get_session_compression (struct MHD_Connection * session );
+gnutls_certificate_type_t MHDS_get_session_cert_type (struct MHD_Connection * session );
+
+//TODO impl
+size_t MHDS_get_key_size (struct MHD_Daemon * daemon, gnutls_cipher_algorithm_t algorithm);
+size_t MHDS_get_mac_key_size (struct MHD_Daemon * daemon, gnutls_mac_algorithm_t algorithm);
+#endif
+
 /**
  * Get a particular header value.  If multiple
  * values match the kind, return any one of them.
@@ -836,7 +854,7 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @param key which header to get
  * @return NULL if header does not exist
  */
-const char *MHD_get_response_header (struct MHD_Response *response,
+const char * MHD_get_response_header (struct MHD_Response *response,
                                      const char *key);
 
 

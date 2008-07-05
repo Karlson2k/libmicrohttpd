@@ -220,7 +220,7 @@ MHDS_handle_connection (void *data)
                           con->daemon->x509_cret);
 
   /* avoid gnutls blocking recv / write calls */
-  gnutls_transport_set_pull_function(tls_session, &recv);
+  // gnutls_transport_set_pull_function(tls_session, &recv);
   // gnutls_transport_set_push_function(tls_session, &send);
 
   gnutls_transport_set_ptr (tls_session, con->socket_fd);
@@ -240,9 +240,9 @@ MHDS_handle_connection (void *data)
       con->s_state = MHDS_HANDSHAKE_FAILED;
       gnutls_bye (con->tls_session, GNUTLS_SHUT_WR);
       gnutls_deinit (tls_session);
-      con->socket_fd = 1;
+      con->socket_fd = -1;
       return MHD_NO;
-      
+
     }
 
   MHD_handle_connection (data);
@@ -338,7 +338,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       CLOSE (s);
       return MHD_NO;
     }
-  
+
   /* apply connection acceptance policy if present */
   if ((daemon->apc != NULL)
       && (MHD_NO == daemon->apc (daemon->apc_cls, addr, addrlen)))
@@ -415,7 +415,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                             &MHDS_handle_connection,
                                             connection);
       else
-#endif        
+#endif
         {
           res_thread_create = pthread_create (&connection->pid, NULL,
                                               &MHD_handle_connection,
@@ -607,7 +607,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   ds = daemon->socket_fd;
   if (ds == -1)
     return MHD_YES;
-  
+
   /* select connection thread handling type */
   if (__FD_ISSET (ds, &rs))
     MHD_accept_connection (daemon);

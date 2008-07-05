@@ -41,15 +41,14 @@
 #include "gnutls_extensions.h"
 #include "gnutls_supplemental.h"
 #include "gnutls_auth_int.h"
-#include "gnutls_v2_compat.h"
 #include "auth_cert.h"
 #include "gnutls_cert.h"
 #include "gnutls_constate.h"
-#include <gnutls_record.h>
-#include <gnutls_state.h>
-#include <gnutls_rsa_export.h>  /* for gnutls_get_rsa_params() */
-#include <auth_anon.h>          /* for gnutls_anon_server_credentials_t */
-#include <gc.h>
+#include "gnutls_record.h"
+#include "gnutls_state.h"
+#include "gnutls_rsa_export.h"  /* for gnutls_get_rsa_params() */
+#include "auth_anon.h"          /* for gnutls_anon_server_credentials_t */
+#include "gc.h"
 
 #ifdef HANDSHAKE_DEBUG
 #define ERR(x, y) _gnutls_handshake_log( "HSK[%x]: %s (%d)\n", session, x,y)
@@ -76,7 +75,7 @@ _gnutls_handshake_hash_buffers_clear (gnutls_session_t session)
   _gnutls_handshake_buffer_clear (session);
 }
 
-/* this will copy the required values for resuming to 
+/* this will copy the required values for resuming to
  * internals, and to security_parameters.
  * this will keep as less data to security_parameters.
  */
@@ -91,7 +90,7 @@ resume_copy_required_values (gnutls_session_t session)
           client_random,
           session->security_parameters.client_random, TLS_RANDOM_SIZE);
 
-  /* keep the ciphersuite and compression 
+  /* keep the ciphersuite and compression
    * That is because the client must see these in our
    * hello message.
    */
@@ -135,8 +134,7 @@ _gnutls_set_client_random (gnutls_session_t session, uint8_t * rnd)
   memcpy (session->security_parameters.client_random, rnd, TLS_RANDOM_SIZE);
 }
 
-/* Calculate The SSL3 Finished message 
- */
+/* Calculate The SSL3 Finished message */
 #define SSL3_CLIENT_MSG "CLNT"
 #define SSL3_SERVER_MSG "SRVR"
 #define SSL_MSG_LEN 4
@@ -185,8 +183,7 @@ _gnutls_ssl3_finished (gnutls_session_t session, int type, opaque * ret)
   return 0;
 }
 
-/* Hash the handshake messages as required by TLS 1.0 
- */
+/* Hash the handshake messages as required by TLS 1.0 */
 #define SERVER_MSG "server finished"
 #define CLIENT_MSG "client finished"
 #define TLS_MSG_LEN 15
@@ -331,7 +328,7 @@ _gnutls_user_hello_func (gnutls_session session,
   return 0;
 }
 
-/* Read a client hello packet. 
+/* Read a client hello packet.
  * A client hello must be a known version client hello
  * or version 2.0 client hello (only for compatibility
  * since SSL version 2.0 is not supported).
@@ -348,10 +345,6 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
   int len = datalen;
   opaque rnd[TLS_RANDOM_SIZE], *suite_ptr, *comp_ptr;
 
-  if (session->internals.v2_hello != 0)
-    {                           /* version 2.0 */
-      return _gnutls_read_client_hello_v2 (session, data, datalen);
-    }
   DECR_LEN (len, 2);
 
   _gnutls_handshake_log ("HSK[%x]: Client's version: %d.%d\n", session,
@@ -382,8 +375,7 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
   DECR_LEN (len, 1);
   session_id_len = data[pos++];
 
-  /* RESUME SESSION 
-   */
+  /* RESUME SESSION */
   if (session_id_len > TLS_MAX_SESSION_ID_SIZE)
     {
       gnutls_assert ();
@@ -478,7 +470,7 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
   return 0;
 }
 
-/* here we hash all pending data. 
+/* here we hash all pending data.
  */
 inline static int
 _gnutls_handshake_hash_pending (gnutls_session_t session)
@@ -569,7 +561,7 @@ _gnutls_send_finished (gnutls_session_t session, int again)
 }
 
 /* This is to be called after sending our finished message. If everything
- * went fine we have negotiated a secure connection 
+ * went fine we have negotiated a secure connection
  */
 int
 _gnutls_recv_finished (gnutls_session_t session)
@@ -803,7 +795,7 @@ finish:
 }
 
 
-/* This selects the best supported compression method from the ones provided 
+/* This selects the best supported compression method from the ones provided
  */
 int
 _gnutls_server_select_comp_method (gnutls_session_t session,
@@ -875,8 +867,7 @@ _gnutls_send_empty_handshake (gnutls_session_t session,
 }
 
 
-/* This function will hash the handshake message we sent.
- */
+/* This function will hash the handshake message we sent. */
 static int
 _gnutls_handshake_hash_add_sent (gnutls_session_t session,
                                  gnutls_handshake_description_t type,
@@ -904,7 +895,7 @@ _gnutls_handshake_hash_add_sent (gnutls_session_t session,
 
 /* This function sends a handshake message of type 'type' containing the
  * data specified here. If the previous _gnutls_send_handshake() returned
- * GNUTLS_E_AGAIN or GNUTLS_E_INTERRUPTED, then it must be called again 
+ * GNUTLS_E_AGAIN or GNUTLS_E_INTERRUPTED, then it must be called again
  * (until it returns ok), with NULL parameters.
  */
 int
@@ -1533,8 +1524,7 @@ _gnutls_read_server_hello (gnutls_session_t session,
 
 
 
-  /* move to compression 
-   */
+  /* move to compression   */
   DECR_LEN (len, 1);
 
   ret = _gnutls_client_set_comp_method (session, data[pos++]);
@@ -1628,7 +1618,7 @@ _gnutls_copy_ciphersuites (gnutls_session_t session,
 }
 
 
-/* This function copies the appropriate compression methods, to a locally allocated buffer 
+/* This function copies the appropriate compression methods, to a locally allocated buffer
  * Needed in hello messages. Returns the new data length.
  */
 static int
@@ -1701,7 +1691,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
     {
 
       datalen = 2 + (session_id_len + 1) + TLS_RANDOM_SIZE;
-      /* 2 for version, (4 for unix time + 28 for random bytes==TLS_RANDOM_SIZE) 
+      /* 2 for version, (4 for unix time + 28 for random bytes==TLS_RANDOM_SIZE)
        */
 
       data = gnutls_malloc (datalen);
@@ -1731,7 +1721,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
       data[pos++] = _gnutls_version_get_major (hver);
       data[pos++] = _gnutls_version_get_minor (hver);
 
-      /* Set the version we advertized as maximum 
+      /* Set the version we advertized as maximum
        * (RSA uses it).
        */
       _gnutls_set_adv_version (session, hver);
@@ -1740,8 +1730,8 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
        * different version in the record layer.
        * It seems they prefer to read the record's version
        * as the one we actually requested.
-       * The proper behaviour is to use the one in the client hello 
-       * handshake packet and ignore the one in the packet's record 
+       * The proper behaviour is to use the one in the client hello
+       * handshake packet and ignore the one in the packet's record
        * header.
        */
       _gnutls_set_current_version (session, hver);
@@ -1750,7 +1740,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
        */
       session->security_parameters.timestamp = time (NULL);
 
-      /* Generate random data 
+      /* Generate random data
        */
       _gnutls_tls_create_random (rnd);
       _gnutls_set_client_random (session, rnd);
@@ -1758,8 +1748,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
       memcpy (&data[pos], rnd, TLS_RANDOM_SIZE);
       pos += TLS_RANDOM_SIZE;
 
-      /* Copy the Session ID 
-       */
+      /* Copy the Session ID       */
       data[pos++] = session_id_len;
 
       if (session_id_len > 0)
@@ -2286,7 +2275,7 @@ gnutls_handshake (gnutls_session_t session)
 
 
 /*
- * _gnutls_handshake_client 
+ * _gnutls_handshake_client
  * This function performs the client side of the handshake of the TLS/SSL protocol.
  */
 int
@@ -2348,7 +2337,7 @@ _gnutls_handshake_client (gnutls_session_t session)
       IMED_RET ("recv server kx message", ret);
 
     case STATE5:
-      /* receive the server certificate request - if any 
+      /* receive the server certificate request - if any
        */
 
       if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
@@ -2405,7 +2394,7 @@ _gnutls_handshake_client (gnutls_session_t session)
   return 0;
 }
 
-/* This function sends the final handshake packets and initializes connection 
+/* This function sends the final handshake packets and initializes connection
  */
 static int
 _gnutls_send_handshake_final (gnutls_session_t session, int init)
@@ -2427,7 +2416,7 @@ _gnutls_send_handshake_final (gnutls_session_t session, int init)
           return ret;
         }
 
-      /* Initialize the connection session (start encryption) - in case of client 
+      /* Initialize the connection session (start encryption) - in case of client
        */
       if (init == TRUE)
         {
@@ -2465,7 +2454,7 @@ _gnutls_send_handshake_final (gnutls_session_t session, int init)
   return 0;
 }
 
-/* This function receives the final handshake packets 
+/* This function receives the final handshake packets
  * And executes the appropriate function to initialize the
  * read session.
  */
@@ -2525,7 +2514,7 @@ _gnutls_recv_handshake_final (gnutls_session_t session, int init)
 }
 
  /*
-  * _gnutls_handshake_server 
+  * _gnutls_handshake_server
   * This function does the server stuff of the handshake protocol.
   */
 
@@ -2846,7 +2835,7 @@ _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
   gnutls_kx_algorithm_t *alg = NULL;
   int alg_size = 0;
 
-  /* if we should use a specific certificate, 
+  /* if we should use a specific certificate,
    * we should remove all algorithms that are not supported
    * by that certificate and are on the same authentication
    * method (CERTIFICATE).
@@ -2873,7 +2862,7 @@ _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
         }
     }
 
-  /* get all the key exchange algorithms that are 
+  /* get all the key exchange algorithms that are
    * supported by the X509 certificate parameters.
    */
   if ((ret =
@@ -2902,7 +2891,7 @@ _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
        */
       kx = _gnutls_cipher_suite_get_kx_algo (&(*cipherSuites)[i]);
 
-      /* if it is defined but had no credentials 
+      /* if it is defined but had no credentials
        */
       if (_gnutls_get_kx_cred (session, kx, NULL) == NULL)
         {

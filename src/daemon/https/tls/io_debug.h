@@ -22,9 +22,9 @@
  *
  */
 
-/* This debug file was contributed by 
+/* This debug file was contributed by
  * Paul Sheer <psheer@icon.co.za>. Some changes were made by nmav.
- * Its purpose is to debug non blocking behaviour of gnutls. The included
+ * Its purpose is to debug non blocking behavior of gnutls. The included
  * send() and recv() functions return EAGAIN errors in random.
  *
  */

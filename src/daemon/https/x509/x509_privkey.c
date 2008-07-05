@@ -51,7 +51,7 @@ int _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params);
  * gnutls_x509_privkey_init - This function initializes a gnutls_crl structure
  * @key: The structure to be initialized
  *
- * This function will initialize an private key structure. 
+ * This function will initialize an private key structure.
  *
  * Returns 0 on success.
  *
@@ -75,7 +75,7 @@ gnutls_x509_privkey_init (gnutls_x509_privkey_t * key)
  * gnutls_x509_privkey_deinit - This function deinitializes memory used by a gnutls_x509_privkey_t structure
  * @key: The structure to be initialized
  *
- * This function will deinitialize a private key structure. 
+ * This function will deinitialize a private key structure.
  *
  **/
 void
@@ -357,8 +357,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
 
   key->pk_algorithm = GNUTLS_PK_UNKNOWN;
 
-  /* If the Certificate is in PEM format then decode it
-   */
+  /* If the Certificate is in PEM format then decode it */
   if (format == GNUTLS_X509_FMT_PEM)
     {
       opaque *out;
@@ -399,9 +398,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
     }
   else
     {
-      /* Try decoding with both, and accept the one that 
-       * succeeds.
-       */
+      /* Try decoding with both, and accept the one that succeeds. */
       key->pk_algorithm = GNUTLS_PK_RSA;
       key->key = _gnutls_privkey_decode_pkcs1_rsa_key (&_data, key);
 
@@ -419,7 +416,8 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
     {
       gnutls_assert ();
       result = GNUTLS_E_ASN1_DER_ERROR;
-      goto cleanup;
+      key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+      return result;
     }
 
   if (need_free)
@@ -429,11 +427,6 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
    */
 
   return 0;
-
-cleanup:key->pk_algorithm = GNUTLS_PK_UNKNOWN;
-  if (need_free)
-    _gnutls_free_datum (&_data);
-  return result;
 }
 
 #define FREE_RSA_PRIVATE_PARAMS for (i=0;i<RSA_PRIVATE_PARAMS;i++) \
