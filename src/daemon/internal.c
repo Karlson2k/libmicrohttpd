@@ -66,3 +66,5 @@ MHD_http_unescape (char *val)
       val = esc + 1;
     }
 }
+
+/* end of internal.c */

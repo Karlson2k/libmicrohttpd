@@ -563,8 +563,6 @@ struct MHD_Connection
 
 };
 
-typedef struct MHD_Connection MHD_Connection_t;
-
 struct MHD_Daemon
 {
 
@@ -582,12 +580,6 @@ struct MHD_Daemon
      * Linked list of our current connections.
      */
   struct MHD_Connection *connections;
-
-    /**
-     * Linked list of our current connections.
-     */
-  // TODO switch to a dedicated tls connection struct
-  struct MHD_Connection *tls_connections;
 
   MHD_AcceptPolicyCallback apc;
 
