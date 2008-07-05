@@ -225,26 +225,6 @@ MHDS_handle_connection (void *data)
 
   gnutls_transport_set_ptr (tls_session, con->socket_fd);
 
-  ret = gnutls_handshake (tls_session);
-
-  if (ret == 0)
-    {
-      con->s_state = MHDS_HANDSHAKE_COMPLETE;
-      con->state = MHD_CONNECTION_INIT;
-    }
-  else
-    {
-      /* set connection as closed */
-      fprintf (stderr, "*** Handshake has failed (%s)\n\n",
-               gnutls_strerror (ret));
-      con->s_state = MHDS_HANDSHAKE_FAILED;
-      gnutls_bye (con->tls_session, GNUTLS_SHUT_WR);
-      gnutls_deinit (tls_session);
-      con->socket_fd = -1;
-      return MHD_NO;
-
-    }
-
   MHD_handle_connection (data);
 }
 #endif

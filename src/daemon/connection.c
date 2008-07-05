@@ -163,18 +163,28 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 #if HTTPS_SUPPORT
 /* get cipher spec for this connection */
-gnutls_cipher_algorithm_t MHDS_get_session_cipher (struct MHD_Connection * session ){
-  return gnutls_cipher_get(session->tls_session);
+gnutls_cipher_algorithm_t
+MHDS_get_session_cipher (struct MHD_Connection * session)
+{
+  return gnutls_cipher_get (session->tls_session);
 }
 
-gnutls_mac_algorithm_t MHDS_get_session_mac (struct MHD_Connection * session ){
-  return gnutls_mac_get(session->tls_session);
+gnutls_mac_algorithm_t
+MHDS_get_session_mac (struct MHD_Connection * session)
+{
+  return gnutls_mac_get (session->tls_session);
 }
-gnutls_compression_method_t MHDS_get_session_compression (struct MHD_Connection * session ){
-  return gnutls_compression_get(session->tls_session);
+
+gnutls_compression_method_t
+MHDS_get_session_compression (struct MHD_Connection * session)
+{
+  return gnutls_compression_get (session->tls_session);
 }
-gnutls_certificate_type_t MHDS_get_session_cert_type (struct MHD_Connection * session ){
-  return gnutls_certificate_type_get(session->tls_session);
+
+gnutls_certificate_type_t
+MHDS_get_session_cert_type (struct MHD_Connection * session)
+{
+  return gnutls_certificate_type_get (session->tls_session);
 }
 #endif
 
@@ -1543,6 +1553,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
 int
 MHDS_connection_handle_read (struct MHD_Connection *connection)
 {
+  int ret;
+
   connection->last_activity = time (NULL);
 
   if (connection->s_state == MHDS_CONNECTION_CLOSED)
@@ -1619,8 +1631,29 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
       /* forward application level content to MHD */
     case GNUTLS_APPLICATION_DATA:
       return MHD_connection_handle_read (connection);
-      // TODO impl
+
     case GNUTLS_HANDSHAKE:
+      ret = gnutls_handshake (connection->tls_session);
+      if (ret == 0)
+        {
+          connection->s_state = MHDS_HANDSHAKE_COMPLETE;
+          connection->state = MHD_CONNECTION_INIT;
+        }
+      /* set connection as closed */
+      else
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (connection->daemon,
+                    "Error: Handshake has failed (%s)\n",
+                    ret);
+#endif
+          connection->s_state = MHDS_HANDSHAKE_FAILED;
+          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+          gnutls_deinit (connection->tls_session);
+          connection->socket_fd = -1;
+          return MHD_NO;
+
+        }
       break;
     case GNUTLS_INNER_APPLICATION:
       break;
