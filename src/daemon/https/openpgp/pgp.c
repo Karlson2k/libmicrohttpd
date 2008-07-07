@@ -39,12 +39,13 @@
  * Returns 0 on success.
  *
  **/
-int gnutls_openpgp_crt_init(gnutls_openpgp_crt_t * key)
+int
+gnutls_openpgp_crt_init (gnutls_openpgp_crt_t * key)
 {
-  *key = gnutls_calloc(1, sizeof(gnutls_openpgp_crt_int));
+  *key = gnutls_calloc (1, sizeof (gnutls_openpgp_crt_int));
 
   if (*key)
-    return 0; /* success */
+    return 0;                   /* success */
   return GNUTLS_E_MEMORY_ERROR;
 }
 
@@ -54,18 +55,19 @@ int gnutls_openpgp_crt_init(gnutls_openpgp_crt_t * key)
  *
  * This function will deinitialize a key structure. 
  **/
-void gnutls_openpgp_crt_deinit(gnutls_openpgp_crt_t key)
+void
+gnutls_openpgp_crt_deinit (gnutls_openpgp_crt_t key)
 {
   if (!key)
     return;
 
   if (key->knode)
     {
-      cdk_kbnode_release(key->knode);
+      cdk_kbnode_release (key->knode);
       key->knode = NULL;
     }
 
-  gnutls_free(key);
+  gnutls_free (key);
 }
 
 /**
@@ -79,32 +81,33 @@ void gnutls_openpgp_crt_deinit(gnutls_openpgp_crt_t key)
  *
  * Returns 0 on success.
  **/
-int gnutls_openpgp_crt_import(gnutls_openpgp_crt_t key,
-                              const gnutls_datum_t * data,
-                              gnutls_openpgp_crt_fmt_t format)
+int
+gnutls_openpgp_crt_import (gnutls_openpgp_crt_t key,
+                           const gnutls_datum_t * data,
+                           gnutls_openpgp_crt_fmt_t format)
 {
   cdk_stream_t inp;
   int rc;
 
   if (format == GNUTLS_OPENPGP_FMT_RAW)
-    rc = cdk_kbnode_read_from_mem(&key->knode, data->data, data->size);
+    rc = cdk_kbnode_read_from_mem (&key->knode, data->data, data->size);
   else
     {
-      rc = cdk_stream_tmp_from_mem(data->data, data->size, &inp);
+      rc = cdk_stream_tmp_from_mem (data->data, data->size, &inp);
       if (rc)
         {
-          rc = _gnutls_map_cdk_rc(rc);
+          rc = _gnutls_map_cdk_rc (rc);
           gnutls_assert ();
           return rc;
         }
-      if (cdk_armor_filter_use(inp))
-        rc = cdk_stream_set_armor_flag(inp, 0);
+      if (cdk_armor_filter_use (inp))
+        rc = cdk_stream_set_armor_flag (inp, 0);
       if (!rc)
-        rc = cdk_keydb_get_keyblock(inp, &key->knode);
-      cdk_stream_close(inp);
+        rc = cdk_keydb_get_keyblock (inp, &key->knode);
+      cdk_stream_close (inp);
       if (rc)
         {
-          rc = _gnutls_map_cdk_rc(rc);
+          rc = _gnutls_map_cdk_rc (rc);
           gnutls_assert ();
           return rc;
         }
@@ -127,50 +130,50 @@ int gnutls_openpgp_crt_import(gnutls_openpgp_crt_t key,
  * Returns 0 on success.
  *
  **/
-int gnutls_openpgp_crt_export(gnutls_openpgp_crt_t key,
-                              gnutls_openpgp_crt_fmt_t format,
-                              void *output_data,
-                              size_t * output_data_size)
+int
+gnutls_openpgp_crt_export (gnutls_openpgp_crt_t key,
+                           gnutls_openpgp_crt_fmt_t format,
+                           void *output_data, size_t * output_data_size)
 {
   size_t input_data_size = *output_data_size;
   size_t calc_size;
   int rc;
 
-  rc = cdk_kbnode_write_to_mem(key->knode, output_data, output_data_size);
+  rc = cdk_kbnode_write_to_mem (key->knode, output_data, output_data_size);
   if (rc)
     {
-      rc = _gnutls_map_cdk_rc(rc);
+      rc = _gnutls_map_cdk_rc (rc);
       gnutls_assert ();
       return rc;
     }
 
   /* FIXME: The first call of this function is with output_data == NULL
-   to figure out the size and the caller expects this error here. */
+     to figure out the size and the caller expects this error here. */
   if (!output_data)
     return GNUTLS_E_SHORT_MEMORY_BUFFER;
 
   if (format == GNUTLS_OPENPGP_FMT_BASE64)
     {
-      unsigned char *in = cdk_calloc(1, *output_data_size);
-      memcpy(in, output_data, *output_data_size);
+      unsigned char *in = cdk_calloc (1, *output_data_size);
+      memcpy (in, output_data, *output_data_size);
 
       /* Calculate the size of the encoded data and check if the provided
-       buffer is large enough. */
-      rc = cdk_armor_encode_buffer(in, input_data_size, 
-      NULL, 0, &calc_size, CDK_ARMOR_PUBKEY);
+         buffer is large enough. */
+      rc = cdk_armor_encode_buffer (in, input_data_size,
+                                    NULL, 0, &calc_size, CDK_ARMOR_PUBKEY);
       if (rc || calc_size > input_data_size)
         {
-          cdk_free(in);
+          cdk_free (in);
           *output_data_size = calc_size;
-          rc = _gnutls_map_cdk_rc(CDK_Too_Short);
+          rc = _gnutls_map_cdk_rc (CDK_Too_Short);
           gnutls_assert ();
           return rc;
         }
 
-      rc = cdk_armor_encode_buffer(in, input_data_size, output_data,
-                                   input_data_size, &calc_size,
-                                   CDK_ARMOR_PUBKEY);
-      cdk_free(in);
+      rc = cdk_armor_encode_buffer (in, input_data_size, output_data,
+                                    input_data_size, &calc_size,
+                                    CDK_ARMOR_PUBKEY);
+      cdk_free (in);
       *output_data_size = calc_size;
     }
 
@@ -186,12 +189,12 @@ int gnutls_openpgp_crt_export(gnutls_openpgp_crt_t key,
  * Returns the fingerprint of the OpenPGP key. Depends on the algorithm,
  * the fingerprint can be 16 or 20 bytes.
  **/
-int gnutls_openpgp_crt_get_fingerprint(gnutls_openpgp_crt_t key,
-                                       void *fpr,
-                                       size_t * fprlen)
+int
+gnutls_openpgp_crt_get_fingerprint (gnutls_openpgp_crt_t key,
+                                    void *fpr, size_t * fprlen)
 {
   cdk_packet_t pkt;
-  cdk_pkt_pubkey_t pk= NULL;
+  cdk_pkt_pubkey_t pk = NULL;
 
   if (!fpr || !fprlen)
     {
@@ -201,7 +204,7 @@ int gnutls_openpgp_crt_get_fingerprint(gnutls_openpgp_crt_t key,
 
   *fprlen = 0;
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (!pkt)
     return GNUTLS_E_OPENPGP_GETKEY_FAILED;
 
@@ -211,12 +214,13 @@ int gnutls_openpgp_crt_get_fingerprint(gnutls_openpgp_crt_t key,
   /* FIXME: Check if the draft allows old PGP keys. */
   if (is_RSA (pk->pubkey_algo) && pk->version < 4)
     *fprlen = 16;
-  cdk_pk_get_fingerprint(pk, fpr);
+  cdk_pk_get_fingerprint (pk, fpr);
 
   return 0;
 }
 
-int _gnutls_openpgp_count_key_names(gnutls_openpgp_crt_t key)
+int
+_gnutls_openpgp_count_key_names (gnutls_openpgp_crt_t key)
 {
   cdk_kbnode_t p, ctx;
   cdk_packet_t pkt;
@@ -230,9 +234,9 @@ int _gnutls_openpgp_count_key_names(gnutls_openpgp_crt_t key)
 
   ctx = NULL;
   nuids = 0;
-  while ((p = cdk_kbnode_walk(key->knode, &ctx, 0)))
+  while ((p = cdk_kbnode_walk (key->knode, &ctx, 0)))
     {
-      pkt = cdk_kbnode_get_packet(p);
+      pkt = cdk_kbnode_get_packet (p);
       if (pkt->pkttype == CDK_PKT_USER_ID)
         nuids++;
     }
@@ -254,14 +258,13 @@ int _gnutls_openpgp_count_key_names(gnutls_openpgp_crt_t key)
  * if the index of the ID does not exist.
  *
  **/
-int gnutls_openpgp_crt_get_name(gnutls_openpgp_crt_t key,
-                                int idx,
-                                char *buf,
-                                size_t * sizeof_buf)
+int
+gnutls_openpgp_crt_get_name (gnutls_openpgp_crt_t key,
+                             int idx, char *buf, size_t * sizeof_buf)
 {
-  cdk_kbnode_t ctx= NULL, p;
-  cdk_packet_t pkt= NULL;
-  cdk_pkt_userid_t uid= NULL;
+  cdk_kbnode_t ctx = NULL, p;
+  cdk_packet_t pkt = NULL;
+  cdk_pkt_userid_t uid = NULL;
   int pos = 0;
 
   if (!key || !buf)
@@ -270,17 +273,17 @@ int gnutls_openpgp_crt_get_name(gnutls_openpgp_crt_t key,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  if (idx < 0 || idx > _gnutls_openpgp_count_key_names(key))
+  if (idx < 0 || idx > _gnutls_openpgp_count_key_names (key))
     return GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
 
   if (!idx)
-    pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_USER_ID);
+    pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_USER_ID);
   else
     {
       pos = 0;
-      while ((p = cdk_kbnode_walk(key->knode, &ctx, 0)))
+      while ((p = cdk_kbnode_walk (key->knode, &ctx, 0)))
         {
-          pkt = cdk_kbnode_get_packet(p);
+          pkt = cdk_kbnode_get_packet (p);
           if (pkt->pkttype == CDK_PKT_USER_ID && ++pos == idx)
             break;
         }
@@ -300,8 +303,8 @@ int gnutls_openpgp_crt_get_name(gnutls_openpgp_crt_t key,
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
 
-  memcpy(buf, uid->name, uid->len);
-  buf[uid->len] = '\0'; /* make sure it's a string */
+  memcpy (buf, uid->name, uid->len);
+  buf[uid->len] = '\0';         /* make sure it's a string */
   *sizeof_buf = uid->len + 1;
 
   if (uid->is_revoked)
@@ -326,8 +329,9 @@ int gnutls_openpgp_crt_get_name(gnutls_openpgp_crt_t key,
  * or a negative value on error.
  *
  **/
-gnutls_pk_algorithm_t gnutls_openpgp_crt_get_pk_algorithm(gnutls_openpgp_crt_t key,
-                                                          unsigned int *bits)
+gnutls_pk_algorithm_t
+gnutls_openpgp_crt_get_pk_algorithm (gnutls_openpgp_crt_t key,
+                                     unsigned int *bits)
 {
   cdk_packet_t pkt;
   int algo;
@@ -336,11 +340,11 @@ gnutls_pk_algorithm_t gnutls_openpgp_crt_get_pk_algorithm(gnutls_openpgp_crt_t k
     return GNUTLS_PK_UNKNOWN;
 
   algo = 0;
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (pkt && pkt->pkttype == CDK_PKT_PUBLIC_KEY)
     {
       if (bits)
-        *bits = cdk_pk_get_nbits(pkt->pkt.public_key);
+        *bits = cdk_pk_get_nbits (pkt->pkt.public_key);
       algo = pkt->pkt.public_key->pubkey_algo;
       if (is_RSA (algo))
         algo = GNUTLS_PK_RSA;
@@ -357,7 +361,8 @@ gnutls_pk_algorithm_t gnutls_openpgp_crt_get_pk_algorithm(gnutls_openpgp_crt_t k
  *
  * Extract the version of the OpenPGP key.
  **/
-int gnutls_openpgp_crt_get_version(gnutls_openpgp_crt_t key)
+int
+gnutls_openpgp_crt_get_version (gnutls_openpgp_crt_t key)
 {
   cdk_packet_t pkt;
   int version;
@@ -365,7 +370,7 @@ int gnutls_openpgp_crt_get_version(gnutls_openpgp_crt_t key)
   if (!key)
     return -1;
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (pkt)
     version = pkt->pkt.public_key->version;
   else
@@ -380,7 +385,8 @@ int gnutls_openpgp_crt_get_version(gnutls_openpgp_crt_t key)
  *
  * Returns the timestamp when the OpenPGP key was created.
  **/
-time_t gnutls_openpgp_crt_get_creation_time(gnutls_openpgp_crt_t key)
+time_t
+gnutls_openpgp_crt_get_creation_time (gnutls_openpgp_crt_t key)
 {
   cdk_packet_t pkt;
   time_t timestamp;
@@ -388,7 +394,7 @@ time_t gnutls_openpgp_crt_get_creation_time(gnutls_openpgp_crt_t key)
   if (!key)
     return (time_t) - 1;
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (pkt)
     timestamp = pkt->pkt.public_key->timestamp;
   else
@@ -404,7 +410,8 @@ time_t gnutls_openpgp_crt_get_creation_time(gnutls_openpgp_crt_t key)
  * Returns the time when the OpenPGP key expires. A value of '0' means
  * that the key doesn't expire at all.
  **/
-time_t gnutls_openpgp_crt_get_expiration_time(gnutls_openpgp_crt_t key)
+time_t
+gnutls_openpgp_crt_get_expiration_time (gnutls_openpgp_crt_t key)
 {
   cdk_packet_t pkt;
   time_t expiredate;
@@ -412,7 +419,7 @@ time_t gnutls_openpgp_crt_get_expiration_time(gnutls_openpgp_crt_t key)
   if (!key)
     return (time_t) - 1;
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (pkt)
     expiredate = pkt->pkt.public_key->expiredate;
   else
@@ -428,8 +435,8 @@ time_t gnutls_openpgp_crt_get_expiration_time(gnutls_openpgp_crt_t key)
  *
  * Returns the 64-bit keyID of the OpenPGP key.
  **/
-int gnutls_openpgp_crt_get_id(gnutls_openpgp_crt_t key,
-                              unsigned char keyid[8])
+int
+gnutls_openpgp_crt_get_id (gnutls_openpgp_crt_t key, unsigned char keyid[8])
 {
   cdk_packet_t pkt;
   uint32_t kid[2];
@@ -440,11 +447,11 @@ int gnutls_openpgp_crt_get_id(gnutls_openpgp_crt_t key,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (!pkt)
     return GNUTLS_E_OPENPGP_GETKEY_FAILED;
 
-  cdk_pk_get_keyid(pkt->pkt.public_key, kid);
+  cdk_pk_get_keyid (pkt->pkt.public_key, kid);
   keyid[0] = kid[0] >> 24;
   keyid[1] = kid[0] >> 16;
   keyid[2] = kid[0] >> 8;
@@ -469,8 +476,9 @@ int gnutls_openpgp_crt_get_id(gnutls_openpgp_crt_t key,
  * Returns non zero on success, and zero on failure.
  *
  **/
-int gnutls_openpgp_crt_check_hostname(gnutls_openpgp_crt_t key,
-                                      const char *hostname)
+int
+gnutls_openpgp_crt_check_hostname (gnutls_openpgp_crt_t key,
+                                   const char *hostname)
 {
   char dnsname[MAX_CN];
   size_t dnsnamesize;
@@ -481,9 +489,9 @@ int gnutls_openpgp_crt_check_hostname(gnutls_openpgp_crt_t key,
   for (i = 0; !(ret < 0); i++)
     {
       dnsnamesize = sizeof (dnsname);
-      ret = gnutls_openpgp_crt_get_name(key, i, dnsname, &dnsnamesize);
+      ret = gnutls_openpgp_crt_get_name (key, i, dnsname, &dnsnamesize);
       /* FIXME: ret is not used */
-      if (_gnutls_hostname_compare(dnsname, hostname))
+      if (_gnutls_hostname_compare (dnsname, hostname))
         return 1;
     }
 
@@ -503,8 +511,9 @@ int gnutls_openpgp_crt_check_hostname(gnutls_openpgp_crt_t key,
  * A negative value may be returned in case of parsing error.
  *
  */
-int gnutls_openpgp_crt_get_key_usage(gnutls_openpgp_crt_t key,
-                                     unsigned int *key_usage)
+int
+gnutls_openpgp_crt_get_key_usage (gnutls_openpgp_crt_t key,
+                                  unsigned int *key_usage)
 {
   cdk_packet_t pkt;
   int algo = 0;
@@ -514,14 +523,14 @@ int gnutls_openpgp_crt_get_key_usage(gnutls_openpgp_crt_t key,
 
   *key_usage = 0;
 
-  pkt = cdk_kbnode_find_packet(key->knode, CDK_PKT_PUBLIC_KEY);
+  pkt = cdk_kbnode_find_packet (key->knode, CDK_PKT_PUBLIC_KEY);
   if (pkt && pkt->pkttype == CDK_PKT_PUBLIC_KEY)
     {
       algo = pkt->pkt.public_key->pubkey_algo;
 
       /* FIXME: We need to take a look at the key flags because
-       RSA-E and RSA-S are obsolete. Only RSA is used
-       and the flags are used to set the capabilities. */
+         RSA-E and RSA-S are obsolete. Only RSA is used
+         and the flags are used to set the capabilities. */
       if (is_DSA (algo) || algo == GCRY_PK_RSA_S)
         *key_usage |= KEY_DIGITAL_SIGNATURE;
       else if (algo == GCRY_PK_RSA_E)

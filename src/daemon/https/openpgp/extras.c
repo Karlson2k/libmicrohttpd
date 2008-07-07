@@ -41,12 +41,13 @@
  * Returns 0 on success.
  *
  **/
-int gnutls_openpgp_keyring_init(gnutls_openpgp_keyring_t * keyring)
+int
+gnutls_openpgp_keyring_init (gnutls_openpgp_keyring_t * keyring)
 {
-  *keyring = gnutls_calloc(1, sizeof(gnutls_openpgp_keyring_int));
+  *keyring = gnutls_calloc (1, sizeof (gnutls_openpgp_keyring_int));
 
   if (*keyring)
-    return 0; /* success */
+    return 0;                   /* success */
   return GNUTLS_E_MEMORY_ERROR;
 }
 
@@ -57,26 +58,27 @@ int gnutls_openpgp_keyring_init(gnutls_openpgp_keyring_t * keyring)
  * This function will deinitialize a keyring structure. 
  *
  **/
-void gnutls_openpgp_keyring_deinit(gnutls_openpgp_keyring_t keyring)
+void
+gnutls_openpgp_keyring_deinit (gnutls_openpgp_keyring_t keyring)
 {
   if (!keyring)
     return;
 
   if (keyring->db)
     {
-      cdk_keydb_free(keyring->db);
+      cdk_keydb_free (keyring->db);
       keyring->db = NULL;
     }
 
   /* In some cases the stream is also stored outside the keydb context
-   and we need to close it here then. */
+     and we need to close it here then. */
   if (keyring->db_stream)
     {
-      cdk_stream_close(keyring->db_stream);
+      cdk_stream_close (keyring->db_stream);
       keyring->db_stream = NULL;
     }
 
-  gnutls_free(keyring);
+  gnutls_free (keyring);
 }
 
 /**
@@ -90,19 +92,20 @@ void gnutls_openpgp_keyring_deinit(gnutls_openpgp_keyring_t keyring)
  * Returns 0 on success (if keyid exists) and a negative error code
  * on failure.
  **/
-int gnutls_openpgp_keyring_check_id(gnutls_openpgp_keyring_t ring,
-                                    const unsigned char keyid[8],
-                                    unsigned int flags)
+int
+gnutls_openpgp_keyring_check_id (gnutls_openpgp_keyring_t ring,
+                                 const unsigned char keyid[8],
+                                 unsigned int flags)
 {
   cdk_pkt_pubkey_t pk;
   uint32_t id[2];
 
-  id[0] = _gnutls_read_uint32(keyid);
-  id[1] = _gnutls_read_uint32(&keyid[4]);
+  id[0] = _gnutls_read_uint32 (keyid);
+  id[1] = _gnutls_read_uint32 (&keyid[4]);
 
-  if (!cdk_keydb_get_pk(ring->db, id, &pk))
+  if (!cdk_keydb_get_pk (ring->db, id, &pk))
     {
-      cdk_pk_release(pk);
+      cdk_pk_release (pk);
       return 0;
     }
 
@@ -123,42 +126,44 @@ int gnutls_openpgp_keyring_check_id(gnutls_openpgp_keyring_t ring,
  * Returns 0 on success.
  *
  **/
-int gnutls_openpgp_keyring_import(gnutls_openpgp_keyring_t keyring,
-                                  const gnutls_datum_t * data,
-                                  gnutls_openpgp_crt_fmt_t format)
+int
+gnutls_openpgp_keyring_import (gnutls_openpgp_keyring_t keyring,
+                               const gnutls_datum_t * data,
+                               gnutls_openpgp_crt_fmt_t format)
 {
   cdk_error_t err;
   cdk_stream_t input;
 
   _gnutls_debug_log ("PGP: keyring import format '%s'\n",
-      format == GNUTLS_OPENPGP_FMT_RAW ? "raw" : "base64");
+                     format == GNUTLS_OPENPGP_FMT_RAW ? "raw" : "base64");
 
   if (format == GNUTLS_OPENPGP_FMT_RAW)
     {
       err
-          = cdk_keydb_new(&keyring->db, CDK_DBTYPE_DATA, data->data, data->size);
+        =
+        cdk_keydb_new (&keyring->db, CDK_DBTYPE_DATA, data->data, data->size);
       if (err)
         gnutls_assert ();
       return _gnutls_map_cdk_rc (err);
     }
 
   /* Create a new stream from the given data, which means to
-   allocate a new stream and to write the data in the stream.
-   Then push the armor filter to decode the data and to store
-   it in the raw format. */
-  err = cdk_stream_tmp_from_mem(data->data, data->size, &input);
+     allocate a new stream and to write the data in the stream.
+     Then push the armor filter to decode the data and to store
+     it in the raw format. */
+  err = cdk_stream_tmp_from_mem (data->data, data->size, &input);
   if (!err)
-    err = cdk_stream_set_armor_flag(input, 0);
+    err = cdk_stream_set_armor_flag (input, 0);
   if (!err)
-    err = cdk_keydb_new_from_stream(&keyring->db, 0, input);
+    err = cdk_keydb_new_from_stream (&keyring->db, 0, input);
   if (err)
     {
-      cdk_stream_close(input);
+      cdk_stream_close (input);
       gnutls_assert ();
     }
   else
     /* The keydb function will not close the stream itself, so we need to
-     store it separately to close it later. */
+       store it separately to close it later. */
     keyring->db_stream = input;
 
   return _gnutls_map_cdk_rc (err);
