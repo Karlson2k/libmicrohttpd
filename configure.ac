@@ -116,7 +116,6 @@ LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
 AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 LIBS=$SAVE_LIBS
 
-
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
@@ -124,7 +123,8 @@ AC_FUNC_FSEEKO
 # optional: have error messages?
 AC_MSG_CHECKING(--enable-messages argument)
 AC_ARG_ENABLE(messages,
-   [  --enable-messages 	Enable MHD error messages],
+   [AS_HELP_STRING([--enable-messages],
+               [Enable MHD error messages])],
    [enable_messages=$enableval],
    [enable_messages="no"])
 AC_MSG_RESULT($enable_messages)
@@ -143,17 +143,45 @@ AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 # optional: HTTPS support. Included by default
 AC_MSG_CHECKING(--enable-HTTPS argument)
 AC_ARG_ENABLE([HTTPS],
-   [  --enable-HTTPS          Enable MHD HTTPS support],
+   [AS_HELP_STRING([--enable-HTTPS],
+               [enable HTTPS support (default is yes)])],
    [enable_HTTPS=$enableval],
    [enable_HTTPS="yes"])
 AC_MSG_RESULT($enable_HTTPS)
-if test "$enable_HTTPS" = "no"
+if test "$enable_HTTPS" = "yes"
 then
- AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
+ AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
 else
- AC_DEFINE([HTTPS_SUPPORT],[1],[Include HTTPS support]) 
+ AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
 fi
 AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_HTTPS" = "yes")
+
+# optional: TLS support. Included by default
+AC_MSG_CHECKING(--enable-TLS argument)
+AC_ARG_ENABLE([TLS],
+   [AS_HELP_STRING([--enable-TLS],
+               [enable TLS support (default is yes)])],
+   [enable_TLS=$enableval],
+   [enable_TLS="yes"])
+AC_MSG_RESULT($enable_TLS)
+
+# optional: SSLv3 support. Exclude by default
+AC_MSG_CHECKING(--enable-SSL argument)
+AC_ARG_ENABLE([SSL],
+   [AS_HELP_STRING([--enable-SSL],
+               [enable SSLv3 support (default is no)])],
+   [enable_SSL=$enableval],
+   [enable_SSL="no"])
+AC_MSG_RESULT($enable_SSL)
+
+# optional: x509 certificate support. Include by default
+AC_MSG_CHECKING(--enable-x509 argument)
+AC_ARG_ENABLE([x509],
+   [AS_HELP_STRING([--enable-x509],
+               [enable x509 support (default is yes)])],
+   [enable_x509=$enableval],
+   [enable_x509="yes"])
+AC_MSG_RESULT($enable_x509)
 
 # Symbols required by GNU_TLS 
 AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
@@ -166,15 +194,14 @@ AC_DEFINE([ENABLE_INCLUDED_OPENCDK],[1],[Include ENABLE_INCLUDED_OPENCDK support
 AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
 AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
 
-
 AC_DEFINE([ENABLE_OPENSSL],[0],[Include ENABLE_OPENSSL support])
 AC_DEFINE([HAVE_LD_OUTPUT_DEF],[0],[Include HAVE_LD_OUTPUT_DEF support])
 AC_DEFINE([HAVE_LD_VERSION_SCRIPT],[0],[Include HAVE_LD_VERSION_SCRIPT support])
 
-
 # Libgcrypt linkage
 AC_ARG_WITH(libgcrypt,
-  [  --with-libgcrypt=PFX   Base of libgcrypt installation],
+  [AS_HELP_STRING([--with-libgcrypt=PFX],
+               [Base of libgcrypt installation])],
   [AC_MSG_RESULT("$with_libgcrypt")
    case $with_libgcrypt in
    no)
@@ -198,41 +225,14 @@ AC_ARG_WITH(libgcrypt,
    esac
   ],
   [AC_MSG_RESULT([--with_libgcrypt not specified])])
+
+# define the minimal version of libgcrypt required   
+MHD_GCRYPT_VERSION=1:1.2.4
+AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], $MHD_GCRYPT_VERSION, [gcrypt lib version])
   
 AC_SUBST(GCRYPT_LIB_PATH)
 AC_SUBST(GCRYPT_LDFLAGS)
 AC_SUBST(GCRYPT_CPPFLAGS)
-
-# GNUtls linkage
-AC_ARG_WITH(gnutls,
-  [  --with-gnutls=PFX   Base of GNU TLS installation],
-  [AC_MSG_RESULT("$with_gnutls")
-   case $with_gnutls in
-   no)
-     ;;
-   yes)
-	AC_CHECK_HEADERS(gnutls.h,gnutls=true)
-     ;;
-   *)
-    LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
-    CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
-    AC_CHECK_HEADERS(gnutls/gnutls.h,
-     # check for 'gnutls_global_init' in gnutls.la
-     AC_CHECK_LIB(gnutls,gnutls_global_init,
-       GNUTLS_LIB_PATH="$with_gnutls/lib"
-       GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-       GNUTLS_CPPFLAGS="-I$with_gnutls/include/gnutls"
-       gnutls=true))
-    LDFLAGS=$SAVE_LDFLAGS
-    CPPFLAGS=$SAVE_CPPFLAGS
-    ;;
-   esac
-  ],
-  [AC_MSG_RESULT([--with-gnutls not specified])])
-  
-AC_SUBST(GNUTLS_LIB_PATH)
-AC_SUBST(GNUTLS_LDFLAGS)
-AC_SUBST(GNUTLS_CPPFLAGS)
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
@@ -261,14 +261,15 @@ src/testcurl/https/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 
-if test "$curl" != 1
-then
- AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
-fi
-
 AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
 AM_CONDITIONAL(ENABLE_OPENPGP,  [test -n " " ] )
 AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
 AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
 AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
 AM_CONDITIONAL(ENABLE_INCLUDED_OPENCDK,  [test -n "" ] )
+
+# Finally: summary
+if test "$curl" != 1
+then
+ AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
+fi
