@@ -29,7 +29,7 @@
 /* x509 */
 #include "common.h"
 
-/* Cred type mappings to KX algorithms 
+/* Cred type mappings to KX algorithms
  * FIXME: The mappings are not 1-1. Some KX such as SRP_RSA require
  * more than one credentials type.
  */
@@ -57,12 +57,6 @@ static const gnutls_cred_map cred_mappings[] = {
   {GNUTLS_KX_DHE_RSA,
    GNUTLS_CRD_CERTIFICATE,
    GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_PSK,
-   GNUTLS_CRD_PSK,
-   GNUTLS_CRD_PSK},
-  {GNUTLS_KX_DHE_PSK,
-   GNUTLS_CRD_PSK,
-   GNUTLS_CRD_PSK},
   {GNUTLS_KX_SRP,
    GNUTLS_CRD_SRP,
    GNUTLS_CRD_SRP},
@@ -197,7 +191,7 @@ struct gnutls_cipher_entry
 };
 typedef struct gnutls_cipher_entry gnutls_cipher_entry;
 
-/* Note that all algorithms are in CBC or STREAM modes. 
+/* Note that all algorithms are in CBC or STREAM modes.
  * Do not add any algorithms in other modes (avoid modified algorithms).
  * View first: "The order of encryption and authentication for
  * protecting communications" by Hugo Krawczyk - CRYPTO 2001
@@ -613,34 +607,6 @@ static const gnutls_cipher_suite_entry cs_algorithms[] = {
                              GNUTLS_KX_ANON_DH,
                              GNUTLS_MAC_SHA1, GNUTLS_TLS1),
 #endif
-
-  /* PSK */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_PSK_SHA_ARCFOUR_SHA1,
-                             GNUTLS_CIPHER_ARCFOUR, GNUTLS_KX_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_PSK_SHA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_PSK_SHA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_PSK_SHA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-
-  /* DHE-PSK */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_PSK_SHA_ARCFOUR_SHA1,
-                             GNUTLS_CIPHER_ARCFOUR, GNUTLS_KX_DHE_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_PSK_SHA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_DHE_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_PSK_SHA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_DHE_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_PSK_SHA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_DHE_PSK,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
 
   /* SRP */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_3DES_EDE_CBC_SHA1,
@@ -1689,8 +1655,8 @@ _gnutls_qsort (gnutls_session_t session,
                  compar);
 }
 
-/* a compare function for KX algorithms (using priorities). 
- * For use with qsort 
+/* a compare function for KX algorithms (using priorities).
+ * For use with qsort
  */
 static int
 _gnutls_compare_algo (gnutls_session_t session,
@@ -1894,7 +1860,7 @@ _gnutls_supported_ciphersuites (gnutls_session_t session,
 
 #define MIN_PRIVATE_COMP_ALGO 0xEF
 
-/* returns the TLS numbers of the compression methods we support 
+/* returns the TLS numbers of the compression methods we support
  */
 #define SUPPORTED_COMPRESSION_METHODS session->internals.priorities.compression.algorithms
 int

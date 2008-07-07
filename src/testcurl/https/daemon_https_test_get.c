@@ -21,7 +21,7 @@
 /**
  * @file daemon_HTTPS_test_get.c
  * @brief  Testcase for libmicrohttpd GET operations
- * @author lv-426
+ * @author Sagie Amir
  */
 
 #include "config.h"
@@ -42,6 +42,11 @@
 #define MAX_URL_LEN 255
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
+
+#define MHD_E_SERVER_INIT "Error: failed to start server\n"
+#define MHD_E_TEST_FILE_CREAT "Error: failed to setup test file\n"
+#define MHD_E_CERT_FILE_CREAT "Error: failed to setup test certificate\n"
+#define MHD_E_KEY_FILE_CREAT "Error: failed to setup test certificate\n"
 
 /* Test Certificate */
 const char cert_pem[] =
@@ -173,9 +178,8 @@ http_ahc (void *cls, struct MHD_Connection *connection,
  * @param test_fd: file to attempt transfering
  */
 static int
-test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
+test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 {
-  struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
@@ -192,7 +196,7 @@ test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
 
   mem_test_file_local = malloc (len);
   fseek (test_fd, 0, SEEK_SET);
-  if (fread (mem_test_file_local, sizeof(char), len, test_fd) != len)
+  if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
     {
       fclose (test_fd);
       fprintf (stderr, "Error: failed to read test file. %s\n",
@@ -202,30 +206,20 @@ test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
     {
-         fclose (test_fd);
-         fprintf (stderr, "Error: failed to read test file. %s\n",
-                  strerror (errno));
-         return -1;
-       }
+      fclose (test_fd);
+      fprintf (stderr, "Error: failed to read test file. %s\n",
+               strerror (errno));
+      return -1;
+    }
   cbc.size = len;
   cbc.pos = 0;
-
-  /* setup test */
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
-
-  if (d == NULL)
-    return 2;
 
   /* construct url - this might use doc_path */
   sprintf (url, "%s%s/%s", "https://localhost:42433",
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-  //curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  // curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -252,20 +246,91 @@ test_HTTPS_Get (FILE * test_fd, char * cipher_suite, int proto_version)
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      MHD_stop_daemon (d);
-      return 4;
+      return errornum;
     }
 
   curl_easy_cleanup (c);
-  MHD_stop_daemon (d);
 
   if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
     {
-      fprintf (stderr, "Error: local file & received file differ. %s\n");
-      return 8;
+      fprintf (stderr, "Error: local file & received file differ.\n");
+      return -1;
     }
 
   return 0;
+}
+
+/* perform a HTTP GET request via SSL/TLS */
+int
+test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
+{
+
+  int ret;
+  struct MHD_Daemon *d;
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                        MHD_USE_DEBUG, 42433,
+                        NULL, NULL, &http_ahc, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
+
+  if (d == NULL)
+    {
+      fprintf (stderr, MHD_E_SERVER_INIT);
+      return -1;
+    }
+
+  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+  MHD_stop_daemon (d);
+  return ret;
+}
+
+/* test server works with key & certificate files */
+int
+test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
+{
+  int ret;
+  struct MHD_Daemon *d;
+  FILE *cert_fd, *key_fd;
+  char cert_path[255], key_path[255];
+
+  sprintf (cert_path, "%s/%s", get_current_dir_name (), "cert.pem");
+  sprintf (key_path, "%s/%s", get_current_dir_name (), "key.pem");
+
+  if (NULL == (key_fd = fopen (key_path, "w+")))
+    {
+      fprintf (stderr, MHD_E_KEY_FILE_CREAT);
+      return -1;
+    }
+  if (NULL == (cert_fd = fopen (cert_path, "w+")))
+    {
+      fprintf (stderr, MHD_E_CERT_FILE_CREAT);
+      return -1;
+    }
+
+  fwrite (key_pem, strlen (key_pem), sizeof (char), key_fd);
+  fwrite (cert_pem, strlen (cert_pem), sizeof (char), cert_fd);
+  fclose (key_fd);
+  fclose (cert_fd);
+
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                        MHD_USE_DEBUG, 42433,
+                        NULL, NULL, &http_ahc, NULL,
+                        MHD_OPTION_HTTPS_KEY_PATH, key_path,
+                        MHD_OPTION_HTTPS_CERT_PATH, cert_path,
+                        MHD_OPTION_END);
+
+  if (d == NULL)
+    {
+      fprintf (stderr, MHD_E_SERVER_INIT);
+      return -1;
+    }
+
+  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+  MHD_stop_daemon (d);
+
+  remove (cert_path);
+  remove (key_path);
+  return ret;
 }
 
 /* setup a temporary transfer test file */
@@ -274,14 +339,14 @@ setupTestFile ()
 {
   FILE *test_fd;
 
-  if ( NULL == (test_fd = fopen (test_file_name, "w+")))
+  if (NULL == (test_fd = fopen (test_file_name, "w+")))
     {
       fprintf (stderr, "Error: failed to open `%s': %s\n",
                test_file_name, strerror (errno));
       return NULL;
     }
-  if (fwrite (test_file_data, sizeof(char), strlen (test_file_data), test_fd) !=
-      strlen (test_file_data))
+  if (fwrite (test_file_data, sizeof (char), strlen (test_file_data), test_fd)
+      != strlen (test_file_data))
     {
       fprintf (stderr, "Error: failed to write `%s. %s'\n",
                test_file_name, strerror (errno));
@@ -302,19 +367,27 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
-  if ((test_fd = setupTestFile ()) == NULL )
+
+  gnutls_global_set_log_level (0);
+
+  if ((test_fd = setupTestFile ()) == NULL)
     {
-      return 16;
+      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
+      return -1;
     }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
-      return 32;
+      return -1;
     }
 
-  errorCount += test_HTTPS_Get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  errorCount += test_HTTPS_Get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+  errorCount +=
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+  errorCount +=
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+  errorCount +=
+    test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
 
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
@@ -322,6 +395,7 @@ main (int argc, char *const *argv)
   curl_global_cleanup ();
   fclose (test_fd);
 
-  
+  remove (test_file_name);
+
   return errorCount != 0;
 }

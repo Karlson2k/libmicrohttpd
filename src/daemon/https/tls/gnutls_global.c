@@ -27,9 +27,18 @@
 #include <libtasn1.h>
 #include <gnutls_dh.h>
 
+/* this is used in order to make the multi-threaded initialization call to libgcrypt */
+#include <pthread.h>
+#include <gcrypt.h>
+/* TODO fix :  needed by GCRY_THREAD_OPTION_PTHREAD_IMPL but missing otherwise */
+#define ENOMEM    12  /* Out of memory */
+
 #ifdef HAVE_WINSOCK
 # include <winsock2.h>
 #endif
+
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 #include "gettext.h"
 
@@ -57,7 +66,8 @@ ASN1_TYPE _gnutls_gnutls_asn;
  * gnutls_log_func is of the form, 
  * void (*gnutls_log_func)( int level, const char*);
  **/
-void gnutls_global_set_log_function(gnutls_log_func log_func)
+void
+gnutls_global_set_log_function (gnutls_log_func log_func)
 {
   _gnutls_log_func = log_func;
 }
@@ -74,7 +84,8 @@ void gnutls_global_set_log_function(gnutls_log_func log_func)
  * Use a log level over 10 to enable all debugging options.
  *
  **/
-void gnutls_global_set_log_level(int level)
+void
+gnutls_global_set_log_level (int level)
 {
   _gnutls_log_level = level;
 }
@@ -83,21 +94,20 @@ void gnutls_global_set_log_level(int level)
 /* default logging function */
 static void
 dlog (int level, const char *str)
-  {
-    fputs (str, stderr);
-  }
+{
+  fputs (str, stderr);
+}
 #endif
 
 extern gnutls_alloc_function gnutls_secure_malloc;
 extern gnutls_alloc_function gnutls_malloc;
 extern gnutls_free_function gnutls_free;
-extern int (*_gnutls_is_secure_memory)(const void *);
+extern int (*_gnutls_is_secure_memory) (const void *);
 extern gnutls_realloc_function gnutls_realloc;
-extern char *(*gnutls_strdup)(const char *);
-extern void *(*gnutls_calloc)(size_t,
-                              size_t);
+extern char *(*gnutls_strdup) (const char *);
+extern void *(*gnutls_calloc) (size_t, size_t);
 
-int _gnutls_is_secure_mem_null(const void *);
+int _gnutls_is_secure_mem_null (const void *);
 
 /**
  * gnutls_global_set_mem_functions - This function sets the memory allocation functions
@@ -116,13 +126,14 @@ int _gnutls_is_secure_mem_null(const void *);
  * This function must be called before gnutls_global_init() is called.
  *
  **/
-void gnutls_global_set_mem_functions(gnutls_alloc_function alloc_func,
-                                     gnutls_alloc_function
-                                     secure_alloc_func,
-                                     gnutls_is_secure_function
-                                     is_secure_func,
-                                     gnutls_realloc_function realloc_func,
-                                     gnutls_free_function free_func)
+void
+gnutls_global_set_mem_functions (gnutls_alloc_function alloc_func,
+                                 gnutls_alloc_function
+                                 secure_alloc_func,
+                                 gnutls_is_secure_function
+                                 is_secure_func,
+                                 gnutls_realloc_function realloc_func,
+                                 gnutls_free_function free_func)
 {
   gnutls_secure_malloc = secure_alloc_func;
   gnutls_malloc = alloc_func;
@@ -152,10 +163,10 @@ void gnutls_global_set_mem_functions(gnutls_alloc_function alloc_func,
 #ifdef DEBUG
 static void
 _gnutls_gcry_log_handler (void *dummy, int level,
-    const char *fmt, va_list list)
-  {
-    _gnutls_log (fmt, list);
-  }
+                          const char *fmt, va_list list)
+{
+  _gnutls_log (fmt, list);
+}
 #endif
 
 static int _gnutls_init = 0;
@@ -190,7 +201,8 @@ static int _gnutls_init = 0;
  * memory leak is also an option.
  *
  **/
-int gnutls_global_init(void)
+int
+gnutls_global_init (void)
 {
   int result = 0;
   int res;
@@ -200,41 +212,62 @@ int gnutls_global_init(void)
     return;
 
 #if HAVE_WINSOCK
-    {
-      WORD requested;
-      WSADATA data;
-      int err;
+  {
+    WORD requested;
+    WSADATA data;
+    int err;
 
-      requested = MAKEWORD (1, 1);
-      err = WSAStartup (requested, &data);
-      if (err != 0)
-        {
-          _gnutls_debug_log ("WSAStartup failed: %d.\n", err);
-          return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
-        }
+    requested = MAKEWORD (1, 1);
+    err = WSAStartup (requested, &data);
+    if (err != 0)
+      {
+        _gnutls_debug_log ("WSAStartup failed: %d.\n", err);
+        return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
+      }
 
-      if (data.wVersion < requested)
-        {
-          _gnutls_debug_log ("WSAStartup version check failed (%d < %d).\n",
-              data.wVersion, requested);
-          WSACleanup ();
-          return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
-        }
-    }
+    if (data.wVersion < requested)
+      {
+        _gnutls_debug_log ("WSAStartup version check failed (%d < %d).\n",
+                           data.wVersion, requested);
+        WSACleanup ();
+        return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
+      }
+  }
 #endif
 
-  // TODO rm ? bindtextdomain(PACKAGE, LOCALEDIR);
 
-  if (gcry_control(GCRYCTL_ANY_INITIALIZATION_P) == 0)
+  // bindtextdomain("mhd", "./");
+
+  if (gcry_control (GCRYCTL_ANY_INITIALIZATION_P) == 0)
     {
+      const char *p;
+
+      /* to enable multi-threading this call must precede any other call made to libgcrypt */
+      gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+
+      /* set p to point at the required version of gcrypt */
+      p = strchr(MHD_GCRYPT_VERSION, ':');
+      if (p == NULL)
+        p = MHD_GCRYPT_VERSION;
+      else
+        p++;
+
+      /* this call initializes libgcrypt */
+      if (gcry_check_version(p) == NULL)
+        {
+          gnutls_assert();
+          _gnutls_debug_log("Checking for libgcrypt failed '%s'\n", p);
+          return GNUTLS_E_INCOMPATIBLE_GCRYPT_LIBRARY;
+        }
+
       /* for gcrypt in order to be able to allocate memory */
-      gcry_set_allocation_handler(gnutls_malloc, gnutls_secure_malloc,
-                                  _gnutls_is_secure_memory, gnutls_realloc,
-                                  gnutls_free);
+      gcry_set_allocation_handler (gnutls_malloc, gnutls_secure_malloc,
+                                   _gnutls_is_secure_memory, gnutls_realloc,
+                                   gnutls_free);
 
       /* gcry_control (GCRYCTL_DISABLE_INTERNAL_LOCKING, NULL, 0); */
 
-      gcry_control(GCRYCTL_INITIALIZATION_FINISHED, NULL, 0);
+      gcry_control (GCRYCTL_INITIALIZATION_FINISHED, NULL, 0);
 
 #ifdef DEBUG
       /* applications may want to override that, so we only use
@@ -244,7 +277,7 @@ int gnutls_global_init(void)
 #endif
     }
 
-  if (gc_init() != GC_OK)
+  if (gc_init () != GC_OK)
     {
       gnutls_assert ();
       _gnutls_debug_log ("Initializing crypto backend failed\n");
@@ -267,16 +300,16 @@ int gnutls_global_init(void)
       return result;
     }
 
-  res = asn1_array2tree(gnutls_asn1_tab, &_gnutls_gnutls_asn, NULL);
+  res = asn1_array2tree (gnutls_asn1_tab, &_gnutls_gnutls_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
-      asn1_delete_structure(&_gnutls_pkix1_asn);
-      result = _gnutls_asn2err(res);
+      asn1_delete_structure (&_gnutls_pkix1_asn);
+      result = _gnutls_asn2err (res);
       return result;
     }
 
   /* Initialize the gcrypt (if used random generator) */
-  gc_pseudo_random(&c, 1);
+  gc_pseudo_random (&c, 1);
 
   return result;
 }
@@ -291,16 +324,17 @@ int gnutls_global_init(void)
  * gnutls_global_init() for more information.
  *
  **/
-void gnutls_global_deinit(void)
+void
+gnutls_global_deinit (void)
 {
   if (_gnutls_init == 1)
     {
 #if HAVE_WINSOCK
       WSACleanup ();
 #endif
-      asn1_delete_structure(&_gnutls_gnutls_asn);
-      asn1_delete_structure(&_gnutls_pkix1_asn);
-      gc_done();
+      asn1_delete_structure (&_gnutls_gnutls_asn);
+      asn1_delete_structure (&_gnutls_pkix1_asn);
+      gc_done ();
     }
   _gnutls_init--;
 }
@@ -322,8 +356,9 @@ void gnutls_global_deinit(void)
  * PULL_FUNC is of the form, 
  * ssize_t (*gnutls_pull_func)(gnutls_transport_ptr_t, void*, size_t);
  **/
-void gnutls_transport_set_pull_function(gnutls_session_t session,
-                                        gnutls_pull_func pull_func)
+void
+gnutls_transport_set_pull_function (gnutls_session_t session,
+                                    gnutls_pull_func pull_func)
 {
   session->internals._gnutls_pull_func = pull_func;
 }
@@ -342,8 +377,9 @@ void gnutls_transport_set_pull_function(gnutls_session_t session,
  * PUSH_FUNC is of the form, 
  * ssize_t (*gnutls_push_func)(gnutls_transport_ptr_t, const void*, size_t);
  **/
-void gnutls_transport_set_push_function(gnutls_session_t session,
-                                        gnutls_push_func push_func)
+void
+gnutls_transport_set_push_function (gnutls_session_t session,
+                                    gnutls_push_func push_func)
 {
   session->internals._gnutls_push_func = push_func;
 }
@@ -366,9 +402,10 @@ void gnutls_transport_set_push_function(gnutls_session_t session,
  *   %NULL is passed to this function no check is done and only the
  *   version string is returned.
  **/
-const char * gnutls_check_version(const char *req_version)
+const char *
+gnutls_check_version (const char *req_version)
 {
-  if (!req_version || strverscmp(req_version, VERSION) <= 0)
+  if (!req_version || strverscmp (req_version, VERSION) <= 0)
     return VERSION;
 
   return NULL;

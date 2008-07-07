@@ -349,6 +349,7 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
+#if HTTPS_SUPPORT
   // TODO rename
   /**
    * Filename for the private key (key.pem) to be used by the
@@ -383,6 +384,22 @@ enum MHD_OPTION
   * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
   */
   MHD_OPTION_HTTPS_MEM_CERT = 9,
+
+
+  /*
+   * Memory pointer to a zero terminated int array representing the
+   * cipher priority order to which the HTTPS daemon should adhere.
+   * "const int *" argument.
+   */
+  MHDS_CIPHER_ALGORITHM,
+
+  /*
+   * Memory pointer to a zero terminated int array representing the
+   * key exchange algorithm priority order to which the HTTPS daemon should adhere.
+   * "const int *" argument.
+   */
+  MHDS_KX_PRIORITY,
+#endif
 };
 
 /**

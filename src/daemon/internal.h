@@ -60,15 +60,13 @@
  */
 #define MHD_BUF_INC_SIZE 2048
 
-/* TLS Diffie-Hellman parameter */
-#define DH_BITS 1024
-
 #if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug
  * messages.
  */
 void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
+void MHD_tls_log_func (int level, const char *str);
 #endif
 
 /**
@@ -288,6 +286,11 @@ enum MHD_CONNECTION_STATE
 
 };
 
+
+/**
+ * States in a state machine for a secure SSL/TLS connection.
+ *
+ */
 enum MHDS_CONNECTION_STATE
 {
   /* initial HTTPS state */
@@ -296,20 +299,6 @@ enum MHDS_CONNECTION_STATE
   MHDS_HANDSHAKE_FAILED,
 
   MHDS_HANDSHAKE_COMPLETE,
-
-  /* while receiving an HTTP request through the encrypted channel */
-  MHDS_REQUEST_READING,
-
-  /* msg waiting to be forwarded to the internal HTTP daemon */
-  MHDS_REQUEST_READ,
-
-  /* http msg waiting to be sent */
-  MHDS_REPLY_READY,
-
-  /* while receiving an HTTP request through the encrypted channel */
-  MHDS_REPLY_SENDING,
-
-  MHDS_REPLY_SENT,
 
   MHDS_CONNECTION_CLOSED
 };
@@ -558,9 +547,9 @@ struct MHD_Connection
   int (*send_cls) (struct MHD_Connection * connection);
 
 #if HTTPS_SUPPORT
+  /* TODO rename as this might be an SSL connection */
   gnutls_session_t tls_session;
 #endif
-
 };
 
 struct MHD_Daemon

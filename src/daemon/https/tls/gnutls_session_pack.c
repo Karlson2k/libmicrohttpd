@@ -49,21 +49,6 @@ static int unpack_certificate_auth_info (gnutls_session_t,
                                          const gnutls_datum_t *
                                          packed_session);
 
-static int unpack_srp_auth_info (gnutls_session_t session,
-                                 const gnutls_datum_t * packed_session);
-static int pack_srp_auth_info (gnutls_session_t session,
-                               gnutls_datum_t * packed_session);
-
-static int unpack_psk_auth_info (gnutls_session_t session,
-                                 const gnutls_datum_t * packed_session);
-static int pack_psk_auth_info (gnutls_session_t session,
-                               gnutls_datum_t * packed_session);
-
-static int unpack_anon_auth_info (gnutls_session_t session,
-                                  const gnutls_datum_t * packed_session);
-static int pack_anon_auth_info (gnutls_session_t session,
-                                gnutls_datum_t * packed_session);
-
 static int unpack_security_parameters (gnutls_session_t session,
                                        const gnutls_datum_t * packed_session);
 static int pack_security_parameters (gnutls_session_t session,
@@ -230,7 +215,7 @@ _gnutls_session_unpack (gnutls_session_t session,
 }
 
 
-/* Format: 
+/* Format:
  *      1 byte the credentials type
  *      4 bytes the size of the whole structure
  *        DH stuff

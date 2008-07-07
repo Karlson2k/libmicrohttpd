@@ -32,10 +32,6 @@
 
 #define MAX_ELEMENTS 48
 
-static void break_comma_list (char *etag,
-                              char **broken_etag,
-                              int *elements, int max_elements, char sep);
-
 /**
  * gnutls_cipher_set_priority - Sets the priority on the ciphers supported by gnutls.
  * @session: is a #gnutls_session_t structure.
@@ -87,7 +83,6 @@ _set_priority (priority_st * st, const int *list)
     }
 
   return 0;
-
 }
 
 /**
@@ -215,7 +210,8 @@ gnutls_certificate_type_set_priority (gnutls_session_t session,
 }
 
 static const int protocol_priority[] = { GNUTLS_TLS1_1,
-  GNUTLS_TLS1_0, GNUTLS_SSL3,
+  GNUTLS_TLS1_0,
+  GNUTLS_SSL3,
   0
 };
 
@@ -336,10 +332,6 @@ int
 gnutls_priority_init (gnutls_priority_t * priority_cache,
                       const char *priorities, const char **err_pos)
 {
-  int broken_list_size, i, j;
-  char *darg;
-  int algo;
-
   *priority_cache = gnutls_calloc (1, sizeof (struct gnutls_priority_st));
   if (*priority_cache == NULL)
     {
@@ -354,8 +346,8 @@ gnutls_priority_init (gnutls_priority_t * priority_cache,
   _set_priority (&(*priority_cache)->mac, mac_priority_secure);
   _set_priority (&(*priority_cache)->cert_type, cert_type_priority);
   _set_priority (&(*priority_cache)->compression, comp_priority);
-  (*priority_cache)->no_padding = 0;
 
+  (*priority_cache)->no_padding = 0;
   return 0;
 }
 
@@ -410,40 +402,6 @@ gnutls_priority_set_direct (gnutls_session_t session,
   gnutls_priority_deinit (prio);
 
   return 0;
-}
-
-/* Breaks a list of "xxx", "yyy", to a character array, of
- * MAX_COMMA_SEP_ELEMENTS size; Note that the given string is modified.
- */
-static void
-break_comma_list (char *etag,
-                  char **broken_etag,
-                  int *elements, int max_elements, char sep)
-{
-  char *p = etag;
-  if (sep == 0)
-    sep = ',';
-
-  *elements = 0;
-
-  do
-    {
-      broken_etag[*elements] = p;
-
-      (*elements)++;
-
-      p = strchr (p, sep);
-      if (p)
-        {
-          *p = 0;
-          p++;                  /* move to next entry and skip white
-                                 * space.
-                                 */
-          while (*p == ' ')
-            p++;
-        }
-    }
-  while (p != NULL && *elements < max_elements);
 }
 
 /**

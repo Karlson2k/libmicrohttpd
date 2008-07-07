@@ -93,8 +93,6 @@ extern "C"
     GNUTLS_KX_RSA_EXPORT,
     GNUTLS_KX_SRP_RSA,
     GNUTLS_KX_SRP_DSS,
-    GNUTLS_KX_PSK,
-    GNUTLS_KX_DHE_PSK
   } gnutls_kx_algorithm_t;
 
   typedef enum
@@ -318,7 +316,7 @@ extern "C"
   typedef struct gnutls_x509_privkey_int *gnutls_rsa_params_t;	/* XXX ugly. */
 
   struct gnutls_priority_st;
-  typedef struct gnutls_priority_st *gnutls_priority_t;
+  typedef struct gnutls_priority_st * gnutls_priority_t;
 
   typedef struct
   {
@@ -508,7 +506,7 @@ extern "C"
 
 /* if you just want some defaults, use the following.
  */
-  int gnutls_priority_init( gnutls_priority_t*, const char *priority, const char** err_pos);
+  int gnutls_priority_init( gnutls_priority_t * , const char *priority, const char** err_pos);
   void gnutls_priority_deinit( gnutls_priority_t);
 
   int gnutls_priority_set(gnutls_session_t session, gnutls_priority_t);

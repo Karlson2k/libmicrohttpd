@@ -42,6 +42,13 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
   VFPRINTF (stderr, format, va);
   va_end (va);
 }
+
+void
+MHD_tls_log_func (int level, const char *str)
+{
+  fprintf (stdout, "|<%d>| %s", level, str);
+}
+
 #endif
 
 /**

@@ -28,9 +28,9 @@
 
 #include <defines.h>
 
-#include <gnutls.h>
-#include <extra.h>
-#include <gnutls_mem.h>
+#include "gnutls.h"
+#include "extra.h"
+#include "gnutls_mem.h"
 
 /* FIXME: delete this once opencdk has reentrant keyring functions
  */
@@ -210,7 +210,7 @@ struct gnutls_key_st
      */
     void *auth_info;
     gnutls_credentials_type_t auth_info_type;
-    int auth_info_size; /* needed in order to store to db for restoring 
+    int auth_info_size; /* needed in order to store to db for restoring
      */
     uint8_t crypt_algo;
 
@@ -424,7 +424,7 @@ typedef struct
 typedef struct
   {
     gnutls_buffer application_data_buffer; /* holds data to be delivered to application layer */
-    gnutls_buffer handshake_hash_buffer; /* used to keep the last received handshake 
+    gnutls_buffer handshake_hash_buffer; /* used to keep the last received handshake
      * message */
     mac_hd_t handshake_mac_handle_sha; /* hash of the handshake messages */
     mac_hd_t handshake_mac_handle_md5; /* hash of the handshake messages */
@@ -500,10 +500,12 @@ typedef struct
 
     int expire_time; /* after expire_time seconds this session will expire */
     struct mod_auth_st_int *auth_struct; /* used in handshake packets and KX algorithms */
+
+    /* TODO rm */
     int v2_hello; /* 0 if the client hello is v3+.
      * non-zero if we got a v2 hello.
      */
-    /* keeps the headers of the handshake packet 
+    /* keeps the headers of the handshake packet
      */
     handshake_header_buffer_st handshake_header_buffer;
 
@@ -653,8 +655,7 @@ struct gnutls_session_int
     gnutls_key_st key;
   };
 
-/* functions 
- */
+/* functions */
 void _gnutls_set_current_version(gnutls_session_t session,
                                  gnutls_protocol_t version);
 

@@ -21,7 +21,7 @@
 /**
  * @file mhds_test_session_info.c
  * @brief  Testcase for libmicrohttpd GET operations
- * @author lv-426
+ * @author Sagie Amir
  */
 
 #include "config.h"
