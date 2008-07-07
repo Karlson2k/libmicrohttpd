@@ -228,7 +228,7 @@ AC_ARG_WITH(libgcrypt,
 
 # define the minimal version of libgcrypt required   
 MHD_GCRYPT_VERSION=1:1.2.4
-AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], $MHD_GCRYPT_VERSION, [gcrypt lib version])
+AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
   
 AC_SUBST(GCRYPT_LIB_PATH)
 AC_SUBST(GCRYPT_LDFLAGS)

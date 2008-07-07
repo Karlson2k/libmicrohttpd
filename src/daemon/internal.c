@@ -42,14 +42,14 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
   VFPRINTF (stderr, format, va);
   va_end (va);
 }
-
+#endif
 void
 MHD_tls_log_func (int level, const char *str)
 {
   fprintf (stdout, "|<%d>| %s", level, str);
 }
 
-#endif
+
 
 /**
  * Process escape sequences ('+'=space, %HH)

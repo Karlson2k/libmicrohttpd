@@ -66,8 +66,9 @@
  * messages.
  */
 void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
-void MHD_tls_log_func (int level, const char *str);
+
 #endif
+void MHD_tls_log_func (int level, const char *str);
 
 /**
  * Process escape sequences ('+'=space, %HH).
