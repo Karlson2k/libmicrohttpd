@@ -20,7 +20,7 @@
 
 /**
  * @file mhds_multi_daemon_test.c
- * @brief  Testcase for libmicrohttpd GET operations
+ * @brief  Testcase for libmicrohttpd multiple HTTPS daemon scenario
  * @author Sagie Amir
  */
 
@@ -38,15 +38,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define BUF_SIZE 1024
-#define MAX_URL_LEN 255
-
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 #define MHD_E_SERVER_INIT "Error: failed to start server\n"
 #define MHD_E_TEST_FILE_CREAT "Error: failed to setup test file\n"
-#define MHD_E_CERT_FILE_CREAT "Error: failed to setup test certificate\n"
-#define MHD_E_KEY_FILE_CREAT "Error: failed to setup test certificate\n"
 
 /* Test Certificate */
 const char cert_pem[] =
@@ -97,7 +92,6 @@ const char key_pem[] =
   "-----END RSA PRIVATE KEY-----\n";
 
 const char *test_file_name = "https_test_file";
-
 const char test_file_data[] = "Hello World\n";
 
 struct CBC
@@ -139,7 +133,7 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   FILE *file;
   struct stat buf;
 
-  // TODO never respond on first call
+  /* TODO never respond on first call */
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
   if (&aptr != *ptr)
@@ -161,7 +155,7 @@ http_ahc (void *cls, struct MHD_Connection *connection,
     }
   else
     {
-      stat (&url[1], &buf);
+      stat (url, &buf);
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
                                                     &file_reader, file,
                                                     (MHD_ContentReaderFreeCallback)
@@ -173,8 +167,8 @@ http_ahc (void *cls, struct MHD_Connection *connection,
 }
 
 /*
- * test HTTPS transfer
- * @param test_fd: file to attempt transfering
+ * perform cURL request for file
+ * @param test_fd: file to attempt transferring
  */
 static int
 test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
@@ -185,8 +179,11 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   CURLcode errornum;
   char *doc_path;
   char url[255];
-  size_t len = fseek (test_fd, 0, SEEK_END);
+  size_t len;
+  struct stat file_stat;
 
+  stat (test_file_name, &file_stat);
+  len = file_stat.st_size;
 
   /* used to memcmp local copy & deamon supplied copy */
   unsigned char *mem_test_file_local;
@@ -214,12 +211,12 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   cbc.size = len;
   cbc.pos = 0;
 
-  /* construct url - this might use doc_path */
+  /* construct url */
   sprintf (url, "%s:%d%s/%s", "https://localhost", port, doc_path,
            test_file_name);
 
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  /* curl_easy_setopt (c, CURLOPT_VERBOSE, 1); */
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -251,6 +248,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
 
   curl_easy_cleanup (c);
 
+  /* compare received file and local reference */
   if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
     {
       fprintf (stderr, "Error: local file & received file differ.\n");
@@ -296,7 +294,7 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
       return -1;
     }
 
-  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
+  ret = test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
   ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42434);
 
   MHD_stop_daemon (d2);
@@ -339,8 +337,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  gnutls_global_set_log_level (0);
-
   if ((test_fd = setupTestFile ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
@@ -363,6 +359,5 @@ main (int argc, char *const *argv)
   fclose (test_fd);
 
   remove (test_file_name);
-
   return errorCount != 0;
 }

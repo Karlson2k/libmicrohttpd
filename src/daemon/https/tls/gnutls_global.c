@@ -30,6 +30,10 @@
 /* this is used in order to make the multi-threaded initialization call to libgcrypt */
 #include <pthread.h>
 #include <gcrypt.h>
+
+/* used to set the MHD_tls logging function */
+#include "internal.h"
+
 /* TODO fix :  needed by GCRY_THREAD_OPTION_PTHREAD_IMPL but missing otherwise */
 #define ENOMEM    12  /* Out of memory */
 
@@ -275,7 +279,7 @@ gnutls_global_init (void)
     }
 
 #ifdef DEBUG
-  gnutls_global_set_log_function (MHD_tls_log_func());
+  gnutls_global_set_log_function(MHD_tls_log_func);
 #endif
 
   /* initialize parser

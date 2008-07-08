@@ -20,7 +20,7 @@
 
 /**
  * @file mhds_session_info_test.c
- * @brief  Testcase for libmicrohttpd GET operations
+ * @brief  Testcase for libmicrohttpd HTTPS connection querying operations
  * @author Sagie Amir
  */
 
@@ -35,9 +35,6 @@
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#define BUF_SIZE 1024
-#define MAX_URL_LEN 255
 
 #define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
 
@@ -110,7 +107,10 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-/* HTTP access handler call back */
+/*
+ * HTTP access handler call back
+ * used to query negotiated security parameters
+ */
 static int
 query_session_ahc (void *cls, struct MHD_Connection *connection,
                    const char *url, const char *method,
@@ -156,6 +156,9 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
+/*
+ * negotiate a secure connection with server & query negotiated security parameters
+ */
 static int
 test_query_session ()
 {

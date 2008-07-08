@@ -20,7 +20,7 @@
 
 /**
  * @file mhds_get_test.c
- * @brief  Testcase for libmicrohttpd GET operations
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  */
 
@@ -37,9 +37,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
-#define BUF_SIZE 1024
-#define MAX_URL_LEN 255
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
@@ -97,7 +94,6 @@ const char key_pem[] =
   "-----END RSA PRIVATE KEY-----\n";
 
 const char *test_file_name = "https_test_file";
-
 const char test_file_data[] = "Hello World\n";
 
 struct CBC
@@ -161,7 +157,7 @@ http_ahc (void *cls, struct MHD_Connection *connection,
     }
   else
     {
-      stat (&url[1], &buf);
+      stat (url, &buf);
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
                                                     &file_reader, file,
                                                     (MHD_ContentReaderFreeCallback)
@@ -184,8 +180,11 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   CURLcode errornum;
   char *doc_path;
   char url[255];
-  size_t len = fseek (test_fd, 0, SEEK_END);
+  struct stat statb;
 
+  stat (test_file_name, &statb);
+
+  int len = statb.st_size;
 
   /* used to memcmp local copy & deamon supplied copy */
   unsigned char *mem_test_file_local;
@@ -194,6 +193,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   doc_path = get_current_dir_name ();
 
   mem_test_file_local = malloc (len);
+
   fseek (test_fd, 0, SEEK_SET);
   if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
     {
@@ -218,7 +218,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-  // curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  /* curl_easy_setopt (c, CURLOPT_VERBOSE, 1); */
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -236,9 +236,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -283,7 +283,7 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
-/* test server works with key & certificate files */
+/* test loading of key & certificate files */
 int
 test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
 {

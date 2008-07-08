@@ -23,7 +23,7 @@
  */
 
 #ifndef GNUTLS_GLOBAL_H
-# define GNUTLS_GLOBAL_H
+#define GNUTLS_GLOBAL_H
 
 #include <libtasn1.h>
 
