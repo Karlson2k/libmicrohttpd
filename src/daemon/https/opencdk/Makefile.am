@@ -1,4 +1,6 @@
-AM_CPPFLAGS = -I$(top_srcdir)/lib \
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/include \
+-I$(top_srcdir)/lib \
 -I$(top_srcdir)/lgl \
 -I$(GCRYPT_CPPFLAGS)
 

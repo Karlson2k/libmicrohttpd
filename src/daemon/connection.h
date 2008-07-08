@@ -40,9 +40,9 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                           fd_set * write_fd_set,
                           fd_set * except_fd_set, int *max_fd);
 
-int MHD_set_http_calbacks (struct MHD_Connection *connection);
+void MHD_set_http_calbacks (struct MHD_Connection *connection);
 #if HTTPS_SUPPORT
-int MHD_set_https_calbacks (struct MHD_Connection *connection);
+void MHD_set_https_calbacks (struct MHD_Connection *connection);
 #endif
 
 #endif

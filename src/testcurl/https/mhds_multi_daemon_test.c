@@ -19,14 +19,14 @@
  */
 
 /**
- * @file daemon_HTTPS_test_get.c
+ * @file mhds_multi_daemon_test.c
  * @brief  Testcase for libmicrohttpd GET operations
  * @author Sagie Amir
  */
 
 #include "config.h"
 #include "plibc.h"
-#include "microhttpd.h"
+#include "microhttpsd.h"
 #include <errno.h>
 
 #include <curl/curl.h>
@@ -134,7 +134,6 @@ http_ahc (void *cls, struct MHD_Connection *connection,
           const char *version, unsigned int *upload_data_size, void **ptr)
 {
   static int aptr;
-  static char full_url[MAX_URL_LEN];
   struct MHD_Response *response;
   int ret;
   FILE *file;
@@ -178,7 +177,8 @@ http_ahc (void *cls, struct MHD_Connection *connection,
  * @param test_fd: file to attempt transfering
  */
 static int
-test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
+test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
+                 int port)
 {
   CURL *c;
   struct CBC cbc;
@@ -215,11 +215,11 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   cbc.pos = 0;
 
   /* construct url - this might use doc_path */
-  sprintf (url, "%s%s/%s", "https://localhost:42433",
-           doc_path, test_file_name);
+  sprintf (url, "%s:%d%s/%s", "https://localhost", port, doc_path,
+           test_file_name);
 
   c = curl_easy_init ();
-  // curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -260,80 +260,51 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
-/* perform a HTTP GET request via SSL/TLS */
+/*
+ * assert initiating two separate daemons and having one shut down
+ * doesn't affect the other
+ */
 int
-test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
+test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
+                            int proto_version)
 {
 
   int ret;
-  struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
+  struct MHD_Daemon *d1;
+  struct MHD_Daemon *d2;
+  d1 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                         MHD_USE_DEBUG, 42433,
+                         NULL, NULL, &http_ahc, NULL,
+                         MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                         MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
 
-  if (d == NULL)
+  if (d1 == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-  MHD_stop_daemon (d);
-  return ret;
-}
+  d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                         MHD_USE_DEBUG, 42434,
+                         NULL, NULL, &http_ahc, NULL,
+                         MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                         MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
 
-/* test server works with key & certificate files */
-int
-test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
-{
-  int ret;
-  struct MHD_Daemon *d;
-  FILE *cert_fd, *key_fd;
-  char cert_path[255], key_path[255];
-
-  sprintf (cert_path, "%s/%s", get_current_dir_name (), "cert.pem");
-  sprintf (key_path, "%s/%s", get_current_dir_name (), "key.pem");
-
-  if (NULL == (key_fd = fopen (key_path, "w+")))
-    {
-      fprintf (stderr, MHD_E_KEY_FILE_CREAT);
-      return -1;
-    }
-  if (NULL == (cert_fd = fopen (cert_path, "w+")))
-    {
-      fprintf (stderr, MHD_E_CERT_FILE_CREAT);
-      return -1;
-    }
-
-  fwrite (key_pem, strlen (key_pem), sizeof (char), key_fd);
-  fwrite (cert_pem, strlen (cert_pem), sizeof (char), cert_fd);
-  fclose (key_fd);
-  fclose (cert_fd);
-
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_KEY_PATH, key_path,
-                        MHD_OPTION_HTTPS_CERT_PATH, cert_path,
-                        MHD_OPTION_END);
-
-  if (d == NULL)
+  if (d2 == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-  MHD_stop_daemon (d);
+  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
+  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42434);
 
-  remove (cert_path);
-  remove (key_path);
+  MHD_stop_daemon (d2);
+  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
+  MHD_stop_daemon (d1);
   return ret;
 }
 
-/* setup a temporary transfer test file */
 FILE *
 setupTestFile ()
 {
@@ -383,11 +354,7 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-  errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  errorCount +=
-    test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_concurent_daemon_pair (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
 
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

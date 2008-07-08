@@ -48,7 +48,7 @@ typedef int ssize_t;
 #include <sys/socket.h>
 #include <time.h>
 
-// TODO check if these should go into config.h
+/* TODO check if these should go into config.h */
 #define SIZEOF_UNSIGNED_INT 4
 #define SIZEOF_UNSIGNED_LONG 8
 #define SIZEOF_UNSIGNED_LONG_INT SIZEOF_UNSIGNED_LONG

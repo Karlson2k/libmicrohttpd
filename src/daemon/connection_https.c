@@ -32,21 +32,9 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-// get opaque type
+#include "microhttpsd.h"
+/* get opaque type */
 #include "gnutls_int.h"
-
-// TODO clean
-#undef MAX
-#define MAX(a,b) ((a)<(b)) ? (b) : (a)
-#undef MIN
-#define MIN(a,b) ((a)<(b)) ? (a) : (b)
-
-// TODO rm - appears in a switch default clause
-#if EXTRA_CHECKS
-#define EXTRA_CHECK(a) if (!(a)) abort();
-#else
-#define EXTRA_CHECK(a)
-#endif
 
 /* forward declarations used when setting secure connection callbacks */
 int MHD_connection_handle_read (struct MHD_Connection *connection);
@@ -118,9 +106,6 @@ int
 MHDS_connection_handle_idle (struct MHD_Connection *connection)
 {
   unsigned int timeout;
-  const char *end;
-  char *line;
-  ssize_t msgLength;
   while (1)
     {
 #if HAVE_MESSAGES
@@ -141,7 +126,6 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
           break;
 
         default:
-          EXTRA_CHECK (0);
           break;
         }
       break;
@@ -298,7 +282,7 @@ MHDS_connection_handle_write (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
-int
+void
 MHD_set_https_calbacks (struct MHD_Connection *connection)
 {
   connection->recv_cls = &MHDS_con_read;

@@ -1,6 +1,7 @@
 SUBDIRS = . 
 
 AM_CPPFLAGS = -std=c99 \
+-I$(top_srcdir)/src/include \
 -I$(GCRYPT_CPPFLAGS)
 
 # gc-gnulib.c

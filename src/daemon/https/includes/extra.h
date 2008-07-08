@@ -27,9 +27,9 @@
  */
 
 #ifndef GNUTLS_EXTRA_H
-# define GNUTLS_EXTRA_H
+#define GNUTLS_EXTRA_H
 
-#include <gnutls.h>
+#include "gnutls.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -38,7 +38,7 @@ extern "C"
 
 #define LIBGNUTLS_EXTRA_VERSION LIBGNUTLS_VERSION
 
-/* Openpgp certificate stuff 
+/* Openpgp certificate stuff
  */
 
   typedef enum gnutls_openpgp_crt_fmt
@@ -175,7 +175,7 @@ extern "C"
 
   int gnutls_global_init_extra (void);
 
-/* returns libgnutls-extra version (call it with a NULL argument) 
+/* returns libgnutls-extra version (call it with a NULL argument)
  */
   const char *gnutls_extra_check_version (const char *req_version);
 

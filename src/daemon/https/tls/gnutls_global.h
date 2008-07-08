@@ -27,12 +27,15 @@
 
 #include <libtasn1.h>
 
+/* this mutex is used to synchronize threads attemting call gnutls_global_init / gnutls_global_deinit */
+pthread_mutex_t gnutls_init_mutex;
+
 int gnutls_is_secure_memory (const void *mem);
 
 extern ASN1_TYPE _gnutls_pkix1_asn;
 extern ASN1_TYPE _gnutls_gnutls_asn;
 
-/* removed const from node_asn* to 
+/* removed const from node_asn* to
  * prevent warnings, since libtasn1 doesn't
  * use the const keywork in its functions.
  */

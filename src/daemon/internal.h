@@ -50,8 +50,8 @@
 #include <pthread.h>
 
 // TODO unify with other dec
-#define MAX(a,b) ((a)<(b)) ? (b) : (a)
-#define MIN(a,b) ((a)<(b)) ? (a) : (b)
+#define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
+#define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
 
 /**
  * Size by which MHD usually tries to increment read/write buffers.
@@ -533,6 +533,7 @@ struct MHD_Connection
   unsigned int current_chunk_offset;
 
   /* handlers used for processing read, write & idle connection operations */
+  /* TODO fix sig */
   int (*read_handler) (struct MHD_Connection * connection);
 
   int (*write_handler) (struct MHD_Connection * connection);
@@ -543,9 +544,9 @@ struct MHD_Connection
    * function pointers to the appropriate send & receive funtions
    * according to whether this is a HTTPS / HTTP daemon
    */
-  int (*recv_cls) (struct MHD_Connection * connection);
+  ssize_t (*recv_cls) (struct MHD_Connection * connection);
 
-  int (*send_cls) (struct MHD_Connection * connection);
+  ssize_t (*send_cls) (struct MHD_Connection * connection);
 
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */
@@ -626,7 +627,7 @@ struct MHD_Daemon
      */
   unsigned short port;
 
-#ifdef HTTPS_SUPPORT
+#if HTTPS_SUPPORT
   /* server credintials */
   gnutls_certificate_credentials_t x509_cret;
 

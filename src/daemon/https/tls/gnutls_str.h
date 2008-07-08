@@ -23,11 +23,9 @@
  */
 
 #ifndef GNUTLS_STR_H
-# define GNUTLS_STR_H
+#define GNUTLS_STR_H
 
 #include <gnutls_int.h>
-
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y));
 
 void _gnutls_str_cpy (char *dest, size_t dest_tot_size, const char *src);
 void _gnutls_mem_cpy (char *dest, size_t dest_tot_size, const char *src,

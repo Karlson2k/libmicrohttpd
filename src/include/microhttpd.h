@@ -73,10 +73,6 @@
 #include "plibc.h"
 #endif
 
-#if HTTPS_SUPPORT
-#include "gnutls.h"
-#endif
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -349,8 +345,8 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
-#if HTTPS_SUPPORT
-  // TODO rename
+  MHD_HTTPS_OPTION_START = 6,
+
   /**
    * Filename for the private key (key.pem) to be used by the
    * HTTPS daemon.  This option should be followed by an
@@ -358,7 +354,7 @@ enum MHD_OPTION
    * not be released until the application terminates.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
    */
-  MHD_OPTION_HTTPS_KEY_PATH = 6,
+  MHD_OPTION_HTTPS_KEY_PATH,
 
   /**
    * Filename for the certificate (cert.pem) to be used by the
@@ -367,7 +363,7 @@ enum MHD_OPTION
    * not be released until the application terminates.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
    */
-  MHD_OPTION_HTTPS_CERT_PATH = 7,
+  MHD_OPTION_HTTPS_CERT_PATH,
 
   /**
      * Memory pointer for the private key (key.pem) to be used by the
@@ -375,7 +371,7 @@ enum MHD_OPTION
      * "const char*" argument.
      * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
      */
-  MHD_OPTION_HTTPS_MEM_KEY = 8,
+  MHD_OPTION_HTTPS_MEM_KEY,
 
   /**
   * Memory pointer for the certificate (cert.pem) to be used by the
@@ -383,8 +379,7 @@ enum MHD_OPTION
   * "const char*" argument.
   * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
   */
-  MHD_OPTION_HTTPS_MEM_CERT = 9,
-
+  MHD_OPTION_HTTPS_MEM_CERT,
 
   /*
    * Memory pointer to a zero terminated int array representing the
@@ -399,7 +394,8 @@ enum MHD_OPTION
    * "const int *" argument.
    */
   MHDS_KX_PRIORITY,
-#endif
+
+  MHD_HTTPS_OPTION_END,
 };
 
 /**
@@ -745,20 +741,6 @@ int
 MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
                            MHD_KeyValueIterator iterator, void *iterator_cls);
-
-#if HTTPS_SUPPORT
-/* get cipher spec for this connection */
-gnutls_cipher_algorithm_t MHDS_get_session_cipher (struct MHD_Connection * session );
-
-gnutls_kx_algorithm_t MHDS_get_session_kx (struct MHD_Connection * session );
-gnutls_mac_algorithm_t MHDS_get_session_mac (struct MHD_Connection * session );
-gnutls_compression_method_t MHDS_get_session_compression (struct MHD_Connection * session );
-gnutls_certificate_type_t MHDS_get_session_cert_type (struct MHD_Connection * session );
-
-//TODO impl
-size_t MHDS_get_key_size (struct MHD_Daemon * daemon, gnutls_cipher_algorithm_t algorithm);
-size_t MHDS_get_mac_key_size (struct MHD_Daemon * daemon, gnutls_mac_algorithm_t algorithm);
-#endif
 
 /**
  * Get a particular header value.  If multiple

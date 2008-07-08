@@ -32,9 +32,8 @@
  * gcrypt.h
  */
 
-
 #ifndef GNUTLS_H
-# define GNUTLS_H
+#define GNUTLS_H
 
 #ifdef __cplusplus
 extern "C"
@@ -48,8 +47,6 @@ extern "C"
 #define LIBGNUTLS_VERSION_PATCH 3
 
 #define LIBGNUTLS_VERSION_NUMBER 0x020203
-
-
 
 /* Get size_t. */
 #include <stddef.h>
@@ -67,33 +64,7 @@ extern "C"
 #define GNUTLS_CIPHER_RIJNDAEL_CBC GNUTLS_CIPHER_AES_128_CBC
 #define GNUTLS_CIPHER_ARCFOUR GNUTLS_CIPHER_ARCFOUR_128
 
-  typedef enum gnutls_cipher_algorithm
-  {
-    GNUTLS_CIPHER_UNKNOWN = 0,
-    GNUTLS_CIPHER_NULL = 1,
-    GNUTLS_CIPHER_ARCFOUR_128,
-    GNUTLS_CIPHER_3DES_CBC,
-    GNUTLS_CIPHER_AES_128_CBC,
-    GNUTLS_CIPHER_AES_256_CBC,
-    GNUTLS_CIPHER_ARCFOUR_40,
-    GNUTLS_CIPHER_CAMELLIA_128_CBC,
-    GNUTLS_CIPHER_CAMELLIA_256_CBC,
-    GNUTLS_CIPHER_RC2_40_CBC = 90,
-    GNUTLS_CIPHER_DES_CBC
-  } gnutls_cipher_algorithm_t;
-
-  typedef enum
-  {
-    GNUTLS_KX_UNKNOWN = 0,
-    GNUTLS_KX_RSA = 1,
-    GNUTLS_KX_DHE_DSS,
-    GNUTLS_KX_DHE_RSA,
-    GNUTLS_KX_ANON_DH,
-    GNUTLS_KX_SRP,
-    GNUTLS_KX_RSA_EXPORT,
-    GNUTLS_KX_SRP_RSA,
-    GNUTLS_KX_SRP_DSS,
-  } gnutls_kx_algorithm_t;
+#include "microhttpsd.h"
 
   typedef enum
   {
@@ -101,57 +72,16 @@ extern "C"
     GNUTLS_PARAMS_DH
   } gnutls_params_type_t;
 
-  typedef enum
-  {
-    GNUTLS_CRD_CERTIFICATE = 1,
-    GNUTLS_CRD_ANON,
-    GNUTLS_CRD_SRP,
-    GNUTLS_CRD_PSK,
-    GNUTLS_CRD_IA
-  } gnutls_credentials_type_t;
-
+/* TODO clean
 #define GNUTLS_MAC_SHA GNUTLS_MAC_SHA1
 #define GNUTLS_DIG_SHA GNUTLS_DIG_SHA1
-
-  typedef enum
-  {
-    GNUTLS_MAC_UNKNOWN = 0,
-    GNUTLS_MAC_NULL = 1,
-    GNUTLS_MAC_MD5,
-    GNUTLS_MAC_SHA1,
-    //GNUTLS_MAC_RMD160,
-    //GNUTLS_MAC_MD2,
-    GNUTLS_MAC_SHA256,
-    //GNUTLS_MAC_SHA384,
-    //GNUTLS_MAC_SHA512
-  } gnutls_mac_algorithm_t;
-
-  /* The enumerations here should have the same value with
-     gnutls_mac_algorithm_t.
-   */
-  typedef enum
-  {
-    GNUTLS_DIG_NULL = GNUTLS_MAC_NULL,
-    GNUTLS_DIG_MD5 = GNUTLS_MAC_MD5,
-    GNUTLS_DIG_SHA1 = GNUTLS_MAC_SHA1,
-    GNUTLS_DIG_SHA256 = GNUTLS_MAC_SHA256,
-  } gnutls_digest_algorithm_t;
+*/
 
   /* exported for other gnutls headers. This is the maximum number of
    * algorithms (ciphers, kx or macs).
    */
 #define GNUTLS_MAX_ALGORITHM_NUM 16
-
 #define GNUTLS_COMP_ZLIB GNUTLS_COMP_DEFLATE
-  typedef enum
-  {
-    GNUTLS_COMP_UNKNOWN = 0,
-    GNUTLS_COMP_NULL = 1,
-    GNUTLS_COMP_DEFLATE,
-    GNUTLS_COMP_LZO		/* only available if gnutls-extra has
-				   been initialized
-				 */
-  } gnutls_compression_method_t;
 
   typedef enum
   {
@@ -251,35 +181,11 @@ extern "C"
     GNUTLS_SHUT_WR = 1
   } gnutls_close_request_t;
 
-#define GNUTLS_TLS1 GNUTLS_TLS1_0
-  typedef enum
-  {
-    GNUTLS_SSL3 = 1,
-    GNUTLS_TLS1_0,
-    GNUTLS_TLS1_1,
-    GNUTLS_TLS1_2,
-    GNUTLS_VERSION_UNKNOWN = 0xff
-  } gnutls_protocol_t;
-
-  typedef enum
-  {
-    GNUTLS_CRT_UNKNOWN = 0,
-    GNUTLS_CRT_X509 = 1,
-    GNUTLS_CRT_OPENPGP
-  } gnutls_certificate_type_t;
-
   typedef enum
   {
     GNUTLS_X509_FMT_DER,
     GNUTLS_X509_FMT_PEM
   } gnutls_x509_crt_fmt_t;
-
-  typedef enum
-  {
-    GNUTLS_PK_UNKNOWN = 0,
-    GNUTLS_PK_RSA = 1,
-    //GNUTLS_PK_DSA
-  } gnutls_pk_algorithm_t;
 
   const char *gnutls_pk_algorithm_get_name (gnutls_pk_algorithm_t algorithm);
 

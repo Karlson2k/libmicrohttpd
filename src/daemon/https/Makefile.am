@@ -1,19 +1,18 @@
 SUBDIRS = minitasn1 opencdk openpgp lgl x509 tls . 
 
-AM_CPPFLAGS = -I./includes \
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/include \
+-I$(top_srcdir)/src/daemon/https/tls \
 -I$(top_srcdir)/src/daemon/https/lgl \
 -I$(top_srcdir)/src/daemon/https/x509 \
 -I$(top_srcdir)/src/daemon/https/openpgp \
 -I$(top_srcdir)/src/daemon/https/opencdk \
--I$(top_srcdir)/src/daemon/https/tls \
--I$(top_srcdir)/src/daemon/https/includes \
--I$(top_srcdir)/src/daemon/https/cfg 
+-I$(top_srcdir)/src/daemon/https/includes
 
 noinst_LTLIBRARIES = libhttps.la
 
 libhttps_la_SOURCES = \
-https_common.c \
-errcodes.c 
+https_common.c
 
 libhttps_la_LIBADD = \
 opencdk/libopencdk.la \

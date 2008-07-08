@@ -1,5 +1,6 @@
 
-AM_CPPFLAGS = -I./includes \
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon/https/includes \
 -I$(top_srcdir)/src/daemon/https/minitasn1 \
 -I$(top_srcdir)/src/daemon/https/lgl \

@@ -23,7 +23,7 @@
  */
 
 #ifndef X509_H
-# define X509_H
+#define X509_H
 
 #define MIN(X,Y) ((X) > (Y) ? (Y) : (X));
 
@@ -781,8 +781,8 @@ typedef struct gnutls_x509_crt_int
 
 typedef struct gnutls_x509_privkey_int
   {
-    mpi_t params[MAX_PRIV_PARAMS_SIZE]; /* the size of params depends on the public 
-     * key algorithm 
+    mpi_t params[MAX_PRIV_PARAMS_SIZE]; /* the size of params depends on the public
+     * key algorithm
      */
     /*
      * RSA: [0] is modulus

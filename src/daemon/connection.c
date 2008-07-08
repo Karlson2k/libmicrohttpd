@@ -34,12 +34,6 @@
 // get opaque type
 #include "gnutls_int.h"
 
-// TODO clean
-#undef MAX
-#define MAX(a,b) ((a)<(b)) ? (b) : (a)
-#undef MIN
-#define MIN(a,b) ((a)<(b)) ? (a) : (b)
-
 #ifndef LINUX
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -293,7 +287,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,
-                       MIN (response->data_buffer_size,
+                       MHD_MIN(response->data_buffer_size,
                             response->total_size -
                             connection->response_write_position));
   if (ret == -1)
@@ -1249,7 +1243,7 @@ do_write (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
-static int
+static ssize_t
 MHD_con_read (struct MHD_Connection *connection)
 {
   return RECV (connection->socket_fd,
@@ -1463,7 +1457,6 @@ parse_connection_headers (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
-  int num_bytes;
   connection->last_activity = time (NULL);
   if (connection->state == MHD_CONNECTION_CLOSED)
     return MHD_NO;
@@ -1509,7 +1502,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
-static int
+static ssize_t
 MHD_con_write (struct MHD_Connection *connection)
 {
   return SEND (connection->socket_fd,
@@ -2009,7 +2002,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 
 }
 
-int
+void
 MHD_set_http_calbacks (struct MHD_Connection *connection)
 {
   connection->recv_cls = &MHD_con_read;

@@ -60,10 +60,10 @@ ASN1_TYPE _gnutls_gnutls_asn;
  *
  * This is the function where you set the logging function gnutls
  * is going to use. This function only accepts a character array.
- * Normally you may not use this function since it is only used 
+ * Normally you may not use this function since it is only used
  * for debugging purposes.
  *
- * gnutls_log_func is of the form, 
+ * gnutls_log_func is of the form,
  * void (*gnutls_log_func)( int level, const char*);
  **/
 void
@@ -74,7 +74,7 @@ gnutls_global_set_log_function (gnutls_log_func log_func)
 
 /**
  * gnutls_global_set_log_level - This function sets the logging level
- * @level: it's an integer from 0 to 9. 
+ * @level: it's an integer from 0 to 9.
  *
  * This is the function that allows you to set the log level.
  * The level is an integer between 0 and 9. Higher values mean
@@ -89,15 +89,6 @@ gnutls_global_set_log_level (int level)
 {
   _gnutls_log_level = level;
 }
-
-#ifdef DEBUG
-/* default logging function */
-static void
-dlog (int level, const char *str)
-{
-  fputs (str, stderr);
-}
-#endif
 
 extern gnutls_alloc_function gnutls_secure_malloc;
 extern gnutls_alloc_function gnutls_malloc;
@@ -121,7 +112,7 @@ int _gnutls_is_secure_mem_null (const void *);
  * is going to use. By default the libc's allocation functions (malloc(), free()),
  * are used by gnutls, to allocate both sensitive and not sensitive data.
  * This function is provided to set the memory allocation functions to
- * something other than the defaults (ie the gcrypt allocation functions). 
+ * something other than the defaults (ie the gcrypt allocation functions).
  *
  * This function must be called before gnutls_global_init() is called.
  *
@@ -182,7 +173,7 @@ static int _gnutls_init = 0;
  *
  * Note that this function will also initialize libgcrypt, if it has not
  * been initialized before. Thus if you want to manually initialize libgcrypt
- * you must do it before calling this function. This is useful in cases you 
+ * you must do it before calling this function. This is useful in cases you
  * want to disable libgcrypt's internal lockings etc.
  *
  * This function increment a global counter, so that
@@ -209,7 +200,7 @@ gnutls_global_init (void)
   char c;
 
   if (_gnutls_init++)
-    return;
+    return 0;
 
 #if HAVE_WINSOCK
   {
@@ -234,7 +225,6 @@ gnutls_global_init (void)
       }
   }
 #endif
-
 
   // bindtextdomain("mhd", "./");
 
@@ -285,14 +275,13 @@ gnutls_global_init (void)
     }
 
 #ifdef DEBUG
-  gnutls_global_set_log_function (dlog);
+  gnutls_global_set_log_function (MHD_tls_log_func());
 #endif
 
-  /* initialize parser 
+  /* initialize parser
    * This should not deal with files in the final
    * version.
    */
-
   res = asn1_array2tree(pkix_asn1_tab, &_gnutls_pkix1_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
@@ -315,7 +304,7 @@ gnutls_global_init (void)
 }
 
 /**
- * gnutls_global_deinit - This function deinitializes the global data 
+ * gnutls_global_deinit - This function deinitializes the global data
  *
  * This function deinitializes the global data, that were initialized
  * using gnutls_global_init().
@@ -339,7 +328,7 @@ gnutls_global_deinit (void)
   _gnutls_init--;
 }
 
-/* These functions should be elsewere. Kept here for 
+/* These functions should be elsewere. Kept here for
  * historical reasons.
  */
 
@@ -348,12 +337,12 @@ gnutls_global_deinit (void)
  * @pull_func: a callback function similar to read()
  * @session: gnutls session
  *
- * This is the function where you set a function for gnutls 
+ * This is the function where you set a function for gnutls
  * to receive data. Normally, if you use berkeley style sockets,
- * do not need to use this function since the default (recv(2)) will 
+ * do not need to use this function since the default (recv(2)) will
  * probably be ok.
  *
- * PULL_FUNC is of the form, 
+ * PULL_FUNC is of the form,
  * ssize_t (*gnutls_pull_func)(gnutls_transport_ptr_t, void*, size_t);
  **/
 void
@@ -373,8 +362,8 @@ gnutls_transport_set_pull_function (gnutls_session_t session,
  * sockets, you do not need to use this function since
  * the default (send(2)) will probably be ok. Otherwise you should
  * specify this function for gnutls to be able to send data.
- *  
- * PUSH_FUNC is of the form, 
+ *
+ * PUSH_FUNC is of the form,
  * ssize_t (*gnutls_push_func)(gnutls_transport_ptr_t, const void*, size_t);
  **/
 void

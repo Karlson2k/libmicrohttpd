@@ -31,6 +31,7 @@
 
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
+#include "gnutls_global.h"
 
 /**
  * Default connection limit.
@@ -58,7 +59,7 @@
 /* initialize security aspects of the HTTPS daemon */
 static int
 MHDS_init (struct MHD_Daemon *daemon){
-  gnutls_global_set_log_function (MHD_tls_log_func);
+    gnutls_global_set_log_function (MHD_tls_log_func);
     /* TODO let user access log level */
 
     /* setup server certificate */
@@ -671,11 +672,11 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
             {
               // TODO call con->read handler
               if (FD_ISSET (ds, &rs))
-                MHD_connection_handle_read (pos);
+                pos->read_handler (pos);
               if ((pos->socket_fd != -1) && (FD_ISSET (ds, &ws)))
-                MHD_connection_handle_write (pos);
+                pos->write_handler (pos);
               if (pos->socket_fd != -1)
-                MHD_connection_handle_idle (pos);
+                pos->idle_handler (pos);
             }
           pos = pos->next;
         }
@@ -856,11 +857,13 @@ MHD_start_daemon (unsigned int options,
   retVal->connection_timeout = 0;       /* no timeout */
   if (options & MHD_USE_SSL)
     {
+      /* lock gnutls_global mutex since it uses reference counting */
+      pthread_mutex_lock (&gnutls_init_mutex);
       gnutls_global_init ();
+      pthread_mutex_unlock (&gnutls_init_mutex);
       gnutls_priority_init (&retVal->priority_cache,
                             "NONE:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
     }
-
 
   /* initializes the argument pointer variable */
   va_start (ap, dh_cls);
@@ -910,8 +913,14 @@ MHD_start_daemon (unsigned int options,
           break;
         default:
 #if HAVE_MESSAGES
-          fprintf (stderr,
+          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END) {
+            fprintf (stderr,
+                    "Error: HTTPS option given while compiling without HTTPS support\n");
+          }
+          else {
+            fprintf (stderr,
                    "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+          }
 #endif
           abort ();
         }
@@ -1001,7 +1010,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (daemon->options & MHD_USE_SSL)
     {
       gnutls_priority_deinit (daemon->priority_cache);
+
+      /* lock gnutls_global mutex since it uses reference counting */
+      pthread_mutex_lock (&gnutls_init_mutex);
       gnutls_global_deinit ();
+      pthread_mutex_unlock (&gnutls_init_mutex);
     }
 #endif
 

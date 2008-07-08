@@ -23,18 +23,21 @@
  */
 
 #ifndef GNUTLS_INT_H
-
 #define GNUTLS_INT_H
 
 #include <defines.h>
 
 #include "gnutls.h"
+#include "microhttpsd.h"
+
 #include "extra.h"
 #include "gnutls_mem.h"
 
 /* FIXME: delete this once opencdk has reentrant keyring functions
  */
 #define KEYRING_HACK
+
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y));
 
 #define MAX32 4294967295
 #define MAX24 16777215
@@ -49,7 +52,7 @@
 #define TLS_MAX_SESSION_ID_SIZE 32
 #define TLS_MASTER_SIZE 48
 
-/* The maximum digest size of hash algorithms. 
+/* The maximum digest size of hash algorithms.
  */
 #define MAX_HASH_SIZE 64
 
@@ -112,7 +115,7 @@ typedef struct
 #include <gnutls_mpi.h>
 
 typedef enum change_cipher_spec_t
-  { 
+  {
     GNUTLS_TYPE_CHANGE_CIPHER_SPEC = 1
   } change_cipher_spec_t;
 
@@ -176,7 +179,7 @@ typedef struct auth_cred_st
   {
     gnutls_credentials_type_t algorithm;
 
-    /* the type of credentials depends on algorithm 
+    /* the type of credentials depends on algorithm
      */
     void *credentials;
     struct auth_cred_st *next;
@@ -202,9 +205,9 @@ struct gnutls_key_st
      */
     mpi_t rsa[2];
 
-    /* this is used to hold the peers authentication data 
+    /* this is used to hold the peers authentication data
      */
-    /* auth_info_t structures SHOULD NOT contain malloced 
+    /* auth_info_t structures SHOULD NOT contain malloced
      * elements. Check gnutls_session_pack.c, and gnutls_auth.c.
      * Rememember that this should be calloced!
      */
@@ -287,13 +290,13 @@ typedef enum tls_ext_parse_type_t
     EXTENSION_TLS
   } tls_ext_parse_type_t;
 
-/* auth_info_t structures now MAY contain malloced 
+/* auth_info_t structures now MAY contain malloced
  * elements.
  */
 
 /* This structure and auth_info_t, are stored in the resume database,
  * and are restored, in case of resume.
- * Holds all the required parameters to resume the current 
+ * Holds all the required parameters to resume the current
  * session.
  */
 
@@ -321,7 +324,7 @@ typedef struct
     gnutls_mac_algorithm_t write_mac_algorithm;
     gnutls_compression_method_t write_compression_algorithm;
 
-    /* this is the ciphersuite we are going to use 
+    /* this is the ciphersuite we are going to use
      * moved here from internals in order to be restored
      * on resume;
      */
@@ -511,7 +514,7 @@ typedef struct
 
     /* this is the highest version available
      * to the peer. (advertized version).
-     * This is obtained by the Handshake Client Hello 
+     * This is obtained by the Handshake Client Hello
      * message. (some implementations read the Record version)
      */
     uint8_t adv_version_major;
@@ -523,8 +526,8 @@ typedef struct
      */
     int send_cert_req;
 
-    /* bits to use for DHE and DHA 
-     * use _gnutls_dh_get_prime_bits() and gnutls_dh_set_prime_bits() 
+    /* bits to use for DHE and DHA
+     * use _gnutls_dh_get_prime_bits() and gnutls_dh_set_prime_bits()
      * to access it.
      */
     uint16_t dh_prime_bits;
