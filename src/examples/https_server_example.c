@@ -172,8 +172,8 @@ main (int argc, char *const *argv)
       return 1;
     }
 
-  // TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
-  // gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
+  /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
 
   TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG
                                  | MHD_USE_SSL, atoi (argv[3]),

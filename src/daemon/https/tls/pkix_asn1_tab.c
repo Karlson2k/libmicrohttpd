@@ -4,7 +4,7 @@
 
 #include <libtasn1.h>
 
-extern const ASN1_ARRAY_TYPE pkix_asn1_tab[] = {
+const ASN1_ARRAY_TYPE pkix_asn1_tab[] = {
   {"PKIX1", 536875024, 0},
   {0, 1073741836, 0},
   {"id-ce", 1879048204, 0},

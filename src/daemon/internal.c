@@ -46,7 +46,9 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 void
 MHD_tls_log_func (int level, const char *str)
 {
+#ifdef DEBUG
   fprintf (stdout, "|<%d>| %s", level, str);
+#endif
 }
 
 

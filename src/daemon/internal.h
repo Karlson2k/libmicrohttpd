@@ -49,7 +49,6 @@
 
 #include <pthread.h>
 
-// TODO unify with other dec
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
 

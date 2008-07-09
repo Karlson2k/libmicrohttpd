@@ -128,7 +128,6 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return -1;
     }
 
-  // TODO should these be hard coded into the server ?
   if (MHDS_get_session_mac (connection) != GNUTLS_MAC_SHA1)
     {
       fprintf (stderr, "Error: requested mac algorithm mismatch. %s\n",
@@ -184,7 +183,9 @@ test_query_session ()
     return 2;
 
   c = curl_easy_init ();
-  //curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#ifdef DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);

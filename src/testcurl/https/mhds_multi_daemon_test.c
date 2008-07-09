@@ -216,7 +216,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
            test_file_name);
 
   c = curl_easy_init ();
-  /* curl_easy_setopt (c, CURLOPT_VERBOSE, 1); */
+#ifdef DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -228,7 +230,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
   curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
 
-  // TODO rm : currently skip any peer authentication */
+  /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
 

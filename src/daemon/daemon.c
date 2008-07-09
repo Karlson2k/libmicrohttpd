@@ -59,24 +59,18 @@
 /* initialize security aspects of the HTTPS daemon */
 static int
 MHDS_init (struct MHD_Daemon *daemon){
+
+    int i;
+    priority_st st;
+
     gnutls_global_set_log_function (MHD_tls_log_func);
-    /* TODO let user access log level */
 
     /* setup server certificate */
     gnutls_certificate_allocate_credentials (&daemon->x509_cret);
 
-    /* Generate Diffie Hellman parameters - for use with DHE kx algorithms. */
-    // TODO should we be initializing RSA params or DH params ?
-
-    gnutls_dh_params_init (&daemon->dh_params);
-    gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-
-    // TODO remove if unused
-    /* add trusted CAs to certificate */
-    // gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
-
-    /* add Certificate revocation list to certificate */
-    //gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM);
+    /* TODO remove if unused
+        gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
+        gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM); */
 
     /* sets a certificate private key pair */
     if (daemon->https_cert_path && daemon->https_key_path)
@@ -129,11 +123,46 @@ MHDS_init (struct MHD_Daemon *daemon){
         return MHD_NO;
       }
 
+      /* generate DH parameters if necessary */
+      st = daemon->priority_cache->kx;
+      for (i = 0; i < st.algorithms; i++)
+        {
+          /* initialize Diffie Hellman parameters if necessary */
+          /* TODO add other cipher suits */
+          if (st.priority[i] ==  GNUTLS_KX_DHE_RSA ){
+              gnutls_dh_params_init (&daemon->dh_params);
+              gnutls_dh_params_generate2 (daemon->dh_params, 1024);
+              break;
+            }
+        }
+
     gnutls_certificate_set_dh_params (daemon->x509_cret, daemon->dh_params);
 
-    // TODO address error case return value
+    /* TODO address error case return value */
     return MHD_YES;
 }
+
+/* TODO unite with code in gnutls_priority.c */
+/* this is used to set HTTPS related daemon priorities */
+inline static int
+_set_priority (priority_st * st, const int *list)
+{
+  int num = 0, i;
+
+  while (list[num] != 0)
+    num++;
+  if (num > MAX_ALGOS)
+    num = MAX_ALGOS;
+  st->algorithms = num;
+
+  for (i = 0; i < num; i++)
+    {
+      st->priority[i] = list[i];
+    }
+
+  return 0;
+}
+
 #endif
 
 /**
@@ -297,9 +326,10 @@ MHDS_handle_connection (void *data)
   gnutls_credentials_set (tls_session, GNUTLS_CRD_CERTIFICATE,
                           con->daemon->x509_cret);
 
-  /* avoid gnutls blocking recv / write calls */
-  // gnutls_transport_set_pull_function(tls_session, &recv);
-  // gnutls_transport_set_push_function(tls_session, &send);
+  /* TODO avoid gnutls blocking recv / write calls
+  gnutls_transport_set_pull_function(tls_session, &recv);
+  gnutls_transport_set_push_function(tls_session, &send);
+  */
 
   gnutls_transport_set_ptr (tls_session, con->socket_fd);
 
@@ -524,7 +554,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           free (pos->addr);
           free (pos);
           daemon->max_connections++;
-          // TODO add tls con cleanup
+          /* TODO add tls con cleanup */
           if (prev == NULL)
             pos = daemon->connections;
           else
@@ -722,27 +752,6 @@ MHD_select_thread (void *cls)
   return NULL;
 }
 
-/* TODO unite with code in gnutls_priority.c */
-/* this is used to set HTTPS related daemon priorities */
-inline static int
-_set_priority (priority_st * st, const int *list)
-{
-  int num = 0, i;
-
-  while (list[num] != 0)
-    num++;
-  if (num > MAX_ALGOS)
-    num = MAX_ALGOS;
-  st->algorithms = num;
-
-  for (i = 0; i < num; i++)
-    {
-      st->priority[i] = list[i];
-    }
-
-  return 0;
-}
-
 /**
  * Start a webserver on the given port.
  *
@@ -861,6 +870,7 @@ MHD_start_daemon (unsigned int options,
       pthread_mutex_lock (&gnutls_init_mutex);
       gnutls_global_init ();
       pthread_mutex_unlock (&gnutls_init_mutex);
+      /* set default priorities */
       gnutls_priority_init (&retVal->priority_cache,
                             "NONE:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
     }
@@ -891,6 +901,7 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
+#if HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_KEY_PATH:
           retVal->https_key_path = va_arg (ap, const char *);
           break;
@@ -904,13 +915,12 @@ MHD_start_daemon (unsigned int options,
           retVal->https_mem_cert = va_arg (ap, const char *);
           break;
         case MHDS_KX_PRIORITY:
-          _set_priority (&retVal->priority_cache->kx,
-                         va_arg (ap, const int *));
+          _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
           break;
         case MHDS_CIPHER_ALGORITHM:
-          _set_priority (&retVal->priority_cache->cipher,
-                         va_arg (ap, const int *));
+          _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
           break;
+#endif
         default:
 #if HAVE_MESSAGES
           if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END) {

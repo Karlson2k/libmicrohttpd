@@ -233,7 +233,7 @@ _gnutls_handshake_internal_state_clear (gnutls_session_t session)
  * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
  **/
 
-// TODO rm redundent pointer ref  
+/* TODO rm redundent pointer ref */
 int
 gnutls_init (gnutls_session_t * session, gnutls_connection_end_t con_end)
 {
@@ -290,7 +290,7 @@ gnutls_init (gnutls_session_t * session, gnutls_connection_end_t con_end)
   gnutls_handshake_set_max_packet_length ((*session),
                                           MAX_HANDSHAKE_PACKET_SIZE);
 
-  /* Allocate a minimum size for recv_data 
+  /* Allocate a minimum size for recv_data
    * This is allocated in order to avoid small messages, making
    * the receive procedure slow.
    */
@@ -796,7 +796,7 @@ _gnutls_xor (opaque * o1, opaque * o2, int length)
 
 #define MAX_PRF_BYTES 200
 
-/* The PRF function expands a given secret 
+/* The PRF function expands a given secret
  * needed by the TLS specification. ret must have a least total_bytes
  * available.
  */

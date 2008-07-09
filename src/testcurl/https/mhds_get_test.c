@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "plibc.h"
-#include "microhttpd.h"
+#include "microhttpsd.h"
 #include <errno.h>
 
 #include <curl/curl.h>
@@ -218,7 +218,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-  /* curl_easy_setopt (c, CURLOPT_VERBOSE, 1); */
+#ifdef DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
@@ -228,9 +230,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+  //curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
 
-  // TODO rm : currently skip any peer authentication */
+  /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -332,6 +334,59 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
+int
+test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
+{
+
+  int ret;
+  int ciper[] = { GNUTLS_CIPHER_3DES_CBC, 0 };
+  struct MHD_Daemon *d;
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                        MHD_USE_DEBUG, 42433,
+                        NULL, NULL, &http_ahc, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
+                        MHDS_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
+
+  if (d == NULL)
+    {
+      fprintf (stderr, MHD_E_SERVER_INIT);
+      return -1;
+    }
+
+  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+
+  MHD_stop_daemon (d);
+  return ret;
+}
+
+int
+test_kx_option (FILE * test_fd, char *cipher_suite, int proto_version)
+{
+
+  int ret;
+  int kx[] = { GNUTLS_KX_DHE_RSA, 0 };
+  struct MHD_Daemon *d;
+
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                        MHD_USE_DEBUG, 42433,
+                        NULL, NULL, &http_ahc, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
+                        MHDS_KX_PRIORITY, kx, MHD_OPTION_END);
+
+  if (d == NULL)
+    {
+      fprintf (stderr, MHD_E_SERVER_INIT);
+      return -1;
+    }
+
+  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+
+  MHD_stop_daemon (d);
+  return ret;
+}
+
 /* setup a temporary transfer test file */
 FILE *
 setupTestFile ()
@@ -367,8 +422,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  gnutls_global_set_log_level (0);
-
   if ((test_fd = setupTestFile ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
@@ -387,6 +440,12 @@ main (int argc, char *const *argv)
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+
+  /* TODO resolve cipher setting issue when compiling against GNU TLS */
+  errorCount +=
+    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
+  errorCount +=
+    test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
 
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

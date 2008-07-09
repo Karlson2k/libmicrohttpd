@@ -31,7 +31,7 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-// get opaque type
+/* get opaque type */
 #include "gnutls_int.h"
 
 #ifndef LINUX
@@ -1593,7 +1593,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
-          // TODO clean - missing MSG_NOSIGNAL on gnutls record send call
+          /* TODO clean - missing MSG_NOSIGNAL on gnutls record send call */
           if (connection->daemon->options & MHD_USE_SSL)
             {
               ret = gnutls_record_send (connection->tls_session,

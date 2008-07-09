@@ -36,12 +36,15 @@
 /* get opaque type */
 #include "gnutls_int.h"
 
+/* TODO rm */
+#include "gnutls_errors.h"
+
 /* forward declarations used when setting secure connection callbacks */
 int MHD_connection_handle_read (struct MHD_Connection *connection);
 int MHD_connection_handle_write (struct MHD_Connection *connection);
 int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
-// TODO rm - appears in a switch default clause
+/* TODO rm - appears in a switch default clause */
 static void
 connection_close_error (struct MHD_Connection *connection)
 {
@@ -106,6 +109,8 @@ int
 MHDS_connection_handle_idle (struct MHD_Connection *connection)
 {
   unsigned int timeout;
+
+  /* TODO rm gnutls_assert (); */
   while (1)
     {
 #if HAVE_MESSAGES
@@ -213,7 +218,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
-                    "Received unrecognized alert: %s\n",
+                    "Received unrecognized alert: %d\n",
                     connection->tls_session->internals.last_alert);
 #endif
           return MHD_NO;
@@ -236,14 +241,13 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
-                    "Error: Handshake has failed (%s)\n", ret);
+                    "Error: Handshake has failed (%d)\n", ret);
 #endif
           connection->s_state = MHDS_HANDSHAKE_FAILED;
           gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
           gnutls_deinit (connection->tls_session);
-          connection->socket_fd = -1;
+          connection_close_error(connection);
           return MHD_NO;
-
         }
       break;
     case GNUTLS_INNER_APPLICATION:
@@ -257,6 +261,8 @@ int
 MHDS_connection_handle_write (struct MHD_Connection *connection)
 {
   connection->last_activity = time (NULL);
+  /* TODO rm */
+  gnutls_assert ();
   while (1)
     {
 #if HAVE_MESSAGES
@@ -269,7 +275,7 @@ MHDS_connection_handle_write (struct MHD_Connection *connection)
           /* these cases shouldn't occur */
         case MHDS_HANDSHAKE_COMPLETE:
         case MHDS_CONNECTION_INIT:
-          // TODO do we have to write back a responce ?
+          /* TODO do we have to write back a responce ? */
         case MHDS_HANDSHAKE_FAILED:
           /* we should first exit MHDS_REPLY_SENDING */
 

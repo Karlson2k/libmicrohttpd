@@ -99,7 +99,7 @@
 
 #define HASH2MAC(x) ((gnutls_mac_algorithm_t)x)
 
-// TODO rm
+/* TODO rm */
 /* Additional cast to bring void* to a type castable to int. */
 #define GNUTLS_POINTER_TO_INT_CAST (long)
 

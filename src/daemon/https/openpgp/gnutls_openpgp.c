@@ -9,12 +9,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *               
+ *
  * GNUTLS-EXTRA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                               
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -37,8 +37,6 @@
 #define OPENPGP_NAME_SIZE 256
 
 #define datum_append(x, y, z) _gnutls_datum_append_m (x, y, z, gnutls_realloc)
-
-
 
 static void
 release_mpi_array (mpi_t * arr, size_t n)
@@ -256,7 +254,6 @@ leave:
   return rc;
 }
 
-
 /*-
  * _gnutls_openpgp_raw_key_to_gcert - Converts raw OpenPGP data to GnuTLS certs
  * @cert: the certificate to store the data.
@@ -306,7 +303,7 @@ _gnutls_openpgp_raw_key_to_gcert (gnutls_cert * cert,
   * @key: contains an openpgp public key
   * @pkey: is an openpgp private key
   *
-  * This function sets a certificate/private key pair in the 
+  * This function sets a certificate/private key pair in the
   * gnutls_certificate_credentials_t structure. This function may be called
   * more than once (in case multiple keys/certificates exist for the
   * server).
@@ -486,7 +483,7 @@ stream_to_datum (cdk_stream_t inp, gnutls_datum_t * raw)
  * @cert: the datum that contains the public key.
  * @key: the datum that contains the secret key.
  *
- * This funtion is used to load OpenPGP keys into the GnuTLS credential 
+ * This funtion is used to load OpenPGP keys into the GnuTLS credential
  * structure.
  * It doesn't matter whether the keys are armored or not, but the files
  * should only contain one key which should not be encrypted.
@@ -734,12 +731,8 @@ gnutls_certificate_set_openpgp_keyring_mem (gnutls_certificate_credentials_t
       gnutls_openpgp_keyring_deinit (c->keyring);
       return rc;
     }
-
-  return 0;
 #else
-
   c->keyring_format = format;
-
   c->keyring.data = gnutls_malloc (dlen + 1);
   if (c->keyring.data == NULL)
     {
@@ -749,8 +742,8 @@ gnutls_certificate_set_openpgp_keyring_mem (gnutls_certificate_credentials_t
   memcpy (c->keyring.data, data, dlen);
   c->keyring.data[dlen] = 0;
   c->keyring.size = dlen;
-
 #endif
+  return 0;
 }
 
 /*-
