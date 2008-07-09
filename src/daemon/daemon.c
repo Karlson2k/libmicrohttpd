@@ -864,6 +864,7 @@ MHD_start_daemon (unsigned int options,
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
+#if HTTPS_SUPPORT
   if (options & MHD_USE_SSL)
     {
       /* lock gnutls_global mutex since it uses reference counting */
@@ -874,7 +875,7 @@ MHD_start_daemon (unsigned int options,
       gnutls_priority_init (&retVal->priority_cache,
                             "NONE:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
     }
-
+#endif
   /* initializes the argument pointer variable */
   va_start (ap, dh_cls);
   /*

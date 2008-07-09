@@ -1594,6 +1594,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               break;
             }
           /* TODO clean - missing MSG_NOSIGNAL on gnutls record send call */
+#if HTTPS_SUPPORT
           if (connection->daemon->options & MHD_USE_SSL)
             {
               ret = gnutls_record_send (connection->tls_session,
@@ -1606,6 +1607,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                          response->data_start));
             }
           else
+#endif
             {
               ret = SEND (connection->socket_fd,
                           &response->data[connection->

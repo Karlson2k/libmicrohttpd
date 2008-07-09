@@ -1,4 +1,8 @@
-SUBDIRS  = . https
+SUBDIRS  = .
+
+if ENABLE_HTTPS
+SUBDIRS += https
+endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon/https/includes \
