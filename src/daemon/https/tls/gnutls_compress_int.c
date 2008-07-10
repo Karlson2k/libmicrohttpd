@@ -34,7 +34,6 @@ comp_hd_t
 _gnutls_comp_init (gnutls_compression_method_t method, int d)
 {
   comp_hd_t ret;
-  int err;
 
   ret = gnutls_malloc (sizeof (struct comp_hd_t_STRUCT));
   if (ret == NULL)
@@ -105,8 +104,6 @@ cleanup_ret:
 void
 _gnutls_comp_deinit (comp_hd_t handle, int d)
 {
-  int err;
-
   if (handle != NULL)
     {
       switch (handle->algo)
@@ -128,7 +125,7 @@ _gnutls_comp_deinit (comp_hd_t handle, int d)
     }
 }
 
-/* These functions are memory consuming 
+/* These functions are memory consuming
  */
 
 int
@@ -137,7 +134,6 @@ _gnutls_compress (comp_hd_t handle, const opaque * plain,
                   size_t max_comp_size)
 {
   int compressed_size = GNUTLS_E_COMPRESSION_FAILED;
-  int err;
 
   /* NULL compression is not handled here
    */
@@ -212,8 +208,7 @@ _gnutls_decompress (comp_hd_t handle, opaque * compressed,
                     size_t compressed_size, opaque ** plain,
                     size_t max_record_size)
 {
-  int plain_size = GNUTLS_E_DECOMPRESSION_FAILED, err;
-  int cur_pos;
+  int plain_size = GNUTLS_E_DECOMPRESSION_FAILED;
 
   if (compressed_size > max_record_size + EXTRA_COMP_SIZE)
     {

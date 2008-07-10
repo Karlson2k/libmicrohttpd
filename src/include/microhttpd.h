@@ -386,14 +386,29 @@ enum MHD_OPTION
    * cipher priority order to which the HTTPS daemon should adhere.
    * "const int *" argument.
    */
-  MHDS_CIPHER_ALGORITHM,
+  MHD_OPTION_CIPHER_ALGORITHM,
 
   /*
    * Memory pointer to a zero terminated int array representing the
    * key exchange algorithm priority order to which the HTTPS daemon should adhere.
    * "const int *" argument.
    */
-  MHDS_KX_PRIORITY,
+  MHD_OPTION_KX_PRIORITY,
+
+  /*
+   * used to indicate which type of certificate this server will use,
+   */
+  MHD_OPTION_CRET_TYPE,
+
+  /*
+   * mac algorithm used by server
+   */
+  MHD_OPTION_MAC_ALGO,
+
+  /*
+   * compression algorithm used by server
+   */
+  MHD_OPTION_TLS_COMP_ALGO,
 
   MHD_HTTPS_OPTION_END,
 };

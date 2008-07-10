@@ -38,7 +38,6 @@ oprfi_recv_server (gnutls_session_t session,
 {
   ssize_t data_size = _data_size;
   uint16_t len;
-  int ret;
 
   if (!session->security_parameters.extensions.oprfi_cb)
     {
@@ -75,7 +74,6 @@ oprfi_recv_client (gnutls_session_t session,
 {
   ssize_t data_size = _data_size;
   uint16_t len;
-  int ret;
 
   if (session->security_parameters.extensions.oprfi_client == NULL)
     {
@@ -149,7 +147,6 @@ oprfi_send_server (gnutls_session_t session, opaque * data, size_t _data_size)
   opaque *p = data;
   int ret;
   ssize_t data_size = _data_size;
-  size_t len;
 
   if (!session->security_parameters.extensions.oprfi_client ||
       !session->security_parameters.extensions.oprfi_cb)

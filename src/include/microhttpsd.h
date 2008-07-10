@@ -125,7 +125,6 @@
 
 /* get cipher spec for this connection */
 gnutls_cipher_algorithm_t MHDS_get_session_cipher (struct MHD_Connection * session );
-
 gnutls_kx_algorithm_t MHDS_get_session_kx (struct MHD_Connection * session );
 gnutls_mac_algorithm_t MHDS_get_session_mac (struct MHD_Connection * session );
 gnutls_compression_method_t MHDS_get_session_compression (struct MHD_Connection * session );

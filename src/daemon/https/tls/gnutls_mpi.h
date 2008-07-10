@@ -23,7 +23,7 @@
  */
 
 #ifndef GNUTLS_MPI_H
-# define GNUTLS_MPI_H
+#define GNUTLS_MPI_H
 
 # include <gnutls_int.h>
 # include <gcrypt.h>

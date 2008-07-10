@@ -284,24 +284,20 @@ enum MHD_CONNECTION_STATE
      */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
 
+#if HTTPS_SUPPORT
+  /*
+   *  SSL/TLS connection states
+   */
+  MHD_TLS_HANDSHAKE_FAILED = MHD_CONNECTION_CLOSED +1,
+
+  MHD_TLS_HANDSHAKE_COMPLETE,
+#endif
 };
 
 
-/**
- * States in a state machine for a secure SSL/TLS connection.
- *
- */
-enum MHDS_CONNECTION_STATE
-{
-  /* initial HTTPS state */
-  MHDS_CONNECTION_INIT = 0,
-
-  MHDS_HANDSHAKE_FAILED,
-
-  MHDS_HANDSHAKE_COMPLETE,
-
-  MHDS_CONNECTION_CLOSED
-};
+#if DEBUG_STATES
+    /* TODO add state dictionary  */
+#endif
 
 struct MHD_Connection
 {
@@ -486,7 +482,7 @@ struct MHD_Connection
      */
   enum MHD_CONNECTION_STATE state;
 
-  enum MHDS_CONNECTION_STATE s_state;
+  //enum MHDS_CONNECTION_STATE s_state;
 
     /**
      * HTTP response code.  Only valid if response object

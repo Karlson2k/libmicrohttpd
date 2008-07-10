@@ -82,7 +82,7 @@ _gnutls_x509_read_rsa_params (opaque * der, int dersize, mpi_t * params)
 
 }
 
-/* reads p,q and g 
+/* reads p,q and g
  * from the certificate (subjectPublicKey BIT STRING).
  * params[0-2]
  */
@@ -193,7 +193,7 @@ _gnutls_x509_read_der_int (opaque * der, int dersize, mpi_t * out)
 }
 
 /* reads DSA's Y
- * from the certificate 
+ * from the certificate
  * only sets params[3]
  */
 int
@@ -339,7 +339,6 @@ _gnutls_x509_write_sig_params (ASN1_TYPE dst,
                                gnutls_digest_algorithm_t dig,
                                mpi_t * params, int params_size)
 {
-  gnutls_datum_t der;
   int result;
   char name[128];
   const char *pk;

@@ -254,9 +254,15 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
     {
       fprintf (stderr, "Error: local file & received file differ.\n");
+      free (mem_test_file_local);
+      free (cbc.buf);
+      free (doc_path);
       return -1;
     }
 
+  free (mem_test_file_local);
+  free (cbc.buf);
+  free (doc_path);
   return 0;
 }
 

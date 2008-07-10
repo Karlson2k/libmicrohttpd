@@ -160,7 +160,7 @@ static void
 _gnutls_gcry_log_handler (void *dummy, int level,
                           const char *fmt, va_list list)
 {
-  _gnutls_log (fmt, list);
+  _gnutls_log (level, fmt, list);
 }
 #endif
 

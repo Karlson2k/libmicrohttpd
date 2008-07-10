@@ -209,14 +209,16 @@ test_query_session ()
     {
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
-      curl_easy_cleanup (c);
+
       MHD_stop_daemon (d);
-      return 4;
+      curl_easy_cleanup (c);
+      free (cbc.buf);
+      return -1;
     }
 
-  curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-
+  curl_easy_cleanup (c);
+  free (cbc.buf);
   return 0;
 }
 

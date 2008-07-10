@@ -31,9 +31,6 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-/* get opaque type */
-#include "gnutls_int.h"
-
 #ifndef LINUX
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -766,6 +763,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
           if (connection->socket_fd != -1)
             connection_close_error (connection);
           return MHD_YES;       /* do nothing, not even reading */
+
         default:
           EXTRA_CHECK (0);
         }

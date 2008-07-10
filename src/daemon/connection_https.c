@@ -35,6 +35,7 @@
 #include "microhttpsd.h"
 /* get opaque type */
 #include "gnutls_int.h"
+#include "gnutls_record.h"
 
 /* TODO rm */
 #include "gnutls_errors.h"
@@ -46,17 +47,27 @@ int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
 /* TODO rm - appears in a switch default clause */
 static void
-connection_close_error (struct MHD_Connection *connection)
+MHD_tls_connection_close (struct MHD_Connection *connection)
 {
+  gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+  connection->tls_session->internals.read_eof = 1;
+  connection->socket_fd = -1;
+
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
-  connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
   if (connection->daemon->notify_completed != NULL)
     connection->daemon->notify_completed (connection->daemon->
                                           notify_completed_cls, connection,
                                           &connection->client_context,
-                                          MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                          MHD_REQUEST_TERMINATED_COMPLETED_OK);
+}
+
+/* TODO add error connection termination */
+static void
+MHD_tls_connection_close_err (struct MHD_Connection *connection)
+{
+  /* TODO impl */
 }
 
 /* get cipher spec for this connection */
@@ -106,32 +117,27 @@ MHDS_con_write (struct MHD_Connection *connection)
 }
 
 int
-MHDS_connection_handle_idle (struct MHD_Connection *connection)
+MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 {
   unsigned int timeout;
 
-  /* TODO rm gnutls_assert (); */
   while (1)
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
-                connection->s_state, __LINE__, __FUNCTION__);
+      MHD_DLOG (connection->daemon, "MHDS idle: %d, l: %d, f: %s\n",
+                connection->state, __LINE__, __FUNCTION__);
 #endif
-      switch (connection->s_state)
+      switch (connection->state)
         {
-        case MHDS_HANDSHAKE_FAILED:
-          connection->socket_fd = -1;
-        case MHDS_CONNECTION_INIT:
-          /* wait for request */
-        case MHDS_HANDSHAKE_COMPLETE:
-
-        case MHDS_CONNECTION_CLOSED:
-          if (connection->socket_fd != -1)
-            connection_close_error (connection);
-          break;
-
+        case MHD_CONNECTION_CLOSED:
+          MHD_tls_connection_close (connection);
+          return MHD_NO;
+        case MHD_TLS_HANDSHAKE_FAILED:
+          MHD_tls_connection_close (connection);
+          return MHD_NO;
+          /* some http state */
         default:
-          break;
+          return MHD_connection_handle_idle (connection);
         }
       break;
     }
@@ -141,24 +147,34 @@ MHDS_connection_handle_idle (struct MHD_Connection *connection)
   if ((connection->socket_fd != -1) && (timeout != 0)
       && (time (NULL) - timeout > connection->last_activity))
     {
-      connection_close_error (connection);
+      MHD_tls_connection_close (connection);
       return MHD_NO;
     }
   return MHD_YES;
 }
 
+/**
+ * This function handles a particular SSL/TLS connection when
+ * it has been determined that there is data to be read off a
+ * socket. All application_data is forwarded to
+ * MHD_connection_handle_read().
+ *
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */
 int
-MHDS_connection_handle_read (struct MHD_Connection *connection)
+MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 {
   int ret;
+  unsigned char msg_type;
 
   connection->last_activity = time (NULL);
 
-  if (connection->s_state == MHDS_CONNECTION_CLOSED)
-    return MHD_NO;
-
+#if HAVE_MESSAGES
+  MHD_DLOG (connection->daemon, "MHD read: %d, l: %d, f: %s\n",
+            connection->state, __LINE__, __FUNCTION__);
+#endif
   /* discover content type */
-  unsigned char msg_type;
   if (recv (connection->socket_fd, &msg_type, 1, MSG_PEEK) == -1)
     {
 #if HAVE_MESSAGES
@@ -178,16 +194,13 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
        * done to decrypt alert message
        */
       _gnutls_recv_int (connection->tls_session, GNUTLS_ALERT,
-                        GNUTLS_HANDSHAKE_FINISHED, 0);
+                        GNUTLS_HANDSHAKE_FINISHED, 0, 0);
 
       /* CLOSE_NOTIFY */
       if (connection->tls_session->internals.last_alert ==
           GNUTLS_A_CLOSE_NOTIFY)
         {
           gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
-          connection->tls_session->internals.read_eof = 1;
-          connection->socket_fd = -1;
-          gnutls_deinit (connection->tls_session);
           return MHD_YES;
         }
       /* non FATAL or WARNING */
@@ -206,11 +219,7 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
       else if (connection->tls_session->internals.last_alert ==
                GNUTLS_AL_FATAL)
         {
-          connection->tls_session->internals.resumable = RESUME_FALSE;
-          connection->tls_session->internals.valid_connection = VALID_FALSE;
-          connection->socket_fd = -1;
-          gnutls_deinit (connection->tls_session);
-
+          MHD_tls_connection_close (connection);
           return MHD_NO;
         }
       /* this should never execut */
@@ -233,8 +242,8 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
       ret = gnutls_handshake (connection->tls_session);
       if (ret == 0)
         {
-          connection->s_state = MHDS_HANDSHAKE_COMPLETE;
           connection->state = MHD_CONNECTION_INIT;
+          // connection->state = MHD_CONNECTION_INIT;
         }
       /* set connection as closed */
       else
@@ -243,49 +252,56 @@ MHDS_connection_handle_read (struct MHD_Connection *connection)
           MHD_DLOG (connection->daemon,
                     "Error: Handshake has failed (%d)\n", ret);
 #endif
-          connection->s_state = MHDS_HANDSHAKE_FAILED;
-          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
-          gnutls_deinit (connection->tls_session);
-          connection_close_error(connection);
+          connection->state = MHD_TLS_HANDSHAKE_FAILED;
+          MHD_tls_connection_close (connection);
           return MHD_NO;
         }
       break;
     case GNUTLS_INNER_APPLICATION:
       break;
+    default:
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Err: unrecognized tls read message. l: %d, f: %s\n",
+                connection->state, __LINE__, __FUNCTION__);
+#endif
+      return MHD_NO;
     }
 
   return MHD_YES;
 }
 
+/**
+ * This function was created to handle writes to sockets when it has
+ * been determined that the socket can be written to.
+ *
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */
 int
-MHDS_connection_handle_write (struct MHD_Connection *connection)
+MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
   connection->last_activity = time (NULL);
-  /* TODO rm */
-  gnutls_assert ();
+
   while (1)
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "MHDS reached case: %d, l: %d, f: %s\n",
-                connection->s_state, __LINE__, __FUNCTION__);
+      MHD_DLOG (connection->daemon, "MHD write: %d, l: %d, f: %s\n",
+                connection->state, __LINE__, __FUNCTION__);
 #endif
-      switch (connection->s_state)
+      switch (connection->state)
         {
-
-          /* these cases shouldn't occur */
-        case MHDS_HANDSHAKE_COMPLETE:
-        case MHDS_CONNECTION_INIT:
-          /* TODO do we have to write back a responce ? */
-        case MHDS_HANDSHAKE_FAILED:
-          /* we should first exit MHDS_REPLY_SENDING */
-
-        case MHDS_CONNECTION_CLOSED:
-          if (connection->socket_fd != -1)
-            connection_close_error (connection);
+        case MHD_CONNECTION_CLOSED:
+          MHD_tls_connection_close (connection);
           return MHD_NO;
+        case MHD_TLS_HANDSHAKE_FAILED:
+          MHD_tls_connection_close (connection);
+          return MHD_NO;
+          /* some HTTP state */
+        default:
+          return MHD_connection_handle_write (connection);
         }
     }
-  return MHD_YES;
 }
 
 void
@@ -293,7 +309,7 @@ MHD_set_https_calbacks (struct MHD_Connection *connection)
 {
   connection->recv_cls = &MHDS_con_read;
   connection->send_cls = &MHDS_con_write;
-  connection->read_handler = &MHDS_connection_handle_read;
-  connection->write_handler = &MHD_connection_handle_write;
-  connection->idle_handler = &MHD_connection_handle_idle;
+  connection->read_handler = &MHD_tls_connection_handle_read;
+  connection->write_handler = &MHD_tls_connection_handle_write;
+  connection->idle_handler = &MHD_tls_connection_handle_idle;
 }

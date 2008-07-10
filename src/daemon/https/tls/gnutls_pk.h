@@ -23,7 +23,7 @@
  */
 
 #ifndef GNUTLS_PK_H
-# define GNUTLS_PK_H
+#define GNUTLS_PK_H
 
 int _gnutls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
 			       const gnutls_datum_t * plaintext,

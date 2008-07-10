@@ -9,12 +9,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *               
+ *
  * GNUTLS-EXTRA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                               
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -38,7 +38,7 @@ extern int _gnutls_comp_algorithms_size;
 static int _gnutls_init_extra = 0;
 
 /**
- * gnutls_global_init_extra - This function initializes the global state of gnutls-extra 
+ * gnutls_global_init_extra - This function initializes the global state of gnutls-extra
  *
  * This function initializes the global state of gnutls-extra library
  * to defaults.  Returns zero on success.
@@ -51,8 +51,6 @@ static int _gnutls_init_extra = 0;
 int
 gnutls_global_init_extra (void)
 {
-  int ret;
-
   /* If the version of libgnutls != version of
    * libextra, then do not initialize the library.
    * This is because it may break things.

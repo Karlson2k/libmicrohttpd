@@ -29,6 +29,7 @@
 #include "connection.h"
 #include "memorypool.h"
 
+#include "gnutls.h"
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
 #include "gnutls_global.h"
@@ -102,17 +103,15 @@ MHDS_init (struct MHD_Daemon *daemon){
       }
     else if (daemon->https_mem_cert && daemon->https_mem_key)
       {
-        gnutls_datum_t *key =
-          (gnutls_datum_t *) malloc (sizeof (gnutls_datum_t));
-        gnutls_datum_t *cert =
-          (gnutls_datum_t *) malloc (sizeof (gnutls_datum_t));
+        gnutls_datum_t key ;
+        gnutls_datum_t cert ;
 
-        _gnutls_set_datum_m (key, daemon->https_mem_key,
+        _gnutls_set_datum_m (&key, daemon->https_mem_key,
                              strlen (daemon->https_mem_key), &malloc);
-        _gnutls_set_datum_m (cert, daemon->https_mem_cert,
+        _gnutls_set_datum_m (&cert, daemon->https_mem_cert,
                              strlen (daemon->https_mem_cert), &malloc);
 
-        gnutls_certificate_set_x509_key_mem (daemon->x509_cret, cert, key,
+        gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
                                              GNUTLS_X509_FMT_PEM);
       }
     else
@@ -309,21 +308,18 @@ gnutls_push_param_adapter (void *connection,
 static void *
 MHDS_handle_connection (void *data)
 {
-  gnutls_session_t tls_session;
   struct MHD_Connection *con = data;
 
   if (con == NULL)
     abort ();
 
-  gnutls_init (&tls_session, GNUTLS_SERVER);
-
-  con->tls_session = tls_session;
+  gnutls_init (&con->tls_session, GNUTLS_SERVER);
 
   /* sets cipher priorities */
-  gnutls_priority_set (tls_session, con->daemon->priority_cache);
+  gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
 
   /* set needed credentials for certificate authentication. */
-  gnutls_credentials_set (tls_session, GNUTLS_CRD_CERTIFICATE,
+  gnutls_credentials_set (con->tls_session, GNUTLS_CRD_CERTIFICATE,
                           con->daemon->x509_cret);
 
   /* TODO avoid gnutls blocking recv / write calls
@@ -331,7 +327,7 @@ MHDS_handle_connection (void *data)
   gnutls_transport_set_push_function(tls_session, &send);
   */
 
-  gnutls_transport_set_ptr (tls_session, con->socket_fd);
+  gnutls_transport_set_ptr (con->tls_session, con->socket_fd);
 
   return MHD_handle_connection (data);
 }
@@ -554,7 +550,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           free (pos->addr);
           free (pos);
           daemon->max_connections++;
-          /* TODO add tls con cleanup */
+#if HTTPS_SUPPORT
+          if(pos->tls_session != 0){
+            gnutls_deinit (pos->tls_session);
+          }
+#endif
           if (prev == NULL)
             pos = daemon->connections;
           else
@@ -915,10 +915,10 @@ MHD_start_daemon (unsigned int options,
         case MHD_OPTION_HTTPS_MEM_CERT:
           retVal->https_mem_cert = va_arg (ap, const char *);
           break;
-        case MHDS_KX_PRIORITY:
+        case MHD_OPTION_KX_PRIORITY:
           _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
           break;
-        case MHDS_CIPHER_ALGORITHM:
+        case MHD_OPTION_CIPHER_ALGORITHM:
           _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
           break;
 #endif
