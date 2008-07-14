@@ -1,26 +1,9 @@
-SUBDIRS = minitasn1 opencdk openpgp lgl x509 tls . 
+# placing '.' at the end of SUBDIRS having OPENPGP enabled mixes up build order !
+SUBDIRS = minitasn1 lgl x509 tls 
 
-AM_CPPFLAGS = \
--I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon/https/tls \
--I$(top_srcdir)/src/daemon/https/lgl \
--I$(top_srcdir)/src/daemon/https/x509 \
--I$(top_srcdir)/src/daemon/https/openpgp \
--I$(top_srcdir)/src/daemon/https/opencdk \
--I$(top_srcdir)/src/daemon/https/includes
-
-noinst_LTLIBRARIES = libhttps.la
-
-libhttps_la_SOURCES = \
-https_common.c
-
-libhttps_la_LIBADD = \
-opencdk/libopencdk.la \
-openpgp/libopenpgp.la \
-x509/libx509.la \
-lgl/liblgl.la \
-tls/libtls.la \
-minitasn1/libasn1.la
+if ENABLE_OPENPGP
+SUBDIRS += opencdk openpgp
+endif
    
 #noinst_PROGRAMS = errcodes
 #errcodes_SOURCES = errcodes.c

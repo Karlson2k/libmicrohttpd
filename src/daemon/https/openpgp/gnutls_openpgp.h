@@ -1,6 +1,6 @@
 #include <config.h>
 
-#ifdef ENABLE_OPENPGP
+#if ENABLE_OPENPGP
 
 #ifndef GNUTLS_OPENPGP_H
 #define GNUTLS_OPENPGP_H

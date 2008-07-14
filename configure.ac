@@ -29,7 +29,11 @@ AH_TOP([#define _GNU_SOURCE  1])
 
 # Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
+
+
+AM_PROG_CC_C_O
+
+
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -165,6 +169,7 @@ AC_ARG_ENABLE([TLS],
    [enable_TLS="yes"])
 AC_MSG_RESULT($enable_TLS)
 
+
 # optional: SSLv3 support. Exclude by default
 AC_MSG_CHECKING(--enable-SSL argument)
 AC_ARG_ENABLE([SSL],
@@ -173,6 +178,7 @@ AC_ARG_ENABLE([SSL],
    [enable_SSL=$enableval],
    [enable_SSL="no"])
 AC_MSG_RESULT($enable_SSL)
+
 
 # optional: x509 certificate support. Include by default
 AC_MSG_CHECKING(--enable-x509 argument)
@@ -183,9 +189,26 @@ AC_ARG_ENABLE([x509],
    [enable_x509="yes"])
 AC_MSG_RESULT($enable_x509)
 
+
+# optional: OpenPGP support
+AC_MSG_CHECKING(--enable-OpenPGP argument)
+AC_ARG_ENABLE([OpenPGP],
+   [AS_HELP_STRING([--enable-OpenPGP],
+               [enable OpenPGP support (default is no)])],
+   [enable_openpgp=$enableval],
+   [enable_openpgp="yes"])
+AC_MSG_RESULT($enable_openpgp)
+if test "$enable_openpgp" = "yes"
+then
+ AC_DEFINE([ENABLE_OPENPGP],[1],[Include OpenGPG support])
+else
+ AC_DEFINE([ENABLE_OPENPGP],[0],[Include OpenGPG support])
+fi
+AM_CONDITIONAL(ENABLE_OPENPGP, test "$enable_openpgp" = "yes")
+
+
 # Symbols required by GNU_TLS 
 AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
-AC_DEFINE([ENABLE_OPENPGP],[1],[Include ENABLE_OPENPGP support])
 AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
 AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 AC_DEFINE([ENABLE_PKI],[1],[Include ENABLE_OPENPGP support])
@@ -262,7 +285,6 @@ src/testzzuf/Makefile])
 AC_OUTPUT
 
 AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
-AM_CONDITIONAL(ENABLE_OPENPGP,  [test -n " " ] )
 AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
 AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
 AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )

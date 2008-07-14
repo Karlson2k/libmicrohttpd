@@ -6,7 +6,7 @@ AM_CPPFLAGS = \
 
 noinst_LTLIBRARIES = libopencdk.la
 
-libopencdk_la_LDFLAGS = -lgcrypt
+libopencdk_la_LDFLAGS = -lgcrypt 
 
 libopencdk_la_SOURCES = armor.c filters.h main.c seskey.c types.h	\
 	cipher.c kbnode.c main.h packet.h dummy.c sig-check.c verify.c	\

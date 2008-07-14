@@ -35,11 +35,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include "gnutls.h"
+#include <pthread.h>
 
 #include "config.h"
 #include "plibc.h"
 #include "microhttpd.h"
+
+#include "gnutls.h"
 
 #ifndef MINGW
 #include <sys/mman.h>
@@ -47,7 +49,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <pthread.h>
+
 
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)

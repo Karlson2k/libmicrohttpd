@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#ifdef ENABLE_OPENPGP
+#if ENABLE_OPENPGP
 
 #ifdef __cplusplus
 extern "C"
@@ -124,7 +124,7 @@ int gnutls_certificate_set_openpgp_key(gnutls_certificate_credentials_t
 
 #ifdef __cplusplus
 }
-#endif    
+#endif
 
 int _gnutls_map_cdk_rc(int rc);
 int gnutls_openpgp_crt_get_name(gnutls_openpgp_crt_t key,

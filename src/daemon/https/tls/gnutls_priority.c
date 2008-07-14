@@ -199,9 +199,8 @@ int
 gnutls_certificate_type_set_priority (gnutls_session_t session,
                                       const int *list)
 {
-#ifdef ENABLE_OPENPGP
+#if ENABLE_OPENPGP
   return _set_priority (&session->internals.priorities.cert_type, list);
-
 #else
 
   return GNUTLS_E_UNIMPLEMENTED_FEATURE;
@@ -243,7 +242,7 @@ typedef void (rmadd_func) (priority_st * priority_list, int alg);
  * @priority: is a #gnutls_priority_t structure.
  *
  * Sets the priorities to use on the ciphers, key exchange methods,
- * macs and compression methods. 
+ * macs and compression methods.
  *
  * On success 0 is returned.
  *
@@ -288,7 +287,7 @@ gnutls_priority_set (gnutls_session_t session, gnutls_priority_t priority)
  * "NORMAL" option enables all "secure" ciphersuites. The 256-bit ciphers
  * are included as a fallback only. The ciphers are sorted by security margin.
  *
- * "SECURE128" flag enables all "secure" ciphersuites with ciphers up to 
+ * "SECURE128" flag enables all "secure" ciphersuites with ciphers up to
  * 128 bits, sorted by security margin.
  *
  * "SECURE256" flag enables all "secure" ciphersuites including the 256 bit
@@ -316,7 +315,7 @@ gnutls_priority_set (gnutls_session_t session, gnutls_priority_t priority)
  * are enabled (except for the RSA-EXPORT which is only enabled in
  * EXPORT level).
  *
- * Note that although one can select very long key sizes (such as 256 bits) 
+ * Note that although one can select very long key sizes (such as 256 bits)
  * for symmetric algorithms, to actually increase security the public key
  * algorithms have to use longer key sizes as well.
  *

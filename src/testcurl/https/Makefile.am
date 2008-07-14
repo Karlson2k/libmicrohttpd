@@ -7,11 +7,18 @@ AM_CPPFLAGS = \
 
 
 check_PROGRAMS = \
-  mhds_get_test \
-  mhds_session_info_test \
-  mhds_multi_daemon_test
+   tls_authentication_test \
+   mhds_get_test \
+   mhds_session_info_test \
+   mhds_multi_daemon_test 
 
 TESTS = $(check_PROGRAMS)
+
+tls_authentication_test_SOURCES = \
+  tls_authentication_test.c
+tls_authentication_test_LDADD  = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
 
 mhds_get_test_SOURCES = \
   mhds_get_test.c
