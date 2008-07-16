@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <gnutls.h>
 #include <extra.h>
-//#include "openpgp.h"
 #include <time.h>
 #include "https_common.h"
 
@@ -245,7 +245,7 @@ print_x509_info (gnutls_session_t session, const char *hostname)
 
 }
 
-#ifdef ENABLE_OPENPGP
+#if ENABLE_OPENPGP
 void
 print_openpgp_info (gnutls_session_t session, const char *hostname)
 {
@@ -523,7 +523,7 @@ print_cert_info (gnutls_session_t session, const char *hostname)
       printf ("X.509\n");
       print_x509_info (session, hostname);
       break;
-#ifdef ENABLE_OPENPGP
+#if ENABLE_OPENPGP
     case GNUTLS_CRT_OPENPGP:
       printf ("OpenPGP\n");
       print_openpgp_info (session, hostname);

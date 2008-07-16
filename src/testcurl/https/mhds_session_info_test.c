@@ -75,31 +75,54 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   int ret;
 
   /* assert actual connection cipher is the one negotiated */
-  if (MHDS_get_session_cipher (connection) != GNUTLS_CIPHER_AES_256_CBC)
+  if (MHD_get_session_info (connection,MHS_INFO_CIPHER_ALGO).cipher_algorithm != GNUTLS_CIPHER_AES_256_CBC)
     {
       fprintf (stderr, "Error: requested cipher mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHDS_get_session_mac (connection) != GNUTLS_MAC_SHA1)
+  if (MHD_get_session_info (connection,MHD_INFO_KX_ALGO).kx_algorithm != GNUTLS_KX_RSA)
+      {
+        fprintf (stderr, "Error: requested key exchange mismatch. %s\n",
+                 strerror (errno));
+        return -1;
+      }
+
+  if (MHD_get_session_info (connection,MHD_INFO_MAC_ALGO).mac_algorithm != GNUTLS_MAC_SHA1)
     {
       fprintf (stderr, "Error: requested mac algorithm mismatch. %s\n",
                strerror (errno));
       return -1;
     }
-  if (MHDS_get_session_compression (connection) != GNUTLS_COMP_NULL)
+
+  if (MHD_get_session_info (connection,MHD_INFO_COMPRESSION_METHOD).compression_method != GNUTLS_COMP_NULL)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));
       return -1;
     }
-  if (MHDS_get_session_cert_type (connection) != GNUTLS_CRT_X509)
+
+  if (MHD_get_session_info (connection,MHD_INFO_PROTOCOL).protocol != GNUTLS_SSL3)
+      {
+        fprintf (stderr, "Error: requested compression mismatch. %s\n",
+                 strerror (errno));
+        return -1;
+      }
+
+  if (MHD_get_session_info (connection,MHD_INFO_CERT_TYPE).certificate_type != GNUTLS_CRT_X509)
     {
       fprintf (stderr, "Error: requested certificate mismatch. %s\n",
                strerror (errno));
       return -1;
     }
+
+  if (MHD_get_session_info (connection,MHD_INFO_CREDENTIALS_TYPE).credentials_type != GNUTLS_CRD_CERTIFICATE)
+      {
+        fprintf (stderr, "Error: requested certificate mismatch. %s\n",
+                 strerror (errno));
+        return -1;
+      }
 
   response = MHD_create_response_from_data (strlen (EMPTY_PAGE),
                                             (void *) EMPTY_PAGE,

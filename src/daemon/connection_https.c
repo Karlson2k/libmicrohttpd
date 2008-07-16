@@ -70,29 +70,26 @@ MHD_tls_connection_close_err (struct MHD_Connection *connection)
   /* TODO impl */
 }
 
-/* get cipher spec for this connection */
-gnutls_cipher_algorithm_t
-MHDS_get_session_cipher (struct MHD_Connection *session)
+union MHD_SessionInfo
+MHD_get_session_info (struct MHD_Connection *con, enum MHD_InfoType infoType)
 {
-  return gnutls_cipher_get (session->tls_session);
-}
-
-gnutls_mac_algorithm_t
-MHDS_get_session_mac (struct MHD_Connection * session)
-{
-  return gnutls_mac_get (session->tls_session);
-}
-
-gnutls_compression_method_t
-MHDS_get_session_compression (struct MHD_Connection * session)
-{
-  return gnutls_compression_get (session->tls_session);
-}
-
-gnutls_certificate_type_t
-MHDS_get_session_cert_type (struct MHD_Connection * session)
-{
-  return gnutls_certificate_type_get (session->tls_session);
+  switch (infoType)
+    {
+    case MHS_INFO_CIPHER_ALGO:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_bulk_cipher_algorithm;
+    case MHD_INFO_KX_ALGO:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.kx_algorithm;
+    case MHD_INFO_CREDENTIALS_TYPE:
+      return (union MHD_SessionInfo) con->tls_session->key->cred->algorithm;
+    case MHD_INFO_MAC_ALGO:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_mac_algorithm;
+    case MHD_INFO_COMPRESSION_METHOD:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_compression_algorithm;
+    case MHD_INFO_PROTOCOL:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.version;
+    case MHD_INFO_CERT_TYPE:
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.cert_type;
+    };
 }
 
 static ssize_t
@@ -286,8 +283,8 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
   while (1)
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "MHD write: %d, l: %d, f: %s\n",
-                connection->state, __LINE__, __FUNCTION__);
+      MHD_DLOG (connection->daemon, "MHD write: %d. f: %s, l: %d\n",
+                connection->state, __FUNCTION__, __LINE__);
 #endif
       switch (connection->state)
         {
