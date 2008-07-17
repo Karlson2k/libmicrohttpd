@@ -323,7 +323,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   char *buf;
   struct MHD_Response *response;
   unsigned int size;
-  char cbuf[9];
+  char cbuf[10]; /* 10: max strlen of "%x\r\n" */
+  int cblen;
 
   response = connection->response;
   if (connection->write_buffer_size == 0)
@@ -353,8 +354,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
-                       &connection->write_buffer[8],
-                       connection->write_buffer_size - 8 - 2);
+                       &connection->write_buffer[sizeof(cbuf)],
+                       connection->write_buffer_size - sizeof(cbuf) - 2);
   if (ret == -1)
     {
       /* end of message, signal other side! */
@@ -371,12 +372,13 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     }
   if (ret > 0xFFFFFF)
     ret = 0xFFFFFF;
-  snprintf (cbuf, 8, "%X\r\n", ret);
-  memcpy (&connection->write_buffer[8 - strlen (cbuf)], cbuf, strlen (cbuf));
-  memcpy (&connection->write_buffer[8 + ret], "\r\n", 2);
+  cblen = snprintf (cbuf, sizeof(cbuf), "%X\r\n", ret);
+  EXTRA_CHECK(cblen <= sizeof(cbuf));
+  memcpy (&connection->write_buffer[sizeof(cbuf) - cblen], cbuf, cblen);
+  memcpy (&connection->write_buffer[sizeof(cbuf) + ret], "\r\n", 2);
   connection->response_write_position += ret;
-  connection->write_buffer_send_offset = 8 - strlen (cbuf);
-  connection->write_buffer_append_offset = 8 + ret + 2;
+  connection->write_buffer_send_offset = sizeof(cbuf) - cblen;
+  connection->write_buffer_append_offset = sizeof(cbuf) + ret + 2;
   return MHD_YES;
 }
 
@@ -1233,7 +1235,7 @@ do_write (struct MHD_Connection *connection)
     }
 #if DEBUG_SEND_DATA
   fprintf (stderr,
-           "Sent HEADER response: `%.*s'\n",
+           "Sent response: `%.*s'\n",
            ret,
            &connection->write_buffer[connection->write_buffer_send_offset]);
 #endif

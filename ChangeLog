@@ -1,3 +1,7 @@
+Wed Jul 16 18:54:03 MDT 2008
+	 Fixed bug generating chunked responses with chunk sizes
+	 greater than 0xFFFFFF (would cause protocol violations). -CG
+
 Mon May 26 13:28:57 MDT 2008
 	 Updated and improved documentation.
 	 Releasing GNU libmicrohttpd 0.3.1. -CG
