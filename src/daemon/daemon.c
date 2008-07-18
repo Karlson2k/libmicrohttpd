@@ -29,10 +29,11 @@
 #include "connection.h"
 #include "memorypool.h"
 
+#if HTTPS_SUPPORT
 #include "gnutls.h"
 #include "gnutls_int.h"
-#include "gnutls_datum.h"
 #include "gnutls_global.h"
+#endif
 
 /**
  * Default connection limit.
@@ -59,86 +60,86 @@
 #if HTTPS_SUPPORT
 /* initialize security aspects of the HTTPS daemon */
 static int
-MHDS_init (struct MHD_Daemon *daemon){
+MHDS_init (struct MHD_Daemon *daemon)
+{
+  int i;
+  priority_st st;
+  gnutls_datum_t key;
+  gnutls_datum_t cert;
 
-    int i;
-    priority_st st;
+  gnutls_global_set_log_function (MHD_tls_log_func);
 
-    gnutls_global_set_log_function (MHD_tls_log_func);
+  /* setup server certificate */
+  gnutls_certificate_allocate_credentials (&daemon->x509_cret);
 
-    /* setup server certificate */
-    gnutls_certificate_allocate_credentials (&daemon->x509_cret);
+  /* TODO remove if unused
+     gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
+     gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM); */
 
-    /* TODO remove if unused
-        gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
-        gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM); */
-
-    /* sets a certificate private key pair */
-    if (daemon->https_cert_path && daemon->https_key_path)
-      {
-        /* test for private key & certificate file exsitance */
-        if (access (daemon->https_cert_path, R_OK))
-          {
-  #if HAVE_MESSAGES
-            MHD_DLOG (daemon, "Missing X.509 certificate file\n");
-  #endif
-            free (daemon);
-            CLOSE (daemon->socket_fd);
-            return -1;
-          }
-
-        if (access (daemon->https_key_path, R_OK))
-          {
-  #if HAVE_MESSAGES
-            MHD_DLOG (daemon, "Missing X.509 key file\n");
-  #endif
-            free (daemon);
-            CLOSE (daemon->socket_fd);
-            return -1;
-          }
-        gnutls_certificate_set_x509_key_file (daemon->x509_cret,
-                                              daemon->https_cert_path,
-                                              daemon->https_key_path,
-                                              GNUTLS_X509_FMT_PEM);
-      }
-    else if (daemon->https_mem_cert && daemon->https_mem_key)
-      {
-        gnutls_datum_t key ;
-        gnutls_datum_t cert ;
-
-        _gnutls_set_datum_m (&key, daemon->https_mem_key,
-                             strlen (daemon->https_mem_key), &malloc);
-        _gnutls_set_datum_m (&cert, daemon->https_mem_cert,
-                             strlen (daemon->https_mem_cert), &malloc);
-
-        gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
-                                             GNUTLS_X509_FMT_PEM);
-      }
-    else
-      {
-  #if HAVE_MESSAGES
-        MHD_DLOG (daemon, "Failed to load certificate\n");
-  #endif
-        return MHD_NO;
-      }
-
-      /* generate DH parameters if necessary */
-      st = daemon->priority_cache->kx;
-      for (i = 0; i < st.algorithms; i++)
+  /* sets a certificate private key pair */
+  if (daemon->https_cert_path && daemon->https_key_path)
+    {
+      /* test for private key & certificate file exsitance */
+      if (access (daemon->https_cert_path, R_OK))
         {
-          /* initialize Diffie Hellman parameters if necessary */
-          /* TODO add other cipher suits */
-          if (st.priority[i] ==  GNUTLS_KX_DHE_RSA ){
-              gnutls_dh_params_init (&daemon->dh_params);
-              gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-              break;
-            }
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "Missing X.509 certificate file\n");
+#endif
+          free (daemon);
+          CLOSE (daemon->socket_fd);
+          return -1;
         }
 
-    gnutls_certificate_set_dh_params (daemon->x509_cret, daemon->dh_params);
+      if (access (daemon->https_key_path, R_OK))
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "Missing X.509 key file\n");
+#endif
+          free (daemon);
+          CLOSE (daemon->socket_fd);
+          return -1;
+        }
+      gnutls_certificate_set_x509_key_file (daemon->x509_cret,
+                                            daemon->https_cert_path,
+                                            daemon->https_key_path,
+                                            GNUTLS_X509_FMT_PEM);
+    }
+  else if (daemon->https_mem_cert && daemon->https_mem_key)
+    {
+      key.data = daemon->https_mem_key;
+      key.size = strlen (daemon->https_mem_key);
+      cert.data = daemon->https_mem_cert;
+      cert.size = strlen (daemon->https_mem_cert);
 
-    /* TODO address error case return value */
-    return MHD_YES;
+      gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
+                                           GNUTLS_X509_FMT_PEM);
+    }
+  else
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to load certificate\n");
+#endif
+      return MHD_NO;
+    }
+
+  /* generate DH parameters if necessary */
+  st = daemon->priority_cache->kx;
+  for (i = 0; i < st.algorithms; i++)
+    {
+      /* initialize Diffie Hellman parameters if necessary */
+      /* TODO add other cipher suits */
+      if (st.priority[i] == GNUTLS_KX_DHE_RSA)
+        {
+          gnutls_dh_params_init (&daemon->dh_params);
+          gnutls_dh_params_generate2 (daemon->dh_params, 1024);
+          break;
+        }
+    }
+
+  gnutls_certificate_set_dh_params (daemon->x509_cret, daemon->dh_params);
+
+  /* TODO address error case return value */
+  return MHD_YES;
 }
 
 /* TODO unite with code in gnutls_priority.c */
@@ -322,9 +323,9 @@ MHDS_handle_connection (void *data)
                           con->daemon->x509_cret);
 
   /* TODO avoid gnutls blocking recv / write calls
-  gnutls_transport_set_pull_function(tls_session, &recv);
-  gnutls_transport_set_push_function(tls_session, &send);
-  */
+     gnutls_transport_set_pull_function(tls_session, &recv);
+     gnutls_transport_set_push_function(tls_session, &send);
+   */
 
   gnutls_transport_set_ptr (con->tls_session, con->socket_fd);
 
@@ -546,14 +547,15 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
             }
           MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
+#if HTTPS_SUPPORT
+          if (pos->tls_session != 0)
+            {
+              gnutls_deinit (pos->tls_session);
+            }
+#endif
           free (pos->addr);
           free (pos);
           daemon->max_connections++;
-#if HTTPS_SUPPORT
-          if(pos->tls_session != 0){
-            gnutls_deinit (pos->tls_session);
-          }
-#endif
           if (prev == NULL)
             pos = daemon->connections;
           else
@@ -770,7 +772,7 @@ MHD_start_daemon (unsigned int options,
                   MHD_AccessHandlerCallback dh, void *dh_cls, ...)
 {
   const int on = 1;
-  struct MHD_Daemon * retVal;
+  struct MHD_Daemon *retVal;
 
   /* listeningss sockets used by the daemon */
   int socket_fd;
@@ -915,22 +917,26 @@ MHD_start_daemon (unsigned int options,
           retVal->https_mem_cert = va_arg (ap, const char *);
           break;
         case MHD_OPTION_KX_PRIORITY:
-          _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
+          _set_priority (&retVal->priority_cache->cipher,
+                         va_arg (ap, const int *));
           break;
         case MHD_OPTION_CIPHER_ALGORITHM:
-          _set_priority (&retVal->priority_cache->cipher, va_arg (ap, const int *));
+          _set_priority (&retVal->priority_cache->cipher,
+                         va_arg (ap, const int *));
           break;
 #endif
         default:
 #if HAVE_MESSAGES
-          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END) {
-            fprintf (stderr,
-                    "Error: HTTPS option given while compiling without HTTPS support\n");
-          }
-          else {
-            fprintf (stderr,
-                   "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
-          }
+          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
+            {
+              fprintf (stderr,
+                       "Error: HTTPS option given while compiling without HTTPS support\n");
+            }
+          else
+            {
+              fprintf (stderr,
+                       "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+            }
 #endif
           abort ();
         }
@@ -1020,6 +1026,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (daemon->options & MHD_USE_SSL)
     {
       gnutls_priority_deinit (daemon->priority_cache);
+
+      gnutls_certificate_free_credentials (daemon->x509_cret);
 
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);

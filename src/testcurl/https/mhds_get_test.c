@@ -235,7 +235,8 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem, MHD_OPTION_END);
+                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                        MHD_OPTION_END);
 
   if (d == NULL)
     {
@@ -255,10 +256,13 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
   int ret;
   struct MHD_Daemon *d;
   FILE *cert_fd, *key_fd;
-  char cert_path[255], key_path[255];
+  char cert_path[255], key_path[255], *cur_dir;
 
-  sprintf (cert_path, "%s/%s", get_current_dir_name (), "cert.pem");
-  sprintf (key_path, "%s/%s", get_current_dir_name (), "key.pem");
+  cur_dir = get_current_dir_name ();
+
+  sprintf (cert_path, "%s/%s", cur_dir, "cert.pem");
+  sprintf (key_path, "%s/%s", cur_dir, "key.pem");
+
 
   if (NULL == (key_fd = fopen (key_path, "w+")))
     {
@@ -272,7 +276,8 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
     }
 
   fwrite (srv_key_pem, strlen (srv_key_pem), sizeof (char), key_fd);
-  fwrite (srv_self_signed_cert_pem, strlen (srv_self_signed_cert_pem), sizeof (char), cert_fd);
+  fwrite (srv_self_signed_cert_pem, strlen (srv_self_signed_cert_pem),
+          sizeof (char), cert_fd);
   fclose (key_fd);
   fclose (cert_fd);
 
@@ -292,6 +297,7 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
   ret = test_daemon_get (test_fd, cipher_suite, proto_version);
   MHD_stop_daemon (d);
 
+  free (cur_dir);
   remove (cert_path);
   remove (key_path);
   return ret;
@@ -412,6 +418,8 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
+  // gnutls_global_set_log_level(11);
+
   if ((test_fd = setupTestFile ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
@@ -420,27 +428,22 @@ main (int argc, char *const *argv)
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
-      fprintf (stderr, "Error (code: %u)\n", errorCount);
+      fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
 
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-
   /* TODO resolve cipher setting issue when compiling against GNU TLS */
   errorCount +=
     test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
 
-
-  if (errorCount != 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
 
   curl_global_cleanup ();
   fclose (test_fd);

@@ -2,7 +2,7 @@ SUBDIRS  = .
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon/https/includes
+-I$(top_srcdir)/src/daemon/https
 
 # example programs
 noinst_PROGRAMS = \
@@ -43,9 +43,5 @@ fileserver_example_external_select_LDADD = \
 
 https_server_example_SOURCES = \
 https_server_example.c
-https_server_example_CPPFLAGS = \
- -I$(top_srcdir)/src/daemon/https/includes \
- -I$(top_srcdir)/src/daemon \
- -I$(top_srcdir)/src/include 
 https_server_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la

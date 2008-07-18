@@ -51,7 +51,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   int code;
-  const char * auth;
+  const char *auth;
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
@@ -62,25 +62,24 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  auth = MHD_lookup_connection_value(connection,
-				     MHD_HEADER_KIND,
-				     MHD_HTTP_HEADER_AUTHORIZATION);
-  if ( (auth == NULL) ||
-       (0 != strcmp(auth,
-		    "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==") ) )
+  auth = MHD_lookup_connection_value (connection,
+                                      MHD_HEADER_KIND,
+                                      MHD_HTTP_HEADER_AUTHORIZATION);
+  if ((auth == NULL) ||
+      (0 != strcmp (auth, "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")))
     {
       /* require: "Aladdin" with password "open sesame" */
       response = MHD_create_response_from_data (strlen (DENIED),
-						(void *) DENIED, MHD_NO, MHD_NO);
-      MHD_add_response_header(response,
-			      MHD_HTTP_HEADER_WWW_AUTHENTICATE,
-			      "Basic realm=\"TestRealm\"");
+                                                (void *) DENIED, MHD_NO,
+                                                MHD_NO);
+      MHD_add_response_header (response, MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+                               "Basic realm=\"TestRealm\"");
       code = MHD_HTTP_UNAUTHORIZED;
     }
   else
     {
       response = MHD_create_response_from_data (strlen (me),
-						(void *) me, MHD_NO, MHD_NO);
+                                                (void *) me, MHD_NO, MHD_NO);
       code = MHD_HTTP_OK;
     }
   ret = MHD_queue_response (connection, code, response);

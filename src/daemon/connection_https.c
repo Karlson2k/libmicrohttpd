@@ -71,24 +71,37 @@ MHD_tls_connection_close_err (struct MHD_Connection *connection)
 }
 
 union MHD_SessionInfo
-MHD_get_session_info (struct MHD_Connection *con, enum MHD_InfoType infoType)
+MHD_get_tls_session_info (struct MHD_Connection *con,
+                          enum MHD_InfoType infoType)
 {
+  /* return NULL if this isn't a SSL/TLS type connection */
+  if (con->tls_session == NULL)
+    {
+      /* TODO clean */
+      return (union MHD_SessionInfo) 0;
+    }
   switch (infoType)
     {
     case MHS_INFO_CIPHER_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_bulk_cipher_algorithm;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        read_bulk_cipher_algorithm;
     case MHD_INFO_KX_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.kx_algorithm;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        kx_algorithm;
     case MHD_INFO_CREDENTIALS_TYPE:
       return (union MHD_SessionInfo) con->tls_session->key->cred->algorithm;
     case MHD_INFO_MAC_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_mac_algorithm;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        read_mac_algorithm;
     case MHD_INFO_COMPRESSION_METHOD:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.read_compression_algorithm;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        read_compression_algorithm;
     case MHD_INFO_PROTOCOL:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.version;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        version;
     case MHD_INFO_CERT_TYPE:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.cert_type;
+      return (union MHD_SessionInfo) con->tls_session->security_parameters.
+        cert_type;
     };
 }
 
@@ -280,24 +293,21 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
   connection->last_activity = time (NULL);
 
-  while (1)
-    {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "MHD write: %d. f: %s, l: %d\n",
-                connection->state, __FUNCTION__, __LINE__);
+  MHD_DLOG (connection->daemon, "MHD write: %d. f: %s, l: %d\n",
+            connection->state, __FUNCTION__, __LINE__);
 #endif
-      switch (connection->state)
-        {
-        case MHD_CONNECTION_CLOSED:
-          MHD_tls_connection_close (connection);
-          return MHD_NO;
-        case MHD_TLS_HANDSHAKE_FAILED:
-          MHD_tls_connection_close (connection);
-          return MHD_NO;
-          /* some HTTP state */
-        default:
-          return MHD_connection_handle_write (connection);
-        }
+  switch (connection->state)
+    {
+    case MHD_CONNECTION_CLOSED:
+      MHD_tls_connection_close (connection);
+      return MHD_NO;
+    case MHD_TLS_HANDSHAKE_FAILED:
+      MHD_tls_connection_close (connection);
+      return MHD_NO;
+      /* some HTTP state */
+    default:
+      return MHD_connection_handle_write (connection);
     }
 }
 

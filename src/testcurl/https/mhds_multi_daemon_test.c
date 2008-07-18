@@ -236,7 +236,8 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
                          MHD_USE_DEBUG, 42433,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem, MHD_OPTION_END);
+                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                         MHD_OPTION_END);
 
   if (d1 == NULL)
     {
@@ -248,7 +249,8 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
                          MHD_USE_DEBUG, 42434,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem, MHD_OPTION_END);
+                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                         MHD_OPTION_END);
 
   if (d2 == NULL)
     {

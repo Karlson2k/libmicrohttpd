@@ -2,17 +2,26 @@ SUBDIRS = .
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon/https/includes \
+-I$(top_srcdir)/src/daemon/https \
+-I$(top_srcdir)/src/daemon/https/tls \
+-I$(top_srcdir)/src/daemon/https/lgl \
+-I$(top_srcdir)/src/daemon/https/x509 \
 -I$(top_srcdir)/src/daemon
 
 
 check_PROGRAMS = \
-   tls_authentication_test \
    mhds_get_test \
-   mhds_session_info_test \
-   mhds_multi_daemon_test 
-
+   tls_authentication_test \
+   mhds_multi_daemon_test \
+   mhds_session_info_test
+   
 TESTS = $(check_PROGRAMS)
+
+tls_alert_test_SOURCES = \
+  tls_alert_test.c
+tls_alert_test_LDADD  = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
 
 tls_authentication_test_SOURCES = \
   tls_authentication_test.c

@@ -133,6 +133,7 @@ union MHD_SessionInfo
   gnutls_protocol_t protocol;
   gnutls_certificate_type_t certificate_type;
   gnutls_pk_algorithm_t pk_algorithm;
+  int null_info;
 };
 
 enum MHD_InfoType
@@ -146,7 +147,7 @@ enum MHD_InfoType
   MHD_INFO_CERT_TYPE,
 };
 
-union MHD_SessionInfo MHD_get_session_info (struct MHD_Connection *con,
+union MHD_SessionInfo MHD_get_tls_session_info (struct MHD_Connection *con,
                                             enum MHD_InfoType infoType);
 
 //TODO impl

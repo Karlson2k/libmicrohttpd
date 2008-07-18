@@ -18,12 +18,14 @@
 */
 /**
  * @file https_server_example.c
- * @brief a simple https file server using TLS.
+ * @brief a simple HTTPS file server using TLS.
  *
- * This example assumes the existence of a private key file named "key.pem"
- * and a server certificate file named "cert.pem". File path for these should be
- * provided as command-line arguments. 'certtool' may be used to generate these if
- * missing.
+ * Server may be supplied either with included hard coded certificates or using
+ * external ones, which are to be supplied through command line arguments.
+ * A private key file named "key.pem" and a server certificate file named "cert.pem".
+ * are necessary to run the server in this way.
+ *
+ * 'certtool' may be used to generate these if required.
  *
  * Access server with your browser of choice or with curl :
  *
@@ -33,7 +35,7 @@
  */
 
 #include "config.h"
-#include <microhttpd.h>
+#include <microhttpsd.h>
 #include <sys/stat.h>
 
 #include <stdlib.h>
@@ -167,8 +169,7 @@ main (int argc, char *const *argv)
   if (argc < 5)
     {
       printf
-        ("Usage : %s HTTP-PORT SECONDS-TO-RUN HTTPS-PORT KEY-FILE CERT-FILE\n",
-         argv[0]);
+        ("Usage : %s HTTP-PORT SECONDS-TO-RUN KEY-FILE CERT-FILE\n", argv[0]);
       return 1;
     }
 
