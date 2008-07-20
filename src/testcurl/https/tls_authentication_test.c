@@ -330,7 +330,7 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
