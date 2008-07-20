@@ -87,7 +87,6 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   FILE *file;
   struct stat buf;
 
-  /* TODO never respond on first call */
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
   if (&aptr != *ptr)

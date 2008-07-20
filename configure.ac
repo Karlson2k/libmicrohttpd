@@ -207,30 +207,17 @@ fi
 AM_CONDITIONAL(ENABLE_OPENPGP, test "$enable_openpgp" = "yes")
 
 
-# Symbols required by GNU_TLS 
-AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
-AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
-AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
-AC_DEFINE([ENABLE_PKI],[1],[Include ENABLE_OPENPGP support])
-AC_DEFINE([ENABLE_INCLUDED_OPENCDK],[1],[Include ENABLE_INCLUDED_OPENCDK support])
-# gnutls debug support
-AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
-AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
-
-AC_DEFINE([ENABLE_OPENSSL],[0],[Include ENABLE_OPENSSL support])
-AC_DEFINE([HAVE_LD_OUTPUT_DEF],[0],[Include HAVE_LD_OUTPUT_DEF support])
-AC_DEFINE([HAVE_LD_VERSION_SCRIPT],[0],[Include HAVE_LD_VERSION_SCRIPT support])
-
-# Libgcrypt linkage
+# Libgcrypt linkage : required for HTTPS support 
+AC_CHECK_HEADERS(gcrypt.h,gcrypt=true,gcrypt=false)
 AC_ARG_WITH(libgcrypt,
   [AS_HELP_STRING([--with-libgcrypt=PFX],
                [Base of libgcrypt installation])],
   [AC_MSG_RESULT("$with_libgcrypt")
    case $with_libgcrypt in
    no)
+     gcrypt=false
      ;;
    yes)
-	AC_CHECK_HEADERS(gcrypt.h,gcrypt=true)
      ;;
    *)
     LDFLAGS="-L$with_libgcrypt/lib $LDFLAGS"
@@ -241,7 +228,8 @@ AC_ARG_WITH(libgcrypt,
        GCRYPT_LIB_PATH="$with_libgcrypt/lib"
        GCRYPT_LDFLAGS="-L$with_libgcrypt/lib"
        GCRYPT_CPPFLAGS="-I$with_libgcrypt/include"
-       libgcrypt=true))
+       gcrypt=true,
+       gcrypt=false))
     LDFLAGS=$SAVE_LDFLAGS
     CPPFLAGS=$SAVE_CPPFLAGS
     ;;
@@ -256,6 +244,21 @@ AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib vers
 AC_SUBST(GCRYPT_LIB_PATH)
 AC_SUBST(GCRYPT_LDFLAGS)
 AC_SUBST(GCRYPT_CPPFLAGS)
+
+# Symbols required by GNU_TLS 
+AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
+AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
+AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
+AC_DEFINE([ENABLE_PKI],[1],[Include ENABLE_OPENPGP support])
+AC_DEFINE([ENABLE_INCLUDED_OPENCDK],[1],[Include ENABLE_INCLUDED_OPENCDK support])
+# gnutls debug support
+AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
+AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
+
+AC_DEFINE([ENABLE_OPENSSL],[0],[Include ENABLE_OPENSSL support])
+AC_DEFINE([HAVE_LD_OUTPUT_DEF],[0],[Include HAVE_LD_OUTPUT_DEF support])
+AC_DEFINE([HAVE_LD_VERSION_SCRIPT],[0],[Include HAVE_LD_VERSION_SCRIPT support])
+
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
@@ -294,3 +297,8 @@ if test "$curl" != 1
 then
  AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
 fi
+if test "$gcrypt" != true
+then
+ AC_MSG_NOTICE([WARNING: libgcrypt not found, HTTPS supprot cannot be built.])
+fi
+

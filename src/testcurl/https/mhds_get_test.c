@@ -90,7 +90,6 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   FILE *file;
   struct stat buf;
 
-  // TODO never respond on first call
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
   if (&aptr != *ptr)
@@ -178,7 +177,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 
   c = curl_easy_init ();
 #ifdef DEBUG
-  //curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
@@ -262,7 +261,6 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
 
   sprintf (cert_path, "%s/%s", cur_dir, "cert.pem");
   sprintf (key_path, "%s/%s", cur_dir, "key.pem");
-
 
   if (NULL == (key_fd = fopen (key_path, "w+")))
     {
@@ -433,11 +431,11 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
-    test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   /* TODO resolve cipher setting issue when compiling against GNU TLS */
   errorCount +=
     test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
@@ -445,10 +443,10 @@ main (int argc, char *const *argv)
     test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
 
 
-  curl_global_cleanup ();
-  fclose (test_fd);
+   curl_global_cleanup ();
+   fclose (test_fd);
 
-  remove (test_file_name);
+   remove (test_file_name);
 
   return errorCount != 0;
 }

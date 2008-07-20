@@ -530,7 +530,6 @@ struct MHD_Connection
   unsigned int current_chunk_offset;
 
   /* handlers used for processing read, write & idle connection operations */
-  /* TODO fix sig */
   int (*read_handler) (struct MHD_Connection * connection);
 
   int (*write_handler) (struct MHD_Connection * connection);

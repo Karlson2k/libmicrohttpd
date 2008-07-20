@@ -13,7 +13,7 @@ check_PROGRAMS = \
    mhds_get_test \
    tls_authentication_test \
    mhds_multi_daemon_test \
-   mhds_session_info_test
+   mhds_session_info_test   
    
 TESTS = $(check_PROGRAMS)
 

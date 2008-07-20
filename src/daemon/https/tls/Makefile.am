@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon/https \
 -I$(top_srcdir)/src/daemon/https/tls \
 -I$(top_srcdir)/src/daemon/https/lgl \
+-I$(top_srcdir)/src/daemon/https/minitasn1 \
 -I$(top_srcdir)/src/daemon/https/x509 \
 -I$(top_srcdir)/src/daemon/https/openpgp \
 -I$(top_srcdir)/src/daemon/https/opencdk \

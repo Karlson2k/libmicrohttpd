@@ -37,7 +37,7 @@
 #include "gnutls_int.h"
 #include "gnutls_record.h"
 
-/* TODO rm */
+/* TODO rm #include "gnutls_errors.h" */
 #include "gnutls_errors.h"
 
 /* forward declarations used when setting secure connection callbacks */
@@ -45,7 +45,6 @@ int MHD_connection_handle_read (struct MHD_Connection *connection);
 int MHD_connection_handle_write (struct MHD_Connection *connection);
 int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
-/* TODO rm - appears in a switch default clause */
 static void
 MHD_tls_connection_close (struct MHD_Connection *connection)
 {
@@ -63,11 +62,10 @@ MHD_tls_connection_close (struct MHD_Connection *connection)
                                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
 }
 
-/* TODO add error connection termination */
 static void
 MHD_tls_connection_close_err (struct MHD_Connection *connection)
 {
-  /* TODO impl */
+  /* TODO impl MHD_tls_connection_close_err */
 }
 
 union MHD_SessionInfo

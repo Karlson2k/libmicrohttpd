@@ -22,10 +22,10 @@
  *
  */
 
-// TODO clean
+/* TODO clean */
 
 #ifndef GNUTLS_PKCS12_H
-# define GNUTLS_PKCS12_H
+#define GNUTLS_PKCS12_H
 
 #ifdef __cplusplus
 extern "C"
@@ -36,7 +36,7 @@ extern "C"
 
 #define MAX_BAG_ELEMENTS 32
 
-/* PKCS12 structures handling 
+/* PKCS12 structures handling
  */
 struct gnutls_pkcs12_int;
 
