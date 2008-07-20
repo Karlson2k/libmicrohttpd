@@ -22,16 +22,10 @@
  * @author Christian Grothoff
  */
 
-#include "config.h"
+#include "platform.h"
 #include <microhttpd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#ifndef MINGW
 #include <unistd.h>
-#endif
-#include <string.h>
-#include <stdio.h>
 
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 

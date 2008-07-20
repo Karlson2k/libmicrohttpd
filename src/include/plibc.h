@@ -438,7 +438,8 @@ extern "C"
 #define strcasecmp(a, b) stricmp(a, b)
 #define strncasecmp(a, b, c) strnicmp(a, b, c)
 
-#endif                          /* WINDOWS */
+#endif
+/* WINDOWS */
 
 #ifndef WINDOWS
 #define DIR_SEPARATOR '/'
@@ -589,6 +590,7 @@ extern "C"
 #endif
 
 
-#endif                          //_PLIBC_H_
+#endif
+//_PLIBC_H_
 
 /* end of plibc.h */

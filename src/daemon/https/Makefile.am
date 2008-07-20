@@ -4,7 +4,7 @@ SUBDIRS = minitasn1 lgl x509 tls
 if ENABLE_OPENPGP
 SUBDIRS += opencdk openpgp
 endif
-   
+
 #noinst_PROGRAMS = errcodes
 #errcodes_SOURCES = errcodes.c
 #errcodes_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS) $(LIBTASN1_LIBS)
@@ -15,3 +15,5 @@ endif
 #	tls_test.c tests.h tests.c common.h common.c
 # certtool_SOURCES = certtool.gaa certtool-gaa.h certtool-cfg.h \
 # certtool-gaa.c certtool.c prime.c certtool-cfg.c
+
+EXTRA_DIST = gnutls.h

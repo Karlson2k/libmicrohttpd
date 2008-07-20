@@ -58,20 +58,18 @@
  * All functions are guaranteed to be completely reentrant and
  * thread-safe.<p>
  *
+ * NEW: Before including "microhttpd.h" you should add the 
+ * necessary includes to define the "size_t", "fd_set", "socklen_t" and
+ * "struct sockaddr" data types (which headers are needed may
+ * depend on your platform; for possible suggestions consult
+ * "platform.h" in the MHD distribution).
+ *
  * TODO:
  * - Add option codes for SSL support
  */
 
 #ifndef MHD_MICROHTTPD_H
 #define MHD_MICROHTTPD_H
-
-#include <sys/types.h>
-#ifndef MINGW
-#include <sys/select.h>
-#include <sys/socket.h>
-#else
-#include "plibc.h"
-#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -84,7 +82,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00030000
+#define MHD_VERSION 0x00040000
 
 /**
  * MHD-internal return codes.
@@ -283,7 +281,7 @@ enum MHD_FLAG
    * recommended to turn this ON if you are testing clients against
    * MHD, and OFF in production.
    */
-  MHD_USE_PEDANTIC_CHECKS = 32,
+  MHD_USE_PEDANTIC_CHECKS = 32
 
 };
 
@@ -410,7 +408,7 @@ enum MHD_OPTION
    */
   MHD_OPTION_TLS_COMP_ALGO,
 
-  MHD_HTTPS_OPTION_END,
+  MHD_HTTPS_OPTION_END
 };
 
 /**
@@ -454,7 +452,7 @@ enum MHD_ValueKind
   /**
    * HTTP footer (only for http 1.1 chunked encodings).
    */
-  MHD_FOOTER_KIND = 16,
+  MHD_FOOTER_KIND = 16
 
 };
 
@@ -488,7 +486,7 @@ enum MHD_RequestTerminationCode
    * We had to close the session since MHD was being
    * shut down.
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3
 
 };
 

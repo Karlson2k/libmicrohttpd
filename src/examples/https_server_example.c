@@ -34,16 +34,10 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
+#include "platform.h"
 #include <microhttpsd.h>
 #include <sys/stat.h>
 
-#include <stdlib.h>
-#ifndef MINGW
-#include <unistd.h>
-#endif
-#include <string.h>
-#include <stdio.h>
 #include "gnutls.h"
 #include <gcrypt.h>
 

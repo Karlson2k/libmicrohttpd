@@ -27,28 +27,11 @@
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <pthread.h>
-
-#include "config.h"
-#include "plibc.h"
+#include "platform.h"
 #include "microhttpd.h"
-
+#if HTTPS_SUPPORT
 #include "gnutls.h"
-
-#ifndef MINGW
-#include <sys/mman.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #endif
-
 
 
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
@@ -484,9 +467,7 @@ struct MHD_Connection
      */
   enum MHD_CONNECTION_STATE state;
 
-  //enum MHDS_CONNECTION_STATE s_state;
-
-    /**
+     /**
      * HTTP response code.  Only valid if response object
      * is already set.
      */
@@ -550,7 +531,7 @@ struct MHD_Connection
 #endif
 };
 
-struct MHD_Daemon
+  n struct MHD_Daemon
 {
 
     /**

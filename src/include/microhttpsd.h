@@ -54,7 +54,7 @@ typedef enum
   GNUTLS_KX_SRP,
   GNUTLS_KX_RSA_EXPORT,
   GNUTLS_KX_SRP_RSA,
-  GNUTLS_KX_SRP_DSS,
+  GNUTLS_KX_SRP_DSS
 } gnutls_kx_algorithm_t;
 
 typedef enum
@@ -72,7 +72,7 @@ typedef enum
   GNUTLS_MAC_NULL = 1,
   GNUTLS_MAC_MD5,
   GNUTLS_MAC_SHA1,
-  GNUTLS_MAC_SHA256,
+  GNUTLS_MAC_SHA256
   //GNUTLS_MAC_SHA384,
   //GNUTLS_MAC_SHA512
 } gnutls_mac_algorithm_t;
@@ -85,7 +85,7 @@ typedef enum
   GNUTLS_DIG_NULL = GNUTLS_MAC_NULL,
   GNUTLS_DIG_MD5 = GNUTLS_MAC_MD5,
   GNUTLS_DIG_SHA1 = GNUTLS_MAC_SHA1,
-  GNUTLS_DIG_SHA256 = GNUTLS_MAC_SHA256,
+  GNUTLS_DIG_SHA256 = GNUTLS_MAC_SHA256
 } gnutls_digest_algorithm_t;
 
 
@@ -119,7 +119,7 @@ typedef enum
 typedef enum
 {
   GNUTLS_PK_UNKNOWN = 0,
-  GNUTLS_PK_RSA = 1,
+  GNUTLS_PK_RSA = 1
   //GNUTLS_PK_DSA
 } gnutls_pk_algorithm_t;
 
@@ -144,7 +144,7 @@ enum MHD_InfoType
   MHD_INFO_MAC_ALGO,
   MHD_INFO_COMPRESSION_METHOD,
   MHD_INFO_PROTOCOL,
-  MHD_INFO_CERT_TYPE,
+  MHD_INFO_CERT_TYPE
 };
 
 union MHD_SessionInfo MHD_get_tls_session_info (struct MHD_Connection *con,

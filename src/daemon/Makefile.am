@@ -1,3 +1,5 @@
+SUBDIRS = .
+
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon \
@@ -20,33 +22,31 @@ EXTRA_DIST = SYMBOLS
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
-SUBDIRS =
-libmicrohttpd_la_LIBADD = 
-
 libmicrohttpd_la_SOURCES = \
 connection.c connection.h \
 reason_phrase.c reason_phrase.h \
 daemon.c  \
 internal.c internal.h \
 memorypool.c memorypool.h \
-plibc.h \
 postprocessor.c \
 response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   -export-dynamic -version-info 4:3:0 $(retaincommand)
 
+
 if ENABLE_HTTPS
 SUBDIRS += https .
 libmicrohttpd_la_SOURCES += connection_https.c
-libmicrohttpd_la_LIBADD += \
-https/x509/libx509.la \
-https/lgl/liblgl.la \
-https/tls/libtls.la \
-https/minitasn1/libasn1.la \
-https/opencdk/libopencdk.la \
-https/openpgp/libopenpgp.la 
+libmicrohttpd_la_LIBADD = \
+  https/x509/libx509.la \
+  https/lgl/liblgl.la \
+  https/tls/libtls.la \
+  https/minitasn1/libasn1.la \
+  https/opencdk/libopencdk.la \
+  https/openpgp/libopenpgp.la 
 endif
- 
+
+
 check_PROGRAMS = \
   postprocessor_test \
   postprocessor_large_test \

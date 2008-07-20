@@ -1,6 +1,19 @@
 # See: http://gcc.gnu.org/ml/gcc/2000-05/msg01141.html
 AC_DEFUN([CHECK_PTHREAD],
 [
+        # first try without -pthread
+        AC_TRY_LINK(
+		[
+			#include <pthread.h>
+		],[
+			pthread_create(0,0,0,0);
+		],[
+			AC_MSG_RESULT(yes)
+			PTHREAD_CPPFLAGS=
+			PTHREAD_LDFLAGS=
+			PTHREAD_LIBS=
+		],[
+        # now with -pthread        
 	AC_CHECK_LIB(pthread,pthread_create,
 	[
 		PTHREAD_CPPFLAGS=
@@ -57,4 +70,6 @@ AC_DEFUN([CHECK_PTHREAD],
 		])
 		CPPFLAGS="$save_CPPFLAGS"
 	])
+         
+        ])
 ])

@@ -113,6 +113,8 @@ AC_SUBST(PTHREAD_CPPFLAGS)
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
+# Check for optional headers
+AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h time.h sys/socket.h sys/mman.h arpa/inet.h])
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS

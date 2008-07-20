@@ -27,7 +27,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "config.h"
+#include "internal.h"
 
 /**
  * Obtain the select sets for this connection.
@@ -41,6 +41,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                           fd_set * except_fd_set, int *max_fd);
 
 void MHD_set_http_calbacks (struct MHD_Connection *connection);
+
 #if HTTPS_SUPPORT
 void MHD_set_https_calbacks (struct MHD_Connection *connection);
 #endif

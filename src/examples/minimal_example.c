@@ -22,14 +22,8 @@
  * @author Christian Grothoff
  */
 
-#include "config.h"
+#include "platform.h"
 #include <microhttpd.h>
-#include <stdlib.h>
-#ifndef MINGW
-#include <unistd.h>
-#endif
-#include <string.h>
-#include <stdio.h>
 
 #define PAGE "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
 

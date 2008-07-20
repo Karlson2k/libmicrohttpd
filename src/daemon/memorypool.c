@@ -22,13 +22,16 @@
  * @brief memory pool
  * @author Christian Grothoff
  */
-
 #include "memorypool.h"
 
 /* define MAP_ANONYMOUS for Mac OS X */
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
 #define MAP_ANONYMOUS MAP_ANON
 #endif
+#ifndef MAP_FAILED
+#define MAP_FAILED ((void*)-1)
+#endif
+
 
 struct MemoryPool
 {
@@ -72,8 +75,12 @@ MHD_pool_create (unsigned int max)
   pool = malloc (sizeof (struct MemoryPool));
   if (pool == NULL)
     return NULL;
+#ifdef MAP_ANONYMOUS
   pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
                        MAP_ANONYMOUS, -1, 0);
+#else
+  pool->memory = MAP_FAILED;
+#endif
   if ((pool->memory == MAP_FAILED) || (pool->memory == NULL))
     {
       pool->memory = malloc (max);

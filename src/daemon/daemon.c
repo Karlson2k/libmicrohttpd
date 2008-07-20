@@ -30,7 +30,6 @@
 #include "memorypool.h"
 
 #if HTTPS_SUPPORT
-#include "gnutls.h"
 #include "gnutls_int.h"
 #include "gnutls_global.h"
 #endif
@@ -106,9 +105,9 @@ MHDS_init (struct MHD_Daemon *daemon)
     }
   else if (daemon->https_mem_cert && daemon->https_mem_key)
     {
-      key.data = daemon->https_mem_key;
+      key.data = (char*) daemon->https_mem_key;
       key.size = strlen (daemon->https_mem_key);
-      cert.data = daemon->https_mem_cert;
+      cert.data = (char*) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
       gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
@@ -701,7 +700,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
           ds = pos->socket_fd;
           if (ds != -1)
             {
-              // TODO call con->read handler
+              /* TODO call con->read handler */
               if (FD_ISSET (ds, &rs))
                 pos->read_handler (pos);
               if ((pos->socket_fd != -1) && (FD_ISSET (ds, &ws)))
