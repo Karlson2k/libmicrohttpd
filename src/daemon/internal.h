@@ -531,7 +531,7 @@ struct MHD_Connection
 #endif
 };
 
-  n struct MHD_Daemon
+struct MHD_Daemon
 {
 
     /**
