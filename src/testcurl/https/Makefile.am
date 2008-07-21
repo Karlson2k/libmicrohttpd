@@ -8,7 +8,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon/https/x509 \
 -I$(top_srcdir)/src/daemon
 
-
 check_PROGRAMS = \
    mhds_get_test \
    tls_authentication_test \
@@ -18,31 +17,36 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 
 tls_alert_test_SOURCES = \
-  tls_alert_test.c
+  tls_alert_test.c \
+  $(top_builddir)/src/testcurl/curl_version_check.c
 tls_alert_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 tls_authentication_test_SOURCES = \
-  tls_authentication_test.c
+  tls_authentication_test.c \
+  $(top_builddir)/src/testcurl/curl_version_check.c
 tls_authentication_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 mhds_get_test_SOURCES = \
-  mhds_get_test.c
+  mhds_get_test.c \
+  $(top_builddir)/src/testcurl/curl_version_check.c 
 mhds_get_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
   
 mhds_session_info_test_SOURCES = \
-  mhds_session_info_test.c
+  mhds_session_info_test.c \
+  $(top_builddir)/src/testcurl/curl_version_check.c
 mhds_session_info_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
   
 mhds_multi_daemon_test_SOURCES = \
-  mhds_multi_daemon_test.c
+  mhds_multi_daemon_test.c \
+  $(top_builddir)/src/testcurl/curl_version_check.c
 mhds_multi_daemon_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@  

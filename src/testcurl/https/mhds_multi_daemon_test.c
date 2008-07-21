@@ -48,6 +48,8 @@
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
+extern int curl_check_version (const char *req_version, ...);
+
 struct CBC
 {
   char *buf;
@@ -299,6 +301,11 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
+
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+    {
+      return -1;
+    }
 
   if ((test_fd = setupTestFile ()) == NULL)
     {

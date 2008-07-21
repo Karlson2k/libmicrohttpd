@@ -48,6 +48,8 @@
 #include "gnutls_datum.h"
 #include "tls_test_keys.h"
 
+extern int curl_check_version (const char *req_version, ...);
+
 const char *ca_cert_file_name = "ca_cert_pem";
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
@@ -79,8 +81,6 @@ http_ahc (void *cls, struct MHD_Connection *connection,
 static int
 test_alert_response ()
 {
-
-
   int sd, ret;
   char *err_pos;
   struct sockaddr_in sa;
@@ -88,12 +88,10 @@ test_alert_response ()
   gnutls_session_t session;
   gnutls_certificate_credentials_t xcred;
 
-
   gnutls_global_init ();
 
   gnutls_datum_t key;
   gnutls_datum_t cert;
-
 
   gnutls_certificate_allocate_credentials (&xcred);
 
@@ -157,13 +155,16 @@ test_alert_response ()
 
 }
 
-
-
 int
 main (int argc, char *const *argv)
 {
   int ret, errorCount = 0;;
   struct MHD_Daemon *d;
+
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+    {
+      return -1;
+    }
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,

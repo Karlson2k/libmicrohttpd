@@ -40,6 +40,8 @@
 
 #include "tls_test_keys.h"
 
+extern int curl_check_version (const char *req_version, ...);
+
 struct MHD_Daemon *d;
 
 struct CBC
@@ -212,6 +214,11 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
+
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+    {
+      return -1;
+    }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
