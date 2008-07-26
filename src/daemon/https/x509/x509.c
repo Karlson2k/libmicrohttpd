@@ -2041,7 +2041,7 @@ rsadsa_get_key_id (gnutls_x509_crt_t crt,
       return result;
     }
 
-  if (pk == GNUTLS_PK_RSA)
+  if (pk == MHD_GNUTLS_PK_RSA)
     {
       result = _gnutls_x509_write_rsa_params (params, params_size, &der);
       if (result < 0)
@@ -2053,7 +2053,7 @@ rsadsa_get_key_id (gnutls_x509_crt_t crt,
   else
     return GNUTLS_E_INTERNAL_ERROR;
 
-  hd = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  hd = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (hd == GNUTLS_HASH_FAILED)
     {
       gnutls_assert ();
@@ -2130,7 +2130,7 @@ gnutls_x509_crt_get_key_id (gnutls_x509_crt_t crt,
       return pk;
     }
 
-  if (pk == GNUTLS_PK_RSA)
+  if (pk == MHD_GNUTLS_PK_RSA)
     {
       /* This is for compatibility with what GnuTLS has printed for
          RSA/DSA before the code below was added.  The code below is
@@ -2165,7 +2165,7 @@ gnutls_x509_crt_get_key_id (gnutls_x509_crt_t crt,
       return _gnutls_asn2err (result);
     }
 
-  result = gnutls_fingerprint (GNUTLS_DIG_SHA1, &pubkey, output_data,
+  result = gnutls_fingerprint (MHD_GNUTLS_DIG_SHA1, &pubkey, output_data,
                                output_data_size);
 
   gnutls_afree (pubkey.data);
@@ -2581,7 +2581,7 @@ gnutls_x509_crt_get_pk_rsa_raw (gnutls_x509_crt_t crt,
     }
 
   ret = gnutls_x509_crt_get_pk_algorithm (crt, NULL);
-  if (ret != GNUTLS_PK_RSA)
+  if (ret != MHD_GNUTLS_PK_RSA)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;

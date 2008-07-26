@@ -81,7 +81,7 @@ gen_rsa_export_server_kx (gnutls_session_t session, opaque ** data)
   gnutls_certificate_credentials_t cred;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -116,7 +116,7 @@ gen_rsa_export_server_kx (gnutls_session_t session, opaque ** data)
       return GNUTLS_E_NO_TEMPORARY_RSA_PARAMS;
     }
 
-  if ((ret = _gnutls_auth_info_set (session, GNUTLS_CRD_CERTIFICATE,
+  if ((ret = _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                                     sizeof (cert_auth_info_st), 0)) < 0)
     {
       gnutls_assert ();
@@ -213,7 +213,7 @@ _gnutls_peers_cert_less_512 (gnutls_session_t session)
       return 0;
     }
 
-  if (peer_cert.subject_pk_algorithm != GNUTLS_PK_RSA)
+  if (peer_cert.subject_pk_algorithm != MHD_GNUTLS_PK_RSA)
     {
       gnutls_assert ();
       _gnutls_gcert_deinit (&peer_cert);

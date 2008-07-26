@@ -24,12 +24,9 @@
  * @author Christian Grothoff
  */
 
-#include "config.h"
+#include "platform.h"
 #include "microhttpd.h"
 #include "internal.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #ifndef WINDOWS
 #include <unistd.h>

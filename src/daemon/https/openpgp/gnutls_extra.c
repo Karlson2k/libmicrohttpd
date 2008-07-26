@@ -55,11 +55,6 @@ gnutls_global_init_extra (void)
    * libextra, then do not initialize the library.
    * This is because it may break things.
    */
-  if (strcmp (gnutls_check_version (NULL), VERSION) != 0)
-    {
-      return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
-    }
-
   _gnutls_init_extra++;
 
   if (_gnutls_init_extra != 1)

@@ -24,17 +24,9 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
-#include "plibc.h"
-#include "microhttpsd.h"
-#include <errno.h>
-
+#include "platform.h"
+#include "microhttpd.h"
 #include <curl/curl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
 
@@ -77,56 +69,56 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   int ret;
 
   /* assert actual connection cipher is the one negotiated */
-  if (MHD_get_tls_session_info (connection, MHS_INFO_CIPHER_ALGO).
-      cipher_algorithm != GNUTLS_CIPHER_AES_256_CBC)
+  if (MHD_get_session_info (connection, MHS_INFO_CIPHER_ALGO).
+      cipher_algorithm != MHD_GNUTLS_CIPHER_AES_256_CBC)
     {
       fprintf (stderr, "Error: requested cipher mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_KX_ALGO).kx_algorithm !=
-      GNUTLS_KX_RSA)
+  if (MHD_get_session_info (connection, MHD_INFO_KX_ALGO).kx_algorithm !=
+      MHD_GNUTLS_KX_RSA)
     {
       fprintf (stderr, "Error: requested key exchange mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_MAC_ALGO).
-      mac_algorithm != GNUTLS_MAC_SHA1)
+  if (MHD_get_session_info (connection, MHD_INFO_MAC_ALGO).
+      mac_algorithm != MHD_GNUTLS_MAC_SHA1)
     {
       fprintf (stderr, "Error: requested mac algorithm mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_COMPRESSION_METHOD).
-      compression_method != GNUTLS_COMP_NULL)
+  if (MHD_get_session_info (connection, MHD_INFO_COMPRESSION_METHOD).
+      compression_method != MHD_GNUTLS_COMP_NULL)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_PROTOCOL).protocol !=
-      GNUTLS_SSL3)
+  if (MHD_get_session_info (connection, MHD_INFO_PROTOCOL).protocol !=
+      MHD_GNUTLS_SSL3)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_CERT_TYPE).
-      certificate_type != GNUTLS_CRT_X509)
+  if (MHD_get_session_info (connection, MHD_INFO_CERT_TYPE).
+      certificate_type != MHD_GNUTLS_CRT_X509)
     {
       fprintf (stderr, "Error: requested certificate mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_tls_session_info (connection, MHD_INFO_CREDENTIALS_TYPE).
-      credentials_type != GNUTLS_CRD_CERTIFICATE)
+  if (MHD_get_session_info (connection, MHD_INFO_CREDENTIALS_TYPE).
+      credentials_type != MHD_GNUTLS_CRD_CERTIFICATE)
     {
       fprintf (stderr, "Error: requested certificate mismatch. %s\n",
                strerror (errno));
@@ -215,7 +207,7 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
     {
       return -1;
     }

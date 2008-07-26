@@ -24,18 +24,9 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
-#include "plibc.h"
-#include "microhttpsd.h"
-#include <errno.h>
-
+#include "platform.h"
+#include "microhttpd.h"
 #include <curl/curl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
@@ -234,7 +225,7 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   int ret;
   struct MHD_Daemon *d;
 
-  int kx[] = { GNUTLS_KX_DHE_RSA, 0 };
+  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
@@ -317,10 +308,10 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
-      {
-        return -1;
-      }
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
+    {
+      return -1;
+    }
 
   if ((test_fd = setupTestFile ()) == NULL)
     {

@@ -96,7 +96,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
   memcpy (&rrnd[TLS_RANDOM_SIZE],
           session->security_parameters.server_random, TLS_RANDOM_SIZE);
 
-  if (session->security_parameters.version == GNUTLS_SSL3)
+  if (session->security_parameters.version == MHD_GNUTLS_SSL3)
     {                           /* SSL 3 */
       ret =
         _gnutls_ssl3_generate_random (session->
@@ -189,7 +189,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
 
           /* generate the final keys */
 
-          if (session->security_parameters.version == GNUTLS_SSL3)
+          if (session->security_parameters.version == MHD_GNUTLS_SSL3)
             {                   /* SSL 3 */
               ret =
                 _gnutls_ssl3_hash_md5 (&key_block[pos],
@@ -221,7 +221,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           client_write_key_size = EXPORT_FINAL_KEY_SIZE;
           pos += key_size;
 
-          if (session->security_parameters.version == GNUTLS_SSL3)
+          if (session->security_parameters.version == MHD_GNUTLS_SSL3)
             {                   /* SSL 3 */
               ret =
                 _gnutls_ssl3_hash_md5 (&key_block[pos], key_size,
@@ -323,7 +323,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           return GNUTLS_E_MEMORY_ERROR;
         }
 
-      if (session->security_parameters.version == GNUTLS_SSL3)
+      if (session->security_parameters.version == MHD_GNUTLS_SSL3)
         {                       /* SSL 3 */
           ret = _gnutls_ssl3_hash_md5 ("", 0,
                                        rrnd, TLS_RANDOM_SIZE * 2,
@@ -596,7 +596,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
       if (session->connection_state.read_cipher_state ==
           GNUTLS_CIPHER_FAILED
           && session->security_parameters.
-          read_bulk_cipher_algorithm != GNUTLS_CIPHER_NULL)
+          read_bulk_cipher_algorithm != MHD_GNUTLS_CIPHER_NULL)
         {
           gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
@@ -633,7 +633,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
       if (session->connection_state.read_cipher_state ==
           GNUTLS_CIPHER_FAILED
           && session->security_parameters.
-          read_bulk_cipher_algorithm != GNUTLS_CIPHER_NULL)
+          read_bulk_cipher_algorithm != MHD_GNUTLS_CIPHER_NULL)
         {
           gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
@@ -788,7 +788,7 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
       if (session->connection_state.write_cipher_state ==
           GNUTLS_CIPHER_FAILED
           && session->security_parameters.
-          write_bulk_cipher_algorithm != GNUTLS_CIPHER_NULL)
+          write_bulk_cipher_algorithm != MHD_GNUTLS_CIPHER_NULL)
         {
           gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
@@ -827,7 +827,7 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
       if (session->connection_state.write_cipher_state ==
           GNUTLS_CIPHER_FAILED
           && session->security_parameters.
-          write_bulk_cipher_algorithm != GNUTLS_CIPHER_NULL)
+          write_bulk_cipher_algorithm != MHD_GNUTLS_CIPHER_NULL)
         {
           gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;

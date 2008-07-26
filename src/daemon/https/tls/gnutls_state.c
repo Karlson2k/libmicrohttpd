@@ -130,7 +130,7 @@ _gnutls_session_cert_type_supported (gnutls_session_t session,
     {
       cred
         = (gnutls_certificate_credentials_t) _gnutls_get_cred (session->key,
-                                                               GNUTLS_CRD_CERTIFICATE,
+                                                               MHD_GNUTLS_CRD_CERTIFICATE,
                                                                NULL);
 
       if (cred == NULL)
@@ -249,15 +249,15 @@ gnutls_init (gnutls_session_t * session, gnutls_connection_end_t con_end)
   /* Set the defaults for initial handshake */
   (*session)->security_parameters.read_bulk_cipher_algorithm =
     (*session)->security_parameters.write_bulk_cipher_algorithm =
-    GNUTLS_CIPHER_NULL;
+    MHD_GNUTLS_CIPHER_NULL;
 
   (*session)->security_parameters.read_mac_algorithm =
-    (*session)->security_parameters.write_mac_algorithm = GNUTLS_MAC_NULL;
+    (*session)->security_parameters.write_mac_algorithm = MHD_GNUTLS_MAC_NULL;
 
   (*session)->security_parameters.read_compression_algorithm
-    = GNUTLS_COMP_NULL;
+    = MHD_GNUTLS_COMP_NULL;
   (*session)->security_parameters.write_compression_algorithm
-    = GNUTLS_COMP_NULL;
+    = MHD_GNUTLS_COMP_NULL;
 
   (*session)->internals.enable_private = 0;
 
@@ -435,7 +435,7 @@ _gnutls_dh_set_peer_public (gnutls_session_t session, mpi_t public)
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
         info = _gnutls_get_auth_info (session);
@@ -445,7 +445,7 @@ _gnutls_dh_set_peer_public (gnutls_session_t session, mpi_t public)
         dh = &info->dh;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -476,7 +476,7 @@ _gnutls_dh_set_secret_bits (gnutls_session_t session, unsigned bits)
 {
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
         info = _gnutls_get_auth_info (session);
@@ -485,7 +485,7 @@ _gnutls_dh_set_secret_bits (gnutls_session_t session, unsigned bits)
         info->dh.secret_bits = bits;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -546,7 +546,7 @@ _gnutls_dh_set_group (gnutls_session_t session, mpi_t gen, mpi_t prime)
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
         info = _gnutls_get_auth_info (session);
@@ -556,7 +556,7 @@ _gnutls_dh_set_group (gnutls_session_t session, mpi_t gen, mpi_t prime)
         dh = &info->dh;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -832,10 +832,11 @@ _gnutls_PRF (gnutls_session_t session,
   memcpy (s_seed, label, label_size);
   memcpy (&s_seed[label_size], seed, seed_size);
 
-  if (ver >= GNUTLS_TLS1_2)
+  if (ver >= MHD_GNUTLS_TLS1_2)
     {
-      result = _gnutls_P_hash (GNUTLS_MAC_SHA1, secret, secret_size, s_seed,
-                               s_seed_size, total_bytes, ret);
+      result =
+        _gnutls_P_hash (MHD_GNUTLS_MAC_SHA1, secret, secret_size, s_seed,
+                        s_seed_size, total_bytes, ret);
       if (result < 0)
         {
           gnutls_assert ();
@@ -854,16 +855,18 @@ _gnutls_PRF (gnutls_session_t session,
           l_s++;
         }
 
-      result = _gnutls_P_hash (GNUTLS_MAC_MD5, s1, l_s, s_seed, s_seed_size,
-                               total_bytes, o1);
+      result =
+        _gnutls_P_hash (MHD_GNUTLS_MAC_MD5, s1, l_s, s_seed, s_seed_size,
+                        total_bytes, o1);
       if (result < 0)
         {
           gnutls_assert ();
           return result;
         }
 
-      result = _gnutls_P_hash (GNUTLS_MAC_SHA1, s2, l_s, s_seed, s_seed_size,
-                               total_bytes, o2);
+      result =
+        _gnutls_P_hash (MHD_GNUTLS_MAC_SHA1, s2, l_s, s_seed, s_seed_size,
+                        total_bytes, o2);
       if (result < 0)
         {
           gnutls_assert ();

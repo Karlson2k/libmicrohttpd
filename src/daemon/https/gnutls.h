@@ -64,7 +64,7 @@ extern "C"
 #define GNUTLS_CIPHER_RIJNDAEL_CBC GNUTLS_CIPHER_AES_128_CBC
 #define GNUTLS_CIPHER_ARCFOUR GNUTLS_CIPHER_ARCFOUR_128
 
-#include "microhttpsd.h"
+#include "microhttpd.h"
 
   typedef enum
   {
@@ -490,10 +490,6 @@ extern "C"
 
   void gnutls_handshake_set_max_packet_length (gnutls_session_t session,
 					       size_t max);
-
-/* returns libgnutls version (call it with a NULL argument)
- */
-  const char *gnutls_check_version (const char *req_version);
 
 /* Functions for setting/clearing credentials
  */

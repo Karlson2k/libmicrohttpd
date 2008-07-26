@@ -108,7 +108,7 @@ _gnutls_x509_cert_verify_peers (gnutls_session_t session,
   gnutls_x509_crt_t *peer_certificate_list;
   int peer_certificate_list_size, i, x, ret;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
@@ -118,7 +118,7 @@ _gnutls_x509_cert_verify_peers (gnutls_session_t session,
     }
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -1054,8 +1054,8 @@ _gnutls_check_key_usage (const gnutls_cert * cert, gnutls_kx_algorithm_t alg)
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  if (_gnutls_map_kx_get_cred (alg, 1) == GNUTLS_CRD_CERTIFICATE ||
-      _gnutls_map_kx_get_cred (alg, 0) == GNUTLS_CRD_CERTIFICATE)
+  if (_gnutls_map_kx_get_cred (alg, 1) == MHD_GNUTLS_CRD_CERTIFICATE ||
+      _gnutls_map_kx_get_cred (alg, 0) == MHD_GNUTLS_CRD_CERTIFICATE)
     {
 
       key_usage = cert->key_usage;

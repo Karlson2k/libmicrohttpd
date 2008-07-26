@@ -79,7 +79,7 @@ _gnutls_session_pack (gnutls_session_t session,
   switch (gnutls_auth_get_type (session))
     {
 #ifdef ENABLE_SRP
-    case GNUTLS_CRD_SRP:
+    case MHD_GNUTLS_CRD_SRP:
       ret = pack_srp_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -89,7 +89,7 @@ _gnutls_session_pack (gnutls_session_t session,
       break;
 #endif
 #ifdef ENABLE_PSK
-    case GNUTLS_CRD_PSK:
+    case MHD_GNUTLS_CRD_PSK:
       ret = pack_psk_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -99,7 +99,7 @@ _gnutls_session_pack (gnutls_session_t session,
       break;
 #endif
 #ifdef ENABLE_ANON
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       ret = pack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -108,7 +108,7 @@ _gnutls_session_pack (gnutls_session_t session,
         }
       break;
 #endif
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       ret = pack_certificate_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -158,7 +158,7 @@ _gnutls_session_unpack (gnutls_session_t session,
   switch (packed_session->data[0])
     {
 #ifdef ENABLE_SRP
-    case GNUTLS_CRD_SRP:
+    case MHD_GNUTLS_CRD_SRP:
       ret = unpack_srp_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -168,7 +168,7 @@ _gnutls_session_unpack (gnutls_session_t session,
       break;
 #endif
 #ifdef ENABLE_PSK
-    case GNUTLS_CRD_PSK:
+    case MHD_GNUTLS_CRD_PSK:
       ret = unpack_psk_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -178,7 +178,7 @@ _gnutls_session_unpack (gnutls_session_t session,
       break;
 #endif
 #ifdef ENABLE_ANON
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       ret = unpack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -187,7 +187,7 @@ _gnutls_session_unpack (gnutls_session_t session,
         }
       break;
 #endif
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       ret = unpack_certificate_auth_info (session, packed_session);
       if (ret < 0)
         {
@@ -273,7 +273,7 @@ pack_certificate_auth_info (gnutls_session_t session,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  packed_session->data[0] = GNUTLS_CRD_CERTIFICATE;
+  packed_session->data[0] = MHD_GNUTLS_CRD_CERTIFICATE;
   _gnutls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
   pos += 4 + PACK_HEADER_SIZE;
 
@@ -324,7 +324,7 @@ unpack_certificate_auth_info (gnutls_session_t session,
   size_t pack_size;
   cert_auth_info_t info;
 
-  if (packed_session->data[0] != GNUTLS_CRD_CERTIFICATE)
+  if (packed_session->data[0] != MHD_GNUTLS_CRD_CERTIFICATE)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
@@ -346,7 +346,7 @@ unpack_certificate_auth_info (gnutls_session_t session,
   /* client and server have the same auth_info here
    */
   ret =
-    _gnutls_auth_info_set (session, GNUTLS_CRD_CERTIFICATE,
+    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                            sizeof (cert_auth_info_st), 1);
   if (ret < 0)
     {
@@ -506,7 +506,7 @@ pack_srp_auth_info (gnutls_session_t session, gnutls_datum_t * packed_session)
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  packed_session->data[0] = GNUTLS_CRD_SRP;
+  packed_session->data[0] = MHD_GNUTLS_CRD_SRP;
   _gnutls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
 
   if (pack_size > 0)
@@ -525,7 +525,7 @@ unpack_srp_auth_info (gnutls_session_t session,
   int ret;
   srp_server_auth_info_t info;
 
-  if (packed_session->data[0] != GNUTLS_CRD_SRP)
+  if (packed_session->data[0] != MHD_GNUTLS_CRD_SRP)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
@@ -545,7 +545,7 @@ unpack_srp_auth_info (gnutls_session_t session,
     }
 
   ret =
-    _gnutls_auth_info_set (session, GNUTLS_CRD_SRP,
+    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_SRP,
                            sizeof (srp_server_auth_info_st), 1);
   if (ret < 0)
     {
@@ -611,7 +611,7 @@ pack_anon_auth_info (gnutls_session_t session,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  packed_session->data[0] = GNUTLS_CRD_ANON;
+  packed_session->data[0] = MHD_GNUTLS_CRD_ANON;
   _gnutls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
   pos += 4 + PACK_HEADER_SIZE;
 
@@ -641,7 +641,7 @@ unpack_anon_auth_info (gnutls_session_t session,
   int pos = 0, size, ret;
   anon_auth_info_t info;
 
-  if (packed_session->data[0] != GNUTLS_CRD_ANON)
+  if (packed_session->data[0] != MHD_GNUTLS_CRD_ANON)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
@@ -664,7 +664,7 @@ unpack_anon_auth_info (gnutls_session_t session,
   /* client and serer have the same auth_info here
    */
   ret =
-    _gnutls_auth_info_set (session, GNUTLS_CRD_ANON,
+    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
                            sizeof (anon_auth_info_st), 1);
   if (ret < 0)
     {
@@ -775,7 +775,7 @@ pack_psk_auth_info (gnutls_session_t session, gnutls_datum_t * packed_session)
 
   pos = 0;
 
-  packed_session->data[pos] = GNUTLS_CRD_PSK;
+  packed_session->data[pos] = MHD_GNUTLS_CRD_PSK;
   pos++;
 
   _gnutls_write_uint32 (pack_size, &packed_session->data[pos]);
@@ -815,7 +815,7 @@ unpack_psk_auth_info (gnutls_session_t session,
   int pos = 0, size, ret;
   psk_auth_info_t info;
 
-  if (packed_session->data[0] != GNUTLS_CRD_PSK)
+  if (packed_session->data[0] != MHD_GNUTLS_CRD_PSK)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
@@ -838,7 +838,7 @@ unpack_psk_auth_info (gnutls_session_t session,
   /* client and serer have the same auth_info here
    */
   ret =
-    _gnutls_auth_info_set (session, GNUTLS_CRD_PSK,
+    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_PSK,
                            sizeof (psk_auth_info_st), 1);
   if (ret < 0)
     {

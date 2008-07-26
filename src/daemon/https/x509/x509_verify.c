@@ -500,7 +500,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
 
   *hash = _gnutls_x509_oid2mac_algorithm (str);
 
-  if (*hash == GNUTLS_MAC_UNKNOWN)
+  if (*hash == MHD_GNUTLS_MAC_UNKNOWN)
     {
 
       _gnutls_x509_log ("verify.c: HASH OID: %s\n", str);
@@ -547,7 +547,7 @@ _pkcs1_rsa_verify_sig (const gnutls_datum_t * text,
                        const gnutls_datum_t * signature,
                        mpi_t * params, int params_len)
 {
-  gnutls_mac_algorithm_t hash = GNUTLS_MAC_UNKNOWN;
+  gnutls_mac_algorithm_t hash = MHD_GNUTLS_MAC_UNKNOWN;
   int ret;
   opaque digest[MAX_HASH_SIZE], md[MAX_HASH_SIZE];
   int digest_size;
@@ -613,7 +613,7 @@ dsa_verify_sig (const gnutls_datum_t * text,
   gnutls_datum_t digest;
   GNUTLS_HASH_HANDLE hd;
 
-  hd = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  hd = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (hd == NULL)
     {
       gnutls_assert ();
@@ -643,7 +643,7 @@ verify_sig (const gnutls_datum_t * tbs,
 
   switch (pk)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
 
       if (_pkcs1_rsa_verify_sig
           (tbs, signature, issuer_params, issuer_params_size) != 0)

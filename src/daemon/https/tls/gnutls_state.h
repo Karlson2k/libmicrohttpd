@@ -69,4 +69,4 @@ int _gnutls_PRF (gnutls_session_t session,
 
 int gnutls_init (gnutls_session_t * session, gnutls_connection_end_t con_end);
 
-#define DEFAULT_CERT_TYPE GNUTLS_CRT_X509
+#define DEFAULT_CERT_TYPE MHD_GNUTLS_CRT_X509

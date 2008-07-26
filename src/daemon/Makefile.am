@@ -1,4 +1,5 @@
-SUBDIRS = .
+# including '.' mixes up build order when HTTPS is enabled.
+SUBDIRS = 
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
@@ -38,8 +39,8 @@ if ENABLE_HTTPS
 SUBDIRS += https .
 libmicrohttpd_la_SOURCES += connection_https.c
 libmicrohttpd_la_LIBADD = \
-  https/x509/libx509.la \
   https/lgl/liblgl.la \
+  https/x509/libx509.la \
   https/tls/libtls.la \
   https/minitasn1/libasn1.la \
   https/opencdk/libopencdk.la \

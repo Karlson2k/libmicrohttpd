@@ -124,9 +124,11 @@ LIBS=$SAVE_LIBS
 
 # Lib cURL & cURL - OpenSSL versions
 MHD_REQ_CURL_VERSION=7.16.4
-MHD_REQ_CURL_SSL_VERSION=0.9.8
+MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
+MHD_REQ_CURL_GNUTLS_VERSION=2.2.3
 AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
-AC_DEFINE_UNQUOTED([MHD_REQ_CURL_SSL_VERSION], "$MHD_REQ_CURL_SSL_VERSION", [required cURL SSL version to run tests])
+AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
+AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
 
 
 # large file support (> 4 GB)
@@ -302,12 +304,32 @@ AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
 AM_CONDITIONAL(ENABLE_INCLUDED_OPENCDK,  [test -n "" ] )
 
 # Finally: summary
-if test "$curl" != 1
-then
- AC_MSG_NOTICE([WARNING: libcurl not found, testcases cannot be built.])
+if test "$curl" != 1 ; then
+ MSG_CURL="libcurl not found, building test won't be possible"
+else
+ MSG_CURL="${_libcurl_with}/lib"
 fi
 if test "$gcrypt" != true
 then
- AC_MSG_NOTICE([WARNING: libgcrypt not found, HTTPS supprot cannot be built.])
+ MSG_GCRYPT="libgcrypt not found, HTTPS supprot cannot be built"
+else
+ MSG_GCRYPT="${with_libgcrypt}/lib"
 fi
+
+AC_MSG_NOTICE([Configured to build curl/libcurl:
+  Configuration Summery:
+  
+  os:              ${host_os}
+  target dir:      ${prefix}
+  messages:        ${enable_messages}
+  HTTPS support:   ${enable_HTTPS}	
+  TLS support:     ${enable_TLS}
+  SSLv3 support:   ${enable_SSL}
+  OpenGPG support: ${enable_openpgp}
+  x509 support:    ${enable_x509}
+  libgcrypt:       ${MSG_GCRYPT}
+  
+  # Testing
+  libcurl:         ${MSG_CURL}		
+])
 

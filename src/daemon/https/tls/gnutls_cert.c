@@ -453,14 +453,14 @@ _gnutls_openpgp_crt_verify_peers (gnutls_session_t session,
   gnutls_certificate_credentials_t cred;
   int peer_certificate_list_size, ret;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
     return GNUTLS_E_INVALID_REQUEST;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -537,7 +537,7 @@ gnutls_certificate_verify_peers2 (gnutls_session_t session,
 {
   cert_auth_info_t info;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
@@ -550,9 +550,9 @@ gnutls_certificate_verify_peers2 (gnutls_session_t session,
 
   switch (gnutls_certificate_type_get (session))
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_cert_verify_peers (session, status);
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       return _gnutls_openpgp_crt_verify_peers (session, status);
     default:
       return GNUTLS_E_INVALID_REQUEST;
@@ -606,7 +606,7 @@ gnutls_certificate_expiration_time_peers (gnutls_session_t session)
 {
   cert_auth_info_t info;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
@@ -622,11 +622,11 @@ gnutls_certificate_expiration_time_peers (gnutls_session_t session)
 
   switch (gnutls_certificate_type_get (session))
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_get_raw_crt_expiration_time (&info->
                                                        raw_certificate_list
                                                        [0]);
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       if (_E_gnutls_openpgp_get_raw_key_expiration_time == NULL)
         return (time_t) - 1;
       return _E_gnutls_openpgp_get_raw_key_expiration_time (&info->
@@ -651,7 +651,7 @@ gnutls_certificate_activation_time_peers (gnutls_session_t session)
 {
   cert_auth_info_t info;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
@@ -667,11 +667,11 @@ gnutls_certificate_activation_time_peers (gnutls_session_t session)
 
   switch (gnutls_certificate_type_get (session))
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_get_raw_crt_activation_time (&info->
                                                        raw_certificate_list
                                                        [0]);
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       if (_E_gnutls_openpgp_get_raw_key_creation_time == NULL)
         return (time_t) - 1;
       return _E_gnutls_openpgp_get_raw_key_creation_time (&info->
@@ -690,9 +690,9 @@ _gnutls_raw_cert_to_gcert (gnutls_cert * gcert,
 {
   switch (type)
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_raw_cert_to_gcert (gcert, raw_cert, flags);
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       if (_E_gnutls_openpgp_raw_key_to_gcert == NULL)
         {
           gnutls_assert ();
@@ -713,9 +713,9 @@ _gnutls_raw_privkey_to_gkey (gnutls_privkey * key,
 {
   switch (type)
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       if (_E_gnutls_openpgp_raw_privkey_to_gkey == NULL)
         {
           gnutls_assert ();
@@ -778,7 +778,7 @@ _gnutls_x509_crt_to_gcert (gnutls_cert * gcert,
   int ret = 0;
 
   memset (gcert, 0, sizeof (gnutls_cert));
-  gcert->cert_type = GNUTLS_CRT_X509;
+  gcert->cert_type = MHD_GNUTLS_CRT_X509;
 
   if (!(flags & CERT_NO_COPY))
     {

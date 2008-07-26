@@ -297,9 +297,9 @@ _gnutls_free_auth_info (gnutls_session_t session)
 
   switch (session->key->auth_info_type)
     {
-    case GNUTLS_CRD_SRP:
+    case MHD_GNUTLS_CRD_SRP:
       break;
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info = _gnutls_get_auth_info (session);
 
@@ -310,7 +310,7 @@ _gnutls_free_auth_info (gnutls_session_t session)
         _gnutls_free_dh_info (dh_info);
       }
       break;
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         unsigned int i;
         cert_auth_info_t info = _gnutls_get_auth_info (session);

@@ -65,7 +65,7 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver == GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_SSL3)
     {
       ret = _gnutls_generate_master (session, 1);
       if (ret < 0)
@@ -83,7 +83,7 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
 
   switch (cert->subject_pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       td_md5 =
         _gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
       if (td_md5 == NULL)
@@ -92,7 +92,7 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
           return GNUTLS_E_HASH_FAILED;
         }
 
-      if (ver == GNUTLS_SSL3)
+      if (ver == MHD_GNUTLS_SSL3)
         _gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
                                            session->security_parameters.
                                            master_secret, TLS_MASTER_SIZE);
@@ -130,7 +130,7 @@ _gnutls_tls_sign_params (gnutls_session_t session,
   opaque concat[36];
   gnutls_protocol_t ver = gnutls_protocol_get_version (session);
 
-  td_sha = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  td_sha = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td_sha == NULL)
     {
       gnutls_assert ();
@@ -145,10 +145,10 @@ _gnutls_tls_sign_params (gnutls_session_t session,
 
   switch (cert->subject_pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
-      if (ver < GNUTLS_TLS1_2)
+    case MHD_GNUTLS_PK_RSA:
+      if (ver < MHD_GNUTLS_TLS1_2)
         {
-          mac_hd_t td_md5 = _gnutls_hash_init (GNUTLS_MAC_MD5);
+          mac_hd_t td_md5 = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
           if (td_md5 == NULL)
             {
               gnutls_assert ();
@@ -213,7 +213,7 @@ _gnutls_sign (gnutls_pk_algorithm_t algo,
 
   switch (algo)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       /* encrypt */
       if ((ret =
            _gnutls_pkcs1_rsa_encrypt (signature, data, params, params_size,
@@ -301,7 +301,7 @@ _gnutls_verify_sig (gnutls_cert * cert,
 
   switch (cert->subject_pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
 
       vdata.data = hash_concat->data;
       vdata.size = hash_concat->size;
@@ -352,7 +352,7 @@ _gnutls_verify_sig_hdata (gnutls_session_t session,
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver == GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_SSL3)
     {
       ret = _gnutls_generate_master (session, 1);
       if (ret < 0)
@@ -404,9 +404,9 @@ _gnutls_verify_sig_params (gnutls_session_t session,
   opaque concat[36];
   gnutls_protocol_t ver = gnutls_protocol_get_version (session);
 
-  if (ver < GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_TLS1_2)
     {
-      td_md5 = _gnutls_hash_init (GNUTLS_MAC_MD5);
+      td_md5 = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
       if (td_md5 == NULL)
         {
           gnutls_assert ();
@@ -420,7 +420,7 @@ _gnutls_verify_sig_params (gnutls_session_t session,
       _gnutls_hash (td_md5, params->data, params->size);
     }
 
-  td_sha = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  td_sha = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td_sha == NULL)
     {
       gnutls_assert ();
@@ -435,7 +435,7 @@ _gnutls_verify_sig_params (gnutls_session_t session,
                 TLS_RANDOM_SIZE);
   _gnutls_hash (td_sha, params->data, params->size);
 
-  if (ver < GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_TLS1_2)
     {
       _gnutls_hash_deinit (td_md5, concat);
       _gnutls_hash_deinit (td_sha, &concat[16]);

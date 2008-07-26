@@ -24,18 +24,9 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
-#include "plibc.h"
-#include "microhttpsd.h"
-#include <errno.h>
-
+#include "platform.h"
+#include "microhttpd.h"
 #include <curl/curl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
@@ -302,7 +293,7 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
     {
       return -1;
     }

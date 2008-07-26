@@ -231,7 +231,7 @@ _gnutls_x509_crt_get_mpis (gnutls_x509_crt_t cert,
 
   switch (pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       /* params[0] is the modulus,
        * params[1] is the exponent
        */
@@ -365,7 +365,7 @@ _gnutls_x509_write_sig_params (ASN1_TYPE dst,
   _gnutls_str_cpy (name, sizeof (name), dst_name);
   _gnutls_str_cat (name, sizeof (name), ".parameters");
 
-  if (pk_algorithm == GNUTLS_PK_RSA)
+  if (pk_algorithm == MHD_GNUTLS_PK_RSA)
     {                           /* RSA */
       result = asn1_write_value (dst, name, NULL, 0);
 

@@ -139,7 +139,7 @@ _encode_privkey (gnutls_x509_privkey pkey, gnutls_datum * raw)
 
   switch (pkey->pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       ret =
         gnutls_x509_privkey_export (pkey, GNUTLS_X509_FMT_DER, NULL, &size);
       if (ret != GNUTLS_E_SHORT_MEMORY_BUFFER)
@@ -196,7 +196,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   gnutls_datum algo_params = { NULL, 0 };
   gnutls_datum algo_privkey = { NULL, 0 };
 
-  if (pkey->pk_algorithm == GNUTLS_PK_RSA)
+  if (pkey->pk_algorithm == MHD_GNUTLS_PK_RSA)
     {
       oid = PK_PKIX1_RSA_OID;
       /* parameters are null
@@ -612,17 +612,17 @@ read_pkcs_schema_params (schema_id schema, const char *password,
 
       if ((schema) == PKCS12_3DES_SHA1)
         {
-          enc_params->cipher = GNUTLS_CIPHER_3DES_CBC;
+          enc_params->cipher = MHD_GNUTLS_CIPHER_3DES_CBC;
           enc_params->iv_size = 8;
         }
       else if ((schema) == PKCS12_ARCFOUR_SHA1)
         {
-          enc_params->cipher = GNUTLS_CIPHER_ARCFOUR_128;
+          enc_params->cipher = MHD_GNUTLS_CIPHER_ARCFOUR_128;
           enc_params->iv_size = 0;
         }
       else if ((schema) == PKCS12_RC2_40_SHA1)
         {
-          enc_params->cipher = GNUTLS_CIPHER_RC2_40_CBC;
+          enc_params->cipher = MHD_GNUTLS_CIPHER_RC2_40_CBC;
           enc_params->iv_size = 8;
         }
 
@@ -950,7 +950,7 @@ decode_private_key_info (const gnutls_datum_t * der,
   /* we only support RSA and DSA private keys.
    */
   if (strcmp (oid, PK_PKIX1_RSA_OID) == 0)
-    pkey->pk_algorithm = GNUTLS_PK_RSA;
+    pkey->pk_algorithm = MHD_GNUTLS_PK_RSA;
   else
     {
       gnutls_assert ();
@@ -963,7 +963,7 @@ decode_private_key_info (const gnutls_datum_t * der,
   /* Get the DER encoding of the actual private key.
    */
 
-  if (pkey->pk_algorithm == GNUTLS_PK_RSA)
+  if (pkey->pk_algorithm == MHD_GNUTLS_PK_RSA)
     result = _decode_pkcs8_rsa_key (pkcs8_asn, pkey);
   if (result < 0)
     {
@@ -1021,7 +1021,7 @@ gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
   _data.data = data->data;
   _data.size = data->size;
 
-  key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+  key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
 
   /* If the Certificate is in PEM format then decode it
    */
@@ -1082,7 +1082,7 @@ gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
   return 0;
 
 cleanup:
-  key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+  key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
   if (need_free)
     _gnutls_free_datum (&_data);
   return result;
@@ -1291,13 +1291,13 @@ oid2cipher (const char *oid, gnutls_cipher_algorithm_t * algo)
 
   if (strcmp (oid, DES_EDE3_CBC_OID) == 0)
     {
-      *algo = GNUTLS_CIPHER_3DES_CBC;
+      *algo = MHD_GNUTLS_CIPHER_3DES_CBC;
       return 0;
     }
 
   if (strcmp (oid, DES_CBC_OID) == 0)
     {
-      *algo = GNUTLS_CIPHER_DES_CBC;
+      *algo = MHD_GNUTLS_CIPHER_DES_CBC;
       return 0;
     }
 
@@ -1697,11 +1697,11 @@ generate_key (schema_id schema,
    */
 
   if (schema == PKCS12_ARCFOUR_SHA1)
-    enc_params->cipher = GNUTLS_CIPHER_ARCFOUR_128;
+    enc_params->cipher = MHD_GNUTLS_CIPHER_ARCFOUR_128;
   else if (schema == PKCS12_3DES_SHA1)
-    enc_params->cipher = GNUTLS_CIPHER_3DES_CBC;
+    enc_params->cipher = MHD_GNUTLS_CIPHER_3DES_CBC;
   else if (schema == PKCS12_RC2_40_SHA1)
-    enc_params->cipher = GNUTLS_CIPHER_RC2_40_CBC;
+    enc_params->cipher = MHD_GNUTLS_CIPHER_RC2_40_CBC;
 
   if (gc_pseudo_random (rnd, 2) != GC_OK)
     {

@@ -30,13 +30,13 @@
 #include "gnutls_errors.h"
 #include "gnutls_num.h"
 #include "ext_cert_type.h"
-#include <gnutls_state.h>
-#include <gnutls_num.h>
+#include "gnutls_state.h"
+#include "gnutls_num.h"
 
 inline static int _gnutls_num2cert_type (int num);
 inline static int _gnutls_cert_type2num (int record_size);
 
-/* 
+/*
  * In case of a server: if a CERT_TYPE extension type is received then it stores
  * into the session security parameters the new value. The server may use gnutls_session_certificate_type_get(),
  * to access it.
@@ -82,7 +82,7 @@ _gnutls_cert_type_recv_params (gnutls_session_t session,
         }
     }
   else
-    {                           /* SERVER SIDE - we must check if the sent cert type is the right one 
+    {                           /* SERVER SIDE - we must check if the sent cert type is the right one
                                  */
       if (data_size > 1)
         {
@@ -157,7 +157,7 @@ _gnutls_cert_type_send_params (gnutls_session_t session, opaque * data,
 
           if (len == 1 &&
               session->internals.priorities.cert_type.priority[0] ==
-              GNUTLS_CRT_X509)
+              MHD_GNUTLS_CRT_X509)
             {
               /* We don't use this extension if X.509 certificates
                * are used.
@@ -216,9 +216,9 @@ _gnutls_num2cert_type (int num)
   switch (num)
     {
     case 0:
-      return GNUTLS_CRT_X509;
+      return MHD_GNUTLS_CRT_X509;
     case 1:
-      return GNUTLS_CRT_OPENPGP;
+      return MHD_GNUTLS_CRT_OPENPGP;
     default:
       return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
     }
@@ -232,9 +232,9 @@ _gnutls_cert_type2num (int cert_type)
 {
   switch (cert_type)
     {
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return 0;
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       return 1;
     default:
       return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;

@@ -25,10 +25,9 @@
  */
 
 #include "config.h"
+#include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
-#include <stdlib.h>
-#include <string.h>
 #include "internal.h"
 
 #ifndef WINDOWS
@@ -87,12 +86,14 @@ curl_check_version (const char *req_version, ...)
   int rq_major, rq_minor, rq_micro;
 
   ver = curl_version ();
+#if HAVE_MESSAGES
+  fprintf (stderr, "curl version: %s\n", ver);
+#endif
   /*
    * this call relies on the cURL string to be of the format :
    * 'libcurl/7.16.4 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/0.6.5'
    */
   curl_ver = strchr (ver, '/') + 1;
-  ssl_ver = strchr (curl_ver, '/') + 1;
 
   /* Parse version numbers */
   parse_version_string (req_version, &rq_major, &rq_minor, &rq_micro);
@@ -112,11 +113,18 @@ curl_check_version (const char *req_version, ...)
       return -1;
     }
 
+  /*
+   * enforce required gnutls/openssl version.
+   * TODO use curl version string to assert use of gnutls
+   */
 #if HTTPS_SUPPORT
   va_start (ap, req_version);
   req_ssl_ver = va_arg (ap, void *);
 
   parse_version_string (req_ssl_ver, &rq_major, &rq_minor, &rq_micro);
+
+  ssl_ver = strchr (curl_ver, '/') + 1;
+
   parse_version_string (ssl_ver, &loc_major, &loc_minor, &loc_micro);
 
   if ((loc_major > rq_major
@@ -127,7 +135,7 @@ curl_check_version (const char *req_version, ...)
                                         && loc_micro == rq_micro)) == 0)
     {
       fprintf (stderr,
-               "Error: running curl test depends on local libcurl-openssl version > %s\n",
+               "Error: running curl test depends on local libcurl SSL version > %s\n",
                req_ssl_ver);
       return -1;
     }

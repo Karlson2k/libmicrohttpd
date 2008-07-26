@@ -77,7 +77,7 @@ _gnutls_inner_application_send_params (gnutls_session_t session,
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       gnutls_ia_client_credentials_t cred = (gnutls_ia_client_credentials_t)
-        _gnutls_get_cred (session->key, GNUTLS_CRD_IA, NULL);
+        _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)
         ext->gnutls_ia_enable = 1;
@@ -85,7 +85,7 @@ _gnutls_inner_application_send_params (gnutls_session_t session,
   else
     {
       gnutls_ia_server_credentials_t cred = (gnutls_ia_server_credentials_t)
-        _gnutls_get_cred (session->key, GNUTLS_CRD_IA, NULL);
+        _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)
         ext->gnutls_ia_enable = 1;

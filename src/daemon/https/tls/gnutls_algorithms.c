@@ -42,30 +42,30 @@ typedef struct
 } gnutls_cred_map;
 
 static const gnutls_cred_map cred_mappings[] = {
-  {GNUTLS_KX_ANON_DH,
-   GNUTLS_CRD_ANON,
-   GNUTLS_CRD_ANON},
-  {GNUTLS_KX_RSA,
-   GNUTLS_CRD_CERTIFICATE,
-   GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_RSA_EXPORT,
-   GNUTLS_CRD_CERTIFICATE,
-   GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_DHE_DSS,
-   GNUTLS_CRD_CERTIFICATE,
-   GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_DHE_RSA,
-   GNUTLS_CRD_CERTIFICATE,
-   GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_SRP,
-   GNUTLS_CRD_SRP,
-   GNUTLS_CRD_SRP},
-  {GNUTLS_KX_SRP_RSA,
-   GNUTLS_CRD_SRP,
-   GNUTLS_CRD_CERTIFICATE},
-  {GNUTLS_KX_SRP_DSS,
-   GNUTLS_CRD_SRP,
-   GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_ANON_DH,
+   MHD_GNUTLS_CRD_ANON,
+   MHD_GNUTLS_CRD_ANON},
+  {MHD_GNUTLS_KX_RSA,
+   MHD_GNUTLS_CRD_CERTIFICATE,
+   MHD_GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_RSA_EXPORT,
+   MHD_GNUTLS_CRD_CERTIFICATE,
+   MHD_GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_DHE_DSS,
+   MHD_GNUTLS_CRD_CERTIFICATE,
+   MHD_GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_DHE_RSA,
+   MHD_GNUTLS_CRD_CERTIFICATE,
+   MHD_GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_SRP,
+   MHD_GNUTLS_CRD_SRP,
+   MHD_GNUTLS_CRD_SRP},
+  {MHD_GNUTLS_KX_SRP_RSA,
+   MHD_GNUTLS_CRD_SRP,
+   MHD_GNUTLS_CRD_CERTIFICATE},
+  {MHD_GNUTLS_KX_SRP_DSS,
+   MHD_GNUTLS_CRD_SRP,
+   MHD_GNUTLS_CRD_CERTIFICATE},
   {0,
    0,
    0}
@@ -101,17 +101,17 @@ typedef struct
  * use GNUTLS_KX_RSA or GNUTLS_KX_DHE_RSA.
  */
 static const gnutls_pk_map pk_mappings[] = {
-  {GNUTLS_KX_RSA,
-   GNUTLS_PK_RSA,
+  {MHD_GNUTLS_KX_RSA,
+   MHD_GNUTLS_PK_RSA,
    CIPHER_ENCRYPT},
-  {GNUTLS_KX_RSA_EXPORT,
-   GNUTLS_PK_RSA,
+  {MHD_GNUTLS_KX_RSA_EXPORT,
+   MHD_GNUTLS_PK_RSA,
    CIPHER_SIGN},
-  {GNUTLS_KX_DHE_RSA,
-   GNUTLS_PK_RSA,
+  {MHD_GNUTLS_KX_DHE_RSA,
+   MHD_GNUTLS_PK_RSA,
    CIPHER_SIGN},
-  {GNUTLS_KX_SRP_RSA,
-   GNUTLS_PK_RSA,
+  {MHD_GNUTLS_KX_SRP_RSA,
+   MHD_GNUTLS_PK_RSA,
    CIPHER_SIGN},
   {0,
    0,
@@ -138,22 +138,22 @@ typedef struct
 
 static const gnutls_version_entry sup_versions[] = {
   {"SSL3.0",
-   GNUTLS_SSL3,
+   MHD_GNUTLS_SSL3,
    3,
    0,
    1},
   {"TLS1.0",
-   GNUTLS_TLS1,
+   MHD_GNUTLS_TLS1_0,
    3,
    1,
    1},
   {"TLS1.1",
-   GNUTLS_TLS1_1,
+   MHD_GNUTLS_TLS1_1,
    3,
    2,
    1},
   {"TLS1.2",
-   GNUTLS_TLS1_2,
+   MHD_GNUTLS_TLS1_2,
    3,
    3,
    1},
@@ -165,10 +165,10 @@ static const gnutls_version_entry sup_versions[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_protocol_t supported_protocols[] = { GNUTLS_SSL3,
-  GNUTLS_TLS1,
-  GNUTLS_TLS1_1,
-  GNUTLS_TLS1_2,
+static const gnutls_protocol_t supported_protocols[] = { MHD_GNUTLS_SSL3,
+  MHD_GNUTLS_TLS1_0,
+  MHD_GNUTLS_TLS1_1,
+  MHD_GNUTLS_TLS1_2,
   0
 };
 
@@ -198,62 +198,64 @@ typedef struct gnutls_cipher_entry gnutls_cipher_entry;
  */
 static const gnutls_cipher_entry algorithms[] = {
   {"AES-256-CBC",
-   GNUTLS_CIPHER_AES_256_CBC,
+   MHD_GNUTLS_CIPHER_AES_256_CBC,
    16,
    32,
    CIPHER_BLOCK,
    16,
    0},
   {"AES-128-CBC",
-   GNUTLS_CIPHER_AES_128_CBC,
+   MHD_GNUTLS_CIPHER_AES_128_CBC,
    16,
    16,
    CIPHER_BLOCK,
    16,
    0},
   {"3DES-CBC",
-   GNUTLS_CIPHER_3DES_CBC,
+   MHD_GNUTLS_CIPHER_3DES_CBC,
    8,
    24,
    CIPHER_BLOCK,
    8,
    0},
   {"DES-CBC",
-   GNUTLS_CIPHER_DES_CBC,
+   MHD_GNUTLS_CIPHER_DES_CBC,
    8,
    8,
    CIPHER_BLOCK,
    8,
    0},
   {"ARCFOUR-128",
-   GNUTLS_CIPHER_ARCFOUR_128,
+   MHD_GNUTLS_CIPHER_ARCFOUR_128,
    1,
    16,
    CIPHER_STREAM,
    0,
    0},
   {"ARCFOUR-40",
-   GNUTLS_CIPHER_ARCFOUR_40,
+   MHD_GNUTLS_CIPHER_ARCFOUR_40,
    1,
    5,
    CIPHER_STREAM,
    0,
    1},
   {"RC2-40",
-   GNUTLS_CIPHER_RC2_40_CBC,
+   MHD_GNUTLS_CIPHER_RC2_40_CBC,
    8,
    5,
    CIPHER_BLOCK,
    8,
    1},
 #ifdef	ENABLE_CAMELLIA
-  {"CAMELLIA-256-CBC", GNUTLS_CIPHER_CAMELLIA_256_CBC, 16, 32, CIPHER_BLOCK,
+  {"CAMELLIA-256-CBC", MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC, 16, 32,
+   CIPHER_BLOCK,
    16, 0},
-  {"CAMELLIA-128-CBC", GNUTLS_CIPHER_CAMELLIA_128_CBC, 16, 16, CIPHER_BLOCK,
+  {"CAMELLIA-128-CBC", MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC, 16, 16,
+   CIPHER_BLOCK,
    16, 0},
 #endif
   {"NULL",
-   GNUTLS_CIPHER_NULL,
+   MHD_GNUTLS_CIPHER_NULL,
    1,
    0,
    CIPHER_STREAM,
@@ -270,18 +272,18 @@ static const gnutls_cipher_entry algorithms[] = {
 
 /* Keep the contents of this struct the same as the previous one. */
 static const gnutls_cipher_algorithm_t supported_ciphers[] =
-  { GNUTLS_CIPHER_AES_256_CBC,
-  GNUTLS_CIPHER_AES_128_CBC,
-  GNUTLS_CIPHER_3DES_CBC,
-  GNUTLS_CIPHER_DES_CBC,
-  GNUTLS_CIPHER_ARCFOUR_128,
-  GNUTLS_CIPHER_ARCFOUR_40,
-  GNUTLS_CIPHER_RC2_40_CBC,
+  { MHD_GNUTLS_CIPHER_AES_256_CBC,
+  MHD_GNUTLS_CIPHER_AES_128_CBC,
+  MHD_GNUTLS_CIPHER_3DES_CBC,
+  MHD_GNUTLS_CIPHER_DES_CBC,
+  MHD_GNUTLS_CIPHER_ARCFOUR_128,
+  MHD_GNUTLS_CIPHER_ARCFOUR_40,
+  MHD_GNUTLS_CIPHER_RC2_40_CBC,
 #ifdef	ENABLE_CAMELLIA
-  GNUTLS_CIPHER_CAMELLIA_256_CBC,
-  GNUTLS_CIPHER_CAMELLIA_128_CBC,
+  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
 #endif
-  GNUTLS_CIPHER_NULL,
+  MHD_GNUTLS_CIPHER_NULL,
   0
 };
 
@@ -304,19 +306,19 @@ typedef struct gnutls_hash_entry gnutls_hash_entry;
 static const gnutls_hash_entry hash_algorithms[] = {
   {"SHA1",
    HASH_OID_SHA1,
-   GNUTLS_MAC_SHA1,
+   MHD_GNUTLS_MAC_SHA1,
    20},
   {"MD5",
    HASH_OID_MD5,
-   GNUTLS_MAC_MD5,
+   MHD_GNUTLS_MAC_MD5,
    16},
   {"SHA256",
    HASH_OID_SHA256,
-   GNUTLS_MAC_SHA256,
+   MHD_GNUTLS_MAC_SHA256,
    32},
   {"NULL",
    NULL,
-   GNUTLS_MAC_NULL,
+   MHD_GNUTLS_MAC_NULL,
    0},
   {0,
    0,
@@ -325,10 +327,10 @@ static const gnutls_hash_entry hash_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_mac_algorithm_t supported_macs[] = { GNUTLS_MAC_SHA1,
-  GNUTLS_MAC_MD5,
-  GNUTLS_MAC_SHA256,
-  GNUTLS_MAC_NULL,
+static const gnutls_mac_algorithm_t supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
+  MHD_GNUTLS_MAC_MD5,
+  MHD_GNUTLS_MAC_SHA256,
+  MHD_GNUTLS_MAC_NULL,
   0
 };
 
@@ -349,10 +351,10 @@ const int _gnutls_comp_algorithms_size = MAX_COMP_METHODS;
 /* the compression entry is defined in gnutls_algorithms.h */
 
 gnutls_compression_entry _gnutls_compression_algorithms[MAX_COMP_METHODS] =
-  { GNUTLS_COMPRESSION_ENTRY (GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
+  { GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
 #ifdef HAVE_LIBZ
   /* draft-ietf-tls-compression-02 */
-  GNUTLS_COMPRESSION_ENTRY (GNUTLS_COMP_DEFLATE, 0x01, 15, 8, 3),
+  GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_DEFLATE, 0x01, 15, 8, 3),
 #endif
   {0,
    0,
@@ -364,9 +366,9 @@ gnutls_compression_entry _gnutls_compression_algorithms[MAX_COMP_METHODS] =
 
 static const gnutls_compression_method_t supported_compressions[] = {
 #ifdef HAVE_LIBZ
-  GNUTLS_COMP_DEFLATE,
+  MHD_GNUTLS_COMP_DEFLATE,
 #endif
-  GNUTLS_COMP_NULL,
+  MHD_GNUTLS_COMP_NULL,
   0
 };
 
@@ -402,33 +404,33 @@ typedef struct gnutls_kx_algo_entry gnutls_kx_algo_entry;
 
 static const gnutls_kx_algo_entry _gnutls_kx_algorithms[] = {
 #ifdef ENABLE_ANON
-  {"ANON-DH", GNUTLS_KX_ANON_DH, &anon_auth_struct, 1, 0},
+  {"ANON-DH", MHD_GNUTLS_KX_ANON_DH, &anon_auth_struct, 1, 0},
 #endif
   {"RSA",
-   GNUTLS_KX_RSA,
+   MHD_GNUTLS_KX_RSA,
    &rsa_auth_struct,
    0,
    0},
   {"RSA-EXPORT",
-   GNUTLS_KX_RSA_EXPORT,
+   MHD_GNUTLS_KX_RSA_EXPORT,
    &rsa_export_auth_struct,
    0,
    1 /* needs RSA params */ },
   {"DHE-RSA",
-   GNUTLS_KX_DHE_RSA,
+   MHD_GNUTLS_KX_DHE_RSA,
    &dhe_rsa_auth_struct,
    1,
    0},
   {"DHE-DSS",
-   GNUTLS_KX_DHE_DSS,
+   MHD_GNUTLS_KX_DHE_DSS,
    &dhe_dss_auth_struct,
    1,
    0},
 
 #ifdef ENABLE_SRP
-  {"SRP-DSS", GNUTLS_KX_SRP_DSS, &srp_dss_auth_struct, 0, 0},
-  {"SRP-RSA", GNUTLS_KX_SRP_RSA, &srp_rsa_auth_struct, 0, 0},
-  {"SRP", GNUTLS_KX_SRP, &srp_auth_struct, 0, 0},
+  {"SRP-DSS", MHD_GNUTLS_KX_SRP_DSS, &srp_dss_auth_struct, 0, 0},
+  {"SRP-RSA", MHD_GNUTLS_KX_SRP_RSA, &srp_rsa_auth_struct, 0, 0},
+  {"SRP", MHD_GNUTLS_KX_SRP, &srp_auth_struct, 0, 0},
 #endif
 #ifdef ENABLE_PSK
   {"PSK", GNUTLS_KX_PSK, &psk_auth_struct, 0, 0},
@@ -445,16 +447,16 @@ static const gnutls_kx_algo_entry _gnutls_kx_algorithms[] = {
 /* Keep the contents of this struct the same as the previous one. */
 static const gnutls_kx_algorithm_t supported_kxs[] = {
 #ifdef ENABLE_ANON
-  GNUTLS_KX_ANON_DH,
+  MHD_GNUTLS_KX_ANON_DH,
 #endif
-  GNUTLS_KX_RSA,
-  GNUTLS_KX_RSA_EXPORT,
-  GNUTLS_KX_DHE_RSA,
-  GNUTLS_KX_DHE_DSS,
+  MHD_GNUTLS_KX_RSA,
+  MHD_GNUTLS_KX_RSA_EXPORT,
+  MHD_GNUTLS_KX_DHE_RSA,
+  MHD_GNUTLS_KX_DHE_DSS,
 #ifdef ENABLE_SRP
-  GNUTLS_KX_SRP_DSS,
-  GNUTLS_KX_SRP_RSA,
-  GNUTLS_KX_SRP,
+  MHD_GNUTLS_KX_SRP_DSS,
+  MHD_GNUTLS_KX_SRP_RSA,
+  MHD_GNUTLS_KX_SRP,
 #endif
 #ifdef ENABLE_PSK
   GNUTLS_KX_PSK,
@@ -585,139 +587,161 @@ typedef struct
 static const gnutls_cipher_suite_entry cs_algorithms[] = {
   /* ANON_DH */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_ARCFOUR_MD5,
-                             GNUTLS_CIPHER_ARCFOUR_128,
-                             GNUTLS_KX_ANON_DH, GNUTLS_MAC_MD5,
-                             GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
+                             MHD_GNUTLS_KX_ANON_DH, MHD_GNUTLS_MAC_MD5,
+                             MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_ANON_DH,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_ANON_DH,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_ANON_DH,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC,
+                             MHD_GNUTLS_KX_ANON_DH,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_ANON_DH,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC,
+                             MHD_GNUTLS_KX_ANON_DH,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
 #ifdef	ENABLE_CAMELLIA
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_CAMELLIA_128_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             GNUTLS_KX_ANON_DH,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+                             MHD_GNUTLS_KX_ANON_DH,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_CAMELLIA_256_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             GNUTLS_KX_ANON_DH,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+                             MHD_GNUTLS_KX_ANON_DH,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 #endif
 
   /* SRP */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_SRP,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_3DES_CBC, MHD_GNUTLS_KX_SRP,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_SRP,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC, MHD_GNUTLS_KX_SRP,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_SRP,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC, MHD_GNUTLS_KX_SRP,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_SRP_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_SRP_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_SRP_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_SRP_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_SRP_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC,
+                             MHD_GNUTLS_KX_SRP_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_SRP_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC,
+                             MHD_GNUTLS_KX_SRP_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_SRP_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC,
+                             MHD_GNUTLS_KX_SRP_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_SRP_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC,
+                             MHD_GNUTLS_KX_SRP_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 
   /* DHE_DSS */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_ARCFOUR_SHA1,
-                             GNUTLS_CIPHER_ARCFOUR_128, GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
 #ifdef	ENABLE_CAMELLIA
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_CAMELLIA_128_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_CAMELLIA_256_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             GNUTLS_KX_DHE_DSS,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+                             MHD_GNUTLS_KX_DHE_DSS,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 #endif
   /* DHE_RSA */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC, GNUTLS_KX_DHE_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_DHE_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_DHE_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC,
+                             MHD_GNUTLS_KX_DHE_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_DHE_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC,
+                             MHD_GNUTLS_KX_DHE_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
 #ifdef	ENABLE_CAMELLIA
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_CAMELLIA_128_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             GNUTLS_KX_DHE_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+                             MHD_GNUTLS_KX_DHE_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_CAMELLIA_256_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             GNUTLS_KX_DHE_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+                             MHD_GNUTLS_KX_DHE_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 #endif
   /* RSA */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_NULL_MD5,
-                             GNUTLS_CIPHER_NULL,
-                             GNUTLS_KX_RSA, GNUTLS_MAC_MD5, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_NULL,
+                             MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_MD5,
+                             MHD_GNUTLS_SSL3),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_EXPORT_ARCFOUR_40_MD5,
-                             GNUTLS_CIPHER_ARCFOUR_40,
-                             GNUTLS_KX_RSA_EXPORT, GNUTLS_MAC_MD5,
-                             GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_ARCFOUR_40,
+                             MHD_GNUTLS_KX_RSA_EXPORT, MHD_GNUTLS_MAC_MD5,
+                             MHD_GNUTLS_SSL3),
 
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_ARCFOUR_SHA1,
-                             GNUTLS_CIPHER_ARCFOUR_128,
-                             GNUTLS_KX_RSA, GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
+                             MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_SHA1,
+                             MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_ARCFOUR_MD5,
-                             GNUTLS_CIPHER_ARCFOUR_128,
-                             GNUTLS_KX_RSA, GNUTLS_MAC_MD5, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
+                             MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_MD5,
+                             MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_3DES_EDE_CBC_SHA1,
-                             GNUTLS_CIPHER_3DES_CBC,
-                             GNUTLS_KX_RSA, GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_3DES_CBC,
+                             MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_SHA1,
+                             MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_AES_128_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_128_CBC, GNUTLS_KX_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_128_CBC, MHD_GNUTLS_KX_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_AES_256_CBC_SHA1,
-                             GNUTLS_CIPHER_AES_256_CBC, GNUTLS_KX_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_SSL3),
+                             MHD_GNUTLS_CIPHER_AES_256_CBC, MHD_GNUTLS_KX_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_SSL3),
 #ifdef	ENABLE_CAMELLIA
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_CAMELLIA_128_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_128_CBC, GNUTLS_KX_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+                             MHD_GNUTLS_KX_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_CAMELLIA_256_CBC_SHA1,
-                             GNUTLS_CIPHER_CAMELLIA_256_CBC, GNUTLS_KX_RSA,
-                             GNUTLS_MAC_SHA1, GNUTLS_TLS1),
+                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+                             MHD_GNUTLS_KX_RSA,
+                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_TLS1_0),
 #endif
   {0,
    {
@@ -780,7 +804,7 @@ gnutls_mac_get_name (gnutls_mac_algorithm_t algorithm)
 gnutls_mac_algorithm_t
 gnutls_mac_get_id (const char *name)
 {
-  gnutls_mac_algorithm_t ret = GNUTLS_MAC_UNKNOWN;
+  gnutls_mac_algorithm_t ret = MHD_GNUTLS_MAC_UNKNOWN;
 
   GNUTLS_HASH_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -847,7 +871,7 @@ _gnutls_x509_oid2mac_algorithm (const char *oid)
     ;
 
   if (ret == 0)
-    return GNUTLS_MAC_UNKNOWN;
+    return MHD_GNUTLS_MAC_UNKNOWN;
   return ret;
 }
 
@@ -908,7 +932,7 @@ gnutls_compression_get_name (gnutls_compression_method_t algorithm)
 gnutls_compression_method_t
 gnutls_compression_get_id (const char *name)
 {
-  gnutls_compression_method_t ret = GNUTLS_COMP_UNKNOWN;
+  gnutls_compression_method_t ret = MHD_GNUTLS_COMP_UNKNOWN;
 
   GNUTLS_COMPRESSION_LOOP (if
                            (strcasecmp
@@ -1099,7 +1123,7 @@ gnutls_cipher_get_name (gnutls_cipher_algorithm_t algorithm)
 gnutls_cipher_algorithm_t
 gnutls_cipher_get_id (const char *name)
 {
-  gnutls_cipher_algorithm_t ret = GNUTLS_CIPHER_UNKNOWN;
+  gnutls_cipher_algorithm_t ret = MHD_GNUTLS_CIPHER_UNKNOWN;
 
   GNUTLS_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -1190,7 +1214,7 @@ gnutls_kx_get_name (gnutls_kx_algorithm_t algorithm)
 gnutls_kx_algorithm_t
 gnutls_kx_get_id (const char *name)
 {
-  gnutls_cipher_algorithm_t ret = GNUTLS_KX_UNKNOWN;
+  gnutls_cipher_algorithm_t ret = MHD_GNUTLS_KX_UNKNOWN;
 
   GNUTLS_KX_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->algorithm)
     ;
@@ -1267,7 +1291,7 @@ _gnutls_version_lowest (gnutls_session_t session)
 
   if (session->internals.priorities.protocol.priority == NULL)
     {
-      return GNUTLS_VERSION_UNKNOWN;
+      return MHD_GNUTLS_VERSION_UNKNOWN;
     }
   else
     for (i = 0; i < session->internals.priorities.protocol.algorithms; i++)
@@ -1277,7 +1301,7 @@ _gnutls_version_lowest (gnutls_session_t session)
       }
 
   if (min == 0xff)
-    return GNUTLS_VERSION_UNKNOWN;      /* unknown version */
+    return MHD_GNUTLS_VERSION_UNKNOWN;  /* unknown version */
 
   return min;
 }
@@ -1289,7 +1313,7 @@ _gnutls_version_max (gnutls_session_t session)
 
   if (session->internals.priorities.protocol.priority == NULL)
     {
-      return GNUTLS_VERSION_UNKNOWN;
+      return MHD_GNUTLS_VERSION_UNKNOWN;
     }
   else
     for (i = 0; i < session->internals.priorities.protocol.algorithms; i++)
@@ -1299,7 +1323,7 @@ _gnutls_version_max (gnutls_session_t session)
       }
 
   if (max == 0x00)
-    return GNUTLS_VERSION_UNKNOWN;      /* unknown version */
+    return MHD_GNUTLS_VERSION_UNKNOWN;  /* unknown version */
 
   return max;
 }
@@ -1333,7 +1357,7 @@ gnutls_protocol_get_name (gnutls_protocol_t version)
 gnutls_protocol_t
 gnutls_protocol_get_id (const char *name)
 {
-  gnutls_protocol_t ret = GNUTLS_VERSION_UNKNOWN;
+  gnutls_protocol_t ret = MHD_GNUTLS_VERSION_UNKNOWN;
 
   GNUTLS_VERSION_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -1913,9 +1937,9 @@ gnutls_certificate_type_get_name (gnutls_certificate_type_t type)
 {
   const char *ret = NULL;
 
-  if (type == GNUTLS_CRT_X509)
+  if (type == MHD_GNUTLS_CRT_X509)
     ret = "X.509";
-  if (type == GNUTLS_CRT_OPENPGP)
+  if (type == MHD_GNUTLS_CRT_OPENPGP)
     ret = "OPENPGP";
 
   return ret;
@@ -1933,19 +1957,19 @@ gnutls_certificate_type_get_name (gnutls_certificate_type_t type)
 gnutls_certificate_type_t
 gnutls_certificate_type_get_id (const char *name)
 {
-  gnutls_certificate_type_t ret = GNUTLS_CRT_UNKNOWN;
+  gnutls_certificate_type_t ret = MHD_GNUTLS_CRT_UNKNOWN;
 
   if (strcasecmp (name, "X.509") == 0 || strcasecmp (name, "X509") == 0)
-    return GNUTLS_CRT_X509;
+    return MHD_GNUTLS_CRT_X509;
   if (strcasecmp (name, "OPENPGP") == 0)
-    return GNUTLS_CRT_OPENPGP;
+    return MHD_GNUTLS_CRT_OPENPGP;
 
   return ret;
 }
 
 static const gnutls_certificate_type_t supported_certificate_types[] =
-  { GNUTLS_CRT_X509,
-  GNUTLS_CRT_OPENPGP,
+  { MHD_GNUTLS_CRT_X509,
+  MHD_GNUTLS_CRT_OPENPGP,
   0
 };
 
@@ -2006,18 +2030,18 @@ static const gnutls_sign_entry sign_algorithms[] = {
   {"RSA-SHA",
    SIG_RSA_SHA1_OID,
    GNUTLS_SIGN_RSA_SHA1,
-   GNUTLS_PK_RSA,
-   GNUTLS_MAC_SHA1},
+   MHD_GNUTLS_PK_RSA,
+   MHD_GNUTLS_MAC_SHA1},
   {"RSA-SHA256",
    SIG_RSA_SHA256_OID,
    GNUTLS_SIGN_RSA_SHA256,
-   GNUTLS_PK_RSA,
-   GNUTLS_MAC_SHA256},
+   MHD_GNUTLS_PK_RSA,
+   MHD_GNUTLS_MAC_SHA256},
   {"RSA-MD5",
    SIG_RSA_MD5_OID,
    GNUTLS_SIGN_RSA_MD5,
-   GNUTLS_PK_RSA,
-   GNUTLS_MAC_MD5},
+   MHD_GNUTLS_PK_RSA,
+   MHD_GNUTLS_MAC_MD5},
   {"GOST R 34.10-2001",
    SIG_GOST_R3410_2001_OID,
    0,
@@ -2123,7 +2147,7 @@ typedef struct gnutls_pk_entry gnutls_pk_entry;
 static const gnutls_pk_entry pk_algorithms[] = {
   {"RSA",
    PK_PKIX1_RSA_OID,
-   GNUTLS_PK_RSA},
+   MHD_GNUTLS_PK_RSA},
   {"GOST R 34.10-2001",
    PK_GOST_R3410_2001_OID,
    0},
@@ -2161,7 +2185,7 @@ gnutls_pk_algorithm_get_name (gnutls_pk_algorithm_t algorithm)
 gnutls_pk_algorithm_t
 _gnutls_x509_oid2pk_algorithm (const char *oid)
 {
-  gnutls_pk_algorithm_t ret = GNUTLS_PK_UNKNOWN;
+  gnutls_pk_algorithm_t ret = MHD_GNUTLS_PK_UNKNOWN;
   const gnutls_pk_entry *p;
 
   for (p = pk_algorithms; p->name != NULL; p++)

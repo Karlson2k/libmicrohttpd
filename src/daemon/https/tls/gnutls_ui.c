@@ -83,13 +83,13 @@ gnutls_dh_get_group (gnutls_session_t session,
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       anon_info = _gnutls_get_auth_info (session);
       if (anon_info == NULL)
         return GNUTLS_E_INTERNAL_ERROR;
       dh = &anon_info->dh;
       break;
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       cert_info = _gnutls_get_auth_info (session);
       if (cert_info == NULL)
         return GNUTLS_E_INTERNAL_ERROR;
@@ -140,7 +140,7 @@ gnutls_dh_get_pubkey (gnutls_session_t session, gnutls_datum_t * raw_key)
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_info = _gnutls_get_auth_info (session);
         if (anon_info == NULL)
@@ -148,7 +148,7 @@ gnutls_dh_get_pubkey (gnutls_session_t session, gnutls_datum_t * raw_key)
         dh = &anon_info->dh;
         break;
       }
-    case GNUTLS_CRD_PSK:
+    case MHD_GNUTLS_CRD_PSK:
       {
         psk_info = _gnutls_get_auth_info (session);
         if (psk_info == NULL)
@@ -156,7 +156,7 @@ gnutls_dh_get_pubkey (gnutls_session_t session, gnutls_datum_t * raw_key)
         dh = &psk_info->dh;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
 
         cert_info = _gnutls_get_auth_info (session);
@@ -195,7 +195,7 @@ gnutls_rsa_export_get_pubkey (gnutls_session_t session,
   cert_auth_info_t info;
   int ret;
 
-  if (gnutls_auth_get_type (session) == GNUTLS_CRD_CERTIFICATE)
+  if (gnutls_auth_get_type (session) == MHD_GNUTLS_CRD_CERTIFICATE)
     {
       info = _gnutls_get_auth_info (session);
       if (info == NULL)
@@ -238,7 +238,7 @@ gnutls_dh_get_secret_bits (gnutls_session_t session)
 {
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
 
@@ -247,7 +247,7 @@ gnutls_dh_get_secret_bits (gnutls_session_t session)
           return GNUTLS_E_INTERNAL_ERROR;
         return info->dh.secret_bits;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -279,7 +279,7 @@ gnutls_dh_get_prime_bits (gnutls_session_t session)
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
 
@@ -289,7 +289,7 @@ gnutls_dh_get_prime_bits (gnutls_session_t session)
         dh = &info->dh;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -346,7 +346,7 @@ gnutls_dh_get_peers_public_bits (gnutls_session_t session)
 
   switch (gnutls_auth_get_type (session))
     {
-    case GNUTLS_CRD_ANON:
+    case MHD_GNUTLS_CRD_ANON:
       {
         anon_auth_info_t info;
 
@@ -357,7 +357,7 @@ gnutls_dh_get_peers_public_bits (gnutls_session_t session)
         dh = &info->dh;
         break;
       }
-    case GNUTLS_CRD_CERTIFICATE:
+    case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
 
@@ -395,11 +395,11 @@ gnutls_certificate_get_ours (gnutls_session_t session)
 {
   gnutls_certificate_credentials_t cred;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, NULL);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, NULL);
 
   cred
     = (gnutls_certificate_credentials_t) _gnutls_get_cred (session->key,
-                                                           GNUTLS_CRD_CERTIFICATE,
+                                                           MHD_GNUTLS_CRD_CERTIFICATE,
                                                            NULL);
   if (cred == NULL || cred->cert_list == NULL)
     {
@@ -436,7 +436,7 @@ gnutls_certificate_get_peers (gnutls_session_t
 {
   cert_auth_info_t info;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, NULL);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, NULL);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)
@@ -460,7 +460,7 @@ gnutls_certificate_client_get_request_status (gnutls_session_t session)
 {
   cert_auth_info_t info;
 
-  CHECK_AUTH (GNUTLS_CRD_CERTIFICATE, 0);
+  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, 0);
 
   info = _gnutls_get_auth_info (session);
   if (info == NULL)

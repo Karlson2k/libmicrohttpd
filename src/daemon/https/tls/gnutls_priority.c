@@ -208,29 +208,30 @@ gnutls_certificate_type_set_priority (gnutls_session_t session,
 #endif
 }
 
-static const int protocol_priority[] = { GNUTLS_TLS1_1,
-  GNUTLS_TLS1_0,
-  GNUTLS_SSL3,
+static const int protocol_priority[] = { MHD_GNUTLS_TLS1_1,
+  MHD_GNUTLS_TLS1_0,
+  MHD_GNUTLS_SSL3,
   0
 };
 
-static const int cipher_priority_secure256[] = { GNUTLS_CIPHER_AES_256_CBC,
+static const int cipher_priority_secure256[] =
+  { MHD_GNUTLS_CIPHER_AES_256_CBC,
   0
 };
 
-static const int kx_priority_secure[] = { GNUTLS_KX_RSA,
+static const int kx_priority_secure[] = { MHD_GNUTLS_KX_RSA,
   0
 };
 
-static const int mac_priority_secure[] = { GNUTLS_MAC_SHA1,
+static const int mac_priority_secure[] = { MHD_GNUTLS_MAC_SHA1,
   0
 };
 
-static int cert_type_priority[] = { GNUTLS_CRT_X509,
+static int cert_type_priority[] = { MHD_GNUTLS_CRT_X509,
   0
 };
 
-static const int comp_priority[] = { GNUTLS_COMP_NULL,
+static const int comp_priority[] = { MHD_GNUTLS_COMP_NULL,
   0
 };
 

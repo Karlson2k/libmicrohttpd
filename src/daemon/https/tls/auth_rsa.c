@@ -100,7 +100,7 @@ _gnutls_get_public_rsa_params (gnutls_session_t session,
   /* EXPORT case: */
   if (_gnutls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)
-      == GNUTLS_KX_RSA_EXPORT
+      == MHD_GNUTLS_KX_RSA_EXPORT
       && _gnutls_mpi_get_nbits (peer_cert.params[0]) > 512)
     {
 
@@ -155,7 +155,7 @@ _gnutls_get_private_rsa_params (gnutls_session_t session,
   gnutls_rsa_params_t rsa_params;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -174,7 +174,7 @@ _gnutls_get_private_rsa_params (gnutls_session_t session,
 
   if (_gnutls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)
-      == GNUTLS_KX_RSA_EXPORT && bits > 512)
+      == MHD_GNUTLS_KX_RSA_EXPORT && bits > 512)
     {
 
       rsa_params =
@@ -217,7 +217,7 @@ _gnutls_proc_rsa_client_kx (gnutls_session_t session, opaque * data,
   int randomize_key = 0;
   ssize_t data_size = _data_size;
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_SSL3)
+  if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
       /* SSL 3.0 
        */
@@ -385,7 +385,7 @@ _gnutls_gen_rsa_client_kx (gnutls_session_t session, opaque ** data)
   for (i = 0; i < params_len; i++)
     _gnutls_mpi_release (&params[i]);
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_SSL3)
+  if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
       /* SSL 3.0 */
       *data = sdata.data;

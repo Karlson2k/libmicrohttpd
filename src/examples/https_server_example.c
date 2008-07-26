@@ -35,7 +35,7 @@
  */
 
 #include "platform.h"
-#include <microhttpsd.h>
+#include <microhttpd.h>
 #include <sys/stat.h>
 
 #include "gnutls.h"

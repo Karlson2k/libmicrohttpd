@@ -126,7 +126,7 @@ gnutls_openpgp_privkey_get_pk_algorithm (gnutls_openpgp_privkey_t key,
   if (bits)
     {
       *bits = 0;
-      if (pk == GNUTLS_PK_RSA)
+      if (pk == MHD_GNUTLS_PK_RSA)
         *bits = _gnutls_mpi_get_nbits (key->pkey.params[0]);
     }
 

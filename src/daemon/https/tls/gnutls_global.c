@@ -35,7 +35,7 @@
 #include "internal.h"
 
 /* TODO fix :  needed by GCRY_THREAD_OPTION_PTHREAD_IMPL but missing otherwise */
-#define ENOMEM    12  /* Out of memory */
+#define ENOMEM    12            /* Out of memory */
 
 #ifdef HAVE_WINSOCK
 # include <winsock2.h>
@@ -53,7 +53,7 @@ extern const ASN1_ARRAY_TYPE gnutls_asn1_tab[];
 extern const ASN1_ARRAY_TYPE pkix_asn1_tab[];
 
 LOG_FUNC _gnutls_log_func;
-int _gnutls_log_level = 0; /* default log level */
+int _gnutls_log_level = 0;      /* default log level */
 
 ASN1_TYPE _gnutls_pkix1_asn;
 ASN1_TYPE _gnutls_gnutls_asn;
@@ -148,7 +148,7 @@ gnutls_global_set_mem_functions (gnutls_alloc_function alloc_func,
       gnutls_calloc = calloc;
     }
   else
-    { /* use the included ones */
+    {                           /* use the included ones */
       gnutls_calloc = _gnutls_calloc;
     }
   gnutls_strdup = _gnutls_strdup;
@@ -237,20 +237,20 @@ gnutls_global_init (void)
       const char *p;
 
       /* to enable multi-threading this call must precede any other call made to libgcrypt */
-      gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+      gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 
       /* set p to point at the required version of gcrypt */
-      p = strchr(MHD_GCRYPT_VERSION, ':');
+      p = strchr (MHD_GCRYPT_VERSION, ':');
       if (p == NULL)
         p = MHD_GCRYPT_VERSION;
       else
         p++;
 
       /* this call initializes libgcrypt */
-      if (gcry_check_version(p) == NULL)
+      if (gcry_check_version (p) == NULL)
         {
-          gnutls_assert();
-          _gnutls_debug_log("Checking for libgcrypt failed '%s'\n", p);
+          gnutls_assert ();
+          _gnutls_debug_log ("Checking for libgcrypt failed '%s'\n", p);
           return GNUTLS_E_INCOMPATIBLE_GCRYPT_LIBRARY;
         }
 
@@ -279,17 +279,17 @@ gnutls_global_init (void)
     }
 
 #ifdef DEBUG
-  gnutls_global_set_log_function(MHD_tls_log_func);
+  gnutls_global_set_log_function (MHD_tls_log_func);
 #endif
 
   /* initialize parser
    * This should not deal with files in the final
    * version.
    */
-  res = asn1_array2tree(pkix_asn1_tab, &_gnutls_pkix1_asn, NULL);
+  res = asn1_array2tree (pkix_asn1_tab, &_gnutls_pkix1_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
-      result = _gnutls_asn2err(res);
+      result = _gnutls_asn2err (res);
       return result;
     }
 
@@ -375,31 +375,4 @@ gnutls_transport_set_push_function (gnutls_session_t session,
                                     gnutls_push_func push_func)
 {
   session->internals._gnutls_push_func = push_func;
-}
-
-#include <strverscmp.h>
-
-/**
- * gnutls_check_version - This function checks the library's version
- * @req_version: the version to check
- *
- * Check that the version of the library is at minimum the requested one
- * and return the version string; return NULL if the condition is not
- * satisfied.  If a NULL is passed to this function, no check is done,
- * but the version string is simply returned.
- *
- * See %LIBGNUTLS_VERSION for a suitable @req_version string.
- *
- * Return value: Version string of run-time library, or NULL if the
- *   run-time library does not meet the required version number.  If
- *   %NULL is passed to this function no check is done and only the
- *   version string is returned.
- **/
-const char *
-gnutls_check_version (const char *req_version)
-{
-  if (!req_version || strverscmp (req_version, VERSION) <= 0)
-    return VERSION;
-
-  return NULL;
 }

@@ -461,7 +461,7 @@ _gnutls_ia_client_handshake (gnutls_session_t session)
   ssize_t len;
   int ret;
   const struct gnutls_ia_client_credentials_st *cred =
-    _gnutls_get_cred (session->key, GNUTLS_CRD_IA, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
   if (cred == NULL)
     return GNUTLS_E_INTERNAL_ERROR;
@@ -529,7 +529,7 @@ _gnutls_ia_server_handshake (gnutls_session_t session)
   char buf[1024];
   int ret;
   const struct gnutls_ia_server_credentials_st *cred =
-    _gnutls_get_cred (session->key, GNUTLS_CRD_IA, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
   if (cred == NULL)
     return GNUTLS_E_INTERNAL_ERROR;

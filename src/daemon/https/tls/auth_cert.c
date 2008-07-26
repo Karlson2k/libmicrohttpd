@@ -277,7 +277,7 @@ _find_openpgp_cert (const gnutls_certificate_credentials_t cred,
           if ((_gnutls_check_pk_algo_in_list
                (pk_algos, pk_algos_length,
                 cred->cert_list[i][0].subject_pk_algorithm) == 0)
-              && (cred->cert_list[i][0].cert_type == GNUTLS_CRT_OPENPGP))
+              && (cred->cert_list[i][0].cert_type == MHD_GNUTLS_CRT_OPENPGP))
             {
               *indx = i;
               break;
@@ -350,7 +350,7 @@ get_issuers (gnutls_session_t session,
   int i;
   unsigned size;
 
-  if (gnutls_certificate_type_get (session) != GNUTLS_CRT_X509)
+  if (gnutls_certificate_type_get (session) != MHD_GNUTLS_CRT_X509)
     return 0;
 
   /* put the requested DNs to req_dn, only in case
@@ -398,7 +398,7 @@ call_get_cert_callback (gnutls_session_t session,
   gnutls_certificate_credentials_t cred;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -435,7 +435,7 @@ call_get_cert_callback (gnutls_session_t session,
       goto cleanup;
     }
 
-  if (type == GNUTLS_CRT_X509)
+  if (type == MHD_GNUTLS_CRT_X509)
     {
       local_certs = alloc_and_load_x509_certs (st.cert.x509, st.ncerts);
       if (local_certs != NULL)
@@ -465,7 +465,7 @@ call_get_cert_callback (gnutls_session_t session,
 
 cleanup:
 
-  if (st.type == GNUTLS_CRT_X509)
+  if (st.type == MHD_GNUTLS_CRT_X509)
     {
       if (st.deinit_all)
         {
@@ -517,7 +517,7 @@ _select_client_cert (gnutls_session_t session,
   gnutls_datum_t *issuers_dn = NULL;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -529,7 +529,7 @@ _select_client_cert (gnutls_session_t session,
 
       /* use a callback to get certificate 
        */
-      if (session->security_parameters.cert_type != GNUTLS_CRT_X509)
+      if (session->security_parameters.cert_type != MHD_GNUTLS_CRT_X509)
         issuers_dn_length = 0;
       else
         {
@@ -573,12 +573,12 @@ _select_client_cert (gnutls_session_t session,
        */
       result = 0;
 
-      if (session->security_parameters.cert_type == GNUTLS_CRT_X509)
+      if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509)
         result =
           _find_x509_cert (cred, _data, _data_size,
                            pk_algos, pk_algos_length, &indx);
 
-      if (session->security_parameters.cert_type == GNUTLS_CRT_OPENPGP)
+      if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_OPENPGP)
         result = _find_openpgp_cert (cred, pk_algos, pk_algos_length, &indx);
 
 
@@ -791,13 +791,13 @@ _gnutls_gen_cert_client_certificate (gnutls_session_t session, opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       if (_gnutls_openpgp_send_fingerprint (session) == 0)
         return _gnutls_gen_openpgp_certificate (session, data);
       else
         return _gnutls_gen_openpgp_certificate_fpr (session, data);
 
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_gen_x509_crt (session, data);
 
     default:
@@ -811,9 +811,9 @@ _gnutls_gen_cert_server_certificate (gnutls_session_t session, opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       return _gnutls_gen_openpgp_certificate (session, data);
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_gen_x509_crt (session, data);
     default:
       gnutls_assert ();
@@ -840,7 +840,7 @@ _gnutls_proc_x509_server_certificate (gnutls_session_t session,
   gnutls_datum_t tmp;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -849,7 +849,7 @@ _gnutls_proc_x509_server_certificate (gnutls_session_t session,
 
 
   if ((ret =
-       _gnutls_auth_info_set (session, GNUTLS_CRD_CERTIFICATE,
+       _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                               sizeof (cert_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
@@ -982,7 +982,7 @@ _gnutls_proc_openpgp_server_certificate (gnutls_session_t session,
   gnutls_datum_t tmp, akey = { NULL, 0 };
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -990,7 +990,7 @@ _gnutls_proc_openpgp_server_certificate (gnutls_session_t session,
     }
 
   if ((ret =
-       _gnutls_auth_info_set (session, GNUTLS_CRD_CERTIFICATE,
+       _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                               sizeof (cert_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
@@ -1152,10 +1152,10 @@ _gnutls_proc_cert_server_certificate (gnutls_session_t session,
 {
   switch (session->security_parameters.cert_type)
     {
-    case GNUTLS_CRT_OPENPGP:
+    case MHD_GNUTLS_CRT_OPENPGP:
       return _gnutls_proc_openpgp_server_certificate (session,
                                                       data, data_size);
-    case GNUTLS_CRT_X509:
+    case MHD_GNUTLS_CRT_X509:
       return _gnutls_proc_x509_server_certificate (session, data, data_size);
     default:
       gnutls_assert ();
@@ -1178,7 +1178,7 @@ _gnutls_check_supported_sign_algo (CertificateSigType algo)
   switch (algo)
     {
     case RSA_SIGN:
-      return GNUTLS_PK_RSA;
+      return MHD_GNUTLS_PK_RSA;
     }
 
   return -1;
@@ -1199,7 +1199,7 @@ _gnutls_proc_cert_cert_req (gnutls_session_t session, opaque * data,
   gnutls_protocol_t ver = gnutls_protocol_get_version (session);
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -1207,7 +1207,7 @@ _gnutls_proc_cert_cert_req (gnutls_session_t session, opaque * data,
     }
 
   if ((ret =
-       _gnutls_auth_info_set (session, GNUTLS_CRD_CERTIFICATE,
+       _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                               sizeof (cert_auth_info_st), 0)) < 0)
     {
       gnutls_assert ();
@@ -1244,7 +1244,7 @@ _gnutls_proc_cert_cert_req (gnutls_session_t session, opaque * data,
       return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
     }
 
-  if (ver == GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_TLS1_2)
     {
       /* read supported hashes */
       int hash_num;
@@ -1262,7 +1262,7 @@ _gnutls_proc_cert_cert_req (gnutls_session_t session, opaque * data,
   size = _gnutls_read_uint16 (p);
   p += 2;
 
-  if (session->security_parameters.cert_type == GNUTLS_CRT_OPENPGP
+  if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_OPENPGP
       && size != 0)
     {
       gnutls_assert ();         // size should be zero
@@ -1405,7 +1405,7 @@ _gnutls_gen_cert_server_cert_req (gnutls_session_t session, opaque ** data)
    */
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -1415,11 +1415,11 @@ _gnutls_gen_cert_server_cert_req (gnutls_session_t session, opaque ** data)
   size = CERTTYPE_SIZE + 2;     /* 2 for gnutls_certificate_type_t + 2 for size of rdn_seq 
                                  */
 
-  if (session->security_parameters.cert_type == GNUTLS_CRT_X509 &&
+  if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509 &&
       session->internals.ignore_rdn_sequence == 0)
     size += cred->x509_rdn_sequence.size;
 
-  if (ver == GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_TLS1_2)
     /* Need at least one byte to announce the number of supported hash
        functions (see below).  */
     size += 1;
@@ -1439,14 +1439,14 @@ _gnutls_gen_cert_server_cert_req (gnutls_session_t session, opaque ** data)
   pdata[2] = DSA_SIGN;          /* only these for now */
   pdata += CERTTYPE_SIZE;
 
-  if (ver == GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_TLS1_2)
     {
       /* Supported hashes (nothing for now -- FIXME). */
       *pdata = 0;
       pdata++;
     }
 
-  if (session->security_parameters.cert_type == GNUTLS_CRT_X509 &&
+  if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509 &&
       session->internals.ignore_rdn_sequence == 0)
     {
       _gnutls_write_datum16 (pdata, cred->x509_rdn_sequence);
@@ -1717,7 +1717,7 @@ _gnutls_server_select_cert (gnutls_session_t session,
   gnutls_certificate_credentials_t cred;
 
   cred = (gnutls_certificate_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_CERTIFICATE, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();

@@ -71,7 +71,7 @@ gen_anon_server_kx (gnutls_session_t session, opaque ** data)
   gnutls_anon_server_credentials_t cred;
 
   cred = (gnutls_anon_server_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_ANON, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_ANON, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -91,7 +91,7 @@ gen_anon_server_kx (gnutls_session_t session, opaque ** data)
   g = mpis[1];
 
   if ((ret =
-       _gnutls_auth_info_set (session, GNUTLS_CRD_ANON,
+       _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
                               sizeof (anon_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
@@ -124,7 +124,7 @@ proc_anon_client_kx (gnutls_session_t session, opaque * data,
   bits = _gnutls_dh_get_allowed_prime_bits (session);
 
   cred = (gnutls_anon_server_credentials_t)
-    _gnutls_get_cred (session->key, GNUTLS_CRD_ANON, NULL);
+    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_ANON, NULL);
   if (cred == NULL)
     {
       gnutls_assert ();
@@ -158,7 +158,7 @@ proc_anon_server_kx (gnutls_session_t session, opaque * data,
 
   /* set auth_info */
   if ((ret =
-       _gnutls_auth_info_set (session, GNUTLS_CRD_ANON,
+       _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
                               sizeof (anon_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();

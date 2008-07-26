@@ -6,7 +6,8 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon \
--I$(top_srcdir)/src/include 
+-I$(top_srcdir)/src/include \
+$(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \
   daemontest_get \
@@ -26,6 +27,17 @@ check_PROGRAMS = \
   daemontest_put_chunked 
 
 TESTS = $(check_PROGRAMS)
+
+noinst_LIBRARIES = libcurl_version_check.a
+
+libcurl_version_check_a_SOURCES = \
+  curl_version_check.c
+libcurl_version_check_a_CPPFLAGS = \
+  -I$(top_srcdir)/src/daemon \
+  -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/daemon/https \
+  $(LIBCURL_CPPFLAGS)
+
 
 daemontest_get_SOURCES = \
   daemontest_get.c

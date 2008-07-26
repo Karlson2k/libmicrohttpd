@@ -787,7 +787,7 @@ get_temp_recv_buffer (gnutls_session_t session, gnutls_datum_t * tmp)
 {
   size_t max_record_size;
 
-  if (gnutls_compression_get (session) != GNUTLS_COMP_NULL)
+  if (gnutls_compression_get (session) != MHD_GNUTLS_COMP_NULL)
     max_record_size = MAX_RECORD_RECV_SIZE + EXTRA_COMP_SIZE;
   else
     max_record_size = MAX_RECORD_RECV_SIZE;

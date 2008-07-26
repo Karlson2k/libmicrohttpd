@@ -35,16 +35,16 @@ _gnutls_mac2gc (gnutls_mac_algorithm_t mac)
 {
   switch (mac)
     {
-    case GNUTLS_MAC_NULL:
+    case MHD_GNUTLS_MAC_NULL:
       return -1;
       break;
-    case GNUTLS_MAC_SHA1:
+    case MHD_GNUTLS_MAC_SHA1:
       return GC_SHA1;
       break;
-    case GNUTLS_MAC_SHA256:
+    case MHD_GNUTLS_MAC_SHA256:
       return GC_SHA256;
       break;
-    case GNUTLS_MAC_MD5:
+    case MHD_GNUTLS_MAC_MD5:
       return GC_MD5;
       break;
     default:
@@ -193,9 +193,9 @@ get_padsize (gnutls_mac_algorithm_t algorithm)
 {
   switch (algorithm)
     {
-    case GNUTLS_MAC_MD5:
+    case MHD_GNUTLS_MAC_MD5:
       return 48;
-    case GNUTLS_MAC_SHA1:
+    case MHD_GNUTLS_MAC_SHA1:
       return 40;
     default:
       return 0;
@@ -322,7 +322,7 @@ ssl3_sha (int i, opaque * secret, int secret_len,
       text1[j] = 65 + i;        /* A==65 */
     }
 
-  td = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  td = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td == NULL)
     {
       gnutls_assert ();
@@ -345,7 +345,7 @@ ssl3_md5 (int i, opaque * secret, int secret_len,
   mac_hd_t td;
   int ret;
 
-  td = _gnutls_hash_init (GNUTLS_MAC_MD5);
+  td = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
   if (td == NULL)
     {
       gnutls_assert ();
@@ -362,7 +362,7 @@ ssl3_md5 (int i, opaque * secret, int secret_len,
       return ret;
     }
 
-  _gnutls_hash (td, tmp, _gnutls_hash_get_algo_len (GNUTLS_MAC_SHA1));
+  _gnutls_hash (td, tmp, _gnutls_hash_get_algo_len (MHD_GNUTLS_MAC_SHA1));
 
   _gnutls_hash_deinit (td, digest);
   return 0;
@@ -375,9 +375,9 @@ _gnutls_ssl3_hash_md5 (void *first, int first_len,
 {
   opaque digest[MAX_HASH_SIZE];
   mac_hd_t td;
-  int block = _gnutls_hash_get_algo_len (GNUTLS_MAC_MD5);
+  int block = _gnutls_hash_get_algo_len (MHD_GNUTLS_MAC_MD5);
 
-  td = _gnutls_hash_init (GNUTLS_MAC_MD5);
+  td = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
   if (td == NULL)
     {
       gnutls_assert ();
@@ -408,7 +408,7 @@ _gnutls_ssl3_generate_random (void *secret, int secret_len,
 {
   int i = 0, copy, output_bytes;
   opaque digest[MAX_HASH_SIZE];
-  int block = _gnutls_hash_get_algo_len (GNUTLS_MAC_MD5);
+  int block = _gnutls_hash_get_algo_len (MHD_GNUTLS_MAC_MD5);
   int result, times;
 
   output_bytes = 0;

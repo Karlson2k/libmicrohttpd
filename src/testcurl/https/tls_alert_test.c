@@ -24,29 +24,15 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
-#include "plibc.h"
-#include "microhttpsd.h"
-#include <errno.h>
-
+#include "platform.h"
+#include "microhttpd.h"
 #include <curl/curl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-
-#define MHD_E_MEM "Error: memory error\n"
-#define MHD_E_SERVER_INIT "Error: failed to start server\n"
-
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
 #include "tls_test_keys.h"
+
+#define MHD_E_MEM "Error: memory error\n"
+#define MHD_E_SERVER_INIT "Error: failed to start server\n"
 
 extern int curl_check_version (const char *req_version, ...);
 
@@ -110,7 +96,7 @@ test_alert_response ()
       // ...
     }
 
-  gnutls_credentials_set (session, GNUTLS_CRD_CERTIFICATE, xcred);
+  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
   memset (&sa, '\0', sizeof (struct sockaddr_in));
@@ -161,7 +147,7 @@ main (int argc, char *const *argv)
   int ret, errorCount = 0;;
   struct MHD_Daemon *d;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
     {
       return -1;
     }
@@ -182,7 +168,7 @@ main (int argc, char *const *argv)
   errorCount += test_alert_response ();
 
   if (errorCount != 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
+    fprintf (stderr, "Error (code: %d)\n", errorCount);
 
   MHD_stop_daemon (d);
   return errorCount != 0;

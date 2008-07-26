@@ -162,7 +162,7 @@ pkcs1_rsa_sign (gnutls_digest_algorithm_t hash, const gnutls_datum_t * text,
     }
 
   if ((ret =
-       _gnutls_sign (GNUTLS_PK_RSA, params, params_len, &info,
+       _gnutls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
                      signature)) < 0)
     {
       gnutls_assert ();
@@ -193,7 +193,7 @@ _gnutls_x509_sign (const gnutls_datum_t * tbs,
 
   switch (signer->pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       ret =
         pkcs1_rsa_sign (hash, tbs, signer->params, signer->params_size,
                         signature);

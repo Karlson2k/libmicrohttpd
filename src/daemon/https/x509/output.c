@@ -612,7 +612,7 @@ print_cert (gnutls_string * str, gnutls_x509_crt_t cert, int notsigned)
         addf (str, _("\tSubject Public Key Algorithm: %s\n"), name);
         switch (err)
           {
-          case GNUTLS_PK_RSA:
+          case MHD_GNUTLS_PK_RSA:
             {
               gnutls_datum_t m, e;
 
@@ -932,7 +932,7 @@ print_fingerprint (gnutls_string * str, gnutls_x509_crt_t cert,
       return;
     }
 
-  if (algo == GNUTLS_DIG_MD5)
+  if (algo == MHD_GNUTLS_DIG_MD5)
     addf (str, _("\tMD5 fingerprint:\n\t\t"));
   else
     addf (str, _("\tSHA-1 fingerprint:\n\t\t"));
@@ -981,8 +981,8 @@ print_other (gnutls_string * str, gnutls_x509_crt_t cert, int notsigned)
 {
   if (!notsigned)
     {
-      print_fingerprint (str, cert, GNUTLS_DIG_MD5);
-      print_fingerprint (str, cert, GNUTLS_DIG_SHA1);
+      print_fingerprint (str, cert, MHD_GNUTLS_DIG_MD5);
+      print_fingerprint (str, cert, MHD_GNUTLS_DIG_SHA1);
     }
   print_keyid (str, cert);
 }
@@ -1088,7 +1088,7 @@ print_oneline (gnutls_string * str, gnutls_x509_crt_t cert)
     size_t size = sizeof (buffer);
     int err;
 
-    err = gnutls_x509_crt_get_fingerprint (cert, GNUTLS_DIG_SHA1,
+    err = gnutls_x509_crt_get_fingerprint (cert, MHD_GNUTLS_DIG_SHA1,
                                            buffer, &size);
     if (err < 0)
       {

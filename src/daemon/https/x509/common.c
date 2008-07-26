@@ -1244,7 +1244,7 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
       return _gnutls_asn2err (result);
     }
 
-  if (pk_algorithm == GNUTLS_PK_RSA)
+  if (pk_algorithm == MHD_GNUTLS_PK_RSA)
     {
       /* disable parameters, which are not used in RSA.
        */
@@ -1363,7 +1363,7 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
 
   switch (algo)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       {
         if ((result = _gnutls_x509_read_rsa_params (str, len, params)) < 0)
           {

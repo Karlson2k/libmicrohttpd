@@ -112,10 +112,10 @@ openpgp_pk_to_gnutls_cert (gnutls_cert * cert, cdk_pkt_pubkey_t pk)
       return GNUTLS_E_UNWANTED_ALGORITHM;
     }
 
-  algo = GNUTLS_PK_RSA;
+  algo = MHD_GNUTLS_PK_RSA;
   cert->subject_pk_algorithm = algo;
   cert->version = pk->version;
-  cert->cert_type = GNUTLS_CRT_OPENPGP;
+  cert->cert_type = MHD_GNUTLS_CRT_OPENPGP;
 
   cert->key_usage = 0;
   if (pk->pubkey_usage & CDK_KEY_USG_SIGN)
@@ -247,7 +247,7 @@ _gnutls_openpgp_raw_privkey_to_gkey (gnutls_privkey * pkey,
   if (is_ELG (pke_algo))
     return GNUTLS_E_UNWANTED_ALGORITHM;
   else if (is_RSA (pke_algo))
-    pkey->pk_algorithm = GNUTLS_PK_RSA;
+    pkey->pk_algorithm = MHD_GNUTLS_PK_RSA;
 
 leave:
   cdk_kbnode_release (snode);
@@ -885,7 +885,7 @@ _gnutls_openpgp_crt_to_gcert (gnutls_cert * gcert, gnutls_openpgp_crt_t cert)
   int ret;
 
   memset (gcert, 0, sizeof (gnutls_cert));
-  gcert->cert_type = GNUTLS_CRT_OPENPGP;
+  gcert->cert_type = MHD_GNUTLS_CRT_OPENPGP;
 
 
   ret = gnutls_openpgp_crt_export (cert, GNUTLS_OPENPGP_FMT_RAW,

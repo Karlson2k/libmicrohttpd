@@ -48,7 +48,7 @@ _gnutls_comp_init (gnutls_compression_method_t method, int d)
   switch (method)
     {
 #ifdef HAVE_LIBZ
-    case GNUTLS_COMP_DEFLATE:
+    case MHD_GNUTLS_COMP_DEFLATE:
       {
         int window_bits, mem_level;
         int comp_level;
@@ -88,7 +88,7 @@ _gnutls_comp_init (gnutls_compression_method_t method, int d)
         break;
       }
 #endif
-    case GNUTLS_COMP_NULL:
+    case MHD_GNUTLS_COMP_NULL:
       break;
     }
   return ret;
@@ -109,7 +109,7 @@ _gnutls_comp_deinit (comp_hd_t handle, int d)
       switch (handle->algo)
         {
 #ifdef HAVE_LIBZ
-        case GNUTLS_COMP_DEFLATE:
+        case MHD_GNUTLS_COMP_DEFLATE:
           if (d)
             err = inflateEnd (handle->handle);
           else
@@ -147,7 +147,7 @@ _gnutls_compress (comp_hd_t handle, const opaque * plain,
     {
 
 #ifdef HAVE_LIBZ
-    case GNUTLS_COMP_DEFLATE:
+    case MHD_GNUTLS_COMP_DEFLATE:
       {
         uLongf size;
         z_stream *zhandle;
@@ -228,7 +228,7 @@ _gnutls_decompress (comp_hd_t handle, opaque * compressed,
   switch (handle->algo)
     {
 #ifdef HAVE_LIBZ
-    case GNUTLS_COMP_DEFLATE:
+    case MHD_GNUTLS_COMP_DEFLATE:
       {
         uLongf out_size;
         z_stream *zhandle;

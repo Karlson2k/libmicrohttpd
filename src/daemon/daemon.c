@@ -105,9 +105,9 @@ MHDS_init (struct MHD_Daemon *daemon)
     }
   else if (daemon->https_mem_cert && daemon->https_mem_key)
     {
-      key.data = (char*) daemon->https_mem_key;
+      key.data = (char *) daemon->https_mem_key;
       key.size = strlen (daemon->https_mem_key);
-      cert.data = (char*) daemon->https_mem_cert;
+      cert.data = (char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
       gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
@@ -127,7 +127,7 @@ MHDS_init (struct MHD_Daemon *daemon)
     {
       /* initialize Diffie Hellman parameters if necessary */
       /* TODO add other cipher suits */
-      if (st.priority[i] == GNUTLS_KX_DHE_RSA)
+      if (st.priority[i] == MHD_GNUTLS_KX_DHE_RSA)
         {
           gnutls_dh_params_init (&daemon->dh_params);
           gnutls_dh_params_generate2 (daemon->dh_params, 1024);
@@ -318,7 +318,7 @@ MHDS_handle_connection (void *data)
   gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
 
   /* set needed credentials for certificate authentication. */
-  gnutls_credentials_set (con->tls_session, GNUTLS_CRD_CERTIFICATE,
+  gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
                           con->daemon->x509_cret);
 
   /* TODO avoid gnutls blocking recv / write calls

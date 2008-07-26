@@ -264,7 +264,7 @@ gnutls_rsa_params_cpy (gnutls_rsa_params_t dst, gnutls_rsa_params_t src)
 int
 gnutls_rsa_params_generate2 (gnutls_rsa_params_t params, unsigned int bits)
 {
-  return gnutls_x509_privkey_generate (params, GNUTLS_PK_RSA, bits, 0);
+  return gnutls_x509_privkey_generate (params, MHD_GNUTLS_PK_RSA, bits, 0);
 }
 
 /**

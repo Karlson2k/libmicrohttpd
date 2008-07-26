@@ -24,19 +24,13 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
-#include "plibc.h"
-#include "microhttpsd.h"
-#include <errno.h>
+#include "platform.h"
+#include "microhttpd.h"
 
-#include <curl/curl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
+
+#include "gnutls.h"
+#include <curl/curl.h>
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
@@ -51,7 +45,7 @@
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
-extern int curl_check_version (const char *req_version, ...);
+int curl_check_version (const char *req_version, ...);
 
 struct CBC
 {
@@ -183,14 +177,14 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  //curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
 
   /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
@@ -308,7 +302,7 @@ test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
 {
 
   int ret;
-  int ciper[] = { GNUTLS_CIPHER_3DES_CBC, 0 };
+  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
   struct MHD_Daemon *d;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
@@ -334,7 +328,8 @@ test_kx_option (FILE * test_fd, char *cipher_suite, int proto_version)
 {
 
   int ret;
-  int kx[] = { GNUTLS_KX_DHE_RSA, 0 };
+  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
+  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
@@ -342,7 +337,8 @@ test_kx_option (FILE * test_fd, char *cipher_suite, int proto_version)
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_KX_PRIORITY, kx, MHD_OPTION_END);
+                        MHD_OPTION_KX_PRIORITY, kx,
+                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
 
   if (d == NULL)
     {
@@ -361,7 +357,7 @@ test_mac_option (FILE * test_fd, char *cipher_suite, int proto_version)
 {
 
   int ret;
-  int mac[] = { GNUTLS_MAC_SHA1, 0 };
+  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
@@ -418,7 +414,9 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_SSL_VERSION))
+  /* gnutls_global_set_log_level(11); */
+
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
     {
       return -1;
     }
@@ -436,16 +434,16 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   /* TODO resolve cipher setting issue when compiling against GNU TLS */
   errorCount +=
-    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
-  errorCount +=
-    test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_SSLv3);
+    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+/*  errorCount +=
+    test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_SSLv3); */
 
 
   curl_global_cleanup ();

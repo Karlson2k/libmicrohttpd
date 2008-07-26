@@ -58,7 +58,7 @@
  * All functions are guaranteed to be completely reentrant and
  * thread-safe.<p>
  *
- * NEW: Before including "microhttpd.h" you should add the 
+ * NEW: Before including "microhttpd.h" you should add the
  * necessary includes to define the "size_t", "fd_set", "socklen_t" and
  * "struct sockaddr" data types (which headers are needed may
  * depend on your platform; for possible suggestions consult
@@ -922,6 +922,137 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  *                value of this function
  */
 int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
+
+/*
+ * HTTPS
+ */
+
+typedef enum MHD_GNUTLS_cipher_algorithm
+{
+  MHD_GNUTLS_CIPHER_UNKNOWN = 0,
+  MHD_GNUTLS_CIPHER_NULL = 1,
+  MHD_GNUTLS_CIPHER_ARCFOUR_128,
+  MHD_GNUTLS_CIPHER_3DES_CBC,
+  MHD_GNUTLS_CIPHER_AES_128_CBC,
+  MHD_GNUTLS_CIPHER_AES_256_CBC,
+  MHD_GNUTLS_CIPHER_ARCFOUR_40,
+  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+  MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
+  MHD_GNUTLS_CIPHER_DES_CBC
+} gnutls_cipher_algorithm_t;
+
+typedef enum
+{
+  MHD_GNUTLS_KX_UNKNOWN = 0,
+  MHD_GNUTLS_KX_RSA = 1,
+  MHD_GNUTLS_KX_DHE_DSS,
+  MHD_GNUTLS_KX_DHE_RSA,
+  MHD_GNUTLS_KX_ANON_DH,
+  MHD_GNUTLS_KX_SRP,
+  MHD_GNUTLS_KX_RSA_EXPORT,
+  MHD_GNUTLS_KX_SRP_RSA,
+  MHD_GNUTLS_KX_SRP_DSS
+} gnutls_kx_algorithm_t;
+
+typedef enum
+{
+  MHD_GNUTLS_CRD_CERTIFICATE = 1,
+  MHD_GNUTLS_CRD_ANON,
+  MHD_GNUTLS_CRD_SRP,
+  MHD_GNUTLS_CRD_PSK,
+  MHD_GNUTLS_CRD_IA
+} gnutls_credentials_type_t;
+
+typedef enum
+{
+  MHD_GNUTLS_MAC_UNKNOWN = 0,
+  MHD_GNUTLS_MAC_NULL = 1,
+  MHD_GNUTLS_MAC_MD5,
+  MHD_GNUTLS_MAC_SHA1,
+  MHD_GNUTLS_MAC_SHA256
+  //GNUTLS_MAC_SHA384,
+  //GNUTLS_MAC_SHA512
+} gnutls_mac_algorithm_t;
+
+  /* The enumerations here should have the same value with
+     gnutls_mac_algorithm_t.
+   */
+typedef enum
+{
+  MHD_GNUTLS_DIG_NULL = MHD_GNUTLS_MAC_NULL,
+  MHD_GNUTLS_DIG_MD5 = MHD_GNUTLS_MAC_MD5,
+  MHD_GNUTLS_DIG_SHA1 = MHD_GNUTLS_MAC_SHA1,
+  MHD_GNUTLS_DIG_SHA256 = MHD_GNUTLS_MAC_SHA256
+} gnutls_digest_algorithm_t;
+
+
+typedef enum
+{
+  MHD_GNUTLS_COMP_UNKNOWN = 0,
+  MHD_GNUTLS_COMP_NULL = 1,
+  MHD_GNUTLS_COMP_DEFLATE,
+  MHD_GNUTLS_COMP_LZO               /* only available if gnutls-extra has
+                                   been initialized
+                                 */
+} gnutls_compression_method_t;
+
+typedef enum
+{
+  MHD_GNUTLS_SSL3 = 1,
+  MHD_GNUTLS_TLS1_0,
+  MHD_GNUTLS_TLS1_1,
+  MHD_GNUTLS_TLS1_2,
+  MHD_GNUTLS_VERSION_UNKNOWN = 0xff
+} gnutls_protocol_t;
+
+typedef enum
+{
+  MHD_GNUTLS_CRT_UNKNOWN = 0,
+  MHD_GNUTLS_CRT_X509 = 1,
+  MHD_GNUTLS_CRT_OPENPGP
+} gnutls_certificate_type_t;
+
+typedef enum
+{
+  MHD_GNUTLS_PK_UNKNOWN = 0,
+  MHD_GNUTLS_PK_RSA = 1
+  //GNUTLS_PK_DSA
+} gnutls_pk_algorithm_t;
+
+union MHD_SessionInfo
+{
+  gnutls_cipher_algorithm_t cipher_algorithm;
+  gnutls_kx_algorithm_t kx_algorithm;
+  gnutls_credentials_type_t credentials_type;
+  gnutls_mac_algorithm_t mac_algorithm;
+  gnutls_compression_method_t compression_method;
+  gnutls_protocol_t protocol;
+  gnutls_certificate_type_t certificate_type;
+  gnutls_pk_algorithm_t pk_algorithm;
+  int null_info;
+};
+
+enum MHD_InfoType
+{
+  MHS_INFO_CIPHER_ALGO,
+  MHD_INFO_KX_ALGO,
+  MHD_INFO_CREDENTIALS_TYPE,
+  MHD_INFO_MAC_ALGO,
+  MHD_INFO_COMPRESSION_METHOD,
+  MHD_INFO_PROTOCOL,
+  MHD_INFO_CERT_TYPE
+};
+
+union MHD_SessionInfo MHD_get_session_info (struct MHD_Connection *con,
+                                            enum MHD_InfoType infoType);
+
+/* TODO impl */
+size_t MHDS_get_key_size (struct MHD_Daemon *daemon,
+                          gnutls_cipher_algorithm_t algorithm);
+size_t MHDS_get_mac_key_size (struct MHD_Daemon *daemon,
+                              gnutls_mac_algorithm_t algorithm);
+
 
 
 #if 0                           /* keep Emacsens' auto-indent happy */

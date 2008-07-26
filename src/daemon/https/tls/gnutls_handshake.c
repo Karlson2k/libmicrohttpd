@@ -198,7 +198,7 @@ _gnutls_finished (gnutls_session_t session, int type, void *ret)
   mac_hd_t td_sha;
   gnutls_protocol_t ver = gnutls_protocol_get_version (session);
 
-  if (ver < GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_TLS1_2)
     {
       td_md5 =
         _gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
@@ -217,7 +217,7 @@ _gnutls_finished (gnutls_session_t session, int type, void *ret)
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver < GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_TLS1_2)
     {
       _gnutls_hash_deinit (td_md5, concat);
       _gnutls_hash_deinit (td_sha, &concat[16]);
@@ -283,7 +283,7 @@ _gnutls_negotiate_version (gnutls_session_t session,
        * then we send him the highest we support.
        */
       ret = _gnutls_version_max (session);
-      if (ret == GNUTLS_VERSION_UNKNOWN)
+      if (ret == MHD_GNUTLS_VERSION_UNKNOWN)
         {
           /* this check is not really needed.
            */
@@ -423,7 +423,7 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
 
   /* Parse the extensions (if any)
    */
-  if (neg_version >= GNUTLS_TLS1)
+  if (neg_version >= MHD_GNUTLS_TLS1_0)
     {
       ret = _gnutls_parse_extensions (session, EXTENSION_APPLICATION, &data[pos], len); /* len is the rest of the parsed length */
       if (ret < 0)
@@ -440,7 +440,7 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
       return ret;
     }
 
-  if (neg_version >= GNUTLS_TLS1)
+  if (neg_version >= MHD_GNUTLS_TLS1_0)
     {
       ret = _gnutls_parse_extensions (session, EXTENSION_TLS, &data[pos], len); /* len is the rest of the parsed length */
       if (ret < 0)
@@ -530,7 +530,7 @@ _gnutls_send_finished (gnutls_session_t session, int again)
           return ret;
         }
 
-      if (gnutls_protocol_get_version (session) == GNUTLS_SSL3)
+      if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
         {
           ret =
             _gnutls_ssl3_finished (session,
@@ -582,7 +582,7 @@ _gnutls_recv_finished (gnutls_session_t session)
     }
 
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_SSL3)
+  if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
       data_size = 36;
     }
@@ -598,7 +598,7 @@ _gnutls_recv_finished (gnutls_session_t session)
       return GNUTLS_E_ERROR_IN_FINISHED_PACKET;
     }
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_SSL3)
+  if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
       ret =
         _gnutls_ssl3_finished (session,
@@ -653,7 +653,7 @@ _gnutls_server_find_pk_algos_in_ciphersuites (const opaque *
       memcpy (&cs.suite, &data[j], 2);
       kx = _gnutls_cipher_suite_get_kx_algo (&cs);
 
-      if (_gnutls_map_kx_get_cred (kx, 1) == GNUTLS_CRD_CERTIFICATE)
+      if (_gnutls_map_kx_get_cred (kx, 1) == MHD_GNUTLS_CRD_CERTIFICATE)
         {
           algo = _gnutls_map_pk_get_pk (kx);
 
@@ -848,7 +848,7 @@ _gnutls_server_select_comp_method (gnutls_session_t session,
 
 /* This function sends an empty handshake packet. (like hello request).
  * If the previous _gnutls_send_empty_handshake() returned
- * GNUTLS_E_AGAIN or GNUTLS_E_INTERRUPTED, then it must be called again 
+ * GNUTLS_E_AGAIN or GNUTLS_E_INTERRUPTED, then it must be called again
  * (until it returns ok), with NULL parameters.
  */
 int
@@ -1536,7 +1536,7 @@ _gnutls_read_server_hello (gnutls_session_t session,
 
   /* Parse extensions.
    */
-  if (version >= GNUTLS_TLS1)
+  if (version >= MHD_GNUTLS_TLS1_0)
     {
       ret = _gnutls_parse_extensions (session, EXTENSION_ANY, &data[pos], len); /* len is the rest of the parsed length */
       if (ret < 0)
@@ -1711,7 +1711,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
           hver = session->internals.resumed_security_parameters.version;
         }
 
-      if (hver == GNUTLS_VERSION_UNKNOWN || hver == 0)
+      if (hver == MHD_GNUTLS_VERSION_UNKNOWN || hver == 0)
         {
           gnutls_assert ();
           gnutls_free (data);
@@ -1815,7 +1815,7 @@ _gnutls_send_client_hello (gnutls_session_t session, int again)
 
       /* Generate and copy TLS extensions.
        */
-      if (hver >= GNUTLS_TLS1)
+      if (hver >= MHD_GNUTLS_TLS1_0)
         {
           extdatalen =
             _gnutls_gen_extensions (session, extdata, sizeof (extdata));
@@ -2105,7 +2105,7 @@ _gnutls_handshake_hash_init (gnutls_session_t session)
   if (session->internals.handshake_mac_handle_md5 == NULL)
     {
       session->internals.handshake_mac_handle_md5 =
-        _gnutls_hash_init (GNUTLS_MAC_MD5);
+        _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
 
       if (session->internals.handshake_mac_handle_md5 == GNUTLS_HASH_FAILED)
         {
@@ -2117,7 +2117,7 @@ _gnutls_handshake_hash_init (gnutls_session_t session)
   if (session->internals.handshake_mac_handle_sha == NULL)
     {
       session->internals.handshake_mac_handle_sha =
-        _gnutls_hash_init (GNUTLS_MAC_SHA1);
+        _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
       if (session->internals.handshake_mac_handle_sha == GNUTLS_HASH_FAILED)
         {
           gnutls_assert ();
@@ -2717,7 +2717,7 @@ check_server_params (gnutls_session_t session,
 
   /* Read the Diffie Hellman parameters, if any.
    */
-  if (cred_type == GNUTLS_CRD_CERTIFICATE)
+  if (cred_type == MHD_GNUTLS_CRD_CERTIFICATE)
     {
       int delete;
       gnutls_certificate_credentials_t x509_cred =
@@ -2753,7 +2753,7 @@ check_server_params (gnutls_session_t session,
 
 #ifdef ENABLE_ANON
     }
-  else if (cred_type == GNUTLS_CRD_ANON)
+  else if (cred_type == MHD_GNUTLS_CRD_ANON)
     {
       gnutls_anon_server_credentials_t anon_cred =
         (gnutls_anon_server_credentials_t) _gnutls_get_cred (session->key,
@@ -2768,7 +2768,7 @@ check_server_params (gnutls_session_t session,
 #endif
 #ifdef ENABLE_PSK
     }
-  else if (cred_type == GNUTLS_CRD_PSK)
+  else if (cred_type == MHD_GNUTLS_CRD_PSK)
     {
       gnutls_psk_server_credentials_t psk_cred =
         (gnutls_psk_server_credentials_t) _gnutls_get_cred (session->key,
@@ -2843,7 +2843,7 @@ _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
 
   cert_cred =
     (gnutls_certificate_credentials_t) _gnutls_get_cred (session->key,
-                                                         GNUTLS_CRD_CERTIFICATE,
+                                                         MHD_GNUTLS_CRD_CERTIFICATE,
                                                          NULL);
 
   /* If there are certificate credentials, find an appropriate certificate
@@ -2909,9 +2909,9 @@ _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
          (see cred_mappings in gnutls_algorithms.c), but it also
          requires a SRP credential.  Don't use SRP kx unless we have a
          SRP credential too.  */
-      if (kx == GNUTLS_KX_SRP_RSA || kx == GNUTLS_KX_SRP_DSS)
+      if (kx == MHD_GNUTLS_KX_SRP_RSA || kx == MHD_GNUTLS_KX_SRP_DSS)
         {
-          if (!_gnutls_get_cred (session->key, GNUTLS_CRD_SRP, NULL))
+          if (!_gnutls_get_cred (session->key, MHD_GNUTLS_CRD_SRP, NULL))
             delete = 1;
         }
 

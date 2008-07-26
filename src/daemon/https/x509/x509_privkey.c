@@ -64,7 +64,7 @@ gnutls_x509_privkey_init (gnutls_x509_privkey_t * key)
   if (*key)
     {
       (*key)->key = ASN1_TYPE_EMPTY;
-      (*key)->pk_algorithm = GNUTLS_PK_UNKNOWN;
+      (*key)->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
       return 0;                 /* success */
     }
 
@@ -126,7 +126,7 @@ gnutls_x509_privkey_cpy (gnutls_x509_privkey_t dst, gnutls_x509_privkey_t src)
     {
       switch (dst->pk_algorithm)
         {
-        case GNUTLS_PK_RSA:
+        case MHD_GNUTLS_PK_RSA:
           ret = _gnutls_asn1_encode_rsa (&dst->key, dst->params);
           if (ret < 0)
             {
@@ -355,7 +355,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
   _data.data = data->data;
   _data.size = data->size;
 
-  key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+  key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
 
   /* If the Certificate is in PEM format then decode it */
   if (format == GNUTLS_X509_FMT_PEM)
@@ -365,7 +365,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
       /* Try the first header */
       result
         = _gnutls_fbase64_decode (PEM_KEY_RSA, data->data, data->size, &out);
-      key->pk_algorithm = GNUTLS_PK_RSA;
+      key->pk_algorithm = MHD_GNUTLS_PK_RSA;
 
       // TODO rm
 //      if (result == GNUTLS_E_BASE64_UNEXPECTED_HEADER_ERROR)
@@ -390,7 +390,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
       need_free = 1;
     }
 
-  if (key->pk_algorithm == GNUTLS_PK_RSA)
+  if (key->pk_algorithm == MHD_GNUTLS_PK_RSA)
     {
       key->key = _gnutls_privkey_decode_pkcs1_rsa_key (&_data, key);
       if (key->key == NULL)
@@ -399,7 +399,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
   else
     {
       /* Try decoding with both, and accept the one that succeeds. */
-      key->pk_algorithm = GNUTLS_PK_RSA;
+      key->pk_algorithm = MHD_GNUTLS_PK_RSA;
       key->key = _gnutls_privkey_decode_pkcs1_rsa_key (&_data, key);
 
       // TODO rm
@@ -416,7 +416,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
     {
       gnutls_assert ();
       result = GNUTLS_E_ASN1_DER_ERROR;
-      key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+      key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
       return result;
     }
 
@@ -539,7 +539,7 @@ gnutls_x509_privkey_import_rsa_raw (gnutls_x509_privkey_t key,
     }
 
   key->params_size = RSA_PRIVATE_PARAMS;
-  key->pk_algorithm = GNUTLS_PK_RSA;
+  key->pk_algorithm = MHD_GNUTLS_PK_RSA;
 
   return 0;
 
@@ -605,7 +605,7 @@ gnutls_x509_privkey_export (gnutls_x509_privkey_t key,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  if (key->pk_algorithm == GNUTLS_PK_RSA)
+  if (key->pk_algorithm == MHD_GNUTLS_PK_RSA)
     msg = PEM_KEY_RSA;
   else
     msg = NULL;
@@ -615,7 +615,7 @@ gnutls_x509_privkey_export (gnutls_x509_privkey_t key,
                                  */
       switch (key->pk_algorithm)
         {
-        case GNUTLS_PK_RSA:
+        case MHD_GNUTLS_PK_RSA:
           ret = _gnutls_asn1_encode_rsa (&key->key, key->params);
           if (ret < 0)
             {
@@ -1204,7 +1204,7 @@ gnutls_x509_privkey_generate (gnutls_x509_privkey_t key,
 
   switch (algo)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       ret = _gnutls_rsa_generate_params (key->params, &params_len, bits);
       if (ret < 0)
         {
@@ -1223,7 +1223,7 @@ gnutls_x509_privkey_generate (gnutls_x509_privkey_t key,
         }
 
       key->params_size = params_len;
-      key->pk_algorithm = GNUTLS_PK_RSA;
+      key->pk_algorithm = MHD_GNUTLS_PK_RSA;
 
       break;
     default:
@@ -1233,7 +1233,7 @@ gnutls_x509_privkey_generate (gnutls_x509_privkey_t key,
 
   return 0;
 
-cleanup:key->pk_algorithm = GNUTLS_PK_UNKNOWN;
+cleanup:key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
   key->params_size = 0;
   for (i = 0; i < params_len; i++)
     _gnutls_mpi_release (&key->params[i]);
@@ -1287,7 +1287,7 @@ gnutls_x509_privkey_get_key_id (gnutls_x509_privkey_t key,
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
 
-  if (key->pk_algorithm == GNUTLS_PK_RSA)
+  if (key->pk_algorithm == MHD_GNUTLS_PK_RSA)
     {
       result = _gnutls_x509_write_rsa_params (key->params, key->params_size,
                                               &der);
@@ -1300,7 +1300,7 @@ gnutls_x509_privkey_get_key_id (gnutls_x509_privkey_t key,
   else
     return GNUTLS_E_INTERNAL_ERROR;
 
-  hd = _gnutls_hash_init (GNUTLS_MAC_SHA1);
+  hd = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (hd == GNUTLS_HASH_FAILED)
     {
       gnutls_assert ();
@@ -1483,7 +1483,7 @@ gnutls_x509_privkey_fix (gnutls_x509_privkey_t key)
     asn1_delete_structure (&key->key);
   switch (key->pk_algorithm)
     {
-    case GNUTLS_PK_RSA:
+    case MHD_GNUTLS_PK_RSA:
       ret = _gnutls_asn1_encode_rsa (&key->key, key->params);
       if (ret < 0)
         {

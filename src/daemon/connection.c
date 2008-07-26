@@ -284,9 +284,9 @@ try_ready_normal_body (struct MHD_Connection *connection)
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,
-                       MHD_MIN(response->data_buffer_size,
-                            response->total_size -
-                            connection->response_write_position));
+                       MHD_MIN (response->data_buffer_size,
+                                response->total_size -
+                                connection->response_write_position));
   if (ret == -1)
     {
       /* either error or http 1.0 transfer, close
@@ -323,7 +323,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   char *buf;
   struct MHD_Response *response;
   unsigned int size;
-  char cbuf[10]; /* 10: max strlen of "%x\r\n" */
+  char cbuf[10];                /* 10: max strlen of "%x\r\n" */
   int cblen;
 
   response = connection->response;
@@ -354,8 +354,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
-                       &connection->write_buffer[sizeof(cbuf)],
-                       connection->write_buffer_size - sizeof(cbuf) - 2);
+                       &connection->write_buffer[sizeof (cbuf)],
+                       connection->write_buffer_size - sizeof (cbuf) - 2);
   if (ret == -1)
     {
       /* end of message, signal other side! */
@@ -372,13 +372,13 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     }
   if (ret > 0xFFFFFF)
     ret = 0xFFFFFF;
-  cblen = snprintf (cbuf, sizeof(cbuf), "%X\r\n", ret);
-  EXTRA_CHECK(cblen <= sizeof(cbuf));
-  memcpy (&connection->write_buffer[sizeof(cbuf) - cblen], cbuf, cblen);
-  memcpy (&connection->write_buffer[sizeof(cbuf) + ret], "\r\n", 2);
+  cblen = snprintf (cbuf, sizeof (cbuf), "%X\r\n", ret);
+  EXTRA_CHECK (cblen <= sizeof (cbuf));
+  memcpy (&connection->write_buffer[sizeof (cbuf) - cblen], cbuf, cblen);
+  memcpy (&connection->write_buffer[sizeof (cbuf) + ret], "\r\n", 2);
   connection->response_write_position += ret;
-  connection->write_buffer_send_offset = sizeof(cbuf) - cblen;
-  connection->write_buffer_append_offset = sizeof(cbuf) + ret + 2;
+  connection->write_buffer_send_offset = sizeof (cbuf) - cblen;
+  connection->write_buffer_append_offset = sizeof (cbuf) + ret + 2;
   return MHD_YES;
 }
 

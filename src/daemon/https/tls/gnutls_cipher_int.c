@@ -36,40 +36,40 @@ _gnutls_cipher_init (gnutls_cipher_algorithm_t cipher,
 
   switch (cipher)
     {
-    case GNUTLS_CIPHER_AES_128_CBC:
+    case MHD_GNUTLS_CIPHER_AES_128_CBC:
       err = gc_cipher_open (GC_AES128, GC_CBC, &ret);
       break;
 
-    case GNUTLS_CIPHER_AES_256_CBC:
+    case MHD_GNUTLS_CIPHER_AES_256_CBC:
       err = gc_cipher_open (GC_AES256, GC_CBC, &ret);
       break;
 
-    case GNUTLS_CIPHER_3DES_CBC:
+    case MHD_GNUTLS_CIPHER_3DES_CBC:
       err = gc_cipher_open (GC_3DES, GC_CBC, &ret);
       break;
 
-    case GNUTLS_CIPHER_DES_CBC:
+    case MHD_GNUTLS_CIPHER_DES_CBC:
       err = gc_cipher_open (GC_DES, GC_CBC, &ret);
       break;
 
-    case GNUTLS_CIPHER_ARCFOUR_128:
+    case MHD_GNUTLS_CIPHER_ARCFOUR_128:
       err = gc_cipher_open (GC_ARCFOUR128, GC_STREAM, &ret);
       break;
 
-    case GNUTLS_CIPHER_ARCFOUR_40:
+    case MHD_GNUTLS_CIPHER_ARCFOUR_40:
       err = gc_cipher_open (GC_ARCFOUR40, GC_STREAM, &ret);
       break;
 
-    case GNUTLS_CIPHER_RC2_40_CBC:
+    case MHD_GNUTLS_CIPHER_RC2_40_CBC:
       err = gc_cipher_open (GC_ARCTWO40, GC_CBC, &ret);
       break;
 
 #ifdef	ENABLE_CAMELLIA
-    case GNUTLS_CIPHER_CAMELLIA_128_CBC:
+    case MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC:
       err = gc_cipher_open (GC_CAMELLIA128, GC_CBC, &ret);
       break;
 
-    case GNUTLS_CIPHER_CAMELLIA_256_CBC:
+    case MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC:
       err = gc_cipher_open (GC_CAMELLIA256, GC_CBC, &ret);
       break;
 #endif
@@ -84,7 +84,7 @@ _gnutls_cipher_init (gnutls_cipher_algorithm_t cipher,
       if (iv->data != NULL && iv->size > 0)
         gc_cipher_setiv (ret, iv->size, iv->data);
     }
-  else if (cipher != GNUTLS_CIPHER_NULL)
+  else if (cipher != MHD_GNUTLS_CIPHER_NULL)
     {
       gnutls_assert ();
       _gnutls_x509_log ("Crypto cipher[%d] error: %d\n", cipher, err);

@@ -32,7 +32,7 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-#include "microhttpsd.h"
+#include "microhttpd.h"
 /* get opaque type */
 #include "gnutls_int.h"
 #include "gnutls_record.h"
@@ -69,8 +69,7 @@ MHD_tls_connection_close_err (struct MHD_Connection *connection)
 }
 
 union MHD_SessionInfo
-MHD_get_tls_session_info (struct MHD_Connection *con,
-                          enum MHD_InfoType infoType)
+MHD_get_session_info (struct MHD_Connection *con, enum MHD_InfoType infoType)
 {
   /* return NULL if this isn't a SSL/TLS type connection */
   if (con->tls_session == NULL)
