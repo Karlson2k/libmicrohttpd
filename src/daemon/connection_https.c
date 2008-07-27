@@ -65,7 +65,17 @@ MHD_tls_connection_close (struct MHD_Connection *connection)
 static void
 MHD_tls_connection_close_err (struct MHD_Connection *connection)
 {
-  /* TODO impl MHD_tls_connection_close_err */
+  connection->tls_session->internals.read_eof = 1;
+  connection->socket_fd = -1;
+
+  SHUTDOWN (connection->socket_fd, SHUT_RDWR);
+  CLOSE (connection->socket_fd);
+  connection->state = MHD_CONNECTION_CLOSED;
+  if (connection->daemon->notify_completed != NULL)
+    connection->daemon->notify_completed (connection->daemon->
+                                          notify_completed_cls, connection,
+                                          &connection->client_context,
+                                          MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
 union MHD_SessionInfo
@@ -176,6 +186,8 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
   unsigned char msg_type;
 
   connection->last_activity = time (NULL);
+  if (connection->state == MHD_CONNECTION_CLOSED)
+      return MHD_NO;
 
 #if HAVE_MESSAGES
   MHD_DLOG (connection->daemon, "MHD read: %d, l: %d, f: %s\n",
@@ -207,11 +219,11 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       if (connection->tls_session->internals.last_alert ==
           GNUTLS_A_CLOSE_NOTIFY)
         {
-          gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+          MHD_tls_connection_close (connection);
           return MHD_YES;
         }
       /* non FATAL or WARNING */
-      else if (connection->tls_session->internals.last_alert !=
+      else if (connection->tls_session->internals.last_alert_level !=
                GNUTLS_AL_FATAL)
         {
 #if HAVE_MESSAGES
@@ -223,10 +235,10 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
           return MHD_YES;
         }
       /* FATAL */
-      else if (connection->tls_session->internals.last_alert ==
+      else if (connection->tls_session->internals.last_alert_level ==
                GNUTLS_AL_FATAL)
         {
-          MHD_tls_connection_close (connection);
+          MHD_tls_connection_close_err (connection);
           return MHD_NO;
         }
       /* this should never execut */
@@ -269,7 +281,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
     default:
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-                "Err: unrecognized tls read message. l: %d, f: %s\n",
+                "Error: unrecognized TLS read message. con-state: %d. l: %d, f: %s\n",
                 connection->state, __LINE__, __FUNCTION__);
 #endif
       return MHD_NO;

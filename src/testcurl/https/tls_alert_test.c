@@ -20,7 +20,8 @@
 
 /**
  * @file mhds_get_test.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @brief: daemon TLS alert response test-case
+ *
  * @author Sagie Amir
  */
 
@@ -29,10 +30,12 @@
 #include <curl/curl.h>
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
+#include "gnutls_record.h"
 #include "tls_test_keys.h"
 
 #define MHD_E_MEM "Error: memory error\n"
 #define MHD_E_SERVER_INIT "Error: failed to start server\n"
+#define MHD_E_FAILED_TO_CONNECT "Error: server connection could not be established\n"
 
 extern int curl_check_version (const char *req_version, ...);
 
@@ -47,14 +50,6 @@ struct CBC
   size_t size;
 };
 
-static int
-file_reader (void *cls, size_t pos, char *buf, int max)
-{
-  FILE *file = cls;
-  fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
-}
-
 /* HTTP access handler call back */
 static int
 http_ahc (void *cls, struct MHD_Connection *connection,
@@ -65,38 +60,53 @@ http_ahc (void *cls, struct MHD_Connection *connection,
 }
 
 static int
-test_alert_response ()
+setup (gnutls_session_t * session,
+       gnutls_datum_t * key,
+       gnutls_datum_t * cert, gnutls_certificate_credentials_t * xcred)
 {
-  int sd, ret;
-  char *err_pos;
-  struct sockaddr_in sa;
-  gnutls_priority_t priority_cache;
-  gnutls_session_t session;
-  gnutls_certificate_credentials_t xcred;
+  int ret;
+  const char **err_pos;
 
-  gnutls_global_init ();
+  gnutls_certificate_allocate_credentials (xcred);
 
-  gnutls_datum_t key;
-  gnutls_datum_t cert;
-
-  gnutls_certificate_allocate_credentials (&xcred);
-
-  _gnutls_set_datum_m (&key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  _gnutls_set_datum_m (&cert, srv_self_signed_cert_pem,
+  _gnutls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
+  _gnutls_set_datum_m (cert, srv_self_signed_cert_pem,
                        strlen (srv_self_signed_cert_pem), &malloc);
 
-  gnutls_certificate_set_x509_key_mem (xcred, &cert, &key,
+  gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
                                        GNUTLS_X509_FMT_PEM);
 
-  ret = gnutls_priority_init (&priority_cache,
-                              "NONE:+VERS-TLS1.0:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL",
-                              &err_pos);
+  gnutls_init (session, GNUTLS_CLIENT);
+  ret = gnutls_priority_set_direct (*session, "PERFORMANCE", err_pos);
   if (ret < 0)
     {
-      // ...
+      return -1;
     }
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  return 0;
+}
+
+static int
+teardown (gnutls_session_t session,
+          gnutls_datum_t * key,
+          gnutls_datum_t * cert, gnutls_certificate_credentials_t xcred)
+{
+
+  _gnutls_free_datum_m (key, free);
+  _gnutls_free_datum_m (cert, free);
+
+  gnutls_deinit (session);
+
+  gnutls_certificate_free_credentials (xcred);
+  return 0;
+}
+
+static int
+test_alert_close_notify (gnutls_session_t session)
+{
+  int sd, ret;
+  struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
   memset (&sa, '\0', sizeof (struct sockaddr_in));
@@ -104,18 +114,20 @@ test_alert_response ()
   sa.sin_port = htons (42433);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
+  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) sd);
+
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
   if (ret < 0)
     {
-      // ...
+      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
+      return -1;
     }
 
   ret = gnutls_handshake (session);
-
   if (ret < 0)
     {
-      // ...
+      return -1;
     }
 
   gnutls_alert_send (session, GNUTLS_AL_FATAL, GNUTLS_A_CLOSE_NOTIFY);
@@ -123,34 +135,74 @@ test_alert_response ()
   /* check server responds with a 'close-notify' */
   _gnutls_recv_int (session, GNUTLS_ALERT, GNUTLS_HANDSHAKE_FINISHED, 0, 0);
 
+  close (sd);
   /* CLOSE_NOTIFY */
   if (session->internals.last_alert != GNUTLS_A_CLOSE_NOTIFY)
     {
       return -1;
     }
 
-  close (sd);
-
-  gnutls_deinit (session);
-
-  gnutls_certificate_free_credentials (xcred);
-
-  gnutls_global_deinit ();
-
   return 0;
+}
 
+static int
+test_alert_unexpected_message (gnutls_session_t session)
+{
+  int sd, ret;
+  struct sockaddr_in sa;
+
+  sd = socket (AF_INET, SOCK_STREAM, 0);
+  memset (&sa, '\0', sizeof (struct sockaddr_in));
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons (42433);
+  inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
+
+  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) sd);
+
+  ret = connect (sd, &sa, sizeof (struct sockaddr_in));
+
+  if (ret < 0)
+    {
+      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
+      return -1;
+    }
+
+  ret = gnutls_handshake (session);
+  if (ret < 0)
+    {
+      return -1;
+    }
+
+  gnutls_alert_send (session, GNUTLS_AL_FATAL, GNUTLS_A_UNEXPECTED_MESSAGE);
+  usleep (100);
+
+  /* TODO better RST trigger */
+  if (send (sd, "", 1, 0) == 0)
+    {
+      return -1;
+    }
+
+  close (sd);
+  return 0;
 }
 
 int
 main (int argc, char *const *argv)
 {
-  int ret, errorCount = 0;;
+  int errorCount = 0;;
   struct MHD_Daemon *d;
+  gnutls_session_t session;
+  gnutls_datum_t key;
+  gnutls_datum_t cert;
+  gnutls_certificate_credentials_t xcred;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
     }
+
+  gnutls_global_init ();
+  gnutls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
@@ -165,11 +217,19 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  errorCount += test_alert_response ();
+  setup (&session, &key, &cert, &xcred);
+  errorCount += test_alert_close_notify (session);
+  teardown (session, &key, &cert, xcred);
+
+  setup (&session, &key, &cert, &xcred);
+  errorCount += test_alert_unexpected_message (session);
+  teardown (session, &key, &cert, xcred);
 
   if (errorCount != 0)
-    fprintf (stderr, "Error (code: %d)\n", errorCount);
+    fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   MHD_stop_daemon (d);
+  gnutls_global_deinit ();
+
   return errorCount != 0;
 }

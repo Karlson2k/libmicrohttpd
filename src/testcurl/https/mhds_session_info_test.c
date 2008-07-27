@@ -207,7 +207,7 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
     }
@@ -219,8 +219,9 @@ main (int argc, char *const *argv)
     }
 
   errorCount += test_query_session (test_fd);
+
   if (errorCount != 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
+        fprintf(stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
 

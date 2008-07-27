@@ -173,16 +173,16 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 3L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 3L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  //curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
 
-  /* currently skip any peer authentication */
+  /* perform peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 1);
   curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
 
@@ -224,7 +224,6 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
 {
   int ret;
   struct MHD_Daemon *d;
-
   int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
@@ -241,6 +240,7 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
     }
 
   ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+
   MHD_stop_daemon (d);
   return ret;
 }
@@ -308,7 +308,9 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
+  gnutls_global_set_log_level(11);
+
+   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
     }
@@ -331,7 +333,7 @@ main (int argc, char *const *argv)
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 
   if (errorCount != 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
+        fprintf(stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
   fclose (test_fd);

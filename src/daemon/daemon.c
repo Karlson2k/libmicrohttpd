@@ -872,8 +872,7 @@ MHD_start_daemon (unsigned int options,
       gnutls_global_init ();
       pthread_mutex_unlock (&gnutls_init_mutex);
       /* set default priorities */
-      gnutls_priority_init (&retVal->priority_cache,
-                            "NONE:+AES-256-CBC:+RSA:+SHA1:+COMP-NULL", NULL);
+      gnutls_priority_init (&retVal->priority_cache,"", NULL);
     }
 #endif
   /* initializes the argument pointer variable */

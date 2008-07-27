@@ -74,7 +74,7 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
  * check local libcurl version matches required version
  */
 int
-curl_check_version (const char *req_version, ...)
+curl_check_version (const char *req_version)
 {
   va_list ap;
   const char *ver;
@@ -91,7 +91,8 @@ curl_check_version (const char *req_version, ...)
 #endif
   /*
    * this call relies on the cURL string to be of the format :
-   * 'libcurl/7.16.4 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/0.6.5'
+   * 'libcurl/7.16.4 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/0.6.5' OR
+   * 'libcurl/7.18.2 GnuTLS/2.4.0 zlib/1.2.3.3 libidn/0.6.5'
    */
   curl_ver = strchr (ver, '/') + 1;
 
@@ -118,13 +119,23 @@ curl_check_version (const char *req_version, ...)
    * TODO use curl version string to assert use of gnutls
    */
 #if HTTPS_SUPPORT
-  va_start (ap, req_version);
-  req_ssl_ver = va_arg (ap, void *);
+  ssl_ver = strchr (curl_ver, '\ ') + 1;
+
+  if (strncmp("GnuTLS",ssl_ver,strlen("GNUtls")) == 0){
+    ssl_ver = strchr (ssl_ver, '/') + 1;
+    req_ssl_ver = MHD_REQ_CURL_GNUTLS_VERSION;
+  }
+  else if(strncmp("OpenSSL",ssl_ver,strlen("OpenSSL")) == 0){
+    ssl_ver = strchr (ssl_ver, '/') + 1;
+    req_ssl_ver = MHD_REQ_CURL_OPENSSL_VERSION;
+  }
+  else{
+    fprintf (stderr,
+                   "Error: unrecognized curl ssl library\n",req_ssl_ver);
+          return -1;
+  }
 
   parse_version_string (req_ssl_ver, &rq_major, &rq_minor, &rq_micro);
-
-  ssl_ver = strchr (curl_ver, '/') + 1;
-
   parse_version_string (ssl_ver, &loc_major, &loc_minor, &loc_micro);
 
   if ((loc_major > rq_major
