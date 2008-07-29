@@ -308,9 +308,9 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  gnutls_global_set_log_level(11);
+  /* gnutls_global_set_log_level (11); */
 
-   if (curl_check_version (MHD_REQ_CURL_VERSION))
+  if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
     }
@@ -333,7 +333,7 @@ main (int argc, char *const *argv)
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 
   if (errorCount != 0)
-        fprintf(stderr, "Failed test: %s.\n", argv[0]);
+    fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
   fclose (test_fd);

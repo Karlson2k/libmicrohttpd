@@ -486,8 +486,22 @@ enum MHD_RequestTerminationCode
    * We had to close the session since MHD was being
    * shut down.
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
 
+#if HTTPS_SUPPORT
+    /*
+     * this is the final state of a successfully processed secure connection
+     */
+    MHD_TLS_REQUEST_TERMINATED_COMPLETED_OK,
+
+    /*
+     * processing of this secure connection encountered an error
+     */
+    /* TODO consider elaborating error cause & registering a error callback */
+    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR,
+
+    MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT,
+#endif
 };
 
 /**

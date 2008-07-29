@@ -312,6 +312,9 @@ MHDS_handle_connection (void *data)
   if (con == NULL)
     abort ();
 
+  /* initialize connection state */
+  con->state = MHD_TLS_CONNECTION_INIT;
+
   gnutls_init (&con->tls_session, GNUTLS_SERVER);
 
   /* sets cipher priorities */
@@ -872,7 +875,7 @@ MHD_start_daemon (unsigned int options,
       gnutls_global_init ();
       pthread_mutex_unlock (&gnutls_init_mutex);
       /* set default priorities */
-      gnutls_priority_init (&retVal->priority_cache,"", NULL);
+      gnutls_priority_init (&retVal->priority_cache, "", NULL);
     }
 #endif
   /* initializes the argument pointer variable */

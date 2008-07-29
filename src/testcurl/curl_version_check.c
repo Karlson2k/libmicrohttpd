@@ -76,7 +76,6 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
 int
 curl_check_version (const char *req_version)
 {
-  va_list ap;
   const char *ver;
   const char *curl_ver;
   const char *ssl_ver;
@@ -121,19 +120,21 @@ curl_check_version (const char *req_version)
 #if HTTPS_SUPPORT
   ssl_ver = strchr (curl_ver, '\ ') + 1;
 
-  if (strncmp("GnuTLS",ssl_ver,strlen("GNUtls")) == 0){
-    ssl_ver = strchr (ssl_ver, '/') + 1;
-    req_ssl_ver = MHD_REQ_CURL_GNUTLS_VERSION;
-  }
-  else if(strncmp("OpenSSL",ssl_ver,strlen("OpenSSL")) == 0){
-    ssl_ver = strchr (ssl_ver, '/') + 1;
-    req_ssl_ver = MHD_REQ_CURL_OPENSSL_VERSION;
-  }
-  else{
-    fprintf (stderr,
-                   "Error: unrecognized curl ssl library\n",req_ssl_ver);
-          return -1;
-  }
+  if (strncmp ("GnuTLS", ssl_ver, strlen ("GNUtls")) == 0)
+    {
+      ssl_ver = strchr (ssl_ver, '/') + 1;
+      req_ssl_ver = MHD_REQ_CURL_GNUTLS_VERSION;
+    }
+  else if (strncmp ("OpenSSL", ssl_ver, strlen ("OpenSSL")) == 0)
+    {
+      ssl_ver = strchr (ssl_ver, '/') + 1;
+      req_ssl_ver = MHD_REQ_CURL_OPENSSL_VERSION;
+    }
+  else
+    {
+      fprintf (stderr, "Error: unrecognized curl ssl library\n", req_ssl_ver);
+      return -1;
+    }
 
   parse_version_string (req_ssl_ver, &rq_major, &rq_minor, &rq_micro);
   parse_version_string (ssl_ver, &loc_major, &loc_minor, &loc_micro);

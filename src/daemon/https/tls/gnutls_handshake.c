@@ -940,10 +940,6 @@ _gnutls_send_handshake (gnutls_session_t session, void *i_data,
   if (i_datasize > 0)
     memcpy (&data[pos], i_data, i_datasize);
 
-  _gnutls_handshake_log ("HSK[%x]: %s was send [%ld bytes]\n",
-                         session, _gnutls_handshake2str (type), datasize);
-
-
   /* Here we keep the handshake messages in order to hash them...
    */
   if (type != GNUTLS_HANDSHAKE_HELLO_REQUEST)
@@ -960,6 +956,9 @@ _gnutls_send_handshake (gnutls_session_t session, void *i_data,
   ret =
     _gnutls_handshake_io_send_int (session, GNUTLS_HANDSHAKE, type,
                                    data, datasize);
+
+  _gnutls_handshake_log ("HSK[%x]: %s was sent [%ld bytes]\n",
+                         session, _gnutls_handshake2str (type), datasize);
 
   gnutls_afree (data);
 

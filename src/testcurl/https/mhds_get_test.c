@@ -338,8 +338,7 @@ test_kx_option (FILE * test_fd, char *cipher_suite, int proto_version)
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_KX_PRIORITY, kx,
-                        MHD_OPTION_CIPHER_ALGORITHM, ciper,
-                        MHD_OPTION_END);
+                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
 
   if (d == NULL)
     {
@@ -447,7 +446,7 @@ main (int argc, char *const *argv)
 //    test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
 
   if (errorCount != 0)
-        fprintf(stderr, "Failed test: %s.\n", argv[0]);
+    fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
   fclose (test_fd);

@@ -215,13 +215,13 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
-      return 8;
+      return -1;
     }
 
   errorCount += test_query_session (test_fd);
 
   if (errorCount != 0)
-        fprintf(stderr, "Failed test: %s.\n", argv[0]);
+    fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
 

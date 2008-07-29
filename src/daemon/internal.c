@@ -26,6 +26,65 @@
 
 #include "internal.h"
 
+#if DEBUG_STATES
+char *
+MHD_state_to_string (enum MHD_CONNECTION_STATE state)
+{
+  switch (state)
+    {
+    case MHD_CONNECTION_INIT:
+      return "connection init";
+    case MHD_CONNECTION_URL_RECEIVED:
+      return "connection url received";
+    case MHD_CONNECTION_HEADER_PART_RECEIVED:
+      return "header partially received";
+    case MHD_CONNECTION_HEADERS_RECEIVED:
+      return "headers received";
+    case MHD_CONNECTION_HEADERS_PROCESSED:
+      return "headers processed";
+    case MHD_CONNECTION_CONTINUE_SENDING:
+      return "continue sending";
+    case MHD_CONNECTION_CONTINUE_SENT:
+      return "continue sent";
+    case MHD_CONNECTION_BODY_RECEIVED:
+      return "body received";
+    case MHD_CONNECTION_FOOTER_PART_RECEIVED:
+      return "footer partially received";
+    case MHD_CONNECTION_FOOTERS_RECEIVED:
+      return "footers received";
+    case MHD_CONNECTION_HEADERS_SENDING:
+      return "headers sending";
+    case MHD_CONNECTION_HEADERS_SENT:
+      return "headers sent";
+    case MHD_CONNECTION_NORMAL_BODY_READY:
+      return "normal body ready";
+    case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+      return "normal body unready";
+    case MHD_CONNECTION_CHUNKED_BODY_READY:
+      return "chunked body ready";
+    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+      return "chunked body unready";
+    case MHD_CONNECTION_BODY_SENT:
+      return "body sent";
+    case MHD_CONNECTION_FOOTERS_SENDING:
+      return "footers sending";
+    case MHD_CONNECTION_FOOTERS_SENT:
+      return "footers sent";
+    case MHD_CONNECTION_CLOSED:
+      return "closed";
+    case MHD_TLS_CONNECTION_INIT:
+      return "secure connection init";
+    case MHD_TLS_HELLO_REQUEST:
+      return "secure hello request";
+    case MHD_TLS_HANDSHAKE_FAILED:
+      return "secure handshake failed";
+    case MHD_TLS_HANDSHAKE_COMPLETE:
+      return "secure handshake _complete";
+    }
+  return "unrecognized connection state";
+}
+#endif
+
 #if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug

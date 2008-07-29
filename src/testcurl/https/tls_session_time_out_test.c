@@ -27,6 +27,7 @@
 
 #include "platform.h"
 #include "microhttpd.h"
+#include "internal.h"
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
 #include "gnutls_record.h"
@@ -40,12 +41,9 @@ const char *ca_cert_file_name = "ca_cert_pem";
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
-struct CBC
-{
-  char *buf;
-  size_t pos;
-  size_t size;
-};
+static const int TIME_OUT = 3;
+
+char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 
 /* HTTP access handler call back */
 static int
@@ -99,16 +97,11 @@ teardown (gnutls_session_t session,
   return 0;
 }
 
-/*
- * assert server closes connection upon receiving a
- * close notify alert message.
- *
- * @param session: an initialized TLS session
- */
 static int
-test_alert_close_notify (gnutls_session_t session)
+test_tls_session_time_out (gnutls_session_t session)
 {
   int sd, ret;
+  char *url = "https://localhost:42433/";
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
@@ -133,58 +126,10 @@ test_alert_close_notify (gnutls_session_t session)
       return -1;
     }
 
-  gnutls_alert_send (session, GNUTLS_AL_FATAL, GNUTLS_A_CLOSE_NOTIFY);
+  sleep (TIME_OUT + 1);
 
-  /* check server responds with a 'close-notify' */
-  _gnutls_recv_int (session, GNUTLS_ALERT, GNUTLS_HANDSHAKE_FINISHED, 0, 0);
 
-  close (sd);
-  /* CLOSE_NOTIFY */
-  if (session->internals.last_alert != GNUTLS_A_CLOSE_NOTIFY)
-    {
-      return -1;
-    }
-
-  return 0;
-}
-
-/*
- * assert server closes connection upon receiving a
- * fatal unexpected_message alert.
- *
- * @param session: an initialized TLS session
- */
-static int
-test_alert_unexpected_message (gnutls_session_t session)
-{
-  int sd, ret;
-  struct sockaddr_in sa;
-
-  sd = socket (AF_INET, SOCK_STREAM, 0);
-  memset (&sa, '\0', sizeof (struct sockaddr_in));
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons (42433);
-  inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
-
-  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) sd);
-
-  ret = connect (sd, &sa, sizeof (struct sockaddr_in));
-
-  if (ret < 0)
-    {
-      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
-      return -1;
-    }
-
-  ret = gnutls_handshake (session);
-  if (ret < 0)
-    {
-      return -1;
-    }
-
-  gnutls_alert_send (session, GNUTLS_AL_FATAL, GNUTLS_A_UNEXPECTED_MESSAGE);
-  usleep (100);
-
+  /* check that server has closed the connection */
   /* TODO better RST trigger */
   if (send (sd, "", 1, 0) == 0)
     {
@@ -192,6 +137,7 @@ test_alert_unexpected_message (gnutls_session_t session)
     }
 
   close (sd);
+  fprintf (stderr, "%s. f: %s, l: %d\n", "ok", __FUNCTION__, __LINE__);
   return 0;
 }
 
@@ -211,6 +157,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
+                        MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -222,11 +169,7 @@ main (int argc, char *const *argv)
     }
 
   setup (&session, &key, &cert, &xcred);
-  errorCount += test_alert_close_notify (session);
-  teardown (session, &key, &cert, xcred);
-
-  setup (&session, &key, &cert, &xcred);
-  errorCount += test_alert_unexpected_message (session);
+  errorCount += test_tls_session_time_out (session);
   teardown (session, &key, &cert, xcred);
 
   if (errorCount != 0)

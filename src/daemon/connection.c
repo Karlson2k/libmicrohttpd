@@ -113,11 +113,6 @@
 #define DEBUG_SEND_DATA MHD_NO
 
 /**
- * Should all state transitions be printed to stderr?
- */
-#define DEBUG_STATES MHD_NO
-
-/**
  * Get all of the headers from the request.
  *
  * @param iterator callback to call on each header;
@@ -649,13 +644,17 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
   while (1)
     {
 #if DEBUG_STATES
-      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+      MHD_DLOG (connection->daemon, "%s: state: %s\n",
+                __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
       switch (connection->state)
         {
         case MHD_CONNECTION_INIT:
         case MHD_CONNECTION_URL_RECEIVED:
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
+#if HTTPS_SUPPORT
+        case MHD_TLS_CONNECTION_INIT:
+#endif
           /* while reading headers, we always grow the
              read buffer if needed, no size-check required */
           if ((connection->read_closed) &&
@@ -1465,7 +1464,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   while (1)
     {
 #if DEBUG_STATES
-      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+      MHD_DLOG (connection->daemon, "%s: state: %s\n",
+                __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
       switch (connection->state)
         {
@@ -1530,7 +1530,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   while (1)
     {
 #if DEBUG_STATES
-      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+      MHD_DLOG (connection->daemon, "%s: state: %s\n",
+                __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
       switch (connection->state)
         {
@@ -1694,7 +1695,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   while (1)
     {
 #if DEBUG_STATES
-      fprintf (stderr, "`%s' in state %u\n", __FUNCTION__, connection->state);
+      MHD_DLOG (connection->daemon, "%s: state: %s\n",
+                __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
       switch (connection->state)
         {

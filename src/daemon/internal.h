@@ -273,15 +273,37 @@ enum MHD_CONNECTION_STATE
   /*
    *  SSL/TLS connection states
    */
-  MHD_TLS_HANDSHAKE_FAILED = MHD_CONNECTION_CLOSED +1,
+
+  /*
+   * The initial connection state for all secure connectoins
+   * Handshake messages will be processed in this state & while
+   * in the 'MHD_TLS_HELLO_REQUEST' state
+   */
+  MHD_TLS_CONNECTION_INIT =  MHD_CONNECTION_CLOSED +1,
+
+  /*
+   * This state indicates the server has send a 'Hello Request' to
+   * the client & a renegotiation of the handshake is in progress.
+   *
+   * Handshake messages will processed in this state & while
+   * in the 'MHD_TLS_CONNECTION_INIT' state
+   */
+  MHD_TLS_HELLO_REQUEST,
+
+  MHD_TLS_HANDSHAKE_FAILED,
 
   MHD_TLS_HANDSHAKE_COMPLETE,
+
 #endif
 };
 
+/**
+ * Should all state transitions be printed to stderr?
+ */
+#define DEBUG_STATES MHD_NO
 
 #if DEBUG_STATES
-    /* TODO add state dictionary  */
+char * MHD_state_to_string(enum MHD_CONNECTION_STATE state);
 #endif
 
 struct MHD_Connection
