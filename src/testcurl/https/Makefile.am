@@ -12,13 +12,20 @@ $(LIBCURL_CPPFLAGS)
 check_PROGRAMS = \
 tls_session_time_out_test \
 tls_cipher_change_test \
-mhds_get_test \
+tls_daemon_options_test \
 tls_alert_test \
 tls_authentication_test \
 mhds_multi_daemon_test \
 mhds_session_info_test 
    
 TESTS = $(check_PROGRAMS)
+
+tls_daemon_options_test_SOURCES = \
+  tls_daemon_options_test.c
+tls_daemon_options_test_LDADD = \
+  $(top_builddir)/src/testcurl/libcurl_version_check.a \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
 
 tls_session_time_out_test_SOURCES = \
   tls_session_time_out_test.c
@@ -45,13 +52,6 @@ tls_authentication_test_LDADD  = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
-mhds_get_test_SOURCES = \
-  mhds_get_test.c
-mhds_get_test_LDADD = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
-  
 mhds_session_info_test_SOURCES = \
   mhds_session_info_test.c
 mhds_session_info_test_LDADD  = \

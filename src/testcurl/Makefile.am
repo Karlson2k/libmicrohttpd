@@ -38,7 +38,6 @@ libcurl_version_check_a_CPPFLAGS = \
   -I$(top_srcdir)/src/daemon/https \
   $(LIBCURL_CPPFLAGS)
 
-
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \

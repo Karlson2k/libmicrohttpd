@@ -144,8 +144,8 @@ gnutls_alert_send (gnutls_session_t session, gnutls_alert_level_t level,
   *
   * Returns an alert depending on the error code returned by a gnutls
   * function. All alerts sent by this function should be considered fatal.
-  * The only exception is when err == GNUTLS_E_REHANDSHAKE, where a warning 
-  * alert should be sent to the peer indicating that no renegotiation will 
+  * The only exception is when err == GNUTLS_E_REHANDSHAKE, where a warning
+  * alert should be sent to the peer indicating that no renegotiation will
   * be performed.
   *
   * If there is no mapping to a valid alert the alert to indicate internal error 

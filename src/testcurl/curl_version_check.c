@@ -89,7 +89,7 @@ curl_check_version (const char *req_version)
   fprintf (stderr, "curl version: %s\n", ver);
 #endif
   /*
-   * this call relies on the cURL string to be of the format :
+   * this call relies on the cURL string to be of the exact following format :
    * 'libcurl/7.16.4 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/0.6.5' OR
    * 'libcurl/7.18.2 GnuTLS/2.4.0 zlib/1.2.3.3 libidn/0.6.5'
    */
@@ -118,7 +118,7 @@ curl_check_version (const char *req_version)
    * TODO use curl version string to assert use of gnutls
    */
 #if HTTPS_SUPPORT
-  ssl_ver = strchr (curl_ver, '\ ') + 1;
+  ssl_ver = strchr (curl_ver, ' ') + 1;
 
   if (strncmp ("GnuTLS", ssl_ver, strlen ("GNUtls")) == 0)
     {
@@ -132,7 +132,7 @@ curl_check_version (const char *req_version)
     }
   else
     {
-      fprintf (stderr, "Error: unrecognized curl ssl library\n", req_ssl_ver);
+      fprintf (stderr, "Error: unrecognized curl ssl library\n");
       return -1;
     }
 

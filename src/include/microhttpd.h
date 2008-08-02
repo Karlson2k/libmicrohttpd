@@ -380,6 +380,15 @@ enum MHD_OPTION
   MHD_OPTION_HTTPS_MEM_CERT,
 
   /*
+   * SSL/TLS protocol version
+   *
+   * Memory pointer to a zero terminated int array representing the
+   * protocol versions to this server should support. Unsupported
+   * requests will be droped by the server.
+   */
+  MHD_OPTION_PROTOCOL_VERSION,
+
+  /*
    * Memory pointer to a zero terminated int array representing the
    * cipher priority order to which the HTTPS daemon should adhere.
    * "const int *" argument.
@@ -702,6 +711,18 @@ typedef int
  * @param ... list of options (type-value pairs,
  *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
+ */
+struct MHD_Daemon *
+MHD_start_daemon_va (unsigned int options,
+                     unsigned short port,
+                     MHD_AcceptPolicyCallback apc,
+                     void *apc_cls,
+                     MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap);
+
+
+/*
+ * Variadic version of MHD_start_daemon_va. This function will delegate calls
+ * to MHD_start_daemon_va() once argument list is analyzed.
  */
 struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
                                      unsigned short port,

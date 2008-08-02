@@ -123,11 +123,11 @@ http_ahc (void *cls, struct MHD_Connection *connection,
  * @param test_fd: file to attempt transfering
  */
 static int
-test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
+test_https_transfer (FILE * test_fd, char * cipher_suite, int proto_version)
 {
   CURL *c;
-  struct CBC cbc;
   CURLcode errornum;
+  struct CBC cbc;
   char *doc_path;
   char url[255];
   struct stat statb;
@@ -177,8 +177,8 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
@@ -220,29 +220,76 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
-/* perform a HTTP GET request via SSL/TLS */
-int
-test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
+FILE *
+setupTestFile ()
 {
-  int ret;
-  struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_END);
+  FILE *test_fd;
 
-  if (d == NULL)
+  if (NULL == (test_fd = fopen (test_file_name, "w+")))
+    {
+      fprintf (stderr, "Error: failed to open `%s': %s\n",
+               test_file_name, strerror (errno));
+      return NULL;
+    }
+  if (fwrite (test_file_data, sizeof (char), strlen (test_file_data), test_fd)
+      != strlen (test_file_data))
+    {
+      fprintf (stderr, "Error: failed to write `%s. %s'\n",
+               test_file_name, strerror (errno));
+      return NULL;
+    }
+  if (fflush (test_fd))
+    {
+      fprintf (stderr, "Error: failed to flush test file stream. %s\n",
+               strerror (errno));
+      return NULL;
+    }
+
+  return test_fd;
+}
+
+static int
+setup (struct MHD_Daemon **d, enum MHD_OPTION option, void * value )
+{
+  *d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                         MHD_USE_DEBUG, 42433,
+                         NULL, NULL, &http_ahc, NULL,
+                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                         option, value, MHD_OPTION_END);
+
+  if (*d == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+  return 0;
+}
+
+static void
+teardown (struct MHD_Daemon *d)
+{
   MHD_stop_daemon (d);
+}
+
+int
+test_wrap (int
+           (*test) (FILE * test_fd, char *cipher_suite, int proto_version),
+           FILE * test_fd, char *cipher_suite, int proto_version,
+           enum MHD_OPTION option, void * value)
+{
+  int ret;
+  struct MHD_Daemon *d;
+
+  if (setup (&d, option, value) != 0)
+    return -1;
+  ret = test (test_fd, cipher_suite, proto_version);
+  teardown (d);
   return ret;
 }
+
+/* perform a HTTP GET request via SSL/TLS */
 
 /* test loading of key & certificate files */
 int
@@ -275,21 +322,13 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
   fclose (key_fd);
   fclose (cert_fd);
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_KEY_PATH, key_path,
-                        MHD_OPTION_HTTPS_CERT_PATH, cert_path,
-                        MHD_OPTION_END);
-
   if (d == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-  MHD_stop_daemon (d);
+  ret = test_https_transfer (test_fd, cipher_suite, proto_version);
 
   free (cur_dir);
   remove (cert_path);
@@ -298,123 +337,54 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
 }
 
 int
-test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
+test_protocol_version (FILE * test_fd, char *cipher_suite,
+                       int curl_proto_version)
 {
+  CURL *c;
+  CURLcode errornum;
 
-  int ret;
-  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
-  struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
+  c = curl_easy_init ();
+#ifdef DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#endif
+  curl_easy_setopt (c, CURLOPT_URL, "https://localhost:42433/");
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
 
-  if (d == NULL)
+  /* TLS options */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, curl_proto_version);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+
+  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+
+  /* assert daemon rejected request */
+  if (CURLE_OK == (errornum = curl_easy_perform (c)))
     {
-      fprintf (stderr, MHD_E_SERVER_INIT);
+      fprintf (stderr, "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
+      curl_easy_cleanup (c);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-
-  MHD_stop_daemon (d);
-  return ret;
-}
-
-int
-test_kx_option (FILE * test_fd, char *cipher_suite, int proto_version)
-{
-
-  int ret;
-  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
-  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
-  struct MHD_Daemon *d;
-
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_KX_PRIORITY, kx,
-                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
-
-  if (d == NULL)
-    {
-      fprintf (stderr, MHD_E_SERVER_INIT);
-      return -1;
-    }
-
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-
-  MHD_stop_daemon (d);
-  return ret;
-}
-
-int
-test_mac_option (FILE * test_fd, char *cipher_suite, int proto_version)
-{
-
-  int ret;
-  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
-  struct MHD_Daemon *d;
-
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_MAC_ALGO, mac, MHD_OPTION_END);
-
-  if (d == NULL)
-    {
-      fprintf (stderr, MHD_E_SERVER_INIT);
-      return -1;
-    }
-
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-
-  MHD_stop_daemon (d);
-  return ret;
+  return 0;
 }
 
 /* setup a temporary transfer test file */
-FILE *
-setupTestFile ()
-{
-  FILE *test_fd;
-
-  if (NULL == (test_fd = fopen (test_file_name, "w+")))
-    {
-      fprintf (stderr, "Error: failed to open `%s': %s\n",
-               test_file_name, strerror (errno));
-      return NULL;
-    }
-  if (fwrite (test_file_data, sizeof (char), strlen (test_file_data), test_fd)
-      != strlen (test_file_data))
-    {
-      fprintf (stderr, "Error: failed to write `%s. %s'\n",
-               test_file_name, strerror (errno));
-      return NULL;
-    }
-  if (fflush (test_fd))
-    {
-      fprintf (stderr, "Error: failed to flush test file stream. %s\n",
-               strerror (errno));
-      return NULL;
-    }
-
-  return test_fd;
-}
-
 int
 main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  /* gnutls_global_set_log_level(11); */
+  gnutls_global_set_log_level(11);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
@@ -433,20 +403,54 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-  errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  errorCount +=
-    test_file_certificates (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  /* TODO resolve cipher setting issue when compiling against GNU TLS */
+  int mac[] = {MHD_GNUTLS_MAC_SHA1, 0};
+  int p [] = {MHD_GNUTLS_SSL3, 0};
+  int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
+  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
+
+
 //  errorCount +=
-//    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+//    test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
+//               CURL_SSLVERSION_TLSv1, MHD_OPTION_END, 0);
 //  errorCount +=
-//    test_kx_option (test_fd, "EDH-RSA-DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+//    test_wrap (&test_file_certificates, test_fd, "AES256-SHA",
+//               CURL_SSLVERSION_TLSv1, MHD_OPTION_END, 0);
+//
+//  errorCount +=
+//    test_wrap (&test_protocol_version, test_fd, "AES256-SHA",
+//               CURL_SSLVERSION_TLSv1, MHD_OPTION_PROTOCOL_VERSION, p);
+//
+//  errorCount +=
+//     test_wrap (&test_https_transfer, test_fd, "DES-CBC3-SHA",
+//                CURL_SSLVERSION_TLSv1, MHD_OPTION_CIPHER_ALGORITHM, cipher);
+
+  errorCount +=
+          test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
+                    CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, mac);
+
+  //  errorCount +=
+  //         test_wrap (&test_https_transfer, test_fd, "EDH-RSA-DES-CBC3-SHA",
+  //                    CURL_SSLVERSION_TLSv1, MHD_OPTION_KX_PRIORITY, kx);
+
+  /*gnutls_mac_algorithm_t mac[] = {
+                                  {MHD_GNUTLS_MAC_MD5, 0}, 0};
+  gnutls_mac_algorithm_t * cur_mac;
+
+  for ( cur_mac = &mac[0]; (*cur_mac) != 0; cur_mac++ ){
+    option[0] = MHD_GNUTLS_MAC_SHA1;
+    errorCount +=
+        test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
+                  CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, option);
+  }*/
+
+
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
+  else
+    {
+      fprintf (stderr, "ok\n");
+    }
 
   curl_global_cleanup ();
   fclose (test_fd);

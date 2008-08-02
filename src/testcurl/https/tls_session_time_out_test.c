@@ -128,7 +128,6 @@ test_tls_session_time_out (gnutls_session_t session)
 
   sleep (TIME_OUT + 1);
 
-
   /* check that server has closed the connection */
   /* TODO better RST trigger */
   if (send (sd, "", 1, 0) == 0)

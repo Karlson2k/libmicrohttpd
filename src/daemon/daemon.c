@@ -59,7 +59,7 @@
 #if HTTPS_SUPPORT
 /* initialize security aspects of the HTTPS daemon */
 static int
-MHDS_init (struct MHD_Daemon *daemon)
+MHD_TLS_init (struct MHD_Daemon *daemon)
 {
   int i;
   priority_st st;
@@ -305,7 +305,7 @@ gnutls_push_param_adapter (void *connection,
  */
 #if HTTPS_SUPPORT
 static void *
-MHDS_handle_connection (void *data)
+MHD_TLS_handle_connection (void *data)
 {
   struct MHD_Connection *con = data;
 
@@ -489,7 +489,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
       if (daemon->options & MHD_USE_SSL)
         res_thread_create = pthread_create (&connection->pid, NULL,
-                                            &MHDS_handle_connection,
+                                            &MHD_TLS_handle_connection,
                                             connection);
       else
 #endif
@@ -767,11 +767,11 @@ MHD_select_thread (void *cls)
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *
-MHD_start_daemon (unsigned int options,
-                  unsigned short port,
-                  MHD_AcceptPolicyCallback apc,
-                  void *apc_cls,
-                  MHD_AccessHandlerCallback dh, void *dh_cls, ...)
+MHD_start_daemon_va (unsigned int options,
+                     unsigned short port,
+                     MHD_AcceptPolicyCallback apc,
+                     void *apc_cls,
+                     MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap)
 {
   const int on = 1;
   struct MHD_Daemon *retVal;
@@ -783,7 +783,6 @@ MHD_start_daemon (unsigned int options,
   struct sockaddr_in6 servaddr6;
   const struct sockaddr *servaddr;
   socklen_t addrlen;
-  va_list ap;
   enum MHD_OPTION opt;
 
   if ((port == 0) || (dh == NULL))
@@ -879,7 +878,7 @@ MHD_start_daemon (unsigned int options,
     }
 #endif
   /* initializes the argument pointer variable */
-  va_start (ap, dh_cls);
+
   /*
    * loop through daemon options
    */
@@ -905,6 +904,10 @@ MHD_start_daemon (unsigned int options,
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
 #if HTTPS_SUPPORT
+        case MHD_OPTION_PROTOCOL_VERSION:
+          _set_priority (&retVal->priority_cache->protocol,
+                                   va_arg (ap, const int *));
+          break;
         case MHD_OPTION_HTTPS_KEY_PATH:
           retVal->https_key_path = va_arg (ap, const char *);
           break;
@@ -925,13 +928,17 @@ MHD_start_daemon (unsigned int options,
           _set_priority (&retVal->priority_cache->cipher,
                          va_arg (ap, const int *));
           break;
+        case MHD_OPTION_MAC_ALGO:
+             _set_priority (&retVal->priority_cache->mac,
+                                    va_arg (ap, const int *));
+                 break;
 #endif
         default:
 #if HAVE_MESSAGES
           if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
             {
               fprintf (stderr,
-                       "Error: HTTPS option given while compiling without HTTPS support\n");
+                       "Error: HTTPS option %d passed to non HTTPS daemon\n", opt);
             }
           else
             {
@@ -942,18 +949,19 @@ MHD_start_daemon (unsigned int options,
           abort ();
         }
     }
+
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if (options & MHD_USE_SSL && MHD_NO == MHDS_init (retVal))
+  if (options & MHD_USE_SSL && MHD_NO == MHD_TLS_init (retVal))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to initialize MHDS\n", STRERROR (errno));
+      MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
 #endif
       free (retVal);
       return NULL;
     }
 #endif
-  va_end (ap);
+
   if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
                                                                   &
                                                                   MHD_USE_SELECT_INTERNALLY)))
@@ -972,6 +980,36 @@ MHD_start_daemon (unsigned int options,
   return retVal;
 }
 
+struct MHD_Daemon *
+MHD_start_daemon (unsigned int options,
+                  unsigned short port,
+                  MHD_AcceptPolicyCallback apc,
+                  void *apc_cls,
+                  MHD_AccessHandlerCallback dh, void *dh_cls, ...){
+
+	int ret;
+	va_list ap;
+	va_start (ap, dh_cls);
+	ret = MHD_start_daemon_va (options,
+            port,
+            apc,
+            apc_cls,
+            dh, dh_cls, ap);
+	va_end (ap);
+	return ret;
+}
+
+/**
+ * Start a webserver on the given port.
+ *
+ * @param port port to bind to
+ * @param apc callback to call to check which clients
+ *        will be allowed to connect
+ * @param apc_cls extra argument to apc
+ * @param dh default handler for all URIs
+ * @param dh_cls extra argument to dh
+ * @return NULL on error, handle to daemon on success
+ */
 /**
  * Shutdown an http daemon.
  */
