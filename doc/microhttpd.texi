@@ -695,6 +695,36 @@ and returns the number of headers.
 @end deftypefun
 
 
+@deftypefun int MHD_set_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char * key, const char * value)
+This function can be used to add an entry to
+the HTTP headers of a connection (so that the 
+MHD_get_connection_values function will return
+them -- and the MHD PostProcessor will also 
+see them).  This maybe required in certain
+situations (see Mantis #1399) where (broken)
+HTTP implementations fail to supply values needed
+by the post processor (or other parts of the
+application).
+
+This function MUST only be called from within
+the MHD_AccessHandlerCallback (otherwise, access
+maybe improperly synchronized).  Furthermore,
+the client must guarantee that the key and
+value arguments are 0-terminated strings that
+are NOT freed until the connection is closed.
+(The easiest way to do this is by passing only
+arguments to permanently allocated strings.).
+
+@var{connection} is the connection for which 
+the entry for @var{key} of the given @var{kind}
+should be set to the given @var{value}.
+
+The function returns @code{MHD_NO} if the operation 
+could not be performed due to insufficient memory
+and @code{MHD_YES} on success.
+@end deftypefun
+
+
 @deftypefun {const char *} MHD_lookup_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char *key)
 Get a particular header value.  If multiple values match the @var{kind},
 return one of them (the ``first'', whatever that means).  @var{key} must

@@ -791,6 +791,41 @@ MHD_get_connection_values (struct MHD_Connection *connection,
                            MHD_KeyValueIterator iterator, void *iterator_cls);
 
 /**
+ * This function can be used to add an entry to
+ * the HTTP headers of a connection (so that the 
+ * MHD_get_connection_values function will return
+ * them -- and the MHD PostProcessor will also 
+ * see them).  This maybe required in certain
+ * situations (see Mantis #1399) where (broken)
+ * HTTP implementations fail to supply values needed
+ * by the post processor (or other parts of the
+ * application).
+ * <p>
+ * This function MUST only be called from within
+ * the MHD_AccessHandlerCallback (otherwise, access
+ * maybe improperly synchronized).  Furthermore,
+ * the client must guarantee that the key and
+ * value arguments are 0-terminated strings that
+ * are NOT freed until the connection is closed.
+ * (The easiest way to do this is by passing only
+ * arguments to permanently allocated strings.).
+ *
+ * @param connection the connection for which a
+ *  value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself
+ * @return MHD_NO if the operation could not be
+ *         performed due to insufficient memory;
+ *         MHD_YES on success
+ */
+int 
+MHD_set_connection_value (struct MHD_Connection *connection,
+			  enum MHD_ValueKind kind,
+			  const char *key, 
+			  const char *value);
+
+/**
  * Get a particular header value.  If multiple
  * values match the kind, return any one of them.
  *
