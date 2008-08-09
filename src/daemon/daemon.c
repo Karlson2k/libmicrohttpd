@@ -57,6 +57,7 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
+#if HTTPS_SUPPORT
 /* TODO unite with code in gnutls_priority.c */
 static int
 MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
@@ -166,6 +167,7 @@ _set_priority (priority_st * st, const int *list)
 
   return 0;
 }
+#endif
 
 /**
  * Obtain the select sets for this daemon.
@@ -1203,7 +1205,7 @@ MHD_start_daemon (unsigned int options,
         }
     }
   va_end (ap);
-
+#if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
   if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
     {
@@ -1213,7 +1215,7 @@ MHD_start_daemon (unsigned int options,
       free (retVal);
       return NULL;
     }
-
+#endif
   if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
                                                                   &
                                                                   MHD_USE_SELECT_INTERNALLY)))
@@ -1245,9 +1247,6 @@ MHD_start_daemon_ip (unsigned int options,
                      void *apc_cls,
                      MHD_AccessHandlerCallback dh, void *dh_cls, ...)
 {
-
-  gnutls_global_set_log_level (5);
-
   struct MHD_Daemon *ret;
   va_list ap;
   va_start (ap, dh_cls);
