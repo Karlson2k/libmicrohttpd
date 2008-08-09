@@ -56,7 +56,7 @@ gnutls_cipher_set_priority (gnutls_session_t session, const int *list)
     num++;
   if (num > MAX_ALGOS)
     num = MAX_ALGOS;
-  session->internals.priorities.cipher.algorithms = num;
+  session->internals.priorities.cipher.num_algorithms = num;
 
   for (i = 0; i < num; i++)
     {
@@ -75,7 +75,7 @@ _set_priority (priority_st * st, const int *list)
     num++;
   if (num > MAX_ALGOS)
     num = MAX_ALGOS;
-  st->algorithms = num;
+  st->num_algorithms = num;
 
   for (i = 0; i < num; i++)
     {

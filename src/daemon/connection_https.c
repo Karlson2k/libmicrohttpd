@@ -37,7 +37,7 @@
 #include "gnutls_int.h"
 #include "gnutls_record.h"
 
-/* TODO rm #include "gnutls_errors.h" */
+/* TODO #include rm "gnutls_errors.h" */
 #include "gnutls_errors.h"
 
 /* forward declarations used when setting secure connection callbacks */
@@ -168,6 +168,9 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 
   switch (connection->state)
     {
+    /* on newly created connections we might reach here before any reply has been received */
+    case MHD_TLS_CONNECTION_INIT:
+      return MHD_YES;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
       MHD_tls_connection_close (connection);

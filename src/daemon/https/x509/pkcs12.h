@@ -23,7 +23,6 @@
  */
 
 /* TODO clean */
-
 #ifndef GNUTLS_PKCS12_H
 #define GNUTLS_PKCS12_H
 

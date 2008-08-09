@@ -62,7 +62,7 @@ setup (gnutls_session_t * session,
        gnutls_datum_t * cert, gnutls_certificate_credentials_t * xcred)
 {
   int ret;
-  const char **err_pos;
+  const char ** err_pos;
 
   gnutls_certificate_allocate_credentials (xcred);
 

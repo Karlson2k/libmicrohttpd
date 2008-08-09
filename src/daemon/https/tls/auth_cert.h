@@ -34,6 +34,7 @@
 /* This structure may be complex, but it's the only way to
  * support a server that has multiple certificates
  */
+
 typedef struct gnutls_certificate_credentials_st
 {
   gnutls_dh_params_t dh_params;
@@ -45,7 +46,7 @@ typedef struct gnutls_certificate_credentials_st
 
   gnutls_cert **cert_list;
   /* contains a list of a list of certificates.
-   * eg (X509): [0] certificate1, certificate11, certificate111 
+   * eg (X509): [0] certificate1, certificate11, certificate111
    * (if more than one, one certificate certifies the one before)
    *       [1] certificate2, certificate22, ...
    */
@@ -75,14 +76,14 @@ typedef struct gnutls_certificate_credentials_st
   /* X509 specific stuff */
 
   gnutls_x509_crt_t *x509_ca_list;
-  unsigned x509_ncas;		/* number of CAs in the ca_list 
+  unsigned x509_ncas;		/* number of CAs in the ca_list
 				 */
 
   gnutls_x509_crl_t *x509_crl_list;
-  unsigned x509_ncrls;		/* number of CRLs in the crl_list 
+  unsigned x509_ncrls;		/* number of CRLs in the crl_list
 				 */
 
-  unsigned int verify_flags;	/* flags to be used at 
+  unsigned int verify_flags;	/* flags to be used at
 				 * certificate verification.
 				 */
   unsigned int verify_depth;

@@ -93,9 +93,9 @@ check_bits (gnutls_x509_crt_t crt, unsigned int max_bits)
   * _gnutls_x509_cert_verify_peers - This function returns the peer's certificate status
   * @session: is a gnutls session
   *
-  * This function will try to verify the peer's certificate and return its status (TRUSTED, REVOKED etc.). 
+  * This function will try to verify the peer's certificate and return its status (TRUSTED, REVOKED etc.).
   * The return value (status) should be one of the gnutls_certificate_status_t enumerated elements.
-  * However you must also check the peer's name in order to check if the verified certificate belongs to the 
+  * However you must also check the peer's name in order to check if the verified certificate belongs to the
   * actual peer. Returns a negative error code in case of an error, or GNUTLS_E_NO_CERTIFICATE_FOUND if no certificate was sent.
   *
   -*/
@@ -178,7 +178,7 @@ _gnutls_x509_cert_verify_peers (gnutls_session_t session,
 
     }
 
-  /* Verify certificate 
+  /* Verify certificate
    */
   ret =
     gnutls_x509_crt_list_verify (peer_certificate_list,
@@ -522,7 +522,7 @@ parse_pem_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts,
         }
       _gnutls_free_datum (&tmp);        /* free ptr2 */
 
-      /* now we move ptr after the pem header 
+      /* now we move ptr after the pem header
        */
       ptr++;
       /* find the next certificate (if any)
@@ -794,18 +794,18 @@ read_key_file (gnutls_certificate_credentials_t res,
   * @key: is the private key, or %NULL
   * @type: is PEM or DER
   *
-  * This function sets a certificate/private key pair in the 
+  * This function sets a certificate/private key pair in the
   * gnutls_certificate_credentials_t structure. This function may be called
   * more than once (in case multiple keys/certificates exist for the
   * server).
   *
-  * Currently are supported: RSA PKCS-1 encoded private keys, 
+  * Currently are supported: RSA PKCS-1 encoded private keys,
   * DSA private keys.
   *
   * DSA private keys are encoded the OpenSSL way, which is an ASN.1
   * DER sequence of 6 INTEGERs - version, p, q, g, pub, priv.
   *
-  * Note that the keyUsage (2.5.29.15) PKIX extension in X.509 certificates 
+  * Note that the keyUsage (2.5.29.15) PKIX extension in X.509 certificates
   * is supported. This means that certificates intended for signing cannot
   * be used for ciphersuites that require encryption.
   *
@@ -825,7 +825,7 @@ gnutls_certificate_set_x509_key_mem (gnutls_certificate_credentials_t
 {
   int ret;
 
-  /* this should be first 
+  /* this should be first
    */
   if ((ret = read_key_mem (res, key ? key->data : NULL,
                            key ? key->size : 0, type)) < 0)
@@ -867,7 +867,7 @@ gnutls_certificate_set_x509_key (gnutls_certificate_credentials_t res,
 {
   int ret, i;
 
-  /* this should be first 
+  /* this should be first
    */
 
   res->pkey =
@@ -956,7 +956,7 @@ gnutls_certificate_set_x509_key_file (gnutls_certificate_credentials_t
 {
   int ret;
 
-  /* this should be first 
+  /* this should be first
    */
   if ((ret = read_key_file (res, KEYFILE, type)) < 0)
     return ret;
@@ -983,7 +983,7 @@ generate_rdn_seq (gnutls_certificate_credentials_t res)
   unsigned size, i;
   opaque *pdata;
 
-  /* Generate the RDN sequence 
+  /* Generate the RDN sequence
    * This will be sent to clients when a certificate
    * request message is sent.
    */
@@ -1036,11 +1036,8 @@ generate_rdn_seq (gnutls_certificate_credentials_t res)
   return 0;
 }
 
-
-
-
-/* Returns 0 if it's ok to use the gnutls_kx_algorithm_t with this 
- * certificate (uses the KeyUsage field). 
+/* Returns 0 if it's ok to use the gnutls_kx_algorithm_t with this
+ * certificate (uses the KeyUsage field).
  */
 int
 _gnutls_check_key_usage (const gnutls_cert * cert, gnutls_kx_algorithm_t alg)
@@ -1158,7 +1155,7 @@ parse_pem_ca_mem (gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
           return ret;
         }
 
-      /* now we move ptr after the pem header 
+      /* now we move ptr after the pem header
        */
       ptr++;
       size--;
@@ -1452,7 +1449,7 @@ parse_pem_crl_mem (gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
           return ret;
         }
 
-      /* now we move ptr after the pem header 
+      /* now we move ptr after the pem header
        */
       ptr++;
       /* find the next certificate (if any)

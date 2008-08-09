@@ -150,10 +150,10 @@ _gnutls_cert_type_send_params (gnutls_session_t session, opaque * data,
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 
-      if (session->internals.priorities.cert_type.algorithms > 0)
+      if (session->internals.priorities.cert_type.num_algorithms > 0)
         {
 
-          len = session->internals.priorities.cert_type.algorithms;
+          len = session->internals.priorities.cert_type.num_algorithms;
 
           if (len == 1 &&
               session->internals.priorities.cert_type.priority[0] ==

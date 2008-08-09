@@ -380,7 +380,7 @@ typedef struct
 typedef struct
   {
     unsigned int priority[MAX_ALGOS];
-    unsigned int algorithms;
+    unsigned int num_algorithms;
   } priority_st;
 
 /* For the external api */
@@ -391,6 +391,8 @@ struct gnutls_priority_st
     priority_st kx;
     priority_st compression;
     priority_st protocol;
+
+    /* certificate type : x509, OpenPGP, etc. */
     priority_st cert_type;
 
     /* to disable record padding */

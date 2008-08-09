@@ -32,7 +32,6 @@
 #include <gnutls_auth_int.h>
 #include <gnutls_num.h>
 #include <gnutls_datum.h>
-#include <gnutls_db.h>
 #include <gnutls_record.h>
 #include <gnutls_handshake.h>
 #include <gnutls_dh.h>
@@ -154,11 +153,11 @@ _gnutls_session_cert_type_supported (gnutls_session_t session,
         }
     }
 
-  if (session->internals.priorities.cert_type.algorithms == 0 && cert_type
+  if (session->internals.priorities.cert_type.num_algorithms == 0 && cert_type
       == DEFAULT_CERT_TYPE)
     return 0;
 
-  for (i = 0; i < session->internals.priorities.cert_type.algorithms; i++)
+  for (i = 0; i < session->internals.priorities.cert_type.num_algorithms; i++)
     {
       if (session->internals.priorities.cert_type.priority[i] == cert_type)
         {

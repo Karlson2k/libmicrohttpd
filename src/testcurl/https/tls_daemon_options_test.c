@@ -32,6 +32,7 @@
 #include "gnutls.h"
 #include <curl/curl.h>
 
+#define DEBUG_CURL_VERBOSE 0
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 #define MHD_E_MEM "Error: memory error\n"
@@ -42,6 +43,7 @@
 
 #include "tls_test_keys.h"
 
+const int DEBUG_GNUTLS_LOG_LEVEL = 0;
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
@@ -123,7 +125,7 @@ http_ahc (void *cls, struct MHD_Connection *connection,
  * @param test_fd: file to attempt transfering
  */
 static int
-test_https_transfer (FILE * test_fd, char * cipher_suite, int proto_version)
+test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
 {
   CURL *c;
   CURLcode errornum;
@@ -172,7 +174,7 @@ test_https_transfer (FILE * test_fd, char * cipher_suite, int proto_version)
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-#ifdef DEBUG
+#if DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
@@ -249,14 +251,11 @@ setupTestFile ()
 }
 
 static int
-setup (struct MHD_Daemon **d, enum MHD_OPTION option, void * value )
+setup (struct MHD_Daemon **d, va_list arg_list)
 {
-  *d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                         MHD_USE_DEBUG, 42433,
-                         NULL, NULL, &http_ahc, NULL,
-                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                         option, value, MHD_OPTION_END);
+  *d = MHD_start_daemon_va (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                            MHD_USE_DEBUG, 42433, "127.0.0.1",
+                            NULL, NULL, &http_ahc, NULL, arg_list);
 
   if (*d == NULL)
     {
@@ -273,19 +272,37 @@ teardown (struct MHD_Daemon *d)
   MHD_stop_daemon (d);
 }
 
+/* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) & move to test_util.c */
 int
-test_wrap (int
+test_wrap (char *test_name, int
            (*test) (FILE * test_fd, char *cipher_suite, int proto_version),
-           FILE * test_fd, char *cipher_suite, int proto_version,
-           enum MHD_OPTION option, void * value)
+           FILE * test_fd, char *cipher_suite, int proto_version, ...)
 {
   int ret;
+  va_list arg_list;
   struct MHD_Daemon *d;
 
-  if (setup (&d, option, value) != 0)
-    return -1;
+  va_start (arg_list, proto_version);
+  if (setup (&d, arg_list) != 0)
+    {
+      va_end (arg_list);
+      return -1;
+    }
+
+  fprintf (stdout, "running test: %s ", test_name);
   ret = test (test_fd, cipher_suite, proto_version);
+
+  if (ret == 0)
+    {
+      fprintf (stdout, "[pass]\n");
+    }
+  else
+    {
+      fprintf (stdout, "[fail]\n");
+    }
+
   teardown (d);
+  va_end (arg_list);
   return ret;
 }
 
@@ -336,6 +353,9 @@ test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
+/*
+ * test server refuses to negotiate connections with unsupported protocol versions
+ */
 int
 test_protocol_version (FILE * test_fd, char *cipher_suite,
                        int curl_proto_version)
@@ -344,7 +364,7 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
   CURLcode errornum;
 
   c = curl_easy_init ();
-#ifdef DEBUG
+#if DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, "https://localhost:42433/");
@@ -384,7 +404,7 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  gnutls_global_set_log_level(11);
+  gnutls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
@@ -403,54 +423,61 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  int mac[] = {MHD_GNUTLS_MAC_SHA1, 0};
-  int p [] = {MHD_GNUTLS_SSL3, 0};
+  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
+  int p[] = { MHD_GNUTLS_SSL3, 0 };
   int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
-  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
-
-
-//  errorCount +=
-//    test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
-//               CURL_SSLVERSION_TLSv1, MHD_OPTION_END, 0);
-//  errorCount +=
-//    test_wrap (&test_file_certificates, test_fd, "AES256-SHA",
-//               CURL_SSLVERSION_TLSv1, MHD_OPTION_END, 0);
-//
-//  errorCount +=
-//    test_wrap (&test_protocol_version, test_fd, "AES256-SHA",
-//               CURL_SSLVERSION_TLSv1, MHD_OPTION_PROTOCOL_VERSION, p);
-//
-//  errorCount +=
-//     test_wrap (&test_https_transfer, test_fd, "DES-CBC3-SHA",
-//                CURL_SSLVERSION_TLSv1, MHD_OPTION_CIPHER_ALGORITHM, cipher);
+  int kx[] = { MHD_GNUTLS_KX_ANON_DH, 0 };
 
   errorCount +=
-          test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
-                    CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, mac);
-
-  //  errorCount +=
-  //         test_wrap (&test_https_transfer, test_fd, "EDH-RSA-DES-CBC3-SHA",
-  //                    CURL_SSLVERSION_TLSv1, MHD_OPTION_KX_PRIORITY, kx);
+    test_wrap ("https_transfer", &test_https_transfer, test_fd, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("file certificates", &test_file_certificates, test_fd,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("protocol_version", &test_protocol_version, test_fd,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_PROTOCOL_VERSION, p,
+               MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("cipher DES-CBC3-SHA", &test_https_transfer, test_fd,
+               "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("mac SH1", &test_https_transfer, test_fd, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_MAC_ALGO, mac, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("kx ANON_DH", &test_https_transfer, test_fd,
+               "ADH-DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_CRED_TYPE, MHD_GNUTLS_CRD_ANON,
+               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_KX_PRIORITY,
+               kx, MHD_OPTION_END);
 
   /*gnutls_mac_algorithm_t mac[] = {
-                                  {MHD_GNUTLS_MAC_MD5, 0}, 0};
-  gnutls_mac_algorithm_t * cur_mac;
+     {MHD_GNUTLS_MAC_MD5, 0}, 0};
+     gnutls_mac_algorithm_t * cur_mac;
 
-  for ( cur_mac = &mac[0]; (*cur_mac) != 0; cur_mac++ ){
-    option[0] = MHD_GNUTLS_MAC_SHA1;
-    errorCount +=
-        test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
-                  CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, option);
-  }*/
-
-
+     for ( cur_mac = &mac[0]; (*cur_mac) != 0; cur_mac++ ){
+     option[0] = MHD_GNUTLS_MAC_SHA1;
+     errorCount +=
+     test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
+     CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, option);
+     } */
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
-  else
-    {
-      fprintf (stderr, "ok\n");
-    }
 
   curl_global_cleanup ();
   fclose (test_fd);

@@ -39,9 +39,11 @@
 
 extern int curl_check_version (const char *req_version, ...);
 
+const int DEBUG_GNUTLS_LOG_LEVEL = 6;
 const char *ca_cert_file_name = "ca_cert_pem";
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
+
 
 struct CBC
 {
@@ -173,8 +175,8 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 3L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 3L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
@@ -224,14 +226,13 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
 {
   int ret;
   struct MHD_Daemon *d;
-  int kx[] = { MHD_GNUTLS_KX_DHE_RSA, 0 };
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
-                        MHD_OPTION_KX_PRIORITY, kx, MHD_OPTION_END);
+                        MHD_OPTION_END);
 
   if (d == NULL)
     {
@@ -308,7 +309,7 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  /* gnutls_global_set_log_level (11); */
+  gnutls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
@@ -330,7 +331,7 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);

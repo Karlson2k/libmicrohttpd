@@ -627,8 +627,13 @@ struct MHD_Daemon
   unsigned short port;
 
 #if HTTPS_SUPPORT
-  /* server credintials */
-  gnutls_certificate_credentials_t x509_cret;
+  gnutls_credentials_type_t cred_type;
+
+  /* server x509 credintials */
+  gnutls_certificate_credentials_t x509_cred;
+
+  /* credentials used for anonymous authentication */
+  gnutls_anon_server_credentials_t anon_cred;
 
   /* cipher priority cache */
   gnutls_priority_t priority_cache;

@@ -62,8 +62,9 @@ int
 gnutls_anon_allocate_server_credentials (gnutls_anon_server_credentials_t *
                                          sc)
 {
-
   *sc = gnutls_calloc (1, sizeof (anon_server_credentials_st));
+  if (*sc == NULL)
+  	    return GNUTLS_E_MEMORY_ERROR;
 
   return 0;
 }

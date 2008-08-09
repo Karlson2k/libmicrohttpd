@@ -64,8 +64,6 @@
  * depend on your platform; for possible suggestions consult
  * "platform.h" in the MHD distribution).
  *
- * TODO:
- * - Add option codes for SSL support
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -378,6 +376,13 @@ enum MHD_OPTION
   * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
   */
   MHD_OPTION_HTTPS_MEM_CERT,
+
+  /*
+   * daemon credentials type. either certificate or anonymous,
+   * this option should be followed by one of the values listed in
+   * gnutls_credentials_type_t.
+   */
+  MHD_OPTION_CRED_TYPE,
 
   /*
    * SSL/TLS protocol version
@@ -714,11 +719,17 @@ typedef int
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int options,
-                     unsigned short port,
+                     unsigned short port, char * ip,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
                      MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap);
 
+struct MHD_Daemon *
+MHD_start_daemon_ip (unsigned int options,
+                           unsigned short port, char *ip,
+                           MHD_AcceptPolicyCallback apc,
+                           void *apc_cls,
+                           MHD_AccessHandlerCallback dh, void *dh_cls, ...);
 
 /*
  * Variadic version of MHD_start_daemon_va. This function will delegate calls
@@ -1025,6 +1036,7 @@ typedef enum
   MHD_GNUTLS_KX_SRP_DSS
 } gnutls_kx_algorithm_t;
 
+/* server credentials type */
 typedef enum
 {
   MHD_GNUTLS_CRD_CERTIFICATE = 1,
@@ -1034,6 +1046,7 @@ typedef enum
   MHD_GNUTLS_CRD_IA
 } gnutls_credentials_type_t;
 
+/* mac algorithm */
 typedef enum
 {
   MHD_GNUTLS_MAC_UNKNOWN = 0,
@@ -1056,7 +1069,7 @@ typedef enum
   MHD_GNUTLS_DIG_SHA256 = MHD_GNUTLS_MAC_SHA256
 } gnutls_digest_algorithm_t;
 
-
+/* compression method */
 typedef enum
 {
   MHD_GNUTLS_COMP_UNKNOWN = 0,
@@ -1067,6 +1080,7 @@ typedef enum
                                  */
 } gnutls_compression_method_t;
 
+/* protocol type */
 typedef enum
 {
   MHD_GNUTLS_SSL3 = 1,
@@ -1076,6 +1090,7 @@ typedef enum
   MHD_GNUTLS_VERSION_UNKNOWN = 0xff
 } gnutls_protocol_t;
 
+/* certificate_type */
 typedef enum
 {
   MHD_GNUTLS_CRT_UNKNOWN = 0,

@@ -54,6 +54,169 @@ static int unpack_security_parameters (gnutls_session_t session,
 static int pack_security_parameters (gnutls_session_t session,
                                      gnutls_datum_t * packed_session);
 
+/* Packs the ANON session authentication data. */
+#ifdef ENABLE_ANON
+
+/* Format:
+ *      1 byte the credentials type
+ *      4 bytes the size of the whole structure
+ *      2 bytes the size of secret key in bits
+ *      4 bytes the size of the prime
+ *      x bytes the prime
+ *      4 bytes the size of the generator
+ *      x bytes the generator
+ *      4 bytes the size of the public key
+ *      x bytes the public key
+ */
+static int
+pack_anon_auth_info (gnutls_session_t session, gnutls_datum_t * packed_session)
+{
+  anon_auth_info_t info = _gnutls_get_auth_info (session);
+  int pos = 0;
+  size_t pack_size;
+
+  if (info)
+    pack_size = 2 + 4 * 3 + info->dh.prime.size +
+      info->dh.generator.size + info->dh.public_key.size;
+  else
+    pack_size = 0;
+
+  packed_session->size = PACK_HEADER_SIZE + pack_size + sizeof (uint32_t);
+
+  /* calculate the size and allocate the data.
+   */
+  packed_session->data =
+    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
+
+  if (packed_session->data == NULL)
+    {
+      gnutls_assert ();
+      return GNUTLS_E_MEMORY_ERROR;
+    }
+
+  packed_session->data[0] = MHD_GNUTLS_CRD_ANON;
+  _gnutls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
+  pos += 4 + PACK_HEADER_SIZE;
+
+  if (pack_size > 0)
+    {
+      _gnutls_write_uint16 (info->dh.secret_bits, &packed_session->data[pos]);
+      pos += 2;
+
+      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.prime);
+      pos += 4 + info->dh.prime.size;
+      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.generator);
+      pos += 4 + info->dh.generator.size;
+      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.public_key);
+      pos += 4 + info->dh.public_key.size;
+
+    }
+
+  return 0;
+}
+
+/* Format:
+ *      1 byte the credentials type
+ *      4 bytes the size of the whole structure
+ *      2 bytes the size of secret key in bits
+ *      4 bytes the size of the prime
+ *      x bytes the prime
+ *      4 bytes the size of the generator
+ *      x bytes the generator
+ *      4 bytes the size of the public key
+ *      x bytes the public key
+ */
+static int
+unpack_anon_auth_info (gnutls_session_t session,
+                       const gnutls_datum_t * packed_session)
+{
+  size_t pack_size;
+  int pos = 0, size, ret;
+  anon_auth_info_t info;
+
+  if (packed_session->data[0] != MHD_GNUTLS_CRD_ANON)
+    {
+      gnutls_assert ();
+      return GNUTLS_E_INVALID_REQUEST;
+    }
+
+  pack_size = _gnutls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
+  pos += PACK_HEADER_SIZE + 4;
+
+
+  if (pack_size == 0)
+    return 0;                   /* nothing to be done */
+
+  /* a simple check for integrity */
+  if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
+    {
+      gnutls_assert ();
+      return GNUTLS_E_INVALID_REQUEST;
+    }
+
+  /* client and serer have the same auth_info here
+   */
+  ret =
+    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
+                           sizeof (anon_auth_info_st), 1);
+  if (ret < 0)
+    {
+      gnutls_assert ();
+      return ret;
+    }
+
+  info = _gnutls_get_auth_info (session);
+  if (info == NULL)
+    {
+      gnutls_assert ();
+      return GNUTLS_E_INTERNAL_ERROR;
+    }
+
+  info->dh.secret_bits = _gnutls_read_uint16 (&packed_session->data[pos]);
+  pos += 2;
+
+  size = _gnutls_read_uint32 (&packed_session->data[pos]);
+  pos += 4;
+  ret = _gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  if (ret < 0)
+    {
+      gnutls_assert ();
+      goto error;
+    }
+  pos += size;
+
+  size = _gnutls_read_uint32 (&packed_session->data[pos]);
+  pos += 4;
+  ret =
+    _gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+  if (ret < 0)
+    {
+      gnutls_assert ();
+      goto error;
+    }
+  pos += size;
+
+  size = _gnutls_read_uint32 (&packed_session->data[pos]);
+  pos += 4;
+  ret =
+    _gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
+                       size);
+  if (ret < 0)
+    {
+      gnutls_assert ();
+      goto error;
+    }
+  pos += size;
+
+  return 0;
+
+error:
+  _gnutls_free_datum (&info->dh.prime);
+  _gnutls_free_datum (&info->dh.generator);
+  _gnutls_free_datum (&info->dh.public_key);
+  return ret;
+}
+#endif /* ANON */
 
 /* Since auth_info structures contain malloced data, this function
  * is required in order to pack these structures in a vector in
@@ -121,7 +284,7 @@ _gnutls_session_pack (gnutls_session_t session,
 
     }
 
-  /* Auth_info structures copied. Now copy security_parameters_st. 
+  /* Auth_info structures copied. Now copy security_parameters_st.
    * packed_session must have allocated space for the security parameters.
    */
   ret = pack_security_parameters (session, packed_session);
@@ -201,7 +364,7 @@ _gnutls_session_unpack (gnutls_session_t session,
 
     }
 
-  /* Auth_info structures copied. Now copy security_parameters_st. 
+  /* Auth_info structures copied. Now copy security_parameters_st.
    * packed_session must have allocated space for the security parameters.
    */
   ret = unpack_security_parameters (session, packed_session);
@@ -477,7 +640,7 @@ error:
 /* Packs the SRP session authentication data.
  */
 
-/* Format: 
+/* Format:
  *      1 byte the credentials type
  *      4 bytes the size of the SRP username (x)
  *      x bytes the SRP username
@@ -569,167 +732,12 @@ unpack_srp_auth_info (gnutls_session_t session,
 #endif
 
 
-#ifdef ENABLE_ANON
-/* Packs the ANON session authentication data.
- */
-
-/* Format: 
- *      1 byte the credentials type
- *      4 bytes the size of the whole structure
- *      2 bytes the size of secret key in bits
- *      4 bytes the size of the prime
- *      x bytes the prime
- *      4 bytes the size of the generator
- *      x bytes the generator
- *      4 bytes the size of the public key
- *      x bytes the public key
- */
-static int
-pack_anon_auth_info (gnutls_session_t session,
-                     gnutls_datum_t * packed_session)
-{
-  anon_auth_info_t info = _gnutls_get_auth_info (session);
-  int pos = 0;
-  size_t pack_size;
-
-  if (info)
-    pack_size = 2 + 4 * 3 + info->dh.prime.size +
-      info->dh.generator.size + info->dh.public_key.size;
-  else
-    pack_size = 0;
-
-  packed_session->size = PACK_HEADER_SIZE + pack_size + sizeof (uint32_t);
-
-  /* calculate the size and allocate the data.
-   */
-  packed_session->data =
-    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
-
-  if (packed_session->data == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_MEMORY_ERROR;
-    }
-
-  packed_session->data[0] = MHD_GNUTLS_CRD_ANON;
-  _gnutls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
-  pos += 4 + PACK_HEADER_SIZE;
-
-  if (pack_size > 0)
-    {
-      _gnutls_write_uint16 (info->dh.secret_bits, &packed_session->data[pos]);
-      pos += 2;
-
-      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.prime);
-      pos += 4 + info->dh.prime.size;
-      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.generator);
-      pos += 4 + info->dh.generator.size;
-      _gnutls_write_datum32 (&packed_session->data[pos], info->dh.public_key);
-      pos += 4 + info->dh.public_key.size;
-
-    }
-
-  return 0;
-}
-
-
-static int
-unpack_anon_auth_info (gnutls_session_t session,
-                       const gnutls_datum_t * packed_session)
-{
-  size_t pack_size;
-  int pos = 0, size, ret;
-  anon_auth_info_t info;
-
-  if (packed_session->data[0] != MHD_GNUTLS_CRD_ANON)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  pack_size = _gnutls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
-  pos += PACK_HEADER_SIZE + 4;
-
-
-  if (pack_size == 0)
-    return 0;                   /* nothing to be done */
-
-  /* a simple check for integrity */
-  if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  /* client and serer have the same auth_info here
-   */
-  ret =
-    _gnutls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
-                           sizeof (anon_auth_info_st), 1);
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
-
-  info = _gnutls_get_auth_info (session);
-  if (info == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INTERNAL_ERROR;
-    }
-
-  info->dh.secret_bits = _gnutls_read_uint16 (&packed_session->data[pos]);
-  pos += 2;
-
-  size = _gnutls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret = _gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  size = _gnutls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret =
-    _gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  size = _gnutls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret =
-    _gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
-                       size);
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  return 0;
-
-error:
-  _gnutls_free_datum (&info->dh.prime);
-  _gnutls_free_datum (&info->dh.generator);
-  _gnutls_free_datum (&info->dh.public_key);
-  return ret;
-}
-#endif /* ANON */
 
 #ifdef ENABLE_PSK
 /* Packs the PSK session authentication data.
  */
 
-/* Format: 
+/* Format:
  *      1 byte the credentials type
  *      4 bytes the size of the whole structure
  *      4 bytes the size of the PSK username (x)
@@ -909,7 +917,7 @@ error:
 /* Packs the security parameters.
  */
 
-/* Format: 
+/* Format:
  *      4 bytes the total security data size
  *      1 byte the entity type (client/server)
  *      1 byte the key exchange algorithm used
@@ -947,7 +955,7 @@ error:
  *
  *      2 bytes the number of server name extensions (up to MAX_SERVER_NAME_EXTENSIONS)
  *      1 byte the first name type
- *      2 bytes the size of the first name 
+ *      2 bytes the size of the first name
  *      x bytes the first name (MAX_SERVER_NAME_SIZE)
  *       and so on...
  *

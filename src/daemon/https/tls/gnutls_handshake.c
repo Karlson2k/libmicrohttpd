@@ -37,7 +37,6 @@
 #include "gnutls_handshake.h"
 #include "gnutls_num.h"
 #include "gnutls_hash_int.h"
-#include "gnutls_db.h"
 #include "gnutls_extensions.h"
 #include "gnutls_supplemental.h"
 #include "gnutls_auth_int.h"
@@ -338,7 +337,7 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
                            int datalen)
 {
   uint8_t session_id_len;
-  int pos = 0, ret;
+  int pos = 0, ret = 0;
   uint16_t suite_size, comp_size;
   gnutls_protocol_t adv_version;
   int neg_version;
@@ -383,10 +382,10 @@ _gnutls_read_client_hello (gnutls_session_t session, opaque * data,
     }
   DECR_LEN (len, session_id_len);
 
-  ret = _gnutls_server_restore_session (session, &data[pos], session_id_len);
   pos += session_id_len;
 
-  if (ret == 0)
+  /* TODO rm if support for resumed sessions won't be supported */
+  if (0)
     {                           /* resumed! */
       resume_copy_required_values (session);
       session->internals.resumed = RESUME_TRUE;
@@ -2645,12 +2644,6 @@ _gnutls_handshake_common (gnutls_session_t session)
 
       ret = _gnutls_recv_handshake_final (session, FALSE);
       IMED_RET ("recv handshake final 2", ret);
-    }
-
-  if (session->security_parameters.entity == GNUTLS_SERVER)
-    {
-      /* in order to support session resuming */
-      _gnutls_server_register_current_session (session);
     }
 
   /* clear handshake buffer */

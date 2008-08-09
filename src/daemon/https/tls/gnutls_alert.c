@@ -148,7 +148,7 @@ gnutls_alert_send (gnutls_session_t session, gnutls_alert_level_t level,
   * alert should be sent to the peer indicating that no renegotiation will
   * be performed.
   *
-  * If there is no mapping to a valid alert the alert to indicate internal error 
+  * If there is no mapping to a valid alert the alert to indicate internal error
   * is returned.
   *
   **/
@@ -163,7 +163,7 @@ gnutls_error_to_alert (int err, int *level)
       /* GNUTLS_A_DECRYPTION_FAILED is not sent, because
        * it is not defined in SSL3. Note that we must
        * not distinguish Decryption failures from mac
-       * check failures, due to the possibility of some 
+       * check failures, due to the possibility of some
        * attacks.
        */
       ret = GNUTLS_A_BAD_RECORD_MAC;

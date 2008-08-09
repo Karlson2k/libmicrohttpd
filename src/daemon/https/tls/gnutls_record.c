@@ -35,7 +35,6 @@
 #include "gnutls_hash_int.h"
 #include "gnutls_cipher_int.h"
 #include "gnutls_algorithms.h"
-#include "gnutls_db.h"
 #include "gnutls_auth_int.h"
 #include "gnutls_num.h"
 #include "gnutls_record.h"
@@ -289,7 +288,7 @@ session_is_valid (gnutls_session_t session)
   return 0;
 }
 
-/* Copies the record version into the headers. The 
+/* Copies the record version into the headers. The
  * version must have 2 bytes at least.
  */
 inline static void
@@ -316,7 +315,7 @@ copy_record_version (gnutls_session_t session,
 /* This function behaves exactly like write(). The only difference is
  * that it accepts, the gnutls_session_t and the content_type_t of data to
  * send (if called by the user the Content is specific)
- * It is intended to transfer data, under the current session.    
+ * It is intended to transfer data, under the current session.
  *
  * Oct 30 2001: Removed capability to send data more than MAX_RECORD_SIZE.
  * This makes the function much easier to read, and more error resistant
@@ -376,7 +375,7 @@ _gnutls_send_int (gnutls_session_t session,
   else
     data2send_size = sizeofdata;
 
-  /* Only encrypt if we don't have data to send 
+  /* Only encrypt if we don't have data to send
    * from the previous run. - probably interrupted.
    */
   if (session->internals.record_send_buffer.length > 0)
@@ -469,7 +468,7 @@ _gnutls_send_int (gnutls_session_t session,
   return retval;
 }
 
-/* This function is to be called if the handshake was successfully 
+/* This function is to be called if the handshake was successfully
  * completed. This sends a Change Cipher Spec packet to the peer.
  */
 ssize_t
@@ -556,8 +555,8 @@ record_check_headers (gnutls_session_t session,
                       uint16_t * length, uint16_t * header_size)
 {
 
-  /* Read the first two bytes to determine if this is a 
-   * version 2 message 
+  /* Read the first two bytes to determine if this is a
+   * version 2 message
    */
 
   if (htype == GNUTLS_HANDSHAKE_CLIENT_HELLO && type == GNUTLS_HANDSHAKE
@@ -565,7 +564,7 @@ record_check_headers (gnutls_session_t session,
     {
 
       /* if msb set and expecting handshake message
-       * it should be SSL 2 hello 
+       * it should be SSL 2 hello
        */
       version[0] = 3;           /* assume SSL 3.0 */
       version[1] = 0;
@@ -593,7 +592,7 @@ record_check_headers (gnutls_session_t session,
       version[0] = headers[1];
       version[1] = headers[2];
 
-      /* No DECR_LEN, since headers has enough size. 
+      /* No DECR_LEN, since headers has enough size.
        */
       *length = _gnutls_read_uint16 (&headers[3]);
     }
@@ -676,7 +675,7 @@ record_check_type (gnutls_session_t session,
            */
           if (data[1] == GNUTLS_A_CLOSE_NOTIFY && data[0] != GNUTLS_AL_FATAL)
             {
-              /* If we have been expecting for an alert do 
+              /* If we have been expecting for an alert do
                */
               session->internals.read_eof = 1;
               return GNUTLS_E_INT_RET_0;        /* EOF */
@@ -911,7 +910,7 @@ begin:
     }
 
   /* Here we check if the Type of the received packet is
-   * ok. 
+   * ok.
    */
   if ((ret = check_recv_type (recv_type)) < 0)
     {
@@ -952,7 +951,7 @@ begin:
       return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
     }
 
-  /* check if we have that data into buffer. 
+  /* check if we have that data into buffer.
    */
   if ((ret = _gnutls_io_read_buffered (session, &recv_data,
                                        header_size + length, recv_type))
@@ -1017,7 +1016,7 @@ begin:
                                    read_sequence_number),
      _gnutls_packet2str (recv_type), recv_type, decrypted_length);
 
-  /* increase sequence number 
+  /* increase sequence number
    */
   if (_gnutls_uint64pp (&session->connection_state.read_sequence_number) != 0)
     {
@@ -1037,7 +1036,7 @@ begin:
       return ret;
     }
 
-  /* Get Application data from buffer 
+  /* Get Application data from buffer
    */
   if ((recv_type == type) && (type == GNUTLS_APPLICATION_DATA || type
                               == GNUTLS_HANDSHAKE
@@ -1051,7 +1050,7 @@ begin:
           return ret;
         }
 
-      /* if the buffer just got empty 
+      /* if the buffer just got empty
        */
       if (_gnutls_record_buffer_get_size (type, session) == 0)
         {
@@ -1066,11 +1065,11 @@ begin:
     {
       gnutls_assert ();
       return GNUTLS_E_UNEXPECTED_PACKET;
-      /* we didn't get what we wanted to 
+      /* we didn't get what we wanted to
        */
     }
 
-  /* (originally for) TLS 1.0 CBC protection. 
+  /* (originally for) TLS 1.0 CBC protection.
    * Actually this code is called if we just received
    * an empty packet. An empty TLS packet is usually
    * sent to protect some vulnerabilities in the CBC mode.

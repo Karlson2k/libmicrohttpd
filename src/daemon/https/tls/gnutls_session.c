@@ -24,7 +24,7 @@
 #include "gnutls_int.h"
 #include "gnutls_errors.h"
 #include "debug.h"
-#include <gnutls_session_pack.h>
+#include "gnutls_session_pack.h"
 #include <gnutls_datum.h>
 
 /**
@@ -123,10 +123,10 @@ gnutls_session_get_data2 (gnutls_session_t session, gnutls_datum_t * data)
   *
   * Returns the current session id. This can be used if you want to check if
   * the next session you tried to resume was actually resumed.
-  * This is because resumed sessions have the same sessionID with the 
+  * This is because resumed sessions have the same sessionID with the
   * original session.
   *
-  * Session id is some data set by the server, that identify the current session. 
+  * Session id is some data set by the server, that identify the current session.
   * In TLS 1.0 and SSL 3.0 session id is always less than 32 bytes.
   *
   * Returns zero on success.

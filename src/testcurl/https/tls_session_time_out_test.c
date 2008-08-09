@@ -101,7 +101,6 @@ static int
 test_tls_session_time_out (gnutls_session_t session)
 {
   int sd, ret;
-  char *url = "https://localhost:42433/";
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
@@ -153,8 +152,8 @@ main (int argc, char *const *argv)
   gnutls_global_init ();
   gnutls_global_set_log_level (11);
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
+  d = MHD_start_daemon_ip(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+                        MHD_USE_DEBUG, 42433, "127.0.0.1",
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,

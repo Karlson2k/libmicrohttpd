@@ -32,6 +32,7 @@
 #if HTTPS_SUPPORT
 #include "gnutls_int.h"
 #include "gnutls_global.h"
+#include "auth_anon.h"
 #endif
 
 /**
@@ -56,26 +57,14 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
-#if HTTPS_SUPPORT
-/* initialize security aspects of the HTTPS daemon */
+/* TODO unite with code in gnutls_priority.c */
 static int
-MHD_TLS_init (struct MHD_Daemon *daemon)
+MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 {
-  int i;
-  priority_st st;
   gnutls_datum_t key;
   gnutls_datum_t cert;
 
-  gnutls_global_set_log_function (MHD_tls_log_func);
-
-  /* setup server certificate */
-  gnutls_certificate_allocate_credentials (&daemon->x509_cret);
-
-  /* TODO remove if unused
-     gnutls_certificate_set_x509_trust_file(x509_cret, CAFILE,GNUTLS_X509_FMT_PEM);
-     gnutls_certificate_set_x509_crl_file(x509_cret, CRLFILE, GNUTLS_X509_FMT_PEM); */
-
-  /* sets a certificate private key pair */
+  /* certificate & key loaded from file */
   if (daemon->https_cert_path && daemon->https_key_path)
     {
       /* test for private key & certificate file exsitance */
@@ -98,20 +87,21 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
           CLOSE (daemon->socket_fd);
           return -1;
         }
-      gnutls_certificate_set_x509_key_file (daemon->x509_cret,
-                                            daemon->https_cert_path,
-                                            daemon->https_key_path,
-                                            GNUTLS_X509_FMT_PEM);
+      return gnutls_certificate_set_x509_key_file (daemon->x509_cred,
+                                                   daemon->https_cert_path,
+                                                   daemon->https_key_path,
+                                                   GNUTLS_X509_FMT_PEM);
     }
+  /* certificate & key loaded from memory */
   else if (daemon->https_mem_cert && daemon->https_mem_key)
     {
-      key.data = (char *) daemon->https_mem_key;
+      key.data = (unsigned char *) daemon->https_mem_key;
       key.size = strlen (daemon->https_mem_key);
-      cert.data = (char *) daemon->https_mem_cert;
+      cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      gnutls_certificate_set_x509_key_mem (daemon->x509_cret, &cert, &key,
-                                           GNUTLS_X509_FMT_PEM);
+      return gnutls_certificate_set_x509_key_mem (daemon->x509_cred, &cert,
+                                                  &key, GNUTLS_X509_FMT_PEM);
     }
   else
     {
@@ -120,29 +110,44 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
-
-  /* generate DH parameters if necessary */
-  st = daemon->priority_cache->kx;
-  for (i = 0; i < st.algorithms; i++)
-    {
-      /* initialize Diffie Hellman parameters if necessary */
-      /* TODO add other cipher suits */
-      if (st.priority[i] == MHD_GNUTLS_KX_DHE_RSA)
-        {
-          gnutls_dh_params_init (&daemon->dh_params);
-          gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-          break;
-        }
-    }
-
-  gnutls_certificate_set_dh_params (daemon->x509_cret, daemon->dh_params);
-
-  /* TODO address error case return value */
-  return MHD_YES;
 }
 
-/* TODO unite with code in gnutls_priority.c */
-/* this is used to set HTTPS related daemon priorities */
+/* initialize security aspects of the HTTPS daemon */
+int
+MHD_TLS_init (struct MHD_Daemon *daemon)
+{
+  int ret;
+
+  switch (daemon->cred_type)
+    {
+    case MHD_GNUTLS_CRD_ANON:
+      ret = gnutls_anon_allocate_server_credentials (&daemon->anon_cred);
+      ret += gnutls_dh_params_init (&daemon->dh_params);
+      if (ret != 0) {
+		return GNUTLS_E_MEMORY_ERROR;
+	  }
+      gnutls_dh_params_generate2 (daemon->dh_params, 1024);
+      gnutls_anon_set_server_dh_params (daemon->anon_cred, daemon->dh_params);
+      break;
+    case MHD_GNUTLS_CRD_CERTIFICATE:
+      ret = gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
+      if (ret != 0) {
+		return GNUTLS_E_MEMORY_ERROR;
+	  }
+      if ((ret = MHD_init_daemon_certificate (daemon)) != 0)
+        return ret;
+    default:
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Error: no daemon credentials type found. f: %s, l: %d\n",
+                __FUNCTION__, __LINE__);
+#endif
+      break;
+    }
+
+  return MHD_NO;
+}
+
 inline static int
 _set_priority (priority_st * st, const int *list)
 {
@@ -152,7 +157,7 @@ _set_priority (priority_st * st, const int *list)
     num++;
   if (num > MAX_ALGOS)
     num = MAX_ALGOS;
-  st->algorithms = num;
+  st->num_algorithms = num;
 
   for (i = 0; i < num; i++)
     {
@@ -161,7 +166,6 @@ _set_priority (priority_st * st, const int *list)
 
   return 0;
 }
-#endif /* HTTPS_SUPPORT */
 
 /**
  * Obtain the select sets for this daemon.
@@ -300,12 +304,13 @@ gnutls_push_param_adapter (void *connection,
 }
 #endif
 
+
 /**
  * Handle an individual TLS connection.
  */
 #if HTTPS_SUPPORT
 static void *
-MHD_TLS_handle_connection (void *data)
+MHD_TLS_init_connection (void *data)
 {
   struct MHD_Connection *con = data;
 
@@ -320,16 +325,37 @@ MHD_TLS_handle_connection (void *data)
   /* sets cipher priorities */
   gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
 
-  /* set needed credentials for certificate authentication. */
-  gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
-                          con->daemon->x509_cret);
+  switch (con->daemon->cred_type)
+    {
+      /* set needed credentials for certificate authentication. */
+    case MHD_GNUTLS_CRD_CERTIFICATE:
+      gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
+                              con->daemon->x509_cred);
+      break;
+    case MHD_GNUTLS_CRD_ANON:
+      /* set needed credentials for anonymous authentication. */
+      gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_ANON,
+                              con->daemon->anon_cred);
+      gnutls_dh_set_prime_bits (con->tls_session, 1024);
+      break;
+    default:
+
+#if HAVE_MESSAGES
+      MHD_DLOG (con->daemon,
+                "Error: couldn't init HTTPS session. no appropriate KX algorithm found. f: %s, l: %d\n",
+                __FUNCTION__, __LINE__);
+#endif
+      break;
+    }
 
   /* TODO avoid gnutls blocking recv / write calls
      gnutls_transport_set_pull_function(tls_session, &recv);
      gnutls_transport_set_push_function(tls_session, &send);
    */
 
-  gnutls_transport_set_ptr (con->tls_session, con->socket_fd);
+  gnutls_transport_set_ptr (con->tls_session,
+                            (gnutls_transport_ptr_t) ((void *) con->
+                                                      socket_fd));
 
   return MHD_handle_connection (data);
 }
@@ -489,7 +515,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
       if (daemon->options & MHD_USE_SSL)
         res_thread_create = pthread_create (&connection->pid, NULL,
-                                            &MHD_TLS_handle_connection,
+                                            &MHD_TLS_init_connection,
                                             connection);
       else
 #endif
@@ -768,7 +794,7 @@ MHD_select_thread (void *cls)
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int options,
-                     unsigned short port,
+                     unsigned short port, char *ip,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
                      MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap)
@@ -875,6 +901,7 @@ MHD_start_daemon_va (unsigned int options,
       pthread_mutex_unlock (&gnutls_init_mutex);
       /* set default priorities */
       gnutls_priority_init (&retVal->priority_cache, "", NULL);
+      retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
     }
 #endif
   /* initializes the argument pointer variable */
@@ -906,7 +933,7 @@ MHD_start_daemon_va (unsigned int options,
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
           _set_priority (&retVal->priority_cache->protocol,
-                                   va_arg (ap, const int *));
+                         va_arg (ap, const int *));
           break;
         case MHD_OPTION_HTTPS_KEY_PATH:
           retVal->https_key_path = va_arg (ap, const char *);
@@ -920,8 +947,11 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_HTTPS_MEM_CERT:
           retVal->https_mem_cert = va_arg (ap, const char *);
           break;
+        case MHD_OPTION_CRED_TYPE:
+          retVal->cred_type = va_arg (ap, const int);
+          break;
         case MHD_OPTION_KX_PRIORITY:
-          _set_priority (&retVal->priority_cache->cipher,
+          _set_priority (&retVal->priority_cache->kx,
                          va_arg (ap, const int *));
           break;
         case MHD_OPTION_CIPHER_ALGORITHM:
@@ -929,16 +959,17 @@ MHD_start_daemon_va (unsigned int options,
                          va_arg (ap, const int *));
           break;
         case MHD_OPTION_MAC_ALGO:
-             _set_priority (&retVal->priority_cache->mac,
-                                    va_arg (ap, const int *));
-                 break;
+          _set_priority (&retVal->priority_cache->mac,
+                         va_arg (ap, const int *));
+          break;
 #endif
         default:
 #if HAVE_MESSAGES
           if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
             {
               fprintf (stderr,
-                       "Error: HTTPS option %d passed to non HTTPS daemon\n", opt);
+                       "Error: HTTPS option %d passed to non HTTPS daemon\n",
+                       opt);
             }
           else
             {
@@ -952,7 +983,7 @@ MHD_start_daemon_va (unsigned int options,
 
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if (options & MHD_USE_SSL && MHD_NO == MHD_TLS_init (retVal))
+  if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
@@ -985,18 +1016,244 @@ MHD_start_daemon (unsigned int options,
                   unsigned short port,
                   MHD_AcceptPolicyCallback apc,
                   void *apc_cls,
-                  MHD_AccessHandlerCallback dh, void *dh_cls, ...){
+                  MHD_AccessHandlerCallback dh, void *dh_cls, ...)
+{
+  const int on = 1;
+  struct MHD_Daemon *retVal;
 
-	int ret;
-	va_list ap;
-	va_start (ap, dh_cls);
-	ret = MHD_start_daemon_va (options,
-            port,
-            apc,
-            apc_cls,
-            dh, dh_cls, ap);
-	va_end (ap);
-	return ret;
+  /* listeningss sockets used by the daemon */
+  int socket_fd;
+  va_list ap;
+
+  struct sockaddr_in servaddr4;
+  struct sockaddr_in6 servaddr6;
+  const struct sockaddr *servaddr;
+  socklen_t addrlen;
+  enum MHD_OPTION opt;
+
+  if ((port == 0) || (dh == NULL))
+    return NULL;
+  if ((options & MHD_USE_IPv6) != 0)
+    socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
+  else
+    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
+  if (socket_fd < 0)
+    {
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        fprintf (stderr, "Call to socket failed: %s\n", STRERROR (errno));
+#endif
+      return NULL;
+    }
+  if ((SETSOCKOPT (socket_fd,
+                   SOL_SOCKET,
+                   SO_REUSEADDR,
+                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0)
+    {
+#if HAVE_MESSAGES
+      fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
+#endif
+    }
+  if ((options & MHD_USE_IPv6) != 0)
+    {
+      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+      servaddr6.sin6_family = AF_INET6;
+      servaddr6.sin6_port = htons (port);
+      servaddr = (struct sockaddr *) &servaddr6;
+      addrlen = sizeof (struct sockaddr_in6);
+    }
+  else
+    {
+      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+      servaddr4.sin_family = AF_INET;
+      servaddr4.sin_port = htons (port);
+      servaddr = (struct sockaddr *) &servaddr4;
+      addrlen = sizeof (struct sockaddr_in);
+    }
+  if (BIND (socket_fd, servaddr, addrlen) < 0)
+    {
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        fprintf (stderr,
+                 "Failed to bind to port %u: %s\n", port, STRERROR (errno));
+#endif
+      CLOSE (socket_fd);
+      return NULL;
+    }
+  if (LISTEN (socket_fd, 20) < 0)
+    {
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        fprintf (stderr,
+                 "Failed to listen for connections: %s\n", STRERROR (errno));
+#endif
+      CLOSE (socket_fd);
+      return NULL;
+    }
+
+  /* allocate the mhd daemon */
+
+  retVal = malloc (sizeof (struct MHD_Daemon));
+
+  if (retVal == NULL)
+    {
+      CLOSE (socket_fd);
+      return NULL;
+    }
+
+  memset (retVal, 0, sizeof (struct MHD_Daemon));
+  retVal->options = options;
+  retVal->port = port;
+  retVal->apc = apc;
+  retVal->apc_cls = apc_cls;
+  retVal->socket_fd = socket_fd;
+  retVal->default_handler = dh;
+  retVal->default_handler_cls = dh_cls;
+  retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
+  retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
+  retVal->connection_timeout = 0;       /* no timeout */
+#if HTTPS_SUPPORT
+  if (options & MHD_USE_SSL)
+    {
+      /* lock gnutls_global mutex since it uses reference counting */
+      pthread_mutex_lock (&gnutls_init_mutex);
+      gnutls_global_init ();
+      pthread_mutex_unlock (&gnutls_init_mutex);
+      /* set default priorities */
+      gnutls_priority_init (&retVal->priority_cache, "", NULL);
+      retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
+    }
+#endif
+  /* initializes the argument pointer variable */
+
+  va_start (ap, dh_cls);
+
+  /*
+   * loop through daemon options
+   */
+  while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
+    {
+      switch (opt)
+        {
+        case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+          retVal->pool_size = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_CONNECTION_LIMIT:
+          retVal->max_connections = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_CONNECTION_TIMEOUT:
+          retVal->connection_timeout = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_NOTIFY_COMPLETED:
+          retVal->notify_completed =
+            va_arg (ap, MHD_RequestCompletedCallback);
+          retVal->notify_completed_cls = va_arg (ap, void *);
+          break;
+        case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
+          retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
+          break;
+#if HTTPS_SUPPORT
+        case MHD_OPTION_PROTOCOL_VERSION:
+          _set_priority (&retVal->priority_cache->protocol,
+                         va_arg (ap, const int *));
+          break;
+        case MHD_OPTION_HTTPS_KEY_PATH:
+          retVal->https_key_path = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_HTTPS_CERT_PATH:
+          retVal->https_cert_path = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_HTTPS_MEM_KEY:
+          retVal->https_mem_key = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_HTTPS_MEM_CERT:
+          retVal->https_mem_cert = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_CRED_TYPE:
+          retVal->cred_type = va_arg (ap, const int);
+          break;
+        case MHD_OPTION_KX_PRIORITY:
+          _set_priority (&retVal->priority_cache->kx,
+                         va_arg (ap, const int *));
+          break;
+        case MHD_OPTION_CIPHER_ALGORITHM:
+          _set_priority (&retVal->priority_cache->cipher,
+                         va_arg (ap, const int *));
+          break;
+        case MHD_OPTION_MAC_ALGO:
+          _set_priority (&retVal->priority_cache->mac,
+                         va_arg (ap, const int *));
+          break;
+#endif
+        default:
+#if HAVE_MESSAGES
+          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
+            {
+              fprintf (stderr,
+                       "Error: HTTPS option %d passed to non HTTPS daemon\n",
+                       opt);
+            }
+          else
+            {
+              fprintf (stderr,
+                       "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+            }
+#endif
+          abort ();
+        }
+    }
+  va_end (ap);
+
+  /* initialize HTTPS daemon certificate aspects & send / recv functions */
+  if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
+#endif
+      free (retVal);
+      return NULL;
+    }
+
+  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
+                                                                  &
+                                                                  MHD_USE_SELECT_INTERNALLY)))
+      && (0 !=
+          pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (retVal, "Failed to create listen thread: %s\n",
+                STRERROR (errno));
+#endif
+      free (retVal);
+      CLOSE (socket_fd);
+      return NULL;
+    }
+
+  return retVal;
+}
+
+
+/*
+ * start the MHD_Daemon while binding to a specific ip address.
+ *
+ * TODO : address adding ip parameter to MHD_start_daemon
+ */
+struct MHD_Daemon *
+MHD_start_daemon_ip (unsigned int options,
+                     unsigned short port, char *ip,
+                     MHD_AcceptPolicyCallback apc,
+                     void *apc_cls,
+                     MHD_AccessHandlerCallback dh, void *dh_cls, ...)
+{
+
+  gnutls_global_set_log_level (5);
+
+  struct MHD_Daemon *ret;
+  va_list ap;
+  va_start (ap, dh_cls);
+  ret = MHD_start_daemon_va (options, port, ip, apc, apc_cls, dh, dh_cls, ap);
+  va_end (ap);
+  return ret;
 }
 
 /**
@@ -1066,7 +1323,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     {
       gnutls_priority_deinit (daemon->priority_cache);
 
-      gnutls_certificate_free_credentials (daemon->x509_cret);
+      if (daemon->x509_cred)
+        gnutls_certificate_free_credentials (daemon->x509_cred);
+      if (daemon->anon_cred)
+        gnutls_anon_free_server_credentials (daemon->anon_cred);
 
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);

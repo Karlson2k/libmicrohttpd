@@ -43,7 +43,6 @@ gnutls_compress.c \
 gnutls_compress_int.c \
 gnutls_constate.c \
 gnutls_datum.c \
-gnutls_db.c \
 gnutls_dh.c \
 gnutls_dh_primes.c \
 gnutls_errors.c \
