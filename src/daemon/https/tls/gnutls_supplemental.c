@@ -25,7 +25,7 @@
 /* This file contains support functions for 'TLS Handshake Message for
  * Supplemental Data' (RFC 4680).
  *
- * The idea here is simple.  gnutls_handshake() in gnuts_handshake.c
+ * The idea here is simple.  MHD_gnutls_handshake() in gnuts_handshake.c
  * will call _gnutls_gen_supplemental and _gnutls_parse_supplemental
  * when some extension requested that supplemental data be sent or
  * received.  Extension request this by setting the flags
@@ -50,9 +50,9 @@
 #include "gnutls_errors.h"
 #include "gnutls_num.h"
 
-typedef int (*supp_recv_func) (gnutls_session_t session,
+typedef int (*supp_recv_func) (mhd_gtls_session_t session,
                                const opaque * data, size_t data_size);
-typedef int (*supp_send_func) (gnutls_session_t session, gnutls_buffer * buf);
+typedef int (*supp_send_func) (mhd_gtls_session_t session, mhd_gtls_buffer * buf);
 
 typedef struct
 {
@@ -67,7 +67,7 @@ gnutls_supplemental_entry _gnutls_supplemental[] = {
 };
 
 const char *
-gnutls_supplemental_get_name (gnutls_supplemental_data_format_type_t type)
+MHD_gtls_supplemental_get_name (gnutls_supplemental_data_format_type_t type)
 {
   gnutls_supplemental_entry *p;
 
@@ -91,13 +91,13 @@ get_supp_func_recv (gnutls_supplemental_data_format_type_t type)
 }
 
 int
-_gnutls_gen_supplemental (gnutls_session_t session, gnutls_buffer * buf)
+_gnutls_gen_supplemental (mhd_gtls_session_t session, mhd_gtls_buffer * buf)
 {
   gnutls_supplemental_entry *p;
   int ret;
 
   /* Make room for 3 byte length field. */
-  ret = _gnutls_buffer_append (buf, "\0\0\0", 3);
+  ret = mhd_gtls_buffer_append (buf, "\0\0\0", 3);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -111,7 +111,7 @@ _gnutls_gen_supplemental (gnutls_session_t session, gnutls_buffer * buf)
       int ret;
 
       /* Make room for supplement type and length byte length field. */
-      ret = _gnutls_buffer_append (buf, "\0\0\0\0", 4);
+      ret = mhd_gtls_buffer_append (buf, "\0\0\0\0", 4);
       if (ret < 0)
         {
           gnutls_assert ();
@@ -148,7 +148,7 @@ _gnutls_gen_supplemental (gnutls_session_t session, gnutls_buffer * buf)
 }
 
 int
-_gnutls_parse_supplemental (gnutls_session_t session,
+_gnutls_parse_supplemental (mhd_gtls_session_t session,
                             const uint8_t * data, int datalen)
 {
   const opaque *p = data;
@@ -156,7 +156,7 @@ _gnutls_parse_supplemental (gnutls_session_t session,
   size_t total_size;
 
   DECR_LEN (dsize, 3);
-  total_size = _gnutls_read_uint24 (p);
+  total_size = mhd_gtls_read_uint24 (p);
   p += 3;
 
   if (dsize != total_size)
@@ -172,11 +172,11 @@ _gnutls_parse_supplemental (gnutls_session_t session,
       supp_recv_func recv_func;
 
       DECR_LEN (dsize, 2);
-      supp_data_type = _gnutls_read_uint16 (p);
+      supp_data_type = mhd_gtls_read_uint16 (p);
       p += 2;
 
       DECR_LEN (dsize, 2);
-      supp_data_length = _gnutls_read_uint16 (p);
+      supp_data_length = mhd_gtls_read_uint16 (p);
       p += 2;
 
       _gnutls_debug_log ("EXT[%x]: Got supplemental type=%02x length=%d\n",

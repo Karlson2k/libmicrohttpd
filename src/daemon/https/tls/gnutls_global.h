@@ -27,7 +27,7 @@
 
 #include <libtasn1.h>
 
-/* this mutex is used to synchronize threads attemting call gnutls_global_init / gnutls_global_deinit */
+/* this mutex is used to synchronize threads attemting call MHD_gnutls_global_init / MHD_gnutls_global_deinit */
 pthread_mutex_t gnutls_init_mutex;
 
 int gnutls_is_secure_memory (const void *mem);

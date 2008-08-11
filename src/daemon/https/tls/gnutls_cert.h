@@ -98,7 +98,7 @@ typedef struct gnutls_privkey_int
   gnutls_pk_algorithm_t pk_algorithm;
 } gnutls_privkey;
 
-struct gnutls_session_int;	/* because gnutls_session_t is not defined when this file is included */
+struct MHD_gtls_session_int;	/* because mhd_gtls_session_t is not defined when this file is included */
 
 typedef enum ConvFlags
 {
@@ -107,24 +107,24 @@ typedef enum ConvFlags
   CERT_ONLY_EXTENSIONS = 16
 } ConvFlags;
 
-int _gnutls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
+int mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
 				    const gnutls_datum_t * derCert,
 				    int flags);
-int _gnutls_x509_crt_to_gcert (gnutls_cert * gcert, gnutls_x509_crt_t cert,
+int mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert, gnutls_x509_crt_t cert,
 			       unsigned int flags);
 
-void _gnutls_gkey_deinit (gnutls_privkey * key);
-void _gnutls_gcert_deinit (gnutls_cert * cert);
+void mhd_gtls_gkey_deinit (gnutls_privkey * key);
+void mhd_gtls_gcert_deinit (gnutls_cert * cert);
 
-int _gnutls_selected_cert_supported_kx (struct gnutls_session_int *session,
+int mhd_gtls_selected_cert_supported_kx (struct MHD_gtls_session_int *session,
 					gnutls_kx_algorithm_t ** alg,
 					int *alg_size);
 
-int _gnutls_raw_cert_to_gcert (gnutls_cert * gcert,
+int mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
 			       gnutls_certificate_type_t type,
 			       const gnutls_datum_t * raw_cert,
 			       int flags /* OR of ConvFlags */ );
-int _gnutls_raw_privkey_to_gkey (gnutls_privkey * key,
+int mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
 				 gnutls_certificate_type_t type,
 				 const gnutls_datum_t * raw_key,
 				 int key_enc /* DER or PEM */ );

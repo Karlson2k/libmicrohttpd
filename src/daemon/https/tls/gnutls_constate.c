@@ -55,7 +55,7 @@ static const int servwrite_length = sizeof (servwrite) - 1;
  * (session->cipher_specs)
  */
 int
-_gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
+_gnutls_set_keys (mhd_gtls_session_t session, int hash_size, int IV_size,
                   int key_size, int export_flag)
 {
 
@@ -99,7 +99,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
   if (session->security_parameters.version == MHD_GNUTLS_SSL3)
     {                           /* SSL 3 */
       ret =
-        _gnutls_ssl3_generate_random (session->
+        mhd_gnutls_ssl3_generate_random (session->
                                       security_parameters.
                                       master_secret,
                                       TLS_MASTER_SIZE, rnd,
@@ -109,7 +109,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
   else
     {                           /* TLS 1.0 */
       ret =
-        _gnutls_PRF (session, session->security_parameters.master_secret,
+        mhd_gtls_PRF (session, session->security_parameters.master_secret,
                      TLS_MASTER_SIZE, keyexp, keyexp_length,
                      rnd, 2 * TLS_RANDOM_SIZE, block_size, key_block);
     }
@@ -122,7 +122,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
     }
 
   _gnutls_hard_log ("INT: KEY BLOCK[%d]: %s\n", block_size,
-                    _gnutls_bin2hex (key_block, block_size, buf,
+                    mhd_gtls_bin2hex (key_block, block_size, buf,
                                      sizeof (buf)));
 
   pos = 0;
@@ -192,7 +192,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           if (session->security_parameters.version == MHD_GNUTLS_SSL3)
             {                   /* SSL 3 */
               ret =
-                _gnutls_ssl3_hash_md5 (&key_block[pos],
+                mhd_gnutls_ssl3_hash_md5 (&key_block[pos],
                                        key_size, rrnd,
                                        2 * TLS_RANDOM_SIZE,
                                        EXPORT_FINAL_KEY_SIZE,
@@ -202,7 +202,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           else
             {                   /* TLS 1.0 */
               ret =
-                _gnutls_PRF (session, &key_block[pos], key_size,
+                mhd_gtls_PRF (session, &key_block[pos], key_size,
                              cliwrite, cliwrite_length,
                              rrnd,
                              2 * TLS_RANDOM_SIZE,
@@ -224,7 +224,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           if (session->security_parameters.version == MHD_GNUTLS_SSL3)
             {                   /* SSL 3 */
               ret =
-                _gnutls_ssl3_hash_md5 (&key_block[pos], key_size,
+                mhd_gnutls_ssl3_hash_md5 (&key_block[pos], key_size,
                                        rnd, 2 * TLS_RANDOM_SIZE,
                                        EXPORT_FINAL_KEY_SIZE,
                                        server_write_key);
@@ -232,7 +232,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
           else
             {                   /* TLS 1.0 */
               ret =
-                _gnutls_PRF (session, &key_block[pos], key_size,
+                mhd_gtls_PRF (session, &key_block[pos], key_size,
                              servwrite, servwrite_length,
                              rrnd, 2 * TLS_RANDOM_SIZE,
                              EXPORT_FINAL_KEY_SIZE, server_write_key);
@@ -262,7 +262,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
         }
       _gnutls_hard_log ("INT: CLIENT WRITE KEY [%d]: %s\n",
                         client_write_key_size,
-                        _gnutls_bin2hex (client_write_key,
+                        mhd_gtls_bin2hex (client_write_key,
                                          client_write_key_size, buf,
                                          sizeof (buf)));
 
@@ -278,7 +278,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
 
       _gnutls_hard_log ("INT: SERVER WRITE KEY [%d]: %s\n",
                         server_write_key_size,
-                        _gnutls_bin2hex (server_write_key,
+                        mhd_gtls_bin2hex (server_write_key,
                                          server_write_key_size, buf,
                                          sizeof (buf)));
 
@@ -325,7 +325,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
 
       if (session->security_parameters.version == MHD_GNUTLS_SSL3)
         {                       /* SSL 3 */
-          ret = _gnutls_ssl3_hash_md5 ("", 0,
+          ret = mhd_gnutls_ssl3_hash_md5 ("", 0,
                                        rrnd, TLS_RANDOM_SIZE * 2,
                                        IV_size, iv_block);
 
@@ -337,14 +337,14 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
               return ret;
             }
 
-          ret = _gnutls_ssl3_hash_md5 ("", 0, rnd,
+          ret = mhd_gnutls_ssl3_hash_md5 ("", 0, rnd,
                                        TLS_RANDOM_SIZE * 2,
                                        IV_size, &iv_block[IV_size]);
 
         }
       else
         {                       /* TLS 1.0 */
-          ret = _gnutls_PRF (session, "", 0,
+          ret = mhd_gtls_PRF (session, "", 0,
                              ivblock, ivblock_length, rrnd,
                              2 * TLS_RANDOM_SIZE, IV_size * 2, iv_block);
         }
@@ -385,7 +385,7 @@ _gnutls_set_keys (gnutls_session_t session, int hash_size, int IV_size,
 }
 
 int
-_gnutls_set_read_keys (gnutls_session_t session)
+_gnutls_set_read_keys (mhd_gtls_session_t session)
 {
   int hash_size;
   int IV_size;
@@ -396,17 +396,17 @@ _gnutls_set_read_keys (gnutls_session_t session)
   mac_algo = session->security_parameters.read_mac_algorithm;
   algo = session->security_parameters.read_bulk_cipher_algorithm;
 
-  hash_size = _gnutls_hash_get_algo_len (mac_algo);
-  IV_size = _gnutls_cipher_get_iv_size (algo);
-  key_size = gnutls_cipher_get_key_size (algo);
-  export_flag = _gnutls_cipher_get_export_flag (algo);
+  hash_size = mhd_gnutls_hash_get_algo_len (mac_algo);
+  IV_size = mhd_gtls_cipher_get_iv_size (algo);
+  key_size = MHD_gnutls_cipher_get_key_size (algo);
+  export_flag = mhd_gtls_cipher_get_export_flag (algo);
 
   return _gnutls_set_keys (session, hash_size, IV_size, key_size,
                            export_flag);
 }
 
 int
-_gnutls_set_write_keys (gnutls_session_t session)
+_gnutls_set_write_keys (mhd_gtls_session_t session)
 {
   int hash_size;
   int IV_size;
@@ -417,10 +417,10 @@ _gnutls_set_write_keys (gnutls_session_t session)
   mac_algo = session->security_parameters.write_mac_algorithm;
   algo = session->security_parameters.write_bulk_cipher_algorithm;
 
-  hash_size = _gnutls_hash_get_algo_len (mac_algo);
-  IV_size = _gnutls_cipher_get_iv_size (algo);
-  key_size = gnutls_cipher_get_key_size (algo);
-  export_flag = _gnutls_cipher_get_export_flag (algo);
+  hash_size = mhd_gnutls_hash_get_algo_len (mac_algo);
+  IV_size = mhd_gtls_cipher_get_iv_size (algo);
+  key_size = MHD_gnutls_cipher_get_key_size (algo);
+  export_flag = mhd_gtls_cipher_get_export_flag (algo);
 
   return _gnutls_set_keys (session, hash_size, IV_size, key_size,
                            export_flag);
@@ -439,12 +439,12 @@ _gnutls_set_write_keys (gnutls_session_t session)
 	dst->max_record_recv_size = src->max_record_recv_size; \
 	dst->max_record_send_size = src->max_record_send_size; \
 	dst->version = src->version; \
-	memcpy( &dst->extensions, &src->extensions, sizeof(tls_ext_st)); \
+	memcpy( &dst->extensions, &src->extensions, sizeof(mhd_gtls_ext_st)); \
 	memcpy( &dst->inner_secret, &src->inner_secret, TLS_MASTER_SIZE);
 
 static void
-_gnutls_cpy_read_security_parameters (security_parameters_st *
-                                      dst, security_parameters_st * src)
+_gnutls_cpy_read_security_parameters (mhd_gtls_security_param_st *
+                                      dst, mhd_gtls_security_param_st * src)
 {
   CPY_COMMON;
 
@@ -454,8 +454,8 @@ _gnutls_cpy_read_security_parameters (security_parameters_st *
 }
 
 static void
-_gnutls_cpy_write_security_parameters (security_parameters_st *
-                                       dst, security_parameters_st * src)
+_gnutls_cpy_write_security_parameters (mhd_gtls_security_param_st *
+                                       dst, mhd_gtls_security_param_st * src)
 {
   CPY_COMMON;
 
@@ -471,13 +471,13 @@ _gnutls_cpy_write_security_parameters (security_parameters_st *
  * This is to be called after sending the Change Cipher Spec packet.
  */
 int
-_gnutls_connection_state_init (gnutls_session_t session)
+mhd_gtls_connection_state_init (mhd_gtls_session_t session)
 {
   int ret;
 
 /* Setup the master secret 
  */
-  if ((ret = _gnutls_generate_master (session, 0), 0) < 0)
+  if ((ret = mhd_gtls_generate_master (session, 0), 0) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -492,7 +492,7 @@ _gnutls_connection_state_init (gnutls_session_t session)
  * (read encrypted data)
  */
 int
-_gnutls_read_connection_state_init (gnutls_session_t session)
+mhd_gtls_read_connection_state_init (mhd_gtls_session_t session)
 {
   int mac_size;
   int rc;
@@ -504,27 +504,27 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
  */
   if (session->internals.resumed == RESUME_FALSE)
     {
-      rc = _gnutls_set_read_cipher (session,
-                                    _gnutls_cipher_suite_get_cipher_algo
+      rc = mhd_gtls_set_read_cipher (session,
+                                    mhd_gtls_cipher_suite_get_cipher_algo
                                     (&session->security_parameters.
                                      current_cipher_suite));
       if (rc < 0)
         return rc;
-      rc = _gnutls_set_read_mac (session,
-                                 _gnutls_cipher_suite_get_mac_algo
+      rc = mhd_gtls_set_read_mac (session,
+                                 mhd_gtls_cipher_suite_get_mac_algo
                                  (&session->security_parameters.
                                   current_cipher_suite));
       if (rc < 0)
         return rc;
 
-      rc = _gnutls_set_kx (session,
-                           _gnutls_cipher_suite_get_kx_algo
+      rc = mhd_gtls_set_kx (session,
+                           mhd_gtls_cipher_suite_get_kx_algo
                            (&session->security_parameters.
                             current_cipher_suite));
       if (rc < 0)
         return rc;
 
-      rc = _gnutls_set_read_compression (session,
+      rc = mhd_gtls_set_read_compression (session,
                                          session->internals.
                                          compression_method);
       if (rc < 0)
@@ -545,18 +545,18 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
     return rc;
 
   _gnutls_handshake_log ("HSK[%x]: Cipher Suite: %s\n",
-                         session, _gnutls_cipher_suite_get_name (&session->
+                         session, mhd_gtls_cipher_suite_get_name (&session->
                                                                  security_parameters.
                                                                  current_cipher_suite));
 
-  if (_gnutls_compression_is_ok
+  if (mhd_gtls_compression_is_ok
       (session->security_parameters.read_compression_algorithm) != 0)
     {
       gnutls_assert ();
       return GNUTLS_E_UNKNOWN_COMPRESSION_ALGORITHM;
     }
 
-  if (_gnutls_mac_is_ok
+  if (mhd_gnutls_mac_is_ok
       (session->security_parameters.read_mac_algorithm) != 0)
     {
       gnutls_assert ();
@@ -569,14 +569,14 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
     _gnutls_free_datum (&session->connection_state.read_mac_secret);
 
   if (session->connection_state.read_cipher_state != NULL)
-    _gnutls_cipher_deinit (session->connection_state.read_cipher_state);
+    mhd_gnutls_cipher_deinit (session->connection_state.read_cipher_state);
 
   if (session->connection_state.read_compression_state != NULL)
-    _gnutls_comp_deinit (session->connection_state.read_compression_state, 1);
+    mhd_gtls_comp_deinit (session->connection_state.read_compression_state, 1);
 
 
   mac_size =
-    _gnutls_hash_get_algo_len (session->security_parameters.
+    mhd_gnutls_hash_get_algo_len (session->security_parameters.
                                read_mac_algorithm);
 
   _gnutls_handshake_log
@@ -588,7 +588,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
       /* initialize cipher session
        */
       session->connection_state.read_cipher_state =
-        _gnutls_cipher_init (session->security_parameters.
+        mhd_gtls_cipher_init (session->security_parameters.
                              read_bulk_cipher_algorithm,
                              &session->cipher_specs.
                              client_write_key,
@@ -624,7 +624,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
 
     case GNUTLS_CLIENT:
       session->connection_state.read_cipher_state =
-        _gnutls_cipher_init (session->security_parameters.
+        mhd_gtls_cipher_init (session->security_parameters.
                              read_bulk_cipher_algorithm,
                              &session->cipher_specs.
                              server_write_key,
@@ -664,7 +664,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
     }
 
   session->connection_state.read_compression_state =
-    _gnutls_comp_init (session->security_parameters.
+    mhd_gtls_comp_init (session->security_parameters.
                        read_compression_algorithm, 1);
 
   if (session->connection_state.read_compression_state == GNUTLS_COMP_FAILED)
@@ -682,7 +682,7 @@ _gnutls_read_connection_state_init (gnutls_session_t session)
  * (write encrypted data)
  */
 int
-_gnutls_write_connection_state_init (gnutls_session_t session)
+mhd_gtls_write_connection_state_init (mhd_gtls_session_t session)
 {
   int mac_size;
   int rc;
@@ -694,27 +694,27 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
  */
   if (session->internals.resumed == RESUME_FALSE)
     {
-      rc = _gnutls_set_write_cipher (session,
-                                     _gnutls_cipher_suite_get_cipher_algo
+      rc = mhd_gtls_set_write_cipher (session,
+                                     mhd_gtls_cipher_suite_get_cipher_algo
                                      (&session->security_parameters.
                                       current_cipher_suite));
       if (rc < 0)
         return rc;
-      rc = _gnutls_set_write_mac (session,
-                                  _gnutls_cipher_suite_get_mac_algo
+      rc = mhd_gtls_set_write_mac (session,
+                                  mhd_gtls_cipher_suite_get_mac_algo
                                   (&session->security_parameters.
                                    current_cipher_suite));
       if (rc < 0)
         return rc;
 
-      rc = _gnutls_set_kx (session,
-                           _gnutls_cipher_suite_get_kx_algo
+      rc = mhd_gtls_set_kx (session,
+                           mhd_gtls_cipher_suite_get_kx_algo
                            (&session->security_parameters.
                             current_cipher_suite));
       if (rc < 0)
         return rc;
 
-      rc = _gnutls_set_write_compression (session,
+      rc = mhd_gtls_set_write_compression (session,
                                           session->internals.
                                           compression_method);
       if (rc < 0)
@@ -734,18 +734,18 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
     return rc;
 
   _gnutls_handshake_log ("HSK[%x]: Cipher Suite: %s\n", session,
-                         _gnutls_cipher_suite_get_name (&session->
+                         mhd_gtls_cipher_suite_get_name (&session->
                                                         security_parameters.
                                                         current_cipher_suite));
 
-  if (_gnutls_compression_is_ok
+  if (mhd_gtls_compression_is_ok
       (session->security_parameters.write_compression_algorithm) != 0)
     {
       gnutls_assert ();
       return GNUTLS_E_UNKNOWN_COMPRESSION_ALGORITHM;
     }
 
-  if (_gnutls_mac_is_ok
+  if (mhd_gnutls_mac_is_ok
       (session->security_parameters.write_mac_algorithm) != 0)
     {
       gnutls_assert ();
@@ -760,14 +760,14 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
     _gnutls_free_datum (&session->connection_state.write_mac_secret);
 
   if (session->connection_state.write_cipher_state != NULL)
-    _gnutls_cipher_deinit (session->connection_state.write_cipher_state);
+    mhd_gnutls_cipher_deinit (session->connection_state.write_cipher_state);
 
   if (session->connection_state.write_compression_state != NULL)
-    _gnutls_comp_deinit (session->connection_state.
+    mhd_gtls_comp_deinit (session->connection_state.
                          write_compression_state, 0);
 
   mac_size =
-    _gnutls_hash_get_algo_len (session->security_parameters.
+    mhd_gnutls_hash_get_algo_len (session->security_parameters.
                                write_mac_algorithm);
 
   _gnutls_handshake_log
@@ -779,7 +779,7 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
       /* initialize cipher session
        */
       session->connection_state.write_cipher_state =
-        _gnutls_cipher_init (session->security_parameters.
+        mhd_gtls_cipher_init (session->security_parameters.
                              write_bulk_cipher_algorithm,
                              &session->cipher_specs.
                              server_write_key,
@@ -818,7 +818,7 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
 
     case GNUTLS_CLIENT:
       session->connection_state.write_cipher_state =
-        _gnutls_cipher_init (session->security_parameters.
+        mhd_gtls_cipher_init (session->security_parameters.
                              write_bulk_cipher_algorithm,
                              &session->cipher_specs.
                              client_write_key,
@@ -858,7 +858,7 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
 
 
   session->connection_state.write_compression_state =
-    _gnutls_comp_init (session->security_parameters.
+    mhd_gtls_comp_init (session->security_parameters.
                        write_compression_algorithm, 0);
 
   if (session->connection_state.write_compression_state == GNUTLS_COMP_FAILED)
@@ -873,13 +873,13 @@ _gnutls_write_connection_state_init (gnutls_session_t session)
 /* Sets the specified cipher into the pending session 
  */
 int
-_gnutls_set_read_cipher (gnutls_session_t session,
+mhd_gtls_set_read_cipher (mhd_gtls_session_t session,
                          gnutls_cipher_algorithm_t algo)
 {
 
-  if (_gnutls_cipher_is_ok (algo) == 0)
+  if (mhd_gtls_cipher_is_ok (algo) == 0)
     {
-      if (_gnutls_cipher_priority (session, algo) < 0)
+      if (mhd_gtls_cipher_priority (session, algo) < 0)
         {
           gnutls_assert ();
           return GNUTLS_E_UNWANTED_ALGORITHM;
@@ -899,13 +899,13 @@ _gnutls_set_read_cipher (gnutls_session_t session,
 }
 
 int
-_gnutls_set_write_cipher (gnutls_session_t session,
+mhd_gtls_set_write_cipher (mhd_gtls_session_t session,
                           gnutls_cipher_algorithm_t algo)
 {
 
-  if (_gnutls_cipher_is_ok (algo) == 0)
+  if (mhd_gtls_cipher_is_ok (algo) == 0)
     {
-      if (_gnutls_cipher_priority (session, algo) < 0)
+      if (mhd_gtls_cipher_priority (session, algo) < 0)
         {
           gnutls_assert ();
           return GNUTLS_E_UNWANTED_ALGORITHM;
@@ -928,11 +928,11 @@ _gnutls_set_write_cipher (gnutls_session_t session,
 /* Sets the specified algorithm into pending compression session 
  */
 int
-_gnutls_set_read_compression (gnutls_session_t session,
+mhd_gtls_set_read_compression (mhd_gtls_session_t session,
                               gnutls_compression_method_t algo)
 {
 
-  if (_gnutls_compression_is_ok (algo) == 0)
+  if (mhd_gtls_compression_is_ok (algo) == 0)
     {
       session->security_parameters.read_compression_algorithm = algo;
     }
@@ -946,11 +946,11 @@ _gnutls_set_read_compression (gnutls_session_t session,
 }
 
 int
-_gnutls_set_write_compression (gnutls_session_t session,
+mhd_gtls_set_write_compression (mhd_gtls_session_t session,
                                gnutls_compression_method_t algo)
 {
 
-  if (_gnutls_compression_is_ok (algo) == 0)
+  if (mhd_gtls_compression_is_ok (algo) == 0)
     {
       session->security_parameters.write_compression_algorithm = algo;
     }
@@ -966,10 +966,10 @@ _gnutls_set_write_compression (gnutls_session_t session,
 /* Sets the specified kx algorithm into pending session 
  */
 int
-_gnutls_set_kx (gnutls_session_t session, gnutls_kx_algorithm_t algo)
+mhd_gtls_set_kx (mhd_gtls_session_t session, gnutls_kx_algorithm_t algo)
 {
 
-  if (_gnutls_kx_is_ok (algo) == 0)
+  if (mhd_gtls_kx_is_ok (algo) == 0)
     {
       session->security_parameters.kx_algorithm = algo;
     }
@@ -978,7 +978,7 @@ _gnutls_set_kx (gnutls_session_t session, gnutls_kx_algorithm_t algo)
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
-  if (_gnutls_kx_priority (session, algo) < 0)
+  if (mhd_gtls_kx_priority (session, algo) < 0)
     {
       gnutls_assert ();
       /* we shouldn't get here */
@@ -991,10 +991,10 @@ _gnutls_set_kx (gnutls_session_t session, gnutls_kx_algorithm_t algo)
 
 /* Sets the specified mac algorithm into pending session */
 int
-_gnutls_set_read_mac (gnutls_session_t session, gnutls_mac_algorithm_t algo)
+mhd_gtls_set_read_mac (mhd_gtls_session_t session, gnutls_mac_algorithm_t algo)
 {
 
-  if (_gnutls_mac_is_ok (algo) == 0)
+  if (mhd_gnutls_mac_is_ok (algo) == 0)
     {
       session->security_parameters.read_mac_algorithm = algo;
     }
@@ -1003,7 +1003,7 @@ _gnutls_set_read_mac (gnutls_session_t session, gnutls_mac_algorithm_t algo)
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
-  if (_gnutls_mac_priority (session, algo) < 0)
+  if (mhd_gtls_mac_priority (session, algo) < 0)
     {
       gnutls_assert ();
       return GNUTLS_E_UNWANTED_ALGORITHM;
@@ -1015,10 +1015,10 @@ _gnutls_set_read_mac (gnutls_session_t session, gnutls_mac_algorithm_t algo)
 }
 
 int
-_gnutls_set_write_mac (gnutls_session_t session, gnutls_mac_algorithm_t algo)
+mhd_gtls_set_write_mac (mhd_gtls_session_t session, gnutls_mac_algorithm_t algo)
 {
 
-  if (_gnutls_mac_is_ok (algo) == 0)
+  if (mhd_gnutls_mac_is_ok (algo) == 0)
     {
       session->security_parameters.write_mac_algorithm = algo;
     }
@@ -1027,7 +1027,7 @@ _gnutls_set_write_mac (gnutls_session_t session, gnutls_mac_algorithm_t algo)
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
-  if (_gnutls_mac_priority (session, algo) < 0)
+  if (mhd_gtls_mac_priority (session, algo) < 0)
     {
       gnutls_assert ();
       return GNUTLS_E_UNWANTED_ALGORITHM;

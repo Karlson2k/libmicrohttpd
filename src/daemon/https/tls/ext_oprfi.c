@@ -33,7 +33,7 @@
 #include <gnutls_num.h>
 
 int
-oprfi_recv_server (gnutls_session_t session,
+oprfi_recv_server (mhd_gtls_session_t session,
                    const opaque * data, size_t _data_size)
 {
   ssize_t data_size = _data_size;
@@ -46,7 +46,7 @@ oprfi_recv_server (gnutls_session_t session,
     }
 
   DECR_LEN (data_size, 2);
-  len = _gnutls_read_uint16 (data);
+  len = mhd_gtls_read_uint16 (data);
   data += 2;
 
   if (len != data_size)
@@ -69,7 +69,7 @@ oprfi_recv_server (gnutls_session_t session,
 }
 
 int
-oprfi_recv_client (gnutls_session_t session,
+oprfi_recv_client (mhd_gtls_session_t session,
                    const opaque * data, size_t _data_size)
 {
   ssize_t data_size = _data_size;
@@ -82,7 +82,7 @@ oprfi_recv_client (gnutls_session_t session,
     }
 
   DECR_LEN (data_size, 2);
-  len = _gnutls_read_uint16 (data);
+  len = mhd_gtls_read_uint16 (data);
   data += 2;
 
   if (len != data_size)
@@ -111,7 +111,7 @@ oprfi_recv_client (gnutls_session_t session,
 }
 
 int
-_gnutls_oprfi_recv_params (gnutls_session_t session,
+mhd_gtls_oprfi_recv_params (mhd_gtls_session_t session,
                            const opaque * data, size_t data_size)
 {
   if (session->security_parameters.entity == GNUTLS_CLIENT)
@@ -121,7 +121,7 @@ _gnutls_oprfi_recv_params (gnutls_session_t session,
 }
 
 int
-oprfi_send_client (gnutls_session_t session, opaque * data, size_t _data_size)
+oprfi_send_client (mhd_gtls_session_t session, opaque * data, size_t _data_size)
 {
   opaque *p = data;
   ssize_t data_size = _data_size;
@@ -131,7 +131,7 @@ oprfi_send_client (gnutls_session_t session, opaque * data, size_t _data_size)
     return 0;
 
   DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
-  _gnutls_write_uint16 (oprf_size, p);
+  mhd_gtls_write_uint16 (oprf_size, p);
   p += 2;
 
   DECR_LENGTH_RET (data_size, oprf_size, GNUTLS_E_SHORT_MEMORY_BUFFER);
@@ -142,7 +142,7 @@ oprfi_send_client (gnutls_session_t session, opaque * data, size_t _data_size)
 }
 
 int
-oprfi_send_server (gnutls_session_t session, opaque * data, size_t _data_size)
+oprfi_send_server (mhd_gtls_session_t session, opaque * data, size_t _data_size)
 {
   opaque *p = data;
   int ret;
@@ -177,7 +177,7 @@ oprfi_send_server (gnutls_session_t session, opaque * data, size_t _data_size)
     }
 
   DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
-  _gnutls_write_uint16 (session->security_parameters.
+  mhd_gtls_write_uint16 (session->security_parameters.
                         extensions.oprfi_server_len, p);
   p += 2;
 
@@ -191,7 +191,7 @@ oprfi_send_server (gnutls_session_t session, opaque * data, size_t _data_size)
 }
 
 int
-_gnutls_oprfi_send_params (gnutls_session_t session,
+mhd_gtls_oprfi_send_params (mhd_gtls_session_t session,
                            opaque * data, size_t data_size)
 {
   if (session->security_parameters.entity == GNUTLS_CLIENT)
@@ -201,8 +201,8 @@ _gnutls_oprfi_send_params (gnutls_session_t session,
 }
 
 /**
- * gnutls_oprfi_enable_client:
- * @session: is a #gnutls_session_t structure.
+ * MHD_gtls_oprfi_enable_client:
+ * @session: is a #mhd_gtls_session_t structure.
  * @len: length of Opaque PRF data to use in client.
  * @data: Opaque PRF data to use in client.
  *
@@ -214,7 +214,7 @@ _gnutls_oprfi_send_params (gnutls_session_t session,
  * may de-allocate it immediately after calling this function.
  **/
 void
-gnutls_oprfi_enable_client (gnutls_session_t session,
+MHD_gtls_oprfi_enable_client (mhd_gtls_session_t session,
                             size_t len, unsigned char *data)
 {
   session->security_parameters.extensions.oprfi_client_len = len;
@@ -222,8 +222,8 @@ gnutls_oprfi_enable_client (gnutls_session_t session,
 }
 
 /**
- * gnutls_oprfi_enable_server:
- * @session: is a #gnutls_session_t structure.
+ * MHD_gtls_oprfi_enable_server:
+ * @session: is a #mhd_gtls_session_t structure.
  * @cb: function pointer to Opaque PRF extension server callback.
  * @userdata: hook passed to callback function for passing application state.
  *
@@ -232,7 +232,7 @@ gnutls_oprfi_enable_client (gnutls_session_t session,
  * provided callback @cb will be invoked.  The callback must have the
  * following prototype:
  *
- * int callback (gnutls_session_t session, void *userdata,
+ * int callback (mhd_gtls_session_t session, void *userdata,
  *               size_t oprfi_len, const unsigned char *in_oprfi,
  *               unsigned char *out_oprfi);
  *
@@ -242,7 +242,7 @@ gnutls_oprfi_enable_client (gnutls_session_t session,
  * handshake will be aborted.
  **/
 void
-gnutls_oprfi_enable_server (gnutls_session_t session,
+MHD_gtls_oprfi_enable_server (mhd_gtls_session_t session,
                             gnutls_oprfi_callback_func cb, void *userdata)
 {
   session->security_parameters.extensions.oprfi_cb = cb;

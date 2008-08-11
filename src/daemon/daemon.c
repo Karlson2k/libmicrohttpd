@@ -88,7 +88,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
           CLOSE (daemon->socket_fd);
           return -1;
         }
-      return gnutls_certificate_set_x509_key_file (daemon->x509_cred,
+      return MHD_gnutls_certificate_set_x509_key_file (daemon->x509_cred,
                                                    daemon->https_cert_path,
                                                    daemon->https_key_path,
                                                    GNUTLS_X509_FMT_PEM);
@@ -101,7 +101,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      return gnutls_certificate_set_x509_key_mem (daemon->x509_cred, &cert,
+      return MHD_gnutls_certificate_set_x509_key_mem (daemon->x509_cred, &cert,
                                                   &key, GNUTLS_X509_FMT_PEM);
     }
   else
@@ -122,16 +122,16 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
   switch (daemon->cred_type)
     {
     case MHD_GNUTLS_CRD_ANON:
-      ret = gnutls_anon_allocate_server_credentials (&daemon->anon_cred);
-      ret += gnutls_dh_params_init (&daemon->dh_params);
+      ret = MHD_gnutls_anon_allocate_server_credentials (&daemon->anon_cred);
+      ret += MHD_gnutls_dh_params_init (&daemon->dh_params);
       if (ret != 0) {
 		return GNUTLS_E_MEMORY_ERROR;
 	  }
-      gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-      gnutls_anon_set_server_dh_params (daemon->anon_cred, daemon->dh_params);
+      MHD_gnutls_dh_params_generate2 (daemon->dh_params, 1024);
+      MHD_gnutls_anon_set_server_dh_params (daemon->anon_cred, daemon->dh_params);
       break;
     case MHD_GNUTLS_CRD_CERTIFICATE:
-      ret = gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
+      ret = MHD_gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
       if (ret != 0) {
 		return GNUTLS_E_MEMORY_ERROR;
 	  }
@@ -150,7 +150,7 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 }
 
 inline static int
-_set_priority (priority_st * st, const int *list)
+_set_priority (mhd_gtls_priority_st * st, const int *list)
 {
   int num = 0, i;
 
@@ -322,23 +322,23 @@ MHD_TLS_init_connection (void *data)
   /* initialize connection state */
   con->state = MHD_TLS_CONNECTION_INIT;
 
-  gnutls_init (&con->tls_session, GNUTLS_SERVER);
+  MHD_gnutls_init (&con->tls_session, GNUTLS_SERVER);
 
   /* sets cipher priorities */
-  gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
+  MHD_gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
 
   switch (con->daemon->cred_type)
     {
       /* set needed credentials for certificate authentication. */
     case MHD_GNUTLS_CRD_CERTIFICATE:
-      gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
+      MHD_gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
                               con->daemon->x509_cred);
       break;
     case MHD_GNUTLS_CRD_ANON:
       /* set needed credentials for anonymous authentication. */
-      gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_ANON,
+      MHD_gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_ANON,
                               con->daemon->anon_cred);
-      gnutls_dh_set_prime_bits (con->tls_session, 1024);
+      MHD_gnutls_dh_set_prime_bits (con->tls_session, 1024);
       break;
     default:
 
@@ -351,11 +351,11 @@ MHD_TLS_init_connection (void *data)
     }
 
   /* TODO avoid gnutls blocking recv / write calls
-     gnutls_transport_set_pull_function(tls_session, &recv);
-     gnutls_transport_set_push_function(tls_session, &send);
+     MHD_gnutls_transport_set_pull_function(tls_session, &recv);
+     MHD_gnutls_transport_set_push_function(tls_session, &send);
    */
 
-  gnutls_transport_set_ptr (con->tls_session,
+  MHD_gnutls_transport_set_ptr (con->tls_session,
                             (gnutls_transport_ptr_t) ((void *) con->
                                                       socket_fd));
 
@@ -580,7 +580,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
           if (pos->tls_session != 0)
             {
-              gnutls_deinit (pos->tls_session);
+              MHD_gnutls_deinit (pos->tls_session);
             }
 #endif
           free (pos->addr);
@@ -839,6 +839,7 @@ MHD_start_daemon_va (unsigned int options,
   if ((options & MHD_USE_IPv6) != 0)
     {
       memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+      /* todo impl IPv6 address setting */
       servaddr6.sin6_family = AF_INET6;
       servaddr6.sin6_port = htons (port);
       servaddr = (struct sockaddr *) &servaddr6;
@@ -847,6 +848,7 @@ MHD_start_daemon_va (unsigned int options,
   else
     {
       memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+      inet_pton (AF_INET, ip, &servaddr4.sin_addr);
       servaddr4.sin_family = AF_INET;
       servaddr4.sin_port = htons (port);
       servaddr = (struct sockaddr *) &servaddr4;
@@ -899,10 +901,10 @@ MHD_start_daemon_va (unsigned int options,
     {
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);
-      gnutls_global_init ();
+      MHD_gnutls_global_init ();
       pthread_mutex_unlock (&gnutls_init_mutex);
       /* set default priorities */
-      gnutls_priority_init (&retVal->priority_cache, "", NULL);
+      MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
       retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
     }
 #endif
@@ -1119,10 +1121,10 @@ MHD_start_daemon (unsigned int options,
     {
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);
-      gnutls_global_init ();
+      MHD_gnutls_global_init ();
       pthread_mutex_unlock (&gnutls_init_mutex);
       /* set default priorities */
-      gnutls_priority_init (&retVal->priority_cache, "", NULL);
+      MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
       retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
     }
 #endif
@@ -1320,16 +1322,16 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
   if (daemon->options & MHD_USE_SSL)
     {
-      gnutls_priority_deinit (daemon->priority_cache);
+      MHD_gnutls_priority_deinit (daemon->priority_cache);
 
       if (daemon->x509_cred)
-        gnutls_certificate_free_credentials (daemon->x509_cred);
+        MHD_gnutls_certificate_free_credentials (daemon->x509_cred);
       if (daemon->anon_cred)
-        gnutls_anon_free_server_credentials (daemon->anon_cred);
+        MHD_gnutls_anon_free_server_credentials (daemon->anon_cred);
 
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);
-      gnutls_global_deinit ();
+      MHD_gnutls_global_deinit ();
       pthread_mutex_unlock (&gnutls_init_mutex);
     }
 #endif

@@ -80,15 +80,15 @@ static const gnutls_alert_entry sup_alerts[] = {
 
 
 /**
-  * gnutls_alert_get_name - Returns a string describing the alert number given
-  * @alert: is an alert number #gnutls_session_t structure.
+  * MHD_gnutls_alert_get_name - Returns a string describing the alert number given
+  * @alert: is an alert number #mhd_gtls_session_t structure.
   *
   * This function will return a string that describes the given alert
   * number or NULL.  See gnutls_alert_get().
   *
   **/
 const char *
-gnutls_alert_get_name (gnutls_alert_description_t alert)
+MHD_gnutls_alert_get_name (gnutls_alert_description_t alert)
 {
   const char *ret = NULL;
 
@@ -98,8 +98,8 @@ gnutls_alert_get_name (gnutls_alert_description_t alert)
 }
 
 /**
-  * gnutls_alert_send - This function sends an alert message to the peer
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gnutls_alert_send - This function sends an alert message to the peer
+  * @session: is a #mhd_gtls_session_t structure.
   * @level: is the level of the alert
   * @desc: is the alert description
   *
@@ -115,7 +115,7 @@ gnutls_alert_get_name (gnutls_alert_description_t alert)
   *
   **/
 int
-gnutls_alert_send (gnutls_session_t session, gnutls_alert_level_t level,
+MHD_gnutls_alert_send (mhd_gtls_session_t session, gnutls_alert_level_t level,
                    gnutls_alert_description_t desc)
 {
   uint8_t data[2];
@@ -125,20 +125,20 @@ gnutls_alert_send (gnutls_session_t session, gnutls_alert_level_t level,
   data[0] = (uint8_t) level;
   data[1] = (uint8_t) desc;
 
-  name = gnutls_alert_get_name ((int) data[1]);
+  name = MHD_gnutls_alert_get_name ((int) data[1]);
   if (name == NULL)
     name = "(unknown)";
   _gnutls_record_log ("REC: Sending Alert[%d|%d] - %s\n", data[0],
                       data[1], name);
 
-  if ((ret = _gnutls_send_int (session, GNUTLS_ALERT, -1, data, 2)) >= 0)
+  if ((ret = mhd_gtls_send_int (session, GNUTLS_ALERT, -1, data, 2)) >= 0)
     return 0;
   else
     return ret;
 }
 
 /**
-  * gnutls_error_to_alert - This function returns an alert code based on the given error code
+  * MHD_gtls_error_to_alert - This function returns an alert code based on the given error code
   * @err: is a negative integer
   * @level: the alert level will be stored there
   *
@@ -153,7 +153,7 @@ gnutls_alert_send (gnutls_session_t session, gnutls_alert_level_t level,
   *
   **/
 int
-gnutls_error_to_alert (int err, int *level)
+MHD_gtls_error_to_alert (int err, int *level)
 {
   int ret, _level = -1;
 
@@ -254,12 +254,12 @@ gnutls_error_to_alert (int err, int *level)
 
 
 /**
- * gnutls_alert_send_appropriate - This function sends an alert to the peer depending on the error code
- * @session: is a #gnutls_session_t structure.
+ * MHD_gnutls_alert_send_appropriate - This function sends an alert to the peer depending on the error code
+ * @session: is a #mhd_gtls_session_t structure.
  * @err: is an integer
  *
  * Sends an alert to the peer depending on the error code returned by a gnutls
- * function. This function will call gnutls_error_to_alert() to determine
+ * function. This function will call MHD_gtls_error_to_alert() to determine
  * the appropriate alert to send.
  *
  * This function may also return GNUTLS_E_AGAIN, or GNUTLS_E_INTERRUPTED.
@@ -270,23 +270,23 @@ gnutls_error_to_alert (int err, int *level)
  * Returns zero on success.
  */
 int
-gnutls_alert_send_appropriate (gnutls_session_t session, int err)
+MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err)
 {
   int alert;
   int level;
 
-  alert = gnutls_error_to_alert (err, &level);
+  alert = MHD_gtls_error_to_alert (err, &level);
   if (alert < 0)
     {
       return alert;
     }
 
-  return gnutls_alert_send (session, level, alert);
+  return MHD_gnutls_alert_send (session, level, alert);
 }
 
 /**
   * gnutls_alert_get - Returns the last alert number received.
-  * @session: is a #gnutls_session_t structure.
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * This function will return the last alert number received. This
   * function should be called if GNUTLS_E_WARNING_ALERT_RECEIVED or
@@ -298,7 +298,7 @@ gnutls_alert_send_appropriate (gnutls_session_t session, int err)
   *
   **/
 gnutls_alert_description_t
-gnutls_alert_get (gnutls_session_t session)
+gnutls_alert_get (mhd_gtls_session_t session)
 {
   return session->internals.last_alert;
 }

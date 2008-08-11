@@ -37,7 +37,7 @@
 #include <gnutls_sig.h>
 #include <gnutls_kx.h>
 
-static int _gnutls_tls_sign (gnutls_session_t session,
+static int _gnutls_tls_sign (mhd_gtls_session_t session,
                              gnutls_cert * cert,
                              gnutls_privkey * pkey,
                              const gnutls_datum_t * hash_concat,
@@ -47,7 +47,7 @@ static int _gnutls_tls_sign (gnutls_session_t session,
  * handshake procedure. (20040227: now it works for SSL 3.0 as well)
  */
 int
-_gnutls_tls_sign_hdata (gnutls_session_t session,
+mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
                         gnutls_cert * cert,
                         gnutls_privkey * pkey, gnutls_datum_t * signature)
 {
@@ -56,9 +56,9 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
   opaque concat[36];
   mac_hd_t td_md5;
   mac_hd_t td_sha;
-  gnutls_protocol_t ver = gnutls_protocol_get_version (session);
+  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
 
-  td_sha = _gnutls_hash_copy (session->internals.handshake_mac_handle_sha);
+  td_sha = mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_sha);
   if (td_sha == NULL)
     {
       gnutls_assert ();
@@ -67,25 +67,25 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
 
   if (ver == MHD_GNUTLS_SSL3)
     {
-      ret = _gnutls_generate_master (session, 1);
+      ret = mhd_gtls_generate_master (session, 1);
       if (ret < 0)
         {
           gnutls_assert ();
           return ret;
         }
 
-      _gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
+      mhd_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
                                          session->security_parameters.
                                          master_secret, TLS_MASTER_SIZE);
     }
   else
-    _gnutls_hash_deinit (td_sha, &concat[16]);
+    mhd_gnutls_hash_deinit (td_sha, &concat[16]);
 
   switch (cert->subject_pk_algorithm)
     {
     case MHD_GNUTLS_PK_RSA:
       td_md5 =
-        _gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
+        mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
       if (td_md5 == NULL)
         {
           gnutls_assert ();
@@ -93,11 +93,11 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
         }
 
       if (ver == MHD_GNUTLS_SSL3)
-        _gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
+        mhd_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
                                            session->security_parameters.
                                            master_secret, TLS_MASTER_SIZE);
       else
-        _gnutls_hash_deinit (td_md5, concat);
+        mhd_gnutls_hash_deinit (td_md5, concat);
 
       dconcat.data = concat;
       dconcat.size = 36;
@@ -119,7 +119,7 @@ _gnutls_tls_sign_hdata (gnutls_session_t session,
  * Used in DHE_* ciphersuites.
  */
 int
-_gnutls_tls_sign_params (gnutls_session_t session,
+mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
                          gnutls_cert * cert,
                          gnutls_privkey * pkey,
                          gnutls_datum_t * params, gnutls_datum_t * signature)
@@ -128,41 +128,41 @@ _gnutls_tls_sign_params (gnutls_session_t session,
   int ret;
   mac_hd_t td_sha;
   opaque concat[36];
-  gnutls_protocol_t ver = gnutls_protocol_get_version (session);
+  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
 
-  td_sha = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
+  td_sha = mhd_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td_sha == NULL)
     {
       gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  _gnutls_hash (td_sha, session->security_parameters.client_random,
+  mhd_gnutls_hash (td_sha, session->security_parameters.client_random,
                 TLS_RANDOM_SIZE);
-  _gnutls_hash (td_sha, session->security_parameters.server_random,
+  mhd_gnutls_hash (td_sha, session->security_parameters.server_random,
                 TLS_RANDOM_SIZE);
-  _gnutls_hash (td_sha, params->data, params->size);
+  mhd_gnutls_hash (td_sha, params->data, params->size);
 
   switch (cert->subject_pk_algorithm)
     {
     case MHD_GNUTLS_PK_RSA:
       if (ver < MHD_GNUTLS_TLS1_2)
         {
-          mac_hd_t td_md5 = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
+          mac_hd_t td_md5 = mhd_gtls_hash_init (MHD_GNUTLS_MAC_MD5);
           if (td_md5 == NULL)
             {
               gnutls_assert ();
               return GNUTLS_E_HASH_FAILED;
             }
 
-          _gnutls_hash (td_md5, session->security_parameters.client_random,
+          mhd_gnutls_hash (td_md5, session->security_parameters.client_random,
                         TLS_RANDOM_SIZE);
-          _gnutls_hash (td_md5, session->security_parameters.server_random,
+          mhd_gnutls_hash (td_md5, session->security_parameters.server_random,
                         TLS_RANDOM_SIZE);
-          _gnutls_hash (td_md5, params->data, params->size);
+          mhd_gnutls_hash (td_md5, params->data, params->size);
 
-          _gnutls_hash_deinit (td_md5, concat);
-          _gnutls_hash_deinit (td_sha, &concat[16]);
+          mhd_gnutls_hash_deinit (td_md5, concat);
+          mhd_gnutls_hash_deinit (td_sha, &concat[16]);
 
           dconcat.size = 36;
         }
@@ -173,13 +173,13 @@ _gnutls_tls_sign_params (gnutls_session_t session,
           memcpy (concat,
                   "\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14",
                   15);
-          _gnutls_hash_deinit (td_sha, &concat[15]);
+          mhd_gnutls_hash_deinit (td_sha, &concat[15]);
           dconcat.size = 35;
 #else
           /* No parameters field. */
           memcpy (concat,
                   "\x30\x1f\x30\x07\x06\x05\x2b\x0e\x03\x02\x1a\x04\x14", 13);
-          _gnutls_hash_deinit (td_sha, &concat[13]);
+          mhd_gnutls_hash_deinit (td_sha, &concat[13]);
           dconcat.size = 33;
 #endif
         }
@@ -187,7 +187,7 @@ _gnutls_tls_sign_params (gnutls_session_t session,
       break;
     default:
       gnutls_assert ();
-      _gnutls_hash_deinit (td_sha, NULL);
+      mhd_gnutls_hash_deinit (td_sha, NULL);
       return GNUTLS_E_INTERNAL_ERROR;
     }
   ret = _gnutls_tls_sign (session, cert, pkey, &dconcat, signature);
@@ -204,7 +204,7 @@ _gnutls_tls_sign_params (gnutls_session_t session,
  * given data. The output will be allocated and be put in signature.
  */
 int
-_gnutls_sign (gnutls_pk_algorithm_t algo,
+mhd_gtls_sign (gnutls_pk_algorithm_t algo,
               mpi_t * params,
               int params_size,
               const gnutls_datum_t * data, gnutls_datum_t * signature)
@@ -216,7 +216,7 @@ _gnutls_sign (gnutls_pk_algorithm_t algo,
     case MHD_GNUTLS_PK_RSA:
       /* encrypt */
       if ((ret =
-           _gnutls_pkcs1_rsa_encrypt (signature, data, params, params_size,
+           mhd_gtls_pkcs1_rsa_encrypt (signature, data, params, params_size,
                                       1)) < 0)
         {
           gnutls_assert ();
@@ -238,7 +238,7 @@ _gnutls_sign (gnutls_pk_algorithm_t algo,
  * it supports signing.
  */
 static int
-_gnutls_tls_sign (gnutls_session_t session,
+_gnutls_tls_sign (mhd_gtls_session_t session,
                   gnutls_cert * cert,
                   gnutls_privkey * pkey,
                   const gnutls_datum_t * hash_concat,
@@ -269,7 +269,7 @@ _gnutls_tls_sign (gnutls_session_t session,
                                               hash_concat, signature);
     }
 
-  return _gnutls_sign (pkey->pk_algorithm, pkey->params, pkey->params_size,
+  return mhd_gtls_sign (pkey->pk_algorithm, pkey->params, pkey->params_size,
                        hash_concat, signature);
 }
 
@@ -307,7 +307,7 @@ _gnutls_verify_sig (gnutls_cert * cert,
       vdata.size = hash_concat->size;
 
       /* verify signature */
-      if ((ret = _gnutls_rsa_verify (&vdata, signature, cert->params,
+      if ((ret = mhd_gtls_rsa_verify (&vdata, signature, cert->params,
                                      cert->params_size, 1)) < 0)
         {
           gnutls_assert ();
@@ -327,7 +327,7 @@ _gnutls_verify_sig (gnutls_cert * cert,
  * verify message). 
  */
 int
-_gnutls_verify_sig_hdata (gnutls_session_t session,
+mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
                           gnutls_cert * cert, gnutls_datum_t * signature)
 {
   int ret;
@@ -335,43 +335,43 @@ _gnutls_verify_sig_hdata (gnutls_session_t session,
   mac_hd_t td_md5;
   mac_hd_t td_sha;
   gnutls_datum_t dconcat;
-  gnutls_protocol_t ver = gnutls_protocol_get_version (session);
+  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
 
-  td_md5 = _gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
+  td_md5 = mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
   if (td_md5 == NULL)
     {
       gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  td_sha = _gnutls_hash_copy (session->internals.handshake_mac_handle_sha);
+  td_sha = mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_sha);
   if (td_sha == NULL)
     {
       gnutls_assert ();
-      _gnutls_hash_deinit (td_md5, NULL);
+      mhd_gnutls_hash_deinit (td_md5, NULL);
       return GNUTLS_E_HASH_FAILED;
     }
 
   if (ver == MHD_GNUTLS_SSL3)
     {
-      ret = _gnutls_generate_master (session, 1);
+      ret = mhd_gtls_generate_master (session, 1);
       if (ret < 0)
         {
           gnutls_assert ();
           return ret;
         }
 
-      _gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
+      mhd_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
                                          session->security_parameters.
                                          master_secret, TLS_MASTER_SIZE);
-      _gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
+      mhd_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
                                          session->security_parameters.
                                          master_secret, TLS_MASTER_SIZE);
     }
   else
     {
-      _gnutls_hash_deinit (td_md5, concat);
-      _gnutls_hash_deinit (td_sha, &concat[16]);
+      mhd_gnutls_hash_deinit (td_md5, concat);
+      mhd_gnutls_hash_deinit (td_sha, &concat[16]);
     }
 
   dconcat.data = concat;
@@ -392,7 +392,7 @@ _gnutls_verify_sig_hdata (gnutls_session_t session,
  * Used in DHE_* ciphersuites.
  */
 int
-_gnutls_verify_sig_params (gnutls_session_t session,
+mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
                            gnutls_cert * cert,
                            const gnutls_datum_t * params,
                            gnutls_datum_t * signature)
@@ -402,43 +402,43 @@ _gnutls_verify_sig_params (gnutls_session_t session,
   mac_hd_t td_md5 = NULL;
   mac_hd_t td_sha;
   opaque concat[36];
-  gnutls_protocol_t ver = gnutls_protocol_get_version (session);
+  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
 
   if (ver < MHD_GNUTLS_TLS1_2)
     {
-      td_md5 = _gnutls_hash_init (MHD_GNUTLS_MAC_MD5);
+      td_md5 = mhd_gtls_hash_init (MHD_GNUTLS_MAC_MD5);
       if (td_md5 == NULL)
         {
           gnutls_assert ();
           return GNUTLS_E_HASH_FAILED;
         }
 
-      _gnutls_hash (td_md5, session->security_parameters.client_random,
+      mhd_gnutls_hash (td_md5, session->security_parameters.client_random,
                     TLS_RANDOM_SIZE);
-      _gnutls_hash (td_md5, session->security_parameters.server_random,
+      mhd_gnutls_hash (td_md5, session->security_parameters.server_random,
                     TLS_RANDOM_SIZE);
-      _gnutls_hash (td_md5, params->data, params->size);
+      mhd_gnutls_hash (td_md5, params->data, params->size);
     }
 
-  td_sha = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
+  td_sha = mhd_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td_sha == NULL)
     {
       gnutls_assert ();
       if (td_md5)
-        _gnutls_hash_deinit (td_md5, NULL);
+        mhd_gnutls_hash_deinit (td_md5, NULL);
       return GNUTLS_E_HASH_FAILED;
     }
 
-  _gnutls_hash (td_sha, session->security_parameters.client_random,
+  mhd_gnutls_hash (td_sha, session->security_parameters.client_random,
                 TLS_RANDOM_SIZE);
-  _gnutls_hash (td_sha, session->security_parameters.server_random,
+  mhd_gnutls_hash (td_sha, session->security_parameters.server_random,
                 TLS_RANDOM_SIZE);
-  _gnutls_hash (td_sha, params->data, params->size);
+  mhd_gnutls_hash (td_sha, params->data, params->size);
 
   if (ver < MHD_GNUTLS_TLS1_2)
     {
-      _gnutls_hash_deinit (td_md5, concat);
-      _gnutls_hash_deinit (td_sha, &concat[16]);
+      mhd_gnutls_hash_deinit (td_md5, concat);
+      mhd_gnutls_hash_deinit (td_sha, &concat[16]);
       dconcat.size = 36;
     }
   else
@@ -448,13 +448,13 @@ _gnutls_verify_sig_params (gnutls_session_t session,
       memcpy (concat,
               "\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14",
               15);
-      _gnutls_hash_deinit (td_sha, &concat[15]);
+      mhd_gnutls_hash_deinit (td_sha, &concat[15]);
       dconcat.size = 35;
 #else
       /* No parameters field. */
       memcpy (concat,
               "\x30\x1f\x30\x07\x06\x05\x2b\x0e\x03\x02\x1a\x04\x14", 13);
-      _gnutls_hash_deinit (td_sha, &concat[13]);
+      mhd_gnutls_hash_deinit (td_sha, &concat[13]);
       dconcat.size = 33;
 #endif
     }

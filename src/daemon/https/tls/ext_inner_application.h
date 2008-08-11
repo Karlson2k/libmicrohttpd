@@ -22,8 +22,8 @@
  *
  */
 
-int _gnutls_inner_application_recv_params (gnutls_session_t session,
+int mhd_gtls_inner_app_rcv_params (mhd_gtls_session_t session,
 					   const opaque * data,
 					   size_t data_size);
-int _gnutls_inner_application_send_params (gnutls_session_t session,
+int mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
 					   opaque * data, size_t);

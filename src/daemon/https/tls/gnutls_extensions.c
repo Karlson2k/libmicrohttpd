@@ -43,26 +43,26 @@
 
 
 #define MAX_EXT_SIZE 10
-const int _gnutls_extensions_size = MAX_EXT_SIZE;
+const int mhd_gtls_extensions_size = MAX_EXT_SIZE;
 
-gnutls_extension_entry _gnutls_extensions[MAX_EXT_SIZE] = {
+mhd_gtls_extension_entry mhd_gtls_extensions[MAX_EXT_SIZE] = {
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_MAX_RECORD_SIZE,
                           EXTENSION_TLS,
-                          _gnutls_max_record_recv_params,
-                          _gnutls_max_record_send_params),
+                          mhd_gtls_max_record_recv_params,
+                          mhd_gtls_max_record_send_params),
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_CERT_TYPE,
                           EXTENSION_TLS,
-                          _gnutls_cert_type_recv_params,
-                          _gnutls_cert_type_send_params),
+                          mhd_gtls_cert_type_recv_params,
+                          mhd_gtls_cert_type_send_params),
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_SERVER_NAME,
                           EXTENSION_APPLICATION,
-                          _gnutls_server_name_recv_params,
-                          _gnutls_server_name_send_params),
+                          mhd_gtls_server_name_recv_params,
+                          mhd_gtls_server_name_send_params),
 #ifdef ENABLE_OPRFI
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_OPAQUE_PRF_INPUT,
                           EXTENSION_TLS,
-                          _gnutls_oprfi_recv_params,
-                          _gnutls_oprfi_send_params),
+                          mhd_gtls_oprfi_recv_params,
+                          mhd_gtls_oprfi_send_params),
 #endif
 #ifdef ENABLE_SRP
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_SRP,
@@ -72,14 +72,14 @@ gnutls_extension_entry _gnutls_extensions[MAX_EXT_SIZE] = {
 #endif
   GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_INNER_APPLICATION,
                           EXTENSION_TLS,
-                          _gnutls_inner_application_recv_params,
-                          _gnutls_inner_application_send_params),
+                          mhd_gtls_inner_app_rcv_params,
+                          mhd_gtls_inner_app_send_params),
   {0, 0, 0, 0}
 };
 
 #define GNUTLS_EXTENSION_LOOP2(b) \
-        gnutls_extension_entry *p; \
-                for(p = _gnutls_extensions; p->name != NULL; p++) { b ; }
+        mhd_gtls_extension_entry *p; \
+                for(p = mhd_gtls_extensions; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_EXTENSION_LOOP(a) \
                         GNUTLS_EXTENSION_LOOP2( if(p->type == type) { a; break; } )
@@ -87,10 +87,10 @@ gnutls_extension_entry _gnutls_extensions[MAX_EXT_SIZE] = {
 
 /* EXTENSION functions */
 
-ext_recv_func
-_gnutls_ext_func_recv (uint16_t type, tls_ext_parse_type_t parse_type)
+mhd_gtls_ext_recv_func
+mhd_gtls_ext_func_recv (uint16_t type, mhd_gtls_ext_parse_type_t parse_type)
 {
-  ext_recv_func ret = NULL;
+  mhd_gtls_ext_recv_func ret = NULL;
   GNUTLS_EXTENSION_LOOP (if
                          (parse_type == EXTENSION_ANY
                           || p->parse_type == parse_type) ret =
@@ -99,17 +99,17 @@ _gnutls_ext_func_recv (uint16_t type, tls_ext_parse_type_t parse_type)
 
 }
 
-ext_send_func
-_gnutls_ext_func_send (uint16_t type)
+mhd_gtls_ext_send_func
+mhd_gtls_ext_func_send (uint16_t type)
 {
-  ext_send_func ret = NULL;
+  mhd_gtls_ext_send_func ret = NULL;
   GNUTLS_EXTENSION_LOOP (ret = p->gnutls_ext_func_send);
   return ret;
 
 }
 
 const char *
-_gnutls_extension_get_name (uint16_t type)
+mhd_gtls_extension_get_name (uint16_t type)
 {
   const char *ret = NULL;
 
@@ -123,7 +123,7 @@ _gnutls_extension_get_name (uint16_t type)
  * requested ones. Otherwise it's a fatal error.
  */
 static int
-_gnutls_extension_list_check (gnutls_session_t session, uint16_t type)
+_gnutls_extension_list_check (mhd_gtls_session_t session, uint16_t type)
 {
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
@@ -140,15 +140,15 @@ _gnutls_extension_list_check (gnutls_session_t session, uint16_t type)
 }
 
 int
-_gnutls_parse_extensions (gnutls_session_t session,
-                          tls_ext_parse_type_t parse_type,
+mhd_gtls_parse_extensions (mhd_gtls_session_t session,
+                          mhd_gtls_ext_parse_type_t parse_type,
                           const opaque * data, int data_size)
 {
   int next, ret;
   int pos = 0;
   uint16_t type;
   const opaque *sdata;
-  ext_recv_func ext_recv;
+  mhd_gtls_ext_recv_func ext_recv;
   uint16_t size;
 
 #ifdef DEBUG
@@ -159,14 +159,14 @@ _gnutls_parse_extensions (gnutls_session_t session,
       {
         _gnutls_debug_log ("EXT[%d]: expecting extension '%s'\n",
                            session,
-                           _gnutls_extension_get_name (session->
+                           mhd_gtls_extension_get_name (session->
                                                        internals.
                                                        extensions_sent[i]));
       }
 #endif
 
   DECR_LENGTH_RET (data_size, 2, 0);
-  next = _gnutls_read_uint16 (data);
+  next = mhd_gtls_read_uint16 (data);
   pos += 2;
 
   DECR_LENGTH_RET (data_size, next, 0);
@@ -174,11 +174,11 @@ _gnutls_parse_extensions (gnutls_session_t session,
   do
     {
       DECR_LENGTH_RET (next, 2, 0);
-      type = _gnutls_read_uint16 (&data[pos]);
+      type = mhd_gtls_read_uint16 (&data[pos]);
       pos += 2;
 
       _gnutls_debug_log ("EXT[%x]: Received extension '%s/%d'\n", session,
-                         _gnutls_extension_get_name (type), type);
+                         mhd_gtls_extension_get_name (type), type);
 
       if ((ret = _gnutls_extension_list_check (session, type)) < 0)
         {
@@ -187,14 +187,14 @@ _gnutls_parse_extensions (gnutls_session_t session,
         }
 
       DECR_LENGTH_RET (next, 2, 0);
-      size = _gnutls_read_uint16 (&data[pos]);
+      size = mhd_gtls_read_uint16 (&data[pos]);
       pos += 2;
 
       DECR_LENGTH_RET (next, size, 0);
       sdata = &data[pos];
       pos += size;
 
-      ext_recv = _gnutls_ext_func_recv (type, parse_type);
+      ext_recv = mhd_gtls_ext_func_recv (type, parse_type);
       if (ext_recv == NULL)
         continue;
       if ((ret = ext_recv (session, sdata, size)) < 0)
@@ -215,7 +215,7 @@ _gnutls_parse_extensions (gnutls_session_t session,
  * extensions are the ones we requested.
  */
 static void
-_gnutls_extension_list_add (gnutls_session_t session, uint16_t type)
+_gnutls_extension_list_add (mhd_gtls_session_t session, uint16_t type)
 {
 
   if (session->security_parameters.entity == GNUTLS_CLIENT)
@@ -234,15 +234,15 @@ _gnutls_extension_list_add (gnutls_session_t session, uint16_t type)
 }
 
 int
-_gnutls_gen_extensions (gnutls_session_t session, opaque * data,
+mhd_gtls_gen_extensions (mhd_gtls_session_t session, opaque * data,
                         size_t data_size)
 {
   int size;
   uint16_t pos = 0;
   opaque *sdata;
   int sdata_size;
-  ext_send_func ext_send;
-  gnutls_extension_entry *p;
+  mhd_gtls_ext_send_func ext_send;
+  mhd_gtls_extension_entry *p;
 
   if (data_size < 2)
     {
@@ -261,9 +261,9 @@ _gnutls_gen_extensions (gnutls_session_t session, opaque * data,
     }
 
   pos += 2;
-  for (p = _gnutls_extensions; p->name != NULL; p++)
+  for (p = mhd_gtls_extensions; p->name != NULL; p++)
     {
-      ext_send = _gnutls_ext_func_send (p->type);
+      ext_send = mhd_gtls_ext_func_send (p->type);
       if (ext_send == NULL)
         continue;
       size = ext_send (session, sdata, sdata_size);
@@ -277,11 +277,11 @@ _gnutls_gen_extensions (gnutls_session_t session, opaque * data,
             }
 
           /* write extension type */
-          _gnutls_write_uint16 (p->type, &data[pos]);
+          mhd_gtls_write_uint16 (p->type, &data[pos]);
           pos += 2;
 
           /* write size */
-          _gnutls_write_uint16 (size, &data[pos]);
+          mhd_gtls_write_uint16 (size, &data[pos]);
           pos += 2;
 
           memcpy (&data[pos], sdata, size);
@@ -292,7 +292,7 @@ _gnutls_gen_extensions (gnutls_session_t session, opaque * data,
           _gnutls_extension_list_add (session, p->type);
 
           _gnutls_debug_log ("EXT[%x]: Sending extension %s\n", session,
-                             _gnutls_extension_get_name (p->type));
+                             mhd_gtls_extension_get_name (p->type));
         }
       else if (size < 0)
         {
@@ -305,7 +305,7 @@ _gnutls_gen_extensions (gnutls_session_t session, opaque * data,
   size = pos;
   pos -= 2;                     /* remove the size of the size header! */
 
-  _gnutls_write_uint16 (pos, data);
+  mhd_gtls_write_uint16 (pos, data);
 
   if (size == 2)
     {                           /* empty */

@@ -32,10 +32,10 @@
 #define YES 1
 
 int
-_gnutls_inner_application_recv_params (gnutls_session_t session,
+mhd_gtls_inner_app_rcv_params (mhd_gtls_session_t session,
                                        const opaque * data, size_t data_size)
 {
-  tls_ext_st *ext = &session->security_parameters.extensions;
+  mhd_gtls_ext_st *ext = &session->security_parameters.extensions;
 
   if (data_size != 1)
     {
@@ -66,10 +66,10 @@ _gnutls_inner_application_recv_params (gnutls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-_gnutls_inner_application_send_params (gnutls_session_t session,
+mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
                                        opaque * data, size_t data_size)
 {
-  tls_ext_st *ext = &session->security_parameters.extensions;
+  mhd_gtls_ext_st *ext = &session->security_parameters.extensions;
 
   /* Set ext->gnutls_ia_enable depending on whether we have a TLS/IA
      credential in the session. */
@@ -77,7 +77,7 @@ _gnutls_inner_application_send_params (gnutls_session_t session,
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       gnutls_ia_client_credentials_t cred = (gnutls_ia_client_credentials_t)
-        _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
+        mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)
         ext->gnutls_ia_enable = 1;
@@ -85,7 +85,7 @@ _gnutls_inner_application_send_params (gnutls_session_t session,
   else
     {
       gnutls_ia_server_credentials_t cred = (gnutls_ia_server_credentials_t)
-        _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
+        mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)
         ext->gnutls_ia_enable = 1;

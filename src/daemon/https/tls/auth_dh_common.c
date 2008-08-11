@@ -42,7 +42,7 @@
 /* Frees the dh_info_st structure.
  */
 void
-_gnutls_free_dh_info (dh_info_st * dh)
+mhd_gtls_free_dh_info (dh_info_st * dh)
 {
   dh->secret_bits = 0;
   _gnutls_free_datum (&dh->prime);
@@ -51,7 +51,7 @@ _gnutls_free_dh_info (dh_info_st * dh)
 }
 
 int
-_gnutls_proc_dh_common_client_kx (gnutls_session_t session,
+mhd_gtls_proc_dh_common_client_kx (mhd_gtls_session_t session,
                                   opaque * data, size_t _data_size,
                                   mpi_t g, mpi_t p)
 {
@@ -62,20 +62,20 @@ _gnutls_proc_dh_common_client_kx (gnutls_session_t session,
 
 
   DECR_LEN (data_size, 2);
-  n_Y = _gnutls_read_uint16 (&data[0]);
+  n_Y = mhd_gtls_read_uint16 (&data[0]);
   _n_Y = n_Y;
 
   DECR_LEN (data_size, n_Y);
-  if (_gnutls_mpi_scan_nz (&session->key->client_Y, &data[2], &_n_Y))
+  if (mhd_gtls_mpi_scan_nz (&session->key->client_Y, &data[2], &_n_Y))
     {
       gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
-  _gnutls_dh_set_peer_public (session, session->key->client_Y);
+  mhd_gtls_dh_set_peer_public (session, session->key->client_Y);
 
   session->key->KEY =
-    gnutls_calc_dh_key (session->key->client_Y, session->key->dh_secret, p);
+    mhd_gtls_calc_dh_key (session->key->client_Y, session->key->dh_secret, p);
 
   if (session->key->KEY == NULL)
     {
@@ -83,12 +83,12 @@ _gnutls_proc_dh_common_client_kx (gnutls_session_t session,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  _gnutls_mpi_release (&session->key->client_Y);
-  _gnutls_mpi_release (&session->key->dh_secret);
+  mhd_gtls_mpi_release (&session->key->client_Y);
+  mhd_gtls_mpi_release (&session->key->dh_secret);
 
-  ret = _gnutls_mpi_dprint (&session->key->key, session->key->KEY);
+  ret = mhd_gtls_mpi_dprint (&session->key->key, session->key->KEY);
 
-  _gnutls_mpi_release (&session->key->KEY);
+  mhd_gtls_mpi_release (&session->key->KEY);
 
   if (ret < 0)
     {
@@ -99,7 +99,7 @@ _gnutls_proc_dh_common_client_kx (gnutls_session_t session,
 }
 
 int
-_gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
+mhd_gtls_gen_dh_common_client_kx (mhd_gtls_session_t session, opaque ** data)
 {
   mpi_t x = NULL, X = NULL;
   size_t n_X;
@@ -107,7 +107,7 @@ _gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
 
   *data = NULL;
 
-  X = gnutls_calc_dh_secret (&x, session->key->client_g,
+  X = mhd_gtls_calc_dh_secret (&x, session->key->client_g,
                              session->key->client_p);
   if (X == NULL || x == NULL)
     {
@@ -116,9 +116,9 @@ _gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
       goto error;
     }
 
-  _gnutls_dh_set_secret_bits (session, _gnutls_mpi_get_nbits (x));
+  mhd_gtls_dh_set_secret_bits (session, _gnutls_mpi_get_nbits (x));
 
-  _gnutls_mpi_print (NULL, &n_X, X);
+  mhd_gtls_mpi_print (NULL, &n_X, X);
   (*data) = gnutls_malloc (n_X + 2);
   if (*data == NULL)
     {
@@ -126,16 +126,16 @@ _gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
       goto error;
     }
 
-  _gnutls_mpi_print (&(*data)[2], &n_X, X);
-  _gnutls_mpi_release (&X);
+  mhd_gtls_mpi_print (&(*data)[2], &n_X, X);
+  mhd_gtls_mpi_release (&X);
 
-  _gnutls_write_uint16 (n_X, &(*data)[0]);
+  mhd_gtls_write_uint16 (n_X, &(*data)[0]);
 
   /* calculate the key after calculating the message */
   session->key->KEY =
-    gnutls_calc_dh_key (session->key->client_Y, x, session->key->client_p);
+    mhd_gtls_calc_dh_key (session->key->client_Y, x, session->key->client_p);
 
-  _gnutls_mpi_release (&x);
+  mhd_gtls_mpi_release (&x);
   if (session->key->KEY == NULL)
     {
       gnutls_assert ();
@@ -144,13 +144,13 @@ _gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
     }
 
   /* THESE SHOULD BE DISCARDED */
-  _gnutls_mpi_release (&session->key->client_Y);
-  _gnutls_mpi_release (&session->key->client_p);
-  _gnutls_mpi_release (&session->key->client_g);
+  mhd_gtls_mpi_release (&session->key->client_Y);
+  mhd_gtls_mpi_release (&session->key->client_p);
+  mhd_gtls_mpi_release (&session->key->client_g);
 
-  ret = _gnutls_mpi_dprint (&session->key->key, session->key->KEY);
+  ret = mhd_gtls_mpi_dprint (&session->key->key, session->key->KEY);
 
-  _gnutls_mpi_release (&session->key->KEY);
+  mhd_gtls_mpi_release (&session->key->KEY);
 
   if (ret < 0)
     {
@@ -161,15 +161,15 @@ _gnutls_gen_dh_common_client_kx (gnutls_session_t session, opaque ** data)
   return n_X + 2;
 
 error:
-  _gnutls_mpi_release (&x);
-  _gnutls_mpi_release (&X);
+  mhd_gtls_mpi_release (&x);
+  mhd_gtls_mpi_release (&X);
   gnutls_free (*data);
   *data = NULL;
   return ret;
 }
 
 int
-_gnutls_proc_dh_common_server_kx (gnutls_session_t session,
+mhd_gtls_proc_dh_common_server_kx (mhd_gtls_session_t session,
                                   opaque * data, size_t _data_size, int psk)
 {
   uint16_t n_Y, n_g, n_p;
@@ -185,13 +185,13 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
   if (psk != 0)
     {
       DECR_LEN (data_size, 2);
-      psk_size = _gnutls_read_uint16 (&data[i]);
+      psk_size = mhd_gtls_read_uint16 (&data[i]);
       DECR_LEN (data_size, psk_size);
       i += 2 + psk_size;
     }
 
   DECR_LEN (data_size, 2);
-  n_p = _gnutls_read_uint16 (&data[i]);
+  n_p = mhd_gtls_read_uint16 (&data[i]);
   i += 2;
 
   DECR_LEN (data_size, n_p);
@@ -199,7 +199,7 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
   i += n_p;
 
   DECR_LEN (data_size, 2);
-  n_g = _gnutls_read_uint16 (&data[i]);
+  n_g = mhd_gtls_read_uint16 (&data[i]);
   i += 2;
 
   DECR_LEN (data_size, n_g);
@@ -207,7 +207,7 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
   i += n_g;
 
   DECR_LEN (data_size, 2);
-  n_Y = _gnutls_read_uint16 (&data[i]);
+  n_Y = mhd_gtls_read_uint16 (&data[i]);
   i += 2;
 
   DECR_LEN (data_size, n_Y);
@@ -218,24 +218,24 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
   _n_g = n_g;
   _n_p = n_p;
 
-  if (_gnutls_mpi_scan_nz (&session->key->client_Y, data_Y, &_n_Y) != 0)
+  if (mhd_gtls_mpi_scan_nz (&session->key->client_Y, data_Y, &_n_Y) != 0)
     {
       gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
-  if (_gnutls_mpi_scan_nz (&session->key->client_g, data_g, &_n_g) != 0)
+  if (mhd_gtls_mpi_scan_nz (&session->key->client_g, data_g, &_n_g) != 0)
     {
       gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
-  if (_gnutls_mpi_scan_nz (&session->key->client_p, data_p, &_n_p) != 0)
+  if (mhd_gtls_mpi_scan_nz (&session->key->client_p, data_p, &_n_p) != 0)
     {
       gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
-  bits = _gnutls_dh_get_allowed_prime_bits (session);
+  bits = mhd_gtls_dh_get_allowed_prime_bits (session);
   if (bits < 0)
     {
       gnutls_assert ();
@@ -250,9 +250,9 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
       return GNUTLS_E_DH_PRIME_UNACCEPTABLE;
     }
 
-  _gnutls_dh_set_group (session, session->key->client_g,
+  mhd_gtls_dh_set_group (session, session->key->client_g,
                         session->key->client_p);
-  _gnutls_dh_set_peer_public (session, session->key->client_Y);
+  mhd_gtls_dh_set_peer_public (session, session->key->client_Y);
 
   ret = n_Y + n_p + n_g + 6;
   if (psk != 0)
@@ -264,7 +264,7 @@ _gnutls_proc_dh_common_server_kx (gnutls_session_t session,
 /* If the psk flag is set, then an empty psk_identity_hint will
  * be inserted */
 int
-_gnutls_dh_common_print_server_kx (gnutls_session_t session,
+mhd_gtls_dh_common_print_server_kx (mhd_gtls_session_t session,
                                    mpi_t g, mpi_t p, opaque ** data, int psk)
 {
   mpi_t x, X;
@@ -272,7 +272,7 @@ _gnutls_dh_common_print_server_kx (gnutls_session_t session,
   int ret, data_size, pos;
   uint8_t *pdata;
 
-  X = gnutls_calc_dh_secret (&x, g, p);
+  X = mhd_gtls_calc_dh_secret (&x, g, p);
   if (X == NULL || x == NULL)
     {
       gnutls_assert ();
@@ -280,11 +280,11 @@ _gnutls_dh_common_print_server_kx (gnutls_session_t session,
     }
 
   session->key->dh_secret = x;
-  _gnutls_dh_set_secret_bits (session, _gnutls_mpi_get_nbits (x));
+  mhd_gtls_dh_set_secret_bits (session, _gnutls_mpi_get_nbits (x));
 
-  _gnutls_mpi_print (NULL, &n_g, g);
-  _gnutls_mpi_print (NULL, &n_p, p);
-  _gnutls_mpi_print (NULL, &n_X, X);
+  mhd_gtls_mpi_print (NULL, &n_g, g);
+  mhd_gtls_mpi_print (NULL, &n_p, p);
+  mhd_gtls_mpi_print (NULL, &n_X, X);
 
   data_size = n_g + n_p + n_X + 6;
   if (psk != 0)
@@ -293,7 +293,7 @@ _gnutls_dh_common_print_server_kx (gnutls_session_t session,
   (*data) = gnutls_malloc (data_size);
   if (*data == NULL)
     {
-      _gnutls_mpi_release (&X);
+      mhd_gtls_mpi_release (&X);
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -302,24 +302,24 @@ _gnutls_dh_common_print_server_kx (gnutls_session_t session,
 
   if (psk != 0)
     {
-      _gnutls_write_uint16 (0, &pdata[pos]);
+      mhd_gtls_write_uint16 (0, &pdata[pos]);
       pos += 2;
     }
 
-  _gnutls_mpi_print (&pdata[pos + 2], &n_p, p);
-  _gnutls_write_uint16 (n_p, &pdata[pos]);
+  mhd_gtls_mpi_print (&pdata[pos + 2], &n_p, p);
+  mhd_gtls_write_uint16 (n_p, &pdata[pos]);
 
   pos += n_p + 2;
 
-  _gnutls_mpi_print (&pdata[pos + 2], &n_g, g);
-  _gnutls_write_uint16 (n_g, &pdata[pos]);
+  mhd_gtls_mpi_print (&pdata[pos + 2], &n_g, g);
+  mhd_gtls_write_uint16 (n_g, &pdata[pos]);
 
   pos += n_g + 2;
 
-  _gnutls_mpi_print (&pdata[pos + 2], &n_X, X);
-  _gnutls_mpi_release (&X);
+  mhd_gtls_mpi_print (&pdata[pos + 2], &n_X, X);
+  mhd_gtls_mpi_release (&X);
 
-  _gnutls_write_uint16 (n_X, &pdata[pos]);
+  mhd_gtls_write_uint16 (n_X, &pdata[pos]);
 
   ret = data_size;
 

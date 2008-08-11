@@ -263,7 +263,7 @@ static const gnutls_error_entry error_algorithms[] = {
 
 
 /**
-  * gnutls_error_is_fatal - Returns non-zero in case of a fatal error
+  * MHD_gtls_error_is_fatal - Returns non-zero in case of a fatal error
   * @error: is an error returned by a gnutls function. Error should be a negative value.
   *
   * If a function returns a negative value you may feed that value
@@ -279,7 +279,7 @@ static const gnutls_error_entry error_algorithms[] = {
   *
   **/
 int
-gnutls_error_is_fatal (int error)
+MHD_gtls_error_is_fatal (int error)
 {
   int ret = 1;
 
@@ -294,14 +294,14 @@ gnutls_error_is_fatal (int error)
 }
 
 /**
-  * gnutls_perror - prints a string to stderr with a description of an error
+  * MHD_gtls_perror - prints a string to stderr with a description of an error
   * @error: is an error returned by a gnutls function. Error is always a negative value.
   *
   * This function is like perror(). The only difference is that it accepts an 
   * error number returned by a gnutls function.
   **/
 void
-gnutls_perror (int error)
+MHD_gtls_perror (int error)
 {
   const char *ret = NULL;
 
@@ -314,7 +314,7 @@ gnutls_perror (int error)
 
 
 /**
-  * gnutls_strerror - Returns a string with a description of an error
+  * MHD_gtls_strerror - Returns a string with a description of an error
   * @error: is an error returned by a gnutls function. Error is always a negative value.
   *
   * This function is similar to strerror(). Differences: it accepts an error
@@ -322,7 +322,7 @@ gnutls_perror (int error)
   * a descriptive string is sent instead of NULL.
   **/
 const char *
-gnutls_strerror (int error)
+MHD_gtls_strerror (int error)
 {
   const char *ret = NULL;
 

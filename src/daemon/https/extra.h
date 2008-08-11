@@ -47,7 +47,7 @@ extern "C"
   } gnutls_openpgp_crt_fmt_t;
 
 /**
- * gnutls_openpgp_recv_key_func - Callback prototype to get OpenPGP keys
+ * mhd_gtls_openpgp_recv_key_func - Callback prototype to get OpenPGP keys
  * @session: a TLS session
  * @keyfpr: key fingerprint
  * @keyfpr_length: length of key fingerprint
@@ -59,32 +59,32 @@ extern "C"
  * gnutls_openpgp_set_recv_key_function().
  *
  */
-  typedef int (*gnutls_openpgp_recv_key_func) (gnutls_session_t session,
+  typedef int (*mhd_gtls_openpgp_recv_key_func) (mhd_gtls_session_t session,
 					       const unsigned char *keyfpr,
 					       unsigned int keyfpr_length,
 					       gnutls_datum_t * key);
 
-  void gnutls_openpgp_set_recv_key_function (gnutls_session_t session,
-					     gnutls_openpgp_recv_key_func
+  void gnutls_openpgp_set_recv_key_function (mhd_gtls_session_t session,
+					     mhd_gtls_openpgp_recv_key_func
 					     func);
 
   int
-    gnutls_certificate_set_openpgp_key_file (gnutls_certificate_credentials_t
+    gnutls_certificate_set_openpgp_key_file (mhd_gtls_cert_credentials_t
 					     res, const char *CERTFILE,
 					     const char *KEYFILE, gnutls_openpgp_crt_fmt_t);
-  int gnutls_certificate_set_openpgp_key_mem (gnutls_certificate_credentials_t
+  int gnutls_certificate_set_openpgp_key_mem (mhd_gtls_cert_credentials_t
 					      res,
 					      const gnutls_datum_t * CERT,
 					      const gnutls_datum_t * KEY, gnutls_openpgp_crt_fmt_t);
 
   int
     gnutls_certificate_set_openpgp_keyring_mem
-    (gnutls_certificate_credentials_t c, const unsigned char *data,
+    (mhd_gtls_cert_credentials_t c, const unsigned char *data,
      size_t dlen, gnutls_openpgp_crt_fmt_t);
 
   int
     gnutls_certificate_set_openpgp_keyring_file
-    (gnutls_certificate_credentials_t c, const char *file, gnutls_openpgp_crt_fmt_t);
+    (mhd_gtls_cert_credentials_t c, const char *file, gnutls_openpgp_crt_fmt_t);
 
   /* TLS/IA stuff
    */
@@ -99,7 +99,7 @@ extern "C"
   /* TLS/IA credential
    */
 
-  typedef int (*gnutls_ia_avp_func) (gnutls_session_t session, void *ptr,
+  typedef int (*gnutls_ia_avp_func) (mhd_gtls_session_t session, void *ptr,
 				     const char *last, size_t lastlen,
 				     char **next, size_t * nextlen);
 
@@ -142,35 +142,35 @@ extern "C"
 					     cred);
 
   /* TLS/IA handshake. */
-  extern int gnutls_ia_handshake_p (gnutls_session_t session);
+  extern int gnutls_ia_handshake_p (mhd_gtls_session_t session);
 
-  extern int gnutls_ia_handshake (gnutls_session_t session);
+  extern int gnutls_ia_handshake (mhd_gtls_session_t session);
 
   /* TLS/IA low level interface. */
   extern int
-    gnutls_ia_permute_inner_secret (gnutls_session_t session,
+    gnutls_ia_permute_inner_secret (mhd_gtls_session_t session,
 				    size_t session_keys_size,
 				    const char *session_keys);
-  extern int gnutls_ia_endphase_send (gnutls_session_t session,
+  extern int gnutls_ia_endphase_send (mhd_gtls_session_t session,
 				      int final_p);
 
-  extern int gnutls_ia_verify_endphase (gnutls_session_t session,
+  extern int gnutls_ia_verify_endphase (mhd_gtls_session_t session,
 					const char *checksum);
 
-  extern ssize_t gnutls_ia_send (gnutls_session_t session,
+  extern ssize_t gnutls_ia_send (mhd_gtls_session_t session,
 				 const char *data, size_t sizeofdata);
-  extern ssize_t gnutls_ia_recv (gnutls_session_t session,
+  extern ssize_t gnutls_ia_recv (mhd_gtls_session_t session,
 				 char *data, size_t sizeofdata);
 
   /* Utility stuff. */
-  extern int gnutls_ia_generate_challenge (gnutls_session_t session,
+  extern int gnutls_ia_generate_challenge (mhd_gtls_session_t session,
 					   size_t buffer_size,
 					   char *buffer);
-  extern void gnutls_ia_extract_inner_secret (gnutls_session_t session,
+  extern void gnutls_ia_extract_inner_secret (mhd_gtls_session_t session,
 					      char *buffer);
 
   /* Define whether inner phases are wanted. */
-  extern void gnutls_ia_enable (gnutls_session_t session,
+  extern void gnutls_ia_enable (mhd_gtls_session_t session,
 				int allow_skip_on_resume);
 
   int gnutls_global_init_extra (void);

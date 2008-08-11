@@ -55,7 +55,7 @@ int MHD_connection_handle_idle (struct MHD_Connection *connection);
 static void
 MHD_tls_connection_close (struct MHD_Connection *connection)
 {
-  gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+  MHD_gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
 
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
@@ -129,7 +129,7 @@ MHD_get_session_info (struct MHD_Connection *con, enum MHD_InfoType infoType)
 static ssize_t
 MHDS_con_read (struct MHD_Connection *connection)
 {
-  ssize_t size = gnutls_record_recv (connection->tls_session,
+  ssize_t size = MHD_gnutls_record_recv (connection->tls_session,
                                      &connection->read_buffer[connection->
                                                               read_buffer_offset],
                                      connection->read_buffer_size);
@@ -139,7 +139,7 @@ MHDS_con_read (struct MHD_Connection *connection)
 static ssize_t
 MHDS_con_write (struct MHD_Connection *connection)
 {
-  ssize_t sent = gnutls_record_send (connection->tls_session,
+  ssize_t sent = MHD_gnutls_record_send (connection->tls_session,
                                      &connection->write_buffer[connection->
                                                                write_buffer_send_offset],
                                      connection->write_buffer_append_offset
@@ -147,6 +147,16 @@ MHDS_con_write (struct MHD_Connection *connection)
   return sent;
 }
 
+/**
+ * This function was created to handle per-connection processing that
+ * has to happen even if the socket cannot be read or written to.  All
+ * implementations (multithreaded, external select, internal select)
+ * call this function.
+ *
+ * @param connection being handled
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */
 int
 MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 {
@@ -236,7 +246,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       if (connection->state == MHD_TLS_CONNECTION_INIT ||
           connection->state == MHD_TLS_HELLO_REQUEST)
         {
-          ret = gnutls_handshake (connection->tls_session);
+          ret = MHD_gnutls_handshake (connection->tls_session);
           if (ret == 0)
             {
               /* set connection state to enable HTTP processing */
@@ -274,10 +284,10 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 
     case GNUTLS_ALERT:
       /*
-       * this call of _gnutls_recv_int expects 0 bytes read.
+       * this call of mhd_gtls_recv_int expects 0 bytes read.
        * done to decrypt alert message
        */
-      _gnutls_recv_int (connection->tls_session, GNUTLS_ALERT,
+      mhd_gtls_recv_int (connection->tls_session, GNUTLS_ALERT,
                         GNUTLS_HANDSHAKE_FINISHED, 0, 0);
 
       /* CLOSE_NOTIFY */
@@ -294,7 +304,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Received TLS alert: %s\n",
-                    gnutls_alert_get_name ((int) connection->tls_session->
+                    MHD_gnutls_alert_get_name ((int) connection->tls_session->
                                            internals.last_alert));
 #endif
           return MHD_YES;

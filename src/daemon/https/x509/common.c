@@ -288,8 +288,8 @@ _gnutls_x509_oid_data2string (const char *oid,
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  _gnutls_str_cpy (str, sizeof (str), "PKIX1.");
-  _gnutls_str_cat (str, sizeof (str), ANAME);
+  mhd_gtls_str_cpy (str, sizeof (str), "PKIX1.");
+  mhd_gtls_str_cat (str, sizeof (str), ANAME);
 
   if ((result = asn1_create_element (_gnutls_get_pkix (), str,
                                      &tmpasn)) != ASN1_SUCCESS)
@@ -323,7 +323,7 @@ _gnutls_x509_oid_data2string (const char *oid,
       str[len] = 0;
 
       if (res)
-        _gnutls_str_cpy (res, *res_size, str);
+        mhd_gtls_str_cpy (res, *res_size, str);
       *res_size = len;
 
       asn1_delete_structure (&tmpasn);
@@ -345,7 +345,7 @@ _gnutls_x509_oid_data2string (const char *oid,
       if (strcmp (str, "teletexString") == 0)
         teletex = 1;
 
-      _gnutls_str_cpy (tmpname, sizeof (tmpname), str);
+      mhd_gtls_str_cpy (tmpname, sizeof (tmpname), str);
 
       len = sizeof (str) - 1;
       if ((result = asn1_read_value (tmpasn, tmpname, str, &len))
@@ -376,7 +376,7 @@ _gnutls_x509_oid_data2string (const char *oid,
           if (non_printable == 0)
             {
               str[len] = 0;
-              _gnutls_str_cpy (res, *res_size, str);
+              mhd_gtls_str_cpy (res, *res_size, str);
               *res_size = len;
             }
           else
@@ -411,7 +411,7 @@ _gnutls_x509_data2hex (const opaque * data,
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  res = _gnutls_bin2hex (data, data_size, escaped, sizeof (escaped));
+  res = mhd_gtls_bin2hex (data, data_size, escaped, sizeof (escaped));
 
   if (res)
     {
@@ -694,7 +694,7 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
   time_t c_time = (time_t) - 1;
   int len, result;
 
-  _gnutls_str_cpy (name, sizeof (name), when);
+  mhd_gtls_str_cpy (name, sizeof (name), when);
 
   len = sizeof (ttime) - 1;
   if ((result = asn1_read_value (c2, name, ttime, &len)) < 0)
@@ -707,7 +707,7 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
   if (strcmp (ttime, "generalTime") == 0)
     {
 
-      _gnutls_str_cat (name, sizeof (name), ".generalTime");
+      mhd_gtls_str_cat (name, sizeof (name), ".generalTime");
       len = sizeof (ttime) - 1;
       result = asn1_read_value (c2, name, ttime, &len);
       if (result == ASN1_SUCCESS)
@@ -716,7 +716,7 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
   else
     {                           /* UTCTIME */
 
-      _gnutls_str_cat (name, sizeof (name), ".utcTime");
+      mhd_gtls_str_cat (name, sizeof (name), ".utcTime");
       len = sizeof (ttime) - 1;
       result = asn1_read_value (c2, name, ttime, &len);
       if (result == ASN1_SUCCESS)
@@ -745,7 +745,7 @@ _gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim)
   char name[128];
   int result, len;
 
-  _gnutls_str_cpy (name, sizeof (name), where);
+  mhd_gtls_str_cpy (name, sizeof (name), where);
 
   if ((result = asn1_write_value (c2, name, "utcTime", 1)) < 0)
     {
@@ -760,7 +760,7 @@ _gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim)
       return result;
     }
 
-  _gnutls_str_cat (name, sizeof (name), ".utcTime");
+  mhd_gtls_str_cat (name, sizeof (name), ".utcTime");
 
   len = strlen (str_time);
   result = asn1_write_value (c2, name, str_time, len);
@@ -894,11 +894,11 @@ _gnutls_x509_decode_octet_string (const char *string_type,
   char strname[64];
 
   if (string_type == NULL)
-    _gnutls_str_cpy (strname, sizeof (strname), "PKIX1.pkcs-7-Data");
+    mhd_gtls_str_cpy (strname, sizeof (strname), "PKIX1.pkcs-7-Data");
   else
     {
-      _gnutls_str_cpy (strname, sizeof (strname), "PKIX1.");
-      _gnutls_str_cat (strname, sizeof (strname), string_type);
+      mhd_gtls_str_cpy (strname, sizeof (strname), "PKIX1.");
+      mhd_gtls_str_cat (strname, sizeof (strname), string_type);
     }
 
   if ((result =
@@ -1226,7 +1226,7 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
   int result;
   char name[128];
 
-  pk = _gnutls_x509_pk_to_oid (pk_algorithm);
+  pk = mhd_gtls_x509_pk_to_oid (pk_algorithm);
   if (pk == NULL)
     {
       gnutls_assert ();
@@ -1235,8 +1235,8 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
 
   /* write the OID
    */
-  _gnutls_str_cpy (name, sizeof (name), dst_name);
-  _gnutls_str_cat (name, sizeof (name), ".algorithm.algorithm");
+  mhd_gtls_str_cpy (name, sizeof (name), dst_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
   result = asn1_write_value (dst, name, pk, 1);
   if (result != ASN1_SUCCESS)
     {
@@ -1248,8 +1248,8 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
     {
       /* disable parameters, which are not used in RSA.
        */
-      _gnutls_str_cpy (name, sizeof (name), dst_name);
-      _gnutls_str_cat (name, sizeof (name), ".algorithm.parameters");
+      mhd_gtls_str_cpy (name, sizeof (name), dst_name);
+      mhd_gtls_str_cat (name, sizeof (name), ".algorithm.parameters");
       result = asn1_write_value (dst, name, NULL, 0);
       if (result != ASN1_SUCCESS)
         {
@@ -1266,8 +1266,8 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
 
       /* Write the DER parameters. (in bits)
        */
-      _gnutls_str_cpy (name, sizeof (name), dst_name);
-      _gnutls_str_cat (name, sizeof (name), ".subjectPublicKey");
+      mhd_gtls_str_cpy (name, sizeof (name), dst_name);
+      mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
       result = asn1_write_value (dst, name, der.data, der.size * 8);
 
       _gnutls_free_datum (&der);
@@ -1299,8 +1299,8 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE];
   char name[128];
 
-  _gnutls_str_cpy (name, sizeof (name), src_name);
-  _gnutls_str_cat (name, sizeof (name), ".algorithm.algorithm");
+  mhd_gtls_str_cpy (name, sizeof (name), src_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
 
   len = sizeof (oid);
   result = asn1_read_value (src, name, oid, &len);
@@ -1311,7 +1311,7 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
       return _gnutls_asn2err (result);
     }
 
-  algo = _gnutls_x509_oid2pk_algorithm (oid);
+  algo = mhd_gtls_x509_oid2pk_algorithm (oid);
 
   if (bits == NULL)
     {
@@ -1321,8 +1321,8 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
 
   /* Now read the parameters' bits 
    */
-  _gnutls_str_cpy (name, sizeof (name), src_name);
-  _gnutls_str_cat (name, sizeof (name), ".subjectPublicKey");
+  mhd_gtls_str_cpy (name, sizeof (name), src_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
 
   len = 0;
   result = asn1_read_value (src, name, NULL, &len);
@@ -1347,8 +1347,8 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  _gnutls_str_cpy (name, sizeof (name), src_name);
-  _gnutls_str_cat (name, sizeof (name), ".subjectPublicKey");
+  mhd_gtls_str_cpy (name, sizeof (name), src_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
 
   result = asn1_read_value (src, name, str, &len);
 
@@ -1373,8 +1373,8 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
 
         bits[0] = _gnutls_mpi_get_nbits (params[0]);
 
-        _gnutls_mpi_release (&params[0]);
-        _gnutls_mpi_release (&params[1]);
+        mhd_gtls_mpi_release (&params[0]);
+        mhd_gtls_mpi_release (&params[1]);
       }
       break;
     default:

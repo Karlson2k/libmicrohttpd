@@ -34,7 +34,7 @@
 /* These functions allocate the return value internally
  */
 int
-_gnutls_m_plaintext2compressed (gnutls_session_t session,
+_gnutls_m_plaintext2compressed (mhd_gtls_session_t session,
                                 gnutls_datum_t * compressed,
                                 const gnutls_datum_t * plaintext)
 {
@@ -42,7 +42,7 @@ _gnutls_m_plaintext2compressed (gnutls_session_t session,
   opaque *data;
 
   size =
-    _gnutls_compress (session->connection_state.write_compression_state,
+    mhd_gtls_compress (session->connection_state.write_compression_state,
                       plaintext->data, plaintext->size, &data,
                       MAX_RECORD_SEND_SIZE + EXTRA_COMP_SIZE);
   if (size < 0)
@@ -57,7 +57,7 @@ _gnutls_m_plaintext2compressed (gnutls_session_t session,
 }
 
 int
-_gnutls_m_compressed2plaintext (gnutls_session_t session,
+_gnutls_m_compressed2plaintext (mhd_gtls_session_t session,
                                 gnutls_datum_t * plain,
                                 const gnutls_datum_t * compressed)
 {
@@ -65,7 +65,7 @@ _gnutls_m_compressed2plaintext (gnutls_session_t session,
   opaque *data;
 
   size =
-    _gnutls_decompress (session->connection_state.
+    mhd_gtls_decompress (session->connection_state.
                         read_compression_state, compressed->data,
                         compressed->size, &data, MAX_RECORD_RECV_SIZE);
   if (size < 0)

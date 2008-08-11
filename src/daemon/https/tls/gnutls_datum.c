@@ -34,31 +34,31 @@
 
 
 void
-_gnutls_write_datum16 (opaque * dest, gnutls_datum_t dat)
+mhd_gtls_write_datum16 (opaque * dest, gnutls_datum_t dat)
 {
-  _gnutls_write_uint16 (dat.size, dest);
+  mhd_gtls_write_uint16 (dat.size, dest);
   if (dat.data != NULL)
     memcpy (&dest[2], dat.data, dat.size);
 }
 
 void
-_gnutls_write_datum24 (opaque * dest, gnutls_datum_t dat)
+mhd_gtls_write_datum24 (opaque * dest, gnutls_datum_t dat)
 {
-  _gnutls_write_uint24 (dat.size, dest);
+  mhd_gtls_write_uint24 (dat.size, dest);
   if (dat.data != NULL)
     memcpy (&dest[3], dat.data, dat.size);
 }
 
 void
-_gnutls_write_datum32 (opaque * dest, gnutls_datum_t dat)
+mhd_gtls_write_datum32 (opaque * dest, gnutls_datum_t dat)
 {
-  _gnutls_write_uint32 (dat.size, dest);
+  mhd_gtls_write_uint32 (dat.size, dest);
   if (dat.data != NULL)
     memcpy (&dest[4], dat.data, dat.size);
 }
 
 void
-_gnutls_write_datum8 (opaque * dest, gnutls_datum_t dat)
+mhd_gtls_write_datum8 (opaque * dest, gnutls_datum_t dat)
 {
   dest[0] = (uint8_t) dat.size;
   if (dat.data != NULL)
@@ -67,7 +67,7 @@ _gnutls_write_datum8 (opaque * dest, gnutls_datum_t dat)
 
 
 int
-_gnutls_set_datum_m (gnutls_datum_t * dat, const void *data,
+mhd_gtls_set_datum_m (gnutls_datum_t * dat, const void *data,
                      size_t data_size, gnutls_alloc_function galloc_func)
 {
   if (data_size == 0 || data == NULL)
@@ -88,7 +88,7 @@ _gnutls_set_datum_m (gnutls_datum_t * dat, const void *data,
 }
 
 int
-_gnutls_datum_append_m (gnutls_datum_t * dst, const void *data,
+mhd_gtls_datum_append_m (gnutls_datum_t * dst, const void *data,
                         size_t data_size,
                         gnutls_realloc_function grealloc_func)
 {
@@ -104,7 +104,7 @@ _gnutls_datum_append_m (gnutls_datum_t * dst, const void *data,
 }
 
 void
-_gnutls_free_datum_m (gnutls_datum_t * dat, gnutls_free_function gfree_func)
+mhd_gtls_free_datum_m (gnutls_datum_t * dat, gnutls_free_function gfree_func)
 {
   if (dat->data != NULL)
     gfree_func (dat->data);

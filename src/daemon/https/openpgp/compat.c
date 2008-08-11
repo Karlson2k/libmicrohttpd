@@ -42,7 +42,7 @@
  * may use GnuPG for that purpose, or any other external PGP application.
  -*/
 int
-_gnutls_openpgp_verify_key (const gnutls_certificate_credentials_t cred,
+_gnutls_openpgp_verify_key (const mhd_gtls_cert_credentials_t cred,
                             const gnutls_datum_t * cert_list,
                             int cert_list_length, unsigned int *status)
 {

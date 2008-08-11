@@ -35,7 +35,7 @@
  */
 
 void
-_gnutls_mpi_release (mpi_t * x)
+mhd_gtls_mpi_release (mpi_t * x)
 {
   if (*x == NULL)
     return;
@@ -46,7 +46,7 @@ _gnutls_mpi_release (mpi_t * x)
 /* returns zero on success
  */
 int
-_gnutls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+mhd_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 {
   int ret;
 
@@ -60,7 +60,7 @@ _gnutls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 /* returns zero on success. Fails if the number is zero.
  */
 int
-_gnutls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 {
   int ret;
 
@@ -72,7 +72,7 @@ _gnutls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
    */
   if (_gnutls_mpi_get_nbits (*ret_mpi) == 0)
     {
-      _gnutls_mpi_release (ret_mpi);
+      mhd_gtls_mpi_release (ret_mpi);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
@@ -80,7 +80,7 @@ _gnutls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 }
 
 int
-_gnutls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 {
   int ret;
   ret = gcry_mpi_scan (ret_mpi, GCRYMPI_FMT_PGP, buffer, *nbytes, nbytes);
@@ -91,7 +91,7 @@ _gnutls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
    */
   if (_gnutls_mpi_get_nbits (*ret_mpi) == 0)
     {
-      _gnutls_mpi_release (ret_mpi);
+      mhd_gtls_mpi_release (ret_mpi);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
@@ -99,7 +99,7 @@ _gnutls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 }
 
 int
-_gnutls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
+mhd_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;
 
@@ -115,7 +115,7 @@ _gnutls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 
 /* Always has the first bit zero */
 int
-_gnutls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
+mhd_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;
 
@@ -131,7 +131,7 @@ _gnutls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
 
 /* Always has the first bit zero */
 int
-_gnutls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
+mhd_gtls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
 {
   int ret;
   opaque *buf = NULL;
@@ -160,7 +160,7 @@ _gnutls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
 }
 
 int
-_gnutls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
+mhd_gtls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
 {
   int ret;
   opaque *buf = NULL;
@@ -225,7 +225,7 @@ _gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
     }
 
   s_len = tmpstr_size;
-  if (_gnutls_mpi_scan (ret_mpi, tmpstr, &s_len) != 0)
+  if (mhd_gtls_mpi_scan (ret_mpi, tmpstr, &s_len) != 0)
     {
       gnutls_assert ();
       gnutls_afree (tmpstr);
@@ -248,9 +248,9 @@ _gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
 
   s_len = 0;
   if (lz)
-    result = _gnutls_mpi_print_lz (NULL, &s_len, mpi);
+    result = mhd_gtls_mpi_print_lz (NULL, &s_len, mpi);
   else
-    result = _gnutls_mpi_print (NULL, &s_len, mpi);
+    result = mhd_gtls_mpi_print (NULL, &s_len, mpi);
 
   tmpstr = gnutls_alloca (s_len);
   if (tmpstr == NULL)
@@ -260,9 +260,9 @@ _gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
     }
 
   if (lz)
-    result = _gnutls_mpi_print_lz (tmpstr, &s_len, mpi);
+    result = mhd_gtls_mpi_print_lz (tmpstr, &s_len, mpi);
   else
-    result = _gnutls_mpi_print (tmpstr, &s_len, mpi);
+    result = mhd_gtls_mpi_print (tmpstr, &s_len, mpi);
 
   if (result != 0)
     {

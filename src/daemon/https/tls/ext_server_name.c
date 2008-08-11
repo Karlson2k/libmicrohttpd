@@ -39,7 +39,7 @@
  */
 
 int
-_gnutls_server_name_recv_params (gnutls_session_t session,
+mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
                                  const opaque * data, size_t _data_size)
 {
   int i;
@@ -51,7 +51,7 @@ _gnutls_server_name_recv_params (gnutls_session_t session,
   if (session->security_parameters.entity == GNUTLS_SERVER)
     {
       DECR_LENGTH_RET (data_size, 2, 0);
-      len = _gnutls_read_uint16 (data);
+      len = mhd_gtls_read_uint16 (data);
 
       if (len != data_size)
         {
@@ -71,7 +71,7 @@ _gnutls_server_name_recv_params (gnutls_session_t session,
           p++;
 
           DECR_LEN (data_size, 2);
-          len = _gnutls_read_uint16 (p);
+          len = mhd_gtls_read_uint16 (p);
           p += 2;
 
           DECR_LENGTH_RET (data_size, len, 0);
@@ -96,7 +96,7 @@ _gnutls_server_name_recv_params (gnutls_session_t session,
           type = *p;
           p++;
 
-          len = _gnutls_read_uint16 (p);
+          len = mhd_gtls_read_uint16 (p);
           p += 2;
 
           switch (type)
@@ -124,7 +124,7 @@ _gnutls_server_name_recv_params (gnutls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-_gnutls_server_name_send_params (gnutls_session_t session,
+mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
                                  opaque * data, size_t _data_size)
 {
   uint16_t len;
@@ -163,7 +163,7 @@ _gnutls_server_name_send_params (gnutls_session_t session,
       /* UINT16: write total size of all names 
        */
       DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
-      _gnutls_write_uint16 (total_size - 2, p);
+      mhd_gtls_write_uint16 (total_size - 2, p);
       p += 2;
 
       for (i = 0;
@@ -191,7 +191,7 @@ _gnutls_server_name_send_params (gnutls_session_t session,
               *p = 0;           /* NAME_DNS type */
               p++;
 
-              _gnutls_write_uint16 (len, p);
+              mhd_gtls_write_uint16 (len, p);
               p += 2;
 
               memcpy (p,
@@ -210,8 +210,8 @@ _gnutls_server_name_send_params (gnutls_session_t session,
 }
 
 /**
-  * gnutls_server_name_get - Used to get the server name indicator send by a client
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gnutls_server_name_get - Used to get the server name indicator send by a client
+  * @session: is a #mhd_gtls_session_t structure.
   * @data: will hold the data
   * @data_length: will hold the data length. Must hold the maximum size of data.
   * @type: will hold the server name indicator type
@@ -233,7 +233,7 @@ _gnutls_server_name_send_params (gnutls_session_t session,
   *
   **/
 int
-gnutls_server_name_get (gnutls_session_t session, void *data,
+MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
                         size_t * data_length,
                         unsigned int *type, unsigned int indx)
 {
@@ -278,8 +278,8 @@ gnutls_server_name_get (gnutls_session_t session, void *data,
 }
 
 /**
-  * gnutls_server_name_set - Used to set a name indicator to be sent as an extension
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gnutls_server_name_set - Used to set a name indicator to be sent as an extension
+  * @session: is a #mhd_gtls_session_t structure.
   * @type: specifies the indicator type
   * @name: is a string that contains the server name.
   * @name_length: holds the length of name
@@ -295,7 +295,7 @@ gnutls_server_name_get (gnutls_session_t session, void *data,
   *
   **/
 int
-gnutls_server_name_set (gnutls_session_t session,
+MHD_gnutls_server_name_set (mhd_gtls_session_t session,
                         gnutls_server_name_type_t type,
                         const void *name, size_t name_length)
 {

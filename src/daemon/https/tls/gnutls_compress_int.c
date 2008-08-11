@@ -31,7 +31,7 @@
  * decompress.
  */
 comp_hd_t
-_gnutls_comp_init (gnutls_compression_method_t method, int d)
+mhd_gtls_comp_init (gnutls_compression_method_t method, int d)
 {
   comp_hd_t ret;
 
@@ -54,9 +54,9 @@ _gnutls_comp_init (gnutls_compression_method_t method, int d)
         int comp_level;
         z_stream *zhandle;
 
-        window_bits = _gnutls_compression_get_wbits (method);
-        mem_level = _gnutls_compression_get_mem_level (method);
-        comp_level = _gnutls_compression_get_comp_level (method);
+        window_bits = mhd_gtls_compression_get_wbits (method);
+        mem_level = mhd_gtls_compression_get_mem_level (method);
+        comp_level = mhd_gtls_compression_get_comp_level (method);
 
         ret->handle = gnutls_malloc (sizeof (z_stream));
         if (ret->handle == NULL)
@@ -102,7 +102,7 @@ cleanup_ret:
  * decompress.
  */
 void
-_gnutls_comp_deinit (comp_hd_t handle, int d)
+mhd_gtls_comp_deinit (comp_hd_t handle, int d)
 {
   if (handle != NULL)
     {
@@ -129,7 +129,7 @@ _gnutls_comp_deinit (comp_hd_t handle, int d)
  */
 
 int
-_gnutls_compress (comp_hd_t handle, const opaque * plain,
+mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
                   size_t plain_size, opaque ** compressed,
                   size_t max_comp_size)
 {
@@ -204,7 +204,7 @@ _gnutls_compress (comp_hd_t handle, const opaque * plain,
 
 
 int
-_gnutls_decompress (comp_hd_t handle, opaque * compressed,
+mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
                     size_t compressed_size, opaque ** plain,
                     size_t max_record_size)
 {
@@ -247,7 +247,7 @@ _gnutls_decompress (comp_hd_t handle, opaque * compressed,
         do
           {
             out_size += 512;
-            *plain = gnutls_realloc_fast (*plain, out_size);
+            *plain = mhd_gtls_realloc_fast (*plain, out_size);
             if (*plain == NULL)
               {
                 gnutls_assert ();

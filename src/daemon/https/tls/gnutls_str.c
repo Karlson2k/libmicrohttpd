@@ -34,7 +34,7 @@
  * They should be used only with null terminated strings.
  */
 void
-_gnutls_str_cat (char *dest, size_t dest_tot_size, const char *src)
+mhd_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
   size_t dest_size = strlen (dest);
@@ -54,7 +54,7 @@ _gnutls_str_cat (char *dest, size_t dest_tot_size, const char *src)
 }
 
 void
-_gnutls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
+mhd_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
 
@@ -73,7 +73,7 @@ _gnutls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 }
 
 void
-_gnutls_mem_cpy (char *dest,
+mhd_gtls_mem_cpy (char *dest,
                  size_t dest_tot_size, const char *src, size_t src_size)
 {
 
@@ -91,7 +91,7 @@ _gnutls_mem_cpy (char *dest,
 }
 
 void
-_gnutls_string_init (gnutls_string * str,
+mhd_gtls_string_init (mhd_gtls_string * str,
                      gnutls_alloc_function alloc_func,
                      gnutls_realloc_function realloc_func,
                      gnutls_free_function free_func)
@@ -106,7 +106,7 @@ _gnutls_string_init (gnutls_string * str,
 }
 
 void
-_gnutls_string_clear (gnutls_string * str)
+mhd_gtls_string_clear (mhd_gtls_string * str)
 {
   if (str == NULL || str->data == NULL)
     return;
@@ -120,7 +120,7 @@ _gnutls_string_clear (gnutls_string * str)
 /* This one does not copy the string.
  */
 gnutls_datum_t
-_gnutls_string2datum (gnutls_string * str)
+mhd_gtls_string2datum (mhd_gtls_string * str)
 {
   gnutls_datum_t ret;
 
@@ -133,7 +133,7 @@ _gnutls_string2datum (gnutls_string * str)
 #define MIN_CHUNK 256
 
 int
-_gnutls_string_copy_str (gnutls_string * dest, const char *src)
+mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src)
 {
   size_t src_len = strlen (src);
   size_t max;
@@ -163,7 +163,7 @@ _gnutls_string_copy_str (gnutls_string * dest, const char *src)
 }
 
 int
-_gnutls_string_append_str (gnutls_string * dest, const char *src)
+mhd_gtls_string_append_str (mhd_gtls_string * dest, const char *src)
 {
   size_t src_len = strlen (src);
   size_t tot_len = src_len + dest->length;
@@ -196,7 +196,7 @@ _gnutls_string_append_str (gnutls_string * dest, const char *src)
 }
 
 int
-_gnutls_string_append_data (gnutls_string * dest,
+mhd_gtls_string_append_data (mhd_gtls_string * dest,
                             const void *data, size_t data_size)
 {
   size_t tot_len = data_size + dest->length;
@@ -229,7 +229,7 @@ _gnutls_string_append_data (gnutls_string * dest,
 }
 
 int
-_gnutls_string_append_printf (gnutls_string * dest, const char *fmt, ...)
+mhd_gtls_string_append_printf (mhd_gtls_string * dest, const char *fmt, ...)
 {
   va_list args;
   int len;
@@ -242,7 +242,7 @@ _gnutls_string_append_printf (gnutls_string * dest, const char *fmt, ...)
   if (len < 0 || !str)
     return -1;
 
-  len = _gnutls_string_append_str (dest, str);
+  len = mhd_gtls_string_append_str (dest, str);
 
   free (str);
 
@@ -255,7 +255,7 @@ _gnutls_string_append_printf (gnutls_string * dest, const char *fmt, ...)
  * truncated hex string is returned (always null terminated).
  */
 char *
-_gnutls_bin2hex (const void *_old,
+mhd_gtls_bin2hex (const void *_old,
                  size_t oldlen, char *buffer, size_t buffer_size)
 {
   unsigned int i, j;
@@ -274,7 +274,7 @@ _gnutls_bin2hex (const void *_old,
 /* just a hex2bin function.
  */
 int
-_gnutls_hex2bin (const opaque * hex_data,
+mhd_gtls_hex2bin (const opaque * hex_data,
                  int hex_size, opaque * bin_data, size_t * bin_size)
 {
   int i, j;

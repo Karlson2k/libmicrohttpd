@@ -23,28 +23,28 @@
  */
 
 #ifndef GNUTLS_AUTH_H
-# define GNUTLS_AUTH_H
+#define GNUTLS_AUTH_H
 
-typedef struct mod_auth_st_int
+typedef struct mhd_gtls_mod_auth_st_int
 {
   const char *name;		/* null terminated */
-  int (*gnutls_generate_server_certificate) (gnutls_session_t, opaque **);
-  int (*gnutls_generate_client_certificate) (gnutls_session_t, opaque **);
-  int (*gnutls_generate_server_kx) (gnutls_session_t, opaque **);
-  int (*gnutls_generate_client_kx) (gnutls_session_t, opaque **);	/* used in SRP */
-  int (*gnutls_generate_client_cert_vrfy) (gnutls_session_t, opaque **);
-  int (*gnutls_generate_server_certificate_request) (gnutls_session_t,
+  int (* mhd_gtls_gen_server_certificate) (mhd_gtls_session_t, opaque **);
+  int (* mhd_gtls_gen_client_certificate) (mhd_gtls_session_t, opaque **);
+  int (* mhd_gtls_gen_server_kx) (mhd_gtls_session_t, opaque **);
+  int (* mhd_gtls_gen_client_kx) (mhd_gtls_session_t, opaque **);	/* used in SRP */
+  int (* mhd_gtls_gen_client_cert_vrfy) (mhd_gtls_session_t, opaque **);
+  int (* mhd_gtls_gen_server_certificate_request) (mhd_gtls_session_t,
 						     opaque **);
 
-  int (*gnutls_process_server_certificate) (gnutls_session_t, opaque *,
+  int (* mhd_gtls_process_server_certificate) (mhd_gtls_session_t, opaque *,
 					    size_t);
-  int (*gnutls_process_client_certificate) (gnutls_session_t, opaque *,
+  int (* mhd_gtls_process_client_certificate) (mhd_gtls_session_t, opaque *,
 					    size_t);
-  int (*gnutls_process_server_kx) (gnutls_session_t, opaque *, size_t);
-  int (*gnutls_process_client_kx) (gnutls_session_t, opaque *, size_t);
-  int (*gnutls_process_client_cert_vrfy) (gnutls_session_t, opaque *, size_t);
-  int (*gnutls_process_server_certificate_request) (gnutls_session_t,
+  int (* mhd_gtls_process_server_kx) (mhd_gtls_session_t, opaque *, size_t);
+  int (* mhd_gtls_process_client_kx) (mhd_gtls_session_t, opaque *, size_t);
+  int (* mhd_gtls_process_client_cert_vrfy) (mhd_gtls_session_t, opaque *, size_t);
+  int (* mhd_gtls_process_server_certificate_request) (mhd_gtls_session_t,
 						    opaque *, size_t);
-} mod_auth_st;
+} mhd_gtls_mod_auth_st;
 
 #endif

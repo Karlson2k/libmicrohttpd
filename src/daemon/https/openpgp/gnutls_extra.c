@@ -43,7 +43,7 @@ static int _gnutls_init_extra = 0;
  * This function initializes the global state of gnutls-extra library
  * to defaults.  Returns zero on success.
  *
- * Note that gnutls_global_init() has to be called before this
+ * Note that MHD_gnutls_global_init() has to be called before this
  * function.  If this function is not called then the gnutls-extra
  * library will not be usable.
  *

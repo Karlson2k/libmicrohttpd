@@ -28,7 +28,7 @@
 #include <gnutls_datum.h>
 
 cipher_hd_t
-_gnutls_cipher_init (gnutls_cipher_algorithm_t cipher,
+mhd_gtls_cipher_init (gnutls_cipher_algorithm_t cipher,
                      const gnutls_datum_t * key, const gnutls_datum_t * iv)
 {
   cipher_hd_t ret = NULL;
@@ -95,7 +95,7 @@ _gnutls_cipher_init (gnutls_cipher_algorithm_t cipher,
 }
 
 int
-_gnutls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
+mhd_gtls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {
@@ -109,7 +109,7 @@ _gnutls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
 }
 
 int
-_gnutls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
+mhd_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
                         int ciphertextlen)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
@@ -124,7 +124,7 @@ _gnutls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
 }
 
 void
-_gnutls_cipher_deinit (cipher_hd_t handle)
+mhd_gnutls_cipher_deinit (cipher_hd_t handle)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {

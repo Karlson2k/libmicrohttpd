@@ -35,11 +35,11 @@
 	his_key  = X ^ y mod p;
 
 //      generate our secret and the public value (X) for it
-	X = gnutls_calc_dh_secret(&x, g, p);
+	X = mhd_gtls_calc_dh_secret(&x, g, p);
 //      now we can calculate the shared secret
-	key = gnutls_calc_dh_key(Y, x, g, p);
-	_gnutls_mpi_release(x);
-	_gnutls_mpi_release(g);
+	key = mhd_gtls_calc_dh_key(Y, x, g, p);
+	mhd_gtls_mpi_release(x);
+	mhd_gtls_mpi_release(g);
 */
 
 #define MAX_BITS 18000
@@ -47,7 +47,7 @@
 /* returns the public value (X), and the secret (ret_x).
  */
 mpi_t
-gnutls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
+mhd_gtls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
 {
   mpi_t e, x;
   int x_size = _gnutls_mpi_get_nbits (prime) - 1;
@@ -89,7 +89,7 @@ gnutls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
       if (ret_x)
         *ret_x = NULL;
 
-      _gnutls_mpi_release (&x);
+      mhd_gtls_mpi_release (&x);
       return NULL;
     }
 
@@ -98,13 +98,13 @@ gnutls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
   if (ret_x)
     *ret_x = x;
   else
-    _gnutls_mpi_release (&x);
+    mhd_gtls_mpi_release (&x);
   return e;
 }
 
 
 mpi_t
-gnutls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
+mhd_gtls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
 {
   mpi_t k;
   int bits;
@@ -124,7 +124,7 @@ gnutls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
 }
 
 /*-
-  * _gnutls_get_dh_params - Returns the DH parameters pointer
+  * mhd_gtls_get_dh_params - Returns the DH parameters pointer
   * @dh_params: is an DH parameters structure, or NULL.
   * @func: is a callback function to receive the parameters or NULL.
   * @session: a gnutls session.
@@ -132,10 +132,10 @@ gnutls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
   * This function will return the dh parameters pointer.
   *
   -*/
-gnutls_dh_params_t
-_gnutls_get_dh_params (gnutls_dh_params_t dh_params,
+mhd_gtls_dh_params_t
+mhd_gtls_get_dh_params (mhd_gtls_dh_params_t dh_params,
                        gnutls_params_function * func,
-                       gnutls_session_t session)
+                       mhd_gtls_session_t session)
 {
   gnutls_params_st params;
   int ret;

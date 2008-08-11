@@ -778,7 +778,7 @@ typedef struct gnutls_x509_crt_int
 # error INCREASE MAX_PRIV_PARAMS
 #endif
 
-typedef struct gnutls_x509_privkey_int
+typedef struct MHD_gtls_x509_privkey_int
   {
     mpi_t params[MAX_PRIV_PARAMS_SIZE]; /* the size of params depends on the public
      * key algorithm

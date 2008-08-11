@@ -64,7 +64,7 @@ gnutls_openpgp_privkey_deinit (gnutls_openpgp_privkey_t key)
   if (!key)
     return;
 
-  _gnutls_gkey_deinit (&key->pkey);
+  mhd_gtls_gkey_deinit (&key->pkey);
   gnutls_free (key);
 }
 

@@ -22,9 +22,9 @@
  *
  */
 
-int _gnutls_m_plaintext2compressed (gnutls_session_t session,
+int _gnutls_m_plaintext2compressed (mhd_gtls_session_t session,
 				    gnutls_datum_t * compressed,
 				    const gnutls_datum_t *plaintext);
-int _gnutls_m_compressed2plaintext (gnutls_session_t session,
+int _gnutls_m_compressed2plaintext (mhd_gtls_session_t session,
 				    gnutls_datum_t * plain,
 				    const gnutls_datum_t* compressed);

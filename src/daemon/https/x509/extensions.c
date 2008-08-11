@@ -82,8 +82,8 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
       do
         {
 
-          _gnutls_str_cpy (name2, sizeof (name2), name);
-          _gnutls_str_cat (name2, sizeof (name2), ".extnID");
+          mhd_gtls_str_cpy (name2, sizeof (name2), name);
+          mhd_gtls_str_cat (name2, sizeof (name2), ".extnID");
 
           len = sizeof (extnID) - 1;
           result = asn1_read_value (cert->cert, name2, extnID, &len);
@@ -108,8 +108,8 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
 
               /* read the critical status.
                */
-              _gnutls_str_cpy (name2, sizeof (name2), name);
-              _gnutls_str_cat (name2, sizeof (name2), ".critical");
+              mhd_gtls_str_cpy (name2, sizeof (name2), name);
+              mhd_gtls_str_cat (name2, sizeof (name2), ".critical");
 
               len = sizeof (str_critical);
               result =
@@ -133,8 +133,8 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
 
               /* read the value.
                */
-              _gnutls_str_cpy (name2, sizeof (name2), name);
-              _gnutls_str_cat (name2, sizeof (name2), ".extnValue");
+              mhd_gtls_str_cpy (name2, sizeof (name2), name);
+              mhd_gtls_str_cat (name2, sizeof (name2), ".extnValue");
 
               result = _gnutls_x509_read_value (cert->cert, name2, &value, 0);
               if (result < 0)
@@ -206,8 +206,8 @@ _gnutls_x509_crt_get_extension_oid (gnutls_x509_crt_t cert,
       do
         {
 
-          _gnutls_str_cpy (name2, sizeof (name2), name);
-          _gnutls_str_cat (name2, sizeof (name2), ".extnID");
+          mhd_gtls_str_cpy (name2, sizeof (name2), name);
+          mhd_gtls_str_cat (name2, sizeof (name2), ".extnID");
 
           len = sizeof (extnID) - 1;
           result = asn1_read_value (cert->cert, name2, extnID, &len);
@@ -335,8 +335,8 @@ overwrite_extension (ASN1_TYPE asn, unsigned int indx,
   else
     str = "TRUE";
 
-  _gnutls_str_cpy (name2, sizeof (name2), name);
-  _gnutls_str_cat (name2, sizeof (name2), ".critical");
+  mhd_gtls_str_cpy (name2, sizeof (name2), name);
+  mhd_gtls_str_cat (name2, sizeof (name2), ".critical");
 
   result = asn1_write_value (asn, name2, str, 1);
   if (result != ASN1_SUCCESS)
@@ -345,8 +345,8 @@ overwrite_extension (ASN1_TYPE asn, unsigned int indx,
       return _gnutls_asn2err (result);
     }
 
-  _gnutls_str_cpy (name2, sizeof (name2), name);
-  _gnutls_str_cat (name2, sizeof (name2), ".extnValue");
+  mhd_gtls_str_cpy (name2, sizeof (name2), name);
+  mhd_gtls_str_cat (name2, sizeof (name2), ".extnValue");
 
   result = _gnutls_x509_write_value (asn, name2, ext_data, 0);
   if (result < 0)
@@ -397,8 +397,8 @@ _gnutls_x509_crt_set_extension (gnutls_x509_crt_t cert,
       do
         {
 
-          _gnutls_str_cpy (name2, sizeof (name2), name);
-          _gnutls_str_cat (name2, sizeof (name2), ".extnID");
+          mhd_gtls_str_cpy (name2, sizeof (name2), name);
+          mhd_gtls_str_cat (name2, sizeof (name2), ".extnID");
 
           len = sizeof (extnID) - 1;
           result = asn1_read_value (cert->cert, name2, extnID, &len);
@@ -687,12 +687,12 @@ write_new_general_name (ASN1_TYPE ext, const char *ext_name,
 
   if (ext_name[0] == 0)
     {                           /* no dot */
-      _gnutls_str_cpy (name, sizeof (name), "?LAST");
+      mhd_gtls_str_cpy (name, sizeof (name), "?LAST");
     }
   else
     {
-      _gnutls_str_cpy (name, sizeof (name), ext_name);
-      _gnutls_str_cat (name, sizeof (name), ".?LAST");
+      mhd_gtls_str_cpy (name, sizeof (name), ext_name);
+      mhd_gtls_str_cat (name, sizeof (name), ".?LAST");
     }
 
   result = asn1_write_value (ext, name, str, 1);
@@ -702,8 +702,8 @@ write_new_general_name (ASN1_TYPE ext, const char *ext_name,
       return _gnutls_asn2err (result);
     }
 
-  _gnutls_str_cat (name, sizeof (name), ".");
-  _gnutls_str_cat (name, sizeof (name), str);
+  mhd_gtls_str_cat (name, sizeof (name), ".");
+  mhd_gtls_str_cat (name, sizeof (name), str);
 
   result = asn1_write_value (ext, name, data_string, strlen (data_string));
   if (result != ASN1_SUCCESS)

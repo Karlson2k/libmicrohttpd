@@ -40,7 +40,7 @@
 #define gnutls_openpgp_key_status gnutls_openpgp_key_status_t
 #define gnutls_certificate_request gnutls_certificate_request_t
 #define gnutls_certificate_status gnutls_certificate_status_t
-#define gnutls_session gnutls_session_t
+#define gnutls_session mhd_gtls_session_t
 #define gnutls_alert_level gnutls_alert_level_t
 #define gnutls_alert_description gnutls_alert_description_t
 #define gnutls_x509_subject_alt_name gnutls_x509_subject_alt_name_t
@@ -56,13 +56,13 @@
 #define gnutls_pkcs12_bag_type gnutls_pkcs12_bag_type_t
 #define gnutls_pkcs12_bag gnutls_pkcs12_bag_t
 #define gnutls_pkcs12 gnutls_pkcs12_t
-#define gnutls_certificate_credentials gnutls_certificate_credentials_t
-#define gnutls_anon_server_credentials gnutls_anon_server_credentials_t
-#define gnutls_anon_client_credentials gnutls_anon_client_credentials_t
+#define gnutls_certificate_credentials mhd_gtls_cert_credentials_t
+#define gnutls_anon_server_credentials mhd_gtls_anon_server_credentials_t
+#define gnutls_anon_client_credentials mhd_gtls_anon_client_credentials_t
 #define gnutls_srp_client_credentials gnutls_srp_client_credentials_t
 #define gnutls_srp_server_credentials gnutls_srp_server_credentials_t
-#define gnutls_dh_params gnutls_dh_params_t
-#define gnutls_rsa_params gnutls_rsa_params_t
+#define gnutls_dh_params mhd_gtls_dh_params_t
+#define gnutls_rsa_params mhd_gtls_rsa_params_t
 #define gnutls_params_type gnutls_params_type_t
 #define gnutls_credentials_type gnutls_credentials_type_t
 #define gnutls_certificate_type gnutls_certificate_type_t
@@ -78,7 +78,7 @@
 #define gnutls_openpgp_key_fmt_t gnutls_openpgp_crt_fmt_t
 #define GNUTLS_OPENPGP_KEY GNUTLS_OPENPGP_CERT
 #define GNUTLS_OPENPGP_KEY_FINGERPRINT GNUTLS_OPENPGP_CERT_FINGERPRINT
-#define gnutls_openpgp_send_key gnutls_openpgp_send_cert
+#define gnutls_openpgp_send_key MHD_gtls_openpgp_send_cert
 #define gnutls_openpgp_key_status_t gnutls_openpgp_crt_status_t
 #define gnutls_openpgp_key_t gnutls_openpgp_crt_t
 #define gnutls_openpgp_key_init gnutls_openpgp_crt_init

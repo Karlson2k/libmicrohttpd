@@ -25,33 +25,33 @@
 typedef enum Optional
 { OPTIONAL_PACKET, MANDATORY_PACKET } Optional;
 
-int _gnutls_send_handshake (gnutls_session_t session, void *i_data,
+int mhd_gtls_send_handshake (mhd_gtls_session_t session, void *i_data,
 			    uint32_t i_datasize,
 			    gnutls_handshake_description_t type);
-int _gnutls_recv_hello_request (gnutls_session_t session, void *data,
+int mhd_gtls_recv_hello_request (mhd_gtls_session_t session, void *data,
 				uint32_t data_size);
-int _gnutls_send_hello (gnutls_session_t session, int again);
-int _gnutls_recv_hello (gnutls_session_t session, opaque * data, int datalen);
-int _gnutls_recv_handshake (gnutls_session_t session, uint8_t **, int *,
+int mhd_gtls_send_hello (mhd_gtls_session_t session, int again);
+int mhd_gtls_recv_hello (mhd_gtls_session_t session, opaque * data, int datalen);
+int mhd_gtls_recv_handshake (mhd_gtls_session_t session, uint8_t **, int *,
 			    gnutls_handshake_description_t,
 			    Optional optional);
-int _gnutls_generate_session_id (opaque * session_id, uint8_t * len);
-int _gnutls_handshake_common (gnutls_session_t session);
-int _gnutls_handshake_client (gnutls_session_t session);
-int _gnutls_handshake_server (gnutls_session_t session);
-void _gnutls_set_server_random (gnutls_session_t session, uint8_t * rnd);
-void _gnutls_set_client_random (gnutls_session_t session, uint8_t * rnd);
-int _gnutls_tls_create_random (opaque * dst);
-int _gnutls_remove_unwanted_ciphersuites (gnutls_session_t session,
+int mhd_gtls_generate_session_id (opaque * session_id, uint8_t * len);
+int mhd_gtls_handshake_common (mhd_gtls_session_t session);
+int mhd_gtls_handshake_client (mhd_gtls_session_t session);
+int mhd_gtls_handshake_server (mhd_gtls_session_t session);
+void mhd_gtls_set_server_random (mhd_gtls_session_t session, uint8_t * rnd);
+void mhd_gtls_set_client_random (mhd_gtls_session_t session, uint8_t * rnd);
+int mhd_gtls_tls_create_random (opaque * dst);
+int mhd_gtls_remove_unwanted_ciphersuites (mhd_gtls_session_t session,
 					  cipher_suite_st ** cipherSuites,
 					  int numCipherSuites,
 					  gnutls_pk_algorithm_t);
-int _gnutls_find_pk_algos_in_ciphersuites (opaque * data, int datalen);
-int _gnutls_server_select_suite (gnutls_session_t session, opaque * data,
+int mhd_gtls_find_pk_algos_in_ciphersuites (opaque * data, int datalen);
+int mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
 				 int datalen);
 
-int _gnutls_negotiate_version( gnutls_session_t session, gnutls_protocol_t adv_version);
-int _gnutls_user_hello_func( gnutls_session, gnutls_protocol_t adv_version);
+int mhd_gtls_negotiate_version( mhd_gtls_session_t session, gnutls_protocol_t adv_version);
+int mhd_gtls_user_hello_func( gnutls_session, gnutls_protocol_t adv_version);
 
 #define STATE session->internals.handshake_state
 /* This returns true if we have got there

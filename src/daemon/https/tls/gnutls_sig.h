@@ -25,26 +25,26 @@
 #ifndef GNUTLS_SIG_H
 # define GNUTLS_SIG_H
 
-int _gnutls_tls_sign_hdata (gnutls_session_t session,
+int mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
 			    gnutls_cert * cert,
 			    gnutls_privkey * pkey,
 			    gnutls_datum_t * signature);
 
-int _gnutls_tls_sign_params (gnutls_session_t session,
+int mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
 			     gnutls_cert * cert,
 			     gnutls_privkey * pkey,
 			     gnutls_datum_t * params,
 			     gnutls_datum_t * signature);
 
-int _gnutls_verify_sig_hdata (gnutls_session_t session,
+int mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
 			      gnutls_cert * cert, gnutls_datum_t * signature);
 
-int _gnutls_verify_sig_params (gnutls_session_t session,
+int mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
 			       gnutls_cert * cert,
 			       const gnutls_datum_t * params,
 			       gnutls_datum_t * signature);
 
-int _gnutls_sign (gnutls_pk_algorithm_t algo,
+int mhd_gtls_sign (gnutls_pk_algorithm_t algo,
 		  mpi_t * params, int params_size,
 		  const gnutls_datum_t * data, gnutls_datum_t * signature);
 

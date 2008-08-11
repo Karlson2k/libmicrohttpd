@@ -22,11 +22,11 @@
  *
  */
 
-const void *_gnutls_get_cred (gnutls_key_st key,
+const void * mhd_gtls_get_cred (mhd_gtls_key_st key,
 			      gnutls_credentials_type_t kx, int *err);
-const void *_gnutls_get_kx_cred (gnutls_session_t session,
+const void * mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
 				 gnutls_kx_algorithm_t algo, int *err);
-void *_gnutls_get_auth_info (gnutls_session_t session);
-int _gnutls_auth_info_set (gnutls_session_t session,
+void * mhd_gtls_get_auth_info (mhd_gtls_session_t session);
+int mhd_gtls_auth_info_set (mhd_gtls_session_t session,
 			   gnutls_credentials_type_t type, int size,
 			   int allow_change);

@@ -59,7 +59,7 @@ ASN1_TYPE _gnutls_pkix1_asn;
 ASN1_TYPE _gnutls_gnutls_asn;
 
 /**
- * gnutls_global_set_log_function - This function sets the logging function
+ * MHD_gtls_global_set_log_function - This function sets the logging function
  * @log_func: it's a log function
  *
  * This is the function where you set the logging function gnutls
@@ -71,13 +71,13 @@ ASN1_TYPE _gnutls_gnutls_asn;
  * void (*gnutls_log_func)( int level, const char*);
  **/
 void
-gnutls_global_set_log_function (gnutls_log_func log_func)
+MHD_gtls_global_set_log_function (gnutls_log_func log_func)
 {
   _gnutls_log_func = log_func;
 }
 
 /**
- * gnutls_global_set_log_level - This function sets the logging level
+ * MHD_gtls_global_set_log_level - This function sets the logging level
  * @level: it's an integer from 0 to 9.
  *
  * This is the function that allows you to set the log level.
@@ -89,7 +89,7 @@ gnutls_global_set_log_function (gnutls_log_func log_func)
  *
  **/
 void
-gnutls_global_set_log_level (int level)
+MHD_gtls_global_set_log_level (int level)
 {
   _gnutls_log_level = level;
 }
@@ -105,7 +105,7 @@ extern void *(*gnutls_calloc) (size_t, size_t);
 int _gnutls_is_secure_mem_null (const void *);
 
 /**
- * gnutls_global_set_mem_functions - This function sets the memory allocation functions
+ * MHD_gtls_global_set_mem_functions - This function sets the memory allocation functions
  * @alloc_func: it's the default memory allocation function. Like malloc().
  * @secure_alloc_func: This is the memory allocation function that will be used for sensitive data.
  * @is_secure_func: a function that returns 0 if the memory given is not secure. May be NULL.
@@ -118,17 +118,16 @@ int _gnutls_is_secure_mem_null (const void *);
  * This function is provided to set the memory allocation functions to
  * something other than the defaults (ie the gcrypt allocation functions).
  *
- * This function must be called before gnutls_global_init() is called.
+ * This function must be called before MHD_gnutls_global_init() is called.
  *
  **/
-void
-gnutls_global_set_mem_functions (gnutls_alloc_function alloc_func,
-                                 gnutls_alloc_function
-                                 secure_alloc_func,
-                                 gnutls_is_secure_function
-                                 is_secure_func,
-                                 gnutls_realloc_function realloc_func,
-                                 gnutls_free_function free_func)
+void MHD_gtls_global_set_mem_functions(gnutls_alloc_function alloc_func,
+                                     gnutls_alloc_function
+                                     secure_alloc_func,
+                                     gnutls_is_secure_function
+                                     is_secure_func,
+                                     gnutls_realloc_function realloc_func,
+                                     gnutls_free_function free_func)
 {
   gnutls_secure_malloc = secure_alloc_func;
   gnutls_malloc = alloc_func;
@@ -148,10 +147,10 @@ gnutls_global_set_mem_functions (gnutls_alloc_function alloc_func,
       gnutls_calloc = calloc;
     }
   else
-    {                           /* use the included ones */
-      gnutls_calloc = _gnutls_calloc;
+    { /* use the included ones */
+      gnutls_calloc = mhd_gtls_calloc;
     }
-  gnutls_strdup = _gnutls_strdup;
+  gnutls_strdup = mhd_gtls_strdup;
 
 }
 
@@ -167,12 +166,12 @@ _gnutls_gcry_log_handler (void *dummy, int level,
 static int _gnutls_init = 0;
 
 /**
- * gnutls_global_init - This function initializes the global data to defaults.
+ * MHD_gnutls_global_init - This function initializes the global data to defaults.
  *
  * This function initializes the global data to defaults.
  * Every gnutls application has a global data which holds common parameters
  * shared by gnutls session structures.
- * You must call gnutls_global_deinit() when gnutls usage is no longer needed
+ * You must call MHD_gnutls_global_deinit() when gnutls usage is no longer needed
  * Returns zero on success.
  *
  * Note that this function will also initialize libgcrypt, if it has not
@@ -181,8 +180,8 @@ static int _gnutls_init = 0;
  * want to disable libgcrypt's internal lockings etc.
  *
  * This function increment a global counter, so that
- * gnutls_global_deinit() only releases resources when it has been
- * called as many times as gnutls_global_init().  This is useful when
+ * MHD_gnutls_global_deinit() only releases resources when it has been
+ * called as many times as MHD_gnutls_global_init().  This is useful when
  * GnuTLS is used by more than one library in an application.  This
  * function can be called many times, but will only do something the
  * first time.
@@ -197,7 +196,7 @@ static int _gnutls_init = 0;
  *
  **/
 int
-gnutls_global_init (void)
+MHD_gnutls_global_init (void)
 {
   int result = 0;
   int res;
@@ -279,7 +278,7 @@ gnutls_global_init (void)
     }
 
 #ifdef DEBUG
-  gnutls_global_set_log_function (MHD_tls_log_func);
+  MHD_gtls_global_set_log_function (MHD_tls_log_func);
 #endif
 
   /* initialize parser
@@ -308,17 +307,17 @@ gnutls_global_init (void)
 }
 
 /**
- * gnutls_global_deinit - This function deinitializes the global data
+ * MHD_gnutls_global_deinit - This function deinitializes the global data
  *
  * This function deinitializes the global data, that were initialized
- * using gnutls_global_init().
+ * using MHD_gnutls_global_init().
  *
  * Note!  This function is not thread safe.  See the discussion for
- * gnutls_global_init() for more information.
+ * MHD_gnutls_global_init() for more information.
  *
  **/
 void
-gnutls_global_deinit (void)
+MHD_gnutls_global_deinit (void)
 {
   if (_gnutls_init == 1)
     {
@@ -337,7 +336,7 @@ gnutls_global_deinit (void)
  */
 
 /**
- * gnutls_transport_set_pull_function - This function sets a read like function
+ * MHD_gnutls_transport_set_pull_function - This function sets a read like function
  * @pull_func: a callback function similar to read()
  * @session: gnutls session
  *
@@ -347,17 +346,17 @@ gnutls_global_deinit (void)
  * probably be ok.
  *
  * PULL_FUNC is of the form,
- * ssize_t (*gnutls_pull_func)(gnutls_transport_ptr_t, void*, size_t);
+ * ssize_t (*mhd_gtls_pull_func)(gnutls_transport_ptr_t, void*, size_t);
  **/
 void
-gnutls_transport_set_pull_function (gnutls_session_t session,
-                                    gnutls_pull_func pull_func)
+MHD_gnutls_transport_set_pull_function (mhd_gtls_session_t session,
+                                    mhd_gtls_pull_func pull_func)
 {
   session->internals._gnutls_pull_func = pull_func;
 }
 
 /**
- * gnutls_transport_set_push_function - This function sets the function to send data
+ * MHD_gnutls_transport_set_push_function - This function sets the function to send data
  * @push_func: a callback function similar to write()
  * @session: gnutls session
  *
@@ -368,11 +367,11 @@ gnutls_transport_set_pull_function (gnutls_session_t session,
  * specify this function for gnutls to be able to send data.
  *
  * PUSH_FUNC is of the form,
- * ssize_t (*gnutls_push_func)(gnutls_transport_ptr_t, const void*, size_t);
+ * ssize_t (*mhd_gtls_push_func)(gnutls_transport_ptr_t, const void*, size_t);
  **/
 void
-gnutls_transport_set_push_function (gnutls_session_t session,
-                                    gnutls_push_func push_func)
+MHD_gnutls_transport_set_push_function (mhd_gtls_session_t session,
+                                    mhd_gtls_push_func push_func)
 {
   session->internals._gnutls_push_func = push_func;
 }

@@ -41,7 +41,7 @@
  */
 
 int
-_gnutls_max_record_recv_params (gnutls_session_t session,
+mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
                                 const opaque * data, size_t _data_size)
 {
   ssize_t new_size;
@@ -53,7 +53,7 @@ _gnutls_max_record_recv_params (gnutls_session_t session,
         {
           DECR_LEN (data_size, 1);
 
-          new_size = _gnutls_mre_num2record (data[0]);
+          new_size = mhd_gtls_mre_num2record (data[0]);
 
           if (new_size < 0)
             {
@@ -77,7 +77,7 @@ _gnutls_max_record_recv_params (gnutls_session_t session,
               return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
             }
 
-          new_size = _gnutls_mre_num2record (data[0]);
+          new_size = mhd_gtls_mre_num2record (data[0]);
 
           if (new_size < 0
               || new_size != session->internals.proposed_record_size)
@@ -102,7 +102,7 @@ _gnutls_max_record_recv_params (gnutls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-_gnutls_max_record_send_params (gnutls_session_t session, opaque * data,
+mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
                                 size_t data_size)
 {
   uint16_t len;
@@ -120,7 +120,7 @@ _gnutls_max_record_send_params (gnutls_session_t session, opaque * data,
             }
 
           data[0] =
-            (uint8_t) _gnutls_mre_record2num (session->internals.
+            (uint8_t) mhd_gtls_mre_record2num (session->internals.
                                               proposed_record_size);
           return len;
         }
@@ -140,7 +140,7 @@ _gnutls_max_record_send_params (gnutls_session_t session, opaque * data,
             }
 
           data[0] =
-            (uint8_t) _gnutls_mre_record2num (session->
+            (uint8_t) mhd_gtls_mre_record2num (session->
                                               security_parameters.
                                               max_record_recv_size);
           return len;
@@ -156,7 +156,7 @@ _gnutls_max_record_send_params (gnutls_session_t session, opaque * data,
  * extensions draft.
  */
 int
-_gnutls_mre_num2record (int num)
+mhd_gtls_mre_num2record (int num)
 {
   switch (num)
     {
@@ -177,7 +177,7 @@ _gnutls_mre_num2record (int num)
  * extensions draft.
  */
 int
-_gnutls_mre_record2num (uint16_t record_size)
+mhd_gtls_mre_record2num (uint16_t record_size)
 {
   switch (record_size)
     {

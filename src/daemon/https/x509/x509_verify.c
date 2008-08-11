@@ -498,7 +498,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
       return _gnutls_asn2err (result);
     }
 
-  *hash = _gnutls_x509_oid2mac_algorithm (str);
+  *hash = mhd_gtls_x509_oid2mac_algorithm (str);
 
   if (*hash == MHD_GNUTLS_MAC_UNKNOWN)
     {
@@ -555,7 +555,7 @@ _pkcs1_rsa_verify_sig (const gnutls_datum_t * text,
   gnutls_datum_t decrypted;
 
   ret =
-    _gnutls_pkcs1_rsa_decrypt (&decrypted, signature, params, params_len, 1);
+    mhd_gtls_pkcs1_rsa_decrypt (&decrypted, signature, params, params_len, 1);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -576,21 +576,21 @@ _pkcs1_rsa_verify_sig (const gnutls_datum_t * text,
 
   _gnutls_free_datum (&decrypted);
 
-  if (digest_size != _gnutls_hash_get_algo_len (hash))
+  if (digest_size != mhd_gnutls_hash_get_algo_len (hash))
     {
       gnutls_assert ();
       return GNUTLS_E_ASN1_GENERIC_ERROR;
     }
 
-  hd = _gnutls_hash_init (hash);
+  hd = mhd_gtls_hash_init (hash);
   if (hd == NULL)
     {
       gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  _gnutls_hash (hd, text->data, text->size);
-  _gnutls_hash_deinit (hd, md);
+  mhd_gnutls_hash (hd, text->data, text->size);
+  mhd_gnutls_hash_deinit (hd, md);
 
   if (memcmp (md, digest, digest_size) != 0)
     {
@@ -613,20 +613,20 @@ dsa_verify_sig (const gnutls_datum_t * text,
   gnutls_datum_t digest;
   GNUTLS_HASH_HANDLE hd;
 
-  hd = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
+  hd = mhd_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (hd == NULL)
     {
       gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  _gnutls_hash (hd, text->data, text->size);
-  _gnutls_hash_deinit (hd, _digest);
+  mhd_gnutls_hash (hd, text->data, text->size);
+  mhd_gnutls_hash_deinit (hd, _digest);
 
   digest.data = _digest;
   digest.size = 20;
 
-  ret = _gnutls_dsa_verify (&digest, signature, params, params_len);
+  ret = mhd_gtls_dsa_verify (&digest, signature, params, params_len);
 
   return ret;
 }
@@ -699,7 +699,7 @@ _gnutls_x509_verify_signature (const gnutls_datum_t * tbs,
    */
   for (i = 0; i < issuer_params_size; i++)
     {
-      _gnutls_mpi_release (&issuer_params[i]);
+      mhd_gtls_mpi_release (&issuer_params[i]);
     }
 
   return ret;

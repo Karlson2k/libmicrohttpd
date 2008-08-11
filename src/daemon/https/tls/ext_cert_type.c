@@ -46,7 +46,7 @@ inline static int _gnutls_cert_type2num (int record_size);
  */
 
 int
-_gnutls_cert_type_recv_params (gnutls_session_t session,
+mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
                                const opaque * data, size_t _data_size)
 {
   int new_type = -1, ret, i;
@@ -72,7 +72,7 @@ _gnutls_cert_type_recv_params (gnutls_session_t session,
 
           /* Check if we support this cert_type */
           if ((ret =
-               _gnutls_session_cert_type_supported (session, new_type)) < 0)
+               mhd_gtls_session_cert_type_supported (session, new_type)) < 0)
             {
               gnutls_assert ();
               return ret;
@@ -100,7 +100,7 @@ _gnutls_cert_type_recv_params (gnutls_session_t session,
 
               /* Check if we support this cert_type */
               if ((ret =
-                   _gnutls_session_cert_type_supported (session,
+                   mhd_gtls_session_cert_type_supported (session,
                                                         new_type)) < 0)
                 {
                   gnutls_assert ();
@@ -118,7 +118,7 @@ _gnutls_cert_type_recv_params (gnutls_session_t session,
             }
 
           if ((ret =
-               _gnutls_session_cert_type_supported (session, new_type)) < 0)
+               mhd_gtls_session_cert_type_supported (session, new_type)) < 0)
             {
               gnutls_assert ();
               /* The peer has requested unsupported certificate
@@ -141,7 +141,7 @@ _gnutls_cert_type_recv_params (gnutls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-_gnutls_cert_type_send_params (gnutls_session_t session, opaque * data,
+mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
                                size_t data_size)
 {
   unsigned len, i;

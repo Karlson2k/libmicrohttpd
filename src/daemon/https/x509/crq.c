@@ -338,8 +338,8 @@ parse_attribute (ASN1_TYPE asn1_struct,
        */
       /* Read the OID 
        */
-      _gnutls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer1);
-      _gnutls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
+      mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer1);
+      mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
 
       len = sizeof (oid) - 1;
       result = asn1_read_value (asn1_struct, tmpbuffer3, oid, &len);

@@ -487,7 +487,7 @@ gnutls_x509_crt_get_signature_algorithm (gnutls_x509_crt_t cert)
       return result;
     }
 
-  result = _gnutls_x509_oid2sign_algorithm (sa.data);
+  result = mhd_gtls_x509_oid2sign_algorithm (sa.data);
 
   _gnutls_free_datum (&sa);
 
@@ -950,9 +950,9 @@ parse_general_name (ASN1_TYPE src,
   if (type == GNUTLS_SAN_OTHERNAME)
     {
       if (othername_oid)
-        _gnutls_str_cat (nptr, sizeof (nptr), ".otherName.type-id");
+        mhd_gtls_str_cat (nptr, sizeof (nptr), ".otherName.type-id");
       else
-        _gnutls_str_cat (nptr, sizeof (nptr), ".otherName.value");
+        mhd_gtls_str_cat (nptr, sizeof (nptr), ".otherName.value");
 
       len = *name_size;
       result = asn1_read_value (src, nptr, name, &len);
@@ -1025,7 +1025,7 @@ parse_general_name (ASN1_TYPE src,
     }
   else if (type == GNUTLS_SAN_DN)
     {
-      _gnutls_str_cat (nptr, sizeof (nptr), ".directoryName");
+      mhd_gtls_str_cat (nptr, sizeof (nptr), ".directoryName");
       result = _gnutls_x509_parse_dn (src, nptr, name, name_size);
       if (result < 0)
         {
@@ -1039,8 +1039,8 @@ parse_general_name (ASN1_TYPE src,
     {
       size_t orig_name_size = *name_size;
 
-      _gnutls_str_cat (nptr, sizeof (nptr), ".");
-      _gnutls_str_cat (nptr, sizeof (nptr), choice_type);
+      mhd_gtls_str_cat (nptr, sizeof (nptr), ".");
+      mhd_gtls_str_cat (nptr, sizeof (nptr), choice_type);
 
       len = *name_size;
       result = asn1_read_value (src, nptr, name, &len);
@@ -1980,7 +1980,7 @@ gnutls_x509_crt_get_fingerprint (gnutls_x509_crt_t cert,
   tmp.data = cert_buf;
   tmp.size = cert_buf_size;
 
-  result = gnutls_fingerprint (algo, &tmp, buf, sizeof_buf);
+  result = MHD_gnutls_fingerprint (algo, &tmp, buf, sizeof_buf);
   gnutls_afree (cert_buf);
 
   return result;
@@ -2053,7 +2053,7 @@ rsadsa_get_key_id (gnutls_x509_crt_t crt,
   else
     return GNUTLS_E_INTERNAL_ERROR;
 
-  hd = _gnutls_hash_init (MHD_GNUTLS_MAC_SHA1);
+  hd = mhd_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (hd == GNUTLS_HASH_FAILED)
     {
       gnutls_assert ();
@@ -2061,9 +2061,9 @@ rsadsa_get_key_id (gnutls_x509_crt_t crt,
       goto cleanup;
     }
 
-  _gnutls_hash (hd, der.data, der.size);
+  mhd_gnutls_hash (hd, der.data, der.size);
 
-  _gnutls_hash_deinit (hd, output_data);
+  mhd_gnutls_hash_deinit (hd, output_data);
   *output_data_size = 20;
 
   result = 0;
@@ -2076,7 +2076,7 @@ cleanup:
    */
   for (i = 0; i < params_size; i++)
     {
-      _gnutls_mpi_release (&params[i]);
+      mhd_gtls_mpi_release (&params[i]);
     }
   return result;
 }
@@ -2165,7 +2165,7 @@ gnutls_x509_crt_get_key_id (gnutls_x509_crt_t crt,
       return _gnutls_asn2err (result);
     }
 
-  result = gnutls_fingerprint (MHD_GNUTLS_DIG_SHA1, &pubkey, output_data,
+  result = MHD_gnutls_fingerprint (MHD_GNUTLS_DIG_SHA1, &pubkey, output_data,
                                output_data_size);
 
   gnutls_afree (pubkey.data);
@@ -2420,7 +2420,7 @@ gnutls_x509_crt_get_crl_dist_points (gnutls_x509_crt_t cert,
   /* Return the different names from the first CRLDistr. point.
    * The whole thing is a mess.
    */
-  _gnutls_str_cpy (name, sizeof (name), "?1.distributionPoint.fullName");
+  mhd_gtls_str_cpy (name, sizeof (name), "?1.distributionPoint.fullName");
 
   result = parse_general_name (c2, name, seq, ret, ret_size, NULL, 0);
   if (result < 0)
@@ -2435,7 +2435,7 @@ gnutls_x509_crt_get_crl_dist_points (gnutls_x509_crt_t cert,
    */
   if (reason_flags)
     {
-      _gnutls_str_cpy (name, sizeof (name), "?1.reasons");
+      mhd_gtls_str_cpy (name, sizeof (name), "?1.reasons");
 
       reasons[0] = reasons[1] = 0;
 
@@ -2594,14 +2594,14 @@ gnutls_x509_crt_get_pk_rsa_raw (gnutls_x509_crt_t crt,
       return ret;
     }
 
-  ret = _gnutls_mpi_dprint (m, params[0]);
+  ret = mhd_gtls_mpi_dprint (m, params[0]);
   if (ret < 0)
     {
       gnutls_assert ();
       goto cleanup;
     }
 
-  ret = _gnutls_mpi_dprint (e, params[1]);
+  ret = mhd_gtls_mpi_dprint (e, params[1]);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -2613,7 +2613,7 @@ gnutls_x509_crt_get_pk_rsa_raw (gnutls_x509_crt_t crt,
 
 cleanup:for (i = 0; i < params_size; i++)
     {
-      _gnutls_mpi_release (&params[i]);
+      mhd_gtls_mpi_release (&params[i]);
     }
   return ret;
 }
@@ -2659,7 +2659,7 @@ gnutls_x509_crt_get_pk_dsa_raw (gnutls_x509_crt_t crt,
     }
 
   /* P */
-  ret = _gnutls_mpi_dprint (p, params[0]);
+  ret = mhd_gtls_mpi_dprint (p, params[0]);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -2667,7 +2667,7 @@ gnutls_x509_crt_get_pk_dsa_raw (gnutls_x509_crt_t crt,
     }
 
   /* Q */
-  ret = _gnutls_mpi_dprint (q, params[1]);
+  ret = mhd_gtls_mpi_dprint (q, params[1]);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -2676,7 +2676,7 @@ gnutls_x509_crt_get_pk_dsa_raw (gnutls_x509_crt_t crt,
     }
 
   /* G */
-  ret = _gnutls_mpi_dprint (g, params[2]);
+  ret = mhd_gtls_mpi_dprint (g, params[2]);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -2686,7 +2686,7 @@ gnutls_x509_crt_get_pk_dsa_raw (gnutls_x509_crt_t crt,
     }
 
   /* Y */
-  ret = _gnutls_mpi_dprint (y, params[3]);
+  ret = mhd_gtls_mpi_dprint (y, params[3]);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -2700,7 +2700,7 @@ gnutls_x509_crt_get_pk_dsa_raw (gnutls_x509_crt_t crt,
 
 cleanup:for (i = 0; i < params_size; i++)
     {
-      _gnutls_mpi_release (&params[i]);
+      mhd_gtls_mpi_release (&params[i]);
     }
   return ret;
 

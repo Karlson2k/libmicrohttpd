@@ -35,10 +35,10 @@
  * support a server that has multiple certificates
  */
 
-typedef struct gnutls_certificate_credentials_st
+typedef struct mhd_gtls_certificate_credentials_st
 {
-  gnutls_dh_params_t dh_params;
-  gnutls_rsa_params_t rsa_params;
+  mhd_gtls_dh_params_t dh_params;
+  mhd_gtls_rsa_params_t rsa_params;
   /* this callback is used to retrieve the DH or RSA
    * parameters.
    */
@@ -100,13 +100,13 @@ typedef struct gnutls_certificate_credentials_st
   gnutls_certificate_server_retrieve_function *server_get_cert_callback;
 } certificate_credentials_st;
 
-typedef struct rsa_info_st
+typedef struct mhd_gtls_rsa_info_st
 {
   gnutls_datum_t modulus;
   gnutls_datum_t exponent;
 } rsa_info_st;
 
-typedef struct cert_auth_info_st
+typedef struct mhd_gtls_cert_auth_info_st
 {
   int certificate_requested;	/* if the peer requested certificate
 				 * this is non zero;
@@ -124,36 +124,36 @@ typedef struct cert_auth_info_st
   unsigned int ncerts;		/* holds the size of the list above */
 } *cert_auth_info_t;
 
-typedef struct cert_auth_info_st cert_auth_info_st;
+typedef struct mhd_gtls_cert_auth_info_st cert_auth_info_st;
 
-void _gnutls_free_rsa_info (rsa_info_st * rsa);
+void mhd_gtls_free_rsa_info (rsa_info_st * rsa);
 
 /* AUTH X509 functions */
-int _gnutls_gen_cert_server_certificate (gnutls_session_t, opaque **);
-int _gnutls_gen_cert_client_certificate (gnutls_session_t, opaque **);
-int _gnutls_gen_cert_client_cert_vrfy (gnutls_session_t, opaque **);
-int _gnutls_gen_cert_server_cert_req (gnutls_session_t, opaque **);
-int _gnutls_proc_cert_cert_req (gnutls_session_t, opaque *, size_t);
-int _gnutls_proc_cert_client_cert_vrfy (gnutls_session_t, opaque *, size_t);
-int _gnutls_proc_cert_server_certificate (gnutls_session_t, opaque *, size_t);
-int _gnutls_get_selected_cert (gnutls_session_t session,
+int mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t, opaque **);
+int mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t, opaque **);
+int mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t, opaque **);
+int mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t, opaque **);
+int mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t, opaque *, size_t);
+int mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t, opaque *, size_t);
+int mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t, opaque *, size_t);
+int mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
 			       gnutls_cert ** apr_cert_list,
 			       int *apr_cert_list_length,
 			       gnutls_privkey ** apr_pkey);
 
-int _gnutls_server_select_cert (struct gnutls_session_int *,
+int mhd_gtls_server_select_cert (struct MHD_gtls_session_int *,
 				gnutls_pk_algorithm_t);
-void _gnutls_selected_certs_deinit (gnutls_session_t session);
-void _gnutls_selected_certs_set (gnutls_session_t session,
+void mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session);
+void mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
 				 gnutls_cert * certs, int ncerts,
 				 gnutls_privkey * key, int need_free);
 
-#define _gnutls_proc_cert_client_certificate _gnutls_proc_cert_server_certificate
+#define _gnutls_proc_cert_client_certificate mhd_gtls_proc_cert_server_certificate
 
-gnutls_rsa_params_t _gnutls_certificate_get_rsa_params (gnutls_rsa_params_t
+mhd_gtls_rsa_params_t mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t
 							rsa_params,
 							gnutls_params_function
 							* func,
-							gnutls_session_t);
+							mhd_gtls_session_t);
 
 #endif

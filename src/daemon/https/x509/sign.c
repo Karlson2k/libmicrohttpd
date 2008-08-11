@@ -56,7 +56,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
   int result;
   const char *algo;
 
-  algo = _gnutls_x509_mac_to_oid ((gnutls_mac_algorithm_t) hash);
+  algo = mhd_gtls_x509_mac_to_oid ((gnutls_mac_algorithm_t) hash);
   if (algo == NULL)
     {
       gnutls_assert ();
@@ -140,18 +140,18 @@ pkcs1_rsa_sign (gnutls_digest_algorithm_t hash, const gnutls_datum_t * text,
   GNUTLS_HASH_HANDLE hd;
   gnutls_datum_t digest, info;
 
-  hd = _gnutls_hash_init (HASH2MAC (hash));
+  hd = mhd_gtls_hash_init (HASH2MAC (hash));
   if (hd == NULL)
     {
       gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  _gnutls_hash (hd, text->data, text->size);
-  _gnutls_hash_deinit (hd, _digest);
+  mhd_gnutls_hash (hd, text->data, text->size);
+  mhd_gnutls_hash_deinit (hd, _digest);
 
   digest.data = _digest;
-  digest.size = _gnutls_hash_get_algo_len (HASH2MAC (hash));
+  digest.size = mhd_gnutls_hash_get_algo_len (HASH2MAC (hash));
 
   /* Encode the digest as a DigestInfo
    */
@@ -162,7 +162,7 @@ pkcs1_rsa_sign (gnutls_digest_algorithm_t hash, const gnutls_datum_t * text,
     }
 
   if ((ret =
-       _gnutls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
+       mhd_gtls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
                      signature)) < 0)
     {
       gnutls_assert ();
@@ -278,8 +278,8 @@ _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
 
   /* Step 1. Copy the issuer's name into the certificate.
    */
-  _gnutls_str_cpy (name, sizeof (name), src_name);
-  _gnutls_str_cat (name, sizeof (name), ".issuer");
+  mhd_gtls_str_cpy (name, sizeof (name), src_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".issuer");
 
   result = asn1_copy_node (src, name, issuer->cert, "tbsCertificate.subject");
   if (result != ASN1_SUCCESS)
@@ -290,8 +290,8 @@ _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
 
   /* Step 1.5. Write the signature stuff in the tbsCertificate.
    */
-  _gnutls_str_cpy (name, sizeof (name), src_name);
-  _gnutls_str_cat (name, sizeof (name), ".signature");
+  mhd_gtls_str_cpy (name, sizeof (name), src_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".signature");
 
   result = _gnutls_x509_write_sig_params (src, name,
                                           issuer_key->pk_algorithm, dig,

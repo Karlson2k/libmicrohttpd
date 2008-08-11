@@ -71,7 +71,7 @@ _gnutls_x509_read_rsa_params (opaque * der, int dersize, mpi_t * params)
        _gnutls_x509_read_int (spk, "publicExponent", &params[1])) < 0)
     {
       gnutls_assert ();
-      _gnutls_mpi_release (&params[0]);
+      mhd_gtls_mpi_release (&params[0]);
       asn1_delete_structure (&spk);
       return GNUTLS_E_ASN1_GENERIC_ERROR;
     }
@@ -129,7 +129,7 @@ _gnutls_x509_read_dsa_params (opaque * der, int dersize, mpi_t * params)
     {
       gnutls_assert ();
       asn1_delete_structure (&spk);
-      _gnutls_mpi_release (&params[0]);
+      mhd_gtls_mpi_release (&params[0]);
       return GNUTLS_E_ASN1_GENERIC_ERROR;
     }
 
@@ -139,8 +139,8 @@ _gnutls_x509_read_dsa_params (opaque * der, int dersize, mpi_t * params)
     {
       gnutls_assert ();
       asn1_delete_structure (&spk);
-      _gnutls_mpi_release (&params[0]);
-      _gnutls_mpi_release (&params[1]);
+      mhd_gtls_mpi_release (&params[0]);
+      mhd_gtls_mpi_release (&params[1]);
       return GNUTLS_E_ASN1_GENERIC_ERROR;
     }
 
@@ -343,10 +343,10 @@ _gnutls_x509_write_sig_params (ASN1_TYPE dst,
   char name[128];
   const char *pk;
 
-  _gnutls_str_cpy (name, sizeof (name), dst_name);
-  _gnutls_str_cat (name, sizeof (name), ".algorithm");
+  mhd_gtls_str_cpy (name, sizeof (name), dst_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".algorithm");
 
-  pk = _gnutls_x509_sign_to_oid (pk_algorithm, HASH2MAC (dig));
+  pk = mhd_gtls_x509_sign_to_oid (pk_algorithm, HASH2MAC (dig));
   if (pk == NULL)
     {
       gnutls_assert ();
@@ -362,8 +362,8 @@ _gnutls_x509_write_sig_params (ASN1_TYPE dst,
       return _gnutls_asn2err (result);
     }
 
-  _gnutls_str_cpy (name, sizeof (name), dst_name);
-  _gnutls_str_cat (name, sizeof (name), ".parameters");
+  mhd_gtls_str_cpy (name, sizeof (name), dst_name);
+  mhd_gtls_str_cat (name, sizeof (name), ".parameters");
 
   if (pk_algorithm == MHD_GNUTLS_PK_RSA)
     {                           /* RSA */
@@ -536,11 +536,11 @@ _gnutls_x509_read_uint (ASN1_TYPE node, const char *value, unsigned int *ret)
   if (len == 1)
     *ret = tmpstr[0];
   else if (len == 2)
-    *ret = _gnutls_read_uint16 (tmpstr);
+    *ret = mhd_gtls_read_uint16 (tmpstr);
   else if (len == 3)
-    *ret = _gnutls_read_uint24 (tmpstr);
+    *ret = mhd_gtls_read_uint24 (tmpstr);
   else if (len == 4)
-    *ret = _gnutls_read_uint32 (tmpstr);
+    *ret = mhd_gtls_read_uint32 (tmpstr);
   else
     {
       gnutls_assert ();
@@ -561,7 +561,7 @@ _gnutls_x509_write_uint32 (ASN1_TYPE node, const char *value, uint32_t num)
   opaque tmpstr[4];
   int result;
 
-  _gnutls_write_uint32 (num, tmpstr);
+  mhd_gtls_write_uint32 (num, tmpstr);
 
   result = asn1_write_value (node, value, tmpstr, 4);
 

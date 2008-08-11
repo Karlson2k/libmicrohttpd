@@ -37,14 +37,14 @@
  */
 
 /**
-  * gnutls_credentials_clear - Clears all the credentials previously set
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gnutls_credentials_clear - Clears all the credentials previously set
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * Clears all the credentials previously set in this session.
   *
   **/
 void
-gnutls_credentials_clear (gnutls_session_t session)
+MHD_gnutls_credentials_clear (mhd_gtls_session_t session)
 {
   if (session->key && session->key->cred)
     {                           /* beginning of the list */
@@ -65,8 +65,8 @@ gnutls_credentials_clear (gnutls_session_t session)
  * { algorithm, credentials, pointer to next }
  */
 /**
-  * gnutls_credentials_set - Sets the needed credentials for the specified authentication algorithm.
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gnutls_credentials_set - Sets the needed credentials for the specified authentication algorithm.
+  * @session: is a #mhd_gtls_session_t structure.
   * @type: is the type of the credentials
   * @cred: is a pointer to a structure.
   *
@@ -77,20 +77,20 @@ gnutls_credentials_clear (gnutls_session_t session)
   * [ In order to minimize memory usage, and share credentials between 
   * several threads gnutls keeps a pointer to cred, and not the whole cred
   * structure. Thus you will have to keep the structure allocated until   
-  * you call gnutls_deinit(). ]
+  * you call MHD_gnutls_deinit(). ]
   *
-  * For GNUTLS_CRD_ANON cred should be gnutls_anon_client_credentials_t in case of a client.
-  * In case of a server it should be gnutls_anon_server_credentials_t.
+  * For GNUTLS_CRD_ANON cred should be mhd_gtls_anon_client_credentials_t in case of a client.
+  * In case of a server it should be mhd_gtls_anon_server_credentials_t.
   * 
   * For GNUTLS_CRD_SRP cred should be gnutls_srp_client_credentials_t
   * in case of a client, and gnutls_srp_server_credentials_t, in case
   * of a server.
   *
-  * For GNUTLS_CRD_CERTIFICATE cred should be gnutls_certificate_credentials_t.
+  * For GNUTLS_CRD_CERTIFICATE cred should be mhd_gtls_cert_credentials_t.
   *
   **/
 int
-gnutls_credentials_set (gnutls_session_t session,
+MHD_gnutls_credentials_set (mhd_gtls_session_t session,
                         gnutls_credentials_type_t type, void *cred)
 {
   auth_cred_st *ccred = NULL, *pcred = NULL;
@@ -150,8 +150,8 @@ gnutls_credentials_set (gnutls_session_t session,
 }
 
 /**
-  * gnutls_auth_get_type - Returns the type of credentials for the current authentication schema.
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gtls_auth_get_type - Returns the type of credentials for the current authentication schema.
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * Returns type of credentials for the current authentication schema.
   * The returned information is to be used to distinguish the function used
@@ -161,7 +161,7 @@ gnutls_credentials_set (gnutls_session_t session,
   * the same function are to be used to access the authentication data.
   **/
 gnutls_credentials_type_t
-gnutls_auth_get_type (gnutls_session_t session)
+MHD_gtls_auth_get_type (mhd_gtls_session_t session)
 {
 /* This is not the credentials we must set, but the authentication data
  * we get by the peer, so it should be reversed.
@@ -169,14 +169,14 @@ gnutls_auth_get_type (gnutls_session_t session)
   int server = session->security_parameters.entity == GNUTLS_SERVER ? 0 : 1;
 
   return
-    _gnutls_map_kx_get_cred (_gnutls_cipher_suite_get_kx_algo
+    mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
                              (&session->security_parameters.
                               current_cipher_suite), server);
 }
 
 /**
-  * gnutls_auth_server_get_type - Returns the type of credentials for the server authentication schema.
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gtls_auth_server_get_type - Returns the type of credentials for the server authentication schema.
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * Returns the type of credentials that were used for server authentication.
   * The returned information is to be used to distinguish the function used
@@ -184,17 +184,17 @@ gnutls_auth_get_type (gnutls_session_t session)
   * 
   **/
 gnutls_credentials_type_t
-gnutls_auth_server_get_type (gnutls_session_t session)
+MHD_gtls_auth_server_get_type (mhd_gtls_session_t session)
 {
   return
-    _gnutls_map_kx_get_cred (_gnutls_cipher_suite_get_kx_algo
+    mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
                              (&session->security_parameters.
                               current_cipher_suite), 1);
 }
 
 /**
-  * gnutls_auth_client_get_type - Returns the type of credentials for the client authentication schema.
-  * @session: is a #gnutls_session_t structure.
+  * MHD_gtls_auth_client_get_type - Returns the type of credentials for the client authentication schema.
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * Returns the type of credentials that were used for client authentication.
   * The returned information is to be used to distinguish the function used
@@ -202,10 +202,10 @@ gnutls_auth_server_get_type (gnutls_session_t session)
   * 
   **/
 gnutls_credentials_type_t
-gnutls_auth_client_get_type (gnutls_session_t session)
+MHD_gtls_auth_client_get_type (mhd_gtls_session_t session)
 {
   return
-    _gnutls_map_kx_get_cred (_gnutls_cipher_suite_get_kx_algo
+    mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
                              (&session->security_parameters.
                               current_cipher_suite), 0);
 }
@@ -216,17 +216,17 @@ gnutls_auth_client_get_type (gnutls_session_t session)
  * free that!!!
  */
 const void *
-_gnutls_get_kx_cred (gnutls_session_t session,
+mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
                      gnutls_kx_algorithm_t algo, int *err)
 {
   int server = session->security_parameters.entity == GNUTLS_SERVER ? 1 : 0;
 
-  return _gnutls_get_cred (session->key,
-                           _gnutls_map_kx_get_cred (algo, server), err);
+  return mhd_gtls_get_cred (session->key,
+                           mhd_gtls_map_kx_get_cred (algo, server), err);
 }
 
 const void *
-_gnutls_get_cred (gnutls_key_st key, gnutls_credentials_type_t type, int *err)
+mhd_gtls_get_cred (mhd_gtls_key_st key, gnutls_credentials_type_t type, int *err)
 {
   const void *retval = NULL;
   int _err = -1;
@@ -257,10 +257,10 @@ out:
 }
 
 /*-
-  * _gnutls_get_auth_info - Returns a pointer to authentication information.
-  * @session: is a #gnutls_session_t structure.
+  * mhd_gtls_get_auth_info - Returns a pointer to authentication information.
+  * @session: is a #mhd_gtls_session_t structure.
   *
-  * This function must be called after a succesful gnutls_handshake().
+  * This function must be called after a succesful MHD_gnutls_handshake().
   * Returns a pointer to authentication information. That information
   * is data obtained by the handshake protocol, the key exchange algorithm,
   * and the TLS extensions messages.
@@ -270,21 +270,21 @@ out:
   * In case of GNUTLS_CRD_SRP returns a type of &srp_(server/client)_auth_info_t;
   -*/
 void *
-_gnutls_get_auth_info (gnutls_session_t session)
+mhd_gtls_get_auth_info (mhd_gtls_session_t session)
 {
   return session->key->auth_info;
 }
 
 /*-
-  * _gnutls_free_auth_info - Frees the auth info structure
-  * @session: is a #gnutls_session_t structure.
+  * mhd_gtls_free_auth_info - Frees the auth info structure
+  * @session: is a #mhd_gtls_session_t structure.
   *
   * This function frees the auth info structure and sets it to
   * null. It must be called since some structures contain malloced
   * elements.
   -*/
 void
-_gnutls_free_auth_info (gnutls_session_t session)
+mhd_gtls_free_auth_info (mhd_gtls_session_t session)
 {
   dh_info_st *dh_info;
   rsa_info_st *rsa_info;
@@ -301,19 +301,19 @@ _gnutls_free_auth_info (gnutls_session_t session)
       break;
     case MHD_GNUTLS_CRD_ANON:
       {
-        anon_auth_info_t info = _gnutls_get_auth_info (session);
+        mhd_anon_auth_info_t info = mhd_gtls_get_auth_info (session);
 
         if (info == NULL)
           break;
 
         dh_info = &info->dh;
-        _gnutls_free_dh_info (dh_info);
+        mhd_gtls_free_dh_info (dh_info);
       }
       break;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         unsigned int i;
-        cert_auth_info_t info = _gnutls_get_auth_info (session);
+        cert_auth_info_t info = mhd_gtls_get_auth_info (session);
 
         if (info == NULL)
           break;
@@ -329,8 +329,8 @@ _gnutls_free_auth_info (gnutls_session_t session)
         info->raw_certificate_list = NULL;
         info->ncerts = 0;
 
-        _gnutls_free_dh_info (dh_info);
-        _gnutls_free_rsa_info (rsa_info);
+        mhd_gtls_free_dh_info (dh_info);
+        mhd_gtls_free_rsa_info (rsa_info);
       }
 
 
@@ -353,7 +353,7 @@ _gnutls_free_auth_info (gnutls_session_t session)
  * info structure to a different type.
  */
 int
-_gnutls_auth_info_set (gnutls_session_t session,
+mhd_gtls_auth_info_set (mhd_gtls_session_t session,
                        gnutls_credentials_type_t type, int size,
                        int allow_change)
 {
@@ -378,7 +378,7 @@ _gnutls_auth_info_set (gnutls_session_t session,
            * ciphersuite which is negotiated has different authentication
            * schema.
            */
-          if (gnutls_auth_get_type (session) != session->key->auth_info_type)
+          if (MHD_gtls_auth_get_type (session) != session->key->auth_info_type)
             {
               gnutls_assert ();
               return GNUTLS_E_INVALID_REQUEST;
@@ -392,10 +392,10 @@ _gnutls_auth_info_set (gnutls_session_t session,
            * certificate (in order to prevent revealing the certificate's contents,
            * to passive eavesdropers.
            */
-          if (gnutls_auth_get_type (session) != session->key->auth_info_type)
+          if (MHD_gtls_auth_get_type (session) != session->key->auth_info_type)
             {
 
-              _gnutls_free_auth_info (session);
+              mhd_gtls_free_auth_info (session);
 
               session->key->auth_info = calloc (1, size);
               if (session->key->auth_info == NULL)

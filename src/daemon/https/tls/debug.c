@@ -32,7 +32,7 @@
 
 
 void
-_gnutls_print_state (gnutls_session_t session)
+_gnutls_print_state (mhd_gtls_session_t session)
 {
 
   _gnutls_debug_log ("GNUTLS State:\n");

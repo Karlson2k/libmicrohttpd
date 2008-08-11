@@ -37,8 +37,8 @@
 #include <tests.h>
 
 extern gnutls_srp_client_credentials_t srp_cred;
-extern gnutls_anon_client_credentials_t anon_cred;
-extern gnutls_certificate_credentials_t xcred;
+extern mhd_gtls_anon_client_credentials_t anon_cred;
+extern mhd_gtls_cert_credentials_t xcred;
 
 extern int verbose;
 
@@ -54,13 +54,13 @@ static int sfree = 0;
 static int handshake_output = 0;
 
 int
-do_handshake (gnutls_session_t session)
+do_handshake (mhd_gtls_session_t session)
 {
   int ret, alert;
 
   do
     {
-      ret = gnutls_handshake (session);
+      ret = MHD_gnutls_handshake (session);
     }
   while (ret == GNUTLS_E_INTERRUPTED || ret == GNUTLS_E_AGAIN);
 
@@ -74,7 +74,7 @@ do_handshake (gnutls_session_t session)
           alert = gnutls_alert_get (session);
           printf ("\n");
           printf ("*** Received alert [%d]: %s\n",
-                  alert, gnutls_alert_get_name (alert));
+                  alert, MHD_gnutls_alert_get_name (alert));
         }
     }
 
@@ -98,7 +98,7 @@ do_handshake (gnutls_session_t session)
   gnutls_session_get_data (session, session_data, &session_data_size);
 
   session_id_size = sizeof (session_id);
-  gnutls_session_get_id (session, session_id, &session_id_size);
+  MHD_gtls_session_get_id (session, session_id, &session_id_size);
 
   return TEST_SUCCEED;
 }
@@ -118,43 +118,43 @@ static const int mac_priority[16] =
   { MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_MAC_MD5, 0 };
 static const int cert_type_priority[16] = { MHD_GNUTLS_CRT_X509, 0 };
 
-#define ADD_ALL_CIPHERS(session) gnutls_cipher_set_priority(session, cipher_priority)
-#define ADD_ALL_COMP(session) gnutls_compression_set_priority(session, comp_priority)
-#define ADD_ALL_MACS(session) gnutls_mac_set_priority(session, mac_priority)
-#define ADD_ALL_KX(session) gnutls_kx_set_priority(session, kx_priority)
-#define ADD_ALL_PROTOCOLS(session) gnutls_protocol_set_priority(session, protocol_priority)
-#define ADD_ALL_CERTTYPES(session) gnutls_certificate_type_set_priority(session, cert_type_priority)
+#define ADD_ALL_CIPHERS(session) MHD_gnutls_cipher_set_priority(session, cipher_priority)
+#define ADD_ALL_COMP(session) MHD_gnutls_compression_set_priority(session, comp_priority)
+#define ADD_ALL_MACS(session) MHD_gnutls_mac_set_priority(session, mac_priority)
+#define ADD_ALL_KX(session) MHD_gnutls_kx_set_priority(session, kx_priority)
+#define ADD_ALL_PROTOCOLS(session) MHD_gnutls_protocol_set_priority(session, protocol_priority)
+#define ADD_ALL_CERTTYPES(session) MHD_gnutls_certificate_type_set_priority(session, cert_type_priority)
 
 static void
-ADD_KX (gnutls_session_t session, int kx)
+ADD_KX (mhd_gtls_session_t session, int kx)
 {
   static int _kx_priority[] = { 0, 0 };
   _kx_priority[0] = kx;
 
-  gnutls_kx_set_priority (session, _kx_priority);
+  MHD_gnutls_kx_set_priority (session, _kx_priority);
 }
 
 static void
-ADD_KX2 (gnutls_session_t session, int kx1, int kx2)
+ADD_KX2 (mhd_gtls_session_t session, int kx1, int kx2)
 {
   static int _kx_priority[] = { 0, 0, 0 };
   _kx_priority[0] = kx1;
   _kx_priority[1] = kx2;
 
-  gnutls_kx_set_priority (session, _kx_priority);
+  MHD_gnutls_kx_set_priority (session, _kx_priority);
 }
 
 static void
-ADD_CIPHER (gnutls_session_t session, int cipher)
+ADD_CIPHER (mhd_gtls_session_t session, int cipher)
 {
   static int _cipher_priority[] = { 0, 0 };
   _cipher_priority[0] = cipher;
 
-  gnutls_cipher_set_priority (session, _cipher_priority);
+  MHD_gnutls_cipher_set_priority (session, _cipher_priority);
 }
 
 static void
-ADD_CIPHER4 (gnutls_session_t session, int cipher1, int cipher2, int cipher3,
+ADD_CIPHER4 (mhd_gtls_session_t session, int cipher1, int cipher2, int cipher3,
              int cipher4)
 {
   static int _cipher_priority[] = { 0, 0, 0, 0, 0 };
@@ -163,61 +163,61 @@ ADD_CIPHER4 (gnutls_session_t session, int cipher1, int cipher2, int cipher3,
   _cipher_priority[2] = cipher3;
   _cipher_priority[3] = cipher4;
 
-  gnutls_cipher_set_priority (session, _cipher_priority);
+  MHD_gnutls_cipher_set_priority (session, _cipher_priority);
 }
 
 static void
-ADD_MAC (gnutls_session_t session, int mac)
+ADD_MAC (mhd_gtls_session_t session, int mac)
 {
   static int _mac_priority[] = { 0, 0 };
   _mac_priority[0] = mac;
 
-  gnutls_mac_set_priority (session, _mac_priority);
+  MHD_gnutls_mac_set_priority (session, _mac_priority);
 }
 
 static void
-ADD_COMP (gnutls_session_t session, int c)
+ADD_COMP (mhd_gtls_session_t session, int c)
 {
   static int _comp_priority[] = { 0, 0 };
   _comp_priority[0] = c;
 
-  gnutls_compression_set_priority (session, _comp_priority);
+  MHD_gnutls_compression_set_priority (session, _comp_priority);
 }
 
 static void
-ADD_CERTTYPE (gnutls_session_t session, int ctype)
+ADD_CERTTYPE (mhd_gtls_session_t session, int ctype)
 {
   static int _ct_priority[] = { 0, 0 };
   _ct_priority[0] = ctype;
 
-  gnutls_certificate_type_set_priority (session, _ct_priority);
+  MHD_gnutls_certificate_type_set_priority (session, _ct_priority);
 }
 
 static void
-ADD_PROTOCOL (gnutls_session_t session, int protocol)
+ADD_PROTOCOL (mhd_gtls_session_t session, int protocol)
 {
   static int _proto_priority[] = { 0, 0 };
   _proto_priority[0] = protocol;
 
-  gnutls_protocol_set_priority (session, _proto_priority);
+  MHD_gnutls_protocol_set_priority (session, _proto_priority);
 }
 
 static void
-ADD_PROTOCOL3 (gnutls_session_t session, int p1, int p2, int p3)
+ADD_PROTOCOL3 (mhd_gtls_session_t session, int p1, int p2, int p3)
 {
   static int _proto_priority[] = { 0, 0, 0, 0 };
   _proto_priority[0] = p1;
   _proto_priority[1] = p2;
   _proto_priority[2] = p3;
 
-  gnutls_protocol_set_priority (session, _proto_priority);
+  MHD_gnutls_protocol_set_priority (session, _proto_priority);
 }
 
 #ifdef ENABLE_SRP
 static int srp_detected;
 
 int
-_test_srp_username_callback (gnutls_session_t session,
+_test_srp_username_callback (mhd_gtls_session_t session,
                              char **username, char **password)
 {
   srp_detected = 1;
@@ -226,7 +226,7 @@ _test_srp_username_callback (gnutls_session_t session,
 }
 
 test_code_t
-test_srp (gnutls_session_t session)
+test_srp (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -242,7 +242,7 @@ test_srp (gnutls_session_t session)
   gnutls_srp_set_client_credentials_function (srp_cred,
                                               _test_srp_username_callback);
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_SRP, srp_cred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_SRP, srp_cred);
 
   ret = do_handshake (session);
 
@@ -256,7 +256,7 @@ test_srp (gnutls_session_t session)
 #endif
 
 test_code_t
-test_server (gnutls_session_t session)
+test_server (mhd_gtls_session_t session)
 {
   int ret, i = 0;
   char buf[5 * 1024];
@@ -275,14 +275,14 @@ test_server (gnutls_session_t session)
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret != TEST_SUCCEED)
     return TEST_FAILED;
 
-  gnutls_record_send (session, snd_buf, sizeof (snd_buf) - 1);
-  ret = gnutls_record_recv (session, buf, sizeof (buf) - 1);
+  MHD_gnutls_record_send (session, snd_buf, sizeof (snd_buf) - 1);
+  ret = MHD_gnutls_record_recv (session, buf, sizeof (buf) - 1);
   if (ret < 0)
     return TEST_FAILED;
 
@@ -313,7 +313,7 @@ static gnutls_datum_t exp = { NULL, 0 }, mod =
 NULL, 0};
 
 test_code_t
-test_export (gnutls_session_t session)
+test_export (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -324,21 +324,21 @@ test_export (gnutls_session_t session)
 
   ADD_KX (session, MHD_GNUTLS_KX_RSA_EXPORT);
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_ARCFOUR_40);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
 
   if (ret == TEST_SUCCEED)
     {
       export_true = 1;
-      gnutls_rsa_export_get_pubkey (session, &exp, &mod);
+      MHD_gtls_rsa_export_get_pubkey (session, &exp, &mod);
     }
 
   return ret;
 }
 
 test_code_t
-test_export_info (gnutls_session_t session)
+test_export_info (mhd_gtls_session_t session)
 {
   int ret2, ret;
   gnutls_datum_t exp2, mod2;
@@ -354,13 +354,13 @@ test_export_info (gnutls_session_t session)
 
   ADD_KX (session, MHD_GNUTLS_KX_RSA_EXPORT);
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_ARCFOUR_40);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
 
   if (ret == TEST_SUCCEED)
     {
-      ret2 = gnutls_rsa_export_get_pubkey (session, &exp2, &mod2);
+      ret2 = MHD_gtls_rsa_export_get_pubkey (session, &exp2, &mod2);
       if (ret2 >= 0)
         {
           printf ("\n");
@@ -390,7 +390,7 @@ test_export_info (gnutls_session_t session)
 static gnutls_datum_t pubkey = { NULL, 0 };
 
 test_code_t
-test_dhe (gnutls_session_t session)
+test_dhe (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -401,17 +401,17 @@ test_dhe (gnutls_session_t session)
   ADD_ALL_MACS (session);
 
   ADD_KX2 (session, MHD_GNUTLS_KX_DHE_RSA, MHD_GNUTLS_KX_DHE_DSS);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
 
-  gnutls_dh_get_pubkey (session, &pubkey);
+  MHD_gnutls_dh_get_pubkey (session, &pubkey);
 
   return ret;
 }
 
 test_code_t
-test_dhe_group (gnutls_session_t session)
+test_dhe_group (mhd_gtls_session_t session)
 {
   int ret, ret2;
   gnutls_datum_t gen, prime, pubkey2;
@@ -427,11 +427,11 @@ test_dhe_group (gnutls_session_t session)
   ADD_ALL_MACS (session);
 
   ADD_KX2 (session, MHD_GNUTLS_KX_DHE_RSA, MHD_GNUTLS_KX_DHE_DSS);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
 
-  ret2 = gnutls_dh_get_group (session, &gen, &prime);
+  ret2 = MHD_gnutls_dh_get_group (session, &gen, &prime);
   if (ret2 >= 0)
     {
       printf ("\n");
@@ -444,7 +444,7 @@ test_dhe_group (gnutls_session_t session)
       if (print)
         printf (" Prime [%d bits]: %s\n", prime.size * 8, print);
 
-      gnutls_dh_get_pubkey (session, &pubkey2);
+      MHD_gnutls_dh_get_pubkey (session, &pubkey2);
       print = raw_to_string (pubkey2.data, pubkey2.size);
       if (print)
         printf (" Pubkey [%d bits]: %s\n", pubkey2.size * 8, print);
@@ -459,7 +459,7 @@ test_dhe_group (gnutls_session_t session)
 }
 
 test_code_t
-test_ssl3 (gnutls_session_t session)
+test_ssl3 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -468,7 +468,7 @@ test_ssl3 (gnutls_session_t session)
   ADD_PROTOCOL (session, MHD_GNUTLS_SSL3);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_SUCCEED)
@@ -485,7 +485,7 @@ got_alarm (int k)
 }
 
 test_code_t
-test_bye (gnutls_session_t session)
+test_bye (mhd_gtls_session_t session)
 {
   int ret;
   char data[20];
@@ -501,13 +501,13 @@ test_bye (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
     return ret;
 
-  ret = gnutls_bye (session, GNUTLS_SHUT_WR);
+  ret = MHD_gnutls_bye (session, GNUTLS_SHUT_WR);
   if (ret < 0)
     return TEST_FAILED;
 
@@ -521,7 +521,7 @@ test_bye (gnutls_session_t session)
 
   do
     {
-      ret = gnutls_record_recv (session, data, sizeof (data));
+      ret = MHD_gnutls_record_recv (session, data, sizeof (data));
     }
   while (ret > 0);
 
@@ -544,7 +544,7 @@ test_bye (gnutls_session_t session)
 
 
 test_code_t
-test_aes (gnutls_session_t session)
+test_aes (mhd_gtls_session_t session)
 {
   int ret;
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_AES_128_CBC);
@@ -553,7 +553,7 @@ test_aes (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
@@ -561,7 +561,7 @@ test_aes (gnutls_session_t session)
 
 #ifdef	ENABLE_CAMELLIA
 test_code_t
-test_camellia (gnutls_session_t session)
+test_camellia (mhd_gtls_session_t session)
 {
   int ret;
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC);
@@ -570,7 +570,7 @@ test_camellia (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
@@ -578,7 +578,7 @@ test_camellia (gnutls_session_t session)
 #endif
 
 test_code_t
-test_openpgp1 (gnutls_session_t session)
+test_openpgp1 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -587,7 +587,7 @@ test_openpgp1 (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
@@ -600,7 +600,7 @@ test_openpgp1 (gnutls_session_t session)
 }
 
 test_code_t
-test_unknown_ciphersuites (gnutls_session_t session)
+test_unknown_ciphersuites (mhd_gtls_session_t session)
 {
   int ret;
 #ifdef	ENABLE_CAMELLIA
@@ -616,14 +616,14 @@ test_unknown_ciphersuites (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
 }
 
 test_code_t
-test_md5 (gnutls_session_t session)
+test_md5 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -632,7 +632,7 @@ test_md5 (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_MAC (session, MHD_GNUTLS_MAC_MD5);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
@@ -640,7 +640,7 @@ test_md5 (gnutls_session_t session)
 
 #ifdef HAVE_LIBZ
 test_code_t
-test_zlib (gnutls_session_t session)
+test_zlib (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -649,7 +649,7 @@ test_zlib (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
@@ -657,10 +657,10 @@ test_zlib (gnutls_session_t session)
 #endif
 
 test_code_t
-test_lzo (gnutls_session_t session)
+test_lzo (mhd_gtls_session_t session)
 {
   int ret;
-  gnutls_handshake_set_private_extensions (session, 1);
+  MHD_gtls_handshake_set_private_extensions (session, 1);
 
   ADD_ALL_CIPHERS (session);
   ADD_COMP (session, MHD_GNUTLS_COMP_LZO);
@@ -668,7 +668,7 @@ test_lzo (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
 
@@ -676,7 +676,7 @@ test_lzo (gnutls_session_t session)
 }
 
 test_code_t
-test_sha (gnutls_session_t session)
+test_sha (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -685,14 +685,14 @@ test_sha (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_MAC (session, MHD_GNUTLS_MAC_SHA1);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
 }
 
 test_code_t
-test_3des (gnutls_session_t session)
+test_3des (mhd_gtls_session_t session)
 {
   int ret;
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_3DES_CBC);
@@ -701,14 +701,14 @@ test_3des (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
 }
 
 test_code_t
-test_arcfour (gnutls_session_t session)
+test_arcfour (mhd_gtls_session_t session)
 {
   int ret;
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_ARCFOUR_128);
@@ -717,14 +717,14 @@ test_arcfour (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
 }
 
 test_code_t
-test_arcfour_40 (gnutls_session_t session)
+test_arcfour_40 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_CIPHER (session, MHD_GNUTLS_CIPHER_ARCFOUR_40);
@@ -733,14 +733,14 @@ test_arcfour_40 (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   return ret;
 }
 
 test_code_t
-test_tls1 (gnutls_session_t session)
+test_tls1 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -749,7 +749,7 @@ test_tls1 (gnutls_session_t session)
   ADD_PROTOCOL (session, GNUTLS_TLS1);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_SUCCEED)
@@ -760,7 +760,7 @@ test_tls1 (gnutls_session_t session)
 }
 
 test_code_t
-test_tls1_1 (gnutls_session_t session)
+test_tls1_1 (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -769,7 +769,7 @@ test_tls1_1 (gnutls_session_t session)
   ADD_PROTOCOL (session, MHD_GNUTLS_TLS1_1);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_SUCCEED)
@@ -780,7 +780,7 @@ test_tls1_1 (gnutls_session_t session)
 }
 
 test_code_t
-test_tls1_1_fallback (gnutls_session_t session)
+test_tls1_1_fallback (mhd_gtls_session_t session)
 {
   int ret;
   if (tls1_1_ok)
@@ -792,15 +792,15 @@ test_tls1_1_fallback (gnutls_session_t session)
   ADD_PROTOCOL3 (session, MHD_GNUTLS_TLS1_1, GNUTLS_TLS1, MHD_GNUTLS_SSL3);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret != TEST_SUCCEED)
     return TEST_FAILED;
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_TLS1)
+  if (MHD_gnutls_protocol_get_version (session) == GNUTLS_TLS1)
     return TEST_SUCCEED;
-  else if (gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  else if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     return TEST_UNSURE;
 
   return TEST_FAILED;
@@ -811,7 +811,7 @@ test_tls1_1_fallback (gnutls_session_t session)
  * but the previous SSL 3.0 test succeeded then disable TLS 1.0.
  */
 test_code_t
-test_tls_disable (gnutls_session_t session)
+test_tls_disable (mhd_gtls_session_t session)
 {
   int ret;
   if (tls1_ok != 0)
@@ -823,7 +823,7 @@ test_tls_disable (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
@@ -840,7 +840,7 @@ test_tls_disable (gnutls_session_t session)
 }
 
 test_code_t
-test_rsa_pms (gnutls_session_t session)
+test_rsa_pms (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -855,19 +855,19 @@ test_rsa_pms (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_KX (session, MHD_GNUTLS_KX_RSA);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
     return TEST_FAILED;
 
-  if (gnutls_protocol_get_version (session) == GNUTLS_TLS1)
+  if (MHD_gnutls_protocol_get_version (session) == GNUTLS_TLS1)
     return TEST_SUCCEED;
   return TEST_UNSURE;
 }
 
 test_code_t
-test_max_record_size (gnutls_session_t session)
+test_max_record_size (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -876,14 +876,14 @@ test_max_record_size (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  gnutls_record_set_max_size (session, 512);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_record_set_max_size (session, 512);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
     return ret;
 
-  ret = gnutls_record_get_max_size (session);
+  ret = MHD_gnutls_record_get_max_size (session);
   if (ret == 512)
     return TEST_SUCCEED;
 
@@ -891,7 +891,7 @@ test_max_record_size (gnutls_session_t session)
 }
 
 test_code_t
-test_hello_extension (gnutls_session_t session)
+test_hello_extension (mhd_gtls_session_t session)
 {
   int ret;
   ADD_ALL_CIPHERS (session);
@@ -900,19 +900,19 @@ test_hello_extension (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  gnutls_record_set_max_size (session, 512);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_record_set_max_size (session, 512);
 
   ret = do_handshake (session);
   return ret;
 }
 
-void _gnutls_record_set_default_version (gnutls_session_t session,
+void _gnutls_record_set_default_version (mhd_gtls_session_t session,
                                          unsigned char major,
                                          unsigned char minor);
 
 test_code_t
-test_version_rollback (gnutls_session_t session)
+test_version_rollback (mhd_gtls_session_t session)
 {
   int ret;
   if (tls1_ok == 0)
@@ -931,7 +931,7 @@ test_version_rollback (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
   _gnutls_record_set_default_version (session, 3, 0);
 
   ret = do_handshake (session);
@@ -939,7 +939,7 @@ test_version_rollback (gnutls_session_t session)
     return ret;
 
   if (tls1_ok != 0
-      && gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+      && MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     return TEST_FAILED;
 
   return TEST_SUCCEED;
@@ -950,7 +950,7 @@ test_version_rollback (gnutls_session_t session)
  * message.
  */
 test_code_t
-test_version_oob (gnutls_session_t session)
+test_version_oob (mhd_gtls_session_t session)
 {
   int ret;
   /* here we enable both SSL 3.0 and TLS 1.0
@@ -962,18 +962,18 @@ test_version_oob (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
   _gnutls_record_set_default_version (session, 5, 5);
 
   ret = do_handshake (session);
   return ret;
 }
 
-void _gnutls_rsa_pms_set_version (gnutls_session_t session,
+void _gnutls_rsa_pms_set_version (mhd_gtls_session_t session,
                                   unsigned char major, unsigned char minor);
 
 test_code_t
-test_rsa_pms_version_check (gnutls_session_t session)
+test_rsa_pms_version_check (mhd_gtls_session_t session)
 {
   int ret;
   /* here we use an arbitary version in the RSA PMS
@@ -987,7 +987,7 @@ test_rsa_pms_version_check (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
   _gnutls_rsa_pms_set_version (session, 5, 5);  /* use SSL 5.5 version */
 
   ret = do_handshake (session);
@@ -997,7 +997,7 @@ test_rsa_pms_version_check (gnutls_session_t session)
 
 #ifdef ENABLE_ANON
 test_code_t
-test_anonymous (gnutls_session_t session)
+test_anonymous (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -1007,19 +1007,19 @@ test_anonymous (gnutls_session_t session)
   ADD_ALL_PROTOCOLS (session);
   ADD_ALL_MACS (session);
   ADD_KX (session, MHD_GNUTLS_KX_ANON_DH);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_ANON, anon_cred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_ANON, anon_cred);
 
   ret = do_handshake (session);
 
   if (ret == TEST_SUCCEED)
-    gnutls_dh_get_pubkey (session, &pubkey);
+    MHD_gnutls_dh_get_pubkey (session, &pubkey);
 
   return ret;
 }
 #endif
 
 test_code_t
-test_session_resume2 (gnutls_session_t session)
+test_session_resume2 (mhd_gtls_session_t session)
 {
   int ret;
   char tmp_session_id[32];
@@ -1035,8 +1035,8 @@ test_session_resume2 (gnutls_session_t session)
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_ANON, anon_cred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_ANON, anon_cred);
 
   gnutls_session_set_data (session, session_data, session_data_size);
 
@@ -1050,12 +1050,12 @@ test_session_resume2 (gnutls_session_t session)
   /* check if we actually resumed the previous session */
 
   session_id_size = sizeof (session_id);
-  gnutls_session_get_id (session, session_id, &session_id_size);
+  MHD_gtls_session_get_id (session, session_id, &session_id_size);
 
   if (session_id_size == 0)
     return TEST_FAILED;
 
-  if (gnutls_session_is_resumed (session))
+  if (MHD_gtls_session_is_resumed (session))
     return TEST_SUCCEED;
 
   if (tmp_session_id_size == session_id_size &&
@@ -1068,7 +1068,7 @@ test_session_resume2 (gnutls_session_t session)
 extern char *hostname;
 
 test_code_t
-test_certificate (gnutls_session_t session)
+test_certificate (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -1082,7 +1082,7 @@ test_certificate (gnutls_session_t session)
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
 
   ret = do_handshake (session);
   if (ret == TEST_FAILED)
@@ -1097,7 +1097,7 @@ test_certificate (gnutls_session_t session)
 /* A callback function to be used at the certificate selection time.
  */
 static int
-cert_callback (gnutls_session_t session,
+cert_callback (mhd_gtls_session_t session,
                const gnutls_datum_t * req_ca_rdn, int nreqs,
                const gnutls_pk_algorithm_t * sign_algos,
                int sign_algos_length, gnutls_retr_st * st)
@@ -1137,7 +1137,7 @@ cert_callback (gnutls_session_t session,
  * if the server sends a certificate request packet.
  */
 test_code_t
-test_server_cas (gnutls_session_t session)
+test_server_cas (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -1151,11 +1151,11 @@ test_server_cas (gnutls_session_t session)
   ADD_ALL_MACS (session);
   ADD_ALL_KX (session);
 
-  gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  gnutls_certificate_client_set_retrieve_function (xcred, cert_callback);
+  MHD_gnutls_credentials_set (session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD_gtls_certificate_client_set_retrieve_function (xcred, cert_callback);
 
   ret = do_handshake (session);
-  gnutls_certificate_client_set_retrieve_function (xcred, NULL);
+  MHD_gtls_certificate_client_set_retrieve_function (xcred, NULL);
 
   if (ret == TEST_FAILED)
     return ret;

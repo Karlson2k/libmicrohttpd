@@ -161,7 +161,7 @@ gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12)
   * gnutls_pkcs12_deinit - This function deinitializes memory used by a gnutls_pkcs12_t structure
   * @pkcs12: The structure to be initialized
   *
-  * This function will deinitialize a PKCS12 structure. 
+  * This function will deinitialize a PKCS12 structure.
   *
   **/
 void
@@ -338,7 +338,7 @@ ucs2_to_ascii (char *data, int size)
 }
 
 /* Decodes the SafeContents, and puts the output in
- * the given bag. 
+ * the given bag.
  */
 int
 _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
@@ -760,7 +760,7 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
       return result;
     }
 
-  /* Step 3. Encode the bag elements into a SafeContents 
+  /* Step 3. Encode the bag elements into a SafeContents
    * structure.
    */
   result = _pkcs12_encode_safe_contents (bag, &safe_cont, &enc);
@@ -924,7 +924,7 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
 
   /* MAC the data
    */
-  td1 = _gnutls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
+  td1 = mhd_gtls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
   if (td1 == GNUTLS_MAC_FAILED)
     {
       gnutls_assert ();
@@ -932,10 +932,10 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
       goto cleanup;
     }
 
-  _gnutls_hmac (td1, tmp.data, tmp.size);
+  mhd_gnutls_hash (td1, tmp.data, tmp.size);
   _gnutls_free_datum (&tmp);
 
-  _gnutls_hmac_deinit (td1, sha_mac);
+  mhd_gnutls_hmac_deinit (td1, sha_mac);
 
 
   result =
@@ -1050,7 +1050,7 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
 
   /* MAC the data
    */
-  td1 = _gnutls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
+  td1 = mhd_gtls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
   if (td1 == GNUTLS_MAC_FAILED)
     {
       gnutls_assert ();
@@ -1058,10 +1058,10 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
       goto cleanup;
     }
 
-  _gnutls_hmac (td1, tmp.data, tmp.size);
+  mhd_gnutls_hash (td1, tmp.data, tmp.size);
   _gnutls_free_datum (&tmp);
 
-  _gnutls_hmac_deinit (td1, sha_mac);
+  mhd_gnutls_hmac_deinit (td1, sha_mac);
 
   len = sizeof (sha_mac_orig);
   result =
@@ -1126,8 +1126,8 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
           return _gnutls_asn2err (result);
         }
 
-      _gnutls_str_cpy (root, sizeof (root), where);
-      _gnutls_str_cat (root, sizeof (root), ".?LAST");
+      mhd_gtls_str_cpy (root, sizeof (root), where);
+      mhd_gtls_str_cat (root, sizeof (root), ".?LAST");
 
       result =
         _gnutls_x509_encode_and_write_attribute (KEY_ID_OID, c2, root,
@@ -1176,8 +1176,8 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
           p++;
         }
 
-      _gnutls_str_cpy (root, sizeof (root), where);
-      _gnutls_str_cat (root, sizeof (root), ".?LAST");
+      mhd_gtls_str_cpy (root, sizeof (root), where);
+      mhd_gtls_str_cat (root, sizeof (root), ".?LAST");
 
       result =
         _gnutls_x509_encode_and_write_attribute (FRIENDLY_NAME_OID, c2,

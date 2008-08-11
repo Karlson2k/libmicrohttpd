@@ -32,6 +32,5 @@ sign.c \
 x509_verify.c \
 x509.c \
 x509_write.c
-# output.c
 
 

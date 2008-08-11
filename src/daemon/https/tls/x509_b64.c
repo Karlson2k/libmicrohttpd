@@ -287,7 +287,7 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
 }
 
 /**
-  * gnutls_pem_base64_encode - This function will convert raw data to Base64 encoded
+  * MHD_gtls_pem_base64_encode - This function will convert raw data to Base64 encoded
   * @msg: is a message to be put in the header
   * @data: contain the raw data
   * @result: the place where base64 data will be copied
@@ -302,7 +302,7 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
   * 
   **/
 int
-gnutls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
+MHD_gtls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
                           char *result, size_t * result_size)
 {
   opaque *ret;
@@ -329,7 +329,7 @@ gnutls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
 }
 
 /**
-  * gnutls_pem_base64_encode_alloc - This function will convert raw data to Base64 encoded
+  * MHD_gtls_pem_base64_encode_alloc - This function will convert raw data to Base64 encoded
   * @msg: is a message to be put in the encoded header
   * @data: contains the raw data
   * @result: will hold the newly allocated encoded data
@@ -342,7 +342,7 @@ gnutls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
   * 
   **/
 int
-gnutls_pem_base64_encode_alloc (const char *msg,
+MHD_gtls_pem_base64_encode_alloc (const char *msg,
                                 const gnutls_datum_t * data,
                                 gnutls_datum_t * result)
 {
@@ -436,9 +436,9 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
   int kdata_size;
   char pem_header[128];
 
-  _gnutls_str_cpy (pem_header, sizeof (pem_header), top);
+  mhd_gtls_str_cpy (pem_header, sizeof (pem_header), top);
   if (header != NULL)
-    _gnutls_str_cat (pem_header, sizeof (pem_header), header);
+    mhd_gtls_str_cat (pem_header, sizeof (pem_header), header);
 
   rdata = memmem (data, data_size, pem_header, strlen (pem_header));
 
@@ -520,7 +520,7 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
 }
 
 /**
-  * gnutls_pem_base64_decode - This function will decode base64 encoded data
+  * MHD_gtls_pem_base64_decode - This function will decode base64 encoded data
   * @header: A null terminated string with the PEM header (eg. CERTIFICATE)
   * @b64_data: contain the encoded data
   * @result: the place where decoded data will be copied
@@ -534,7 +534,7 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
   * or 0 on success.
   **/
 int
-gnutls_pem_base64_decode (const char *header,
+MHD_gtls_pem_base64_decode (const char *header,
                           const gnutls_datum_t * b64_data,
                           unsigned char *result, size_t * result_size)
 {
@@ -563,7 +563,7 @@ gnutls_pem_base64_decode (const char *header,
 }
 
 /**
-  * gnutls_pem_base64_decode_alloc - This function will decode base64 encoded data
+  * MHD_gtls_pem_base64_decode_alloc - This function will decode base64 encoded data
   * @header: The PEM header (eg. CERTIFICATE)
   * @b64_data: contains the encoded data
   * @result: the place where decoded data lie
@@ -578,7 +578,7 @@ gnutls_pem_base64_decode (const char *header,
   *
   **/
 int
-gnutls_pem_base64_decode_alloc (const char *header,
+MHD_gtls_pem_base64_decode_alloc (const char *header,
                                 const gnutls_datum_t * b64_data,
                                 gnutls_datum_t * result)
 {

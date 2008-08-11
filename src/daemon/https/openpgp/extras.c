@@ -100,8 +100,8 @@ gnutls_openpgp_keyring_check_id (gnutls_openpgp_keyring_t ring,
   cdk_pkt_pubkey_t pk;
   uint32_t id[2];
 
-  id[0] = _gnutls_read_uint32 (keyid);
-  id[1] = _gnutls_read_uint32 (&keyid[4]);
+  id[0] = mhd_gtls_read_uint32 (keyid);
+  id[1] = mhd_gtls_read_uint32 (&keyid[4]);
 
   if (!cdk_keydb_get_pk (ring->db, id, &pk))
     {

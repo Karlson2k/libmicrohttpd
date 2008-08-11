@@ -23,7 +23,7 @@
  */
 
 #ifdef DEBUG
-void _gnutls_print_state (gnutls_session_t session);
+void _gnutls_print_state (mhd_gtls_session_t session);
 #endif
 const char *_gnutls_packet2str (content_type_t packet);
 const char *_gnutls_handshake2str (gnutls_handshake_description_t handshake);

@@ -134,7 +134,7 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
       for (i = 0; i < 64; i++)
         buf_b[i] = hash[i % 20];
       n = 64;
-      rc = _gnutls_mpi_scan (&num_b1, buf_b, &n);
+      rc = mhd_gtls_mpi_scan (&num_b1, buf_b, &n);
       if (rc < 0)
         {
           gnutls_assert ();
@@ -146,7 +146,7 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
           mpi_t num_ij;
 
           n = 64;
-          rc = _gnutls_mpi_scan (&num_ij, buf_i + i, &n);
+          rc = mhd_gtls_mpi_scan (&num_ij, buf_i + i, &n);
           if (rc < 0)
             {
               gnutls_assert ();
@@ -155,7 +155,7 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
           gcry_mpi_add (num_ij, num_ij, num_b1);
           gcry_mpi_clear_highbit (num_ij, 64 * 8);
           n = 64;
-          rc = _gnutls_mpi_print (buf_i + i, &n, num_ij);
+          rc = mhd_gtls_mpi_print (buf_i + i, &n, num_ij);
           if (rc < 0)
             {
               gnutls_assert ();

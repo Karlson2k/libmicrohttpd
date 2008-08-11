@@ -71,7 +71,7 @@ static const char challenge_label[] = "inner application challenge";
    this return E_AGAIN and E_INTERRUPTED, call this function again
    with data==NULL&&sizeofdata=0NULL until it returns successfully. */
 static ssize_t
-_gnutls_send_inner_application (gnutls_session_t session,
+_gnutls_send_inner_application (mhd_gtls_session_t session,
                                 gnutls_ia_apptype_t msg_type,
                                 const char *data, size_t sizeofdata)
 {
@@ -90,11 +90,11 @@ _gnutls_send_inner_application (gnutls_session_t session,
         }
 
       *(unsigned char *) p = (unsigned char) (msg_type & 0xFF);
-      _gnutls_write_uint24 (sizeofdata, p + 1);
+      mhd_gtls_write_uint24 (sizeofdata, p + 1);
       memcpy (p + 4, data, sizeofdata);
     }
 
-  len = _gnutls_send_int (session, GNUTLS_INNER_APPLICATION, -1, p, plen);
+  len = mhd_gtls_send_int (session, GNUTLS_INNER_APPLICATION, -1, p, plen);
 
   if (p)
     gnutls_free (p);
@@ -106,14 +106,14 @@ _gnutls_send_inner_application (gnutls_session_t session,
    *MSG_TYPE, and the data in DATA of max SIZEOFDATA size.  Return the
    number of bytes read, or an error code. */
 static ssize_t
-_gnutls_recv_inner_application (gnutls_session_t session,
+_gnutls_recv_inner_application (mhd_gtls_session_t session,
                                 gnutls_ia_apptype_t * msg_type,
                                 opaque * data, size_t sizeofdata)
 {
   ssize_t len;
   opaque pkt[4];
 
-  len = _gnutls_recv_int (session, GNUTLS_INNER_APPLICATION, -1, pkt, 4);
+  len = mhd_gtls_recv_int (session, GNUTLS_INNER_APPLICATION, -1, pkt, 4);
   if (len != 4)
     {
       gnutls_assert ();
@@ -121,7 +121,7 @@ _gnutls_recv_inner_application (gnutls_session_t session,
     }
 
   *msg_type = pkt[0];
-  len = _gnutls_read_uint24 (&pkt[1]);
+  len = mhd_gtls_read_uint24 (&pkt[1]);
 
   if (*msg_type != GNUTLS_IA_APPLICATION_PAYLOAD && len != CHECKSUM_SIZE)
     {
@@ -140,7 +140,7 @@ _gnutls_recv_inner_application (gnutls_session_t session,
     {
       int tmplen = len;
 
-      len = _gnutls_recv_int (session, GNUTLS_INNER_APPLICATION, -1,
+      len = mhd_gtls_recv_int (session, GNUTLS_INNER_APPLICATION, -1,
                               data, tmplen);
       if (len != tmplen)
         {
@@ -159,7 +159,7 @@ _gnutls_recv_inner_application (gnutls_session_t session,
    respectively).  LABEL and LABEL_SIZE is used as the label.  The
    result is placed in pre-allocated OUT of OUTSIZE length. */
 static int
-_gnutls_ia_prf (gnutls_session_t session,
+_gnutls_ia_prf (mhd_gtls_session_t session,
                 size_t label_size,
                 const char *label,
                 size_t extra_size,
@@ -181,7 +181,7 @@ _gnutls_ia_prf (gnutls_session_t session,
           TLS_RANDOM_SIZE);
   memcpy (seed + 2 * TLS_RANDOM_SIZE, extra, extra_size);
 
-  ret = _gnutls_PRF (session, session->security_parameters.inner_secret,
+  ret = mhd_gtls_PRF (session, session->security_parameters.inner_secret,
                      TLS_MASTER_SIZE,
                      label, label_size, seed, seedsize, outsize, out);
 
@@ -192,7 +192,7 @@ _gnutls_ia_prf (gnutls_session_t session,
 
 /**
  * gnutls_ia_permute_inner_secret:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @session_keys_size: Size of generated session keys (0 if none).
  * @session_keys: Generated session keys, used to permute inner secret
  *                (NULL if none).
@@ -205,7 +205,7 @@ _gnutls_ia_prf (gnutls_session_t session,
  * Return value: Return zero on success, or a negative error code.
  **/
 int
-gnutls_ia_permute_inner_secret (gnutls_session_t session,
+gnutls_ia_permute_inner_secret (mhd_gtls_session_t session,
                                 size_t session_keys_size,
                                 const char *session_keys)
 {
@@ -220,7 +220,7 @@ gnutls_ia_permute_inner_secret (gnutls_session_t session,
 
 /**
  * gnutls_ia_generate_challenge:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @buffer_size: size of output buffer.
  * @buffer: pre-allocated buffer to contain @buffer_size bytes of output.
  *
@@ -230,7 +230,7 @@ gnutls_ia_permute_inner_secret (gnutls_session_t session,
  * Return value: Returns 0 on success, or an negative error code.
  **/
 int
-gnutls_ia_generate_challenge (gnutls_session_t session,
+gnutls_ia_generate_challenge (mhd_gtls_session_t session,
                               size_t buffer_size, char *buffer)
 {
   return _gnutls_ia_prf (session,
@@ -240,7 +240,7 @@ gnutls_ia_generate_challenge (gnutls_session_t session,
 
 /**
  * gnutls_ia_extract_inner_secret:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @buffer: pre-allocated buffer to hold 48 bytes of inner secret.
  *
  * Copy the 48 bytes large inner secret into the specified buffer
@@ -255,14 +255,14 @@ gnutls_ia_generate_challenge (gnutls_session_t session,
  * key from the inner secret.
  **/
 void
-gnutls_ia_extract_inner_secret (gnutls_session_t session, char *buffer)
+gnutls_ia_extract_inner_secret (mhd_gtls_session_t session, char *buffer)
 {
   memcpy (buffer, session->security_parameters.inner_secret, TLS_MASTER_SIZE);
 }
 
 /**
  * gnutls_ia_endphase_send:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @final_p: Set iff this should signal the final phase.
  *
  * Send a TLS/IA end phase message.
@@ -276,7 +276,7 @@ gnutls_ia_extract_inner_secret (gnutls_session_t session, char *buffer)
  * Return value: Return 0 on success, or an error code.
  **/
 int
-gnutls_ia_endphase_send (gnutls_session_t session, int final_p)
+gnutls_ia_endphase_send (mhd_gtls_session_t session, int final_p)
 {
   opaque local_checksum[CHECKSUM_SIZE];
   int client = session->security_parameters.entity == GNUTLS_CLIENT;
@@ -286,7 +286,7 @@ gnutls_ia_endphase_send (gnutls_session_t session, int final_p)
   ssize_t len;
   int ret;
 
-  ret = _gnutls_PRF (session, session->security_parameters.inner_secret,
+  ret = mhd_gtls_PRF (session, session->security_parameters.inner_secret,
                      TLS_MASTER_SIZE, label, size_of_label - 1,
                      /* XXX specification unclear on seed. */
                      "", 0, CHECKSUM_SIZE, local_checksum);
@@ -300,7 +300,7 @@ gnutls_ia_endphase_send (gnutls_session_t session, int final_p)
 
   /* XXX  Instead of calling this function over and over...?
    * while (len == GNUTLS_E_AGAIN || len == GNUTLS_E_INTERRUPTED)
-   *  len = _gnutls_io_write_flush(session);
+   *  len = mhd_gtls_io_write_flush(session);
    */
 
   if (len < 0)
@@ -314,7 +314,7 @@ gnutls_ia_endphase_send (gnutls_session_t session, int final_p)
 
 /**
  * gnutls_ia_verify_endphase:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @checksum: 12-byte checksum data, received from gnutls_ia_recv().
  *
  * Verify TLS/IA end phase checksum data.  If verification fails, the
@@ -330,7 +330,7 @@ gnutls_ia_endphase_send (gnutls_session_t session, int final_p)
  * %GNUTLS_E_IA_VERIFY_FAILED is returned.
  **/
 int
-gnutls_ia_verify_endphase (gnutls_session_t session, const char *checksum)
+gnutls_ia_verify_endphase (mhd_gtls_session_t session, const char *checksum)
 {
   char local_checksum[CHECKSUM_SIZE];
   int client = session->security_parameters.entity == GNUTLS_CLIENT;
@@ -339,7 +339,7 @@ gnutls_ia_verify_endphase (gnutls_session_t session, const char *checksum)
     sizeof (client_finished_label);
   int ret;
 
-  ret = _gnutls_PRF (session, session->security_parameters.inner_secret,
+  ret = mhd_gtls_PRF (session, session->security_parameters.inner_secret,
                      TLS_MASTER_SIZE,
                      label, size_of_label - 1,
                      "", 0, CHECKSUM_SIZE, local_checksum);
@@ -351,7 +351,7 @@ gnutls_ia_verify_endphase (gnutls_session_t session, const char *checksum)
 
   if (memcmp (local_checksum, checksum, CHECKSUM_SIZE) != 0)
     {
-      ret = gnutls_alert_send (session, GNUTLS_AL_FATAL,
+      ret = MHD_gnutls_alert_send (session, GNUTLS_AL_FATAL,
                                GNUTLS_A_INNER_APPLICATION_VERIFICATION);
       if (ret < 0)
         {
@@ -367,7 +367,7 @@ gnutls_ia_verify_endphase (gnutls_session_t session, const char *checksum)
 
 /**
  * gnutls_ia_send: Send peer the specified TLS/IA data.
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @data: contains the data to send
  * @sizeofdata: is the length of the data
  *
@@ -393,7 +393,7 @@ gnutls_ia_verify_endphase (gnutls_session_t session, const char *checksum)
  * Returns the number of bytes sent, or a negative error code.
  **/
 ssize_t
-gnutls_ia_send (gnutls_session_t session, const char *data, size_t sizeofdata)
+gnutls_ia_send (mhd_gtls_session_t session, const char *data, size_t sizeofdata)
 {
   ssize_t len;
 
@@ -406,7 +406,7 @@ gnutls_ia_send (gnutls_session_t session, const char *data, size_t sizeofdata)
 
 /**
  * gnutls_ia_recv - read data from the TLS/IA protocol
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @data: the buffer that the data will be read into, must hold >= 12 bytes.
  * @sizeofdata: the number of requested bytes, must be >= 12.
  *
@@ -433,7 +433,7 @@ gnutls_ia_send (gnutls_session_t session, const char *data, size_t sizeofdata)
  * application phase finished message has been sent by the server.
  **/
 ssize_t
-gnutls_ia_recv (gnutls_session_t session, char *data, size_t sizeofdata)
+gnutls_ia_recv (mhd_gtls_session_t session, char *data, size_t sizeofdata)
 {
   gnutls_ia_apptype_t msg_type;
   ssize_t len;
@@ -453,7 +453,7 @@ gnutls_ia_recv (gnutls_session_t session, char *data, size_t sizeofdata)
    though.  */
 
 int
-_gnutls_ia_client_handshake (gnutls_session_t session)
+_gnutls_ia_client_handshake (mhd_gtls_session_t session)
 {
   char *buf = NULL;
   size_t buflen = 0;
@@ -461,7 +461,7 @@ _gnutls_ia_client_handshake (gnutls_session_t session)
   ssize_t len;
   int ret;
   const struct gnutls_ia_client_credentials_st *cred =
-    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
+    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
   if (cred == NULL)
     return GNUTLS_E_INTERNAL_ERROR;
@@ -476,7 +476,7 @@ _gnutls_ia_client_handshake (gnutls_session_t session)
       if (ret)
         {
           int tmpret;
-          tmpret = gnutls_alert_send (session, GNUTLS_AL_FATAL,
+          tmpret = MHD_gnutls_alert_send (session, GNUTLS_AL_FATAL,
                                       GNUTLS_A_INNER_APPLICATION_FAILURE);
           if (tmpret < 0)
             gnutls_assert ();
@@ -522,14 +522,14 @@ _gnutls_ia_client_handshake (gnutls_session_t session)
 }
 
 int
-_gnutls_ia_server_handshake (gnutls_session_t session)
+_gnutls_ia_server_handshake (mhd_gtls_session_t session)
 {
   gnutls_ia_apptype_t msg_type;
   ssize_t len;
   char buf[1024];
   int ret;
   const struct gnutls_ia_server_credentials_st *cred =
-    _gnutls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
+    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
   if (cred == NULL)
     return GNUTLS_E_INTERNAL_ERROR;
@@ -563,7 +563,7 @@ _gnutls_ia_server_handshake (gnutls_session_t session)
       if (ret < 0)
         {
           int tmpret;
-          tmpret = gnutls_alert_send (session, GNUTLS_AL_FATAL,
+          tmpret = MHD_gnutls_alert_send (session, GNUTLS_AL_FATAL,
                                       GNUTLS_A_INNER_APPLICATION_FAILURE);
           if (tmpret < 0)
             gnutls_assert ();
@@ -594,18 +594,18 @@ _gnutls_ia_server_handshake (gnutls_session_t session)
 
 /**
  * gnutls_ia_handshake_p:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  *
- * Predicate to be used after gnutls_handshake() to decide whether to
+ * Predicate to be used after MHD_gnutls_handshake() to decide whether to
  * invoke gnutls_ia_handshake().  Usable by both clients and servers.
  *
  * Return value: non-zero if TLS/IA handshake is expected, zero
  *   otherwise.
  **/
 int
-gnutls_ia_handshake_p (gnutls_session_t session)
+gnutls_ia_handshake_p (mhd_gtls_session_t session)
 {
-  tls_ext_st *ext = &session->security_parameters.extensions;
+  mhd_gtls_ext_st *ext = &session->security_parameters.extensions;
 
   /* Either local side or peer doesn't do TLS/IA: don't do IA */
 
@@ -614,7 +614,7 @@ gnutls_ia_handshake_p (gnutls_session_t session)
 
   /* Not resuming or we don't allow skipping on resumption locally: do IA */
 
-  if (!ext->gnutls_ia_allowskip || !gnutls_session_is_resumed (session))
+  if (!ext->gnutls_ia_allowskip || !MHD_gtls_session_is_resumed (session))
     return 1;
 
   /* If we're resuming and we and the peer both allow skipping on resumption: 
@@ -626,15 +626,15 @@ gnutls_ia_handshake_p (gnutls_session_t session)
 
 /**
  * gnutls_ia_handshake:
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  *
  * Perform a TLS/IA handshake.  This should be called after
- * gnutls_handshake() iff gnutls_ia_handshake_p().
+ * MHD_gnutls_handshake() iff gnutls_ia_handshake_p().
  *
  * Return 0 on success, or an error code.
  **/
 int
-gnutls_ia_handshake (gnutls_session_t session)
+gnutls_ia_handshake (mhd_gtls_session_t session)
 {
   int ret;
 
@@ -696,11 +696,11 @@ gnutls_ia_free_client_credentials (gnutls_ia_client_credentials_t sc)
  * server, and to get a new AVP to send to the server.
  *
  * The callback's function form is:
- * int (*avp_func) (gnutls_session_t session, void *ptr,
+ * int (*avp_func) (mhd_gtls_session_t session, void *ptr,
  *                  const char *last, size_t lastlen,
  *                  char **next, size_t *nextlen);
  *
- * The @session parameter is the #gnutls_session_t structure
+ * The @session parameter is the #mhd_gtls_session_t structure
  * corresponding to the current session.  The @ptr parameter is the
  * application hook pointer, set through
  * gnutls_ia_set_client_avp_ptr().  The AVP received from the server
@@ -802,11 +802,11 @@ gnutls_ia_free_server_credentials (gnutls_ia_server_credentials_t sc)
  * Set the TLS/IA AVP callback handler used for the session.
  *
  * The callback's function form is:
- * int (*avp_func) (gnutls_session_t session, void *ptr,
+ * int (*avp_func) (mhd_gtls_session_t session, void *ptr,
  *                  const char *last, size_t lastlen,
  *                  char **next, size_t *nextlen);
  *
- * The @session parameter is the #gnutls_session_t structure
+ * The @session parameter is the #mhd_gtls_session_t structure
  * corresponding to the current session.  The @ptr parameter is the
  * application hook pointer, set through
  * gnutls_ia_set_server_avp_ptr().  The AVP received from the client
@@ -873,7 +873,7 @@ gnutls_ia_get_server_avp_ptr (gnutls_ia_server_credentials_t cred)
 
 /**
  * gnutls_ia_enable - Indicate willingness for TLS/IA application phases
- * @session: is a #gnutls_session_t structure.
+ * @session: is a #mhd_gtls_session_t structure.
  * @allow_skip_on_resume: non-zero if local party allows to skip the
  *			  TLS/IA application phases for a resumed session.
  *
@@ -897,7 +897,7 @@ gnutls_ia_get_server_avp_ptr (gnutls_ia_server_credentials_t cred)
  * functions.
  **/
 void
-gnutls_ia_enable (gnutls_session_t session, int allow_skip_on_resume)
+gnutls_ia_enable (mhd_gtls_session_t session, int allow_skip_on_resume)
 {
   session->security_parameters.extensions.gnutls_ia_enable = 1;
   session->security_parameters.extensions.gnutls_ia_allowskip =

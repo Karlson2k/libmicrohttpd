@@ -25,14 +25,14 @@
 #include <auth_cert.h>
 
 typedef int (*OPENPGP_VERIFY_KEY_FUNC) (const
-					gnutls_certificate_credentials_t,
+					mhd_gtls_cert_credentials_t,
 					const gnutls_datum_t *, int,
 					unsigned int *);
 
 typedef time_t (*OPENPGP_KEY_CREATION_TIME_FUNC) (const gnutls_datum_t *);
 typedef time_t (*OPENPGP_KEY_EXPIRATION_TIME_FUNC) (const gnutls_datum_t *);
-typedef int (*OPENPGP_KEY_REQUEST) (gnutls_session_t, gnutls_datum_t *,
-				    const gnutls_certificate_credentials_t,
+typedef int (*OPENPGP_KEY_REQUEST) (mhd_gtls_session_t, gnutls_datum_t *,
+				    const mhd_gtls_cert_credentials_t,
 				    opaque *, int);
 
 typedef int (*OPENPGP_FINGERPRINT) (const gnutls_datum_t *,

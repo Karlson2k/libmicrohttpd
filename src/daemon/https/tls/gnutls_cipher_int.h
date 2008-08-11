@@ -29,18 +29,18 @@
 #define GNUTLS_CIPHER_FAILED NULL
 
 // TODO gc_cipher_handle -> void * x3
-void * _gnutls_cipher_init(gnutls_cipher_algorithm_t cipher,
+void * mhd_gtls_cipher_init(gnutls_cipher_algorithm_t cipher,
                                      const gnutls_datum_t * key,
                                      const gnutls_datum_t * iv);
 
-int _gnutls_cipher_encrypt(void * handle,
+int mhd_gtls_cipher_encrypt(void * handle,
                            void *text,
                            int textlen);
 
-int _gnutls_cipher_decrypt(void * handle,
+int mhd_gtls_cipher_decrypt(void * handle,
                            void *ciphertext,
                            int ciphertextlen);
 
-void _gnutls_cipher_deinit(void * handle);
+void mhd_gnutls_cipher_deinit(void * handle);
 
 #endif /* GNUTLS_CIPHER_INT */

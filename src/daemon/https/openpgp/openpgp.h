@@ -117,7 +117,7 @@ int gnutls_openpgp_crt_verify_self(gnutls_openpgp_crt_t key,
 
 /* certificate authentication stuff.
  */
-int gnutls_certificate_set_openpgp_key(gnutls_certificate_credentials_t
+int gnutls_certificate_set_openpgp_key(mhd_gtls_cert_credentials_t
                                        res,
                                        gnutls_openpgp_crt_t key,
                                        gnutls_openpgp_privkey_t pkey);

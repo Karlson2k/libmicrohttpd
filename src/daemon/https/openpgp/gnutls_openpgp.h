@@ -31,17 +31,17 @@ typedef enum
   }key_attr_t;
 
 int
-gnutls_certificate_set_openpgp_key_file (gnutls_certificate_credentials_t
+gnutls_certificate_set_openpgp_key_file (mhd_gtls_cert_credentials_t
     res, const char *CERTFILE,
     const char *KEYFILE, gnutls_openpgp_crt_fmt_t);
 
 int gnutls_openpgp_count_key_names (const gnutls_datum_t * cert);
 
 int gnutls_certificate_set_openpgp_keyring_file
-(gnutls_certificate_credentials_t c, const char *file, gnutls_openpgp_crt_fmt_t);
+(mhd_gtls_cert_credentials_t c, const char *file, gnutls_openpgp_crt_fmt_t);
 
 int
-gnutls_certificate_set_openpgp_keyring_mem (gnutls_certificate_credentials_t
+gnutls_certificate_set_openpgp_keyring_mem (mhd_gtls_cert_credentials_t
     c, const opaque * data,
     size_t dlen, gnutls_openpgp_crt_fmt_t);
 
@@ -63,12 +63,12 @@ _gnutls_openpgp_raw_privkey_to_gkey (gnutls_privkey * pkey,
     gnutls_openpgp_crt_fmt_t format);
 
 int
-_gnutls_openpgp_request_key (gnutls_session_t,
+_gnutls_openpgp_request_key (mhd_gtls_session_t,
     gnutls_datum_t * ret,
-    const gnutls_certificate_credentials_t cred,
+    const mhd_gtls_cert_credentials_t cred,
     opaque * key_fpr, int key_fpr_size);
 
-int _gnutls_openpgp_verify_key (const gnutls_certificate_credentials_t,
+int _gnutls_openpgp_verify_key (const mhd_gtls_cert_credentials_t,
     const gnutls_datum_t * cert_list,
     int cert_list_length, unsigned int *status);
 int _gnutls_openpgp_fingerprint (const gnutls_datum_t * cert,

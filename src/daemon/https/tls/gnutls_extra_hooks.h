@@ -29,7 +29,7 @@
 #include <auth_cert.h>
 
 typedef int (*_gnutls_openpgp_verify_key_func)
-(const gnutls_certificate_credentials_t,
+(const mhd_gtls_cert_credentials_t,
  const gnutls_datum_t *, int,
  unsigned int *);
 
@@ -40,8 +40,8 @@ typedef time_t (*_gnutls_openpgp_crt_expiration_time_func)
 (const gnutls_datum_t *);
 
 typedef int (*_gnutls_openpgp_crt_request_func)
-(gnutls_session_t, gnutls_datum_t *,
- const gnutls_certificate_credentials_t,
+(mhd_gtls_session_t, gnutls_datum_t *,
+ const mhd_gtls_cert_credentials_t,
  opaque *, int);
 
 typedef int (*_gnutls_openpgp_fingerprint_func)

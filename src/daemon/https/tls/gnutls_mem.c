@@ -32,7 +32,7 @@ gnutls_free_function gnutls_free = free;
 gnutls_realloc_function gnutls_realloc = realloc;
 
 void *(*gnutls_calloc) (size_t, size_t) = calloc;
-char *(*gnutls_strdup) (const char *) = _gnutls_strdup;
+char *(*gnutls_strdup) (const char *) = mhd_gtls_strdup;
 
 int
 _gnutls_is_secure_mem_null (const void *ign)
@@ -44,7 +44,7 @@ int (*_gnutls_is_secure_memory) (const void *) = _gnutls_is_secure_mem_null;
 
 
 void *
-_gnutls_calloc (size_t nmemb, size_t size)
+mhd_gtls_calloc (size_t nmemb, size_t size)
 {
   void *ret;
   size *= nmemb;
@@ -55,7 +55,7 @@ _gnutls_calloc (size_t nmemb, size_t size)
 }
 
 svoid *
-gnutls_secure_calloc (size_t nmemb, size_t size)
+mhd_gtls_secure_calloc (size_t nmemb, size_t size)
 {
   svoid *ret;
   size *= nmemb;
@@ -69,7 +69,7 @@ gnutls_secure_calloc (size_t nmemb, size_t size)
  * fails.
  */
 void *
-gnutls_realloc_fast (void *ptr, size_t size)
+mhd_gtls_realloc_fast (void *ptr, size_t size)
 {
   void *ret;
 
@@ -86,7 +86,7 @@ gnutls_realloc_fast (void *ptr, size_t size)
 }
 
 char *
-_gnutls_strdup (const char *str)
+mhd_gtls_strdup (const char *str)
 {
   size_t siz = strlen (str) + 1;
   char *ret;
@@ -109,7 +109,7 @@ _gnutls_strdup (const char *str)
   * return a pointer to memory. This function is supposed
   * to be used by callbacks.
   *
-  * The allocation function used is the one set by gnutls_global_set_mem_functions().
+  * The allocation function used is the one set by MHD_gtls_global_set_mem_functions().
   *
   **/
 void *
@@ -123,7 +123,7 @@ gnutls_malloc (size_t s)
   *
   * This function will free data pointed by ptr.
   *
-  * The deallocation function used is the one set by gnutls_global_set_mem_functions().
+  * The deallocation function used is the one set by MHD_gtls_global_set_mem_functions().
   *
   **/
 void

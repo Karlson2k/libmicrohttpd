@@ -1424,7 +1424,7 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
 
   if (kdf_params->key_size == 0)
     {
-      key_size = gnutls_cipher_get_key_size (enc_params->cipher);
+      key_size = MHD_gnutls_cipher_get_key_size (enc_params->cipher);
     }
   else
     key_size = kdf_params->key_size;
@@ -1474,7 +1474,7 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
 
   d_iv.data = (opaque *) enc_params->iv;
   d_iv.size = enc_params->iv_size;
-  ch = _gnutls_cipher_init (enc_params->cipher, &dkey, &d_iv);
+  ch = mhd_gtls_cipher_init (enc_params->cipher, &dkey, &d_iv);
 
   gnutls_afree (key);
   key = NULL;
@@ -1486,7 +1486,7 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
       goto error;
     }
 
-  result = _gnutls_cipher_decrypt (ch, data, data_size);
+  result = mhd_gtls_cipher_decrypt (ch, data, data_size);
   if (result < 0)
     {
       gnutls_assert ();
@@ -1495,12 +1495,12 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
 
   decrypted_data->data = data;
 
-  if (_gnutls_cipher_get_block_size (enc_params->cipher) != 1)
+  if (mhd_gtls_cipher_get_block_size (enc_params->cipher) != 1)
     decrypted_data->size = data_size - data[data_size - 1];
   else
     decrypted_data->size = data_size;
 
-  _gnutls_cipher_deinit (ch);
+  mhd_gnutls_cipher_deinit (ch);
 
   return 0;
 
@@ -1508,7 +1508,7 @@ error:
   gnutls_free (data);
   gnutls_afree (key);
   if (ch != NULL)
-    _gnutls_cipher_deinit (ch);
+    mhd_gnutls_cipher_deinit (ch);
   return result;
 }
 
@@ -1568,7 +1568,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
 
   /* write the iteration count
    */
-  _gnutls_write_uint32 (kdf_params->iter_count, tmp);
+  mhd_gtls_write_uint32 (kdf_params->iter_count, tmp);
 
   result = asn1_write_value (pbkdf2_asn, "iterationCount", tmp, 4);
   if (result != ASN1_SUCCESS)
@@ -1727,9 +1727,9 @@ generate_key (schema_id schema,
 
   kdf_params->iter_count = 256 + rnd[0];
   key->size = kdf_params->key_size =
-    gnutls_cipher_get_key_size (enc_params->cipher);
+    MHD_gnutls_cipher_get_key_size (enc_params->cipher);
 
-  enc_params->iv_size = _gnutls_cipher_get_iv_size (enc_params->cipher);
+  enc_params->iv_size = mhd_gtls_cipher_get_iv_size (enc_params->cipher);
 
   key->data = gnutls_secure_malloc (key->size);
   if (key->data == NULL)
@@ -1893,7 +1893,7 @@ encrypt_data (const gnutls_datum_t * plain,
   cipher_hd_t ch = NULL;
   opaque pad, pad_size;
 
-  pad_size = _gnutls_cipher_get_block_size (enc_params->cipher);
+  pad_size = mhd_gtls_cipher_get_block_size (enc_params->cipher);
 
   if (pad_size == 1)            /* stream */
     pad_size = 0;
@@ -1921,7 +1921,7 @@ encrypt_data (const gnutls_datum_t * plain,
 
   d_iv.data = (opaque *) enc_params->iv;
   d_iv.size = enc_params->iv_size;
-  ch = _gnutls_cipher_init (enc_params->cipher, key, &d_iv);
+  ch = mhd_gtls_cipher_init (enc_params->cipher, key, &d_iv);
 
   if (ch == GNUTLS_CIPHER_FAILED)
     {
@@ -1930,7 +1930,7 @@ encrypt_data (const gnutls_datum_t * plain,
       goto error;
     }
 
-  result = _gnutls_cipher_encrypt (ch, data, data_size);
+  result = mhd_gtls_cipher_encrypt (ch, data, data_size);
   if (result < 0)
     {
       gnutls_assert ();
@@ -1940,14 +1940,14 @@ encrypt_data (const gnutls_datum_t * plain,
   encrypted->data = data;
   encrypted->size = data_size;
 
-  _gnutls_cipher_deinit (ch);
+  mhd_gnutls_cipher_deinit (ch);
 
   return 0;
 
 error:
   gnutls_free (data);
   if (ch != NULL)
-    _gnutls_cipher_deinit (ch);
+    mhd_gnutls_cipher_deinit (ch);
   return result;
 }
 
