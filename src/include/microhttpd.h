@@ -341,7 +341,16 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
-  MHD_HTTPS_OPTION_START = 6,
+ /**
+  * Bind daemon to the supplied ip address. this option should be followed by a
+  * ip address string. Addresses should be supplied in the number & dot notation
+  * [ie. '127.0.0.1' for IPv4 & '::ffff:127.0.0.1' for IPv6 ]. Supplying an
+  * IPv6 address * must be done in conjunction with supplying the daemon with
+  * the 'MHD_USE_IPv6' option.
+  */
+  MHD_OPTION_IP_ADDR = 6,
+
+  MHD_HTTPS_OPTION_START = 7,
 
   /**
    * Filename for the private key (key.pem) to be used by the
@@ -719,23 +728,16 @@ typedef int
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int options,
-                     unsigned short port, char * ip,
+                     unsigned short port,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
                      MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap);
-
-struct MHD_Daemon *
-MHD_start_daemon_ip (unsigned int options,
-                           unsigned short port, char *ip,
-                           MHD_AcceptPolicyCallback apc,
-                           void *apc_cls,
-                           MHD_AccessHandlerCallback dh, void *dh_cls, ...);
 
 /*
  * Variadic version of MHD_start_daemon_va. This function will delegate calls
  * to MHD_start_daemon_va() once argument list is analyzed.
  */
-struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
+struct MHD_Daemon * MHD_start_daemon (unsigned int flags,
                                      unsigned short port,
                                      MHD_AcceptPolicyCallback apc,
                                      void *apc_cls,
@@ -803,9 +805,9 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 /**
  * This function can be used to add an entry to
- * the HTTP headers of a connection (so that the 
+ * the HTTP headers of a connection (so that the
  * MHD_get_connection_values function will return
- * them -- and the MHD PostProcessor will also 
+ * them -- and the MHD PostProcessor will also
  * see them).  This maybe required in certain
  * situations (see Mantis #1399) where (broken)
  * HTTP implementations fail to supply values needed
@@ -830,10 +832,10 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  *         performed due to insufficient memory;
  *         MHD_YES on success
  */
-int 
+int
 MHD_set_connection_value (struct MHD_Connection *connection,
 			  enum MHD_ValueKind kind,
-			  const char *key, 
+			  const char *key,
 			  const char *value);
 
 /**

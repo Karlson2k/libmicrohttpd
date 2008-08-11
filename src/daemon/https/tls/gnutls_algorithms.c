@@ -392,17 +392,16 @@ extern mhd_gtls_mod_auth_st dhe_psk_auth_struct;
 extern mhd_gtls_mod_auth_st srp_rsa_auth_struct;
 extern mhd_gtls_mod_auth_st srp_dss_auth_struct;
 
-struct gnutls_kx_algo_entry
+typedef struct mhd_gtls_kx_algo_entry
 {
   const char *name;
   gnutls_kx_algorithm_t algorithm;
   mhd_gtls_mod_auth_st *auth_struct;
   int needs_dh_params;
   int needs_rsa_params;
-};
-typedef struct gnutls_kx_algo_entry gnutls_kx_algo_entry;
+} mhd_gtls_kx_algo_entry_t;
 
-static const gnutls_kx_algo_entry _gnutls_kx_algorithms[] = {
+static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
 #ifdef ENABLE_ANON
   {"ANON-DH", MHD_GNUTLS_KX_ANON_DH, &anon_auth_struct, 1, 0},
 #endif
@@ -466,8 +465,8 @@ static const gnutls_kx_algorithm_t supported_kxs[] = {
 };
 
 #define GNUTLS_KX_LOOP(b) \
-        const gnutls_kx_algo_entry *p; \
-                for(p = _gnutls_kx_algorithms; p->name != NULL; p++) { b ; }
+        const mhd_gtls_kx_algo_entry_t *p; \
+                for(p = mhd_gtls_kx_algorithms; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_KX_ALG_LOOP(a) \
                         GNUTLS_KX_LOOP( if(p->algorithm == algorithm) { a; break; } )

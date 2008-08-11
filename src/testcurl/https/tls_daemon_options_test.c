@@ -254,7 +254,7 @@ static int
 setup (struct MHD_Daemon **d, va_list arg_list)
 {
   *d = MHD_start_daemon_va (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                            MHD_USE_DEBUG, 42433, "127.0.0.1",
+                            MHD_USE_DEBUG, 42433,
                             NULL, NULL, &http_ahc, NULL, arg_list);
 
   if (*d == NULL)
@@ -428,40 +428,40 @@ main (int argc, char *const *argv)
   int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
   int kx[] = { MHD_GNUTLS_KX_ANON_DH, 0 };
 
-//  errorCount +=
-//    test_wrap ("https_transfer", &test_https_transfer, test_fd, "AES256-SHA",
-//               CURL_SSLVERSION_TLSv1,
-//               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-//               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-//               MHD_OPTION_END);
-//  errorCount +=
-//    test_wrap ("file certificates", &test_file_certificates, test_fd,
-//               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
-//               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-//               srv_self_signed_cert_pem, MHD_OPTION_END);
-//  errorCount +=
-//    test_wrap ("protocol_version", &test_protocol_version, test_fd,
-//               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
-//               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-//               srv_self_signed_cert_pem, MHD_OPTION_PROTOCOL_VERSION, p,
-//               MHD_OPTION_END);
-//  errorCount +=
-//    test_wrap ("cipher DES-CBC3-SHA", &test_https_transfer, test_fd,
-//               "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
-//               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-//               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-//               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_END);
-//  errorCount +=
-//    test_wrap ("mac SH1", &test_https_transfer, test_fd, "AES256-SHA",
-//               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-//               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-//               MHD_OPTION_MAC_ALGO, mac, MHD_OPTION_END);
-//  errorCount +=
-//    test_wrap ("kx ANON_DH", &test_https_transfer, test_fd,
-//               "ADH-DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
-//               MHD_OPTION_CRED_TYPE, MHD_GNUTLS_CRD_ANON,
-//               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_KX_PRIORITY,
-//               kx, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("https_transfer", &test_https_transfer, test_fd, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("file certificates", &test_file_certificates, test_fd,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("protocol_version", &test_protocol_version, test_fd,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_PROTOCOL_VERSION, p,
+               MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("cipher DES-CBC3-SHA", &test_https_transfer, test_fd,
+               "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("mac SH1", &test_https_transfer, test_fd, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_MAC_ALGO, mac, MHD_OPTION_END);
+  errorCount +=
+    test_wrap ("kx ANON_DH", &test_https_transfer, test_fd,
+               "ADH-DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_CRED_TYPE, MHD_GNUTLS_CRD_ANON,
+               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_KX_PRIORITY,
+               kx, MHD_OPTION_END);
   errorCount +=
       test_wrap ("ADH-AES256-SHA", &test_https_transfer, test_fd,
     		     "ADH-AES256-SHA", CURL_SSLVERSION_TLSv1,

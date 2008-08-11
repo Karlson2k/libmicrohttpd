@@ -783,6 +783,24 @@ MHD_select_thread (void *cls)
   return NULL;
 }
 
+struct MHD_Daemon *
+MHD_start_daemon (unsigned int options,
+                  unsigned short port,
+                  MHD_AcceptPolicyCallback apc,
+                  void *apc_cls,
+                  MHD_AccessHandlerCallback dh, void *dh_cls, ...)
+{
+  struct MHD_Daemon *ret;
+  va_list ap;
+
+  /* initializes argument pointer */
+  va_start (ap, dh_cls);
+
+  ret = MHD_start_daemon_va (options, port, apc, apc_cls, dh, dh_cls, ap);
+  va_end (ap);
+  return ret;
+}
+
 /**
  * Start a webserver on the given port.
  *
@@ -796,13 +814,14 @@ MHD_select_thread (void *cls)
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int options,
-                     unsigned short port, char *ip,
+                     unsigned short port,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
                      MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap)
 {
   const int on = 1;
   struct MHD_Daemon *retVal;
+  char * daemon_ip_addr = 0;
 
   /* listeningss sockets used by the daemon */
   int socket_fd;
@@ -815,68 +834,8 @@ MHD_start_daemon_va (unsigned int options,
 
   if ((port == 0) || (dh == NULL))
     return NULL;
-  if ((options & MHD_USE_IPv6) != 0)
-    socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
-  else
-    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
-  if (socket_fd < 0)
-    {
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        fprintf (stderr, "Call to socket failed: %s\n", STRERROR (errno));
-#endif
-      return NULL;
-    }
-  if ((SETSOCKOPT (socket_fd,
-                   SOL_SOCKET,
-                   SO_REUSEADDR,
-                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0)
-    {
-#if HAVE_MESSAGES
-      fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
-#endif
-    }
-  if ((options & MHD_USE_IPv6) != 0)
-    {
-      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
-      /* todo impl IPv6 address setting */
-      servaddr6.sin6_family = AF_INET6;
-      servaddr6.sin6_port = htons (port);
-      servaddr = (struct sockaddr *) &servaddr6;
-      addrlen = sizeof (struct sockaddr_in6);
-    }
-  else
-    {
-      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
-      inet_pton (AF_INET, ip, &servaddr4.sin_addr);
-      servaddr4.sin_family = AF_INET;
-      servaddr4.sin_port = htons (port);
-      servaddr = (struct sockaddr *) &servaddr4;
-      addrlen = sizeof (struct sockaddr_in);
-    }
-  if (BIND (socket_fd, servaddr, addrlen) < 0)
-    {
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        fprintf (stderr,
-                 "Failed to bind to port %u: %s\n", port, STRERROR (errno));
-#endif
-      CLOSE (socket_fd);
-      return NULL;
-    }
-  if (LISTEN (socket_fd, 20) < 0)
-    {
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        fprintf (stderr,
-                 "Failed to listen for connections: %s\n", STRERROR (errno));
-#endif
-      CLOSE (socket_fd);
-      return NULL;
-    }
 
   /* allocate the mhd daemon */
-
   retVal = malloc (sizeof (struct MHD_Daemon));
 
   if (retVal == NULL)
@@ -885,17 +844,18 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 
+  /* set default daemon values */
   memset (retVal, 0, sizeof (struct MHD_Daemon));
   retVal->options = options;
   retVal->port = port;
   retVal->apc = apc;
   retVal->apc_cls = apc_cls;
-  retVal->socket_fd = socket_fd;
   retVal->default_handler = dh;
   retVal->default_handler_cls = dh_cls;
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
+
 #if HTTPS_SUPPORT
   if (options & MHD_USE_SSL)
     {
@@ -908,10 +868,9 @@ MHD_start_daemon_va (unsigned int options,
       retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
     }
 #endif
-  /* initializes the argument pointer variable */
 
   /*
-   * loop through daemon options
+   * analyze daemon options
    */
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
     {
@@ -933,6 +892,9 @@ MHD_start_daemon_va (unsigned int options,
           break;
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
+          break;
+        case  MHD_OPTION_IP_ADDR:
+          daemon_ip_addr = va_arg (ap, const char *);
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
@@ -985,58 +947,6 @@ MHD_start_daemon_va (unsigned int options,
         }
     }
 
-#if HTTPS_SUPPORT
-  /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
-#endif
-      free (retVal);
-      return NULL;
-    }
-#endif
-
-  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
-                                                                  &
-                                                                  MHD_USE_SELECT_INTERNALLY)))
-      && (0 !=
-          pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to create listen thread: %s\n",
-                STRERROR (errno));
-#endif
-      free (retVal);
-      CLOSE (socket_fd);
-      return NULL;
-    }
-
-  return retVal;
-}
-
-struct MHD_Daemon *
-MHD_start_daemon (unsigned int options,
-                  unsigned short port,
-                  MHD_AcceptPolicyCallback apc,
-                  void *apc_cls,
-                  MHD_AccessHandlerCallback dh, void *dh_cls, ...)
-{
-  const int on = 1;
-  struct MHD_Daemon *retVal;
-
-  /* listeningss sockets used by the daemon */
-  int socket_fd;
-  va_list ap;
-
-  struct sockaddr_in servaddr4;
-  struct sockaddr_in6 servaddr6;
-  const struct sockaddr *servaddr;
-  socklen_t addrlen;
-  enum MHD_OPTION opt;
-
-  if ((port == 0) || (dh == NULL))
-    return NULL;
   if ((options & MHD_USE_IPv6) != 0)
     socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
   else
@@ -1063,6 +973,14 @@ MHD_start_daemon (unsigned int options,
       memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
       servaddr6.sin6_family = AF_INET6;
       servaddr6.sin6_port = htons (port);
+     if (daemon_ip_addr && inet_pton (AF_INET6, daemon_ip_addr, &servaddr6.sin6_addr) <= 0){
+     #if HAVE_MESSAGES
+           if ((options & MHD_USE_DEBUG) != 0)
+             fprintf (stderr,
+                      "Failed to parse given daemon ipv6 inet address: %s\n", daemon_ip_addr );
+           return NULL;
+     #endif
+     	  }
       servaddr = (struct sockaddr *) &servaddr6;
       addrlen = sizeof (struct sockaddr_in6);
     }
@@ -1071,9 +989,20 @@ MHD_start_daemon (unsigned int options,
       memset (&servaddr4, 0, sizeof (struct sockaddr_in));
       servaddr4.sin_family = AF_INET;
       servaddr4.sin_port = htons (port);
+      if (daemon_ip_addr && inet_pton (AF_INET, daemon_ip_addr, &servaddr4.sin_addr) <= 0){
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        fprintf (stderr,
+        		"Failed to parse given daemon ipv4 inet address: %s\n", daemon_ip_addr );
+        return NULL;
+#endif
+	  }
       servaddr = (struct sockaddr *) &servaddr4;
       addrlen = sizeof (struct sockaddr_in);
     }
+
+  retVal->socket_fd = socket_fd;
+
   if (BIND (socket_fd, servaddr, addrlen) < 0)
     {
 #if HAVE_MESSAGES
@@ -1084,6 +1013,8 @@ MHD_start_daemon (unsigned int options,
       CLOSE (socket_fd);
       return NULL;
     }
+
+
   if (LISTEN (socket_fd, 20) < 0)
     {
 #if HAVE_MESSAGES
@@ -1095,118 +1026,6 @@ MHD_start_daemon (unsigned int options,
       return NULL;
     }
 
-  /* allocate the mhd daemon */
-
-  retVal = malloc (sizeof (struct MHD_Daemon));
-
-  if (retVal == NULL)
-    {
-      CLOSE (socket_fd);
-      return NULL;
-    }
-
-  memset (retVal, 0, sizeof (struct MHD_Daemon));
-  retVal->options = options;
-  retVal->port = port;
-  retVal->apc = apc;
-  retVal->apc_cls = apc_cls;
-  retVal->socket_fd = socket_fd;
-  retVal->default_handler = dh;
-  retVal->default_handler_cls = dh_cls;
-  retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
-  retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
-  retVal->connection_timeout = 0;       /* no timeout */
-#if HTTPS_SUPPORT
-  if (options & MHD_USE_SSL)
-    {
-      /* lock gnutls_global mutex since it uses reference counting */
-      pthread_mutex_lock (&gnutls_init_mutex);
-      MHD_gnutls_global_init ();
-      pthread_mutex_unlock (&gnutls_init_mutex);
-      /* set default priorities */
-      MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
-      retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
-    }
-#endif
-  /* initializes the argument pointer variable */
-
-  va_start (ap, dh_cls);
-
-  /*
-   * loop through daemon options
-   */
-  while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
-    {
-      switch (opt)
-        {
-        case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
-          retVal->pool_size = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_CONNECTION_LIMIT:
-          retVal->max_connections = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_CONNECTION_TIMEOUT:
-          retVal->connection_timeout = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_NOTIFY_COMPLETED:
-          retVal->notify_completed =
-            va_arg (ap, MHD_RequestCompletedCallback);
-          retVal->notify_completed_cls = va_arg (ap, void *);
-          break;
-        case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
-          retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
-          break;
-#if HTTPS_SUPPORT
-        case MHD_OPTION_PROTOCOL_VERSION:
-          _set_priority (&retVal->priority_cache->protocol,
-                         va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_HTTPS_KEY_PATH:
-          retVal->https_key_path = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_HTTPS_CERT_PATH:
-          retVal->https_cert_path = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_HTTPS_MEM_KEY:
-          retVal->https_mem_key = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_HTTPS_MEM_CERT:
-          retVal->https_mem_cert = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_CRED_TYPE:
-          retVal->cred_type = va_arg (ap, const int);
-          break;
-        case MHD_OPTION_KX_PRIORITY:
-          _set_priority (&retVal->priority_cache->kx,
-                         va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_CIPHER_ALGORITHM:
-          _set_priority (&retVal->priority_cache->cipher,
-                         va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_MAC_ALGO:
-          _set_priority (&retVal->priority_cache->mac,
-                         va_arg (ap, const int *));
-          break;
-#endif
-        default:
-#if HAVE_MESSAGES
-          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
-            {
-              fprintf (stderr,
-                       "Error: HTTPS option %d passed to non HTTPS daemon\n",
-                       opt);
-            }
-          else
-            {
-              fprintf (stderr,
-                       "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
-            }
-#endif
-          abort ();
-        }
-    }
-  va_end (ap);
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
   if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
@@ -1234,27 +1053,6 @@ MHD_start_daemon (unsigned int options,
     }
 
   return retVal;
-}
-
-
-/*
- * start the MHD_Daemon while binding to a specific ip address.
- *
- * TODO : address adding ip parameter to MHD_start_daemon
- */
-struct MHD_Daemon *
-MHD_start_daemon_ip (unsigned int options,
-                     unsigned short port, char *ip,
-                     MHD_AcceptPolicyCallback apc,
-                     void *apc_cls,
-                     MHD_AccessHandlerCallback dh, void *dh_cls, ...)
-{
-  struct MHD_Daemon *ret;
-  va_list ap;
-  va_start (ap, dh_cls);
-  ret = MHD_start_daemon_va (options, port, ip, apc, apc_cls, dh, dh_cls, ap);
-  va_end (ap);
-  return ret;
 }
 
 /**

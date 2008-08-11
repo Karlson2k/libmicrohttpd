@@ -24,8 +24,9 @@ check_PROGRAMS = \
   daemontest_large_put11 \
   daemontest_long_header \
   daemontest_get_chunked \
-  daemontest_put_chunked 
-
+  daemontest_put_chunked \
+  daemon_options_test
+  
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libcurl_version_check.a
@@ -38,6 +39,11 @@ libcurl_version_check_a_CPPFLAGS = \
   -I$(top_srcdir)/src/daemon/https \
   $(LIBCURL_CPPFLAGS)
 
+daemon_options_test_SOURCES = \
+  daemon_options_test.c
+daemon_options_test_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la
+  
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
