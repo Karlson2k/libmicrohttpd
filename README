@@ -49,8 +49,9 @@ reasonably complete.  #XXXX refers to the respective Mantis bug report
 Missing features:
 =================
 - SSL support:
-  * define appropriate MHD_OPTIONs (#1225)
-  * actual implementation (#1225)
+  * documentation
+  * more testing
+  * remove GPL'ed code
 
 
 Untested features:
@@ -68,7 +69,11 @@ Untested features:
 
 Missing documentation:
 ======================
-- manual (texinfo, man)
-- tutorial
+- manual (SSL/TLS support)
+- tutorial:
+  * clean up English
+  * make sure everything is accurate
+  * change example code to follow GNU coding conventions
+
 
 
