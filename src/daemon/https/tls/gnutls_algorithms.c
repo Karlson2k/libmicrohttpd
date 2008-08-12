@@ -41,7 +41,7 @@ typedef struct
                                                  * needs to set */
 } gnutls_cred_map;
 
-static const gnutls_cred_map cred_mappings[] = {
+static const gnutls_cred_map mhd_gtls_cred_mappings[] = {
   {MHD_GNUTLS_KX_ANON_DH,
    MHD_GNUTLS_CRD_ANON,
    MHD_GNUTLS_CRD_ANON},
@@ -73,7 +73,7 @@ static const gnutls_cred_map cred_mappings[] = {
 
 #define GNUTLS_KX_MAP_LOOP(b) \
         const gnutls_cred_map *p; \
-                for(p = cred_mappings; p->algorithm != 0; p++) { b ; }
+                for(p = mhd_gtls_cred_mappings; p->algorithm != 0; p++) { b ; }
 
 #define GNUTLS_KX_MAP_ALG_LOOP_SERVER(a) \
                         GNUTLS_KX_MAP_LOOP( if(p->server_type == type) { a; break; })
@@ -100,7 +100,7 @@ typedef struct
  * RSA algorithm in the certificate then we can
  * use GNUTLS_KX_RSA or GNUTLS_KX_DHE_RSA.
  */
-static const gnutls_pk_map pk_mappings[] = {
+static const gnutls_pk_map mhd_gtls_pk_mappings[] = {
   {MHD_GNUTLS_KX_RSA,
    MHD_GNUTLS_PK_RSA,
    CIPHER_ENCRYPT},
@@ -120,7 +120,7 @@ static const gnutls_pk_map pk_mappings[] = {
 
 #define GNUTLS_PK_MAP_LOOP(b) \
         const gnutls_pk_map *p; \
-                for(p = pk_mappings; p->kx_algorithm != 0; p++) { b }
+                for(p = mhd_gtls_pk_mappings; p->kx_algorithm != 0; p++) { b }
 
 #define GNUTLS_PK_MAP_ALG_LOOP(a) \
                         GNUTLS_PK_MAP_LOOP( if(p->kx_algorithm == kx_algorithm) { a; break; })
@@ -136,7 +136,7 @@ typedef struct
   int supported;                /* 0 not supported, > 0 is supported */
 } gnutls_version_entry;
 
-static const gnutls_version_entry sup_versions[] = {
+static const gnutls_version_entry mhd_gtls_sup_versions[] = {
   {"SSL3.0",
    MHD_GNUTLS_SSL3,
    3,
@@ -165,7 +165,7 @@ static const gnutls_version_entry sup_versions[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_protocol_t supported_protocols[] = { MHD_GNUTLS_SSL3,
+static const gnutls_protocol_t mhd_gtls_supported_protocols[] = { MHD_GNUTLS_SSL3,
   MHD_GNUTLS_TLS1_0,
   MHD_GNUTLS_TLS1_1,
   MHD_GNUTLS_TLS1_2,
@@ -174,7 +174,7 @@ static const gnutls_protocol_t supported_protocols[] = { MHD_GNUTLS_SSL3,
 
 #define GNUTLS_VERSION_LOOP(b) \
         const gnutls_version_entry *p; \
-                for(p = sup_versions; p->name != NULL; p++) { b ; }
+                for(p = mhd_gtls_sup_versions; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_VERSION_ALG_LOOP(a) \
                         GNUTLS_VERSION_LOOP( if(p->id == version) { a; break; })
@@ -196,7 +196,7 @@ typedef struct gnutls_cipher_entry gnutls_cipher_entry;
  * View first: "The order of encryption and authentication for
  * protecting communications" by Hugo Krawczyk - CRYPTO 2001
  */
-static const gnutls_cipher_entry algorithms[] = {
+static const gnutls_cipher_entry mhd_gtls_algorithms[] = {
   {"AES-256-CBC",
    MHD_GNUTLS_CIPHER_AES_256_CBC,
    16,
@@ -271,7 +271,7 @@ static const gnutls_cipher_entry algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_cipher_algorithm_t supported_ciphers[] =
+static const gnutls_cipher_algorithm_t mhd_gtls_supported_ciphers[] =
   { MHD_GNUTLS_CIPHER_AES_256_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_3DES_CBC,
@@ -289,7 +289,7 @@ static const gnutls_cipher_algorithm_t supported_ciphers[] =
 
 #define GNUTLS_LOOP(b) \
         const gnutls_cipher_entry *p; \
-                for(p = algorithms; p->name != NULL; p++) { b ; }
+                for(p = mhd_gtls_algorithms; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_ALG_LOOP(a) \
                         GNUTLS_LOOP( if(p->id == algorithm) { a; break; } )
@@ -303,7 +303,7 @@ struct gnutls_hash_entry
 };
 typedef struct gnutls_hash_entry gnutls_hash_entry;
 
-static const gnutls_hash_entry hash_algorithms[] = {
+static const gnutls_hash_entry mhd_gtls_hash_algorithms[] = {
   {"SHA1",
    HASH_OID_SHA1,
    MHD_GNUTLS_MAC_SHA1,
@@ -327,7 +327,7 @@ static const gnutls_hash_entry hash_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_mac_algorithm_t supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
+static const gnutls_mac_algorithm_t mhd_gtls_supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_MD5,
   MHD_GNUTLS_MAC_SHA256,
   MHD_GNUTLS_MAC_NULL,
@@ -336,7 +336,7 @@ static const gnutls_mac_algorithm_t supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
 
 #define GNUTLS_HASH_LOOP(b) \
         const gnutls_hash_entry *p; \
-                for(p = hash_algorithms; p->name != NULL; p++) { b ; }
+                for(p = mhd_gtls_hash_algorithms; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_HASH_ALG_LOOP(a) \
                         GNUTLS_HASH_LOOP( if(p->id == algorithm) { a; break; } )
@@ -364,7 +364,7 @@ gnutls_compression_entry _gnutls_compression_algorithms[MAX_COMP_METHODS] =
    0}
 };
 
-static const gnutls_compression_method_t supported_compressions[] = {
+static const gnutls_compression_method_t mhd_gtls_supported_compressions[] = {
 #ifdef HAVE_LIBZ
   MHD_GNUTLS_COMP_DEFLATE,
 #endif
@@ -381,11 +381,11 @@ static const gnutls_compression_method_t supported_compressions[] = {
                         GNUTLS_COMPRESSION_LOOP( if(p->num == num) { a; break; } )
 
 /* Key Exchange Section */
-extern mhd_gtls_mod_auth_st rsa_auth_struct;
+extern mhd_gtls_mod_auth_st mhd_gtls_rsa_auth_struct;
 extern mhd_gtls_mod_auth_st rsa_export_auth_struct;
-extern mhd_gtls_mod_auth_st dhe_rsa_auth_struct;
-extern mhd_gtls_mod_auth_st dhe_dss_auth_struct;
-extern mhd_gtls_mod_auth_st anon_auth_struct;
+extern mhd_gtls_mod_auth_st mhd_gtls_dhe_rsa_auth_struct;
+extern mhd_gtls_mod_auth_st mhd_gtls_dhe_dss_auth_struct;
+extern mhd_gtls_mod_auth_st mhd_gtls_anon_auth_struct;
 extern mhd_gtls_mod_auth_st srp_auth_struct;
 extern mhd_gtls_mod_auth_st psk_auth_struct;
 extern mhd_gtls_mod_auth_st dhe_psk_auth_struct;
@@ -403,11 +403,11 @@ typedef struct mhd_gtls_kx_algo_entry
 
 static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
 #ifdef ENABLE_ANON
-  {"ANON-DH", MHD_GNUTLS_KX_ANON_DH, &anon_auth_struct, 1, 0},
+  {"ANON-DH", MHD_GNUTLS_KX_ANON_DH, &mhd_gtls_anon_auth_struct, 1, 0},
 #endif
   {"RSA",
    MHD_GNUTLS_KX_RSA,
-   &rsa_auth_struct,
+   &mhd_gtls_rsa_auth_struct,
    0,
    0},
   {"RSA-EXPORT",
@@ -417,12 +417,12 @@ static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
    1 /* needs RSA params */ },
   {"DHE-RSA",
    MHD_GNUTLS_KX_DHE_RSA,
-   &dhe_rsa_auth_struct,
+   &mhd_gtls_dhe_rsa_auth_struct,
    1,
    0},
   {"DHE-DSS",
    MHD_GNUTLS_KX_DHE_DSS,
-   &dhe_dss_auth_struct,
+   &mhd_gtls_dhe_dss_auth_struct,
    1,
    0},
 
@@ -444,7 +444,7 @@ static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_kx_algorithm_t supported_kxs[] = {
+static const gnutls_kx_algorithm_t mhd_gtls_supported_kxs[] = {
 #ifdef ENABLE_ANON
   MHD_GNUTLS_KX_ANON_DH,
 #endif
@@ -485,7 +485,7 @@ typedef struct
   gnutls_protocol_t version;    /* this cipher suite is supported
                                  * from 'version' and above;
                                  */
-} gnutls_cipher_suite_entry;
+} mhd_gtls_cipher_suite_entry;
 
 /* RSA with NULL cipher and MD5 MAC
  * for test purposes.
@@ -581,9 +581,9 @@ typedef struct
 #define GNUTLS_DHE_RSA_CAMELLIA_128_CBC_SHA1 { 0x00,0x45 }
 #define GNUTLS_DHE_RSA_CAMELLIA_256_CBC_SHA1 { 0x00,0x88 }
 
-#define CIPHER_SUITES_COUNT sizeof(cs_algorithms)/sizeof(gnutls_cipher_suite_entry)-1
+#define CIPHER_SUITES_COUNT sizeof(mhd_gtls_cs_algorithms)/sizeof(mhd_gtls_cipher_suite_entry)-1
 
-static const gnutls_cipher_suite_entry cs_algorithms[] = {
+static const mhd_gtls_cipher_suite_entry mhd_gtls_cs_algorithms[] = {
   /* ANON_DH */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_ARCFOUR_MD5,
                              MHD_GNUTLS_CIPHER_ARCFOUR_128,
@@ -753,8 +753,8 @@ static const gnutls_cipher_suite_entry cs_algorithms[] = {
 };
 
 #define GNUTLS_CIPHER_SUITE_LOOP(b) \
-        const gnutls_cipher_suite_entry *p; \
-                for(p = cs_algorithms; p->name != NULL; p++) { b ; }
+        const mhd_gtls_cipher_suite_entry *p; \
+                for(p = mhd_gtls_cs_algorithms; p->name != NULL; p++) { b ; }
 
 #define GNUTLS_CIPHER_SUITE_ALG_LOOP(a) \
                         GNUTLS_CIPHER_SUITE_LOOP( if( (p->id.suite[0] == suite->suite[0]) && (p->id.suite[1] == suite->suite[1])) { a; break; } )
@@ -844,7 +844,7 @@ MHD_gnutls_mac_get_key_size (gnutls_mac_algorithm_t algorithm)
 const gnutls_mac_algorithm_t *
 MHD_gtls_mac_list (void)
 {
-  return supported_macs;
+  return mhd_gtls_supported_macs;
 }
 
 const char *
@@ -955,7 +955,7 @@ MHD_gtls_compression_get_id (const char *name)
 const gnutls_compression_method_t *
 MHD_gtls_compression_list (void)
 {
-  return supported_compressions;
+  return mhd_gtls_supported_compressions;
 }
 
 /* return the tls number of the specified algorithm */
@@ -1145,7 +1145,7 @@ MHD_gtls_cipher_get_id (const char *name)
 const gnutls_cipher_algorithm_t *
 MHD_gtls_cipher_list (void)
 {
-  return supported_ciphers;
+  return mhd_gtls_supported_ciphers;
 }
 
 int
@@ -1232,7 +1232,7 @@ MHD_gtls_kx_get_id (const char *name)
 const gnutls_kx_algorithm_t *
 MHD_gtls_kx_list (void)
 {
-  return supported_kxs;
+  return mhd_gtls_supported_kxs;
 }
 
 int
@@ -1376,7 +1376,7 @@ MHD_gtls_protocol_get_id (const char *name)
 const gnutls_protocol_t *
 MHD_gtls_protocol_list (void)
 {
-  return supported_protocols;
+  return mhd_gtls_supported_protocols;
 }
 
 int
@@ -1739,7 +1739,7 @@ mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
 
   for (i = 0; i < count; i++)
     {
-      memcpy (&tmp_ciphers[i], &cs_algorithms[i].id,
+      memcpy (&tmp_ciphers[i], &mhd_gtls_cs_algorithms[i].id,
               sizeof (cipher_suite_st));
     }
 
@@ -1894,7 +1894,7 @@ MHD_gtls_certificate_type_get_id (const char *name)
   return ret;
 }
 
-static const gnutls_certificate_type_t supported_certificate_types[] =
+static const gnutls_certificate_type_t mhd_gtls_supported_certificate_types[] =
   { MHD_GNUTLS_CRT_X509,
   MHD_GNUTLS_CRT_OPENPGP,
   0
@@ -1914,7 +1914,7 @@ static const gnutls_certificate_type_t supported_certificate_types[] =
 const gnutls_certificate_type_t *
 MHD_gtls_certificate_type_list (void)
 {
-  return supported_certificate_types;
+  return mhd_gtls_supported_certificate_types;
 }
 
 /* returns the gnutls_pk_algorithm_t which is compatible with
@@ -1953,7 +1953,7 @@ struct gnutls_sign_entry
 };
 typedef struct gnutls_sign_entry gnutls_sign_entry;
 
-static const gnutls_sign_entry sign_algorithms[] = {
+static const gnutls_sign_entry mhd_gtls_sign_algorithms[] = {
   {"RSA-SHA",
    SIG_RSA_SHA1_OID,
    GNUTLS_SIGN_RSA_SHA1,
@@ -1989,7 +1989,7 @@ static const gnutls_sign_entry sign_algorithms[] = {
 #define GNUTLS_SIGN_LOOP(b) \
   do {								       \
     const gnutls_sign_entry *p;					       \
-    for(p = sign_algorithms; p->name != NULL; p++) { b ; }	       \
+    for(p = mhd_gtls_sign_algorithms; p->name != NULL; p++) { b ; }	       \
   } while (0)
 
 #define GNUTLS_SIGN_ALG_LOOP(a) \
@@ -2053,7 +2053,7 @@ struct gnutls_pk_entry
 };
 typedef struct gnutls_pk_entry gnutls_pk_entry;
 
-static const gnutls_pk_entry pk_algorithms[] = {
+static const gnutls_pk_entry mhd_gtls_pk_algorithms[] = {
   {"RSA",
    PK_PKIX1_RSA_OID,
    MHD_GNUTLS_PK_RSA},
@@ -2074,7 +2074,7 @@ mhd_gtls_x509_oid2pk_algorithm (const char *oid)
   gnutls_pk_algorithm_t ret = MHD_GNUTLS_PK_UNKNOWN;
   const gnutls_pk_entry *p;
 
-  for (p = pk_algorithms; p->name != NULL; p++)
+  for (p = mhd_gtls_pk_algorithms; p->name != NULL; p++)
     if (strcmp (p->oid, oid) == 0)
       {
         ret = p->id;
@@ -2090,7 +2090,7 @@ mhd_gtls_x509_pk_to_oid (gnutls_pk_algorithm_t algorithm)
   const char *ret = NULL;
   const gnutls_pk_entry *p;
 
-  for (p = pk_algorithms; p->name != NULL; p++)
+  for (p = mhd_gtls_pk_algorithms; p->name != NULL; p++)
     if (p->id == algorithm)
       {
         ret = p->oid;

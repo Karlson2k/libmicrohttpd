@@ -141,7 +141,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
       if (result != ASN1_VALUE_NOT_FOUND)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -169,7 +169,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
           if (result != ASN1_VALUE_NOT_FOUND)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -186,7 +186,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -211,7 +211,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
           if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 #define STR_APPEND(y) if ((result=mhd_gtls_string_append_str( &out_str, y)) < 0) { \
@@ -382,7 +382,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
       if (result != ASN1_VALUE_NOT_FOUND)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -412,7 +412,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
           if (result != ASN1_VALUE_NOT_FOUND)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -429,7 +429,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -449,7 +449,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
                   gnutls_assert ();
                   if (result == ASN1_MEM_ERROR)
                     *sizeof_buf = len;
-                  result = _gnutls_asn2err (result);
+                  result = mhd_gtls_asn2err (result);
                   goto cleanup;
                 }
 
@@ -551,7 +551,7 @@ _gnutls_x509_get_dn_oid (ASN1_TYPE asn1_struct,
       if (result != ASN1_VALUE_NOT_FOUND)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -581,7 +581,7 @@ _gnutls_x509_get_dn_oid (ASN1_TYPE asn1_struct,
           if (result != ASN1_VALUE_NOT_FOUND)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -598,7 +598,7 @@ _gnutls_x509_get_dn_oid (ASN1_TYPE asn1_struct,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -667,7 +667,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   tmp[0] = 0;
@@ -699,7 +699,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
         {
           gnutls_assert ();
           asn1_delete_structure (&c2);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       mhd_gtls_str_cpy (tmp, sizeof (tmp), string_type);
@@ -710,7 +710,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
     {
       gnutls_assert ();
       asn1_delete_structure (&c2);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
 
@@ -728,7 +728,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       mhd_gtls_str_cat (tmp, sizeof (tmp), ".?LAST");
@@ -751,7 +751,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -783,7 +783,7 @@ _gnutls_x509_write_attribute (const char *given_oid,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       mhd_gtls_str_cat (tmp, sizeof (tmp), ".?LAST");
@@ -794,7 +794,7 @@ _gnutls_x509_write_attribute (const char *given_oid,
   if (result < 0)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* write the type
@@ -806,7 +806,7 @@ _gnutls_x509_write_attribute (const char *given_oid,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -841,7 +841,7 @@ _gnutls_x509_decode_and_read_attribute (ASN1_TYPE asn1_struct,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       return result;
     }
 
@@ -893,7 +893,7 @@ _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   mhd_gtls_str_cpy (asn1_rdn_name, sizeof (asn1_rdn_name), asn1_name);
@@ -905,7 +905,7 @@ _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   mhd_gtls_str_cpy (tmp, sizeof (tmp), asn1_rdn_name);
@@ -917,7 +917,7 @@ _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
 
@@ -987,7 +987,7 @@ gnutls_x509_rdn_get (const gnutls_datum_t * idn,
                             "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&dn, idn->data, idn->size, NULL);
@@ -996,7 +996,7 @@ gnutls_x509_rdn_get (const gnutls_datum_t * idn,
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&dn);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_parse_dn (dn, "rdnSequence", buf, sizeof_buf);
@@ -1042,7 +1042,7 @@ gnutls_x509_rdn_get_by_oid (const gnutls_datum_t * idn, const char *oid,
                             "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&dn, idn->data, idn->size, NULL);
@@ -1051,7 +1051,7 @@ gnutls_x509_rdn_get_by_oid (const gnutls_datum_t * idn, const char *oid,
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&dn);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -1094,7 +1094,7 @@ gnutls_x509_rdn_get_oid (const gnutls_datum_t * idn,
                             "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&dn, idn->data, idn->size, NULL);
@@ -1103,7 +1103,7 @@ gnutls_x509_rdn_get_oid (const gnutls_datum_t * idn,
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&dn);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_get_dn_oid (dn, "rdnSequence", indx, buf, sizeof_buf);

@@ -185,7 +185,7 @@ _pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
                                       &c2)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -193,7 +193,7 @@ _pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
       if (ret != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -212,7 +212,7 @@ _pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
                                       &c2)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -220,7 +220,7 @@ _pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
       if (ret != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -258,7 +258,7 @@ _pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
                                       &c2)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -266,7 +266,7 @@ _pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
       if (ret != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -285,7 +285,7 @@ _pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
                                       &c2)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 
@@ -293,7 +293,7 @@ _pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
       if (ret != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          ret = _gnutls_asn2err (ret);
+          ret = mhd_gtls_asn2err (ret);
           goto cleanup;
         }
 

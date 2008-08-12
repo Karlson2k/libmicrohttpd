@@ -20,7 +20,7 @@
 
 /**
  * @file mhds_get_test.c
- * @brief  Testcase for libmicrohttpd daemon option arguments
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  */
 
@@ -67,9 +67,6 @@ test_wrap (char *test_name, int (*test) (void ))
   return ret;
 }
 
-/**
- * Test the MHD_OPTION_IP_ADDR along with an IPv4 address
- */
 static int
 test_ipv4_option ()
 {
@@ -84,10 +81,6 @@ test_ipv4_option ()
 	MHD_stop_daemon (d);
 	return 0;
 }
-
-/**
- * Test the MHD_OPTION_IP_ADDR along with an IPv6 address
- */
 
 static int
 test_ipv6_option ()

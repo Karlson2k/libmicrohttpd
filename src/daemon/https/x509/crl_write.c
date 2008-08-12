@@ -76,7 +76,7 @@ gnutls_x509_crl_set_version (gnutls_x509_crl_t crl, unsigned int version)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -220,7 +220,7 @@ gnutls_x509_crl_set_crt_serial (gnutls_x509_crl_t crl,
   if (ret != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (ret);
+      return mhd_gtls_asn2err (ret);
     }
 
   ret =
@@ -230,7 +230,7 @@ gnutls_x509_crl_set_crt_serial (gnutls_x509_crl_t crl,
   if (ret != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (ret);
+      return mhd_gtls_asn2err (ret);
     }
 
   ret =
@@ -250,7 +250,7 @@ gnutls_x509_crl_set_crt_serial (gnutls_x509_crl_t crl,
   if (ret != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (ret);
+      return mhd_gtls_asn2err (ret);
     }
 
   return 0;
@@ -295,7 +295,7 @@ gnutls_x509_crl_set_crt (gnutls_x509_crl_t crl, gnutls_x509_crt_t crt,
   if (ret < 0)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (ret);
+      return mhd_gtls_asn2err (ret);
     }
 
   return 0;

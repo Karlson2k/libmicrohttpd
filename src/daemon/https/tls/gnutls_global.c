@@ -159,7 +159,7 @@ static void
 _gnutls_gcry_log_handler (void *dummy, int level,
                           const char *fmt, va_list list)
 {
-  _gnutls_log (level, fmt, list);
+  mhd_gtls_log (level, fmt, list);
 }
 #endif
 
@@ -288,7 +288,7 @@ MHD_gnutls_global_init (void)
   res = asn1_array2tree (pkix_asn1_tab, &_gnutls_pkix1_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
-      result = _gnutls_asn2err (res);
+      result = mhd_gtls_asn2err (res);
       return result;
     }
 
@@ -296,7 +296,7 @@ MHD_gnutls_global_init (void)
   if (res != ASN1_SUCCESS)
     {
       asn1_delete_structure (&_gnutls_pkix1_asn);
-      result = _gnutls_asn2err (res);
+      result = mhd_gtls_asn2err (res);
       return result;
     }
 

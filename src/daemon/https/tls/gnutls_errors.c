@@ -48,7 +48,7 @@ struct gnutls_error_entry
 };
 typedef struct gnutls_error_entry gnutls_error_entry;
 
-static const gnutls_error_entry error_algorithms[] = {
+static const gnutls_error_entry mhd_gtls_error_algorithms[] = {
   /* "Short Description", Error code define, critical (0,1) -- 1 in most cases */
   ERROR_ENTRY (N_("Success."), GNUTLS_E_SUCCESS, 0),
   ERROR_ENTRY (N_("Could not negotiate a supported cipher suite."),
@@ -255,7 +255,7 @@ static const gnutls_error_entry error_algorithms[] = {
 
 #define GNUTLS_ERROR_LOOP(b) \
         const gnutls_error_entry *p; \
-                for(p = error_algorithms; p->desc != NULL; p++) { b ; }
+                for(p = mhd_gtls_error_algorithms; p->desc != NULL; p++) { b ; }
 
 #define GNUTLS_ERROR_ALG_LOOP(a) \
                         GNUTLS_ERROR_LOOP( if(p->number == error) { a; break; } )
@@ -348,7 +348,7 @@ _gnutls_strerror (int error)
 }
 
 int
-_gnutls_asn2err (int asn_err)
+mhd_gtls_asn2err (int asn_err)
 {
   switch (asn_err)
     {
@@ -390,7 +390,7 @@ _gnutls_asn2err (int asn_err)
  * caller provided function
  */
 void
-_gnutls_log (int level, const char *fmt, ...)
+mhd_gtls_log (int level, const char *fmt, ...)
 {
   va_list args;
   char str[MAX_LOG_SIZE];

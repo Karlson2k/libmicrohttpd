@@ -65,7 +65,7 @@ gnutls_x509_crq_init (gnutls_x509_crq_t * crq)
         {
           gnutls_assert ();
           gnutls_free (*crq);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
       return 0;                 /* success */
     }
@@ -155,7 +155,7 @@ gnutls_x509_crq_import (gnutls_x509_crq_t crq,
   result = asn1_der_decoding (&crq->crq, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       gnutls_assert ();
       goto cleanup;
     }
@@ -330,7 +330,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
       if (result != ASN1_VALUE_NOT_FOUND)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -349,7 +349,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
       else if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -367,7 +367,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
           if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              result = _gnutls_asn2err (result);
+              result = mhd_gtls_asn2err (result);
               goto cleanup;
             }
 
@@ -480,7 +480,7 @@ gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -594,7 +594,7 @@ gnutls_x509_crq_set_version (gnutls_x509_crq_t crq, unsigned int version)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -630,7 +630,7 @@ gnutls_x509_crq_get_version (gnutls_x509_crq_t crq)
       if (result == ASN1_ELEMENT_NOT_FOUND)
         return 1;               /* the DEFAULT version */
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return (int) version[0] + 1;
@@ -703,7 +703,7 @@ gnutls_x509_crq_set_challenge_password (gnutls_x509_crq_t crq,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -774,7 +774,7 @@ gnutls_x509_crq_sign2 (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Step 3. Write the signatureAlgorithm field.

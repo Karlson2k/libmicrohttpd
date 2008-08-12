@@ -62,7 +62,7 @@ gnutls_x509_crl_init (gnutls_x509_crl_t * crl)
         {
           gnutls_assert ();
           gnutls_free (*crl);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
       return 0;                 /* success */
     }
@@ -145,7 +145,7 @@ gnutls_x509_crl_import (gnutls_x509_crl_t crl,
   result = asn1_der_decoding (&crl->crl, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       gnutls_assert ();
       goto cleanup;
     }
@@ -340,7 +340,7 @@ gnutls_x509_crl_get_signature (gnutls_x509_crl_t crl,
   if (result != ASN1_MEM_ERROR)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (bits % 8 != 0)
@@ -361,7 +361,7 @@ gnutls_x509_crl_get_signature (gnutls_x509_crl_t crl,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -394,7 +394,7 @@ gnutls_x509_crl_get_version (gnutls_x509_crl_t crl)
                         &len)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return (int) version[0] + 1;
@@ -523,7 +523,7 @@ gnutls_x509_crl_get_crt_serial (gnutls_x509_crl_t crl, int indx,
       gnutls_assert ();
       if (result == ASN1_ELEMENT_NOT_FOUND)
         return GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (t)
@@ -567,7 +567,7 @@ _gnutls_x509_crl_get_raw_issuer_dn (gnutls_x509_crl_t crl,
                             &c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -585,7 +585,7 @@ _gnutls_x509_crl_get_raw_issuer_dn (gnutls_x509_crl_t crl,
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&c2);
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -597,7 +597,7 @@ _gnutls_x509_crl_get_raw_issuer_dn (gnutls_x509_crl_t crl,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 

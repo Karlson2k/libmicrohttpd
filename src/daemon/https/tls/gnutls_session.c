@@ -55,7 +55,7 @@
 //
 //  psession.data = session_data;
 //
-//  ret = _gnutls_session_pack (session, &psession);
+//  ret = mhd_gtls_session_pack (session, &psession);
 //  if (ret < 0)
 //    {
 //      gnutls_assert ();
@@ -106,7 +106,7 @@
 //  if (session->internals.resumable == RESUME_FALSE)
 //    return GNUTLS_E_INVALID_SESSION;
 //
-//  ret = _gnutls_session_pack (session, data);
+//  ret = mhd_gtls_session_pack (session, data);
 //  if (ret < 0)
 //    {
 //      gnutls_assert ();
@@ -190,7 +190,7 @@ MHD_gtls_session_get_id (mhd_gtls_session_t session,
 //      gnutls_assert ();
 //      return GNUTLS_E_INVALID_REQUEST;
 //    }
-//  ret = _gnutls_session_unpack (session, &psession);
+//  ret = mhd_gtls_session_unpack (session, &psession);
 //  if (ret < 0)
 //    {
 //      gnutls_assert ();

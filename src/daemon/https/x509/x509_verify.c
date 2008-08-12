@@ -478,7 +478,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
                                      &dinfo)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&dinfo, info->data, info->size, NULL);
@@ -486,7 +486,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   len = sizeof (str) - 1;
@@ -495,7 +495,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   *hash = mhd_gtls_x509_oid2mac_algorithm (str);
@@ -529,7 +529,7 @@ decode_ber_digest_info (const gnutls_datum_t * info,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   asn1_delete_structure (&dinfo);

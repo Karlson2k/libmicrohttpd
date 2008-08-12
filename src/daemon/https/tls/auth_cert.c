@@ -147,7 +147,7 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
        (_gnutls_get_pkix (), "PKIX1.Certificate", &dn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&dn, cert->raw.data, cert->raw.size, NULL);
@@ -156,7 +156,7 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&dn);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding_startEnd (dn, cert->raw.data, cert->raw.size,
@@ -167,7 +167,7 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
       /* couldn't decode DER */
       gnutls_assert ();
       asn1_delete_structure (&dn);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
   asn1_delete_structure (&dn);
 
@@ -613,7 +613,7 @@ cleanup:
  */
 
 int
-_gnutls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
 {
   int ret, i;
   opaque *pdata;
@@ -671,7 +671,7 @@ enum PGPKeyDescriptorType
 { PGP_KEY_FINGERPRINT, PGP_KEY };
 
 int
-_gnutls_gen_openpgp_certificate (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_openpgp_certificate (mhd_gtls_session_t session, opaque ** data)
 {
   int ret;
   opaque *pdata;
@@ -720,7 +720,7 @@ _gnutls_gen_openpgp_certificate (mhd_gtls_session_t session, opaque ** data)
 }
 
 int
-_gnutls_gen_openpgp_certificate_fpr (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_openpgp_certificate_fpr (mhd_gtls_session_t session, opaque ** data)
 {
   int ret, packet_size;
   size_t fpr_size;
@@ -745,7 +745,7 @@ _gnutls_gen_openpgp_certificate_fpr (mhd_gtls_session_t session, opaque ** data)
   if (apr_cert_list_length > 0 && apr_cert_list[0].version == 4)
     packet_size += 20 + 1;
   else                          /* empty certificate case */
-    return _gnutls_gen_openpgp_certificate (session, data);
+    return mhd_gtls_gen_openpgp_certificate (session, data);
 
   (*data) = gnutls_malloc (packet_size);
   pdata = (*data);
@@ -793,12 +793,12 @@ mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t session, opaque ** data
     {
     case MHD_GNUTLS_CRT_OPENPGP:
       if (mhd_gtls_openpgp_send_fingerprint (session) == 0)
-        return _gnutls_gen_openpgp_certificate (session, data);
+        return mhd_gtls_gen_openpgp_certificate (session, data);
       else
-        return _gnutls_gen_openpgp_certificate_fpr (session, data);
+        return mhd_gtls_gen_openpgp_certificate_fpr (session, data);
 
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_gen_x509_crt (session, data);
+      return mhd_gtls_gen_x509_crt (session, data);
 
     default:
       gnutls_assert ();
@@ -812,9 +812,9 @@ mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session, opaque ** data
   switch (session->security_parameters.cert_type)
     {
     case MHD_GNUTLS_CRT_OPENPGP:
-      return _gnutls_gen_openpgp_certificate (session, data);
+      return mhd_gtls_gen_openpgp_certificate (session, data);
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_gen_x509_crt (session, data);
+      return mhd_gtls_gen_x509_crt (session, data);
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
@@ -826,7 +826,7 @@ mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session, opaque ** data
 
 #define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) mhd_gtls_gcert_deinit(&peer_certificate_list[x])
 int
-_gnutls_proc_x509_server_certificate (mhd_gtls_session_t session,
+mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
                                       opaque * data, size_t data_size)
 {
   int size, len, ret;
@@ -968,7 +968,7 @@ cleanup:
 
 #define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) mhd_gtls_gcert_deinit(&peer_certificate_list[x])
 int
-_gnutls_proc_openpgp_server_certificate (mhd_gtls_session_t session,
+mhd_gtls_proc_openpgp_server_certificate (mhd_gtls_session_t session,
                                          opaque * data, size_t data_size)
 {
   int size, ret, len;
@@ -1153,10 +1153,10 @@ mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t session,
   switch (session->security_parameters.cert_type)
     {
     case MHD_GNUTLS_CRT_OPENPGP:
-      return _gnutls_proc_openpgp_server_certificate (session,
+      return mhd_gtls_proc_openpgp_server_certificate (session,
                                                       data, data_size);
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_proc_x509_server_certificate (session, data, data_size);
+      return mhd_gtls_proc_x509_server_certificate (session, data, data_size);
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;

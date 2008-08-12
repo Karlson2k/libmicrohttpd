@@ -119,12 +119,13 @@ mhd_gtls_extension_get_name (uint16_t type)
   return ret;
 }
 
-/* Checks if the extension we just received is one of the 
+/* Checks if the extension we just received is one of the
  * requested ones. Otherwise it's a fatal error.
  */
 static int
 _gnutls_extension_list_check (mhd_gtls_session_t session, uint16_t type)
 {
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       int i;
@@ -135,7 +136,7 @@ _gnutls_extension_list_check (mhd_gtls_session_t session, uint16_t type)
         }
       return GNUTLS_E_RECEIVED_ILLEGAL_EXTENSION;
     }
-
+#endif
   return 0;
 }
 
@@ -153,7 +154,6 @@ mhd_gtls_parse_extensions (mhd_gtls_session_t session,
 
 #ifdef DEBUG
   int i;
-
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     for (i = 0; i < session->internals.extensions_sent_size; i++)
       {
@@ -217,7 +217,7 @@ mhd_gtls_parse_extensions (mhd_gtls_session_t session,
 static void
 _gnutls_extension_list_add (mhd_gtls_session_t session, uint16_t type)
 {
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       if (session->internals.extensions_sent_size < MAX_EXT_TYPES)
@@ -231,6 +231,7 @@ _gnutls_extension_list_add (mhd_gtls_session_t session, uint16_t type)
           _gnutls_debug_log ("extensions: Increase MAX_EXT_TYPES\n");
         }
     }
+#endif
 }
 
 int

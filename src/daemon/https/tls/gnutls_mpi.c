@@ -206,7 +206,7 @@ _gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
   if (result != ASN1_MEM_ERROR)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   tmpstr = gnutls_alloca (tmpstr_size);
@@ -221,7 +221,7 @@ _gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
     {
       gnutls_assert ();
       gnutls_afree (tmpstr);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   s_len = tmpstr_size;
@@ -278,7 +278,7 @@ _gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;

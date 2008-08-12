@@ -227,7 +227,7 @@ error:
  * The data will be in a platform independent format.
  */
 int
-_gnutls_session_pack (mhd_gtls_session_t session,
+mhd_gtls_session_pack (mhd_gtls_session_t session,
                       gnutls_datum_t * packed_session)
 {
   int ret;
@@ -302,7 +302,7 @@ _gnutls_session_pack (mhd_gtls_session_t session,
 /* Load session data from a buffer.
  */
 int
-_gnutls_session_unpack (mhd_gtls_session_t session,
+mhd_gtls_session_unpack (mhd_gtls_session_t session,
                         const gnutls_datum_t * packed_session)
 {
   int ret;

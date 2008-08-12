@@ -956,7 +956,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
                             c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -966,7 +966,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -974,7 +974,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -982,7 +982,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -990,7 +990,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -998,7 +998,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1006,7 +1006,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1014,7 +1014,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1022,7 +1022,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1037,14 +1037,14 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
                                   NULL, 0)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
   if ((result = asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1116,7 +1116,7 @@ _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
                             c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1125,28 +1125,28 @@ _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
   if ((result = asn1_write_value (*c2, "p", p_data, size[0])) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
   if ((result = asn1_write_value (*c2, "q", q_data, size[1])) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
   if ((result = asn1_write_value (*c2, "g", g_data, size[2])) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
   if ((result = asn1_write_value (*c2, "Y", y_data, size[3])) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1154,7 +1154,7 @@ _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
        asn1_write_value (*c2, "priv", x_data, size[4])) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1163,7 +1163,7 @@ _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
   if ((result = asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 

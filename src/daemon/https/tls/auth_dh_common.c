@@ -39,10 +39,10 @@
 #include <auth_dh_common.h>
 #include <gnutls_algorithms.h>
 
-/* Frees the dh_info_st structure.
+/* Frees the mhd_gtls_dh_info_st structure.
  */
 void
-mhd_gtls_free_dh_info (dh_info_st * dh)
+mhd_gtls_free_dh_info (mhd_gtls_dh_info_st * dh)
 {
   dh->secret_bits = 0;
   _gnutls_free_datum (&dh->prime);

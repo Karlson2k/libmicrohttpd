@@ -42,7 +42,7 @@ typedef struct mhd_gtls_anon_client_credentials_st
 
 typedef struct mhd_gtls_anon_auth_info_st
 {
-  dh_info_st dh;
+  mhd_gtls_dh_info_st dh;
 } * mhd_anon_auth_info_t;
 
 typedef struct mhd_gtls_anon_auth_info_st anon_auth_info_st;

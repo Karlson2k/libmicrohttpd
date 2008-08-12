@@ -69,7 +69,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
                                      &dinfo)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (dinfo, "digestAlgorithm.algorithm", algo, 1);
@@ -77,7 +77,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Write an ASN.1 NULL in the parameters field.  This matches RFC
@@ -91,7 +91,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (dinfo, "digest", digest->data, digest->size);
@@ -99,7 +99,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   info->size = 0;
@@ -118,7 +118,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
     {
       gnutls_assert ();
       asn1_delete_structure (&dinfo);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   asn1_delete_structure (&dinfo);
@@ -242,7 +242,7 @@ _gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
     {
       gnutls_assert ();
       gnutls_afree (buf);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   tbs.data = buf;
@@ -285,7 +285,7 @@ _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Step 1.5. Write the signature stuff in the tbsCertificate.
@@ -323,7 +323,7 @@ _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Step 3. Move up and write the AlgorithmIdentifier, which is also

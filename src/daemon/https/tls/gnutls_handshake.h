@@ -37,7 +37,6 @@ int mhd_gtls_recv_handshake (mhd_gtls_session_t session, uint8_t **, int *,
 			    Optional optional);
 int mhd_gtls_generate_session_id (opaque * session_id, uint8_t * len);
 int mhd_gtls_handshake_common (mhd_gtls_session_t session);
-int mhd_gtls_handshake_client (mhd_gtls_session_t session);
 int mhd_gtls_handshake_server (mhd_gtls_session_t session);
 void mhd_gtls_set_server_random (mhd_gtls_session_t session, uint8_t * rnd);
 void mhd_gtls_set_client_random (mhd_gtls_session_t session, uint8_t * rnd);
@@ -52,6 +51,10 @@ int mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
 
 int mhd_gtls_negotiate_version( mhd_gtls_session_t session, gnutls_protocol_t adv_version);
 int mhd_gtls_user_hello_func( gnutls_session, gnutls_protocol_t adv_version);
+
+#if MHD_DEBUG_TLS
+int mhd_gtls_handshake_client (mhd_gtls_session_t session);
+#endif
 
 #define STATE session->internals.handshake_state
 /* This returns true if we have got there

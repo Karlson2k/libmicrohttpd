@@ -286,7 +286,7 @@ mhd_gtls_get_auth_info (mhd_gtls_session_t session)
 void
 mhd_gtls_free_auth_info (mhd_gtls_session_t session)
 {
-  dh_info_st *dh_info;
+  mhd_gtls_dh_info_st *dh_info;
   rsa_info_st *rsa_info;
 
   if (session == NULL || session->key == NULL)

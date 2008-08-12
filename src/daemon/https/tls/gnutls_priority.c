@@ -208,30 +208,30 @@ MHD_gnutls_certificate_type_set_priority (mhd_gtls_session_t session,
 #endif
 }
 
-static const int protocol_priority[] = { MHD_GNUTLS_TLS1_1,
+static const int mhd_gtls_protocol_priority[] = { MHD_GNUTLS_TLS1_1,
   MHD_GNUTLS_TLS1_0,
   MHD_GNUTLS_SSL3,
   0
 };
 
-static const int cipher_priority_secure256[] =
+static const int mhd_gtls_cipher_priority_secure256[] =
   { MHD_GNUTLS_CIPHER_AES_256_CBC,
   0
 };
 
-static const int kx_priority_secure[] = { MHD_GNUTLS_KX_RSA,
+static const int mhd_gtls_kx_priority_secure[] = { MHD_GNUTLS_KX_RSA,
   0
 };
 
-static const int mac_priority_secure[] = { MHD_GNUTLS_MAC_SHA1,
+static const int mhd_gtls_mac_priority_secure[] = { MHD_GNUTLS_MAC_SHA1,
   0
 };
 
-static int cert_type_priority[] = { MHD_GNUTLS_CRT_X509,
+static int mhd_gtls_cert_type_priority[] = { MHD_GNUTLS_CRT_X509,
   0
 };
 
-static const int comp_priority[] = { MHD_GNUTLS_COMP_NULL,
+static const int mhd_gtls_comp_priority[] = { MHD_GNUTLS_COMP_NULL,
   0
 };
 
@@ -340,12 +340,12 @@ MHD_tls_set_default_priority (gnutls_priority_t * priority_cache,
     }
 
   /* set mode to "SECURE256" */
-  _set_priority (&(*priority_cache)->protocol, protocol_priority);
-  _set_priority (&(*priority_cache)->cipher, cipher_priority_secure256);
-  _set_priority (&(*priority_cache)->kx, kx_priority_secure);
-  _set_priority (&(*priority_cache)->mac, mac_priority_secure);
-  _set_priority (&(*priority_cache)->cert_type, cert_type_priority);
-  _set_priority (&(*priority_cache)->compression, comp_priority);
+  _set_priority (&(*priority_cache)->protocol, mhd_gtls_protocol_priority);
+  _set_priority (&(*priority_cache)->cipher, mhd_gtls_cipher_priority_secure256);
+  _set_priority (&(*priority_cache)->kx, mhd_gtls_kx_priority_secure);
+  _set_priority (&(*priority_cache)->mac, mhd_gtls_mac_priority_secure);
+  _set_priority (&(*priority_cache)->cert_type, mhd_gtls_cert_type_priority);
+  _set_priority (&(*priority_cache)->compression, mhd_gtls_comp_priority);
 
   (*priority_cache)->no_padding = 0;
   return 0;

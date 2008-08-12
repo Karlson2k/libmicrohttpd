@@ -395,7 +395,7 @@ encode_ber_rs (gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
                             &sig)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_write_int (sig, "r", r, 1);
@@ -493,7 +493,7 @@ decode_ber_rs (const gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
                             &sig)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&sig, sig_value->data, sig_value->size, NULL);
@@ -501,7 +501,7 @@ decode_ber_rs (const gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
     {
       gnutls_assert ();
       asn1_delete_structure (&sig);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_read_int (sig, "r", r);

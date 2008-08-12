@@ -30,7 +30,7 @@
 #include "gnutls_num.h"
 #include <ext_max_record.h>
 
-/* 
+/*
  * In case of a server: if a MAX_RECORD_SIZE extension type is received then it stores
  * into the session the new value. The server may use gnutls_get_max_record_size(),
  * in order to access it.
@@ -66,7 +66,7 @@ mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
         }
     }
   else
-    {                           /* CLIENT SIDE - we must check if the sent record size is the right one 
+    {                           /* CLIENT SIDE - we must check if the sent record size is the right one
                                  */
       if (data_size > 0)
         {
@@ -107,6 +107,7 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
 {
   uint16_t len;
   /* this function sends the client extension data (dnsname) */
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 
@@ -127,6 +128,7 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
 
     }
   else
+#endif
     {                           /* server side */
 
       if (session->security_parameters.max_record_recv_size !=

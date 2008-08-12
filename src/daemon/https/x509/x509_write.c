@@ -151,7 +151,7 @@ gnutls_x509_crt_set_proxy_dn (gnutls_x509_crt_t crt, gnutls_x509_crt_t eecrt,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (name && sizeof_name)
@@ -200,7 +200,7 @@ gnutls_x509_crt_set_version (gnutls_x509_crt_t crt, unsigned int version)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -273,7 +273,7 @@ gnutls_x509_crt_set_crq (gnutls_x509_crt_t crt, gnutls_x509_crq_t crq)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -282,7 +282,7 @@ gnutls_x509_crt_set_crq (gnutls_x509_crt_t crt, gnutls_x509_crq_t crq)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -714,7 +714,7 @@ gnutls_x509_crt_set_serial (gnutls_x509_crt_t cert, const void *serial,
   if (ret != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (ret);
+      return mhd_gtls_asn2err (ret);
     }
 
   return 0;
@@ -1020,7 +1020,7 @@ gnutls_x509_crt_set_key_purpose_oid (gnutls_x509_crt_t cert,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Check if the extension already exists.
@@ -1039,7 +1039,7 @@ gnutls_x509_crt_set_key_purpose_oid (gnutls_x509_crt_t cert,
         {
           gnutls_assert ();
           asn1_delete_structure (&c2);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
     }
@@ -1053,7 +1053,7 @@ gnutls_x509_crt_set_key_purpose_oid (gnutls_x509_crt_t cert,
     {
       gnutls_assert ();
       asn1_delete_structure (&c2);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* 2. Add the OID.
@@ -1063,7 +1063,7 @@ gnutls_x509_crt_set_key_purpose_oid (gnutls_x509_crt_t cert,
     {
       gnutls_assert ();
       asn1_delete_structure (&c2);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_der_encode (c2, "", &der_data, 0);
@@ -1072,7 +1072,7 @@ gnutls_x509_crt_set_key_purpose_oid (gnutls_x509_crt_t cert,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_crt_set_extension (cert, "2.5.29.37",

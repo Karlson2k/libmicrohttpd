@@ -28,7 +28,7 @@
 #include "gnutls_num.h"
 #include <ext_server_name.h>
 
-/* 
+/*
  * In case of a server: if a NAME_DNS extension type is received then it stores
  * into the session the value of NAME_DNS. The server may use gnutls_ext_get_server_name(),
  * in order to access it.
@@ -133,34 +133,34 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
   ssize_t data_size = _data_size;
   int total_size = 0;
 
-  /* this function sends the client extension data (dnsname) 
-   */
+  /* this function sends the client extension data (dnsname) */
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 
       if (session->security_parameters.extensions.server_names_size == 0)
         return 0;
 
-      /* uint16_t 
+      /* uint16_t
        */
       total_size = 2;
       for (i = 0;
            i < session->security_parameters.extensions.server_names_size; i++)
         {
-          /* count the total size 
+          /* count the total size
            */
           len =
             session->security_parameters.extensions.server_names[i].
             name_length;
 
-          /* uint8_t + uint16_t + size 
+          /* uint8_t + uint16_t + size
            */
           total_size += 1 + 2 + len;
         }
 
       p = data;
 
-      /* UINT16: write total size of all names 
+      /* UINT16: write total size of all names
        */
       DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
       mhd_gtls_write_uint16 (total_size - 2, p);
@@ -205,7 +205,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
             }
         }
     }
-
+#endif
   return total_size;
 }
 
@@ -238,13 +238,13 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
                         unsigned int *type, unsigned int indx)
 {
   char *_data = data;
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
-
+#endif
   if (indx + 1 > session->security_parameters.extensions.server_names_size)
     {
       return GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
@@ -284,13 +284,13 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
   * @name: is a string that contains the server name.
   * @name_length: holds the length of name
   *
-  * This function is to be used by clients that want to inform 
+  * This function is to be used by clients that want to inform
   * (via a TLS extension mechanism) the server of the name they
   * connected to. This should be used by clients that connect
   * to servers that do virtual hosting.
   *
   * The value of @name depends on the @ind type. In case of GNUTLS_NAME_DNS,
-  * an ASCII or UTF-8 null terminated string, without the trailing dot, is expected. 
+  * an ASCII or UTF-8 null terminated string, without the trailing dot, is expected.
   * IPv4 or IPv6 addresses are not permitted.
   *
   **/

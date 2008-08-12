@@ -469,18 +469,6 @@ main (int argc, char *const *argv)
                  MHD_OPTION_KX_PRIORITY,
                  kx, MHD_OPTION_END);
 
-
-  /*gnutls_mac_algorithm_t mac[] = {
-     {MHD_GNUTLS_MAC_MD5, 0}, 0};
-     gnutls_mac_algorithm_t * cur_mac;
-
-     for ( cur_mac = &mac[0]; (*cur_mac) != 0; cur_mac++ ){
-     option[0] = MHD_GNUTLS_MAC_SHA1;
-     errorCount +=
-     test_wrap (&test_https_transfer, test_fd, "AES256-SHA",
-     CURL_SSLVERSION_TLSv1, MHD_OPTION_MAC_ALGO, option);
-     } */
-
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 

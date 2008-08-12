@@ -32,9 +32,9 @@ typedef struct
   gnutls_datum_t prime;
   gnutls_datum_t generator;
   gnutls_datum_t public_key;
-} dh_info_st;
+} mhd_gtls_dh_info_st;
 
-void mhd_gtls_free_dh_info (dh_info_st * dh);
+void mhd_gtls_free_dh_info (mhd_gtls_dh_info_st * dh);
 int mhd_gtls_gen_dh_common_client_kx (mhd_gtls_session_t, opaque **);
 int mhd_gtls_proc_dh_common_client_kx (mhd_gtls_session_t session,
 				      opaque * data, size_t _data_size,

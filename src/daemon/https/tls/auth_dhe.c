@@ -43,7 +43,7 @@ static int gen_dhe_server_kx (mhd_gtls_session_t, opaque **);
 static int proc_dhe_server_kx (mhd_gtls_session_t, opaque *, size_t);
 static int proc_dhe_client_kx (mhd_gtls_session_t, opaque *, size_t);
 
-const mhd_gtls_mod_auth_st dhe_rsa_auth_struct = {
+const mhd_gtls_mod_auth_st mhd_gtls_dhe_rsa_auth_struct = {
   "DHE_RSA",
   mhd_gtls_gen_cert_server_certificate,
   mhd_gtls_gen_cert_client_certificate,
@@ -60,7 +60,7 @@ const mhd_gtls_mod_auth_st dhe_rsa_auth_struct = {
   mhd_gtls_proc_cert_cert_req    /* proc server cert request */
 };
 
-const mhd_gtls_mod_auth_st dhe_dss_auth_struct = {
+const mhd_gtls_mod_auth_st mhd_gtls_dhe_dss_auth_struct = {
   "DHE_DSS",
   mhd_gtls_gen_cert_server_certificate,
   mhd_gtls_gen_cert_client_certificate,

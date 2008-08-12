@@ -114,9 +114,11 @@ int
 mhd_gtls_oprfi_recv_params (mhd_gtls_session_t session,
                            const opaque * data, size_t data_size)
 {
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     return oprfi_recv_client (session, data, data_size);
   else
+#endif
     return oprfi_recv_server (session, data, data_size);
 }
 
@@ -194,9 +196,6 @@ int
 mhd_gtls_oprfi_send_params (mhd_gtls_session_t session,
                            opaque * data, size_t data_size)
 {
-  if (session->security_parameters.entity == GNUTLS_CLIENT)
-    return oprfi_send_client (session, data, data_size);
-  else
     return oprfi_send_server (session, data, data_size);
 }
 

@@ -33,7 +33,7 @@ typedef struct
   const char *desc;
 } gnutls_alert_entry;
 
-static const gnutls_alert_entry sup_alerts[] = {
+static const gnutls_alert_entry mhd_gtls_sup_alerts[] = {
   {GNUTLS_A_CLOSE_NOTIFY, "Close notify"},
   {GNUTLS_A_UNEXPECTED_MESSAGE, "Unexpected message"},
   {GNUTLS_A_BAD_RECORD_MAC, "Bad record MAC"},
@@ -73,7 +73,7 @@ static const gnutls_alert_entry sup_alerts[] = {
 
 #define GNUTLS_ALERT_LOOP(b) \
         const gnutls_alert_entry *p; \
-                for(p = sup_alerts; p->desc != NULL; p++) { b ; }
+                for(p = mhd_gtls_sup_alerts; p->desc != NULL; p++) { b ; }
 
 #define GNUTLS_ALERT_ID_LOOP(a) \
                         GNUTLS_ALERT_LOOP( if(p->alert == alert) { a; break; })

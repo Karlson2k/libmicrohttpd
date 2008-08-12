@@ -40,15 +40,15 @@
 #include <gnutls_state.h>
 #include <auth_dh_common.h>
 
-static int gen_anon_server_kx (mhd_gtls_session_t, opaque **);
-static int proc_anon_client_kx (mhd_gtls_session_t, opaque *, size_t);
+static int mhd_gtls_gen_anon_server_kx (mhd_gtls_session_t, opaque **);
+static int mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t, opaque *, size_t);
 static int mhd_gtls_proc_anon_server_kx (mhd_gtls_session_t, opaque *, size_t);
 
-const mhd_gtls_mod_auth_st anon_auth_struct = {
+const mhd_gtls_mod_auth_st mhd_gtls_anon_auth_struct = {
   "ANON",
   NULL,
   NULL,
-  gen_anon_server_kx,
+  mhd_gtls_gen_anon_server_kx,
   mhd_gtls_gen_dh_common_client_kx,      /* this can be shared */
   NULL,
   NULL,
@@ -56,13 +56,13 @@ const mhd_gtls_mod_auth_st anon_auth_struct = {
   NULL,
   NULL,                         /* certificate */
   mhd_gtls_proc_anon_server_kx,
-  proc_anon_client_kx,
+  mhd_gtls_proc_anon_client_kx,
   NULL,
   NULL
 };
 
 static int
-gen_anon_server_kx (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_anon_server_kx (mhd_gtls_session_t session, opaque ** data)
 {
   mpi_t g, p;
   const mpi_t *mpis;
@@ -111,7 +111,7 @@ gen_anon_server_kx (mhd_gtls_session_t session, opaque ** data)
 
 
 static int
-proc_anon_client_kx (mhd_gtls_session_t session, opaque * data,
+mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t session, opaque * data,
                      size_t _data_size)
 {
   mhd_gtls_anon_server_credentials_t cred;

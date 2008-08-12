@@ -59,7 +59,7 @@ _decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (strcmp (oid, DATA_OID) != 0)
@@ -89,7 +89,7 @@ _decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
         &c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -97,7 +97,7 @@ _decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -150,7 +150,7 @@ gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12)
         {
           gnutls_assert ();
           gnutls_free (*pkcs12);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
       return 0;                 /* success */
     }
@@ -234,7 +234,7 @@ gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
   result = asn1_der_decoding (&pkcs12->pkcs12, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       gnutls_assert ();
       goto cleanup;
     }
@@ -360,7 +360,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
         &c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -368,7 +368,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -378,7 +378,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -394,7 +394,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -443,7 +443,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
       if (result != ASN1_SUCCESS && result != ASN1_ELEMENT_NOT_FOUND)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -619,7 +619,7 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -669,7 +669,7 @@ create_empty_pfx (ASN1_TYPE pkcs12)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -679,7 +679,7 @@ create_empty_pfx (ASN1_TYPE pkcs12)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -692,7 +692,7 @@ create_empty_pfx (ASN1_TYPE pkcs12)
         &c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -777,7 +777,7 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -788,7 +788,7 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -803,7 +803,7 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
     }
@@ -884,7 +884,7 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -944,7 +944,7 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -954,7 +954,7 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -965,7 +965,7 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1023,7 +1023,7 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1070,7 +1070,7 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1108,7 +1108,7 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       return 0;
@@ -1123,7 +1123,7 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       mhd_gtls_str_cpy (root, sizeof (root), where);
@@ -1154,7 +1154,7 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       /* convert name to BMPString
@@ -1224,7 +1224,7 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
         &c2)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1242,7 +1242,7 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -1252,7 +1252,7 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
 

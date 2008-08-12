@@ -76,7 +76,7 @@ int
 MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
                      gnutls_datum_t * raw_gen, gnutls_datum_t * raw_prime)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
   int ret;
   mhd_anon_auth_info_t anon_info;
   cert_auth_info_t cert_info;
@@ -133,7 +133,7 @@ MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
 int
 MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session, gnutls_datum_t * raw_key)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
   mhd_anon_auth_info_t anon_info;
   cert_auth_info_t cert_info;
   cert_auth_info_t psk_info;
@@ -275,7 +275,7 @@ MHD_gnutls_dh_get_secret_bits (mhd_gtls_session_t session)
 int
 MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
 
   switch (MHD_gtls_auth_get_type (session))
     {
@@ -342,7 +342,7 @@ MHD_gtls_rsa_export_get_modulus_bits (mhd_gtls_session_t session)
 int
 MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
 
   switch (MHD_gtls_auth_get_type (session))
     {

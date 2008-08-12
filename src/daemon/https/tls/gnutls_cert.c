@@ -216,7 +216,7 @@ int
 MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
                                          res)
 {
-  *res = gnutls_calloc (1, sizeof (certificate_credentials_st));
+  *res = gnutls_calloc (1, sizeof (mhd_gtls_cert_credentials_st));
 
   if (*res == NULL)
     return GNUTLS_E_MEMORY_ERROR;

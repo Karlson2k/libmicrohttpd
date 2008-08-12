@@ -58,7 +58,7 @@
 #define TRUE 1
 #define FALSE 0
 
-int _gnutls_server_select_comp_method (mhd_gtls_session_t session,
+static int _gnutls_server_select_comp_method (mhd_gtls_session_t session,
                                        opaque * data, int datalen);
 
 
@@ -186,7 +186,7 @@ _gnutls_ssl3_finished (mhd_gtls_session_t session, int type, opaque * ret)
 #define SERVER_MSG "server finished"
 #define CLIENT_MSG "client finished"
 #define TLS_MSG_LEN 15
-int
+static int
 _gnutls_finished (mhd_gtls_session_t session, int type, void *ret)
 {
   const int siz = TLS_MSG_LEN;
@@ -332,7 +332,7 @@ mhd_gtls_user_hello_func (gnutls_session session,
  * or version 2.0 client hello (only for compatibility
  * since SSL version 2.0 is not supported).
  */
-int
+static int
 _gnutls_read_client_hello (mhd_gtls_session_t session, opaque * data,
                            int datalen)
 {
@@ -509,7 +509,7 @@ _gnutls_handshake_hash_pending (mhd_gtls_session_t session)
  * and initializing encryption. This is the first encrypted message
  * we send.
  */
-int
+static int
 _gnutls_send_finished (mhd_gtls_session_t session, int again)
 {
   uint8_t data[36];
@@ -562,7 +562,7 @@ _gnutls_send_finished (mhd_gtls_session_t session, int again)
 /* This is to be called after sending our finished message. If everything
  * went fine we have negotiated a secure connection
  */
-int
+static int
 _gnutls_recv_finished (mhd_gtls_session_t session)
 {
   uint8_t data[36], *vrfy;
@@ -796,7 +796,7 @@ finish:
 
 /* This selects the best supported compression method from the ones provided
  */
-int
+static int
 _gnutls_server_select_comp_method (mhd_gtls_session_t session,
                                    opaque * data, int datalen)
 {
@@ -850,7 +850,7 @@ _gnutls_server_select_comp_method (mhd_gtls_session_t session,
  * GNUTLS_E_AGAIN or GNUTLS_E_INTERRUPTED, then it must be called again
  * (until it returns ok), with NULL parameters.
  */
-int
+static int
 _gnutls_send_empty_handshake (mhd_gtls_session_t session,
                               gnutls_handshake_description_t type, int again)
 {
@@ -1964,13 +1964,14 @@ int
 mhd_gtls_send_hello (mhd_gtls_session_t session, int again)
 {
   int ret;
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       ret = _gnutls_send_client_hello (session, again);
 
     }
   else
+#endif
     {                           /* SERVER */
       ret = _gnutls_send_server_hello (session, again);
     }
@@ -1986,7 +1987,7 @@ int
 mhd_gtls_recv_hello (mhd_gtls_session_t session, opaque * data, int datalen)
 {
   int ret;
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       ret = _gnutls_read_server_hello (session, data, datalen);
@@ -1997,6 +1998,7 @@ mhd_gtls_recv_hello (mhd_gtls_session_t session, opaque * data, int datalen)
         }
     }
   else
+#endif
     {                           /* Server side reading a client hello */
 
       ret = _gnutls_read_client_hello (session, data, datalen);
@@ -2126,7 +2128,7 @@ _gnutls_handshake_hash_init (mhd_gtls_session_t session)
   return 0;
 }
 
-int
+static int
 _gnutls_send_supplemental (mhd_gtls_session_t session, int again)
 {
   int ret = 0;
@@ -2156,7 +2158,7 @@ _gnutls_send_supplemental (mhd_gtls_session_t session, int again)
   return ret;
 }
 
-int
+static int
 _gnutls_recv_supplemental (mhd_gtls_session_t session)
 {
   uint8_t *data = NULL;
@@ -2223,12 +2225,13 @@ MHD_gnutls_handshake (mhd_gtls_session_t session)
       gnutls_assert ();
       return ret;
     }
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       ret = mhd_gtls_handshake_client (session);
     }
   else
+#endif
     {
       ret = mhd_gtls_handshake_server (session);
     }

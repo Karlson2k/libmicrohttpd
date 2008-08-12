@@ -96,7 +96,7 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              return _gnutls_asn2err (result);
+              return mhd_gtls_asn2err (result);
             }
 
           /* Handle Extension 
@@ -123,7 +123,7 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
               else if (result != ASN1_SUCCESS)
                 {
                   gnutls_assert ();
-                  return _gnutls_asn2err (result);
+                  return mhd_gtls_asn2err (result);
                 }
 
               if (str_critical[0] == 'T')
@@ -165,7 +165,7 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
   else
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 }
 
@@ -220,7 +220,7 @@ _gnutls_x509_crt_get_extension_oid (gnutls_x509_crt_t cert,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              return _gnutls_asn2err (result);
+              return mhd_gtls_asn2err (result);
             }
 
           /* Handle Extension 
@@ -255,7 +255,7 @@ _gnutls_x509_crt_get_extension_oid (gnutls_x509_crt_t cert,
   else
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 }
 
@@ -277,7 +277,7 @@ set_extension (ASN1_TYPE asn, const char *extension_id,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -286,7 +286,7 @@ set_extension (ASN1_TYPE asn, const char *extension_id,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (critical == 0)
@@ -301,7 +301,7 @@ set_extension (ASN1_TYPE asn, const char *extension_id,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -342,7 +342,7 @@ overwrite_extension (ASN1_TYPE asn, unsigned int indx,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   mhd_gtls_str_cpy (name2, sizeof (name2), name);
@@ -411,7 +411,7 @@ _gnutls_x509_crt_set_extension (gnutls_x509_crt_t cert,
           else if (result != ASN1_SUCCESS)
             {
               gnutls_assert ();
-              return _gnutls_asn2err (result);
+              return mhd_gtls_asn2err (result);
             }
 
           /* Handle Extension 
@@ -436,7 +436,7 @@ _gnutls_x509_crt_set_extension (gnutls_x509_crt_t cert,
   else
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
 
@@ -462,7 +462,7 @@ _gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
        (_gnutls_get_pkix (), "PKIX1.KeyUsage", &ext)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&ext, extnValue, extnValueLen, NULL);
@@ -471,7 +471,7 @@ _gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   len = sizeof (str);
@@ -506,7 +506,7 @@ _gnutls_x509_ext_extract_basicConstraints (int *CA,
        (_gnutls_get_pkix (), "PKIX1.BasicConstraints", &ext)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&ext, extnValue, extnValueLen, NULL);
@@ -514,7 +514,7 @@ _gnutls_x509_ext_extract_basicConstraints (int *CA,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (pathLenConstraint)
@@ -527,7 +527,7 @@ _gnutls_x509_ext_extract_basicConstraints (int *CA,
         {
           gnutls_assert ();
           asn1_delete_structure (&ext);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
     }
 
@@ -569,7 +569,7 @@ _gnutls_x509_ext_gen_basicConstraints (int CA,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (ext, "cA", str, 1);
@@ -577,14 +577,14 @@ _gnutls_x509_ext_gen_basicConstraints (int CA,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (pathLenConstraint < 0)
     {
       result = asn1_write_value (ext, "pathLenConstraint", NULL, 0);
       if (result < 0)
-        result = _gnutls_asn2err (result);
+        result = mhd_gtls_asn2err (result);
     }
   else
     result = _gnutls_x509_write_uint32 (ext, "pathLenConstraint",
@@ -623,7 +623,7 @@ _gnutls_x509_ext_gen_keyUsage (uint16_t usage, gnutls_datum_t * der_ext)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   str[0] = usage & 0xff;
@@ -634,7 +634,7 @@ _gnutls_x509_ext_gen_keyUsage (uint16_t usage, gnutls_datum_t * der_ext)
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_der_encode (ext, "", der_ext, 0);
@@ -663,7 +663,7 @@ write_new_general_name (ASN1_TYPE ext, const char *ext_name,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   switch (type)
@@ -699,7 +699,7 @@ write_new_general_name (ASN1_TYPE ext, const char *ext_name,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   mhd_gtls_str_cat (name, sizeof (name), ".");
@@ -710,7 +710,7 @@ write_new_general_name (ASN1_TYPE ext, const char *ext_name,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   return 0;
@@ -732,7 +732,7 @@ _gnutls_x509_ext_gen_subject_alt_name (gnutls_x509_subject_alt_name_t
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = write_new_general_name (ext, "", type, data_string);
@@ -771,7 +771,7 @@ _gnutls_x509_ext_gen_key_id (const void *id, size_t id_size,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (ext, "", id, id_size);
@@ -779,7 +779,7 @@ _gnutls_x509_ext_gen_key_id (const void *id, size_t id_size,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_der_encode (ext, "", der_ext, 0);
@@ -810,7 +810,7 @@ _gnutls_x509_ext_gen_auth_key_id (const void *id, size_t id_size,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (ext, "keyIdentifier", id, id_size);
@@ -818,7 +818,7 @@ _gnutls_x509_ext_gen_auth_key_id (const void *id, size_t id_size,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   asn1_write_value (ext, "authorityCertIssuer", NULL, 0);
@@ -863,7 +863,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -871,7 +871,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -881,7 +881,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
     }
@@ -891,7 +891,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto cleanup;
         }
     }
@@ -900,7 +900,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -910,7 +910,7 @@ _gnutls_x509_ext_gen_crl_dist_points (gnutls_x509_subject_alt_name_t
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -964,7 +964,7 @@ _gnutls_x509_ext_extract_proxyCertInfo (int *pathLenConstraint,
        (_gnutls_get_pkix (), "PKIX1.ProxyCertInfo", &ext)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_der_decoding (&ext, extnValue, extnValueLen, NULL);
@@ -972,7 +972,7 @@ _gnutls_x509_ext_extract_proxyCertInfo (int *pathLenConstraint,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (pathLenConstraint)
@@ -984,7 +984,7 @@ _gnutls_x509_ext_extract_proxyCertInfo (int *pathLenConstraint,
       else if (result != GNUTLS_E_SUCCESS)
         {
           asn1_delete_structure (&ext);
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
     }
 
@@ -1044,14 +1044,14 @@ _gnutls_x509_ext_gen_proxyCertInfo (int pathLenConstraint,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   if (pathLenConstraint < 0)
     {
       result = asn1_write_value (ext, "pCPathLenConstraint", NULL, 0);
       if (result < 0)
-        result = _gnutls_asn2err (result);
+        result = mhd_gtls_asn2err (result);
     }
   else
     result = _gnutls_x509_write_uint32 (ext, "pCPathLenConstraint",
@@ -1069,7 +1069,7 @@ _gnutls_x509_ext_gen_proxyCertInfo (int pathLenConstraint,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (ext, "proxyPolicy.policy",
@@ -1078,7 +1078,7 @@ _gnutls_x509_ext_gen_proxyCertInfo (int pathLenConstraint,
     {
       gnutls_assert ();
       asn1_delete_structure (&ext);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = _gnutls_x509_der_encode (ext, "", der_ext, 0);

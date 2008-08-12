@@ -429,7 +429,7 @@ mhd_gtls_dh_get_allowed_prime_bits (mhd_gtls_session_t session)
 int
 mhd_gtls_dh_set_peer_public (mhd_gtls_session_t session, mpi_t public)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
   int ret;
 
   switch (MHD_gtls_auth_get_type (session))
@@ -540,7 +540,7 @@ mhd_gtls_rsa_export_set_pubkey (mhd_gtls_session_t session,
 int
 mhd_gtls_dh_set_group (mhd_gtls_session_t session, mpi_t gen, mpi_t prime)
 {
-  dh_info_st *dh;
+  mhd_gtls_dh_info_st *dh;
   int ret;
 
   switch (MHD_gtls_auth_get_type (session))
@@ -1060,6 +1060,7 @@ MHD_gtls_session_get_master_secret (mhd_gtls_session_t session)
 int
 MHD_gtls_session_is_resumed (mhd_gtls_session_t session)
 {
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       if (session->security_parameters.session_id_size > 0
@@ -1072,6 +1073,7 @@ MHD_gtls_session_is_resumed (mhd_gtls_session_t session)
         return 1;
     }
   else
+#endif
     {
       if (session->internals.resumed == RESUME_TRUE)
         return 1;

@@ -36,17 +36,17 @@
 # define gnutls_assert()
 #endif
 
-int _gnutls_asn2err (int asn_err);
-void _gnutls_log (int, const char *fmt, ...);
+int mhd_gtls_asn2err (int asn_err);
+void mhd_gtls_log (int, const char *fmt, ...);
 
 extern int _gnutls_log_level;
 
 #ifdef C99_MACROS
 #define LEVEL(l, ...) if (_gnutls_log_level >= l || _gnutls_log_level > 9) \
-	_gnutls_log( l, __VA_ARGS__)
+	mhd_gtls_log( l, __VA_ARGS__)
 
 #define LEVEL_EQ(l, ...) if (_gnutls_log_level == l || _gnutls_log_level > 9) \
-	_gnutls_log( l, __VA_ARGS__)
+	mhd_gtls_log( l, __VA_ARGS__)
 
 # define _gnutls_debug_log(...) LEVEL(2, __VA_ARGS__)
 # define _gnutls_handshake_log(...) LEVEL(3, __VA_ARGS__)

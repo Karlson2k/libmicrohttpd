@@ -130,12 +130,11 @@ AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cU
 AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
 AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
 
-
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-# optional: have error messages?
+# optional: have error messages ?
 AC_MSG_CHECKING(--enable-messages argument)
 AC_ARG_ENABLE(messages,
    [AS_HELP_STRING([--enable-messages],
@@ -147,6 +146,24 @@ if test "$enable_messages" = "yes"
 then
  AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
 fi
+
+# optional: compile TLS client side code [only for test running] ?
+AC_MSG_CHECKING(--enable-client-side argument)
+AC_ARG_ENABLE(client-side,
+   [AS_HELP_STRING([--enable-client-side],
+               [Compile client side code])],
+   [enable_client_side=$enableval],
+   [enable_client_side="no"])
+AC_MSG_RESULT($enable_client_side)
+if test "$enable_client_side" = "no"
+then
+ AC_DEFINE([MHD_DEBUG_TLS],[0],[Compile client side code. This will enable running some test cases.])
+ MSG_CLIENT_SIDE="disabled. running some test cases won't be possible"
+else
+ AC_DEFINE([MHD_DEBUG_TLS],[1],[Compile client side code. This will enable running some test cases.])
+ MSG_CLIENT_SIDE="enabled" 
+fi
+AM_CONDITIONAL(MHD_DEBUG_TLS, test "$enable_client_side" != "no")
 
 # optional: have zzuf, socat?
 AC_CHECK_PROG([HAVE_ZZUF],[zzuf], 1, 0)
@@ -207,7 +224,7 @@ AC_ARG_ENABLE([OpenPGP],
    [AS_HELP_STRING([--enable-OpenPGP],
                [enable OpenPGP support (default is no)])],
    [enable_openpgp=$enableval],
-   [enable_openpgp="yes"])
+   [enable_openpgp="no"])
 AC_MSG_RESULT($enable_openpgp)
 if test "$enable_openpgp" = "yes"
 then
@@ -320,17 +337,18 @@ fi
 AC_MSG_NOTICE([Configured to build curl/libcurl:
   Configuration Summery:
   
-  os:              ${host_os}
-  target dir:      ${prefix}
-  messages:        ${enable_messages}
-  HTTPS support:   ${enable_HTTPS}	
-  TLS support:     ${enable_TLS}
-  SSLv3 support:   ${enable_SSL}
-  OpenGPG support: ${enable_openpgp}
-  x509 support:    ${enable_x509}
-  libgcrypt:       ${MSG_GCRYPT}
+  os:                ${host_os}
+  target dir:        ${prefix}
+  messages:          ${enable_messages}
+  HTTPS support:     ${enable_HTTPS}	
+  TLS support:       ${enable_TLS}
+  SSLv3 support:     ${enable_SSL}
+  OpenGPG support:   ${enable_openpgp}
+  x509 support:      ${enable_x509}
+  libgcrypt:         ${MSG_GCRYPT}
   
   # Testing
-  libcurl:         ${MSG_CURL}		
+  libcurl:           ${MSG_CURL}
+  client code dep.:  ${MSG_CLIENT_SIDE}    		
 ])
 

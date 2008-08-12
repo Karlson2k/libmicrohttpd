@@ -98,7 +98,7 @@ typedef struct mhd_gtls_certificate_credentials_st
 
   gnutls_certificate_client_retrieve_function *client_get_cert_callback;
   gnutls_certificate_server_retrieve_function *server_get_cert_callback;
-} certificate_credentials_st;
+} mhd_gtls_cert_credentials_st;
 
 typedef struct mhd_gtls_rsa_info_st
 {
@@ -115,14 +115,14 @@ typedef struct mhd_gtls_cert_auth_info_st
   /* These (dh/rsa) are just copies from the credentials_t structure.
    * They must be freed.
    */
-  dh_info_st dh;
+  mhd_gtls_dh_info_st dh;
   rsa_info_st rsa_export;
 
   gnutls_datum_t *raw_certificate_list;	/* holds the raw certificate of the
 					 * peer.
 					 */
   unsigned int ncerts;		/* holds the size of the list above */
-} *cert_auth_info_t;
+} * cert_auth_info_t;
 
 typedef struct mhd_gtls_cert_auth_info_st cert_auth_info_st;
 

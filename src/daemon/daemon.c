@@ -109,12 +109,12 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, "Failed to load certificate\n");
 #endif
-      return MHD_NO;
+      return -1;
     }
 }
 
 /* initialize security aspects of the HTTPS daemon */
-int
+static int
 MHD_TLS_init (struct MHD_Daemon *daemon)
 {
   int ret;
@@ -129,24 +129,21 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 	  }
       MHD_gnutls_dh_params_generate2 (daemon->dh_params, 1024);
       MHD_gnutls_anon_set_server_dh_params (daemon->anon_cred, daemon->dh_params);
-      break;
+      return 0;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       ret = MHD_gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
       if (ret != 0) {
 		return GNUTLS_E_MEMORY_ERROR;
 	  }
-      if ((ret = MHD_init_daemon_certificate (daemon)) != 0)
-        return ret;
+      return MHD_init_daemon_certificate (daemon);
     default:
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "Error: no daemon credentials type found. f: %s, l: %d\n",
                 __FUNCTION__, __LINE__);
 #endif
-      break;
+      return -1;
     }
-
-  return MHD_NO;
 }
 
 inline static int
@@ -1028,7 +1025,7 @@ MHD_start_daemon_va (unsigned int options,
 
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if (options & MHD_USE_SSL && MHD_TLS_init (retVal) != 0)
+  if ((options & MHD_USE_SSL) && MHD_TLS_init (retVal))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");

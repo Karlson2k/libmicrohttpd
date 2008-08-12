@@ -9,12 +9,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *               
+ *
  * GNUTLS-EXTRA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                               
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -448,10 +448,6 @@ gnutls_ia_recv (mhd_gtls_session_t session, char *data, size_t sizeofdata)
   return len;
 }
 
-/* XXX rewrite the following two functions as state machines, to
-   handle EAGAIN/EINTERRUPTED?  just add more problems to callers,
-   though.  */
-
 int
 _gnutls_ia_client_handshake (mhd_gtls_session_t session)
 {
@@ -617,7 +613,7 @@ gnutls_ia_handshake_p (mhd_gtls_session_t session)
   if (!ext->gnutls_ia_allowskip || !MHD_gtls_session_is_resumed (session))
     return 1;
 
-  /* If we're resuming and we and the peer both allow skipping on resumption: 
+  /* If we're resuming and we and the peer both allow skipping on resumption:
    * don't do IA */
 
   return !ext->gnutls_ia_peer_allowskip;

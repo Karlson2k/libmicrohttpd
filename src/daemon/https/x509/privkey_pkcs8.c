@@ -221,7 +221,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
                             pkey_info)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -231,7 +231,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -243,7 +243,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -254,7 +254,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -275,7 +275,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -285,7 +285,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -296,7 +296,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_MEM_ERROR)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -314,7 +314,7 @@ encode_to_private_key_info (gnutls_x509_privkey_t pkey,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -348,7 +348,7 @@ encode_to_pkcs8_key (schema_id schema, const gnutls_datum_t * der_key,
                             &pkcs8_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -382,7 +382,7 @@ encode_to_pkcs8_key (schema_id schema, const gnutls_datum_t * der_key,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -422,7 +422,7 @@ encode_to_pkcs8_key (schema_id schema, const gnutls_datum_t * der_key,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -569,7 +569,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -579,7 +579,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -590,7 +590,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
       if (result < 0)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -598,7 +598,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
       if (result < 0)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -632,7 +632,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -642,7 +642,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
       if (result != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -705,7 +705,7 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
                             &pkcs8_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -713,7 +713,7 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -747,7 +747,7 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   params_len = params_end - params_start + 1;
@@ -923,7 +923,7 @@ decode_private_key_info (const gnutls_datum_t * der,
                             &pkcs8_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -931,7 +931,7 @@ decode_private_key_info (const gnutls_datum_t * der,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -943,7 +943,7 @@ decode_private_key_info (const gnutls_datum_t * der,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1109,7 +1109,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
   _gnutls_hard_log ("keyDerivationFunc.algorithm: %s\n", oid);
 
@@ -1118,7 +1118,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
       gnutls_assert ();
       _gnutls_x509_log
         ("PKCS #8 key derivation OID '%s' is unsupported.\n", oid);
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -1128,7 +1128,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
   params_len = params_end - params_start + 1;
 
@@ -1141,7 +1141,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
                             &pbkdf2_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -1150,7 +1150,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1162,7 +1162,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("salt.specified.size: %d\n", params->salt_size);
@@ -1216,7 +1216,7 @@ read_pkcs12_kdf_params (ASN1_TYPE pbes2_asn, struct pbkdf2_params *params)
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("salt.size: %d\n", params->salt_size);
@@ -1257,7 +1257,7 @@ write_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("salt.size: %d\n", kdf_params->salt_size);
@@ -1342,7 +1342,7 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
   params_len = params_end - params_start + 1;
 
@@ -1354,7 +1354,7 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
                             &pbe_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result =
@@ -1362,7 +1362,7 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1372,7 +1372,7 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("IV.size: %d\n", params->iv_size);
@@ -1404,7 +1404,7 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
   if (result != ASN1_MEM_ERROR)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   data = gnutls_malloc (data_size);
@@ -1418,7 +1418,7 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1530,7 +1530,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* Now write the key derivation and the encryption
@@ -1542,14 +1542,14 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
                             &pbkdf2_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   result = asn1_write_value (pbkdf2_asn, "salt", "specified", 1);
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1561,7 +1561,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("salt.specified.size: %d\n", kdf_params->salt_size);
@@ -1574,7 +1574,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("iterationCount: %d\n", kdf_params->iter_count);
@@ -1585,7 +1585,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1595,7 +1595,7 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1647,7 +1647,7 @@ write_pbe_enc_params (ASN1_TYPE pbes2_asn,
                             &pbe_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      return _gnutls_asn2err (result);
+      return mhd_gtls_asn2err (result);
     }
 
   /* read the salt */
@@ -1655,7 +1655,7 @@ write_pbe_enc_params (ASN1_TYPE pbes2_asn,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   _gnutls_hard_log ("IV.size: %d\n", params->iv_size);
@@ -1814,7 +1814,7 @@ write_schema_params (schema_id schema, ASN1_TYPE pkcs8_asn,
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          return _gnutls_asn2err (result);
+          return mhd_gtls_asn2err (result);
         }
 
       result = write_pbkdf2_params (pbes2_asn, kdf_params);
@@ -1850,7 +1850,7 @@ write_schema_params (schema_id schema, ASN1_TYPE pkcs8_asn,
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
           gnutls_assert ();
-          result = _gnutls_asn2err (result);
+          result = mhd_gtls_asn2err (result);
           goto error;
         }
 
@@ -1973,7 +1973,7 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
                             &pkcs7_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1981,7 +1981,7 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -1995,7 +1995,7 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2015,7 +2015,7 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
   params_len = params_end - params_start + 1;
@@ -2027,7 +2027,7 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   if (result < ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2078,7 +2078,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
                             &pkcs7_asn)) != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2116,7 +2116,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2158,7 +2158,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2181,7 +2181,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 
@@ -2189,7 +2189,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   if (result != ASN1_SUCCESS)
     {
       gnutls_assert ();
-      result = _gnutls_asn2err (result);
+      result = mhd_gtls_asn2err (result);
       goto error;
     }
 

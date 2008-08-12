@@ -50,7 +50,7 @@ static const int servwrite_length = sizeof (servwrite) - 1;
 #define EXPORT_FINAL_KEY_SIZE 16
 
 /* This function is to be called after handshake, when master_secret,
- *  client_random and server_random have been initialized. 
+ *  client_random and server_random have been initialized.
  * This function creates the keys and stores them into pending session.
  * (session->cipher_specs)
  */
@@ -475,7 +475,7 @@ mhd_gtls_connection_state_init (mhd_gtls_session_t session)
 {
   int ret;
 
-/* Setup the master secret 
+/* Setup the master secret
  */
   if ((ret = mhd_gtls_generate_master (session, 0), 0) < 0)
     {
@@ -621,7 +621,7 @@ mhd_gtls_read_connection_state_init (mhd_gtls_session_t session)
         }
 
       break;
-
+#if MHD_DEBUG_TLS
     case GNUTLS_CLIENT:
       session->connection_state.read_cipher_state =
         mhd_gtls_cipher_init (session->security_parameters.
@@ -657,7 +657,7 @@ mhd_gtls_read_connection_state_init (mhd_gtls_session_t session)
         }
 
       break;
-
+#endif
     default:                   /* this check is useless */
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
@@ -815,7 +815,7 @@ mhd_gtls_write_connection_state_init (mhd_gtls_session_t session)
 
 
       break;
-
+#if MHD_DEBUG_TLS
     case GNUTLS_CLIENT:
       session->connection_state.write_cipher_state =
         mhd_gtls_cipher_init (session->security_parameters.
@@ -850,7 +850,7 @@ mhd_gtls_write_connection_state_init (mhd_gtls_session_t session)
         }
 
       break;
-
+#endif
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
@@ -870,7 +870,7 @@ mhd_gtls_write_connection_state_init (mhd_gtls_session_t session)
   return 0;
 }
 
-/* Sets the specified cipher into the pending session 
+/* Sets the specified cipher into the pending session
  */
 int
 mhd_gtls_set_read_cipher (mhd_gtls_session_t session,
@@ -925,7 +925,7 @@ mhd_gtls_set_write_cipher (mhd_gtls_session_t session,
 }
 
 
-/* Sets the specified algorithm into pending compression session 
+/* Sets the specified algorithm into pending compression session
  */
 int
 mhd_gtls_set_read_compression (mhd_gtls_session_t session,
@@ -963,7 +963,7 @@ mhd_gtls_set_write_compression (mhd_gtls_session_t session,
 
 }
 
-/* Sets the specified kx algorithm into pending session 
+/* Sets the specified kx algorithm into pending session
  */
 int
 mhd_gtls_set_kx (mhd_gtls_session_t session, gnutls_kx_algorithm_t algo)

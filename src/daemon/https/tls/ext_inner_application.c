@@ -73,7 +73,7 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
 
   /* Set ext->gnutls_ia_enable depending on whether we have a TLS/IA
      credential in the session. */
-
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       gnutls_ia_client_credentials_t cred = (gnutls_ia_client_credentials_t)
@@ -83,6 +83,7 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
         ext->gnutls_ia_enable = 1;
     }
   else
+#endif
     {
       gnutls_ia_server_credentials_t cred = (gnutls_ia_server_credentials_t)
         mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
@@ -114,6 +115,7 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
 
   *data = YES;
 
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 
@@ -123,6 +125,7 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
         *data = NO;
     }
   else
+#endif
     {
 
       /* Server: value follows local setting and client's setting, but only

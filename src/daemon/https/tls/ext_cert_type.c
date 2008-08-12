@@ -52,6 +52,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
   int new_type = -1, ret, i;
   ssize_t data_size = _data_size;
 
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
       if (data_size > 0)
@@ -82,6 +83,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
         }
     }
   else
+#endif
     {                           /* SERVER SIDE - we must check if the sent cert type is the right one
                                  */
       if (data_size > 1)
@@ -147,6 +149,7 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
   unsigned len, i;
 
   /* this function sends the client extension data (dnsname) */
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 
@@ -186,6 +189,7 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
 
     }
   else
+#endif
     {                           /* server side */
       if (session->security_parameters.cert_type != DEFAULT_CERT_TYPE)
         {
