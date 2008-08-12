@@ -1,0 +1,119 @@
+\input texinfo  @c -*-texinfo-*-
+@finalout
+@setfilename libmicrohttpdtutorial
+@settitle A tutorial for GNU libmicrohttpd
+@afourpaper
+
+@set VERSION 0.3.1 beta
+
+@titlepage
+@title A Tutorial for GNU libmicrohttpd
+@subtitle written for version @value{VERSION}
+@author Sebastian Gerhardt (@email{sebgerhardt@@gmx.net})
+@page
+@vskip 0pt plus 1filll
+@end titlepage
+
+@verbatim
+Copyright (c)  2008  Sebastian Gerhardt.
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+@end verbatim
+
+@contents
+
+@ifnottex
+@node Top
+@top Top
+@end ifnottex     
+
+@menu
+* Introduction::
+* Hello browser example::
+* Exploring requests::
+* Response headers::
+* A basic authentication::
+* Processing post data::
+* Bibliography::
+* License text::
+* Example programs::
+@end menu
+
+@node Introduction
+@chapter Introduction
+@include introduction.inc
+
+@node Hello browser example
+@chapter Hello browser example
+@include hellobrowser.inc
+
+@node Exploring requests
+@chapter Exploring requests
+@include exploringrequests.inc
+
+@node Response headers
+@chapter Response headers
+@include responseheaders.inc
+
+@node A basic authentication
+@chapter A basic authentication
+@include basicauthentication.inc
+
+@node Processing post data
+@chapter Processing post data
+@include processingpost.inc
+
+
+@node Bibliography
+@appendix Bibliography
+@include bibliography.inc
+
+@node License text
+@appendix GNU Free Documentation License
+@include fdl-1.2.texi
+
+@node Example programs
+@appendix Example programs
+@menu
+* hellobrowser.c::
+* logging.c::
+* responseheaders.c::
+* basicauthentication.c::
+* simplepost.c::
+@end menu
+
+@node hellobrowser.c
+@section hellobrowser.c
+@smalldisplay
+@verbatiminclude examples/hellobrowser.c
+@end smalldisplay
+
+@node logging.c
+@section logging.c
+@smalldisplay
+@verbatiminclude examples/logging.c
+@end smalldisplay
+
+@node responseheaders.c
+@section responseheaders.c
+@smalldisplay
+@verbatiminclude examples/responseheaders.c
+@end smalldisplay
+
+@node basicauthentication.c
+@section basicauthentication.c
+@smalldisplay
+@verbatiminclude examples/basicauthentication.c
+@end smalldisplay
+
+@node simplepost.c
+@section simplepost.c
+@smalldisplay
+@verbatiminclude examples/simplepost.c
+@end smalldisplay
+
+@bye
