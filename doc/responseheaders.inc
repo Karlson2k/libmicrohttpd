@@ -60,7 +60,7 @@ The @code{GetFileSize} function, which returns a size of zero if the file could 
 found, is left out on this page for tidiness. 
 
 When dealing with files and allocating memory, there is a lot that could go wrong on the
-sider side and if so, the client should be informed with @code{MHD_HTTP_INTERNAL_SERVER_ERROR}.
+server side and if so, the client should be informed with @code{MHD_HTTP_INTERNAL_SERVER_ERROR}.
 
 @verbatim
   if (!ret) 
@@ -80,7 +80,7 @@ sider side and if so, the client should be informed with @code{MHD_HTTP_INTERNAL
 @end verbatim
 @noindent
 
-Note that we nevertheless have to create an response object even for sending a simple error code.
+Note that we nevertheless have to create a response object even for sending a simple error code.
 Otherwise, the connection would just be closed without comment, leaving the client curious about
 what has happened.
 
@@ -124,7 +124,7 @@ Find a @emph{PNG} file you like and save it to the directory the example is run 
 The include file of the @emph{MHD} library comes with the header types mentioned in @emph{RFC 2616}
 already defined as macros. Thus, we could have written @code{MHD_HTTP_HEADER_CONTENT_TYPE} instead
 of @code{"Content-Type"} as well. However, one is not limited to these standard headers and could
-add custom response headers without violated the protocol. Whether and how the client would react
+add custom response headers without violating the protocol. Whether, and how, the client would react
 to these custom header is up to the receiver. Likewise, the client is allowed to send custom request
 headers to the server as well, opening up yet more possibilities how client and server could 
 communicate with each other.
