@@ -1,5 +1,5 @@
 The most basic task for a HTTP server is to deliver a static text message to any client connecting to it.
-Given that this is also very easy to implement, it is an excellent problem to start with.
+Given that this is also easy to implement, it is an excellent problem to start with.
 
 For now, the particular filename the client asks for shall have no effect on the message that will 
 be returned. In addition, the server shall end the connection after the message has been sent so that

@@ -36,8 +36,8 @@ Free Documentation License".
 * Hello browser example::
 * Exploring requests::
 * Response headers::
-* A basic authentication::
-* Processing post data::
+* Supporting basic authentication::
+* Processing POST data::
 * Bibliography::
 * License text::
 * Example programs::
@@ -59,12 +59,12 @@ Free Documentation License".
 @chapter Response headers
 @include responseheaders.inc
 
-@node A basic authentication
-@chapter A basic authentication
+@node Supporting basic authentication
+@chapter Supporting basic authentication
 @include basicauthentication.inc
 
-@node Processing post data
-@chapter Processing post data
+@node Processing POST data
+@chapter Processing POST data
 @include processingpost.inc
 
 
