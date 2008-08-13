@@ -35,9 +35,9 @@ daemon to sent the reply.
 
 Talking about the reply, it is defined as a string right after the function header
 @verbatim
-int AnswerToConnection(void *cls, struct MHD_Connection *connection, 
-    const char *url, const char *method, const char *version,
-    const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
+                          const char *method, const char *version, const char *upload_data, 
+                          unsigned int *upload_data_size, void **con_cls)
 {
   const char *page  = "<html><body>Hello, browser!</body></html>";
 @end verbatim
@@ -55,8 +55,8 @@ no internal copy to be done because the @emph{constant} string won't change anyw
   struct MHD_Response *response;
   int ret;
 
-  response = MHD_create_response_from_data(strlen(page),
-             (void*)page, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_data (strlen (page),
+                                            (void*) page, MHD_NO, MHD_NO);
 @end verbatim
 @noindent
 Now that the the response has been laced up, it is ready for delivery and can be queued for sending. 
@@ -72,6 +72,7 @@ already being set at this point to either MHD_YES or MHD_NO in case of success o
 @verbatim
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
+
   return ret;
 }
 @end verbatim
@@ -81,11 +82,11 @@ on @code{PORT} for connections. This is done in the main function.
 @verbatim
 int main ()
 {
-  struct MHD_Daemon *d;
+  struct MHD_Daemon *daemon;
 
-  d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL, 
-                      &AnswerToConnection, NULL, MHD_OPTION_END);
-  if (d == NULL) return 1;
+  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL, 
+                             &answer_to_connection, NULL, MHD_OPTION_END);
+  if (NULL == daemon) return 1;
 @end verbatim
 @noindent
 The first parameter is one of three possible modes of operation. Here we want the daemon to run in
@@ -107,11 +108,12 @@ main thread or else the program will terminate prematurely. We let it pause in a
 friendly manner by waiting for the enter key to be pressed. In the end, we stop the daemon so it can
 do its cleanup tasks.
 @verbatim
-  getchar(); 
+  getchar (); 
 
-  MHD_stop_daemon(d);
+  MHD_stop_daemon (daemon);
   return 0;
 }
+
 @end verbatim
 @noindent
 The first example is now complete.
