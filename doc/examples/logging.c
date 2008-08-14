@@ -12,7 +12,7 @@ int print_out_key (void *cls, enum MHD_ValueKind kind, const char *key, const ch
   return MHD_YES;
 }
 
-int answer_to_connection(void *cls, struct MHD_Connection *connection, const char *url, 
+int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
                          const char *method, const char *version, const char *upload_data, 
                          unsigned int *upload_data_size, void **con_cls)
 {

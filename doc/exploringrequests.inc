@@ -9,7 +9,7 @@ just return MHD_NO after we have probed the request. This way, the connection is
 without much ado by the server.
 
 @verbatim
-int answer_to_connection(void *cls, struct MHD_Connection *connection, const char *url, 
+int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
                          const char *method, const char *version, const char *upload_data, 
                          unsigned int *upload_data_size, void **con_cls)
 {
