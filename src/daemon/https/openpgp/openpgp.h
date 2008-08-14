@@ -11,8 +11,8 @@ extern "C"
 #endif
 
 #include <gnutls.h>
-#include <gnutls_cert.h>
 #include "opencdk.h"
+#include <gnutls_cert.h>
 
 /* Internal context to store the OpenPGP key. */
 typedef struct gnutls_openpgp_crt_int

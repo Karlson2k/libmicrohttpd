@@ -301,7 +301,7 @@ mhd_gtls_negotiate_version (mhd_gtls_session_t session,
 }
 
 int
-mhd_gtls_user_hello_func (gnutls_session session,
+mhd_gtls_user_hello_func (mhd_gtls_session_t session,
                          gnutls_protocol_t adv_version)
 {
   int ret;

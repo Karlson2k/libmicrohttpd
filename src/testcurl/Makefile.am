@@ -24,7 +24,8 @@ check_PROGRAMS = \
   daemontest_large_put11 \
   daemontest_long_header \
   daemontest_get_chunked \
-  daemontest_put_chunked \
+  daemontest_put_chunked
+noinst_PROGRAMS = \
   daemon_options_test
   
 TESTS = $(check_PROGRAMS)

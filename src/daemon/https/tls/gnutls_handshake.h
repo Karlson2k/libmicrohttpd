@@ -50,7 +50,7 @@ int mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
 				 int datalen);
 
 int mhd_gtls_negotiate_version( mhd_gtls_session_t session, gnutls_protocol_t adv_version);
-int mhd_gtls_user_hello_func( gnutls_session, gnutls_protocol_t adv_version);
+int mhd_gtls_user_hello_func( mhd_gtls_session_t, gnutls_protocol_t adv_version);
 
 #if MHD_DEBUG_TLS
 int mhd_gtls_handshake_client (mhd_gtls_session_t session);

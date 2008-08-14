@@ -44,7 +44,6 @@ extern "C"
 
 /* Get size_t. */
 #include <stddef.h>
-#include <compat.h>
 
 #define GNUTLS_CIPHER_RIJNDAEL_128_CBC GNUTLS_CIPHER_AES_128_CBC
 #define GNUTLS_CIPHER_RIJNDAEL_256_CBC GNUTLS_CIPHER_AES_256_CBC

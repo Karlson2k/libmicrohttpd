@@ -818,14 +818,14 @@ MHD_start_daemon_va (unsigned int options,
 {
   const int on = 1;
   struct MHD_Daemon *retVal;
-  char * daemon_ip_addr = 0;
+  void * daemon_ip_addr;
 
   /* listeningss sockets used by the daemon */
   int socket_fd;
 
   struct sockaddr_in servaddr4;
   struct sockaddr_in6 servaddr6;
-  const struct sockaddr *servaddr;
+  const struct sockaddr *servaddr = 0;
   socklen_t addrlen;
   enum MHD_OPTION opt;
 
@@ -890,8 +890,8 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
-        case  MHD_OPTION_IP_ADDR:
-          daemon_ip_addr = va_arg (ap, const char *);
+        case  MHD_OPTION_SOCK_ADDR:
+          servaddr = va_arg (ap, struct sockaddr *);
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
@@ -965,19 +965,21 @@ MHD_start_daemon_va (unsigned int options,
       fprintf (stderr, "setsockopt failed: %s\n", STRERROR (errno));
 #endif
     }
-  if ((options & MHD_USE_IPv6) != 0)
+
+  /* check for user supplied sockaddr */
+  if (servaddr) {
+	  if (options & MHD_USE_IPv6){
+		  addrlen = sizeof (struct sockaddr_in6);
+	  }
+	  else{
+		  addrlen = sizeof (struct sockaddr_in);
+	  }
+  }
+  else if ((options & MHD_USE_IPv6) != 0)
     {
       memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
       servaddr6.sin6_family = AF_INET6;
       servaddr6.sin6_port = htons (port);
-     if (daemon_ip_addr && inet_pton (AF_INET6, daemon_ip_addr, &servaddr6.sin6_addr) <= 0){
-     #if HAVE_MESSAGES
-           if ((options & MHD_USE_DEBUG) != 0)
-             fprintf (stderr,
-                      "Failed to parse given daemon ipv6 inet address: %s\n", daemon_ip_addr );
-           return NULL;
-     #endif
-     	  }
       servaddr = (struct sockaddr *) &servaddr6;
       addrlen = sizeof (struct sockaddr_in6);
     }
@@ -986,14 +988,6 @@ MHD_start_daemon_va (unsigned int options,
       memset (&servaddr4, 0, sizeof (struct sockaddr_in));
       servaddr4.sin_family = AF_INET;
       servaddr4.sin_port = htons (port);
-      if (daemon_ip_addr && inet_pton (AF_INET, daemon_ip_addr, &servaddr4.sin_addr) <= 0){
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        fprintf (stderr,
-        		"Failed to parse given daemon ipv4 inet address: %s\n", daemon_ip_addr );
-        return NULL;
-#endif
-	  }
       servaddr = (struct sockaddr *) &servaddr4;
       addrlen = sizeof (struct sockaddr_in);
     }

@@ -32,7 +32,6 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-#include "microhttpd.h"
 /* get opaque type */
 #include "gnutls_int.h"
 #include "gnutls_record.h"
@@ -45,15 +44,57 @@ int MHD_connection_handle_read (struct MHD_Connection *connection);
 int MHD_connection_handle_write (struct MHD_Connection *connection);
 int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
-/*
+/**
+ * retrieve session info
+ *
+ * @param connection: from which to retrieve data
+ * @return: an appropriate 'union MHD_SessionInfo' with the requested connection data or 'null_info' in an invalid request has been received.
+ */
+union MHD_SessionInfo
+MHD_get_session_info ( struct MHD_Connection * connection, enum MHD_InfoType infoType)
+{
+  /* return NULL if this isn't a SSL/TLS type connection */
+  if (connection->tls_session == NULL)
+    {
+      /* TODO clean */
+      return (union MHD_SessionInfo) 0;
+    }
+  switch (infoType)
+    {
+#if HTTPS_SUPPORT
+    case MHS_INFO_CIPHER_ALGO:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        read_bulk_cipher_algorithm;
+    case MHD_INFO_KX_ALGO:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        kx_algorithm;
+    case MHD_INFO_CREDENTIALS_TYPE:
+      return (union MHD_SessionInfo) connection->tls_session->key->cred->algorithm;
+    case MHD_INFO_MAC_ALGO:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        read_mac_algorithm;
+    case MHD_INFO_COMPRESSION_METHOD:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        read_compression_algorithm;
+    case MHD_INFO_PROTOCOL:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        version;
+    case MHD_INFO_CERT_TYPE:
+      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
+        cert_type;
+#endif
+    };
+  return (union MHD_SessionInfo) 0;
+}
+
+/**
  * This function is called once a secure connection has been marked
  * for closure.
  *
- * @param :
- * @return:
+ * @param connection: the connection to close
  */
 static void
-MHD_tls_connection_close (struct MHD_Connection *connection)
+MHD_tls_connection_close (struct MHD_Connection * connection)
 {
   MHD_gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
@@ -72,7 +113,13 @@ MHD_tls_connection_close (struct MHD_Connection *connection)
                                           MHD_TLS_REQUEST_TERMINATED_COMPLETED_OK);
 }
 
-/* TODO - we might want to send raw RST packets here... */
+/**
+ * This function is called once a secure connection has been marked
+ * for closure.
+ *
+ * @param connection: the connection to close
+ * @param termination_code: the termination code with which the notify completed callback function is called.
+ */
 static void
 MHD_tls_connection_close_err (struct MHD_Connection *connection,
                               enum MHD_RequestTerminationCode
@@ -91,44 +138,19 @@ MHD_tls_connection_close_err (struct MHD_Connection *connection,
                                           termination_code);
 }
 
-union MHD_SessionInfo
-MHD_get_session_info (struct MHD_Connection *con, enum MHD_InfoType infoType)
-{
-  /* return NULL if this isn't a SSL/TLS type connection */
-  if (con->tls_session == NULL)
-    {
-      /* TODO clean */
-      return (union MHD_SessionInfo) 0;
-    }
-  switch (infoType)
-    {
-    case MHS_INFO_CIPHER_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        read_bulk_cipher_algorithm;
-    case MHD_INFO_KX_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        kx_algorithm;
-    case MHD_INFO_CREDENTIALS_TYPE:
-      return (union MHD_SessionInfo) con->tls_session->key->cred->algorithm;
-    case MHD_INFO_MAC_ALGO:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        read_mac_algorithm;
-    case MHD_INFO_COMPRESSION_METHOD:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        read_compression_algorithm;
-    case MHD_INFO_PROTOCOL:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        version;
-    case MHD_INFO_CERT_TYPE:
-      return (union MHD_SessionInfo) con->tls_session->security_parameters.
-        cert_type;
-    };
-  return (union MHD_SessionInfo) 0;
-}
 
+/**
+ * @name : MHDS_con_read
+ *
+ * reads data from the TLS record protocol
+ * @param connection: is a %MHD_Connection structure.
+ * @return: number of bytes received and zero on EOF.  A negative
+ * error code is returned in case of an error.
+ **/
 static ssize_t
-MHDS_con_read (struct MHD_Connection *connection)
+MHDS_con_read (struct MHD_Connection * connection)
 {
+  /* no special handling when GNUTLS_E_AGAIN is returned since this function is called from within a select loop */
   ssize_t size = MHD_gnutls_record_recv (connection->tls_session,
                                      &connection->read_buffer[connection->
                                                               read_buffer_offset],

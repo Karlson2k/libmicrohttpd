@@ -63,7 +63,8 @@ mhd_gtls_inner_app_rcv_params (mhd_gtls_session_t session,
 }
 
 
-/* returns data_size or a negative number on failure
+/**
+ *  returns data_size or a negative number on failure
  */
 int
 mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,

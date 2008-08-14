@@ -226,9 +226,10 @@ AC_ARG_ENABLE([OpenPGP],
    [enable_openpgp=$enableval],
    [enable_openpgp="no"])
 AC_MSG_RESULT($enable_openpgp)
+# currently we ignore this option.
 if test "$enable_openpgp" = "yes"
 then
- AC_DEFINE([ENABLE_OPENPGP],[1],[Include OpenGPG support])
+ AC_DEFINE([ENABLE_OPENPGP],[0],[Include OpenGPG support])
 else
  AC_DEFINE([ENABLE_OPENPGP],[0],[Include OpenGPG support])
 fi
@@ -306,8 +307,6 @@ src/daemon/https/Makefile
 src/daemon/https/tls/Makefile
 src/daemon/https/x509/Makefile
 src/daemon/https/lgl/Makefile
-src/daemon/https/openpgp/Makefile
-src/daemon/https/opencdk/Makefile
 src/daemon/https/minitasn1/Makefile
 src/examples/Makefile
 src/testcurl/Makefile

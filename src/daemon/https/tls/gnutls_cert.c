@@ -314,11 +314,11 @@ MHD_gtls_certificate_server_set_request (mhd_gtls_session_t session,
   * This function sets a callback to be called in order to retrieve the certificate
   * to be used in the handshake.
   * The callback's function prototype is:
-  * int (*callback)(mhd_gtls_session_t, const gnutls_datum_t* req_ca_dn, int nreqs, 
+  * int (*callback)(mhd_gtls_session_t, const gnutls_datum_t* req_ca_dn, int nreqs,
   * const gnutls_pk_algorithm_t* pk_algos, int pk_algos_length, gnutls_retr_st* st);
   *
-  * @req_ca_cert is only used in X.509 certificates. 
-  * Contains a list with the CA names that the server considers trusted. 
+  * @req_ca_cert is only used in X.509 certificates.
+  * Contains a list with the CA names that the server considers trusted.
   * Normally we should send a certificate that is signed
   * by one of these CAs. These names are DER encoded. To get a more
   * meaningful value use the function gnutls_x509_rdn_get().
@@ -441,7 +441,7 @@ _gnutls_x509_get_raw_crt_expiration_time (const gnutls_datum_t * cert)
   * _gnutls_openpgp_crt_verify_peers - This function returns the peer's certificate status
   * @session: is a gnutls session
   *
-  * This function will try to verify the peer's certificate and return its status (TRUSTED, INVALID etc.). 
+  * This function will try to verify the peer's certificate and return its status (TRUSTED, INVALID etc.).
   * Returns a negative error code in case of an error, or GNUTLS_E_NO_CERTIFICATE_FOUND if no certificate was sent.
   *
   -*/
@@ -484,7 +484,7 @@ _gnutls_openpgp_crt_verify_peers (mhd_gtls_session_t session,
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  /* Verify certificate 
+  /* Verify certificate
    */
   if (_E_gnutls_openpgp_verify_key == NULL)
     {
@@ -715,6 +715,7 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
     {
     case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
+#if ENABLE_OPENPGP
     case MHD_GNUTLS_CRT_OPENPGP:
       if (_E_gnutls_openpgp_raw_privkey_to_gkey == NULL)
         {
@@ -724,6 +725,7 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
       return _E_gnutls_openpgp_raw_privkey_to_gkey (key, raw_key,
                                                     (gnutls_openpgp_crt_fmt_t)
                                                     key_enc);
+#endif
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
@@ -733,11 +735,11 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
 
 /* This function will convert a der certificate to a format
  * (structure) that gnutls can understand and use. Actually the
- * important thing on this function is that it extracts the 
+ * important thing on this function is that it extracts the
  * certificate's (public key) parameters.
  *
  * The noext flag is used to complete the handshake even if the
- * extensions found in the certificate are unsupported and critical. 
+ * extensions found in the certificate are unsupported and critical.
  * The critical extensions will be catched by the verification functions.
  */
 int

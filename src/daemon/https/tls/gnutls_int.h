@@ -28,9 +28,9 @@
 #include <defines.h>
 
 #include "gnutls.h"
+#include "extra.h"
 #include "microhttpd.h"
 
-#include "extra.h"
 #include "gnutls_mem.h"
 
 /* FIXME: delete this once opencdk has reentrant keyring functions
@@ -598,11 +598,6 @@ typedef struct
      * receiving, and non zero otherwise.
      */
     int direction;
-
-    /* This callback will be used (if set) to receive an
-     * openpgp key. (if the peer sends a fingerprint)
-     */
-    mhd_gtls_openpgp_recv_key_func openpgp_recv_key_func;
 
     /* If non zero the server will not advertize the CA's he
      * trusts (do not send an RDN sequence).

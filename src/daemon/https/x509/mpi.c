@@ -210,7 +210,7 @@ _gnutls_x509_crt_get_mpis (gnutls_x509_crt_t cert,
 {
   int result;
   int pk_algorithm;
-  gnutls_datum tmp = { NULL, 0 };
+  gnutls_datum_t tmp = { NULL, 0 };
 
   /* Read the algorithm's OID
    */

@@ -149,9 +149,9 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 /**
  * This function can be used to add an entry to
- * the HTTP headers of a connection (so that the 
+ * the HTTP headers of a connection (so that the
  * MHD_get_connection_values function will return
- * them -- and the MHD PostProcessor will also 
+ * them -- and the MHD PostProcessor will also
  * see them).  This maybe required in certain
  * situations (see Mantis #1399) where (broken)
  * HTTP implementations fail to supply values needed
@@ -176,10 +176,10 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  *         performed due to insufficient memory;
  *         MHD_YES on success
  */
-int 
+int
 MHD_set_connection_value (struct MHD_Connection *connection,
 			  enum MHD_ValueKind kind,
-			  const char *key, 
+			  const char *key,
 			  const char *value)
 {
   struct MHD_HTTP_Header * pos;

@@ -342,13 +342,11 @@ enum MHD_OPTION
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
  /**
-  * Bind daemon to the supplied ip address. this option should be followed by a
-  * ip address string. Addresses should be supplied in the number & dot notation
-  * [ie. '127.0.0.1' for IPv4 & '::ffff:127.0.0.1' for IPv6 ]. Supplying an
-  * IPv6 address * must be done in conjunction with supplying the daemon with
-  * the 'MHD_USE_IPv6' option.
+  * Bind daemon to the supplied sockaddr. this option should be followed by a
+  * 'struct sockaddr'. Supplying an IPv6 address must be done in conjunction with
+  * with the 'MHD_USE_IPv6' option.
   */
-  MHD_OPTION_IP_ADDR = 6,
+  MHD_OPTION_SOCK_ADDR = 6,
 
   MHD_HTTPS_OPTION_START = 7,
 
@@ -1131,8 +1129,8 @@ enum MHD_InfoType
   MHD_INFO_CERT_TYPE
 };
 
-union MHD_SessionInfo MHD_get_session_info (struct MHD_Connection *con,
-                                            enum MHD_InfoType infoType);
+union MHD_SessionInfo
+MHD_get_session_info ( struct MHD_Connection * connection, enum MHD_InfoType infoType);
 
 /* TODO impl */
 size_t MHDS_get_key_size (struct MHD_Daemon *daemon,

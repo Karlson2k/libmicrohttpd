@@ -26,10 +26,10 @@ auth_rsa.c \
 auth_rsa_export.c \
 debug.c \
 ext_cert_type.c \
-ext_inner_application.c \
 ext_max_record.c \
 ext_oprfi.c \
 ext_server_name.c \
+ext_inner_application.c \
 gnutls_alert.c \
 gnutls_algorithms.c \
 gnutls_anon_cred.c \
@@ -69,5 +69,3 @@ gnutls_ui.c \
 gnutls_x509.c \
 pkix_asn1_tab.c \
 x509_b64.c
-
-

@@ -47,7 +47,7 @@ ahc_echo (void *cls,
 }
 
 int
-test_wrap (char *test_name, int (*test) (void ))
+test_wrap (char *test_name, int (*test) (void))
 {
   int ret;
   va_list arg_list;
@@ -67,34 +67,47 @@ test_wrap (char *test_name, int (*test) (void ))
   return ret;
 }
 
+
+/**
+ * Test daemon initialization with the MHD_OPTION_SOCK_ADDR option
+ */
 static int
-test_ipv4_option ()
+test_ip_addr_option ()
 {
-	struct MHD_Daemon * d;
+  struct MHD_Daemon *d;
+  struct sockaddr_in daemon_ip_addr;
+  struct sockaddr_in6 daemon_ip_addr6;
 
-	d = MHD_start_daemon ( MHD_USE_DEBUG, 42433,
-	                            NULL, NULL, &ahc_echo, NULL, MHD_OPTION_IP_ADDR, "127.0.0.1", MHD_OPTION_END);
+  memset (&daemon_ip_addr, 0, sizeof (struct sockaddr_in));
+  daemon_ip_addr.sin_family = AF_INET;
+  daemon_ip_addr.sin_port = htons (42433);
 
-	if (d == 0)
-	      return -1;
+  memset (&daemon_ip_addr6, 0, sizeof (struct sockaddr_in6));
+  daemon_ip_addr6.sin6_family = AF_INET6;
+  daemon_ip_addr6.sin6_port = htons (42433);
 
-	MHD_stop_daemon (d);
-	return 0;
-}
+  inet_pton (AF_INET, "127.0.0.1", &daemon_ip_addr.sin_addr);
+  inet_pton (AF_INET6, "::ffff:127.0.0.1", &daemon_ip_addr6.sin6_addr);
 
-static int
-test_ipv6_option ()
-{
-	struct MHD_Daemon * d;
+  d = MHD_start_daemon (MHD_USE_DEBUG, 42433,
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
+                        &daemon_ip_addr, MHD_OPTION_END);
 
-	d = MHD_start_daemon ( MHD_USE_DEBUG | MHD_USE_IPv6, 42433,
-	                            NULL, NULL, &ahc_echo, NULL, MHD_OPTION_IP_ADDR, "::ffff:127.0.0.1", MHD_OPTION_END);
+  if (d == 0)
+    return -1;
 
-	if (d == 0)
-	      return -1;
+  MHD_stop_daemon (d);
 
-	MHD_stop_daemon (d);
-	return 0;
+  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_IPv6, 42433,
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
+                        &daemon_ip_addr6, MHD_OPTION_END);
+
+  if (d == 0)
+    return -1;
+
+  MHD_stop_daemon (d);
+
+  return 0;
 }
 
 /* setup a temporary transfer test file */
@@ -103,8 +116,7 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  errorCount += test_wrap("test_ipv4_option", &test_ipv4_option);
-  errorCount += test_wrap("test_ipv6_option", &test_ipv6_option);
+  errorCount += test_wrap ("ip addr option", &test_ip_addr_option);
 
   return errorCount != 0;
 }
