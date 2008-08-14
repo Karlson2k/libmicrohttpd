@@ -9,9 +9,9 @@ just return MHD_NO after we have probed the request. This way, the connection is
 without much ado by the server.
 
 @verbatim
-int AnswerToConnection(void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method, const char *version,
-    const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+int answer_to_connection(void *cls, struct MHD_Connection *connection, const char *url, 
+                         const char *method, const char *version, const char *upload_data, 
+                         unsigned int *upload_data_size, void **con_cls)
 {
   ...  
   return MHD_NO;
@@ -27,7 +27,7 @@ It also contains a string for the version of the protocol which can be found in 
 To call it a "new request" is justified because we return only @code{MHD_NO}, thus ensuring the 
 function will not be called again for this connection. 
 @verbatim
-printf("New request %s for %s using version %s\n", method, url, version);
+printf ("New request %s for %s using version %s\n", method, url, version);
 @end verbatim
 @noindent
 
@@ -38,10 +38,9 @@ one until there are no more left. We do this by writing a separate function whic
 each pair just like the above function is called for each HTTP request. 
 It can then print out the content of this pair.
 @verbatim
-int PrintOutKey(void *cls, enum MHD_ValueKind kind, const char *key, 
-    const char *value)
+int print_out_key (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-  printf("%s = %s\n", key, value);
+  printf ("%s = %s\n", key, value);
   return MHD_YES;
 }
 @end verbatim
@@ -49,7 +48,7 @@ int PrintOutKey(void *cls, enum MHD_ValueKind kind, const char *key,
 
 To start the iteration process that calls our new function for every key, the line
 @verbatim
-MHD_get_connection_values(connection, MHD_HEADER_KIND, PrintOutKey, NULL);
+MHD_get_connection_values (connection, MHD_HEADER_KIND, print_out_key, NULL);
 @end verbatim
 @noindent
 needs to be inserted in the connection callback function too. The second parameter tells the function 
@@ -89,8 +88,8 @@ returned accompanied by an informative message.
 A very interesting information has still been ignored by our logger---the client's IP address. 
 Implement a callback function 
 @verbatim
-int OnClientConnect(void *cls,
-                    const struct sockaddr *addr,socklen_t addrlen)
+int on_client_connect (void *cls,
+                       const struct sockaddr *addr,socklen_t addrlen)
 @end verbatim
 @noindent
 that prints out the IP address in an appropriate format. You might want to use the posix function
