@@ -42,12 +42,13 @@ so we can set the parameter to any adress that is assured to be not null. The po
 Not even the headers will be looked at on the first iteration.
 
 @verbatim
-int AnswerToConnection(void *cls, struct MHD_Connection *connection, 
-    const char *url, const char *method, const char *version, 
-    const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+int answer_to_connection (void *cls, struct MHD_Connection *connection,
+                          const char *url, const char *method, const char *version, 
+                          const char *upload_data, unsigned int *upload_data_size,
+                          void **con_cls)
 {
   if (0 != strcmp(method, "GET")) return MHD_NO;
-  if(*con_cls==NULL) {*con_cls=connection; return MHD_YES;}
+  if (NULL == *con_cls) {*con_cls = connection; return MHD_YES;}
 
   ... 
   /* else respond accordingly */
@@ -69,24 +70,24 @@ so every "GET" request will be challenged.
 
 We let an extra function function do this.
 @verbatim
-int AskForAuthentication(struct MHD_Connection *connection, const char *realm)
+int ask_for_authentication (struct MHD_Connection *connection, const char *realm)
 {
   int ret;
   struct MHD_Response *response;
   char *headervalue;
   const char *strbase = "Basic realm=";
   
-  response = MHD_create_response_from_data(0, NULL, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_data (0, NULL, MHD_NO, MHD_NO);
   if (!response) return MHD_NO;
   
-  headervalue = malloc( strlen(strbase) + strlen(realm) + 1);
+  headervalue = malloc (strlen (strbase) + strlen (realm) + 1);
   if (!headervalue) return MHD_NO;  
 
-  strcpy(headervalue, strbase);
-  strcat(headervalue, realm);
+  strcpy (headervalue, strbase);
+  strcat (headervalue, realm);
   
-  ret = MHD_add_response_header(response, "WWW-Authenticate", headervalue);
-  free(headervalue);  
+  ret = MHD_add_response_header (response, "WWW-Authenticate", headervalue);
+  free (headervalue);  
   if (!ret) {MHD_destroy_response (response); return MHD_NO;}
 
   ret = MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
@@ -115,16 +116,15 @@ and the resulting line is the value of a request header of the type "Authorizati
 
 This header line thus is of interest to the function checking a connection for a given username/password:
 @verbatim
-int IsAuthenticated(struct MHD_Connection *connection, 
-                    const char *username, const char *password)
+int is_authenticated (struct MHD_Connection *connection,
+                      const char *username, const char *password)
 {
   const char *headervalue;
   ...
 
-  headervalue = MHD_lookup_connection_value (connection, 
-                                             MHD_HEADER_KIND, "Authorization");
-
-  if(headervalue == NULL) return 0;
+  headervalue = MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
+                                             "Authorization");
+  if (NULL == headervalue) return 0;
 @end verbatim
 @noindent
 
@@ -132,7 +132,7 @@ where, firstly, the authentication method will be checked.
 @verbatim
 const char *strbase = "Basic ";
 ...
-if (strncmp(headervalue, strbase, strlen(strbase))!=0) return 0;
+if (0 != strncmp (headervalue, strbase, strlen (strbase))) return 0;
 @end verbatim
 @noindent
 
@@ -146,18 +146,17 @@ it has been checked already at this point.
   int authenticated;
 
   ...
-  strcpy(expected, username);
-  strcat(expected, ":");
-  strcat(expected, password);  
+  strcpy (expected, username);
+  strcat (expected, ":");
+  strcat (expected, password);  
 
-  expected_b64 = StringToBase64(expected);
-  if(expected_b64 == NULL) return 0;
+  expected_b64 = string_to_base64 (expected);
+  if (NULL == expected_b64) return 0;
  
-  strcpy(expected, strbase);
+  strcpy (expected, strbase);
+  authenticated = (strcmp (headervalue + strlen (strbase), expected_b64) == 0);
 
-  authenticated = (strcmp(headervalue+strlen(strbase), expected_b64) == 0);
-
-  free(expected_b64);
+  free (expected_b64);
 
   return authenticated;
 }
@@ -167,10 +166,10 @@ it has been checked already at this point.
 These two functions---together with a response function in case of positive authentication doing little 
 new---allow the rest of the callback function to be rather short. 
 @verbatim
-  if (!IsAuthenticated(connection, USER, PASSWORD)) 
-    return AskForAuthentication(connection, REALM); 
+  if (!is_authenticated (connection, USER, PASSWORD)) 
+    return ask_for_authentication (connection, REALM); 
   
-  return SecretPage(connection);
+  return secret_page (connection);
 }
 @end verbatim
 @noindent

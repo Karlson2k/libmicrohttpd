@@ -14,12 +14,12 @@ When the first @emph{GET} request arrives, the server shall respond with a HTML 
 edit field for the name.
 
 @verbatim
-const char* askpage="<html><body>\
-                     What's your name, Sir?<br>\
-                     <form action=\"/namepost\" method=\"post\">\
-                     <input name=\"name\" type=\"text\"\
-                     <input type=\"submit\" value=\" Send \"></form>\
-                     </body></html>";
+const char* askpage = "<html><body>\
+                       What's your name, Sir?<br>\
+                       <form action=\"/namepost\" method=\"post\">\
+                       <input name=\"name\" type=\"text\"\
+                       <input type=\"submit\" value=\" Send \"></form>\
+                       </body></html>";
 @end verbatim
 @noindent
 
@@ -56,7 +56,7 @@ But in order to pass this string to other functions and still be able to differe
 connections, we must first define a structure to share the information, holding the most import entries.
 
 @verbatim
-struct ConnectionInfoStruct
+struct connection_info_struct
 {
   int connectiontype;
   char *answerstring;
@@ -73,27 +73,28 @@ chunks, we had to expand the namestring dynamically as additional parts of it wi
 came in. But in this example, the name is assumed to fit entirely inside one single packet.
 
 @verbatim
-int IteratePost(void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
-                const char *filename, const char *content_type,
-                const char *transfer_encoding, const char *data, size_t off, size_t size)
+int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
+                  const char *filename, const char *content_type,
+                  const char *transfer_encoding, const char *data, size_t off, size_t size)
 {
-  struct ConnectionInfoStruct *con_info = (struct ConnectionInfoStruct*)(coninfo_cls);
+  struct connection_info_struct *con_info = (struct connection_info_struct*) coninfo_cls;
   
 
-  if (0 == strcmp(key, "name"))
-  {
-    if ((size>0) && (size<=MAXNAMESIZE))
+  if (0 == strcmp (key, "name"))
     {
-      char *answerstring;
-      answerstring = malloc(MAXANSWERSIZE);
-      if (!answerstring) return MHD_NO;
+      if ((size > 0) && (size <= MAXNAMESIZE))
+        {
+          char *answerstring;
+          answerstring = malloc (MAXANSWERSIZE);
+          if (!answerstring) return MHD_NO;
       
-      snprintf(answerstring, MAXANSWERSIZE, greatingpage, data);
-      con_info->answerstring = answerstring;      
-    } else con_info->answerstring=NULL;
+          snprintf (answerstring, MAXANSWERSIZE, greatingpage, data);
+          con_info->answerstring = answerstring;      
+        } 
+      else con_info->answerstring = NULL;
 
-    return MHD_NO;
-  }
+      return MHD_NO;
+    }
 
   return MHD_YES;
 }
@@ -107,21 +108,21 @@ string. This cleanup function must take into account that it will also be called
 requests other than @emph{POST} requests.
 
 @verbatim
-void RequestCompleted(void *cls, struct MHD_Connection *connection, void **con_cls,
-                      enum MHD_RequestTerminationCode toe)
+void request_completed (void *cls, struct MHD_Connection *connection, void **con_cls,
+                        enum MHD_RequestTerminationCode toe)
 {
-  struct ConnectionInfoStruct *con_info = (struct ConnectionInfoStruct*)(*con_cls);
+  struct connection_info_struct *con_info = (struct connection_info_struct*) *con_cls;
 
 
   if (NULL == con_info) return;
 
   if (con_info->connectiontype == POST)
-  {
-    MHD_destroy_post_processor(con_info->postprocessor);        
-    if (con_info->answerstring) free(con_info->answerstring);
-  }
+    {
+      MHD_destroy_post_processor (con_info->postprocessor);        
+      if (con_info->answerstring) free (con_info->answerstring);
+    }
   
-  free(con_info);      
+  free (con_info);      
 }
 @end verbatim
 @noindent
@@ -131,9 +132,9 @@ in the main function.
 
 @verbatim
 ...
-daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
-                            &AnswerToConnection, NULL, MHD_OPTION_NOTIFY_COMPLETED,
-                            RequestCompleted, NULL, MHD_OPTION_END);
+daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
+                           &answer_to_connection, NULL, MHD_OPTION_NOTIFY_COMPLETED,
+                           request_completed, NULL, MHD_OPTION_END);
 ...
 @end verbatim
 @noindent
@@ -146,54 +147,55 @@ On the first iteration for a new request, we start by allocating a new instance 
 iterations and other functions.
 
 @verbatim
-int AnswerToConnection(void *cls, struct MHD_Connection *connection, const char *url, 
-    const char *method, const char *version, const char *upload_data, 
-    unsigned int *upload_data_size, void **con_cls)
+int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
+                          const char *method, const char *version, const char *upload_data, 
+                          unsigned int *upload_data_size, void **con_cls)
 {
-  if(*con_cls==NULL) 
-  {
-    struct ConnectionInfoStruct *con_info;
+  if(NULL == *con_cls) 
+    {
+      struct connection_info_struct *con_info;
 
-    con_info = malloc(sizeof(struct ConnectionInfoStruct));
-    if (NULL == con_info) return MHD_NO;
+      con_info = malloc (sizeof (struct connection_info_struct));
+      if (NULL == con_info) return MHD_NO;
 @end verbatim
 @noindent
 
 If the new request is a @emph{POST}, the postprocessor must be created now. In addition, the type
 of the request is stored for convenience.
 @verbatim
-  if (0 == strcmp(method, "POST")) 
-    {      
-      con_info->postprocessor = MHD_create_post_processor(connection, POSTBUFFERSIZE, 
-                                                          IteratePost, (void*)con_info);   
+      if (0 == strcmp (method, "POST")) 
+        {      
+          con_info->postprocessor = MHD_create_post_processor (connection, POSTBUFFERSIZE, 
+                                                               iterate_post, (void*) con_info);   
 
-      if (NULL == con_info->postprocessor) 
-      {
-        free(con_info); 
-        return MHD_NO;
-      }
+          if (NULL == con_info->postprocessor) 
+            {
+              free (con_info); 
+              return MHD_NO;
+            }
 
-      con_info->connectiontype = POST;
-    } else con_info->connectiontype = GET;
+          con_info->connectiontype = POST;
+        } 
+      else con_info->connectiontype = GET;
 @end verbatim
 @noindent
 
 The address of our structure will both serve as the indicator for successive iterations and to remember
 the particular details about the connection.
 @verbatim
- *con_cls = (void*)con_info;
-    return MHD_YES;
-  }
+      *con_cls = (void*) con_info; 
+      return MHD_YES;
+    }
 @end verbatim
 @noindent
 
 The rest of the function will not be executed on the first iteration. A @emph{GET} request is easily
 satisfied by sending the question form.
 @verbatim
-  if (0 == strcmp(method, "GET")) 
-  {
-    return SendPage(connection, askpage);     
-  } 
+  if (0 == strcmp (method, "GET")) 
+    {
+      return send_page (connection, askpage);     
+    } 
 @end verbatim
 @noindent
 
@@ -201,23 +203,25 @@ In case of @emph{POST}, we invoke the post processor for as long as data keeps i
 @code{*upload_data_size} to zero in order to indicate that we have processed---or at least have
 considered---all of it.
 @verbatim
-  if (0 == strcmp(method, "POST")) 
-  {
-    struct ConnectionInfoStruct *con_info = *con_cls;
-
-    if (*upload_data_size != 0) 
+  if (0 == strcmp (method, "POST")) 
     {
-      MHD_post_process(con_info->postprocessor, upload_data, *upload_data_size);
-      *upload_data_size = 0;
-      return MHD_YES;
-    } else return SendPage(connection, con_info->answerstring);
-  } 
+      struct connection_info_struct *con_info = *con_cls;
+
+      if (*upload_data_size != 0) 
+        {
+          MHD_post_process(con_info->postprocessor, upload_data, *upload_data_size);
+          *upload_data_size = 0;
+          
+          return MHD_YES;
+        } 
+        else return send_page (connection, con_info->answerstring);
+    } 
 @end verbatim
 @noindent
 
 If they are neither @emph{GET} nor @emph{POST} requests, the error page is returned finally.
 @verbatim
-  return SendPage(connection, errorpage); 
+  return send_page(connection, errorpage); 
 }
 @end verbatim
 @noindent
