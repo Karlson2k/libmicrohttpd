@@ -122,7 +122,8 @@ void request_completed (void *cls, struct MHD_Connection *connection, void **con
       if (con_info->answerstring) free (con_info->answerstring);
     }
   
-  free (con_info);      
+  free (con_info);
+  *con_cls = NULL;   
 }
 @end verbatim
 @noindent
@@ -157,6 +158,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection, const ch
 
       con_info = malloc (sizeof (struct connection_info_struct));
       if (NULL == con_info) return MHD_NO;
+      con_info->answerstring = NULL;
 @end verbatim
 @noindent
 
@@ -214,7 +216,7 @@ considered---all of it.
           
           return MHD_YES;
         } 
-        else return send_page (connection, con_info->answerstring);
+      else if (NULL != con_info->answerstring) return send_page (connection, con_info->answerstring);
     } 
 @end verbatim
 @noindent

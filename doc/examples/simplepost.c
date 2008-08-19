@@ -86,7 +86,8 @@ void request_completed (void *cls, struct MHD_Connection *connection, void **con
       if (con_info->answerstring) free (con_info->answerstring);
     }
   
-  free (con_info);      
+  free (con_info);
+  *con_cls = NULL;          
 }
 
 
@@ -100,6 +101,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection, const ch
 
       con_info = malloc (sizeof (struct connection_info_struct));
       if (NULL == con_info) return MHD_NO;
+      con_info->answerstring = NULL;
 
       if (0 == strcmp (method, "POST")) 
         {      
@@ -137,7 +139,8 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection, const ch
           
           return MHD_YES;
         } 
-        else return send_page (connection, con_info->answerstring);
+      else
+        if (NULL != con_info->answerstring) return send_page (connection, con_info->answerstring);
     } 
 
   return send_page(connection, errorpage); 
