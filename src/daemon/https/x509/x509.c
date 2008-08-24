@@ -1917,11 +1917,6 @@ gnutls_x509_dn_get_rdn_ava (gnutls_x509_dn_t dn,
   remlen -= lenlen;
 
   ava->value.size = asn1_get_length_der (ptr, remlen, &lenlen);
-  if (ava->value.size < 0)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_ASN1_DER_ERROR;
-    }
   ava->value.data = ptr + lenlen;
 
   return 0;

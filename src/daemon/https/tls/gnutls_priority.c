@@ -171,12 +171,10 @@ MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
   int ret;
 
   ret = _set_priority (&session->internals.priorities.protocol, list);
-
   /* set the current version to the first in the chain.
    * This will be overridden later.
    */
-  if (list)
-    mhd_gtls_set_current_version (session, list[0]);
+  mhd_gtls_set_current_version (session, list[0]);
 
   return ret;
 }
