@@ -1832,6 +1832,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
               break;
             }
+	  if (connection->response != NULL)
+	    {
+	      /* we refused (no upload allowed!) */
+	      connection->remaining_upload_size = 0; 
+	      /* force close, in case client still tries to upload... */
+	      connection->read_closed = MHD_YES; 
+	    }
           connection->state = (connection->remaining_upload_size == 0)
             ? MHD_CONNECTION_FOOTERS_RECEIVED : MHD_CONNECTION_CONTINUE_SENT;
           continue;
