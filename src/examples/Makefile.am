@@ -10,7 +10,8 @@ authorization_example \
 minimal_example \
 querystring_example \
 fileserver_example \
-fileserver_example_external_select
+fileserver_example_external_select \
+refuse_post_example
 
 if ENABLE_HTTPS
 noinst_PROGRAMS += https_server_example 
@@ -24,6 +25,11 @@ minimal_example_LDADD = \
 authorization_example_SOURCES = \
  authorization_example.c 
 authorization_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+refuse_post_example_SOURCES = \
+ refuse_post_example.c 
+refuse_post_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 querystring_example_SOURCES = \
