@@ -858,7 +858,6 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
 {
   opaque salt[8], key[20];
   int result;
-  const int iter = 1;
   mac_hd_t td1 = NULL;
   gnutls_datum_t tmp = { NULL, 0 };
   opaque sha_mac[20];
@@ -888,25 +887,10 @@ gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
       goto cleanup;
     }
 
-  /* write the iterations
-   */
-
-  if (iter > 1)
-    {
-      result =
-        _gnutls_x509_write_uint32 (pkcs12->pkcs12, "macData.iterations",
-                                   iter);
-      if (result < 0)
-        {
-          gnutls_assert ();
-          goto cleanup;
-        }
-    }
-
   /* Generate the key.
    */
   result = _pkcs12_string_to_key (3 /*MAC*/, salt, sizeof (salt),
-                                  iter, pass, sizeof (key), key);
+                                  1, pass, sizeof (key), key);
   if (result < 0)
     {
       gnutls_assert ();
