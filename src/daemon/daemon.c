@@ -69,19 +69,32 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   /* certificate & key loaded from file */
   if (daemon->https_cert_path && daemon->https_key_path)
     {
-      /* test for private key & certificate file exsitance */
+      if (daemon->https_mem_cert || daemon->https_mem_key)
+	{
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "You specified certificates both in memory and on disk!",
+		    daemon->https_cert_path,
+		    strerror(errno));
+#endif
+	  return -1;
+	}
+     /* test for private key & certificate file exsitance */
       if (access (daemon->https_cert_path, R_OK))
         {
 #if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Missing X.509 certificate file\n");
+          MHD_DLOG (daemon, "Missing X.509 certificate file `%s': %s\n",
+		    daemon->https_cert_path,
+		    strerror(errno));
 #endif
           return -1;
-        }
-
+	}
+      
       if (access (daemon->https_key_path, R_OK))
         {
 #if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Missing X.509 key file\n");
+          MHD_DLOG (daemon, "Missing X.509 key file `%s': %s\n",
+		    daemon->https_key_path,
+		    strerror(errno));
 #endif
           return -1;
         }
@@ -91,8 +104,17 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
                                                        GNUTLS_X509_FMT_PEM);
     }
   /* certificate & key loaded from memory */
-  else if (daemon->https_mem_cert && daemon->https_mem_key)
+  if (daemon->https_mem_cert && daemon->https_mem_key)
     {
+      if (daemon->https_cert_path || daemon->https_key_path)
+	{
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "You specified certificates both in memory and on disk!",
+		    daemon->https_cert_path,
+		    strerror(errno));
+#endif
+	  return -1;
+	}
       key.data = (unsigned char *) daemon->https_mem_key;
       key.size = strlen (daemon->https_mem_key);
       cert.data = (unsigned char *) daemon->https_mem_cert;
@@ -102,13 +124,10 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
                                                       &cert, &key,
                                                       GNUTLS_X509_FMT_PEM);
     }
-  else
-    {
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to load certificate\n");
+  MHD_DLOG (daemon, "You need to specify a certificate and key location\n");
 #endif
-      return -1;
-    }
+  return -1;
 }
 
 /* initialize security aspects of the HTTPS daemon */
@@ -121,11 +140,9 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
     {
     case MHD_GNUTLS_CRD_ANON:
       ret = MHD_gnutls_anon_allocate_server_credentials (&daemon->anon_cred);
-      ret += MHD_gnutls_dh_params_init (&daemon->dh_params);
+      ret |= MHD_gnutls_dh_params_init (&daemon->dh_params);
       if (ret != 0)
-        {
-          return GNUTLS_E_MEMORY_ERROR;
-        }
+	return GNUTLS_E_MEMORY_ERROR;        
       MHD_gnutls_dh_params_generate2 (daemon->dh_params, 1024);
       MHD_gnutls_anon_set_server_dh_params (daemon->anon_cred,
                                             daemon->dh_params);
@@ -138,29 +155,23 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
     default:
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Error: no daemon credentials type found. f: %s, l: %d\n",
-                __FUNCTION__, __LINE__);
+                "Error: invalid credentials type %d specified.\n",
+		daemon->cred_type);
 #endif
       return -1;
     }
 }
 
-inline static int
+static int
 _set_priority (mhd_gtls_priority_st * st, const int *list)
 {
-  int num = 0, i;
+  int num = 0;
 
-  while (list[num] != 0)
+  while ( (list[num] != 0) &&
+	  (num < MAX_ALGOS) )
     num++;
-  if (num > MAX_ALGOS)
-    num = MAX_ALGOS;
   st->num_algorithms = num;
-
-  for (i = 0; i < num; i++)
-    {
-      st->priority[i] = list[i];
-    }
-
+  memcpy(st->priority, list, num * sizeof(int));
   return 0;
 }
 #endif
@@ -1114,6 +1125,23 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
 
   free (daemon);
+}
+
+/**
+ * Obtain information about the given daemon
+ * (not fully implemented!).
+ *
+ * @param daemon what daemon to get information about
+ * @param infoType what information is desired?
+ * @param ... depends on infoType
+ * @return NULL if this information is not available
+ *         (or if the infoType is unknown)
+ */
+const union MHD_DaemonInfo *MHD_get_daemon_info (struct MHD_Daemon *daemon,
+                                                 enum MHD_DaemonInfoType
+                                                 infoType, ...)
+{
+  return NULL;
 }
 
 #ifndef WINDOWS

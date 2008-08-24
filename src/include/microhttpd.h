@@ -56,7 +56,8 @@
  * standard and use those with MHD.<p>
  *
  * All functions are guaranteed to be completely reentrant and
- * thread-safe.<p>
+ * thread-safe (with the exception of 'MHD_set_connection_value',
+ * which must only be used in a particular context).<p>
  *
  * NEW: Before including "microhttpd.h" you should add the
  * necessary includes to define the "size_t", "fd_set", "socklen_t" and
@@ -526,7 +527,7 @@ enum MHD_RequestTerminationCode
 };
 
 /**
- * Which symmetric cipher should be used by HTTPS?
+ * List of symmetric ciphers.
  * Note that not all listed algorithms are necessarily
  * supported by all builds of MHD.
  */
@@ -543,11 +544,10 @@ enum MHD_GNUTLS_CipherAlgorithm
   MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
   MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
   MHD_GNUTLS_CIPHER_DES_CBC
-};                              // enum MHD_GNUTLS_CipherAlgorithm;
+};
 
 /**
- * Which public key algorithm should be used
- * for the key exchange?
+ * List of key exchange algorithms.
  * Note that not all listed algorithms are necessarily
  * supported by all builds of MHD.
  */
@@ -565,20 +565,38 @@ enum MHD_GNUTLS_KeyExchangeAlgorithm
 };
 
 /**
- * Server credentials type
+ * Server credentials type (note that not all types
+ * maybe supported by all MHD builds).
  */
 enum MHD_GNUTLS_CredentialsType
 {
+  /**
+   * We have a x.509 certificate.
+   */
   MHD_GNUTLS_CRD_CERTIFICATE = 1,
+  
+  /**
+   * We have no certificate ("anonymous").
+   */
   MHD_GNUTLS_CRD_ANON,
+
+  /**
+   * Use SRP (password-based authentication).
+   */
   MHD_GNUTLS_CRD_SRP,
+
+  /**
+   * Use PSK (pre-shared keys).
+   */
   MHD_GNUTLS_CRD_PSK,
-  MHD_GNUTLS_CRD_IA
+
 };
 
 /**
  * Enumeration of possible cryptographic
  * hash functions (for MAC and Digest operations).
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
  */
 enum MHD_GNUTLS_HashAlgorithm
 {
@@ -587,22 +605,37 @@ enum MHD_GNUTLS_HashAlgorithm
   MHD_GNUTLS_MAC_MD5,
   MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_SHA256
-    //GNUTLS_MAC_SHA384,
-    //GNUTLS_MAC_SHA512
+#if 0
+  /* unsupported */
+  MHD_GNUTLS_MAC_SHA384,
+  MHD_GNUTLS_MAC_SHA512
+#endif
 };
 
 /**
- * Compression methods.
+ * List of compression methods.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
  */
 enum MHD_GNUTLS_CompressionMethod
 {
-  MHD_GNUTLS_COMP_UNKNOWN = 0,
+  MHD_GNUTLS_COMP_UNKNOWN = 0,		       
+
+  /**
+   * No compression.
+   */
   MHD_GNUTLS_COMP_NULL = 1,
+
+  /**
+   * gzip compression.
+   */
   MHD_GNUTLS_COMP_DEFLATE
 };
 
 /**
  * SSL/TLS Protocol types.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
  */
 enum MHD_GNUTLS_Protocol
 {
@@ -615,7 +648,7 @@ enum MHD_GNUTLS_Protocol
 };
 
 /**
- * Specify what type of certificate should be used.
+ * Types of certificates.
  */
 enum MHD_GNUTLS_CertificateType
 {
@@ -623,11 +656,19 @@ enum MHD_GNUTLS_CertificateType
   MHD_GNUTLS_CRT_X509 = 1
 };
 
+/**
+ * List of public key algorithms.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
 enum MHD_GNUTLS_PublicKeyAlgorithm
 {
   MHD_GNUTLS_PK_UNKNOWN = 0,
   MHD_GNUTLS_PK_RSA = 1
-    //GNUTLS_PK_DSA
+#if 0
+  /* unsupported */
+  MHD_GNUTLS_PK_DSA
+#endif
 };
 
 /**
@@ -729,7 +770,6 @@ struct MHD_PostProcessor;
 
 /**
  * Allow or deny a client to connect.
- *
  *
  * @param addr address information from the client
  * @param addrlen length of the address information
@@ -888,8 +928,11 @@ typedef int
                            const char *transfer_encoding,
                            const char *data, size_t off, size_t size);
 
+/* **************** Daemon handling functions ***************** */
+
 /**
  * Start a webserver on the given port.
+ *
  * @param flags combination of MHD_FLAG values
  * @param port port to bind to
  * @param apc callback to call to check which clients
@@ -910,9 +953,20 @@ struct MHD_Daemon *MHD_start_daemon_va (unsigned int options,
                                         MHD_AccessHandlerCallback dh,
                                         void *dh_cls, va_list ap);
 
-/*
- * Variadic version of MHD_start_daemon_va. This function will delegate calls
- * to MHD_start_daemon_va() once argument list is analyzed.
+/**
+ * Start a webserver on the given port.  Variadic version of
+ * MHD_start_daemon_va.
+ *
+ * @param flags combination of MHD_FLAG values
+ * @param port port to bind to
+ * @param apc callback to call to check which clients
+ *        will be allowed to connect; you can pass NULL
+ *        in which case connections from any IP will be
+ *        accepted
+ * @param apc_cls extra argument to apc
+ * @param dh handler called for all requests (repeatedly)
+ * @param dh_cls extra argument to dh
+ * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
                                      unsigned short port,
@@ -921,10 +975,10 @@ struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
                                      MHD_AccessHandlerCallback dh,
                                      void *dh_cls, ...);
 
-
-
 /**
  * Shutdown an http daemon.
+ *
+ * @param daemon daemon to stop
  */
 void MHD_stop_daemon (struct MHD_Daemon *daemon);
 
@@ -932,6 +986,12 @@ void MHD_stop_daemon (struct MHD_Daemon *daemon);
 /**
  * Obtain the select sets for this daemon.
  *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set 
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value)
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.
@@ -946,7 +1006,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * (only needed if connection timeout is used).  The
  * returned value is how long select should at most
  * block, not the timeout value set for connections.
- *
+ * 
+ * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return MHD_YES on success, MHD_NO if timeouts are
  *        not used (or no connections exist that would
@@ -961,15 +1022,21 @@ int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout);
  * by clients in combination with MHD_get_fdset
  * if the client-controlled select method is used.
  *
+ * @param daemon daemon to run
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.
  */
 int MHD_run (struct MHD_Daemon *daemon);
 
+
+/* **************** Connection handling functions ***************** */
+
 /**
  * Get all of the headers from the request.
  *
+ * @param connection connection to get values from
+ * @param kind types of values to iterate over
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
@@ -1018,6 +1085,8 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * Get a particular header value.  If multiple
  * values match the kind, return any one of them.
  *
+ * @param connection connection to get values from
+ * @param kind what kind of value are we looking for
  * @param key the header to look for
  * @return NULL if no such item was found
  */
@@ -1039,6 +1108,8 @@ int
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code, struct MHD_Response *response);
 
+
+/* **************** Response manipulation functions ***************** */
 
 /**
  * Create a response object.  The response object can be extended with
@@ -1085,13 +1156,19 @@ struct MHD_Response *MHD_create_response_from_data (size_t size,
  * libmicrohttpd may keep some of the resources around if the response
  * is still in the queue for some clients, so the memory may not
  * necessarily be freed immediatley.
+ *
+ * @param response response to destroy
  */
 void MHD_destroy_response (struct MHD_Response *response);
 
 /**
  * Add a header line to the response.
  *
- * @return MHD_NO on error (i.e. invalid header or content format).
+ * @param response response to add a header to
+ * @param header the header to add
+ * @param content value to add
+ * @return MHD_NO on error (i.e. invalid header or content format),
+ *         or out of memory
  */
 int
 MHD_add_response_header (struct MHD_Response *response,
@@ -1100,6 +1177,9 @@ MHD_add_response_header (struct MHD_Response *response,
 /**
  * Delete a header line from the response.
  *
+ * @param response response to remove a header from
+ * @param header the header to delete
+ * @param content value to delete
  * @return MHD_NO on error (no such header known)
  */
 int
@@ -1109,6 +1189,7 @@ MHD_del_response_header (struct MHD_Response *response,
 /**
  * Get all of the headers added to a response.
  *
+ * @param response response to query
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
@@ -1122,6 +1203,7 @@ MHD_get_response_headers (struct MHD_Response *response,
 /**
  * Get a particular header from the response.
  *
+ * @param response response to query
  * @param key which header to get
  * @return NULL if header does not exist
  */
@@ -1129,11 +1211,17 @@ const char *MHD_get_response_header (struct MHD_Response *response,
                                      const char *key);
 
 
+/* ********************** PostProcessor functions ********************** */
+
 /**
  * Create a PostProcessor.
  *
- * A PostProcessor can be used to (incrementally)
- * parse the data portion of a POST request.
+ * A PostProcessor can be used to (incrementally) parse the data
+ * portion of a POST request.  Note that some buggy browsers fail to
+ * set the encoding type.  If you want to support those, you may have
+ * to call 'MHD_set_connection_value' with the proper encoding type
+ * before creating a post processor (if no supported encoding type is
+ * set, this function will fail).
  *
  * @param connection the connection on which the POST is
  *        happening (used to determine the POST format)
@@ -1175,12 +1263,17 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 /**
  * Release PostProcessor resources.
  *
+ * @param pp the PostProcessor to destroy
  * @return MHD_YES if processing completed nicely,
  *         MHD_NO if there were spurious characters / formatting
  *                problems; it is common to ignore the return
  *                value of this function
  */
 int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
+
+
+
+/* ********************** generic query functions ********************** */
 
 
 /**
@@ -1231,7 +1324,8 @@ union MHD_DaemonInfo
 };
 
 /**
- * Obtain information about the given daemon.
+ * Obtain information about the given daemon
+ * (not fully implemented!).
  *
  * @param daemon what daemon to get information about
  * @param infoType what information is desired?

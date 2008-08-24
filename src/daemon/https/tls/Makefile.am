@@ -16,7 +16,7 @@ noinst_LTLIBRARIES = libtls.la
 
 libtls_la_LDFLAGS = \
  -L$(GCRYPT_LIB_PATH)
- 
+
 libtls_la_SOURCES = \
 auth_anon.c \
 auth_cert.c \
@@ -29,7 +29,6 @@ ext_cert_type.c \
 ext_max_record.c \
 ext_oprfi.c \
 ext_server_name.c \
-ext_inner_application.c \
 gnutls_alert.c \
 gnutls_algorithms.c \
 gnutls_anon_cred.c \

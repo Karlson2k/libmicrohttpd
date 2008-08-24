@@ -64,11 +64,6 @@ static const gnutls_alert_entry mhd_gtls_sup_alerts[] = {
    "The server name sent was not recognized"},
   {GNUTLS_A_UNKNOWN_PSK_IDENTITY,
    "The SRP/PSK username is missing or not known"},
-  {GNUTLS_A_INNER_APPLICATION_FAILURE,
-   "Inner application negotiation failed"},
-  {GNUTLS_A_INNER_APPLICATION_VERIFICATION,
-   "Inner application verification failed"},
-  {0, NULL}
 };
 
 #define GNUTLS_ALERT_LOOP(b) \

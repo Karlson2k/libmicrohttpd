@@ -34,7 +34,6 @@
 #include <ext_cert_type.h>
 #include <ext_server_name.h>
 #include <ext_oprfi.h>
-#include <ext_inner_application.h>
 #include <gnutls_num.h>
 
 /* Key Exchange Section */
@@ -70,10 +69,6 @@ mhd_gtls_extension_entry mhd_gtls_extensions[MAX_EXT_SIZE] = {
                           _gnutls_srp_recv_params,
                           _gnutls_srp_send_params),
 #endif
-  GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_INNER_APPLICATION,
-                          EXTENSION_TLS,
-                          mhd_gtls_inner_app_rcv_params,
-                          mhd_gtls_inner_app_send_params),
   {0, 0, 0, 0}
 };
 
