@@ -28,10 +28,13 @@
 #include <gnutls_int.h>
 
 void _gnutls_session_cert_type_set (mhd_gtls_session_t session,
-				    enum MHD_GNUTLS_CertificateType);
-enum MHD_GNUTLS_KeyExchangeAlgorithm gnutls_kx_get (mhd_gtls_session_t session);
-enum MHD_GNUTLS_CipherAlgorithm gnutls_cipher_get (mhd_gtls_session_t session);
-enum MHD_GNUTLS_CertificateType gnutls_certificate_type_get (mhd_gtls_session_t);
+                                    enum MHD_GNUTLS_CertificateType);
+enum MHD_GNUTLS_KeyExchangeAlgorithm gnutls_kx_get (mhd_gtls_session_t
+                                                    session);
+enum MHD_GNUTLS_CipherAlgorithm gnutls_cipher_get (mhd_gtls_session_t
+                                                   session);
+enum MHD_GNUTLS_CertificateType
+gnutls_certificate_type_get (mhd_gtls_session_t);
 
 #include <gnutls_auth_int.h>
 
@@ -43,18 +46,19 @@ enum MHD_GNUTLS_CertificateType gnutls_certificate_type_get (mhd_gtls_session_t)
 #endif
 
 int mhd_gtls_session_cert_type_supported (mhd_gtls_session_t,
-					 enum MHD_GNUTLS_CertificateType);
+                                          enum MHD_GNUTLS_CertificateType);
 
 int mhd_gtls_dh_set_secret_bits (mhd_gtls_session_t session, unsigned bits);
 
 int mhd_gtls_dh_set_peer_public (mhd_gtls_session_t session, mpi_t public);
-int mhd_gtls_dh_set_group (mhd_gtls_session_t session, mpi_t gen, mpi_t prime);
+int mhd_gtls_dh_set_group (mhd_gtls_session_t session, mpi_t gen,
+                           mpi_t prime);
 
 int mhd_gtls_dh_get_allowed_prime_bits (mhd_gtls_session_t session);
 void mhd_gtls_handshake_internal_state_clear (mhd_gtls_session_t);
 
 int mhd_gtls_rsa_export_set_pubkey (mhd_gtls_session_t session,
-				   mpi_t exponent, mpi_t modulus);
+                                    mpi_t exponent, mpi_t modulus);
 
 int mhd_gtls_session_is_resumable (mhd_gtls_session_t session);
 int mhd_gtls_session_is_export (mhd_gtls_session_t session);
@@ -62,11 +66,12 @@ int mhd_gtls_session_is_export (mhd_gtls_session_t session);
 int mhd_gtls_openpgp_send_fingerprint (mhd_gtls_session_t session);
 
 int mhd_gtls_PRF (mhd_gtls_session_t session,
-		 const opaque * secret, int secret_size,
-		 const char *label, int label_size,
-		 const opaque * seed, int seed_size,
-		 int total_bytes, void *ret);
+                  const opaque * secret, int secret_size,
+                  const char *label, int label_size,
+                  const opaque * seed, int seed_size,
+                  int total_bytes, void *ret);
 
-int MHD_gnutls_init (mhd_gtls_session_t * session, gnutls_connection_end_t con_end);
+int MHD_gnutls_init (mhd_gtls_session_t * session,
+                     gnutls_connection_end_t con_end);
 
 #define DEFAULT_CERT_TYPE MHD_GNUTLS_CRT_X509

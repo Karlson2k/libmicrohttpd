@@ -28,6 +28,6 @@
 int mhd_gtls_mre_num2record (int num);
 int mhd_gtls_mre_record2num (uint16_t record_size);
 int mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
-				    const opaque * data, size_t data_size);
-int mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
-				    size_t);
+                                     const opaque * data, size_t data_size);
+int mhd_gtls_max_record_send_params (mhd_gtls_session_t session,
+                                     opaque * data, size_t);

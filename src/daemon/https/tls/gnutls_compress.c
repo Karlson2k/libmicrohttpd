@@ -43,8 +43,8 @@ _gnutls_m_plaintext2compressed (mhd_gtls_session_t session,
 
   size =
     mhd_gtls_compress (session->connection_state.write_compression_state,
-                      plaintext->data, plaintext->size, &data,
-                      MAX_RECORD_SEND_SIZE + EXTRA_COMP_SIZE);
+                       plaintext->data, plaintext->size, &data,
+                       MAX_RECORD_SEND_SIZE + EXTRA_COMP_SIZE);
   if (size < 0)
     {
       gnutls_assert ();
@@ -65,9 +65,9 @@ _gnutls_m_compressed2plaintext (mhd_gtls_session_t session,
   opaque *data;
 
   size =
-    mhd_gtls_decompress (session->connection_state.
-                        read_compression_state, compressed->data,
-                        compressed->size, &data, MAX_RECORD_RECV_SIZE);
+    mhd_gtls_decompress (session->connection_state.read_compression_state,
+                         compressed->data, compressed->size, &data,
+                         MAX_RECORD_RECV_SIZE);
   if (size < 0)
     {
       gnutls_assert ();

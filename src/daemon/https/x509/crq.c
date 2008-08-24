@@ -46,7 +46,7 @@
   * gnutls_x509_crq_init - This function initializes a gnutls_x509_crq_t structure
   * @crq: The structure to be initialized
   *
-  * This function will initialize a PKCS10 certificate request structure. 
+  * This function will initialize a PKCS10 certificate request structure.
   *
   * Returns 0 on success.
   *
@@ -76,7 +76,7 @@ gnutls_x509_crq_init (gnutls_x509_crq_t * crq)
   * gnutls_x509_crq_deinit - This function deinitializes memory used by a gnutls_x509_crq_t structure
   * @crq: The structure to be initialized
   *
-  * This function will deinitialize a CRL structure. 
+  * This function will deinitialize a CRL structure.
   *
   **/
 void
@@ -336,7 +336,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
 
       /* Move to the attibute type and values
        */
-      /* Read the OID 
+      /* Read the OID
        */
       mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer1);
       mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
@@ -356,7 +356,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
       if (strcmp (oid, given_oid) == 0)
         {                       /* Found the OID */
 
-          /* Read the Value 
+          /* Read the Value
            */
           snprintf (tmpbuffer3, sizeof (tmpbuffer3), "%s.values.?%u",
                     tmpbuffer1, indx + 1);
@@ -421,7 +421,7 @@ cleanup:
 }
 
 /**
-  * gnutls_x509_crq_get_challenge_password - This function will get the challenge password 
+  * gnutls_x509_crq_get_challenge_password - This function will get the challenge password
   * @crq: should contain a gnutls_x509_crq_t structure
   * @pass: will hold a null terminated password
   * @sizeof_pass: Initially holds the size of @pass.
@@ -499,7 +499,7 @@ gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
 }
 
 /**
-  * gnutls_x509_crq_get_attribute_by_oid - This function will get an attribute of the request 
+  * gnutls_x509_crq_get_attribute_by_oid - This function will get an attribute of the request
   * @crq: should contain a gnutls_x509_crq_t structure
   * @oid: holds an Object Identified in null terminated string
   * @indx: In case multiple same OIDs exist in the attribute list, this specifies
@@ -674,7 +674,7 @@ gnutls_x509_crq_set_key (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
 }
 
 /**
-  * gnutls_x509_crq_set_challenge_password - This function will set a challenge password 
+  * gnutls_x509_crq_set_challenge_password - This function will set a challenge password
   * @crq: should contain a gnutls_x509_crq_t structure
   * @pass: holds a null terminated password
   *
@@ -849,11 +849,11 @@ gnutls_x509_crq_export (gnutls_x509_crq_t crq,
   * @crq: should contain a gnutls_x509_crq_t structure
   * @bits: if bits is non null it will hold the size of the parameters' in bits
   *
-  * This function will return the public key algorithm of a PKCS \#10 
+  * This function will return the public key algorithm of a PKCS \#10
   * certificate request.
   *
   * If bits is non null, it should have enough size to hold the parameters
-  * size in bits. For RSA the bits returned is the modulus. 
+  * size in bits. For RSA the bits returned is the modulus.
   * For DSA the bits returned are of the public
   * exponent.
   *

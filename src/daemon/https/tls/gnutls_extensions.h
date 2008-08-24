@@ -24,16 +24,18 @@
 
 #include <gnutls_int.h>
 
-const char * mhd_gtls_extension_get_name (uint16_t type);
-int mhd_gtls_parse_extensions (mhd_gtls_session_t, mhd_gtls_ext_parse_type_t, const opaque *, int);
+const char *mhd_gtls_extension_get_name (uint16_t type);
+int mhd_gtls_parse_extensions (mhd_gtls_session_t, mhd_gtls_ext_parse_type_t,
+                               const opaque *, int);
 int mhd_gtls_gen_extensions (mhd_gtls_session_t session, opaque * data,
-			    size_t data_size);
+                             size_t data_size);
 
-typedef int (* mhd_gtls_ext_recv_func) (mhd_gtls_session_t, const opaque *, size_t);	/* recv data */
-typedef int (* mhd_gtls_ext_send_func) (mhd_gtls_session_t, opaque *, size_t);	/* send data */
+typedef int (*mhd_gtls_ext_recv_func) (mhd_gtls_session_t, const opaque *, size_t);     /* recv data */
+typedef int (*mhd_gtls_ext_send_func) (mhd_gtls_session_t, opaque *, size_t);   /* send data */
 
 mhd_gtls_ext_send_func mhd_gtls_ext_func_send (uint16_t type);
-mhd_gtls_ext_recv_func mhd_gtls_ext_func_recv (uint16_t type, mhd_gtls_ext_parse_type_t);
+mhd_gtls_ext_recv_func mhd_gtls_ext_func_recv (uint16_t type,
+                                               mhd_gtls_ext_parse_type_t);
 
 typedef struct
 {

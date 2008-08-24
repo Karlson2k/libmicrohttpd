@@ -800,9 +800,9 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
             {
               session->internals.record_send_buffer_prev_size += n - left;
 
-              retval = _gnutls_buffer_insert (&session->internals.
-                                              record_send_buffer,
-                                              &ptr[n - left], left);
+              retval =
+                _gnutls_buffer_insert (&session->internals.record_send_buffer,
+                                       &ptr[n - left], left);
               if (retval < 0)
                 {
                   gnutls_assert ();

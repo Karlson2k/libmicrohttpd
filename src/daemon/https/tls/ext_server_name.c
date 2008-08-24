@@ -40,7 +40,7 @@
 
 int
 mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
-                                 const opaque * data, size_t _data_size)
+                                  const opaque * data, size_t _data_size)
 {
   int i;
   const unsigned char *p;
@@ -125,7 +125,7 @@ mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
-                                 opaque * data, size_t _data_size)
+                                  opaque * data, size_t _data_size)
 {
   int total_size = 0;
 #if MHD_DEBUG_TLS
@@ -234,8 +234,8 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
   **/
 int
 MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
-                        size_t * data_length,
-                        unsigned int *type, unsigned int indx)
+                            size_t * data_length,
+                            unsigned int *type, unsigned int indx)
 {
   char *_data = data;
 #if MHD_DEBUG_TLS
@@ -259,8 +259,8 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
         session->security_parameters.extensions.server_names[indx].
         name_length;
       memcpy (data,
-              session->security_parameters.extensions.server_names[indx].
-              name, *data_length);
+              session->security_parameters.extensions.server_names[indx].name,
+              *data_length);
 
       if (*type == GNUTLS_NAME_DNS)     /* null terminate */
         _data[(*data_length)] = 0;
@@ -296,8 +296,8 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
   **/
 int
 MHD_gnutls_server_name_set (mhd_gtls_session_t session,
-                        gnutls_server_name_type_t type,
-                        const void *name, size_t name_length)
+                            gnutls_server_name_type_t type,
+                            const void *name, size_t name_length)
 {
   int server_names;
 

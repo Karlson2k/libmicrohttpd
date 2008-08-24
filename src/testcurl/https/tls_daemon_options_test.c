@@ -463,11 +463,10 @@ main (int argc, char *const *argv)
                MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_KX_PRIORITY,
                kx, MHD_OPTION_END);
   errorCount +=
-      test_wrap ("ADH-AES256-SHA", &test_https_transfer, test_fd,
-    		     "ADH-AES256-SHA", CURL_SSLVERSION_TLSv1,
-                 MHD_OPTION_CRED_TYPE, MHD_GNUTLS_CRD_ANON,
-                 MHD_OPTION_KX_PRIORITY,
-                 kx, MHD_OPTION_END);
+    test_wrap ("ADH-AES256-SHA", &test_https_transfer, test_fd,
+               "ADH-AES256-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_CRED_TYPE, MHD_GNUTLS_CRD_ANON,
+               MHD_OPTION_KX_PRIORITY, kx, MHD_OPTION_END);
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);

@@ -26,7 +26,7 @@
  * before "microhttpd.h"; it provides the required
  * standard headers (which are platform-specific).<p>
  *
- * Note that this file depends on our configure.ac 
+ * Note that this file depends on our configure.ac
  * build process and the generated config.h file.
  * Hence you cannot include it directly in applications
  * that use libmicrohttpd.

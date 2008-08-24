@@ -161,7 +161,7 @@ asn1_find_node (ASN1_TYPE pointer, const char *name)
 
       p = p->down;
 
-      /* The identifier "?LAST" indicates the last element 
+      /* The identifier "?LAST" indicates the last element
          in the right chain. */
       if (!strcmp (n, "?LAST"))
         {

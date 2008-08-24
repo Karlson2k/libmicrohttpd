@@ -76,7 +76,7 @@ gnutls_x509_crt_init (gnutls_x509_crt_t * cert)
  * @dest: The structure where to copy
  * @src: The structure to be copied
  *
- * This function will copy an X.509 certificate structure. 
+ * This function will copy an X.509 certificate structure.
  *
  * Returns 0 on success.
  *
@@ -131,7 +131,7 @@ _gnutls_x509_crt_cpy (gnutls_x509_crt_t dest, gnutls_x509_crt_t src)
  * gnutls_x509_crt_deinit - This function deinitializes memory used by a gnutls_x509_crt_t structure
  * @cert: The structure to be initialized
  *
- * This function will deinitialize a CRL structure. 
+ * This function will deinitialize a CRL structure.
  *
  **/
 void
@@ -456,8 +456,8 @@ gnutls_x509_crt_get_dn_oid (gnutls_x509_crt_t cert,
  * gnutls_x509_crt_get_signature_algorithm - This function returns the Certificate's signature algorithm
  * @cert: should contain a gnutls_x509_crt_t structure
  *
- * This function will return a value of the gnutls_sign_algorithm_t enumeration that 
- * is the signature algorithm. 
+ * This function will return a value of the gnutls_sign_algorithm_t enumeration that
+ * is the signature algorithm.
  *
  * Returns a negative value on error.
  *
@@ -635,11 +635,11 @@ gnutls_x509_crt_get_expiration_time (gnutls_x509_crt_t cert)
  * @result: The place where the serial number will be copied
  * @result_size: Holds the size of the result field.
  *
- * This function will return the X.509 certificate's serial number. 
+ * This function will return the X.509 certificate's serial number.
  * This is obtained by the X509 Certificate serialNumber
  * field. Serial is not always a 32 or 64bit number. Some CAs use
  * large serial numbers, thus it may be wise to handle it as something
- * opaque. 
+ * opaque.
  *
  * Returns 0 on success and a negative value in case of an error.
  *
@@ -680,7 +680,7 @@ gnutls_x509_crt_get_serial (gnutls_x509_crt_t cert,
  *
  * This function will return the X.509v3 certificate's subject key identifier.
  * This is obtained by the X.509 Subject Key identifier extension
- * field (2.5.29.14). 
+ * field (2.5.29.14).
  *
  * Returns 0 on success and a negative value in case of an error.
  *
@@ -850,11 +850,11 @@ gnutls_x509_crt_get_authority_key_id (gnutls_x509_crt_t cert,
  * @cert: should contain a gnutls_x509_crt_t structure
  * @bits: if bits is non null it will hold the size of the parameters' in bits
  *
- * This function will return the public key algorithm of an X.509 
+ * This function will return the public key algorithm of an X.509
  * certificate.
  *
  * If bits is non null, it should have enough size to hold the parameters
- * size in bits. For RSA the bits returned is the modulus. 
+ * size in bits. For RSA the bits returned is the modulus.
  * For DSA the bits returned are of the public
  * exponent.
  *
@@ -1353,7 +1353,7 @@ gnutls_x509_crt_get_ca_status (gnutls_x509_crt_t cert, unsigned int *critical)
  * @key_usage: where the key usage bits will be stored
  * @critical: will be non zero if the extension is marked as critical
  *
- * This function will return certificate's key usage, by reading the 
+ * This function will return certificate's key usage, by reading the
  * keyUsage X.509 extension (2.5.29.15). The key usage value will ORed values of the:
  * GNUTLS_KEY_DIGITAL_SIGNATURE, GNUTLS_KEY_NON_REPUDIATION,
  * GNUTLS_KEY_KEY_ENCIPHERMENT, GNUTLS_KEY_DATA_ENCIPHERMENT,
@@ -1547,7 +1547,7 @@ gnutls_x509_crt_get_extension_by_oid (gnutls_x509_crt_t cert,
  * The extension OID will be stored as a string in the provided buffer.
  *
  * A negative value may be returned in case of parsing error.
- * If your have reached the last extension available 
+ * If your have reached the last extension available
  * GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE will be returned.
  *
  **/
@@ -2166,7 +2166,7 @@ gnutls_x509_crt_get_key_id (gnutls_x509_crt_t crt,
     }
 
   result = MHD_gnutls_fingerprint (MHD_GNUTLS_MAC_SHA1, &pubkey, output_data,
-                               output_data_size);
+                                   output_data_size);
 
   gnutls_afree (pubkey.data);
 
@@ -2813,7 +2813,7 @@ gnutls_x509_crt_list_import (gnutls_x509_crt_t * certs,
             }
         }
 
-      /* now we move ptr after the pem header 
+      /* now we move ptr after the pem header
        */
       ptr++;
       /* find the next certificate (if any)

@@ -197,7 +197,7 @@ gnutls_x509_crl_set_next_update (gnutls_x509_crl_t crl, time_t exp_time)
   * @serial_size: Holds the size of the serial field.
   * @revocation_time: The time this certificate was revoked
   *
-  * This function will set a revoked certificate's serial number to the CRL. 
+  * This function will set a revoked certificate's serial number to the CRL.
   *
   * Returns 0 on success, or a negative value in case of an error.
   *
@@ -262,7 +262,7 @@ gnutls_x509_crl_set_crt_serial (gnutls_x509_crl_t crl,
   * @crt: should contain a gnutls_x509_crt_t structure with the revoked certificate
   * @revocation_time: The time this certificate was revoked
   *
-  * This function will set a revoked certificate's serial number to the CRL. 
+  * This function will set a revoked certificate's serial number to the CRL.
   *
   * Returns 0 on success, or a negative value in case of an error.
   *

@@ -178,19 +178,17 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  */
 int
 MHD_set_connection_value (struct MHD_Connection *connection,
-			  enum MHD_ValueKind kind,
-			  const char *key,
-			  const char *value)
+                          enum MHD_ValueKind kind,
+                          const char *key, const char *value)
 {
-  struct MHD_HTTP_Header * pos;
+  struct MHD_HTTP_Header *pos;
 
-  pos = MHD_pool_allocate(connection->pool,
-			  sizeof(struct MHD_HTTP_Header),
-			  MHD_NO);
+  pos = MHD_pool_allocate (connection->pool,
+                           sizeof (struct MHD_HTTP_Header), MHD_NO);
   if (pos == NULL)
     return MHD_NO;
-  pos->header = (char*) key;
-  pos->value = (char*) value;
+  pos->header = (char *) key;
+  pos->value = (char *) value;
   pos->kind = kind;
   pos->next = connection->headers_received;
   connection->headers_received = pos;
@@ -590,7 +588,7 @@ build_header_response (struct MHD_Connection *connection)
   while (pos != NULL)
     {
       if (pos->kind == kind)
-	off += SPRINTF (&data[off], "%s: %s\r\n", pos->header, pos->value);        
+        off += SPRINTF (&data[off], "%s: %s\r\n", pos->header, pos->value);
       pos = pos->next;
     }
   if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
@@ -1592,8 +1590,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CONTINUE_SENDING:
           ret = SEND (connection->socket_fd,
-                      &HTTP_100_CONTINUE[connection->
-                                         continue_message_write_offset],
+                      &HTTP_100_CONTINUE
+                      [connection->continue_message_write_offset],
                       strlen (HTTP_100_CONTINUE) -
                       connection->continue_message_write_offset,
                       MSG_NOSIGNAL);
@@ -1612,8 +1610,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           fprintf (stderr,
                    "Sent 100 continue response: `%.*s'\n",
                    ret,
-                   &HTTP_100_CONTINUE[connection->
-                                      continue_message_write_offset]);
+                   &HTTP_100_CONTINUE
+                   [connection->continue_message_write_offset]);
 #endif
           connection->continue_message_write_offset += ret;
           break;
@@ -1646,13 +1644,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (connection->daemon->options & MHD_USE_SSL)
             {
               ret = MHD_gnutls_record_send (connection->tls_session,
-                                        &connection->response->
-                                        data[connection->
+                                            &connection->response->data
+                                            [connection->
                                              response_write_position -
                                              response->data_start],
-                                        response->data_size -
-                                        (connection->response_write_position -
-                                         response->data_start));
+                                            response->data_size -
+                                            (connection->response_write_position
+                                             - response->data_start));
             }
           else
 #endif
@@ -1698,8 +1696,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           do_write (connection);
           check_write_done (connection,
                             (connection->response->total_size ==
-                             connection->
-                             response_write_position) ?
+                             connection->response_write_position) ?
                             MHD_CONNECTION_BODY_SENT :
                             MHD_CONNECTION_CHUNKED_BODY_UNREADY);
           break;
@@ -1829,13 +1826,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
               break;
             }
-	  if (connection->response != NULL)
-	    {
-	      /* we refused (no upload allowed!) */
-	      connection->remaining_upload_size = 0; 
-	      /* force close, in case client still tries to upload... */
-	      connection->read_closed = MHD_YES; 
-	    }
+          if (connection->response != NULL)
+            {
+              /* we refused (no upload allowed!) */
+              connection->remaining_upload_size = 0;
+              /* force close, in case client still tries to upload... */
+              connection->read_closed = MHD_YES;
+            }
           connection->state = (connection->remaining_upload_size == 0)
             ? MHD_CONNECTION_FOOTERS_RECEIVED : MHD_CONNECTION_CONTINUE_SENT;
           continue;
@@ -1995,9 +1992,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                                                   connection,
                                                   &connection->client_context,
                                                   MHD_REQUEST_TERMINATED_COMPLETED_OK);
-          end = MHD_lookup_connection_value (connection,
-                                             MHD_HEADER_KIND,
-                                             MHD_HTTP_HEADER_CONNECTION);
+          end =
+            MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
+                                         MHD_HTTP_HEADER_CONNECTION);
           connection->client_context = NULL;
           connection->continue_message_write_offset = 0;
           connection->responseCode = 0;

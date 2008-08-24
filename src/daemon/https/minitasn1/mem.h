@@ -23,5 +23,3 @@
 #define _asn1_strdup strdup
 
 #endif /* MEM_H */
-
-

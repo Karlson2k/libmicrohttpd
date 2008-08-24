@@ -26,15 +26,16 @@ typedef enum Optional
 { OPTIONAL_PACKET, MANDATORY_PACKET } Optional;
 
 int mhd_gtls_send_handshake (mhd_gtls_session_t session, void *i_data,
-			    uint32_t i_datasize,
-			    gnutls_handshake_description_t type);
+                             uint32_t i_datasize,
+                             gnutls_handshake_description_t type);
 int mhd_gtls_recv_hello_request (mhd_gtls_session_t session, void *data,
-				uint32_t data_size);
+                                 uint32_t data_size);
 int mhd_gtls_send_hello (mhd_gtls_session_t session, int again);
-int mhd_gtls_recv_hello (mhd_gtls_session_t session, opaque * data, int datalen);
+int mhd_gtls_recv_hello (mhd_gtls_session_t session, opaque * data,
+                         int datalen);
 int mhd_gtls_recv_handshake (mhd_gtls_session_t session, uint8_t **, int *,
-			    gnutls_handshake_description_t,
-			    Optional optional);
+                             gnutls_handshake_description_t,
+                             Optional optional);
 int mhd_gtls_generate_session_id (opaque * session_id, uint8_t * len);
 int mhd_gtls_handshake_common (mhd_gtls_session_t session);
 int mhd_gtls_handshake_server (mhd_gtls_session_t session);
@@ -42,15 +43,18 @@ void mhd_gtls_set_server_random (mhd_gtls_session_t session, uint8_t * rnd);
 void mhd_gtls_set_client_random (mhd_gtls_session_t session, uint8_t * rnd);
 int mhd_gtls_tls_create_random (opaque * dst);
 int mhd_gtls_remove_unwanted_ciphersuites (mhd_gtls_session_t session,
-					  cipher_suite_st ** cipherSuites,
-					  int numCipherSuites,
-					  enum MHD_GNUTLS_PublicKeyAlgorithm);
+                                           cipher_suite_st ** cipherSuites,
+                                           int numCipherSuites,
+                                           enum
+                                           MHD_GNUTLS_PublicKeyAlgorithm);
 int mhd_gtls_find_pk_algos_in_ciphersuites (opaque * data, int datalen);
 int mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
-				 int datalen);
+                                  int datalen);
 
-int mhd_gtls_negotiate_version( mhd_gtls_session_t session, enum MHD_GNUTLS_Protocol adv_version);
-int mhd_gtls_user_hello_func( mhd_gtls_session_t, enum MHD_GNUTLS_Protocol adv_version);
+int mhd_gtls_negotiate_version (mhd_gtls_session_t session,
+                                enum MHD_GNUTLS_Protocol adv_version);
+int mhd_gtls_user_hello_func (mhd_gtls_session_t,
+                              enum MHD_GNUTLS_Protocol adv_version);
 
 #if MHD_DEBUG_TLS
 int mhd_gtls_handshake_client (mhd_gtls_session_t session);

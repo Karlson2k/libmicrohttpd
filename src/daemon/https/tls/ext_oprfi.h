@@ -25,9 +25,7 @@
 #include <gnutls_int.h>
 
 int mhd_gtls_oprfi_recv_params (mhd_gtls_session_t state,
-			       const opaque * data,
-			       size_t data_size);
+                                const opaque * data, size_t data_size);
 
 int mhd_gtls_oprfi_send_params (mhd_gtls_session_t state,
-			       opaque * data,
-			       size_t data_size);
+                                opaque * data, size_t data_size);

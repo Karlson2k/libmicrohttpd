@@ -74,21 +74,23 @@ struct md5_ctx
 
 /* Initialize structure containing state of computation.
    (RFC 1321, 3.3: Step 3)  */
-extern void __md5_init_ctx (struct md5_ctx *ctx) __THROW;
+extern void
+__md5_init_ctx (struct md5_ctx *ctx)
+  __THROW;
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is necessary that LEN is a multiple of 64!!! */
-extern void __md5_process_block (const void *buffer, size_t len,
-				 struct md5_ctx *ctx) __THROW;
+     extern void __md5_process_block (const void *buffer, size_t len,
+                                      struct md5_ctx *ctx) __THROW;
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is NOT required that LEN is a multiple of 64.  */
-extern void __md5_process_bytes (const void *buffer, size_t len,
-				 struct md5_ctx *ctx) __THROW;
+     extern void __md5_process_bytes (const void *buffer, size_t len,
+                                      struct md5_ctx *ctx) __THROW;
 
 /* Process the remaining bytes in the buffer and put result from CTX
    in first 16 bytes following RESBUF.  The result is always in little
@@ -97,7 +99,8 @@ extern void __md5_process_bytes (const void *buffer, size_t len,
 
    IMPORTANT: On some systems, RESBUF must be aligned to a 32-bit
    boundary. */
-extern void *__md5_finish_ctx (struct md5_ctx *ctx, void *resbuf) __THROW;
+     extern void *__md5_finish_ctx (struct md5_ctx *ctx,
+                                    void *resbuf) __THROW;
 
 
 /* Put result from CTX in first 16 bytes following RESBUF.  The result is
@@ -106,19 +109,20 @@ extern void *__md5_finish_ctx (struct md5_ctx *ctx, void *resbuf) __THROW;
 
    IMPORTANT: On some systems, RESBUF must be aligned to a 32-bit
    boundary. */
-extern void *__md5_read_ctx (const struct md5_ctx *ctx, void *resbuf) __THROW;
+     extern void *__md5_read_ctx (const struct md5_ctx *ctx,
+                                  void *resbuf) __THROW;
 
 
 /* Compute MD5 message digest for bytes read from STREAM.  The
    resulting message digest number will be written into the 16 bytes
    beginning at RESBLOCK.  */
-extern int __md5_stream (FILE *stream, void *resblock) __THROW;
+     extern int __md5_stream (FILE * stream, void *resblock) __THROW;
 
 /* Compute MD5 message digest for LEN bytes beginning at BUFFER.  The
    result is always in little endian byte order, so that a byte-wise
    output yields to the wanted ASCII representation of the message
    digest.  */
-extern void *__md5_buffer (const char *buffer, size_t len,
-			   void *resblock) __THROW;
+     extern void *__md5_buffer (const char *buffer, size_t len,
+                                void *resblock) __THROW;
 
 #endif /* md5.h */

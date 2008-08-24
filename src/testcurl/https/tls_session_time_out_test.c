@@ -66,10 +66,10 @@ setup (mhd_gtls_session_t * session,
 
   mhd_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
   mhd_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                       strlen (srv_self_signed_cert_pem), &malloc);
+                        strlen (srv_self_signed_cert_pem), &malloc);
 
   MHD_gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                       GNUTLS_X509_FMT_PEM);
+                                           GNUTLS_X509_FMT_PEM);
 
   MHD_gnutls_init (session, GNUTLS_CLIENT);
   ret = MHD_gnutls_priority_set_direct (*session, "NORMAL", err_pos);
@@ -152,7 +152,7 @@ main (int argc, char *const *argv)
   MHD_gnutls_global_init ();
   MHD_gtls_global_set_log_level (11);
 
-  d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,

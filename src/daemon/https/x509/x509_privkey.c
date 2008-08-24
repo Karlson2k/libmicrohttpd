@@ -446,7 +446,7 @@ gnutls_x509_privkey_import (gnutls_x509_privkey_t key,
  *
  * This function will convert the given RSA raw parameters
  * to the native gnutls_x509_privkey_t format. The output will be stored in @key.
- * 
+ *
  **/
 int
 gnutls_x509_privkey_import_rsa_raw (gnutls_x509_privkey_t key,
@@ -646,7 +646,7 @@ gnutls_x509_privkey_export (gnutls_x509_privkey_t key,
  * This function will export the RSA private key's parameters found in the given
  * structure. The new parameters will be allocated using
  * gnutls_malloc() and will be stored in the appropriate datum.
- * 
+ *
  **/
 int
 gnutls_x509_privkey_export_rsa_raw (gnutls_x509_privkey_t key,
@@ -760,7 +760,7 @@ error:_gnutls_free_datum (m);
  * This function will export the DSA private key's parameters found in the given
  * structure. The new parameters will be allocated using
  * gnutls_malloc() and will be stored in the appropriate datum.
- * 
+ *
  **/
 int
 gnutls_x509_privkey_export_dsa_raw (gnutls_x509_privkey_t key,
@@ -960,7 +960,7 @@ _gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       goto cleanup;
     }
 
-  /* Write PRIME 
+  /* Write PRIME
    */
   if ((result = asn1_write_value (*c2, "modulus", m_data, size[0]))
       != ASN1_SUCCESS)
@@ -1120,7 +1120,7 @@ _gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
       goto cleanup;
     }
 
-  /* Write PRIME 
+  /* Write PRIME
    */
   if ((result = asn1_write_value (*c2, "p", p_data, size[0])) != ASN1_SUCCESS)
     {
@@ -1183,7 +1183,7 @@ cleanup:asn1_delete_structure (c2);
  * @flags: unused for now. Must be 0.
  *
  * This function will generate a random private key. Note that
- * this function must be called on an empty private key. 
+ * this function must be called on an empty private key.
  *
  * Returns 0 on success or a negative value on error.
  *
@@ -1409,7 +1409,7 @@ gnutls_x509_privkey_sign_hash (gnutls_x509_privkey_t key,
     }
 
   result = mhd_gtls_sign (key->pk_algorithm, key->params,
-                         key->params_size, hash, signature);
+                          key->params_size, hash, signature);
   if (result < 0)
     {
       gnutls_assert ();

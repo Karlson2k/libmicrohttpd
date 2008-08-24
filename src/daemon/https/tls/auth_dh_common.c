@@ -52,8 +52,8 @@ mhd_gtls_free_dh_info (mhd_gtls_dh_info_st * dh)
 
 int
 mhd_gtls_proc_dh_common_client_kx (mhd_gtls_session_t session,
-                                  opaque * data, size_t _data_size,
-                                  mpi_t g, mpi_t p)
+                                   opaque * data, size_t _data_size,
+                                   mpi_t g, mpi_t p)
 {
   uint16_t n_Y;
   size_t _n_Y;
@@ -108,7 +108,7 @@ mhd_gtls_gen_dh_common_client_kx (mhd_gtls_session_t session, opaque ** data)
   *data = NULL;
 
   X = mhd_gtls_calc_dh_secret (&x, session->key->client_g,
-                             session->key->client_p);
+                               session->key->client_p);
   if (X == NULL || x == NULL)
     {
       gnutls_assert ();
@@ -170,7 +170,7 @@ error:
 
 int
 mhd_gtls_proc_dh_common_server_kx (mhd_gtls_session_t session,
-                                  opaque * data, size_t _data_size, int psk)
+                                   opaque * data, size_t _data_size, int psk)
 {
   uint16_t n_Y, n_g, n_p;
   size_t _n_Y, _n_g, _n_p;
@@ -251,7 +251,7 @@ mhd_gtls_proc_dh_common_server_kx (mhd_gtls_session_t session,
     }
 
   mhd_gtls_dh_set_group (session, session->key->client_g,
-                        session->key->client_p);
+                         session->key->client_p);
   mhd_gtls_dh_set_peer_public (session, session->key->client_Y);
 
   ret = n_Y + n_p + n_g + 6;
@@ -265,7 +265,7 @@ mhd_gtls_proc_dh_common_server_kx (mhd_gtls_session_t session,
  * be inserted */
 int
 mhd_gtls_dh_common_print_server_kx (mhd_gtls_session_t session,
-                                   mpi_t g, mpi_t p, opaque ** data, int psk)
+                                    mpi_t g, mpi_t p, opaque ** data, int psk)
 {
   mpi_t x, X;
   size_t n_X, n_g, n_p;

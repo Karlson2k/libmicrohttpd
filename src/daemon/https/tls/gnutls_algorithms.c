@@ -37,7 +37,7 @@ typedef struct
 {
   enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm;
   enum MHD_GNUTLS_CredentialsType client_type;
-  enum MHD_GNUTLS_CredentialsType server_type;        /* The type of credentials a server
+  enum MHD_GNUTLS_CredentialsType server_type;  /* The type of credentials a server
                                                  * needs to set */
 } gnutls_cred_map;
 
@@ -130,7 +130,7 @@ static const gnutls_pk_map mhd_gtls_pk_mappings[] = {
 typedef struct
 {
   const char *name;
-  enum MHD_GNUTLS_Protocol id;         /* gnutls internal version number */
+  enum MHD_GNUTLS_Protocol id;  /* gnutls internal version number */
   int major;                    /* defined by the protocol */
   int minor;                    /* defined by the protocol */
   int supported;                /* 0 not supported, > 0 is supported */
@@ -165,7 +165,8 @@ static const gnutls_version_entry mhd_gtls_sup_versions[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const enum MHD_GNUTLS_Protocol mhd_gtls_supported_protocols[] = { MHD_GNUTLS_SSL3,
+static const enum MHD_GNUTLS_Protocol mhd_gtls_supported_protocols[] =
+{ MHD_GNUTLS_SSL3,
   MHD_GNUTLS_TLS1_0,
   MHD_GNUTLS_TLS1_1,
   MHD_GNUTLS_TLS1_2,
@@ -272,7 +273,7 @@ static const gnutls_cipher_entry mhd_gtls_algorithms[] = {
 
 /* Keep the contents of this struct the same as the previous one. */
 static const enum MHD_GNUTLS_CipherAlgorithm mhd_gtls_supported_ciphers[] =
-  { MHD_GNUTLS_CIPHER_AES_256_CBC,
+{ MHD_GNUTLS_CIPHER_AES_256_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_3DES_CBC,
   MHD_GNUTLS_CIPHER_DES_CBC,
@@ -327,7 +328,8 @@ static const gnutls_hash_entry mhd_gtls_hash_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const enum MHD_GNUTLS_HashAlgorithm mhd_gtls_supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
+static const enum MHD_GNUTLS_HashAlgorithm mhd_gtls_supported_macs[] =
+{ MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_MD5,
   MHD_GNUTLS_MAC_SHA256,
   MHD_GNUTLS_MAC_NULL,
@@ -364,7 +366,9 @@ gnutls_compression_entry _gnutls_compression_algorithms[MAX_COMP_METHODS] =
    0}
 };
 
-static const enum MHD_GNUTLS_CompressionMethod mhd_gtls_supported_compressions[] = {
+static const enum MHD_GNUTLS_CompressionMethod
+  mhd_gtls_supported_compressions[] =
+{
 #ifdef HAVE_LIBZ
   MHD_GNUTLS_COMP_DEFLATE,
 #endif
@@ -444,7 +448,8 @@ static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const enum MHD_GNUTLS_KeyExchangeAlgorithm mhd_gtls_supported_kxs[] = {
+static const enum MHD_GNUTLS_KeyExchangeAlgorithm mhd_gtls_supported_kxs[] =
+{
 #ifdef ENABLE_ANON
   MHD_GNUTLS_KX_ANON_DH,
 #endif
@@ -482,9 +487,9 @@ typedef struct
   enum MHD_GNUTLS_CipherAlgorithm block_algorithm;
   enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
   enum MHD_GNUTLS_HashAlgorithm mac_algorithm;
-  enum MHD_GNUTLS_Protocol version;    /* this cipher suite is supported
-                                 * from 'version' and above;
-                                 */
+  enum MHD_GNUTLS_Protocol version;     /* this cipher suite is supported
+                                         * from 'version' and above;
+                                         */
 } mhd_gtls_cipher_suite_entry;
 
 /* RSA with NULL cipher and MD5 MAC
@@ -763,7 +768,7 @@ static const mhd_gtls_cipher_suite_entry mhd_gtls_cs_algorithms[] = {
 
 int
 mhd_gtls_mac_priority (mhd_gtls_session_t session,
-                      enum MHD_GNUTLS_HashAlgorithm algorithm)
+                       enum MHD_GNUTLS_HashAlgorithm algorithm)
 {                               /* actually returns the priority */
   unsigned int i;
   for (i = 0; i < session->internals.priorities.mac.num_algorithms; i++)
@@ -889,10 +894,11 @@ mhd_gnutls_mac_is_ok (enum MHD_GNUTLS_HashAlgorithm algorithm)
 /* Compression Functions */
 int
 mhd_gtls_compression_priority (mhd_gtls_session_t session,
-                              enum MHD_GNUTLS_CompressionMethod algorithm)
+                               enum MHD_GNUTLS_CompressionMethod algorithm)
 {                               /* actually returns the priority */
   unsigned int i;
-  for (i = 0; i < session->internals.priorities.compression.num_algorithms; i++)
+  for (i = 0; i < session->internals.priorities.compression.num_algorithms;
+       i++)
     {
       if (session->internals.priorities.compression.priority[i] == algorithm)
         return i;
@@ -980,7 +986,8 @@ mhd_gtls_compression_get_wbits (enum MHD_GNUTLS_CompressionMethod algorithm)
 }
 
 int
-mhd_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod algorithm)
+mhd_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod
+                                    algorithm)
 {
   int ret = -1;
   /* avoid prefix */
@@ -989,7 +996,8 @@ mhd_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod algorithm)
 }
 
 int
-mhd_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod algorithm)
+mhd_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod
+                                     algorithm)
 {
   int ret = -1;
   /* avoid prefix */
@@ -1036,7 +1044,7 @@ mhd_gtls_cipher_get_block_size (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 /* returns the priority */
 int
 mhd_gtls_cipher_priority (mhd_gtls_session_t session,
-                         enum MHD_GNUTLS_CipherAlgorithm algorithm)
+                          enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   unsigned int i;
   for (i = 0; i < session->internals.priorities.cipher.num_algorithms; i++)
@@ -1172,7 +1180,7 @@ mhd_gtls_kx_auth_struct (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 
 int
 mhd_gtls_kx_priority (mhd_gtls_session_t session,
-                     enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
+                      enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   unsigned int i;
   for (i = 0; i < session->internals.priorities.kx.num_algorithms; i++)
@@ -1265,7 +1273,8 @@ mhd_gtls_kx_needs_dh_params (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 
 /* Version */
 int
-mhd_gtls_version_priority (mhd_gtls_session_t session, enum MHD_GNUTLS_Protocol version)
+mhd_gtls_version_priority (mhd_gtls_session_t session,
+                           enum MHD_GNUTLS_Protocol version)
 {                               /* actually returns the priority */
   unsigned int i;
 
@@ -1293,7 +1302,8 @@ mhd_gtls_version_lowest (mhd_gtls_session_t session)
       return MHD_GNUTLS_VERSION_UNKNOWN;
     }
   else
-    for (i = 0; i < session->internals.priorities.protocol.num_algorithms; i++)
+    for (i = 0; i < session->internals.priorities.protocol.num_algorithms;
+         i++)
       {
         if (session->internals.priorities.protocol.priority[i] < min)
           min = session->internals.priorities.protocol.priority[i];
@@ -1315,7 +1325,8 @@ mhd_gtls_version_max (mhd_gtls_session_t session)
       return MHD_GNUTLS_VERSION_UNKNOWN;
     }
   else
-    for (i = 0; i < session->internals.priorities.protocol.num_algorithms; i++)
+    for (i = 0; i < session->internals.priorities.protocol.num_algorithms;
+         i++)
       {
         if (session->internals.priorities.protocol.priority[i] > max)
           max = session->internals.priorities.protocol.priority[i];
@@ -1412,7 +1423,7 @@ mhd_gtls_version_get_major (enum MHD_GNUTLS_Protocol version)
 
 int
 mhd_gtls_version_is_supported (mhd_gtls_session_t session,
-                              const enum MHD_GNUTLS_Protocol version)
+                               const enum MHD_GNUTLS_Protocol version)
 {
   int ret = 0;
 
@@ -1444,7 +1455,8 @@ mhd_gtls_map_kx_get_kx (enum MHD_GNUTLS_CredentialsType type, int server)
 }
 
 enum MHD_GNUTLS_CredentialsType
-mhd_gtls_map_kx_get_cred (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm, int server)
+mhd_gtls_map_kx_get_cred (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm,
+                          int server)
 {
   enum MHD_GNUTLS_CredentialsType ret = -1;
   if (server)
@@ -1674,7 +1686,7 @@ _gnutls_bsort (mhd_gtls_session_t session, void *_base, size_t nmemb,
 
 int
 mhd_gtls_supported_ciphersuites_sorted (mhd_gtls_session_t session,
-                                       cipher_suite_st ** ciphers)
+                                        cipher_suite_st ** ciphers)
 {
 
 #ifdef SORT_DEBUG
@@ -1710,7 +1722,7 @@ mhd_gtls_supported_ciphersuites_sorted (mhd_gtls_session_t session,
 
 int
 mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
-                                cipher_suite_st ** _ciphers)
+                                 cipher_suite_st ** _ciphers)
 {
 
   unsigned int i, ret_count, j;
@@ -1758,16 +1770,16 @@ mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
         continue;
 
       if (mhd_gtls_kx_priority (session,
-                               mhd_gtls_cipher_suite_get_kx_algo (&tmp_ciphers
-                                                                 [i])) < 0)
-        continue;
-      if (mhd_gtls_mac_priority (session,
-                                mhd_gtls_cipher_suite_get_mac_algo
+                                mhd_gtls_cipher_suite_get_kx_algo
                                 (&tmp_ciphers[i])) < 0)
         continue;
+      if (mhd_gtls_mac_priority (session,
+                                 mhd_gtls_cipher_suite_get_mac_algo
+                                 (&tmp_ciphers[i])) < 0)
+        continue;
       if (mhd_gtls_cipher_priority (session,
-                                   mhd_gtls_cipher_suite_get_cipher_algo
-                                   (&tmp_ciphers[i])) < 0)
+                                    mhd_gtls_cipher_suite_get_cipher_algo
+                                    (&tmp_ciphers[i])) < 0)
         continue;
 
       memcpy (&ciphers[j], &tmp_ciphers[i], sizeof (cipher_suite_st));
@@ -1816,7 +1828,7 @@ mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
 #define SUPPORTED_COMPRESSION_METHODS session->internals.priorities.compression.num_algorithms
 int
 mhd_gtls_supported_compression_methods (mhd_gtls_session_t session,
-                                       uint8_t ** comp)
+                                        uint8_t ** comp)
 {
   unsigned int i, j;
 
@@ -1826,8 +1838,9 @@ mhd_gtls_supported_compression_methods (mhd_gtls_session_t session,
 
   for (i = j = 0; i < SUPPORTED_COMPRESSION_METHODS; i++)
     {
-      int tmp = mhd_gtls_compression_get_num (session->internals.priorities.
-                                             compression.priority[i]);
+      int tmp =
+        mhd_gtls_compression_get_num (session->internals.priorities.
+                                      compression.priority[i]);
 
       /* remove private compression algorithms, if requested.
        */
@@ -1888,8 +1901,9 @@ MHD_gtls_certificate_type_get_id (const char *name)
   return ret;
 }
 
-static const enum MHD_GNUTLS_CertificateType mhd_gtls_supported_certificate_types[] =
-  { MHD_GNUTLS_CRT_X509,
+static const enum MHD_GNUTLS_CertificateType
+  mhd_gtls_supported_certificate_types[] =
+{ MHD_GNUTLS_CRT_X509,
   0
 };
 
@@ -2005,7 +2019,8 @@ mhd_gtls_x509_oid2sign_algorithm (const char *oid)
 }
 
 gnutls_sign_algorithm_t
-mhd_gtls_x509_pk_to_sign (enum MHD_GNUTLS_PublicKeyAlgorithm pk, enum MHD_GNUTLS_HashAlgorithm mac)
+mhd_gtls_x509_pk_to_sign (enum MHD_GNUTLS_PublicKeyAlgorithm pk,
+                          enum MHD_GNUTLS_HashAlgorithm mac)
 {
   gnutls_sign_algorithm_t ret = 0;
 
@@ -2021,7 +2036,7 @@ mhd_gtls_x509_pk_to_sign (enum MHD_GNUTLS_PublicKeyAlgorithm pk, enum MHD_GNUTLS
 
 const char *
 mhd_gtls_x509_sign_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm pk,
-                          enum MHD_GNUTLS_HashAlgorithm mac)
+                           enum MHD_GNUTLS_HashAlgorithm mac)
 {
   gnutls_sign_algorithm_t sign;
   const char *ret = NULL;

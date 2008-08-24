@@ -47,7 +47,7 @@ inline static int _gnutls_cert_type2num (int record_size);
 
 int
 mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
-                               const opaque * data, size_t _data_size)
+                                const opaque * data, size_t _data_size)
 {
   int new_type = -1, ret, i;
   ssize_t data_size = _data_size;
@@ -103,7 +103,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
               /* Check if we support this cert_type */
               if ((ret =
                    mhd_gtls_session_cert_type_supported (session,
-                                                        new_type)) < 0)
+                                                         new_type)) < 0)
                 {
                   gnutls_assert ();
                   continue;
@@ -144,7 +144,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
-                               size_t data_size)
+                                size_t data_size)
 {
   unsigned len, i;
 
@@ -180,9 +180,9 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
 
           for (i = 0; i < len; i++)
             {
-              data[i + 1] = _gnutls_cert_type2num (session->internals.
-                                                   priorities.cert_type.
-                                                   priority[i]);
+              data[i + 1] =
+                _gnutls_cert_type2num (session->internals.
+                                       priorities.cert_type.priority[i]);
             }
           return len + 1;
         }

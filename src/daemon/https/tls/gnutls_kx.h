@@ -27,7 +27,7 @@ int mhd_gtls_send_client_kx_message (mhd_gtls_session_t session, int again);
 int mhd_gtls_recv_server_kx_message (mhd_gtls_session_t session);
 int mhd_gtls_recv_client_kx_message (mhd_gtls_session_t session);
 int mhd_gtls_send_client_certificate_verify (mhd_gtls_session_t session,
-					    int again);
+                                             int again);
 int mhd_gtls_send_server_certificate (mhd_gtls_session_t session, int again);
 int mhd_gtls_generate_master (mhd_gtls_session_t session, int keep_premaster);
 int mhd_gtls_recv_client_certificate (mhd_gtls_session_t session);
@@ -35,5 +35,6 @@ int mhd_gtls_recv_server_certificate (mhd_gtls_session_t session);
 int mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again);
 int mhd_gtls_recv_server_certificate_request (mhd_gtls_session_t session);
 int mhd_gtls_send_server_certificate_request (mhd_gtls_session_t session,
-					     int again);
-int mhd_gtls_recv_client_certificate_verify_message (mhd_gtls_session_t session);
+                                              int again);
+int mhd_gtls_recv_client_certificate_verify_message (mhd_gtls_session_t
+                                                     session);

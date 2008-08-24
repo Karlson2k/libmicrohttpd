@@ -28,7 +28,7 @@
 
 #ifdef __cplusplus
 extern "C"
-  {
+{
 #endif
 
 #include <x509.h>
@@ -37,15 +37,15 @@ extern "C"
 
 /* PKCS12 structures handling
  */
-struct gnutls_pkcs12_int;
+  struct gnutls_pkcs12_int;
 
-struct gnutls_pkcs12_bag_int;
-typedef struct gnutls_pkcs12_int
+  struct gnutls_pkcs12_bag_int;
+  typedef struct gnutls_pkcs12_int
   {
     ASN1_TYPE pkcs12;
   } gnutls_pkcs12_int;
 
-typedef enum gnutls_pkcs12_bag_type_t
+  typedef enum gnutls_pkcs12_bag_type_t
   {
     GNUTLS_BAG_EMPTY = 0,
 
@@ -57,7 +57,7 @@ typedef enum gnutls_pkcs12_bag_type_t
     GNUTLS_BAG_UNKNOWN = 20
   } gnutls_pkcs12_bag_type_t;
 
-struct bag_element
+  struct bag_element
   {
     gnutls_datum_t data;
     gnutls_pkcs12_bag_type_t type;
@@ -65,7 +65,7 @@ struct bag_element
     char *friendly_name;
   };
 
-typedef struct gnutls_pkcs12_bag_int
+  typedef struct gnutls_pkcs12_bag_int
   {
     struct bag_element element[MAX_BAG_ELEMENTS];
     int bag_elements;
@@ -75,68 +75,54 @@ typedef struct gnutls_pkcs12_bag_int
 #define FRIENDLY_NAME_OID "1.2.840.113549.1.9.20"
 #define KEY_ID_OID "1.2.840.113549.1.9.21"
 
-typedef struct gnutls_pkcs12_int *gnutls_pkcs12_t;
-typedef struct gnutls_pkcs12_bag_int *gnutls_pkcs12_bag_t;
+  typedef struct gnutls_pkcs12_int *gnutls_pkcs12_t;
+  typedef struct gnutls_pkcs12_bag_int *gnutls_pkcs12_bag_t;
 
-int gnutls_pkcs12_init(gnutls_pkcs12_t * pkcs12);
-void gnutls_pkcs12_deinit(gnutls_pkcs12_t pkcs12);
-int gnutls_pkcs12_import(gnutls_pkcs12_t pkcs12,
-                         const gnutls_datum_t * data,
-                         gnutls_x509_crt_fmt_t format,
-                         unsigned int flags);
-int gnutls_pkcs12_export(gnutls_pkcs12_t pkcs12,
-                         gnutls_x509_crt_fmt_t format,
-                         void *output_data,
-                         size_t * output_data_size);
+  int gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12);
+  void gnutls_pkcs12_deinit (gnutls_pkcs12_t pkcs12);
+  int gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
+                            const gnutls_datum_t * data,
+                            gnutls_x509_crt_fmt_t format, unsigned int flags);
+  int gnutls_pkcs12_export (gnutls_pkcs12_t pkcs12,
+                            gnutls_x509_crt_fmt_t format,
+                            void *output_data, size_t * output_data_size);
 
-int gnutls_pkcs12_get_bag(gnutls_pkcs12_t pkcs12,
-                          int indx,
-                          gnutls_pkcs12_bag_t bag);
-int gnutls_pkcs12_set_bag(gnutls_pkcs12_t pkcs12,
-                          gnutls_pkcs12_bag_t bag);
+  int gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
+                             int indx, gnutls_pkcs12_bag_t bag);
+  int gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag);
 
-int gnutls_pkcs12_generate_mac(gnutls_pkcs12_t pkcs12,
-                               const char *pass);
-int gnutls_pkcs12_verify_mac(gnutls_pkcs12_t pkcs12,
-                             const char *pass);
+  int gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass);
+  int gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass);
 
-int gnutls_pkcs12_bag_decrypt(gnutls_pkcs12_bag_t bag,
-                              const char *pass);
-int gnutls_pkcs12_bag_encrypt(gnutls_pkcs12_bag_t bag,
-                              const char *pass,
-                              unsigned int flags);
+  int gnutls_pkcs12_bag_decrypt (gnutls_pkcs12_bag_t bag, const char *pass);
+  int gnutls_pkcs12_bag_encrypt (gnutls_pkcs12_bag_t bag,
+                                 const char *pass, unsigned int flags);
 
-gnutls_pkcs12_bag_type_t gnutls_pkcs12_bag_get_type(gnutls_pkcs12_bag_t
-                                                    bag,
-                                                    int indx);
-int gnutls_pkcs12_bag_get_data(gnutls_pkcs12_bag_t bag,
-                               int indx,
-                               gnutls_datum_t * data);
-int gnutls_pkcs12_bag_set_data(gnutls_pkcs12_bag_t bag,
-                               gnutls_pkcs12_bag_type_t type,
-                               const gnutls_datum_t * data);
-int gnutls_pkcs12_bag_set_crl(gnutls_pkcs12_bag_t bag,
-                              gnutls_x509_crl_t crl);
-int gnutls_pkcs12_bag_set_crt(gnutls_pkcs12_bag_t bag,
-                              gnutls_x509_crt_t crt);
+  gnutls_pkcs12_bag_type_t gnutls_pkcs12_bag_get_type (gnutls_pkcs12_bag_t
+                                                       bag, int indx);
+  int gnutls_pkcs12_bag_get_data (gnutls_pkcs12_bag_t bag,
+                                  int indx, gnutls_datum_t * data);
+  int gnutls_pkcs12_bag_set_data (gnutls_pkcs12_bag_t bag,
+                                  gnutls_pkcs12_bag_type_t type,
+                                  const gnutls_datum_t * data);
+  int gnutls_pkcs12_bag_set_crl (gnutls_pkcs12_bag_t bag,
+                                 gnutls_x509_crl_t crl);
+  int gnutls_pkcs12_bag_set_crt (gnutls_pkcs12_bag_t bag,
+                                 gnutls_x509_crt_t crt);
 
-int gnutls_pkcs12_bag_init(gnutls_pkcs12_bag_t * bag);
-void gnutls_pkcs12_bag_deinit(gnutls_pkcs12_bag_t bag);
-int gnutls_pkcs12_bag_get_count(gnutls_pkcs12_bag_t bag);
+  int gnutls_pkcs12_bag_init (gnutls_pkcs12_bag_t * bag);
+  void gnutls_pkcs12_bag_deinit (gnutls_pkcs12_bag_t bag);
+  int gnutls_pkcs12_bag_get_count (gnutls_pkcs12_bag_t bag);
 
-int gnutls_pkcs12_bag_get_key_id(gnutls_pkcs12_bag_t bag,
-                                 int indx,
-                                 gnutls_datum_t * id);
-int gnutls_pkcs12_bag_set_key_id(gnutls_pkcs12_bag_t bag,
-                                 int indx,
-                                 const gnutls_datum_t * id);
+  int gnutls_pkcs12_bag_get_key_id (gnutls_pkcs12_bag_t bag,
+                                    int indx, gnutls_datum_t * id);
+  int gnutls_pkcs12_bag_set_key_id (gnutls_pkcs12_bag_t bag,
+                                    int indx, const gnutls_datum_t * id);
 
-int gnutls_pkcs12_bag_get_friendly_name(gnutls_pkcs12_bag_t bag,
-                                        int indx,
-                                        char **name);
-int gnutls_pkcs12_bag_set_friendly_name(gnutls_pkcs12_bag_t bag,
-                                        int indx,
-                                        const char *name);
+  int gnutls_pkcs12_bag_get_friendly_name (gnutls_pkcs12_bag_t bag,
+                                           int indx, char **name);
+  int gnutls_pkcs12_bag_set_friendly_name (gnutls_pkcs12_bag_t bag,
+                                           int indx, const char *name);
 
 #ifdef __cplusplus
 }
@@ -152,56 +138,48 @@ int gnutls_pkcs12_bag_set_friendly_name(gnutls_pkcs12_bag_t bag,
 #define DATA_OID "1.2.840.113549.1.7.1"
 #define ENC_DATA_OID "1.2.840.113549.1.7.6"
 
-int gnutls_pkcs12_init(gnutls_pkcs12_t * pkcs12);
-void gnutls_pkcs12_deinit(gnutls_pkcs12_t pkcs12);
-int gnutls_pkcs12_import(gnutls_pkcs12_t pkcs12,
-                         const gnutls_datum_t * data,
-                         gnutls_x509_crt_fmt_t format,
-                         unsigned int flags);
+int gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12);
+void gnutls_pkcs12_deinit (gnutls_pkcs12_t pkcs12);
+int gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
+                          const gnutls_datum_t * data,
+                          gnutls_x509_crt_fmt_t format, unsigned int flags);
 
-int gnutls_pkcs12_get_bag(gnutls_pkcs12_t pkcs12,
-                          int indx,
-                          gnutls_pkcs12_bag_t bag);
+int gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
+                           int indx, gnutls_pkcs12_bag_t bag);
 
-int gnutls_pkcs12_bag_init(gnutls_pkcs12_bag_t * bag);
-void gnutls_pkcs12_bag_deinit(gnutls_pkcs12_bag_t bag);
+int gnutls_pkcs12_bag_init (gnutls_pkcs12_bag_t * bag);
+void gnutls_pkcs12_bag_deinit (gnutls_pkcs12_bag_t bag);
 
-int _pkcs12_string_to_key(unsigned int id,
-                          const opaque * salt,
-                          unsigned int salt_size,
-                          unsigned int iter,
-                          const char *pw,
-                          unsigned int req_keylen,
-                          opaque * keybuf);
+int _pkcs12_string_to_key (unsigned int id,
+                           const opaque * salt,
+                           unsigned int salt_size,
+                           unsigned int iter,
+                           const char *pw,
+                           unsigned int req_keylen, opaque * keybuf);
 
-int _gnutls_pkcs7_decrypt_data(const gnutls_datum_t * data,
-                               const char *password,
-                               gnutls_datum_t * dec);
+int _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
+                                const char *password, gnutls_datum_t * dec);
 
 typedef enum schema_id
-  {
-    PBES2, /* the stuff in PKCS #5 */
-    PKCS12_3DES_SHA1, /* the fucking stuff in PKCS #12 */
-    PKCS12_ARCFOUR_SHA1,
-    PKCS12_RC2_40_SHA1
-  } schema_id;
+{
+  PBES2,                        /* the stuff in PKCS #5 */
+  PKCS12_3DES_SHA1,             /* the fucking stuff in PKCS #12 */
+  PKCS12_ARCFOUR_SHA1,
+  PKCS12_RC2_40_SHA1
+} schema_id;
 
-int _gnutls_pkcs7_encrypt_data(schema_id schema,
-                               const gnutls_datum_t * data,
-                               const char *password,
-                               gnutls_datum_t * enc);
-int _pkcs12_decode_safe_contents(const gnutls_datum_t * content,
-                                 gnutls_pkcs12_bag_t bag);
+int _gnutls_pkcs7_encrypt_data (schema_id schema,
+                                const gnutls_datum_t * data,
+                                const char *password, gnutls_datum_t * enc);
+int _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
+                                  gnutls_pkcs12_bag_t bag);
 
-int _pkcs12_encode_safe_contents(gnutls_pkcs12_bag_t bag,
-                                 ASN1_TYPE * content,
-                                 int *enc);
+int _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag,
+                                  ASN1_TYPE * content, int *enc);
 
-int _pkcs12_decode_crt_bag(gnutls_pkcs12_bag_type_t type,
-                           const gnutls_datum_t * in,
-                           gnutls_datum_t * out);
-int _pkcs12_encode_crt_bag(gnutls_pkcs12_bag_type_t type,
-                           const gnutls_datum_t * raw,
-                           gnutls_datum_t * out);
+int _pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
+                            const gnutls_datum_t * in, gnutls_datum_t * out);
+int _pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
+                            const gnutls_datum_t * raw, gnutls_datum_t * out);
 
-#endif        /* GNUTLS_PKCS12_H */
+#endif /* GNUTLS_PKCS12_H */

@@ -116,7 +116,7 @@ MHD_gnutls_alert_get_name (gnutls_alert_description_t alert)
   **/
 int
 MHD_gnutls_alert_send (mhd_gtls_session_t session, gnutls_alert_level_t level,
-                   gnutls_alert_description_t desc)
+                       gnutls_alert_description_t desc)
 {
   uint8_t data[2];
   int ret;

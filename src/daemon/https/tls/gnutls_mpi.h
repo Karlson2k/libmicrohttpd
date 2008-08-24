@@ -63,11 +63,11 @@ typedef gcry_mpi_t mpi_t;
 void mhd_gtls_mpi_release (mpi_t * x);
 
 int mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer,
-			 size_t * nbytes);
+                          size_t * nbytes);
 int mhd_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer,
-		      size_t * nbytes);
+                       size_t * nbytes);
 int mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
-			  size_t * nbytes);
+                           size_t * nbytes);
 
 int mhd_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a);
 int mhd_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a);

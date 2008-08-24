@@ -29,7 +29,7 @@
 #include <libtasn1.h>
 #include "x509.h"
 
-#define MAX_PUBLIC_PARAMS_SIZE 4	/* ok for RSA and DSA */
+#define MAX_PUBLIC_PARAMS_SIZE 4        /* ok for RSA and DSA */
 
 /* parameters should not be larger than this limit */
 #define DSA_PUBLIC_PARAMS 4
@@ -50,21 +50,21 @@
 
 typedef struct gnutls_cert
 {
-  mpi_t params[MAX_PUBLIC_PARAMS_SIZE];	/* the size of params depends on the public 
-					 * key algorithm 
-					 * RSA: [0] is modulus
-					 *      [1] is public exponent
-					 * DSA: [0] is p
-					 *      [1] is q
-					 *      [2] is g
-					 *      [3] is public key
-					 */
-  int params_size;		/* holds the size of MPI params */
+  mpi_t params[MAX_PUBLIC_PARAMS_SIZE]; /* the size of params depends on the public
+                                         * key algorithm
+                                         * RSA: [0] is modulus
+                                         *      [1] is public exponent
+                                         * DSA: [0] is p
+                                         *      [1] is q
+                                         *      [2] is g
+                                         *      [3] is public key
+                                         */
+  int params_size;              /* holds the size of MPI params */
 
   enum MHD_GNUTLS_PublicKeyAlgorithm subject_pk_algorithm;
 
-  unsigned int key_usage;	/* bits from KEY_* 
-				 */
+  unsigned int key_usage;       /* bits from KEY_*
+                                 */
 
   unsigned int version;
   /* holds the type (PGP, X509)
@@ -77,9 +77,9 @@ typedef struct gnutls_cert
 
 typedef struct gnutls_privkey_int
 {
-  mpi_t params[MAX_PRIV_PARAMS_SIZE];	/* the size of params depends on the public 
-					 * key algorithm 
-					 */
+  mpi_t params[MAX_PRIV_PARAMS_SIZE];   /* the size of params depends on the public
+                                         * key algorithm
+                                         */
   /*
    * RSA: [0] is modulus
    *      [1] is public exponent
@@ -93,12 +93,12 @@ typedef struct gnutls_privkey_int
    *      [3] is y (public key)
    *      [4] is x (private key)
    */
-  int params_size;		/* holds the number of params */
+  int params_size;              /* holds the number of params */
 
   enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
 } gnutls_privkey;
 
-struct MHD_gtls_session_int;	/* because mhd_gtls_session_t is not defined when this file is included */
+struct MHD_gtls_session_int;    /* because mhd_gtls_session_t is not defined when this file is included */
 
 typedef enum ConvFlags
 {
@@ -108,25 +108,25 @@ typedef enum ConvFlags
 } ConvFlags;
 
 int mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
-				    const gnutls_datum_t * derCert,
-				    int flags);
+                                     const gnutls_datum_t * derCert,
+                                     int flags);
 int mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert, gnutls_x509_crt_t cert,
-			       unsigned int flags);
+                                unsigned int flags);
 
 void mhd_gtls_gkey_deinit (gnutls_privkey * key);
 void mhd_gtls_gcert_deinit (gnutls_cert * cert);
 
 int mhd_gtls_selected_cert_supported_kx (struct MHD_gtls_session_int *session,
-					enum MHD_GNUTLS_KeyExchangeAlgorithm ** alg,
-					int *alg_size);
+                                         enum MHD_GNUTLS_KeyExchangeAlgorithm
+                                         **alg, int *alg_size);
 
 int mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
-			       enum MHD_GNUTLS_CertificateType type,
-			       const gnutls_datum_t * raw_cert,
-			       int flags /* OR of ConvFlags */ );
+                                enum MHD_GNUTLS_CertificateType type,
+                                const gnutls_datum_t * raw_cert,
+                                int flags /* OR of ConvFlags */ );
 int mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
-				 enum MHD_GNUTLS_CertificateType type,
-				 const gnutls_datum_t * raw_key,
-				 int key_enc /* DER or PEM */ );
+                                  enum MHD_GNUTLS_CertificateType type,
+                                  const gnutls_datum_t * raw_key,
+                                  int key_enc /* DER or PEM */ );
 
 #endif

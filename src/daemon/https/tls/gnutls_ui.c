@@ -41,13 +41,13 @@
  * @session: is a #mhd_gtls_session_t structure.
  * @bits: is the number of bits
  *
- * This function sets the number of bits, for use in an 
+ * This function sets the number of bits, for use in an
  * Diffie Hellman key exchange. This is used both in DH ephemeral and
  * DH anonymous cipher suites. This will set the
  * minimum size of the prime that will be used for the handshake.
  *
  * In the client side it sets the minimum accepted number of bits.
- * If a server sends a prime with less bits than that 
+ * If a server sends a prime with less bits than that
  * GNUTLS_E_DH_PRIME_UNACCEPTABLE will be returned by the
  * handshake.
  *
@@ -64,7 +64,7 @@ MHD_gnutls_dh_set_prime_bits (mhd_gtls_session_t session, unsigned int bits)
  * @raw_gen: will hold the generator.
  * @raw_prime: will hold the prime.
  *
- * This function will return the group parameters used in the last Diffie Hellman 
+ * This function will return the group parameters used in the last Diffie Hellman
  * authentication with the peer. These are the prime and the generator used.
  * This function should be used for both anonymous and ephemeral diffie Hellman.
  * The output parameters must be freed with gnutls_free().
@@ -74,7 +74,7 @@ MHD_gnutls_dh_set_prime_bits (mhd_gtls_session_t session, unsigned int bits)
  **/
 int
 MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
-                     gnutls_datum_t * raw_gen, gnutls_datum_t * raw_prime)
+                         gnutls_datum_t * raw_gen, gnutls_datum_t * raw_prime)
 {
   mhd_gtls_dh_info_st *dh;
   int ret;
@@ -131,7 +131,8 @@ MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
  *
  **/
 int
-MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session, gnutls_datum_t * raw_key)
+MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
+                          gnutls_datum_t * raw_key)
 {
   mhd_gtls_dh_info_st *dh;
   mhd_anon_auth_info_t anon_info;
@@ -189,8 +190,8 @@ MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session, gnutls_datum_t * raw_key)
  **/
 int
 MHD_gtls_rsa_export_get_pubkey (mhd_gtls_session_t session,
-                              gnutls_datum_t * exponent,
-                              gnutls_datum_t * modulus)
+                                gnutls_datum_t * exponent,
+                                gnutls_datum_t * modulus)
 {
   cert_auth_info_t info;
   int ret;
@@ -314,7 +315,7 @@ MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
  * @session: is a gnutls session
  *
  * This function will return the bits used in the last RSA-EXPORT key exchange
- * with the peer. 
+ * with the peer.
  * Returns a negative value in case of an error.
  *
  **/
@@ -384,7 +385,7 @@ MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
  * @session: is a gnutls session
  *
  * This function will return the certificate as sent to the peer,
- * in the last handshake. These certificates are in raw format. 
+ * in the last handshake. These certificates are in raw format.
  * In X.509 this is a certificate list. In OpenPGP this is a single
  * certificate.
  * Returns NULL in case of an error, or if no certificate was used.
@@ -399,8 +400,8 @@ MHD_gtls_certificate_get_ours (mhd_gtls_session_t session)
 
   cred
     = (mhd_gtls_cert_credentials_t) mhd_gtls_get_cred (session->key,
-                                                           MHD_GNUTLS_CRD_CERTIFICATE,
-                                                           NULL);
+                                                       MHD_GNUTLS_CRD_CERTIFICATE,
+                                                       NULL);
   if (cred == NULL || cred->cert_list == NULL)
     {
       gnutls_assert ();
@@ -418,9 +419,9 @@ MHD_gtls_certificate_get_ours (mhd_gtls_session_t session)
  * @session: is a gnutls session
  * @list_size: is the length of the certificate list
  *
- * This function will return the peer's raw certificate (chain) as 
- * sent by the peer. These certificates are in raw format (DER encoded 
- * for X.509). In case of a X.509 then a certificate list may be present. 
+ * This function will return the peer's raw certificate (chain) as
+ * sent by the peer. These certificates are in raw format (DER encoded
+ * for X.509). In case of a X.509 then a certificate list may be present.
  * The first certificate in the list is the peer's certificate,
  * following the issuer's certificate, then the issuer's issuer etc.
  *
@@ -432,7 +433,7 @@ MHD_gtls_certificate_get_ours (mhd_gtls_session_t session)
  **/
 const gnutls_datum_t *
 MHD_gtls_certificate_get_peers (mhd_gtls_session_t
-                              session, unsigned int *list_size)
+                                session, unsigned int *list_size)
 {
   cert_auth_info_t info;
 
@@ -472,7 +473,7 @@ MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
  * MHD_gnutls_fingerprint - This function calculates the fingerprint of the given data
  * @algo: is a digest algorithm
  * @data: is the data
- * @result: is the place where the result will be copied (may be null). 
+ * @result: is the place where the result will be copied (may be null).
  * @result_size: should hold the size of the result. The actual size
  * of the returned result will also be copied there.
  *
@@ -480,8 +481,8 @@ MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
  * given data. The result is not printable data. You should convert it
  * to hex, or to something else printable.
  *
- * This is the usual way to calculate a fingerprint of an X.509 
- * DER encoded certificate. Note however that the fingerprint 
+ * This is the usual way to calculate a fingerprint of an X.509
+ * DER encoded certificate. Note however that the fingerprint
  * of an OpenPGP is not just a hash and cannot be calculated with
  * this function.
  *
@@ -490,8 +491,8 @@ MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
  **/
 int
 MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
-                    const gnutls_datum_t * data,
-                    void *result, size_t * result_size)
+                        const gnutls_datum_t * data,
+                        void *result, size_t * result_size)
 {
   GNUTLS_HASH_HANDLE td;
   int hash_len = mhd_gnutls_hash_get_algo_len (HASH2MAC (algo));
@@ -532,7 +533,7 @@ MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
  **/
 void
 MHD_gnutls_certificate_set_dh_params (mhd_gtls_cert_credentials_t res,
-                                  mhd_gtls_dh_params_t dh_params)
+                                      mhd_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
@@ -542,7 +543,7 @@ MHD_gnutls_certificate_set_dh_params (mhd_gtls_cert_credentials_t res,
  * @res: is a mhd_gtls_cert_credentials_t structure
  * @func: is the function to be called
  *
- * This function will set a callback in order for the server to get the 
+ * This function will set a callback in order for the server to get the
  * diffie hellman or RSA parameters for certificate authentication. The callback
  * should return zero on success.
  *
@@ -566,7 +567,7 @@ gnutls_certificate_set_params_function (mhd_gtls_cert_credentials_t res,
  **/
 void
 MHD_gnutls_certificate_set_verify_flags (mhd_gtls_cert_credentials_t
-                                     res, unsigned int flags)
+                                         res, unsigned int flags)
 {
   res->verify_flags = flags;
 }
@@ -584,9 +585,9 @@ MHD_gnutls_certificate_set_verify_flags (mhd_gtls_cert_credentials_t
  **/
 void
 MHD_gnutls_certificate_set_verify_limits (mhd_gtls_cert_credentials_t
-                                      res,
-                                      unsigned int max_bits,
-                                      unsigned int max_depth)
+                                          res,
+                                          unsigned int max_bits,
+                                          unsigned int max_depth)
 {
   res->verify_depth = max_depth;
   res->verify_bits = max_bits;
@@ -604,7 +605,9 @@ MHD_gnutls_certificate_set_verify_limits (mhd_gtls_cert_credentials_t
  **/
 void
 MHD_gnutls_certificate_set_rsa_export_params (mhd_gtls_cert_credentials_t
-                                          res, mhd_gtls_rsa_params_t rsa_params)
+                                              res,
+                                              mhd_gtls_rsa_params_t
+                                              rsa_params)
 {
   res->rsa_params = rsa_params;
 }
@@ -614,7 +617,7 @@ MHD_gnutls_certificate_set_rsa_export_params (mhd_gtls_cert_credentials_t
  * @res: is a mhd_gtls_anon_server_credentials_t structure
  * @func: is the function to be called
  *
- * This function will set a callback in order for the server to get the 
+ * This function will set a callback in order for the server to get the
  * diffie hellman or RSA parameters for anonymous authentication. The callback
  * should return zero on success.
  *

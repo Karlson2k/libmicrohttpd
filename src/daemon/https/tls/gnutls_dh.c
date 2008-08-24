@@ -26,8 +26,8 @@
 #include <gnutls_errors.h>
 
 
-/* 
-	--Example-- 
+/*
+	--Example--
 	you: X = g ^ x mod p;
 	peer:Y = g ^ y mod p;
 
@@ -77,7 +77,7 @@ mhd_gtls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
   do
     {
       _gnutls_mpi_randomize (x, (x_size / 8) * 8, GCRY_STRONG_RANDOM);
-      /* Check whether x is zero. 
+      /* Check whether x is zero.
        */
     }
   while (_gnutls_mpi_cmp_ui (x, 0) == 0);
@@ -134,8 +134,8 @@ mhd_gtls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
   -*/
 mhd_gtls_dh_params_t
 mhd_gtls_get_dh_params (mhd_gtls_dh_params_t dh_params,
-                       gnutls_params_function * func,
-                       mhd_gtls_session_t session)
+                        gnutls_params_function * func,
+                        mhd_gtls_session_t session)
 {
   gnutls_params_st params;
   int ret;

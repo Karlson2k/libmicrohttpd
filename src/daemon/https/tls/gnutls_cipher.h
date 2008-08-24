@@ -23,19 +23,18 @@
  */
 
 int mhd_gtls_encrypt (mhd_gtls_session_t session, const opaque * headers,
-		     size_t headers_size, const opaque * data,
-		     size_t data_size, opaque * ciphertext,
-		     size_t ciphertext_size, content_type_t type,
-		     int random_pad);
+                      size_t headers_size, const opaque * data,
+                      size_t data_size, opaque * ciphertext,
+                      size_t ciphertext_size, content_type_t type,
+                      int random_pad);
 
 int mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
-		     size_t ciphertext_size, uint8_t * data, size_t data_size,
-		     content_type_t type);
+                      size_t ciphertext_size, uint8_t * data,
+                      size_t data_size, content_type_t type);
 int mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
-				   opaque * cipher_data, int cipher_size,
-				   gnutls_datum_t compressed,
-				   content_type_t _type, int random_pad);
+                                    opaque * cipher_data, int cipher_size,
+                                    gnutls_datum_t compressed,
+                                    content_type_t _type, int random_pad);
 int mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
-				   opaque * compress_data,
-				   int compress_size,
-				   gnutls_datum_t ciphertext, uint8_t type);
+                                    opaque * compress_data, int compress_size,
+                                    gnutls_datum_t ciphertext, uint8_t type);

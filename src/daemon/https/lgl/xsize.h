@@ -51,9 +51,9 @@
 /* Sum of two sizes, with overflow check.  */
 static inline size_t
 #if __GNUC__ >= 3
-__attribute__ ((__pure__))
+  __attribute__ ((__pure__))
 #endif
-xsum (size_t size1, size_t size2)
+  xsum (size_t size1, size_t size2)
 {
   size_t sum = size1 + size2;
   return (sum >= size1 ? sum : SIZE_MAX);
@@ -62,9 +62,9 @@ xsum (size_t size1, size_t size2)
 /* Sum of three sizes, with overflow check.  */
 static inline size_t
 #if __GNUC__ >= 3
-__attribute__ ((__pure__))
+  __attribute__ ((__pure__))
 #endif
-xsum3 (size_t size1, size_t size2, size_t size3)
+  xsum3 (size_t size1, size_t size2, size_t size3)
 {
   return xsum (xsum (size1, size2), size3);
 }
@@ -72,9 +72,9 @@ xsum3 (size_t size1, size_t size2, size_t size3)
 /* Sum of four sizes, with overflow check.  */
 static inline size_t
 #if __GNUC__ >= 3
-__attribute__ ((__pure__))
+  __attribute__ ((__pure__))
 #endif
-xsum4 (size_t size1, size_t size2, size_t size3, size_t size4)
+  xsum4 (size_t size1, size_t size2, size_t size3, size_t size4)
 {
   return xsum (xsum (xsum (size1, size2), size3), size4);
 }
@@ -82,9 +82,9 @@ xsum4 (size_t size1, size_t size2, size_t size3, size_t size4)
 /* Maximum of two sizes, with overflow check.  */
 static inline size_t
 #if __GNUC__ >= 3
-__attribute__ ((__pure__))
+  __attribute__ ((__pure__))
 #endif
-xmax (size_t size1, size_t size2)
+  xmax (size_t size1, size_t size2)
 {
   /* No explicit check is needed here, because for any n:
      max (SIZE_MAX, n) == SIZE_MAX and max (n, SIZE_MAX) == SIZE_MAX.  */
@@ -106,4 +106,3 @@ xmax (size_t size1, size_t size2)
   ((SIZE) != SIZE_MAX)
 
 #endif /* _XSIZE_H */
- 

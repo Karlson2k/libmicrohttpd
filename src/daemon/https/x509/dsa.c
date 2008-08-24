@@ -59,7 +59,7 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  /* generate the DSA key 
+  /* generate the DSA key
    */
   ret = gcry_pk_genkey (&key, parms);
   gcry_sexp_release (parms);

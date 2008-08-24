@@ -23,10 +23,11 @@
  */
 
 ssize_t mhd_gtls_send_int (mhd_gtls_session_t session, content_type_t type,
-			  gnutls_handshake_description_t htype,
-			  const void *data, size_t sizeofdata);
+                           gnutls_handshake_description_t htype,
+                           const void *data, size_t sizeofdata);
 ssize_t mhd_gtls_recv_int (mhd_gtls_session_t session, content_type_t type,
-			  gnutls_handshake_description_t, opaque * data,
-			  size_t sizeofdata);
-ssize_t mhd_gtls_send_change_cipher_spec (mhd_gtls_session_t session, int again);
+                           gnutls_handshake_description_t, opaque * data,
+                           size_t sizeofdata);
+ssize_t mhd_gtls_send_change_cipher_spec (mhd_gtls_session_t session,
+                                          int again);
 void MHD_gnutls_transport_set_lowat (mhd_gtls_session_t session, int num);

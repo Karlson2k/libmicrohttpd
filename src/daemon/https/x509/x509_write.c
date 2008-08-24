@@ -118,7 +118,7 @@ gnutls_x509_crt_set_issuer_dn_by_oid (gnutls_x509_crt_t crt,
 }
 
 /**
- * gnutls_x509_crt_set_proxy_dn - Set Proxy Certificate subject's distinguished name 
+ * gnutls_x509_crt_set_proxy_dn - Set Proxy Certificate subject's distinguished name
  * @crt: a gnutls_x509_crt_t structure with the new proxy cert
  * @eecrt: the end entity certificate that will be issuing the proxy
  * @raw_flag: must be 0, or 1 if the CN is DER encoded
@@ -407,7 +407,7 @@ gnutls_x509_crt_set_ca_status (gnutls_x509_crt_t crt, unsigned int ca)
   * @crt: should contain a gnutls_x509_crt_t structure
   * @usage: an ORed sequence of the GNUTLS_KEY_* elements.
   *
-  * This function will set the keyUsage certificate extension. 
+  * This function will set the keyUsage certificate extension.
   *
   * Returns 0 on success.
   *
@@ -454,7 +454,7 @@ gnutls_x509_crt_set_key_usage (gnutls_x509_crt_t crt, unsigned int usage)
   * @type: is one of the gnutls_x509_subject_alt_name_t enumerations
   * @data_string: The data to be set
   *
-  * This function will set the subject alternative name certificate extension. 
+  * This function will set the subject alternative name certificate extension.
   *
   * Returns 0 on success.
   *
@@ -520,7 +520,7 @@ gnutls_x509_crt_set_subject_alternative_name (gnutls_x509_crt_t crt,
  *   and negative values indicate that the pathLenConstraints field should
  *   not be present.
  * @policyLanguage: OID describing the language of @policy.
- * @policy: opaque byte array with policy language, can be %NULL 
+ * @policy: opaque byte array with policy language, can be %NULL
  * @sizeof_policy: size of @policy.
  *
  * This function will set the proxyCertInfo extension.
@@ -688,10 +688,10 @@ gnutls_x509_crt_set_expiration_time (gnutls_x509_crt_t cert, time_t exp_time)
   * @serial: The serial number
   * @serial_size: Holds the size of the serial field.
   *
-  * This function will set the X.509 certificate's serial number. 
+  * This function will set the X.509 certificate's serial number.
   * Serial is not always a 32 or 64bit number. Some CAs use
   * large serial numbers, thus it may be wise to handle it as something
-  * opaque. 
+  * opaque.
   *
   * Returns 0 on success, or a negative value in case of an error.
   *
@@ -748,7 +748,7 @@ disable_optional_stuff (gnutls_x509_crt_t cert)
   * @data_string: The data to be set
   * @reason_flags: revocation reasons
   *
-  * This function will set the CRL distribution points certificate extension. 
+  * This function will set the CRL distribution points certificate extension.
   *
   * Returns 0 on success.
   *
@@ -814,7 +814,7 @@ gnutls_x509_crt_set_crl_dist_points (gnutls_x509_crt_t crt,
   * @dst: should contain a gnutls_x509_crt_t structure
   * @src: the certificate where the dist points will be copied from
   *
-  * This function will copy the CRL distribution points certificate 
+  * This function will copy the CRL distribution points certificate
   * extension, from the source to the destination certificate.
   * This may be useful to copy from a CA certificate to issued ones.
   *

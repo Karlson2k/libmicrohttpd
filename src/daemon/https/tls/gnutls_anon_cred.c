@@ -43,7 +43,8 @@ static const int anon_dummy;
   * helper function is provided in order to free (deallocate) it.
   **/
 void
-MHD_gnutls_anon_free_server_credentials (mhd_gtls_anon_server_credentials_t sc)
+MHD_gnutls_anon_free_server_credentials (mhd_gtls_anon_server_credentials_t
+                                         sc)
 {
 
   gnutls_free (sc);
@@ -59,12 +60,12 @@ MHD_gnutls_anon_free_server_credentials (mhd_gtls_anon_server_credentials_t sc)
   * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
   **/
 int
-MHD_gnutls_anon_allocate_server_credentials (mhd_gtls_anon_server_credentials_t *
-                                         sc)
+  MHD_gnutls_anon_allocate_server_credentials
+  (mhd_gtls_anon_server_credentials_t * sc)
 {
   *sc = gnutls_calloc (1, sizeof (mhd_anon_server_credentials_st));
   if (*sc == NULL)
-  	    return GNUTLS_E_MEMORY_ERROR;
+    return GNUTLS_E_MEMORY_ERROR;
 
   return 0;
 }
@@ -78,7 +79,8 @@ MHD_gnutls_anon_allocate_server_credentials (mhd_gtls_anon_server_credentials_t 
   * helper function is provided in order to free (deallocate) it.
   **/
 void
-MHD_gnutls_anon_free_client_credentials (mhd_gtls_anon_client_credentials_t sc)
+MHD_gnutls_anon_free_client_credentials (mhd_gtls_anon_client_credentials_t
+                                         sc)
 {
 }
 
@@ -92,8 +94,8 @@ MHD_gnutls_anon_free_client_credentials (mhd_gtls_anon_client_credentials_t sc)
  * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
  **/
 int
-MHD_gnutls_anon_allocate_client_credentials (mhd_gtls_anon_client_credentials_t *
-                                         sc)
+  MHD_gnutls_anon_allocate_client_credentials
+  (mhd_gtls_anon_client_credentials_t * sc)
 {
   /* anon_dummy is only there for *sc not to be null.
    * it is not used at all;
@@ -114,7 +116,7 @@ MHD_gnutls_anon_allocate_client_credentials (mhd_gtls_anon_client_credentials_t 
   **/
 void
 MHD_gnutls_anon_set_server_dh_params (mhd_gtls_anon_server_credentials_t res,
-                                  mhd_gtls_dh_params_t dh_params)
+                                      mhd_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
@@ -129,8 +131,9 @@ MHD_gnutls_anon_set_server_dh_params (mhd_gtls_anon_server_credentials_t res,
   * callback should return zero on success.
   **/
 void
-MHD_gnutls_anon_set_server_params_function (mhd_gtls_anon_server_credentials_t res,
-                                        gnutls_params_function * func)
+MHD_gnutls_anon_set_server_params_function (mhd_gtls_anon_server_credentials_t
+                                            res,
+                                            gnutls_params_function * func)
 {
   res->params_func = func;
 }

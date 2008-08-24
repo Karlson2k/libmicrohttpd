@@ -145,7 +145,7 @@ mhd_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest)
 
 mac_hd_t
 mhd_gtls_hmac_init (enum MHD_GNUTLS_HashAlgorithm algorithm,
-                   const void *key, int keylen)
+                    const void *key, int keylen)
 {
   mac_hd_t ret;
   int result;
@@ -204,7 +204,7 @@ get_padsize (enum MHD_GNUTLS_HashAlgorithm algorithm)
 
 mac_hd_t
 mhd_gnutls_mac_init_ssl3 (enum MHD_GNUTLS_HashAlgorithm algorithm, void *key,
-                       int keylen)
+                          int keylen)
 {
   mac_hd_t ret;
   opaque ipad[48];
@@ -259,7 +259,7 @@ mhd_gnutls_mac_deinit_ssl3 (mac_hd_t handle, void *digest)
 
       mhd_gnutls_hash (td, opad, padsize);
       block = mhd_gnutls_hash_get_algo_len (handle->algorithm);
-      mhd_gnutls_hash_deinit (handle, ret);        /* get the previous hash */
+      mhd_gnutls_hash_deinit (handle, ret);     /* get the previous hash */
       mhd_gnutls_hash (td, ret, block);
 
       mhd_gnutls_hash_deinit (td, digest);
@@ -268,8 +268,8 @@ mhd_gnutls_mac_deinit_ssl3 (mac_hd_t handle, void *digest)
 
 void
 mhd_gnutls_mac_deinit_ssl3_handshake (mac_hd_t handle,
-                                   void *digest, opaque * key,
-                                   uint32_t key_size)
+                                      void *digest, opaque * key,
+                                      uint32_t key_size)
 {
   opaque ret[MAX_HASH_SIZE];
   mac_hd_t td;
@@ -300,7 +300,7 @@ mhd_gnutls_mac_deinit_ssl3_handshake (mac_hd_t handle,
       if (key_size > 0)
         mhd_gnutls_hash (handle, key, key_size);
       mhd_gnutls_hash (handle, ipad, padsize);
-      mhd_gnutls_hash_deinit (handle, ret);        /* get the previous hash */
+      mhd_gnutls_hash_deinit (handle, ret);     /* get the previous hash */
 
       mhd_gnutls_hash (td, ret, block);
 
@@ -362,7 +362,8 @@ ssl3_md5 (int i, opaque * secret, int secret_len,
       return ret;
     }
 
-  mhd_gnutls_hash (td, tmp, mhd_gnutls_hash_get_algo_len (MHD_GNUTLS_MAC_SHA1));
+  mhd_gnutls_hash (td, tmp,
+                   mhd_gnutls_hash_get_algo_len (MHD_GNUTLS_MAC_SHA1));
 
   mhd_gnutls_hash_deinit (td, digest);
   return 0;
@@ -370,8 +371,8 @@ ssl3_md5 (int i, opaque * secret, int secret_len,
 
 int
 mhd_gnutls_ssl3_hash_md5 (void *first, int first_len,
-                       void *second, int second_len, int ret_len,
-                       opaque * ret)
+                          void *second, int second_len, int ret_len,
+                          opaque * ret)
 {
   opaque digest[MAX_HASH_SIZE];
   mac_hd_t td;
@@ -403,8 +404,8 @@ mhd_gnutls_ssl3_hash_md5 (void *first, int first_len,
 
 int
 mhd_gnutls_ssl3_generate_random (void *secret, int secret_len,
-                              void *rnd, int rnd_len,
-                              int ret_bytes, opaque * ret)
+                                 void *rnd, int rnd_len,
+                                 int ret_bytes, opaque * ret)
 {
   int i = 0, copy, output_bytes;
   opaque digest[MAX_HASH_SIZE];

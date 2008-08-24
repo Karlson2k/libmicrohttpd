@@ -26,6 +26,6 @@
  * extensions draft.
  */
 int mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
-				   const opaque * data, size_t data_size);
+                                    const opaque * data, size_t data_size);
 int mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
-				   size_t);
+                                    size_t);

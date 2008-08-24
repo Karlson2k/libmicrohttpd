@@ -63,13 +63,13 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
 
   _gnutls_hard_log ("INT: PREMASTER SECRET[%d]: %s\n", PREMASTER.size,
                     mhd_gtls_bin2hex (PREMASTER.data, PREMASTER.size, buf,
-                                     sizeof (buf)));
+                                      sizeof (buf)));
   _gnutls_hard_log ("INT: CLIENT RANDOM[%d]: %s\n", 32,
                     mhd_gtls_bin2hex (session->security_parameters.
-                                     client_random, 32, buf, sizeof (buf)));
+                                      client_random, 32, buf, sizeof (buf)));
   _gnutls_hard_log ("INT: SERVER RANDOM[%d]: %s\n", 32,
                     mhd_gtls_bin2hex (session->security_parameters.
-                                     server_random, 32, buf, sizeof (buf)));
+                                      server_random, 32, buf, sizeof (buf)));
 
   if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
@@ -82,10 +82,10 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
 
       ret =
         mhd_gnutls_ssl3_generate_random (PREMASTER.data, PREMASTER.size,
-                                      rnd, 2 * TLS_RANDOM_SIZE,
-                                      TLS_MASTER_SIZE,
-                                      session->security_parameters.
-                                      master_secret);
+                                         rnd, 2 * TLS_RANDOM_SIZE,
+                                         TLS_MASTER_SIZE,
+                                         session->security_parameters.
+                                         master_secret);
 
     }
   else if (session->security_parameters.extensions.oprfi_client_len > 0 &&
@@ -108,18 +108,18 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
                         session->security_parameters.
                         extensions.oprfi_server_len,
                         mhd_gtls_bin2hex (session->security_parameters.
-                                         extensions.oprfi_client,
-                                         session->security_parameters.
-                                         extensions.oprfi_client_len,
-                                         buf, sizeof (buf)));
+                                          extensions.oprfi_client,
+                                          session->security_parameters.
+                                          extensions.oprfi_client_len, buf,
+                                          sizeof (buf)));
       _gnutls_hard_log ("INT: SERVER OPRFI[%d]: %s\n",
                         session->security_parameters.
                         extensions.oprfi_server_len,
                         mhd_gtls_bin2hex (session->security_parameters.
-                                         extensions.oprfi_server,
-                                         session->security_parameters.
-                                         extensions.oprfi_server_len,
-                                         buf, sizeof (buf)));
+                                          extensions.oprfi_server,
+                                          session->security_parameters.
+                                          extensions.oprfi_server_len, buf,
+                                          sizeof (buf)));
 
       memcpy (rnd, session->security_parameters.client_random,
               TLS_RANDOM_SIZE);
@@ -136,9 +136,9 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
               session->security_parameters.extensions.oprfi_server_len);
 
       ret = mhd_gtls_PRF (session, PREMASTER.data, PREMASTER.size,
-                         MASTER_SECRET, strlen (MASTER_SECRET),
-                         rnd, rndlen, TLS_MASTER_SIZE,
-                         session->security_parameters.master_secret);
+                          MASTER_SECRET, strlen (MASTER_SECRET),
+                          rnd, rndlen, TLS_MASTER_SIZE,
+                          session->security_parameters.master_secret);
 
       gnutls_free (rnd);
     }
@@ -153,9 +153,9 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
 
       ret =
         mhd_gtls_PRF (session, PREMASTER.data, PREMASTER.size,
-                     MASTER_SECRET, strlen (MASTER_SECRET),
-                     rnd, 2 * TLS_RANDOM_SIZE, TLS_MASTER_SIZE,
-                     session->security_parameters.master_secret);
+                      MASTER_SECRET, strlen (MASTER_SECRET),
+                      rnd, 2 * TLS_RANDOM_SIZE, TLS_MASTER_SIZE,
+                      session->security_parameters.master_secret);
     }
 
   /* TLS/IA inner secret is derived from the master secret. */
@@ -170,8 +170,8 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
 
   _gnutls_hard_log ("INT: MASTER SECRET: %s\n",
                     mhd_gtls_bin2hex (session->security_parameters.
-                                     master_secret, TLS_MASTER_SIZE, buf,
-                                     sizeof (buf)));
+                                      master_secret, TLS_MASTER_SIZE, buf,
+                                      sizeof (buf)));
 
   return ret;
 }
@@ -179,7 +179,7 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
 
 /* This is called when we want to receive the key exchange message of the
  * server. It does nothing if this type of message is not required
- * by the selected ciphersuite. 
+ * by the selected ciphersuite.
  */
 int
 mhd_gtls_send_server_kx_message (mhd_gtls_session_t session, int again)
@@ -197,8 +197,8 @@ mhd_gtls_send_server_kx_message (mhd_gtls_session_t session, int again)
   if (again == 0)
     {
       data_size =
-        session->internals.auth_struct->
-        mhd_gtls_gen_server_kx (session, &data);
+        session->internals.auth_struct->mhd_gtls_gen_server_kx (session,
+                                                                &data);
 
       if (data_size == GNUTLS_E_INT_RET_0)
         {
@@ -215,7 +215,7 @@ mhd_gtls_send_server_kx_message (mhd_gtls_session_t session, int again)
 
   ret =
     mhd_gtls_send_handshake (session, data, data_size,
-                            GNUTLS_HANDSHAKE_SERVER_KEY_EXCHANGE);
+                             GNUTLS_HANDSHAKE_SERVER_KEY_EXCHANGE);
   gnutls_free (data);
 
   if (ret < 0)
@@ -230,7 +230,8 @@ mhd_gtls_send_server_kx_message (mhd_gtls_session_t session, int again)
  * client.
  */
 int
-mhd_gtls_send_server_certificate_request (mhd_gtls_session_t session, int again)
+mhd_gtls_send_server_certificate_request (mhd_gtls_session_t session,
+                                          int again)
 {
   uint8_t *data = NULL;
   int data_size = 0;
@@ -260,7 +261,7 @@ mhd_gtls_send_server_certificate_request (mhd_gtls_session_t session, int again)
     }
   ret =
     mhd_gtls_send_handshake (session, data, data_size,
-                            GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST);
+                             GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST);
   gnutls_free (data);
 
   if (ret < 0)
@@ -273,7 +274,7 @@ mhd_gtls_send_server_certificate_request (mhd_gtls_session_t session, int again)
 
 
 /* This is the function for the client to send the key
- * exchange message 
+ * exchange message
  */
 int
 mhd_gtls_send_client_kx_message (mhd_gtls_session_t session, int again)
@@ -292,8 +293,8 @@ mhd_gtls_send_client_kx_message (mhd_gtls_session_t session, int again)
   if (again == 0)
     {
       data_size =
-        session->internals.auth_struct->
-        mhd_gtls_gen_client_kx (session, &data);
+        session->internals.auth_struct->mhd_gtls_gen_client_kx (session,
+                                                                &data);
       if (data_size < 0)
         {
           gnutls_assert ();
@@ -302,7 +303,7 @@ mhd_gtls_send_client_kx_message (mhd_gtls_session_t session, int again)
     }
   ret =
     mhd_gtls_send_handshake (session, data, data_size,
-                            GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE);
+                             GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE);
   gnutls_free (data);
 
   if (ret < 0)
@@ -319,7 +320,8 @@ mhd_gtls_send_client_kx_message (mhd_gtls_session_t session, int again)
  * verify message
  */
 int
-mhd_gtls_send_client_certificate_verify (mhd_gtls_session_t session, int again)
+mhd_gtls_send_client_certificate_verify (mhd_gtls_session_t session,
+                                         int again)
 {
   uint8_t *data;
   int ret = 0;
@@ -330,16 +332,15 @@ mhd_gtls_send_client_certificate_verify (mhd_gtls_session_t session, int again)
   if (session->security_parameters.entity == GNUTLS_SERVER)
     return 0;
 
-  /* if certificate verify is not needed just exit 
+  /* if certificate verify is not needed just exit
    */
   if (session->key->certificate_requested == 0)
     return 0;
 
-  if (session->internals.auth_struct->mhd_gtls_gen_client_cert_vrfy ==
-      NULL)
+  if (session->internals.auth_struct->mhd_gtls_gen_client_cert_vrfy == NULL)
     {
       gnutls_assert ();
-      return 0;                 /* this algorithm does not support cli_cert_vrfy 
+      return 0;                 /* this algorithm does not support cli_cert_vrfy
                                  */
     }
 
@@ -362,7 +363,7 @@ mhd_gtls_send_client_certificate_verify (mhd_gtls_session_t session, int again)
     }
   ret =
     mhd_gtls_send_handshake (session, data,
-                            data_size, GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY);
+                             data_size, GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY);
   gnutls_free (data);
 
   return ret;
@@ -379,7 +380,7 @@ mhd_gtls_recv_server_kx_message (mhd_gtls_session_t session)
   if (session->internals.auth_struct->mhd_gtls_process_server_kx != NULL)
     {
 
-      /* EXCEPTION FOR RSA_EXPORT cipher suite 
+      /* EXCEPTION FOR RSA_EXPORT cipher suite
        */
       if (mhd_gtls_session_is_export (session) != 0 &&
           _gnutls_peers_cert_less_512 (session) != 0)
@@ -390,9 +391,9 @@ mhd_gtls_recv_server_kx_message (mhd_gtls_session_t session)
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_SERVER_KEY_EXCHANGE,
-                                MANDATORY_PACKET);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_SERVER_KEY_EXCHANGE,
+                                 MANDATORY_PACKET);
       if (ret < 0)
         {
           gnutls_assert ();
@@ -400,8 +401,9 @@ mhd_gtls_recv_server_kx_message (mhd_gtls_session_t session)
         }
 
       ret =
-        session->internals.auth_struct->
-        mhd_gtls_process_server_kx (session, data, datasize);
+        session->internals.auth_struct->mhd_gtls_process_server_kx (session,
+                                                                    data,
+                                                                    datasize);
       gnutls_free (data);
 
       if (ret < 0)
@@ -427,9 +429,9 @@ mhd_gtls_recv_server_certificate_request (mhd_gtls_session_t session)
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
-                                OPTIONAL_PACKET);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
+                                 OPTIONAL_PACKET);
       if (ret < 0)
         return ret;
 
@@ -461,15 +463,16 @@ mhd_gtls_recv_client_kx_message (mhd_gtls_session_t session)
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
-                                MANDATORY_PACKET);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
+                                 MANDATORY_PACKET);
       if (ret < 0)
         return ret;
 
       ret =
-        session->internals.auth_struct->
-        mhd_gtls_process_client_kx (session, data, datasize);
+        session->internals.auth_struct->mhd_gtls_process_client_kx (session,
+                                                                    data,
+                                                                    datasize);
       gnutls_free (data);
       if (ret < 0)
         return ret;
@@ -493,8 +496,7 @@ mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again)
   if (session->key->certificate_requested == 0)
     return 0;
 
-  if (session->internals.auth_struct->
-      mhd_gtls_gen_client_certificate == NULL)
+  if (session->internals.auth_struct->mhd_gtls_gen_client_certificate == NULL)
     return 0;
 
   data = NULL;
@@ -505,7 +507,7 @@ mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again)
       if (MHD_gnutls_protocol_get_version (session) != MHD_GNUTLS_SSL3 ||
           session->internals.selected_cert_list_length > 0)
         {
-          /* TLS 1.0 or SSL 3.0 with a valid certificate 
+          /* TLS 1.0 or SSL 3.0 with a valid certificate
            */
           data_size =
             session->internals.auth_struct->
@@ -528,15 +530,15 @@ mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again)
     {
       ret =
         MHD_gnutls_alert_send (session, GNUTLS_AL_WARNING,
-                           GNUTLS_A_SSL3_NO_CERTIFICATE);
+                               GNUTLS_A_SSL3_NO_CERTIFICATE);
 
     }
   else
-    {                           /* TLS 1.0 or SSL 3.0 with a valid certificate 
+    {                           /* TLS 1.0 or SSL 3.0 with a valid certificate
                                  */
       ret =
         mhd_gtls_send_handshake (session, data, data_size,
-                                GNUTLS_HANDSHAKE_CERTIFICATE_PKT);
+                                 GNUTLS_HANDSHAKE_CERTIFICATE_PKT);
       gnutls_free (data);
     }
 
@@ -560,8 +562,7 @@ mhd_gtls_send_server_certificate (mhd_gtls_session_t session, int again)
   int ret = 0;
 
 
-  if (session->internals.auth_struct->
-      mhd_gtls_gen_server_certificate == NULL)
+  if (session->internals.auth_struct->mhd_gtls_gen_server_certificate == NULL)
     return 0;
 
   data = NULL;
@@ -581,7 +582,7 @@ mhd_gtls_send_server_certificate (mhd_gtls_session_t session, int again)
     }
   ret =
     mhd_gtls_send_handshake (session, data, data_size,
-                            GNUTLS_HANDSHAKE_CERTIFICATE_PKT);
+                             GNUTLS_HANDSHAKE_CERTIFICATE_PKT);
   gnutls_free (data);
 
   if (ret < 0)
@@ -602,8 +603,8 @@ mhd_gtls_recv_client_certificate (mhd_gtls_session_t session)
   int ret = 0;
   int optional;
 
-  if (session->internals.auth_struct->
-      mhd_gtls_process_client_certificate != NULL)
+  if (session->internals.auth_struct->mhd_gtls_process_client_certificate !=
+      NULL)
     {
 
       /* if we have not requested a certificate then just return
@@ -620,8 +621,8 @@ mhd_gtls_recv_client_certificate (mhd_gtls_session_t session)
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_CERTIFICATE_PKT, optional);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_CERTIFICATE_PKT, optional);
 
       if (ret < 0)
         {
@@ -642,7 +643,7 @@ mhd_gtls_recv_client_certificate (mhd_gtls_session_t session)
               return 0;
             }
 
-          /* certificate was required 
+          /* certificate was required
            */
           if ((ret == GNUTLS_E_WARNING_ALERT_RECEIVED
                || ret == GNUTLS_E_FATAL_ALERT_RECEIVED)
@@ -675,7 +676,7 @@ mhd_gtls_recv_client_certificate (mhd_gtls_session_t session)
           return ret;
         }
 
-      /* ok we should expect a certificate verify message now 
+      /* ok we should expect a certificate verify message now
        */
       if (ret == GNUTLS_E_NO_CERTIFICATE_FOUND && optional == OPTIONAL_PACKET)
         ret = 0;
@@ -694,15 +695,15 @@ mhd_gtls_recv_server_certificate (mhd_gtls_session_t session)
   opaque *data;
   int ret = 0;
 
-  if (session->internals.auth_struct->
-      mhd_gtls_process_server_certificate != NULL)
+  if (session->internals.auth_struct->mhd_gtls_process_server_certificate !=
+      NULL)
     {
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
-                                MANDATORY_PACKET);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
+                                 MANDATORY_PACKET);
       if (ret < 0)
         {
           gnutls_assert ();
@@ -735,7 +736,8 @@ mhd_gtls_recv_client_certificate_verify_message (mhd_gtls_session_t session)
   int ret = 0;
 
 
-  if (session->internals.auth_struct->mhd_gtls_process_client_cert_vrfy != NULL)
+  if (session->internals.auth_struct->mhd_gtls_process_client_cert_vrfy !=
+      NULL)
     {
 
       if (session->internals.send_cert_req == 0 ||
@@ -746,9 +748,9 @@ mhd_gtls_recv_client_certificate_verify_message (mhd_gtls_session_t session)
 
       ret =
         mhd_gtls_recv_handshake (session, &data,
-                                &datasize,
-                                GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
-                                OPTIONAL_PACKET);
+                                 &datasize,
+                                 GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
+                                 OPTIONAL_PACKET);
       if (ret < 0)
         return ret;
 

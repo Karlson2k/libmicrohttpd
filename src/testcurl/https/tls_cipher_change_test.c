@@ -70,10 +70,10 @@ setup (mhd_gtls_session_t * session,
 
   mhd_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
   mhd_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                       strlen (srv_self_signed_cert_pem), &malloc);
+                        strlen (srv_self_signed_cert_pem), &malloc);
 
   MHD_gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                       GNUTLS_X509_FMT_PEM);
+                                           GNUTLS_X509_FMT_PEM);
 
   MHD_gnutls_init (session, GNUTLS_CLIENT);
   ret = MHD_gnutls_priority_set_direct (*session, "NORMAL", err_pos);

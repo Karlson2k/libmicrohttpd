@@ -62,16 +62,16 @@ setup (mhd_gtls_session_t * session,
        gnutls_datum_t * cert, mhd_gtls_cert_credentials_t * xcred)
 {
   int ret;
-  const char ** err_pos;
+  const char **err_pos;
 
   MHD_gnutls_certificate_allocate_credentials (xcred);
 
   mhd_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
   mhd_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                       strlen (srv_self_signed_cert_pem), &malloc);
+                        strlen (srv_self_signed_cert_pem), &malloc);
 
   MHD_gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                       GNUTLS_X509_FMT_PEM);
+                                           GNUTLS_X509_FMT_PEM);
 
   MHD_gnutls_init (session, GNUTLS_CLIENT);
   ret = MHD_gnutls_priority_set_direct (*session, "NORMAL", err_pos);
@@ -166,7 +166,8 @@ test_alert_unexpected_message (mhd_gtls_session_t session)
   sa.sin_port = htons (42433);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
-  MHD_gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) ((void *) sd));
+  MHD_gnutls_transport_set_ptr (session,
+                                (gnutls_transport_ptr_t) ((void *) sd));
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
@@ -182,7 +183,8 @@ test_alert_unexpected_message (mhd_gtls_session_t session)
       return -1;
     }
 
-  MHD_gnutls_alert_send (session, GNUTLS_AL_FATAL, GNUTLS_A_UNEXPECTED_MESSAGE);
+  MHD_gnutls_alert_send (session, GNUTLS_AL_FATAL,
+                         GNUTLS_A_UNEXPECTED_MESSAGE);
   usleep (100);
 
   /* TODO better RST trigger */

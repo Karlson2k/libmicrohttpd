@@ -279,7 +279,7 @@ enum MHD_CONNECTION_STATE
    * Handshake messages will be processed in this state & while
    * in the 'MHD_TLS_HELLO_REQUEST' state
    */
-  MHD_TLS_CONNECTION_INIT =  MHD_CONNECTION_CLOSED +1,
+  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_CLOSED + 1,
 
   /*
    * This state indicates the server has send a 'Hello Request' to
@@ -303,7 +303,7 @@ enum MHD_CONNECTION_STATE
 #define DEBUG_STATES MHD_NO
 
 #if DEBUG_STATES
-char * MHD_state_to_string(enum MHD_CONNECTION_STATE state);
+char *MHD_state_to_string (enum MHD_CONNECTION_STATE state);
 #endif
 
 struct MHD_Connection
@@ -543,9 +543,9 @@ struct MHD_Connection
    * function pointers to the appropriate send & receive funtions
    * according to whether this is a HTTPS / HTTP daemon
    */
-  ssize_t (*recv_cls) (struct MHD_Connection * connection);
+    ssize_t (*recv_cls) (struct MHD_Connection * connection);
 
-  ssize_t (*send_cls) (struct MHD_Connection * connection);
+    ssize_t (*send_cls) (struct MHD_Connection * connection);
 
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */
@@ -641,13 +641,13 @@ struct MHD_Daemon
   /* Diffie-Hellman parameters */
   mhd_gtls_dh_params_t dh_params;
 
-  const char * https_key_path;
+  const char *https_key_path;
 
-  const char * https_cert_path;
+  const char *https_cert_path;
 
-  const char * https_mem_key;
+  const char *https_mem_key;
 
-  const char * https_mem_cert;
+  const char *https_mem_cert;
 #endif
 };
 

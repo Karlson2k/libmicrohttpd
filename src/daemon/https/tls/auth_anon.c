@@ -41,15 +41,17 @@
 #include <auth_dh_common.h>
 
 static int mhd_gtls_gen_anon_server_kx (mhd_gtls_session_t, opaque **);
-static int mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t, opaque *, size_t);
-static int mhd_gtls_proc_anon_server_kx (mhd_gtls_session_t, opaque *, size_t);
+static int mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t, opaque *,
+                                         size_t);
+static int mhd_gtls_proc_anon_server_kx (mhd_gtls_session_t, opaque *,
+                                         size_t);
 
 const mhd_gtls_mod_auth_st mhd_gtls_anon_auth_struct = {
   "ANON",
   NULL,
   NULL,
   mhd_gtls_gen_anon_server_kx,
-  mhd_gtls_gen_dh_common_client_kx,      /* this can be shared */
+  mhd_gtls_gen_dh_common_client_kx,     /* this can be shared */
   NULL,
   NULL,
 
@@ -92,7 +94,7 @@ mhd_gtls_gen_anon_server_kx (mhd_gtls_session_t session, opaque ** data)
 
   if ((ret =
        mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
-                              sizeof (anon_auth_info_st), 1)) < 0)
+                               sizeof (anon_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -112,7 +114,7 @@ mhd_gtls_gen_anon_server_kx (mhd_gtls_session_t session, opaque ** data)
 
 static int
 mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t session, opaque * data,
-                     size_t _data_size)
+                              size_t _data_size)
 {
   mhd_gtls_anon_server_credentials_t cred;
   int bits;
@@ -151,7 +153,7 @@ mhd_gtls_proc_anon_client_kx (mhd_gtls_session_t session, opaque * data,
 
 int
 mhd_gtls_proc_anon_server_kx (mhd_gtls_session_t session, opaque * data,
-                     size_t _data_size)
+                              size_t _data_size)
 {
 
   int ret;
@@ -159,7 +161,7 @@ mhd_gtls_proc_anon_server_kx (mhd_gtls_session_t session, opaque * data,
   /* set auth_info */
   if ((ret =
        mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
-                              sizeof (anon_auth_info_st), 1)) < 0)
+                               sizeof (anon_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
       return ret;

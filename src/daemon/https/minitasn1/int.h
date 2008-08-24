@@ -34,7 +34,7 @@
 
 #include <mem.h>
 
-#define MAX_LOG_SIZE 1024 /* maximum number of characters of a log message */
+#define MAX_LOG_SIZE 1024       /* maximum number of characters of a log message */
 
 /* Define used for visiting trees. */
 #define UP     1
@@ -82,13 +82,13 @@
 #define CONST_EXPLICIT    (1<<11)
 #define CONST_IMPLICIT    (1<<12)
 
-#define CONST_TAG         (1<<13)  /*  Used in ASN.1 assignement  */
+#define CONST_TAG         (1<<13)       /*  Used in ASN.1 assignement  */
 #define CONST_OPTION      (1<<14)
 #define CONST_DEFAULT     (1<<15)
 #define CONST_TRUE        (1<<16)
 #define CONST_FALSE       (1<<17)
 
-#define CONST_LIST        (1<<18)  /*  Used with TYPE_INTEGER and TYPE_BIT_STRING  */
+#define CONST_LIST        (1<<18)       /*  Used with TYPE_INTEGER and TYPE_BIT_STRING  */
 #define CONST_MIN_MAX     (1<<19)
 
 #define CONST_1_PARAM     (1<<20)

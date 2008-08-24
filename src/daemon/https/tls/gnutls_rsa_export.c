@@ -220,7 +220,8 @@ MHD_gnutls_rsa_params_deinit (mhd_gtls_rsa_params_t rsa_params)
   *
   **/
 int
-MHD_gnutls_rsa_params_generate2 (mhd_gtls_rsa_params_t params, unsigned int bits)
+MHD_gnutls_rsa_params_generate2 (mhd_gtls_rsa_params_t params,
+                                 unsigned int bits)
 {
   return gnutls_x509_privkey_generate (params, MHD_GNUTLS_PK_RSA, bits, 0);
 }

@@ -51,15 +51,15 @@ const mhd_gtls_mod_auth_st mhd_gtls_rsa_auth_struct = {
   mhd_gtls_gen_cert_client_certificate,
   NULL,                         /* gen server kx */
   _gnutls_gen_rsa_client_kx,
-  mhd_gtls_gen_cert_client_cert_vrfy,    /* gen client cert vrfy */
-  mhd_gtls_gen_cert_server_cert_req,     /* server cert request */
+  mhd_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
+  mhd_gtls_gen_cert_server_cert_req,    /* server cert request */
 
   mhd_gtls_proc_cert_server_certificate,
   _gnutls_proc_cert_client_certificate,
   NULL,                         /* proc server kx */
   _gnutls_proc_rsa_client_kx,   /* proc client kx */
-  mhd_gtls_proc_cert_client_cert_vrfy,   /* proc client cert vrfy */
-  mhd_gtls_proc_cert_cert_req    /* proc server cert request */
+  mhd_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
+  mhd_gtls_proc_cert_cert_req   /* proc server cert request */
 };
 
 /* This function reads the RSA parameters from peer's certificate;
@@ -86,9 +86,9 @@ _gnutls_get_public_rsa_params (mhd_gtls_session_t session,
 
   ret =
     mhd_gtls_raw_cert_to_gcert (&peer_cert,
-                               session->security_parameters.cert_type,
-                               &info->raw_certificate_list[0],
-                               CERT_ONLY_PUBKEY | CERT_NO_COPY);
+                                session->security_parameters.cert_type,
+                                &info->raw_certificate_list[0],
+                                CERT_ONLY_PUBKEY | CERT_NO_COPY);
 
   if (ret < 0)
     {
@@ -179,7 +179,7 @@ _gnutls_get_private_rsa_params (mhd_gtls_session_t session,
 
       rsa_params =
         mhd_gtls_certificate_get_rsa_params (cred->rsa_params,
-                                            cred->params_func, session);
+                                             cred->params_func, session);
       /* EXPORT case: */
       if (rsa_params == NULL)
         {
@@ -219,7 +219,7 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
 
   if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
     {
-      /* SSL 3.0 
+      /* SSL 3.0
        */
       ciphertext.data = data;
       ciphertext.size = data_size;
@@ -247,7 +247,7 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
       return ret;
     }
 
-  ret = mhd_gtls_pkcs1_rsa_decrypt (&plaintext, &ciphertext, params, params_len, 2);     /* btype==2 */
+  ret = mhd_gtls_pkcs1_rsa_decrypt (&plaintext, &ciphertext, params, params_len, 2);    /* btype==2 */
 
   if (ret < 0 || plaintext.size != TLS_MASTER_SIZE)
     {
@@ -315,7 +315,7 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
 
 
 
-/* return RSA(random) using the peers public key 
+/* return RSA(random) using the peers public key
  */
 int
 _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
@@ -376,7 +376,7 @@ _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
 
   if ((ret =
        mhd_gtls_pkcs1_rsa_encrypt (&sdata, &session->key->key,
-                                  params, params_len, 2)) < 0)
+                                   params, params_len, 2)) < 0)
     {
       gnutls_assert ();
       return ret;

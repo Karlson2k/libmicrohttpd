@@ -69,8 +69,8 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   int ret;
 
   /* assert actual connection cipher is the one negotiated */
-  if (MHD_get_session_info (connection, MHS_INFO_CIPHER_ALGO).
-      cipher_algorithm != MHD_GNUTLS_CIPHER_AES_256_CBC)
+  if (MHD_get_session_info (connection, MHS_INFO_CIPHER_ALGO).cipher_algorithm
+      != MHD_GNUTLS_CIPHER_AES_256_CBC)
     {
       fprintf (stderr, "Error: requested cipher mismatch. %s\n",
                strerror (errno));
@@ -85,16 +85,18 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return -1;
     }
 
-  if (MHD_get_session_info (connection, MHD_INFO_MAC_ALGO).
-      mac_algorithm != MHD_GNUTLS_MAC_SHA1)
+  if (MHD_get_session_info (connection, MHD_INFO_MAC_ALGO).mac_algorithm !=
+      MHD_GNUTLS_MAC_SHA1)
     {
       fprintf (stderr, "Error: requested mac algorithm mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_session_info (connection, MHD_INFO_COMPRESSION_METHOD).
-      compression_method != MHD_GNUTLS_COMP_NULL)
+  if (MHD_get_session_info
+      (connection,
+       MHD_INFO_COMPRESSION_METHOD).compression_method !=
+      MHD_GNUTLS_COMP_NULL)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));
@@ -109,16 +111,18 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return -1;
     }
 
-  if (MHD_get_session_info (connection, MHD_INFO_CERT_TYPE).
-      certificate_type != MHD_GNUTLS_CRT_X509)
+  if (MHD_get_session_info (connection, MHD_INFO_CERT_TYPE).certificate_type
+      != MHD_GNUTLS_CRT_X509)
     {
       fprintf (stderr, "Error: requested certificate mismatch. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (MHD_get_session_info (connection, MHD_INFO_CREDENTIALS_TYPE).
-      credentials_type != MHD_GNUTLS_CRD_CERTIFICATE)
+  if (MHD_get_session_info
+      (connection,
+       MHD_INFO_CREDENTIALS_TYPE).credentials_type !=
+      MHD_GNUTLS_CRD_CERTIFICATE)
     {
       fprintf (stderr, "Error: requested certificate mismatch. %s\n",
                strerror (errno));

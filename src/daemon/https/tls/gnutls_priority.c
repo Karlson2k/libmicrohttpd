@@ -147,7 +147,8 @@ MHD_gnutls_mac_set_priority (mhd_gtls_session_t session, const int *list)
  *
  **/
 int
-MHD_gnutls_compression_set_priority (mhd_gtls_session_t session, const int *list)
+MHD_gnutls_compression_set_priority (mhd_gtls_session_t session,
+                                     const int *list)
 {
   return _set_priority (&session->internals.priorities.compression, list);
 }
@@ -197,7 +198,7 @@ MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
  **/
 int
 MHD_gnutls_certificate_type_set_priority (mhd_gtls_session_t session,
-                                      const int *list)
+                                          const int *list)
 {
 #if ENABLE_OPENPGP
   return _set_priority (&session->internals.priorities.cert_type, list);
@@ -249,7 +250,8 @@ typedef void (rmadd_func) (mhd_gtls_priority_st * priority_list, int alg);
  *
  **/
 int
-MHD_gnutls_priority_set (mhd_gtls_session_t session, gnutls_priority_t priority)
+MHD_gnutls_priority_set (mhd_gtls_session_t session,
+                         gnutls_priority_t priority)
 {
   if (priority == NULL)
     {
@@ -330,7 +332,7 @@ MHD_gnutls_priority_set (mhd_gtls_session_t session, gnutls_priority_t priority)
  **/
 int
 MHD_tls_set_default_priority (gnutls_priority_t * priority_cache,
-                      const char *priorities, const char **err_pos)
+                              const char *priorities, const char **err_pos)
 {
   *priority_cache = gnutls_calloc (1, sizeof (struct MHD_gtls_priority_st));
   if (*priority_cache == NULL)
@@ -341,7 +343,8 @@ MHD_tls_set_default_priority (gnutls_priority_t * priority_cache,
 
   /* set mode to "SECURE256" */
   _set_priority (&(*priority_cache)->protocol, mhd_gtls_protocol_priority);
-  _set_priority (&(*priority_cache)->cipher, mhd_gtls_cipher_priority_secure256);
+  _set_priority (&(*priority_cache)->cipher,
+                 mhd_gtls_cipher_priority_secure256);
   _set_priority (&(*priority_cache)->kx, mhd_gtls_kx_priority_secure);
   _set_priority (&(*priority_cache)->mac, mhd_gtls_mac_priority_secure);
   _set_priority (&(*priority_cache)->cert_type, mhd_gtls_cert_type_priority);
@@ -380,7 +383,7 @@ MHD_gnutls_priority_deinit (gnutls_priority_t priority_cache)
  **/
 int
 MHD_gnutls_priority_set_direct (mhd_gtls_session_t session,
-                            const char *priorities, const char **err_pos)
+                                const char *priorities, const char **err_pos)
 {
   gnutls_priority_t prio;
   int ret;

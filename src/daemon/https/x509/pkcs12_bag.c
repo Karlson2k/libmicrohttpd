@@ -80,7 +80,7 @@ _pkcs12_bag_free_data (gnutls_pkcs12_bag_t bag)
   * gnutls_pkcs12_bag_deinit - This function deinitializes memory used by a gnutls_pkcs12_t structure
   * @bag: The structure to be initialized
   *
-  * This function will deinitialize a PKCS12 Bag structure. 
+  * This function will deinitialize a PKCS12 Bag structure.
   *
   **/
 void
@@ -121,7 +121,7 @@ gnutls_pkcs12_bag_get_type (gnutls_pkcs12_bag_t bag, int indx)
   * gnutls_pkcs12_bag_get_count - This function returns the bag's elements count
   * @bag: The bag
   *
-  * This function will return the number of the elements withing the bag. 
+  * This function will return the number of the elements withing the bag.
   *
   **/
 int
@@ -332,7 +332,7 @@ cleanup:
   * @data: the data to be copied.
   *
   * This function will insert the given data of the given type into the
-  * bag. 
+  * bag.
   *
   * Returns the index of the added bag on success, or a negative
   * value on error.
@@ -475,7 +475,7 @@ gnutls_pkcs12_bag_set_crl (gnutls_pkcs12_bag_t bag, gnutls_x509_crl_t crl)
   * This function will add the given key ID, to the specified, by the index, bag
   * element. The key ID will be encoded as a 'Local key identifier' bag attribute,
   * which is usually used to distinguish the local private key and the certificate pair.
-  * 
+  *
   * Returns 0 on success, or a negative value on error.
   *
   **/
@@ -518,7 +518,7 @@ gnutls_pkcs12_bag_set_key_id (gnutls_pkcs12_bag_t bag, int indx,
   *
   * This function will return the key ID, of the specified bag element.
   * The key ID is usually used to distinguish the local private key and the certificate pair.
-  * 
+  *
   * Returns 0 on success, or a negative value on error.
   *
   **/
@@ -552,7 +552,7 @@ gnutls_pkcs12_bag_get_key_id (gnutls_pkcs12_bag_t bag, int indx,
   *
   * This function will return the friendly name, of the specified bag element.
   * The key ID is usually used to distinguish the local private key and the certificate pair.
-  * 
+  *
   * Returns 0 on success, or a negative value on error.
   *
   **/
@@ -587,7 +587,7 @@ gnutls_pkcs12_bag_get_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
   * This function will add the given key friendly name, to the specified, by the index, bag
   * element. The name will be encoded as a 'Friendly name' bag attribute,
   * which is usually used to set a user name to the local private key and the certificate pair.
-  * 
+  *
   * Returns 0 on success, or a negative value on error.
   *
   **/
@@ -752,7 +752,7 @@ gnutls_pkcs12_bag_encrypt (gnutls_pkcs12_bag_t bag, const char *pass,
       return ret;
     }
 
-  /* encryption succeeded. 
+  /* encryption succeeded.
    */
 
   _pkcs12_bag_free_data (bag);

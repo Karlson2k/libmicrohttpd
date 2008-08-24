@@ -260,7 +260,7 @@ static const gnutls_error_entry mhd_gtls_error_algorithms[] = {
   * @error: is an error returned by a gnutls function. Error should be a negative value.
   *
   * If a function returns a negative value you may feed that value
-  * to this function to see if it is fatal. Returns 1 for a fatal 
+  * to this function to see if it is fatal. Returns 1 for a fatal
   * error 0 otherwise. However you may want to check the
   * error code manually, since some non-fatal errors to the protocol
   * may be fatal for you (your program).
@@ -290,7 +290,7 @@ MHD_gtls_error_is_fatal (int error)
   * MHD_gtls_perror - prints a string to stderr with a description of an error
   * @error: is an error returned by a gnutls function. Error is always a negative value.
   *
-  * This function is like perror(). The only difference is that it accepts an 
+  * This function is like perror(). The only difference is that it accepts an
   * error number returned by a gnutls function.
   **/
 void

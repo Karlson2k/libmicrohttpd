@@ -26,26 +26,27 @@
 # define GNUTLS_SIG_H
 
 int mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
-			    gnutls_cert * cert,
-			    gnutls_privkey * pkey,
-			    gnutls_datum_t * signature);
+                             gnutls_cert * cert,
+                             gnutls_privkey * pkey,
+                             gnutls_datum_t * signature);
 
 int mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
-			     gnutls_cert * cert,
-			     gnutls_privkey * pkey,
-			     gnutls_datum_t * params,
-			     gnutls_datum_t * signature);
+                              gnutls_cert * cert,
+                              gnutls_privkey * pkey,
+                              gnutls_datum_t * params,
+                              gnutls_datum_t * signature);
 
 int mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
-			      gnutls_cert * cert, gnutls_datum_t * signature);
+                               gnutls_cert * cert,
+                               gnutls_datum_t * signature);
 
 int mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
-			       gnutls_cert * cert,
-			       const gnutls_datum_t * params,
-			       gnutls_datum_t * signature);
+                                gnutls_cert * cert,
+                                const gnutls_datum_t * params,
+                                gnutls_datum_t * signature);
 
 int mhd_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
-		  mpi_t * params, int params_size,
-		  const gnutls_datum_t * data, gnutls_datum_t * signature);
+                   mpi_t * params, int params_size,
+                   const gnutls_datum_t * data, gnutls_datum_t * signature);
 
 #endif

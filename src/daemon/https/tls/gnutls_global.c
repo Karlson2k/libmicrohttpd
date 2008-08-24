@@ -121,13 +121,14 @@ int _gnutls_is_secure_mem_null (const void *);
  * This function must be called before MHD_gnutls_global_init() is called.
  *
  **/
-void MHD_gtls_global_set_mem_functions(gnutls_alloc_function alloc_func,
-                                     gnutls_alloc_function
-                                     secure_alloc_func,
-                                     gnutls_is_secure_function
-                                     is_secure_func,
-                                     gnutls_realloc_function realloc_func,
-                                     gnutls_free_function free_func)
+void
+MHD_gtls_global_set_mem_functions (gnutls_alloc_function alloc_func,
+                                   gnutls_alloc_function
+                                   secure_alloc_func,
+                                   gnutls_is_secure_function
+                                   is_secure_func,
+                                   gnutls_realloc_function realloc_func,
+                                   gnutls_free_function free_func)
 {
   gnutls_secure_malloc = secure_alloc_func;
   gnutls_malloc = alloc_func;
@@ -147,7 +148,7 @@ void MHD_gtls_global_set_mem_functions(gnutls_alloc_function alloc_func,
       gnutls_calloc = calloc;
     }
   else
-    { /* use the included ones */
+    {                           /* use the included ones */
       gnutls_calloc = mhd_gtls_calloc;
     }
   gnutls_strdup = mhd_gtls_strdup;
@@ -350,7 +351,7 @@ MHD_gnutls_global_deinit (void)
  **/
 void
 MHD_gnutls_transport_set_pull_function (mhd_gtls_session_t session,
-                                    mhd_gtls_pull_func pull_func)
+                                        mhd_gtls_pull_func pull_func)
 {
   session->internals._gnutls_pull_func = pull_func;
 }
@@ -371,7 +372,7 @@ MHD_gnutls_transport_set_pull_function (mhd_gtls_session_t session,
  **/
 void
 MHD_gnutls_transport_set_push_function (mhd_gtls_session_t session,
-                                    mhd_gtls_push_func push_func)
+                                        mhd_gtls_push_func push_func)
 {
   session->internals._gnutls_push_func = push_func;
 }

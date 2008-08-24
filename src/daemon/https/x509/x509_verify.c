@@ -201,7 +201,7 @@ find_issuer (gnutls_x509_crt_t cert,
 {
   int i;
 
-  /* this is serial search. 
+  /* this is serial search.
    */
 
   for (i = 0; i < tcas_size; i++)
@@ -214,11 +214,11 @@ find_issuer (gnutls_x509_crt_t cert,
   return NULL;
 }
 
-/* 
+/*
  * Verifies the given certificate again a certificate list of
  * trusted CAs.
  *
- * Returns only 0 or 1. If 1 it means that the certificate 
+ * Returns only 0 or 1. If 1 it means that the certificate
  * was successfuly verified.
  *
  * 'flags': an OR of the gnutls_certificate_verify_flags enumeration.
@@ -435,7 +435,7 @@ _gnutls_x509_verify_certificate (const gnutls_x509_crt_t * certificate_list,
       clist_size--;
     }
 
-  /* Verify the certificate path (chain) 
+  /* Verify the certificate path (chain)
    */
   for (i = clist_size - 1; i > 0; i--)
     {
@@ -465,7 +465,7 @@ _gnutls_x509_verify_certificate (const gnutls_x509_crt_t * certificate_list,
  */
 static int
 decode_ber_digest_info (const gnutls_datum_t * info,
-                        enum MHD_GNUTLS_HashAlgorithm * hash,
+                        enum MHD_GNUTLS_HashAlgorithm *hash,
                         opaque * digest, int *digest_size)
 {
   ASN1_TYPE dinfo = ASN1_TYPE_EMPTY;
@@ -664,7 +664,7 @@ verify_sig (const gnutls_datum_t * tbs,
 
 /* verifies if the certificate is properly signed.
  * returns 0 on failure and 1 on success.
- * 
+ *
  * 'tbs' is the signed data
  * 'signature' is the signature!
  */
@@ -707,7 +707,7 @@ _gnutls_x509_verify_signature (const gnutls_datum_t * tbs,
 
 /* verifies if the certificate is properly signed.
  * returns 0 on failure and 1 on success.
- * 
+ *
  * 'tbs' is the signed data
  * 'signature' is the signature!
  */
@@ -743,12 +743,12 @@ _gnutls_x509_privkey_verify_signature (const gnutls_datum_t * tbs,
  * Note that expiration and activation dates are not checked
  * by this function, you should check them using the appropriate functions.
  *
- * If no flags are specified (0), this function will use the 
- * basicConstraints (2.5.29.19) PKIX extension. This means that only a certificate 
+ * If no flags are specified (0), this function will use the
+ * basicConstraints (2.5.29.19) PKIX extension. This means that only a certificate
  * authority is allowed to sign a certificate.
  *
- * You must also check the peer's name in order to check if the verified 
- * certificate belongs to the actual peer. 
+ * You must also check the peer's name in order to check if the verified
+ * certificate belongs to the actual peer.
  *
  * The certificate verification output will be put in @verify and will be
  * one or more of the gnutls_certificate_status_t enumerated elements bitwise or'd.
@@ -774,7 +774,7 @@ gnutls_x509_crt_list_verify (const gnutls_x509_crt_t * cert_list,
   if (cert_list == NULL || cert_list_length == 0)
     return GNUTLS_E_NO_CERTIFICATE_FOUND;
 
-  /* Verify certificate 
+  /* Verify certificate
    */
   *verify = _gnutls_x509_verify_certificate (cert_list, cert_list_length,
                                              CA_list, CA_list_length,
@@ -792,7 +792,7 @@ gnutls_x509_crt_list_verify (const gnutls_x509_crt_t * cert_list,
  * @flags: Flags that may be used to change the verification algorithm. Use OR of the gnutls_certificate_verify_flags enumerations.
  * @verify: will hold the certificate verification output.
  *
- * This function will try to verify the given certificate and return its status. 
+ * This function will try to verify the given certificate and return its status.
  * The verification output in this functions cannot be GNUTLS_CERT_NOT_VALID.
  *
  * Returns 0 on success and a negative value in case of an error.
@@ -805,7 +805,7 @@ gnutls_x509_crt_verify (gnutls_x509_crt_t cert,
                         unsigned int flags, unsigned int *verify)
 {
   int ret;
-  /* Verify certificate 
+  /* Verify certificate
    */
   ret = _gnutls_verify_certificate2 (cert, CA_list, CA_list_length, flags,
                                      verify);
@@ -861,7 +861,7 @@ gnutls_x509_crl_verify (gnutls_x509_crl_t crl,
                         unsigned int *verify)
 {
   int ret;
-  /* Verify crl 
+  /* Verify crl
    */
   ret = _gnutls_verify_crl2 (crl, CA_list, CA_list_length, flags, verify);
   if (ret < 0)
@@ -912,7 +912,7 @@ find_crl_issuer (gnutls_x509_crl_t crl,
 {
   int i;
 
-  /* this is serial search. 
+  /* this is serial search.
    */
 
   for (i = 0; i < tcas_size; i++)
@@ -925,14 +925,14 @@ find_crl_issuer (gnutls_x509_crl_t crl,
   return NULL;
 }
 
-/* 
+/*
  * Returns only 0 or 1. If 1 it means that the CRL
  * was successfuly verified.
  *
  * 'flags': an OR of the gnutls_certificate_verify_flags enumeration.
  *
  * Output will hold information about the verification
- * procedure. 
+ * procedure.
  */
 static int
 _gnutls_verify_crl2 (gnutls_x509_crl_t crl,

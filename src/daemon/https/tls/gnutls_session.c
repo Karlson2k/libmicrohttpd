@@ -135,7 +135,7 @@
   **/
 int
 MHD_gtls_session_get_id (mhd_gtls_session_t session,
-                       void *session_id, size_t * session_id_size)
+                         void *session_id, size_t * session_id_size)
 {
   size_t given_session_id_size = *session_id_size;
 

@@ -335,7 +335,8 @@ cleanup:asn1_delete_structure (&spk);
 int
 _gnutls_x509_write_sig_params (ASN1_TYPE dst,
                                const char *dst_name,
-                               enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm,
+                               enum MHD_GNUTLS_PublicKeyAlgorithm
+                               pk_algorithm,
                                enum MHD_GNUTLS_HashAlgorithm dig,
                                mpi_t * params, int params_size)
 {

@@ -119,7 +119,8 @@ gnutls_compression_get (mhd_gtls_session_t session)
  */
 int
 mhd_gtls_session_cert_type_supported (mhd_gtls_session_t session,
-                                     enum MHD_GNUTLS_CertificateType cert_type)
+                                      enum MHD_GNUTLS_CertificateType
+                                      cert_type)
 {
   unsigned i;
   unsigned cert_found = 0;
@@ -129,8 +130,8 @@ mhd_gtls_session_cert_type_supported (mhd_gtls_session_t session,
     {
       cred
         = (mhd_gtls_cert_credentials_t) mhd_gtls_get_cred (session->key,
-                                                               MHD_GNUTLS_CRD_CERTIFICATE,
-                                                               NULL);
+                                                           MHD_GNUTLS_CRD_CERTIFICATE,
+                                                           NULL);
 
       if (cred == NULL)
         return GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
@@ -234,7 +235,8 @@ mhd_gtls_handshake_internal_state_clear (mhd_gtls_session_t session)
 
 /* TODO rm redundent pointer ref */
 int
-MHD_gnutls_init (mhd_gtls_session_t * session, gnutls_connection_end_t con_end)
+MHD_gnutls_init (mhd_gtls_session_t * session,
+                 gnutls_connection_end_t con_end)
 {
   *session = gnutls_calloc (1, sizeof (struct MHD_gtls_session_int));
   if (*session == NULL)
@@ -284,10 +286,10 @@ MHD_gnutls_init (mhd_gtls_session_t * session, gnutls_connection_end_t con_end)
 
   MHD_gnutls_dh_set_prime_bits ((*session), MIN_DH_BITS);
 
-  MHD_gnutls_transport_set_lowat ((*session), DEFAULT_LOWAT);       /* the default for tcp */
+  MHD_gnutls_transport_set_lowat ((*session), DEFAULT_LOWAT);   /* the default for tcp */
 
   MHD_gnutls_handshake_set_max_packet_length ((*session),
-                                          MAX_HANDSHAKE_PACKET_SIZE);
+                                              MAX_HANDSHAKE_PACKET_SIZE);
 
   /* Allocate a minimum size for recv_data
    * This is allocated in order to avoid small messages, making
@@ -369,10 +371,11 @@ MHD_gnutls_deinit (mhd_gtls_session_t session)
     mhd_gnutls_cipher_deinit (session->connection_state.write_cipher_state);
 
   if (session->connection_state.read_compression_state != NULL)
-    mhd_gtls_comp_deinit (session->connection_state.read_compression_state, 1);
+    mhd_gtls_comp_deinit (session->connection_state.read_compression_state,
+                          1);
   if (session->connection_state.write_compression_state != NULL)
-    mhd_gtls_comp_deinit (session->connection_state.
-                         write_compression_state, 0);
+    mhd_gtls_comp_deinit (session->connection_state.write_compression_state,
+                          0);
 
   _gnutls_free_datum (&session->cipher_specs.server_write_mac_secret);
   _gnutls_free_datum (&session->cipher_specs.client_write_mac_secret);
@@ -508,7 +511,7 @@ mhd_gtls_dh_set_secret_bits (mhd_gtls_session_t session, unsigned bits)
  */
 int
 mhd_gtls_rsa_export_set_pubkey (mhd_gtls_session_t session,
-                               mpi_t exponent, mpi_t modulus)
+                                mpi_t exponent, mpi_t modulus)
 {
   cert_auth_info_t info;
   int ret;
@@ -609,7 +612,7 @@ mhd_gtls_dh_set_group (mhd_gtls_session_t session, mpi_t gen, mpi_t prime)
  **/
 void
 MHD_gnutls_certificate_send_x509_rdn_sequence (mhd_gtls_session_t session,
-                                           int status)
+                                               int status)
 {
   session->internals.ignore_rdn_sequence = status;
 }
@@ -650,7 +653,8 @@ _gnutls_record_set_default_version (mhd_gtls_session_t session,
  * gnutls servers and clients may cause interoperability problems.
  **/
 void
-MHD_gtls_handshake_set_private_extensions (mhd_gtls_session_t session, int allow)
+MHD_gtls_handshake_set_private_extensions (mhd_gtls_session_t session,
+                                           int allow)
 {
   session->internals.enable_private = allow;
 }
@@ -778,11 +782,11 @@ _gnutls_xor (opaque * o1, opaque * o2, int length)
  */
 int
 mhd_gtls_PRF (mhd_gtls_session_t session,
-             const opaque * secret,
-             int secret_size,
-             const char *label,
-             int label_size,
-             const opaque * seed, int seed_size, int total_bytes, void *ret)
+              const opaque * secret,
+              int secret_size,
+              const char *label,
+              int label_size,
+              const opaque * seed, int seed_size, int total_bytes, void *ret)
 {
   int l_s, s_seed_size;
   const opaque *s1, *s2;
@@ -889,15 +893,16 @@ mhd_gtls_PRF (mhd_gtls_session_t session,
  **/
 int
 MHD_gnutls_prf_raw (mhd_gtls_session_t session,
-                size_t label_size,
-                const char *label,
-                size_t seed_size, const char *seed, size_t outsize, char *out)
+                    size_t label_size,
+                    const char *label,
+                    size_t seed_size, const char *seed, size_t outsize,
+                    char *out)
 {
   int ret;
 
   ret = mhd_gtls_PRF (session, session->security_parameters.master_secret,
-                     TLS_MASTER_SIZE, label, label_size, (opaque *) seed,
-                     seed_size, outsize, out);
+                      TLS_MASTER_SIZE, label, label_size, (opaque *) seed,
+                      seed_size, outsize, out);
 
   return ret;
 }
@@ -933,10 +938,11 @@ MHD_gnutls_prf_raw (mhd_gtls_session_t session,
  **/
 int
 MHD_gnutls_prf (mhd_gtls_session_t session,
-            size_t label_size,
-            const char *label,
-            int server_random_first,
-            size_t extra_size, const char *extra, size_t outsize, char *out)
+                size_t label_size,
+                const char *label,
+                int server_random_first,
+                size_t extra_size, const char *extra, size_t outsize,
+                char *out)
 {
   int ret;
   opaque *seed;
@@ -959,8 +965,8 @@ MHD_gnutls_prf (mhd_gtls_session_t session,
   memcpy (seed + 2 * TLS_RANDOM_SIZE, extra, extra_size);
 
   ret = mhd_gtls_PRF (session, session->security_parameters.master_secret,
-                     TLS_MASTER_SIZE, label, label_size, seed, seedsize,
-                     outsize, out);
+                      TLS_MASTER_SIZE, label, label_size, seed, seedsize,
+                      outsize, out);
 
   gnutls_free (seed);
 
@@ -1045,8 +1051,8 @@ MHD_gtls_session_is_resumed (mhd_gtls_session_t session)
           == session->internals.resumed_security_parameters.session_id_size
           && memcmp (session->security_parameters.session_id,
                      session->internals.resumed_security_parameters.
-                     session_id, session->security_parameters.session_id_size)
-          == 0)
+                     session_id,
+                     session->security_parameters.session_id_size) == 0)
         return 1;
     }
   else
@@ -1073,7 +1079,7 @@ mhd_gtls_session_is_export (mhd_gtls_session_t session)
 
   cipher =
     mhd_gtls_cipher_suite_get_cipher_algo (&session->security_parameters.
-                                          current_cipher_suite);
+                                           current_cipher_suite);
 
   if (mhd_gtls_cipher_get_export_flag (cipher) != 0)
     return 1;
@@ -1174,9 +1180,10 @@ _gnutls_rsa_pms_set_version (mhd_gtls_session_t session,
  *
  **/
 void
-MHD_gnutls_handshake_set_post_client_hello_function (mhd_gtls_session_t session,
-                                                 gnutls_handshake_post_client_hello_func
-                                                 func)
+MHD_gnutls_handshake_set_post_client_hello_function (mhd_gtls_session_t
+                                                     session,
+                                                     gnutls_handshake_post_client_hello_func
+                                                     func)
 {
   session->internals.user_hello_func = func;
 }

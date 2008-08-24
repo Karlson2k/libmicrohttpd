@@ -280,7 +280,6 @@ enum MHD_FLAG
    * MHD, and OFF in production.
    */
   MHD_USE_PEDANTIC_CHECKS = 32
-
 };
 
 /**
@@ -373,7 +372,7 @@ enum MHD_OPTION
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
    */
   MHD_OPTION_HTTPS_MEM_KEY = 9,
-  
+
   /**
    * Memory pointer for the certificate (cert.pem) to be used by the
    * HTTPS daemon.  This option should be followed by an
@@ -392,16 +391,16 @@ enum MHD_OPTION
   /**
    * SSL/TLS protocol version.
    *
-   * Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated 
+   * Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated
    * (const) array of 'enum MHD_GNUTLS_Protocol' values representing the
    * protocol versions to this server should support. Unsupported
-   * requests will be droped by the server. 
+   * requests will be droped by the server.
    */
   MHD_OPTION_PROTOCOL_VERSION = 12,
 
   /**
-   * Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN) 
-   * terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm' 
+   * Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN)
+   * terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm'
    * representing the cipher priority order to which the HTTPS
    * daemon should adhere.
    */
@@ -421,7 +420,7 @@ enum MHD_OPTION
   MHD_OPTION_CERT_TYPE = 15,
 
   /**
-   * Specify the mac algorithm used by server.  
+   * Specify the mac algorithm used by server.
    * The argument should be of type "enum MHD_GNUTLS_MacAlgorithm"
    */
   MHD_OPTION_MAC_ALGO = 16,
@@ -481,7 +480,6 @@ enum MHD_ValueKind
    * HTTP footer (only for http 1.1 chunked encodings).
    */
   MHD_FOOTER_KIND = 16
-
 };
 
 /**
@@ -519,13 +517,12 @@ enum MHD_RequestTerminationCode
   /* FIXME: add TLS-specific error codes,
      but only those that are useful! */
   /**
-   * Processing of this secure connection encountered 
+   * Processing of this secure connection encountered
    * an error.
    */
   MHD_TLS_REQUEST_TERMINATED_WITH_ERROR,
-  
-  MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT
 
+  MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT
 };
 
 /**
@@ -546,7 +543,7 @@ enum MHD_GNUTLS_CipherAlgorithm
   MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
   MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
   MHD_GNUTLS_CIPHER_DES_CBC
-}; // enum MHD_GNUTLS_CipherAlgorithm;
+};                              // enum MHD_GNUTLS_CipherAlgorithm;
 
 /**
  * Which public key algorithm should be used
@@ -568,7 +565,7 @@ enum MHD_GNUTLS_KeyExchangeAlgorithm
 };
 
 /**
- * Server credentials type 
+ * Server credentials type
  */
 enum MHD_GNUTLS_CredentialsType
 {
@@ -590,8 +587,8 @@ enum MHD_GNUTLS_HashAlgorithm
   MHD_GNUTLS_MAC_MD5,
   MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_SHA256
-  //GNUTLS_MAC_SHA384,
-  //GNUTLS_MAC_SHA512
+    //GNUTLS_MAC_SHA384,
+    //GNUTLS_MAC_SHA512
 };
 
 /**
@@ -630,7 +627,7 @@ enum MHD_GNUTLS_PublicKeyAlgorithm
 {
   MHD_GNUTLS_PK_UNKNOWN = 0,
   MHD_GNUTLS_PK_RSA = 1
-  //GNUTLS_PK_DSA
+    //GNUTLS_PK_DSA
 };
 
 /**
@@ -906,18 +903,18 @@ typedef int
  *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
-struct MHD_Daemon *
-MHD_start_daemon_va (unsigned int options,
-                     unsigned short port,
-                     MHD_AcceptPolicyCallback apc,
-                     void *apc_cls,
-                     MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap);
+struct MHD_Daemon *MHD_start_daemon_va (unsigned int options,
+                                        unsigned short port,
+                                        MHD_AcceptPolicyCallback apc,
+                                        void *apc_cls,
+                                        MHD_AccessHandlerCallback dh,
+                                        void *dh_cls, va_list ap);
 
 /*
  * Variadic version of MHD_start_daemon_va. This function will delegate calls
  * to MHD_start_daemon_va() once argument list is analyzed.
  */
-struct MHD_Daemon * MHD_start_daemon (unsigned int flags,
+struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
                                      unsigned short port,
                                      MHD_AcceptPolicyCallback apc,
                                      void *apc_cls,
@@ -1014,9 +1011,8 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  */
 int
 MHD_set_connection_value (struct MHD_Connection *connection,
-			  enum MHD_ValueKind kind,
-			  const char *key,
-			  const char *value);
+                          enum MHD_ValueKind kind,
+                          const char *key, const char *value);
 
 /**
  * Get a particular header value.  If multiple
@@ -1129,7 +1125,7 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @param key which header to get
  * @return NULL if header does not exist
  */
-const char * MHD_get_response_header (struct MHD_Response *response,
+const char *MHD_get_response_header (struct MHD_Response *response,
                                      const char *key);
 
 
@@ -1211,10 +1207,11 @@ union MHD_ConnectionInfo
  * @return NULL if this information is not available
  *         (or if the infoType is unknown)
  */
-const union MHD_ConnectionInfo *
-MHD_get_connection_info (struct MHD_Connection * connection,
-			 enum MHD_ConnectionInfoType infoType,
-			 ...);
+const union MHD_ConnectionInfo *MHD_get_connection_info (struct MHD_Connection
+                                                         *connection,
+                                                         enum
+                                                         MHD_ConnectionInfoType
+                                                         infoType, ...);
 
 
 /**
@@ -1242,10 +1239,9 @@ union MHD_DaemonInfo
  * @return NULL if this information is not available
  *         (or if the infoType is unknown)
  */
-const union MHD_DaemonInfo *
-MHD_get_daemon_info (struct MHD_Daemon * daemon,
-		     enum MHD_DaemonInfoType infoType,
-		     ...);
+const union MHD_DaemonInfo *MHD_get_daemon_info (struct MHD_Daemon *daemon,
+                                                 enum MHD_DaemonInfoType
+                                                 infoType, ...);
 
 #if 0                           /* keep Emacsens' auto-indent happy */
 {

@@ -132,8 +132,9 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
  * params[1] is public key
  */
 static int
-pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash, const gnutls_datum_t * text,
-                mpi_t * params, int params_len, gnutls_datum_t * signature)
+pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
+                const gnutls_datum_t * text, mpi_t * params, int params_len,
+                gnutls_datum_t * signature)
 {
   int ret;
   opaque _digest[MAX_HASH_SIZE];
@@ -163,7 +164,7 @@ pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash, const gnutls_datum_t * text,
 
   if ((ret =
        mhd_gtls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
-                     signature)) < 0)
+                      signature)) < 0)
     {
       gnutls_assert ();
       _gnutls_free_datum (&info);
@@ -179,7 +180,7 @@ pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash, const gnutls_datum_t * text,
  * private key.
  *
  * returns 0 on success.
- * 
+ *
  * 'tbs' is the data to be signed
  * 'signature' will hold the signature!
  * 'hash' is only used in PKCS1 RSA signing.
@@ -327,7 +328,7 @@ _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
     }
 
   /* Step 3. Move up and write the AlgorithmIdentifier, which is also
-   * the same. 
+   * the same.
    */
 
   result = _gnutls_x509_write_sig_params (src, "signatureAlgorithm",

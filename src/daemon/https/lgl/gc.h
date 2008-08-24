@@ -25,37 +25,37 @@
 # include <stddef.h>
 
 enum Gc_rc
-  {
-    GC_OK = 0,
-    GC_MALLOC_ERROR,
-    GC_INIT_ERROR,
-    GC_RANDOM_ERROR,
-    GC_INVALID_CIPHER,
-    GC_INVALID_HASH,
-    GC_PKCS5_INVALID_ITERATION_COUNT,
-    GC_PKCS5_INVALID_DERIVED_KEY_LENGTH,
-    GC_PKCS5_DERIVED_KEY_TOO_LONG
-  };
+{
+  GC_OK = 0,
+  GC_MALLOC_ERROR,
+  GC_INIT_ERROR,
+  GC_RANDOM_ERROR,
+  GC_INVALID_CIPHER,
+  GC_INVALID_HASH,
+  GC_PKCS5_INVALID_ITERATION_COUNT,
+  GC_PKCS5_INVALID_DERIVED_KEY_LENGTH,
+  GC_PKCS5_DERIVED_KEY_TOO_LONG
+};
 typedef enum Gc_rc Gc_rc;
 
 /* Hash types. */
 enum Gc_hash
-  {
-    GC_MD4,
-    GC_MD5,
-    GC_SHA1,
-    GC_MD2,
-    GC_RMD160,
-    GC_SHA256,
-    GC_SHA384,
-    GC_SHA512
-  };
+{
+  GC_MD4,
+  GC_MD5,
+  GC_SHA1,
+  GC_MD2,
+  GC_RMD160,
+  GC_SHA256,
+  GC_SHA384,
+  GC_SHA512
+};
 typedef enum Gc_hash Gc_hash;
 
 enum Gc_hash_mode
-  {
-    GC_HMAC = 1
-  };
+{
+  GC_HMAC = 1
+};
 typedef enum Gc_hash_mode Gc_hash_mode;
 
 typedef void *gc_hash_handle;
@@ -71,88 +71,71 @@ typedef void *gc_hash_handle;
 
 /* Cipher types. */
 enum Gc_cipher
-  {
-    GC_AES128,
-    GC_AES192,
-    GC_AES256,
-    GC_3DES,
-    GC_DES,
-    GC_ARCFOUR128,
-    GC_ARCFOUR40,
-    GC_ARCTWO40,
-    GC_CAMELLIA128,
-    GC_CAMELLIA256
-  };
+{
+  GC_AES128,
+  GC_AES192,
+  GC_AES256,
+  GC_3DES,
+  GC_DES,
+  GC_ARCFOUR128,
+  GC_ARCFOUR40,
+  GC_ARCTWO40,
+  GC_CAMELLIA128,
+  GC_CAMELLIA256
+};
 typedef enum Gc_cipher Gc_cipher;
 
 enum Gc_cipher_mode
-  {
-    GC_ECB,
-    GC_CBC,
-    GC_STREAM
-  };
+{
+  GC_ECB,
+  GC_CBC,
+  GC_STREAM
+};
 typedef enum Gc_cipher_mode Gc_cipher_mode;
 
-typedef void * gc_cipher_handle;
+typedef void *gc_cipher_handle;
 
 /* Call before respectively after any other functions. */
-Gc_rc gc_init(void);
-void gc_done(void);
+Gc_rc gc_init (void);
+void gc_done (void);
 
 /* Memory allocation (avoid). */
-typedef void *(*gc_malloc_t)(size_t n);
-typedef int (*gc_secure_check_t)(const void *);
-typedef void *(*gc_realloc_t)(void *p,
-                              size_t n);
-typedef void (*gc_free_t)(void *);
-void gc_set_allocators(gc_malloc_t func_malloc,
-                       gc_malloc_t secure_malloc,
-                       gc_secure_check_t secure_check,
-                       gc_realloc_t func_realloc,
-                       gc_free_t func_free);
+typedef void *(*gc_malloc_t) (size_t n);
+typedef int (*gc_secure_check_t) (const void *);
+typedef void *(*gc_realloc_t) (void *p, size_t n);
+typedef void (*gc_free_t) (void *);
+void gc_set_allocators (gc_malloc_t func_malloc,
+                        gc_malloc_t secure_malloc,
+                        gc_secure_check_t secure_check,
+                        gc_realloc_t func_realloc, gc_free_t func_free);
 
 /* Randomness. */
-Gc_rc gc_nonce(char *data,
-               size_t datalen);
-Gc_rc gc_pseudo_random(char *data,
-                       size_t datalen);
-Gc_rc gc_random(char *data,
-                size_t datalen);
+Gc_rc gc_nonce (char *data, size_t datalen);
+Gc_rc gc_pseudo_random (char *data, size_t datalen);
+Gc_rc gc_random (char *data, size_t datalen);
 
 /* Ciphers. */
-Gc_rc gc_cipher_open(Gc_cipher cipher,
-                     Gc_cipher_mode mode,
-                     gc_cipher_handle *outhandle);
-Gc_rc gc_cipher_setkey(gc_cipher_handle handle,
-                       size_t keylen,
-                       const char *key);
-Gc_rc gc_cipher_setiv(gc_cipher_handle handle,
-                      size_t ivlen,
-                      const char *iv);
-Gc_rc gc_cipher_encrypt_inline(gc_cipher_handle handle,
-                               size_t len,
-                               char *data);
-Gc_rc gc_cipher_decrypt_inline(gc_cipher_handle handle,
-                               size_t len,
-                               char *data);
-Gc_rc gc_cipher_close(gc_cipher_handle handle);
+Gc_rc gc_cipher_open (Gc_cipher cipher,
+                      Gc_cipher_mode mode, gc_cipher_handle * outhandle);
+Gc_rc gc_cipher_setkey (gc_cipher_handle handle,
+                        size_t keylen, const char *key);
+Gc_rc gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv);
+Gc_rc gc_cipher_encrypt_inline (gc_cipher_handle handle,
+                                size_t len, char *data);
+Gc_rc gc_cipher_decrypt_inline (gc_cipher_handle handle,
+                                size_t len, char *data);
+Gc_rc gc_cipher_close (gc_cipher_handle handle);
 
 /* Hashes. */
 
-Gc_rc gc_hash_open(Gc_hash hash,
-                   Gc_hash_mode mode,
-                   gc_hash_handle *outhandle);
-Gc_rc gc_hash_clone(gc_hash_handle handle,
-                    gc_hash_handle *outhandle);
-size_t gc_hash_digest_length(Gc_hash hash);
-void gc_hash_hmac_setkey(gc_hash_handle handle,
-                         size_t len,
-                         const char *key);
-void gc_hash_write(gc_hash_handle handle,
-                   size_t len,
-                   const char *data);
-const char *gc_hash_read(gc_hash_handle handle);
-void gc_hash_close(gc_hash_handle handle);
+Gc_rc gc_hash_open (Gc_hash hash,
+                    Gc_hash_mode mode, gc_hash_handle * outhandle);
+Gc_rc gc_hash_clone (gc_hash_handle handle, gc_hash_handle * outhandle);
+size_t gc_hash_digest_length (Gc_hash hash);
+void gc_hash_hmac_setkey (gc_hash_handle handle, size_t len, const char *key);
+void gc_hash_write (gc_hash_handle handle, size_t len, const char *data);
+const char *gc_hash_read (gc_hash_handle handle);
+void gc_hash_close (gc_hash_handle handle);
 
 /* Compute a hash value over buffer IN of INLEN bytes size using the
  algorithm HASH, placing the result in the pre-allocated buffer OUT.
@@ -160,34 +143,18 @@ void gc_hash_close(gc_hash_handle handle);
  GC_<HASH>_DIGEST_SIZE.  For example, for GC_MD5 the output buffer
  must be 16 bytes.  The return value is 0 (GC_OK) on success, or
  another Gc_rc error code. */
-Gc_rc gc_hash_buffer(Gc_hash hash,
-                     const void *in,
-                     size_t inlen,
-                     char *out);
+Gc_rc gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *out);
 
 /* One-call interface. */
-Gc_rc gc_md2(const void *in,
-             size_t inlen,
-             void *resbuf);
-Gc_rc gc_md4(const void *in,
-             size_t inlen,
-             void *resbuf);
-Gc_rc gc_md5(const void *in,
-             size_t inlen,
-             void *resbuf);
-Gc_rc gc_sha1(const void *in,
-              size_t inlen,
-              void *resbuf);
-Gc_rc gc_hmac_md5(const void *key,
-                  size_t keylen,
-                  const void *in,
-                  size_t inlen,
-                  char *resbuf);
-Gc_rc gc_hmac_sha1(const void *key,
-                   size_t keylen,
-                   const void *in,
-                   size_t inlen,
-                   char *resbuf);
+Gc_rc gc_md2 (const void *in, size_t inlen, void *resbuf);
+Gc_rc gc_md4 (const void *in, size_t inlen, void *resbuf);
+Gc_rc gc_md5 (const void *in, size_t inlen, void *resbuf);
+Gc_rc gc_sha1 (const void *in, size_t inlen, void *resbuf);
+Gc_rc gc_hmac_md5 (const void *key,
+                   size_t keylen, const void *in, size_t inlen, char *resbuf);
+Gc_rc gc_hmac_sha1 (const void *key,
+                    size_t keylen,
+                    const void *in, size_t inlen, char *resbuf);
 
 /* Derive cryptographic keys from a password P of length PLEN, with
  salt S of length SLEN, placing the result in pre-allocated buffer
@@ -196,13 +163,10 @@ Gc_rc gc_hmac_sha1(const void *key,
  counts are 1000-20000).  This function "stretches" the key to be
  exactly dkLen bytes long.  GC_OK is returned on success, otherwise
  an Gc_rc error code is returned.  */
-Gc_rc gc_pbkdf2_sha1(const char *P,
-                     size_t Plen,
-                     const char *S,
-                     size_t Slen,
-                     unsigned int c,
-                     char *DK,
-                     size_t dkLen);
+Gc_rc gc_pbkdf2_sha1 (const char *P,
+                      size_t Plen,
+                      const char *S,
+                      size_t Slen, unsigned int c, char *DK, size_t dkLen);
 
 /*
  TODO:

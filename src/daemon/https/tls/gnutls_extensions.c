@@ -142,8 +142,8 @@ _gnutls_extension_list_check (mhd_gtls_session_t session, uint16_t type)
 
 int
 mhd_gtls_parse_extensions (mhd_gtls_session_t session,
-                          mhd_gtls_ext_parse_type_t parse_type,
-                          const opaque * data, int data_size)
+                           mhd_gtls_ext_parse_type_t parse_type,
+                           const opaque * data, int data_size)
 {
   int next, ret;
   int pos = 0;
@@ -159,9 +159,8 @@ mhd_gtls_parse_extensions (mhd_gtls_session_t session,
       {
         _gnutls_debug_log ("EXT[%d]: expecting extension '%s'\n",
                            session,
-                           mhd_gtls_extension_get_name (session->
-                                                       internals.
-                                                       extensions_sent[i]));
+                           mhd_gtls_extension_get_name
+                           (session->internals.extensions_sent[i]));
       }
 #endif
 
@@ -236,7 +235,7 @@ _gnutls_extension_list_add (mhd_gtls_session_t session, uint16_t type)
 
 int
 mhd_gtls_gen_extensions (mhd_gtls_session_t session, opaque * data,
-                        size_t data_size)
+                         size_t data_size)
 {
   int size;
   uint16_t pos = 0;

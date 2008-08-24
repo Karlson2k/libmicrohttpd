@@ -43,13 +43,13 @@ static int _gnutls_tls_sign (mhd_gtls_session_t session,
                              const gnutls_datum_t * hash_concat,
                              gnutls_datum_t * signature);
 
-/* Generates a signature of all the previous sent packets in the 
+/* Generates a signature of all the previous sent packets in the
  * handshake procedure. (20040227: now it works for SSL 3.0 as well)
  */
 int
 mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
-                        gnutls_cert * cert,
-                        gnutls_privkey * pkey, gnutls_datum_t * signature)
+                         gnutls_cert * cert,
+                         gnutls_privkey * pkey, gnutls_datum_t * signature)
 {
   gnutls_datum_t dconcat;
   int ret;
@@ -75,8 +75,8 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
         }
 
       mhd_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                         session->security_parameters.
-                                         master_secret, TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
     }
   else
     mhd_gnutls_hash_deinit (td_sha, &concat[16]);
@@ -94,8 +94,8 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
 
       if (ver == MHD_GNUTLS_SSL3)
         mhd_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                           session->security_parameters.
-                                           master_secret, TLS_MASTER_SIZE);
+                                              session->security_parameters.
+                                              master_secret, TLS_MASTER_SIZE);
       else
         mhd_gnutls_hash_deinit (td_md5, concat);
 
@@ -120,9 +120,9 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
-                         gnutls_cert * cert,
-                         gnutls_privkey * pkey,
-                         gnutls_datum_t * params, gnutls_datum_t * signature)
+                          gnutls_cert * cert,
+                          gnutls_privkey * pkey,
+                          gnutls_datum_t * params, gnutls_datum_t * signature)
 {
   gnutls_datum_t dconcat;
   int ret;
@@ -138,9 +138,9 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
     }
 
   mhd_gnutls_hash (td_sha, session->security_parameters.client_random,
-                TLS_RANDOM_SIZE);
+                   TLS_RANDOM_SIZE);
   mhd_gnutls_hash (td_sha, session->security_parameters.server_random,
-                TLS_RANDOM_SIZE);
+                   TLS_RANDOM_SIZE);
   mhd_gnutls_hash (td_sha, params->data, params->size);
 
   switch (cert->subject_pk_algorithm)
@@ -156,9 +156,9 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
             }
 
           mhd_gnutls_hash (td_md5, session->security_parameters.client_random,
-                        TLS_RANDOM_SIZE);
+                           TLS_RANDOM_SIZE);
           mhd_gnutls_hash (td_md5, session->security_parameters.server_random,
-                        TLS_RANDOM_SIZE);
+                           TLS_RANDOM_SIZE);
           mhd_gnutls_hash (td_md5, params->data, params->size);
 
           mhd_gnutls_hash_deinit (td_md5, concat);
@@ -205,9 +205,9 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
-              mpi_t * params,
-              int params_size,
-              const gnutls_datum_t * data, gnutls_datum_t * signature)
+               mpi_t * params,
+               int params_size,
+               const gnutls_datum_t * data, gnutls_datum_t * signature)
 {
   int ret;
 
@@ -217,7 +217,7 @@ mhd_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
       /* encrypt */
       if ((ret =
            mhd_gtls_pkcs1_rsa_encrypt (signature, data, params, params_size,
-                                      1)) < 0)
+                                       1)) < 0)
         {
           gnutls_assert ();
           return ret;
@@ -270,7 +270,7 @@ _gnutls_tls_sign (mhd_gtls_session_t session,
     }
 
   return mhd_gtls_sign (pkey->pk_algorithm, pkey->params, pkey->params_size,
-                       hash_concat, signature);
+                        hash_concat, signature);
 }
 
 static int
@@ -308,7 +308,7 @@ _gnutls_verify_sig (gnutls_cert * cert,
 
       /* verify signature */
       if ((ret = mhd_gtls_rsa_verify (&vdata, signature, cert->params,
-                                     cert->params_size, 1)) < 0)
+                                      cert->params_size, 1)) < 0)
         {
           gnutls_assert ();
           return ret;
@@ -324,11 +324,11 @@ _gnutls_verify_sig (gnutls_cert * cert,
 }
 
 /* Verifies a TLS signature (like the one in the client certificate
- * verify message). 
+ * verify message).
  */
 int
 mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
-                          gnutls_cert * cert, gnutls_datum_t * signature)
+                           gnutls_cert * cert, gnutls_datum_t * signature)
 {
   int ret;
   opaque concat[36];
@@ -362,11 +362,11 @@ mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
         }
 
       mhd_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                         session->security_parameters.
-                                         master_secret, TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
       mhd_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                         session->security_parameters.
-                                         master_secret, TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
     }
   else
     {
@@ -393,9 +393,9 @@ mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
-                           gnutls_cert * cert,
-                           const gnutls_datum_t * params,
-                           gnutls_datum_t * signature)
+                            gnutls_cert * cert,
+                            const gnutls_datum_t * params,
+                            gnutls_datum_t * signature)
 {
   gnutls_datum_t dconcat;
   int ret;
@@ -414,9 +414,9 @@ mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
         }
 
       mhd_gnutls_hash (td_md5, session->security_parameters.client_random,
-                    TLS_RANDOM_SIZE);
+                       TLS_RANDOM_SIZE);
       mhd_gnutls_hash (td_md5, session->security_parameters.server_random,
-                    TLS_RANDOM_SIZE);
+                       TLS_RANDOM_SIZE);
       mhd_gnutls_hash (td_md5, params->data, params->size);
     }
 
@@ -430,9 +430,9 @@ mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
     }
 
   mhd_gnutls_hash (td_sha, session->security_parameters.client_random,
-                TLS_RANDOM_SIZE);
+                   TLS_RANDOM_SIZE);
   mhd_gnutls_hash (td_sha, session->security_parameters.server_random,
-                TLS_RANDOM_SIZE);
+                   TLS_RANDOM_SIZE);
   mhd_gnutls_hash (td_sha, params->data, params->size);
 
   if (ver < MHD_GNUTLS_TLS1_2)

@@ -2557,7 +2557,7 @@ asn1_expand_any_defined_by (ASN1_TYPE definitions, ASN1_TYPE * element)
                       if ((result == ASN1_SUCCESS)
                           && (!strcmp (p3->value, value)))
                         {
-                          p2 = p2->right;       /* pointer to the structure to 
+                          p2 = p2->right;       /* pointer to the structure to
                                                    use for expansion */
                           while ((p2) && (p2->type & CONST_ASSIGN))
                             p2 = p2->right;
@@ -2747,7 +2747,7 @@ asn1_expand_octet_string (ASN1_TYPE definitions, ASN1_TYPE * element,
               && (!strcmp (objectNode->value, value)))
             {
 
-              p2 = p2->right;   /* pointer to the structure to 
+              p2 = p2->right;   /* pointer to the structure to
                                    use for expansion */
               while ((p2) && (p2->type & CONST_ASSIGN))
                 p2 = p2->right;

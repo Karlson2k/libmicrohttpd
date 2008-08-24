@@ -130,8 +130,8 @@ mhd_gtls_comp_deinit (comp_hd_t handle, int d)
 
 int
 mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
-                  size_t plain_size, opaque ** compressed,
-                  size_t max_comp_size)
+                   size_t plain_size, opaque ** compressed,
+                   size_t max_comp_size)
 {
   int compressed_size = GNUTLS_E_COMPRESSION_FAILED;
 
@@ -205,8 +205,8 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
 
 int
 mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
-                    size_t compressed_size, opaque ** plain,
-                    size_t max_record_size)
+                     size_t compressed_size, opaque ** plain,
+                     size_t max_record_size)
 {
   int plain_size = GNUTLS_E_DECOMPRESSION_FAILED;
 

@@ -25,6 +25,6 @@
 
 #include "int.h"
 
-void _libtasn1_log( const char *fmt, ...);
+void _libtasn1_log (const char *fmt, ...);
 
 #endif /* ERRORS_H */

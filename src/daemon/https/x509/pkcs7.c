@@ -40,7 +40,7 @@
 
 #define SIGNED_DATA_OID "1.2.840.113549.1.7.2"
 
-/* Decodes the PKCS #7 signed data, and returns an ASN1_TYPE, 
+/* Decodes the PKCS #7 signed data, and returns an ASN1_TYPE,
  * which holds them. If raw is non null then the raw decoded
  * data are copied (they are locally allocated) there.
  */
@@ -175,7 +175,7 @@ gnutls_pkcs7_init (gnutls_pkcs7_t * pkcs7)
   * gnutls_pkcs7_deinit - This function deinitializes memory used by a gnutls_pkcs7_t structure
   * @pkcs7: The structure to be initialized
   *
-  * This function will deinitialize a PKCS7 structure. 
+  * This function will deinitialize a PKCS7 structure.
   *
   **/
 void
@@ -298,7 +298,7 @@ gnutls_pkcs7_get_crt_raw (gnutls_pkcs7_t pkcs7,
       return result;
     }
 
-  /* Step 2. Parse the CertificateSet 
+  /* Step 2. Parse the CertificateSet
    */
 
   snprintf (root2, sizeof (root2), "certificates.?%u", indx + 1);
@@ -320,7 +320,7 @@ gnutls_pkcs7_get_crt_raw (gnutls_pkcs7_t pkcs7,
       goto cleanup;
     }
 
-  /* if 'Certificate' is the choice found: 
+  /* if 'Certificate' is the choice found:
    */
   if (strcmp (oid, "certificate") == 0)
     {
@@ -369,7 +369,7 @@ cleanup:
   * gnutls_pkcs7_get_crt_count - This function returns the number of certificates in a PKCS7 certificate set
   * @pkcs7_struct: should contain a gnutls_pkcs7_t structure
   *
-  * This function will return the number of certifcates in the PKCS7 or 
+  * This function will return the number of certifcates in the PKCS7 or
   * RFC2630 certificate set.
   *
   * Returns a negative value on failure.
@@ -755,12 +755,12 @@ gnutls_pkcs7_get_crl_raw (gnutls_pkcs7_t pkcs7,
       return result;
     }
 
-  /* Step 2. Parse the CertificateSet 
+  /* Step 2. Parse the CertificateSet
    */
 
   snprintf (root2, sizeof (root2), "crls.?%u", indx + 1);
 
-  /* Get the raw CRL 
+  /* Get the raw CRL
    */
   result = asn1_der_decoding_startEnd (c2, tmp.data, tmp.size,
                                        root2, &start, &end);
@@ -799,7 +799,7 @@ cleanup:
   * gnutls_pkcs7_get_crl_count - This function returns the number of crls in a PKCS7 crl set
   * @pkcs7_struct: should contain a gnutls_pkcs7_t structure
   *
-  * This function will return the number of certifcates in the PKCS7 or 
+  * This function will return the number of certifcates in the PKCS7 or
   * RFC2630 crl set.
   *
   * Returns a negative value on failure.

@@ -47,8 +47,7 @@ typedef struct
 
 /* Check whether the 8 byte key is weak.  Does not check the parity
  * bits of the key but simple ignore them. */
-extern bool
-gl_des_is_weak_key (const char * key);
+extern bool gl_des_is_weak_key (const char *key);
 
 /*
  * DES
@@ -58,19 +57,17 @@ gl_des_is_weak_key (const char * key);
 /* Fill a DES context CTX with subkeys calculated from 64bit KEY.
  * Does not check parity bits, but simply ignore them.  Does not check
  * for weak keys. */
-extern void
-gl_des_setkey (gl_des_ctx *ctx, const char * key);
+extern void gl_des_setkey (gl_des_ctx * ctx, const char *key);
 
 /* Fill a DES context CTX with subkeys calculated from 64bit KEY, with
  * weak key checking.  Does not check parity bits, but simply ignore
  * them. */
-extern bool
-gl_des_makekey (gl_des_ctx *ctx, const char * key, size_t keylen);
+extern bool gl_des_makekey (gl_des_ctx * ctx, const char *key, size_t keylen);
 
 /* Electronic Codebook Mode DES encryption/decryption of data
  * according to 'mode'. */
 extern void
-gl_des_ecb_crypt (gl_des_ctx *ctx, const char * from,  char * to, int mode);
+gl_des_ecb_crypt (gl_des_ctx * ctx, const char *from, char *to, int mode);
 
 #define gl_des_ecb_encrypt(ctx, from, to)  gl_des_ecb_crypt(ctx, from, to, 0)
 #define gl_des_ecb_decrypt(ctx, from, to)  gl_des_ecb_crypt(ctx, from, to, 1)
@@ -83,9 +80,7 @@ gl_des_ecb_crypt (gl_des_ctx *ctx, const char * from,  char * to, int mode);
  * 64bit keys in KEY1 and KEY2.  Does not check the parity bits of the
  * keys, but simply ignore them.  Does not check for weak keys. */
 extern void
-gl_3des_set2keys (gl_3des_ctx *ctx,
-		  const char * key1,
-		  const char * key2);
+gl_3des_set2keys (gl_3des_ctx * ctx, const char *key1, const char *key2);
 
 /*
  * Fill a Triple-DES context CTX with subkeys calculated from three
@@ -93,27 +88,20 @@ gl_3des_set2keys (gl_3des_ctx *ctx,
  * of the keys, but simply ignore them.  Does not check for weak
  * keys. */
 extern void
-gl_3des_set3keys (gl_3des_ctx *ctx,
-		  const char * key1,
-		  const char * key2,
-		  const char * key3);
+gl_3des_set3keys (gl_3des_ctx * ctx,
+                  const char *key1, const char *key2, const char *key3);
 
 /* Fill a Triple-DES context CTX with subkeys calculated from three
  * concatenated 64bit keys in KEY, with weak key checking.  Does not
  * check the parity bits of the keys, but simply ignore them. */
 extern bool
-gl_3des_makekey (gl_3des_ctx *ctx,
-		 const char * key,
-		 size_t keylen);
+gl_3des_makekey (gl_3des_ctx * ctx, const char *key, size_t keylen);
 
 /* Electronic Codebook Mode Triple-DES encryption/decryption of data
  * according to 'mode'.  Sometimes this mode is named 'EDE' mode
  * (Encryption-Decryption-Encryption). */
 extern void
-gl_3des_ecb_crypt (gl_3des_ctx *ctx,
-		   const char * from,
-		   char * to,
-		   int mode);
+gl_3des_ecb_crypt (gl_3des_ctx * ctx, const char *from, char *to, int mode);
 
 #define gl_3des_ecb_encrypt(ctx, from, to) gl_3des_ecb_crypt(ctx,from,to,0)
 #define gl_3des_ecb_decrypt(ctx, from, to) gl_3des_ecb_crypt(ctx,from,to,1)

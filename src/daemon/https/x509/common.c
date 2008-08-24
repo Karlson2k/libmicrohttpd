@@ -440,7 +440,7 @@ _gnutls_x509_data2hex (const opaque * data,
   return 0;
 }
 
-/* TIME functions 
+/* TIME functions
  * Convertions between generalized or UTC time to time_t
  *
  */
@@ -463,7 +463,7 @@ typedef struct fake_tm
  * who placed it under public domain:
  */
 
-/* The number of days in each month. 
+/* The number of days in each month.
  */
 static const int MONTHDAYS[] = { 31,
   28,
@@ -498,12 +498,12 @@ mktime_utc (const struct fake_tm *tm)
   /* We do allow some ill-formed dates, but we don't do anything special
    * with them and our callers really shouldn't pass them to us.  Do
    * explicitly disallow the ones that would cause invalid array accesses
-   * or other algorithm problems. 
+   * or other algorithm problems.
    */
   if (tm->tm_mon < 0 || tm->tm_mon > 11 || tm->tm_year < 1970)
     return (time_t) - 1;
 
-  /* Convert to a time_t. 
+  /* Convert to a time_t.
    */
   for (i = 1970; i < tm->tm_year; i++)
     result += 365 + ISLEAP (i);
@@ -1319,7 +1319,7 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
       return algo;
     }
 
-  /* Now read the parameters' bits 
+  /* Now read the parameters' bits
    */
   mhd_gtls_str_cpy (name, sizeof (name), src_name);
   mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
@@ -1442,7 +1442,7 @@ _gnutls_x509_get_signature (ASN1_TYPE src,
   signature->data = NULL;
   signature->size = 0;
 
-  /* Read the signature 
+  /* Read the signature
    */
   bits = 0;
   result = asn1_read_value (src, src_name, NULL, &bits);

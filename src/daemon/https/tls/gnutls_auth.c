@@ -60,7 +60,7 @@ MHD_gnutls_credentials_clear (mhd_gtls_session_t session)
     }
 }
 
-/* 
+/*
  * This creates a linked list of the form:
  * { algorithm, credentials, pointer to next }
  */
@@ -71,17 +71,17 @@ MHD_gnutls_credentials_clear (mhd_gtls_session_t session)
   * @cred: is a pointer to a structure.
   *
   * Sets the needed credentials for the specified type.
-  * Eg username, password - or public and private keys etc.  
+  * Eg username, password - or public and private keys etc.
   * The (void* cred) parameter is a structure that depends on the
   * specified type and on the current session (client or server).
-  * [ In order to minimize memory usage, and share credentials between 
+  * [ In order to minimize memory usage, and share credentials between
   * several threads gnutls keeps a pointer to cred, and not the whole cred
-  * structure. Thus you will have to keep the structure allocated until   
+  * structure. Thus you will have to keep the structure allocated until
   * you call MHD_gnutls_deinit(). ]
   *
   * For GNUTLS_CRD_ANON cred should be mhd_gtls_anon_client_credentials_t in case of a client.
   * In case of a server it should be mhd_gtls_anon_server_credentials_t.
-  * 
+  *
   * For GNUTLS_CRD_SRP cred should be gnutls_srp_client_credentials_t
   * in case of a client, and gnutls_srp_server_credentials_t, in case
   * of a server.
@@ -91,7 +91,7 @@ MHD_gnutls_credentials_clear (mhd_gtls_session_t session)
   **/
 int
 MHD_gnutls_credentials_set (mhd_gtls_session_t session,
-                        enum MHD_GNUTLS_CredentialsType type, void *cred)
+                            enum MHD_GNUTLS_CredentialsType type, void *cred)
 {
   auth_cred_st *ccred = NULL, *pcred = NULL;
   int exists = 0;
@@ -156,7 +156,7 @@ MHD_gnutls_credentials_set (mhd_gtls_session_t session,
   * Returns type of credentials for the current authentication schema.
   * The returned information is to be used to distinguish the function used
   * to access authentication data.
-  * 
+  *
   * Eg. for CERTIFICATE ciphersuites (key exchange algorithms: KX_RSA, KX_DHE_RSA),
   * the same function are to be used to access the authentication data.
   **/
@@ -170,8 +170,8 @@ MHD_gtls_auth_get_type (mhd_gtls_session_t session)
 
   return
     mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
-                             (&session->security_parameters.
-                              current_cipher_suite), server);
+                              (&session->security_parameters.
+                               current_cipher_suite), server);
 }
 
 /**
@@ -181,15 +181,15 @@ MHD_gtls_auth_get_type (mhd_gtls_session_t session)
   * Returns the type of credentials that were used for server authentication.
   * The returned information is to be used to distinguish the function used
   * to access authentication data.
-  * 
+  *
   **/
 enum MHD_GNUTLS_CredentialsType
 MHD_gtls_auth_server_get_type (mhd_gtls_session_t session)
 {
   return
     mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
-                             (&session->security_parameters.
-                              current_cipher_suite), 1);
+                              (&session->security_parameters.
+                               current_cipher_suite), 1);
 }
 
 /**
@@ -199,34 +199,35 @@ MHD_gtls_auth_server_get_type (mhd_gtls_session_t session)
   * Returns the type of credentials that were used for client authentication.
   * The returned information is to be used to distinguish the function used
   * to access authentication data.
-  * 
+  *
   **/
 enum MHD_GNUTLS_CredentialsType
 MHD_gtls_auth_client_get_type (mhd_gtls_session_t session)
 {
   return
     mhd_gtls_map_kx_get_cred (mhd_gtls_cipher_suite_get_kx_algo
-                             (&session->security_parameters.
-                              current_cipher_suite), 0);
+                              (&session->security_parameters.
+                               current_cipher_suite), 0);
 }
 
 
-/* 
+/*
  * This returns a pointer to the linked list. Don't
  * free that!!!
  */
 const void *
 mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
-                     enum MHD_GNUTLS_KeyExchangeAlgorithm algo, int *err)
+                      enum MHD_GNUTLS_KeyExchangeAlgorithm algo, int *err)
 {
   int server = session->security_parameters.entity == GNUTLS_SERVER ? 1 : 0;
 
   return mhd_gtls_get_cred (session->key,
-                           mhd_gtls_map_kx_get_cred (algo, server), err);
+                            mhd_gtls_map_kx_get_cred (algo, server), err);
 }
 
 const void *
-mhd_gtls_get_cred (mhd_gtls_key_st key, enum MHD_GNUTLS_CredentialsType type, int *err)
+mhd_gtls_get_cred (mhd_gtls_key_st key, enum MHD_GNUTLS_CredentialsType type,
+                   int *err)
 {
   const void *retval = NULL;
   int _err = -1;
@@ -354,8 +355,8 @@ mhd_gtls_free_auth_info (mhd_gtls_session_t session)
  */
 int
 mhd_gtls_auth_info_set (mhd_gtls_session_t session,
-                       enum MHD_GNUTLS_CredentialsType type, int size,
-                       int allow_change)
+                        enum MHD_GNUTLS_CredentialsType type, int size,
+                        int allow_change)
 {
   if (session->key->auth_info == NULL)
     {
@@ -378,7 +379,8 @@ mhd_gtls_auth_info_set (mhd_gtls_session_t session,
            * ciphersuite which is negotiated has different authentication
            * schema.
            */
-          if (MHD_gtls_auth_get_type (session) != session->key->auth_info_type)
+          if (MHD_gtls_auth_get_type (session) !=
+              session->key->auth_info_type)
             {
               gnutls_assert ();
               return GNUTLS_E_INVALID_REQUEST;
@@ -392,7 +394,8 @@ mhd_gtls_auth_info_set (mhd_gtls_session_t session,
            * certificate (in order to prevent revealing the certificate's contents,
            * to passive eavesdropers.
            */
-          if (MHD_gtls_auth_get_type (session) != session->key->auth_info_type)
+          if (MHD_gtls_auth_get_type (session) !=
+              session->key->auth_info_type)
             {
 
               mhd_gtls_free_auth_info (session);

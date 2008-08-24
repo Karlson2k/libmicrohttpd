@@ -49,15 +49,15 @@ const mhd_gtls_mod_auth_st mhd_gtls_dhe_rsa_auth_struct = {
   mhd_gtls_gen_cert_client_certificate,
   gen_dhe_server_kx,
   mhd_gtls_gen_dh_common_client_kx,
-  mhd_gtls_gen_cert_client_cert_vrfy,    /* gen client cert vrfy */
-  mhd_gtls_gen_cert_server_cert_req,     /* server cert request */
+  mhd_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
+  mhd_gtls_gen_cert_server_cert_req,    /* server cert request */
 
   mhd_gtls_proc_cert_server_certificate,
   _gnutls_proc_cert_client_certificate,
   proc_dhe_server_kx,
   proc_dhe_client_kx,
-  mhd_gtls_proc_cert_client_cert_vrfy,   /* proc client cert vrfy */
-  mhd_gtls_proc_cert_cert_req    /* proc server cert request */
+  mhd_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
+  mhd_gtls_proc_cert_cert_req   /* proc server cert request */
 };
 
 const mhd_gtls_mod_auth_st mhd_gtls_dhe_dss_auth_struct = {
@@ -66,15 +66,15 @@ const mhd_gtls_mod_auth_st mhd_gtls_dhe_dss_auth_struct = {
   mhd_gtls_gen_cert_client_certificate,
   gen_dhe_server_kx,
   mhd_gtls_gen_dh_common_client_kx,
-  mhd_gtls_gen_cert_client_cert_vrfy,    /* gen client cert vrfy */
-  mhd_gtls_gen_cert_server_cert_req,     /* server cert request */
+  mhd_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
+  mhd_gtls_gen_cert_server_cert_req,    /* server cert request */
 
   mhd_gtls_proc_cert_server_certificate,
   _gnutls_proc_cert_client_certificate,
   proc_dhe_server_kx,
   proc_dhe_client_kx,
-  mhd_gtls_proc_cert_client_cert_vrfy,   /* proc client cert vrfy */
-  mhd_gtls_proc_cert_cert_req    /* proc server cert request */
+  mhd_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
+  mhd_gtls_proc_cert_cert_req   /* proc server cert request */
 };
 
 
@@ -105,7 +105,7 @@ gen_dhe_server_kx (mhd_gtls_session_t session, opaque ** data)
   /* find the appropriate certificate */
   if ((ret =
        mhd_gtls_get_selected_cert (session, &apr_cert_list,
-                                  &apr_cert_list_length, &apr_pkey)) < 0)
+                                   &apr_cert_list_length, &apr_pkey)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -124,7 +124,7 @@ gen_dhe_server_kx (mhd_gtls_session_t session, opaque ** data)
   g = mpis[1];
 
   if ((ret = mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
-                                    sizeof (cert_auth_info_st), 0)) < 0)
+                                     sizeof (cert_auth_info_st), 0)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -149,7 +149,7 @@ gen_dhe_server_kx (mhd_gtls_session_t session, opaque ** data)
     {
       if ((ret =
            mhd_gtls_tls_sign_params (session, &apr_cert_list[0],
-                                    apr_pkey, &ddata, &signature)) < 0)
+                                     apr_pkey, &ddata, &signature)) < 0)
         {
           gnutls_assert ();
           gnutls_free (*data);
@@ -217,15 +217,16 @@ proc_dhe_server_kx (mhd_gtls_session_t session, opaque * data,
 
   if ((ret =
        mhd_gtls_raw_cert_to_gcert (&peer_cert,
-                                  session->security_parameters.cert_type,
-                                  &info->raw_certificate_list[0],
-                                  CERT_NO_COPY)) < 0)
+                                   session->security_parameters.cert_type,
+                                   &info->raw_certificate_list[0],
+                                   CERT_NO_COPY)) < 0)
     {
       gnutls_assert ();
       return ret;
     }
 
-  ret = mhd_gtls_verify_sig_params (session, &peer_cert, &vparams, &signature);
+  ret =
+    mhd_gtls_verify_sig_params (session, &peer_cert, &vparams, &signature);
 
   mhd_gtls_gcert_deinit (&peer_cert);
   if (ret < 0)

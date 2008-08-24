@@ -74,7 +74,7 @@ mhd_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 
 void
 mhd_gtls_mem_cpy (char *dest,
-                 size_t dest_tot_size, const char *src, size_t src_size)
+                  size_t dest_tot_size, const char *src, size_t src_size)
 {
 
   if (dest_tot_size >= src_size)
@@ -92,9 +92,9 @@ mhd_gtls_mem_cpy (char *dest,
 
 void
 mhd_gtls_string_init (mhd_gtls_string * str,
-                     gnutls_alloc_function alloc_func,
-                     gnutls_realloc_function realloc_func,
-                     gnutls_free_function free_func)
+                      gnutls_alloc_function alloc_func,
+                      gnutls_realloc_function realloc_func,
+                      gnutls_free_function free_func)
 {
   str->data = NULL;
   str->max_length = 0;
@@ -197,7 +197,7 @@ mhd_gtls_string_append_str (mhd_gtls_string * dest, const char *src)
 
 int
 mhd_gtls_string_append_data (mhd_gtls_string * dest,
-                            const void *data, size_t data_size)
+                             const void *data, size_t data_size)
 {
   size_t tot_len = data_size + dest->length;
 
@@ -256,7 +256,7 @@ mhd_gtls_string_append_printf (mhd_gtls_string * dest, const char *fmt, ...)
  */
 char *
 mhd_gtls_bin2hex (const void *_old,
-                 size_t oldlen, char *buffer, size_t buffer_size)
+                  size_t oldlen, char *buffer, size_t buffer_size)
 {
   unsigned int i, j;
   const opaque *old = _old;
@@ -275,7 +275,7 @@ mhd_gtls_bin2hex (const void *_old,
  */
 int
 mhd_gtls_hex2bin (const opaque * hex_data,
-                 int hex_size, opaque * bin_data, size_t * bin_size)
+                  int hex_size, opaque * bin_data, size_t * bin_size)
 {
   int i, j;
   opaque hex2_data[3];

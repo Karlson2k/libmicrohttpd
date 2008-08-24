@@ -54,15 +54,15 @@ const mhd_gtls_mod_auth_st rsa_export_auth_struct = {
   mhd_gtls_gen_cert_client_certificate,
   gen_rsa_export_server_kx,
   _gnutls_gen_rsa_client_kx,
-  mhd_gtls_gen_cert_client_cert_vrfy,    /* gen client cert vrfy */
-  mhd_gtls_gen_cert_server_cert_req,     /* server cert request */
+  mhd_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
+  mhd_gtls_gen_cert_server_cert_req,    /* server cert request */
 
   mhd_gtls_proc_cert_server_certificate,
   _gnutls_proc_cert_client_certificate,
   proc_rsa_export_server_kx,
   _gnutls_proc_rsa_client_kx,   /* proc client kx */
-  mhd_gtls_proc_cert_client_cert_vrfy,   /* proc client cert vrfy */
-  mhd_gtls_proc_cert_cert_req    /* proc server cert request */
+  mhd_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
+  mhd_gtls_proc_cert_cert_req   /* proc server cert request */
 };
 
 static int
@@ -91,7 +91,7 @@ gen_rsa_export_server_kx (mhd_gtls_session_t session, opaque ** data)
   /* find the appropriate certificate */
   if ((ret =
        mhd_gtls_get_selected_cert (session, &apr_cert_list,
-                                  &apr_cert_list_length, &apr_pkey)) < 0)
+                                   &apr_cert_list_length, &apr_pkey)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -108,7 +108,7 @@ gen_rsa_export_server_kx (mhd_gtls_session_t session, opaque ** data)
 
   rsa_params =
     mhd_gtls_certificate_get_rsa_params (cred->rsa_params, cred->params_func,
-                                        session);
+                                         session);
   rsa_mpis = _gnutls_rsa_params_to_mpi (rsa_params);
   if (rsa_mpis == NULL)
     {
@@ -117,7 +117,7 @@ gen_rsa_export_server_kx (mhd_gtls_session_t session, opaque ** data)
     }
 
   if ((ret = mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
-                                    sizeof (cert_auth_info_st), 0)) < 0)
+                                     sizeof (cert_auth_info_st), 0)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -157,7 +157,7 @@ gen_rsa_export_server_kx (mhd_gtls_session_t session, opaque ** data)
     {
       if ((ret =
            mhd_gtls_tls_sign_params (session, &apr_cert_list[0],
-                                    apr_pkey, &ddata, &signature)) < 0)
+                                     apr_pkey, &ddata, &signature)) < 0)
         {
           gnutls_assert ();
           gnutls_free (*data);
@@ -205,9 +205,9 @@ _gnutls_peers_cert_less_512 (mhd_gtls_session_t session)
 
   if ((ret =
        mhd_gtls_raw_cert_to_gcert (&peer_cert,
-                                  session->security_parameters.cert_type,
-                                  &info->raw_certificate_list[0],
-                                  CERT_NO_COPY)) < 0)
+                                   session->security_parameters.cert_type,
+                                   &info->raw_certificate_list[0],
+                                   CERT_NO_COPY)) < 0)
     {
       gnutls_assert ();
       return 0;
@@ -289,7 +289,7 @@ proc_rsa_export_server_kx (mhd_gtls_session_t session,
     }
 
   mhd_gtls_rsa_export_set_pubkey (session, session->key->rsa[1],
-                                 session->key->rsa[0]);
+                                  session->key->rsa[0]);
 
   /* VERIFY SIGNATURE */
 
@@ -305,15 +305,16 @@ proc_rsa_export_server_kx (mhd_gtls_session_t session,
 
   if ((ret =
        mhd_gtls_raw_cert_to_gcert (&peer_cert,
-                                  session->security_parameters.cert_type,
-                                  &info->raw_certificate_list[0],
-                                  CERT_NO_COPY)) < 0)
+                                   session->security_parameters.cert_type,
+                                   &info->raw_certificate_list[0],
+                                   CERT_NO_COPY)) < 0)
     {
       gnutls_assert ();
       return ret;
     }
 
-  ret = mhd_gtls_verify_sig_params (session, &peer_cert, &vparams, &signature);
+  ret =
+    mhd_gtls_verify_sig_params (session, &peer_cert, &vparams, &signature);
 
   mhd_gtls_gcert_deinit (&peer_cert);
   if (ret < 0)

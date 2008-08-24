@@ -385,7 +385,7 @@ _asn1_complete_explicit_tag (node_asn * node, unsigned char *der,
       p = node->down;
       /* When there are nested tags we must complete them reverse to
          the order they were created. This is because completing a tag
-         modifies all data within it, including the incomplete tags 
+         modifies all data within it, including the incomplete tags
          which store buffer positions -- simon@josefsson.org 2002-09-06
        */
       while (p->right)

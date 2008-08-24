@@ -293,17 +293,17 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
   * @result: the place where base64 data will be copied
   * @result_size: holds the size of the result
   *
-  * This function will convert the given data to printable data, using the base64 
+  * This function will convert the given data to printable data, using the base64
   * encoding. This is the encoding used in PEM messages. If the provided
   * buffer is not long enough GNUTLS_E_SHORT_MEMORY_BUFFER is returned.
   *
   * The output string will be null terminated, although the size will not include
   * the terminating null.
-  * 
+  *
   **/
 int
 MHD_gtls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
-                          char *result, size_t * result_size)
+                            char *result, size_t * result_size)
 {
   opaque *ret;
   int size;
@@ -334,17 +334,17 @@ MHD_gtls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
   * @data: contains the raw data
   * @result: will hold the newly allocated encoded data
   *
-  * This function will convert the given data to printable data, using the base64 
+  * This function will convert the given data to printable data, using the base64
   * encoding. This is the encoding used in PEM messages. This function will
   * allocate the required memory to hold the encoded data.
   *
   * You should use gnutls_free() to free the returned data.
-  * 
+  *
   **/
 int
 MHD_gtls_pem_base64_encode_alloc (const char *msg,
-                                const gnutls_datum_t * data,
-                                gnutls_datum_t * result)
+                                  const gnutls_datum_t * data,
+                                  gnutls_datum_t * result)
 {
   opaque *ret;
   int size;
@@ -483,7 +483,7 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
 
-  /* position of kdata is before the ----END--- footer 
+  /* position of kdata is before the ----END--- footer
    */
   rdata_size = (unsigned long int) kdata - (unsigned long int) rdata;
 
@@ -535,8 +535,8 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
   **/
 int
 MHD_gtls_pem_base64_decode (const char *header,
-                          const gnutls_datum_t * b64_data,
-                          unsigned char *result, size_t * result_size)
+                            const gnutls_datum_t * b64_data,
+                            unsigned char *result, size_t * result_size)
 {
   opaque *ret;
   int size;
@@ -570,8 +570,8 @@ MHD_gtls_pem_base64_decode (const char *header,
   *
   * This function will decode the given encoded data. The decoded data
   * will be allocated, and stored into result.
-  * If the header given is non null this function will search for 
-  * "-----BEGIN header" and decode only this part. Otherwise it will decode the 
+  * If the header given is non null this function will search for
+  * "-----BEGIN header" and decode only this part. Otherwise it will decode the
   * first PEM packet found.
   *
   * You should use gnutls_free() to free the returned data.
@@ -579,8 +579,8 @@ MHD_gtls_pem_base64_decode (const char *header,
   **/
 int
 MHD_gtls_pem_base64_decode_alloc (const char *header,
-                                const gnutls_datum_t * b64_data,
-                                gnutls_datum_t * result)
+                                  const gnutls_datum_t * b64_data,
+                                  gnutls_datum_t * result)
 {
   opaque *ret;
   int size;

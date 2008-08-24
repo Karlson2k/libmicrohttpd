@@ -42,7 +42,7 @@
 
 int
 mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
-                                const opaque * data, size_t _data_size)
+                                 const opaque * data, size_t _data_size)
 {
   ssize_t new_size;
   ssize_t data_size = _data_size;
@@ -103,7 +103,7 @@ mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
-                                size_t data_size)
+                                 size_t data_size)
 {
   uint16_t len;
   /* this function sends the client extension data (dnsname) */
@@ -122,7 +122,7 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
 
           data[0] =
             (uint8_t) mhd_gtls_mre_record2num (session->internals.
-                                              proposed_record_size);
+                                               proposed_record_size);
           return len;
         }
 
@@ -142,9 +142,9 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
             }
 
           data[0] =
-            (uint8_t) mhd_gtls_mre_record2num (session->
-                                              security_parameters.
-                                              max_record_recv_size);
+            (uint8_t)
+            mhd_gtls_mre_record2num
+            (session->security_parameters.max_record_recv_size);
           return len;
         }
 

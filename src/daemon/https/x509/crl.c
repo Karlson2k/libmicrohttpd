@@ -73,7 +73,7 @@ gnutls_x509_crl_init (gnutls_x509_crl_t * crl)
   * gnutls_x509_crl_deinit - This function deinitializes memory used by a gnutls_x509_crl_t structure
   * @crl: The structure to be initialized
   *
-  * This function will deinitialize a CRL structure. 
+  * This function will deinitialize a CRL structure.
   *
   **/
 void
@@ -168,7 +168,7 @@ cleanup:
   * @buf: a pointer to a structure to hold the peer's name (may be null)
   * @sizeof_buf: initially holds the size of @buf
   *
-  * This function will copy the name of the CRL issuer in the provided buffer. The name 
+  * This function will copy the name of the CRL issuer in the provided buffer. The name
   * will be in the form "C=xxxx,O=yyyy,CN=zzzz" as described in RFC2253. The output
   * string will be ASCII or UTF-8 encoded, depending on the certificate data.
   *
@@ -208,7 +208,7 @@ gnutls_x509_crl_get_issuer_dn (const gnutls_x509_crl_t crl, char *buf,
   * string will be ASCII or UTF-8 encoded, depending on the certificate data.
   *
   * Some helper macros with popular OIDs can be found in gnutls/x509.h
-  * If raw flag is zero, this function will only return known OIDs as text. Other OIDs 
+  * If raw flag is zero, this function will only return known OIDs as text. Other OIDs
   * will be DER encoded, as described in RFC2253 -- in hex format with a '\#' prefix.
   * You can check about known OIDs using gnutls_x509_dn_oid_known().
   *
@@ -244,7 +244,7 @@ gnutls_x509_crl_get_issuer_dn_by_oid (gnutls_x509_crl_t crl,
   * @sizeof_oid: initially holds the size of 'oid'
   *
   * This function will extract the requested OID of the name of the CRL issuer, specified
-  * by the given index. 
+  * by the given index.
   *
   * If oid is null then only the size will be filled.
   *
@@ -273,8 +273,8 @@ gnutls_x509_crl_get_dn_oid (gnutls_x509_crl_t crl,
   * gnutls_x509_crl_get_signature_algorithm - This function returns the CRL's signature algorithm
   * @crl: should contain a gnutls_x509_crl_t structure
   *
-  * This function will return a value of the gnutls_sign_algorithm_t enumeration that 
-  * is the signature algorithm. 
+  * This function will return a value of the gnutls_sign_algorithm_t enumeration that
+  * is the signature algorithm.
   *
   * Returns a negative value on error.
   *
@@ -651,7 +651,7 @@ gnutls_x509_crl_export (gnutls_x509_crl_t crl,
   * @dest: The structure where to copy
   * @src: The structure to be copied
   *
-  * This function will copy an X.509 certificate structure. 
+  * This function will copy an X.509 certificate structure.
   *
   * Returns 0 on success.
   *

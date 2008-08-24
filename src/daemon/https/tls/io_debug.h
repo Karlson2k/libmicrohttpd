@@ -33,7 +33,7 @@
 
 #include <gnutls_int.h>
 
-#define EDUNNO EAGAIN		/* EAGAIN */
+#define EDUNNO EAGAIN           /* EAGAIN */
 
 extern int errno;
 static int initialized_rand = 0;

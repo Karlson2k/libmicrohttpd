@@ -50,7 +50,7 @@ static gnutls_cert *alloc_and_load_x509_certs (gnutls_x509_crt_t * certs,
 static gnutls_privkey *alloc_and_load_x509_key (gnutls_x509_privkey_t key);
 
 
-/* Copies data from a internal certificate struct (gnutls_cert) to 
+/* Copies data from a internal certificate struct (gnutls_cert) to
  * exported certificate struct (cert_auth_info_t)
  */
 static int
@@ -81,8 +81,7 @@ _gnutls_copy_certificate_auth_info (cert_auth_info_t info,
       if (cert->raw.size > 0)
         {
           ret =
-            _gnutls_set_datum (&info->
-                               raw_certificate_list[i],
+            _gnutls_set_datum (&info->raw_certificate_list[i],
                                cert[i].raw.data, cert[i].raw.size);
           if (ret < 0)
             {
@@ -113,9 +112,10 @@ clear:
  * -1 otherwise.
  */
 inline static int
-_gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm *
-                               pk_algos, int pk_algos_length,
-                               enum MHD_GNUTLS_PublicKeyAlgorithm algo_to_check)
+_gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
+                               *pk_algos, int pk_algos_length,
+                               enum MHD_GNUTLS_PublicKeyAlgorithm
+                               algo_to_check)
 {
   int i;
   for (i = 0; i < pk_algos_length; i++)
@@ -129,7 +129,7 @@ _gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm *
 }
 
 
-/* Returns the issuer's Distinguished name in odn, of the certificate 
+/* Returns the issuer's Distinguished name in odn, of the certificate
  * specified in cert.
  */
 static int
@@ -179,13 +179,13 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
 /* Locates the most appropriate x509 certificate using the
  * given DN. If indx == -1 then no certificate was found.
  *
- * That is to guess which certificate to use, based on the 
+ * That is to guess which certificate to use, based on the
  * CAs and sign algorithms supported by the peer server.
  */
 static int
 _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
                  opaque * _data, size_t _data_size,
-                 const enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos,
+                 const enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
                  int pk_algos_length, int *indx)
 {
   unsigned size;
@@ -210,8 +210,8 @@ _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
           for (j = 0; j < cred->cert_list_length[i]; j++)
             {
               if ((result =
-                   _gnutls_cert_get_issuer_dn (&cred->
-                                               cert_list[i][j], &odn)) < 0)
+                   _gnutls_cert_get_issuer_dn (&cred->cert_list[i][j],
+                                               &odn)) < 0)
                 {
                   gnutls_assert ();
                   return result;
@@ -271,7 +271,7 @@ get_issuers_num (mhd_gtls_session_t session, opaque * data, ssize_t data_size)
   if (data_size > 0)
     do
       {
-        /* This works like DECR_LEN() 
+        /* This works like DECR_LEN()
          */
         result = GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
         DECR_LENGTH_COM (data_size, 2, goto error);
@@ -348,14 +348,16 @@ static int
 call_get_cert_callback (mhd_gtls_session_t session,
                         gnutls_datum_t * issuers_dn,
                         int issuers_dn_length,
-                        enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos, int pk_algos_length)
+                        enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
+                        int pk_algos_length)
 {
   unsigned i;
   gnutls_cert *local_certs = NULL;
   gnutls_privkey *local_key = NULL;
   gnutls_retr_st st;
   int ret;
-  enum MHD_GNUTLS_CertificateType type = gnutls_certificate_type_get (session);
+  enum MHD_GNUTLS_CertificateType type =
+    gnutls_certificate_type_get (session);
   mhd_gtls_cert_credentials_t cred;
 
   cred = (mhd_gtls_cert_credentials_t)
@@ -411,8 +413,8 @@ call_get_cert_callback (mhd_gtls_session_t session,
     }
 
   mhd_gtls_selected_certs_set (session, local_certs,
-                              (local_certs != NULL) ? st.ncerts : 0,
-                              local_key, 1);
+                               (local_certs != NULL) ? st.ncerts : 0,
+                               local_key, 1);
 
   ret = 0;
 
@@ -443,7 +445,8 @@ cleanup:
 static int
 _select_client_cert (mhd_gtls_session_t session,
                      opaque * _data, size_t _data_size,
-                     enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos, int pk_algos_length)
+                     enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
+                     int pk_algos_length)
 {
   int result;
   int indx = -1;
@@ -464,7 +467,7 @@ _select_client_cert (mhd_gtls_session_t session,
   if (cred->client_get_cert_callback != NULL)
     {
 
-      /* use a callback to get certificate 
+      /* use a callback to get certificate
        */
       if (session->security_parameters.cert_type != MHD_GNUTLS_CRT_X509)
         issuers_dn_length = 0;
@@ -523,9 +526,9 @@ _select_client_cert (mhd_gtls_session_t session,
       if (indx >= 0)
         {
           mhd_gtls_selected_certs_set (session,
-                                      &cred->cert_list[indx][0],
-                                      cred->cert_list_length[indx],
-                                      &cred->pkey[indx], 0);
+                                       &cred->cert_list[indx][0],
+                                       cred->cert_list_length[indx],
+                                       &cred->pkey[indx], 0);
         }
       else
         {
@@ -553,11 +556,11 @@ mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
   gnutls_privkey *apr_pkey;
   int apr_cert_list_length;
 
-  /* find the appropriate certificate 
+  /* find the appropriate certificate
    */
   if ((ret =
        mhd_gtls_get_selected_cert (session, &apr_cert_list,
-                                  &apr_cert_list_length, &apr_pkey)) < 0)
+                                   &apr_cert_list_length, &apr_pkey)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -576,7 +579,7 @@ mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
    * instead of:
    * 0B 00 00 00          // empty certificate handshake
    *
-   * ( the above is the whole handshake message, not 
+   * ( the above is the whole handshake message, not
    * the one produced here )
    */
 
@@ -600,7 +603,8 @@ mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
 }
 
 int
-mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t session,
+                                      opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
@@ -614,7 +618,8 @@ mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t session, opaque ** data
 }
 
 int
-mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session,
+                                      opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
@@ -632,7 +637,7 @@ mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session, opaque ** data
 #define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) mhd_gtls_gcert_deinit(&peer_certificate_list[x])
 int
 mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
-                                      opaque * data, size_t data_size)
+                                       opaque * data, size_t data_size)
 {
   int size, len, ret;
   opaque *p = data;
@@ -655,7 +660,7 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
   if ((ret =
        mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
-                              sizeof (cert_auth_info_st), 1)) < 0)
+                               sizeof (cert_auth_info_st), 1)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -703,7 +708,7 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
     }
 
   /* Ok we now allocate the memory to hold the
-   * certificate list 
+   * certificate list
    */
 
   peer_certificate_list =
@@ -734,8 +739,8 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
       if ((ret =
            mhd_gtls_x509_raw_cert_to_gcert (&peer_certificate_list
-                                           [j], &tmp,
-                                           CERT_ONLY_EXTENSIONS)) < 0)
+                                            [j], &tmp,
+                                            CERT_ONLY_EXTENSIONS)) < 0)
         {
           gnutls_assert ();
           goto cleanup;
@@ -775,7 +780,7 @@ cleanup:
 
 int
 mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t session,
-                                      opaque * data, size_t data_size)
+                                       opaque * data, size_t data_size)
 {
   switch (session->security_parameters.cert_type)
     {
@@ -792,7 +797,7 @@ typedef enum CertificateSigType
 { RSA_SIGN = 1, DSA_SIGN
 } CertificateSigType;
 
-/* Checks if we support the given signature algorithm 
+/* Checks if we support the given signature algorithm
  * (RSA or DSA). Returns the corresponding enum MHD_GNUTLS_PublicKeyAlgorithm
  * if true;
  */
@@ -810,7 +815,7 @@ _gnutls_check_supported_sign_algo (CertificateSigType algo)
 
 int
 mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
-                            size_t data_size)
+                             size_t data_size)
 {
   int size, ret;
   opaque *p;
@@ -832,7 +837,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
 
   if ((ret =
        mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
-                              sizeof (cert_auth_info_st), 0)) < 0)
+                               sizeof (cert_auth_info_st), 0)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -898,7 +903,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
       return ret;
     }
 
-  /* We should reply with a certificate message, 
+  /* We should reply with a certificate message,
    * even if we have no certificate to send.
    */
   session->key->certificate_requested = 1;
@@ -907,7 +912,8 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
 }
 
 int
-mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session, opaque ** data)
+mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session,
+                                    opaque ** data)
 {
   int ret;
   gnutls_cert *apr_cert_list;
@@ -920,7 +926,7 @@ mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session, opaque ** data)
   /* find the appropriate certificate */
   if ((ret =
        mhd_gtls_get_selected_cert (session, &apr_cert_list,
-                                  &apr_cert_list_length, &apr_pkey)) < 0)
+                                   &apr_cert_list_length, &apr_pkey)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -930,8 +936,8 @@ mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session, opaque ** data)
     {
       if ((ret =
            mhd_gtls_tls_sign_hdata (session,
-                                   &apr_cert_list[0],
-                                   apr_pkey, &signature)) < 0)
+                                    &apr_cert_list[0],
+                                    apr_pkey, &signature)) < 0)
         {
           gnutls_assert ();
           return ret;
@@ -960,7 +966,7 @@ mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session, opaque ** data)
 
 int
 mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t session,
-                                    opaque * data, size_t data_size)
+                                     opaque * data, size_t data_size)
 {
   int size, ret;
   ssize_t dsize = data_size;
@@ -986,9 +992,9 @@ mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t session,
   sig.size = size;
 
   ret = mhd_gtls_raw_cert_to_gcert (&peer_cert,
-                                   session->security_parameters.cert_type,
-                                   &info->raw_certificate_list[0],
-                                   CERT_NO_COPY);
+                                    session->security_parameters.cert_type,
+                                    &info->raw_certificate_list[0],
+                                    CERT_NO_COPY);
 
   if (ret < 0)
     {
@@ -1029,7 +1035,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
-  size = CERTTYPE_SIZE + 2;     /* 2 for enum MHD_GNUTLS_CertificateType + 2 for size of rdn_seq 
+  size = CERTTYPE_SIZE + 2;     /* 2 for enum MHD_GNUTLS_CertificateType + 2 for size of rdn_seq
                                  */
 
   if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509 &&
@@ -1079,7 +1085,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
 }
 
 
-/* This function will return the appropriate certificate to use. 
+/* This function will return the appropriate certificate to use.
  * Fills in the apr_cert_list, apr_cert_list_length and apr_pkey.
  * The return value is a negative value on error.
  *
@@ -1088,9 +1094,9 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
  */
 int
 mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
-                           gnutls_cert ** apr_cert_list,
-                           int *apr_cert_list_length,
-                           gnutls_privkey ** apr_pkey)
+                            gnutls_cert ** apr_cert_list,
+                            int *apr_cert_list_length,
+                            gnutls_privkey ** apr_pkey)
 {
   if (session->security_parameters.entity == GNUTLS_SERVER)
     {
@@ -1110,7 +1116,7 @@ mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
 
     }
   else
-    {                           /* CLIENT SIDE 
+    {                           /* CLIENT SIDE
                                  */
 
       /* we have already decided which certificate
@@ -1223,8 +1229,8 @@ mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session)
 
 void
 mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
-                            gnutls_cert * certs, int ncerts,
-                            gnutls_privkey * key, int need_free)
+                             gnutls_cert * certs, int ncerts,
+                             gnutls_privkey * key, int need_free)
 {
   mhd_gtls_selected_certs_deinit (session);
 
@@ -1248,7 +1254,8 @@ mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_server_select_cert (mhd_gtls_session_t session,
-                            enum MHD_GNUTLS_PublicKeyAlgorithm requested_algo)
+                             enum MHD_GNUTLS_PublicKeyAlgorithm
+                             requested_algo)
 {
   unsigned i;
   int idx, ret;
@@ -1276,12 +1283,12 @@ mhd_gtls_server_select_cert (mhd_gtls_session_t session,
 
   for (i = 0; i < cred->ncerts; i++)
     {
-      /* find one compatible certificate 
+      /* find one compatible certificate
        */
       if (requested_algo == GNUTLS_PK_ANY ||
           requested_algo == cred->cert_list[i][0].subject_pk_algorithm)
         {
-          /* if cert type matches 
+          /* if cert type matches
            */
           if (session->security_parameters.cert_type ==
               cred->cert_list[i][0].cert_type)
@@ -1298,9 +1305,9 @@ mhd_gtls_server_select_cert (mhd_gtls_session_t session,
   if (idx >= 0 && ret == 0)
     {
       mhd_gtls_selected_certs_set (session,
-                                  &cred->cert_list[idx][0],
-                                  cred->cert_list_length[idx],
-                                  &cred->pkey[idx], 0);
+                                   &cred->cert_list[idx][0],
+                                   cred->cert_list_length[idx],
+                                   &cred->pkey[idx], 0);
     }
   else
     /* Certificate does not support REQUESTED_ALGO.  */

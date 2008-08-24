@@ -43,28 +43,29 @@ typedef mac_hd_t GNUTLS_HASH_HANDLE;
 #define GNUTLS_MAC_FAILED NULL
 
 mac_hd_t mhd_gtls_hmac_init (enum MHD_GNUTLS_HashAlgorithm algorithm,
-			    const void *key, int keylen);
+                             const void *key, int keylen);
 
 void mhd_gnutls_hmac_deinit (mac_hd_t handle, void *digest);
 
-mac_hd_t mhd_gnutls_mac_init_ssl3 (enum MHD_GNUTLS_HashAlgorithm algorithm, void *key,
-				int keylen);
+mac_hd_t mhd_gnutls_mac_init_ssl3 (enum MHD_GNUTLS_HashAlgorithm algorithm,
+                                   void *key, int keylen);
 void mhd_gnutls_mac_deinit_ssl3 (mac_hd_t handle, void *digest);
 
-GNUTLS_HASH_HANDLE mhd_gtls_hash_init (enum MHD_GNUTLS_HashAlgorithm algorithm);
+GNUTLS_HASH_HANDLE mhd_gtls_hash_init (enum MHD_GNUTLS_HashAlgorithm
+                                       algorithm);
 int mhd_gnutls_hash_get_algo_len (enum MHD_GNUTLS_HashAlgorithm algorithm);
 int mhd_gnutls_hash (GNUTLS_HASH_HANDLE handle, const void *text,
-		  size_t textlen);
+                     size_t textlen);
 void mhd_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest);
 
 int mhd_gnutls_ssl3_generate_random (void *secret, int secret_len,
-				  void *rnd, int random_len, int bytes,
-				  opaque * ret);
+                                     void *rnd, int random_len, int bytes,
+                                     opaque * ret);
 int mhd_gnutls_ssl3_hash_md5 (void *first, int first_len, void *second,
-			   int second_len, int ret_len, opaque * ret);
+                              int second_len, int ret_len, opaque * ret);
 
 void mhd_gnutls_mac_deinit_ssl3_handshake (mac_hd_t handle, void *digest,
-					opaque * key, uint32_t key_size);
+                                           opaque * key, uint32_t key_size);
 
 GNUTLS_HASH_HANDLE mhd_gnutls_hash_copy (GNUTLS_HASH_HANDLE handle);
 

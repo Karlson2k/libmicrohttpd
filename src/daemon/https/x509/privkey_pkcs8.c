@@ -1284,7 +1284,7 @@ error:
 /* Converts an OID to a gnutls cipher type.
  */
 inline static int
-oid2cipher (const char *oid, enum MHD_GNUTLS_CipherAlgorithm * algo)
+oid2cipher (const char *oid, enum MHD_GNUTLS_CipherAlgorithm *algo)
 {
 
   *algo = 0;

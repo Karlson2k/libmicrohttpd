@@ -52,7 +52,8 @@
 
 typedef int (*supp_recv_func) (mhd_gtls_session_t session,
                                const opaque * data, size_t data_size);
-typedef int (*supp_send_func) (mhd_gtls_session_t session, mhd_gtls_buffer * buf);
+typedef int (*supp_send_func) (mhd_gtls_session_t session,
+                               mhd_gtls_buffer * buf);
 
 typedef struct
 {

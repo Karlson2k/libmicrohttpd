@@ -141,8 +141,8 @@ MHD_gnutls_certificate_free_ca_names (mhd_gtls_cert_credentials_t sc)
   -*/
 mhd_gtls_rsa_params_t
 mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t rsa_params,
-                                    gnutls_params_function * func,
-                                    mhd_gtls_session_t session)
+                                     gnutls_params_function * func,
+                                     mhd_gtls_session_t session)
 {
   gnutls_params_st params;
   int ret;
@@ -210,7 +210,7 @@ MHD_gnutls_certificate_free_credentials (mhd_gtls_cert_credentials_t sc)
   **/
 int
 MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
-                                         res)
+                                             res)
 {
   *res = gnutls_calloc (1, sizeof (mhd_gtls_cert_credentials_st));
 
@@ -232,8 +232,8 @@ MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
  */
 int
 mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
-                                    enum MHD_GNUTLS_KeyExchangeAlgorithm ** alg,
-                                    int *alg_size)
+                                     enum MHD_GNUTLS_KeyExchangeAlgorithm
+                                     **alg, int *alg_size)
 {
   enum MHD_GNUTLS_KeyExchangeAlgorithm kx;
   enum MHD_GNUTLS_PublicKeyAlgorithm pk;
@@ -297,7 +297,7 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
   **/
 void
 MHD_gtls_certificate_server_set_request (mhd_gtls_session_t session,
-                                       gnutls_certificate_request_t req)
+                                         gnutls_certificate_request_t req)
 {
   session->internals.send_cert_req = req;
 }
@@ -461,7 +461,7 @@ _gnutls_x509_get_raw_crt_expiration_time (const gnutls_datum_t * cert)
   **/
 int
 MHD_gtls_certificate_verify_peers2 (mhd_gtls_session_t session,
-                                  unsigned int *status)
+                                    unsigned int *status)
 {
   cert_auth_info_t info;
 
@@ -549,9 +549,9 @@ MHD_gtls_certificate_expiration_time_peers (mhd_gtls_session_t session)
   switch (gnutls_certificate_type_get (session))
     {
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_x509_get_raw_crt_expiration_time (&info->
-                                                       raw_certificate_list
-                                                       [0]);
+      return
+        _gnutls_x509_get_raw_crt_expiration_time (&info->raw_certificate_list
+                                                  [0]);
     default:
       return (time_t) - 1;
     }
@@ -588,9 +588,9 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
   switch (gnutls_certificate_type_get (session))
     {
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_x509_get_raw_crt_activation_time (&info->
-                                                       raw_certificate_list
-                                                       [0]);
+      return
+        _gnutls_x509_get_raw_crt_activation_time (&info->raw_certificate_list
+                                                  [0]);
     default:
       return (time_t) - 1;
     }
@@ -598,9 +598,9 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
 
 int
 mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
-                           enum MHD_GNUTLS_CertificateType type,
-                           const gnutls_datum_t * raw_cert,
-                           int flags /* OR of ConvFlags */ )
+                            enum MHD_GNUTLS_CertificateType type,
+                            const gnutls_datum_t * raw_cert,
+                            int flags /* OR of ConvFlags */ )
 {
   switch (type)
     {
@@ -614,9 +614,9 @@ mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
 
 int
 mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
-                             enum MHD_GNUTLS_CertificateType type,
-                             const gnutls_datum_t * raw_key,
-                             int key_enc /* DER or PEM */ )
+                              enum MHD_GNUTLS_CertificateType type,
+                              const gnutls_datum_t * raw_key,
+                              int key_enc /* DER or PEM */ )
 {
   switch (type)
     {
@@ -640,8 +640,8 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
  */
 int
 mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
-                                const gnutls_datum_t * derCert,
-                                int flags /* OR of ConvFlags */ )
+                                 const gnutls_datum_t * derCert,
+                                 int flags /* OR of ConvFlags */ )
 {
   int ret;
   gnutls_x509_crt_t cert;
@@ -671,7 +671,7 @@ mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
  */
 int
 mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert,
-                           gnutls_x509_crt_t cert, unsigned int flags)
+                            gnutls_x509_crt_t cert, unsigned int flags)
 {
   int ret = 0;
 
@@ -791,7 +791,7 @@ mhd_gtls_gcert_deinit (gnutls_cert * cert)
  **/
 void
 MHD_gtls_sign_callback_set (mhd_gtls_session_t session,
-                          gnutls_sign_func sign_func, void *userdata)
+                            gnutls_sign_func sign_func, void *userdata)
 {
   session->internals.sign_func = sign_func;
   session->internals.sign_func_userdata = userdata;

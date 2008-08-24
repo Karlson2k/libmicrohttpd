@@ -23,7 +23,7 @@
  */
 
 /* This file contains the functions needed for RSA/DSA public key
- * encryption and signatures. 
+ * encryption and signatures.
  */
 
 #include <gnutls_int.h>
@@ -50,14 +50,14 @@ static int _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data,
                                mpi_t * pkey, int);
 
 
-/* Do PKCS-1 RSA encryption. 
+/* Do PKCS-1 RSA encryption.
  * params is modulus, public exp.
  */
 int
 mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
-                           const gnutls_datum_t * plaintext,
-                           mpi_t * params, unsigned params_len,
-                           unsigned btype)
+                            const gnutls_datum_t * plaintext,
+                            mpi_t * params, unsigned params_len,
+                            unsigned btype)
 {
   unsigned int i, pad;
   int ret;
@@ -84,7 +84,7 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  /* EB = 00||BT||PS||00||D 
+  /* EB = 00||BT||PS||00||D
    * (use block type 'btype')
    */
 
@@ -203,15 +203,15 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
 }
 
 
-/* Do PKCS-1 RSA decryption. 
+/* Do PKCS-1 RSA decryption.
  * params is modulus, public exp., private key
  * Can decrypt block type 1 and type 2 packets.
  */
 int
 mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
-                           const gnutls_datum_t * ciphertext,
-                           mpi_t * params, unsigned params_len,
-                           unsigned btype)
+                            const gnutls_datum_t * ciphertext,
+                            mpi_t * params, unsigned params_len,
+                            unsigned btype)
 {
   unsigned k, i;
   int ret;
@@ -346,8 +346,8 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
 
 int
 mhd_gtls_rsa_verify (const gnutls_datum_t * vdata,
-                    const gnutls_datum_t * ciphertext, mpi_t * params,
-                    int params_len, int btype)
+                     const gnutls_datum_t * ciphertext, mpi_t * params,
+                     int params_len, int btype)
 {
 
   gnutls_datum_t plain;
@@ -356,7 +356,7 @@ mhd_gtls_rsa_verify (const gnutls_datum_t * vdata,
   /* decrypt signature */
   if ((ret =
        mhd_gtls_pkcs1_rsa_decrypt (&plain, ciphertext, params, params_len,
-                                  btype)) < 0)
+                                   btype)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -434,8 +434,8 @@ encode_ber_rs (gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
  */
 int
 mhd_gtls_dsa_sign (gnutls_datum_t * signature,
-                  const gnutls_datum_t * hash, mpi_t * params,
-                  unsigned params_len)
+                   const gnutls_datum_t * hash, mpi_t * params,
+                   unsigned params_len)
 {
   mpi_t rs[2], mdata;
   int ret;
@@ -530,8 +530,8 @@ decode_ber_rs (const gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
  */
 int
 mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
-                    const gnutls_datum_t * sig_value, mpi_t * params,
-                    int params_len)
+                     const gnutls_datum_t * sig_value, mpi_t * params,
+                     int params_len)
 {
 
   mpi_t mdata;
@@ -576,7 +576,7 @@ mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
 }
 
 
-/* this is taken from gnupg 
+/* this is taken from gnupg
  */
 
 /****************

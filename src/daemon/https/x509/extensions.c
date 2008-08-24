@@ -99,11 +99,11 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
               return mhd_gtls_asn2err (result);
             }
 
-          /* Handle Extension 
+          /* Handle Extension
            */
           if (strcmp (extnID, extension_id) == 0 && indx == indx_counter++)
             {
-              /* extension was found 
+              /* extension was found
                */
 
               /* read the critical status.
@@ -170,7 +170,7 @@ _gnutls_x509_crt_get_extension (gnutls_x509_crt_t cert,
 }
 
 /* This function will attempt to return the requested extension OID found in
- * the given X509v3 certificate. 
+ * the given X509v3 certificate.
  *
  * If you have passed the last extension, GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE will
  * be returned.
@@ -223,7 +223,7 @@ _gnutls_x509_crt_get_extension_oid (gnutls_x509_crt_t cert,
               return mhd_gtls_asn2err (result);
             }
 
-          /* Handle Extension 
+          /* Handle Extension
            */
           if (indx == indx_counter++)
             {
@@ -260,7 +260,7 @@ _gnutls_x509_crt_get_extension_oid (gnutls_x509_crt_t cert,
 }
 
 /* This function will attempt to set the requested extension in
- * the given X509v3 certificate. 
+ * the given X509v3 certificate.
  *
  * Critical will be either 0 or 1.
  */
@@ -359,7 +359,7 @@ overwrite_extension (ASN1_TYPE asn, unsigned int indx,
 }
 
 /* This function will attempt to overwrite the requested extension with
- * the given one. 
+ * the given one.
  *
  * Critical will be either 0 or 1.
  */
@@ -414,11 +414,11 @@ _gnutls_x509_crt_set_extension (gnutls_x509_crt_t cert,
               return mhd_gtls_asn2err (result);
             }
 
-          /* Handle Extension 
+          /* Handle Extension
            */
           if (strcmp (extnID, ext_id) == 0)
             {
-              /* extension was found 
+              /* extension was found
                */
               return overwrite_extension (cert->cert, k, ext_data, critical);
             }
@@ -839,7 +839,7 @@ _gnutls_x509_ext_gen_auth_key_id (const void *id, size_t id_size,
 
 
 /* Creates and encodes the CRL Distribution points. data_string should be a name
- * and type holds the type of the name. 
+ * and type holds the type of the name.
  * reason_flags should be an or'ed sequence of GNUTLS_CRL_REASON_*.
  *
  */

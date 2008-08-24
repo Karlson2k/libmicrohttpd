@@ -33,7 +33,7 @@
 
 int
 mhd_gtls_inner_app_rcv_params (mhd_gtls_session_t session,
-                                       const opaque * data, size_t data_size)
+                               const opaque * data, size_t data_size)
 {
   mhd_gtls_ext_st *ext = &session->security_parameters.extensions;
 
@@ -68,7 +68,7 @@ mhd_gtls_inner_app_rcv_params (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
-                                       opaque * data, size_t data_size)
+                                opaque * data, size_t data_size)
 {
   mhd_gtls_ext_st *ext = &session->security_parameters.extensions;
 
@@ -86,7 +86,8 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
   else
 #endif
     {
-      struct gnutls_ia_server_credentials_st * cred = (struct gnutls_ia_server_credentials_st*)
+      struct gnutls_ia_server_credentials_st *cred =
+        (struct gnutls_ia_server_credentials_st *)
         mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)

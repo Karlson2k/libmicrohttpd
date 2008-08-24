@@ -80,7 +80,8 @@ mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 }
 
 int
-mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
+                       size_t * nbytes)
 {
   int ret;
   ret = gcry_mpi_scan (ret_mpi, GCRYMPI_FMT_PGP, buffer, *nbytes, nbytes);

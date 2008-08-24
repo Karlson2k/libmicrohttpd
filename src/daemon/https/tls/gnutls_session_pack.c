@@ -69,7 +69,8 @@ static int pack_security_parameters (mhd_gtls_session_t session,
  *      x bytes the public key
  */
 static int
-pack_anon_auth_info (mhd_gtls_session_t session, gnutls_datum_t * packed_session)
+pack_anon_auth_info (mhd_gtls_session_t session,
+                     gnutls_datum_t * packed_session)
 {
   mhd_anon_auth_info_t info = mhd_gtls_get_auth_info (session);
   int pos = 0;
@@ -100,14 +101,16 @@ pack_anon_auth_info (mhd_gtls_session_t session, gnutls_datum_t * packed_session
 
   if (pack_size > 0)
     {
-      mhd_gtls_write_uint16 (info->dh.secret_bits, &packed_session->data[pos]);
+      mhd_gtls_write_uint16 (info->dh.secret_bits,
+                             &packed_session->data[pos]);
       pos += 2;
 
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.public_key);
+      mhd_gtls_write_datum32 (&packed_session->data[pos],
+                              info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
     }
@@ -158,7 +161,7 @@ unpack_anon_auth_info (mhd_gtls_session_t session,
    */
   ret =
     mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
-                           sizeof (anon_auth_info_st), 1);
+                            sizeof (anon_auth_info_st), 1);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -228,7 +231,7 @@ error:
  */
 int
 mhd_gtls_session_pack (mhd_gtls_session_t session,
-                      gnutls_datum_t * packed_session)
+                       gnutls_datum_t * packed_session)
 {
   int ret;
 
@@ -303,7 +306,7 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_session_unpack (mhd_gtls_session_t session,
-                        const gnutls_datum_t * packed_session)
+                         const gnutls_datum_t * packed_session)
 {
   int ret;
 
@@ -444,21 +447,23 @@ pack_certificate_auth_info (mhd_gtls_session_t session,
   if (pack_size > 0)
     {
 
-      mhd_gtls_write_uint16 (info->dh.secret_bits, &packed_session->data[pos]);
+      mhd_gtls_write_uint16 (info->dh.secret_bits,
+                             &packed_session->data[pos]);
       pos += 2;
 
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.public_key);
+      mhd_gtls_write_datum32 (&packed_session->data[pos],
+                              info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
       mhd_gtls_write_datum32 (&packed_session->data[pos],
-                             info->rsa_export.modulus);
+                              info->rsa_export.modulus);
       pos += 4 + info->rsa_export.modulus.size;
       mhd_gtls_write_datum32 (&packed_session->data[pos],
-                             info->rsa_export.exponent);
+                              info->rsa_export.exponent);
       pos += 4 + info->rsa_export.exponent.size;
 
       mhd_gtls_write_uint32 (info->ncerts, &packed_session->data[pos]);
@@ -467,7 +472,7 @@ pack_certificate_auth_info (mhd_gtls_session_t session,
       for (i = 0; i < info->ncerts; i++)
         {
           mhd_gtls_write_datum32 (&packed_session->data[pos],
-                                 info->raw_certificate_list[i]);
+                                  info->raw_certificate_list[i]);
           pos += sizeof (uint32_t) + info->raw_certificate_list[i].size;
         }
     }
@@ -510,7 +515,7 @@ unpack_certificate_auth_info (mhd_gtls_session_t session,
    */
   ret =
     mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
-                           sizeof (cert_auth_info_st), 1);
+                            sizeof (cert_auth_info_st), 1);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -646,7 +651,8 @@ error:
  *      x bytes the SRP username
  */
 static int
-pack_srp_auth_info (mhd_gtls_session_t session, gnutls_datum_t * packed_session)
+pack_srp_auth_info (mhd_gtls_session_t session,
+                    gnutls_datum_t * packed_session)
 {
   srp_server_auth_info_t info = mhd_gtls_get_auth_info (session);
   int pack_size;
@@ -709,7 +715,7 @@ unpack_srp_auth_info (mhd_gtls_session_t session,
 
   ret =
     mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_SRP,
-                           sizeof (srp_server_auth_info_st), 1);
+                            sizeof (srp_server_auth_info_st), 1);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -751,7 +757,8 @@ unpack_srp_auth_info (mhd_gtls_session_t session,
  *      x bytes the public key
  */
 static int
-pack_psk_auth_info (mhd_gtls_session_t session, gnutls_datum_t * packed_session)
+pack_psk_auth_info (mhd_gtls_session_t session,
+                    gnutls_datum_t * packed_session)
 {
   psk_auth_info_t info;
   int pack_size, username_size = 0, pos;
@@ -798,14 +805,16 @@ pack_psk_auth_info (mhd_gtls_session_t session, gnutls_datum_t * packed_session)
       memcpy (&packed_session->data[pos], info->username, username_size);
       pos += username_size;
 
-      mhd_gtls_write_uint16 (info->dh.secret_bits, &packed_session->data[pos]);
+      mhd_gtls_write_uint16 (info->dh.secret_bits,
+                             &packed_session->data[pos]);
       pos += 2;
 
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
       mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.public_key);
+      mhd_gtls_write_datum32 (&packed_session->data[pos],
+                              info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
     }
@@ -847,7 +856,7 @@ unpack_psk_auth_info (mhd_gtls_session_t session,
    */
   ret =
     mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_PSK,
-                           sizeof (psk_auth_info_st), 1);
+                            sizeof (psk_auth_info_st), 1);
   if (ret < 0)
     {
       gnutls_assert ();
@@ -1016,16 +1025,16 @@ pack_security_parameters (mhd_gtls_session_t session,
   pos += session->security_parameters.session_id_size;
 
   mhd_gtls_write_uint32 (session->security_parameters.timestamp,
-                        &packed_session->data[pos]);
+                         &packed_session->data[pos]);
   pos += 4;
 
   /* Extensions */
   mhd_gtls_write_uint16 (session->security_parameters.max_record_send_size,
-                        &packed_session->data[pos]);
+                         &packed_session->data[pos]);
   pos += 2;
 
   mhd_gtls_write_uint16 (session->security_parameters.max_record_recv_size,
-                        &packed_session->data[pos]);
+                         &packed_session->data[pos]);
   pos += 2;
 
   /* SRP */
@@ -1037,7 +1046,7 @@ pack_security_parameters (mhd_gtls_session_t session,
   pos += len;
 
   mhd_gtls_write_uint16 (session->security_parameters.extensions.
-                        server_names_size, &packed_session->data[pos]);
+                         server_names_size, &packed_session->data[pos]);
   pos += 2;
 
   for (i = 0; i < session->security_parameters.extensions.server_names_size;
@@ -1046,8 +1055,8 @@ pack_security_parameters (mhd_gtls_session_t session,
       packed_session->data[pos++] =
         session->security_parameters.extensions.server_names[i].type;
       mhd_gtls_write_uint16 (session->security_parameters.extensions.
-                            server_names[i].name_length,
-                            &packed_session->data[pos]);
+                             server_names[i].name_length,
+                             &packed_session->data[pos]);
       pos += 2;
 
       memcpy (&packed_session->data[pos],

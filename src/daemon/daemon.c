@@ -86,9 +86,9 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
           return -1;
         }
       return MHD_gnutls_certificate_set_x509_key_file (daemon->x509_cred,
-                                                   daemon->https_cert_path,
-                                                   daemon->https_key_path,
-                                                   GNUTLS_X509_FMT_PEM);
+                                                       daemon->https_cert_path,
+                                                       daemon->https_key_path,
+                                                       GNUTLS_X509_FMT_PEM);
     }
   /* certificate & key loaded from memory */
   else if (daemon->https_mem_cert && daemon->https_mem_key)
@@ -98,8 +98,9 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      return MHD_gnutls_certificate_set_x509_key_mem (daemon->x509_cred, &cert,
-                                                  &key, GNUTLS_X509_FMT_PEM);
+      return MHD_gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
+                                                      &cert, &key,
+                                                      GNUTLS_X509_FMT_PEM);
     }
   else
     {
@@ -121,16 +122,18 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
     case MHD_GNUTLS_CRD_ANON:
       ret = MHD_gnutls_anon_allocate_server_credentials (&daemon->anon_cred);
       ret += MHD_gnutls_dh_params_init (&daemon->dh_params);
-      if (ret != 0) {
-		return GNUTLS_E_MEMORY_ERROR;
-	  }
+      if (ret != 0)
+        {
+          return GNUTLS_E_MEMORY_ERROR;
+        }
       MHD_gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-      MHD_gnutls_anon_set_server_dh_params (daemon->anon_cred, daemon->dh_params);
+      MHD_gnutls_anon_set_server_dh_params (daemon->anon_cred,
+                                            daemon->dh_params);
       return 0;
     case MHD_GNUTLS_CRD_CERTIFICATE:
-      ret = MHD_gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
-      if (ret != 0) 
-	return GNUTLS_E_MEMORY_ERROR;	
+      ret = MHD_gnutls_certificate_allocate_credentials (&daemon->x509_cred);
+      if (ret != 0)
+        return GNUTLS_E_MEMORY_ERROR;
       return MHD_init_daemon_certificate (daemon);
     default:
 #if HAVE_MESSAGES
@@ -178,9 +181,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   int fd;
 
   if ((daemon == NULL) || (read_fd_set == NULL) || (write_fd_set == NULL)
-      || (except_fd_set == NULL) || (max_fd == NULL) || (-1 == (fd = daemon->
-                                                                socket_fd))
-      || (daemon->shutdown == MHD_YES)
+      || (except_fd_set == NULL) || (max_fd == NULL)
+      || (-1 == (fd = daemon->socket_fd)) || (daemon->shutdown == MHD_YES)
       || ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0))
     return MHD_NO;
 
@@ -324,13 +326,14 @@ MHD_TLS_init_connection (void *data)
     {
       /* set needed credentials for certificate authentication. */
     case MHD_GNUTLS_CRD_CERTIFICATE:
-      MHD_gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_CERTIFICATE,
-                              con->daemon->x509_cred);
+      MHD_gnutls_credentials_set (con->tls_session,
+                                  MHD_GNUTLS_CRD_CERTIFICATE,
+                                  con->daemon->x509_cred);
       break;
     case MHD_GNUTLS_CRD_ANON:
       /* set needed credentials for anonymous authentication. */
       MHD_gnutls_credentials_set (con->tls_session, MHD_GNUTLS_CRD_ANON,
-                              con->daemon->anon_cred);
+                                  con->daemon->anon_cred);
       MHD_gnutls_dh_set_prime_bits (con->tls_session, 1024);
       break;
     default:
@@ -349,8 +352,8 @@ MHD_TLS_init_connection (void *data)
    */
 
   MHD_gnutls_transport_set_ptr (con->tls_session,
-                            (gnutls_transport_ptr_t) ((void *) con->
-                                                      socket_fd));
+                                (gnutls_transport_ptr_t) ((void *)
+                                                          con->socket_fd));
 
   return MHD_handle_connection (data);
 }
@@ -432,9 +435,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
 
   if ((daemon->max_connections == 0) || ((daemon->per_ip_connection_limit
-                                          != 0) && (daemon->
-                                                    per_ip_connection_limit <=
-                                                    have)))
+                                          != 0)
+                                         && (daemon->per_ip_connection_limit
+                                             <= have)))
     {
       /* above connection limit - reject */
 #if HAVE_MESSAGES
@@ -834,7 +837,7 @@ MHD_start_daemon_va (unsigned int options,
     return NULL;
   retVal = malloc (sizeof (struct MHD_Daemon));
   if (retVal == NULL)
-    return NULL;    
+    return NULL;
   memset (retVal, 0, sizeof (struct MHD_Daemon));
   retVal->options = options;
   retVal->port = port;
@@ -883,8 +886,8 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
-        case  MHD_OPTION_SOCK_ADDR:
-          servaddr = va_arg (ap, struct sockaddr *);	 
+        case MHD_OPTION_SOCK_ADDR:
+          servaddr = va_arg (ap, struct sockaddr *);
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
@@ -921,8 +924,8 @@ MHD_start_daemon_va (unsigned int options,
 #endif
         default:
 #if HAVE_MESSAGES
-          if ( (opt >= MHD_OPTION_HTTPS_KEY_PATH) && 
-	       (opt <= MHD_OPTION_TLS_COMP_ALGO) )
+          if ((opt >= MHD_OPTION_HTTPS_KEY_PATH) &&
+              (opt <= MHD_OPTION_TLS_COMP_ALGO))
             {
               fprintf (stderr,
                        "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
@@ -932,7 +935,7 @@ MHD_start_daemon_va (unsigned int options,
             {
               fprintf (stderr,
                        "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?)\n",
-		       opt);
+                       opt);
             }
 #endif
           abort ();
@@ -949,7 +952,7 @@ MHD_start_daemon_va (unsigned int options,
       if ((options & MHD_USE_DEBUG) != 0)
         fprintf (stderr, "Call to socket failed: %s\n", STRERROR (errno));
 #endif
-      free(retVal);
+      free (retVal);
       return NULL;
     }
   if ((SETSOCKOPT (socket_fd,
@@ -974,19 +977,19 @@ MHD_start_daemon_va (unsigned int options,
   if (NULL == servaddr)
     {
       if ((options & MHD_USE_IPv6) != 0)
-	{
-	  memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
-	  servaddr6.sin6_family = AF_INET6;
-	  servaddr6.sin6_port = htons (port);
-	  servaddr = (struct sockaddr *) &servaddr6;
-	}
+        {
+          memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+          servaddr6.sin6_family = AF_INET6;
+          servaddr6.sin6_port = htons (port);
+          servaddr = (struct sockaddr *) &servaddr6;
+        }
       else
-	{
-	  memset (&servaddr4, 0, sizeof (struct sockaddr_in));
-	  servaddr4.sin_family = AF_INET;
-	  servaddr4.sin_port = htons (port);
-	  servaddr = (struct sockaddr *) &servaddr4;
-	}
+        {
+          memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+          servaddr4.sin_family = AF_INET;
+          servaddr4.sin_port = htons (port);
+          servaddr = (struct sockaddr *) &servaddr4;
+        }
     }
   retVal->socket_fd = socket_fd;
   if (BIND (socket_fd, servaddr, addrlen) < 0)
@@ -997,7 +1000,7 @@ MHD_start_daemon_va (unsigned int options,
                  "Failed to bind to port %u: %s\n", port, STRERROR (errno));
 #endif
       CLOSE (socket_fd);
-      free(retVal);
+      free (retVal);
       return NULL;
     }
 
@@ -1010,7 +1013,7 @@ MHD_start_daemon_va (unsigned int options,
                  "Failed to listen for connections: %s\n", STRERROR (errno));
 #endif
       CLOSE (socket_fd);
-      free(retVal);
+      free (retVal);
       return NULL;
     }
 
@@ -1026,20 +1029,19 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #endif
-  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || 
+  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
        (0 != (options & MHD_USE_SELECT_INTERNALLY)))
       && (0 !=
           pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (retVal, 
-		"Failed to create listen thread: %s\n",
-                STRERROR (errno));
+      MHD_DLOG (retVal,
+                "Failed to create listen thread: %s\n", STRERROR (errno));
 #endif
       free (retVal);
       CLOSE (socket_fd);
       return NULL;
-    }  
+    }
   return retVal;
 }
 

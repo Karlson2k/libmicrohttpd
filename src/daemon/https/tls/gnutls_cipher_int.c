@@ -29,7 +29,7 @@
 
 cipher_hd_t
 mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
-                     const gnutls_datum_t * key, const gnutls_datum_t * iv)
+                      const gnutls_datum_t * key, const gnutls_datum_t * iv)
 {
   cipher_hd_t ret = NULL;
   int err = GC_INVALID_CIPHER;  /* doesn't matter */
@@ -110,7 +110,7 @@ mhd_gtls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
 
 int
 mhd_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
-                        int ciphertextlen)
+                         int ciphertextlen)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {

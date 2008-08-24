@@ -37,7 +37,7 @@
  */
 
 /* Converts the given OID to an ldap acceptable string or
- * a dotted OID. 
+ * a dotted OID.
  */
 static const char *
 oid2ldap_string (const char *oid)
@@ -173,7 +173,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
               goto cleanup;
             }
 
-          /* Read the OID 
+          /* Read the OID
            */
           mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer2);
           mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
@@ -190,7 +190,7 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
               goto cleanup;
             }
 
-          /* Read the Value 
+          /* Read the Value
            */
           mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer2);
           mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".value");
@@ -280,7 +280,8 @@ _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
               gnutls_assert ();
               _gnutls_x509_log
                 ("Found OID: '%s' with value '%s'\n",
-                 oid, mhd_gtls_bin2hex (value2, len, escaped, sizeof_escaped));
+                 oid, mhd_gtls_bin2hex (value2, len, escaped,
+                                        sizeof_escaped));
               goto cleanup;
             }
           STR_APPEND (str_escape (string, escaped, sizeof_escaped));
@@ -416,7 +417,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
               goto cleanup;
             }
 
-          /* Read the OID 
+          /* Read the OID
            */
           mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer2);
           mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
@@ -436,7 +437,7 @@ _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
           if (strcmp (oid, given_oid) == 0 && indx == i++)
             {                   /* Found the OID */
 
-              /* Read the Value 
+              /* Read the Value
                */
               mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer2);
               mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".value");
@@ -585,7 +586,7 @@ _gnutls_x509_get_dn_oid (ASN1_TYPE asn1_struct,
               goto cleanup;
             }
 
-          /* Read the OID 
+          /* Read the OID
            */
           mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer2);
           mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
@@ -722,7 +723,7 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
 
   if (multi != 0)
     {                           /* if not writing an AttributeTypeAndValue, but an Attribute */
-      mhd_gtls_str_cat (tmp, sizeof (tmp), "s"); /* values */
+      mhd_gtls_str_cat (tmp, sizeof (tmp), "s");        /* values */
 
       result = asn1_write_value (asn1_struct, tmp, "NEW", 1);
       if (result != ASN1_SUCCESS)
@@ -777,7 +778,7 @@ _gnutls_x509_write_attribute (const char *given_oid,
 
   if (multi != 0)
     {                           /* if not writing an AttributeTypeAndValue, but an Attribute */
-      mhd_gtls_str_cat (tmp, sizeof (tmp), "s"); /* values */
+      mhd_gtls_str_cat (tmp, sizeof (tmp), "s");        /* values */
 
       result = asn1_write_value (asn1_struct, tmp, "NEW", 1);
       if (result != ASN1_SUCCESS)
@@ -830,7 +831,7 @@ _gnutls_x509_decode_and_read_attribute (ASN1_TYPE asn1_struct,
   char tmpbuffer[128];
   int len, result;
 
-  /* Read the OID 
+  /* Read the OID
    */
   mhd_gtls_str_cpy (tmpbuffer, sizeof (tmpbuffer), where);
   mhd_gtls_str_cat (tmpbuffer, sizeof (tmpbuffer), ".type");
@@ -845,14 +846,14 @@ _gnutls_x509_decode_and_read_attribute (ASN1_TYPE asn1_struct,
       return result;
     }
 
-  /* Read the Value 
+  /* Read the Value
    */
 
   mhd_gtls_str_cpy (tmpbuffer, sizeof (tmpbuffer), where);
   mhd_gtls_str_cat (tmpbuffer, sizeof (tmpbuffer), ".value");
 
   if (multi)
-    mhd_gtls_str_cat (tmpbuffer, sizeof (tmpbuffer), "s.?1");    /* .values.?1 */
+    mhd_gtls_str_cat (tmpbuffer, sizeof (tmpbuffer), "s.?1");   /* .values.?1 */
 
   result =
     _gnutls_x509_read_value (asn1_struct, tmpbuffer, value, octet_string);
@@ -899,7 +900,7 @@ _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
   mhd_gtls_str_cpy (asn1_rdn_name, sizeof (asn1_rdn_name), asn1_name);
   mhd_gtls_str_cat (asn1_rdn_name, sizeof (asn1_rdn_name), ".rdnSequence");
 
-  /* create a new element 
+  /* create a new element
    */
   result = asn1_write_value (asn1_struct, asn1_rdn_name, "NEW", 1);
   if (result != ASN1_SUCCESS)

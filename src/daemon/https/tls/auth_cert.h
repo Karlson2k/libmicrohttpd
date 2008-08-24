@@ -53,9 +53,9 @@ typedef struct mhd_gtls_certificate_credentials_st
   /* contains the number of the certificates in a
    * row (should be 1 for OpenPGP keys).
    */
-  unsigned ncerts;		/* contains the number of columns in cert_list.
-				 * This is the same with the number of pkeys.
-				 */
+  unsigned ncerts;              /* contains the number of columns in cert_list.
+                                 * This is the same with the number of pkeys.
+                                 */
 
   gnutls_privkey *pkey;
   /* private keys. It contains ncerts private
@@ -75,16 +75,16 @@ typedef struct mhd_gtls_certificate_credentials_st
   /* X509 specific stuff */
 
   gnutls_x509_crt_t *x509_ca_list;
-  unsigned x509_ncas;		/* number of CAs in the ca_list
-				 */
+  unsigned x509_ncas;           /* number of CAs in the ca_list
+                                 */
 
   gnutls_x509_crl_t *x509_crl_list;
-  unsigned x509_ncrls;		/* number of CRLs in the crl_list
-				 */
+  unsigned x509_ncrls;          /* number of CRLs in the crl_list
+                                 */
 
-  unsigned int verify_flags;	/* flags to be used at
-				 * certificate verification.
-				 */
+  unsigned int verify_flags;    /* flags to be used at
+                                 * certificate verification.
+                                 */
   unsigned int verify_depth;
   unsigned int verify_bits;
 
@@ -107,9 +107,9 @@ typedef struct mhd_gtls_rsa_info_st
 
 typedef struct mhd_gtls_cert_auth_info_st
 {
-  int certificate_requested;	/* if the peer requested certificate
-				 * this is non zero;
-				 */
+  int certificate_requested;    /* if the peer requested certificate
+                                 * this is non zero;
+                                 */
 
   /* These (dh/rsa) are just copies from the credentials_t structure.
    * They must be freed.
@@ -117,11 +117,11 @@ typedef struct mhd_gtls_cert_auth_info_st
   mhd_gtls_dh_info_st dh;
   rsa_info_st rsa_export;
 
-  gnutls_datum_t *raw_certificate_list;	/* holds the raw certificate of the
-					 * peer.
-					 */
-  unsigned int ncerts;		/* holds the size of the list above */
-} * cert_auth_info_t;
+  gnutls_datum_t *raw_certificate_list; /* holds the raw certificate of the
+                                         * peer.
+                                         */
+  unsigned int ncerts;          /* holds the size of the list above */
+} *cert_auth_info_t;
 
 typedef struct mhd_gtls_cert_auth_info_st cert_auth_info_st;
 
@@ -133,26 +133,27 @@ int mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t, opaque **);
 int mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t, opaque **);
 int mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t, opaque **);
 int mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t, opaque *, size_t);
-int mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t, opaque *, size_t);
-int mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t, opaque *, size_t);
+int mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t, opaque *,
+                                         size_t);
+int mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t, opaque *,
+                                           size_t);
 int mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
-			       gnutls_cert ** apr_cert_list,
-			       int *apr_cert_list_length,
-			       gnutls_privkey ** apr_pkey);
+                                gnutls_cert ** apr_cert_list,
+                                int *apr_cert_list_length,
+                                gnutls_privkey ** apr_pkey);
 
 int mhd_gtls_server_select_cert (struct MHD_gtls_session_int *,
-				enum MHD_GNUTLS_PublicKeyAlgorithm);
+                                 enum MHD_GNUTLS_PublicKeyAlgorithm);
 void mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session);
 void mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
-				 gnutls_cert * certs, int ncerts,
-				 gnutls_privkey * key, int need_free);
+                                  gnutls_cert * certs, int ncerts,
+                                  gnutls_privkey * key, int need_free);
 
 #define _gnutls_proc_cert_client_certificate mhd_gtls_proc_cert_server_certificate
 
-mhd_gtls_rsa_params_t mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t
-							rsa_params,
-							gnutls_params_function
-							* func,
-							mhd_gtls_session_t);
+mhd_gtls_rsa_params_t
+mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t rsa_params,
+                                     gnutls_params_function * func,
+                                     mhd_gtls_session_t);
 
 #endif
