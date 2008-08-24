@@ -74,8 +74,6 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #if HAVE_MESSAGES
           MHD_DLOG (daemon, "Missing X.509 certificate file\n");
 #endif
-          free (daemon);
-          CLOSE (daemon->socket_fd);
           return -1;
         }
 
@@ -84,8 +82,6 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #if HAVE_MESSAGES
           MHD_DLOG (daemon, "Missing X.509 key file\n");
 #endif
-          free (daemon);
-          CLOSE (daemon->socket_fd);
           return -1;
         }
       return MHD_gnutls_certificate_set_x509_key_file (daemon->x509_cred,
@@ -132,9 +128,8 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
       return 0;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       ret = MHD_gnutls_certificate_allocate_credentials (&daemon->x509_cred) ;
-      if (ret != 0) {
-		return GNUTLS_E_MEMORY_ERROR;
-	  }
+      if (ret != 0) 
+	return GNUTLS_E_MEMORY_ERROR;	
       return MHD_init_daemon_certificate (daemon);
     default:
 #if HAVE_MESSAGES
@@ -780,6 +775,17 @@ MHD_select_thread (void *cls)
   return NULL;
 }
 
+/**
+ * Start a webserver on the given port.
+ *
+ * @param port port to bind to
+ * @param apc callback to call to check which clients
+ *        will be allowed to connect
+ * @param apc_cls extra argument to apc
+ * @param dh default handler for all URIs
+ * @param dh_cls extra argument to dh
+ * @return NULL on error, handle to daemon on success
+ */
 struct MHD_Daemon *
 MHD_start_daemon (unsigned int options,
                   unsigned short port,
@@ -790,9 +796,7 @@ MHD_start_daemon (unsigned int options,
   struct MHD_Daemon *ret;
   va_list ap;
 
-  /* initializes argument pointer */
   va_start (ap, dh_cls);
-
   ret = MHD_start_daemon_va (options, port, apc, apc_cls, dh, dh_cls, ap);
   va_end (ap);
   return ret;
@@ -834,12 +838,8 @@ MHD_start_daemon_va (unsigned int options,
 
   /* allocate the mhd daemon */
   retVal = malloc (sizeof (struct MHD_Daemon));
-
   if (retVal == NULL)
-    {
-      CLOSE (socket_fd);
-      return NULL;
-    }
+    return NULL;    
 
   /* set default daemon values */
   memset (retVal, 0, sizeof (struct MHD_Daemon));
@@ -891,7 +891,7 @@ MHD_start_daemon_va (unsigned int options,
           retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
         case  MHD_OPTION_SOCK_ADDR:
-          servaddr = va_arg (ap, struct sockaddr *);
+          servaddr = va_arg (ap, struct sockaddr *);	 
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
@@ -931,13 +931,14 @@ MHD_start_daemon_va (unsigned int options,
           if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
             {
               fprintf (stderr,
-                       "Error: HTTPS option %d passed to non HTTPS daemon\n",
+                       "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
                        opt);
             }
           else
             {
               fprintf (stderr,
-                       "Invalid MHD_OPTION argument! (Did you terminate the list with MHD_OPTION_END?)\n");
+                       "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?)\n",
+		       opt);
             }
 #endif
           abort ();
@@ -954,6 +955,7 @@ MHD_start_daemon_va (unsigned int options,
       if ((options & MHD_USE_DEBUG) != 0)
         fprintf (stderr, "Call to socket failed: %s\n", STRERROR (errno));
 #endif
+      free(retVal);
       return NULL;
     }
   if ((SETSOCKOPT (socket_fd,
@@ -967,33 +969,32 @@ MHD_start_daemon_va (unsigned int options,
     }
 
   /* check for user supplied sockaddr */
-  if (servaddr) {
-	  if (options & MHD_USE_IPv6){
-		  addrlen = sizeof (struct sockaddr_in6);
-	  }
-	  else{
-		  addrlen = sizeof (struct sockaddr_in);
-	  }
-  }
-  else if ((options & MHD_USE_IPv6) != 0)
+  if ((options & MHD_USE_IPv6) != 0)
     {
-      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
-      servaddr6.sin6_family = AF_INET6;
-      servaddr6.sin6_port = htons (port);
-      servaddr = (struct sockaddr *) &servaddr6;
       addrlen = sizeof (struct sockaddr_in6);
     }
   else
     {
-      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
-      servaddr4.sin_family = AF_INET;
-      servaddr4.sin_port = htons (port);
-      servaddr = (struct sockaddr *) &servaddr4;
       addrlen = sizeof (struct sockaddr_in);
     }
-
+  if (NULL == servaddr)
+    {
+      if ((options & MHD_USE_IPv6) != 0)
+	{
+	  memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+	  servaddr6.sin6_family = AF_INET6;
+	  servaddr6.sin6_port = htons (port);
+	  servaddr = (struct sockaddr *) &servaddr6;
+	}
+      else
+	{
+	  memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+	  servaddr4.sin_family = AF_INET;
+	  servaddr4.sin_port = htons (port);
+	  servaddr = (struct sockaddr *) &servaddr4;
+	}
+    }
   retVal->socket_fd = socket_fd;
-
   if (BIND (socket_fd, servaddr, addrlen) < 0)
     {
 #if HAVE_MESSAGES
@@ -1002,6 +1003,7 @@ MHD_start_daemon_va (unsigned int options,
                  "Failed to bind to port %u: %s\n", port, STRERROR (errno));
 #endif
       CLOSE (socket_fd);
+      free(retVal);
       return NULL;
     }
 
@@ -1014,6 +1016,7 @@ MHD_start_daemon_va (unsigned int options,
                  "Failed to listen for connections: %s\n", STRERROR (errno));
 #endif
       CLOSE (socket_fd);
+      free(retVal);
       return NULL;
     }
 
@@ -1024,39 +1027,28 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
       MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
 #endif
+      CLOSE (socket_fd);
       free (retVal);
       return NULL;
     }
 #endif
-  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || (0 != (options
-                                                                  &
-                                                                  MHD_USE_SELECT_INTERNALLY)))
+  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) || 
+       (0 != (options & MHD_USE_SELECT_INTERNALLY)))
       && (0 !=
           pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to create listen thread: %s\n",
+      MHD_DLOG (retVal, 
+		"Failed to create listen thread: %s\n",
                 STRERROR (errno));
 #endif
       free (retVal);
       CLOSE (socket_fd);
       return NULL;
-    }
-
+    }  
   return retVal;
 }
 
-/**
- * Start a webserver on the given port.
- *
- * @param port port to bind to
- * @param apc callback to call to check which clients
- *        will be allowed to connect
- * @param apc_cls extra argument to apc
- * @param dh default handler for all URIs
- * @param dh_cls extra argument to dh
- * @return NULL on error, handle to daemon on success
- */
 /**
  * Shutdown an http daemon.
  */

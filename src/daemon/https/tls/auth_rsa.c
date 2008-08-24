@@ -325,7 +325,7 @@ _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE];
   int params_len = MAX_PUBLIC_PARAMS_SIZE;
   int ret, i;
-  gnutls_protocol_t ver;
+  enum MHD_GNUTLS_Protocol ver;
 
   if (auth == NULL)
     {

@@ -28,7 +28,7 @@
 #include <gnutls_datum.h>
 
 cipher_hd_t
-mhd_gtls_cipher_init (gnutls_cipher_algorithm_t cipher,
+mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
                      const gnutls_datum_t * key, const gnutls_datum_t * iv)
 {
   cipher_hd_t ret = NULL;

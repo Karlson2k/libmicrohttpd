@@ -35,9 +35,9 @@
  */
 typedef struct
 {
-  gnutls_kx_algorithm_t algorithm;
-  gnutls_credentials_type_t client_type;
-  gnutls_credentials_type_t server_type;        /* The type of credentials a server
+  enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm;
+  enum MHD_GNUTLS_CredentialsType client_type;
+  enum MHD_GNUTLS_CredentialsType server_type;        /* The type of credentials a server
                                                  * needs to set */
 } gnutls_cred_map;
 
@@ -84,8 +84,8 @@ static const gnutls_cred_map mhd_gtls_cred_mappings[] = {
 /* KX mappings to PK algorithms */
 typedef struct
 {
-  gnutls_kx_algorithm_t kx_algorithm;
-  gnutls_pk_algorithm_t pk_algorithm;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
   enum encipher_type encipher_type;     /* CIPHER_ENCRYPT if this algorithm is to be used
                                          * for encryption, CIPHER_SIGN if signature only,
                                          * CIPHER_IGN if this does not apply at all.
@@ -130,7 +130,7 @@ static const gnutls_pk_map mhd_gtls_pk_mappings[] = {
 typedef struct
 {
   const char *name;
-  gnutls_protocol_t id;         /* gnutls internal version number */
+  enum MHD_GNUTLS_Protocol id;         /* gnutls internal version number */
   int major;                    /* defined by the protocol */
   int minor;                    /* defined by the protocol */
   int supported;                /* 0 not supported, > 0 is supported */
@@ -165,7 +165,7 @@ static const gnutls_version_entry mhd_gtls_sup_versions[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_protocol_t mhd_gtls_supported_protocols[] = { MHD_GNUTLS_SSL3,
+static const enum MHD_GNUTLS_Protocol mhd_gtls_supported_protocols[] = { MHD_GNUTLS_SSL3,
   MHD_GNUTLS_TLS1_0,
   MHD_GNUTLS_TLS1_1,
   MHD_GNUTLS_TLS1_2,
@@ -182,7 +182,7 @@ static const gnutls_protocol_t mhd_gtls_supported_protocols[] = { MHD_GNUTLS_SSL
 struct gnutls_cipher_entry
 {
   const char *name;
-  gnutls_cipher_algorithm_t id;
+  enum MHD_GNUTLS_CipherAlgorithm id;
   uint16_t blocksize;
   uint16_t keysize;
   cipher_type_t block;
@@ -271,7 +271,7 @@ static const gnutls_cipher_entry mhd_gtls_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_cipher_algorithm_t mhd_gtls_supported_ciphers[] =
+static const enum MHD_GNUTLS_CipherAlgorithm mhd_gtls_supported_ciphers[] =
   { MHD_GNUTLS_CIPHER_AES_256_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_3DES_CBC,
@@ -298,7 +298,7 @@ struct gnutls_hash_entry
 {
   const char *name;
   const char *oid;
-  gnutls_mac_algorithm_t id;
+  enum MHD_GNUTLS_HashAlgorithm id;
   size_t key_size;              /* in case of mac */
 };
 typedef struct gnutls_hash_entry gnutls_hash_entry;
@@ -327,7 +327,7 @@ static const gnutls_hash_entry mhd_gtls_hash_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_mac_algorithm_t mhd_gtls_supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
+static const enum MHD_GNUTLS_HashAlgorithm mhd_gtls_supported_macs[] = { MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_MD5,
   MHD_GNUTLS_MAC_SHA256,
   MHD_GNUTLS_MAC_NULL,
@@ -364,7 +364,7 @@ gnutls_compression_entry _gnutls_compression_algorithms[MAX_COMP_METHODS] =
    0}
 };
 
-static const gnutls_compression_method_t mhd_gtls_supported_compressions[] = {
+static const enum MHD_GNUTLS_CompressionMethod mhd_gtls_supported_compressions[] = {
 #ifdef HAVE_LIBZ
   MHD_GNUTLS_COMP_DEFLATE,
 #endif
@@ -395,7 +395,7 @@ extern mhd_gtls_mod_auth_st srp_dss_auth_struct;
 typedef struct mhd_gtls_kx_algo_entry
 {
   const char *name;
-  gnutls_kx_algorithm_t algorithm;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm;
   mhd_gtls_mod_auth_st *auth_struct;
   int needs_dh_params;
   int needs_rsa_params;
@@ -444,7 +444,7 @@ static const mhd_gtls_kx_algo_entry_t mhd_gtls_kx_algorithms[] = {
 };
 
 /* Keep the contents of this struct the same as the previous one. */
-static const gnutls_kx_algorithm_t mhd_gtls_supported_kxs[] = {
+static const enum MHD_GNUTLS_KeyExchangeAlgorithm mhd_gtls_supported_kxs[] = {
 #ifdef ENABLE_ANON
   MHD_GNUTLS_KX_ANON_DH,
 #endif
@@ -479,10 +479,10 @@ typedef struct
 {
   const char *name;
   cipher_suite_st id;
-  gnutls_cipher_algorithm_t block_algorithm;
-  gnutls_kx_algorithm_t kx_algorithm;
-  gnutls_mac_algorithm_t mac_algorithm;
-  gnutls_protocol_t version;    /* this cipher suite is supported
+  enum MHD_GNUTLS_CipherAlgorithm block_algorithm;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
+  enum MHD_GNUTLS_HashAlgorithm mac_algorithm;
+  enum MHD_GNUTLS_Protocol version;    /* this cipher suite is supported
                                  * from 'version' and above;
                                  */
 } mhd_gtls_cipher_suite_entry;
@@ -763,7 +763,7 @@ static const mhd_gtls_cipher_suite_entry mhd_gtls_cs_algorithms[] = {
 
 int
 mhd_gtls_mac_priority (mhd_gtls_session_t session,
-                      gnutls_mac_algorithm_t algorithm)
+                      enum MHD_GNUTLS_HashAlgorithm algorithm)
 {                               /* actually returns the priority */
   unsigned int i;
   for (i = 0; i < session->internals.priorities.mac.num_algorithms; i++)
@@ -782,7 +782,7 @@ mhd_gtls_mac_priority (mhd_gtls_session_t session,
  * algorithm, or %NULL.
  **/
 const char *
-MHD_gnutls_mac_get_name (gnutls_mac_algorithm_t algorithm)
+MHD_gnutls_mac_get_name (enum MHD_GNUTLS_HashAlgorithm algorithm)
 {
   const char *ret = NULL;
 
@@ -796,14 +796,14 @@ MHD_gnutls_mac_get_name (gnutls_mac_algorithm_t algorithm)
  * MHD_gtls_mac_get_id - Returns the gnutls id of the specified in string algorithm
  * @algorithm: is a MAC algorithm name
  *
- * Returns: an %gnutls_mac_algorithm_tid of the specified in a string
+ * Returns: an %enum MHD_GNUTLS_HashAlgorithmid of the specified in a string
  * MAC algorithm, or %GNUTLS_MAC_UNKNOWN on failures.  The names are
  * compared in a case insensitive way.
  **/
-gnutls_mac_algorithm_t
+enum MHD_GNUTLS_HashAlgorithm
 MHD_gtls_mac_get_id (const char *name)
 {
-  gnutls_mac_algorithm_t ret = MHD_GNUTLS_MAC_UNKNOWN;
+  enum MHD_GNUTLS_HashAlgorithm ret = MHD_GNUTLS_MAC_UNKNOWN;
 
   GNUTLS_HASH_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -820,7 +820,7 @@ MHD_gtls_mac_get_id (const char *name)
  *
  **/
 size_t
-MHD_gnutls_mac_get_key_size (gnutls_mac_algorithm_t algorithm)
+MHD_gnutls_mac_get_key_size (enum MHD_GNUTLS_HashAlgorithm algorithm)
 {
   size_t ret = 0;
 
@@ -838,17 +838,17 @@ MHD_gnutls_mac_get_key_size (gnutls_mac_algorithm_t algorithm)
  * example, MD2 is not supported as a cipher suite, but is supported
  * for other purposes (e.g., X.509 signature verification or similar).
  *
- * Returns: Return a zero-terminated list of %gnutls_mac_algorithm_t
+ * Returns: Return a zero-terminated list of %enum MHD_GNUTLS_HashAlgorithm
  * integers indicating the available MACs.
  **/
-const gnutls_mac_algorithm_t *
+const enum MHD_GNUTLS_HashAlgorithm *
 MHD_gtls_mac_list (void)
 {
   return mhd_gtls_supported_macs;
 }
 
 const char *
-mhd_gtls_x509_mac_to_oid (gnutls_mac_algorithm_t algorithm)
+mhd_gtls_x509_mac_to_oid (enum MHD_GNUTLS_HashAlgorithm algorithm)
 {
   const char *ret = NULL;
 
@@ -858,10 +858,10 @@ mhd_gtls_x509_mac_to_oid (gnutls_mac_algorithm_t algorithm)
   return ret;
 }
 
-gnutls_mac_algorithm_t
+enum MHD_GNUTLS_HashAlgorithm
 mhd_gtls_x509_oid2mac_algorithm (const char *oid)
 {
-  gnutls_mac_algorithm_t ret = 0;
+  enum MHD_GNUTLS_HashAlgorithm ret = 0;
 
   GNUTLS_HASH_LOOP (if (p->oid && strcmp (oid, p->oid) == 0)
                     {
@@ -875,7 +875,7 @@ mhd_gtls_x509_oid2mac_algorithm (const char *oid)
 }
 
 int
-mhd_gnutls_mac_is_ok (gnutls_mac_algorithm_t algorithm)
+mhd_gnutls_mac_is_ok (enum MHD_GNUTLS_HashAlgorithm algorithm)
 {
   ssize_t ret = -1;
   GNUTLS_HASH_ALG_LOOP (ret = p->id);
@@ -889,7 +889,7 @@ mhd_gnutls_mac_is_ok (gnutls_mac_algorithm_t algorithm)
 /* Compression Functions */
 int
 mhd_gtls_compression_priority (mhd_gtls_session_t session,
-                              gnutls_compression_method_t algorithm)
+                              enum MHD_GNUTLS_CompressionMethod algorithm)
 {                               /* actually returns the priority */
   unsigned int i;
   for (i = 0; i < session->internals.priorities.compression.num_algorithms; i++)
@@ -908,7 +908,7 @@ mhd_gtls_compression_priority (mhd_gtls_session_t session,
  * specified compression algorithm, or %NULL.
  **/
 const char *
-MHD_gnutls_compression_get_name (gnutls_compression_method_t algorithm)
+MHD_gnutls_compression_get_name (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   const char *ret = NULL;
 
@@ -928,10 +928,10 @@ MHD_gnutls_compression_get_name (gnutls_compression_method_t algorithm)
  * %GNUTLS_COMP_UNKNOWN on error.
  *
  **/
-gnutls_compression_method_t
+enum MHD_GNUTLS_CompressionMethod
 MHD_gtls_compression_get_id (const char *name)
 {
-  gnutls_compression_method_t ret = MHD_GNUTLS_COMP_UNKNOWN;
+  enum MHD_GNUTLS_CompressionMethod ret = MHD_GNUTLS_COMP_UNKNOWN;
 
   GNUTLS_COMPRESSION_LOOP (if
                            (strcasecmp
@@ -949,10 +949,10 @@ MHD_gtls_compression_get_id (const char *name)
  * compression, you must link to libgnutls-extra and call
  * gnutls_global_init_extra().
  *
- * Returns: a zero-terminated list of %gnutls_compression_method_t
+ * Returns: a zero-terminated list of %enum MHD_GNUTLS_CompressionMethod
  * integers indicating the available compression methods.
  **/
-const gnutls_compression_method_t *
+const enum MHD_GNUTLS_CompressionMethod *
 MHD_gtls_compression_list (void)
 {
   return mhd_gtls_supported_compressions;
@@ -960,7 +960,7 @@ MHD_gtls_compression_list (void)
 
 /* return the tls number of the specified algorithm */
 int
-mhd_gtls_compression_get_num (gnutls_compression_method_t algorithm)
+mhd_gtls_compression_get_num (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   int ret = -1;
 
@@ -971,7 +971,7 @@ mhd_gtls_compression_get_num (gnutls_compression_method_t algorithm)
 }
 
 int
-mhd_gtls_compression_get_wbits (gnutls_compression_method_t algorithm)
+mhd_gtls_compression_get_wbits (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   int ret = -1;
   /* avoid prefix */
@@ -980,7 +980,7 @@ mhd_gtls_compression_get_wbits (gnutls_compression_method_t algorithm)
 }
 
 int
-mhd_gtls_compression_get_mem_level (gnutls_compression_method_t algorithm)
+mhd_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   int ret = -1;
   /* avoid prefix */
@@ -989,7 +989,7 @@ mhd_gtls_compression_get_mem_level (gnutls_compression_method_t algorithm)
 }
 
 int
-mhd_gtls_compression_get_comp_level (gnutls_compression_method_t algorithm)
+mhd_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   int ret = -1;
   /* avoid prefix */
@@ -1000,10 +1000,10 @@ mhd_gtls_compression_get_comp_level (gnutls_compression_method_t algorithm)
 /* returns the gnutls internal ID of the TLS compression
  * method num
  */
-gnutls_compression_method_t
+enum MHD_GNUTLS_CompressionMethod
 mhd_gtls_compression_get_id (int num)
 {
-  gnutls_compression_method_t ret = -1;
+  enum MHD_GNUTLS_CompressionMethod ret = -1;
 
   /* avoid prefix */
   GNUTLS_COMPRESSION_ALG_LOOP_NUM (ret = p->id);
@@ -1012,7 +1012,7 @@ mhd_gtls_compression_get_id (int num)
 }
 
 int
-mhd_gtls_compression_is_ok (gnutls_compression_method_t algorithm)
+mhd_gtls_compression_is_ok (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   ssize_t ret = -1;
   GNUTLS_COMPRESSION_ALG_LOOP (ret = p->id);
@@ -1025,7 +1025,7 @@ mhd_gtls_compression_is_ok (gnutls_compression_method_t algorithm)
 
 /* CIPHER functions */
 int
-mhd_gtls_cipher_get_block_size (gnutls_cipher_algorithm_t algorithm)
+mhd_gtls_cipher_get_block_size (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   size_t ret = 0;
   GNUTLS_ALG_LOOP (ret = p->blocksize);
@@ -1036,7 +1036,7 @@ mhd_gtls_cipher_get_block_size (gnutls_cipher_algorithm_t algorithm)
 /* returns the priority */
 int
 mhd_gtls_cipher_priority (mhd_gtls_session_t session,
-                         gnutls_cipher_algorithm_t algorithm)
+                         enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   unsigned int i;
   for (i = 0; i < session->internals.priorities.cipher.num_algorithms; i++)
@@ -1048,7 +1048,7 @@ mhd_gtls_cipher_priority (mhd_gtls_session_t session,
 }
 
 int
-mhd_gtls_cipher_is_block (gnutls_cipher_algorithm_t algorithm)
+mhd_gtls_cipher_is_block (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   size_t ret = 0;
 
@@ -1065,7 +1065,7 @@ mhd_gtls_cipher_is_block (gnutls_cipher_algorithm_t algorithm)
  *   the given cipher is invalid.
  **/
 size_t
-MHD_gnutls_cipher_get_key_size (gnutls_cipher_algorithm_t algorithm)
+MHD_gnutls_cipher_get_key_size (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {                               /* In bytes */
   size_t ret = 0;
   GNUTLS_ALG_LOOP (ret = p->keysize);
@@ -1074,7 +1074,7 @@ MHD_gnutls_cipher_get_key_size (gnutls_cipher_algorithm_t algorithm)
 }
 
 int
-mhd_gtls_cipher_get_iv_size (gnutls_cipher_algorithm_t algorithm)
+mhd_gtls_cipher_get_iv_size (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {                               /* In bytes */
   size_t ret = 0;
   GNUTLS_ALG_LOOP (ret = p->iv);
@@ -1083,7 +1083,7 @@ mhd_gtls_cipher_get_iv_size (gnutls_cipher_algorithm_t algorithm)
 }
 
 int
-mhd_gtls_cipher_get_export_flag (gnutls_cipher_algorithm_t algorithm)
+mhd_gtls_cipher_get_export_flag (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {                               /* In bytes */
   size_t ret = 0;
   GNUTLS_ALG_LOOP (ret = p->export_flag);
@@ -1099,7 +1099,7 @@ mhd_gtls_cipher_get_export_flag (gnutls_cipher_algorithm_t algorithm)
  *   specified cipher, or %NULL.
  **/
 const char *
-MHD_gnutls_cipher_get_name (gnutls_cipher_algorithm_t algorithm)
+MHD_gnutls_cipher_get_name (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   const char *ret = NULL;
 
@@ -1119,10 +1119,10 @@ MHD_gnutls_cipher_get_name (gnutls_cipher_algorithm_t algorithm)
  * on error.
  *
  **/
-gnutls_cipher_algorithm_t
+enum MHD_GNUTLS_CipherAlgorithm
 MHD_gtls_cipher_get_id (const char *name)
 {
-  gnutls_cipher_algorithm_t ret = MHD_GNUTLS_CIPHER_UNKNOWN;
+  enum MHD_GNUTLS_CipherAlgorithm ret = MHD_GNUTLS_CIPHER_UNKNOWN;
 
   GNUTLS_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -1138,18 +1138,18 @@ MHD_gtls_cipher_get_id (const char *name)
  * example, DES is not supported as a cipher suite, but is supported
  * for other purposes (e.g., PKCS#8 or similar).
  *
- * Returns: a zero-terminated list of %gnutls_cipher_algorithm_t
+ * Returns: a zero-terminated list of %enum MHD_GNUTLS_CipherAlgorithm
  * integers indicating the available ciphers.
  *
  **/
-const gnutls_cipher_algorithm_t *
+const enum MHD_GNUTLS_CipherAlgorithm *
 MHD_gtls_cipher_list (void)
 {
   return mhd_gtls_supported_ciphers;
 }
 
 int
-mhd_gtls_cipher_is_ok (gnutls_cipher_algorithm_t algorithm)
+mhd_gtls_cipher_is_ok (enum MHD_GNUTLS_CipherAlgorithm algorithm)
 {
   ssize_t ret = -1;
   GNUTLS_ALG_LOOP (ret = p->id);
@@ -1162,7 +1162,7 @@ mhd_gtls_cipher_is_ok (gnutls_cipher_algorithm_t algorithm)
 
 /* Key EXCHANGE functions */
 mhd_gtls_mod_auth_st *
-mhd_gtls_kx_auth_struct (gnutls_kx_algorithm_t algorithm)
+mhd_gtls_kx_auth_struct (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   mhd_gtls_mod_auth_st *ret = NULL;
   GNUTLS_KX_ALG_LOOP (ret = p->auth_struct);
@@ -1172,7 +1172,7 @@ mhd_gtls_kx_auth_struct (gnutls_kx_algorithm_t algorithm)
 
 int
 mhd_gtls_kx_priority (mhd_gtls_session_t session,
-                     gnutls_kx_algorithm_t algorithm)
+                     enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   unsigned int i;
   for (i = 0; i < session->internals.priorities.kx.num_algorithms; i++)
@@ -1191,7 +1191,7 @@ mhd_gtls_kx_priority (mhd_gtls_session_t session,
  * specified key exchange algorithm, or %NULL.
  **/
 const char *
-MHD_gnutls_kx_get_name (gnutls_kx_algorithm_t algorithm)
+MHD_gnutls_kx_get_name (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   const char *ret = NULL;
 
@@ -1210,10 +1210,10 @@ MHD_gnutls_kx_get_name (gnutls_kx_algorithm_t algorithm)
  * Returns: an id of the specified KX algorithm, or
  * %GNUTLS_KX_UNKNOWN on error.
  **/
-gnutls_kx_algorithm_t
+enum MHD_GNUTLS_KeyExchangeAlgorithm
 MHD_gtls_kx_get_id (const char *name)
 {
-  gnutls_cipher_algorithm_t ret = MHD_GNUTLS_KX_UNKNOWN;
+  enum MHD_GNUTLS_CipherAlgorithm ret = MHD_GNUTLS_KX_UNKNOWN;
 
   GNUTLS_KX_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->algorithm)
     ;
@@ -1226,17 +1226,17 @@ MHD_gtls_kx_get_id (const char *name)
  *
  * Get a list of supported key exchange algorithms.
  *
- * Returns: a zero-terminated list of %gnutls_kx_algorithm_t integers
+ * Returns: a zero-terminated list of %enum MHD_GNUTLS_KeyExchangeAlgorithm integers
  * indicating the available key exchange algorithms.
  **/
-const gnutls_kx_algorithm_t *
+const enum MHD_GNUTLS_KeyExchangeAlgorithm *
 MHD_gtls_kx_list (void)
 {
   return mhd_gtls_supported_kxs;
 }
 
 int
-mhd_gtls_kx_is_ok (gnutls_kx_algorithm_t algorithm)
+mhd_gtls_kx_is_ok (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   ssize_t ret = -1;
   GNUTLS_KX_ALG_LOOP (ret = p->algorithm);
@@ -1248,7 +1248,7 @@ mhd_gtls_kx_is_ok (gnutls_kx_algorithm_t algorithm)
 }
 
 int
-mhd_gtls_kx_needs_rsa_params (gnutls_kx_algorithm_t algorithm)
+mhd_gtls_kx_needs_rsa_params (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   ssize_t ret = 0;
   GNUTLS_KX_ALG_LOOP (ret = p->needs_rsa_params);
@@ -1256,7 +1256,7 @@ mhd_gtls_kx_needs_rsa_params (gnutls_kx_algorithm_t algorithm)
 }
 
 int
-mhd_gtls_kx_needs_dh_params (gnutls_kx_algorithm_t algorithm)
+mhd_gtls_kx_needs_dh_params (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm)
 {
   ssize_t ret = 0;
   GNUTLS_KX_ALG_LOOP (ret = p->needs_dh_params);
@@ -1265,7 +1265,7 @@ mhd_gtls_kx_needs_dh_params (gnutls_kx_algorithm_t algorithm)
 
 /* Version */
 int
-mhd_gtls_version_priority (mhd_gtls_session_t session, gnutls_protocol_t version)
+mhd_gtls_version_priority (mhd_gtls_session_t session, enum MHD_GNUTLS_Protocol version)
 {                               /* actually returns the priority */
   unsigned int i;
 
@@ -1283,7 +1283,7 @@ mhd_gtls_version_priority (mhd_gtls_session_t session, gnutls_protocol_t version
   return -1;
 }
 
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 mhd_gtls_version_lowest (mhd_gtls_session_t session)
 {                               /* returns the lowest version supported */
   unsigned int i, min = 0xff;
@@ -1305,7 +1305,7 @@ mhd_gtls_version_lowest (mhd_gtls_session_t session)
   return min;
 }
 
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 mhd_gtls_version_max (mhd_gtls_session_t session)
 {                               /* returns the maximum version supported */
   unsigned int i, max = 0x00;
@@ -1335,7 +1335,7 @@ mhd_gtls_version_max (mhd_gtls_session_t session)
  * version (e.g., "TLS 1.0"), or %NULL.
  **/
 const char *
-MHD_gnutls_protocol_get_name (gnutls_protocol_t version)
+MHD_gnutls_protocol_get_name (enum MHD_GNUTLS_Protocol version)
 {
   const char *ret = NULL;
 
@@ -1353,10 +1353,10 @@ MHD_gnutls_protocol_get_name (gnutls_protocol_t version)
  * Returns: an id of the specified protocol, or
  * %GNUTLS_VERSION_UNKNOWN on error.
  **/
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 MHD_gtls_protocol_get_id (const char *name)
 {
-  gnutls_protocol_t ret = MHD_GNUTLS_VERSION_UNKNOWN;
+  enum MHD_GNUTLS_Protocol ret = MHD_GNUTLS_VERSION_UNKNOWN;
 
   GNUTLS_VERSION_LOOP (if (strcasecmp (p->name, name) == 0) ret = p->id)
     ;
@@ -1369,18 +1369,18 @@ MHD_gtls_protocol_get_id (const char *name)
  *
  * Get a list of supported protocols, e.g. SSL 3.0, TLS 1.0 etc.
  *
- * Returns: a zero-terminated list of %gnutls_protocol_t integers
+ * Returns: a zero-terminated list of %enum MHD_GNUTLS_Protocol integers
  * indicating the available protocols.
  *
  **/
-const gnutls_protocol_t *
+const enum MHD_GNUTLS_Protocol *
 MHD_gtls_protocol_list (void)
 {
   return mhd_gtls_supported_protocols;
 }
 
 int
-mhd_gtls_version_get_minor (gnutls_protocol_t version)
+mhd_gtls_version_get_minor (enum MHD_GNUTLS_Protocol version)
 {
   int ret = -1;
 
@@ -1388,7 +1388,7 @@ mhd_gtls_version_get_minor (gnutls_protocol_t version)
   return ret;
 }
 
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 mhd_gtls_version_get (int major, int minor)
 {
   int ret = -1;
@@ -1400,7 +1400,7 @@ mhd_gtls_version_get (int major, int minor)
 }
 
 int
-mhd_gtls_version_get_major (gnutls_protocol_t version)
+mhd_gtls_version_get_major (enum MHD_GNUTLS_Protocol version)
 {
   int ret = -1;
 
@@ -1412,7 +1412,7 @@ mhd_gtls_version_get_major (gnutls_protocol_t version)
 
 int
 mhd_gtls_version_is_supported (mhd_gtls_session_t session,
-                              const gnutls_protocol_t version)
+                              const enum MHD_GNUTLS_Protocol version)
 {
   int ret = 0;
 
@@ -1427,10 +1427,10 @@ mhd_gtls_version_is_supported (mhd_gtls_session_t session,
 }
 
 /* Type to KX mappings */
-gnutls_kx_algorithm_t
-mhd_gtls_map_kx_get_kx (gnutls_credentials_type_t type, int server)
+enum MHD_GNUTLS_KeyExchangeAlgorithm
+mhd_gtls_map_kx_get_kx (enum MHD_GNUTLS_CredentialsType type, int server)
 {
-  gnutls_kx_algorithm_t ret = -1;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm ret = -1;
 
   if (server)
     {
@@ -1443,10 +1443,10 @@ mhd_gtls_map_kx_get_kx (gnutls_credentials_type_t type, int server)
   return ret;
 }
 
-gnutls_credentials_type_t
-mhd_gtls_map_kx_get_cred (gnutls_kx_algorithm_t algorithm, int server)
+enum MHD_GNUTLS_CredentialsType
+mhd_gtls_map_kx_get_cred (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm, int server)
 {
-  gnutls_credentials_type_t ret = -1;
+  enum MHD_GNUTLS_CredentialsType ret = -1;
   if (server)
     {
       GNUTLS_KX_MAP_LOOP (if (p->algorithm == algorithm) ret = p->server_type)
@@ -1462,7 +1462,7 @@ mhd_gtls_map_kx_get_cred (gnutls_kx_algorithm_t algorithm, int server)
 }
 
 /* Cipher Suite's functions */
-gnutls_cipher_algorithm_t
+enum MHD_GNUTLS_CipherAlgorithm
 mhd_gtls_cipher_suite_get_cipher_algo (const cipher_suite_st * suite)
 {
   int ret = 0;
@@ -1470,7 +1470,7 @@ mhd_gtls_cipher_suite_get_cipher_algo (const cipher_suite_st * suite)
   return ret;
 }
 
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 mhd_gtls_cipher_suite_get_version (const cipher_suite_st * suite)
 {
   int ret = 0;
@@ -1478,7 +1478,7 @@ mhd_gtls_cipher_suite_get_version (const cipher_suite_st * suite)
   return ret;
 }
 
-gnutls_kx_algorithm_t
+enum MHD_GNUTLS_KeyExchangeAlgorithm
 mhd_gtls_cipher_suite_get_kx_algo (const cipher_suite_st * suite)
 {
   int ret = 0;
@@ -1488,7 +1488,7 @@ mhd_gtls_cipher_suite_get_kx_algo (const cipher_suite_st * suite)
 
 }
 
-gnutls_mac_algorithm_t
+enum MHD_GNUTLS_HashAlgorithm
 mhd_gtls_cipher_suite_get_mac_algo (const cipher_suite_st * suite)
 {                               /* In bytes */
   int ret = 0;
@@ -1613,17 +1613,17 @@ static int
 _gnutls_compare_algo (mhd_gtls_session_t session,
                       const void *i_A1, const void *i_A2)
 {
-  gnutls_kx_algorithm_t kA1 =
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kA1 =
     mhd_gtls_cipher_suite_get_kx_algo ((const cipher_suite_st *) i_A1);
-  gnutls_kx_algorithm_t kA2 =
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kA2 =
     mhd_gtls_cipher_suite_get_kx_algo ((const cipher_suite_st *) i_A2);
-  gnutls_cipher_algorithm_t cA1 =
+  enum MHD_GNUTLS_CipherAlgorithm cA1 =
     mhd_gtls_cipher_suite_get_cipher_algo ((const cipher_suite_st *) i_A1);
-  gnutls_cipher_algorithm_t cA2 =
+  enum MHD_GNUTLS_CipherAlgorithm cA2 =
     mhd_gtls_cipher_suite_get_cipher_algo ((const cipher_suite_st *) i_A2);
-  gnutls_mac_algorithm_t mA1 =
+  enum MHD_GNUTLS_HashAlgorithm mA1 =
     mhd_gtls_cipher_suite_get_mac_algo ((const cipher_suite_st *) i_A1);
-  gnutls_mac_algorithm_t mA2 =
+  enum MHD_GNUTLS_HashAlgorithm mA2 =
     mhd_gtls_cipher_suite_get_mac_algo ((const cipher_suite_st *) i_A2);
 
   int p1 = (mhd_gtls_kx_priority (session, kA1) + 1) * 64;
@@ -1717,7 +1717,7 @@ mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
   unsigned int count = CIPHER_SUITES_COUNT;
   cipher_suite_st *tmp_ciphers;
   cipher_suite_st *ciphers;
-  gnutls_protocol_t version;
+  enum MHD_GNUTLS_Protocol version;
 
   if (count == 0)
     {
@@ -1860,7 +1860,7 @@ mhd_gtls_supported_compression_methods (mhd_gtls_session_t session,
  * specified certificate type.
  **/
 const char *
-MHD_gnutls_certificate_type_get_name (gnutls_certificate_type_t type)
+MHD_gnutls_certificate_type_get_name (enum MHD_GNUTLS_CertificateType type)
 {
   const char *ret = NULL;
 
@@ -1878,17 +1878,17 @@ MHD_gnutls_certificate_type_get_name (gnutls_certificate_type_t type)
  * Returns: an id of the specified in a string certificate type, or
  * %GNUTLS_CRT_UNKNOWN on error.
  **/
-gnutls_certificate_type_t
+enum MHD_GNUTLS_CertificateType
 MHD_gtls_certificate_type_get_id (const char *name)
 {
-  gnutls_certificate_type_t ret = MHD_GNUTLS_CRT_UNKNOWN;
+  enum MHD_GNUTLS_CertificateType ret = MHD_GNUTLS_CRT_UNKNOWN;
 
   if (strcasecmp (name, "X.509") == 0 || strcasecmp (name, "X509") == 0)
     return MHD_GNUTLS_CRT_X509;
   return ret;
 }
 
-static const gnutls_certificate_type_t mhd_gtls_supported_certificate_types[] =
+static const enum MHD_GNUTLS_CertificateType mhd_gtls_supported_certificate_types[] =
   { MHD_GNUTLS_CRT_X509,
   0
 };
@@ -1898,23 +1898,23 @@ static const gnutls_certificate_type_t mhd_gtls_supported_certificate_types[] =
  *
  * Get a list of certificate types.
  *
- * Returns: a zero-terminated list of %gnutls_certificate_type_t
+ * Returns: a zero-terminated list of %enum MHD_GNUTLS_CertificateType
  * integers indicating the available certificate types.
  *
  **/
-const gnutls_certificate_type_t *
+const enum MHD_GNUTLS_CertificateType *
 MHD_gtls_certificate_type_list (void)
 {
   return mhd_gtls_supported_certificate_types;
 }
 
-/* returns the gnutls_pk_algorithm_t which is compatible with
- * the given gnutls_kx_algorithm_t.
+/* returns the enum MHD_GNUTLS_PublicKeyAlgorithm which is compatible with
+ * the given enum MHD_GNUTLS_KeyExchangeAlgorithm.
  */
-gnutls_pk_algorithm_t
-mhd_gtls_map_pk_get_pk (gnutls_kx_algorithm_t kx_algorithm)
+enum MHD_GNUTLS_PublicKeyAlgorithm
+mhd_gtls_map_pk_get_pk (enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm)
 {
-  gnutls_pk_algorithm_t ret = -1;
+  enum MHD_GNUTLS_PublicKeyAlgorithm ret = -1;
 
   GNUTLS_PK_MAP_ALG_LOOP (ret = p->pk_algorithm) return ret;
 }
@@ -1925,7 +1925,7 @@ mhd_gtls_map_pk_get_pk (gnutls_kx_algorithm_t kx_algorithm)
  * ex. GNUTLS_KX_RSA requires a certificate able to encrypt... so returns CIPHER_ENCRYPT.
  */
 enum encipher_type
-mhd_gtls_kx_encipher_type (gnutls_kx_algorithm_t kx_algorithm)
+mhd_gtls_kx_encipher_type (enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm)
 {
   int ret = CIPHER_IGN;
   GNUTLS_PK_MAP_ALG_LOOP (ret = p->encipher_type) return ret;
@@ -1939,8 +1939,8 @@ struct gnutls_sign_entry
   const char *name;
   const char *oid;
   gnutls_sign_algorithm_t id;
-  gnutls_pk_algorithm_t pk;
-  gnutls_mac_algorithm_t mac;
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk;
+  enum MHD_GNUTLS_HashAlgorithm mac;
 };
 typedef struct gnutls_sign_entry gnutls_sign_entry;
 
@@ -2005,7 +2005,7 @@ mhd_gtls_x509_oid2sign_algorithm (const char *oid)
 }
 
 gnutls_sign_algorithm_t
-mhd_gtls_x509_pk_to_sign (gnutls_pk_algorithm_t pk, gnutls_mac_algorithm_t mac)
+mhd_gtls_x509_pk_to_sign (enum MHD_GNUTLS_PublicKeyAlgorithm pk, enum MHD_GNUTLS_HashAlgorithm mac)
 {
   gnutls_sign_algorithm_t ret = 0;
 
@@ -2020,8 +2020,8 @@ mhd_gtls_x509_pk_to_sign (gnutls_pk_algorithm_t pk, gnutls_mac_algorithm_t mac)
 }
 
 const char *
-mhd_gtls_x509_sign_to_oid (gnutls_pk_algorithm_t pk,
-                          gnutls_mac_algorithm_t mac)
+mhd_gtls_x509_sign_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm pk,
+                          enum MHD_GNUTLS_HashAlgorithm mac)
 {
   gnutls_sign_algorithm_t sign;
   const char *ret = NULL;
@@ -2040,7 +2040,7 @@ struct gnutls_pk_entry
 {
   const char *name;
   const char *oid;
-  gnutls_pk_algorithm_t id;
+  enum MHD_GNUTLS_PublicKeyAlgorithm id;
 };
 typedef struct gnutls_pk_entry gnutls_pk_entry;
 
@@ -2059,10 +2059,10 @@ static const gnutls_pk_entry mhd_gtls_pk_algorithms[] = {
    0}
 };
 
-gnutls_pk_algorithm_t
+enum MHD_GNUTLS_PublicKeyAlgorithm
 mhd_gtls_x509_oid2pk_algorithm (const char *oid)
 {
-  gnutls_pk_algorithm_t ret = MHD_GNUTLS_PK_UNKNOWN;
+  enum MHD_GNUTLS_PublicKeyAlgorithm ret = MHD_GNUTLS_PK_UNKNOWN;
   const gnutls_pk_entry *p;
 
   for (p = mhd_gtls_pk_algorithms; p->name != NULL; p++)
@@ -2076,7 +2076,7 @@ mhd_gtls_x509_oid2pk_algorithm (const char *oid)
 }
 
 const char *
-mhd_gtls_x509_pk_to_oid (gnutls_pk_algorithm_t algorithm)
+mhd_gtls_x509_pk_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm algorithm)
 {
   const char *ret = NULL;
   const gnutls_pk_entry *p;

@@ -21,7 +21,7 @@ if MHD_DEBUG_TLS
   tls_cipher_change_test \
   tls_alert_test
 endif  
-   
+
 TESTS = $(check_PROGRAMS)
 
 # cURL independent tests
@@ -64,7 +64,7 @@ mhds_session_info_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
-  
+
 mhds_multi_daemon_test_SOURCES = \
   mhds_multi_daemon_test.c
 mhds_multi_daemon_test_LDADD  = \

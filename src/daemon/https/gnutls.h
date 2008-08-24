@@ -233,40 +233,40 @@ extern "C"
   int MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err);
   const char * MHD_gnutls_alert_get_name (gnutls_alert_description_t alert);
 
-//  gnutls_cipher_algorithm_t gnutls_cipher_get (mhd_gtls_session_t session);
-//  gnutls_kx_algorithm_t gnutls_kx_get (mhd_gtls_session_t session);
-//  gnutls_mac_algorithm_t gnutls_mac_get (mhd_gtls_session_t session);
-//  gnutls_compression_method_t gnutls_compression_get (mhd_gtls_session_t
+//  enum MHD_GNUTLS_CipherAlgorithm gnutls_cipher_get (mhd_gtls_session_t session);
+//  enum MHD_GNUTLS_KeyExchangeAlgorithm gnutls_kx_get (mhd_gtls_session_t session);
+//  enum MHD_GNUTLS_HashAlgorithm gnutls_mac_get (mhd_gtls_session_t session);
+//  enum MHD_GNUTLS_CompressionMethod gnutls_compression_get (mhd_gtls_session_t
 //                                                      session);
-//  gnutls_certificate_type_t gnutls_certificate_type_get (mhd_gtls_session_t
+//  enum MHD_GNUTLS_CertificateType gnutls_certificate_type_get (mhd_gtls_session_t
 //                                                         session);
 
-  size_t MHD_gnutls_cipher_get_key_size (gnutls_cipher_algorithm_t algorithm);
-  size_t MHD_gnutls_mac_get_key_size (gnutls_mac_algorithm_t algorithm);
+  size_t MHD_gnutls_cipher_get_key_size (enum MHD_GNUTLS_CipherAlgorithm algorithm);
+  size_t MHD_gnutls_mac_get_key_size (enum MHD_GNUTLS_HashAlgorithm algorithm);
 
 /* the name of the specified algorithms */
-  const char * MHD_gnutls_cipher_get_name (gnutls_cipher_algorithm_t algorithm);
-  const char * MHD_gnutls_mac_get_name (gnutls_mac_algorithm_t algorithm);
-  const char * MHD_gnutls_compression_get_name (gnutls_compression_method_t
+  const char * MHD_gnutls_cipher_get_name (enum MHD_GNUTLS_CipherAlgorithm algorithm);
+  const char * MHD_gnutls_mac_get_name (enum MHD_GNUTLS_HashAlgorithm algorithm);
+  const char * MHD_gnutls_compression_get_name (enum MHD_GNUTLS_CompressionMethod
                                            algorithm);
-  const char * MHD_gnutls_kx_get_name (gnutls_kx_algorithm_t algorithm);
-  const char * MHD_gnutls_certificate_type_get_name (gnutls_certificate_type_t
+  const char * MHD_gnutls_kx_get_name (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm);
+  const char * MHD_gnutls_certificate_type_get_name (enum MHD_GNUTLS_CertificateType
                                                 type);
 
-  gnutls_mac_algorithm_t MHD_gtls_mac_get_id (const char *name);
-  gnutls_compression_method_t MHD_gtls_compression_get_id (const char *name);
-  gnutls_cipher_algorithm_t MHD_gtls_cipher_get_id (const char *name);
-  gnutls_kx_algorithm_t MHD_gtls_kx_get_id (const char *name);
-  gnutls_protocol_t MHD_gtls_protocol_get_id (const char *name);
-  gnutls_certificate_type_t MHD_gtls_certificate_type_get_id (const char *name);
+  enum MHD_GNUTLS_HashAlgorithm MHD_gtls_mac_get_id (const char *name);
+  enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id (const char *name);
+  enum MHD_GNUTLS_CipherAlgorithm MHD_gtls_cipher_get_id (const char *name);
+  enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_kx_get_id (const char *name);
+  enum MHD_GNUTLS_Protocol MHD_gtls_protocol_get_id (const char *name);
+  enum MHD_GNUTLS_CertificateType MHD_gtls_certificate_type_get_id (const char *name);
 
   /* list supported algorithms */
-  const gnutls_cipher_algorithm_t * MHD_gtls_cipher_list (void);
-  const gnutls_mac_algorithm_t * MHD_gtls_mac_list (void);
-  const gnutls_compression_method_t * MHD_gtls_compression_list (void);
-  const gnutls_protocol_t * MHD_gtls_protocol_list (void);
-  const gnutls_certificate_type_t * MHD_gtls_certificate_type_list (void);
-  const gnutls_kx_algorithm_t * MHD_gtls_kx_list (void);
+  const enum MHD_GNUTLS_CipherAlgorithm * MHD_gtls_cipher_list (void);
+  const enum MHD_GNUTLS_HashAlgorithm * MHD_gtls_mac_list (void);
+  const enum MHD_GNUTLS_CompressionMethod * MHD_gtls_compression_list (void);
+  const enum MHD_GNUTLS_Protocol * MHD_gtls_protocol_list (void);
+  const enum MHD_GNUTLS_CertificateType * MHD_gtls_certificate_type_list (void);
+  const enum MHD_GNUTLS_KeyExchangeAlgorithm * MHD_gtls_kx_list (void);
 
   /* error functions */
   int MHD_gtls_error_is_fatal (int error);
@@ -372,9 +372,9 @@ extern "C"
                                   const char *priority, const char **err_pos);
 
 /* get the currently used protocol version */
-  gnutls_protocol_t MHD_gnutls_protocol_get_version (mhd_gtls_session_t session);
+  enum MHD_GNUTLS_Protocol MHD_gnutls_protocol_get_version (mhd_gtls_session_t session);
 
-  const char * MHD_gnutls_protocol_get_name (gnutls_protocol_t version);
+  const char * MHD_gnutls_protocol_get_name (enum MHD_GNUTLS_Protocol version);
 
 /*
  * get/set session
@@ -415,7 +415,7 @@ extern "C"
  * cred is a structure defined by the kx algorithm
  */
   int MHD_gnutls_credentials_set (mhd_gtls_session_t session,
-                              gnutls_credentials_type_t type, void *cred);
+                              enum MHD_GNUTLS_CredentialsType type, void *cred);
 
 /* Credential structures - used in MHD_gnutls_credentials_set(); */
   struct mhd_gtls_certificate_credentials_st;
@@ -634,7 +634,7 @@ extern "C"
 /*
  * this function returns the hash of the given data.
  */
-  int MHD_gnutls_fingerprint (gnutls_digest_algorithm_t algo,
+  int MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
                           const gnutls_datum_t * data, void *result,
                           size_t * result_size);
 
@@ -789,7 +789,7 @@ extern "C"
 
   typedef struct gnutls_retr_st
   {
-    gnutls_certificate_type_t type;
+    enum MHD_GNUTLS_CertificateType type;
     union cert
     {
       gnutls_x509_crt_t *x509;
@@ -810,7 +810,7 @@ extern "C"
                                                            req_ca_rdn,
                                                            int nreqs,
                                                            const
-                                                           gnutls_pk_algorithm_t
+                                                           enum MHD_GNUTLS_PublicKeyAlgorithm
                                                            * pk_algos,
                                                            int
                                                            pk_algos_length,
@@ -822,10 +822,10 @@ extern "C"
   /*
    * Functions that allow auth_info_t structures handling
    */
-  gnutls_credentials_type_t MHD_gtls_auth_get_type (mhd_gtls_session_t session);
-    gnutls_credentials_type_t
+  enum MHD_GNUTLS_CredentialsType MHD_gtls_auth_get_type (mhd_gtls_session_t session);
+    enum MHD_GNUTLS_CredentialsType
     MHD_gtls_auth_server_get_type (mhd_gtls_session_t session);
-    gnutls_credentials_type_t
+    enum MHD_GNUTLS_CredentialsType
     MHD_gtls_auth_client_get_type (mhd_gtls_session_t session);
 
   /*
@@ -852,7 +852,7 @@ extern "C"
   /* External signing callback.  Experimental. */
   typedef int (*gnutls_sign_func) (mhd_gtls_session_t session,
                                    void *userdata,
-                                   gnutls_certificate_type_t cert_type,
+                                   enum MHD_GNUTLS_CertificateType cert_type,
                                    const gnutls_datum_t * cert,
                                    const gnutls_datum_t * hash,
                                    gnutls_datum_t * signature);

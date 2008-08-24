@@ -552,7 +552,7 @@ gnutls_x509_privkey_import_rsa_raw (gnutls_x509_privkey_t key,
  * This function will return the public key algorithm of a private
  * key.
  *
- * Returns a member of the gnutls_pk_algorithm_t enumeration on success,
+ * Returns a member of the enum MHD_GNUTLS_PublicKeyAlgorithm enumeration on success,
  * or a negative value on error.
  *
  **/
@@ -1190,7 +1190,7 @@ cleanup:asn1_delete_structure (c2);
  **/
 int
 gnutls_x509_privkey_generate (gnutls_x509_privkey_t key,
-                              gnutls_pk_algorithm_t algo,
+                              enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                               unsigned int bits, unsigned int flags)
 {
   int ret, params_len;
@@ -1348,7 +1348,7 @@ cleanup:
  **/
 int
 gnutls_x509_privkey_sign_data (gnutls_x509_privkey_t key,
-                               gnutls_digest_algorithm_t digest,
+                               enum MHD_GNUTLS_HashAlgorithm digest,
                                unsigned int flags,
                                const gnutls_datum_t * data,
                                void *signature, size_t * signature_size)

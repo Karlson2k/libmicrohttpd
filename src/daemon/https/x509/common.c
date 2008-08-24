@@ -1215,7 +1215,7 @@ cleanup:if (val.data != data->data)
 int
 _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
                                          const char *dst_name,
-                                         gnutls_pk_algorithm_t
+                                         enum MHD_GNUTLS_PublicKeyAlgorithm
                                          pk_algorithm,
                                          mpi_t * params, int params_size)
 {

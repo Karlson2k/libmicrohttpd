@@ -28,10 +28,10 @@
 #include <gnutls_int.h>
 
 void _gnutls_session_cert_type_set (mhd_gtls_session_t session,
-				    gnutls_certificate_type_t);
-gnutls_kx_algorithm_t gnutls_kx_get (mhd_gtls_session_t session);
-gnutls_cipher_algorithm_t gnutls_cipher_get (mhd_gtls_session_t session);
-gnutls_certificate_type_t gnutls_certificate_type_get (mhd_gtls_session_t);
+				    enum MHD_GNUTLS_CertificateType);
+enum MHD_GNUTLS_KeyExchangeAlgorithm gnutls_kx_get (mhd_gtls_session_t session);
+enum MHD_GNUTLS_CipherAlgorithm gnutls_cipher_get (mhd_gtls_session_t session);
+enum MHD_GNUTLS_CertificateType gnutls_certificate_type_get (mhd_gtls_session_t);
 
 #include <gnutls_auth_int.h>
 
@@ -43,7 +43,7 @@ gnutls_certificate_type_t gnutls_certificate_type_get (mhd_gtls_session_t);
 #endif
 
 int mhd_gtls_session_cert_type_supported (mhd_gtls_session_t,
-					 gnutls_certificate_type_t);
+					 enum MHD_GNUTLS_CertificateType);
 
 int mhd_gtls_dh_set_secret_bits (mhd_gtls_session_t session, unsigned bits);
 

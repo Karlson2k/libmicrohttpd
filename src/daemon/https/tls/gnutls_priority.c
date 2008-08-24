@@ -35,7 +35,7 @@
 /**
  * MHD_gnutls_cipher_set_priority - Sets the priority on the ciphers supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_cipher_algorithm_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_CipherAlgorithm elements.
  *
  * Sets the priority on the ciphers supported by gnutls.
  * Priority is higher for elements specified before others.
@@ -88,7 +88,7 @@ _set_priority (mhd_gtls_priority_st * st, const int *list)
 /**
  * MHD_gnutls_kx_set_priority - Sets the priority on the key exchange algorithms supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_kx_algorithm_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_KeyExchangeAlgorithm elements.
  *
  * Sets the priority on the key exchange algorithms supported by gnutls.
  * Priority is higher for elements specified before others.
@@ -109,7 +109,7 @@ MHD_gnutls_kx_set_priority (mhd_gtls_session_t session, const int *list)
 /**
  * MHD_gnutls_mac_set_priority - Sets the priority on the mac algorithms supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_mac_algorithm_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_HashAlgorithm elements.
  *
  * Sets the priority on the mac algorithms supported by gnutls.
  * Priority is higher for elements specified before others.
@@ -130,7 +130,7 @@ MHD_gnutls_mac_set_priority (mhd_gtls_session_t session, const int *list)
 /**
  * MHD_gnutls_compression_set_priority - Sets the priority on the compression algorithms supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_compression_method_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_CompressionMethod elements.
  *
  * Sets the priority on the compression algorithms supported by gnutls.
  * Priority is higher for elements specified before others.
@@ -155,7 +155,7 @@ MHD_gnutls_compression_set_priority (mhd_gtls_session_t session, const int *list
 /**
  * MHD_gnutls_protocol_set_priority - Sets the priority on the protocol versions supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_protocol_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_Protocol elements.
  *
  * Sets the priority on the protocol versions supported by gnutls.
  * This function actually enables or disables protocols. Newer protocol
@@ -183,7 +183,7 @@ MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
 /**
  * MHD_gnutls_certificate_type_set_priority - Sets the priority on the certificate types supported by gnutls.
  * @session: is a #mhd_gtls_session_t structure.
- * @list: is a 0 terminated list of gnutls_certificate_type_t elements.
+ * @list: is a 0 terminated list of enum MHD_GNUTLS_CertificateType elements.
  *
  * Sets the priority on the certificate types supported by gnutls.
  * Priority is higher for elements specified before others.

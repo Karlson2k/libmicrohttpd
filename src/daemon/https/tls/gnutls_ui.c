@@ -489,7 +489,7 @@ MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
  *
  **/
 int
-MHD_gnutls_fingerprint (gnutls_digest_algorithm_t algo,
+MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
                     const gnutls_datum_t * data,
                     void *result, size_t * result_size)
 {

@@ -23,10 +23,10 @@
  */
 
 const void * mhd_gtls_get_cred (mhd_gtls_key_st key,
-			      gnutls_credentials_type_t kx, int *err);
+			      enum MHD_GNUTLS_CredentialsType kx, int *err);
 const void * mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
-				 gnutls_kx_algorithm_t algo, int *err);
+				 enum MHD_GNUTLS_KeyExchangeAlgorithm algo, int *err);
 void * mhd_gtls_get_auth_info (mhd_gtls_session_t session);
 int mhd_gtls_auth_info_set (mhd_gtls_session_t session,
-			   gnutls_credentials_type_t type, int size,
+			   enum MHD_GNUTLS_CredentialsType type, int size,
 			   int allow_change);

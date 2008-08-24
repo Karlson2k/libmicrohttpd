@@ -590,10 +590,7 @@ build_header_response (struct MHD_Connection *connection)
   while (pos != NULL)
     {
       if (pos->kind == kind)
-        {
-          SPRINTF (&data[off], "%s: %s\r\n", pos->header, pos->value);
-          off += strlen (pos->header) + strlen (pos->value) + 4;
-        }
+	off += SPRINTF (&data[off], "%s: %s\r\n", pos->header, pos->value);        
       pos = pos->next;
     }
   if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
@@ -601,7 +598,7 @@ build_header_response (struct MHD_Connection *connection)
       strcpy (&data[off], date);
       off += strlen (date);
     }
-  sprintf (&data[off], "\r\n");
+  memcpy (&data[off], "\r\n", 2);
   off += 2;
   if (off != size)
     abort ();

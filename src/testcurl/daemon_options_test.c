@@ -50,12 +50,9 @@ int
 test_wrap (char *test_name, int (*test) (void))
 {
   int ret;
-  va_list arg_list;
-  struct MHD_Daemon *d;
 
   fprintf (stdout, "running test: %s ", test_name);
   ret = test ();
-
   if (ret == 0)
     {
       fprintf (stdout, "[pass]\n");

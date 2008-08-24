@@ -49,14 +49,14 @@
  * structure. The digest info is allocated and stored into the info structure.
  */
 static int
-encode_ber_digest_info (gnutls_digest_algorithm_t hash,
+encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
                         const gnutls_datum_t * digest, gnutls_datum_t * info)
 {
   ASN1_TYPE dinfo = ASN1_TYPE_EMPTY;
   int result;
   const char *algo;
 
-  algo = mhd_gtls_x509_mac_to_oid ((gnutls_mac_algorithm_t) hash);
+  algo = mhd_gtls_x509_mac_to_oid ((enum MHD_GNUTLS_HashAlgorithm) hash);
   if (algo == NULL)
     {
       gnutls_assert ();
@@ -132,7 +132,7 @@ encode_ber_digest_info (gnutls_digest_algorithm_t hash,
  * params[1] is public key
  */
 static int
-pkcs1_rsa_sign (gnutls_digest_algorithm_t hash, const gnutls_datum_t * text,
+pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash, const gnutls_datum_t * text,
                 mpi_t * params, int params_len, gnutls_datum_t * signature)
 {
   int ret;
@@ -186,7 +186,7 @@ pkcs1_rsa_sign (gnutls_digest_algorithm_t hash, const gnutls_datum_t * text,
  */
 int
 _gnutls_x509_sign (const gnutls_datum_t * tbs,
-                   gnutls_digest_algorithm_t hash,
+                   enum MHD_GNUTLS_HashAlgorithm hash,
                    gnutls_x509_privkey_t signer, gnutls_datum_t * signature)
 {
   int ret;
@@ -217,7 +217,7 @@ _gnutls_x509_sign (const gnutls_datum_t * tbs,
  */
 int
 _gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
-                       gnutls_digest_algorithm_t hash,
+                       enum MHD_GNUTLS_HashAlgorithm hash,
                        gnutls_x509_privkey_t signer,
                        gnutls_datum_t * signature)
 {
@@ -268,7 +268,7 @@ _gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
  -*/
 int
 _gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
-                        gnutls_digest_algorithm_t dig,
+                        enum MHD_GNUTLS_HashAlgorithm dig,
                         gnutls_x509_crt_t issuer,
                         gnutls_x509_privkey_t issuer_key)
 {

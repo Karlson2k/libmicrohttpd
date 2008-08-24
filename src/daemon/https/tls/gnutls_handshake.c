@@ -195,7 +195,7 @@ _gnutls_finished (mhd_gtls_session_t session, int type, void *ret)
   const char *mesg;
   mac_hd_t td_md5 = NULL;
   mac_hd_t td_sha;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   if (ver < MHD_GNUTLS_TLS1_2)
     {
@@ -271,7 +271,7 @@ mhd_gtls_tls_create_random (opaque * dst)
  */
 int
 mhd_gtls_negotiate_version (mhd_gtls_session_t session,
-                           gnutls_protocol_t adv_version)
+                           enum MHD_GNUTLS_Protocol adv_version)
 {
   int ret;
 
@@ -302,7 +302,7 @@ mhd_gtls_negotiate_version (mhd_gtls_session_t session,
 
 int
 mhd_gtls_user_hello_func (mhd_gtls_session_t session,
-                         gnutls_protocol_t adv_version)
+                         enum MHD_GNUTLS_Protocol adv_version)
 {
   int ret;
 
@@ -339,7 +339,7 @@ _gnutls_read_client_hello (mhd_gtls_session_t session, opaque * data,
   uint8_t session_id_len;
   int pos = 0, ret = 0;
   uint16_t suite_size, comp_size;
-  gnutls_protocol_t adv_version;
+  enum MHD_GNUTLS_Protocol adv_version;
   int neg_version;
   int len = datalen;
   opaque rnd[TLS_RANDOM_SIZE], *suite_ptr, *comp_ptr;
@@ -637,8 +637,8 @@ _gnutls_server_find_pk_algos_in_ciphersuites (const opaque *
                                               data, int datalen)
 {
   int j;
-  gnutls_pk_algorithm_t algo = GNUTLS_PK_NONE, prev_algo = 0;
-  gnutls_kx_algorithm_t kx;
+  enum MHD_GNUTLS_PublicKeyAlgorithm algo = GNUTLS_PK_NONE, prev_algo = 0;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx;
   cipher_suite_st cs;
 
   if (datalen % 2 != 0)
@@ -676,7 +676,7 @@ mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
   int x, i, j;
   cipher_suite_st *ciphers, cs;
   int retval, err;
-  gnutls_pk_algorithm_t pk_algo;        /* will hold the pk algorithms
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algo;        /* will hold the pk algorithms
                                          * supported by the peer.
                                          */
 
@@ -811,7 +811,7 @@ _gnutls_server_select_comp_method (mhd_gtls_session_t session,
     }
 
   memset (&session->internals.compression_method, 0,
-          sizeof (gnutls_compression_method_t));
+          sizeof (enum MHD_GNUTLS_CompressionMethod));
 
   for (j = 0; j < datalen; j++)
     {
@@ -819,7 +819,7 @@ _gnutls_server_select_comp_method (mhd_gtls_session_t session,
         {
           if (comps[i] == data[j])
             {
-              gnutls_compression_method_t method =
+              enum MHD_GNUTLS_CompressionMethod method =
                 mhd_gtls_compression_get_id (comps[i]);
 
               session->internals.compression_method = method;
@@ -1454,7 +1454,7 @@ _gnutls_read_server_hello (mhd_gtls_session_t session,
   uint8_t session_id_len = 0;
   int pos = 0;
   int ret = 0;
-  gnutls_protocol_t version;
+  enum MHD_GNUTLS_Protocol version;
   int len = datalen;
 
   if (datalen < 38)
@@ -1672,7 +1672,7 @@ _gnutls_send_client_hello (mhd_gtls_session_t session, int again)
   int pos = 0;
   int datalen = 0, ret = 0;
   opaque rnd[TLS_RANDOM_SIZE];
-  gnutls_protocol_t hver;
+  enum MHD_GNUTLS_Protocol hver;
   opaque extdata[MAX_EXT_DATA_LENGTH];
 
   opaque *SessionID =
@@ -2700,8 +2700,8 @@ mhd_gtls_recv_hello_request (mhd_gtls_session_t session, void *data,
  */
 inline static int
 check_server_params (mhd_gtls_session_t session,
-                     gnutls_kx_algorithm_t kx,
-                     gnutls_kx_algorithm_t * alg, int alg_size)
+                     enum MHD_GNUTLS_KeyExchangeAlgorithm kx,
+                     enum MHD_GNUTLS_KeyExchangeAlgorithm * alg, int alg_size)
 {
   int cred_type;
   mhd_gtls_dh_params_t dh_params = NULL;
@@ -2818,16 +2818,16 @@ int
 mhd_gtls_remove_unwanted_ciphersuites (mhd_gtls_session_t session,
                                       cipher_suite_st ** cipherSuites,
                                       int numCipherSuites,
-                                      gnutls_pk_algorithm_t requested_pk_algo)
+                                      enum MHD_GNUTLS_PublicKeyAlgorithm requested_pk_algo)
 {
 
   int ret = 0;
   cipher_suite_st *newSuite, cs;
   int newSuiteSize = 0, i;
   mhd_gtls_cert_credentials_t cert_cred;
-  gnutls_kx_algorithm_t kx;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx;
   int server = session->security_parameters.entity == GNUTLS_SERVER ? 1 : 0;
-  gnutls_kx_algorithm_t *alg = NULL;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm *alg = NULL;
   int alg_size = 0;
 
   /* if we should use a specific certificate,
@@ -2959,13 +2959,13 @@ MHD_gnutls_handshake_set_max_packet_length (mhd_gtls_session_t session, size_t m
 }
 
 void
-mhd_gtls_set_adv_version (mhd_gtls_session_t session, gnutls_protocol_t ver)
+mhd_gtls_set_adv_version (mhd_gtls_session_t session, enum MHD_GNUTLS_Protocol ver)
 {
   set_adv_version (session, mhd_gtls_version_get_major (ver),
                    mhd_gtls_version_get_minor (ver));
 }
 
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 mhd_gtls_get_adv_version (mhd_gtls_session_t session)
 {
   return mhd_gtls_version_get (_gnutls_get_adv_version_major (session),

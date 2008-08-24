@@ -296,7 +296,7 @@ int gnutls_x509_crt_sign(gnutls_x509_crt_t crt,
 int gnutls_x509_crt_sign2(gnutls_x509_crt_t crt,
                           gnutls_x509_crt_t issuer,
                           gnutls_x509_privkey_t issuer_key,
-                          gnutls_digest_algorithm_t,
+                          enum MHD_GNUTLS_HashAlgorithm,
                           unsigned int flags);
 int gnutls_x509_crt_set_activation_time(gnutls_x509_crt_t cert,
                                         time_t act_time);
@@ -435,7 +435,7 @@ int gnutls_x509_crl_sign(gnutls_x509_crl_t crl,
 int gnutls_x509_crl_sign2(gnutls_x509_crl_t crl,
                           gnutls_x509_crt_t issuer,
                           gnutls_x509_privkey_t issuer_key,
-                          gnutls_digest_algorithm_t,
+                          enum MHD_GNUTLS_HashAlgorithm,
                           unsigned int flags);
 int gnutls_x509_crl_set_this_update(gnutls_x509_crl_t crl,
                                     time_t act_time);
@@ -556,7 +556,7 @@ int gnutls_x509_crt_check_revocation(gnutls_x509_crt_t cert,
                                      int crl_list_length);
 
 int gnutls_x509_crt_get_fingerprint(gnutls_x509_crt_t cert,
-                                    gnutls_digest_algorithm_t algo,
+                                    enum MHD_GNUTLS_HashAlgorithm algo,
                                     void *buf,
                                     size_t * sizeof_buf);
 
@@ -631,7 +631,7 @@ int gnutls_x509_privkey_get_key_id(gnutls_x509_privkey_t key,
                                    size_t * output_data_size);
 
 int gnutls_x509_privkey_generate(gnutls_x509_privkey_t key,
-                                 gnutls_pk_algorithm_t algo,
+                                 enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                                  unsigned int bits,
                                  unsigned int flags);
 
@@ -656,7 +656,7 @@ int gnutls_x509_privkey_export_rsa_raw(gnutls_x509_privkey_t key,
 /* Signing stuff.
  */
 int gnutls_x509_privkey_sign_data(gnutls_x509_privkey_t key,
-                                  gnutls_digest_algorithm_t digest,
+                                  enum MHD_GNUTLS_HashAlgorithm digest,
                                   unsigned int flags,
                                   const gnutls_datum_t * data,
                                   void *signature,
@@ -710,7 +710,7 @@ int gnutls_x509_crq_set_key(gnutls_x509_crq_t crq,
                             gnutls_x509_privkey_t key);
 int gnutls_x509_crq_sign2(gnutls_x509_crq_t crq,
                           gnutls_x509_privkey_t key,
-                          gnutls_digest_algorithm_t,
+                          enum MHD_GNUTLS_HashAlgorithm,
                           unsigned int flags);
 int gnutls_x509_crq_sign(gnutls_x509_crq_t crq,
                          gnutls_x509_privkey_t key);
@@ -800,7 +800,7 @@ typedef struct MHD_gtls_x509_privkey_int
      */
     int params_size; /* holds the number of params */
 
-    gnutls_pk_algorithm_t pk_algorithm;
+    enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
 
     int crippled; /* The crippled keys will not use the ASN1_TYPE key.
      * The encoding will only be performed at the export
@@ -887,7 +887,7 @@ int gnutls_x509_privkey_init(gnutls_x509_privkey_t * key);
 void gnutls_x509_privkey_deinit(gnutls_x509_privkey_t key);
 
 int gnutls_x509_privkey_generate(gnutls_x509_privkey_t key,
-                                 gnutls_pk_algorithm_t algo,
+                                 enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                                  unsigned int bits,
                                  unsigned int flags);
 

@@ -44,7 +44,7 @@
 
 void
 _gnutls_session_cert_type_set (mhd_gtls_session_t session,
-                               gnutls_certificate_type_t ct)
+                               enum MHD_GNUTLS_CertificateType ct)
 {
   session->security_parameters.cert_type = ct;
 }
@@ -55,7 +55,7 @@ _gnutls_session_cert_type_set (mhd_gtls_session_t session,
  *
  * Returns: the currently used cipher.
  **/
-gnutls_cipher_algorithm_t
+enum MHD_GNUTLS_CipherAlgorithm
 gnutls_cipher_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.read_bulk_cipher_algorithm;
@@ -68,10 +68,10 @@ gnutls_cipher_get (mhd_gtls_session_t session)
  * The certificate type is by default X.509, unless it is negotiated
  * as a TLS extension.
  *
- * Returns: the currently used %gnutls_certificate_type_t certificate
+ * Returns: the currently used %enum MHD_GNUTLS_CertificateType certificate
  *   type.
  **/
-gnutls_certificate_type_t
+enum MHD_GNUTLS_CertificateType
 gnutls_certificate_type_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.cert_type;
@@ -83,7 +83,7 @@ gnutls_certificate_type_get (mhd_gtls_session_t session)
  *
  * Returns: the key exchange algorithm used in the last handshake.
  **/
-gnutls_kx_algorithm_t
+enum MHD_GNUTLS_KeyExchangeAlgorithm
 gnutls_kx_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.kx_algorithm;
@@ -95,7 +95,7 @@ gnutls_kx_get (mhd_gtls_session_t session)
  *
  * Returns: the currently used mac algorithm.
  **/
-gnutls_mac_algorithm_t
+enum MHD_GNUTLS_HashAlgorithm
 gnutls_mac_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.read_mac_algorithm;
@@ -107,7 +107,7 @@ gnutls_mac_get (mhd_gtls_session_t session)
  *
  * Returns: the currently used compression method.
  **/
-gnutls_compression_method_t
+enum MHD_GNUTLS_CompressionMethod
 gnutls_compression_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.read_compression_algorithm;
@@ -119,7 +119,7 @@ gnutls_compression_get (mhd_gtls_session_t session)
  */
 int
 mhd_gtls_session_cert_type_supported (mhd_gtls_session_t session,
-                                     gnutls_certificate_type_t cert_type)
+                                     enum MHD_GNUTLS_CertificateType cert_type)
 {
   unsigned i;
   unsigned cert_found = 0;
@@ -656,7 +656,7 @@ MHD_gtls_handshake_set_private_extensions (mhd_gtls_session_t session, int allow
 }
 
 inline static int
-_gnutls_cal_PRF_A (gnutls_mac_algorithm_t algorithm,
+_gnutls_cal_PRF_A (enum MHD_GNUTLS_HashAlgorithm algorithm,
                    const void *secret,
                    int secret_size,
                    const void *seed, int seed_size, void *result)
@@ -682,7 +682,7 @@ _gnutls_cal_PRF_A (gnutls_mac_algorithm_t algorithm,
  * (used in the PRF function)
  */
 static int
-_gnutls_P_hash (gnutls_mac_algorithm_t algorithm,
+_gnutls_P_hash (enum MHD_GNUTLS_HashAlgorithm algorithm,
                 const opaque * secret,
                 int secret_size,
                 const opaque * seed,
@@ -789,7 +789,7 @@ mhd_gtls_PRF (mhd_gtls_session_t session,
   opaque s_seed[MAX_SEED_SIZE];
   opaque o1[MAX_PRF_BYTES], o2[MAX_PRF_BYTES];
   int result;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   if (total_bytes > MAX_PRF_BYTES)
     {
@@ -1069,7 +1069,7 @@ MHD_gtls_session_is_resumed (mhd_gtls_session_t session)
 int
 mhd_gtls_session_is_export (mhd_gtls_session_t session)
 {
-  gnutls_cipher_algorithm_t cipher;
+  enum MHD_GNUTLS_CipherAlgorithm cipher;
 
   cipher =
     mhd_gtls_cipher_suite_get_cipher_algo (&session->security_parameters.

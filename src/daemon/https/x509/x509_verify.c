@@ -465,7 +465,7 @@ _gnutls_x509_verify_certificate (const gnutls_x509_crt_t * certificate_list,
  */
 static int
 decode_ber_digest_info (const gnutls_datum_t * info,
-                        gnutls_mac_algorithm_t * hash,
+                        enum MHD_GNUTLS_HashAlgorithm * hash,
                         opaque * digest, int *digest_size)
 {
   ASN1_TYPE dinfo = ASN1_TYPE_EMPTY;
@@ -547,7 +547,7 @@ _pkcs1_rsa_verify_sig (const gnutls_datum_t * text,
                        const gnutls_datum_t * signature,
                        mpi_t * params, int params_len)
 {
-  gnutls_mac_algorithm_t hash = MHD_GNUTLS_MAC_UNKNOWN;
+  enum MHD_GNUTLS_HashAlgorithm hash = MHD_GNUTLS_MAC_UNKNOWN;
   int ret;
   opaque digest[MAX_HASH_SIZE], md[MAX_HASH_SIZE];
   int digest_size;
@@ -637,7 +637,7 @@ dsa_verify_sig (const gnutls_datum_t * text,
 static int
 verify_sig (const gnutls_datum_t * tbs,
             const gnutls_datum_t * signature,
-            gnutls_pk_algorithm_t pk,
+            enum MHD_GNUTLS_PublicKeyAlgorithm pk,
             mpi_t * issuer_params, int issuer_params_size)
 {
 

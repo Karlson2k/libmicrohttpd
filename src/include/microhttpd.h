@@ -343,12 +343,10 @@ enum MHD_OPTION
 
  /**
   * Bind daemon to the supplied sockaddr. this option should be followed by a
-  * 'struct sockaddr'. Supplying an IPv6 address must be done in conjunction with
-  * with the 'MHD_USE_IPv6' option.
+  * 'struct sockaddr *'.  If 'MHD_USE_IPv6' is specified, the 'struct sockaddr*'
+  * should point to a 'struct sockaddr_in6', otherwise to a 'struct sockaddr_in'.
   */
   MHD_OPTION_SOCK_ADDR = 6,
-
-  MHD_HTTPS_OPTION_START = 7,
 
   /**
    * Filename for the private key (key.pem) to be used by the
@@ -357,7 +355,7 @@ enum MHD_OPTION
    * not be released until the application terminates.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
    */
-  MHD_OPTION_HTTPS_KEY_PATH,
+  MHD_OPTION_HTTPS_KEY_PATH = 7,
 
   /**
    * Filename for the certificate (cert.pem) to be used by the
@@ -366,70 +364,79 @@ enum MHD_OPTION
    * not be released until the application terminates.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
    */
-  MHD_OPTION_HTTPS_CERT_PATH,
+  MHD_OPTION_HTTPS_CERT_PATH = 8,
 
   /**
-     * Memory pointer for the private key (key.pem) to be used by the
-     * HTTPS daemon.  This option should be followed by an
-     * "const char*" argument.
-     * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
-     */
-  MHD_OPTION_HTTPS_MEM_KEY,
+   * Memory pointer for the private key (key.pem) to be used by the
+   * HTTPS daemon.  This option should be followed by an
+   * "const char*" argument.
+   * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
+   */
+  MHD_OPTION_HTTPS_MEM_KEY = 9,
+  
+  /**
+   * Memory pointer for the certificate (cert.pem) to be used by the
+   * HTTPS daemon.  This option should be followed by an
+   * "const char*" argument.
+   * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
+   */
+  MHD_OPTION_HTTPS_MEM_CERT = 10,
 
   /**
-  * Memory pointer for the certificate (cert.pem) to be used by the
-  * HTTPS daemon.  This option should be followed by an
-  * "const char*" argument.
-  * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
-  */
-  MHD_OPTION_HTTPS_MEM_CERT,
-
-  /*
-   * daemon credentials type. either certificate or anonymous,
+   * Daemon credentials type.  Either certificate or anonymous,
    * this option should be followed by one of the values listed in
-   * gnutls_credentials_type_t.
+   * "enum MHD_GNUTLS_CredentialsType".
    */
-  MHD_OPTION_CRED_TYPE,
+  MHD_OPTION_CRED_TYPE = 11,
 
-  /*
-   * SSL/TLS protocol version
+  /**
+   * SSL/TLS protocol version.
    *
-   * Memory pointer to a zero terminated int array representing the
+   * Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated 
+   * (const) array of 'enum MHD_GNUTLS_Protocol' values representing the
    * protocol versions to this server should support. Unsupported
-   * requests will be droped by the server.
+   * requests will be droped by the server. 
    */
-  MHD_OPTION_PROTOCOL_VERSION,
+  MHD_OPTION_PROTOCOL_VERSION = 12,
 
-  /*
-   * Memory pointer to a zero terminated int array representing the
-   * cipher priority order to which the HTTPS daemon should adhere.
-   * "const int *" argument.
+  /**
+   * Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN) 
+   * terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm' 
+   * representing the cipher priority order to which the HTTPS
+   * daemon should adhere.
    */
-  MHD_OPTION_CIPHER_ALGORITHM,
+  MHD_OPTION_CIPHER_ALGORITHM = 13,
 
-  /*
-   * Memory pointer to a zero terminated int array representing the
+  /**
+   * Memory pointer to a zero (MHD_GNUTLS_KX_UNKNOWN)
+   * terminated (const) array of 'MHD_GNUTLS_KeyExchangeAlgorithm' representing the
    * key exchange algorithm priority order to which the HTTPS daemon should adhere.
-   * "const int *" argument.
    */
-  MHD_OPTION_KX_PRIORITY,
+  MHD_OPTION_KX_PRIORITY = 14,
 
-  /*
-   * used to indicate which type of certificate this server will use,
+  /**
+   * Indicate which type of certificate this server will use,
+   * followed by a value of type 'enum MHD_GNUTLS_CertificateType'.
    */
-  MHD_OPTION_CRET_TYPE,
+  MHD_OPTION_CERT_TYPE = 15,
 
-  /*
-   * mac algorithm used by server
+  /**
+   * Specify the mac algorithm used by server.  
+   * The argument should be of type "enum MHD_GNUTLS_MacAlgorithm"
    */
-  MHD_OPTION_MAC_ALGO,
+  MHD_OPTION_MAC_ALGO = 16,
 
-  /*
-   * compression algorithm used by server
+  /**
+   * Compression algorithm used by server.  Should be followed by an
+   * option of type 'enum MHD_GNUTLS_CompressionMethod'.
    */
-  MHD_OPTION_TLS_COMP_ALGO,
+  MHD_OPTION_TLS_COMP_ALGO = 17,
 
-  MHD_HTTPS_OPTION_END
+  /**
+   * This value is used to indicate the end of the
+   * list of vararg options.
+   */
+  MHD_HTTPS_OPTION_END = -1
 };
 
 /**
@@ -509,21 +516,196 @@ enum MHD_RequestTerminationCode
    */
   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
 
-#if HTTPS_SUPPORT
-    /*
-     * this is the final state of a successfully processed secure connection
-     */
-    MHD_TLS_REQUEST_TERMINATED_COMPLETED_OK,
+  /* FIXME: add TLS-specific error codes,
+     but only those that are useful! */
+  /**
+   * Processing of this secure connection encountered 
+   * an error.
+   */
+  MHD_TLS_REQUEST_TERMINATED_WITH_ERROR,
+  
+  MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT
 
-    /*
-     * processing of this secure connection encountered an error
-     */
-    /* TODO consider elaborating error cause & registering a error callback */
-    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR,
-
-    MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT,
-#endif
 };
+
+/**
+ * Which symmetric cipher should be used by HTTPS?
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_CipherAlgorithm
+{
+  MHD_GNUTLS_CIPHER_UNKNOWN = 0,
+  MHD_GNUTLS_CIPHER_NULL = 1,
+  MHD_GNUTLS_CIPHER_ARCFOUR_128,
+  MHD_GNUTLS_CIPHER_3DES_CBC,
+  MHD_GNUTLS_CIPHER_AES_128_CBC,
+  MHD_GNUTLS_CIPHER_AES_256_CBC,
+  MHD_GNUTLS_CIPHER_ARCFOUR_40,
+  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
+  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
+  MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
+  MHD_GNUTLS_CIPHER_DES_CBC
+}; // enum MHD_GNUTLS_CipherAlgorithm;
+
+/**
+ * Which public key algorithm should be used
+ * for the key exchange?
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_KeyExchangeAlgorithm
+{
+  MHD_GNUTLS_KX_UNKNOWN = 0,
+  MHD_GNUTLS_KX_RSA = 1,
+  MHD_GNUTLS_KX_DHE_DSS,
+  MHD_GNUTLS_KX_DHE_RSA,
+  MHD_GNUTLS_KX_ANON_DH,
+  MHD_GNUTLS_KX_SRP,
+  MHD_GNUTLS_KX_RSA_EXPORT,
+  MHD_GNUTLS_KX_SRP_RSA,
+  MHD_GNUTLS_KX_SRP_DSS
+};
+
+/**
+ * Server credentials type 
+ */
+enum MHD_GNUTLS_CredentialsType
+{
+  MHD_GNUTLS_CRD_CERTIFICATE = 1,
+  MHD_GNUTLS_CRD_ANON,
+  MHD_GNUTLS_CRD_SRP,
+  MHD_GNUTLS_CRD_PSK,
+  MHD_GNUTLS_CRD_IA
+};
+
+/**
+ * Enumeration of possible cryptographic
+ * hash functions (for MAC and Digest operations).
+ */
+enum MHD_GNUTLS_HashAlgorithm
+{
+  MHD_GNUTLS_MAC_UNKNOWN = 0,
+  MHD_GNUTLS_MAC_NULL = 1,
+  MHD_GNUTLS_MAC_MD5,
+  MHD_GNUTLS_MAC_SHA1,
+  MHD_GNUTLS_MAC_SHA256
+  //GNUTLS_MAC_SHA384,
+  //GNUTLS_MAC_SHA512
+};
+
+/**
+ * Compression methods.
+ */
+enum MHD_GNUTLS_CompressionMethod
+{
+  MHD_GNUTLS_COMP_UNKNOWN = 0,
+  MHD_GNUTLS_COMP_NULL = 1,
+  MHD_GNUTLS_COMP_DEFLATE
+};
+
+/**
+ * SSL/TLS Protocol types.
+ */
+enum MHD_GNUTLS_Protocol
+{
+  MHD_GNUTLS_PROTOCOL_END = 0,
+  MHD_GNUTLS_SSL3 = 1,
+  MHD_GNUTLS_TLS1_0,
+  MHD_GNUTLS_TLS1_1,
+  MHD_GNUTLS_TLS1_2,
+  MHD_GNUTLS_VERSION_UNKNOWN = 0xff
+};
+
+/**
+ * Specify what type of certificate should be used.
+ */
+enum MHD_GNUTLS_CertificateType
+{
+  MHD_GNUTLS_CRT_UNKNOWN = 0,
+  MHD_GNUTLS_CRT_X509 = 1
+};
+
+enum MHD_GNUTLS_PublicKeyAlgorithm
+{
+  MHD_GNUTLS_PK_UNKNOWN = 0,
+  MHD_GNUTLS_PK_RSA = 1
+  //GNUTLS_PK_DSA
+};
+
+/**
+ * Values of this enum are used to specify what
+ * information about a connection is desired.
+ */
+enum MHD_ConnectionInfoType
+{
+  /**
+   * What cipher algorithm is being used.
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_CIPHER_ALGO,
+
+  /**
+   * What key exchange algorithm is being used.
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_KX_ALGO,
+
+  /**
+   *
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_CREDENTIALS_TYPE,
+
+  /**
+   *
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_MAC_ALGO,
+
+  /**
+   * What compression method is being used.
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_COMPRESSION_METHOD,
+
+  /**
+   *
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_PROTOCOL,
+
+  /**
+   *
+   * Takes no extra arguments.
+   */
+  MHD_SESSION_INFO_CERT_TYPE
+};
+
+/**
+ * Values of this enum are used to specify what
+ * information about a deamon is desired.
+ */
+enum MHD_DaemonInfoType
+{
+  /**
+   * Request information about the key size for
+   * a particular cipher algorithm.  The cipher
+   * algorithm should be passed as an extra
+   * argument (of type 'enum MHD_GNUTLS_CipherAlgorithm').
+   */
+  MHD_DAEMON_INFO_KEY_SIZE,
+
+  /**
+   * Request information about the key size for
+   * a particular cipher algorithm.  The cipher
+   * algorithm should be passed as an extra
+   * argument (of type 'enum MHD_GNUTLS_HashAlgorithm').
+   */
+  MHD_DAEMON_INFO_MAC_KEY_SIZE
+};
+
+
 
 /**
  * Handle for the daemon (listening on a socket for HTTP traffic).
@@ -1004,140 +1186,66 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  */
 int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
-/*
- * HTTPS
+
+/**
+ * Information about a connection.
  */
-
-typedef enum MHD_GNUTLS_cipher_algorithm
+union MHD_ConnectionInfo
 {
-  MHD_GNUTLS_CIPHER_UNKNOWN = 0,
-  MHD_GNUTLS_CIPHER_NULL = 1,
-  MHD_GNUTLS_CIPHER_ARCFOUR_128,
-  MHD_GNUTLS_CIPHER_3DES_CBC,
-  MHD_GNUTLS_CIPHER_AES_128_CBC,
-  MHD_GNUTLS_CIPHER_AES_256_CBC,
-  MHD_GNUTLS_CIPHER_ARCFOUR_40,
-  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-  MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
-  MHD_GNUTLS_CIPHER_DES_CBC
-} gnutls_cipher_algorithm_t;
+  enum MHD_GNUTLS_CipherAlgorithm cipher_algorithm;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
+  enum MHD_GNUTLS_CredentialsType credentials_type;
+  enum MHD_GNUTLS_HashAlgorithm mac_algorithm;
+  enum MHD_GNUTLS_CompressionMethod compression_method;
+  enum MHD_GNUTLS_Protocol protocol;
+  enum MHD_GNUTLS_CertificateType certificate_type;
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
+};
 
-typedef enum
+/**
+ * Obtain information about the given connection.
+ *
+ * @param connection what connection to get information about
+ * @param infoType what information is desired?
+ * @param ... depends on infoType
+ * @return NULL if this information is not available
+ *         (or if the infoType is unknown)
+ */
+const union MHD_ConnectionInfo *
+MHD_get_connection_info (struct MHD_Connection * connection,
+			 enum MHD_ConnectionInfoType infoType,
+			 ...);
+
+
+/**
+ * Information about an MHD daemon.
+ */
+union MHD_DaemonInfo
 {
-  MHD_GNUTLS_KX_UNKNOWN = 0,
-  MHD_GNUTLS_KX_RSA = 1,
-  MHD_GNUTLS_KX_DHE_DSS,
-  MHD_GNUTLS_KX_DHE_RSA,
-  MHD_GNUTLS_KX_ANON_DH,
-  MHD_GNUTLS_KX_SRP,
-  MHD_GNUTLS_KX_RSA_EXPORT,
-  MHD_GNUTLS_KX_SRP_RSA,
-  MHD_GNUTLS_KX_SRP_DSS
-} gnutls_kx_algorithm_t;
-
-/* server credentials type */
-typedef enum
-{
-  MHD_GNUTLS_CRD_CERTIFICATE = 1,
-  MHD_GNUTLS_CRD_ANON,
-  MHD_GNUTLS_CRD_SRP,
-  MHD_GNUTLS_CRD_PSK,
-  MHD_GNUTLS_CRD_IA
-} gnutls_credentials_type_t;
-
-/* mac algorithm */
-typedef enum
-{
-  MHD_GNUTLS_MAC_UNKNOWN = 0,
-  MHD_GNUTLS_MAC_NULL = 1,
-  MHD_GNUTLS_MAC_MD5,
-  MHD_GNUTLS_MAC_SHA1,
-  MHD_GNUTLS_MAC_SHA256
-  //GNUTLS_MAC_SHA384,
-  //GNUTLS_MAC_SHA512
-} gnutls_mac_algorithm_t;
-
-  /* The enumerations here should have the same value with
-     gnutls_mac_algorithm_t.
+  /**
+   * Size of the key (unit??)
    */
-typedef enum
-{
-  MHD_GNUTLS_DIG_NULL = MHD_GNUTLS_MAC_NULL,
-  MHD_GNUTLS_DIG_MD5 = MHD_GNUTLS_MAC_MD5,
-  MHD_GNUTLS_DIG_SHA1 = MHD_GNUTLS_MAC_SHA1,
-  MHD_GNUTLS_DIG_SHA256 = MHD_GNUTLS_MAC_SHA256
-} gnutls_digest_algorithm_t;
+  size_t key_size;
 
-/* compression method */
-typedef enum
-{
-  MHD_GNUTLS_COMP_UNKNOWN = 0,
-  MHD_GNUTLS_COMP_NULL = 1,
-  MHD_GNUTLS_COMP_DEFLATE,
-  MHD_GNUTLS_COMP_LZO               /* only available if gnutls-extra has
-                                   been initialized
-                                 */
-} gnutls_compression_method_t;
-
-/* protocol type */
-typedef enum
-{
-  MHD_GNUTLS_SSL3 = 1,
-  MHD_GNUTLS_TLS1_0,
-  MHD_GNUTLS_TLS1_1,
-  MHD_GNUTLS_TLS1_2,
-  MHD_GNUTLS_VERSION_UNKNOWN = 0xff
-} gnutls_protocol_t;
-
-/* certificate_type */
-typedef enum
-{
-  MHD_GNUTLS_CRT_UNKNOWN = 0,
-  MHD_GNUTLS_CRT_X509 = 1
-} gnutls_certificate_type_t;
-
-typedef enum
-{
-  MHD_GNUTLS_PK_UNKNOWN = 0,
-  MHD_GNUTLS_PK_RSA = 1
-  //GNUTLS_PK_DSA
-} gnutls_pk_algorithm_t;
-
-union MHD_SessionInfo
-{
-  gnutls_cipher_algorithm_t cipher_algorithm;
-  gnutls_kx_algorithm_t kx_algorithm;
-  gnutls_credentials_type_t credentials_type;
-  gnutls_mac_algorithm_t mac_algorithm;
-  gnutls_compression_method_t compression_method;
-  gnutls_protocol_t protocol;
-  gnutls_certificate_type_t certificate_type;
-  gnutls_pk_algorithm_t pk_algorithm;
-  int null_info;
+  /**
+   * Size of the mac key (unit??)
+   */
+  size_t mac_key_size;
 };
 
-enum MHD_InfoType
-{
-  MHS_INFO_CIPHER_ALGO,
-  MHD_INFO_KX_ALGO,
-  MHD_INFO_CREDENTIALS_TYPE,
-  MHD_INFO_MAC_ALGO,
-  MHD_INFO_COMPRESSION_METHOD,
-  MHD_INFO_PROTOCOL,
-  MHD_INFO_CERT_TYPE
-};
-
-union MHD_SessionInfo
-MHD_get_session_info ( struct MHD_Connection * connection, enum MHD_InfoType infoType);
-
-/* TODO impl */
-size_t MHDS_get_key_size (struct MHD_Daemon *daemon,
-                          gnutls_cipher_algorithm_t algorithm);
-size_t MHDS_get_mac_key_size (struct MHD_Daemon *daemon,
-                              gnutls_mac_algorithm_t algorithm);
-
-
+/**
+ * Obtain information about the given daemon.
+ *
+ * @param daemon what daemon to get information about
+ * @param infoType what information is desired?
+ * @param ... depends on infoType
+ * @return NULL if this information is not available
+ *         (or if the infoType is unknown)
+ */
+const union MHD_DaemonInfo *
+MHD_get_daemon_info (struct MHD_Daemon * daemon,
+		     enum MHD_DaemonInfoType infoType,
+		     ...);
 
 #if 0                           /* keep Emacsens' auto-indent happy */
 {

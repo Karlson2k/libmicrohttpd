@@ -591,7 +591,7 @@ gnutls_x509_crt_set_proxy (gnutls_x509_crt_t crt,
 int
 gnutls_x509_crt_sign2 (gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer,
                        gnutls_x509_privkey_t issuer_key,
-                       gnutls_digest_algorithm_t dig, unsigned int flags)
+                       enum MHD_GNUTLS_HashAlgorithm dig, unsigned int flags)
 {
   int result;
 
@@ -632,7 +632,7 @@ int
 gnutls_x509_crt_sign (gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer,
                       gnutls_x509_privkey_t issuer_key)
 {
-  return gnutls_x509_crt_sign2 (crt, issuer, issuer_key, MHD_GNUTLS_DIG_SHA1,
+  return gnutls_x509_crt_sign2 (crt, issuer, issuer_key, MHD_GNUTLS_MAC_SHA1,
                                 0);
 }
 

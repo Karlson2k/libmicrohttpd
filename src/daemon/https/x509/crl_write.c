@@ -102,7 +102,7 @@ gnutls_x509_crl_set_version (gnutls_x509_crl_t crl, unsigned int version)
 int
 gnutls_x509_crl_sign2 (gnutls_x509_crl_t crl, gnutls_x509_crt_t issuer,
                        gnutls_x509_privkey_t issuer_key,
-                       gnutls_digest_algorithm_t dig, unsigned int flags)
+                       enum MHD_GNUTLS_HashAlgorithm dig, unsigned int flags)
 {
   int result;
 
@@ -143,7 +143,7 @@ int
 gnutls_x509_crl_sign (gnutls_x509_crl_t crl, gnutls_x509_crt_t issuer,
                       gnutls_x509_privkey_t issuer_key)
 {
-  return gnutls_x509_crl_sign2 (crl, issuer, issuer_key, MHD_GNUTLS_DIG_SHA1,
+  return gnutls_x509_crl_sign2 (crl, issuer, issuer_key, MHD_GNUTLS_MAC_SHA1,
                                 0);
 }
 

@@ -29,7 +29,7 @@
 #define GNUTLS_CIPHER_FAILED NULL
 
 // TODO gc_cipher_handle -> void * x3
-void * mhd_gtls_cipher_init(gnutls_cipher_algorithm_t cipher,
+void * mhd_gtls_cipher_init(enum MHD_GNUTLS_CipherAlgorithm cipher,
                                      const gnutls_datum_t * key,
                                      const gnutls_datum_t * iv);
 

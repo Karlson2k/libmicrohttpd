@@ -194,7 +194,7 @@ mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
 }
 
 inline static mac_hd_t
-mac_init (gnutls_mac_algorithm_t mac, opaque * secret, int secret_size,
+mac_init (enum MHD_GNUTLS_HashAlgorithm mac, opaque * secret, int secret_size,
           int ver)
 {
   mac_hd_t td;
@@ -304,7 +304,7 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
   int hash_size =
     mhd_gnutls_hash_get_algo_len (session->security_parameters.
                                write_mac_algorithm);
-  gnutls_protocol_t ver;
+  enum MHD_GNUTLS_Protocol ver;
   int blocksize =
     mhd_gtls_cipher_get_block_size (session->security_parameters.
                                    write_bulk_cipher_algorithm);
@@ -429,7 +429,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
   uint16_t blocksize;
   int ret, i, pad_failed = 0;
   uint8_t major, minor;
-  gnutls_protocol_t ver;
+  enum MHD_GNUTLS_Protocol ver;
   int hash_size =
     mhd_gnutls_hash_get_algo_len (session->security_parameters.
                                read_mac_algorithm);

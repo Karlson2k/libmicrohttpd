@@ -56,7 +56,7 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
   opaque concat[36];
   mac_hd_t td_md5;
   mac_hd_t td_sha;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   td_sha = mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_sha);
   if (td_sha == NULL)
@@ -128,7 +128,7 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
   int ret;
   mac_hd_t td_sha;
   opaque concat[36];
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   td_sha = mhd_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
   if (td_sha == NULL)
@@ -204,7 +204,7 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
  * given data. The output will be allocated and be put in signature.
  */
 int
-mhd_gtls_sign (gnutls_pk_algorithm_t algo,
+mhd_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
               mpi_t * params,
               int params_size,
               const gnutls_datum_t * data, gnutls_datum_t * signature)
@@ -335,7 +335,7 @@ mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
   mac_hd_t td_md5;
   mac_hd_t td_sha;
   gnutls_datum_t dconcat;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   td_md5 = mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
   if (td_md5 == NULL)
@@ -402,7 +402,7 @@ mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
   mac_hd_t td_md5 = NULL;
   mac_hd_t td_sha;
   opaque concat[36];
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   if (ver < MHD_GNUTLS_TLS1_2)
     {

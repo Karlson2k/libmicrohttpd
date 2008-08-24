@@ -232,12 +232,12 @@ MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
  */
 int
 mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
-                                    gnutls_kx_algorithm_t ** alg,
+                                    enum MHD_GNUTLS_KeyExchangeAlgorithm ** alg,
                                     int *alg_size)
 {
-  gnutls_kx_algorithm_t kx;
-  gnutls_pk_algorithm_t pk;
-  gnutls_kx_algorithm_t kxlist[MAX_ALGOS];
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kx;
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk;
+  enum MHD_GNUTLS_KeyExchangeAlgorithm kxlist[MAX_ALGOS];
   gnutls_cert *cert;
   int i;
 
@@ -271,13 +271,13 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  *alg = gnutls_calloc (1, sizeof (gnutls_kx_algorithm_t) * i);
+  *alg = gnutls_calloc (1, sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm) * i);
   if (*alg == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
   *alg_size = i;
 
-  memcpy (*alg, kxlist, i * sizeof (gnutls_kx_algorithm_t));
+  memcpy (*alg, kxlist, i * sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm));
 
   return 0;
 }
@@ -311,7 +311,7 @@ MHD_gtls_certificate_server_set_request (mhd_gtls_session_t session,
   * to be used in the handshake.
   * The callback's function prototype is:
   * int (*callback)(mhd_gtls_session_t, const gnutls_datum_t* req_ca_dn, int nreqs,
-  * const gnutls_pk_algorithm_t* pk_algos, int pk_algos_length, gnutls_retr_st* st);
+  * const enum MHD_GNUTLS_PublicKeyAlgorithm* pk_algos, int pk_algos_length, gnutls_retr_st* st);
   *
   * @req_ca_cert is only used in X.509 certificates.
   * Contains a list with the CA names that the server considers trusted.
@@ -598,7 +598,7 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
 
 int
 mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
-                           gnutls_certificate_type_t type,
+                           enum MHD_GNUTLS_CertificateType type,
                            const gnutls_datum_t * raw_cert,
                            int flags /* OR of ConvFlags */ )
 {
@@ -614,7 +614,7 @@ mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
 
 int
 mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
-                             gnutls_certificate_type_t type,
+                             enum MHD_GNUTLS_CertificateType type,
                              const gnutls_datum_t * raw_key,
                              int key_enc /* DER or PEM */ )
 {
@@ -780,7 +780,7 @@ mhd_gtls_gcert_deinit (gnutls_cert * cert)
  *
  * typedef int (*gnutls_sign_func) (mhd_gtls_session_t session,
  *                                  void *userdata,
- *                                  gnutls_certificate_type_t cert_type,
+ *                                  enum MHD_GNUTLS_CertificateType cert_type,
  *                                  const gnutls_datum_t * cert,
  *                                  const gnutls_datum_t * hash,
  *                                  gnutls_datum_t * signature);

@@ -45,46 +45,41 @@ int MHD_connection_handle_write (struct MHD_Connection *connection);
 int MHD_connection_handle_idle (struct MHD_Connection *connection);
 
 /**
- * retrieve session info
+ * Obtain information about the given connection.
  *
- * @param connection: from which to retrieve data
- * @return: an appropriate 'union MHD_SessionInfo' with the requested connection data or 'null_info' in an invalid request has been received.
+ * @param connection what connection to get information about
+ * @param infoType what information is desired?
+ * @param ... depends on infoType
+ * @return NULL if this information is not available
+ *         (or if the infoType is unknown)
  */
-union MHD_SessionInfo
-MHD_get_session_info ( struct MHD_Connection * connection, enum MHD_InfoType infoType)
+const union MHD_ConnectionInfo *
+MHD_get_connection_info (struct MHD_Connection * connection,
+			 enum MHD_InfoType infoType,
+			 ...)
 {
-  /* return NULL if this isn't a SSL/TLS type connection */
   if (connection->tls_session == NULL)
-    {
-      /* TODO clean */
-      return (union MHD_SessionInfo) 0;
-    }
+    return NULL;
   switch (infoType)
     {
 #if HTTPS_SUPPORT
     case MHS_INFO_CIPHER_ALGO:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        read_bulk_cipher_algorithm;
+      return &connection->tls_session->security_parameters.read_bulk_cipher_algorithm;
     case MHD_INFO_KX_ALGO:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        kx_algorithm;
+      return &connection->tls_session->security_parameters.kx_algorithm;
     case MHD_INFO_CREDENTIALS_TYPE:
-      return (union MHD_SessionInfo) connection->tls_session->key->cred->algorithm;
+      return &connection->tls_session->key->cred->algorithm;
     case MHD_INFO_MAC_ALGO:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        read_mac_algorithm;
+      return &connection->tls_session->security_parameters.read_mac_algorithm;
     case MHD_INFO_COMPRESSION_METHOD:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        read_compression_algorithm;
+      return &connection->tls_session->security_parameters.read_compression_algorithm;
     case MHD_INFO_PROTOCOL:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        version;
+      return &connection->tls_session->security_parameters.version;
     case MHD_INFO_CERT_TYPE:
-      return (union MHD_SessionInfo) connection->tls_session->security_parameters.
-        cert_type;
+      return &connection->tls_session->security_parameters.cert_type;
 #endif
     };
-  return (union MHD_SessionInfo) 0;
+  return NULL;
 }
 
 /**

@@ -740,7 +740,7 @@ gnutls_x509_crq_set_challenge_password (gnutls_x509_crq_t crq,
   **/
 int
 gnutls_x509_crq_sign2 (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key,
-                       gnutls_digest_algorithm_t dig, unsigned int flags)
+                       enum MHD_GNUTLS_HashAlgorithm dig, unsigned int flags)
 {
   int result;
   gnutls_datum_t signature;
@@ -805,7 +805,7 @@ gnutls_x509_crq_sign2 (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key,
 int
 gnutls_x509_crq_sign (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
 {
-  return gnutls_x509_crq_sign2 (crq, key, MHD_GNUTLS_DIG_SHA1, 0);
+  return gnutls_x509_crq_sign2 (crq, key, MHD_GNUTLS_MAC_SHA1, 0);
 }
 
 /**
@@ -857,7 +857,7 @@ gnutls_x509_crq_export (gnutls_x509_crq_t crq,
   * For DSA the bits returned are of the public
   * exponent.
   *
-  * Returns a member of the gnutls_pk_algorithm_t enumeration on success,
+  * Returns a member of the enum MHD_GNUTLS_PublicKeyAlgorithm enumeration on success,
   * or a negative value on error.
   *
   **/

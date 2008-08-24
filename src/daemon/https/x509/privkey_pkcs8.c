@@ -63,7 +63,7 @@ struct pbkdf2_params
 
 struct pbe_enc_params
 {
-  gnutls_cipher_algorithm_t cipher;
+  enum MHD_GNUTLS_CipherAlgorithm cipher;
   opaque iv[8];
   int iv_size;
 };
@@ -1284,7 +1284,7 @@ error:
 /* Converts an OID to a gnutls cipher type.
  */
 inline static int
-oid2cipher (const char *oid, gnutls_cipher_algorithm_t * algo)
+oid2cipher (const char *oid, enum MHD_GNUTLS_CipherAlgorithm * algo)
 {
 
   *algo = 0;

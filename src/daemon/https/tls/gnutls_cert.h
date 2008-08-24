@@ -61,7 +61,7 @@ typedef struct gnutls_cert
 					 */
   int params_size;		/* holds the size of MPI params */
 
-  gnutls_pk_algorithm_t subject_pk_algorithm;
+  enum MHD_GNUTLS_PublicKeyAlgorithm subject_pk_algorithm;
 
   unsigned int key_usage;	/* bits from KEY_* 
 				 */
@@ -69,7 +69,7 @@ typedef struct gnutls_cert
   unsigned int version;
   /* holds the type (PGP, X509)
    */
-  gnutls_certificate_type_t cert_type;
+  enum MHD_GNUTLS_CertificateType cert_type;
 
   gnutls_datum_t raw;
 
@@ -95,7 +95,7 @@ typedef struct gnutls_privkey_int
    */
   int params_size;		/* holds the number of params */
 
-  gnutls_pk_algorithm_t pk_algorithm;
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
 } gnutls_privkey;
 
 struct MHD_gtls_session_int;	/* because mhd_gtls_session_t is not defined when this file is included */
@@ -117,15 +117,15 @@ void mhd_gtls_gkey_deinit (gnutls_privkey * key);
 void mhd_gtls_gcert_deinit (gnutls_cert * cert);
 
 int mhd_gtls_selected_cert_supported_kx (struct MHD_gtls_session_int *session,
-					gnutls_kx_algorithm_t ** alg,
+					enum MHD_GNUTLS_KeyExchangeAlgorithm ** alg,
 					int *alg_size);
 
 int mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
-			       gnutls_certificate_type_t type,
+			       enum MHD_GNUTLS_CertificateType type,
 			       const gnutls_datum_t * raw_cert,
 			       int flags /* OR of ConvFlags */ );
 int mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
-				 gnutls_certificate_type_t type,
+				 enum MHD_GNUTLS_CertificateType type,
 				 const gnutls_datum_t * raw_key,
 				 int key_enc /* DER or PEM */ );
 

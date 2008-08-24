@@ -32,7 +32,7 @@
 typedef struct
 {
   gc_hash_handle handle;
-  gnutls_mac_algorithm_t algorithm;
+  enum MHD_GNUTLS_HashAlgorithm algorithm;
   const void *key;
   int keysize;
 } mac_hd_st;
@@ -42,17 +42,17 @@ typedef mac_hd_t GNUTLS_HASH_HANDLE;
 #define GNUTLS_HASH_FAILED NULL
 #define GNUTLS_MAC_FAILED NULL
 
-mac_hd_t mhd_gtls_hmac_init (gnutls_mac_algorithm_t algorithm,
+mac_hd_t mhd_gtls_hmac_init (enum MHD_GNUTLS_HashAlgorithm algorithm,
 			    const void *key, int keylen);
 
 void mhd_gnutls_hmac_deinit (mac_hd_t handle, void *digest);
 
-mac_hd_t mhd_gnutls_mac_init_ssl3 (gnutls_mac_algorithm_t algorithm, void *key,
+mac_hd_t mhd_gnutls_mac_init_ssl3 (enum MHD_GNUTLS_HashAlgorithm algorithm, void *key,
 				int keylen);
 void mhd_gnutls_mac_deinit_ssl3 (mac_hd_t handle, void *digest);
 
-GNUTLS_HASH_HANDLE mhd_gtls_hash_init (gnutls_mac_algorithm_t algorithm);
-int mhd_gnutls_hash_get_algo_len (gnutls_mac_algorithm_t algorithm);
+GNUTLS_HASH_HANDLE mhd_gtls_hash_init (enum MHD_GNUTLS_HashAlgorithm algorithm);
+int mhd_gnutls_hash_get_algo_len (enum MHD_GNUTLS_HashAlgorithm algorithm);
 int mhd_gnutls_hash (GNUTLS_HASH_HANDLE handle, const void *text,
 		  size_t textlen);
 void mhd_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest);

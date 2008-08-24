@@ -37,7 +37,7 @@ int _gnutls_x509_cert_verify_peers (mhd_gtls_session_t session,
 #define PEM_KEY_DSA_SEP "-----BEGIN DSA"
 
 int _gnutls_check_key_usage (const gnutls_cert * cert,
-			     gnutls_kx_algorithm_t alg);
+			     enum MHD_GNUTLS_KeyExchangeAlgorithm alg);
 
 int _gnutls_x509_read_rsa_params (opaque * der, int dersize, mpi_t * params);
 int _gnutls_x509_read_dsa_pubkey (opaque * der, int dersize, mpi_t * params);

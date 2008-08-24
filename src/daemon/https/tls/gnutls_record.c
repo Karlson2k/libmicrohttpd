@@ -49,7 +49,7 @@
  *
  * Returns: the version of the currently used protocol.
  **/
-gnutls_protocol_t
+enum MHD_GNUTLS_Protocol
 MHD_gnutls_protocol_get_version (mhd_gtls_session_t session)
 {
   return session->security_parameters.version;
@@ -57,7 +57,7 @@ MHD_gnutls_protocol_get_version (mhd_gtls_session_t session)
 
 void
 mhd_gtls_set_current_version (mhd_gtls_session_t session,
-                             gnutls_protocol_t version)
+                             enum MHD_GNUTLS_Protocol version)
 {
   session->security_parameters.version = version;
 }
@@ -259,7 +259,7 @@ inline static void
 copy_record_version (mhd_gtls_session_t session,
                      gnutls_handshake_description_t htype, opaque version[2])
 {
-  gnutls_protocol_t lver;
+  enum MHD_GNUTLS_Protocol lver;
 
   if (htype != GNUTLS_HANDSHAKE_CLIENT_HELLO
       || session->internals.default_record_version[0] == 0)

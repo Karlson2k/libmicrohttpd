@@ -91,7 +91,7 @@ MHD_gnutls_credentials_clear (mhd_gtls_session_t session)
   **/
 int
 MHD_gnutls_credentials_set (mhd_gtls_session_t session,
-                        gnutls_credentials_type_t type, void *cred)
+                        enum MHD_GNUTLS_CredentialsType type, void *cred)
 {
   auth_cred_st *ccred = NULL, *pcred = NULL;
   int exists = 0;
@@ -160,7 +160,7 @@ MHD_gnutls_credentials_set (mhd_gtls_session_t session,
   * Eg. for CERTIFICATE ciphersuites (key exchange algorithms: KX_RSA, KX_DHE_RSA),
   * the same function are to be used to access the authentication data.
   **/
-gnutls_credentials_type_t
+enum MHD_GNUTLS_CredentialsType
 MHD_gtls_auth_get_type (mhd_gtls_session_t session)
 {
 /* This is not the credentials we must set, but the authentication data
@@ -183,7 +183,7 @@ MHD_gtls_auth_get_type (mhd_gtls_session_t session)
   * to access authentication data.
   * 
   **/
-gnutls_credentials_type_t
+enum MHD_GNUTLS_CredentialsType
 MHD_gtls_auth_server_get_type (mhd_gtls_session_t session)
 {
   return
@@ -201,7 +201,7 @@ MHD_gtls_auth_server_get_type (mhd_gtls_session_t session)
   * to access authentication data.
   * 
   **/
-gnutls_credentials_type_t
+enum MHD_GNUTLS_CredentialsType
 MHD_gtls_auth_client_get_type (mhd_gtls_session_t session)
 {
   return
@@ -217,7 +217,7 @@ MHD_gtls_auth_client_get_type (mhd_gtls_session_t session)
  */
 const void *
 mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
-                     gnutls_kx_algorithm_t algo, int *err)
+                     enum MHD_GNUTLS_KeyExchangeAlgorithm algo, int *err)
 {
   int server = session->security_parameters.entity == GNUTLS_SERVER ? 1 : 0;
 
@@ -226,7 +226,7 @@ mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
 }
 
 const void *
-mhd_gtls_get_cred (mhd_gtls_key_st key, gnutls_credentials_type_t type, int *err)
+mhd_gtls_get_cred (mhd_gtls_key_st key, enum MHD_GNUTLS_CredentialsType type, int *err)
 {
   const void *retval = NULL;
   int _err = -1;
@@ -354,7 +354,7 @@ mhd_gtls_free_auth_info (mhd_gtls_session_t session)
  */
 int
 mhd_gtls_auth_info_set (mhd_gtls_session_t session,
-                       gnutls_credentials_type_t type, int size,
+                       enum MHD_GNUTLS_CredentialsType type, int size,
                        int allow_change)
 {
   if (session->key->auth_info == NULL)

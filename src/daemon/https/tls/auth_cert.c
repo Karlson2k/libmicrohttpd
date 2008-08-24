@@ -113,9 +113,9 @@ clear:
  * -1 otherwise.
  */
 inline static int
-_gnutls_check_pk_algo_in_list (const gnutls_pk_algorithm_t *
+_gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm *
                                pk_algos, int pk_algos_length,
-                               gnutls_pk_algorithm_t algo_to_check)
+                               enum MHD_GNUTLS_PublicKeyAlgorithm algo_to_check)
 {
   int i;
   for (i = 0; i < pk_algos_length; i++)
@@ -185,7 +185,7 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
 static int
 _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
                  opaque * _data, size_t _data_size,
-                 const gnutls_pk_algorithm_t * pk_algos,
+                 const enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos,
                  int pk_algos_length, int *indx)
 {
   unsigned size;
@@ -348,14 +348,14 @@ static int
 call_get_cert_callback (mhd_gtls_session_t session,
                         gnutls_datum_t * issuers_dn,
                         int issuers_dn_length,
-                        gnutls_pk_algorithm_t * pk_algos, int pk_algos_length)
+                        enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos, int pk_algos_length)
 {
   unsigned i;
   gnutls_cert *local_certs = NULL;
   gnutls_privkey *local_key = NULL;
   gnutls_retr_st st;
   int ret;
-  gnutls_certificate_type_t type = gnutls_certificate_type_get (session);
+  enum MHD_GNUTLS_CertificateType type = gnutls_certificate_type_get (session);
   mhd_gtls_cert_credentials_t cred;
 
   cred = (mhd_gtls_cert_credentials_t)
@@ -443,7 +443,7 @@ cleanup:
 static int
 _select_client_cert (mhd_gtls_session_t session,
                      opaque * _data, size_t _data_size,
-                     gnutls_pk_algorithm_t * pk_algos, int pk_algos_length)
+                     enum MHD_GNUTLS_PublicKeyAlgorithm * pk_algos, int pk_algos_length)
 {
   int result;
   int indx = -1;
@@ -793,7 +793,7 @@ typedef enum CertificateSigType
 } CertificateSigType;
 
 /* Checks if we support the given signature algorithm 
- * (RSA or DSA). Returns the corresponding gnutls_pk_algorithm_t
+ * (RSA or DSA). Returns the corresponding enum MHD_GNUTLS_PublicKeyAlgorithm
  * if true;
  */
 inline static int
@@ -818,9 +818,9 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
   cert_auth_info_t info;
   ssize_t dsize;
   int i, j;
-  gnutls_pk_algorithm_t pk_algos[MAX_SIGN_ALGOS];
+  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algos[MAX_SIGN_ALGOS];
   int pk_algos_length;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   cred = (mhd_gtls_cert_credentials_t)
     mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
@@ -1014,7 +1014,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
   mhd_gtls_cert_credentials_t cred;
   int size;
   opaque *pdata;
-  gnutls_protocol_t ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
   /* Now we need to generate the RDN sequence. This is
    * already in the CERTIFICATE_CRED structure, to improve
@@ -1029,7 +1029,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
-  size = CERTTYPE_SIZE + 2;     /* 2 for gnutls_certificate_type_t + 2 for size of rdn_seq 
+  size = CERTTYPE_SIZE + 2;     /* 2 for enum MHD_GNUTLS_CertificateType + 2 for size of rdn_seq 
                                  */
 
   if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509 &&
@@ -1248,7 +1248,7 @@ mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_server_select_cert (mhd_gtls_session_t session,
-                            gnutls_pk_algorithm_t requested_algo)
+                            enum MHD_GNUTLS_PublicKeyAlgorithm requested_algo)
 {
   unsigned i;
   int idx, ret;

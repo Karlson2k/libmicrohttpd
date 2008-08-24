@@ -96,7 +96,7 @@
 #define DECR_LENGTH_RET(len, x, RET) do { len-=x; if (len<0) {gnutls_assert(); return RET;} } while (0)
 #define DECR_LENGTH_COM(len, x, COM) do { len-=x; if (len<0) {gnutls_assert(); COM;} } while (0)
 
-#define HASH2MAC(x) ((gnutls_mac_algorithm_t)x)
+#define HASH2MAC(x) ((enum MHD_GNUTLS_HashAlgorithm)x)
 
 /* TODO rm */
 /* Additional cast to bring void* to a type castable to int. */
@@ -171,8 +171,8 @@ typedef enum content_type_t
     GNUTLS_INNER_APPLICATION = 24
   } content_type_t;
 
-#define GNUTLS_PK_ANY (gnutls_pk_algorithm_t)-1
-#define GNUTLS_PK_NONE (gnutls_pk_algorithm_t)-2
+#define GNUTLS_PK_ANY (enum MHD_GNUTLS_PublicKeyAlgorithm)-1
+#define GNUTLS_PK_NONE (enum MHD_GNUTLS_PublicKeyAlgorithm)-2
 
 /* STATE (stop) */
 
@@ -182,7 +182,7 @@ typedef void (*LOG_FUNC)(int,
 /* Store & Retrieve functions defines:  */
 typedef struct mhd_gtls_auth_cred_st
   {
-    gnutls_credentials_type_t algorithm;
+    enum MHD_GNUTLS_CredentialsType algorithm;
 
     /* the type of credentials depends on algorithm
      */
@@ -217,7 +217,7 @@ struct mhd_gtls_key
      * Rememember that this should be calloced!
      */
     void *auth_info;
-    gnutls_credentials_type_t auth_info_type;
+    enum MHD_GNUTLS_CredentialsType auth_info_type;
     int auth_info_size; /* needed in order to store to db for restoring
      */
     uint8_t crypt_algo;
@@ -316,18 +316,18 @@ typedef enum tls_ext_parse_type_t
 typedef struct
   {
     gnutls_connection_end_t entity;
-    gnutls_kx_algorithm_t kx_algorithm;
+    enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
     /* we've got separate write/read bulk/macs because
      * there is a time in handshake where the peer has
      * null cipher and we don't
      */
-    gnutls_cipher_algorithm_t read_bulk_cipher_algorithm;
-    gnutls_mac_algorithm_t read_mac_algorithm;
-    gnutls_compression_method_t read_compression_algorithm;
+    enum MHD_GNUTLS_CipherAlgorithm read_bulk_cipher_algorithm;
+    enum MHD_GNUTLS_HashAlgorithm read_mac_algorithm;
+    enum MHD_GNUTLS_CompressionMethod read_compression_algorithm;
 
-    gnutls_cipher_algorithm_t write_bulk_cipher_algorithm;
-    gnutls_mac_algorithm_t write_mac_algorithm;
-    gnutls_compression_method_t write_compression_algorithm;
+    enum MHD_GNUTLS_CipherAlgorithm write_bulk_cipher_algorithm;
+    enum MHD_GNUTLS_HashAlgorithm write_mac_algorithm;
+    enum MHD_GNUTLS_CompressionMethod write_compression_algorithm;
 
     /* this is the ciphersuite we are going to use
      * moved here from internals in order to be restored
@@ -348,8 +348,8 @@ typedef struct
     uint16_t max_record_send_size;
     uint16_t max_record_recv_size;
     /* holds the negotiated certificate type */
-    gnutls_certificate_type_t cert_type;
-    gnutls_protocol_t version; /* moved here */
+    enum MHD_GNUTLS_CertificateType cert_type;
+    enum MHD_GNUTLS_Protocol version; /* moved here */
     /* For TLS/IA.  XXX: Move to IA credential? */
     opaque inner_secret[TLS_MASTER_SIZE];
   } mhd_gtls_security_param_st;
@@ -465,7 +465,7 @@ typedef struct
     int last_handshake_out;
 
     /* this is the compression method we are going to use */
-    gnutls_compression_method_t compression_method;
+    enum MHD_GNUTLS_CompressionMethod compression_method;
 
     /* priorities */
     struct MHD_gtls_priority_st priorities;
@@ -654,7 +654,7 @@ struct MHD_gtls_session_int
 
 /* functions */
 void mhd_gtls_set_current_version(mhd_gtls_session_t session,
-                                 gnutls_protocol_t version);
+                                 enum MHD_GNUTLS_Protocol version);
 
 void mhd_gtls_free_auth_info(mhd_gtls_session_t session);
 
@@ -672,7 +672,7 @@ void mhd_gtls_free_auth_info(mhd_gtls_session_t session);
 	session->internals.adv_version_minor = minor
 
 void mhd_gtls_set_adv_version(mhd_gtls_session_t,
-                             gnutls_protocol_t);
-gnutls_protocol_t mhd_gtls_get_adv_version(mhd_gtls_session_t);
+                             enum MHD_GNUTLS_Protocol);
+enum MHD_GNUTLS_Protocol mhd_gtls_get_adv_version(mhd_gtls_session_t);
 
 #endif /* GNUTLS_INT_H */

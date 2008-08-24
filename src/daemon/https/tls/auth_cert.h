@@ -141,7 +141,7 @@ int mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
 			       gnutls_privkey ** apr_pkey);
 
 int mhd_gtls_server_select_cert (struct MHD_gtls_session_int *,
-				gnutls_pk_algorithm_t);
+				enum MHD_GNUTLS_PublicKeyAlgorithm);
 void mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session);
 void mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
 				 gnutls_cert * certs, int ncerts,

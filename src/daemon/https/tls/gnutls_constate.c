@@ -390,8 +390,8 @@ _gnutls_set_read_keys (mhd_gtls_session_t session)
   int hash_size;
   int IV_size;
   int key_size, export_flag;
-  gnutls_cipher_algorithm_t algo;
-  gnutls_mac_algorithm_t mac_algo;
+  enum MHD_GNUTLS_CipherAlgorithm algo;
+  enum MHD_GNUTLS_HashAlgorithm mac_algo;
 
   mac_algo = session->security_parameters.read_mac_algorithm;
   algo = session->security_parameters.read_bulk_cipher_algorithm;
@@ -411,8 +411,8 @@ _gnutls_set_write_keys (mhd_gtls_session_t session)
   int hash_size;
   int IV_size;
   int key_size, export_flag;
-  gnutls_cipher_algorithm_t algo;
-  gnutls_mac_algorithm_t mac_algo;
+  enum MHD_GNUTLS_CipherAlgorithm algo;
+  enum MHD_GNUTLS_HashAlgorithm mac_algo;
 
   mac_algo = session->security_parameters.write_mac_algorithm;
   algo = session->security_parameters.write_bulk_cipher_algorithm;
@@ -874,7 +874,7 @@ mhd_gtls_write_connection_state_init (mhd_gtls_session_t session)
  */
 int
 mhd_gtls_set_read_cipher (mhd_gtls_session_t session,
-                         gnutls_cipher_algorithm_t algo)
+                         enum MHD_GNUTLS_CipherAlgorithm algo)
 {
 
   if (mhd_gtls_cipher_is_ok (algo) == 0)
@@ -900,7 +900,7 @@ mhd_gtls_set_read_cipher (mhd_gtls_session_t session,
 
 int
 mhd_gtls_set_write_cipher (mhd_gtls_session_t session,
-                          gnutls_cipher_algorithm_t algo)
+                          enum MHD_GNUTLS_CipherAlgorithm algo)
 {
 
   if (mhd_gtls_cipher_is_ok (algo) == 0)
@@ -929,7 +929,7 @@ mhd_gtls_set_write_cipher (mhd_gtls_session_t session,
  */
 int
 mhd_gtls_set_read_compression (mhd_gtls_session_t session,
-                              gnutls_compression_method_t algo)
+                              enum MHD_GNUTLS_CompressionMethod algo)
 {
 
   if (mhd_gtls_compression_is_ok (algo) == 0)
@@ -947,7 +947,7 @@ mhd_gtls_set_read_compression (mhd_gtls_session_t session,
 
 int
 mhd_gtls_set_write_compression (mhd_gtls_session_t session,
-                               gnutls_compression_method_t algo)
+                               enum MHD_GNUTLS_CompressionMethod algo)
 {
 
   if (mhd_gtls_compression_is_ok (algo) == 0)
@@ -966,7 +966,7 @@ mhd_gtls_set_write_compression (mhd_gtls_session_t session,
 /* Sets the specified kx algorithm into pending session
  */
 int
-mhd_gtls_set_kx (mhd_gtls_session_t session, gnutls_kx_algorithm_t algo)
+mhd_gtls_set_kx (mhd_gtls_session_t session, enum MHD_GNUTLS_KeyExchangeAlgorithm algo)
 {
 
   if (mhd_gtls_kx_is_ok (algo) == 0)
@@ -991,7 +991,7 @@ mhd_gtls_set_kx (mhd_gtls_session_t session, gnutls_kx_algorithm_t algo)
 
 /* Sets the specified mac algorithm into pending session */
 int
-mhd_gtls_set_read_mac (mhd_gtls_session_t session, gnutls_mac_algorithm_t algo)
+mhd_gtls_set_read_mac (mhd_gtls_session_t session, enum MHD_GNUTLS_HashAlgorithm algo)
 {
 
   if (mhd_gnutls_mac_is_ok (algo) == 0)
@@ -1015,7 +1015,7 @@ mhd_gtls_set_read_mac (mhd_gtls_session_t session, gnutls_mac_algorithm_t algo)
 }
 
 int
-mhd_gtls_set_write_mac (mhd_gtls_session_t session, gnutls_mac_algorithm_t algo)
+mhd_gtls_set_write_mac (mhd_gtls_session_t session, enum MHD_GNUTLS_HashAlgorithm algo)
 {
 
   if (mhd_gnutls_mac_is_ok (algo) == 0)

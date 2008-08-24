@@ -44,13 +44,13 @@ int mhd_gtls_tls_create_random (opaque * dst);
 int mhd_gtls_remove_unwanted_ciphersuites (mhd_gtls_session_t session,
 					  cipher_suite_st ** cipherSuites,
 					  int numCipherSuites,
-					  gnutls_pk_algorithm_t);
+					  enum MHD_GNUTLS_PublicKeyAlgorithm);
 int mhd_gtls_find_pk_algos_in_ciphersuites (opaque * data, int datalen);
 int mhd_gtls_server_select_suite (mhd_gtls_session_t session, opaque * data,
 				 int datalen);
 
-int mhd_gtls_negotiate_version( mhd_gtls_session_t session, gnutls_protocol_t adv_version);
-int mhd_gtls_user_hello_func( mhd_gtls_session_t, gnutls_protocol_t adv_version);
+int mhd_gtls_negotiate_version( mhd_gtls_session_t session, enum MHD_GNUTLS_Protocol adv_version);
+int mhd_gtls_user_hello_func( mhd_gtls_session_t, enum MHD_GNUTLS_Protocol adv_version);
 
 #if MHD_DEBUG_TLS
 int mhd_gtls_handshake_client (mhd_gtls_session_t session);

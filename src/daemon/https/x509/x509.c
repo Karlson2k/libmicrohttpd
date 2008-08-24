@@ -858,7 +858,7 @@ gnutls_x509_crt_get_authority_key_id (gnutls_x509_crt_t cert,
  * For DSA the bits returned are of the public
  * exponent.
  *
- * Returns a member of the gnutls_pk_algorithm_t enumeration on success,
+ * Returns a member of the enum MHD_GNUTLS_PublicKeyAlgorithm enumeration on success,
  * or a negative value on error.
  *
  **/
@@ -1945,7 +1945,7 @@ gnutls_x509_dn_get_rdn_ava (gnutls_x509_dn_t dn,
  **/
 int
 gnutls_x509_crt_get_fingerprint (gnutls_x509_crt_t cert,
-                                 gnutls_digest_algorithm_t algo,
+                                 enum MHD_GNUTLS_HashAlgorithm algo,
                                  void *buf, size_t * sizeof_buf)
 {
   opaque *cert_buf;
@@ -2165,7 +2165,7 @@ gnutls_x509_crt_get_key_id (gnutls_x509_crt_t crt,
       return mhd_gtls_asn2err (result);
     }
 
-  result = MHD_gnutls_fingerprint (MHD_GNUTLS_DIG_SHA1, &pubkey, output_data,
+  result = MHD_gnutls_fingerprint (MHD_GNUTLS_MAC_SHA1, &pubkey, output_data,
                                output_data_size);
 
   gnutls_afree (pubkey.data);

@@ -52,6 +52,6 @@ int _gnutls_x509_write_uint32 (ASN1_TYPE node, const char *value,
 			       uint32_t num);
 
 int _gnutls_x509_write_sig_params (ASN1_TYPE dst, const char *dst_name,
-				   gnutls_pk_algorithm_t pk_algorithm,
-				   gnutls_digest_algorithm_t, mpi_t * params,
+				   enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm,
+				   enum MHD_GNUTLS_HashAlgorithm, mpi_t * params,
 				   int params_size);

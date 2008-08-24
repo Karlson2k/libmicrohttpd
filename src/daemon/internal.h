@@ -627,7 +627,7 @@ struct MHD_Daemon
   unsigned short port;
 
 #if HTTPS_SUPPORT
-  gnutls_credentials_type_t cred_type;
+  enum MHD_GNUTLS_CredentialsType cred_type;
 
   /* server x509 credintials */
   mhd_gtls_cert_credentials_t x509_cred;

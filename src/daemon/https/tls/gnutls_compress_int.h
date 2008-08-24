@@ -34,10 +34,10 @@
 typedef struct comp_hd_t_STRUCT
 {
   void *handle;
-  gnutls_compression_method_t algo;
+  enum MHD_GNUTLS_CompressionMethod algo;
 } *comp_hd_t;
 
-comp_hd_t mhd_gtls_comp_init (gnutls_compression_method_t, int d);
+comp_hd_t mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod, int d);
 void mhd_gtls_comp_deinit (comp_hd_t handle, int d);
 
 int mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,

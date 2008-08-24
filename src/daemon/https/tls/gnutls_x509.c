@@ -951,11 +951,11 @@ generate_rdn_seq (mhd_gtls_cert_credentials_t res)
   return 0;
 }
 
-/* Returns 0 if it's ok to use the gnutls_kx_algorithm_t with this
+/* Returns 0 if it's ok to use the enum MHD_GNUTLS_KeyExchangeAlgorithm with this
  * certificate (uses the KeyUsage field).
  */
 int
-_gnutls_check_key_usage (const gnutls_cert * cert, gnutls_kx_algorithm_t alg)
+_gnutls_check_key_usage (const gnutls_cert * cert, enum MHD_GNUTLS_KeyExchangeAlgorithm alg)
 {
   unsigned int key_usage = 0;
   int encipher_type;

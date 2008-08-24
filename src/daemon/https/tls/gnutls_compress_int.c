@@ -31,7 +31,7 @@
  * decompress.
  */
 comp_hd_t
-mhd_gtls_comp_init (gnutls_compression_method_t method, int d)
+mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
 {
   comp_hd_t ret;
 
