@@ -1,3 +1,8 @@
+Sun Aug 24 10:33:22 MDT 2008
+	 Fixed bug where MHD failed to transmit the response when
+	 the client decided not to send "100 CONTINUE" during
+	 a PUT/POST request. -CG
+
 Wed Jul 16 18:54:03 MDT 2008
 	 Fixed bug generating chunked responses with chunk sizes
 	 greater than 0xFFFFFF (would cause protocol violations). -CG
