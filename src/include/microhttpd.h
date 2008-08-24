@@ -681,43 +681,43 @@ enum MHD_ConnectionInfoType
    * What cipher algorithm is being used.
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_CIPHER_ALGO,
+  MHD_CONNECTION_INFO_CIPHER_ALGO,
 
   /**
    * What key exchange algorithm is being used.
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_KX_ALGO,
+  MHD_CONNECTION_INFO_KX_ALGO,
 
   /**
    *
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_CREDENTIALS_TYPE,
+  MHD_CONNECTION_INFO_CREDENTIALS_TYPE,
 
   /**
    *
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_MAC_ALGO,
+  MHD_CONNECTION_INFO_MAC_ALGO,
 
   /**
    * What compression method is being used.
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_COMPRESSION_METHOD,
+  MHD_CONNECTION_INFO_COMPRESSION_METHOD,
 
   /**
    *
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_PROTOCOL,
+  MHD_CONNECTION_INFO_PROTOCOL,
 
   /**
    *
    * Takes no extra arguments.
    */
-  MHD_SESSION_INFO_CERT_TYPE
+  MHD_CONNECTION_INFO_CERT_TYPE
 };
 
 /**
