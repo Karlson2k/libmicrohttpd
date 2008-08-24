@@ -1,5 +1,6 @@
-Primary developer:
+Primary developers:
 Christian Grothoff <christian@grothoff.org>
+Sagie Amir (TLS/SSL support using GNUtls)
 
 Code contributions also came from:
 Chris GauthierDickey <chrisg@cs.du.edu>
@@ -9,7 +10,6 @@ John Popplewell <john@johnnypops.demon.co.uk>
 Nils Durner <durner@gnunet.org>
 Heikki Lindholm <holindho@cs.helsinki.fi>
 Alex Sadovsky <alexeysad@gmail.com>
-Sagie Amir
 
 Documentation contributions also came from:
 Marco Maggi <marco.maggi-ipsu@poste.it>
