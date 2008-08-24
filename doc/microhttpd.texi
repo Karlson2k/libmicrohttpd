@@ -284,6 +284,12 @@ should be followed by an @code{unsigned int}.  The default is
 zero, which means no limit on the number of connections
 from the same IP address.
 
+@item MHD_OPTION_SOCK_ADDR
+Bind daemon to the supplied socket address. This option should be followed by a
+@code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified, 
+the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6}, 
+otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
+the daemon will listen to incomming connections from anywhere.
 
 
 @end table
