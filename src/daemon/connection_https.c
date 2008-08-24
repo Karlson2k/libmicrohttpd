@@ -204,7 +204,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_YES;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
-      MHD_tls_connection_close (connection);
+      if (connection->socket_fd != -1)
+	MHD_tls_connection_close (connection);
       return MHD_NO;
     case MHD_TLS_HANDSHAKE_FAILED:
       MHD_tls_connection_close_err (connection,

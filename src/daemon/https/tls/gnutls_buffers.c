@@ -1223,7 +1223,8 @@ mhd_gtls_handshake_buffer_get_ptr (mhd_gtls_session_t session,
   if (length != NULL)
     *length = session->internals.handshake_hash_buffer.length;
 
-  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", *length);
+  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", 
+		       session->internals.handshake_hash_buffer.length)
 
   if (data_ptr != NULL)
     *data_ptr = session->internals.handshake_hash_buffer.data;
