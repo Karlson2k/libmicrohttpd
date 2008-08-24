@@ -30,6 +30,7 @@
 #include "memorypool.h"
 
 #if HTTPS_SUPPORT
+#include "connection_https.h"
 #include "gnutls_int.h"
 #include "gnutls_global.h"
 #include "auth_anon.h"

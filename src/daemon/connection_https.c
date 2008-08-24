@@ -39,11 +39,6 @@
 /* TODO #include rm "gnutls_errors.h" */
 #include "gnutls_errors.h"
 
-/* forward declarations used when setting secure connection callbacks */
-int MHD_connection_handle_read (struct MHD_Connection *connection);
-int MHD_connection_handle_write (struct MHD_Connection *connection);
-int MHD_connection_handle_idle (struct MHD_Connection *connection);
-
 /**
  * Obtain information about the given connection.
  *
@@ -175,7 +170,7 @@ MHDS_con_write (struct MHD_Connection *connection)
  * @return MHD_YES if we should continue to process the
  *         connection (not dead yet), MHD_NO if it died
  */
-int
+static int
 MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 {
   unsigned int timeout;
@@ -231,7 +226,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
  * @return MHD_YES if we should continue to process the
  *         connection (not dead yet), MHD_NO if it died
  */
-int
+static int
 MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 {
   int ret;
@@ -374,7 +369,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
  * @return MHD_connection_handle_write() if we should continue to
  *         process the connection (not dead yet), MHD_NO if it died
  */
-int
+static int
 MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
   connection->last_activity = time (NULL);

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Daniel Pittman and Christian Grothoff
+     (C) 2008 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -18,33 +18,18 @@
 */
 
 /**
- * @file connection.h
+ * @file connection_https.h
  * @brief  Methods for managing connections
- * @author Daniel Pittman
  * @author Christian Grothoff
  */
 
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef CONNECTION_HTTPS_H
+#define CONNECTION_HTTPS_H
 
 #include "internal.h"
 
-/**
- * Obtain the select sets for this connection.
- *
- * @return MHD_YES on success
- */
-int
-MHD_connection_get_fdset (struct MHD_Connection *connection,
-                          fd_set * read_fd_set,
-                          fd_set * write_fd_set,
-                          fd_set * except_fd_set, int *max_fd);
-
-void MHD_set_http_calbacks (struct MHD_Connection *connection);
-
-int MHD_connection_handle_read (struct MHD_Connection *connection);
-int MHD_connection_handle_write (struct MHD_Connection *connection);
-int MHD_connection_handle_idle (struct MHD_Connection *connection);
-
+#if HTTPS_SUPPORT
+void MHD_set_https_calbacks (struct MHD_Connection *connection);
+#endif
 
 #endif

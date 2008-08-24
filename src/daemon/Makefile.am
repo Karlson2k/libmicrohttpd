@@ -37,7 +37,7 @@ libmicrohttpd_la_LDFLAGS = \
 
 if ENABLE_HTTPS
 SUBDIRS += https .
-libmicrohttpd_la_SOURCES += connection_https.c
+libmicrohttpd_la_SOURCES += connection_https.c connection_https.h
 libmicrohttpd_la_LIBADD = \
   https/lgl/liblgl.la \
   https/x509/libx509.la \
