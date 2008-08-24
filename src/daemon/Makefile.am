@@ -42,9 +42,7 @@ libmicrohttpd_la_LIBADD = \
   https/lgl/liblgl.la \
   https/x509/libx509.la \
   https/tls/libtls.la \
-  https/minitasn1/libasn1.la \
-  https/opencdk/libopencdk.la \
-  https/openpgp/libopenpgp.la 
+  https/minitasn1/libasn1.la 
 endif
 
 

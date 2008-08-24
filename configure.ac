@@ -218,24 +218,6 @@ AC_ARG_ENABLE([x509],
 AC_MSG_RESULT($enable_x509)
 
 
-# optional: OpenPGP support
-AC_MSG_CHECKING(--enable-OpenPGP argument)
-AC_ARG_ENABLE([OpenPGP],
-   [AS_HELP_STRING([--enable-OpenPGP],
-               [enable OpenPGP support (default is no)])],
-   [enable_openpgp=$enableval],
-   [enable_openpgp="no"])
-AC_MSG_RESULT($enable_openpgp)
-# currently we ignore this option.
-if test "$enable_openpgp" = "yes"
-then
- AC_DEFINE([ENABLE_OPENPGP],[0],[Include OpenGPG support])
-else
- AC_DEFINE([ENABLE_OPENPGP],[0],[Include OpenGPG support])
-fi
-AM_CONDITIONAL(ENABLE_OPENPGP, test "$enable_openpgp" = "yes")
-
-
 # Libgcrypt linkage : required for HTTPS support 
 AC_CHECK_HEADERS(gcrypt.h,gcrypt=true,gcrypt=false)
 AC_ARG_WITH(libgcrypt,
@@ -342,7 +324,6 @@ AC_MSG_NOTICE([Configured to build curl/libcurl:
   HTTPS support:     ${enable_HTTPS}	
   TLS support:       ${enable_TLS}
   SSLv3 support:     ${enable_SSL}
-  OpenGPG support:   ${enable_openpgp}
   x509 support:      ${enable_x509}
   libgcrypt:         ${MSG_GCRYPT}
   
