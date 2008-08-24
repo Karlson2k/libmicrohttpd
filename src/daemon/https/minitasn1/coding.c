@@ -630,7 +630,7 @@ _asn1_ordering_set (unsigned char *der, int der_len, node_asn * node)
 	  ((type_field (p->type) == TYPE_TAG)
 	   || (type_field (p->type) == TYPE_SIZE)) )
     p = p->right;
-
+  
   if ((p == NULL) || (p->right == NULL))
     return;
 
