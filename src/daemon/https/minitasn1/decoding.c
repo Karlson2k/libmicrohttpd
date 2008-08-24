@@ -629,7 +629,10 @@ _asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
           temp2 = temp + len2;
           len2 = asn1_get_length_der (der, *len, &len3);
           if (len2 < -1)
-            return ASN1_DER_ERROR;
+	    {
+	      _asn1_afree (temp);
+	      return ASN1_DER_ERROR;
+	    }
           counter2 = len3 + 1;
 
           if (indefinite == -1)
@@ -642,7 +645,10 @@ _asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
               len2 =
                 asn1_get_length_der (der + counter2, *len - counter, &len3);
               if (len2 < -1)
-                return ASN1_DER_ERROR;
+		{
+		  _asn1_afree (temp);
+		  return ASN1_DER_ERROR;
+		}
 
               /* FIXME: to be checked. Is this ok? Has the
                * size been checked before?
