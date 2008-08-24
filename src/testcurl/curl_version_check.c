@@ -38,7 +38,7 @@ static int
 parse_version_number (const char **s)
 {
   int i = 0;
-  char num[16];
+  char num[17];
 
   while (i < 16 && ((**s >= '0') & (**s <= '9')))
     {

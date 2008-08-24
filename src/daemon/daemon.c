@@ -330,7 +330,6 @@ MHD_TLS_init_connection (void *data)
 
   /* initialize connection state */
   con->state = MHD_TLS_CONNECTION_INIT;
-
   MHD_gnutls_init (&con->tls_session, GNUTLS_SERVER);
 
   /* sets cipher priorities */
@@ -588,10 +587,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
-          if (pos->tls_session != 0)
-            {
-              MHD_gnutls_deinit (pos->tls_session);
-            }
+          if (pos->tls_session != NULL)            
+	    MHD_gnutls_deinit (pos->tls_session);            
 #endif
           free (pos->addr);
           free (pos);

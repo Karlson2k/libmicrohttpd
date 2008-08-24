@@ -820,7 +820,6 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
   int size, ret;
   opaque *p;
   mhd_gtls_cert_credentials_t cred;
-  cert_auth_info_t info;
   ssize_t dsize;
   int i, j;
   enum MHD_GNUTLS_PublicKeyAlgorithm pk_algos[MAX_SIGN_ALGOS];
@@ -842,8 +841,6 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
       gnutls_assert ();
       return ret;
     }
-
-  info = mhd_gtls_get_auth_info (session);
 
   p = data;
   dsize = data_size;
