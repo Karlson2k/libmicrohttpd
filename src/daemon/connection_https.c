@@ -55,7 +55,7 @@ int MHD_connection_handle_idle (struct MHD_Connection *connection);
  */
 const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection * connection,
-			 enum MHD_InfoType infoType,
+			 enum MHD_ConnectionInfoType infoType,
 			 ...)
 {
   if (connection->tls_session == NULL)
@@ -63,23 +63,24 @@ MHD_get_connection_info (struct MHD_Connection * connection,
   switch (infoType)
     {
 #if HTTPS_SUPPORT
-    case MHS_INFO_CIPHER_ALGO:
-      return &connection->tls_session->security_parameters.read_bulk_cipher_algorithm;
-    case MHD_INFO_KX_ALGO:
-      return &connection->tls_session->security_parameters.kx_algorithm;
-    case MHD_INFO_CREDENTIALS_TYPE:
-      return &connection->tls_session->key->cred->algorithm;
-    case MHD_INFO_MAC_ALGO:
-      return &connection->tls_session->security_parameters.read_mac_algorithm;
-    case MHD_INFO_COMPRESSION_METHOD:
-      return &connection->tls_session->security_parameters.read_compression_algorithm;
-    case MHD_INFO_PROTOCOL:
-      return &connection->tls_session->security_parameters.version;
-    case MHD_INFO_CERT_TYPE:
-      return &connection->tls_session->security_parameters.cert_type;
+    case MHD_SESSION_INFO_CIPHER_ALGO:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.read_bulk_cipher_algorithm;
+    case MHD_SESSION_INFO_KX_ALGO:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.kx_algorithm;
+    case MHD_SESSION_INFO_CREDENTIALS_TYPE:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->key->cred->algorithm;
+    case MHD_SESSION_INFO_MAC_ALGO:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.read_mac_algorithm;
+    case MHD_SESSION_INFO_COMPRESSION_METHOD:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.read_compression_algorithm;
+    case MHD_SESSION_INFO_PROTOCOL:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.version;
+    case MHD_SESSION_INFO_CERT_TYPE:
+      return (const union MHD_ConnectionInfo*) &connection->tls_session->security_parameters.cert_type;
 #endif
+    default:
+      return NULL;
     };
-  return NULL;
 }
 
 /**
@@ -105,7 +106,7 @@ MHD_tls_connection_close (struct MHD_Connection * connection)
     connection->daemon->notify_completed (connection->daemon->
                                           notify_completed_cls, connection,
                                           &connection->client_context,
-                                          MHD_TLS_REQUEST_TERMINATED_COMPLETED_OK);
+                                          MHD_REQUEST_TERMINATED_COMPLETED_OK);
 }
 
 /**

@@ -822,26 +822,18 @@ MHD_start_daemon_va (unsigned int options,
 {
   const int on = 1;
   struct MHD_Daemon *retVal;
-  void * daemon_ip_addr;
-
-  /* listeningss sockets used by the daemon */
   int socket_fd;
-
   struct sockaddr_in servaddr4;
   struct sockaddr_in6 servaddr6;
-  const struct sockaddr *servaddr = 0;
+  const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   enum MHD_OPTION opt;
 
   if ((port == 0) || (dh == NULL))
     return NULL;
-
-  /* allocate the mhd daemon */
   retVal = malloc (sizeof (struct MHD_Daemon));
   if (retVal == NULL)
     return NULL;    
-
-  /* set default daemon values */
   memset (retVal, 0, sizeof (struct MHD_Daemon));
   retVal->options = options;
   retVal->port = port;
@@ -928,7 +920,8 @@ MHD_start_daemon_va (unsigned int options,
 #endif
         default:
 #if HAVE_MESSAGES
-          if (opt > MHD_HTTPS_OPTION_START && opt < MHD_HTTPS_OPTION_END)
+          if ( (opt >= MHD_OPTION_HTTPS_KEY_PATH) && 
+	       (opt <= MHD_OPTION_TLS_COMP_ALGO) )
             {
               fprintf (stderr,
                        "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
