@@ -309,8 +309,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
-
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
