@@ -30,7 +30,7 @@ privkey_pkcs8.c \
 rfc2818_hostname.c \
 sign.c \
 x509_verify.c \
-x509.c \
-x509_write.c
+x509.c 
+
 
 

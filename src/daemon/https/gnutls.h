@@ -589,21 +589,7 @@ extern "C"
   void MHD_gnutls_dh_params_deinit (mhd_gtls_dh_params_t dh_params);
   int MHD_gnutls_dh_params_generate2 (mhd_gtls_dh_params_t params,
                                       unsigned int bits);
-//  int MHD_gnutls_dh_params_import_raw (mhd_gtls_dh_params_t dh_params,
-//                                   const gnutls_datum_t * prime,
-//                                   const gnutls_datum_t * generator);
-//  int MHD_gnutls_dh_params_export_raw (mhd_gtls_dh_params_t params,
-//                                   gnutls_datum_t * prime,
-//                                   gnutls_datum_t * generator,
-//                                   unsigned int *bits);
-//  int gnutls_dh_params_import_pkcs3 (mhd_gtls_dh_params_t params,
-//                                     const gnutls_datum_t * pkcs3_params,
-//                                     gnutls_x509_crt_fmt_t format);
 
-//  int gnutls_dh_params_export_pkcs3 (mhd_gtls_dh_params_t params,
-//                                     gnutls_x509_crt_fmt_t format,
-//                                     unsigned char *params_data,
-//                                     size_t * params_data_size);
 
 /* RSA params */
   int MHD_gnutls_rsa_params_init (mhd_gtls_rsa_params_t * rsa_params);
@@ -611,18 +597,6 @@ extern "C"
   int MHD_gnutls_rsa_params_generate2 (mhd_gtls_rsa_params_t params,
                                        unsigned int bits);
 
-//  int gnutls_rsa_params_import_raw (mhd_gtls_rsa_params_t rsa_params,
-//                                    const gnutls_datum_t * m,
-//                                    const gnutls_datum_t * e,
-//                                    const gnutls_datum_t * d,
-//                                    const gnutls_datum_t * p,
-//                                    const gnutls_datum_t * q,
-//                                    const gnutls_datum_t * u);
-//  int gnutls_rsa_params_export_raw (mhd_gtls_rsa_params_t params,
-//                                    gnutls_datum_t * m, gnutls_datum_t * e,
-//                                    gnutls_datum_t * d, gnutls_datum_t * p,
-//                                    gnutls_datum_t * q, gnutls_datum_t * u,
-//                                    unsigned int *bits);
 
 /*
  * Session stuff
