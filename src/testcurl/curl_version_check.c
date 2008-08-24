@@ -62,7 +62,7 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
     return NULL;
   s++;
   *minor = parse_version_number (&s);
-  if (!s || *s != '.')
+  if (*s != '.')
     return NULL;
   s++;
   *micro = parse_version_number (&s);
