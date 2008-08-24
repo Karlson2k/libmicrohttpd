@@ -393,7 +393,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
             }
           else
             {                   /* raw!=0 */
-              if (*sizeof_buf > (size_t) len && buf != NULL)
+              if (*sizeof_buf > (size_t) len)
                 {
                   *sizeof_buf = len;
                   memcpy (buf, value, len);
