@@ -231,10 +231,6 @@ MHD_gtls_error_to_alert (int err, int *level)
       ret = GNUTLS_A_INTERNAL_ERROR;
       _level = GNUTLS_AL_FATAL;
       break;
-    case GNUTLS_E_OPENPGP_GETKEY_FAILED:
-      ret = GNUTLS_A_CERTIFICATE_UNOBTAINABLE;
-      _level = GNUTLS_AL_FATAL;
-      break;
     case GNUTLS_E_DH_PRIME_UNACCEPTABLE:
     case GNUTLS_E_NO_CERTIFICATE_FOUND:
       ret = GNUTLS_A_INSUFFICIENT_SECURITY;

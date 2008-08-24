@@ -47,7 +47,6 @@ gnutls_dh.c \
 gnutls_dh_primes.c \
 gnutls_errors.c \
 gnutls_extensions.c \
-gnutls_extra_hooks.c \
 gnutls_global.c \
 gnutls_handshake.c \
 gnutls_hash_int.c \

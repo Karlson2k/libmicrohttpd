@@ -1866,9 +1866,6 @@ MHD_gnutls_certificate_type_get_name (gnutls_certificate_type_t type)
 
   if (type == MHD_GNUTLS_CRT_X509)
     ret = "X.509";
-  if (type == MHD_GNUTLS_CRT_OPENPGP)
-    ret = "OPENPGP";
-
   return ret;
 }
 
@@ -1888,24 +1885,18 @@ MHD_gtls_certificate_type_get_id (const char *name)
 
   if (strcasecmp (name, "X.509") == 0 || strcasecmp (name, "X509") == 0)
     return MHD_GNUTLS_CRT_X509;
-  if (strcasecmp (name, "OPENPGP") == 0)
-    return MHD_GNUTLS_CRT_OPENPGP;
-
   return ret;
 }
 
 static const gnutls_certificate_type_t mhd_gtls_supported_certificate_types[] =
   { MHD_GNUTLS_CRT_X509,
-  MHD_GNUTLS_CRT_OPENPGP,
   0
 };
 
 /**
  * MHD_gtls_certificate_type_list:
  *
- * Get a list of certificate types.  Note that to be able to use
- * OpenPGP certificates, you must link to libgnutls-extra and call
- * gnutls_global_init_extra().
+ * Get a list of certificate types.
  *
  * Returns: a zero-terminated list of %gnutls_certificate_type_t
  * integers indicating the available certificate types.

@@ -28,7 +28,6 @@
 #include <defines.h>
 
 #include "gnutls.h"
-#include "extra.h"
 #include "microhttpd.h"
 
 #include "gnutls_mem.h"

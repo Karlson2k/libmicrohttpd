@@ -86,7 +86,7 @@ mhd_gtls_inner_app_send_params (mhd_gtls_session_t session,
   else
 #endif
     {
-      gnutls_ia_server_credentials_t cred = (gnutls_ia_server_credentials_t)
+      struct gnutls_ia_server_credentials_st * cred = (struct gnutls_ia_server_credentials_st*)
         mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_IA, NULL);
 
       if (cred)

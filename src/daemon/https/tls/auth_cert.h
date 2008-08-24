@@ -29,8 +29,6 @@
 #include "gnutls_auth.h"
 #include "auth_dh_common.h"
 #include "x509.h"
-#include "openpgp.h"
-#include "extra.h"
 
 /* This structure may be complex, but it's the only way to
  * support a server that has multiple certificates

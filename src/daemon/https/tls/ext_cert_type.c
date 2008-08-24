@@ -221,8 +221,6 @@ _gnutls_num2cert_type (int num)
     {
     case 0:
       return MHD_GNUTLS_CRT_X509;
-    case 1:
-      return MHD_GNUTLS_CRT_OPENPGP;
     default:
       return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
     }
@@ -238,8 +236,6 @@ _gnutls_cert_type2num (int cert_type)
     {
     case MHD_GNUTLS_CRT_X509:
       return 0;
-    case MHD_GNUTLS_CRT_OPENPGP:
-      return 1;
     default:
       return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
     }

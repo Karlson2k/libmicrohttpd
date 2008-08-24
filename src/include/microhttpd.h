@@ -1094,8 +1094,7 @@ typedef enum
 typedef enum
 {
   MHD_GNUTLS_CRT_UNKNOWN = 0,
-  MHD_GNUTLS_CRT_X509 = 1,
-  MHD_GNUTLS_CRT_OPENPGP
+  MHD_GNUTLS_CRT_X509 = 1
 } gnutls_certificate_type_t;
 
 typedef enum

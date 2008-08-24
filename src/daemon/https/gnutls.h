@@ -128,9 +128,6 @@ extern "C"
     GNUTLS_HANDSHAKE_SUPPLEMENTAL = 23
   } gnutls_handshake_description_t;
 
-/* Note that the status bits have different meanings
- * in openpgp keys and x.509 certificate verification.
- */
   typedef enum
   {
     GNUTLS_CERT_INVALID = 2,    /* will be set if the certificate
@@ -154,11 +151,6 @@ extern "C"
     GNUTLS_CERT_REQUEST = 1,
     GNUTLS_CERT_REQUIRE
   } gnutls_certificate_request_t;
-
-  typedef enum
-  { GNUTLS_OPENPGP_CERT,
-    GNUTLS_OPENPGP_CERT_FINGERPRINT
-  } gnutls_openpgp_crt_status_t;
 
   typedef enum
   {
@@ -639,9 +631,6 @@ extern "C"
   void MHD_gnutls_session_set_ptr (mhd_gtls_session_t session, void *ptr);
   void * MHD_gtls_session_get_ptr (mhd_gtls_session_t session);
 
-  void MHD_gtls_openpgp_send_cert (mhd_gtls_session_t session,
-                                 gnutls_openpgp_crt_status_t status);
-
 /*
  * this function returns the hash of the given data.
  */
@@ -798,26 +787,18 @@ extern "C"
     GNUTLS_SAN_OTHERNAME_XMPP = 1000
   } gnutls_x509_subject_alt_name_t;
 
-  struct gnutls_openpgp_crt_int;
-  typedef struct gnutls_openpgp_crt_int *gnutls_openpgp_crt_t;
-
-  struct gnutls_openpgp_privkey_int;
-  typedef struct gnutls_openpgp_privkey_int *gnutls_openpgp_privkey_t;
-
   typedef struct gnutls_retr_st
   {
     gnutls_certificate_type_t type;
     union cert
     {
       gnutls_x509_crt_t *x509;
-      gnutls_openpgp_crt_t pgp;
     } cert;
-    unsigned int ncerts;        /* one for pgp keys */
+    unsigned int ncerts;
 
     union key
     {
       gnutls_x509_privkey_t x509;
-      gnutls_openpgp_privkey_t pgp;
     } key;
 
     unsigned int deinit_all;    /* if non zero all keys will be deinited */
@@ -1026,7 +1007,6 @@ extern "C"
 #define GNUTLS_E_NO_COMPRESSION_ALGORITHMS -86
 #define GNUTLS_E_NO_CIPHER_SUITES -87
 
-#define GNUTLS_E_OPENPGP_GETKEY_FAILED -88
 #define GNUTLS_E_PK_SIG_VERIFY_FAILED -89
 
 #define GNUTLS_E_ILLEGAL_SRP_USERNAME -90
@@ -1046,13 +1026,11 @@ extern "C"
 #define GNUTLS_E_ASN1_TYPE_ANY_ERROR -75
 #define GNUTLS_E_ASN1_SYNTAX_ERROR -76
 #define GNUTLS_E_ASN1_DER_OVERFLOW -77
-#define GNUTLS_E_OPENPGP_UID_REVOKED -79
 #define GNUTLS_E_CERTIFICATE_ERROR -43
 #define GNUTLS_E_X509_CERTIFICATE_ERROR GNUTLS_E_CERTIFICATE_ERROR
 #define GNUTLS_E_CERTIFICATE_KEY_MISMATCH -60
 #define GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE -61       /* GNUTLS_A_UNSUPPORTED_CERTIFICATE */
 #define GNUTLS_E_X509_UNKNOWN_SAN -62
-#define GNUTLS_E_OPENPGP_FINGERPRINT_UNSUPPORTED -94
 #define GNUTLS_E_X509_UNSUPPORTED_ATTRIBUTE -95
 #define GNUTLS_E_UNKNOWN_HASH_ALGORITHM -96
 #define GNUTLS_E_UNKNOWN_PKCS_CONTENT_TYPE -97
@@ -1073,7 +1051,6 @@ extern "C"
 #define GNUTLS_E_INCOMPATIBLE_CRYPTO_LIBRARY -202
 #define GNUTLS_E_INCOMPATIBLE_LIBTASN1_LIBRARY -203
 
-#define GNUTLS_E_OPENPGP_KEYRING_ERROR -204
 #define GNUTLS_E_X509_UNSUPPORTED_OID -205
 
 #define GNUTLS_E_RANDOM_FAILED -206

@@ -205,22 +205,15 @@ static const gnutls_error_entry mhd_gtls_error_algorithms[] = {
   ERROR_ENTRY (N_("The tasn1 library version is too old."),
                GNUTLS_E_INCOMPATIBLE_LIBTASN1_LIBRARY, 1),
 
-  ERROR_ENTRY (N_("Error loading the keyring."),
-               GNUTLS_E_OPENPGP_KEYRING_ERROR, 1),
   ERROR_ENTRY (N_("The initialization of LZO has failed."),
                GNUTLS_E_LZO_INIT_FAILED, 1),
   ERROR_ENTRY (N_("No supported compression algorithms have been found."),
                GNUTLS_E_NO_COMPRESSION_ALGORITHMS, 1),
   ERROR_ENTRY (N_("No supported cipher suites have been found."),
                GNUTLS_E_NO_CIPHER_SUITES, 1),
-  ERROR_ENTRY (N_("Could not get OpenPGP key."),
-               GNUTLS_E_OPENPGP_GETKEY_FAILED, 1),
-
   ERROR_ENTRY (N_("The SRP username supplied is illegal."),
                GNUTLS_E_ILLEGAL_SRP_USERNAME, 1),
 
-  ERROR_ENTRY (N_("The OpenPGP fingerprint is not supported."),
-               GNUTLS_E_OPENPGP_FINGERPRINT_UNSUPPORTED, 1),
   ERROR_ENTRY (N_("The certificate has unsupported attributes."),
                GNUTLS_E_X509_UNSUPPORTED_ATTRIBUTE, 1),
   ERROR_ENTRY (N_("The OID is not supported."), GNUTLS_E_X509_UNSUPPORTED_OID,

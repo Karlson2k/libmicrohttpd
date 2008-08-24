@@ -127,14 +127,14 @@ int
 mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
                                  opaque * data, size_t _data_size)
 {
+  int total_size = 0;
+#if MHD_DEBUG_TLS
   uint16_t len;
   opaque *p;
   unsigned i;
   ssize_t data_size = _data_size;
-  int total_size = 0;
 
   /* this function sends the client extension data (dnsname) */
-#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 

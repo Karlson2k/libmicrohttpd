@@ -594,23 +594,6 @@ mhd_gtls_dh_set_group (mhd_gtls_session_t session, mpi_t gen, mpi_t prime)
 }
 
 /**
- * MHD_gtls_openpgp_send_cert - This function will order gnutls to send the openpgp fingerprint instead of the key
- * @session: is a pointer to a #mhd_gtls_session_t structure.
- * @status: is one of GNUTLS_OPENPGP_CERT, or GNUTLS_OPENPGP_CERT_FINGERPRINT
- *
- * This function will order gnutls to send the key fingerprint
- * instead of the key in the initial handshake procedure. This should
- * be used with care and only when there is indication or knowledge
- * that the server can obtain the client's key.
- **/
-void
-MHD_gtls_openpgp_send_cert (mhd_gtls_session_t session,
-                          gnutls_openpgp_crt_status_t status)
-{
-  session->internals.pgp_fingerprint = status;
-}
-
-/**
  * MHD_gnutls_certificate_send_x509_rdn_sequence - This function will order gnutls to send or not the x.509 rdn sequence
  * @session: is a pointer to a #mhd_gtls_session_t structure.
  * @status: is 0 or 1
@@ -629,12 +612,6 @@ MHD_gnutls_certificate_send_x509_rdn_sequence (mhd_gtls_session_t session,
                                            int status)
 {
   session->internals.ignore_rdn_sequence = status;
-}
-
-int
-mhd_gtls_openpgp_send_fingerprint (mhd_gtls_session_t session)
-{
-  return session->internals.pgp_fingerprint;
 }
 
 /*-

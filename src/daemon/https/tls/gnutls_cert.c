@@ -40,7 +40,6 @@
 #include <gnutls_state.h>
 #include <gnutls_auth_int.h>
 #include <gnutls_x509.h>
-#include <gnutls_extra_hooks.h>
 /* x509 */
 #include "x509.h"
 #include "mpi.h"
@@ -192,10 +191,7 @@ MHD_gnutls_certificate_free_credentials (mhd_gtls_cert_credentials_t sc)
   MHD_gnutls_certificate_free_crls (sc);
 #endif
 
-#ifndef KEYRING_HACK
-  if (_E_gnutls_openpgp_keyring_deinit)
-    _E_gnutls_openpgp_keyring_deinit (sc->keyring);
-#else
+#ifdef KEYRING_HACK
   _gnutls_free_datum (&sc->keyring);
 #endif
 
@@ -437,74 +433,6 @@ _gnutls_x509_get_raw_crt_expiration_time (const gnutls_datum_t * cert)
   return result;
 }
 
-/*-
-  * _gnutls_openpgp_crt_verify_peers - This function returns the peer's certificate status
-  * @session: is a gnutls session
-  *
-  * This function will try to verify the peer's certificate and return its status (TRUSTED, INVALID etc.).
-  * Returns a negative error code in case of an error, or GNUTLS_E_NO_CERTIFICATE_FOUND if no certificate was sent.
-  *
-  -*/
-int
-_gnutls_openpgp_crt_verify_peers (mhd_gtls_session_t session,
-                                  unsigned int *status)
-{
-  cert_auth_info_t info;
-  mhd_gtls_cert_credentials_t cred;
-  int peer_certificate_list_size, ret;
-
-  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
-
-  info = mhd_gtls_get_auth_info (session);
-  if (info == NULL)
-    return GNUTLS_E_INVALID_REQUEST;
-
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
-  if (cred == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
-    }
-
-  if (info->raw_certificate_list == NULL || info->ncerts == 0)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_NO_CERTIFICATE_FOUND;
-    }
-
-  /* generate a list of gnutls_certs based on the auth info
-   * raw certs.
-   */
-  peer_certificate_list_size = info->ncerts;
-
-  if (peer_certificate_list_size != 1)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INTERNAL_ERROR;
-    }
-
-  /* Verify certificate
-   */
-  if (_E_gnutls_openpgp_verify_key == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_INIT_LIBEXTRA;
-    }
-  ret =
-    _E_gnutls_openpgp_verify_key (cred, &info->raw_certificate_list[0],
-                                  peer_certificate_list_size, status);
-
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
-
-  return 0;
-}
-
-
 /**
   * MHD_gtls_certificate_verify_peers2 - This function returns the peer's certificate verification status
   * @session: is a gnutls session
@@ -552,8 +480,6 @@ MHD_gtls_certificate_verify_peers2 (mhd_gtls_session_t session,
     {
     case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_cert_verify_peers (session, status);
-    case MHD_GNUTLS_CRT_OPENPGP:
-      return _gnutls_openpgp_crt_verify_peers (session, status);
     default:
       return GNUTLS_E_INVALID_REQUEST;
     }
@@ -626,12 +552,6 @@ MHD_gtls_certificate_expiration_time_peers (mhd_gtls_session_t session)
       return _gnutls_x509_get_raw_crt_expiration_time (&info->
                                                        raw_certificate_list
                                                        [0]);
-    case MHD_GNUTLS_CRT_OPENPGP:
-      if (_E_gnutls_openpgp_get_raw_key_expiration_time == NULL)
-        return (time_t) - 1;
-      return _E_gnutls_openpgp_get_raw_key_expiration_time (&info->
-                                                            raw_certificate_list
-                                                            [0]);
     default:
       return (time_t) - 1;
     }
@@ -671,12 +591,6 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
       return _gnutls_x509_get_raw_crt_activation_time (&info->
                                                        raw_certificate_list
                                                        [0]);
-    case MHD_GNUTLS_CRT_OPENPGP:
-      if (_E_gnutls_openpgp_get_raw_key_creation_time == NULL)
-        return (time_t) - 1;
-      return _E_gnutls_openpgp_get_raw_key_creation_time (&info->
-                                                          raw_certificate_list
-                                                          [0]);
     default:
       return (time_t) - 1;
     }
@@ -692,13 +606,6 @@ mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
     {
     case MHD_GNUTLS_CRT_X509:
       return mhd_gtls_x509_raw_cert_to_gcert (gcert, raw_cert, flags);
-    case MHD_GNUTLS_CRT_OPENPGP:
-      if (_E_gnutls_openpgp_raw_key_to_gcert == NULL)
-        {
-          gnutls_assert ();
-          return GNUTLS_E_INIT_LIBEXTRA;
-        }
-      return _E_gnutls_openpgp_raw_key_to_gcert (gcert, raw_cert);
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
@@ -715,17 +622,6 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
     {
     case MHD_GNUTLS_CRT_X509:
       return _gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
-#if ENABLE_OPENPGP
-    case MHD_GNUTLS_CRT_OPENPGP:
-      if (_E_gnutls_openpgp_raw_privkey_to_gkey == NULL)
-        {
-          gnutls_assert ();
-          return GNUTLS_E_INIT_LIBEXTRA;
-        }
-      return _E_gnutls_openpgp_raw_privkey_to_gkey (key, raw_key,
-                                                    (gnutls_openpgp_crt_fmt_t)
-                                                    key_enc);
-#endif
     default:
       gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
