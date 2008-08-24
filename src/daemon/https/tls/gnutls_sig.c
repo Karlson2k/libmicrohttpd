@@ -281,7 +281,7 @@ _gnutls_verify_sig (gnutls_cert * cert,
   int ret;
   gnutls_datum_t vdata;
 
-  if (cert->version == 0 || cert == NULL)
+  if ( (cert == NULL) || (cert->version == 0) )
     {                           /* this is the only way to check
                                  * if it is initialized
                                  */
