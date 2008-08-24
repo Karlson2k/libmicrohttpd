@@ -55,6 +55,8 @@ parse_version_number (const char **s)
 const char *
 parse_version_string (const char *s, int *major, int *minor, int *micro)
 {
+  if (!s)
+    return NULL;
   *major = parse_version_number (&s);
   if (!s || *s != '.')
     return NULL;
@@ -64,8 +66,6 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
     return NULL;
   s++;
   *micro = parse_version_number (&s);
-  if (!s)
-    return NULL;
   return s;
 }
 
