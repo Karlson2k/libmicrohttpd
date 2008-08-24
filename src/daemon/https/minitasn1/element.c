@@ -420,7 +420,10 @@ asn1_write_value (ASN1_TYPE node_root, const char *name,
       asn1_length_der (len - k, NULL, &len2);
       temp = (unsigned char *) _asn1_alloca (len - k + len2);
       if (temp == NULL)
-        return ASN1_MEM_ALLOC_ERROR;
+	{
+	  _asn1_afree (value_temp);
+	  return ASN1_MEM_ALLOC_ERROR;
+	}
 
       asn1_octet_der (value_temp + k, len - k, temp, &len2);
       _asn1_set_value (node, temp, len2);
@@ -438,7 +441,10 @@ asn1_write_value (ASN1_TYPE node_root, const char *name,
               default_temp =
                 (unsigned char *) _asn1_alloca (SIZEOF_UNSIGNED_LONG_INT);
               if (default_temp == NULL)
-                return ASN1_MEM_ALLOC_ERROR;
+		{
+		  _asn1_afree (value_temp);
+		  return ASN1_MEM_ALLOC_ERROR;
+		}
 
               _asn1_convert_integer (p->value, default_temp,
                                      SIZEOF_UNSIGNED_LONG_INT, &len2);
@@ -446,7 +452,10 @@ asn1_write_value (ASN1_TYPE node_root, const char *name,
           else
             {                   /* is an identifier like v1 */
               if (!(node->type & CONST_LIST))
-                return ASN1_VALUE_NOT_VALID;
+		{
+		  _asn1_afree (value_temp);
+		  return ASN1_VALUE_NOT_VALID;
+		}
               p2 = node->down;
               while (p2)
                 {
@@ -458,7 +467,10 @@ asn1_write_value (ASN1_TYPE node_root, const char *name,
                             (unsigned char *)
                             _asn1_alloca (SIZEOF_UNSIGNED_LONG_INT);
                           if (default_temp == NULL)
-                            return ASN1_MEM_ALLOC_ERROR;
+			    {
+			      _asn1_afree (value_temp);
+			      return ASN1_MEM_ALLOC_ERROR;
+			    }
 
                           _asn1_convert_integer (p2->value,
                                                  default_temp,
@@ -470,7 +482,10 @@ asn1_write_value (ASN1_TYPE node_root, const char *name,
                   p2 = p2->right;
                 }
               if (p2 == NULL)
-                return ASN1_VALUE_NOT_VALID;
+		{
+		  _asn1_afree (value_temp);
+		  return ASN1_VALUE_NOT_VALID;
+		}
             }
 
 
