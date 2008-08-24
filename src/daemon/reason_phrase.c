@@ -43,7 +43,8 @@ static const char *two_hundred[] = {
   "Non-Authoritative Information",
   "No Content",
   "Reset Content",
-  "Partial Content"
+  "Partial Content",
+  "Multi Status"
 };
 
 static const char *three_hundred[] = {
@@ -52,7 +53,9 @@ static const char *three_hundred[] = {
   "Moved Temporarily",
   "See Other",
   "Not Modified",
-  "Use Proxy"
+  "Use Proxy",
+  "Switch Proxy",
+  "Temporary Redirect"
 };
 
 static const char *four_hundred[] = {
@@ -71,15 +74,28 @@ static const char *four_hundred[] = {
   "Precondition Failed",
   "Request Entity Too Large",
   "Request-URI Too Large",
-  "Unsupported Media Type"
+  "Unsupported Media Type",
+  "Requested Range Not Satisfiable",
+  "Expectation Failed",
+  "Unprocessable Entity",
+  "Locked",
+  "Failed Dependency",
+  "Unordered Collection",
+  "Upgrade Required",
+  "Retry With"
 };
 
 static const char *five_hundred[] = {
   "Internal Server Error",
+  "Not Implemented",
   "Bad Gateway",
   "Service Unavailable",
   "Gateway Time-out",
-  "HTTP Version not supported"
+  "HTTP Version not supported",
+  "Variant Also Negotiates",
+  "Insufficient Storage",
+  "Bandwidth Limit Exceeded",
+  "Not Extended"
 };
 
 

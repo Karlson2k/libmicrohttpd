@@ -1,3 +1,6 @@
+Sun Aug 24 12:44:43 MDT 2008
+	 Added missing reason phrase. -SG
+
 Sun Aug 24 10:33:22 MDT 2008
 	 Fixed bug where MHD failed to transmit the response when
 	 the client decided not to send "100 CONTINUE" during
