@@ -1,3 +1,9 @@
+Sun Aug 24 13:05:41 MDT 2008
+	 Now handling clients returning 0 from response callback
+	 as specified in the documentation (abort if internal
+	 select is used, retry immediately if a thread per 
+	 connection is used). -CG
+
 Sun Aug 24 12:44:43 MDT 2008
 	 Added missing reason phrase. -SG
 

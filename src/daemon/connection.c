@@ -330,6 +330,9 @@ try_ready_normal_body (struct MHD_Connection *connection)
                        MHD_MIN (response->data_buffer_size,
                                 response->total_size -
                                 connection->response_write_position));
+  if ( (ret == 0) &&
+       (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)) )
+    abort(); /* serious client API violation */
   if (ret == -1)
     {
       /* either error or http 1.0 transfer, close
@@ -1715,6 +1718,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (connection->socket_fd != -1)
             connection_close_error (connection);
           return MHD_NO;
+        case MHD_TLS_CONNECTION_INIT:
+	case MHD_TLS_HELLO_REQUEST:
+	case MHD_TLS_HANDSHAKE_FAILED:
+	case MHD_TLS_HANDSHAKE_COMPLETE:
+	  EXTRA_CHECK(0);
+	  break;
         }
       break;
     }

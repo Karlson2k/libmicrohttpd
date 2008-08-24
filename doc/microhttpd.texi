@@ -507,10 +507,11 @@ number of bytes that has been placed into @var{buf} should be returned.
 
 Note that returning zero will cause @mhd{} to try again, either
 ``immediately'' if in multi-threaded mode (in which case the callback
-may want to do blocking operations) or in the next round if MHD_run is
-used.  Returning zero for a daemon that runs in internal
-@cfunction{select} mode is an error (since it would result in busy
-waiting) and will cause the program to be aborted (@cfunction{abort}).
+may want to do blocking operations to avoid busy waiting) or in the
+next round if @code{MHD_run} is used.  Returning zero for a daemon
+that runs in internal @cfunction{select} mode is an error (since it
+would result in busy waiting) and cause the program to be aborted
+(@cfunction{abort}).
 
 @table @var
 @item cls

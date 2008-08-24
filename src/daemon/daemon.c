@@ -251,6 +251,9 @@ MHD_handle_connection (void *data)
         tv.tv_sec = timeout - (now - con->last_activity);
       else
         tv.tv_sec = 0;
+      if ( (con->state == MHD_CONNECTION_NORMAL_BODY_UNREADY) ||
+	   (con->state == MHD_CONNECTION_CHUNKED_BODY_UNREADY) )
+	timeout = 1; /* do not block */	
       num_ready = SELECT (max + 1,
                           &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
       if (num_ready < 0)
