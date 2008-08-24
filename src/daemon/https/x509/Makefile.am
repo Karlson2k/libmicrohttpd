@@ -16,7 +16,6 @@ libx509_la_SOURCES = \
 common.c \
 crq.c \
 crl.c \
-crl_write.c \
 dn.c \
 dsa.c \
 extensions.c \
