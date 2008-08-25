@@ -344,7 +344,8 @@ parse_pkcs7_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts, const
       gnutls_assert ();
       return ret;
     }
-
+  tmp.data = (opaque * ) input_cert;
+  tmp.size = input_cert_size;
   if (flags & CERT_PEM)
     ret = gnutls_pkcs7_import (pkcs7, &tmp, GNUTLS_X509_FMT_PEM);
   else
