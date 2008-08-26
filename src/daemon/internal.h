@@ -269,7 +269,6 @@ enum MHD_CONNECTION_STATE
      */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
 
-#if HTTPS_SUPPORT
   /*
    *  SSL/TLS connection states
    */
@@ -294,7 +293,6 @@ enum MHD_CONNECTION_STATE
 
   MHD_TLS_HANDSHAKE_COMPLETE,
 
-#endif
 };
 
 /**
