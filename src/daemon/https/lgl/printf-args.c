@@ -21,7 +21,7 @@
      STATIC             Set to 'static' to declare the function static.  */
 
 #ifndef PRINTF_FETCHARGS
-# include <config.h>
+#include "MHD_config.h"
 #endif
 
 /* Specification.  */

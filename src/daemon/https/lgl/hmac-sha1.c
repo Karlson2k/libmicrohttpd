@@ -17,7 +17,7 @@
 
 /* Written by Simon Josefsson.  */
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include "hmac.h"
 

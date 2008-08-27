@@ -18,7 +18,7 @@
 /* Written by Simon Josefsson.  The comments in this file are taken
    from RFC 2898.  */
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include "gc.h"
 

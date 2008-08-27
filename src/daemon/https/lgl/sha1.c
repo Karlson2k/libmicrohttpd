@@ -23,7 +23,7 @@
       Robert Klep <robert@ilse.nl>  -- Expansion function fix
 */
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include "sha1.h"
 

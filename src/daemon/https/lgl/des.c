@@ -94,7 +94,7 @@
  */
 
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include "des.h"
 

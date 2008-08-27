@@ -25,7 +25,7 @@
  * http://www.iaik.tu-graz.ac.at/research/krypto/AES/old/~rijmen/rijndael/rijndael-fst-3.0.zip
  */
 
-#include <config.h>
+#include "MHD_config.h"
 
 /**
  * rijndael-api-fst.c

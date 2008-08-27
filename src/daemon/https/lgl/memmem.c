@@ -16,7 +16,7 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #ifndef _LIBC
-# include <config.h>
+#include "MHD_config.h"
 #endif
 
 #include <stddef.h>

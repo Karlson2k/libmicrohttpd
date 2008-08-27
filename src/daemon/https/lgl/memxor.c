@@ -18,7 +18,7 @@
 /* Written by Simon Josefsson.  The interface was inspired by memxor
    in Niels Möller's Nettle. */
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include "memxor.h"
 

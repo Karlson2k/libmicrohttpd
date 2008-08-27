@@ -24,6 +24,7 @@
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
+#include "platform.h"
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
@@ -411,8 +412,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
+#if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
+#endif
 #endif
   have = 0;
   if ((daemon->per_ip_connection_limit != 0) && (daemon->max_connections > 0))

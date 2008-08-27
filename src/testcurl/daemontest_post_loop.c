@@ -24,7 +24,7 @@
  * @author Christian Grothoff (inspired by bug report #1296)
  */
 
-#include "config.h"
+#include "MHD_config.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>

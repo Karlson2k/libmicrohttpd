@@ -29,7 +29,7 @@
      ENABLE_UNISTDIO    Set to 1 to enable the unistdio extensions.  */
 
 #ifndef PRINTF_PARSE
-# include <config.h>
+#include "MHD_config.h"
 #endif
 
 /* Specification.  */

@@ -24,7 +24,7 @@
  * @author Sagie Amir
  */
 
-#include "config.h"
+#include "MHD_config.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>

@@ -18,7 +18,7 @@
 
 /* Written by Paul Eggert.  */
 
-#include <config.h>
+#include "MHD_config.h"
 
 #include <time.h>
 

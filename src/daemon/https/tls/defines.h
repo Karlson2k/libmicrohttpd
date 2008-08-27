@@ -26,7 +26,7 @@
 # define DEFINES_H
 
 #if HAVE_CONFIG_H
-# include <config.h>
+# include "MHD_config.h"
 #endif
 
 #include <stddef.h>

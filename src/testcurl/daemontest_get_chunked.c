@@ -28,7 +28,7 @@
  * @author Christian Grothoff
  */
 
-#include "config.h"
+#include "MHD_config.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>

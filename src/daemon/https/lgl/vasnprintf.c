@@ -52,7 +52,7 @@
 #endif
 
 #ifndef VASNPRINTF
-# include <config.h>
+#include "MHD_config.h"
 #endif
 #ifndef IN_LIBINTL
 # include <alloca.h>

@@ -34,7 +34,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include "config.h"
+#include "MHD_config.h"
 
 #define _XOPEN_SOURCE_EXTENDED  1
 #define _OPEN_THREADS

@@ -20,7 +20,7 @@
 
 /* Note: This file is only built if GC uses internal functions. */
 
-#include <config.h>
+#include "MHD_config.h"
 
 /* Get prototype. */
 #include "gc.h"
