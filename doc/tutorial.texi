@@ -45,32 +45,32 @@ Free Documentation License".
 
 @node Introduction
 @chapter Introduction
-@include introduction.inc
+@include chapters/introduction.inc
 
 @node Hello browser example
 @chapter Hello browser example
-@include hellobrowser.inc
+@include chapters/hellobrowser.inc
 
 @node Exploring requests
 @chapter Exploring requests
-@include exploringrequests.inc
+@include chapters/exploringrequests.inc
 
 @node Response headers
 @chapter Response headers
-@include responseheaders.inc
+@include chapters/responseheaders.inc
 
 @node Supporting basic authentication
 @chapter Supporting basic authentication
-@include basicauthentication.inc
+@include chapters/basicauthentication.inc
 
 @node Processing POST data
 @chapter Processing POST data
-@include processingpost.inc
+@include chapters/processingpost.inc
 
 
 @node Bibliography
 @appendix Bibliography
-@include bibliography.inc
+@include chapters/bibliography.inc
 
 @node License text
 @appendix GNU Free Documentation License
