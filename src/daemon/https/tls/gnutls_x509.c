@@ -249,8 +249,8 @@ _gnutls_check_key_cert_match (mhd_gtls_cert_credentials_t res)
 }
 
 /* Reads a DER encoded certificate list from memory and stores it to
- * a gnutls_cert structure. This is only called if PKCS7 read fails.
- * returns the number of certificates parsed (1)
+ * a gnutls_cert structure.
+ * Returns the number of certificates parsed.
  */
 static int
 parse_crt_mem (gnutls_cert ** cert_list, unsigned *ncerts,
@@ -284,8 +284,8 @@ parse_crt_mem (gnutls_cert ** cert_list, unsigned *ncerts,
 }
 
 /* Reads a DER encoded certificate list from memory and stores it to
- * a gnutls_cert structure. This is only called if PKCS7 read fails.
- * returns the number of certificates parsed (1)
+ * a gnutls_cert structure. 
+ * Returns the number of certificates parsed.
  */
 static int
 parse_der_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts,
@@ -319,134 +319,6 @@ parse_der_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts,
   return ret;
 }
 
-#define CERT_PEM 1
-
-
-/* Reads a PKCS7 base64 encoded certificate list from memory and stores it to
- * a gnutls_cert structure.
- * returns the number of certificate parsed
- */
-static int
-parse_pkcs7_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts, const
-                      void *input_cert, int input_cert_size, int flags)
-{
-#ifdef ENABLE_PKI
-  int i, j, count;
-  gnutls_datum_t tmp, tmp2;
-  int ret;
-  opaque *pcert = NULL;
-  size_t pcert_size;
-  gnutls_pkcs7_t pkcs7;
-
-  ret = gnutls_pkcs7_init (&pkcs7);
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
-  tmp.data = (opaque * ) input_cert;
-  tmp.size = input_cert_size;
-  if (flags & CERT_PEM)
-    ret = gnutls_pkcs7_import (pkcs7, &tmp, GNUTLS_X509_FMT_PEM);
-  else
-    ret = gnutls_pkcs7_import (pkcs7, &tmp, GNUTLS_X509_FMT_DER);
-  if (ret < 0)
-    {
-      /* if we failed to read the structure,
-       * then just try to decode a plain DER
-       * certificate.
-       */
-      gnutls_assert ();
-      gnutls_pkcs7_deinit (pkcs7);
-#endif
-      return parse_der_cert_mem (cert_list, ncerts,
-                                 input_cert, input_cert_size);
-#ifdef ENABLE_PKI
-    }
-
-  i = *ncerts + 1;
-
-  /* tmp now contains the decoded certificate list */
-  tmp.data = (opaque *) input_cert;
-  tmp.size = input_cert_size;
-
-  ret = gnutls_pkcs7_get_crt_count (pkcs7);
-
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      gnutls_pkcs7_deinit (pkcs7);
-      return ret;
-    }
-  count = ret;
-
-  j = count - 1;
-  do
-    {
-      pcert_size = 0;
-      ret = gnutls_pkcs7_get_crt_raw (pkcs7, j, NULL, &pcert_size);
-      if (ret != GNUTLS_E_MEMORY_ERROR)
-        {
-          count--;
-          continue;
-        }
-
-      pcert = gnutls_malloc (pcert_size);
-      if (ret == GNUTLS_E_MEMORY_ERROR)
-        {
-          gnutls_assert ();
-          count--;
-          continue;
-        }
-
-      /* read the certificate
-       */
-      ret = gnutls_pkcs7_get_crt_raw (pkcs7, j, pcert, &pcert_size);
-
-      j--;
-
-      if (ret >= 0)
-        {
-          *cert_list =
-            (gnutls_cert *) mhd_gtls_realloc_fast (*cert_list,
-                                                   i * sizeof (gnutls_cert));
-
-          if (*cert_list == NULL)
-            {
-              gnutls_assert ();
-              gnutls_free (pcert);
-              return GNUTLS_E_MEMORY_ERROR;
-            }
-
-          tmp2.data = pcert;
-          tmp2.size = pcert_size;
-
-          ret =
-            mhd_gtls_x509_raw_cert_to_gcert (&cert_list[0][i - 1], &tmp2, 0);
-
-          if (ret < 0)
-            {
-              gnutls_assert ();
-              gnutls_pkcs7_deinit (pkcs7);
-              gnutls_free (pcert);
-              return ret;
-            }
-
-          i++;
-        }
-
-      gnutls_free (pcert);
-
-    }
-  while (ret >= 0 && j >= 0);
-
-  *ncerts = i - 1;
-
-  gnutls_pkcs7_deinit (pkcs7);
-  return count;
-#endif
-}
-
 /* Reads a base64 encoded certificate list from memory and stores it to
  * a gnutls_cert structure. Returns the number of certificate parsed.
  */
@@ -459,18 +331,6 @@ parse_pem_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts,
   opaque *ptr2;
   gnutls_datum_t tmp;
   int ret, count;
-
-#ifdef ENABLE_PKI
-  if ((ptr = memmem (input_cert, input_cert_size,
-                     PEM_PKCS7_SEP, sizeof (PEM_PKCS7_SEP) - 1)) != NULL)
-    {
-      size = strlen (ptr);
-
-      ret = parse_pkcs7_cert_mem (cert_list, ncerts, ptr, size, CERT_PEM);
-
-      return ret;
-    }
-#endif
 
   /* move to the certificate
    */
@@ -493,7 +353,7 @@ parse_pem_cert_mem (gnutls_cert ** cert_list, unsigned *ncerts,
   do
     {
 
-      siz2 = _gnutls_fbase64_decode (NULL, ptr, size, &ptr2);
+      siz2 = _gnutls_fbase64_decode (NULL, (const unsigned char*) ptr, size, &ptr2);
 
       if (siz2 < 0)
         {
@@ -590,9 +450,9 @@ read_cert_mem (mhd_gtls_cert_credentials_t res, const void *cert,
   res->cert_list_length[res->ncerts] = 0;
 
   if (type == GNUTLS_X509_FMT_DER)
-    ret = parse_pkcs7_cert_mem (&res->cert_list[res->ncerts],
+    ret = parse_der_cert_mem (&res->cert_list[res->ncerts],
                                 &res->cert_list_length[res->ncerts],
-                                cert, cert_size, 0);
+			      cert, cert_size);
   else
     ret =
       parse_pem_cert_mem (&res->cert_list[res->ncerts],
@@ -672,11 +532,13 @@ _gnutls_x509_raw_privkey_to_gkey (gnutls_privkey * privkey,
 
   ret = gnutls_x509_privkey_import (tmpkey, raw_key, type);
 
+#ifdef ENABLE_PKI
   /* If normal key decoding doesn't work try decoding a plain PKCS #8 key */
   if (ret < 0)
     ret =
       gnutls_x509_privkey_import_pkcs8 (tmpkey, raw_key, type, NULL,
                                         GNUTLS_PKCS_PLAIN);
+#endif
 
   if (ret < 0)
     {
@@ -1088,7 +950,7 @@ parse_pem_ca_mem (gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
             ptr3 = memmem (ptr, size,
                            PEM_CERT_SEP2, sizeof (PEM_CERT_SEP2) - 1);
 
-          ptr = ptr3;
+          ptr = (const opaque *) ptr3;
           size = input_cert_size - (ptr - input_cert);
         }
       else
@@ -1106,8 +968,8 @@ parse_pem_ca_mem (gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
 }
 
 /* Reads a DER encoded certificate list from memory and stores it to
- * a gnutls_cert structure. This is only called if PKCS7 read fails.
- * returns the number of certificates parsed (1)
+ * a gnutls_cert structure.
+ * returns the number of certificates parsed.
  */
 static int
 parse_der_ca_mem (gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
@@ -1218,7 +1080,7 @@ MHD_gnutls_certificate_set_x509_trust_file (mhd_gtls_cert_credentials_t
 {
   int ret, ret2;
   size_t size;
-  char *data = read_binary_file (cafile, &size);
+  unsigned char *data = (unsigned char*) read_binary_file (cafile, &size);
 
   if (data == NULL)
     {
@@ -1292,8 +1154,8 @@ parse_pem_crl_mem (gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
           gnutls_assert ();
           return ret;
         }
-
-      tmp.data = (char *) ptr;
+      
+      tmp.data = (unsigned char *) ptr;
       tmp.size = size;
 
       ret =
@@ -1329,8 +1191,8 @@ parse_pem_crl_mem (gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
 }
 
 /* Reads a DER encoded certificate list from memory and stores it to
- * a gnutls_cert structure. This is only called if PKCS7 read fails.
- * returns the number of certificates parsed (1)
+ * a gnutls_cert structure.
+ * returns the number of certificates parsed.
  */
 static int
 parse_der_crl_mem (gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
@@ -1461,7 +1323,7 @@ MHD_gnutls_certificate_set_x509_crl_file (mhd_gtls_cert_credentials_t
 {
   int ret;
   size_t size;
-  char *data = read_binary_file (crlfile, &size);
+  unsigned char *data = (unsigned char*) read_binary_file (crlfile, &size);
 
   if (data == NULL)
     {
@@ -1488,281 +1350,6 @@ MHD_gnutls_certificate_set_x509_crl_file (mhd_gtls_cert_credentials_t
 }
 
 #include <pkcs12.h>
-
-static int
-parse_pkcs12 (mhd_gtls_cert_credentials_t res,
-              gnutls_pkcs12_t p12,
-              const char *password,
-              gnutls_x509_privkey_t * key,
-              gnutls_x509_crt_t * cert, gnutls_x509_crl_t * crl)
-{
-  gnutls_pkcs12_bag_t bag = NULL;
-  int index = 0;
-  int ret;
-
-  for (;;)
-    {
-      int elements_in_bag;
-      int i;
-
-      ret = gnutls_pkcs12_bag_init (&bag);
-      if (ret < 0)
-        {
-          bag = NULL;
-          gnutls_assert ();
-          goto done;
-        }
-
-      ret = gnutls_pkcs12_get_bag (p12, index, bag);
-      if (ret == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE)
-        break;
-      if (ret < 0)
-        {
-          gnutls_assert ();
-          goto done;
-        }
-
-      ret = gnutls_pkcs12_bag_get_type (bag, 0);
-      if (ret < 0)
-        {
-          gnutls_assert ();
-          goto done;
-        }
-
-      if (ret == GNUTLS_BAG_ENCRYPTED)
-        {
-          ret = gnutls_pkcs12_bag_decrypt (bag, password);
-          if (ret < 0)
-            {
-              gnutls_assert ();
-              goto done;
-            }
-        }
-
-      elements_in_bag = gnutls_pkcs12_bag_get_count (bag);
-      if (elements_in_bag < 0)
-        {
-          gnutls_assert ();
-          goto done;
-        }
-
-      for (i = 0; i < elements_in_bag; i++)
-        {
-          int type;
-          gnutls_datum_t data;
-
-          type = gnutls_pkcs12_bag_get_type (bag, i);
-          if (type < 0)
-            {
-              gnutls_assert ();
-              goto done;
-            }
-
-          ret = gnutls_pkcs12_bag_get_data (bag, i, &data);
-          if (ret < 0)
-            {
-              gnutls_assert ();
-              goto done;
-            }
-
-          switch (type)
-            {
-            case GNUTLS_BAG_PKCS8_ENCRYPTED_KEY:
-            case GNUTLS_BAG_PKCS8_KEY:
-              ret = gnutls_x509_privkey_init (key);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-
-              ret = gnutls_x509_privkey_import_pkcs8
-                (*key, &data, GNUTLS_X509_FMT_DER, password,
-                 type == GNUTLS_BAG_PKCS8_KEY ? GNUTLS_PKCS_PLAIN : 0);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-              break;
-
-            case GNUTLS_BAG_CERTIFICATE:
-              ret = gnutls_x509_crt_init (cert);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-
-              ret =
-                gnutls_x509_crt_import (*cert, &data, GNUTLS_X509_FMT_DER);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-              break;
-
-            case GNUTLS_BAG_CRL:
-              ret = gnutls_x509_crl_init (crl);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-
-              ret = gnutls_x509_crl_import (*crl, &data, GNUTLS_X509_FMT_DER);
-              if (ret < 0)
-                {
-                  gnutls_assert ();
-                  goto done;
-                }
-              break;
-
-            case GNUTLS_BAG_ENCRYPTED:
-              /* XXX Bother to recurse one level down?  Unlikely to
-                 use the same password anyway. */
-            case GNUTLS_BAG_EMPTY:
-            default:
-              break;
-            }
-        }
-
-      index++;
-      gnutls_pkcs12_bag_deinit (bag);
-    }
-
-  ret = 0;
-
-done:
-  if (bag)
-    gnutls_pkcs12_bag_deinit (bag);
-
-  return ret;
-}
-
-/**
- * gnutls_certificate_set_x509_simple_pkcs12_file:
- * @res: is an #mhd_gtls_cert_credentials_t structure.
- * @pkcs12file: filename of file containing PKCS#12 blob.
- * @type: is PEM or DER of the @pkcs12file.
- * @password: optional password used to decrypt PKCS#12 file, bags and keys.
- *
- * This function sets a certificate/private key pair and/or a CRL in
- * the mhd_gtls_cert_credentials_t structure.  This function may
- * be called more than once (in case multiple keys/certificates exist
- * for the server).
- *
- * MAC:ed PKCS#12 files are supported.  Encrypted PKCS#12 bags are
- * supported.  Encrypted PKCS#8 private keys are supported.  However,
- * only password based security, and the same password for all
- * operations, are supported.
- *
- * The private keys may be RSA PKCS#1 or DSA private keys encoded in
- * the OpenSSL way.
- *
- * PKCS#12 file may contain many keys and/or certificates, and there
- * is no way to identify which key/certificate pair you want.  You
- * should make sure the PKCS#12 file only contain one key/certificate
- * pair and/or one CRL.
- *
- * It is believed that the limitations of this function is acceptable
- * for most usage, and that any more flexibility would introduce
- * complexity that would make it harder to use this functionality at
- * all.
- *
- * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
- **/
-//int
-//  gnutls_certificate_set_x509_simple_pkcs12_file
-//  (mhd_gtls_cert_credentials_t res, const char *pkcs12file,
-//   gnutls_x509_crt_fmt_t type, const char *password)
-//{
-//  gnutls_pkcs12_t p12;
-//  gnutls_datum_t p12blob;
-//  gnutls_x509_privkey_t key = NULL;
-//  gnutls_x509_crt_t cert = NULL;
-//  gnutls_x509_crl_t crl = NULL;
-//  int ret;
-//  size_t size;
-//
-//  ret = gnutls_pkcs12_init (&p12);
-//  if (ret < 0)
-//    {
-//      gnutls_assert ();
-//      return ret;
-//    }
-//
-//  p12blob.data = read_binary_file (pkcs12file, &size);
-//  p12blob.size = (unsigned int) size;
-//  if (p12blob.data == NULL)
-//    {
-//      gnutls_assert ();
-//      gnutls_pkcs12_deinit (p12);
-//      return GNUTLS_E_FILE_ERROR;
-//    }
-//
-//  ret = gnutls_pkcs12_import (p12, &p12blob, type, 0);
-//  free (p12blob.data);
-//  if (ret < 0)
-//    {
-//      gnutls_assert ();
-//      gnutls_pkcs12_deinit (p12);
-//      return ret;
-//    }
-//
-//  if (password)
-//    {
-//      ret = gnutls_pkcs12_verify_mac (p12, password);
-//      if (ret < 0)
-//        {
-//          gnutls_assert ();
-//          gnutls_pkcs12_deinit (p12);
-//          return ret;
-//        }
-//    }
-//
-//  ret = parse_pkcs12 (res, p12, password, &key, &cert, &crl);
-//  gnutls_pkcs12_deinit (p12);
-//  if (ret < 0)
-//    {
-//      gnutls_assert ();
-//      return ret;
-//    }
-//
-//  if (key && cert)
-//    {
-//      ret = gnutls_certificate_set_x509_key (res, &cert, 1, key);
-//      if (ret < 0)
-//        {
-//          gnutls_assert ();
-//          goto done;
-//        }
-//    }
-//
-//  if (crl)
-//    {
-//      ret = gnutls_certificate_set_x509_crl (res, &crl, 1);
-//      if (ret < 0)
-//        {
-//          gnutls_assert ();
-//          goto done;
-//        }
-//    }
-//
-//  ret = 0;
-//
-//done:
-//  if (cert)
-//    gnutls_x509_crt_deinit (cert);
-//  if (key)
-//    gnutls_x509_privkey_deinit (key);
-//  if (crl)
-//    gnutls_x509_crl_deinit (crl);
-//
-//  return ret;
-//}
-
 
 /**
   * MHD_gnutls_certificate_free_crls - Used to free all the CRLs from a mhd_gtls_cert_credentials_t structure

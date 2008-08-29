@@ -94,14 +94,6 @@ MHD_gtls_global_set_log_level (int level)
   _gnutls_log_level = level;
 }
 
-extern gnutls_alloc_function gnutls_secure_malloc;
-extern gnutls_alloc_function gnutls_malloc;
-extern gnutls_free_function gnutls_free;
-extern int (*_gnutls_is_secure_memory) (const void *);
-extern gnutls_realloc_function gnutls_realloc;
-extern char *(*gnutls_strdup) (const char *);
-extern void *(*gnutls_calloc) (size_t, size_t);
-
 int _gnutls_is_secure_mem_null (const void *);
 
 /**

@@ -759,13 +759,12 @@ _gnutls_x509_encode_and_write_attribute (const char *given_oid,
 }
 
 /* This will write the AttributeTypeAndValue field. The data must be already DER encoded.
- * 'multi' must be zero if writing an AttributeTypeAndValue, and 1 if Attribute.
  * In all cases only one value is written.
  */
-int
+static int
 _gnutls_x509_write_attribute (const char *given_oid,
                               ASN1_TYPE asn1_struct, const char *where,
-                              const void *_data, int sizeof_data, int multi)
+                              const void *_data, int sizeof_data)
 {
   char tmp[128];
   int result;
@@ -775,21 +774,6 @@ _gnutls_x509_write_attribute (const char *given_oid,
 
   mhd_gtls_str_cpy (tmp, sizeof (tmp), where);
   mhd_gtls_str_cat (tmp, sizeof (tmp), ".value");
-
-  if (multi != 0)
-    {                           /* if not writing an AttributeTypeAndValue, but an Attribute */
-      mhd_gtls_str_cat (tmp, sizeof (tmp), "s");        /* values */
-
-      result = asn1_write_value (asn1_struct, tmp, "NEW", 1);
-      if (result != ASN1_SUCCESS)
-        {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
-        }
-
-      mhd_gtls_str_cat (tmp, sizeof (tmp), ".?LAST");
-
-    }
 
   result = asn1_write_value (asn1_struct, tmp, _data, sizeof_data);
   if (result < 0)
@@ -938,7 +922,7 @@ _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
     {
       result =
         _gnutls_x509_write_attribute (given_oid, asn1_struct,
-                                      tmp, name, sizeof_name, 0);
+                                      tmp, name, sizeof_name);
     }
 
   if (result < 0)
