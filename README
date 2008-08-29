@@ -35,6 +35,9 @@ sockets.  This should work on OS X, Linux and recent BSD systems (at
 least).  On other systems that may trigger a SIGPIPE on send/recv, the
 main application should install a signal handler to handle SIGPIPE.
 
+libmicrohttpd should work well on GNU/Linux, BSD, OS X and W32.
+We also have reports of users using it on vxWorks and z/OS.
+
 
 Development Status
 ==================
@@ -51,7 +54,6 @@ Missing features:
 - SSL support:
   * documentation
   * more testing
-  * remove GPL'ed code
 
 
 Untested features:
@@ -74,6 +76,3 @@ Missing documentation:
   * clean up English
   * make sure everything is accurate
   * change example code to follow GNU coding conventions
-
-
-
