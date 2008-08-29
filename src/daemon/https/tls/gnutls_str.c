@@ -236,11 +236,17 @@ mhd_gtls_string_append_printf (mhd_gtls_string * dest, const char *fmt, ...)
   char *str;
 
   va_start (args, fmt);
-  len = vasprintf (&str, fmt, args);
+  len = vsnprintf (NULL, 0, fmt, args);
   va_end (args);
-
-  if (len < 0 || !str)
+  if (len < 0)
     return -1;
+  str = malloc(len + 1);
+  if (! str)
+    return -1;
+
+  va_start (args, fmt);
+  len = vsprintf (str, fmt, args);
+  va_end (args);
 
   len = mhd_gtls_string_append_str (dest, str);
 
