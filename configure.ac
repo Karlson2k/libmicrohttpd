@@ -261,7 +261,7 @@ AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
 AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
 AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 AC_DEFINE([ENABLE_ANON],[1],[Enable anonymous authentication])
-AC_DEFINE([ENABLE_PKI],[1],[Include PKI support])
+AC_DEFINE([ENABLE_PKI],[0],[Include PKI support])
 AC_DEFINE([ENABLE_INCLUDED_OPENCDK],[1],[Include ENABLE_INCLUDED_OPENCDK support])
 # gnutls debug support
 AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
