@@ -23,9 +23,8 @@ hmac-md5.c \
 hmac-sha1.c \
 realloc.c \
 memxor.c \
-printf-args.c \
+memmem.c \
 strverscmp.c \
 md5.c \
-printf-parse.c \
 des.c 
   
