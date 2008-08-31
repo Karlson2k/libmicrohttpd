@@ -38,6 +38,7 @@ Free Documentation License".
 * Response headers::
 * Supporting basic authentication::
 * Processing POST data::
+* Improved processing of POST data::
 * Bibliography::
 * License text::
 * Example programs::
@@ -67,6 +68,9 @@ Free Documentation License".
 @chapter Processing POST data
 @include chapters/processingpost.inc
 
+@node Improved processing of POST data 
+@chapter Improved processing of POST data 
+@include chapters/largerpost.inc
 
 @node Bibliography
 @appendix Bibliography
@@ -84,6 +88,7 @@ Free Documentation License".
 * responseheaders.c::
 * basicauthentication.c::
 * simplepost.c::
+* largepost.c::
 @end menu
 
 @node hellobrowser.c
@@ -115,5 +120,12 @@ Free Documentation License".
 @smalldisplay
 @verbatiminclude examples/simplepost.c
 @end smalldisplay
+
+@node largepost.c
+@section largepost.c
+@smalldisplay
+@verbatiminclude examples/largepost.c
+@end smalldisplay
+
 
 @bye
