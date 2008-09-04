@@ -1,7 +1,7 @@
 --- NOTE: This does not work flawlessly with the beta release because there is
 a bug preventing early busy messages from being sent ---
 
-The previous chapter introduced a way to upload data to the server but the developed example program 
+The previous chapter introduced a way to upload data to the server, but the developed example program 
 has some shortcomings, such as not being able to handle larger chunks of data. In this chapter, we
 are going to discuss a more advanced server program that allows clients to upload a file in order to 
 have it stored on the server's filesystem. The server shall also watch and limit the number of
@@ -11,24 +11,24 @@ clients concurrently uploading, responding with a proper busy message if necessa
 @heading Prepared answers
 We choose to operate the server with the @code{SELECT_INTERNALLY} method. This makes it easier to 
 synchronize the global states at the cost of possible delays for other connections if the processing
-of a request is to slow. A variable that needs to be shared for all connections is the total number
-of clients which are uploading.
+of a request is too slow. One of these variables that needs to be shared for all connections is the
+total number of clients that are uploading.
 
 @verbatim
 #define MAXCLIENTS      2
-static unsigned char  nr_of_uploading_clients = 0;
+static unsigned char    nr_of_uploading_clients = 0;
 @end verbatim
 @noindent
 
 If there are too many clients uploading, we want the server to respond to all requests with a busy
-message
+message.
 @verbatim
 const char* busypage = "<html><body>This server is busy, please try again later.</body></html>";
 @end verbatim
 @noindent
 
-Otherwise, the server will send a form that informs the user of the current number of uploading clients,   
-and ask her to pick a file on her local filesystem for uploading. 
+Otherwise, the server will send a @emph{form} that informs the user of the current number of uploading clients,   
+and ask her to pick a file on her local filesystem which is to be uploaded. 
 @verbatim
 const char* askpage = "<html><body>\n\
                        Upload a file, please!<br>\n\
@@ -54,9 +54,9 @@ const char* fileexistspage = "<html><body>This file already exists.</body></html
 @end verbatim
 @noindent
 
-It would be tolerable to send all these responses undifferentiated with an @code{200 HTTP_OK} 
-status code, but in order to improve the @code{HTTP} conformance of our server a bit, we extend the 
-@code{send_page} function so that it allows to chose individual status codes. 
+It would be tolerable to send all these responses undifferentiated with a @code{200 HTTP_OK} 
+status code but in order to improve the @code{HTTP} conformance of our server a bit, we extend the 
+@code{send_page} function so that it accepts individual status codes. 
 
 @verbatim
 int send_page (struct MHD_Connection *connection, const char* page, int status_code)
@@ -84,7 +84,7 @@ become clear later.
 The decision whether the server is busy or not is made right at the beginning of the connection. To 
 do that at this stage is especially important for @emph{POST} requests because if no response is 
 queued at this point, and @code{MHD_YES} returned, @emph{MHD} will not sent any queued messages until
-a postprocessor has been created and the post iterator was called at least once.
+a postprocessor has been created and the post iterator is called at least once.
 
 @verbatim
 int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
@@ -101,7 +101,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection, const ch
 @noindent
 
 If the server is not busy, the @code{connection_info} structure is initialized as usual, with 
-an additional filepointer for each connection. 
+the addition of a filepointer for each connection.
 
 @verbatim
       con_info = malloc (sizeof (struct connection_info_struct));
@@ -150,8 +150,8 @@ the structure is initialized to "no error".
 @noindent
 
 If the connection handler is called for the second time, @emph{GET} requests will be answered with
-the form. We can keep the buffer under function scope because we have asked @emph{MHD} to make its
-own copy of it for as long as it needs one.
+the @emph{form}. We can keep the buffer under function scope, because we asked @emph{MHD} to make its
+own copy of it for as long as it is needed.
 @verbatim
   if (0 == strcmp (method, "GET")) 
     {
@@ -191,8 +191,8 @@ constituted no expected request method.
 
 
 @heading Storing to data
-Unlike the @code{simplepost.c} example, it is to be expected that post iterator will be called
-several times now. This means that for any given connection, there might be several concurrent of them,
+Unlike the @code{simplepost.c} example, here it is to be expected that post iterator will be called
+several times now. This means that for any given connection (there might be several concurrent of them)
 the posted data has to be written to the correct file. That is why we store a file handle in every
 @code{connection_info}, so that the it is preserved between successive iterations.
 @verbatim
@@ -213,7 +213,7 @@ con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
 @end verbatim
 @noindent
 
-In the "askpage" form, we told the client to label its post data with the "file" key. Anything else
+In the "askpage" @emph{form}, we told the client to label its post data with the "file" key. Anything else
 would be an error.
 
 @verbatim
@@ -253,7 +253,7 @@ if (size > 0)
 @end verbatim
 @noindent
 
-If this point has been reached, everything worked flawless for this iteration and the response can
+If this point has been reached, everything worked well for this iteration and the response can
 be set to success again. If the upload has finished, this iterator function will not be called again.
 @verbatim
   con_info->answerstring = completepage;
@@ -299,4 +299,4 @@ This is essentially the whole example @code{largepost.c}.
 @heading Remarks
 Now that the clients are able to create files on the server, security aspects are becoming even more
 important than before. Aside from proper client authentication, the server should always make sure
-explicitly that no files will be written outside a dedicated upload directory.
+explicitly that no files will be created outside of a dedicated upload directory.
