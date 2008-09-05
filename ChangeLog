@@ -1,3 +1,9 @@
+Thu Sep  4 23:37:18 MDT 2008
+	 Fixed some boundary issues with processing
+	 chunked requests; removed memmove from a 
+	 number of spots, in favor of using an index into 
+	 the current buffer instead. -GS
+
 Sun Aug 24 13:05:41 MDT 2008
 	 Now handling clients returning 0 from response callback
 	 as specified in the documentation (abort if internal

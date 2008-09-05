@@ -1065,27 +1065,30 @@ call_connection_handler (struct MHD_Connection *connection)
   int instant_retry;
   unsigned int i;
   int malformed;
+  char * buffer_head;
 
   if (connection->response != NULL)
     return;                     /* already queued a response */
+
+  buffer_head = connection->read_buffer;
+  available = connection->read_buffer_offset;
   do
     {
       instant_retry = MHD_NO;
-      available = connection->read_buffer_offset;
       if ((connection->have_chunked_upload == MHD_YES) &&
           (connection->remaining_upload_size == -1))
         {
-          if ((connection->current_chunk_offset ==
-               connection->current_chunk_size)
-              && (connection->current_chunk_offset != 0) && (available >= 2))
+          if ((connection->current_chunk_offset == connection->current_chunk_size) && 
+	      (connection->current_chunk_offset != 0) && 
+	      (available >= 2))
             {
               /* skip new line at the *end* of a chunk */
               i = 0;
-              if ((connection->read_buffer[i] == '\r') ||
-                  (connection->read_buffer[i] == '\n'))
+              if ((buffer_head[i] == '\r') ||
+                  (buffer_head[i] == '\n'))
                 i++;            /* skip 1st part of line feed */
-              if ((connection->read_buffer[i] == '\r') ||
-                  (connection->read_buffer[i] == '\n'))
+              if ((buffer_head[i] == '\r') ||
+                  (buffer_head[i] == '\n'))
                 i++;            /* skip 2nd part of line feed */
               if (i == 0)
                 {
@@ -1097,10 +1100,8 @@ call_connection_handler (struct MHD_Connection *connection)
                   connection_close_error (connection);
                   return;
                 }
-              connection->read_buffer_offset -= i;
               available -= i;
-              memmove (connection->read_buffer,
-                       &connection->read_buffer[i], available);
+	      buffer_head += i;
               connection->current_chunk_offset = 0;
               connection->current_chunk_size = 0;
             }
@@ -1115,8 +1116,7 @@ call_connection_handler (struct MHD_Connection *connection)
                 connection->current_chunk_offset;
               if (processed > available)
                 processed = available;
-              available -= processed;
-              if (available > 0)
+              if (available > processed)
                 instant_retry = MHD_YES;
             }
           else
@@ -1125,25 +1125,31 @@ call_connection_handler (struct MHD_Connection *connection)
               i = 0;
               while (i < available)
                 {
-                  if ((connection->read_buffer[i] == '\r') ||
-                      (connection->read_buffer[i] == '\n'))
+                  if ((buffer_head[i] == '\r') ||
+                      (buffer_head[i] == '\n'))
                     break;
                   i++;
                   if (i >= 6)
                     break;
                 }
-              if (i >= available)
-                return;         /* need more data... */
+	      /* take '\n' into account; if '\n'
+		 is the unavailable character, we
+		 will need to wait until we have it 
+		 before going further */
+              if ( (i+1 >= available) &&
+		   ! ( (i == 1) &&
+		       (available == 2) &&
+		       (buffer_head[0] == '0') ) )		
+                break;         /* need more data... */
               malformed = (i >= 6);
               if (!malformed)
                 {
-                  connection->read_buffer[i] = '\0';
-                  malformed = (1 != sscanf (connection->read_buffer,
-                                            "%X",
-                                            &connection->current_chunk_size))
-                    && (1 !=
-                        sscanf (connection->read_buffer, "%x",
-                                &connection->current_chunk_size));
+                  buffer_head[i] = '\0';
+                  malformed =
+		    (1 != sscanf (buffer_head, "%X",
+				  &connection->current_chunk_size)) &&
+		    (1 != sscanf (buffer_head, "%x",
+				  &connection->current_chunk_size));
                 }
               if (malformed)
                 {
@@ -1156,18 +1162,21 @@ call_connection_handler (struct MHD_Connection *connection)
                   return;
                 }
               i++;
-              if ((connection->read_buffer[i] == '\r') ||
-                  (connection->read_buffer[i] == '\n'))
+              if ((i<available) &&
+		  ( (buffer_head[i] == '\r') ||
+		    (buffer_head[i] == '\n')) )
                 i++;            /* skip 2nd part of line feed */
-              memmove (connection->read_buffer,
-                       &connection->read_buffer[i], available - i);
-              connection->read_buffer_offset -= i;
+
+	      buffer_head += i;
+	      available -= i;
               connection->current_chunk_offset = 0;
-              instant_retry = MHD_YES;
+
+              if (available > 0)
+		instant_retry = MHD_YES;
               if (connection->current_chunk_size == 0)
                 {
                   connection->remaining_upload_size = 0;
-                  return;
+                  break;
                 }
               continue;
             }
@@ -1176,7 +1185,6 @@ call_connection_handler (struct MHD_Connection *connection)
         {
           /* no chunked encoding, give all to the client */
           processed = available;
-          available = 0;
         }
       used = processed;
       if (MHD_NO ==
@@ -1185,7 +1193,7 @@ call_connection_handler (struct MHD_Connection *connection)
                                                connection, connection->url,
                                                connection->method,
                                                connection->version,
-                                               connection->read_buffer,
+                                               buffer_head,
                                                &processed,
                                                &connection->client_context))
         {
@@ -1203,16 +1211,19 @@ call_connection_handler (struct MHD_Connection *connection)
         instant_retry = MHD_NO; /* client did not process everything */
       used -= processed;
       if (connection->have_chunked_upload == MHD_YES)
-        connection->current_chunk_offset += used;
+	connection->current_chunk_offset += used;
       /* dh left "processed" bytes in buffer for next time... */
-      if (used > 0)
-        memmove (connection->read_buffer,
-                 &connection->read_buffer[used], processed + available);
+      buffer_head += used;
+      available -= used;
       if (connection->remaining_upload_size != -1)
         connection->remaining_upload_size -= used;
-      connection->read_buffer_offset = processed + available;
     }
   while (instant_retry == MHD_YES);
+  if (available > 0)
+    memmove(connection->read_buffer,
+	    buffer_head,
+	    available);
+  connection->read_buffer_offset = available;
 }
 
 /**

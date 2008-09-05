@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 -I$(GCRYPT_CPPFLAGS)
 
 if HAVE_GNU_LD
- retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
+#  retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
 endif
 
 EXTRA_DIST = SYMBOLS
