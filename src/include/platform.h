@@ -52,10 +52,20 @@
 #include <pthread.h>
 #include <sys/types.h>
 
+
 /* different OSes have size_t, fd_set in
    a broad range of header files;
    we just include most of them (if they
    are available) */
+
+
+#ifdef OS_VXWORKS
+#include <sockLib.h>
+#include <netinet/in.h>
+#include <stdarg.h>
+#include <sys/mman.h>
+#define RESTRICT __restrict__
+#endif
 
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>

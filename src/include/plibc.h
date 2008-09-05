@@ -591,6 +591,6 @@ extern "C"
 
 
 #endif
-//_PLIBC_H_
+/* _PLIBC_H_ */
 
 /* end of plibc.h */
