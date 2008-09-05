@@ -15,6 +15,7 @@ AM_CPPFLAGS = \
 -I$(GCRYPT_CPPFLAGS)
 
 if HAVE_GNU_LD
+#  If you want to debug with gdb, comment out this line:
 #  retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
 endif
 
