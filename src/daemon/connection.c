@@ -93,14 +93,6 @@
 #define INTERNAL_ERROR ""
 #endif
 
-#define EXTRA_CHECKS MHD_YES
-
-#if EXTRA_CHECKS
-#define EXTRA_CHECK(a) if (!(a)) abort();
-#else
-#define EXTRA_CHECK(a)
-#endif
-
 /**
  * Add extra debug messages with reasons for closing connections
  * (non-error reasons).

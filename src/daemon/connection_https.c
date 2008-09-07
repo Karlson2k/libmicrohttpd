@@ -225,7 +225,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
  * determined by peeking into the first message type byte of the
  * stream.
  *
- * Error message handling : all fatal level messages cause the
+ * Error message handling: all fatal level messages cause the
  * connection to be terminated.
  *
  * Application data is forwarded to the underlying daemon for
@@ -252,7 +252,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #endif
 
   /* discover content type */
-  if (recv (connection->socket_fd, &msg_type, 1, MSG_PEEK) == -1)
+  if (RECV (connection->socket_fd, &msg_type, 1, MSG_PEEK) == -1)
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Failed to peek into TLS content type\n");
@@ -339,7 +339,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
                                         MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT);
           return MHD_NO;
         }
-      /* this should never execut */
+      /* this should never execute */
       else
         {
 #if HAVE_MESSAGES
@@ -414,3 +414,5 @@ MHD_set_https_calbacks (struct MHD_Connection *connection)
   connection->write_handler = &MHD_tls_connection_handle_write;
   connection->idle_handler = &MHD_tls_connection_handle_idle;
 }
+
+/* end of connection_https.c */

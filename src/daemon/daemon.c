@@ -1,22 +1,22 @@
 /*
- This file is part of libmicrohttpd
- (C) 2007 Daniel Pittman and Christian Grothoff
-
- This library is free software; you can redistribute it and/or
- modify it under the terms of the GNU Lesser General Public
- License as published by the Free Software Foundation; either
- version 2.1 of the License, or (at your option) any later version.
-
- This library is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- Lesser General Public License for more details.
-
- You should have received a copy of the GNU Lesser General Public
- License along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
- */
+  This file is part of libmicrohttpd
+  (C) 2007 Daniel Pittman and Christian Grothoff
+  
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+  
+*/
 
 /**
  * @file daemon.c
@@ -131,7 +131,9 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   return -1;
 }
 
-/* initialize security aspects of the HTTPS daemon */
+/**
+ * initialize security aspects of the HTTPS daemon 
+ */
 static int
 MHD_TLS_init (struct MHD_Daemon *daemon)
 {
@@ -290,52 +292,60 @@ MHD_handle_connection (void *data)
   return NULL;
 }
 
-#if 0
-/* TODO rm if unused - gnutls parameter adapter , used to set gnutls pull function */
-static long
-gnutls_pull_param_adapter (void *connection, void *other, unsigned long i)
+#if HTTPS_SUPPORT
+/**
+ * Callback for receiving data from the socket (for gnutls).
+ *
+ * @param conn the MHD connection structure
+ * @param other where to write received data to
+ * @param i maximum size of other (in bytes)
+ * @return number of bytes actually received
+ */
+static ssize_t
+pull_param_adapter (gnutls_transport_ptr_t conn,
+		    void *other,
+		    size_t i)
 {
-  ssize_t bytes;
-  bytes = ((struct MHD_Connection *) connection)->read_buffer_offset;
-  MHD_handle_connection (connection);
-  bytes = ((struct MHD_Connection *) connection)->read_buffer_offset - bytes;
-  return bytes;
+  struct MHD_Connection * connection = (struct MHD_Connection*) conn;
 
+  if (connection->socket_fd == -1)
+    return -1;
+  return RECV(connection->socket_fd, other, i, MSG_NOSIGNAL);
 }
-
-static long
-gnutls_push_param_adapter (void *connection,
-                           const void *other, unsigned long i)
-{
-  ssize_t bytes;
-  bytes = ((struct MHD_Connection *) connection)->write_buffer_send_offset;
-  MHD_handle_connection (connection);
-  bytes = ((struct MHD_Connection *) connection)->write_buffer_send_offset
-    - bytes;
-  return bytes;
-}
-#endif
-
 
 /**
- * Handle an individual TLS connection.
+ * Callback for writing data to the socket (for gnutls).
+ *
+ * @param conn the MHD connection structure
+ * @param other data to write
+ * @param i number of bytes to write
+ * @return actual number of bytes written
  */
-#if HTTPS_SUPPORT
+static ssize_t
+push_param_adapter (void *conn,
+		    const void *other, 
+		    size_t i)
+{
+  struct MHD_Connection * connection = (struct MHD_Connection*) conn;
+
+  if (connection->socket_fd == -1)
+    return -1;
+  return SEND(connection->socket_fd, other, i, MSG_NOSIGNAL);
+}
+
+/**
+ * Handle an individual TLS connection (main function
+ * of the thread handling a TLS connection).
+ */
 static void *
 MHD_TLS_init_connection (void *data)
 {
   struct MHD_Connection *con = data;
 
-  if (con == NULL)
-    abort ();
-
-  /* initialize connection state */
+  EXTRA_CHECK (con->state == MHD_CONNECTION_INIT);
   con->state = MHD_TLS_CONNECTION_INIT;
   MHD_gnutls_init (&con->tls_session, GNUTLS_SERVER);
-
-  /* sets cipher priorities */
   MHD_gnutls_priority_set (con->tls_session, con->daemon->priority_cache);
-
   switch (con->daemon->cred_type)
     {
       /* set needed credentials for certificate authentication. */
@@ -351,24 +361,17 @@ MHD_TLS_init_connection (void *data)
       MHD_gnutls_dh_set_prime_bits (con->tls_session, 1024);
       break;
     default:
-
 #if HAVE_MESSAGES
       MHD_DLOG (con->daemon,
-                "Error: couldn't init HTTPS session. no appropriate KX algorithm found. f: %s, l: %d\n",
-                __FUNCTION__, __LINE__);
+                "Failed to setup TLS credentials: unknown credential type %d\n",
+		con->daemon->cred_type);
 #endif
-      break;
+      abort();
     }
-
-  /* TODO avoid gnutls blocking recv / write calls
-     MHD_gnutls_transport_set_pull_function(tls_session, &recv);
-     MHD_gnutls_transport_set_push_function(tls_session, &send);
-   */
-
   MHD_gnutls_transport_set_ptr (con->tls_session,
-                                (gnutls_transport_ptr_t) ((void *)
-                                                          con->socket_fd));
-
+                                (gnutls_transport_ptr_t) con);
+  MHD_gnutls_transport_set_pull_function(con->tls_session, &pull_param_adapter);
+  MHD_gnutls_transport_set_push_function(con->tls_session, &push_param_adapter);  
   return MHD_handle_connection (data);
 }
 #endif
@@ -512,32 +515,25 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->addr_len = addrlen;
   connection->socket_fd = s;
   connection->daemon = daemon;
+  connection->last_activity = time (NULL);
 
   /* set default connection handlers  */
   MHD_set_http_calbacks (connection);
-
 #if HTTPS_SUPPORT
-  if (daemon->options & MHD_USE_SSL)
-    {
-      MHD_set_https_calbacks (connection);
-    }
+  if (0 != (daemon->options & MHD_USE_SSL))
+    MHD_set_https_calbacks (connection);    
 #endif
 
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
+      res_thread_create = pthread_create (&connection->pid, NULL,
 #if HTTPS_SUPPORT
-      if (daemon->options & MHD_USE_SSL)
-        res_thread_create = pthread_create (&connection->pid, NULL,
-                                            &MHD_TLS_init_connection,
-                                            connection);
-      else
+					  (0 != (daemon->options & MHD_USE_SSL)) ? 
+					  &MHD_TLS_init_connection : 
 #endif
-        {
-          res_thread_create = pthread_create (&connection->pid, NULL,
-                                              &MHD_handle_connection,
-                                              connection);
-        }
+					  &MHD_handle_connection,
+					  connection);
       if (res_thread_create != 0)
         {
 #if HAVE_MESSAGES
@@ -550,11 +546,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
           free (connection);
           return MHD_NO;
         }
-    }
-
-  connection->last_activity = time (NULL);
+    }  
   connection->next = daemon->connections;
-
   daemon->connections = connection;
   daemon->max_connections--;
   return MHD_YES;
@@ -720,7 +713,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
       if (errno == EINTR)
         return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Select failed: %s\n", STRERROR (errno));
+      MHD_DLOG (daemon, "select failed: %s\n", STRERROR (errno));
 #endif
       return MHD_NO;
     }
@@ -876,9 +869,6 @@ MHD_start_daemon_va (unsigned int options,
     }
 #endif
 
-  /*
-   * analyze daemon options
-   */
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
     {
       switch (opt)
@@ -981,13 +971,9 @@ MHD_start_daemon_va (unsigned int options,
 
   /* check for user supplied sockaddr */
   if ((options & MHD_USE_IPv6) != 0)
-    {
-      addrlen = sizeof (struct sockaddr_in6);
-    }
+    addrlen = sizeof (struct sockaddr_in6);
   else
-    {
-      addrlen = sizeof (struct sockaddr_in);
-    }
+    addrlen = sizeof (struct sockaddr_in);
   if (NULL == servaddr)
     {
       if ((options & MHD_USE_IPv6) != 0)
@@ -1036,7 +1022,7 @@ MHD_start_daemon_va (unsigned int options,
   if ((options & MHD_USE_SSL) && MHD_TLS_init (retVal))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to initialize HTTPS daemon\n");
+      MHD_DLOG (retVal, "Failed to initialize TLS support\n");
 #endif
       CLOSE (socket_fd);
       free (retVal);
@@ -1079,11 +1065,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
 #endif
   CLOSE (fd);
-  if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || (0
-                                                                   !=
-                                                                   (daemon->
-                                                                    options &
-                                                                    MHD_USE_SELECT_INTERNALLY)))
+  if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || 
+      (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)))
     {
       pthread_kill (daemon->pid, SIGALRM);
       pthread_join (daemon->pid, &unused);
@@ -1114,19 +1097,16 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (daemon->options & MHD_USE_SSL)
     {
       MHD_gnutls_priority_deinit (daemon->priority_cache);
-
       if (daemon->x509_cred)
         MHD_gnutls_certificate_free_credentials (daemon->x509_cred);
       if (daemon->anon_cred)
         MHD_gnutls_anon_free_server_credentials (daemon->anon_cred);
-
       /* lock gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&gnutls_init_mutex);
       MHD_gnutls_global_deinit ();
       pthread_mutex_unlock (&gnutls_init_mutex);
     }
 #endif
-
   free (daemon);
 }
 

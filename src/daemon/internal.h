@@ -33,6 +33,7 @@
 #include "gnutls.h"
 #endif
 
+#define EXTRA_CHECKS MHD_YES
 
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
@@ -537,14 +538,14 @@ struct MHD_Connection
 
   int (*idle_handler) (struct MHD_Connection * connection);
 
-  /*
+  /**
    * function pointers to the appropriate send & receive funtions
    * according to whether this is a HTTPS / HTTP daemon
    */
-    ssize_t (*recv_cls) (struct MHD_Connection * connection);
-
-    ssize_t (*send_cls) (struct MHD_Connection * connection);
-
+  ssize_t (*recv_cls) (struct MHD_Connection * connection);
+  
+  ssize_t (*send_cls) (struct MHD_Connection * connection);
+  
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */
   mhd_gtls_session_t tls_session;
@@ -648,5 +649,14 @@ struct MHD_Daemon
   const char *https_mem_cert;
 #endif
 };
+
+
+#if EXTRA_CHECKS
+#define EXTRA_CHECK(a) if (!(a)) abort();
+#else
+#define EXTRA_CHECK(a)
+#endif
+
+
 
 #endif

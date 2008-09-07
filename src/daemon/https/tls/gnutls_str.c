@@ -212,7 +212,6 @@ mhd_gtls_string_append_data (mhd_gtls_string * dest,
     {
       size_t new_len =
         MAX (data_size, MIN_CHUNK) + MAX (dest->max_length, MIN_CHUNK);
-
       dest->data = dest->realloc_func (dest->data, new_len);
       if (dest->data == NULL)
         {
