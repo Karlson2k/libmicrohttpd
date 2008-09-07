@@ -36,7 +36,7 @@
  */
 #define KEYRING_HACK
 
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y));
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
 #define MAX32 4294967295
 #define MAX24 16777215
