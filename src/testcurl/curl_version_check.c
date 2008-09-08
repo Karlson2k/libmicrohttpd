@@ -27,8 +27,6 @@
 #include "MHD_config.h"
 #include "platform.h"
 #include <curl/curl.h>
-#include <microhttpd.h>
-#include "internal.h"
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -78,8 +76,10 @@ curl_check_version (const char *req_version)
 {
   const char *ver;
   const char *curl_ver;
+#if HTTPS_SUPPORT
   const char *ssl_ver;
   const char *req_ssl_ver;
+#endif
 
   int loc_major, loc_minor, loc_micro;
   int rq_major, rq_minor, rq_micro;

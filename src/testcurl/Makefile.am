@@ -5,6 +5,7 @@ SUBDIRS += https
 endif
 
 AM_CPPFLAGS = \
+-I$(top_srcdir) \
 -I$(top_srcdir)/src/daemon \
 -I$(top_srcdir)/src/include \
 $(LIBCURL_CPPFLAGS)
@@ -27,24 +28,19 @@ check_PROGRAMS = \
   daemontest_put_chunked
 noinst_PROGRAMS = \
   daemon_options_test
-  
+
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libcurl_version_check.a
 
 libcurl_version_check_a_SOURCES = \
   curl_version_check.c
-libcurl_version_check_a_CPPFLAGS = \
-  -I$(top_srcdir)/src/daemon \
-  -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/daemon/https \
-  $(LIBCURL_CPPFLAGS)
 
 daemon_options_test_SOURCES = \
   daemon_options_test.c
 daemon_options_test_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la
-  
+
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
