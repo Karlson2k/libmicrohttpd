@@ -403,6 +403,7 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
+  char * cur_dir;
 
   MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
@@ -434,11 +435,14 @@ main (int argc, char *const *argv)
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_END);
+
+  cur_dir = get_current_dir_name ();
   errorCount +=
     test_wrap ("file certificates", &test_file_certificates, test_fd,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-               srv_self_signed_cert_pem, MHD_OPTION_END);
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_CERT_PATH, cur_dir,
+               MHD_OPTION_HTTPS_KEY_PATH, cur_dir, MHD_OPTION_END);
+  free (cur_dir);
+
   errorCount +=
     test_wrap ("protocol_version", &test_protocol_version, test_fd,
                "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,

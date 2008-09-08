@@ -487,7 +487,6 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   if (sizeOfPtr > MAX_RECV_SIZE || sizeOfPtr == 0)
     {
       gnutls_assert ();         /* internal error */
-      printf("AT %u\n", __LINE__);
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -538,7 +537,6 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
       > MAX_RECV_SIZE)
     {
       gnutls_assert ();         /* internal error */
-      printf("AT %u\n", __LINE__);
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -551,14 +549,12 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   if (session->internals.record_recv_buffer.data == NULL)
     {
       gnutls_assert ();
-      printf("AT %u\n", __LINE__);
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   buf_pos = session->internals.record_recv_buffer.length;
   buf = session->internals.record_recv_buffer.data;
   *iptr = buf;
-      printf("AT %u\n", __LINE__);
 
   /* READ DATA - but leave RCVLOWAT bytes in the kernel buffer. */
   if (recvdata - recvlowat > 0)
@@ -570,7 +566,6 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
        */
       if (ret < 0 && MHD_gtls_error_is_fatal (ret) == 0)
         {
-      printf("AT %u\n", __LINE__);
           return ret;
         }
     }
@@ -598,7 +593,6 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 
       if (ret2 < 0 && MHD_gtls_error_is_fatal (ret2) == 0)
         {
-      printf("AT %u\n", __LINE__);
           return ret2;
         }
 
@@ -618,7 +612,6 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
     {
       gnutls_assert ();
       /* that's because they are initialized to 0 */
-      printf("AT %u\n", __LINE__);
       return MIN (ret, ret2);
     }
 
@@ -627,14 +620,12 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   if (ret > 0 && ret < recvlowat)
     {
       gnutls_assert ();
-      printf("AT %u\n", __LINE__);
       return GNUTLS_E_AGAIN;
     }
 
   if (ret == 0)
     {                           /* EOF */
       gnutls_assert ();
-      printf("AT %u\n", __LINE__);
       return 0;
     }
 
@@ -644,12 +635,10 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
     {
       /* Short Read */
       gnutls_assert ();
-      printf("AT %u\n", __LINE__);
       return GNUTLS_E_AGAIN;
     }
   else
     {
-      printf("AT %u\n", __LINE__);
       return ret;
     }
 }
@@ -1234,7 +1223,7 @@ mhd_gtls_handshake_buffer_get_ptr (mhd_gtls_session_t session,
   if (length != NULL)
     *length = session->internals.handshake_hash_buffer.length;
 
-  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", 
+  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n",
 		       session->internals.handshake_hash_buffer.length);
 
   if (data_ptr != NULL)

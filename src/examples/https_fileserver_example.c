@@ -20,16 +20,14 @@
  * @file https_server_example.c
  * @brief a simple HTTPS file server using TLS.
  *
- * Server may be supplied either with included hard coded certificates or using
- * external ones, which are to be supplied through command line arguments.
- * A private key file named "key.pem" and a server certificate file named "cert.pem".
- * are necessary to run the server in this way.
+ * Usage :
+ *
+ *  'http_fileserver_example HTTP-PORT SECONDS-TO-RUN [CERTIFICATE PATH, KEY PATH]'
+ *
+ * The certificate & key are required by the server to operate,  Omitting the
+ * path arguments will cause the server to use the hard coded example certificate & key.
  *
  * 'certtool' may be used to generate these if required.
- *
- * Access server with your browser of choice or with curl :
- *
- *   curl --insecure --tlsv1 --ciphers AES256-SHA <url>
  *
  * @author Sagie Amir
  */
@@ -159,31 +157,43 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *TLS_daemon;
 
-  /* look for HTTPS arguments */
-  if (argc < 5)
-    {
-      printf
-        ("Usage : %s HTTP-PORT SECONDS-TO-RUN KEY-FILE CERT-FILE\n", argv[0]);
-      return 1;
-    }
-
+  if (argc == 3){
   /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
   /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
-
   TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG
-                                 | MHD_USE_SSL, atoi (argv[3]),
+                                 | MHD_USE_SSL, atoi (argv[1]),
                                  NULL,
                                  NULL, &http_ahc,
                                  NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
                                  MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                                  MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
+
                                  MHD_OPTION_END);
+  }
+  else if (argc == 5){
+	  TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG
+          | MHD_USE_SSL, atoi (argv[1]),
+          NULL,
+          NULL, &http_ahc,
+          NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
+          MHD_OPTION_HTTPS_CERT_PATH, argv[3],
+          MHD_OPTION_HTTPS_KEY_PATH, argv[4],
+          MHD_OPTION_END);
+  }
+  else {
+	  printf
+	          ("Usage : %s HTTP-PORT SECONDS-TO-RUN [CERTIFICATE PATH, KEY PATH]\n", argv[0]);
+	        return 1;
+  }
 
   if (TLS_daemon == NULL)
     {
       printf ("Error: failed to start TLS_daemon");
       return 1;
     }
+  else {
+	  printf ("MHD daemon listening on port %d\n", atoi (argv[1]));
+  }
 
   sleep (atoi (argv[2]));
 

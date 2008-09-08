@@ -227,33 +227,6 @@ mhd_gtls_string_append_data (mhd_gtls_string * dest,
     }
 }
 
-int
-mhd_gtls_string_append_printf (mhd_gtls_string * dest, const char *fmt, ...)
-{
-  va_list args;
-  int len;
-  char *str;
-
-  va_start (args, fmt);
-  len = vsnprintf (NULL, 0, fmt, args);
-  va_end (args);
-  if (len < 0)
-    return -1;
-  str = malloc(len + 1);
-  if (! str)
-    return -1;
-
-  va_start (args, fmt);
-  len = vsprintf (str, fmt, args);
-  va_end (args);
-
-  len = mhd_gtls_string_append_str (dest, str);
-
-  free (str);
-
-  return len;
-}
-
 /* Converts the given string (old) to hex. A buffer must be provided
  * to hold the new hex string. The new string will be null terminated.
  * If the buffer does not have enough space to hold the string, a

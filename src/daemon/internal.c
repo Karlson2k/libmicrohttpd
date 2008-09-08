@@ -26,7 +26,10 @@
 
 #include "internal.h"
 
-#if DEBUG_STATES
+#if HAVE_MESSAGES
+/**
+ * State to string dictionary.
+ */
 char *
 MHD_state_to_string (enum MHD_CONNECTION_STATE state)
 {
@@ -80,8 +83,9 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
       return "secure handshake failed";
     case MHD_TLS_HANDSHAKE_COMPLETE:
       return "secure handshake _complete";
+    default:
+      return "unrecognized connection state";
     }
-  return "unrecognized connection state";
 }
 #endif
 

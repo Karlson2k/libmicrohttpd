@@ -14,7 +14,7 @@ fileserver_example_external_select \
 refuse_post_example
 
 if ENABLE_HTTPS
-noinst_PROGRAMS += https_server_example 
+noinst_PROGRAMS += https_fileserver_example 
 endif
 
 minimal_example_SOURCES = \
@@ -47,7 +47,7 @@ fileserver_example_external_select_SOURCES = \
 fileserver_example_external_select_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
-https_server_example_SOURCES = \
-https_server_example.c
-https_server_example_LDADD = \
+https_fileserver_example_SOURCES = \
+https_fileserver_example.c
+https_fileserver_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la

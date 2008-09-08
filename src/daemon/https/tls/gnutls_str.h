@@ -55,9 +55,6 @@ int mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src);
 int mhd_gtls_string_append_str (mhd_gtls_string *, const char *str);
 int mhd_gtls_string_append_data (mhd_gtls_string *, const void *data,
                                  size_t data_size);
-int mhd_gtls_string_append_printf (mhd_gtls_string * dest, const char *fmt,
-                                   ...);
-
 char *mhd_gtls_bin2hex (const void *old, size_t oldlen, char *buffer,
                         size_t buffer_size);
 int mhd_gtls_hex2bin (const opaque * hex_data, int hex_size,

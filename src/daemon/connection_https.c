@@ -87,7 +87,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
 /**
  * This function is called once a secure connection has been marked
  * for closure.
- * 
+ *
  * NOTE: Some code duplication with connection_close_error
  * in connection.c
  *
@@ -216,6 +216,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
             {
               /* set connection state to enable HTTP processing */
               connection->state = MHD_CONNECTION_INIT;
+              break;
             }
           /* set connection as closed */
           else
@@ -227,7 +228,6 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
               connection->state = MHD_TLS_HANDSHAKE_FAILED;
               return MHD_NO;
             }
-          break;
         }
       /* a handshake message has been received out of bound */
       else
@@ -241,7 +241,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
           return MHD_NO;
         }
 
-      /* ignore any out of bound change chiper spec messages */
+    /* ignore any out of bound change chiper spec messages */
     case GNUTLS_CHANGE_CIPHER_SPEC:
       MHD_tls_connection_close (connection,
                                     MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
@@ -303,9 +303,12 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
     default:
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-                "Error: unrecognized TLS read message. con-state: %d. l: %d, f: %s\n",
-                connection->state, __LINE__, __FUNCTION__);
+                "Error: unrecognized TLS message type: %d, connection state: %s. l: %d, f: %s\n",
+                msg_type, MHD_state_to_string(connection->state), __LINE__, __FUNCTION__);
 #endif
+      /* close connection upon reception of unrecognized message type */
+      MHD_tls_connection_close (connection,
+      				    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
     }
 

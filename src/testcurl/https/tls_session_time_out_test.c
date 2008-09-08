@@ -156,7 +156,6 @@ main (int argc, char *const *argv)
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
-                        MHD_OPTION_SOCK_ADDR, "127.0.0.1",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);

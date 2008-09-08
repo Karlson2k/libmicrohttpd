@@ -301,7 +301,7 @@ enum MHD_CONNECTION_STATE
  */
 #define DEBUG_STATES MHD_NO
 
-#if DEBUG_STATES
+#if HAVE_MESSAGES
 char *MHD_state_to_string (enum MHD_CONNECTION_STATE state);
 #endif
 
@@ -568,7 +568,7 @@ struct MHD_Connection
   ReceiveCallback recv_cls;
 
   TransmitCallback send_cls;
-  
+
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */
   mhd_gtls_session_t tls_session;
