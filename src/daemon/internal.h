@@ -305,6 +305,33 @@ enum MHD_CONNECTION_STATE
 char *MHD_state_to_string (enum MHD_CONNECTION_STATE state);
 #endif
 
+/**
+ * Function to receive plaintext data.
+ *
+ * @param conn the connection struct
+ * @param write_to where to write received data
+ * @param max_bytes maximum number of bytes to receive
+ * @return number of bytes written to write_to
+ */
+typedef ssize_t (*ReceiveCallback)(struct MHD_Connection * conn,
+				   void * write_to,
+				   size_t max_bytes);
+
+
+/**
+ * Function to transmit plaintext data.
+ *
+ * @param conn the connection struct
+ * @param read_from where to read data to transmit
+ * @param max_bytes maximum number of bytes to transmit
+ * @return number of bytes transmitted
+ */
+typedef ssize_t (*TransmitCallback)(struct MHD_Connection * conn,
+				    const void * write_to,
+				    size_t max_bytes);
+
+
+
 struct MHD_Connection
 {
 
@@ -538,13 +565,9 @@ struct MHD_Connection
 
   int (*idle_handler) (struct MHD_Connection * connection);
 
-  /**
-   * function pointers to the appropriate send & receive funtions
-   * according to whether this is a HTTPS / HTTP daemon
-   */
-  ssize_t (*recv_cls) (struct MHD_Connection * connection);
-  
-  ssize_t (*send_cls) (struct MHD_Connection * connection);
+  ReceiveCallback recv_cls;
+
+  TransmitCallback send_cls;
   
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */

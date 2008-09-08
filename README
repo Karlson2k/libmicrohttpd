@@ -35,8 +35,28 @@ sockets.  This should work on OS X, Linux and recent BSD systems (at
 least).  On other systems that may trigger a SIGPIPE on send/recv, the
 main application should install a signal handler to handle SIGPIPE.
 
-libmicrohttpd should work well on GNU/Linux, BSD, OS X and W32.
-We also have reports of users using it on vxWorks and z/OS.
+libmicrohttpd should work well on GNU/Linux, BSD, OS X, W32 and z/OS.
+Note that HTTPS is not supported on z/OS (yet).
+We also have reports of users using it on vxWorks.  
+
+
+Notes on compiling on z/OS:
+---------------------------
+
+After extracting the archive, run
+
+iconv -f UTF-8 -t IBM-1047 contrib/ascebc > /tmp/ascebc.sh
+chmod +x /tmp/ascebc.sh
+for n in `find * -type f`
+do
+  /tmp/ascebc.sh $n
+done
+
+to convert all source files to EBCDIC.  Note that you must run
+"configure" from the directory where the configure script is
+located.   Otherwise, configure will fail to find the
+"contrib/xcc" script (which is a wrapper around the z/OS c89
+compiler).
 
 
 Development Status

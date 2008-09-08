@@ -410,7 +410,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     }
   if (ret > 0xFFFFFF)
     ret = 0xFFFFFF;
-  cblen = snprintf (cbuf, sizeof (cbuf), "%X\r\n", ret);
+  SPRINTF (cbuf, "%X\r\n", ret);
+  cblen = strlen(cbuf);
   EXTRA_CHECK (cblen <= sizeof (cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen], cbuf, cblen);
   memcpy (&connection->write_buffer[sizeof (cbuf) + ret], "\r\n", 2);
@@ -458,10 +459,9 @@ add_extra_headers (struct MHD_Connection *connection)
   else if (NULL == MHD_get_response_header (connection->response,
                                             MHD_HTTP_HEADER_CONTENT_LENGTH))
     {
-      _REAL_SNPRINTF (buf,
-                      128,
-                      "%llu",
-                      (unsigned long long) connection->response->total_size);
+      SPRINTF (buf,
+	       "%llu",
+	       (unsigned long long) connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
     }
@@ -469,11 +469,12 @@ add_extra_headers (struct MHD_Connection *connection)
 
 /**
  * Produce HTTP "Date:" header.
- * @param date where to write the header
- * @param max maximum number of characters to write
+ *
+ * @param date where to write the header, with
+ *        at least 128 bytes available space.
  */
 static void
-get_date_string (char *date, unsigned int max)
+get_date_string (char *date)
 {
   static const char *days[] =
     { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
@@ -486,17 +487,17 @@ get_date_string (char *date, unsigned int max)
 
   time (&t);
   gmtime_r (&t, &now);
-  snprintf (date,
-            max - 1,
-            "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
-            days[now.tm_wday % 7],
-            now.tm_mday,
-            mons[now.tm_mon % 12],
-            1900 + now.tm_year, now.tm_hour, now.tm_min, now.tm_sec);
+  SPRINTF (date,
+	   "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+	   days[now.tm_wday % 7],
+	   now.tm_mday,
+	   mons[now.tm_mon % 12],
+	   1900 + now.tm_year, now.tm_hour, now.tm_min, now.tm_sec);
 }
 
 /**
- * try growing the read buffer
+ * Try growing the read buffer
+ *
  * @return MHD_YES on success, MHD_NO on failure
  */
 static int
@@ -530,7 +531,7 @@ build_header_response (struct MHD_Connection *connection)
   size_t size;
   size_t off;
   struct MHD_HTTP_Header *pos;
-  char code[128];
+  char code[256];
   char date[128];
   char *data;
   enum MHD_ValueKind kind;
@@ -540,15 +541,18 @@ build_header_response (struct MHD_Connection *connection)
     {
       add_extra_headers (connection);
       reason_phrase = MHD_get_reason_phrase_for (connection->responseCode);
-      _REAL_SNPRINTF (code, 128, "%s %u %s\r\n", MHD_HTTP_VERSION_1_1,
-                      connection->responseCode, reason_phrase);
+      SPRINTF (code,
+	       "%s %u %s\r\n", 
+	       MHD_HTTP_VERSION_1_1,
+	       connection->responseCode,
+	       reason_phrase);
       off = strlen (code);
       /* estimate size */
       size = off + 2;           /* extra \r\n at the end */
       kind = MHD_HEADER_KIND;
       if (NULL == MHD_get_response_header (connection->response,
                                            MHD_HTTP_HEADER_DATE))
-        get_date_string (date, sizeof (date));
+        get_date_string (date);
       else
         date[0] = '\0';
       size += strlen (date);
@@ -1138,9 +1142,9 @@ call_connection_handler (struct MHD_Connection *connection)
                 {
                   buffer_head[i] = '\0';
                   malformed =
-		    (1 != sscanf (buffer_head, "%X",
+		    (1 != SSCANF (buffer_head, "%X",
 				  &connection->current_chunk_size)) &&
-		    (1 != sscanf (buffer_head, "%x",
+		    (1 != SSCANF (buffer_head, "%x",
 				  &connection->current_chunk_size));
                 }
               if (malformed)
@@ -1234,8 +1238,9 @@ do_read (struct MHD_Connection *connection)
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return MHD_NO;
 
-  bytes_read = connection->recv_cls (connection);
-
+  bytes_read = connection->recv_cls (connection,
+				     &connection->read_buffer[connection->read_buffer_offset],
+				     connection->read_buffer_size - connection->read_buffer_offset);
   if (bytes_read < 0)
     {
       if (errno == EINTR)
@@ -1270,7 +1275,11 @@ do_write (struct MHD_Connection *connection)
 {
   int ret;
 
-  ret = connection->send_cls (connection);
+  ret = connection->send_cls (connection,
+			      &connection->write_buffer
+			      [connection->write_buffer_send_offset],
+			      connection->write_buffer_append_offset
+			      - connection->write_buffer_send_offset);
 
   if (ret < 0)
     {
@@ -1284,22 +1293,13 @@ do_write (struct MHD_Connection *connection)
       return MHD_YES;
     }
 #if DEBUG_SEND_DATA
-  fprintf (stderr,
+  FPRINTF (stderr,
            "Sent response: `%.*s'\n",
            ret,
            &connection->write_buffer[connection->write_buffer_send_offset]);
 #endif
   connection->write_buffer_send_offset += ret;
   return MHD_YES;
-}
-
-static ssize_t
-MHD_con_read (struct MHD_Connection *connection)
-{
-  return RECV (connection->socket_fd,
-               &connection->read_buffer[connection->read_buffer_offset],
-               connection->read_buffer_size -
-               connection->read_buffer_offset, MSG_NOSIGNAL);
 }
 
 /**
@@ -1462,7 +1462,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                                       MHD_HTTP_HEADER_CONTENT_LENGTH);
   if (clen != NULL)
     {
-      if (1 != sscanf (clen, "%llu", &cval))
+      if (1 != SSCANF (clen, "%llu", &cval))
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
@@ -1553,16 +1553,6 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
-static ssize_t
-MHD_con_write (struct MHD_Connection *connection)
-{
-  return SEND (connection->socket_fd,
-               &connection->write_buffer[connection->
-                                         write_buffer_send_offset],
-               connection->write_buffer_append_offset -
-               connection->write_buffer_send_offset, MSG_NOSIGNAL);
-}
-
 /**
  * This function was created to handle writes to sockets when it has
  * been determined that the socket can be written to. All
@@ -1595,12 +1585,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_HEADERS_PROCESSED:
           break;
         case MHD_CONNECTION_CONTINUE_SENDING:
-          ret = SEND (connection->socket_fd,
-                      &HTTP_100_CONTINUE
-                      [connection->continue_message_write_offset],
-                      strlen (HTTP_100_CONTINUE) -
-                      connection->continue_message_write_offset,
-                      MSG_NOSIGNAL);
+          ret = connection->send_cls (connection,
+				      &HTTP_100_CONTINUE
+				      [connection->continue_message_write_offset],
+				      strlen (HTTP_100_CONTINUE) -
+				      connection->continue_message_write_offset);
           if (ret < 0)
             {
               if (errno == EINTR)
@@ -1613,7 +1602,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               return MHD_NO;
             }
 #if DEBUG_SEND_DATA
-          fprintf (stderr,
+          FPRINTF (stderr,
                    "Sent 100 continue response: `%.*s'\n",
                    ret,
                    &HTTP_100_CONTINUE
@@ -1661,17 +1650,17 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           else
 #endif
             {
-              ret = SEND (connection->socket_fd,
-                          &response->data[connection->
-                                          response_write_position -
-                                          response->data_start],
-                          response->data_size -
-                          (connection->response_write_position -
-                           response->data_start), MSG_NOSIGNAL);
+              ret = connection->send_cls (connection,
+					  &response->data[connection->
+							  response_write_position -
+							  response->data_start],
+					  response->data_size -
+					  (connection->response_write_position -
+					   response->data_start));
             }
 #if DEBUG_SEND_DATA
           if (ret > 0)
-            fprintf (stderr,
+            FPRINTF (stderr,
                      "Sent DATA response: `%.*s'\n",
                      ret,
                      &response->data[connection->response_write_position -
@@ -1748,6 +1737,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   unsigned int timeout;
   const char *end;
   char *line;
+
   while (1)
     {
 #if DEBUG_STATES
@@ -2072,8 +2062,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 void
 MHD_set_http_calbacks (struct MHD_Connection *connection)
 {
-  connection->recv_cls = &MHD_con_read;
-  connection->send_cls = &MHD_con_write;
   connection->read_handler = &MHD_connection_handle_read;
   connection->write_handler = &MHD_connection_handle_write;
   connection->idle_handler = &MHD_connection_handle_idle;
