@@ -66,22 +66,16 @@ MHD_gnutls_cipher_set_priority (mhd_gtls_session_t session, const int *list)
   return 0;
 }
 
-inline static int
+static int
 _set_priority (mhd_gtls_priority_st * st, const int *list)
 {
-  int num = 0, i;
+  int num = 0;
 
-  while (list[num] != 0)
+  while ( (list[num] != 0) &&
+	  (num < MAX_ALGOS) )
     num++;
-  if (num > MAX_ALGOS)
-    num = MAX_ALGOS;
   st->num_algorithms = num;
-
-  for (i = 0; i < num; i++)
-    {
-      st->priority[i] = list[i];
-    }
-
+  memcpy(st->priority, list, num * sizeof(int));
   return 0;
 }
 
