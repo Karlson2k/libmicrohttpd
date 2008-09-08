@@ -37,9 +37,11 @@
 #include "MHD_config.h"
 
 #define _XOPEN_SOURCE_EXTENDED  1
+#if OS390
 #define _OPEN_THREADS
 #define _OPEN_SYS_SOCK_IPV6
 #define _OPEN_MSGQ_EXT
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,8 +52,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
-#include <sys/types.h>
-
 
 /* different OSes have size_t, fd_set in
    a broad range of header files;
@@ -75,6 +75,9 @@
 #endif
 #if HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#if HAVE_SYS_STAT_H
+#include <sys/stat.h>
 #endif
 #if HAVE_SYS_MSG_H
 #include <sys/msg.h>
