@@ -106,11 +106,9 @@ void
 MHD_tls_log_func (int level, const char *str)
 {
 #ifdef DEBUG
-  fprintf (stdout, "|<%d>| %s", level, str);
+  FPRINTF (stdout, "|<%d>| %s", level, str);
 #endif
 }
-
-
 
 /**
  * Process escape sequences ('+'=space, %HH)
@@ -125,8 +123,10 @@ MHD_http_unescape (char *val)
     *esc = ' ';
   while (NULL != (esc = strstr (val, "%")))
     {
-      if ((1 == sscanf (&esc[1],
-                        "%2x", &num)) || (1 == sscanf (&esc[1], "%2X", &num)))
+      if ((1 == SSCANF (&esc[1],
+                        "%2x", &num)) || 
+	  (1 == SSCANF (&esc[1],
+			"%2X", &num)))
         {
           esc[0] = (unsigned char) num;
           memmove (&esc[1], &esc[3], strlen (&esc[3]) + 1);
