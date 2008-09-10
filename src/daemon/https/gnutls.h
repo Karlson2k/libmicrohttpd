@@ -225,6 +225,9 @@ extern "C"
   int MHD_gnutls_bye (mhd_gtls_session_t session, gnutls_close_request_t how);
   int MHD_gnutls_handshake (mhd_gtls_session_t session);
   int MHD_gnutls_rehandshake (mhd_gtls_session_t session);
+
+  int mhd_gtls_handshake_client (mhd_gtls_session_t session);
+
   gnutls_alert_description_t gnutls_alert_get (mhd_gtls_session_t session);
   int MHD_gnutls_alert_send (mhd_gtls_session_t session,
                              gnutls_alert_level_t level,
@@ -232,11 +235,11 @@ extern "C"
   int MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err);
   const char *MHD_gnutls_alert_get_name (gnutls_alert_description_t alert);
 
+  enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get (mhd_gtls_session_t
+                                                        session);
 //  enum MHD_GNUTLS_CipherAlgorithm gnutls_cipher_get (mhd_gtls_session_t session);
 //  enum MHD_GNUTLS_KeyExchangeAlgorithm gnutls_kx_get (mhd_gtls_session_t session);
 //  enum MHD_GNUTLS_HashAlgorithm gnutls_mac_get (mhd_gtls_session_t session);
-//  enum MHD_GNUTLS_CompressionMethod gnutls_compression_get (mhd_gtls_session_t
-//                                                      session);
 //  enum MHD_GNUTLS_CertificateType gnutls_certificate_type_get (mhd_gtls_session_t
 //                                                         session);
 
@@ -250,7 +253,7 @@ extern "C"
                                           algorithm);
   const char *MHD_gnutls_mac_get_name (enum MHD_GNUTLS_HashAlgorithm
                                        algorithm);
-  const char *MHD_gnutls_compression_get_name (enum
+  const char *MHD_gtls_compression_get_name (enum
                                                MHD_GNUTLS_CompressionMethod
                                                algorithm);
   const char *MHD_gnutls_kx_get_name (enum MHD_GNUTLS_KeyExchangeAlgorithm

@@ -914,7 +914,7 @@ mhd_gtls_compression_priority (mhd_gtls_session_t session,
  * specified compression algorithm, or %NULL.
  **/
 const char *
-MHD_gnutls_compression_get_name (enum MHD_GNUTLS_CompressionMethod algorithm)
+MHD_gtls_compression_get_name (enum MHD_GNUTLS_CompressionMethod algorithm)
 {
   const char *ret = NULL;
 

@@ -27,6 +27,7 @@
  * allow for extra functionality.
  */
 
+#include "MHD_config.h"
 #include "gnutls_int.h"
 #include "gnutls_extensions.h"
 #include "gnutls_errors.h"
@@ -147,7 +148,7 @@ mhd_gtls_parse_extensions (mhd_gtls_session_t session,
   mhd_gtls_ext_recv_func ext_recv;
   uint16_t size;
 
-#ifdef DEBUG
+#if MHD_DEBUG_TLS
   int i;
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     for (i = 0; i < session->internals.extensions_sent_size; i++)

@@ -27,12 +27,13 @@
  *
  */
 
+#include "MHD_config.h"
 #include <ext_oprfi.h>
 
 #include <gnutls_errors.h>
 #include <gnutls_num.h>
 
-int
+static int
 oprfi_recv_server (mhd_gtls_session_t session,
                    const opaque * data, size_t _data_size)
 {
@@ -68,7 +69,7 @@ oprfi_recv_server (mhd_gtls_session_t session,
   return 0;
 }
 
-int
+static int
 oprfi_recv_client (mhd_gtls_session_t session,
                    const opaque * data, size_t _data_size)
 {
@@ -122,7 +123,7 @@ mhd_gtls_oprfi_recv_params (mhd_gtls_session_t session,
     return oprfi_recv_server (session, data, data_size);
 }
 
-int
+static int
 oprfi_send_client (mhd_gtls_session_t session, opaque * data,
                    size_t _data_size)
 {
@@ -144,7 +145,7 @@ oprfi_send_client (mhd_gtls_session_t session, opaque * data,
   return 2 + oprf_size;
 }
 
-int
+static int
 oprfi_send_server (mhd_gtls_session_t session, opaque * data,
                    size_t _data_size)
 {
@@ -199,7 +200,12 @@ int
 mhd_gtls_oprfi_send_params (mhd_gtls_session_t session,
                             opaque * data, size_t data_size)
 {
-  return oprfi_send_server (session, data, data_size);
+#if MHD_DEBUG_TLS
+  if (session->security_parameters.entity == GNUTLS_CLIENT)
+	   return oprfi_send_client (session, data, data_size);
+  else
+#endif
+       return oprfi_send_server (session, data, data_size);
 }
 
 /**

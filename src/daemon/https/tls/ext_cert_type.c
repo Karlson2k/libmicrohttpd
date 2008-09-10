@@ -84,6 +84,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
     }
   else
 #endif
+
     {                           /* SERVER SIDE - we must check if the sent cert type is the right one
                                  */
       if (data_size > 1)

@@ -108,7 +108,7 @@ gnutls_mac_get (mhd_gtls_session_t session)
  * Returns: the currently used compression method.
  **/
 enum MHD_GNUTLS_CompressionMethod
-gnutls_compression_get (mhd_gtls_session_t session)
+MHD_gtls_compression_get (mhd_gtls_session_t session)
 {
   return session->security_parameters.read_compression_algorithm;
 }

@@ -26,6 +26,7 @@
  * finished. These functions activate the established security parameters.
  */
 
+#include "MHD_config.h"
 #include <gnutls_int.h>
 #include <gnutls_constate.h>
 #include <gnutls_errors.h>

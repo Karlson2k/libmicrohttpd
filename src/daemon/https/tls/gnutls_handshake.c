@@ -25,6 +25,7 @@
 /* Functions that relate to the TLS handshake procedure.
  */
 
+#include "MHD_config.h"
 #include "gnutls_int.h"
 #include "gnutls_errors.h"
 #include "gnutls_dh.h"
@@ -825,7 +826,7 @@ _gnutls_server_select_comp_method (mhd_gtls_session_t session,
 
               _gnutls_handshake_log
                 ("HSK[%x]: Selected Compression Method: %s\n", session,
-                 MHD_gnutls_compression_get_name (session->internals.
+                 MHD_gtls_compression_get_name (session->internals.
                                                   compression_method));
 
 
@@ -1096,8 +1097,6 @@ _gnutls_recv_handshake_header (mhd_gtls_session_t session,
 
 #define _gnutls_handshake_header_buffer_clear( session) session->internals.handshake_header_buffer.header_size = 0
 
-
-
 /* This function will hash the handshake headers and the
  * handshake data.
  */
@@ -1143,7 +1142,6 @@ _gnutls_handshake_hash_add_recvd (mhd_gtls_session_t session,
 
   return 0;
 }
-
 
 /* This function will receive handshake messages of the given types,
  * and will pass the message to the right place in order to be processed.
@@ -1612,7 +1610,6 @@ _gnutls_copy_ciphersuites (mhd_gtls_session_t session,
   return datalen;
 }
 
-
 /* This function copies the appropriate compression methods, to a locally allocated buffer
  * Needed in hello messages. Returns the new data length.
  */
@@ -1660,6 +1657,7 @@ _gnutls_copy_comp_methods (mhd_gtls_session_t session,
  */
 #define MAX_EXT_DATA_LENGTH 1024
 
+#if MHD_DEBUG_TLS
 /* This function sends the client hello handshake message.
  */
 static int
@@ -1844,6 +1842,7 @@ _gnutls_send_client_hello (mhd_gtls_session_t session, int again)
 
   return ret;
 }
+#endif
 
 static int
 _gnutls_send_server_hello (mhd_gtls_session_t session, int again)
@@ -2061,10 +2060,6 @@ MHD_gnutls_rehandshake (mhd_gtls_session_t session)
 {
   int ret;
 
-  /* only server sends that handshake packet */
-  if (session->security_parameters.entity == GNUTLS_CLIENT)
-    return GNUTLS_E_INVALID_REQUEST;
-
   ret =
     _gnutls_send_empty_handshake (session, GNUTLS_HANDSHAKE_HELLO_REQUEST,
                                   AGAIN (STATE50));
@@ -2091,7 +2086,6 @@ _gnutls_abort_handshake (mhd_gtls_session_t session, int ret)
   /* this doesn't matter */
   return GNUTLS_E_INTERNAL_ERROR;
 }
-
 
 /* This function initialized the handshake hash session.
  * required for finished messages.
@@ -2223,12 +2217,17 @@ MHD_gnutls_handshake (mhd_gtls_session_t session)
       gnutls_assert ();
       return ret;
     }
+#if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_UNIMPLEMENTED_FEATURE;
-    }
-  ret = mhd_gtls_handshake_server (session);
+      {
+        ret = mhd_gtls_handshake_client (session);
+      }
+    else
+#endif
+      {
+        ret = mhd_gtls_handshake_server (session);
+      }
+
   if (ret < 0)
     {
       /* In the case of a rehandshake abort
@@ -2268,6 +2267,127 @@ MHD_gnutls_handshake (mhd_gtls_session_t session)
 	} } while (0)
 
 
+#if MHD_DEBUG_TLS
+/*
+ * mhd_gtls_handshake_client
+ * This function performs the client side of the handshake of the TLS/SSL protocol.
+ */
+int
+mhd_gtls_handshake_client (mhd_gtls_session_t session)
+{
+  int ret = 0;
+
+#ifdef HANDSHAKE_DEBUG
+  char buf[64];
+
+  if (session->internals.resumed_security_parameters.session_id_size > 0)
+    _gnutls_handshake_log ("HSK[%x]: Ask to resume: %s\n", session,
+                           mhd_gtls_bin2hex (session->internals.
+                                             resumed_security_parameters.
+                                             session_id,
+                                             session->internals.
+                                             resumed_security_parameters.
+                                             session_id_size, buf,
+                                             sizeof (buf)));
+#endif
+
+  switch (STATE)
+    {
+    case STATE0:
+    case STATE1:
+      ret = mhd_gtls_send_hello (session, AGAIN (STATE1));
+      STATE = STATE1;
+      IMED_RET ("send hello", ret);
+
+    case STATE2:
+      /* receive the server hello */
+      ret =
+        mhd_gtls_recv_handshake (session, NULL, NULL,
+                                 GNUTLS_HANDSHAKE_SERVER_HELLO,
+                                 MANDATORY_PACKET);
+      STATE = STATE2;
+      IMED_RET ("recv hello", ret);
+
+    case STATE70:
+      if (session->security_parameters.extensions.do_recv_supplemental)
+        {
+          ret = _gnutls_recv_supplemental (session);
+          STATE = STATE70;
+          IMED_RET ("recv supplemental", ret);
+        }
+
+    case STATE3:
+      /* RECV CERTIFICATE */
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret = mhd_gtls_recv_server_certificate (session);
+      STATE = STATE3;
+      IMED_RET ("recv server certificate", ret);
+
+    case STATE4:
+      /* receive the server key exchange */
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret = mhd_gtls_recv_server_kx_message (session);
+      STATE = STATE4;
+      IMED_RET ("recv server kx message", ret);
+
+    case STATE5:
+      /* receive the server certificate request - if any
+       */
+
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret = mhd_gtls_recv_server_certificate_request (session);
+      STATE = STATE5;
+      IMED_RET ("recv server certificate request message", ret);
+
+    case STATE6:
+      /* receive the server hello done */
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret =
+          mhd_gtls_recv_handshake (session, NULL, NULL,
+                                   GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
+                                   MANDATORY_PACKET);
+      STATE = STATE6;
+      IMED_RET ("recv server hello done", ret);
+
+    case STATE71:
+      if (session->security_parameters.extensions.do_send_supplemental)
+        {
+          ret = _gnutls_send_supplemental (session, AGAIN (STATE71));
+          STATE = STATE71;
+          IMED_RET ("send supplemental", ret);
+        }
+
+    case STATE7:
+      /* send our certificate - if any and if requested
+       */
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret = mhd_gtls_send_client_certificate (session, AGAIN (STATE7));
+      STATE = STATE7;
+      IMED_RET ("send client certificate", ret);
+
+    case STATE8:
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret = mhd_gtls_send_client_kx_message (session, AGAIN (STATE8));
+      STATE = STATE8;
+      IMED_RET ("send client kx", ret);
+
+    case STATE9:
+      /* send client certificate verify */
+      if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
+        ret =
+          mhd_gtls_send_client_certificate_verify (session, AGAIN (STATE9));
+      STATE = STATE9;
+      IMED_RET ("send client certificate verify", ret);
+
+      STATE = STATE0;
+    default:
+      break;
+    }
+
+
+  return 0;
+}
+#endif
 
 /* This function sends the final handshake packets and initializes connection
  */
