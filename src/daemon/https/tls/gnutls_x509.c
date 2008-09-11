@@ -625,6 +625,7 @@ read_file (const char *filename, size_t * length)
       free(out);
       goto ERR;
     }
+  *length = st.st_size;
   close(fd);
   return out;
  ERR:
