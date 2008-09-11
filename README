@@ -73,6 +73,8 @@ Missing features:
 - SSL code is still too large (plenty of dead or
   unnecessary code imported from gnuTLS)
 - Make sure SSL works on non-GNU/Linux platforms
+- Fix compiler warnings in gnuTLS code 
+  (largely signed vs. unsigned char)
 
 
 Untested features:
