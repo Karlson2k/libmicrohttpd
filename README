@@ -24,8 +24,9 @@ reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
 default to reduce the size of the library (error messages take
 space!).  If you are concerned about space, you should set "CFLAGS" to
 "-Os -fomit-frame-pointer" to have gcc generate tight code.  The
-resulting binary should be about 25k depending on the platform (I 
-got 25884 bytes using "-march=pentium4").
+resulting binary should be about 30k (without SSL support) depending 
+on the platform.
+
 
 Portability
 ===========
@@ -64,16 +65,14 @@ Development Status
 
 This is a beta release.  Below we list things that should be
 implemented (in order of importance) before we can claim to be
-reasonably complete.  #XXXX refers to the respective Mantis bug report
-(or feature request).
-
+reasonably complete.
 
 
 Missing features:
 =================
-- SSL support:
-  * documentation
-  * more testing
+- SSL code is still too large (plenty of dead or
+  unnecessary code imported from gnuTLS)
+- Make sure SSL works on non-GNU/Linux platforms
 
 
 Untested features:
@@ -87,12 +86,18 @@ Untested features:
   suppressing 100 CONTINUE
 - extend testcase for chunked encoding to validate
   handling of footers
+- more testing for SSL support
 
 
 Missing documentation:
 ======================
-- manual (SSL/TLS support)
+
+- manual:
+  * document configuration options
+  * document SSL/TLS support
+  * document details on porting MHD (plibc, z/OS)
 - tutorial:
   * clean up English
   * make sure everything is accurate
   * change example code to follow GNU coding conventions
+  * provide examples for using SSL

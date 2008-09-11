@@ -597,32 +597,35 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   prev = NULL;
   while (pos != NULL)
     {
-      if (pos->socket_fd == -1)
-        {
+      if ( (pos->socket_fd == -1) ||
+	   ( ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+	       (daemon->shutdown) &&
+	       (pos->socket_fd != -1) ) ) )
+	{
           if (prev == NULL)
             daemon->connections = pos->next;
           else
-            prev->next = pos->next;
-          if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-            {
-              pthread_kill (pos->pid, SIGALRM);
-              pthread_join (pos->pid, &unused);
-            }
-          MHD_destroy_response (pos->response);
-          MHD_pool_destroy (pos->pool);
+            prev->next = pos->next;       
+	  if (0 != (pos->daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+	    {
+	      pthread_kill (pos->pid, SIGALRM);
+	      pthread_join (pos->pid, &unused);
+	    }
+	  MHD_destroy_response (pos->response);
+	  MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
-          if (pos->tls_session != NULL)            
-	    MHD_gnutls_deinit (pos->tls_session);            
+	  if (pos->tls_session != NULL)            
+	    MHD_gnutls_deinit (pos->tls_session);
 #endif
-          free (pos->addr);
-          free (pos);
-          daemon->max_connections++;
-          if (prev == NULL)
+	  free (pos->addr);
+	  free (pos);
+	  daemon->max_connections++;
+  	  if (prev == NULL)
             pos = daemon->connections;
           else
             pos = prev->next;
-          continue;
-        }
+  	  continue;
+	}
       prev = pos;
       pos = pos->next;
     }

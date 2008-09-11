@@ -1,3 +1,7 @@
+Wed Sep 10 21:36:06 MDT 2008
+	 Fixed data race on closing sockets during 
+	 shutdown (in one-thread-per-connection mode). -CG
+
 Thu Sep  4 23:37:18 MDT 2008
 	 Fixed some boundary issues with processing
 	 chunked requests; removed memmove from a 
