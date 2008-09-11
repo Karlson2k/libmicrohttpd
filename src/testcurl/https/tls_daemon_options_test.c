@@ -306,53 +306,6 @@ test_wrap (char *test_name, int
   return ret;
 }
 
-/* perform a HTTP GET request via SSL/TLS */
-
-/* test loading of key & certificate files */
-int
-test_file_certificates (FILE * test_fd, char *cipher_suite, int proto_version)
-{
-  int ret;
-  struct MHD_Daemon *d;
-  FILE *cert_fd, *key_fd;
-  char cert_path[255], key_path[255], *cur_dir;
-
-  cur_dir = get_current_dir_name ();
-
-  sprintf (cert_path, "%s/%s", cur_dir, "cert.pem");
-  sprintf (key_path, "%s/%s", cur_dir, "key.pem");
-
-  if (NULL == (key_fd = fopen (key_path, "w+")))
-    {
-      fprintf (stderr, MHD_E_KEY_FILE_CREAT);
-      return -1;
-    }
-  if (NULL == (cert_fd = fopen (cert_path, "w+")))
-    {
-      fprintf (stderr, MHD_E_CERT_FILE_CREAT);
-      return -1;
-    }
-
-  fwrite (srv_key_pem, strlen (srv_key_pem), sizeof (char), key_fd);
-  fwrite (srv_self_signed_cert_pem, strlen (srv_self_signed_cert_pem),
-          sizeof (char), cert_fd);
-  fclose (key_fd);
-  fclose (cert_fd);
-
-  if (d == NULL)
-    {
-      fprintf (stderr, MHD_E_SERVER_INIT);
-      return -1;
-    }
-
-  ret = test_https_transfer (test_fd, cipher_suite, proto_version);
-
-  free (cur_dir);
-  remove (cert_path);
-  remove (key_path);
-  return ret;
-}
-
 /*
  * test server refuses to negotiate connections with unsupported protocol versions
  */
@@ -442,7 +395,7 @@ main (int argc, char *const *argv)
   sprintf (key_path, "%s/%s", cur_dir, "key.pem");
 
   errorCount +=
-    test_wrap ("file certificates", &test_file_certificates, test_fd,
+    test_wrap ("file certificates", &test_https_transfer, test_fd,
                "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_CERT_PATH, cert_path,
                MHD_OPTION_HTTPS_KEY_PATH, key_path, MHD_OPTION_END);
   free (cur_dir);
