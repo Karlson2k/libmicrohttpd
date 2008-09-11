@@ -167,7 +167,7 @@ test_query_session ()
     return 2;
 
   c = curl_easy_init ();
-#ifdef DEBUG_CURL_VERBOSE
+#if DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
