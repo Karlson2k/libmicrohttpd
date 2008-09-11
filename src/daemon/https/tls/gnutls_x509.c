@@ -1354,7 +1354,7 @@ MHD_gnutls_certificate_set_x509_crl_file (mhd_gtls_cert_credentials_t
 {
   int ret;
   size_t size;
-  unsigned char *data = (unsigned char*) read_binary_file (crlfile, &size);
+  unsigned char *data = (unsigned char*) read_file (crlfile, &size);
 
   if (data == NULL)
     {
