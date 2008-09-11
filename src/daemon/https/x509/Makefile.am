@@ -13,23 +13,20 @@ libx509_la_LDFLAGS = -lgcrypt
 # -l $(top_srcdir)/src/daemon/https/lgl/liblgl.la
 
 libx509_la_SOURCES = \
-common.c \
-crq.c \
+common.c common.h \
+crq.c crq.h \
 crl.c \
-dn.c \
-dsa.c \
-extensions.c \
-mpi.c \
+dn.c dn.h \
+dsa.c dsa.h \
+extensions.c extensions.h \
+mpi.c mpi.h \
 pkcs12_bag.c \
-pkcs12.c \
+pkcs12.c pkcs12.h \
 pkcs12_encr.c \
-pkcs7.c \
-x509_privkey.c \
+pkcs7.c pkcs7.h \
+x509_privkey.c privkey.h \
 privkey_pkcs8.c \
-rfc2818_hostname.c \
-sign.c \
-x509_verify.c \
-x509.c 
-
-
-
+rfc2818_hostname.c rfc2818.h \
+sign.c sign.h \
+x509_verify.c verify.h \
+x509.c x509.h
