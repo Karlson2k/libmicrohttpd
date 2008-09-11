@@ -44,8 +44,6 @@
 
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
-#include "gettext.h"
-
 #define gnutls_log_func LOG_FUNC
 
 /* created by asn1c */

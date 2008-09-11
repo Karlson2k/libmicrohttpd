@@ -30,9 +30,8 @@
 #endif
 
 /* I18n of error codes. */
-#include "gettext.h"
-#define _(String) dgettext (PACKAGE, String)
-#define N_(String) gettext_noop (String)
+#define _(String) (String)
+#define N_(String) (String)
 
 extern LOG_FUNC _gnutls_log_func;
 

@@ -23,6 +23,7 @@ auth_dhe.c \
 auth_rsa.c \
 auth_rsa_export.c \
 debug.c \
+defines.h \
 ext_cert_type.c \
 ext_max_record.c \
 ext_oprfi.c \

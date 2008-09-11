@@ -210,7 +210,8 @@ _gnutls_finished (mhd_gtls_session_t session, int type, void *ret)
   if (td_sha == NULL)
     {
       gnutls_assert ();
-      mhd_gnutls_hash_deinit (td_md5, NULL);
+      if (td_md5 != NULL)
+	mhd_gnutls_hash_deinit (td_md5, NULL);
       return GNUTLS_E_HASH_FAILED;
     }
 

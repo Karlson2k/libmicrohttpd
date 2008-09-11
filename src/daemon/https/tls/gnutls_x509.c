@@ -42,7 +42,10 @@
 #include <debug.h>
 #include <x509_b64.h>
 #include <gnutls_x509.h>
-#include <read-file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 /* x509 */
 #include "common.h"
@@ -602,6 +605,33 @@ read_key_mem (mhd_gtls_cert_credentials_t res,
   return 0;
 }
 
+static char *
+read_file (const char *filename, size_t * length)
+{
+  struct stat st;
+  char *out;
+  int fd;
+
+  fd = open (filename, O_RDONLY);
+  if (-1 == fd)
+    return NULL;
+  if (0 != fstat(fd, &st))
+    goto ERR;
+  out = malloc(st.st_size);
+  if (out == NULL)
+    goto ERR;
+  if (st.st_size != read(fd, out, st.st_size))
+    {
+      free(out);
+      goto ERR;
+    }
+  close(fd);
+  return out;
+ ERR:
+  close(fd);
+  return NULL;
+}
+
 /* Reads a certificate file
  */
 static int
@@ -610,7 +640,7 @@ read_cert_file (mhd_gtls_cert_credentials_t res,
 {
   int ret;
   size_t size;
-  char *data = read_binary_file (certfile, &size);
+  char *data = read_file (certfile, &size);
 
   if (data == NULL)
     {
@@ -636,7 +666,7 @@ read_key_file (mhd_gtls_cert_credentials_t res,
 {
   int ret;
   size_t size;
-  char *data = read_binary_file (keyfile, &size);
+  char *data = read_file (keyfile, &size);
 
   if (data == NULL)
     {
@@ -1080,7 +1110,7 @@ MHD_gnutls_certificate_set_x509_trust_file (mhd_gtls_cert_credentials_t
 {
   int ret, ret2;
   size_t size;
-  unsigned char *data = (unsigned char*) read_binary_file (cafile, &size);
+  unsigned char *data = (unsigned char*) read_file (cafile, &size);
 
   if (data == NULL)
     {
