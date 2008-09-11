@@ -22,6 +22,8 @@ if MHD_DEBUG_TLS
   tls_alert_test
 endif  
 
+EXTRA_DIST = cert.pem key.pem
+
 TESTS = $(check_PROGRAMS)
 
 # cURL independent tests
