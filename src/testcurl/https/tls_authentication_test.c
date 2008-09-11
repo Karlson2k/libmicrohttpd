@@ -29,6 +29,7 @@
 #include <curl/curl.h>
 #include <sys/stat.h>
 
+#define DEBUG_CURL_VERBOSE 0
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 #define MHD_E_MEM "Error: memory error\n"
@@ -170,7 +171,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-#ifdef DEBUG
+#if DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);

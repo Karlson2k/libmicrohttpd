@@ -28,6 +28,7 @@
 #include "microhttpd.h"
 #include <curl/curl.h>
 
+#define DEBUG_CURL_VERBOSE 0
 #define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
 
 #include "tls_test_keys.h"
@@ -166,7 +167,7 @@ test_query_session ()
     return 2;
 
   c = curl_easy_init ();
-#ifdef DEBUG
+#ifdef DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
