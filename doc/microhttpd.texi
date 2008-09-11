@@ -291,6 +291,67 @@ the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6},
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
 the daemon will listen to incomming connections from anywhere.
 
+@item MHD_OPTION_HTTPS_KEY_PATH
+Filename for the private key (key.pem) to be used by the
+HTTPS daemon.  This option should be followed by an
+"const char*" argument.  The memory of the filename must
+not be released until the application terminates.
+This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
+          
+@item MHD_OPTION_HTTPS_CERT_PATH
+Filename for the certificate (cert.pem) to be used by the
+HTTPS daemon.  This option should be followed by an
+"const char*" argument.  The memory of the filename must
+not be released until the application terminates.
+This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
+          
+@item MHD_OPTION_HTTPS_MEM_KEY
+Memory pointer to the private key to be used by the
+HTTPS daemon.  This option should be followed by an
+"const char*" argument.
+This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
+   
+@item MHD_OPTION_HTTPS_MEM_CERT
+Memory pointer to the certificate to be used by the
+HTTPS daemon.  This option should be followed by an
+"const char*" argument.
+This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
+   
+@item MHD_OPTION_CRED_TYPE
+Daemon credentials type.  Either certificate or anonymous,
+this option should be followed by one of the values listed in
+"enum MHD_GNUTLS_CredentialsType".
+   
+@item MHD_OPTION_PROTOCOL_VERSION
+SSL/TLS protocol version.
+Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated
+(const) array of 'enum MHD_GNUTLS_Protocol' values representing the
+protocol versions to this server should support. Unsupported
+requests will be dropped by the server.
+
+@item MHD_OPTION_CIPHER_ALGORITHM
+Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN)
+terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm'
+representing the cipher priority order to which the HTTPS
+daemon should adhere.
+  
+@item MHD_OPTION_KX_PRIORITY
+Memory pointer to a zero (MHD_GNUTLS_KX_UNKNOWN)
+terminated (const) array of 'MHD_GNUTLS_KeyExchangeAlgorithm'
+representing the key exchange algorithm priority order to which
+the HTTPS daemon should adhere.
+
+@item MHD_OPTION_CERT_TYPE
+Indicate which type of certificate this server will use,
+followed by a value of type 'enum MHD_GNUTLS_CertificateType'.
+
+@item MHD_OPTION_MAC_ALGO
+Specify the mac algorithm used by server.
+The argument should be of type "enum MHD_GNUTLS_MacAlgorithm"
+
+@item MHD_OPTION_TLS_COMP_ALGO
+Compression algorithm used by server.  Should be followed by an
+option of type 'enum MHD_GNUTLS_CompressionMethod'.
 
 @end table
 @end deftp
@@ -348,6 +409,20 @@ No activity on the connection for the number of seconds specified using
 @item MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN
 We had to close the session since @mhd{} was being shut down.
 @end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_GNUTLS_CipherAlgorithm
+List of symmetric ciphers.
+Note that not all listed algorithms are necessarily supported by
+all builds of MHD.
+@end deftp
+
+
+@deftp {Enumeration} MHD_GNUTLS_KeyExchangeAlgorithm
+List of key exchange algorithms.
+Note that not all listed algorithms are necessarily supported by
+all builds of MHD.
 @end deftp
 
 
