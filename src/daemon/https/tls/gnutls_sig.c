@@ -65,7 +65,7 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver == MHD_GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       ret = mhd_gtls_generate_master (session, 1);
       if (ret < 0)
@@ -92,7 +92,7 @@ mhd_gtls_tls_sign_hdata (mhd_gtls_session_t session,
           return GNUTLS_E_HASH_FAILED;
         }
 
-      if (ver == MHD_GNUTLS_SSL3)
+      if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
         mhd_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
                                               session->security_parameters.
                                               master_secret, TLS_MASTER_SIZE);
@@ -146,7 +146,7 @@ mhd_gtls_tls_sign_params (mhd_gtls_session_t session,
   switch (cert->subject_pk_algorithm)
     {
     case MHD_GNUTLS_PK_RSA:
-      if (ver < MHD_GNUTLS_TLS1_2)
+      if (ver < MHD_GNUTLS_PROTOCOL_TLS1_2)
         {
           mac_hd_t td_md5 = mhd_gtls_hash_init (MHD_GNUTLS_MAC_MD5);
           if (td_md5 == NULL)
@@ -352,7 +352,7 @@ mhd_gtls_verify_sig_hdata (mhd_gtls_session_t session,
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver == MHD_GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       ret = mhd_gtls_generate_master (session, 1);
       if (ret < 0)
@@ -404,7 +404,7 @@ mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
   opaque concat[36];
   enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
-  if (ver < MHD_GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       td_md5 = mhd_gtls_hash_init (MHD_GNUTLS_MAC_MD5);
       if (td_md5 == NULL)
@@ -435,7 +435,7 @@ mhd_gtls_verify_sig_params (mhd_gtls_session_t session,
                    TLS_RANDOM_SIZE);
   mhd_gnutls_hash (td_sha, params->data, params->size);
 
-  if (ver < MHD_GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       mhd_gnutls_hash_deinit (td_md5, concat);
       mhd_gnutls_hash_deinit (td_sha, &concat[16]);

@@ -217,7 +217,7 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
   int randomize_key = 0;
   ssize_t data_size = _data_size;
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       /* SSL 3.0
        */
@@ -385,7 +385,7 @@ _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
   for (i = 0; i < params_len; i++)
     mhd_gtls_mpi_release (&params[i]);
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       /* SSL 3.0 */
       *data = sdata.data;

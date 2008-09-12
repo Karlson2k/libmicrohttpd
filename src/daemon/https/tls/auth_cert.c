@@ -870,7 +870,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
       return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
     }
 
-  if (ver == MHD_GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       /* read supported hashes */
       int hash_num;
@@ -1039,7 +1039,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
       session->internals.ignore_rdn_sequence == 0)
     size += cred->x509_rdn_sequence.size;
 
-  if (ver == MHD_GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_PROTOCOL_TLS1_2)
     /* Need at least one byte to announce the number of supported hash
        functions (see below).  */
     size += 1;
@@ -1059,7 +1059,7 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
   pdata[2] = DSA_SIGN;          /* only these for now */
   pdata += CERTTYPE_SIZE;
 
-  if (ver == MHD_GNUTLS_TLS1_2)
+  if (ver == MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       /* Supported hashes (nothing for now -- FIXME). */
       *pdata = 0;

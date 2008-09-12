@@ -349,24 +349,6 @@ enum MHD_OPTION
   MHD_OPTION_SOCK_ADDR = 6,
 
   /**
-   * Filename for the private key (key.pem) to be used by the
-   * HTTPS daemon.  This option should be followed by an
-   * "const char*" argument.  The memory of the filename must
-   * not be released until the application terminates.
-   * This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
-   */
-  MHD_OPTION_HTTPS_KEY_PATH = 7,
-
-  /**
-   * Filename for the certificate (cert.pem) to be used by the
-   * HTTPS daemon.  This option should be followed by an
-   * "const char*" argument.  The memory of the filename must
-   * not be released until the application terminates.
-   * This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
-   */
-  MHD_OPTION_HTTPS_CERT_PATH = 8,
-
-  /**
    * Memory pointer for the private key (key.pem) to be used by the
    * HTTPS daemon.  This option should be followed by an
    * "const char*" argument.
@@ -515,15 +497,6 @@ enum MHD_RequestTerminationCode
    */
   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
 
-  /* FIXME: add TLS-specific error codes,
-     but only those that are useful! */
-  /**
-   * Processing of this secure connection encountered
-   * an error.
-   */
-  MHD_TLS_REQUEST_TERMINATED_WITH_ERROR,
-
-  MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT
 };
 
 /**
@@ -640,11 +613,11 @@ enum MHD_GNUTLS_CompressionMethod
 enum MHD_GNUTLS_Protocol
 {
   MHD_GNUTLS_PROTOCOL_END = 0,
-  MHD_GNUTLS_SSL3 = 1,
-  MHD_GNUTLS_TLS1_0,
-  MHD_GNUTLS_TLS1_1,
-  MHD_GNUTLS_TLS1_2,
-  MHD_GNUTLS_VERSION_UNKNOWN = 0xff
+  MHD_GNUTLS_PROTOCOL_SSL3 = 1,
+  MHD_GNUTLS_PROTOCOL_TLS1_0,
+  MHD_GNUTLS_PROTOCOL_TLS1_1,
+  MHD_GNUTLS_PROTOCOL_TLS1_2,
+  MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN = 0xff
 };
 
 /**

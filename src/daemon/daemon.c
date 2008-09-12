@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  (C) 2007 Daniel Pittman and Christian Grothoff
+  (C) 2007, 2008 Daniel Pittman and Christian Grothoff
   
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -125,55 +125,9 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   gnutls_datum_t key;
   gnutls_datum_t cert;
 
-  /* certificate & key loaded from file */
-  if (daemon->https_cert_path && daemon->https_key_path)
-    {
-      if (daemon->https_mem_cert || daemon->https_mem_key)
-	{
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "You specified certificates both in memory and on disk!",
-		    daemon->https_cert_path,
-		    strerror(errno));
-#endif
-	  return -1;
-	}
-     /* test for private key & certificate file exsitance */
-      if (access (daemon->https_cert_path, R_OK))
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Missing X.509 certificate file `%s': %s\n",
-		    daemon->https_cert_path,
-		    strerror(errno));
-#endif
-          return -1;
-	}
-      
-      if (access (daemon->https_key_path, R_OK))
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Missing X.509 key file `%s': %s\n",
-		    daemon->https_key_path,
-		    strerror(errno));
-#endif
-          return -1;
-        }
-      return MHD_gnutls_certificate_set_x509_key_file (daemon->x509_cred,
-                                                       daemon->https_cert_path,
-                                                       daemon->https_key_path,
-                                                       GNUTLS_X509_FMT_PEM);
-    }
   /* certificate & key loaded from memory */
   if (daemon->https_mem_cert && daemon->https_mem_key)
     {
-      if (daemon->https_cert_path || daemon->https_key_path)
-	{
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "You specified certificates both in memory and on disk!",
-		    daemon->https_cert_path,
-		    strerror(errno));
-#endif
-	  return -1;
-	}
       key.data = (unsigned char *) daemon->https_mem_key;
       key.size = strlen (daemon->https_mem_key);
       cert.data = (unsigned char *) daemon->https_mem_cert;
@@ -927,12 +881,6 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_PROTOCOL_VERSION:
           _set_priority (&retVal->priority_cache->protocol,
                          va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_HTTPS_KEY_PATH:
-          retVal->https_key_path = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_HTTPS_CERT_PATH:
-          retVal->https_cert_path = va_arg (ap, const char *);
           break;
         case MHD_OPTION_HTTPS_MEM_KEY:
           retVal->https_mem_key = va_arg (ap, const char *);

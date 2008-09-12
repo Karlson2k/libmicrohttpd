@@ -356,8 +356,6 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
-  char * cur_dir;
-  char cert_path[255], key_path[255];
 
   MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
@@ -379,7 +377,7 @@ main (int argc, char *const *argv)
     }
 
   int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
-  int p[] = { MHD_GNUTLS_SSL3, 0 };
+  int p[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
   int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
   int kx[] = { MHD_GNUTLS_KX_ANON_DH, 0 };
 
@@ -389,16 +387,6 @@ main (int argc, char *const *argv)
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_END);
-
-  cur_dir = get_current_dir_name ();
-  sprintf (cert_path, "%s/%s", cur_dir, "cert.pem");
-  sprintf (key_path, "%s/%s", cur_dir, "key.pem");
-
-  errorCount +=
-    test_wrap ("file certificates", &test_https_transfer, test_fd,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_CERT_PATH, cert_path,
-               MHD_OPTION_HTTPS_KEY_PATH, key_path, MHD_OPTION_END);
-  free (cur_dir);
 
   errorCount +=
     test_wrap ("protocol_version", &test_protocol_version, test_fd,

@@ -812,7 +812,7 @@ mhd_gtls_PRF (mhd_gtls_session_t session,
   memcpy (s_seed, label, label_size);
   memcpy (&s_seed[label_size], seed, seed_size);
 
-  if (ver >= MHD_GNUTLS_TLS1_2)
+  if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       result =
         _gnutls_P_hash (MHD_GNUTLS_MAC_SHA1, secret, secret_size, s_seed,

@@ -71,7 +71,7 @@ generate_normal_master (mhd_gtls_session_t session, int keep_premaster)
                     mhd_gtls_bin2hex (session->security_parameters.
                                       server_random, 32, buf, sizeof (buf)));
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       opaque rnd[2 * TLS_RANDOM_SIZE + 1];
 
@@ -504,7 +504,7 @@ mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again)
 
   if (again == 0)
     {
-      if (MHD_gnutls_protocol_get_version (session) != MHD_GNUTLS_SSL3 ||
+      if (MHD_gnutls_protocol_get_version (session) != MHD_GNUTLS_PROTOCOL_SSL3 ||
           session->internals.selected_cert_list_length > 0)
         {
           /* TLS 1.0 or SSL 3.0 with a valid certificate
@@ -525,7 +525,7 @@ mhd_gtls_send_client_certificate (mhd_gtls_session_t session, int again)
    * no certificate alert instead of an
    * empty certificate.
    */
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3 &&
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3 &&
       session->internals.selected_cert_list_length == 0)
     {
       ret =
@@ -632,7 +632,7 @@ mhd_gtls_recv_client_certificate (mhd_gtls_session_t session)
            */
           if (optional == OPTIONAL_PACKET &&
               ret == GNUTLS_E_WARNING_ALERT_RECEIVED &&
-              MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3 &&
+              MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3 &&
               gnutls_alert_get (session) == GNUTLS_A_SSL3_NO_CERTIFICATE)
             {
 

@@ -202,7 +202,7 @@ _gnutls_x509_cert_verify_peers (mhd_gtls_session_t session,
 }
 
 /*
- * Read certificates and private keys, from files, memory etc.
+ * Read certificates and private keys, from memory etc.
  */
 
 /* returns error if the certificate has different algorithm than
@@ -605,82 +605,6 @@ read_key_mem (mhd_gtls_cert_credentials_t res,
   return 0;
 }
 
-static char *
-read_file (const char *filename, size_t * length)
-{
-  struct stat st;
-  char *out;
-  int fd;
-
-  fd = open (filename, O_RDONLY);
-  if (-1 == fd)
-    return NULL;
-  if (0 != fstat(fd, &st))
-    goto ERR;
-  out = malloc(st.st_size);
-  if (out == NULL)
-    goto ERR;
-  if (st.st_size != read(fd, out, st.st_size))
-    {
-      free(out);
-      goto ERR;
-    }
-  *length = st.st_size;
-  close(fd);
-  return out;
- ERR:
-  close(fd);
-  return NULL;
-}
-
-/* Reads a certificate file
- */
-static int
-read_cert_file (mhd_gtls_cert_credentials_t res,
-                const char *certfile, gnutls_x509_crt_fmt_t type)
-{
-  int ret;
-  size_t size;
-  char *data = read_file (certfile, &size);
-
-  if (data == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_FILE_ERROR;
-    }
-
-  ret = read_cert_mem (res, data, size, type);
-  free (data);
-
-  return ret;
-
-}
-
-
-
-/* Reads PKCS-1 RSA private key file or a DSA file (in the format openssl
- * stores it).
- */
-static int
-read_key_file (mhd_gtls_cert_credentials_t res,
-               const char *keyfile, gnutls_x509_crt_fmt_t type)
-{
-  int ret;
-  size_t size;
-  char *data = read_file (keyfile, &size);
-
-  if (data == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_FILE_ERROR;
-    }
-
-  ret = read_key_mem (res, data, size, type);
-  free (data);
-
-  return ret;
-}
-
 /**
   * MHD_gnutls_certificate_set_x509_key_mem - Used to set keys in a mhd_gtls_cert_credentials_t structure
   * @res: is an #mhd_gtls_cert_credentials_t structure.
@@ -731,51 +655,6 @@ MHD_gnutls_certificate_set_x509_key_mem (mhd_gtls_cert_credentials_t
   res->ncerts++;
 
   if (key && (ret = _gnutls_check_key_cert_match (res)) < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
-
-  return 0;
-}
-
-/**
-  * MHD_gnutls_certificate_set_x509_key_file - Used to set keys in a mhd_gtls_cert_credentials_t structure
-  * @res: is an #mhd_gtls_cert_credentials_t structure.
-  * @CERTFILE: is a file that containing the certificate list (path) for
-  * the specified private key, in PKCS7 format, or a list of certificates
-  * @KEYFILE: is a file that contains the private key
-  * @type: is PEM or DER
-  *
-  * This function sets a certificate/private key pair in the
-  * mhd_gtls_cert_credentials_t structure.  This function may be
-  * called more than once (in case multiple keys/certificates exist
-  * for the server).
-  *
-  * Currently only PKCS-1 encoded RSA and DSA private keys are accepted by
-  * this function.
-  *
-  * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
-  **/
-int
-MHD_gnutls_certificate_set_x509_key_file (mhd_gtls_cert_credentials_t
-                                          res, const char *CERTFILE,
-                                          const char *KEYFILE,
-                                          gnutls_x509_crt_fmt_t type)
-{
-  int ret;
-
-  /* this should be first
-   */
-  if ((ret = read_key_file (res, KEYFILE, type)) < 0)
-    return ret;
-
-  if ((ret = read_cert_file (res, CERTFILE, type)) < 0)
-    return ret;
-
-  res->ncerts++;
-
-  if ((ret = _gnutls_check_key_cert_match (res)) < 0)
     {
       gnutls_assert ();
       return ret;
@@ -1085,59 +964,6 @@ MHD_gnutls_certificate_set_x509_trust_mem (mhd_gtls_cert_credentials_t
   return ret;
 }
 
-/**
-  * MHD_gnutls_certificate_set_x509_trust_file - Used to add trusted CAs in a mhd_gtls_cert_credentials_t structure
-  * @res: is an #mhd_gtls_cert_credentials_t structure.
-  * @cafile: is a file containing the list of trusted CAs (DER or PEM list)
-  * @type: is PEM or DER
-  *
-  * This function adds the trusted CAs in order to verify client or
-  * server certificates. In case of a client this is not required to
-  * be called if the certificates are not verified using
-  * MHD_gtls_certificate_verify_peers2().  This function may be called
-  * multiple times.
-  *
-  * In case of a server the names of the CAs set here will be sent to
-  * the client if a certificate request is sent. This can be disabled
-  * using MHD_gnutls_certificate_send_x509_rdn_sequence().
-  *
-  * Returns: number of certificates processed, or a negative value on
-  * error.
-  **/
-int
-MHD_gnutls_certificate_set_x509_trust_file (mhd_gtls_cert_credentials_t
-                                            res, const char *cafile,
-                                            gnutls_x509_crt_fmt_t type)
-{
-  int ret, ret2;
-  size_t size;
-  unsigned char *data = (unsigned char*) read_file (cafile, &size);
-
-  if (data == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_FILE_ERROR;
-    }
-
-  if (type == GNUTLS_X509_FMT_DER)
-    ret = parse_der_ca_mem (&res->x509_ca_list, &res->x509_ncas, data, size);
-  else
-    ret = parse_pem_ca_mem (&res->x509_ca_list, &res->x509_ncas, data, size);
-
-  free (data);
-
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
-
-  if ((ret2 = generate_rdn_seq (res)) < 0)
-    return ret2;
-
-  return ret;
-}
-
 #ifdef ENABLE_PKI
 
 static int
@@ -1329,53 +1155,6 @@ MHD_gnutls_certificate_set_x509_crl_mem (mhd_gtls_cert_credentials_t
 
   if ((ret = read_crl_mem (res, CRL->data, CRL->size, type)) < 0)
     return ret;
-
-  return ret;
-}
-
-/**
-  * MHD_gnutls_certificate_set_x509_crl_file - Used to add CRLs in a mhd_gtls_cert_credentials_t structure
-  * @res: is an #mhd_gtls_cert_credentials_t structure.
-  * @crlfile: is a file containing the list of verified CRLs (DER or PEM list)
-  * @type: is PEM or DER
-  *
-  * This function adds the trusted CRLs in order to verify client or server
-  * certificates.  In case of a client this is not required
-  * to be called if the certificates are not verified using
-  * MHD_gtls_certificate_verify_peers2().
-  * This function may be called multiple times.
-  *
-  * Returns: number of CRLs processed or a negative value on error.
-  **/
-int
-MHD_gnutls_certificate_set_x509_crl_file (mhd_gtls_cert_credentials_t
-                                          res, const char *crlfile,
-                                          gnutls_x509_crt_fmt_t type)
-{
-  int ret;
-  size_t size;
-  unsigned char *data = (unsigned char*) read_file (crlfile, &size);
-
-  if (data == NULL)
-    {
-      gnutls_assert ();
-      return GNUTLS_E_FILE_ERROR;
-    }
-
-  if (type == GNUTLS_X509_FMT_DER)
-    ret = parse_der_crl_mem (&res->x509_crl_list, &res->x509_ncrls,
-                             data, size);
-  else
-    ret = parse_pem_crl_mem (&res->x509_crl_list, &res->x509_ncrls,
-                             data, size);
-
-  free (data);
-
-  if (ret < 0)
-    {
-      gnutls_assert ();
-      return ret;
-    }
 
   return ret;
 }

@@ -202,7 +202,7 @@ mac_init (enum MHD_GNUTLS_HashAlgorithm mac, opaque * secret, int secret_size,
   if (mac == MHD_GNUTLS_MAC_NULL)
     return GNUTLS_MAC_FAILED;
 
-  if (ver == MHD_GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {                           /* SSL 3.0 */
       td = mhd_gnutls_mac_init_ssl3 (mac, secret, secret_size);
     }
@@ -217,7 +217,7 @@ mac_init (enum MHD_GNUTLS_HashAlgorithm mac, opaque * secret, int secret_size,
 inline static void
 mac_deinit (mac_hd_t td, opaque * res, int ver)
 {
-  if (ver == MHD_GNUTLS_SSL3)
+  if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {                           /* SSL 3.0 */
       mhd_gnutls_mac_deinit_ssl3 (td, res);
     }
@@ -251,7 +251,7 @@ calc_enc_length (mhd_gtls_session_t session, int data_size,
         }
 
       /* make rnd a multiple of blocksize */
-      if (session->security_parameters.version == MHD_GNUTLS_SSL3 ||
+      if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3 ||
           random_pad == 0)
         {
           rnd = 0;
@@ -271,7 +271,7 @@ calc_enc_length (mhd_gtls_session_t session, int data_size,
       *pad = (uint8_t) (blocksize - (length % blocksize)) + rnd;
 
       length += *pad;
-      if (session->security_parameters.version >= MHD_GNUTLS_TLS1_1)
+      if (session->security_parameters.version >= MHD_GNUTLS_PROTOCOL_TLS1_1)
         length += blocksize;    /* for the IV */
 
       break;
@@ -341,7 +341,7 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
                                    write_sequence_number), 8);
 
       mhd_gnutls_hash (td, &type, 1);
-      if (ver >= MHD_GNUTLS_TLS1_0)
+      if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
         {                       /* TLS 1.0 or higher */
           mhd_gnutls_hash (td, &major, 1);
           mhd_gnutls_hash (td, &minor, 1);
@@ -373,7 +373,7 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
 
   data_ptr = cipher_data;
   if (block_algo == CIPHER_BLOCK &&
-      session->security_parameters.version >= MHD_GNUTLS_TLS1_1)
+      session->security_parameters.version >= MHD_GNUTLS_PROTOCOL_TLS1_1)
     {
       /* copy the random IV.
        */
@@ -494,7 +494,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
 
       /* ignore the IV in TLS 1.1.
        */
-      if (session->security_parameters.version >= MHD_GNUTLS_TLS1_1)
+      if (session->security_parameters.version >= MHD_GNUTLS_PROTOCOL_TLS1_1)
         {
           ciphertext.size -= blocksize;
           ciphertext.data += blocksize;
@@ -521,7 +521,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
 
       /* Check the pading bytes (TLS 1.x)
        */
-      if (ver >= MHD_GNUTLS_TLS1_0 && pad_failed == 0)
+      if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0 && pad_failed == 0)
         for (i = 2; i < pad; i++)
           {
             if (ciphertext.data[ciphertext.size - i] !=
@@ -548,7 +548,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
                                    read_sequence_number), 8);
 
       mhd_gnutls_hash (td, &type, 1);
-      if (ver >= MHD_GNUTLS_TLS1_0)
+      if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
         {                       /* TLS 1.x */
           mhd_gnutls_hash (td, &major, 1);
           mhd_gnutls_hash (td, &minor, 1);

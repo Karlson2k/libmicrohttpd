@@ -170,19 +170,9 @@ main (int argc, char *const *argv)
 
                                  MHD_OPTION_END);
   }
-  else if (argc == 5){
-	  TLS_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG
-          | MHD_USE_SSL, atoi (argv[1]),
-          NULL,
-          NULL, &http_ahc,
-          NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
-          MHD_OPTION_HTTPS_CERT_PATH, argv[3],
-          MHD_OPTION_HTTPS_KEY_PATH, argv[4],
-          MHD_OPTION_END);
-  }
   else {
 	  printf
-	          ("Usage : %s HTTP-PORT SECONDS-TO-RUN [CERTIFICATE PATH, KEY PATH]\n", argv[0]);
+	          ("Usage : %s HTTP-PORT SECONDS-TO-RUN\n", argv[0]);
 	        return 1;
   }
 

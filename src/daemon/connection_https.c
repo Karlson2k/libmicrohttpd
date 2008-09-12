@@ -152,7 +152,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_NO;
     case MHD_TLS_HANDSHAKE_FAILED:
       MHD_tls_connection_close (connection,
-                                    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
+				MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
       /* some HTTP state */
     default:
@@ -237,14 +237,14 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
                     "Error: received handshake message out of context\n");
 #endif
           MHD_tls_connection_close (connection,
-                                        MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
+                                        MHD_REQUEST_TERMINATED_WITH_ERROR);
           return MHD_NO;
         }
 
     /* ignore any out of bound change chiper spec messages */
     case GNUTLS_CHANGE_CIPHER_SPEC:
       MHD_tls_connection_close (connection,
-                                    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
+				MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
 
     case GNUTLS_ALERT:
@@ -279,7 +279,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
                GNUTLS_AL_FATAL)
         {
           MHD_tls_connection_close (connection,
-				    MHD_TLS_REQUEST_TERMINATED_WITH_FATAL_ALERT);
+				    MHD_REQUEST_TERMINATED_WITH_ERROR);
           return MHD_NO;
         }
       /* this should never execute */
@@ -308,7 +308,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #endif
       /* close connection upon reception of unrecognized message type */
       MHD_tls_connection_close (connection,
-      				    MHD_TLS_REQUEST_TERMINATED_WITH_ERROR);
+				MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
     }
 

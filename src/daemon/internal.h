@@ -663,10 +663,6 @@ struct MHD_Daemon
   /* Diffie-Hellman parameters */
   mhd_gtls_dh_params_t dh_params;
 
-  const char *https_key_path;
-
-  const char *https_cert_path;
-
   const char *https_mem_key;
 
   const char *https_mem_cert;

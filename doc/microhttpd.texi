@@ -123,6 +123,7 @@ GNU libmicrohttpd is a GNU package.
 * microhttpd-requests::         Handling requests.
 * microhttpd-responses::        Building responses to requests.
 * microhttpd-post::             Adding a @code{POST} processor.
+* microhttpd-info::             Obtaining status information.
 
 Appendices
 
@@ -291,20 +292,6 @@ the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6},
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
 the daemon will listen to incomming connections from anywhere.
 
-@item MHD_OPTION_HTTPS_KEY_PATH
-Filename for the private key (key.pem) to be used by the
-HTTPS daemon.  This option should be followed by an
-"const char*" argument.  The memory of the filename must
-not be released until the application terminates.
-This should be used in conjunction with 'MHD_OPTION_HTTPS_CERT_PATH'.
-          
-@item MHD_OPTION_HTTPS_CERT_PATH
-Filename for the certificate (cert.pem) to be used by the
-HTTPS daemon.  This option should be followed by an
-"const char*" argument.  The memory of the filename must
-not be released until the application terminates.
-This should be used in conjunction with 'MHD_OPTION_HTTPS_KEY_PATH'.
-          
 @item MHD_OPTION_HTTPS_MEM_KEY
 Memory pointer to the private key to be used by the
 HTTPS daemon.  This option should be followed by an
@@ -416,6 +403,31 @@ We had to close the session since @mhd{} was being shut down.
 List of symmetric ciphers.
 Note that not all listed algorithms are necessarily supported by
 all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_CIPHER_UNKNOWN
+
+@item MHD_GNUTLS_CIPHER_NULL
+
+@item MHD_GNUTLS_CIPHER_ARCFOUR_128
+
+@item MHD_GNUTLS_CIPHER_3DES_CBC
+
+@item MHD_GNUTLS_CIPHER_AES_128_CBC
+
+@item MHD_GNUTLS_CIPHER_AES_256_CBC
+
+@item MHD_GNUTLS_CIPHER_ARCFOUR_40
+
+@item MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC
+
+@item MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC
+
+@item MHD_GNUTLS_CIPHER_RC2_40_CBC
+
+@item MHD_GNUTLS_CIPHER_DES_CBC
+
+@end table
 @end deftp
 
 
@@ -423,6 +435,170 @@ all builds of MHD.
 List of key exchange algorithms.
 Note that not all listed algorithms are necessarily supported by
 all builds of MHD.
+
+@table @code
+
+@item MHD_GNUTLS_KX_UNKNOWN
+
+@item MHD_GNUTLS_KX_RSA
+
+@item MHD_GNUTLS_KX_DHE_DSS
+
+@item MHD_GNUTLS_KX_DHE_RSA
+
+@item MHD_GNUTLS_KX_ANON_DH
+
+@item MHD_GNUTLS_KX_SRP
+
+@item MHD_GNUTLS_KX_RSA_EXPORT
+
+@item MHD_GNUTLS_KX_SRP_RSA
+
+@item MHD_GNUTLS_KX_SRP_DSS
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_GNUTLS_CredentialsType
+Server credentials type (note that not all types
+maybe supported by all MHD builds).
+
+@table @code
+@item MHD_GNUTLS_CRD_CERTIFICATE
+We have a x.509 certificate.
+
+@item MHD_GNUTLS_CRD_ANON
+We have no certificate (anonymous).
+
+@item MHD_GNUTLS_CRD_SRP
+We are using password-based authentication.
+
+@item MHD_GNUTLS_CRD_PSK
+We are using pre-shared keys (PSK).
+
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_GNUTLS_HashAlgorithm
+Enumeration of possible cryptographic hash functions (for MAC and
+Digest operations).  Note that not all listed algorithms are
+necessarily supported by all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_MAC_UNKNOWN
+
+@item MHD_GNUTLS_MAC_NULL
+
+@item MHD_GNUTLS_MAC_MD5
+
+@item MHD_GNUTLS_MAC_SHA1
+
+@item MHD_GNUTLS_MAC_SHA256
+
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_GNUTLS_CompressionMethod
+List of compression methods.  Note that not all listed algorithms are
+necessarily supported by all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_COMP_UNKNOWN
+
+@item MHD_GNUTLS_COMP_NULL
+No compression.
+
+@item MHD_GNUTLS_COMP_DEFLATE
+gzip compression.
+
+@end table
+@end deftp
+
+
+
+@deftp {Enumeration} MHD_GNUTLS_Protocol
+SSL/TLS Protocol types.  Note that not all listed algorithms are
+necessarily supported by all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_PROTOCOL_END
+@item MHD_GNUTLS_PROTOCOL_SSL3
+@item MHD_GNUTLS_PROTOCOL_TLS1_0
+@item MHD_GNUTLS_PROTOCOL_TLS1_1
+@item MHD_GNUTLS_PROTOCOL_TLS1_2
+@item MHD_GNUTLS_PROTOCOL_UNKNOWN
+
+@end table
+@end deftp
+
+
+
+@deftp {Enumeration} MHD_GNUTLS_PublicKeyAlgorithm
+List of public key algorithms.  Note that not all listed algorithms
+are necessarily supported by all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_PK_UNKNOWN
+
+@item MHD_GNUTLS_PK_RSA
+
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_ConnectionInfoType
+Values of this enum are used to specify what information about a
+connection is desired.
+
+@table @code
+
+@item MHD_CONNECTION_INFO_CIPHER_ALGO
+What cipher algorithm is being used.
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_KX_ALGO
+What key exchange algorithm is being used.
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_CREDENTIALS_TYPE
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_MAC_ALGO
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_COMPRESSION_METHOD,
+What compression method is being used.
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_PROTOCOL,
+Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_CERT_TYPE
+Takes no extra arguments.
+
+@end table
+@end deftp
+
+
+
+
+@deftp {Enumeration} MHD_DaemonInfoType
+Values of this enum are used to specify what
+information about a deamon is desired.
+@table @code
+@item MHD_DAEMON_INFO_KEY_SIZE
+Request information about the key size for a particular cipher
+algorithm.  The cipher algorithm should be passed as an extra argument
+(of type 'enum MHD_GNUTLS_CipherAlgorithm').
+
+@item MHD_DAEMON_INFO_MAC_KEY_SIZE
+Request information about the key size for a particular cipher
+algorithm.  The cipher algorithm should be passed as an extra argument
+(of type 'enum MHD_GNUTLS_HashAlgorithm').
+
+@end table
 @end deftp
 
 
@@ -452,6 +628,16 @@ Handle for a response.
 
 @deftp {C Struct} MHD_PostProcessor
 Handle for @code{POST} processing.
+@end deftp
+
+
+@deftp {C Union} MHD_ConnectionInfo
+Information about a connection.
+@end deftp
+
+
+@deftp {C Union} MHD_DaemonInfo
+Information about an MHD daemon.
 @end deftp
 
 
@@ -1222,6 +1408,72 @@ of this function.
 
 @end deftypefun
 
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd-info
+@chapter Obtaining status information.
+
+
+@menu
+* microhttpd-info daemon::        State information about an MHD daemon
+* microhttpd-info conn::          State information about a connection
+@end menu
+
+
+@c ------------------------------------------------------------
+@node microhttpd-info daemon
+@section Obtaining state information about an MHD daemon
+
+@deftypefun {const union MHD_DaemonInfo *} MHD_get_daemon_info (struct MHD_Daemon *daemon, enum MHD_DaemonInfoType infoType, ...)
+Obtain information about the given daemon.  This function
+is currently not fully implemented.
+
+@table @var
+@item daemon
+the daemon about which information is desired;
+
+@item infoType
+type of information that is desired
+
+@item ...
+additional arguments about the desired information (depending on
+infoType)
+@end table
+
+Returns a union with the respective member (depending on
+infoType) set to the desired information), or NULL
+in case the desired information is not available or
+applicable.
+@end deftypefun
+
+@c ------------------------------------------------------------
+@node microhttpd-info conn
+@section Obtaining state information about a connection
+
+
+@deftypefun {const union MHD_ConnectionInfo *} MHD_get_connection_info (struct MHD_Connection *daemon, enum MHD_ConnectionInfoType infoType, ...)
+Obtain information about the given connection.
+
+@table @var
+@item connection
+the connection about which information is desired;
+
+@item infoType
+type of information that is desired
+
+@item ...
+additional arguments about the desired information (depending on
+infoType)
+@end table
+
+Returns a union with the respective member (depending on
+infoType) set to the desired information), or NULL
+in case the desired information is not available or
+applicable.
+@end deftypefun
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

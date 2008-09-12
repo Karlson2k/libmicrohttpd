@@ -97,7 +97,7 @@ _gnutls_set_keys (mhd_gtls_session_t session, int hash_size, int IV_size,
   memcpy (&rrnd[TLS_RANDOM_SIZE],
           session->security_parameters.server_random, TLS_RANDOM_SIZE);
 
-  if (session->security_parameters.version == MHD_GNUTLS_SSL3)
+  if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
     {                           /* SSL 3 */
       ret =
         mhd_gnutls_ssl3_generate_random
@@ -187,7 +187,7 @@ _gnutls_set_keys (mhd_gtls_session_t session, int hash_size, int IV_size,
 
           /* generate the final keys */
 
-          if (session->security_parameters.version == MHD_GNUTLS_SSL3)
+          if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
             {                   /* SSL 3 */
               ret =
                 mhd_gnutls_ssl3_hash_md5 (&key_block[pos],
@@ -219,7 +219,7 @@ _gnutls_set_keys (mhd_gtls_session_t session, int hash_size, int IV_size,
           client_write_key_size = EXPORT_FINAL_KEY_SIZE;
           pos += key_size;
 
-          if (session->security_parameters.version == MHD_GNUTLS_SSL3)
+          if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
             {                   /* SSL 3 */
               ret =
                 mhd_gnutls_ssl3_hash_md5 (&key_block[pos], key_size,
@@ -321,7 +321,7 @@ _gnutls_set_keys (mhd_gtls_session_t session, int hash_size, int IV_size,
           return GNUTLS_E_MEMORY_ERROR;
         }
 
-      if (session->security_parameters.version == MHD_GNUTLS_SSL3)
+      if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
         {                       /* SSL 3 */
           ret = mhd_gnutls_ssl3_hash_md5 ("", 0,
                                           rrnd, TLS_RANDOM_SIZE * 2,

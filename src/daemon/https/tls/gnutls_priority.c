@@ -201,9 +201,9 @@ MHD_gnutls_certificate_type_set_priority (mhd_gtls_session_t session,
 #endif
 }
 
-static const int mhd_gtls_protocol_priority[] = { MHD_GNUTLS_TLS1_1,
-  MHD_GNUTLS_TLS1_0,
-  MHD_GNUTLS_SSL3,
+static const int mhd_gtls_protocol_priority[] = { MHD_GNUTLS_PROTOCOL_TLS1_1,
+  MHD_GNUTLS_PROTOCOL_TLS1_0,
+  MHD_GNUTLS_PROTOCOL_SSL3,
   0
 };
 

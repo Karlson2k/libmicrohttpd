@@ -195,7 +195,7 @@ _gnutls_finished (mhd_gtls_session_t session, int type, void *ret)
   mac_hd_t td_sha;
   enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
 
-  if (ver < MHD_GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       td_md5 =
         mhd_gnutls_hash_copy (session->internals.handshake_mac_handle_md5);
@@ -215,7 +215,7 @@ _gnutls_finished (mhd_gtls_session_t session, int type, void *ret)
       return GNUTLS_E_HASH_FAILED;
     }
 
-  if (ver < MHD_GNUTLS_TLS1_2)
+  if (ver < MHD_GNUTLS_PROTOCOL_TLS1_2)
     {
       mhd_gnutls_hash_deinit (td_md5, concat);
       mhd_gnutls_hash_deinit (td_sha, &concat[16]);
@@ -281,7 +281,7 @@ mhd_gtls_negotiate_version (mhd_gtls_session_t session,
        * then we send him the highest we support.
        */
       ret = mhd_gtls_version_max (session);
-      if (ret == MHD_GNUTLS_VERSION_UNKNOWN)
+      if (ret == MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN)
         {
           /* this check is not really needed.
            */
@@ -420,7 +420,7 @@ _gnutls_read_client_hello (mhd_gtls_session_t session, opaque * data,
 
   /* Parse the extensions (if any)
    */
-  if (neg_version >= MHD_GNUTLS_TLS1_0)
+  if (neg_version >= MHD_GNUTLS_PROTOCOL_TLS1_0)
     {
       ret = mhd_gtls_parse_extensions (session, EXTENSION_APPLICATION, &data[pos], len);        /* len is the rest of the parsed length */
       if (ret < 0)
@@ -437,7 +437,7 @@ _gnutls_read_client_hello (mhd_gtls_session_t session, opaque * data,
       return ret;
     }
 
-  if (neg_version >= MHD_GNUTLS_TLS1_0)
+  if (neg_version >= MHD_GNUTLS_PROTOCOL_TLS1_0)
     {
       ret = mhd_gtls_parse_extensions (session, EXTENSION_TLS, &data[pos], len);        /* len is the rest of the parsed length */
       if (ret < 0)
@@ -529,7 +529,7 @@ _gnutls_send_finished (mhd_gtls_session_t session, int again)
           return ret;
         }
 
-      if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+      if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
         {
           ret =
             _gnutls_ssl3_finished (session,
@@ -581,7 +581,7 @@ _gnutls_recv_finished (mhd_gtls_session_t session)
     }
 
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       data_size = 36;
     }
@@ -597,7 +597,7 @@ _gnutls_recv_finished (mhd_gtls_session_t session)
       return GNUTLS_E_ERROR_IN_FINISHED_PACKET;
     }
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_SSL3)
+  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       ret =
         _gnutls_ssl3_finished (session,
@@ -1530,7 +1530,7 @@ _gnutls_read_server_hello (mhd_gtls_session_t session,
 
   /* Parse extensions.
    */
-  if (version >= MHD_GNUTLS_TLS1_0)
+  if (version >= MHD_GNUTLS_PROTOCOL_TLS1_0)
     {
       ret = mhd_gtls_parse_extensions (session, EXTENSION_ANY, &data[pos], len);        /* len is the rest of the parsed length */
       if (ret < 0)
@@ -1706,7 +1706,7 @@ _gnutls_send_client_hello (mhd_gtls_session_t session, int again)
           hver = session->internals.resumed_security_parameters.version;
         }
 
-      if (hver == MHD_GNUTLS_VERSION_UNKNOWN || hver == 0)
+      if (hver == MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN || hver == 0)
         {
           gnutls_assert ();
           gnutls_free (data);
@@ -1810,7 +1810,7 @@ _gnutls_send_client_hello (mhd_gtls_session_t session, int again)
 
       /* Generate and copy TLS extensions.
        */
-      if (hver >= MHD_GNUTLS_TLS1_0)
+      if (hver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
         {
           extdatalen =
             mhd_gtls_gen_extensions (session, extdata, sizeof (extdata));

@@ -105,7 +105,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
     }
 
   if (MHD_get_connection_info (connection, MHD_CONNECTION_INFO_PROTOCOL)->protocol !=
-      MHD_GNUTLS_SSL3)
+      MHD_GNUTLS_PROTOCOL_SSL3)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));
