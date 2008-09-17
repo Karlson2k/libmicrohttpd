@@ -31,12 +31,6 @@
 #include "response.h"
 #include "reason_phrase.h"
 
-#ifndef LINUX
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
-#endif
-
 /**
  * Message to transmit when http 1.1 request is received
  */
@@ -1634,7 +1628,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
-          /* TODO clean - missing MSG_NOSIGNAL on gnutls record send call */
 #if HTTPS_SUPPORT
           if (connection->daemon->options & MHD_USE_SSL)
             {

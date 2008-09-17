@@ -59,6 +59,12 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
+#ifndef LINUX
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+#endif
+
 #if HTTPS_SUPPORT
 /**
  * Note: code duplication with code in gnutls_priority.c 
