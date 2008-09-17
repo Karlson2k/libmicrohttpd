@@ -27,13 +27,22 @@ AM_CONFIG_HEADER([MHD_config.h])
 
 AH_TOP([#define _GNU_SOURCE  1])
 
-if test `uname -s` == "OS/S390"
+if test `uname -s` = "OS/390"
 then
 # configure binaries for z/OS
-  CC=`pwd`"/contrib/xcc"
-  chmod +x $CC || true
-  CPP="c89 -E"
-  CXXCPP="c++ -E -+"
+  if test -z $CC
+  then
+    CC=`pwd`"/contrib/xcc"
+    chmod +x $CC || true
+  fi
+  if test -z $CPP
+  then
+    CPP="c89 -E"
+  fi
+  if test -z $CXXCPP
+  then
+    CXXCPP="c++ -E -+"
+  fi
 #  _CCC_CCMODE=1
 #  _C89_CCMODE=1
 fi
@@ -134,7 +143,7 @@ AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
 LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
-AM_CONDITIONAL(HAVE_CURL, test x$curl == x1)
+AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 LIBS=$SAVE_LIBS
 
 # Lib cURL & cURL - OpenSSL versions
@@ -157,7 +166,7 @@ AC_ARG_ENABLE(messages,
    [enable_messages=$enableval],
    [enable_messages="no"])
 AC_MSG_RESULT($enable_messages)
-if test "$enable_messages" == "yes"
+if test "$enable_messages" = "yes"
 then
  AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
 fi
@@ -224,9 +233,9 @@ AC_ARG_ENABLE([HTTPS],
                [enable HTTPS support (default is yes)])],
    [enable_HTTPS=$enableval],
    [enable_HTTPS="yes"])
-if test "$enable_HTTPS" == "yes"
+if test "$enable_HTTPS" = "yes"
 then
- if test "$gcrypt" == "true"
+ if test "$gcrypt" = "true"
  then
    AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
  else
@@ -238,7 +247,7 @@ else
 fi
 AC_MSG_RESULT($enable_HTTPS)
 
-AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_HTTPS" == "yes")
+AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_HTTPS" = "yes")
 
 # optional: compile TLS client side code [only for test running] ?
 AC_MSG_CHECKING(--enable-client-side argument)
@@ -248,7 +257,7 @@ AC_ARG_ENABLE(client-side,
    [enable_client_side=$enableval],
    [enable_client_side="no"])
 AC_MSG_RESULT($enable_client_side)
-if test "$enable_client_side" == "no"
+if test "$enable_client_side" = "no"
 then
  AC_DEFINE([MHD_DEBUG_TLS],[0],[Compile client side code. This will enable running some test cases.])
  MSG_CLIENT_SIDE="disabled. running some test cases won't be possible"
@@ -357,7 +366,7 @@ AC_MSG_NOTICE([Configuration Summary:
   HTTPS support:     ${enable_HTTPS}
 ])
 
-if test "$enable_HTTPS" == "yes"
+if test "$enable_HTTPS" = "yes"
 then
 AC_MSG_NOTICE([HTTPS subsystem configuration:
   TLS support:       ${enable_TLS}
