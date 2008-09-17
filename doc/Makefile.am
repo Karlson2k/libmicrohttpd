@@ -7,6 +7,6 @@ microhttpd_TEXINFOS = lgpl.texi chapters/basicauthentication.inc chapters/biblio
 examples/basicauthentication.c \
 examples/hellobrowser.c \
 examples/largepost.c \
-examples/logging.c \ 
+examples/logging.c \
 examples/responseheaders.c \
 examples/simplepost.c
