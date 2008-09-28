@@ -1033,6 +1033,7 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       args++;
       parse_arguments (MHD_GET_ARGUMENT_KIND, connection, args);
     }
+  MHD_http_unescape(uri);
   connection->url = uri;
   if (httpVersion == NULL)
     connection->version = "";

@@ -1,3 +1,6 @@
+Sun Sep 28 14:57:46 MDT 2008
+	 Unescape URIs (convert "%ef%e4%45" to "中国").
+
 Wed Sep 10 22:43:59 MDT 2008
 	 Releasing GNU libmicrohttpd 0.4.0pre0. -CG
 
