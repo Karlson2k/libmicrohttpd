@@ -1,3 +1,7 @@
+Tue Sep 30 16:48:08 MDT 2008
+	 Make MHD useful to Cygwin users; detect IPv6 headers
+	 in configure.
+
 Sun Sep 28 14:57:46 MDT 2008
 	 Unescape URIs (convert "%ef%e4%45" to "中国").
 

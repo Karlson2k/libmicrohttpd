@@ -104,7 +104,6 @@ netbsd*)
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
-     AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      LDFLAGS="$LDFLAGS -no-undefined"
      ;;
@@ -139,6 +138,27 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 
 # Check for optional headers
 AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h time.h sys/socket.h sys/mman.h arpa/inet.h])
+
+# IPv6
+AC_MSG_CHECKING(for IPv6)
+AC_TRY_COMPILE([
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#if HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+],[
+int af=AF_INET6;
+int pf=PF_INET6;
+struct sockaddr_in6 sa;
+],[
+have_inet6=yes;
+AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])
+],
+have_inet6=no
+)
+AC_MSG_RESULT($have_inet6)
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS

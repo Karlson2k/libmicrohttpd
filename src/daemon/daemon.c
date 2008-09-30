@@ -341,8 +341,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *connection;
-  struct sockaddr_in6 addr6;
-  struct sockaddr *addr = (struct sockaddr *) &addr6;
+#if HAVE_INET6
+  struct sockaddr_in6 addrstorage;
+#else
+  struct sockaddr_in addrstorage;
+#endif
+  struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
   unsigned int have;
   int s, res_thread_create;
@@ -350,10 +354,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   static int on = 1;
 #endif
 
+#if HAVE_INET6
   if (sizeof (struct sockaddr) > sizeof (struct sockaddr_in6))
     abort ();                   /* fatal, serious error */
-  addrlen = sizeof (struct sockaddr_in6);
-  memset (addr, 0, sizeof (struct sockaddr_in6));
+#endif
+  addrlen = sizeof (addrstorage);
+  memset (addr, 0, sizeof (addrstorage));
 
   s = ACCEPT (daemon->socket_fd, addr, &addrlen);
 
@@ -393,6 +399,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                    sizeof (struct in_addr)))
                     have++;
                 }
+#if HAVE_INET6
               if (addrlen == sizeof (struct sockaddr_in6))
                 {
                   const struct sockaddr_in6 *a1 =
@@ -403,6 +410,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                    sizeof (struct in6_addr)))
                     have++;
                 }
+#endif
             }
           pos = pos->next;
         }
@@ -826,7 +834,9 @@ MHD_start_daemon_va (unsigned int options,
   struct MHD_Daemon *retVal;
   int socket_fd;
   struct sockaddr_in servaddr4;
+#if HAVE_INET6
   struct sockaddr_in6 servaddr6;
+#endif
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   enum MHD_OPTION opt;
@@ -931,7 +941,16 @@ MHD_start_daemon_va (unsigned int options,
     }
 
   if ((options & MHD_USE_IPv6) != 0)
+#if HAVE_INET6
     socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
+#else
+    {
+#if HAVE_MESSAGES
+        FPRINTF (stderr, "AF_INET6 not supported\n");
+#endif
+        return NULL;
+    }
+#endif
   else
     socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0)
@@ -954,12 +973,15 @@ MHD_start_daemon_va (unsigned int options,
     }
 
   /* check for user supplied sockaddr */
+#if HAVE_INET6
   if ((options & MHD_USE_IPv6) != 0)
     addrlen = sizeof (struct sockaddr_in6);
   else
+#endif
     addrlen = sizeof (struct sockaddr_in);
   if (NULL == servaddr)
     {
+#if HAVE_INET6
       if ((options & MHD_USE_IPv6) != 0)
         {
           memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
@@ -968,6 +990,7 @@ MHD_start_daemon_va (unsigned int options,
           servaddr = (struct sockaddr *) &servaddr6;
         }
       else
+#endif
         {
           memset (&servaddr4, 0, sizeof (struct sockaddr_in));
           servaddr4.sin_family = AF_INET;
