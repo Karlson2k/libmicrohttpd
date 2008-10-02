@@ -273,7 +273,7 @@ MHD_handle_connection (void *data)
           break;
         }
       /* call appropriate connection handler if necessary */
-      if (FD_ISSET (con->socket_fd, &rs))
+      if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &rs)))
         con->read_handler (con);
       if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &ws)))
         con->write_handler (con);
