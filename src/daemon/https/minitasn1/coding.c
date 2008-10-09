@@ -321,7 +321,7 @@ MHD__asn1_objectid_der (unsigned char *str, unsigned char *der, int *der_len)
 }
 
 
-const char bit_mask[] = { 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80 };
+const char MHD_bit_mask[] = { 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80 };
 
 /**
  * MHD__asn1_bit_der:
@@ -351,7 +351,7 @@ MHD__asn1_bit_der (const unsigned char *str, int bit_len,
   MHD__asn1_length_der (len_byte + 1, der, &len_len);
   der[len_len] = len_pad;
   memcpy (der + len_len + 1, str, len_byte);
-  der[len_len + len_byte] &= bit_mask[len_pad];
+  der[len_len + len_byte] &= MHD_bit_mask[len_pad];
   *der_len = len_byte + len_len + 1;
 }
 

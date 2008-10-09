@@ -42,12 +42,12 @@ typedef struct list_struct
 
 
 /* Pointer to the first element of the list */
-list_type *firstElement = NULL;
+list_type *MHD_firstElement = NULL;
 
 /******************************************************/
 /* Function : MHD__asn1_add_node                          */
 /* Description: creates a new NODE_ASN element and    */
-/* puts it in the list pointed by firstElement.       */
+/* puts it in the list pointed by MHD_firstElement.       */
 /* Parameters:                                        */
 /*   type: type of the new element (see TYPE_         */
 /*         and CONST_ constants).                     */
@@ -71,8 +71,8 @@ MHD__asn1_add_node (unsigned int type)
     }
 
   listElement->node = punt;
-  listElement->next = firstElement;
-  firstElement = listElement;
+  listElement->next = MHD_firstElement;
+  MHD_firstElement = listElement;
 
   punt->type = type;
 
@@ -439,10 +439,10 @@ MHD__asn1_delete_list (void)
 {
   list_type *listElement;
 
-  while (firstElement)
+  while (MHD_firstElement)
     {
-      listElement = firstElement;
-      firstElement = firstElement->next;
+      listElement = MHD_firstElement;
+      MHD_firstElement = MHD_firstElement->next;
       MHD__asn1_free (listElement);
     }
 }
@@ -457,10 +457,10 @@ MHD__asn1_delete_list_and_nodes (void)
 {
   list_type *listElement;
 
-  while (firstElement)
+  while (MHD_firstElement)
     {
-      listElement = firstElement;
-      firstElement = firstElement->next;
+      listElement = MHD_firstElement;
+      MHD_firstElement = MHD_firstElement->next;
       MHD__asn1_remove_node (listElement->node);
       MHD__asn1_free (listElement);
     }

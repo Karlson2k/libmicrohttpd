@@ -48,7 +48,7 @@ int MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t, opaque *, size_t);
 static int gen_rsa_export_server_kx (MHD_gtls_session_t, opaque **);
 static int proc_rsa_export_server_kx (MHD_gtls_session_t, opaque *, size_t);
 
-const MHD_gtls_mod_auth_st rsa_export_auth_struct = {
+const MHD_gtls_mod_auth_st MHD_rsa_export_auth_struct = {
   "RSA EXPORT",
   MHD_gtls_gen_cert_server_certificate,
   MHD_gtls_gen_cert_client_certificate,

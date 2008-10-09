@@ -386,7 +386,7 @@ static const enum MHD_GNUTLS_CompressionMethod
 
 /* Key Exchange Section */
 extern MHD_gtls_mod_auth_st MHD_gtls_rsa_auth_struct;
-extern MHD_gtls_mod_auth_st rsa_export_auth_struct;
+extern MHD_gtls_mod_auth_st MHD_rsa_export_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_gtls_dhe_rsa_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_gtls_dhe_dss_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_gtls_anon_auth_struct;
@@ -416,7 +416,7 @@ static const MHD_gtls_kx_algo_entry_t MHD_gtls_kx_algorithms[] = {
    0},
   {"RSA-EXPORT",
    MHD_GNUTLS_KX_RSA_EXPORT,
-   &rsa_export_auth_struct,
+   &MHD_rsa_export_auth_struct,
    0,
    1 /* needs RSA params */ },
   {"DHE-RSA",

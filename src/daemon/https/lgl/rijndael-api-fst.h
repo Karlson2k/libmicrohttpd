@@ -137,7 +137,7 @@ typedef struct
    from KEYMATERIAL, a hex string, of KEYLEN size.  KEYLEN should be
    128, 192 or 256. Returns 0 on success, or an error code. */
 extern rijndael_rc
-rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
+MHD_rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
                  size_t keyLen, const char *keyMaterial);
 
 /* Initialize cipher state CIPHER for encryption MODE (e.g.,
@@ -145,18 +145,18 @@ rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
    2*RIJNDAEL_MAX_IV_SIZE length.  IV may be NULL for modes that do
    not need an IV (i.e., RIJNDAEL_MODE_ECB).  */
 extern rijndael_rc
-rijndaelCipherInit (rijndaelCipherInstance * cipher,
+MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher,
                     rijndael_mode mode, const char *IV);
 
 /* Encrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
    INPUTLEN/8 bytes of data.  The CIPHER is used as state, and must be
-   initialized with rijndaelCipherInit before calling this function.
-   The encryption KEY must be initialized with rijndaelMakeKey before
+   initialized with MHD_MHD_rijndaelCipherInit before calling this function.
+   The encryption KEY must be initialized with MHD_rijndaelMakeKey before
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
+MHD_rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
                       const rijndaelKeyInstance * key,
                       const char *input, size_t inputLen, char *outBuffer);
 
@@ -165,24 +165,24 @@ rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
    INPUTOCTETS aligned to the next block size boundary.
    Ciphertext-Stealing as described in RFC 2040 is used to encrypt
    partial blocks.  The CIPHER is used as state, and must be
-   initialized with rijndaelCipherInit before calling this function.
-   The encryption KEY must be initialized with rijndaelMakeKey before
+   initialized with MHD_MHD_rijndaelCipherInit before calling this function.
+   The encryption KEY must be initialized with MHD_rijndaelMakeKey before
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
+MHD_rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
                     const rijndaelKeyInstance * key,
                     const char *input, size_t inputOctets, char *outBuffer);
 
 /* Decrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
    INPUTLEN/8 bytes of data.  The CIPHER is used as state, and must be
-   initialized with rijndaelCipherInit before calling this function.
-   The encryption KEY must be initialized with rijndaelMakeKey before
+   initialized with MHD_MHD_rijndaelCipherInit before calling this function.
+   The encryption KEY must be initialized with MHD_rijndaelMakeKey before
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
+MHD_rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
                       const rijndaelKeyInstance * key,
                       const char *input, size_t inputLen, char *outBuffer);
 
@@ -191,12 +191,12 @@ rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
    INPUTOCTETS aligned to the next block size boundary.
    Ciphertext-Stealing as described in RFC 2040 is used to encrypt
    partial blocks.  The CIPHER is used as state, and must be
-   initialized with rijndaelCipherInit before calling this function.
-   The encryption KEY must be initialized with rijndaelMakeKey before
+   initialized with MHD_MHD_rijndaelCipherInit before calling this function.
+   The encryption KEY must be initialized with MHD_rijndaelMakeKey before
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelPadDecrypt (rijndaelCipherInstance * cipher,
+MHD_rijndaelPadDecrypt (rijndaelCipherInstance * cipher,
                     const rijndaelKeyInstance * key,
                     const char *input, size_t inputOctets, char *outBuffer);
 

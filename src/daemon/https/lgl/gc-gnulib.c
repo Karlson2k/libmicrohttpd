@@ -316,17 +316,17 @@ MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *ke
         for (i = 0; i < keylen; i++)
           sprintf (&keyMaterial[2 * i], "%02x", key[i] & 0xFF);
 
-        rc = rijndaelMakeKey (&ctx->aesEncKey, RIJNDAEL_DIR_ENCRYPT,
+        rc = MHD_rijndaelMakeKey (&ctx->aesEncKey, RIJNDAEL_DIR_ENCRYPT,
                               keylen * 8, keyMaterial);
         if (rc < 0)
           return GC_INVALID_CIPHER;
 
-        rc = rijndaelMakeKey (&ctx->aesDecKey, RIJNDAEL_DIR_DECRYPT,
+        rc = MHD_rijndaelMakeKey (&ctx->aesDecKey, RIJNDAEL_DIR_DECRYPT,
                               keylen * 8, keyMaterial);
         if (rc < 0)
           return GC_INVALID_CIPHER;
 
-        rc = rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB, NULL);
+        rc = MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB, NULL);
         if (rc < 0)
           return GC_INVALID_CIPHER;
       }
@@ -374,7 +374,7 @@ MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
             for (i = 0; i < ivlen; i++)
               sprintf (&ivMaterial[2 * i], "%02x", iv[i] & 0xFF);
 
-            rc = rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
+            rc = MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
                                      ivMaterial);
             if (rc < 0)
               return GC_INVALID_CIPHER;
@@ -449,7 +449,7 @@ MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
       {
         int nblocks;
 
-        nblocks = rijndaelBlockEncrypt (&ctx->aesContext, &ctx->aesEncKey,
+        nblocks = MHD_rijndaelBlockEncrypt (&ctx->aesContext, &ctx->aesEncKey,
                                         data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;
@@ -521,7 +521,7 @@ MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
       {
         int nblocks;
 
-        nblocks = rijndaelBlockDecrypt (&ctx->aesContext, &ctx->aesDecKey,
+        nblocks = MHD_rijndaelBlockDecrypt (&ctx->aesContext, &ctx->aesDecKey,
                                         data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;

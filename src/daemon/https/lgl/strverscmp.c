@@ -45,11 +45,11 @@
    of `digit' even when the host does not conform to POSIX.  */
 #define ISDIGIT(c) ((unsigned int) (c) - '0' <= 9)
 
-#undef __strverscmp
-#undef strverscmp
+#undef __MHD_strverscmp
+#undef MHD_strverscmp
 
 #ifndef weak_alias
-# define __strverscmp strverscmp
+# define __MHD_strverscmp MHD_strverscmp
 #endif
 
 /* Compare S1 and S2 as strings holding indices/version numbers,
@@ -58,7 +58,7 @@
 */
 
 int
-__strverscmp (const char *s1, const char *s2)
+__MHD_strverscmp (const char *s1, const char *s2)
 {
   const unsigned char *p1 = (const unsigned char *) s1;
   const unsigned char *p2 = (const unsigned char *) s2;
@@ -126,5 +126,5 @@ __strverscmp (const char *s1, const char *s2)
 }
 
 #ifdef weak_alias
-weak_alias (__strverscmp, strverscmp)
+weak_alias (__MHD_strverscmp, MHD_strverscmp)
 #endif
