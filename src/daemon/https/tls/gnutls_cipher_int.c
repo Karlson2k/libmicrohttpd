@@ -28,8 +28,8 @@
 #include <gnutls_datum.h>
 
 cipher_hd_t
-mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
-                      const gnutls_datum_t * key, const gnutls_datum_t * iv)
+MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
+                      const MHD_gnutls_datum_t * key, const MHD_gnutls_datum_t * iv)
 {
   cipher_hd_t ret = NULL;
   int err = GC_INVALID_CIPHER;  /* doesn't matter */
@@ -37,40 +37,40 @@ mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
   switch (cipher)
     {
     case MHD_GNUTLS_CIPHER_AES_128_CBC:
-      err = gc_cipher_open (GC_AES128, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_AES128, GC_CBC, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_AES_256_CBC:
-      err = gc_cipher_open (GC_AES256, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_AES256, GC_CBC, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_3DES_CBC:
-      err = gc_cipher_open (GC_3DES, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_3DES, GC_CBC, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_DES_CBC:
-      err = gc_cipher_open (GC_DES, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_DES, GC_CBC, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_ARCFOUR_128:
-      err = gc_cipher_open (GC_ARCFOUR128, GC_STREAM, &ret);
+      err = MHD_gc_cipher_open (GC_ARCFOUR128, GC_STREAM, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_ARCFOUR_40:
-      err = gc_cipher_open (GC_ARCFOUR40, GC_STREAM, &ret);
+      err = MHD_gc_cipher_open (GC_ARCFOUR40, GC_STREAM, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_RC2_40_CBC:
-      err = gc_cipher_open (GC_ARCTWO40, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_ARCTWO40, GC_CBC, &ret);
       break;
 
 #ifdef	ENABLE_CAMELLIA
     case MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC:
-      err = gc_cipher_open (GC_CAMELLIA128, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_CAMELLIA128, GC_CBC, &ret);
       break;
 
     case MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC:
-      err = gc_cipher_open (GC_CAMELLIA256, GC_CBC, &ret);
+      err = MHD_gc_cipher_open (GC_CAMELLIA256, GC_CBC, &ret);
       break;
 #endif
 
@@ -80,28 +80,28 @@ mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
 
   if (err == 0)
     {
-      gc_cipher_setkey (ret, key->size, key->data);
+      MHD_gc_cipher_setkey (ret, key->size, key->data);
       if (iv->data != NULL && iv->size > 0)
-        gc_cipher_setiv (ret, iv->size, iv->data);
+        MHD_gc_cipher_setiv (ret, iv->size, iv->data);
     }
   else if (cipher != MHD_GNUTLS_CIPHER_NULL)
     {
-      gnutls_assert ();
-      _gnutls_x509_log ("Crypto cipher[%d] error: %d\n", cipher, err);
-      /* FIXME: gc_strerror */
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("Crypto cipher[%d] error: %d\n", cipher, err);
+      /* FIXME: MHD_gc_strerror */
     }
 
   return ret;
 }
 
 int
-mhd_gtls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
+MHD_gtls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {
-      if (gc_cipher_encrypt_inline (handle, textlen, text) != 0)
+      if (MHD_gc_cipher_encrypt_inline (handle, textlen, text) != 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
         }
     }
@@ -109,14 +109,14 @@ mhd_gtls_cipher_encrypt (cipher_hd_t handle, void *text, int textlen)
 }
 
 int
-mhd_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
+MHD_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
                          int ciphertextlen)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {
-      if (gc_cipher_decrypt_inline (handle, ciphertextlen, ciphertext) != 0)
+      if (MHD_gc_cipher_decrypt_inline (handle, ciphertextlen, ciphertext) != 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
         }
     }
@@ -124,10 +124,10 @@ mhd_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
 }
 
 void
-mhd_gnutls_cipher_deinit (cipher_hd_t handle)
+MHD_gnutls_cipher_deinit (cipher_hd_t handle)
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {
-      gc_cipher_close (handle);
+      MHD_gc_cipher_close (handle);
     }
 }

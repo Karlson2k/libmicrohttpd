@@ -48,7 +48,7 @@
 #define KEY_ENCIPHER_ONLY		1
 #define KEY_DECIPHER_ONLY		32768
 
-typedef struct gnutls_cert
+typedef struct MHD_gnutls_cert
 {
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE]; /* the size of params depends on the public
                                          * key algorithm
@@ -71,11 +71,11 @@ typedef struct gnutls_cert
    */
   enum MHD_GNUTLS_CertificateType cert_type;
 
-  gnutls_datum_t raw;
+  MHD_gnutls_datum_t raw;
 
-} gnutls_cert;
+} MHD_gnutls_cert;
 
-typedef struct gnutls_privkey_int
+typedef struct MHD_gnutls_privkey_int
 {
   mpi_t params[MAX_PRIV_PARAMS_SIZE];   /* the size of params depends on the public
                                          * key algorithm
@@ -96,9 +96,9 @@ typedef struct gnutls_privkey_int
   int params_size;              /* holds the number of params */
 
   enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
-} gnutls_privkey;
+} MHD_gnutls_privkey;
 
-struct MHD_gtls_session_int;    /* because mhd_gtls_session_t is not defined when this file is included */
+struct MHD_gtls_session_int;    /* because MHD_gtls_session_t is not defined when this file is included */
 
 typedef enum ConvFlags
 {
@@ -107,26 +107,26 @@ typedef enum ConvFlags
   CERT_ONLY_EXTENSIONS = 16
 } ConvFlags;
 
-int mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
-                                     const gnutls_datum_t * derCert,
+int MHD_gtls_x509_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
+                                     const MHD_gnutls_datum_t * derCert,
                                      int flags);
-int mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert, gnutls_x509_crt_t cert,
+int MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert, MHD_gnutls_x509_crt_t cert,
                                 unsigned int flags);
 
-void mhd_gtls_gkey_deinit (gnutls_privkey * key);
-void mhd_gtls_gcert_deinit (gnutls_cert * cert);
+void MHD_gtls_gkey_deinit (MHD_gnutls_privkey * key);
+void MHD_gtls_gcert_deinit (MHD_gnutls_cert * cert);
 
-int mhd_gtls_selected_cert_supported_kx (struct MHD_gtls_session_int *session,
+int MHD_gtls_selected_cert_supported_kx (struct MHD_gtls_session_int *session,
                                          enum MHD_GNUTLS_KeyExchangeAlgorithm
                                          **alg, int *alg_size);
 
-int mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
+int MHD_gtls_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
                                 enum MHD_GNUTLS_CertificateType type,
-                                const gnutls_datum_t * raw_cert,
+                                const MHD_gnutls_datum_t * raw_cert,
                                 int flags /* OR of ConvFlags */ );
-int mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
+int MHD_gtls_raw_privkey_to_gkey (MHD_gnutls_privkey * key,
                                   enum MHD_GNUTLS_CertificateType type,
-                                  const gnutls_datum_t * raw_key,
+                                  const MHD_gnutls_datum_t * raw_key,
                                   int key_enc /* DER or PEM */ );
 
 #endif

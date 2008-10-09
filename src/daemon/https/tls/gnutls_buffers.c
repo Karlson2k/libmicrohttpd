@@ -30,20 +30,20 @@
  * RECORD LAYER:
  *  1. uses a buffer to hold data (application/handshake),
  *    we got but they were not requested, yet.
- *  (see gnutls_record_buffer_put(), gnutls_record_buffer_get_size() etc.)
+ *  (see MHD_gnutls_record_buffer_put(), MHD_gnutls_record_buffer_get_size() etc.)
  *
  *  2. uses a buffer to hold data that were incomplete (ie the read/write
  *    was interrupted)
- *  (see mhd_gtls_io_read_buffered(), mhd_gtls_io_write_buffered() etc.)
+ *  (see MHD_gtls_io_read_buffered(), MHD_gtls_io_write_buffered() etc.)
  *
  * HANDSHAKE LAYER:
  *  1. Uses a buffer to hold data that was not sent or received
  *  complete. (E.g. sent 10 bytes of a handshake packet that is 20 bytes
  *  long).
- * (see _gnutls_handshake_send_int(), _gnutls_handshake_recv_int())
+ * (see MHD__gnutls_handshake_send_int(), MHD__gnutls_handshake_recv_int())
  *
  *  2. Uses buffer to hold the last received handshake message.
- *  (see mhd_gtls_handshake_buffer_put() etc.)
+ *  (see MHD_gtls_handshake_buffer_put() etc.)
  *
  */
 
@@ -68,8 +68,8 @@
 #endif
 
 /**
- * MHD_gnutls_transport_set_errno:
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_transport_set_errno:
+ * @session: is a #MHD_gtls_session_t structure.
  * @err: error value to store in session-specific errno variable.
  *
  * Store @err in the session-specific errno variable.  Useful values
@@ -77,24 +77,24 @@
  * treated as real errors in the push/pull function.
  *
  * This function is useful in replacement push/pull functions set by
- * MHD_gnutls_transport_set_push_function and
- * gnutls_transport_set_pullpush_function under Windows, where the
+ * MHD__gnutls_transport_set_push_function and
+ * MHD_gnutls_transport_set_pullpush_function under Windows, where the
  * replacement push/pull may not have access to the same @errno
  * variable that is used by GnuTLS (e.g., the application is linked to
  * msvcr71.dll and gnutls is linked to msvcrt.dll).
  *
  * If you don't have the @session variable easily accessible from the
  * push/pull function, and don't worry about thread conflicts, you can
- * also use MHD_gnutls_transport_set_global_errno().
+ * also use MHD__gnutls_transport_set_global_errno().
  **/
 void
-MHD_gnutls_transport_set_errno (mhd_gtls_session_t session, int err)
+MHD__gnutls_transport_set_errno (MHD_gtls_session_t session, int err)
 {
   session->internals.errnum = err;
 }
 
 /**
- * MHD_gnutls_transport_set_global_errno:
+ * MHD__gnutls_transport_set_global_errno:
  * @err: error value to store in global errno variable.
  *
  * Store @err in the global errno variable.  Useful values for @err is
@@ -102,8 +102,8 @@ MHD_gnutls_transport_set_errno (mhd_gtls_session_t session, int err)
  * errors in the push/pull function.
  *
  * This function is useful in replacement push/pull functions set by
- * MHD_gnutls_transport_set_push_function and
- * gnutls_transport_set_pullpush_function under Windows, where the
+ * MHD__gnutls_transport_set_push_function and
+ * MHD_gnutls_transport_set_pullpush_function under Windows, where the
  * replacement push/pull may not have access to the same @errno
  * variable that is used by GnuTLS (e.g., the application is linked to
  * msvcr71.dll and gnutls is linked to msvcrt.dll).
@@ -111,10 +111,10 @@ MHD_gnutls_transport_set_errno (mhd_gtls_session_t session, int err)
  * Whether this function is thread safe or not depends on whether the
  * global variable errno is thread safe, some system libraries make it
  * a thread-local variable.  When feasible, using the guaranteed
- * thread-safe MHD_gnutls_transport_set_errno() may be better.
+ * thread-safe MHD__gnutls_transport_set_errno() may be better.
  **/
 void
-MHD_gnutls_transport_set_global_errno (int err)
+MHD__gnutls_transport_set_global_errno (int err)
 {
   errno = err;
 }
@@ -123,11 +123,11 @@ MHD_gnutls_transport_set_global_errno (int err)
  * HANDSHAKE DATA.
  */
 int
-mhd_gnutls_record_buffer_put (content_type_t type,
-                              mhd_gtls_session_t session, opaque * data,
+MHD_gnutls_record_buffer_put (content_type_t type,
+                              MHD_gtls_session_t session, opaque * data,
                               size_t length)
 {
-  mhd_gtls_buffer *buf;
+  MHD_gtls_buffer *buf;
 
   if (length == 0)
     return 0;
@@ -136,30 +136,30 @@ mhd_gnutls_record_buffer_put (content_type_t type,
     {
     case GNUTLS_APPLICATION_DATA:
       buf = &session->internals.application_data_buffer;
-      _gnutls_buffers_log ("BUF[REC]: Inserted %d bytes of Data(%d)\n",
+      MHD__gnutls_buffers_log ("BUF[REC]: Inserted %d bytes of Data(%d)\n",
                            length, type);
       break;
 
     case GNUTLS_HANDSHAKE:
       buf = &session->internals.handshake_data_buffer;
-      _gnutls_buffers_log ("BUF[HSK]: Inserted %d bytes of Data(%d)\n",
+      MHD__gnutls_buffers_log ("BUF[HSK]: Inserted %d bytes of Data(%d)\n",
                            length, type);
       break;
 
     case GNUTLS_INNER_APPLICATION:
       buf = &session->internals.ia_data_buffer;
-      _gnutls_buffers_log ("BUF[IA]: Inserted %d bytes of Data(%d)\n", length,
+      MHD__gnutls_buffers_log ("BUF[IA]: Inserted %d bytes of Data(%d)\n", length,
                            type);
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  if (mhd_gtls_buffer_append (buf, data, length) < 0)
+  if (MHD_gtls_buffer_append (buf, data, length) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -167,8 +167,8 @@ mhd_gnutls_record_buffer_put (content_type_t type,
 }
 
 int
-mhd_gnutls_record_buffer_get_size (content_type_t type,
-                                   mhd_gtls_session_t session)
+MHD_gnutls_record_buffer_get_size (content_type_t type,
+                                   MHD_gtls_session_t session)
 {
   switch (type)
     {
@@ -188,7 +188,7 @@ mhd_gnutls_record_buffer_get_size (content_type_t type,
 
 /**
  * MHD_gtls_record_check_pending - checks if there are any data to receive in gnutls buffers.
- * @session: is a #mhd_gtls_session_t structure.
+ * @session: is a #MHD_gtls_session_t structure.
  *
  * This function checks if there are any data to receive
  * in the gnutls buffers. Returns the size of that data or 0.
@@ -198,18 +198,18 @@ mhd_gnutls_record_buffer_get_size (content_type_t type,
  * to work).
  **/
 size_t
-MHD_gtls_record_check_pending (mhd_gtls_session_t session)
+MHD_gtls_record_check_pending (MHD_gtls_session_t session)
 {
-  return mhd_gnutls_record_buffer_get_size (GNUTLS_APPLICATION_DATA, session);
+  return MHD_gnutls_record_buffer_get_size (GNUTLS_APPLICATION_DATA, session);
 }
 
 int
-mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
+MHD_gtls_record_buffer_get (content_type_t type, MHD_gtls_session_t session,
                             opaque * data, size_t length)
 {
   if (length == 0 || data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -222,7 +222,7 @@ mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
           length = session->internals.application_data_buffer.length;
         }
 
-      _gnutls_buffers_log ("BUFFER[REC][AD]: Read %d bytes of Data(%d)\n",
+      MHD__gnutls_buffers_log ("BUFFER[REC][AD]: Read %d bytes of Data(%d)\n",
                            length, type);
 
       session->internals.application_data_buffer.length -= length;
@@ -245,7 +245,7 @@ mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
           length = session->internals.handshake_data_buffer.length;
         }
 
-      _gnutls_buffers_log ("BUF[REC][HD]: Read %d bytes of Data(%d)\n",
+      MHD__gnutls_buffers_log ("BUF[REC][HD]: Read %d bytes of Data(%d)\n",
                            length, type);
 
       session->internals.handshake_data_buffer.length -= length;
@@ -262,7 +262,7 @@ mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
       if (length > session->internals.ia_data_buffer.length)
         length = session->internals.ia_data_buffer.length;
 
-      _gnutls_buffers_log ("BUF[REC][IA]: Read %d bytes of Data(%d)\n",
+      MHD__gnutls_buffers_log ("BUF[REC][IA]: Read %d bytes of Data(%d)\n",
                            length, type);
 
       session->internals.ia_data_buffer.length -= length;
@@ -276,7 +276,7 @@ mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -284,19 +284,19 @@ mhd_gtls_record_buffer_get (content_type_t type, mhd_gtls_session_t session,
 }
 
 /* This function is like read. But it does not return -1 on error.
- * It does return gnutls_errno instead.
+ * It does return MHD_gnutls_errno instead.
  *
  * Flags are only used if the default recv() function is being used.
  */
 static ssize_t
-_gnutls_read (mhd_gtls_session_t session, void *iptr,
+MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
               size_t sizeOfPtr, int flags)
 {
   size_t left;
   ssize_t i = 0;
   char *ptr = iptr;
   unsigned j, x, sum = 0;
-  gnutls_transport_ptr_t fd = session->internals.transport_recv_ptr;
+  MHD_gnutls_transport_ptr_t fd = session->internals.transport_recv_ptr;
 
   session->internals.direction = 0;
 
@@ -304,7 +304,7 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
   while (left > 0)
     {
       session->internals.errnum = 0;
-      if (session->internals._gnutls_pull_func == NULL)
+      if (session->internals.MHD__gnutls_pull_func == NULL)
         {
           i =
             recv (GNUTLS_POINTER_TO_INT (fd), &ptr[sizeOfPtr - left], left,
@@ -332,7 +332,7 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
 #endif
         }
       else
-        i = session->internals._gnutls_pull_func (fd,
+        i = session->internals.MHD__gnutls_pull_func (fd,
                                                   &ptr[sizeOfPtr - left],
                                                   left);
 
@@ -341,7 +341,7 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
           int err = session->internals.errnum ? session->internals.errnum
             : errno;
 
-          _gnutls_read_log ("READ: %d returned from %d, errno=%d gerrno=%d\n",
+          MHD__gnutls_read_log ("READ: %d returned from %d, errno=%d gerrno=%d\n",
                             i, fd, errno, session->internals.errnum);
 
           if (err == EAGAIN || err == EINTR)
@@ -349,12 +349,12 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
               if (sizeOfPtr - left > 0)
                 {
 
-                  _gnutls_read_log ("READ: returning %d bytes from %d\n",
+                  MHD__gnutls_read_log ("READ: returning %d bytes from %d\n",
                                     sizeOfPtr - left, fd);
 
                   goto finish;
                 }
-              gnutls_assert ();
+              MHD_gnutls_assert ();
 
               if (err == EAGAIN)
                 return GNUTLS_E_AGAIN;
@@ -362,14 +362,14 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
             }
           else
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_PULL_ERROR;
             }
         }
       else
         {
 
-          _gnutls_read_log ("READ: Got %d bytes from %d\n", i, fd);
+          MHD__gnutls_read_log ("READ: Got %d bytes from %d\n", i, fd);
 
           if (i == 0)
             break;              /* EOF */
@@ -381,12 +381,12 @@ _gnutls_read (mhd_gtls_session_t session, void *iptr,
 
 finish:
 
-  if (_gnutls_log_level >= 7)
+  if (MHD__gnutls_log_level >= 7)
     {
       char line[128];
       char tmp[16];
 
-      _gnutls_read_log ("READ: read %d bytes from %d\n", (sizeOfPtr - left),
+      MHD__gnutls_read_log ("READ: read %d bytes from %d\n", (sizeOfPtr - left),
                         fd);
 
       for (x = 0; x < ((sizeOfPtr - left) / 16) + 1; x++)
@@ -394,17 +394,17 @@ finish:
           line[0] = 0;
 
           sprintf (tmp, "%.4x - ", x);
-          mhd_gtls_str_cat (line, sizeof (line), tmp);
+          MHD_gtls_str_cat (line, sizeof (line), tmp);
 
           for (j = 0; j < 16; j++)
             {
               if (sum < (sizeOfPtr - left))
                 {
                   sprintf (tmp, "%.2x ", ((unsigned char *) ptr)[sum++]);
-                  mhd_gtls_str_cat (line, sizeof (line), tmp);
+                  MHD_gtls_str_cat (line, sizeof (line), tmp);
                 }
             }
-          _gnutls_read_log ("%s\n", line);
+          MHD__gnutls_read_log ("%s\n", line);
         }
     }
 
@@ -417,7 +417,7 @@ finish:
  * Clears the peeked data (read with MSG_PEEK).
  */
 int
-mhd_gtls_io_clear_peeked_data (mhd_gtls_session_t session)
+MHD_gtls_io_clear_peeked_data (MHD_gtls_session_t session)
 {
   char *peekdata;
   int ret, sum;
@@ -425,10 +425,10 @@ mhd_gtls_io_clear_peeked_data (mhd_gtls_session_t session)
   if (session->internals.have_peeked_data == 0 || RCVLOWAT == 0)
     return 0;
 
-  peekdata = gnutls_alloca (RCVLOWAT);
+  peekdata = MHD_gnutls_alloca (RCVLOWAT);
   if (peekdata == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -436,18 +436,18 @@ mhd_gtls_io_clear_peeked_data (mhd_gtls_session_t session)
   sum = 0;
   do
     {                           /* we need this to finish now */
-      ret = _gnutls_read (session, peekdata, RCVLOWAT - sum, 0);
+      ret = MHD__gnutls_read (session, peekdata, RCVLOWAT - sum, 0);
       if (ret > 0)
         sum += ret;
     }
   while (ret == GNUTLS_E_INTERRUPTED || ret == GNUTLS_E_AGAIN || sum
          < RCVLOWAT);
 
-  gnutls_afree (peekdata);
+  MHD_gnutls_afree (peekdata);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -457,13 +457,13 @@ mhd_gtls_io_clear_peeked_data (mhd_gtls_session_t session)
 }
 
 void
-mhd_gtls_io_clear_read_buffer (mhd_gtls_session_t session)
+MHD_gtls_io_clear_read_buffer (MHD_gtls_session_t session)
 {
   session->internals.record_recv_buffer.length = 0;
 }
 
 /* This function is like recv(with MSG_PEEK). But it does not return -1 on error.
- * It does return gnutls_errno instead.
+ * It does return MHD_gnutls_errno instead.
  * This function reads data from the socket and keeps them in a buffer, of up to
  * MAX_RECV_SIZE.
  *
@@ -472,7 +472,7 @@ mhd_gtls_io_clear_read_buffer (mhd_gtls_session_t session)
  *
  */
 ssize_t
-mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
+MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
                            size_t sizeOfPtr, content_type_t recv_type)
 {
   ssize_t ret = 0, ret2 = 0;
@@ -486,14 +486,14 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 
   if (sizeOfPtr > MAX_RECV_SIZE || sizeOfPtr == 0)
     {
-      gnutls_assert ();         /* internal error */
+      MHD_gnutls_assert ();         /* internal error */
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* If an external pull function is used, then do not leave
    * any data into the kernel buffer.
    */
-  if (session->internals._gnutls_pull_func != NULL)
+  if (session->internals.MHD__gnutls_pull_func != NULL)
     {
       recvlowat = 0;
     }
@@ -536,7 +536,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   if ((session->internals.record_recv_buffer.length + recvdata)
       > MAX_RECV_SIZE)
     {
-      gnutls_assert ();         /* internal error */
+      MHD_gnutls_assert ();         /* internal error */
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -544,11 +544,11 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
    */
   alloc_size = recvdata + session->internals.record_recv_buffer.length;
   session->internals.record_recv_buffer.data =
-    mhd_gtls_realloc_fast (session->internals.record_recv_buffer.data,
+    MHD_gtls_realloc_fast (session->internals.record_recv_buffer.data,
                            alloc_size);
   if (session->internals.record_recv_buffer.data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -559,7 +559,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   /* READ DATA - but leave RCVLOWAT bytes in the kernel buffer. */
   if (recvdata - recvlowat > 0)
     {
-      ret = _gnutls_read (session, &buf[buf_pos], recvdata - recvlowat, 0);
+      ret = MHD__gnutls_read (session, &buf[buf_pos], recvdata - recvlowat, 0);
 
       /* return immediately if we got an interrupt or eagain
        * error.
@@ -574,9 +574,9 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
    */
   if (ret > 0)
     {
-      _gnutls_read_log ("RB: Have %d bytes into buffer. Adding %d bytes.\n",
+      MHD__gnutls_read_log ("RB: Have %d bytes into buffer. Adding %d bytes.\n",
                         session->internals.record_recv_buffer.length, ret);
-      _gnutls_read_log ("RB: Requested %d bytes\n", sizeOfPtr);
+      MHD__gnutls_read_log ("RB: Requested %d bytes\n", sizeOfPtr);
       session->internals.record_recv_buffer.length += ret;
     }
 
@@ -589,7 +589,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
    */
   if (ret == (recvdata - recvlowat) && recvlowat > 0)
     {
-      ret2 = _gnutls_read (session, &buf[buf_pos], recvlowat, MSG_PEEK);
+      ret2 = MHD__gnutls_read (session, &buf[buf_pos], recvlowat, MSG_PEEK);
 
       if (ret2 < 0 && MHD_gtls_error_is_fatal (ret2) == 0)
         {
@@ -598,8 +598,8 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 
       if (ret2 > 0)
         {
-          _gnutls_read_log ("RB-PEEK: Read %d bytes in PEEK MODE.\n", ret2);
-          _gnutls_read_log
+          MHD__gnutls_read_log ("RB-PEEK: Read %d bytes in PEEK MODE.\n", ret2);
+          MHD__gnutls_read_log
             ("RB-PEEK: Have %d bytes into buffer. Adding %d bytes.\nRB: Requested %d bytes\n",
              session->internals.record_recv_buffer.length, ret2, sizeOfPtr);
           session->internals.have_peeked_data = 1;
@@ -610,7 +610,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 
   if (ret < 0 || ret2 < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* that's because they are initialized to 0 */
       return MIN (ret, ret2);
     }
@@ -619,13 +619,13 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 
   if (ret > 0 && ret < recvlowat)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_AGAIN;
     }
 
   if (ret == 0)
     {                           /* EOF */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return 0;
     }
 
@@ -634,7 +634,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
   if ((ret > 0) && ((size_t) ret < sizeOfPtr))
     {
       /* Short Read */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_AGAIN;
     }
   else
@@ -651,7 +651,7 @@ mhd_gtls_io_read_buffered (mhd_gtls_session_t session, opaque ** iptr,
 #define MEMSUB(x,y) ((ssize_t)((ptrdiff_t)x-(ptrdiff_t)y))
 
 inline static int
-_gnutls_buffer_insert (mhd_gtls_buffer * buffer,
+MHD__gnutls_buffer_insert (MHD_gtls_buffer * buffer,
                        const opaque * _data, size_t data_size)
 {
 
@@ -662,7 +662,7 @@ _gnutls_buffer_insert (mhd_gtls_buffer * buffer,
        */
       if (data_size > buffer->length)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           /* this shouldn't have happened */
           return GNUTLS_E_INTERNAL_ERROR;
         }
@@ -680,9 +680,9 @@ _gnutls_buffer_insert (mhd_gtls_buffer * buffer,
 
     }
 
-  if (mhd_gtls_buffer_append (buffer, _data, data_size) < 0)
+  if (MHD_gtls_buffer_append (buffer, _data, data_size) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -690,7 +690,7 @@ _gnutls_buffer_insert (mhd_gtls_buffer * buffer,
 }
 
 inline static int
-_gnutls_buffer_get (mhd_gtls_buffer * buffer,
+MHD__gnutls_buffer_get (MHD_gtls_buffer * buffer,
                     const opaque ** ptr, size_t * ptr_size)
 {
   *ptr_size = buffer->length;
@@ -700,9 +700,9 @@ _gnutls_buffer_get (mhd_gtls_buffer * buffer,
 }
 
 /* This function is like write. But it does not return -1 on error.
- * It does return gnutls_errno instead.
+ * It does return MHD_gnutls_errno instead.
  *
- * In case of E_AGAIN and E_INTERRUPTED errors, you must call gnutls_write_flush(),
+ * In case of E_AGAIN and E_INTERRUPTED errors, you must call MHD_gnutls_write_flush(),
  * until it returns ok (0).
  *
  * We need to push exactly the data in n, since we cannot send less
@@ -711,7 +711,7 @@ _gnutls_buffer_get (mhd_gtls_buffer * buffer,
  *
  */
 ssize_t
-mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
+MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
                             const void *iptr, size_t n)
 {
   size_t left;
@@ -719,7 +719,7 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
   ssize_t retval, i;
   const opaque *ptr;
   int ret;
-  gnutls_transport_ptr_t fd = session->internals.transport_send_ptr;
+  MHD_gnutls_transport_ptr_t fd = session->internals.transport_send_ptr;
 
   /* to know where the procedure was interrupted.
    */
@@ -733,7 +733,7 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
    */
   if (session->internals.record_send_buffer.length > 0 && iptr != NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -742,19 +742,19 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
   if (iptr == NULL)
     {
       /* checking is handled above */
-      ret = _gnutls_buffer_get (&session->internals.record_send_buffer, &ptr,
+      ret = MHD__gnutls_buffer_get (&session->internals.record_send_buffer, &ptr,
                                 &n);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
 
-      _gnutls_write_log ("WRITE: Restoring old write. (%d bytes to send)\n",
+      MHD__gnutls_write_log ("WRITE: Restoring old write. (%d bytes to send)\n",
                          n);
     }
 
-  _gnutls_write_log ("WRITE: Will write %d bytes to %d.\n", n, fd);
+  MHD__gnutls_write_log ("WRITE: Will write %d bytes to %d.\n", n, fd);
 
   i = 0;
   left = n;
@@ -763,7 +763,7 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
 
       session->internals.errnum = 0;
 
-      if (session->internals._gnutls_push_func == NULL)
+      if (session->internals.MHD__gnutls_push_func == NULL)
         {
           i = send (GNUTLS_POINTER_TO_INT (fd), &ptr[n - left], left, 0);
 #if HAVE_WINSOCK
@@ -789,7 +789,7 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
 #endif
         }
       else
-        i = session->internals._gnutls_push_func (fd, &ptr[n - left], left);
+        i = session->internals.MHD__gnutls_push_func (fd, &ptr[n - left], left);
 
       if (i == -1)
         {
@@ -801,15 +801,15 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
               session->internals.record_send_buffer_prev_size += n - left;
 
               retval =
-                _gnutls_buffer_insert (&session->internals.record_send_buffer,
+                MHD__gnutls_buffer_insert (&session->internals.record_send_buffer,
                                        &ptr[n - left], left);
               if (retval < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return retval;
                 }
 
-              _gnutls_write_log
+              MHD__gnutls_write_log
                 ("WRITE: Interrupted. Stored %d bytes to buffer. Already sent %d bytes.\n",
                  left, n - left);
 
@@ -819,18 +819,18 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
             }
           else
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_PUSH_ERROR;
             }
         }
       left -= i;
 
-      if (_gnutls_log_level >= 7)
+      if (MHD__gnutls_log_level >= 7)
         {
           char line[128];
           char tmp[16];
 
-          _gnutls_write_log
+          MHD__gnutls_write_log
             ("WRITE: wrote %d bytes to %d. Left %d bytes. Total %d bytes.\n",
              i, fd, left, n);
           for (x = 0; x < (unsigned) ((i) / 16) + 1; x++)
@@ -841,19 +841,19 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
                 break;
 
               sprintf (tmp, "%.4x - ", x);
-              mhd_gtls_str_cat (line, sizeof (line), tmp);
+              MHD_gtls_str_cat (line, sizeof (line), tmp);
 
               for (j = 0; j < 16; j++)
                 {
                   if (sum < n - left)
                     {
                       sprintf (tmp, "%.2x ", ((unsigned char *) ptr)[sum++]);
-                      mhd_gtls_str_cat (line, sizeof (line), tmp);
+                      MHD_gtls_str_cat (line, sizeof (line), tmp);
                     }
                   else
                     break;
                 }
-              _gnutls_write_log ("%s\n", line);
+              MHD__gnutls_write_log ("%s\n", line);
             }
         }
     }
@@ -872,15 +872,15 @@ mhd_gtls_io_write_buffered (mhd_gtls_session_t session,
  * interrupted.
  */
 ssize_t
-mhd_gtls_io_write_flush (mhd_gtls_session_t session)
+MHD_gtls_io_write_flush (MHD_gtls_session_t session)
 {
   ssize_t ret;
 
   if (session->internals.record_send_buffer.length == 0)
     return 0;                   /* done */
 
-  ret = mhd_gtls_io_write_buffered (session, NULL, 0);
-  _gnutls_write_log ("WRITE FLUSH: %d [buffer: %d]\n", ret,
+  ret = MHD_gtls_io_write_buffered (session, NULL, 0);
+  MHD__gnutls_write_log ("WRITE FLUSH: %d [buffer: %d]\n", ret,
                      session->internals.record_send_buffer.length);
 
   return ret;
@@ -891,17 +891,17 @@ mhd_gtls_io_write_flush (mhd_gtls_session_t session)
  * interrupted.
  */
 ssize_t
-mhd_gtls_handshake_io_write_flush (mhd_gtls_session_t session)
+MHD_gtls_handshake_io_write_flush (MHD_gtls_session_t session)
 {
   ssize_t ret;
-  ret = mhd_gtls_handshake_io_send_int (session, 0, 0, NULL, 0);
+  ret = MHD_gtls_handshake_io_send_int (session, 0, 0, NULL, 0);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  _gnutls_write_log ("HANDSHAKE_FLUSH: written[1] %d bytes\n", ret);
+  MHD__gnutls_write_log ("HANDSHAKE_FLUSH: written[1] %d bytes\n", ret);
 
   if (session->internals.handshake_send_buffer.length == 0)
     {
@@ -916,9 +916,9 @@ mhd_gtls_handshake_io_write_flush (mhd_gtls_session_t session)
  * protocol. Just makes sure that all data have been sent.
  */
 ssize_t
-mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
+MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
                                 content_type_t type,
-                                gnutls_handshake_description_t htype,
+                                MHD_gnutls_handshake_description_t htype,
                                 const void *iptr, size_t n)
 {
   size_t left;
@@ -933,12 +933,12 @@ mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
     {
       /* resuming previously interrupted write
        */
-      gnutls_assert ();
-      ret = _gnutls_buffer_get (&session->internals.handshake_send_buffer,
+      MHD_gnutls_assert ();
+      ret = MHD__gnutls_buffer_get (&session->internals.handshake_send_buffer,
                                 &ptr, &n);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return retval;
         }
 
@@ -948,7 +948,7 @@ mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
     }
   else if (session->internals.handshake_send_buffer.length > 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 #ifdef WRITE_DEBUG
@@ -956,65 +956,65 @@ mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
     {
       size_t sum = 0, x, j;
 
-      _gnutls_write_log ("HWRITE: will write %d bytes to %d.\n", n,
-                         gnutls_transport_get_ptr (session));
+      MHD__gnutls_write_log ("HWRITE: will write %d bytes to %d.\n", n,
+                         MHD_gnutls_transport_get_ptr (session));
       for (x = 0; x < ((n) / 16) + 1; x++)
         {
           if (sum > n)
             break;
 
-          _gnutls_write_log ("%.4x - ", x);
+          MHD__gnutls_write_log ("%.4x - ", x);
           for (j = 0; j < 16; j++)
             {
               if (sum < n)
                 {
-                  _gnutls_write_log ("%.2x ", ((unsigned char *) ptr)[sum++]);
+                  MHD__gnutls_write_log ("%.2x ", ((unsigned char *) ptr)[sum++]);
                 }
               else
                 break;
             }
-          _gnutls_write_log ("\n");
+          MHD__gnutls_write_log ("\n");
         }
-      _gnutls_write_log ("\n");
+      MHD__gnutls_write_log ("\n");
     }
 #endif
 
   if (n == 0)
     {                           /* if we have no data to send */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return 0;
     }
   else if (ptr == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   left = n;
   while (left > 0)
     {
-      ret = mhd_gtls_send_int (session, type, htype, &ptr[n - left], left);
+      ret = MHD_gtls_send_int (session, type, htype, &ptr[n - left], left);
 
       if (ret <= 0)
         {
           if (ret == 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               ret = GNUTLS_E_INTERNAL_ERROR;
             }
 
           if (left > 0 && (ret == GNUTLS_E_INTERRUPTED || ret
                            == GNUTLS_E_AGAIN))
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
 
               retval =
-                _gnutls_buffer_insert (&session->internals.
+                MHD__gnutls_buffer_insert (&session->internals.
                                        handshake_send_buffer, &ptr[n - left],
                                        left);
               if (retval < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return retval;
                 }
 
@@ -1030,7 +1030,7 @@ mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
               session->internals.handshake_send_buffer.length = 0;
             }
 
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       left -= ret;
@@ -1049,9 +1049,9 @@ mhd_gtls_handshake_io_send_int (mhd_gtls_session_t session,
  * protocol. Makes sure that we have received all data.
  */
 ssize_t
-mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
+MHD_gtls_handshake_io_recv_int (MHD_gtls_session_t session,
                                 content_type_t type,
-                                gnutls_handshake_description_t htype,
+                                MHD_gnutls_handshake_description_t htype,
                                 void *iptr, size_t sizeOfPtr)
 {
   size_t left;
@@ -1064,7 +1064,7 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
 
   if (sizeOfPtr == 0 || iptr == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -1075,7 +1075,7 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
         {
           /* if requested less data then return it.
            */
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           memcpy (iptr, session->internals.handshake_recv_buffer.data,
                   sizeOfPtr);
 
@@ -1087,7 +1087,7 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
 
           return sizeOfPtr;
         }
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       memcpy (iptr, session->internals.handshake_recv_buffer.data,
               session->internals.handshake_recv_buffer.length);
 
@@ -1102,21 +1102,21 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
   while (left > 0)
     {
       dsize = sizeOfPtr - left;
-      i = mhd_gtls_recv_int (session, type, htype, &ptr[dsize], left);
+      i = MHD_gtls_recv_int (session, type, htype, &ptr[dsize], left);
       if (i < 0)
         {
 
           if (dsize > 0 && (i == GNUTLS_E_INTERRUPTED || i == GNUTLS_E_AGAIN))
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
 
               session->internals.handshake_recv_buffer.data
                 =
-                mhd_gtls_realloc_fast (session->internals.
+                MHD_gtls_realloc_fast (session->internals.
                                        handshake_recv_buffer.data, dsize);
               if (session->internals.handshake_recv_buffer.data == NULL)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return GNUTLS_E_MEMORY_ERROR;
                 }
 
@@ -1131,7 +1131,7 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
           else
             session->internals.handshake_recv_buffer.length = 0;
 
-          gnutls_assert ();
+          MHD_gnutls_assert ();
 
           return i;
         }
@@ -1155,7 +1155,7 @@ mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t session,
  * and finished messages.
  */
 int
-mhd_gtls_handshake_buffer_put (mhd_gtls_session_t session, opaque * data,
+MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
                                size_t length)
 {
 
@@ -1172,16 +1172,16 @@ mhd_gtls_handshake_buffer_put (mhd_gtls_session_t session, opaque * data,
                                                                   internals.
                                                                   max_handshake_data_buffer_size))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  _gnutls_buffers_log ("BUF[HSK]: Inserted %d bytes of Data\n", length);
+  MHD__gnutls_buffers_log ("BUF[HSK]: Inserted %d bytes of Data\n", length);
 
-  if (mhd_gtls_buffer_append (&session->internals.handshake_hash_buffer, data,
+  if (MHD_gtls_buffer_append (&session->internals.handshake_hash_buffer, data,
                               length) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -1189,7 +1189,7 @@ mhd_gtls_handshake_buffer_put (mhd_gtls_session_t session, opaque * data,
 }
 
 int
-mhd_gtls_handshake_buffer_get_size (mhd_gtls_session_t session)
+MHD_gtls_handshake_buffer_get_size (MHD_gtls_session_t session)
 {
 
   return session->internals.handshake_hash_buffer.length;
@@ -1199,7 +1199,7 @@ mhd_gtls_handshake_buffer_get_size (mhd_gtls_session_t session)
  * and returns data from it (peek mode!)
  */
 int
-mhd_gtls_handshake_buffer_peek (mhd_gtls_session_t session, opaque * data,
+MHD_gtls_handshake_buffer_peek (MHD_gtls_session_t session, opaque * data,
                                 size_t length)
 {
   if (length > session->internals.handshake_hash_buffer.length)
@@ -1207,7 +1207,7 @@ mhd_gtls_handshake_buffer_peek (mhd_gtls_session_t session, opaque * data,
       length = session->internals.handshake_hash_buffer.length;
     }
 
-  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", length);
+  MHD__gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", length);
 
   memcpy (data, session->internals.handshake_hash_buffer.data, length);
   return length;
@@ -1217,13 +1217,13 @@ mhd_gtls_handshake_buffer_peek (mhd_gtls_session_t session, opaque * data,
  * and returns data from it (peek mode!)
  */
 int
-mhd_gtls_handshake_buffer_get_ptr (mhd_gtls_session_t session,
+MHD_gtls_handshake_buffer_get_ptr (MHD_gtls_session_t session,
                                    opaque ** data_ptr, size_t * length)
 {
   if (length != NULL)
     *length = session->internals.handshake_hash_buffer.length;
 
-  _gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n",
+  MHD__gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n",
 		       session->internals.handshake_hash_buffer.length);
 
   if (data_ptr != NULL)
@@ -1235,10 +1235,10 @@ mhd_gtls_handshake_buffer_get_ptr (mhd_gtls_session_t session,
 /* Does not free the buffer
  */
 int
-mhd_gtls_handshake_buffer_empty (mhd_gtls_session_t session)
+MHD_gtls_handshake_buffer_empty (MHD_gtls_session_t session)
 {
 
-  _gnutls_buffers_log ("BUF[HSK]: Emptied buffer\n");
+  MHD__gnutls_buffers_log ("BUF[HSK]: Emptied buffer\n");
 
   session->internals.handshake_hash_buffer.length = 0;
 
@@ -1246,9 +1246,9 @@ mhd_gtls_handshake_buffer_empty (mhd_gtls_session_t session)
 }
 
 int
-mhd_gtls_handshake_buffer_clear (mhd_gtls_session_t session)
+MHD_gtls_handshake_buffer_clear (MHD_gtls_session_t session)
 {
-  _gnutls_buffers_log ("BUF[HSK]: Cleared Data from buffer\n");
-  mhd_gtls_buffer_clear (&session->internals.handshake_hash_buffer);
+  MHD__gnutls_buffers_log ("BUF[HSK]: Cleared Data from buffer\n");
+  MHD_gtls_buffer_clear (&session->internals.handshake_hash_buffer);
   return 0;
 }

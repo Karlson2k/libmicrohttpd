@@ -26,11 +26,11 @@
 # define __builtin_expect(expr, val)   (expr)
 #endif
 
-#undef memmem
+#undef MHD_memmem
 
 /* Return the first occurrence of NEEDLE in HAYSTACK.  */
 void *
-memmem (haystack, haystack_len, needle, needle_len)
+MHD_memmem (haystack, haystack_len, needle, needle_len)
      const void *haystack;
      size_t haystack_len;
      const void *needle;

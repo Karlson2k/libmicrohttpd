@@ -35,7 +35,7 @@
  * has been reached.
  */
 int
-mhd_gtls_uint64pp (uint64 * x)
+MHD_gtls_uint64pp (uint64 * x)
 {
   register int i, y = 0;
 
@@ -60,7 +60,7 @@ mhd_gtls_uint64pp (uint64 * x)
 }
 
 uint32_t
-mhd_gtls_uint24touint32 (uint24 num)
+MHD_gtls_uint24touint32 (uint24 num)
 {
   uint32_t ret = 0;
 
@@ -71,7 +71,7 @@ mhd_gtls_uint24touint32 (uint24 num)
 }
 
 uint24
-mhd_gtls_uint32touint24 (uint32_t num)
+MHD_gtls_uint32touint24 (uint32_t num)
 {
   uint24 ret;
 
@@ -84,7 +84,7 @@ mhd_gtls_uint32touint24 (uint32_t num)
 
 /* data should be at least 3 bytes */
 uint32_t
-mhd_gtls_read_uint24 (const opaque * data)
+MHD_gtls_read_uint24 (const opaque * data)
 {
   uint32_t res;
   uint24 num;
@@ -93,7 +93,7 @@ mhd_gtls_read_uint24 (const opaque * data)
   num.pint[1] = data[1];
   num.pint[2] = data[2];
 
-  res = mhd_gtls_uint24touint32 (num);
+  res = MHD_gtls_uint24touint32 (num);
 #ifndef WORDS_BIGENDIAN
   res = byteswap32 (res);
 #endif
@@ -101,14 +101,14 @@ mhd_gtls_read_uint24 (const opaque * data)
 }
 
 void
-mhd_gtls_write_uint24 (uint32_t num, opaque * data)
+MHD_gtls_write_uint24 (uint32_t num, opaque * data)
 {
   uint24 tmp;
 
 #ifndef WORDS_BIGENDIAN
   num = byteswap32 (num);
 #endif
-  tmp = mhd_gtls_uint32touint24 (num);
+  tmp = MHD_gtls_uint32touint24 (num);
 
   data[0] = tmp.pint[0];
   data[1] = tmp.pint[1];
@@ -116,7 +116,7 @@ mhd_gtls_write_uint24 (uint32_t num, opaque * data)
 }
 
 uint32_t
-mhd_gtls_read_uint32 (const opaque * data)
+MHD_gtls_read_uint32 (const opaque * data)
 {
   uint32_t res;
 
@@ -128,7 +128,7 @@ mhd_gtls_read_uint32 (const opaque * data)
 }
 
 void
-mhd_gtls_write_uint32 (uint32_t num, opaque * data)
+MHD_gtls_write_uint32 (uint32_t num, opaque * data)
 {
 
 #ifndef WORDS_BIGENDIAN
@@ -138,7 +138,7 @@ mhd_gtls_write_uint32 (uint32_t num, opaque * data)
 }
 
 uint16_t
-mhd_gtls_read_uint16 (const opaque * data)
+MHD_gtls_read_uint16 (const opaque * data)
 {
   uint16_t res;
   memcpy (&res, data, sizeof (uint16_t));
@@ -149,7 +149,7 @@ mhd_gtls_read_uint16 (const opaque * data)
 }
 
 void
-mhd_gtls_write_uint16 (uint16_t num, opaque * data)
+MHD_gtls_write_uint16 (uint16_t num, opaque * data)
 {
 
 #ifndef WORDS_BIGENDIAN
@@ -159,7 +159,7 @@ mhd_gtls_write_uint16 (uint16_t num, opaque * data)
 }
 
 uint32_t
-mhd_gtls_conv_uint32 (uint32_t data)
+MHD_gtls_conv_uint32 (uint32_t data)
 {
 #ifndef WORDS_BIGENDIAN
   return byteswap32 (data);
@@ -169,7 +169,7 @@ mhd_gtls_conv_uint32 (uint32_t data)
 }
 
 uint16_t
-mhd_gtls_conv_uint16 (uint16_t data)
+MHD_gtls_conv_uint16 (uint16_t data)
 {
 #ifndef WORDS_BIGENDIAN
   return byteswap16 (data);
@@ -179,7 +179,7 @@ mhd_gtls_conv_uint16 (uint16_t data)
 }
 
 uint32_t
-mhd_gtls_uint64touint32 (const uint64 * num)
+MHD_gtls_uint64touint32 (const uint64 * num)
 {
   uint32_t ret;
 

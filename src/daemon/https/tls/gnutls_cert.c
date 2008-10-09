@@ -45,8 +45,8 @@
 #include "mpi.h"
 
 /**
-  * MHD_gnutls_certificate_free_keys - Used to free all the keys from a mhd_gtls_cert_credentials_t structure
-  * @sc: is an #mhd_gtls_cert_credentials_t structure.
+  * MHD__gnutls_certificate_free_keys - Used to free all the keys from a MHD_gtls_cert_credentials_t structure
+  * @sc: is an #MHD_gtls_cert_credentials_t structure.
   *
   * This function will delete all the keys and the certificates associated
   * with the given credentials. This function must not be called when a
@@ -54,7 +54,7 @@
   *
   **/
 void
-MHD_gnutls_certificate_free_keys (mhd_gtls_cert_credentials_t sc)
+MHD__gnutls_certificate_free_keys (MHD_gtls_cert_credentials_t sc)
 {
   unsigned i, j;
 
@@ -62,23 +62,23 @@ MHD_gnutls_certificate_free_keys (mhd_gtls_cert_credentials_t sc)
     {
       for (j = 0; j < sc->cert_list_length[i]; j++)
         {
-          mhd_gtls_gcert_deinit (&sc->cert_list[i][j]);
+          MHD_gtls_gcert_deinit (&sc->cert_list[i][j]);
         }
-      gnutls_free (sc->cert_list[i]);
+      MHD_gnutls_free (sc->cert_list[i]);
     }
 
-  gnutls_free (sc->cert_list_length);
+  MHD_gnutls_free (sc->cert_list_length);
   sc->cert_list_length = NULL;
 
-  gnutls_free (sc->cert_list);
+  MHD_gnutls_free (sc->cert_list);
   sc->cert_list = NULL;
 
   for (i = 0; i < sc->ncerts; i++)
     {
-      mhd_gtls_gkey_deinit (&sc->pkey[i]);
+      MHD_gtls_gkey_deinit (&sc->pkey[i]);
     }
 
-  gnutls_free (sc->pkey);
+  MHD_gnutls_free (sc->pkey);
   sc->pkey = NULL;
 
   sc->ncerts = 0;
@@ -86,8 +86,8 @@ MHD_gnutls_certificate_free_keys (mhd_gtls_cert_credentials_t sc)
 }
 
 /**
-  * MHD_gnutls_certificate_free_cas - Used to free all the CAs from a mhd_gtls_cert_credentials_t structure
-  * @sc: is an #mhd_gtls_cert_credentials_t structure.
+  * MHD__gnutls_certificate_free_cas - Used to free all the CAs from a MHD_gtls_cert_credentials_t structure
+  * @sc: is an #MHD_gtls_cert_credentials_t structure.
   *
   * This function will delete all the CAs associated
   * with the given credentials. Servers that do not use
@@ -96,25 +96,25 @@ MHD_gnutls_certificate_free_keys (mhd_gtls_cert_credentials_t sc)
   *
   **/
 void
-MHD_gnutls_certificate_free_cas (mhd_gtls_cert_credentials_t sc)
+MHD__gnutls_certificate_free_cas (MHD_gtls_cert_credentials_t sc)
 {
   unsigned j;
 
   for (j = 0; j < sc->x509_ncas; j++)
     {
-      gnutls_x509_crt_deinit (sc->x509_ca_list[j]);
+      MHD_gnutls_x509_crt_deinit (sc->x509_ca_list[j]);
     }
 
   sc->x509_ncas = 0;
 
-  gnutls_free (sc->x509_ca_list);
+  MHD_gnutls_free (sc->x509_ca_list);
   sc->x509_ca_list = NULL;
 
 }
 
 /**
-  * MHD_gnutls_certificate_free_ca_names - Used to free all the CA names from a mhd_gtls_cert_credentials_t structure
-  * @sc: is an #mhd_gtls_cert_credentials_t structure.
+  * MHD__gnutls_certificate_free_ca_names - Used to free all the CA names from a MHD_gtls_cert_credentials_t structure
+  * @sc: is an #MHD_gtls_cert_credentials_t structure.
   *
   * This function will delete all the CA name in the
   * given credentials. Clients may call this to save some memory
@@ -125,13 +125,13 @@ MHD_gnutls_certificate_free_cas (mhd_gtls_cert_credentials_t sc)
   *
   **/
 void
-MHD_gnutls_certificate_free_ca_names (mhd_gtls_cert_credentials_t sc)
+MHD__gnutls_certificate_free_ca_names (MHD_gtls_cert_credentials_t sc)
 {
-  _gnutls_free_datum (&sc->x509_rdn_sequence);
+  MHD__gnutls_free_datum (&sc->x509_rdn_sequence);
 }
 
 /*-
-  * mhd_gtls_certificate_get_rsa_params - Returns the RSA parameters pointer
+  * MHD_gtls_certificate_get_rsa_params - Returns the RSA parameters pointer
   * @rsa_params: holds the RSA parameters or NULL.
   * @func: function to retrieve the parameters or NULL.
   * @session: The session.
@@ -139,12 +139,12 @@ MHD_gnutls_certificate_free_ca_names (mhd_gtls_cert_credentials_t sc)
   * This function will return the rsa parameters pointer.
   *
   -*/
-mhd_gtls_rsa_params_t
-mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t rsa_params,
-                                     gnutls_params_function * func,
-                                     mhd_gtls_session_t session)
+MHD_gtls_rsa_params_t
+MHD_gtls_certificate_get_rsa_params (MHD_gtls_rsa_params_t rsa_params,
+                                     MHD_gnutls_params_function * func,
+                                     MHD_gtls_session_t session)
 {
-  gnutls_params_st params;
+  MHD_gnutls_params_st params;
   int ret;
 
   if (session->internals.params.rsa_params)
@@ -171,8 +171,8 @@ mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t rsa_params,
 
 
 /**
-  * MHD_gnutls_certificate_free_credentials - Used to free an allocated mhd_gtls_cert_credentials_t structure
-  * @sc: is an #mhd_gtls_cert_credentials_t structure.
+  * MHD__gnutls_certificate_free_credentials - Used to free an allocated MHD_gtls_cert_credentials_t structure
+  * @sc: is an #MHD_gtls_cert_credentials_t structure.
   *
   * This structure is complex enough to manipulate directly thus
   * this helper function is provided in order to free (deallocate) it.
@@ -182,26 +182,26 @@ mhd_gtls_certificate_get_rsa_params (mhd_gtls_rsa_params_t rsa_params,
   * this function).
   **/
 void
-MHD_gnutls_certificate_free_credentials (mhd_gtls_cert_credentials_t sc)
+MHD__gnutls_certificate_free_credentials (MHD_gtls_cert_credentials_t sc)
 {
-  MHD_gnutls_certificate_free_keys (sc);
-  MHD_gnutls_certificate_free_cas (sc);
-  MHD_gnutls_certificate_free_ca_names (sc);
+  MHD__gnutls_certificate_free_keys (sc);
+  MHD__gnutls_certificate_free_cas (sc);
+  MHD__gnutls_certificate_free_ca_names (sc);
 #ifdef ENABLE_PKI
-  MHD_gnutls_certificate_free_crls (sc);
+  MHD__gnutls_certificate_free_crls (sc);
 #endif
 
 #ifdef KEYRING_HACK
-  _gnutls_free_datum (&sc->keyring);
+  MHD__gnutls_free_datum (&sc->keyring);
 #endif
 
-  gnutls_free (sc);
+  MHD_gnutls_free (sc);
 }
 
 
 /**
-  * MHD_gnutls_certificate_allocate_credentials - Used to allocate a mhd_gtls_cert_credentials_t structure
-  * @res: is a pointer to an #mhd_gtls_cert_credentials_t structure.
+  * MHD__gnutls_certificate_allocate_credentials - Used to allocate a MHD_gtls_cert_credentials_t structure
+  * @res: is a pointer to an #MHD_gtls_cert_credentials_t structure.
   *
   * This structure is complex enough to manipulate directly thus this
   * helper function is provided in order to allocate it.
@@ -209,10 +209,10 @@ MHD_gnutls_certificate_free_credentials (mhd_gtls_cert_credentials_t sc)
   * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
   **/
 int
-MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
+MHD__gnutls_certificate_allocate_credentials (MHD_gtls_cert_credentials_t *
                                              res)
 {
-  *res = gnutls_calloc (1, sizeof (mhd_gtls_cert_credentials_st));
+  *res = MHD_gnutls_calloc (1, sizeof (MHD_gtls_cert_credentials_st));
 
   if (*res == NULL)
     return GNUTLS_E_MEMORY_ERROR;
@@ -231,14 +231,14 @@ MHD_gnutls_certificate_allocate_credentials (mhd_gtls_cert_credentials_t *
  * extensions in order to disable unneded algorithms.
  */
 int
-mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
+MHD_gtls_selected_cert_supported_kx (MHD_gtls_session_t session,
                                      enum MHD_GNUTLS_KeyExchangeAlgorithm
                                      **alg, int *alg_size)
 {
   enum MHD_GNUTLS_KeyExchangeAlgorithm kx;
   enum MHD_GNUTLS_PublicKeyAlgorithm pk;
   enum MHD_GNUTLS_KeyExchangeAlgorithm kxlist[MAX_ALGOS];
-  gnutls_cert *cert;
+  MHD_gnutls_cert *cert;
   int i;
 
   if (session->internals.selected_cert_list_length == 0)
@@ -253,11 +253,11 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
 
   for (kx = 0; kx < MAX_ALGOS; kx++)
     {
-      pk = mhd_gtls_map_pk_get_pk (kx);
+      pk = MHD_gtls_map_pk_get_pk (kx);
       if (pk == cert->subject_pk_algorithm)
         {
           /* then check key usage */
-          if (_gnutls_check_key_usage (cert, kx) == 0)
+          if (MHD__gnutls_check_key_usage (cert, kx) == 0)
             {
               kxlist[i] = kx;
               i++;
@@ -267,11 +267,11 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
 
   if (i == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  *alg = gnutls_calloc (1, sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm) * i);
+  *alg = MHD_gnutls_calloc (1, sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm) * i);
   if (*alg == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -285,7 +285,7 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
 
 /**
   * MHD_gtls_certificate_server_set_request - Used to set whether to request a client certificate
-  * @session: is an #mhd_gtls_session_t structure.
+  * @session: is an #MHD_gtls_session_t structure.
   * @req: is one of GNUTLS_CERT_REQUEST, GNUTLS_CERT_REQUIRE
   *
   * This function specifies if we (in case of a server) are going
@@ -296,28 +296,28 @@ mhd_gtls_selected_cert_supported_kx (mhd_gtls_session_t session,
   * send a certificate.
   **/
 void
-MHD_gtls_certificate_server_set_request (mhd_gtls_session_t session,
-                                         gnutls_certificate_request_t req)
+MHD_gtls_certificate_server_set_request (MHD_gtls_session_t session,
+                                         MHD_gnutls_certificate_request_t req)
 {
   session->internals.send_cert_req = req;
 }
 
 /**
   * MHD_gtls_certificate_client_set_retrieve_function - Used to set a callback to retrieve the certificate
-  * @cred: is a #mhd_gtls_cert_credentials_t structure.
+  * @cred: is a #MHD_gtls_cert_credentials_t structure.
   * @func: is the callback function
   *
   * This function sets a callback to be called in order to retrieve the certificate
   * to be used in the handshake.
   * The callback's function prototype is:
-  * int (*callback)(mhd_gtls_session_t, const gnutls_datum_t* req_ca_dn, int nreqs,
-  * const enum MHD_GNUTLS_PublicKeyAlgorithm* pk_algos, int pk_algos_length, gnutls_retr_st* st);
+  * int (*callback)(MHD_gtls_session_t, const MHD_gnutls_datum_t* req_ca_dn, int nreqs,
+  * const enum MHD_GNUTLS_PublicKeyAlgorithm* pk_algos, int pk_algos_length, MHD_gnutls_retr_st* st);
   *
   * @req_ca_cert is only used in X.509 certificates.
   * Contains a list with the CA names that the server considers trusted.
   * Normally we should send a certificate that is signed
   * by one of these CAs. These names are DER encoded. To get a more
-  * meaningful value use the function gnutls_x509_rdn_get().
+  * meaningful value use the function MHD_gnutls_x509_rdn_get().
   *
   * @pk_algos contains a list with server's acceptable signature algorithms.
   * The certificate returned should support the server's given algorithms.
@@ -333,21 +333,21 @@ MHD_gtls_certificate_server_set_request (mhd_gtls_session_t session,
   * will be terminated.
   **/
 void MHD_gtls_certificate_client_set_retrieve_function
-  (mhd_gtls_cert_credentials_t cred,
-   gnutls_certificate_client_retrieve_function * func)
+  (MHD_gtls_cert_credentials_t cred,
+   MHD_gnutls_certificate_client_retrieve_function * func)
 {
   cred->client_get_cert_callback = func;
 }
 
 /**
   * MHD_gtls_certificate_server_set_retrieve_function - Used to set a callback to retrieve the certificate
-  * @cred: is a #mhd_gtls_cert_credentials_t structure.
+  * @cred: is a #MHD_gtls_cert_credentials_t structure.
   * @func: is the callback function
   *
   * This function sets a callback to be called in order to retrieve the certificate
   * to be used in the handshake.
   * The callback's function prototype is:
-  * int (*callback)(mhd_gtls_session_t, gnutls_retr_st* st);
+  * int (*callback)(MHD_gtls_session_t, MHD_gnutls_retr_st* st);
   *
   * @st should contain the certificates and private keys.
   *
@@ -359,14 +359,14 @@ void MHD_gtls_certificate_client_set_retrieve_function
   * will be terminated.
   **/
 void MHD_gtls_certificate_server_set_retrieve_function
-  (mhd_gtls_cert_credentials_t cred,
-   gnutls_certificate_server_retrieve_function * func)
+  (MHD_gtls_cert_credentials_t cred,
+   MHD_gnutls_certificate_server_retrieve_function * func)
 {
   cred->server_get_cert_callback = func;
 }
 
 /*-
- * _gnutls_x509_extract_certificate_activation_time - This function returns the peer's certificate activation time
+ * MHD__gnutls_x509_extract_certificate_activation_time - This function returns the peer's certificate activation time
  * @cert: should contain an X.509 DER encoded certificate
  *
  * This function will return the certificate's activation time in UNIX time
@@ -376,31 +376,31 @@ void MHD_gtls_certificate_server_set_retrieve_function
  *
  -*/
 static time_t
-_gnutls_x509_get_raw_crt_activation_time (const gnutls_datum_t * cert)
+MHD__gnutls_x509_get_raw_crt_activation_time (const MHD_gnutls_datum_t * cert)
 {
-  gnutls_x509_crt_t xcert;
+  MHD_gnutls_x509_crt_t xcert;
   time_t result;
 
-  result = gnutls_x509_crt_init (&xcert);
+  result = MHD_gnutls_x509_crt_init (&xcert);
   if (result < 0)
     return (time_t) - 1;
 
-  result = gnutls_x509_crt_import (xcert, cert, GNUTLS_X509_FMT_DER);
+  result = MHD_gnutls_x509_crt_import (xcert, cert, GNUTLS_X509_FMT_DER);
   if (result < 0)
     {
-      gnutls_x509_crt_deinit (xcert);
+      MHD_gnutls_x509_crt_deinit (xcert);
       return (time_t) - 1;
     }
 
-  result = gnutls_x509_crt_get_activation_time (xcert);
+  result = MHD_gnutls_x509_crt_get_activation_time (xcert);
 
-  gnutls_x509_crt_deinit (xcert);
+  MHD_gnutls_x509_crt_deinit (xcert);
 
   return result;
 }
 
 /*-
- * gnutls_x509_extract_certificate_expiration_time - This function returns the certificate's expiration time
+ * MHD_gnutls_x509_extract_certificate_expiration_time - This function returns the certificate's expiration time
  * @cert: should contain an X.509 DER encoded certificate
  *
  * This function will return the certificate's expiration time in UNIX
@@ -410,25 +410,25 @@ _gnutls_x509_get_raw_crt_activation_time (const gnutls_datum_t * cert)
  *
  -*/
 static time_t
-_gnutls_x509_get_raw_crt_expiration_time (const gnutls_datum_t * cert)
+MHD__gnutls_x509_get_raw_crt_expiration_time (const MHD_gnutls_datum_t * cert)
 {
-  gnutls_x509_crt_t xcert;
+  MHD_gnutls_x509_crt_t xcert;
   time_t result;
 
-  result = gnutls_x509_crt_init (&xcert);
+  result = MHD_gnutls_x509_crt_init (&xcert);
   if (result < 0)
     return (time_t) - 1;
 
-  result = gnutls_x509_crt_import (xcert, cert, GNUTLS_X509_FMT_DER);
+  result = MHD_gnutls_x509_crt_import (xcert, cert, GNUTLS_X509_FMT_DER);
   if (result < 0)
     {
-      gnutls_x509_crt_deinit (xcert);
+      MHD_gnutls_x509_crt_deinit (xcert);
       return (time_t) - 1;
     }
 
-  result = gnutls_x509_crt_get_expiration_time (xcert);
+  result = MHD_gnutls_x509_crt_get_expiration_time (xcert);
 
-  gnutls_x509_crt_deinit (xcert);
+  MHD_gnutls_x509_crt_deinit (xcert);
 
   return result;
 }
@@ -440,34 +440,34 @@ _gnutls_x509_get_raw_crt_expiration_time (const gnutls_datum_t * cert)
   *
   * This function will try to verify the peer's certificate and return
   * its status (trusted, invalid etc.).  The value of @status should
-  * be one or more of the gnutls_certificate_status_t enumerated
+  * be one or more of the MHD_gnutls_certificate_status_t enumerated
   * elements bitwise or'd. To avoid denial of service attacks some
   * default upper limits regarding the certificate key size and chain
   * size are set. To override them use
-  * MHD_gnutls_certificate_set_verify_limits().
+  * MHD__gnutls_certificate_set_verify_limits().
   *
   * Note that you must also check the peer's name in order to check if
   * the verified certificate belongs to the actual peer.
   *
-  * This is the same as gnutls_x509_crt_list_verify() and uses the
+  * This is the same as MHD_gnutls_x509_crt_list_verify() and uses the
   * loaded CAs in the credentials as trusted CAs.
   *
   * Note that some commonly used X.509 Certificate Authorities are
   * still using Version 1 certificates.  If you want to accept them,
-  * you need to call MHD_gnutls_certificate_set_verify_flags() with, e.g.,
+  * you need to call MHD__gnutls_certificate_set_verify_flags() with, e.g.,
   * %GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT parameter.
   *
   * Returns: a negative error code on error and zero on success.
   **/
 int
-MHD_gtls_certificate_verify_peers2 (mhd_gtls_session_t session,
+MHD_gtls_certificate_verify_peers2 (MHD_gtls_session_t session,
                                     unsigned int *status)
 {
   cert_auth_info_t info;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
       return GNUTLS_E_NO_CERTIFICATE_FOUND;
@@ -476,10 +476,10 @@ MHD_gtls_certificate_verify_peers2 (mhd_gtls_session_t session,
   if (info->raw_certificate_list == NULL || info->ncerts == 0)
     return GNUTLS_E_NO_CERTIFICATE_FOUND;
 
-  switch (gnutls_certificate_type_get (session))
+  switch (MHD_gnutls_certificate_type_get (session))
     {
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_x509_cert_verify_peers (session, status);
+      return MHD__gnutls_x509_cert_verify_peers (session, status);
     default:
       return GNUTLS_E_INVALID_REQUEST;
     }
@@ -495,15 +495,15 @@ MHD_gtls_certificate_verify_peers2 (mhd_gtls_session_t session,
   * belongs to the actual peer.
   *
   * The return value should be one or more of the
-  * gnutls_certificate_status_t enumerated elements bitwise or'd, or a
+  * MHD_gnutls_certificate_status_t enumerated elements bitwise or'd, or a
   * negative value on error.
   *
-  * This is the same as gnutls_x509_crt_list_verify().
+  * This is the same as MHD_gnutls_x509_crt_list_verify().
   *
   * Deprecated: Use MHD_gtls_certificate_verify_peers2() instead.
   **/
 int
-MHD_gtls_certificate_verify_peers (mhd_gtls_session_t session)
+MHD_gtls_certificate_verify_peers (MHD_gtls_session_t session)
 {
   unsigned int status;
   int ret;
@@ -512,7 +512,7 @@ MHD_gtls_certificate_verify_peers (mhd_gtls_session_t session)
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -528,13 +528,13 @@ MHD_gtls_certificate_verify_peers (mhd_gtls_session_t session)
   * Returns: (time_t)-1 on error.
   **/
 time_t
-MHD_gtls_certificate_expiration_time_peers (mhd_gtls_session_t session)
+MHD_gtls_certificate_expiration_time_peers (MHD_gtls_session_t session)
 {
   cert_auth_info_t info;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
       return (time_t) - 1;
@@ -542,15 +542,15 @@ MHD_gtls_certificate_expiration_time_peers (mhd_gtls_session_t session)
 
   if (info->raw_certificate_list == NULL || info->ncerts == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) - 1;
     }
 
-  switch (gnutls_certificate_type_get (session))
+  switch (MHD_gnutls_certificate_type_get (session))
     {
     case MHD_GNUTLS_CRT_X509:
       return
-        _gnutls_x509_get_raw_crt_expiration_time (&info->raw_certificate_list
+        MHD__gnutls_x509_get_raw_crt_expiration_time (&info->raw_certificate_list
                                                   [0]);
     default:
       return (time_t) - 1;
@@ -567,13 +567,13 @@ MHD_gtls_certificate_expiration_time_peers (mhd_gtls_session_t session)
   * Returns: (time_t)-1 on error.
   **/
 time_t
-MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
+MHD_gtls_certificate_activation_time_peers (MHD_gtls_session_t session)
 {
   cert_auth_info_t info;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
       return (time_t) - 1;
@@ -581,15 +581,15 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
 
   if (info->raw_certificate_list == NULL || info->ncerts == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) - 1;
     }
 
-  switch (gnutls_certificate_type_get (session))
+  switch (MHD_gnutls_certificate_type_get (session))
     {
     case MHD_GNUTLS_CRT_X509:
       return
-        _gnutls_x509_get_raw_crt_activation_time (&info->raw_certificate_list
+        MHD__gnutls_x509_get_raw_crt_activation_time (&info->raw_certificate_list
                                                   [0]);
     default:
       return (time_t) - 1;
@@ -597,33 +597,33 @@ MHD_gtls_certificate_activation_time_peers (mhd_gtls_session_t session)
 }
 
 int
-mhd_gtls_raw_cert_to_gcert (gnutls_cert * gcert,
+MHD_gtls_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
                             enum MHD_GNUTLS_CertificateType type,
-                            const gnutls_datum_t * raw_cert,
+                            const MHD_gnutls_datum_t * raw_cert,
                             int flags /* OR of ConvFlags */ )
 {
   switch (type)
     {
     case MHD_GNUTLS_CRT_X509:
-      return mhd_gtls_x509_raw_cert_to_gcert (gcert, raw_cert, flags);
+      return MHD_gtls_x509_raw_cert_to_gcert (gcert, raw_cert, flags);
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
 
 int
-mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
+MHD_gtls_raw_privkey_to_gkey (MHD_gnutls_privkey * key,
                               enum MHD_GNUTLS_CertificateType type,
-                              const gnutls_datum_t * raw_key,
+                              const MHD_gnutls_datum_t * raw_key,
                               int key_enc /* DER or PEM */ )
 {
   switch (type)
     {
     case MHD_GNUTLS_CRT_X509:
-      return _gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
+      return MHD__gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
@@ -639,30 +639,30 @@ mhd_gtls_raw_privkey_to_gkey (gnutls_privkey * key,
  * The critical extensions will be catched by the verification functions.
  */
 int
-mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
-                                 const gnutls_datum_t * derCert,
+MHD_gtls_x509_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
+                                 const MHD_gnutls_datum_t * derCert,
                                  int flags /* OR of ConvFlags */ )
 {
   int ret;
-  gnutls_x509_crt_t cert;
+  MHD_gnutls_x509_crt_t cert;
 
-  ret = gnutls_x509_crt_init (&cert);
+  ret = MHD_gnutls_x509_crt_init (&cert);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = gnutls_x509_crt_import (cert, derCert, GNUTLS_X509_FMT_DER);
+  ret = MHD_gnutls_x509_crt_import (cert, derCert, GNUTLS_X509_FMT_DER);
   if (ret < 0)
     {
-      gnutls_assert ();
-      gnutls_x509_crt_deinit (cert);
+      MHD_gnutls_assert ();
+      MHD_gnutls_x509_crt_deinit (cert);
       return ret;
     }
 
-  ret = mhd_gtls_x509_crt_to_gcert (gcert, cert, flags);
-  gnutls_x509_crt_deinit (cert);
+  ret = MHD_gtls_x509_crt_to_gcert (gcert, cert, flags);
+  MHD_gnutls_x509_crt_deinit (cert);
 
   return ret;
 }
@@ -670,12 +670,12 @@ mhd_gtls_x509_raw_cert_to_gcert (gnutls_cert * gcert,
 /* Like above but it accepts a parsed certificate instead.
  */
 int
-mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert,
-                            gnutls_x509_crt_t cert, unsigned int flags)
+MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert,
+                            MHD_gnutls_x509_crt_t cert, unsigned int flags)
 {
   int ret = 0;
 
-  memset (gcert, 0, sizeof (gnutls_cert));
+  memset (gcert, 0, sizeof (MHD_gnutls_cert));
   gcert->cert_type = MHD_GNUTLS_CRT_X509;
 
   if (!(flags & CERT_NO_COPY))
@@ -687,38 +687,38 @@ mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert,
       /* initially allocate a bogus size, just in case the certificate
        * fits in it. That way we minimize the DER encodings performed.
        */
-      der = gnutls_malloc (SMALL_DER);
+      der = MHD_gnutls_malloc (SMALL_DER);
       if (der == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
 
       ret =
-        gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der, &der_size);
+        MHD_gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der, &der_size);
       if (ret < 0 && ret != GNUTLS_E_SHORT_MEMORY_BUFFER)
         {
-          gnutls_assert ();
-          gnutls_free (der);
+          MHD_gnutls_assert ();
+          MHD_gnutls_free (der);
           return ret;
         }
 
       if (ret == GNUTLS_E_SHORT_MEMORY_BUFFER)
         {
-          der = gnutls_realloc (der, der_size);
+          der = MHD_gnutls_realloc (der, der_size);
           if (der == NULL)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_MEMORY_ERROR;
             }
 
           ret =
-            gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der,
+            MHD_gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der,
                                     &der_size);
           if (ret < 0)
             {
-              gnutls_assert ();
-              gnutls_free (der);
+              MHD_gnutls_assert ();
+              MHD_gnutls_free (der);
               return ret;
             }
         }
@@ -733,19 +733,19 @@ mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert,
 
   if (flags & CERT_ONLY_EXTENSIONS || flags == 0)
     {
-      gnutls_x509_crt_get_key_usage (cert, &gcert->key_usage, NULL);
-      gcert->version = gnutls_x509_crt_get_version (cert);
+      MHD_gnutls_x509_crt_get_key_usage (cert, &gcert->key_usage, NULL);
+      gcert->version = MHD_gnutls_x509_crt_get_version (cert);
     }
-  gcert->subject_pk_algorithm = gnutls_x509_crt_get_pk_algorithm (cert, NULL);
+  gcert->subject_pk_algorithm = MHD_gnutls_x509_crt_get_pk_algorithm (cert, NULL);
 
   if (flags & CERT_ONLY_PUBKEY || flags == 0)
     {
       gcert->params_size = MAX_PUBLIC_PARAMS_SIZE;
       ret =
-        _gnutls_x509_crt_get_mpis (cert, gcert->params, &gcert->params_size);
+        MHD__gnutls_x509_crt_get_mpis (cert, gcert->params, &gcert->params_size);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
     }
@@ -755,7 +755,7 @@ mhd_gtls_x509_crt_to_gcert (gnutls_cert * gcert,
 }
 
 void
-mhd_gtls_gcert_deinit (gnutls_cert * cert)
+MHD_gtls_gcert_deinit (MHD_gnutls_cert * cert)
 {
   int i;
 
@@ -764,10 +764,10 @@ mhd_gtls_gcert_deinit (gnutls_cert * cert)
 
   for (i = 0; i < cert->params_size; i++)
     {
-      mhd_gtls_mpi_release (&cert->params[i]);
+      MHD_gtls_mpi_release (&cert->params[i]);
     }
 
-  _gnutls_free_datum (&cert->raw);
+  MHD__gnutls_free_datum (&cert->raw);
 }
 
 /**
@@ -778,20 +778,20 @@ mhd_gtls_gcert_deinit (gnutls_cert * cert)
  *
  * Set the callback function.  The function must have this prototype:
  *
- * typedef int (*gnutls_sign_func) (mhd_gtls_session_t session,
+ * typedef int (*MHD_gnutls_sign_func) (MHD_gtls_session_t session,
  *                                  void *userdata,
  *                                  enum MHD_GNUTLS_CertificateType cert_type,
- *                                  const gnutls_datum_t * cert,
- *                                  const gnutls_datum_t * hash,
- *                                  gnutls_datum_t * signature);
+ *                                  const MHD_gnutls_datum_t * cert,
+ *                                  const MHD_gnutls_datum_t * hash,
+ *                                  MHD_gnutls_datum_t * signature);
  *
  * The @userdata parameter is passed to the @sign_func verbatim, and
  * can be used to store application-specific data needed in the
  * callback function.  See also MHD_gtls_sign_callback_get().
  **/
 void
-MHD_gtls_sign_callback_set (mhd_gtls_session_t session,
-                            gnutls_sign_func sign_func, void *userdata)
+MHD_gtls_sign_callback_set (MHD_gtls_session_t session,
+                            MHD_gnutls_sign_func sign_func, void *userdata)
 {
   session->internals.sign_func = sign_func;
   session->internals.sign_func_userdata = userdata;
@@ -807,8 +807,8 @@ MHD_gtls_sign_callback_set (mhd_gtls_session_t session,
  * Returns: The function pointer set by MHD_gtls_sign_callback_set(), or
  *   if not set, %NULL.
  **/
-gnutls_sign_func
-MHD_gtls_sign_callback_get (mhd_gtls_session_t session, void **userdata)
+MHD_gnutls_sign_func
+MHD_gtls_sign_callback_get (MHD_gtls_session_t session, void **userdata)
 {
   if (userdata)
     *userdata = session->internals.sign_func_userdata;

@@ -170,7 +170,7 @@ static const oid2string _oid2str[] = {
 /* Returns 1 if the data defined by the OID are printable.
  */
 int
-_gnutls_x509_oid_data_printable (const char *oid)
+MHD__gnutls_x509_oid_data_printable (const char *oid)
 {
   int i = 0;
 
@@ -186,11 +186,11 @@ _gnutls_x509_oid_data_printable (const char *oid)
 }
 
 /**
- * gnutls_x509_dn_oid_known - This function will return true if the given OID is known
+ * MHD_gnutls_x509_dn_oid_known - This function will return true if the given OID is known
  * @oid: holds an Object Identifier in a null terminated string
  *
  * This function will inform about known DN OIDs. This is useful since functions
- * like gnutls_x509_crt_set_dn_by_oid() use the information on known
+ * like MHD_gnutls_x509_crt_set_dn_by_oid() use the information on known
  * OIDs to properly encode their input. Object Identifiers that are not
  * known are not encoded by these functions, and their input is stored directly
  * into the ASN.1 structure. In that case of unknown OIDs, you have
@@ -200,7 +200,7 @@ _gnutls_x509_oid_data_printable (const char *oid)
  *
  **/
 int
-gnutls_x509_dn_oid_known (const char *oid)
+MHD_gnutls_x509_dn_oid_known (const char *oid)
 {
   int i = 0;
 
@@ -219,7 +219,7 @@ gnutls_x509_dn_oid_known (const char *oid)
  * type.
  */
 int
-_gnutls_x509_oid_data_choice (const char *oid)
+MHD__gnutls_x509_oid_data_choice (const char *oid)
 {
   int i = 0;
 
@@ -235,7 +235,7 @@ _gnutls_x509_oid_data_choice (const char *oid)
 }
 
 const char *
-_gnutls_x509_oid2ldap_string (const char *oid)
+MHD__gnutls_x509_oid2ldap_string (const char *oid)
 {
   int i = 0;
 
@@ -257,7 +257,7 @@ _gnutls_x509_oid2ldap_string (const char *oid)
  * hold the string.
  */
 int
-_gnutls_x509_oid_data2string (const char *oid,
+MHD__gnutls_x509_oid_data2string (const char *oid,
                               void *value,
                               int value_size, char *res, size_t * res_size)
 {
@@ -265,57 +265,57 @@ _gnutls_x509_oid_data2string (const char *oid,
   const char *ANAME = NULL;
   int CHOICE = -1, len = -1, result;
   ASN1_TYPE tmpasn = ASN1_TYPE_EMPTY;
-  char asn1_err[MAX_ERROR_DESCRIPTION_SIZE] = "";
+  char MHD__asn1_err[MAX_ERROR_DESCRIPTION_SIZE] = "";
 
   if (value == NULL || value_size <= 0 || res_size == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  if (_gnutls_x509_oid_data_printable (oid) == 0)
+  if (MHD__gnutls_x509_oid_data_printable (oid) == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  ANAME = asn1_find_structure_from_oid (_gnutls_get_pkix (), oid);
-  CHOICE = _gnutls_x509_oid_data_choice (oid);
+  ANAME = MHD__asn1_find_structure_from_oid (MHD__gnutls_get_pkix (), oid);
+  CHOICE = MHD__gnutls_x509_oid_data_choice (oid);
 
   if (ANAME == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  mhd_gtls_str_cpy (str, sizeof (str), "PKIX1.");
-  mhd_gtls_str_cat (str, sizeof (str), ANAME);
+  MHD_gtls_str_cpy (str, sizeof (str), "PKIX1.");
+  MHD_gtls_str_cat (str, sizeof (str), ANAME);
 
-  if ((result = asn1_create_element (_gnutls_get_pkix (), str,
+  if ((result = MHD__asn1_create_element (MHD__gnutls_get_pkix (), str,
                                      &tmpasn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  if ((result = asn1_der_decoding (&tmpasn, value, value_size, asn1_err))
+  if ((result = MHD__asn1_der_decoding (&tmpasn, value, value_size, MHD__asn1_err))
       != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      _gnutls_x509_log ("asn1_der_decoding: %s:%s\n", str, asn1_err);
-      asn1_delete_structure (&tmpasn);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("MHD__asn1_der_decoding: %s:%s\n", str, MHD__asn1_err);
+      MHD__asn1_delete_structure (&tmpasn);
+      return MHD_gtls_asn2err (result);
     }
 
   /* If this is a choice then we read the choice. Otherwise it
    * is the value;
    */
   len = sizeof (str) - 1;
-  if ((result = asn1_read_value (tmpasn, "", str, &len)) != ASN1_SUCCESS)
+  if ((result = MHD__asn1_read_value (tmpasn, "", str, &len)) != ASN1_SUCCESS)
     {                           /* CHOICE */
-      gnutls_assert ();
-      asn1_delete_structure (&tmpasn);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&tmpasn);
+      return MHD_gtls_asn2err (result);
     }
 
   if (CHOICE == 0)
@@ -323,10 +323,10 @@ _gnutls_x509_oid_data2string (const char *oid,
       str[len] = 0;
 
       if (res)
-        mhd_gtls_str_cpy (res, *res_size, str);
+        MHD_gtls_str_cpy (res, *res_size, str);
       *res_size = len;
 
-      asn1_delete_structure (&tmpasn);
+      MHD__asn1_delete_structure (&tmpasn);
     }
   else
     {                           /* CHOICE */
@@ -345,17 +345,17 @@ _gnutls_x509_oid_data2string (const char *oid,
       if (strcmp (str, "teletexString") == 0)
         teletex = 1;
 
-      mhd_gtls_str_cpy (tmpname, sizeof (tmpname), str);
+      MHD_gtls_str_cpy (tmpname, sizeof (tmpname), str);
 
       len = sizeof (str) - 1;
-      if ((result = asn1_read_value (tmpasn, tmpname, str, &len))
+      if ((result = MHD__asn1_read_value (tmpasn, tmpname, str, &len))
           != ASN1_SUCCESS)
         {
-          asn1_delete_structure (&tmpasn);
-          return mhd_gtls_asn2err (result);
+          MHD__asn1_delete_structure (&tmpasn);
+          return MHD_gtls_asn2err (result);
         }
 
-      asn1_delete_structure (&tmpasn);
+      MHD__asn1_delete_structure (&tmpasn);
 
       if (teletex != 0)
         {
@@ -376,15 +376,15 @@ _gnutls_x509_oid_data2string (const char *oid,
           if (non_printable == 0)
             {
               str[len] = 0;
-              mhd_gtls_str_cpy (res, *res_size, str);
+              MHD_gtls_str_cpy (res, *res_size, str);
               *res_size = len;
             }
           else
             {
-              result = _gnutls_x509_data2hex (str, len, res, res_size);
+              result = MHD__gnutls_x509_data2hex (str, len, res, res_size);
               if (result < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return result;
                 }
             }
@@ -399,7 +399,7 @@ _gnutls_x509_oid_data2string (const char *oid,
  * something like '#01020304'
  */
 int
-_gnutls_x509_data2hex (const opaque * data,
+MHD__gnutls_x509_data2hex (const opaque * data,
                        size_t data_size, opaque * out, size_t * sizeof_out)
 {
   char *res;
@@ -407,11 +407,11 @@ _gnutls_x509_data2hex (const opaque * data,
 
   if (2 * data_size + 1 > MAX_STRING_LEN)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  res = mhd_gtls_bin2hex (data, data_size, escaped, sizeof (escaped));
+  res = MHD_gtls_bin2hex (data, data_size, escaped, sizeof (escaped));
 
   if (res)
     {
@@ -433,7 +433,7 @@ _gnutls_x509_data2hex (const opaque * data,
     }
   else
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -522,7 +522,7 @@ mktime_utc (const struct fake_tm *tm)
  * and year is given. Returns a time_t date.
  */
 time_t
-_gnutls_x509_time2gtime (const char *ttime, int year)
+MHD__gnutls_x509_time2gtime (const char *ttime, int year)
 {
   char xx[3];
   struct fake_tm etime;
@@ -530,7 +530,7 @@ _gnutls_x509_time2gtime (const char *ttime, int year)
 
   if (strlen (ttime) < 8)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) - 1;
     }
 
@@ -589,14 +589,14 @@ _gnutls_x509_time2gtime (const char *ttime, int year)
  * (seconds are optional)
  */
 time_t
-_gnutls_x509_utcTime2gtime (const char *ttime)
+MHD__gnutls_x509_utcTime2gtime (const char *ttime)
 {
   char xx[3];
   int year;
 
   if (strlen (ttime) < 10)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) - 1;
     }
   xx[2] = 0;
@@ -611,7 +611,7 @@ _gnutls_x509_utcTime2gtime (const char *ttime)
   else
     year += 2000;
 
-  return _gnutls_x509_time2gtime (ttime, year);
+  return MHD__gnutls_x509_time2gtime (ttime, year);
 }
 
 /* returns a time value that contains the given time.
@@ -619,7 +619,7 @@ _gnutls_x509_utcTime2gtime (const char *ttime)
  * YEAR(2)|MONTH(2)|DAY(2)|HOUR(2)|MIN(2)|SEC(2)
  */
 int
-_gnutls_x509_gtime2utcTime (time_t gtime, char *str_time, int str_time_size)
+MHD__gnutls_x509_gtime2utcTime (time_t gtime, char *str_time, int str_time_size)
 {
   size_t ret;
 
@@ -639,7 +639,7 @@ _gnutls_x509_gtime2utcTime (time_t gtime, char *str_time, int str_time_size)
 
   if (!ret)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
 
@@ -652,20 +652,20 @@ _gnutls_x509_gtime2utcTime (time_t gtime, char *str_time, int str_time_size)
  * YEAR(4)|MONTH(2)|DAY(2)|HOUR(2)|MIN(2)|SEC(2)*
  */
 time_t
-_gnutls_x509_generalTime2gtime (const char *ttime)
+MHD__gnutls_x509_generalTime2gtime (const char *ttime)
 {
   char xx[5];
   int year;
 
   if (strlen (ttime) < 12)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) - 1;
     }
 
   if (strchr (ttime, 'Z') == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* sorry we don't support it yet
        */
       return (time_t) - 1;
@@ -678,7 +678,7 @@ _gnutls_x509_generalTime2gtime (const char *ttime)
   year = atoi (xx);
   ttime += 4;
 
-  return _gnutls_x509_time2gtime (ttime, year);
+  return MHD__gnutls_x509_time2gtime (ttime, year);
 
 }
 
@@ -687,19 +687,19 @@ _gnutls_x509_generalTime2gtime (const char *ttime)
  */
 #define MAX_TIME 64
 time_t
-_gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
+MHD__gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
 {
   char ttime[MAX_TIME];
   char name[128];
   time_t c_time = (time_t) - 1;
   int len, result;
 
-  mhd_gtls_str_cpy (name, sizeof (name), when);
+  MHD_gtls_str_cpy (name, sizeof (name), when);
 
   len = sizeof (ttime) - 1;
-  if ((result = asn1_read_value (c2, name, ttime, &len)) < 0)
+  if ((result = MHD__asn1_read_value (c2, name, ttime, &len)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) (-1);
     }
 
@@ -707,20 +707,20 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
   if (strcmp (ttime, "generalTime") == 0)
     {
 
-      mhd_gtls_str_cat (name, sizeof (name), ".generalTime");
+      MHD_gtls_str_cat (name, sizeof (name), ".generalTime");
       len = sizeof (ttime) - 1;
-      result = asn1_read_value (c2, name, ttime, &len);
+      result = MHD__asn1_read_value (c2, name, ttime, &len);
       if (result == ASN1_SUCCESS)
-        c_time = _gnutls_x509_generalTime2gtime (ttime);
+        c_time = MHD__gnutls_x509_generalTime2gtime (ttime);
     }
   else
     {                           /* UTCTIME */
 
-      mhd_gtls_str_cat (name, sizeof (name), ".utcTime");
+      MHD_gtls_str_cat (name, sizeof (name), ".utcTime");
       len = sizeof (ttime) - 1;
-      result = asn1_read_value (c2, name, ttime, &len);
+      result = MHD__asn1_read_value (c2, name, ttime, &len);
       if (result == ASN1_SUCCESS)
-        c_time = _gnutls_x509_utcTime2gtime (ttime);
+        c_time = MHD__gnutls_x509_utcTime2gtime (ttime);
     }
 
   /* We cannot handle dates after 2031 in 32 bit machines.
@@ -729,7 +729,7 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return (time_t) (-1);
     }
   return c_time;
@@ -739,42 +739,42 @@ _gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
  * be something like "tbsCertList.thisUpdate".
  */
 int
-_gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim)
+MHD__gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim)
 {
   char str_time[MAX_TIME];
   char name[128];
   int result, len;
 
-  mhd_gtls_str_cpy (name, sizeof (name), where);
+  MHD_gtls_str_cpy (name, sizeof (name), where);
 
-  if ((result = asn1_write_value (c2, name, "utcTime", 1)) < 0)
+  if ((result = MHD__asn1_write_value (c2, name, "utcTime", 1)) < 0)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = _gnutls_x509_gtime2utcTime (tim, str_time, sizeof (str_time));
+  result = MHD__gnutls_x509_gtime2utcTime (tim, str_time, sizeof (str_time));
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
-  mhd_gtls_str_cat (name, sizeof (name), ".utcTime");
+  MHD_gtls_str_cat (name, sizeof (name), ".utcTime");
 
   len = strlen (str_time);
-  result = asn1_write_value (c2, name, str_time, len);
+  result = MHD__asn1_write_value (c2, name, str_time, len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return 0;
 }
 
-gnutls_x509_subject_alt_name_t
-_gnutls_x509_san_find_type (char *str_type)
+MHD_gnutls_x509_subject_alt_name_t
+MHD__gnutls_x509_san_find_type (char *str_type)
 {
   if (strcmp (str_type, "dNSName") == 0)
     return GNUTLS_SAN_DNSNAME;
@@ -788,15 +788,15 @@ _gnutls_x509_san_find_type (char *str_type)
     return GNUTLS_SAN_OTHERNAME;
   if (strcmp (str_type, "directoryName") == 0)
     return GNUTLS_SAN_DN;
-  return (gnutls_x509_subject_alt_name_t) - 1;
+  return (MHD_gnutls_x509_subject_alt_name_t) - 1;
 }
 
 /* A generic export function. Will export the given ASN.1 encoded data
  * to PEM or DER raw data.
  */
 int
-_gnutls_x509_export_int (ASN1_TYPE asn1_data,
-                         gnutls_x509_crt_fmt_t format,
+MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
+                         MHD_gnutls_x509_crt_fmt_t format,
                          char *pem_header,
                          unsigned char *output_data,
                          size_t * output_data_size)
@@ -811,7 +811,7 @@ _gnutls_x509_export_int (ASN1_TYPE asn1_data,
 
       len = *output_data_size;
 
-      if ((result = asn1_der_coding (asn1_data, "", output_data, &len,
+      if ((result = MHD__asn1_der_coding (MHD__asn1_data, "", output_data, &len,
                                      NULL)) != ASN1_SUCCESS)
         {
           *output_data_size = len;
@@ -819,8 +819,8 @@ _gnutls_x509_export_int (ASN1_TYPE asn1_data,
             {
               return GNUTLS_E_SHORT_MEMORY_BUFFER;
             }
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
       *output_data_size = len;
@@ -829,35 +829,35 @@ _gnutls_x509_export_int (ASN1_TYPE asn1_data,
   else
     {                           /* PEM */
       opaque *out;
-      gnutls_datum_t tmp;
+      MHD_gnutls_datum_t tmp;
 
-      result = _gnutls_x509_der_encode (asn1_data, "", &tmp, 0);
+      result = MHD__gnutls_x509_der_encode (MHD__asn1_data, "", &tmp, 0);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
-      result = _gnutls_fbase64_encode (pem_header, tmp.data, tmp.size, &out);
+      result = MHD__gnutls_fbase64_encode (pem_header, tmp.data, tmp.size, &out);
 
-      _gnutls_free_datum (&tmp);
+      MHD__gnutls_free_datum (&tmp);
 
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
       if (result == 0)
         {                       /* oooops */
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
       if ((unsigned) result > *output_data_size)
         {
-          gnutls_assert ();
-          gnutls_free (out);
+          MHD_gnutls_assert ();
+          MHD_gnutls_free (out);
           *output_data_size = result;
           return GNUTLS_E_SHORT_MEMORY_BUFFER;
         }
@@ -872,7 +872,7 @@ _gnutls_x509_export_int (ASN1_TYPE asn1_data,
            */
           *output_data_size = result - 1;
         }
-      gnutls_free (out);
+      MHD_gnutls_free (out);
 
     }
 
@@ -884,7 +884,7 @@ _gnutls_x509_export_int (ASN1_TYPE asn1_data,
  * etc.
  */
 int
-_gnutls_x509_decode_octet_string (const char *string_type,
+MHD__gnutls_x509_decode_octet_string (const char *string_type,
                                   const opaque * der,
                                   size_t der_size,
                                   opaque * output, size_t * output_size)
@@ -894,45 +894,45 @@ _gnutls_x509_decode_octet_string (const char *string_type,
   char strname[64];
 
   if (string_type == NULL)
-    mhd_gtls_str_cpy (strname, sizeof (strname), "PKIX1.pkcs-7-Data");
+    MHD_gtls_str_cpy (strname, sizeof (strname), "PKIX1.pkcs-7-Data");
   else
     {
-      mhd_gtls_str_cpy (strname, sizeof (strname), "PKIX1.");
-      mhd_gtls_str_cat (strname, sizeof (strname), string_type);
+      MHD_gtls_str_cpy (strname, sizeof (strname), "PKIX1.");
+      MHD_gtls_str_cat (strname, sizeof (strname), string_type);
     }
 
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (), strname,
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (), strname,
                             &c2)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  result = asn1_der_decoding (&c2, der, der_size, NULL);
+  result = MHD__asn1_der_decoding (&c2, der, der_size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   tmp_output_size = *output_size;
-  result = asn1_read_value (c2, "", output, &tmp_output_size);
+  result = MHD__asn1_read_value (c2, "", output, &tmp_output_size);
   *output_size = tmp_output_size;
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   return 0;
 
 cleanup:if (c2)
-    asn1_delete_structure (&c2);
+    MHD__asn1_delete_structure (&c2);
 
   return result;
 }
@@ -944,37 +944,37 @@ cleanup:if (c2)
  * flags == 2 the value is a BIT STRING
  */
 int
-_gnutls_x509_read_value (ASN1_TYPE c,
-                         const char *root, gnutls_datum_t * ret, int flags)
+MHD__gnutls_x509_read_value (ASN1_TYPE c,
+                         const char *root, MHD_gnutls_datum_t * ret, int flags)
 {
   int len = 0, result;
   size_t slen;
   opaque *tmp = NULL;
 
-  result = asn1_read_value (c, root, NULL, &len);
+  result = MHD__asn1_read_value (c, root, NULL, &len);
   if (result != ASN1_MEM_ERROR)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       return result;
     }
 
   if (flags == 2)
     len /= 8;
 
-  tmp = gnutls_malloc (len);
+  tmp = MHD_gnutls_malloc (len);
   if (tmp == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_MEMORY_ERROR;
       goto cleanup;
     }
 
-  result = asn1_read_value (c, root, tmp, &len);
+  result = MHD__asn1_read_value (c, root, tmp, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -987,10 +987,10 @@ _gnutls_x509_read_value (ASN1_TYPE c,
   if (flags == 1)
     {
       slen = len;
-      result = _gnutls_x509_decode_octet_string (NULL, tmp, slen, tmp, &slen);
+      result = MHD__gnutls_x509_decode_octet_string (NULL, tmp, slen, tmp, &slen);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
       len = slen;
@@ -1001,7 +1001,7 @@ _gnutls_x509_read_value (ASN1_TYPE c,
 
   return 0;
 
-cleanup:gnutls_free (tmp);
+cleanup:MHD_gnutls_free (tmp);
   return result;
 
 }
@@ -1011,8 +1011,8 @@ cleanup:gnutls_free (tmp);
  * an OCTET STRING.
  */
 int
-_gnutls_x509_der_encode (ASN1_TYPE src,
-                         const char *src_name, gnutls_datum_t * res, int str)
+MHD__gnutls_x509_der_encode (ASN1_TYPE src,
+                         const char *src_name, MHD_gnutls_datum_t * res, int str)
 {
   int size, result;
   int asize;
@@ -1020,11 +1020,11 @@ _gnutls_x509_der_encode (ASN1_TYPE src,
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
 
   size = 0;
-  result = asn1_der_coding (src, src_name, NULL, &size, NULL);
+  result = MHD__asn1_der_coding (src, src_name, NULL, &size, NULL);
   if (result != ASN1_MEM_ERROR)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1035,60 +1035,60 @@ _gnutls_x509_der_encode (ASN1_TYPE src,
     size += 16;                 /* for later to include the octet tags */
   asize = size;
 
-  data = gnutls_malloc (size);
+  data = MHD_gnutls_malloc (size);
   if (data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_MEMORY_ERROR;
       goto cleanup;
     }
 
-  result = asn1_der_coding (src, src_name, data, &size, NULL);
+  result = MHD__asn1_der_coding (src, src_name, data, &size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   if (str)
     {
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
                                 &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
-      result = asn1_write_value (c2, "", data, size);
+      result = MHD__asn1_write_value (c2, "", data, size);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
-      result = asn1_der_coding (c2, "", data, &asize, NULL);
+      result = MHD__asn1_der_coding (c2, "", data, &asize, NULL);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
       size = asize;
 
-      asn1_delete_structure (&c2);
+      MHD__asn1_delete_structure (&c2);
     }
 
   res->data = data;
   res->size = size;
   return 0;
 
-cleanup:gnutls_free (data);
-  asn1_delete_structure (&c2);
+cleanup:MHD_gnutls_free (data);
+  MHD__asn1_delete_structure (&c2);
   return result;
 
 }
@@ -1099,32 +1099,32 @@ cleanup:gnutls_free (data);
  * an OCTET STRING.
  */
 int
-_gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
+MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
                                   const char *src_name,
                                   ASN1_TYPE dest,
                                   const char *dest_name, int str)
 {
   int result;
-  gnutls_datum_t encoded;
+  MHD_gnutls_datum_t encoded;
 
-  result = _gnutls_x509_der_encode (src, src_name, &encoded, str);
+  result = MHD__gnutls_x509_der_encode (src, src_name, &encoded, str);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Write the data.
    */
-  result = asn1_write_value (dest, dest_name, encoded.data, encoded.size);
+  result = MHD__asn1_write_value (dest, dest_name, encoded.data, encoded.size);
 
-  _gnutls_free_datum (&encoded);
+  MHD__gnutls_free_datum (&encoded);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return 0;
@@ -1134,21 +1134,21 @@ _gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
  * zero it encodes it as OCTET STRING.
  */
 int
-_gnutls_x509_write_value (ASN1_TYPE c,
+MHD__gnutls_x509_write_value (ASN1_TYPE c,
                           const char *root,
-                          const gnutls_datum_t * data, int str)
+                          const MHD_gnutls_datum_t * data, int str)
 {
   int result;
   int asize;
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
-  gnutls_datum_t val;
+  MHD_gnutls_datum_t val;
 
   asize = data->size + 16;
 
-  val.data = gnutls_malloc (asize);
+  val.data = MHD_gnutls_malloc (asize);
   if (val.data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_MEMORY_ERROR;
       goto cleanup;
     }
@@ -1158,26 +1158,26 @@ _gnutls_x509_write_value (ASN1_TYPE c,
       /* Convert it to OCTET STRING
        */
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
                                 &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
-      result = asn1_write_value (c2, "", data->data, data->size);
+      result = MHD__asn1_write_value (c2, "", data->data, data->size);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
-      result = _gnutls_x509_der_encode (c2, "", &val, 0);
+      result = MHD__gnutls_x509_der_encode (c2, "", &val, 0);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
@@ -1190,21 +1190,21 @@ _gnutls_x509_write_value (ASN1_TYPE c,
 
   /* Write the data.
    */
-  result = asn1_write_value (c, root, val.data, val.size);
+  result = MHD__asn1_write_value (c, root, val.data, val.size);
 
   if (val.data != data->data)
-    _gnutls_free_datum (&val);
+    MHD__gnutls_free_datum (&val);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return 0;
 
 cleanup:if (val.data != data->data)
-    _gnutls_free_datum (&val);
+    MHD__gnutls_free_datum (&val);
   return result;
 }
 
@@ -1213,69 +1213,69 @@ cleanup:if (val.data != data->data)
  *
  */
 int
-_gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
+MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
                                          const char *dst_name,
                                          enum MHD_GNUTLS_PublicKeyAlgorithm
                                          pk_algorithm,
                                          mpi_t * params, int params_size)
 {
   const char *pk;
-  gnutls_datum_t der = { NULL,
+  MHD_gnutls_datum_t der = { NULL,
     0
   };
   int result;
   char name[128];
 
-  pk = mhd_gtls_x509_pk_to_oid (pk_algorithm);
+  pk = MHD_gtls_x509_pk_to_oid (pk_algorithm);
   if (pk == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
     }
 
   /* write the OID
    */
-  mhd_gtls_str_cpy (name, sizeof (name), dst_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
-  result = asn1_write_value (dst, name, pk, 1);
+  MHD_gtls_str_cpy (name, sizeof (name), dst_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
+  result = MHD__asn1_write_value (dst, name, pk, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   if (pk_algorithm == MHD_GNUTLS_PK_RSA)
     {
       /* disable parameters, which are not used in RSA.
        */
-      mhd_gtls_str_cpy (name, sizeof (name), dst_name);
-      mhd_gtls_str_cat (name, sizeof (name), ".algorithm.parameters");
-      result = asn1_write_value (dst, name, NULL, 0);
+      MHD_gtls_str_cpy (name, sizeof (name), dst_name);
+      MHD_gtls_str_cat (name, sizeof (name), ".algorithm.parameters");
+      result = MHD__asn1_write_value (dst, name, NULL, 0);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
-      result = _gnutls_x509_write_rsa_params (params, params_size, &der);
+      result = MHD__gnutls_x509_write_rsa_params (params, params_size, &der);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
       /* Write the DER parameters. (in bits)
        */
-      mhd_gtls_str_cpy (name, sizeof (name), dst_name);
-      mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
-      result = asn1_write_value (dst, name, der.data, der.size * 8);
+      MHD_gtls_str_cpy (name, sizeof (name), dst_name);
+      MHD_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
+      result = MHD__asn1_write_value (dst, name, der.data, der.size * 8);
 
-      _gnutls_free_datum (&der);
+      MHD__gnutls_free_datum (&der);
 
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
     }
   else
@@ -1288,7 +1288,7 @@ _gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
  * ASN.1 structure. src_name should be something like "tbsCertificate.subjectPublicKeyInfo".
  */
 int
-_gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
+MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
                                const char *src_name, unsigned int *bits)
 {
   int result;
@@ -1299,64 +1299,64 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE];
   char name[128];
 
-  mhd_gtls_str_cpy (name, sizeof (name), src_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
+  MHD_gtls_str_cpy (name, sizeof (name), src_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
 
   len = sizeof (oid);
-  result = asn1_read_value (src, name, oid, &len);
+  result = MHD__asn1_read_value (src, name, oid, &len);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  algo = mhd_gtls_x509_oid2pk_algorithm (oid);
+  algo = MHD_gtls_x509_oid2pk_algorithm (oid);
 
   if (bits == NULL)
     {
-      gnutls_free (str);
+      MHD_gnutls_free (str);
       return algo;
     }
 
   /* Now read the parameters' bits
    */
-  mhd_gtls_str_cpy (name, sizeof (name), src_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
+  MHD_gtls_str_cpy (name, sizeof (name), src_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
 
   len = 0;
-  result = asn1_read_value (src, name, NULL, &len);
+  result = MHD__asn1_read_value (src, name, NULL, &len);
   if (result != ASN1_MEM_ERROR)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   if (len % 8 != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_CERTIFICATE_ERROR;
     }
 
   len /= 8;
 
-  str = gnutls_malloc (len);
+  str = MHD_gnutls_malloc (len);
   if (str == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  mhd_gtls_str_cpy (name, sizeof (name), src_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
+  MHD_gtls_str_cpy (name, sizeof (name), src_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
 
-  result = asn1_read_value (src, name, str, &len);
+  result = MHD__asn1_read_value (src, name, str, &len);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      gnutls_free (str);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD_gnutls_free (str);
+      return MHD_gtls_asn2err (result);
     }
 
   len /= 8;
@@ -1365,24 +1365,24 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
     {
     case MHD_GNUTLS_PK_RSA:
       {
-        if ((result = _gnutls_x509_read_rsa_params (str, len, params)) < 0)
+        if ((result = MHD__gnutls_x509_read_rsa_params (str, len, params)) < 0)
           {
-            gnutls_assert ();
+            MHD_gnutls_assert ();
             return result;
           }
 
-        bits[0] = _gnutls_mpi_get_nbits (params[0]);
+        bits[0] = MHD__gnutls_mpi_get_nbits (params[0]);
 
-        mhd_gtls_mpi_release (&params[0]);
-        mhd_gtls_mpi_release (&params[1]);
+        MHD_gtls_mpi_release (&params[0]);
+        MHD_gtls_mpi_release (&params[1]);
       }
       break;
     default:
-      _gnutls_x509_log
-        ("_gnutls_x509_get_pk_algorithm: unhandled algorithm %d\n", algo);
+      MHD__gnutls_x509_log
+        ("MHD__gnutls_x509_get_pk_algorithm: unhandled algorithm %d\n", algo);
     }
 
-  gnutls_free (str);
+  MHD_gnutls_free (str);
   return algo;
 }
 
@@ -1390,42 +1390,42 @@ _gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
  * returns them into signed_data.
  */
 int
-_gnutls_x509_get_signed_data (ASN1_TYPE src,
+MHD__gnutls_x509_get_signed_data (ASN1_TYPE src,
                               const char *src_name,
-                              gnutls_datum_t * signed_data)
+                              MHD_gnutls_datum_t * signed_data)
 {
-  gnutls_datum_t der;
+  MHD_gnutls_datum_t der;
   int start, end, result;
 
-  result = _gnutls_x509_der_encode (src, "", &der, 0);
+  result = MHD__gnutls_x509_der_encode (src, "", &der, 0);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Get the signed data
    */
-  result = asn1_der_decoding_startEnd (src, der.data, der.size, src_name,
+  result = MHD__asn1_der_decoding_startEnd (src, der.data, der.size, src_name,
                                        &start, &end);
   if (result != ASN1_SUCCESS)
     {
-      result = mhd_gtls_asn2err (result);
-      gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  result = _gnutls_set_datum (signed_data, &der.data[start], end - start + 1);
+  result = MHD__gnutls_set_datum (signed_data, &der.data[start], end - start + 1);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   result = 0;
 
-cleanup:_gnutls_free_datum (&der);
+cleanup:MHD__gnutls_free_datum (&der);
 
   return result;
 }
@@ -1434,8 +1434,8 @@ cleanup:_gnutls_free_datum (&der);
  * returns them into signed_data.
  */
 int
-_gnutls_x509_get_signature (ASN1_TYPE src,
-                            const char *src_name, gnutls_datum_t * signature)
+MHD__gnutls_x509_get_signature (ASN1_TYPE src,
+                            const char *src_name, MHD_gnutls_datum_t * signature)
 {
   int bits, result, len;
 
@@ -1445,28 +1445,28 @@ _gnutls_x509_get_signature (ASN1_TYPE src,
   /* Read the signature
    */
   bits = 0;
-  result = asn1_read_value (src, src_name, NULL, &bits);
+  result = MHD__asn1_read_value (src, src_name, NULL, &bits);
 
   if (result != ASN1_MEM_ERROR)
     {
-      result = mhd_gtls_asn2err (result);
-      gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   if (bits % 8 != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_CERTIFICATE_ERROR;
       goto cleanup;
     }
 
   len = bits / 8;
 
-  signature->data = gnutls_malloc (len);
+  signature->data = MHD_gnutls_malloc (len);
   if (signature->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_MEMORY_ERROR;
       return result;
     }
@@ -1474,12 +1474,12 @@ _gnutls_x509_get_signature (ASN1_TYPE src,
   /* read the bit string of the signature
    */
   bits = len;
-  result = asn1_read_value (src, src_name, signature->data, &bits);
+  result = MHD__asn1_read_value (src, src_name, signature->data, &bits);
 
   if (result != ASN1_SUCCESS)
     {
-      result = mhd_gtls_asn2err (result);
-      gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 

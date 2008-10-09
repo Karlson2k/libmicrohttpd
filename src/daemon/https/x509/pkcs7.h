@@ -24,7 +24,7 @@
 
 #include "x509.h"
 
-typedef struct gnutls_pkcs7_int
+typedef struct MHD_gnutls_pkcs7_int
 {
   ASN1_TYPE pkcs7;
-} gnutls_pkcs7_int;
+} MHD_gnutls_pkcs7_int;

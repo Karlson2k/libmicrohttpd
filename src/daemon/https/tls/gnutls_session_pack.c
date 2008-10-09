@@ -43,16 +43,16 @@
 
 #define PACK_HEADER_SIZE 1
 #define MAX_SEC_PARAMS 7+MAX_SRP_USERNAME+MAX_SERVER_NAME_EXTENSIONS*(3+MAX_SERVER_NAME_SIZE)+165
-static int pack_certificate_auth_info (mhd_gtls_session_t,
-                                       gnutls_datum_t * packed_session);
-static int unpack_certificate_auth_info (mhd_gtls_session_t,
-                                         const gnutls_datum_t *
+static int pack_certificate_auth_info (MHD_gtls_session_t,
+                                       MHD_gnutls_datum_t * packed_session);
+static int unpack_certificate_auth_info (MHD_gtls_session_t,
+                                         const MHD_gnutls_datum_t *
                                          packed_session);
 
-static int unpack_security_parameters (mhd_gtls_session_t session,
-                                       const gnutls_datum_t * packed_session);
-static int pack_security_parameters (mhd_gtls_session_t session,
-                                     gnutls_datum_t * packed_session);
+static int unpack_security_parameters (MHD_gtls_session_t session,
+                                       const MHD_gnutls_datum_t * packed_session);
+static int pack_security_parameters (MHD_gtls_session_t session,
+                                     MHD_gnutls_datum_t * packed_session);
 
 /* Packs the ANON session authentication data. */
 #ifdef ENABLE_ANON
@@ -69,10 +69,10 @@ static int pack_security_parameters (mhd_gtls_session_t session,
  *      x bytes the public key
  */
 static int
-pack_anon_auth_info (mhd_gtls_session_t session,
-                     gnutls_datum_t * packed_session)
+pack_anon_auth_info (MHD_gtls_session_t session,
+                     MHD_gnutls_datum_t * packed_session)
 {
-  mhd_anon_auth_info_t info = mhd_gtls_get_auth_info (session);
+  mhd_anon_auth_info_t info = MHD_gtls_get_auth_info (session);
   int pos = 0;
   size_t pack_size;
 
@@ -87,29 +87,29 @@ pack_anon_auth_info (mhd_gtls_session_t session,
   /* calculate the size and allocate the data.
    */
   packed_session->data =
-    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
+    MHD_gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
 
   if (packed_session->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   packed_session->data[0] = MHD_GNUTLS_CRD_ANON;
-  mhd_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
+  MHD_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
   pos += 4 + PACK_HEADER_SIZE;
 
   if (pack_size > 0)
     {
-      mhd_gtls_write_uint16 (info->dh.secret_bits,
+      MHD_gtls_write_uint16 (info->dh.secret_bits,
                              &packed_session->data[pos]);
       pos += 2;
 
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos],
+      MHD_gtls_write_datum32 (&packed_session->data[pos],
                               info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
@@ -130,8 +130,8 @@ pack_anon_auth_info (mhd_gtls_session_t session,
  *      x bytes the public key
  */
 static int
-unpack_anon_auth_info (mhd_gtls_session_t session,
-                       const gnutls_datum_t * packed_session)
+unpack_anon_auth_info (MHD_gtls_session_t session,
+                       const MHD_gnutls_datum_t * packed_session)
 {
   size_t pack_size;
   int pos = 0, size, ret;
@@ -139,11 +139,11 @@ unpack_anon_auth_info (mhd_gtls_session_t session,
 
   if (packed_session->data[0] != MHD_GNUTLS_CRD_ANON)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  pack_size = mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
+  pack_size = MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
   pos += PACK_HEADER_SIZE + 4;
 
 
@@ -153,60 +153,60 @@ unpack_anon_auth_info (mhd_gtls_session_t session,
   /* a simple check for integrity */
   if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* client and serer have the same auth_info here
    */
   ret =
-    mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
+    MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
                             sizeof (anon_auth_info_st), 1);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  info->dh.secret_bits = mhd_gtls_read_uint16 (&packed_session->data[pos]);
+  info->dh.secret_bits = MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = _gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
+    MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
                        size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
@@ -214,9 +214,9 @@ unpack_anon_auth_info (mhd_gtls_session_t session,
   return 0;
 
 error:
-  _gnutls_free_datum (&info->dh.prime);
-  _gnutls_free_datum (&info->dh.generator);
-  _gnutls_free_datum (&info->dh.public_key);
+  MHD__gnutls_free_datum (&info->dh.prime);
+  MHD__gnutls_free_datum (&info->dh.generator);
+  MHD__gnutls_free_datum (&info->dh.public_key);
   return ret;
 }
 #endif /* ANON */
@@ -230,14 +230,14 @@ error:
  * The data will be in a platform independent format.
  */
 int
-mhd_gtls_session_pack (mhd_gtls_session_t session,
-                       gnutls_datum_t * packed_session)
+MHD_gtls_session_pack (MHD_gtls_session_t session,
+                       MHD_gnutls_datum_t * packed_session)
 {
   int ret;
 
   if (packed_session == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -249,7 +249,7 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
       ret = pack_srp_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -259,7 +259,7 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
       ret = pack_psk_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -269,7 +269,7 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
       ret = pack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -278,7 +278,7 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
       ret = pack_certificate_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -287,14 +287,14 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
 
     }
 
-  /* Auth_info structures copied. Now copy mhd_gtls_security_param_st.
+  /* Auth_info structures copied. Now copy MHD_gtls_security_param_st.
    * packed_session must have allocated space for the security parameters.
    */
   ret = pack_security_parameters (session, packed_session);
   if (ret < 0)
     {
-      gnutls_assert ();
-      _gnutls_free_datum (packed_session);
+      MHD_gnutls_assert ();
+      MHD__gnutls_free_datum (packed_session);
       return ret;
     }
 
@@ -305,20 +305,20 @@ mhd_gtls_session_pack (mhd_gtls_session_t session,
 /* Load session data from a buffer.
  */
 int
-mhd_gtls_session_unpack (mhd_gtls_session_t session,
-                         const gnutls_datum_t * packed_session)
+MHD_gtls_session_unpack (MHD_gtls_session_t session,
+                         const MHD_gnutls_datum_t * packed_session)
 {
   int ret;
 
   if (packed_session == NULL || packed_session->size == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  if (mhd_gtls_get_auth_info (session) != NULL)
+  if (MHD_gtls_get_auth_info (session) != NULL)
     {
-      mhd_gtls_free_auth_info (session);
+      MHD_gtls_free_auth_info (session);
     }
 
   switch (packed_session->data[0])
@@ -328,7 +328,7 @@ mhd_gtls_session_unpack (mhd_gtls_session_t session,
       ret = unpack_srp_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -338,7 +338,7 @@ mhd_gtls_session_unpack (mhd_gtls_session_t session,
       ret = unpack_psk_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -348,7 +348,7 @@ mhd_gtls_session_unpack (mhd_gtls_session_t session,
       ret = unpack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
@@ -357,23 +357,23 @@ mhd_gtls_session_unpack (mhd_gtls_session_t session,
       ret = unpack_certificate_auth_info (session, packed_session);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       break;
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
 
     }
 
-  /* Auth_info structures copied. Now copy mhd_gtls_security_param_st.
+  /* Auth_info structures copied. Now copy MHD_gtls_security_param_st.
    * packed_session must have allocated space for the security parameters.
    */
   ret = unpack_security_parameters (session, packed_session);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -404,12 +404,12 @@ mhd_gtls_session_unpack (mhd_gtls_session_t session,
  *       and so on...
  */
 static int
-pack_certificate_auth_info (mhd_gtls_session_t session,
-                            gnutls_datum_t * packed_session)
+pack_certificate_auth_info (MHD_gtls_session_t session,
+                            MHD_gnutls_datum_t * packed_session)
 {
   unsigned int pos = 0, i;
   int cert_size, pack_size;
-  cert_auth_info_t info = mhd_gtls_get_auth_info (session);
+  cert_auth_info_t info = MHD_gtls_get_auth_info (session);
 
   if (info)
     {
@@ -431,47 +431,47 @@ pack_certificate_auth_info (mhd_gtls_session_t session,
   /* calculate the size and allocate the data.
    */
   packed_session->data =
-    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
+    MHD_gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
 
   if (packed_session->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   packed_session->data[0] = MHD_GNUTLS_CRD_CERTIFICATE;
-  mhd_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
+  MHD_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
   pos += 4 + PACK_HEADER_SIZE;
 
 
   if (pack_size > 0)
     {
 
-      mhd_gtls_write_uint16 (info->dh.secret_bits,
+      MHD_gtls_write_uint16 (info->dh.secret_bits,
                              &packed_session->data[pos]);
       pos += 2;
 
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos],
+      MHD_gtls_write_datum32 (&packed_session->data[pos],
                               info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
-      mhd_gtls_write_datum32 (&packed_session->data[pos],
+      MHD_gtls_write_datum32 (&packed_session->data[pos],
                               info->rsa_export.modulus);
       pos += 4 + info->rsa_export.modulus.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos],
+      MHD_gtls_write_datum32 (&packed_session->data[pos],
                               info->rsa_export.exponent);
       pos += 4 + info->rsa_export.exponent.size;
 
-      mhd_gtls_write_uint32 (info->ncerts, &packed_session->data[pos]);
+      MHD_gtls_write_uint32 (info->ncerts, &packed_session->data[pos]);
       pos += 4;
 
       for (i = 0; i < info->ncerts; i++)
         {
-          mhd_gtls_write_datum32 (&packed_session->data[pos],
+          MHD_gtls_write_datum32 (&packed_session->data[pos],
                                   info->raw_certificate_list[i]);
           pos += sizeof (uint32_t) + info->raw_certificate_list[i].size;
         }
@@ -484,8 +484,8 @@ pack_certificate_auth_info (mhd_gtls_session_t session,
 /* Upack certificate info.
  */
 static int
-unpack_certificate_auth_info (mhd_gtls_session_t session,
-                              const gnutls_datum_t * packed_session)
+unpack_certificate_auth_info (MHD_gtls_session_t session,
+                              const MHD_gnutls_datum_t * packed_session)
 {
   int pos = 0, size, ret;
   unsigned int i = 0, j;
@@ -494,11 +494,11 @@ unpack_certificate_auth_info (mhd_gtls_session_t session,
 
   if (packed_session->data[0] != MHD_GNUTLS_CRD_CERTIFICATE)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  pack_size = mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
+  pack_size = MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
   pos += PACK_HEADER_SIZE + 4;
 
   if (pack_size == 0)
@@ -507,98 +507,98 @@ unpack_certificate_auth_info (mhd_gtls_session_t session,
   /* a simple check for integrity */
   if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* client and server have the same auth_info here
    */
   ret =
-    mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
+    MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                             sizeof (cert_auth_info_st), 1);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  info->dh.secret_bits = mhd_gtls_read_uint16 (&packed_session->data[pos]);
+  info->dh.secret_bits = MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = _gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
+    MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
                        size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->rsa_export.modulus,
+    MHD__gnutls_set_datum (&info->rsa_export.modulus,
                        &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->rsa_export.exponent,
+    MHD__gnutls_set_datum (&info->rsa_export.exponent,
                        &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  info->ncerts = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  info->ncerts = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
 
   if (info->ncerts > 0)
     {
       info->raw_certificate_list =
-        gnutls_calloc (1, sizeof (gnutls_datum_t) * info->ncerts);
+        MHD_gnutls_calloc (1, sizeof (MHD_gnutls_datum_t) * info->ncerts);
       if (info->raw_certificate_list == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           ret = GNUTLS_E_MEMORY_ERROR;
           goto error;
         }
@@ -606,17 +606,17 @@ unpack_certificate_auth_info (mhd_gtls_session_t session,
 
   for (i = 0; i < info->ncerts; i++)
     {
-      size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+      size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
       pos += sizeof (uint32_t);
 
       ret =
-        _gnutls_set_datum (&info->raw_certificate_list[i],
+        MHD__gnutls_set_datum (&info->raw_certificate_list[i],
                            &packed_session->data[pos], size);
       pos += size;
 
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
     }
@@ -625,17 +625,17 @@ unpack_certificate_auth_info (mhd_gtls_session_t session,
   return 0;
 
 error:
-  _gnutls_free_datum (&info->dh.prime);
-  _gnutls_free_datum (&info->dh.generator);
-  _gnutls_free_datum (&info->dh.public_key);
+  MHD__gnutls_free_datum (&info->dh.prime);
+  MHD__gnutls_free_datum (&info->dh.generator);
+  MHD__gnutls_free_datum (&info->dh.public_key);
 
-  _gnutls_free_datum (&info->rsa_export.modulus);
-  _gnutls_free_datum (&info->rsa_export.exponent);
+  MHD__gnutls_free_datum (&info->rsa_export.modulus);
+  MHD__gnutls_free_datum (&info->rsa_export.exponent);
 
   for (j = 0; j < i; j++)
-    _gnutls_free_datum (&info->raw_certificate_list[j]);
+    MHD__gnutls_free_datum (&info->raw_certificate_list[j]);
 
-  gnutls_free (info->raw_certificate_list);
+  MHD_gnutls_free (info->raw_certificate_list);
 
   return ret;
 
@@ -651,10 +651,10 @@ error:
  *      x bytes the SRP username
  */
 static int
-pack_srp_auth_info (mhd_gtls_session_t session,
-                    gnutls_datum_t * packed_session)
+pack_srp_auth_info (MHD_gtls_session_t session,
+                    MHD_gnutls_datum_t * packed_session)
 {
-  srp_server_auth_info_t info = mhd_gtls_get_auth_info (session);
+  srp_server_auth_info_t info = MHD_gtls_get_auth_info (session);
   int pack_size;
 
   if (info && info->username)
@@ -667,16 +667,16 @@ pack_srp_auth_info (mhd_gtls_session_t session,
   /* calculate the size and allocate the data.
    */
   packed_session->data =
-    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
+    MHD_gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
 
   if (packed_session->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   packed_session->data[0] = MHD_GNUTLS_CRD_SRP;
-  mhd_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
+  MHD_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
 
   if (pack_size > 0)
     memcpy (&packed_session->data[PACK_HEADER_SIZE + sizeof (uint32_t)],
@@ -687,8 +687,8 @@ pack_srp_auth_info (mhd_gtls_session_t session,
 
 
 static int
-unpack_srp_auth_info (mhd_gtls_session_t session,
-                      const gnutls_datum_t * packed_session)
+unpack_srp_auth_info (MHD_gtls_session_t session,
+                      const MHD_gnutls_datum_t * packed_session)
 {
   size_t username_size;
   int ret;
@@ -696,12 +696,12 @@ unpack_srp_auth_info (mhd_gtls_session_t session,
 
   if (packed_session->data[0] != MHD_GNUTLS_CRD_SRP)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   username_size =
-    mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
+    MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
 
   if (username_size == 0)
     return 0;                   /* nothing to be done */
@@ -709,23 +709,23 @@ unpack_srp_auth_info (mhd_gtls_session_t session,
   /* a simple check for integrity */
   if (username_size + 4 + PACK_HEADER_SIZE > packed_session->size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   ret =
-    mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_SRP,
+    MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_SRP,
                             sizeof (srp_server_auth_info_st), 1);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -757,13 +757,13 @@ unpack_srp_auth_info (mhd_gtls_session_t session,
  *      x bytes the public key
  */
 static int
-pack_psk_auth_info (mhd_gtls_session_t session,
-                    gnutls_datum_t * packed_session)
+pack_psk_auth_info (MHD_gtls_session_t session,
+                    MHD_gnutls_datum_t * packed_session)
 {
   psk_auth_info_t info;
   int pack_size, username_size = 0, pos;
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
 
   if (info)
     {
@@ -780,11 +780,11 @@ pack_psk_auth_info (mhd_gtls_session_t session,
   /* calculate the size and allocate the data.
    */
   packed_session->data =
-    gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
+    MHD_gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
 
   if (packed_session->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -793,27 +793,27 @@ pack_psk_auth_info (mhd_gtls_session_t session,
   packed_session->data[pos] = MHD_GNUTLS_CRD_PSK;
   pos++;
 
-  mhd_gtls_write_uint32 (pack_size, &packed_session->data[pos]);
+  MHD_gtls_write_uint32 (pack_size, &packed_session->data[pos]);
   pos += 4;
 
 
   if (pack_size > 0)
     {
-      mhd_gtls_write_uint32 (username_size, &packed_session->data[pos]);
+      MHD_gtls_write_uint32 (username_size, &packed_session->data[pos]);
       pos += 4;
 
       memcpy (&packed_session->data[pos], info->username, username_size);
       pos += username_size;
 
-      mhd_gtls_write_uint16 (info->dh.secret_bits,
+      MHD_gtls_write_uint16 (info->dh.secret_bits,
                              &packed_session->data[pos]);
       pos += 2;
 
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
       pos += 4 + info->dh.prime.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
+      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
       pos += 4 + info->dh.generator.size;
-      mhd_gtls_write_datum32 (&packed_session->data[pos],
+      MHD_gtls_write_datum32 (&packed_session->data[pos],
                               info->dh.public_key);
       pos += 4 + info->dh.public_key.size;
 
@@ -824,8 +824,8 @@ pack_psk_auth_info (mhd_gtls_session_t session,
 }
 
 static int
-unpack_psk_auth_info (mhd_gtls_session_t session,
-                      const gnutls_datum_t * packed_session)
+unpack_psk_auth_info (MHD_gtls_session_t session,
+                      const MHD_gnutls_datum_t * packed_session)
 {
   size_t username_size;
   size_t pack_size;
@@ -834,11 +834,11 @@ unpack_psk_auth_info (mhd_gtls_session_t session,
 
   if (packed_session->data[0] != MHD_GNUTLS_CRD_PSK)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  pack_size = mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
+  pack_size = MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
   pos += PACK_HEADER_SIZE + 4;
 
 
@@ -848,66 +848,66 @@ unpack_psk_auth_info (mhd_gtls_session_t session,
   /* a simple check for integrity */
   if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* client and serer have the same auth_info here
    */
   ret =
-    mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_PSK,
+    MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_PSK,
                             sizeof (psk_auth_info_st), 1);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  username_size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  username_size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
 
   memcpy (info->username, &packed_session->data[pos], username_size);
   pos += username_size;
 
-  info->dh.secret_bits = mhd_gtls_read_uint16 (&packed_session->data[pos]);
+  info->dh.secret_bits = MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = _gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
 
-  size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    _gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
+    MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
                        size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   pos += size;
@@ -915,9 +915,9 @@ unpack_psk_auth_info (mhd_gtls_session_t session,
   return 0;
 
 error:
-  _gnutls_free_datum (&info->dh.prime);
-  _gnutls_free_datum (&info->dh.generator);
-  _gnutls_free_datum (&info->dh.public_key);
+  MHD__gnutls_free_datum (&info->dh.prime);
+  MHD__gnutls_free_datum (&info->dh.generator);
+  MHD__gnutls_free_datum (&info->dh.public_key);
   return ret;
 }
 #endif
@@ -972,8 +972,8 @@ error:
  *                MAX: 7+MAX_SRP_USERNAME+MAX_SERVER_NAME_EXTENSIONS*(3+MAX_SERVER_NAME_SIZE)
  */
 static int
-pack_security_parameters (mhd_gtls_session_t session,
-                          gnutls_datum_t * packed_session)
+pack_security_parameters (MHD_gtls_session_t session,
+                          MHD_gnutls_datum_t * packed_session)
 {
   int pos = 0;
   size_t len, init, i;
@@ -981,7 +981,7 @@ pack_security_parameters (mhd_gtls_session_t session,
   /* move after the auth info stuff.
    */
   init =
-    mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]) + 4 +
+    MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]) + 4 +
     PACK_HEADER_SIZE;
 
   pos = init + 4;               /* make some space to write later the size */
@@ -1024,16 +1024,16 @@ pack_security_parameters (mhd_gtls_session_t session,
           session->security_parameters.session_id_size);
   pos += session->security_parameters.session_id_size;
 
-  mhd_gtls_write_uint32 (session->security_parameters.timestamp,
+  MHD_gtls_write_uint32 (session->security_parameters.timestamp,
                          &packed_session->data[pos]);
   pos += 4;
 
   /* Extensions */
-  mhd_gtls_write_uint16 (session->security_parameters.max_record_send_size,
+  MHD_gtls_write_uint16 (session->security_parameters.max_record_send_size,
                          &packed_session->data[pos]);
   pos += 2;
 
-  mhd_gtls_write_uint16 (session->security_parameters.max_record_recv_size,
+  MHD_gtls_write_uint16 (session->security_parameters.max_record_recv_size,
                          &packed_session->data[pos]);
   pos += 2;
 
@@ -1045,7 +1045,7 @@ pack_security_parameters (mhd_gtls_session_t session,
           session->security_parameters.extensions.srp_username, len);
   pos += len;
 
-  mhd_gtls_write_uint16 (session->security_parameters.extensions.
+  MHD_gtls_write_uint16 (session->security_parameters.extensions.
                          server_names_size, &packed_session->data[pos]);
   pos += 2;
 
@@ -1054,7 +1054,7 @@ pack_security_parameters (mhd_gtls_session_t session,
     {
       packed_session->data[pos++] =
         session->security_parameters.extensions.server_names[i].type;
-      mhd_gtls_write_uint16 (session->security_parameters.extensions.
+      MHD_gtls_write_uint16 (session->security_parameters.extensions.
                              server_names[i].name_length,
                              &packed_session->data[pos]);
       pos += 2;
@@ -1068,7 +1068,7 @@ pack_security_parameters (mhd_gtls_session_t session,
     }
 
   /* write the total size */
-  mhd_gtls_write_uint32 (pos - init - 4, &packed_session->data[init]);
+  MHD_gtls_write_uint32 (pos - init - 4, &packed_session->data[init]);
   packed_session->size += pos - init;
 
   return 0;
@@ -1076,8 +1076,8 @@ pack_security_parameters (mhd_gtls_session_t session,
 
 
 static int
-unpack_security_parameters (mhd_gtls_session_t session,
-                            const gnutls_datum_t * packed_session)
+unpack_security_parameters (MHD_gtls_session_t session,
+                            const MHD_gnutls_datum_t * packed_session)
 {
   size_t pack_size, init, i;
   int pos = 0, len;
@@ -1086,12 +1086,12 @@ unpack_security_parameters (mhd_gtls_session_t session,
 
   /* skip the auth info stuff */
   init =
-    mhd_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]) + 4 +
+    MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]) + 4 +
     PACK_HEADER_SIZE;
 
   pos = init;
 
-  pack_size = mhd_gtls_read_uint32 (&packed_session->data[pos]);
+  pack_size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
 
 
@@ -1101,7 +1101,7 @@ unpack_security_parameters (mhd_gtls_session_t session,
   /* a simple check for integrity */
   if (pack_size > MAX_SEC_PARAMS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -1150,24 +1150,24 @@ unpack_security_parameters (mhd_gtls_session_t session,
   pos += session->internals.resumed_security_parameters.session_id_size;
 
   session->internals.resumed_security_parameters.timestamp =
-    mhd_gtls_read_uint32 (&packed_session->data[pos]);
+    MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
 
   if (timestamp - session->internals.resumed_security_parameters.timestamp >
       session->internals.expire_time
       || session->internals.resumed_security_parameters.timestamp > timestamp)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_EXPIRED;
     }
 
   /* Extensions */
   session->internals.resumed_security_parameters.max_record_send_size =
-    mhd_gtls_read_uint16 (&packed_session->data[pos]);
+    MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
 
   session->internals.resumed_security_parameters.max_record_recv_size =
-    mhd_gtls_read_uint16 (&packed_session->data[pos]);
+    MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
 
 
@@ -1180,7 +1180,7 @@ unpack_security_parameters (mhd_gtls_session_t session,
   pos += len;
 
   session->internals.resumed_security_parameters.extensions.
-    server_names_size = mhd_gtls_read_uint16 (&packed_session->data[pos]);
+    server_names_size = MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
   for (i = 0;
        i <
@@ -1191,7 +1191,7 @@ unpack_security_parameters (mhd_gtls_session_t session,
         server_names[i].type = packed_session->data[pos++];
       session->internals.resumed_security_parameters.extensions.
         server_names[i].name_length =
-        mhd_gtls_read_uint16 (&packed_session->data[pos]);
+        MHD_gtls_read_uint16 (&packed_session->data[pos]);
       pos += 2;
 
       memcpy (session->internals.resumed_security_parameters.extensions.

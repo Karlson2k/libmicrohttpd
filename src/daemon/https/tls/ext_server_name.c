@@ -30,7 +30,7 @@
 
 /*
  * In case of a server: if a NAME_DNS extension type is received then it stores
- * into the session the value of NAME_DNS. The server may use gnutls_ext_get_server_name(),
+ * into the session the value of NAME_DNS. The server may use MHD_gnutls_ext_get_server_name(),
  * in order to access it.
  *
  * In case of a client: If a proper NAME_DNS extension type is found in the session then
@@ -39,7 +39,7 @@
  */
 
 int
-mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
+MHD_gtls_server_name_recv_params (MHD_gtls_session_t session,
                                   const opaque * data, size_t _data_size)
 {
   int i;
@@ -51,14 +51,14 @@ mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
   if (session->security_parameters.entity == GNUTLS_SERVER)
     {
       DECR_LENGTH_RET (data_size, 2, 0);
-      len = mhd_gtls_read_uint16 (data);
+      len = MHD_gtls_read_uint16 (data);
 
       if (len != data_size)
         {
           /* This is unexpected packet length, but
            * just ignore it, for now.
            */
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return 0;
         }
 
@@ -71,7 +71,7 @@ mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
           p++;
 
           DECR_LEN (data_size, 2);
-          len = mhd_gtls_read_uint16 (p);
+          len = MHD_gtls_read_uint16 (p);
           p += 2;
 
           DECR_LENGTH_RET (data_size, len, 0);
@@ -96,7 +96,7 @@ mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
           type = *p;
           p++;
 
-          len = mhd_gtls_read_uint16 (p);
+          len = MHD_gtls_read_uint16 (p);
           p += 2;
 
           switch (type)
@@ -124,7 +124,7 @@ mhd_gtls_server_name_recv_params (mhd_gtls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
+MHD_gtls_server_name_send_params (MHD_gtls_session_t session,
                                   opaque * data, size_t _data_size)
 {
   int total_size = 0;
@@ -163,7 +163,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
       /* UINT16: write total size of all names
        */
       DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
-      mhd_gtls_write_uint16 (total_size - 2, p);
+      MHD_gtls_write_uint16 (total_size - 2, p);
       p += 2;
 
       for (i = 0;
@@ -191,7 +191,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
               *p = 0;           /* NAME_DNS type */
               p++;
 
-              mhd_gtls_write_uint16 (len, p);
+              MHD_gtls_write_uint16 (len, p);
               p += 2;
 
               memcpy (p,
@@ -200,7 +200,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
               p += len;
               break;
             default:
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_INTERNAL_ERROR;
             }
         }
@@ -210,8 +210,8 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
 }
 
 /**
-  * MHD_gnutls_server_name_get - Used to get the server name indicator send by a client
-  * @session: is a #mhd_gtls_session_t structure.
+  * MHD__gnutls_server_name_get - Used to get the server name indicator send by a client
+  * @session: is a #MHD_gtls_session_t structure.
   * @data: will hold the data
   * @data_length: will hold the data length. Must hold the maximum size of data.
   * @type: will hold the server name indicator type
@@ -219,7 +219,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
   *
   * This function will allow you to get the name indication (if any),
   * a client has sent. The name indication may be any of the enumeration
-  * gnutls_server_name_type_t.
+  * MHD_gnutls_server_name_type_t.
   *
   * If @type is GNUTLS_NAME_DNS, then this function is to be used by servers
   * that support virtual hosting, and the data will be a null terminated UTF-8 string.
@@ -233,7 +233,7 @@ mhd_gtls_server_name_send_params (mhd_gtls_session_t session,
   *
   **/
 int
-MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
+MHD__gnutls_server_name_get (MHD_gtls_session_t session, void *data,
                             size_t * data_length,
                             unsigned int *type, unsigned int indx)
 {
@@ -241,7 +241,7 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
 #if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 #endif
@@ -278,8 +278,8 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
 }
 
 /**
-  * MHD_gnutls_server_name_set - Used to set a name indicator to be sent as an extension
-  * @session: is a #mhd_gtls_session_t structure.
+  * MHD__gnutls_server_name_set - Used to set a name indicator to be sent as an extension
+  * @session: is a #MHD_gtls_session_t structure.
   * @type: specifies the indicator type
   * @name: is a string that contains the server name.
   * @name_length: holds the length of name
@@ -295,15 +295,15 @@ MHD_gnutls_server_name_get (mhd_gtls_session_t session, void *data,
   *
   **/
 int
-MHD_gnutls_server_name_set (mhd_gtls_session_t session,
-                            gnutls_server_name_type_t type,
+MHD__gnutls_server_name_set (MHD_gtls_session_t session,
+                            MHD_gnutls_server_name_type_t type,
                             const void *name, size_t name_length)
 {
   int server_names;
 
   if (session->security_parameters.entity == GNUTLS_SERVER)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 

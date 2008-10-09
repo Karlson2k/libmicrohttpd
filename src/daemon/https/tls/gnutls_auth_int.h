@@ -22,12 +22,12 @@
  *
  */
 
-const void *mhd_gtls_get_cred (mhd_gtls_key_st key,
+const void *MHD_gtls_get_cred (MHD_gtls_key_st key,
                                enum MHD_GNUTLS_CredentialsType kx, int *err);
-const void *mhd_gtls_get_kx_cred (mhd_gtls_session_t session,
+const void *MHD_gtls_get_kx_cred (MHD_gtls_session_t session,
                                   enum MHD_GNUTLS_KeyExchangeAlgorithm algo,
                                   int *err);
-void *mhd_gtls_get_auth_info (mhd_gtls_session_t session);
-int mhd_gtls_auth_info_set (mhd_gtls_session_t session,
+void *MHD_gtls_get_auth_info (MHD_gtls_session_t session);
+int MHD_gtls_auth_info_set (MHD_gtls_session_t session,
                             enum MHD_GNUTLS_CredentialsType type, int size,
                             int allow_change);

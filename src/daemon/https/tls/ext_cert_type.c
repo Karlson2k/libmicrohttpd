@@ -33,12 +33,12 @@
 #include "gnutls_state.h"
 #include "gnutls_num.h"
 
-inline static int _gnutls_num2cert_type (int num);
-inline static int _gnutls_cert_type2num (int record_size);
+inline static int MHD__gnutls_num2cert_type (int num);
+inline static int MHD__gnutls_cert_type2num (int record_size);
 
 /*
  * In case of a server: if a CERT_TYPE extension type is received then it stores
- * into the session security parameters the new value. The server may use gnutls_session_certificate_type_get(),
+ * into the session security parameters the new value. The server may use MHD_gnutls_session_certificate_type_get(),
  * to access it.
  *
  * In case of a client: If a cert_types have been specified then we send the extension.
@@ -46,7 +46,7 @@ inline static int _gnutls_cert_type2num (int record_size);
  */
 
 int
-mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
+MHD_gtls_cert_type_recv_params (MHD_gtls_session_t session,
                                 const opaque * data, size_t _data_size)
 {
   int new_type = -1, ret, i;
@@ -59,27 +59,27 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
         {
           if (data_size != 1)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
             }
 
-          new_type = _gnutls_num2cert_type (data[0]);
+          new_type = MHD__gnutls_num2cert_type (data[0]);
 
           if (new_type < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return new_type;
             }
 
           /* Check if we support this cert_type */
           if ((ret =
-               mhd_gtls_session_cert_type_supported (session, new_type)) < 0)
+               MHD_gtls_session_cert_type_supported (session, new_type)) < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return ret;
             }
 
-          _gnutls_session_cert_type_set (session, new_type);
+          MHD__gnutls_session_cert_type_set (session, new_type);
         }
     }
   else
@@ -96,17 +96,17 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
 
           for (i = 0; i < len; i++)
             {
-              new_type = _gnutls_num2cert_type (data[i + 1]);
+              new_type = MHD__gnutls_num2cert_type (data[i + 1]);
 
               if (new_type < 0)
                 continue;
 
               /* Check if we support this cert_type */
               if ((ret =
-                   mhd_gtls_session_cert_type_supported (session,
+                   MHD_gtls_session_cert_type_supported (session,
                                                          new_type)) < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   continue;
                 }
               else
@@ -116,14 +116,14 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
 
           if (new_type < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
             }
 
           if ((ret =
-               mhd_gtls_session_cert_type_supported (session, new_type)) < 0)
+               MHD_gtls_session_cert_type_supported (session, new_type)) < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               /* The peer has requested unsupported certificate
                * types. Instead of failing, procceed normally.
                * (the ciphersuite selection would fail, or a
@@ -132,7 +132,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
               return 0;
             }
 
-          _gnutls_session_cert_type_set (session, new_type);
+          MHD__gnutls_session_cert_type_set (session, new_type);
         }
 
 
@@ -144,7 +144,7 @@ mhd_gtls_cert_type_recv_params (mhd_gtls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
+MHD_gtls_cert_type_send_params (MHD_gtls_session_t session, opaque * data,
                                 size_t data_size)
 {
   unsigned len, i;
@@ -171,7 +171,7 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
 
           if (data_size < len + 1)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_SHORT_MEMORY_BUFFER;
             }
 
@@ -182,7 +182,7 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
           for (i = 0; i < len; i++)
             {
               data[i + 1] =
-                _gnutls_cert_type2num (session->internals.
+                MHD__gnutls_cert_type2num (session->internals.
                                        priorities.cert_type.priority[i]);
             }
           return len + 1;
@@ -197,12 +197,12 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
           len = 1;
           if (data_size < len)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_SHORT_MEMORY_BUFFER;
             }
 
           data[0] =
-            _gnutls_cert_type2num (session->security_parameters.cert_type);
+            MHD__gnutls_cert_type2num (session->security_parameters.cert_type);
           return len;
         }
 
@@ -216,7 +216,7 @@ mhd_gtls_cert_type_send_params (mhd_gtls_session_t session, opaque * data,
  * extensions draft.
  */
 inline static int
-_gnutls_num2cert_type (int num)
+MHD__gnutls_num2cert_type (int num)
 {
   switch (num)
     {
@@ -231,7 +231,7 @@ _gnutls_num2cert_type (int num)
  * extensions draft.
  */
 inline static int
-_gnutls_cert_type2num (int cert_type)
+MHD__gnutls_cert_type2num (int cert_type)
 {
   switch (cert_type)
     {

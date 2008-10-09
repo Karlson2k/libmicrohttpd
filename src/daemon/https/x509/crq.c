@@ -43,7 +43,7 @@
 #include <libtasn1.h>
 
 /**
-  * gnutls_x509_crq_init - This function initializes a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_init - This function initializes a MHD_gnutls_x509_crq_t structure
   * @crq: The structure to be initialized
   *
   * This function will initialize a PKCS10 certificate request structure.
@@ -52,20 +52,20 @@
   *
   **/
 int
-gnutls_x509_crq_init (gnutls_x509_crq_t * crq)
+MHD_gnutls_x509_crq_init (MHD_gnutls_x509_crq_t * crq)
 {
-  *crq = gnutls_calloc (1, sizeof (gnutls_x509_crq_int));
+  *crq = MHD_gnutls_calloc (1, sizeof (MHD_gnutls_x509_crq_int));
 
   if (*crq)
     {
-      int result = asn1_create_element (_gnutls_get_pkix (),
+      int result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                         "PKIX1.pkcs-10-CertificationRequest",
                                         &((*crq)->crq));
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          gnutls_free (*crq);
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          MHD_gnutls_free (*crq);
+          return MHD_gtls_asn2err (result);
         }
       return 0;                 /* success */
     }
@@ -73,35 +73,35 @@ gnutls_x509_crq_init (gnutls_x509_crq_t * crq)
 }
 
 /**
-  * gnutls_x509_crq_deinit - This function deinitializes memory used by a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_deinit - This function deinitializes memory used by a MHD_gnutls_x509_crq_t structure
   * @crq: The structure to be initialized
   *
   * This function will deinitialize a CRL structure.
   *
   **/
 void
-gnutls_x509_crq_deinit (gnutls_x509_crq_t crq)
+MHD_gnutls_x509_crq_deinit (MHD_gnutls_x509_crq_t crq)
 {
   if (!crq)
     return;
 
   if (crq->crq)
-    asn1_delete_structure (&crq->crq);
+    MHD__asn1_delete_structure (&crq->crq);
 
-  gnutls_free (crq);
+  MHD_gnutls_free (crq);
 }
 
 #define PEM_CRQ "NEW CERTIFICATE REQUEST"
 #define PEM_CRQ2 "CERTIFICATE REQUEST"
 
 /**
-  * gnutls_x509_crq_import - This function will import a DER or PEM encoded Certificate request
+  * MHD_gnutls_x509_crq_import - This function will import a DER or PEM encoded Certificate request
   * @crq: The structure to store the parsed certificate request.
   * @data: The DER or PEM encoded certificate.
   * @format: One of DER or PEM
   *
   * This function will convert the given DER or PEM encoded Certificate
-  * to the native gnutls_x509_crq_t format. The output will be stored in @cert.
+  * to the native MHD_gnutls_x509_crq_t format. The output will be stored in @cert.
   *
   * If the Certificate is PEM encoded it should have a header of "NEW CERTIFICATE REQUEST".
   *
@@ -109,16 +109,16 @@ gnutls_x509_crq_deinit (gnutls_x509_crq_t crq)
   *
   **/
 int
-gnutls_x509_crq_import (gnutls_x509_crq_t crq,
-                        const gnutls_datum_t * data,
-                        gnutls_x509_crt_fmt_t format)
+MHD_gnutls_x509_crq_import (MHD_gnutls_x509_crq_t crq,
+                        const MHD_gnutls_datum_t * data,
+                        MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
-  gnutls_datum_t _data;
+  MHD_gnutls_datum_t _data;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -132,17 +132,17 @@ gnutls_x509_crq_import (gnutls_x509_crq_t crq,
       opaque *out;
 
       /* Try the first header */
-      result = _gnutls_fbase64_decode (PEM_CRQ, data->data, data->size, &out);
+      result = MHD__gnutls_fbase64_decode (PEM_CRQ, data->data, data->size, &out);
 
       if (result <= 0)          /* Go for the second header */
         result =
-          _gnutls_fbase64_decode (PEM_CRQ2, data->data, data->size, &out);
+          MHD__gnutls_fbase64_decode (PEM_CRQ2, data->data, data->size, &out);
 
       if (result <= 0)
         {
           if (result == 0)
             result = GNUTLS_E_INTERNAL_ERROR;
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
@@ -152,11 +152,11 @@ gnutls_x509_crq_import (gnutls_x509_crq_t crq,
       need_free = 1;
     }
 
-  result = asn1_der_decoding (&crq->crq, _data.data, _data.size, NULL);
+  result = MHD__asn1_der_decoding (&crq->crq, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      result = mhd_gtls_asn2err (result);
-      gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
@@ -164,15 +164,15 @@ gnutls_x509_crq_import (gnutls_x509_crq_t crq,
 
 cleanup:
   if (need_free)
-    _gnutls_free_datum (&_data);
+    MHD__gnutls_free_datum (&_data);
   return result;
 }
 
 
 
 /**
-  * gnutls_x509_crq_get_dn - This function returns the Certificate request subject's distinguished name
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_dn - This function returns the Certificate request subject's distinguished name
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @buf: a pointer to a structure to hold the name (may be null)
   * @sizeof_buf: initially holds the size of @buf
   *
@@ -189,22 +189,22 @@ cleanup:
   *
   **/
 int
-gnutls_x509_crq_get_dn (gnutls_x509_crq_t crq, char *buf, size_t * sizeof_buf)
+MHD_gnutls_x509_crq_get_dn (MHD_gnutls_x509_crq_t crq, char *buf, size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_parse_dn (crq->crq,
+  return MHD__gnutls_x509_parse_dn (crq->crq,
                                 "certificationRequestInfo.subject.rdnSequence",
                                 buf, sizeof_buf);
 }
 
 /**
-  * gnutls_x509_crq_get_dn_by_oid - This function returns the Certificate request subject's distinguished name
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_dn_by_oid - This function returns the Certificate request subject's distinguished name
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @oid: holds an Object Identified in null terminated string
   * @indx: In case multiple same OIDs exist in the RDN, this specifies
   *   which to send. Use zero to get the first one.
@@ -221,7 +221,7 @@ gnutls_x509_crq_get_dn (gnutls_x509_crq_t crq, char *buf, size_t * sizeof_buf)
   * If raw flag is zero, this function will only return known OIDs as
   * text. Other OIDs will be DER encoded, as described in RFC2253 --
   * in hex format with a '\#' prefix.  You can check about known OIDs
-  * using gnutls_x509_dn_oid_known().
+  * using MHD_gnutls_x509_dn_oid_known().
   *
   * If @buf is null then only the size will be filled.
   *
@@ -231,24 +231,24 @@ gnutls_x509_crq_get_dn (gnutls_x509_crq_t crq, char *buf, size_t * sizeof_buf)
   *
   **/
 int
-gnutls_x509_crq_get_dn_by_oid (gnutls_x509_crq_t crq, const char *oid,
+MHD_gnutls_x509_crq_get_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
                                int indx, unsigned int raw_flag,
                                void *buf, size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_parse_dn_oid (crq->crq,
+  return MHD__gnutls_x509_parse_dn_oid (crq->crq,
                                     "certificationRequestInfo.subject.rdnSequence",
                                     oid, indx, raw_flag, buf, sizeof_buf);
 }
 
 /**
-  * gnutls_x509_crq_get_dn_oid - This function returns the Certificate request subject's distinguished name OIDs
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_dn_oid - This function returns the Certificate request subject's distinguished name OIDs
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @indx: Specifies which DN OID to send. Use zero to get the first one.
   * @oid: a pointer to a structure to hold the name (may be null)
   * @sizeof_oid: initially holds the size of @oid
@@ -264,30 +264,30 @@ gnutls_x509_crq_get_dn_by_oid (gnutls_x509_crq_t crq, const char *oid,
   *
   **/
 int
-gnutls_x509_crq_get_dn_oid (gnutls_x509_crq_t crq,
+MHD_gnutls_x509_crq_get_dn_oid (MHD_gnutls_x509_crq_t crq,
                             int indx, void *oid, size_t * sizeof_oid)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_get_dn_oid (crq->crq,
+  return MHD__gnutls_x509_get_dn_oid (crq->crq,
                                   "certificationRequestInfo.subject.rdnSequence",
                                   indx, oid, sizeof_oid);
 }
 
-/* Parses an Attribute list in the asn1_struct, and searches for the
+/* Parses an Attribute list in the MHD__asn1_struct, and searches for the
  * given OID. The index indicates the attribute value to be returned.
  *
  * If raw==0 only printable data are returned, or GNUTLS_E_X509_UNSUPPORTED_ATTRIBUTE.
  *
- * asn1_attr_name must be a string in the form "certificationRequestInfo.attributes"
+ * MHD__asn1_attr_name must be a string in the form "certificationRequestInfo.attributes"
  *
  */
 static int
-parse_attribute (ASN1_TYPE asn1_struct,
+parse_attribute (ASN1_TYPE MHD__asn1_struct,
                  const char *attr_name, const char *given_oid, int indx,
                  int raw, char *buf, size_t * sizeof_buf)
 {
@@ -300,7 +300,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
 
   if (*sizeof_buf == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -319,18 +319,18 @@ parse_attribute (ASN1_TYPE asn1_struct,
         snprintf (tmpbuffer1, sizeof (tmpbuffer1), "?%u", k1);
 
       len = sizeof (value) - 1;
-      result = asn1_read_value (asn1_struct, tmpbuffer1, value, &len);
+      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           break;
         }
 
       if (result != ASN1_VALUE_NOT_FOUND)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -338,18 +338,18 @@ parse_attribute (ASN1_TYPE asn1_struct,
        */
       /* Read the OID
        */
-      mhd_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer1);
-      mhd_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
+      MHD_gtls_str_cpy (tmpbuffer3, sizeof (tmpbuffer3), tmpbuffer1);
+      MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
 
       len = sizeof (oid) - 1;
-      result = asn1_read_value (asn1_struct, tmpbuffer3, oid, &len);
+      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         break;
       else if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -362,32 +362,32 @@ parse_attribute (ASN1_TYPE asn1_struct,
                     tmpbuffer1, indx + 1);
 
           len = sizeof (value) - 1;
-          result = asn1_read_value (asn1_struct, tmpbuffer3, value, &len);
+          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, value, &len);
 
           if (result != ASN1_SUCCESS)
             {
-              gnutls_assert ();
-              result = mhd_gtls_asn2err (result);
+              MHD_gnutls_assert ();
+              result = MHD_gtls_asn2err (result);
               goto cleanup;
             }
 
           if (raw == 0)
             {
-              printable = _gnutls_x509_oid_data_printable (oid);
+              printable = MHD__gnutls_x509_oid_data_printable (oid);
               if (printable == 1)
                 {
                   if ((result =
-                       _gnutls_x509_oid_data2string
+                       MHD__gnutls_x509_oid_data2string
                        (oid, value, len, buf, sizeof_buf)) < 0)
                     {
-                      gnutls_assert ();
+                      MHD_gnutls_assert ();
                       goto cleanup;
                     }
                   return 0;
                 }
               else
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return GNUTLS_E_X509_UNSUPPORTED_ATTRIBUTE;
                 }
             }
@@ -403,7 +403,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
               else
                 {
                   *sizeof_buf = len;
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return GNUTLS_E_SHORT_MEMORY_BUFFER;
                 }
             }
@@ -412,7 +412,7 @@ parse_attribute (ASN1_TYPE asn1_struct,
     }
   while (1);
 
-  gnutls_assert ();
+  MHD_gnutls_assert ();
 
   result = GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
 
@@ -421,8 +421,8 @@ cleanup:
 }
 
 /**
-  * gnutls_x509_crq_get_challenge_password - This function will get the challenge password
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_challenge_password - This function will get the challenge password
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @pass: will hold a null terminated password
   * @sizeof_pass: Initially holds the size of @pass.
   *
@@ -433,12 +433,12 @@ cleanup:
   *
   **/
 int
-gnutls_x509_crq_get_challenge_password (gnutls_x509_crq_t crq,
+MHD_gnutls_x509_crq_get_challenge_password (MHD_gnutls_x509_crq_t crq,
                                         char *pass, size_t * sizeof_pass)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -447,8 +447,8 @@ gnutls_x509_crq_get_challenge_password (gnutls_x509_crq_t crq,
 }
 
 /**
-  * gnutls_x509_crq_set_attribute_by_oid - This function will set an attribute in the request
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_set_attribute_by_oid - This function will set an attribute in the request
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @oid: holds an Object Identified in null terminated string
   * @buf: a pointer to a structure that holds the attribute data
   * @sizeof_buf: holds the size of @buf
@@ -460,7 +460,7 @@ gnutls_x509_crq_get_challenge_password (gnutls_x509_crq_t crq,
   *
   **/
 int
-gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
+MHD_gnutls_x509_crq_set_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
                                       const char *oid, void *buf,
                                       size_t sizeof_buf)
 {
@@ -468,30 +468,30 @@ gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Add the attribute.
    */
   result =
-    asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
+    MHD__asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
                       "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   result =
-    _gnutls_x509_encode_and_write_attribute (oid,
+    MHD__gnutls_x509_encode_and_write_attribute (oid,
                                              crq->crq,
                                              "certificationRequestInfo.attributes.?LAST",
                                              buf, sizeof_buf, 1);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -499,8 +499,8 @@ gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
 }
 
 /**
-  * gnutls_x509_crq_get_attribute_by_oid - This function will get an attribute of the request
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_attribute_by_oid - This function will get an attribute of the request
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @oid: holds an Object Identified in null terminated string
   * @indx: In case multiple same OIDs exist in the attribute list, this specifies
   *   which to send. Use zero to get the first one.
@@ -514,13 +514,13 @@ gnutls_x509_crq_set_attribute_by_oid (gnutls_x509_crq_t crq,
   *
   **/
 int
-gnutls_x509_crq_get_attribute_by_oid (gnutls_x509_crq_t crq,
+MHD_gnutls_x509_crq_get_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
                                       const char *oid, int indx, void *buf,
                                       size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -529,8 +529,8 @@ gnutls_x509_crq_get_attribute_by_oid (gnutls_x509_crq_t crq,
 }
 
 /**
-  * gnutls_x509_crq_set_dn_by_oid - This function will set the Certificate request subject's distinguished name
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_set_dn_by_oid - This function will set the Certificate request subject's distinguished name
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @oid: holds an Object Identifier in a null terminated string
   * @raw_flag: must be 0, or 1 if the data are DER encoded
   * @data: a pointer to the input data
@@ -541,7 +541,7 @@ gnutls_x509_crq_get_attribute_by_oid (gnutls_x509_crq_t crq,
   *
   * Some helper macros with popular OIDs can be found in gnutls/x509.h
   * With this function you can only set the known OIDs. You can test
-  * for known OIDs using gnutls_x509_dn_oid_known(). For OIDs that are
+  * for known OIDs using MHD_gnutls_x509_dn_oid_known(). For OIDs that are
   * not known (by gnutls) you should properly DER encode your data, and
   * call this function with raw_flag set.
   *
@@ -549,7 +549,7 @@ gnutls_x509_crq_get_attribute_by_oid (gnutls_x509_crq_t crq,
   *
   **/
 int
-gnutls_x509_crq_set_dn_by_oid (gnutls_x509_crq_t crq, const char *oid,
+MHD_gnutls_x509_crq_set_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
                                unsigned int raw_flag, const void *data,
                                unsigned int sizeof_data)
 {
@@ -558,14 +558,14 @@ gnutls_x509_crq_set_dn_by_oid (gnutls_x509_crq_t crq, const char *oid,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_set_dn_oid (crq->crq,
+  return MHD__gnutls_x509_set_dn_oid (crq->crq,
                                   "certificationRequestInfo.subject", oid,
                                   raw_flag, data, sizeof_data);
 }
 
 /**
-  * gnutls_x509_crq_set_version - This function will set the Certificate request version
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_set_version - This function will set the Certificate request version
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @version: holds the version number. For v1 Requests must be 1.
   *
   * This function will set the version of the certificate request. For
@@ -575,14 +575,14 @@ gnutls_x509_crq_set_dn_by_oid (gnutls_x509_crq_t crq, const char *oid,
   *
   **/
 int
-gnutls_x509_crq_set_version (gnutls_x509_crq_t crq, unsigned int version)
+MHD_gnutls_x509_crq_set_version (MHD_gnutls_x509_crq_t crq, unsigned int version)
 {
   int result;
   unsigned char null = version;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -590,19 +590,19 @@ gnutls_x509_crq_set_version (gnutls_x509_crq_t crq, unsigned int version)
     null--;
 
   result =
-    asn1_write_value (crq->crq, "certificationRequestInfo.version", &null, 1);
+    MHD__asn1_write_value (crq->crq, "certificationRequestInfo.version", &null, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return 0;
 }
 
 /**
-  * gnutls_x509_crq_get_version - This function returns the Certificate request's version number
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_version - This function returns the Certificate request's version number
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   *
   * This function will return the version of the specified Certificate request.
   *
@@ -610,35 +610,35 @@ gnutls_x509_crq_set_version (gnutls_x509_crq_t crq, unsigned int version)
   *
   **/
 int
-gnutls_x509_crq_get_version (gnutls_x509_crq_t crq)
+MHD_gnutls_x509_crq_get_version (MHD_gnutls_x509_crq_t crq)
 {
   opaque version[5];
   int len, result;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   len = sizeof (version);
   if ((result =
-       asn1_read_value (crq->crq, "certificationRequestInfo.version",
+       MHD__asn1_read_value (crq->crq, "certificationRequestInfo.version",
                         version, &len)) != ASN1_SUCCESS)
     {
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         return 1;               /* the DEFAULT version */
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return (int) version[0] + 1;
 }
 
 /**
-  * gnutls_x509_crq_set_key - This function will associate the Certificate request with a key
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_set_key - This function will associate the Certificate request with a key
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @key: holds a private key
   *
   * This function will set the public parameters from the given private key to the
@@ -648,17 +648,17 @@ gnutls_x509_crq_get_version (gnutls_x509_crq_t crq)
   *
   **/
 int
-gnutls_x509_crq_set_key (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
+MHD_gnutls_x509_crq_set_key (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key)
 {
   int result;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  result = _gnutls_x509_encode_and_copy_PKI_params (crq->crq,
+  result = MHD__gnutls_x509_encode_and_copy_PKI_params (crq->crq,
                                                     "certificationRequestInfo.subjectPKInfo",
                                                     key->pk_algorithm,
                                                     key->params,
@@ -666,7 +666,7 @@ gnutls_x509_crq_set_key (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -674,8 +674,8 @@ gnutls_x509_crq_set_key (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
 }
 
 /**
-  * gnutls_x509_crq_set_challenge_password - This function will set a challenge password
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_set_challenge_password - This function will set a challenge password
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @pass: holds a null terminated password
   *
   * This function will set a challenge password to be used when revoking the request.
@@ -684,37 +684,37 @@ gnutls_x509_crq_set_key (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
   *
   **/
 int
-gnutls_x509_crq_set_challenge_password (gnutls_x509_crq_t crq,
+MHD_gnutls_x509_crq_set_challenge_password (MHD_gnutls_x509_crq_t crq,
                                         const char *pass)
 {
   int result;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Add the attribute.
    */
   result =
-    asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
+    MHD__asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
                       "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   result =
-    _gnutls_x509_encode_and_write_attribute ("1.2.840.113549.1.9.7",
+    MHD__gnutls_x509_encode_and_write_attribute ("1.2.840.113549.1.9.7",
                                              crq->crq,
                                              "certificationRequestInfo.attributes.?LAST",
                                              pass, strlen (pass), 1);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -722,14 +722,14 @@ gnutls_x509_crq_set_challenge_password (gnutls_x509_crq_t crq,
 }
 
 /**
-  * gnutls_x509_crq_sign2 - This function will sign a Certificate request with a key
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_sign2 - This function will sign a Certificate request with a key
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @key: holds a private key
   * @dig: The message digest to use. GNUTLS_DIG_SHA1 is the safe choice unless you know what you're doing.
   * @flags: must be 0
   *
   * This function will sign the certificate request with a private key.
-  * This must be the same key as the one used in gnutls_x509_crt_set_key() since a
+  * This must be the same key as the one used in MHD_gnutls_x509_crt_set_key() since a
   * certificate request is self signed.
   *
   * This must be the last step in a certificate request generation since all
@@ -739,52 +739,52 @@ gnutls_x509_crq_set_challenge_password (gnutls_x509_crq_t crq,
   *
   **/
 int
-gnutls_x509_crq_sign2 (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key,
+MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key,
                        enum MHD_GNUTLS_HashAlgorithm dig, unsigned int flags)
 {
   int result;
-  gnutls_datum_t signature;
+  MHD_gnutls_datum_t signature;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Step 1. Self sign the request.
    */
   result =
-    _gnutls_x509_sign_tbs (crq->crq, "certificationRequestInfo",
+    MHD__gnutls_x509_sign_tbs (crq->crq, "certificationRequestInfo",
                            dig, key, &signature);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Step 2. write the signature (bits)
    */
   result =
-    asn1_write_value (crq->crq, "signature", signature.data,
+    MHD__asn1_write_value (crq->crq, "signature", signature.data,
                       signature.size * 8);
 
-  _gnutls_free_datum (&signature);
+  MHD__gnutls_free_datum (&signature);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   /* Step 3. Write the signatureAlgorithm field.
    */
-  result = _gnutls_x509_write_sig_params (crq->crq, "signatureAlgorithm",
+  result = MHD__gnutls_x509_write_sig_params (crq->crq, "signatureAlgorithm",
                                           key->pk_algorithm, dig, key->params,
                                           key->params_size);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -792,24 +792,24 @@ gnutls_x509_crq_sign2 (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key,
 }
 
 /**
-  * gnutls_x509_crq_sign - This function will sign a Certificate request with a key
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_sign - This function will sign a Certificate request with a key
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @key: holds a private key
   *
-  * This function is the same a gnutls_x509_crq_sign2() with no flags, and
+  * This function is the same a MHD_gnutls_x509_crq_sign2() with no flags, and
   * SHA1 as the hash algorithm.
   *
   * Returns 0 on success.
   *
   **/
 int
-gnutls_x509_crq_sign (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
+MHD_gnutls_x509_crq_sign (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key)
 {
-  return gnutls_x509_crq_sign2 (crq, key, MHD_GNUTLS_MAC_SHA1, 0);
+  return MHD_gnutls_x509_crq_sign2 (crq, key, MHD_GNUTLS_MAC_SHA1, 0);
 }
 
 /**
-  * gnutls_x509_crq_export - Export the generated certificate request
+  * MHD_gnutls_x509_crq_export - Export the generated certificate request
   * @crq: Holds the request
   * @format: the format of output params. One of PEM or DER.
   * @output_data: will contain a certificate request PEM or DER encoded
@@ -830,23 +830,23 @@ gnutls_x509_crq_sign (gnutls_x509_crq_t crq, gnutls_x509_privkey_t key)
   *
   **/
 int
-gnutls_x509_crq_export (gnutls_x509_crq_t crq,
-                        gnutls_x509_crt_fmt_t format, void *output_data,
+MHD_gnutls_x509_crq_export (MHD_gnutls_x509_crq_t crq,
+                        MHD_gnutls_x509_crt_fmt_t format, void *output_data,
                         size_t * output_data_size)
 {
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_export_int (crq->crq, format, PEM_CRQ,
+  return MHD__gnutls_x509_export_int (crq->crq, format, PEM_CRQ,
                                   output_data, output_data_size);
 }
 
 /**
-  * gnutls_x509_crq_get_pk_algorithm - This function returns the certificate request's PublicKey algorithm
-  * @crq: should contain a gnutls_x509_crq_t structure
+  * MHD_gnutls_x509_crq_get_pk_algorithm - This function returns the certificate request's PublicKey algorithm
+  * @crq: should contain a MHD_gnutls_x509_crq_t structure
   * @bits: if bits is non null it will hold the size of the parameters' in bits
   *
   * This function will return the public key algorithm of a PKCS \#10
@@ -862,23 +862,23 @@ gnutls_x509_crq_export (gnutls_x509_crq_t crq,
   *
   **/
 int
-gnutls_x509_crq_get_pk_algorithm (gnutls_x509_crq_t crq, unsigned int *bits)
+MHD_gnutls_x509_crq_get_pk_algorithm (MHD_gnutls_x509_crq_t crq, unsigned int *bits)
 {
   int result;
 
   if (crq == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   result =
-    _gnutls_x509_get_pk_algorithm (crq->crq,
+    MHD__gnutls_x509_get_pk_algorithm (crq->crq,
                                    "certificationRequestInfo.subjectPKInfo",
                                    bits);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
     }
 
   return result;

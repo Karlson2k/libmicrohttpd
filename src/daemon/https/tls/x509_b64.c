@@ -142,7 +142,7 @@ decode (uint8_t * result, const opaque * data)
  * The result_size is the return value
  */
 int
-_gnutls_base64_encode (const uint8_t * data, size_t data_size,
+MHD__gnutls_base64_encode (const uint8_t * data, size_t data_size,
                        uint8_t ** result)
 {
   unsigned int i, j;
@@ -151,7 +151,7 @@ _gnutls_base64_encode (const uint8_t * data, size_t data_size,
 
   ret = B64SIZE (data_size);
 
-  (*result) = gnutls_malloc (ret + 1);
+  (*result) = MHD_gnutls_malloc (ret + 1);
   if ((*result) == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -160,7 +160,7 @@ _gnutls_base64_encode (const uint8_t * data, size_t data_size,
       tmp = encode (tmpres, &data[i], data_size - i);
       if (tmp == -1)
         {
-          gnutls_free ((*result));
+          MHD_gnutls_free ((*result));
           return GNUTLS_E_MEMORY_ERROR;
         }
       memcpy (&(*result)[j], tmpres, tmp);
@@ -174,8 +174,8 @@ _gnutls_base64_encode (const uint8_t * data, size_t data_size,
 	do { \
 	what+=size; \
 	if (what > ret) { \
-		gnutls_assert(); \
-		gnutls_free( (*result)); *result = NULL; \
+		MHD_gnutls_assert(); \
+		MHD_gnutls_free( (*result)); *result = NULL; \
 		return GNUTLS_E_INTERNAL_ERROR; \
 	} \
 	} while(0)
@@ -184,7 +184,7 @@ _gnutls_base64_encode (const uint8_t * data, size_t data_size,
  * The result_size (including the null terminator) is the return value.
  */
 int
-_gnutls_fbase64_encode (const char *msg, const uint8_t * data,
+MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
                         int data_size, uint8_t ** result)
 {
   int i, ret, tmp, j;
@@ -197,7 +197,7 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
 
   if (msglen > 50)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_BASE64_ENCODING_ERROR;
     }
 
@@ -217,10 +217,10 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
 
   ret = B64FSIZE (msglen, data_size);
 
-  (*result) = gnutls_calloc (1, ret + 1);
+  (*result) = MHD_gnutls_calloc (1, ret + 1);
   if ((*result) == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -236,8 +236,8 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
       tmp = encode (tmpres, &data[i], data_size - i);
       if (tmp == -1)
         {
-          gnutls_assert ();
-          gnutls_free ((*result));
+          MHD_gnutls_assert ();
+          MHD_gnutls_free ((*result));
           *result = NULL;
           return GNUTLS_E_BASE64_ENCODING_ERROR;
         }
@@ -302,26 +302,26 @@ _gnutls_fbase64_encode (const char *msg, const uint8_t * data,
   *
   **/
 int
-MHD_gtls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
+MHD_gtls_pem_base64_encode (const char *msg, const MHD_gnutls_datum_t * data,
                             char *result, size_t * result_size)
 {
   opaque *ret;
   int size;
 
-  size = _gnutls_fbase64_encode (msg, data->data, data->size, &ret);
+  size = MHD__gnutls_fbase64_encode (msg, data->data, data->size, &ret);
   if (size < 0)
     return size;
 
   if (result == NULL || *result_size < (unsigned) size)
     {
-      gnutls_free (ret);
+      MHD_gnutls_free (ret);
       *result_size = size;
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
   else
     {
       memcpy (result, ret, size);
-      gnutls_free (ret);
+      MHD_gnutls_free (ret);
       *result_size = size - 1;
     }
 
@@ -338,13 +338,13 @@ MHD_gtls_pem_base64_encode (const char *msg, const gnutls_datum_t * data,
   * encoding. This is the encoding used in PEM messages. This function will
   * allocate the required memory to hold the encoded data.
   *
-  * You should use gnutls_free() to free the returned data.
+  * You should use MHD_gnutls_free() to free the returned data.
   *
   **/
 int
 MHD_gtls_pem_base64_encode_alloc (const char *msg,
-                                  const gnutls_datum_t * data,
-                                  gnutls_datum_t * result)
+                                  const MHD_gnutls_datum_t * data,
+                                  MHD_gnutls_datum_t * result)
 {
   opaque *ret;
   int size;
@@ -352,7 +352,7 @@ MHD_gtls_pem_base64_encode_alloc (const char *msg,
   if (result == NULL)
     return GNUTLS_E_INVALID_REQUEST;
 
-  size = _gnutls_fbase64_encode (msg, data->data, data->size, &ret);
+  size = MHD__gnutls_fbase64_encode (msg, data->data, data->size, &ret);
   if (size < 0)
     return size;
 
@@ -366,7 +366,7 @@ MHD_gtls_pem_base64_encode_alloc (const char *msg,
  * The result_size is the return value
  */
 int
-_gnutls_base64_decode (const uint8_t * data, size_t data_size,
+MHD__gnutls_base64_decode (const uint8_t * data, size_t data_size,
                        uint8_t ** result)
 {
   unsigned int i, j;
@@ -374,7 +374,7 @@ _gnutls_base64_decode (const uint8_t * data, size_t data_size,
   uint8_t tmpres[3];
 
   est = ((data_size * 3) / 4) + 1;
-  (*result) = gnutls_malloc (est);
+  (*result) = MHD_gnutls_malloc (est);
   if ((*result) == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -384,7 +384,7 @@ _gnutls_base64_decode (const uint8_t * data, size_t data_size,
       tmp = decode (tmpres, &data[i]);
       if (tmp < 0)
         {
-          gnutls_free (*result);
+          MHD_gnutls_free (*result);
           *result = NULL;
           return tmp;
         }
@@ -402,7 +402,7 @@ cpydata (const uint8_t * data, int data_size, uint8_t ** result)
 {
   int i, j;
 
-  (*result) = gnutls_malloc (data_size);
+  (*result) = MHD_gnutls_malloc (data_size);
   if (*result == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -424,7 +424,7 @@ cpydata (const uint8_t * data, int data_size, uint8_t ** result)
 #define ENDSTR "-----\n"
 #define ENDSTR2 "-----\r"
 int
-_gnutls_fbase64_decode (const char *header, const opaque * data,
+MHD__gnutls_fbase64_decode (const char *header, const opaque * data,
                         size_t data_size, uint8_t ** result)
 {
   int ret;
@@ -436,16 +436,16 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
   int kdata_size;
   char pem_header[128];
 
-  mhd_gtls_str_cpy (pem_header, sizeof (pem_header), top);
+  MHD_gtls_str_cpy (pem_header, sizeof (pem_header), top);
   if (header != NULL)
-    mhd_gtls_str_cat (pem_header, sizeof (pem_header), header);
+    MHD_gtls_str_cat (pem_header, sizeof (pem_header), header);
 
-  rdata = memmem (data, data_size, pem_header, strlen (pem_header));
+  rdata = MHD_memmem (data, data_size, pem_header, strlen (pem_header));
 
   if (rdata == NULL)
     {
-      gnutls_assert ();
-      _gnutls_debug_log ("Could not find '%s'\n", pem_header);
+      MHD_gnutls_assert ();
+      MHD__gnutls_debug_log ("Could not find '%s'\n", pem_header);
       return GNUTLS_E_BASE64_UNEXPECTED_HEADER_ERROR;
     }
 
@@ -453,20 +453,20 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
 
   if (data_size < 4 + strlen (bottom))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
 
-  kdata = memmem (rdata, data_size, ENDSTR, sizeof (ENDSTR) - 1);
+  kdata = MHD_memmem (rdata, data_size, ENDSTR, sizeof (ENDSTR) - 1);
   /* allow CR as well.
    */
   if (kdata == NULL)
-    kdata = memmem (rdata, data_size, ENDSTR2, sizeof (ENDSTR2) - 1);
+    kdata = MHD_memmem (rdata, data_size, ENDSTR2, sizeof (ENDSTR2) - 1);
 
   if (kdata == NULL)
     {
-      gnutls_assert ();
-      _gnutls_x509_log ("Could not find '%s'\n", ENDSTR);
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("Could not find '%s'\n", ENDSTR);
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
   data_size -= strlen (ENDSTR);
@@ -476,10 +476,10 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
 
   /* position is now after the ---BEGIN--- headers */
 
-  kdata = memmem (rdata, data_size, bottom, strlen (bottom));
+  kdata = MHD_memmem (rdata, data_size, bottom, strlen (bottom));
   if (kdata == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
 
@@ -489,7 +489,7 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
 
   if (rdata_size < 4)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
 
@@ -497,24 +497,24 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
 
   if (kdata_size < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return kdata_size;
     }
 
   if (kdata_size < 4)
     {
-      gnutls_assert ();
-      gnutls_free (kdata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_free (kdata);
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
 
-  if ((ret = _gnutls_base64_decode (kdata, kdata_size, result)) < 0)
+  if ((ret = MHD__gnutls_base64_decode (kdata, kdata_size, result)) < 0)
     {
-      gnutls_free (kdata);
-      gnutls_assert ();
+      MHD_gnutls_free (kdata);
+      MHD_gnutls_assert ();
       return GNUTLS_E_BASE64_DECODING_ERROR;
     }
-  gnutls_free (kdata);
+  MHD_gnutls_free (kdata);
 
   return ret;
 }
@@ -535,27 +535,27 @@ _gnutls_fbase64_decode (const char *header, const opaque * data,
   **/
 int
 MHD_gtls_pem_base64_decode (const char *header,
-                            const gnutls_datum_t * b64_data,
+                            const MHD_gnutls_datum_t * b64_data,
                             unsigned char *result, size_t * result_size)
 {
   opaque *ret;
   int size;
 
   size =
-    _gnutls_fbase64_decode (header, b64_data->data, b64_data->size, &ret);
+    MHD__gnutls_fbase64_decode (header, b64_data->data, b64_data->size, &ret);
   if (size < 0)
     return size;
 
   if (result == NULL || *result_size < (unsigned) size)
     {
-      gnutls_free (ret);
+      MHD_gnutls_free (ret);
       *result_size = size;
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
   else
     {
       memcpy (result, ret, size);
-      gnutls_free (ret);
+      MHD_gnutls_free (ret);
       *result_size = size;
     }
 
@@ -574,13 +574,13 @@ MHD_gtls_pem_base64_decode (const char *header,
   * "-----BEGIN header" and decode only this part. Otherwise it will decode the
   * first PEM packet found.
   *
-  * You should use gnutls_free() to free the returned data.
+  * You should use MHD_gnutls_free() to free the returned data.
   *
   **/
 int
 MHD_gtls_pem_base64_decode_alloc (const char *header,
-                                  const gnutls_datum_t * b64_data,
-                                  gnutls_datum_t * result)
+                                  const MHD_gnutls_datum_t * b64_data,
+                                  MHD_gnutls_datum_t * result)
 {
   opaque *ret;
   int size;
@@ -589,7 +589,7 @@ MHD_gtls_pem_base64_decode_alloc (const char *header,
     return GNUTLS_E_INVALID_REQUEST;
 
   size =
-    _gnutls_fbase64_decode (header, b64_data->data, b64_data->size, &ret);
+    MHD__gnutls_fbase64_decode (header, b64_data->data, b64_data->size, &ret);
   if (size < 0)
     return size;
 

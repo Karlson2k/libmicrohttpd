@@ -24,11 +24,11 @@
 
 #include "x509.h"
 
-int gnutls_x509_crt_is_issuer (gnutls_x509_crt_t cert,
-                               gnutls_x509_crt_t issuer);
-int _gnutls_x509_verify_signature (const gnutls_datum_t * tbs,
-                                   const gnutls_datum_t * signature,
-                                   gnutls_x509_crt_t issuer);
-int _gnutls_x509_privkey_verify_signature (const gnutls_datum_t * tbs,
-                                           const gnutls_datum_t * signature,
-                                           gnutls_x509_privkey_t issuer);
+int MHD_gnutls_x509_crt_is_issuer (MHD_gnutls_x509_crt_t cert,
+                               MHD_gnutls_x509_crt_t issuer);
+int MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
+                                   const MHD_gnutls_datum_t * signature,
+                                   MHD_gnutls_x509_crt_t issuer);
+int MHD__gnutls_x509_privkey_verify_signature (const MHD_gnutls_datum_t * tbs,
+                                           const MHD_gnutls_datum_t * signature,
+                                           MHD_gnutls_x509_privkey_t issuer);

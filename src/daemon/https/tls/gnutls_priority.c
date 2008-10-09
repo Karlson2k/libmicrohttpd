@@ -22,7 +22,7 @@
  *
  */
 
-/* Here lies the code of the gnutls_*_set_priority() functions.
+/* Here lies the code of the MHD_gnutls_*_set_priority() functions.
  */
 
 #include "gnutls_int.h"
@@ -33,8 +33,8 @@
 #define MAX_ELEMENTS 48
 
 /**
- * MHD_gnutls_cipher_set_priority - Sets the priority on the ciphers supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_cipher_set_priority - Sets the priority on the ciphers supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_CipherAlgorithm elements.
  *
  * Sets the priority on the ciphers supported by gnutls.
@@ -48,7 +48,7 @@
  *
  **/
 int
-MHD_gnutls_cipher_set_priority (mhd_gtls_session_t session, const int *list)
+MHD__gnutls_cipher_set_priority (MHD_gtls_session_t session, const int *list)
 {
   int num = 0, i;
 
@@ -67,7 +67,7 @@ MHD_gnutls_cipher_set_priority (mhd_gtls_session_t session, const int *list)
 }
 
 static int
-_set_priority (mhd_gtls_priority_st * st, const int *list)
+_set_priority (MHD_gtls_priority_st * st, const int *list)
 {
   int num = 0;
 
@@ -80,8 +80,8 @@ _set_priority (mhd_gtls_priority_st * st, const int *list)
 }
 
 /**
- * MHD_gnutls_kx_set_priority - Sets the priority on the key exchange algorithms supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_kx_set_priority - Sets the priority on the key exchange algorithms supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_KeyExchangeAlgorithm elements.
  *
  * Sets the priority on the key exchange algorithms supported by gnutls.
@@ -95,14 +95,14 @@ _set_priority (mhd_gtls_priority_st * st, const int *list)
  *
  **/
 int
-MHD_gnutls_kx_set_priority (mhd_gtls_session_t session, const int *list)
+MHD__gnutls_kx_set_priority (MHD_gtls_session_t session, const int *list)
 {
   return _set_priority (&session->internals.priorities.kx, list);
 }
 
 /**
- * MHD_gnutls_mac_set_priority - Sets the priority on the mac algorithms supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_mac_set_priority - Sets the priority on the mac algorithms supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_HashAlgorithm elements.
  *
  * Sets the priority on the mac algorithms supported by gnutls.
@@ -116,14 +116,14 @@ MHD_gnutls_kx_set_priority (mhd_gtls_session_t session, const int *list)
  *
  **/
 int
-MHD_gnutls_mac_set_priority (mhd_gtls_session_t session, const int *list)
+MHD__gnutls_mac_set_priority (MHD_gtls_session_t session, const int *list)
 {
   return _set_priority (&session->internals.priorities.mac, list);
 }
 
 /**
- * MHD_gnutls_compression_set_priority - Sets the priority on the compression algorithms supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_compression_set_priority - Sets the priority on the compression algorithms supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_CompressionMethod elements.
  *
  * Sets the priority on the compression algorithms supported by gnutls.
@@ -141,15 +141,15 @@ MHD_gnutls_mac_set_priority (mhd_gtls_session_t session, const int *list)
  *
  **/
 int
-MHD_gnutls_compression_set_priority (mhd_gtls_session_t session,
+MHD__gnutls_compression_set_priority (MHD_gtls_session_t session,
                                      const int *list)
 {
   return _set_priority (&session->internals.priorities.compression, list);
 }
 
 /**
- * MHD_gnutls_protocol_set_priority - Sets the priority on the protocol versions supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_protocol_set_priority - Sets the priority on the protocol versions supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_Protocol elements.
  *
  * Sets the priority on the protocol versions supported by gnutls.
@@ -160,7 +160,7 @@ MHD_gnutls_compression_set_priority (mhd_gtls_session_t session,
  *
  **/
 int
-MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
+MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session, const int *list)
 {
   int ret;
 
@@ -168,14 +168,14 @@ MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
   /* set the current version to the first in the chain.
    * This will be overridden later.
    */
-  mhd_gtls_set_current_version (session, list[0]);
+  MHD_gtls_set_current_version (session, list[0]);
 
   return ret;
 }
 
 /**
- * MHD_gnutls_certificate_type_set_priority - Sets the priority on the certificate types supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_certificate_type_set_priority - Sets the priority on the certificate types supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @list: is a 0 terminated list of enum MHD_GNUTLS_CertificateType elements.
  *
  * Sets the priority on the certificate types supported by gnutls.
@@ -189,7 +189,7 @@ MHD_gnutls_protocol_set_priority (mhd_gtls_session_t session, const int *list)
  *
  **/
 int
-MHD_gnutls_certificate_type_set_priority (mhd_gtls_session_t session,
+MHD__gnutls_certificate_type_set_priority (MHD_gtls_session_t session,
                                           const int *list)
 {
 #if ENABLE_OPENPGP
@@ -201,39 +201,39 @@ MHD_gnutls_certificate_type_set_priority (mhd_gtls_session_t session,
 #endif
 }
 
-static const int mhd_gtls_protocol_priority[] = { MHD_GNUTLS_PROTOCOL_TLS1_1,
+static const int MHD_gtls_protocol_priority[] = { MHD_GNUTLS_PROTOCOL_TLS1_1,
   MHD_GNUTLS_PROTOCOL_TLS1_0,
   MHD_GNUTLS_PROTOCOL_SSL3,
   0
 };
 
-static const int mhd_gtls_cipher_priority_secure256[] =
+static const int MHD_gtls_cipher_priority_secure256[] =
   { MHD_GNUTLS_CIPHER_AES_256_CBC,
   0
 };
 
-static const int mhd_gtls_kx_priority_secure[] = { MHD_GNUTLS_KX_RSA,
+static const int MHD_gtls_kx_priority_secure[] = { MHD_GNUTLS_KX_RSA,
   0
 };
 
-static const int mhd_gtls_mac_priority_secure[] = { MHD_GNUTLS_MAC_SHA1,
+static const int MHD_gtls_mac_priority_secure[] = { MHD_GNUTLS_MAC_SHA1,
   0
 };
 
-static int mhd_gtls_cert_type_priority[] = { MHD_GNUTLS_CRT_X509,
+static int MHD_gtls_cert_type_priority[] = { MHD_GNUTLS_CRT_X509,
   0
 };
 
-static const int mhd_gtls_comp_priority[] = { MHD_GNUTLS_COMP_NULL,
+static const int MHD_gtls_comp_priority[] = { MHD_GNUTLS_COMP_NULL,
   0
 };
 
-typedef void (rmadd_func) (mhd_gtls_priority_st * priority_list, int alg);
+typedef void (rmadd_func) (MHD_gtls_priority_st * priority_list, int alg);
 
 /**
- * MHD_gnutls_priority_set - Sets priorities for the cipher suites supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
- * @priority: is a #gnutls_priority_t structure.
+ * MHD__gnutls_priority_set - Sets priorities for the cipher suites supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
+ * @priority: is a #MHD_gnutls_priority_t structure.
  *
  * Sets the priorities to use on the ciphers, key exchange methods,
  * macs and compression methods.
@@ -242,12 +242,12 @@ typedef void (rmadd_func) (mhd_gtls_priority_st * priority_list, int alg);
  *
  **/
 int
-MHD_gnutls_priority_set (mhd_gtls_session_t session,
-                         gnutls_priority_t priority)
+MHD__gnutls_priority_set (MHD_gtls_session_t session,
+                         MHD_gnutls_priority_t priority)
 {
   if (priority == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_NO_CIPHER_SUITES;
     }
 
@@ -259,13 +259,13 @@ MHD_gnutls_priority_set (mhd_gtls_session_t session,
 
 /**
  * MHD_tls_set_default_priority - Sets priorities for the cipher suites supported by gnutls.
- * @priority_cache: is a #gnutls_prioritity_t structure.
+ * @priority_cache: is a #MHD_gnutls_prioritity_t structure.
  * @priorities: is a string describing priorities
  * @err_pos: In case of an error this will have the position in the string the error occured
  *
  * Sets priorities for the ciphers, key exchange methods, macs and
  * compression methods. This is to avoid using the
- * gnutls_*_priority() functions.
+ * MHD_gnutls_*_priority() functions.
  *
  * The #priorities option allows you to specify a semi-colon
  * separated list of the cipher priorities to enable.
@@ -323,45 +323,45 @@ MHD_gnutls_priority_set (mhd_gtls_session_t session,
  * 0 on success.
  **/
 int
-MHD_tls_set_default_priority (gnutls_priority_t * priority_cache,
+MHD_tls_set_default_priority (MHD_gnutls_priority_t * priority_cache,
                               const char *priorities, const char **err_pos)
 {
-  *priority_cache = gnutls_calloc (1, sizeof (struct MHD_gtls_priority_st));
+  *priority_cache = MHD_gnutls_calloc (1, sizeof (struct MHD_gtls_priority_st));
   if (*priority_cache == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   /* set mode to "SECURE256" */
-  _set_priority (&(*priority_cache)->protocol, mhd_gtls_protocol_priority);
+  _set_priority (&(*priority_cache)->protocol, MHD_gtls_protocol_priority);
   _set_priority (&(*priority_cache)->cipher,
-                 mhd_gtls_cipher_priority_secure256);
-  _set_priority (&(*priority_cache)->kx, mhd_gtls_kx_priority_secure);
-  _set_priority (&(*priority_cache)->mac, mhd_gtls_mac_priority_secure);
-  _set_priority (&(*priority_cache)->cert_type, mhd_gtls_cert_type_priority);
-  _set_priority (&(*priority_cache)->compression, mhd_gtls_comp_priority);
+                 MHD_gtls_cipher_priority_secure256);
+  _set_priority (&(*priority_cache)->kx, MHD_gtls_kx_priority_secure);
+  _set_priority (&(*priority_cache)->mac, MHD_gtls_mac_priority_secure);
+  _set_priority (&(*priority_cache)->cert_type, MHD_gtls_cert_type_priority);
+  _set_priority (&(*priority_cache)->compression, MHD_gtls_comp_priority);
 
   (*priority_cache)->no_padding = 0;
   return 0;
 }
 
 /**
- * MHD_gnutls_priority_deinit - Deinitialize the priorities cache for the cipher suites supported by gnutls.
- * @priority_cache: is a #gnutls_prioritity_t structure.
+ * MHD__gnutls_priority_deinit - Deinitialize the priorities cache for the cipher suites supported by gnutls.
+ * @priority_cache: is a #MHD_gnutls_prioritity_t structure.
  *
  * Deinitializes the priority cache.
  *
  **/
 void
-MHD_gnutls_priority_deinit (gnutls_priority_t priority_cache)
+MHD__gnutls_priority_deinit (MHD_gnutls_priority_t priority_cache)
 {
-  gnutls_free (priority_cache);
+  MHD_gnutls_free (priority_cache);
 }
 
 /**
- * MHD_gnutls_priority_set_direct - Sets priorities for the cipher suites supported by gnutls.
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_priority_set_direct - Sets priorities for the cipher suites supported by gnutls.
+ * @session: is a #MHD_gtls_session_t structure.
  * @priorities: is a string describing priorities
  * @err_pos: In case of an error this will have the position in the string the error occured
  *
@@ -374,27 +374,27 @@ MHD_gnutls_priority_deinit (gnutls_priority_t priority_cache)
  *
  **/
 int
-MHD_gnutls_priority_set_direct (mhd_gtls_session_t session,
+MHD__gnutls_priority_set_direct (MHD_gtls_session_t session,
                                 const char *priorities, const char **err_pos)
 {
-  gnutls_priority_t prio;
+  MHD_gnutls_priority_t prio;
   int ret;
 
   ret = MHD_tls_set_default_priority (&prio, priorities, err_pos);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = MHD_gnutls_priority_set (session, prio);
+  ret = MHD__gnutls_priority_set (session, prio);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  MHD_gnutls_priority_deinit (prio);
+  MHD__gnutls_priority_deinit (prio);
 
   return 0;
 }

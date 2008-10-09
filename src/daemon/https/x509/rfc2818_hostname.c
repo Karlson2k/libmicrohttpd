@@ -32,7 +32,7 @@
  * return 1 on success or 0 on error
  */
 int
-_gnutls_hostname_compare (const char *certname, const char *hostname)
+MHD__gnutls_hostname_compare (const char *certname, const char *hostname)
 {
   const char *cmpstr1, *cmpstr2;
 
@@ -71,8 +71,8 @@ _gnutls_hostname_compare (const char *certname, const char *hostname)
 }
 
 /**
-  * gnutls_x509_crt_check_hostname - This function compares the given hostname with the hostname in the certificate
-  * @cert: should contain an gnutls_x509_crt_t structure
+  * MHD_gnutls_x509_crt_check_hostname - This function compares the given hostname with the hostname in the certificate
+  * @cert: should contain an MHD_gnutls_x509_crt_t structure
   * @hostname: A null terminated string that contains a DNS name
   *
   * This function will check if the given certificate's subject
@@ -84,7 +84,7 @@ _gnutls_hostname_compare (const char *certname, const char *hostname)
   * Returns non zero for a successful match, and zero on failure.
   **/
 int
-gnutls_x509_crt_check_hostname (gnutls_x509_crt_t cert, const char *hostname)
+MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert, const char *hostname)
 {
 
   char dnsname[MAX_CN];
@@ -111,14 +111,14 @@ gnutls_x509_crt_check_hostname (gnutls_x509_crt_t cert, const char *hostname)
     {
 
       dnsnamesize = sizeof (dnsname);
-      ret = gnutls_x509_crt_get_subject_alt_name (cert, i,
+      ret = MHD_gnutls_x509_crt_get_subject_alt_name (cert, i,
                                                   dnsname, &dnsnamesize,
                                                   NULL);
 
       if (ret == GNUTLS_SAN_DNSNAME)
         {
           found_dnsname = 1;
-          if (_gnutls_hostname_compare (dnsname, hostname))
+          if (MHD__gnutls_hostname_compare (dnsname, hostname))
             {
               return 1;
             }
@@ -128,7 +128,7 @@ gnutls_x509_crt_check_hostname (gnutls_x509_crt_t cert, const char *hostname)
           found_dnsname = 1;    /* RFC 2818 is unclear whether the CN
                                    should be compared for IP addresses
                                    too, but we won't do it.  */
-          if (_gnutls_hostname_compare (dnsname, hostname))
+          if (MHD__gnutls_hostname_compare (dnsname, hostname))
             {
               return 1;
             }
@@ -140,7 +140,7 @@ gnutls_x509_crt_check_hostname (gnutls_x509_crt_t cert, const char *hostname)
       /* not got the necessary extension, use CN instead
        */
       dnsnamesize = sizeof (dnsname);
-      if (gnutls_x509_crt_get_dn_by_oid (cert, OID_X520_COMMON_NAME, 0,
+      if (MHD_gnutls_x509_crt_get_dn_by_oid (cert, OID_X520_COMMON_NAME, 0,
                                          0, dnsname, &dnsnamesize) < 0)
         {
           /* got an error, can't find a name
@@ -148,7 +148,7 @@ gnutls_x509_crt_check_hostname (gnutls_x509_crt_t cert, const char *hostname)
           return 0;
         }
 
-      if (_gnutls_hostname_compare (dnsname, hostname))
+      if (MHD__gnutls_hostname_compare (dnsname, hostname))
         {
           return 1;
         }

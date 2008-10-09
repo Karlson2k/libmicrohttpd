@@ -52,7 +52,7 @@
  */
 
 Gc_rc
-gc_pbkdf2_sha1 (const char *P, size_t Plen,
+MHD_gc_pbkdf2_sha1 (const char *P, size_t Plen,
                 const char *S, size_t Slen,
                 unsigned int c, char *DK, size_t dkLen)
 {
@@ -161,10 +161,10 @@ gc_pbkdf2_sha1 (const char *P, size_t Plen,
               tmp[Slen + 2] = (i & 0x0000ff00) >> 8;
               tmp[Slen + 3] = (i & 0x000000ff) >> 0;
 
-              rc = gc_hmac_sha1 (P, Plen, tmp, tmplen, U);
+              rc = MHD_gc_MHD_hmac_sha1 (P, Plen, tmp, tmplen, U);
             }
           else
-            rc = gc_hmac_sha1 (P, Plen, U, hLen, U);
+            rc = MHD_gc_MHD_hmac_sha1 (P, Plen, U, hLen, U);
 
           if (rc != GC_OK)
             {

@@ -33,7 +33,7 @@
 /* resarr will contain: p(0), q(1), g(2), y(3), x(4).
  */
 int
-_gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
+MHD__gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 {
 
   int ret;
@@ -42,20 +42,20 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   /* FIXME: Remove me once we depend on 1.3.1 */
   if (bits > 1024 && gcry_check_version ("1.3.1") == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (bits < 512)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   ret = gcry_sexp_build (&parms, NULL, "(genkey(dsa(nbits %d)))", bits);
   if (ret != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -66,14 +66,14 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 
   if (ret != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   list = gcry_sexp_find_token (key, "p", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -84,7 +84,7 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "q", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -95,7 +95,7 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "g", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -106,7 +106,7 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "y", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -118,7 +118,7 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "x", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -129,11 +129,11 @@ _gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 
   gcry_sexp_release (key);
 
-  _gnutls_dump_mpi ("p: ", resarr[0]);
-  _gnutls_dump_mpi ("q: ", resarr[1]);
-  _gnutls_dump_mpi ("g: ", resarr[2]);
-  _gnutls_dump_mpi ("y: ", resarr[3]);
-  _gnutls_dump_mpi ("x: ", resarr[4]);
+  MHD__gnutls_dump_mpi ("p: ", resarr[0]);
+  MHD__gnutls_dump_mpi ("q: ", resarr[1]);
+  MHD__gnutls_dump_mpi ("g: ", resarr[2]);
+  MHD__gnutls_dump_mpi ("y: ", resarr[3]);
+  MHD__gnutls_dump_mpi ("x: ", resarr[4]);
 
   *resarr_len = 5;
 

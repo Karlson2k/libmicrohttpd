@@ -29,7 +29,7 @@
  * They should be used only with null terminated strings.
  */
 void
-_asn1_str_cat (char *dest, size_t dest_tot_size, const char *src)
+MHD__asn1_str_cat (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
   size_t dest_size = strlen (dest);
@@ -49,7 +49,7 @@ _asn1_str_cat (char *dest, size_t dest_tot_size, const char *src)
 }
 
 void
-_asn1_str_cpy (char *dest, size_t dest_tot_size, const char *src)
+MHD__asn1_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
 

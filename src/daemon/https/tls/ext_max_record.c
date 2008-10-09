@@ -32,7 +32,7 @@
 
 /*
  * In case of a server: if a MAX_RECORD_SIZE extension type is received then it stores
- * into the session the new value. The server may use gnutls_get_max_record_size(),
+ * into the session the new value. The server may use MHD_gnutls_get_max_record_size(),
  * in order to access it.
  *
  * In case of a client: If a different max record size (than the default) has
@@ -41,7 +41,7 @@
  */
 
 int
-mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
+MHD_gtls_max_record_recv_params (MHD_gtls_session_t session,
                                  const opaque * data, size_t _data_size)
 {
   ssize_t new_size;
@@ -53,11 +53,11 @@ mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
         {
           DECR_LEN (data_size, 1);
 
-          new_size = mhd_gtls_mre_num2record (data[0]);
+          new_size = MHD_gtls_mre_num2record (data[0]);
 
           if (new_size < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return new_size;
             }
 
@@ -73,16 +73,16 @@ mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
 
           if (data_size != 1)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
             }
 
-          new_size = mhd_gtls_mre_num2record (data[0]);
+          new_size = MHD_gtls_mre_num2record (data[0]);
 
           if (new_size < 0
               || new_size != session->internals.proposed_record_size)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
             }
           else
@@ -102,7 +102,7 @@ mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
 /* returns data_size or a negative number on failure
  */
 int
-mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
+MHD_gtls_max_record_send_params (MHD_gtls_session_t session, opaque * data,
                                  size_t data_size)
 {
   uint16_t len;
@@ -116,12 +116,12 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
           len = 1;
           if (data_size < len)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_SHORT_MEMORY_BUFFER;
             }
 
           data[0] =
-            (uint8_t) mhd_gtls_mre_record2num (session->internals.
+            (uint8_t) MHD_gtls_mre_record2num (session->internals.
                                                proposed_record_size);
           return len;
         }
@@ -137,13 +137,13 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
           len = 1;
           if (data_size < len)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_SHORT_MEMORY_BUFFER;
             }
 
           data[0] =
             (uint8_t)
-            mhd_gtls_mre_record2num
+            MHD_gtls_mre_record2num
             (session->security_parameters.max_record_recv_size);
           return len;
         }
@@ -158,7 +158,7 @@ mhd_gtls_max_record_send_params (mhd_gtls_session_t session, opaque * data,
  * extensions draft.
  */
 int
-mhd_gtls_mre_num2record (int num)
+MHD_gtls_mre_num2record (int num)
 {
   switch (num)
     {
@@ -179,7 +179,7 @@ mhd_gtls_mre_num2record (int num)
  * extensions draft.
  */
 int
-mhd_gtls_mre_record2num (uint16_t record_size)
+MHD_gtls_mre_record2num (uint16_t record_size)
 {
   switch (record_size)
     {

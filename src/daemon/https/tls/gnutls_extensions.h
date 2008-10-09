@@ -24,24 +24,24 @@
 
 #include <gnutls_int.h>
 
-const char *mhd_gtls_extension_get_name (uint16_t type);
-int mhd_gtls_parse_extensions (mhd_gtls_session_t, mhd_gtls_ext_parse_type_t,
+const char *MHD_gtls_extension_get_name (uint16_t type);
+int MHD_gtls_parse_extensions (MHD_gtls_session_t, MHD_gtls_ext_parse_type_t,
                                const opaque *, int);
-int mhd_gtls_gen_extensions (mhd_gtls_session_t session, opaque * data,
+int MHD_gtls_gen_extensions (MHD_gtls_session_t session, opaque * data,
                              size_t data_size);
 
-typedef int (*mhd_gtls_ext_recv_func) (mhd_gtls_session_t, const opaque *, size_t);     /* recv data */
-typedef int (*mhd_gtls_ext_send_func) (mhd_gtls_session_t, opaque *, size_t);   /* send data */
+typedef int (*MHD_gtls_ext_recv_func) (MHD_gtls_session_t, const opaque *, size_t);     /* recv data */
+typedef int (*MHD_gtls_ext_send_func) (MHD_gtls_session_t, opaque *, size_t);   /* send data */
 
-mhd_gtls_ext_send_func mhd_gtls_ext_func_send (uint16_t type);
-mhd_gtls_ext_recv_func mhd_gtls_ext_func_recv (uint16_t type,
-                                               mhd_gtls_ext_parse_type_t);
+MHD_gtls_ext_send_func MHD_gtls_ext_func_send (uint16_t type);
+MHD_gtls_ext_recv_func MHD_gtls_ext_func_recv (uint16_t type,
+                                               MHD_gtls_ext_parse_type_t);
 
 typedef struct
 {
   const char *name;
   uint16_t type;
-  mhd_gtls_ext_parse_type_t parse_type;
-  mhd_gtls_ext_recv_func gnutls_ext_func_recv;
-  mhd_gtls_ext_send_func gnutls_ext_func_send;
-} mhd_gtls_extension_entry;
+  MHD_gtls_ext_parse_type_t parse_type;
+  MHD_gtls_ext_recv_func MHD_gnutls_ext_func_recv;
+  MHD_gtls_ext_send_func MHD_gnutls_ext_func_send;
+} MHD_gtls_extension_entry;

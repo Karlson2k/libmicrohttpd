@@ -43,7 +43,7 @@ extern "C"
   /* (null character included)    */
 
 
-  typedef int asn1_retCode;     /* type returned by libtasn1 functions */
+  typedef int MHD__asn1_retCode;     /* type returned by libtasn1 functions */
 
   /*****************************************/
   /*  Errors returned by libtasn1 functions */
@@ -68,7 +68,7 @@ extern "C"
 #define ASN1_ELEMENT_NOT_EMPTY     17
 
 /*************************************/
-/* Constants used in asn1_visit_tree */
+/* Constants used in MHD__asn1_visit_tree */
 /*************************************/
 #define ASN1_PRINT_NAME             1
 #define ASN1_PRINT_NAME_TYPE        2
@@ -76,7 +76,7 @@ extern "C"
 #define ASN1_PRINT_ALL              4
 
 /*****************************************/
-/* Constants returned by asn1_read_tag   */
+/* Constants returned by MHD__asn1_read_tag   */
 /*****************************************/
 #define ASN1_CLASS_UNIVERSAL        0x00        /* old: 1 */
 #define ASN1_CLASS_APPLICATION      0x40        /* old: 2 */
@@ -85,7 +85,7 @@ extern "C"
 #define ASN1_CLASS_STRUCTURED       0x20
 
 /*****************************************/
-/* Constants returned by asn1_read_tag   */
+/* Constants returned by MHD__asn1_read_tag   */
 /*****************************************/
 #define ASN1_TAG_BOOLEAN          0x01
 #define ASN1_TAG_INTEGER          0x02
@@ -137,106 +137,106 @@ extern "C"
   /*  Functions definitions          */
   /***********************************/
 
-  asn1_retCode asn1_parser2tree (const char *file_name,
+  MHD__asn1_retCode MHD__asn1_parser2tree (const char *file_name,
                                  ASN1_TYPE * definitions,
                                  char *errorDescription);
 
-  asn1_retCode asn1_parser2array (const char *inputFileName,
+  MHD__asn1_retCode MHD__asn1_parser2array (const char *inputFileName,
                                   const char *outputFileName,
                                   const char *vectorName,
                                   char *errorDescription);
 
-  asn1_retCode asn1_array2tree (const ASN1_ARRAY_TYPE * array,
+  MHD__asn1_retCode MHD__asn1_array2tree (const ASN1_ARRAY_TYPE * array,
                                 ASN1_TYPE * definitions,
                                 char *errorDescription);
 
-  void asn1_print_structure (FILE * out, ASN1_TYPE structure,
+  void MHD__asn1_print_structure (FILE * out, ASN1_TYPE structure,
                              const char *name, int mode);
 
-  asn1_retCode asn1_create_element (ASN1_TYPE definitions,
+  MHD__asn1_retCode MHD__asn1_create_element (ASN1_TYPE definitions,
                                     const char *source_name,
                                     ASN1_TYPE * element);
 
-  asn1_retCode asn1_delete_structure (ASN1_TYPE * structure);
+  MHD__asn1_retCode MHD__asn1_delete_structure (ASN1_TYPE * structure);
 
-  asn1_retCode asn1_delete_element (ASN1_TYPE structure,
+  MHD__asn1_retCode MHD__asn1_delete_element (ASN1_TYPE structure,
                                     const char *element_name);
 
-  asn1_retCode asn1_write_value (ASN1_TYPE node_root, const char *name,
+  MHD__asn1_retCode MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
                                  const void *ivalue, int len);
 
-  asn1_retCode asn1_read_value (ASN1_TYPE root, const char *name,
+  MHD__asn1_retCode MHD__asn1_read_value (ASN1_TYPE root, const char *name,
                                 void *ivalue, int *len);
 
-  asn1_retCode asn1_number_of_elements (ASN1_TYPE element, const char *name,
+  MHD__asn1_retCode MHD__asn1_number_of_elements (ASN1_TYPE element, const char *name,
                                         int *num);
 
-  asn1_retCode asn1_der_coding (ASN1_TYPE element, const char *name,
+  MHD__asn1_retCode MHD__asn1_der_coding (ASN1_TYPE element, const char *name,
                                 void *ider, int *len, char *ErrorDescription);
 
-  asn1_retCode asn1_der_decoding (ASN1_TYPE * element, const void *ider,
+  MHD__asn1_retCode MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider,
                                   int len, char *errorDescription);
 
-  asn1_retCode asn1_der_decoding_element (ASN1_TYPE * structure,
+  MHD__asn1_retCode MHD__asn1_der_decoding_element (ASN1_TYPE * structure,
                                           const char *elementName,
                                           const void *ider, int len,
                                           char *errorDescription);
 
-  asn1_retCode asn1_der_decoding_startEnd (ASN1_TYPE element,
+  MHD__asn1_retCode MHD__asn1_der_decoding_startEnd (ASN1_TYPE element,
                                            const void *ider, int len,
                                            const char *name_element,
                                            int *start, int *end);
 
-  asn1_retCode asn1_expand_any_defined_by (ASN1_TYPE definitions,
+  MHD__asn1_retCode MHD__asn1_expand_any_defined_by (ASN1_TYPE definitions,
                                            ASN1_TYPE * element);
 
-  asn1_retCode asn1_expand_octet_string (ASN1_TYPE definitions,
+  MHD__asn1_retCode MHD__asn1_expand_octet_string (ASN1_TYPE definitions,
                                          ASN1_TYPE * element,
                                          const char *octetName,
                                          const char *objectName);
 
-  asn1_retCode asn1_read_tag (node_asn * root, const char *name,
+  MHD__asn1_retCode MHD__asn1_read_tag (node_asn * root, const char *name,
                               int *tagValue, int *classValue);
 
-  const char *asn1_find_structure_from_oid (ASN1_TYPE definitions,
+  const char *MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
                                             const char *oidValue);
 
-  const char *asn1_check_version (const char *req_version);
+  const char *MHD__asn1_check_version (const char *req_version);
 
-  const char *libtasn1_strerror (asn1_retCode error);
+  const char *MHD__libtasn1_strerror (MHD__asn1_retCode error);
 
-  void libtasn1_perror (asn1_retCode error);
+  void MHD__libtasn1_perror (MHD__asn1_retCode error);
 
   /* DER utility functions. */
 
-  int asn1_get_tag_der (const unsigned char *der, int der_len,
+  int MHD__asn1_get_tag_der (const unsigned char *der, int der_len,
                         unsigned char *cls, int *len, unsigned long *tag);
 
-  void asn1_octet_der (const unsigned char *str, int str_len,
+  void MHD__asn1_octet_der (const unsigned char *str, int str_len,
                        unsigned char *der, int *der_len);
 
-  asn1_retCode asn1_get_octet_der (const unsigned char *der, int der_len,
+  MHD__asn1_retCode MHD__asn1_get_octet_der (const unsigned char *der, int der_len,
                                    int *ret_len, unsigned char *str,
                                    int str_size, int *str_len);
 
-  void asn1_bit_der (const unsigned char *str, int bit_len,
+  void MHD__asn1_bit_der (const unsigned char *str, int bit_len,
                      unsigned char *der, int *der_len);
 
-  asn1_retCode asn1_get_bit_der (const unsigned char *der, int der_len,
+  MHD__asn1_retCode MHD__asn1_get_bit_der (const unsigned char *der, int der_len,
                                  int *ret_len, unsigned char *str,
                                  int str_size, int *bit_len);
 
-  signed long asn1_get_length_der (const unsigned char *der, int der_len,
+  signed long MHD__asn1_get_length_der (const unsigned char *der, int der_len,
                                    int *len);
 
-  void asn1_length_der (unsigned long int len, unsigned char *ans,
+  void MHD__asn1_length_der (unsigned long int len, unsigned char *ans,
                         int *ans_len);
 
   /* Other utility functions. */
 
-  ASN1_TYPE asn1_find_node (ASN1_TYPE pointer, const char *name);
+  ASN1_TYPE MHD__asn1_find_node (ASN1_TYPE pointer, const char *name);
 
-  asn1_retCode asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
+  MHD__asn1_retCode MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
                                ASN1_TYPE src, const char *src_name);
 
 #ifdef __cplusplus

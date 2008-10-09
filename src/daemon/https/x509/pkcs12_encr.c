@@ -33,7 +33,7 @@
  * code instead.
  */
 static int
-_pkcs12_check_pass (const char *pass, size_t plen)
+MHD_pkcs12_check_pass (const char *pass, size_t plen)
 {
   const unsigned char *p = pass;
   unsigned int i;
@@ -54,14 +54,14 @@ _pkcs12_check_pass (const char *pass, size_t plen)
  * 1 for encryption key
  */
 int
-_pkcs12_string_to_key (unsigned int id, const opaque * salt,
+MHD_pkcs12_string_to_key (unsigned int id, const opaque * salt,
                        unsigned int salt_size, unsigned int iter,
                        const char *pw, unsigned int req_keylen,
                        opaque * keybuf)
 {
   int rc;
   unsigned int i, j;
-  gc_hash_handle md;
+  MHD_gc_hash_handle md;
   mpi_t num_b1 = NULL;
   unsigned int pwlen;
   opaque hash[20], buf_b[64], buf_i[128], *p;
@@ -77,13 +77,13 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
 
   if (pwlen > 63 / 2)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  if ((rc = _pkcs12_check_pass (pw, pwlen)) < 0)
+  if ((rc = MHD_pkcs12_check_pass (pw, pwlen)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return rc;
     }
 
@@ -106,22 +106,22 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
 
   for (;;)
     {
-      rc = gc_hash_open (GC_SHA1, 0, &md);
+      rc = MHD_gc_hash_open (GC_SHA1, 0, &md);
       if (rc)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_DECRYPTION_FAILED;
         }
       for (i = 0; i < 64; i++)
         {
           unsigned char lid = id & 0xFF;
-          gc_hash_write (md, 1, &lid);
+          MHD_gc_hash_write (md, 1, &lid);
         }
-      gc_hash_write (md, pw ? 128 : 64, buf_i);
-      memcpy (hash, gc_hash_read (md), 20);
-      gc_hash_close (md);
+      MHD_gc_hash_write (md, pw ? 128 : 64, buf_i);
+      memcpy (hash, MHD_gc_hash_read (md), 20);
+      MHD_gc_hash_close (md);
       for (i = 1; i < iter; i++)
-        gc_hash_buffer (GC_SHA1, hash, 20, hash);
+        MHD_gc_hash_buffer (GC_SHA1, hash, 20, hash);
       for (i = 0; i < 20 && cur_keylen < req_keylen; i++)
         keybuf[cur_keylen++] = hash[i];
       if (cur_keylen == req_keylen)
@@ -134,10 +134,10 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
       for (i = 0; i < 64; i++)
         buf_b[i] = hash[i % 20];
       n = 64;
-      rc = mhd_gtls_mpi_scan (&num_b1, buf_b, &n);
+      rc = MHD_gtls_mpi_scan (&num_b1, buf_b, &n);
       if (rc < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return rc;
         }
       gcry_mpi_add_ui (num_b1, num_b1, 1);
@@ -146,19 +146,19 @@ _pkcs12_string_to_key (unsigned int id, const opaque * salt,
           mpi_t num_ij;
 
           n = 64;
-          rc = mhd_gtls_mpi_scan (&num_ij, buf_i + i, &n);
+          rc = MHD_gtls_mpi_scan (&num_ij, buf_i + i, &n);
           if (rc < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return rc;
             }
           gcry_mpi_add (num_ij, num_ij, num_b1);
           gcry_mpi_clear_highbit (num_ij, 64 * 8);
           n = 64;
-          rc = mhd_gtls_mpi_print (buf_i + i, &n, num_ij);
+          rc = MHD_gtls_mpi_print (buf_i + i, &n, num_ij);
           if (rc < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return rc;
             }
           gcry_mpi_release (num_ij);

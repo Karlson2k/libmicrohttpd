@@ -1632,7 +1632,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if HTTPS_SUPPORT
           if (connection->daemon->options & MHD_USE_SSL)
             {
-              ret = MHD_gnutls_record_send (connection->tls_session,
+              ret = MHD__gnutls_record_send (connection->tls_session,
                                             &connection->response->data
                                             [connection->
                                              response_write_position -

@@ -42,85 +42,85 @@
 #include <gnutls_x509.h>
 #include <gc.h>
 
-int _gnutls_gen_rsa_client_kx (mhd_gtls_session_t, opaque **);
-int _gnutls_proc_rsa_client_kx (mhd_gtls_session_t, opaque *, size_t);
+int MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t, opaque **);
+int MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t, opaque *, size_t);
 
-const mhd_gtls_mod_auth_st mhd_gtls_rsa_auth_struct = {
+const MHD_gtls_mod_auth_st MHD_gtls_rsa_auth_struct = {
   "RSA",
-  mhd_gtls_gen_cert_server_certificate,
-  mhd_gtls_gen_cert_client_certificate,
+  MHD_gtls_gen_cert_server_certificate,
+  MHD_gtls_gen_cert_client_certificate,
   NULL,                         /* gen server kx */
-  _gnutls_gen_rsa_client_kx,
-  mhd_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
-  mhd_gtls_gen_cert_server_cert_req,    /* server cert request */
+  MHD__gnutls_gen_rsa_client_kx,
+  MHD_gtls_gen_cert_client_cert_vrfy,   /* gen client cert vrfy */
+  MHD_gtls_gen_cert_server_cert_req,    /* server cert request */
 
-  mhd_gtls_proc_cert_server_certificate,
-  _gnutls_proc_cert_client_certificate,
+  MHD_gtls_proc_cert_server_certificate,
+  MHD__gnutls_proc_cert_client_certificate,
   NULL,                         /* proc server kx */
-  _gnutls_proc_rsa_client_kx,   /* proc client kx */
-  mhd_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
-  mhd_gtls_proc_cert_cert_req   /* proc server cert request */
+  MHD__gnutls_proc_rsa_client_kx,   /* proc client kx */
+  MHD_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
+  MHD_gtls_proc_cert_cert_req   /* proc server cert request */
 };
 
 /* This function reads the RSA parameters from peer's certificate;
  */
 int
-_gnutls_get_public_rsa_params (mhd_gtls_session_t session,
+MHD__gnutls_get_public_rsa_params (MHD_gtls_session_t session,
                                mpi_t params[MAX_PUBLIC_PARAMS_SIZE],
                                int *params_len)
 {
   int ret;
   cert_auth_info_t info;
-  gnutls_cert peer_cert;
+  MHD_gnutls_cert peer_cert;
   int i;
 
   /* normal non export case */
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
 
   if (info == NULL || info->ncerts == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   ret =
-    mhd_gtls_raw_cert_to_gcert (&peer_cert,
+    MHD_gtls_raw_cert_to_gcert (&peer_cert,
                                 session->security_parameters.cert_type,
                                 &info->raw_certificate_list[0],
                                 CERT_ONLY_PUBKEY | CERT_NO_COPY);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
 
   /* EXPORT case: */
-  if (mhd_gtls_cipher_suite_get_kx_algo
+  if (MHD_gtls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)
       == MHD_GNUTLS_KX_RSA_EXPORT
-      && _gnutls_mpi_get_nbits (peer_cert.params[0]) > 512)
+      && MHD__gnutls_mpi_get_nbits (peer_cert.params[0]) > 512)
     {
 
-      mhd_gtls_gcert_deinit (&peer_cert);
+      MHD_gtls_gcert_deinit (&peer_cert);
 
       if (session->key->rsa[0] == NULL || session->key->rsa[1] == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
       if (*params_len < 2)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;
         }
       *params_len = 2;
       for (i = 0; i < *params_len; i++)
         {
-          params[i] = _gnutls_mpi_copy (session->key->rsa[i]);
+          params[i] = MHD__gnutls_mpi_copy (session->key->rsa[i]);
         }
 
       return 0;
@@ -130,16 +130,16 @@ _gnutls_get_public_rsa_params (mhd_gtls_session_t session,
 
   if (*params_len < peer_cert.params_size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
   *params_len = peer_cert.params_size;
 
   for (i = 0; i < *params_len; i++)
     {
-      params[i] = _gnutls_mpi_copy (peer_cert.params[i]);
+      params[i] = MHD__gnutls_mpi_copy (peer_cert.params[i]);
     }
-  mhd_gtls_gcert_deinit (&peer_cert);
+  MHD_gtls_gcert_deinit (&peer_cert);
 
   return 0;
 }
@@ -147,43 +147,43 @@ _gnutls_get_public_rsa_params (mhd_gtls_session_t session,
 /* This function reads the RSA parameters from the private key
  */
 int
-_gnutls_get_private_rsa_params (mhd_gtls_session_t session,
+MHD__gnutls_get_private_rsa_params (MHD_gtls_session_t session,
                                 mpi_t ** params, int *params_size)
 {
   int bits;
-  mhd_gtls_cert_credentials_t cred;
-  mhd_gtls_rsa_params_t rsa_params;
+  MHD_gtls_cert_credentials_t cred;
+  MHD_gtls_rsa_params_t rsa_params;
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
   if (session->internals.selected_cert_list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
   bits =
-    _gnutls_mpi_get_nbits (session->internals.selected_cert_list[0].
+    MHD__gnutls_mpi_get_nbits (session->internals.selected_cert_list[0].
                            params[0]);
 
-  if (mhd_gtls_cipher_suite_get_kx_algo
+  if (MHD_gtls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)
       == MHD_GNUTLS_KX_RSA_EXPORT && bits > 512)
     {
 
       rsa_params =
-        mhd_gtls_certificate_get_rsa_params (cred->rsa_params,
+        MHD_gtls_certificate_get_rsa_params (cred->rsa_params,
                                              cred->params_func, session);
       /* EXPORT case: */
       if (rsa_params == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_NO_TEMPORARY_RSA_PARAMS;
         }
 
@@ -206,18 +206,18 @@ _gnutls_get_private_rsa_params (mhd_gtls_session_t session,
 }
 
 int
-_gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
+MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t session, opaque * data,
                             size_t _data_size)
 {
-  gnutls_datum_t plaintext;
-  gnutls_datum_t ciphertext;
+  MHD_gnutls_datum_t plaintext;
+  MHD_gnutls_datum_t ciphertext;
   int ret, dsize;
   mpi_t *params;
   int params_len;
   int randomize_key = 0;
   ssize_t data_size = _data_size;
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
+  if (MHD__gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       /* SSL 3.0
        */
@@ -230,24 +230,24 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
        */
       DECR_LEN (data_size, 2);
       ciphertext.data = &data[2];
-      dsize = mhd_gtls_read_uint16 (data);
+      dsize = MHD_gtls_read_uint16 (data);
 
       if (dsize != data_size)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
         }
       ciphertext.size = dsize;
     }
 
-  ret = _gnutls_get_private_rsa_params (session, &params, &params_len);
+  ret = MHD__gnutls_get_private_rsa_params (session, &params, &params_len);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = mhd_gtls_pkcs1_rsa_decrypt (&plaintext, &ciphertext, params, params_len, 2);    /* btype==2 */
+  ret = MHD_gtls_pkcs1_rsa_decrypt (&plaintext, &ciphertext, params, params_len, 2);    /* btype==2 */
 
   if (ret < 0 || plaintext.size != TLS_MASTER_SIZE)
     {
@@ -255,8 +255,8 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
        * the peer. Just use a random key. (in order to avoid
        * attack against pkcs-1 formating).
        */
-      gnutls_assert ();
-      _gnutls_x509_log ("auth_rsa: Possible PKCS #1 format attack\n");
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("auth_rsa: Possible PKCS #1 format attack\n");
       randomize_key = 1;
     }
   else
@@ -264,8 +264,8 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
       /* If the secret was properly formatted, then
        * check the version number.
        */
-      if (_gnutls_get_adv_version_major (session) != plaintext.data[0]
-          || _gnutls_get_adv_version_minor (session) != plaintext.data[1])
+      if (MHD__gnutls_get_adv_version_major (session) != plaintext.data[0]
+          || MHD__gnutls_get_adv_version_minor (session) != plaintext.data[1])
         {
           /* No error is returned here, if the version number check
            * fails. We proceed normally.
@@ -273,8 +273,8 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
            * "Attacking RSA-based sessions in SSL/TLS" by Vlastimil Klima,
            * Ondej Pokorny and Tomas Rosa.
            */
-          gnutls_assert ();
-          _gnutls_x509_log
+          MHD_gnutls_assert ();
+          MHD__gnutls_x509_log
             ("auth_rsa: Possible PKCS #1 version check format attack\n");
         }
     }
@@ -282,18 +282,18 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
   if (randomize_key != 0)
     {
       session->key->key.size = TLS_MASTER_SIZE;
-      session->key->key.data = gnutls_malloc (session->key->key.size);
+      session->key->key.data = MHD_gnutls_malloc (session->key->key.size);
       if (session->key->key.data == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
 
       /* we do not need strong random numbers here.
        */
-      if (gc_nonce (session->key->key.data, session->key->key.size) != GC_OK)
+      if (MHD_gc_nonce (session->key->key.data, session->key->key.size) != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
         }
 
@@ -307,8 +307,8 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
   /* This is here to avoid the version check attack
    * discussed above.
    */
-  session->key->key.data[0] = _gnutls_get_adv_version_major (session);
-  session->key->key.data[1] = _gnutls_get_adv_version_minor (session);
+  session->key->key.data[0] = MHD__gnutls_get_adv_version_major (session);
+  session->key->key.data[1] = MHD__gnutls_get_adv_version_minor (session);
 
   return 0;
 }
@@ -318,46 +318,53 @@ _gnutls_proc_rsa_client_kx (mhd_gtls_session_t session, opaque * data,
 /* return RSA(random) using the peers public key
  */
 int
-_gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
+MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t session, opaque ** data)
 {
-  cert_auth_info_t auth = session->key->auth_info;
-  gnutls_datum_t sdata;         /* data to send */
+  cert_auth_info_t auth;
+  MHD_gnutls_datum_t sdata;         /* data to send */
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE];
   int params_len = MAX_PUBLIC_PARAMS_SIZE;
   int ret, i;
   enum MHD_GNUTLS_Protocol ver;
 
+  if (session->key == NULL)
+    {
+      MHD_gnutls_assert ();
+      return GNUTLS_E_INSUFFICIENT_CREDENTIALS;  
+    }
+
+  auth = session->key->auth_info;
   if (auth == NULL)
     {
       /* this shouldn't have happened. The proc_certificate
        * function should have detected that.
        */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
   session->key->key.size = TLS_MASTER_SIZE;
-  session->key->key.data = gnutls_secure_malloc (session->key->key.size);
+  session->key->key.data = MHD_gnutls_secure_malloc (session->key->key.size);
 
   if (session->key->key.data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  if (gc_pseudo_random (session->key->key.data,
+  if (MHD_gc_pseudo_random (session->key->key.data,
                         session->key->key.size) != GC_OK)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
     }
 
-  ver = mhd_gtls_get_adv_version (session);
+  ver = MHD_gtls_get_adv_version (session);
 
   if (session->internals.rsa_pms_version[0] == 0)
     {
-      session->key->key.data[0] = mhd_gtls_version_get_major (ver);
-      session->key->key.data[1] = mhd_gtls_version_get_minor (ver);
+      session->key->key.data[0] = MHD_gtls_version_get_major (ver);
+      session->key->key.data[1] = MHD_gtls_version_get_minor (ver);
     }
   else
     {                           /* use the version provided */
@@ -368,24 +375,24 @@ _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
   /* move RSA parameters to key (session).
    */
   if ((ret =
-       _gnutls_get_public_rsa_params (session, params, &params_len)) < 0)
+       MHD__gnutls_get_public_rsa_params (session, params, &params_len)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   if ((ret =
-       mhd_gtls_pkcs1_rsa_encrypt (&sdata, &session->key->key,
+       MHD_gtls_pkcs1_rsa_encrypt (&sdata, &session->key->key,
                                    params, params_len, 2)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   for (i = 0; i < params_len; i++)
-    mhd_gtls_mpi_release (&params[i]);
+    MHD_gtls_mpi_release (&params[i]);
 
-  if (MHD_gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
+  if (MHD__gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
     {
       /* SSL 3.0 */
       *data = sdata.data;
@@ -393,15 +400,15 @@ _gnutls_gen_rsa_client_kx (mhd_gtls_session_t session, opaque ** data)
     }
   else
     {                           /* TLS 1 */
-      *data = gnutls_malloc (sdata.size + 2);
+      *data = MHD_gnutls_malloc (sdata.size + 2);
       if (*data == NULL)
         {
-          _gnutls_free_datum (&sdata);
+          MHD__gnutls_free_datum (&sdata);
           return GNUTLS_E_MEMORY_ERROR;
         }
-      mhd_gtls_write_datum16 (*data, sdata);
+      MHD_gtls_write_datum16 (*data, sdata);
       ret = sdata.size + 2;
-      _gnutls_free_datum (&sdata);
+      MHD__gnutls_free_datum (&sdata);
       return ret;
     }
 

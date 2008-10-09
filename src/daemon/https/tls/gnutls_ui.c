@@ -37,8 +37,8 @@
 /* ANON & DHE */
 
 /**
- * MHD_gnutls_dh_set_prime_bits - Used to set the bits for a DH ciphersuite
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_dh_set_prime_bits - Used to set the bits for a DH ciphersuite
+ * @session: is a #MHD_gtls_session_t structure.
  * @bits: is the number of bits
  *
  * This function sets the number of bits, for use in an
@@ -53,13 +53,13 @@
  *
  **/
 void
-MHD_gnutls_dh_set_prime_bits (mhd_gtls_session_t session, unsigned int bits)
+MHD__gnutls_dh_set_prime_bits (MHD_gtls_session_t session, unsigned int bits)
 {
   session->internals.dh_prime_bits = bits;
 }
 
 /**
- * MHD_gnutls_dh_get_group - This function returns the group of the DH authentication
+ * MHD__gnutls_dh_get_group - This function returns the group of the DH authentication
  * @session: is a gnutls session
  * @raw_gen: will hold the generator.
  * @raw_prime: will hold the prime.
@@ -67,16 +67,16 @@ MHD_gnutls_dh_set_prime_bits (mhd_gtls_session_t session, unsigned int bits)
  * This function will return the group parameters used in the last Diffie Hellman
  * authentication with the peer. These are the prime and the generator used.
  * This function should be used for both anonymous and ephemeral diffie Hellman.
- * The output parameters must be freed with gnutls_free().
+ * The output parameters must be freed with MHD_gnutls_free().
  *
  * Returns a negative value in case of an error.
  *
  **/
 int
-MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
-                         gnutls_datum_t * raw_gen, gnutls_datum_t * raw_prime)
+MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
+                         MHD_gnutls_datum_t * raw_gen, MHD_gnutls_datum_t * raw_prime)
 {
-  mhd_gtls_dh_info_st *dh;
+  MHD_gtls_dh_info_st *dh;
   int ret;
   mhd_anon_auth_info_t anon_info;
   cert_auth_info_t cert_info;
@@ -84,34 +84,34 @@ MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
   switch (MHD_gtls_auth_get_type (session))
     {
     case MHD_GNUTLS_CRD_ANON:
-      anon_info = mhd_gtls_get_auth_info (session);
+      anon_info = MHD_gtls_get_auth_info (session);
       if (anon_info == NULL)
         return GNUTLS_E_INTERNAL_ERROR;
       dh = &anon_info->dh;
       break;
     case MHD_GNUTLS_CRD_CERTIFICATE:
-      cert_info = mhd_gtls_get_auth_info (session);
+      cert_info = MHD_gtls_get_auth_info (session);
       if (cert_info == NULL)
         return GNUTLS_E_INTERNAL_ERROR;
       dh = &cert_info->dh;
       break;
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  ret = _gnutls_set_datum (raw_prime, dh->prime.data, dh->prime.size);
+  ret = MHD__gnutls_set_datum (raw_prime, dh->prime.data, dh->prime.size);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = _gnutls_set_datum (raw_gen, dh->generator.data, dh->generator.size);
+  ret = MHD__gnutls_set_datum (raw_gen, dh->generator.data, dh->generator.size);
   if (ret < 0)
     {
-      gnutls_assert ();
-      _gnutls_free_datum (raw_prime);
+      MHD_gnutls_assert ();
+      MHD__gnutls_free_datum (raw_prime);
       return ret;
     }
 
@@ -119,22 +119,22 @@ MHD_gnutls_dh_get_group (mhd_gtls_session_t session,
 }
 
 /**
- * MHD_gnutls_dh_get_pubkey - This function returns the peer's public key used in DH authentication
+ * MHD__gnutls_dh_get_pubkey - This function returns the peer's public key used in DH authentication
  * @session: is a gnutls session
  * @raw_key: will hold the public key.
  *
  * This function will return the peer's public key used in the last Diffie Hellman authentication.
  * This function should be used for both anonymous and ephemeral diffie Hellman.
- * The output parameters must be freed with gnutls_free().
+ * The output parameters must be freed with MHD_gnutls_free().
  *
  * Returns a negative value in case of an error.
  *
  **/
 int
-MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
-                          gnutls_datum_t * raw_key)
+MHD__gnutls_dh_get_pubkey (MHD_gtls_session_t session,
+                          MHD_gnutls_datum_t * raw_key)
 {
-  mhd_gtls_dh_info_st *dh;
+  MHD_gtls_dh_info_st *dh;
   mhd_anon_auth_info_t anon_info;
   cert_auth_info_t cert_info;
   cert_auth_info_t psk_info;
@@ -143,7 +143,7 @@ MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
     {
     case MHD_GNUTLS_CRD_ANON:
       {
-        anon_info = mhd_gtls_get_auth_info (session);
+        anon_info = MHD_gtls_get_auth_info (session);
         if (anon_info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
         dh = &anon_info->dh;
@@ -151,7 +151,7 @@ MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
       }
     case MHD_GNUTLS_CRD_PSK:
       {
-        psk_info = mhd_gtls_get_auth_info (session);
+        psk_info = MHD_gtls_get_auth_info (session);
         if (psk_info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
         dh = &psk_info->dh;
@@ -160,18 +160,18 @@ MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
 
-        cert_info = mhd_gtls_get_auth_info (session);
+        cert_info = MHD_gtls_get_auth_info (session);
         if (cert_info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
         dh = &cert_info->dh;
         break;
       }
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_set_datum (raw_key, dh->public_key.data,
+  return MHD__gnutls_set_datum (raw_key, dh->public_key.data,
                             dh->public_key.size);
 }
 
@@ -183,39 +183,39 @@ MHD_gnutls_dh_get_pubkey (mhd_gtls_session_t session,
  *
  * This function will return the peer's public key exponent and
  * modulus used in the last RSA-EXPORT authentication.  The output
- * parameters must be freed with gnutls_free().
+ * parameters must be freed with MHD_gnutls_free().
  *
  * Returns a negative value in case of an error.
  *
  **/
 int
-MHD_gtls_rsa_export_get_pubkey (mhd_gtls_session_t session,
-                                gnutls_datum_t * exponent,
-                                gnutls_datum_t * modulus)
+MHD_gtls_rsa_export_get_pubkey (MHD_gtls_session_t session,
+                                MHD_gnutls_datum_t * exponent,
+                                MHD_gnutls_datum_t * modulus)
 {
   cert_auth_info_t info;
   int ret;
 
   if (MHD_gtls_auth_get_type (session) == MHD_GNUTLS_CRD_CERTIFICATE)
     {
-      info = mhd_gtls_get_auth_info (session);
+      info = MHD_gtls_get_auth_info (session);
       if (info == NULL)
         return GNUTLS_E_INTERNAL_ERROR;
 
-      ret = _gnutls_set_datum (modulus, info->rsa_export.modulus.data,
+      ret = MHD__gnutls_set_datum (modulus, info->rsa_export.modulus.data,
                                info->rsa_export.modulus.size);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
 
-      ret = _gnutls_set_datum (exponent, info->rsa_export.exponent.data,
+      ret = MHD__gnutls_set_datum (exponent, info->rsa_export.exponent.data,
                                info->rsa_export.exponent.size);
       if (ret < 0)
         {
-          gnutls_assert ();
-          _gnutls_free_datum (modulus);
+          MHD_gnutls_assert ();
+          MHD__gnutls_free_datum (modulus);
           return ret;
         }
 
@@ -226,7 +226,7 @@ MHD_gtls_rsa_export_get_pubkey (mhd_gtls_session_t session,
 }
 
 /**
- * MHD_gnutls_dh_get_secret_bits - This function returns the bits used in DH authentication
+ * MHD__gnutls_dh_get_secret_bits - This function returns the bits used in DH authentication
  * @session: is a gnutls session
  *
  * This function will return the bits used in the last Diffie Hellman authentication
@@ -235,7 +235,7 @@ MHD_gtls_rsa_export_get_pubkey (mhd_gtls_session_t session,
  *
  **/
 int
-MHD_gnutls_dh_get_secret_bits (mhd_gtls_session_t session)
+MHD__gnutls_dh_get_secret_bits (MHD_gtls_session_t session)
 {
   switch (MHD_gtls_auth_get_type (session))
     {
@@ -243,7 +243,7 @@ MHD_gnutls_dh_get_secret_bits (mhd_gtls_session_t session)
       {
         mhd_anon_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
         return info->dh.secret_bits;
@@ -252,20 +252,20 @@ MHD_gnutls_dh_get_secret_bits (mhd_gtls_session_t session)
       {
         cert_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
 
         return info->dh.secret_bits;
       }
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 }
 
 /**
- * MHD_gnutls_dh_get_prime_bits - This function returns the bits used in DH authentication
+ * MHD__gnutls_dh_get_prime_bits - This function returns the bits used in DH authentication
  * @session: is a gnutls session
  *
  * This function will return the bits of the prime used in the last Diffie Hellman authentication
@@ -274,9 +274,9 @@ MHD_gnutls_dh_get_secret_bits (mhd_gtls_session_t session)
  *
  **/
 int
-MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
+MHD__gnutls_dh_get_prime_bits (MHD_gtls_session_t session)
 {
-  mhd_gtls_dh_info_st *dh;
+  MHD_gtls_dh_info_st *dh;
 
   switch (MHD_gtls_auth_get_type (session))
     {
@@ -284,7 +284,7 @@ MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
       {
         mhd_anon_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
         dh = &info->dh;
@@ -294,7 +294,7 @@ MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
       {
         cert_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
 
@@ -302,7 +302,7 @@ MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
         break;
       }
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -320,11 +320,11 @@ MHD_gnutls_dh_get_prime_bits (mhd_gtls_session_t session)
  *
  **/
 int
-MHD_gtls_rsa_export_get_modulus_bits (mhd_gtls_session_t session)
+MHD_gtls_rsa_export_get_modulus_bits (MHD_gtls_session_t session)
 {
   cert_auth_info_t info;
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     return GNUTLS_E_INTERNAL_ERROR;
 
@@ -332,7 +332,7 @@ MHD_gtls_rsa_export_get_modulus_bits (mhd_gtls_session_t session)
 }
 
 /**
- * MHD_gnutls_dh_get_peers_public_bits - This function returns the bits used in DH authentication
+ * MHD__gnutls_dh_get_peers_public_bits - This function returns the bits used in DH authentication
  * @session: is a gnutls session
  *
  * This function will return the bits used in the last Diffie Hellman authentication
@@ -341,9 +341,9 @@ MHD_gtls_rsa_export_get_modulus_bits (mhd_gtls_session_t session)
  *
  **/
 int
-MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
+MHD__gnutls_dh_get_peers_public_bits (MHD_gtls_session_t session)
 {
-  mhd_gtls_dh_info_st *dh;
+  MHD_gtls_dh_info_st *dh;
 
   switch (MHD_gtls_auth_get_type (session))
     {
@@ -351,7 +351,7 @@ MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
       {
         mhd_anon_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
 
@@ -362,7 +362,7 @@ MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
       {
         cert_auth_info_t info;
 
-        info = mhd_gtls_get_auth_info (session);
+        info = MHD_gtls_get_auth_info (session);
         if (info == NULL)
           return GNUTLS_E_INTERNAL_ERROR;
 
@@ -370,7 +370,7 @@ MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
         break;
       }
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -391,20 +391,20 @@ MHD_gnutls_dh_get_peers_public_bits (mhd_gtls_session_t session)
  * Returns NULL in case of an error, or if no certificate was used.
  *
  **/
-const gnutls_datum_t *
-MHD_gtls_certificate_get_ours (mhd_gtls_session_t session)
+const MHD_gnutls_datum_t *
+MHD_gtls_certificate_get_ours (MHD_gtls_session_t session)
 {
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, NULL);
 
   cred
-    = (mhd_gtls_cert_credentials_t) mhd_gtls_get_cred (session->key,
+    = (MHD_gtls_cert_credentials_t) MHD_gtls_get_cred (session->key,
                                                        MHD_GNUTLS_CRD_CERTIFICATE,
                                                        NULL);
   if (cred == NULL || cred->cert_list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
@@ -431,15 +431,15 @@ MHD_gtls_certificate_get_ours (mhd_gtls_session_t session)
  * Returns NULL in case of an error, or if no certificate was sent.
  *
  **/
-const gnutls_datum_t *
-MHD_gtls_certificate_get_peers (mhd_gtls_session_t
+const MHD_gnutls_datum_t *
+MHD_gtls_certificate_get_peers (MHD_gtls_session_t
                                 session, unsigned int *list_size)
 {
   cert_auth_info_t info;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, NULL);
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     return NULL;
 
@@ -457,20 +457,20 @@ MHD_gtls_certificate_get_peers (mhd_gtls_session_t
  *
  **/
 int
-MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
+MHD_gtls_certificate_client_get_request_status (MHD_gtls_session_t session)
 {
   cert_auth_info_t info;
 
   CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, 0);
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
   if (info == NULL)
     return GNUTLS_E_INTERNAL_ERROR;
   return info->certificate_requested;
 }
 
 /**
- * MHD_gnutls_fingerprint - This function calculates the fingerprint of the given data
+ * MHD__gnutls_fingerprint - This function calculates the fingerprint of the given data
  * @algo: is a digest algorithm
  * @data: is the data
  * @result: is the place where the result will be copied (may be null).
@@ -490,12 +490,12 @@ MHD_gtls_certificate_client_get_request_status (mhd_gtls_session_t session)
  *
  **/
 int
-MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
-                        const gnutls_datum_t * data,
+MHD__gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
+                        const MHD_gnutls_datum_t * data,
                         void *result, size_t * result_size)
 {
   GNUTLS_HASH_HANDLE td;
-  int hash_len = mhd_gnutls_hash_get_algo_len (HASH2MAC (algo));
+  int hash_len = MHD_gnutls_hash_get_algo_len (HASH2MAC (algo));
 
   if (hash_len < 0 || (unsigned) hash_len > *result_size || result == NULL)
     {
@@ -506,21 +506,21 @@ MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
 
   if (result)
     {
-      td = mhd_gtls_hash_init (HASH2MAC (algo));
+      td = MHD_gtls_hash_init (HASH2MAC (algo));
       if (td == NULL)
         return GNUTLS_E_HASH_FAILED;
 
-      mhd_gnutls_hash (td, data->data, data->size);
+      MHD_gnutls_hash (td, data->data, data->size);
 
-      mhd_gnutls_hash_deinit (td, result);
+      MHD_gnutls_hash_deinit (td, result);
     }
 
   return 0;
 }
 
 /**
- * MHD_gnutls_certificate_set_dh_params - This function will set the DH parameters for a server to use
- * @res: is a mhd_gtls_cert_credentials_t structure
+ * MHD__gnutls_certificate_set_dh_params - This function will set the DH parameters for a server to use
+ * @res: is a MHD_gtls_cert_credentials_t structure
  * @dh_params: is a structure that holds diffie hellman parameters.
  *
  * This function will set the diffie hellman parameters for a
@@ -532,15 +532,15 @@ MHD_gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
  *
  **/
 void
-MHD_gnutls_certificate_set_dh_params (mhd_gtls_cert_credentials_t res,
-                                      mhd_gtls_dh_params_t dh_params)
+MHD__gnutls_certificate_set_dh_params (MHD_gtls_cert_credentials_t res,
+                                      MHD_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
 
 /**
- * gnutls_certificate_set_params_function - This function will set the DH or RSA parameters callback
- * @res: is a mhd_gtls_cert_credentials_t structure
+ * MHD_gnutls_certificate_set_params_function - This function will set the DH or RSA parameters callback
+ * @res: is a MHD_gtls_cert_credentials_t structure
  * @func: is the function to be called
  *
  * This function will set a callback in order for the server to get the
@@ -549,32 +549,32 @@ MHD_gnutls_certificate_set_dh_params (mhd_gtls_cert_credentials_t res,
  *
  **/
 void
-gnutls_certificate_set_params_function (mhd_gtls_cert_credentials_t res,
-                                        gnutls_params_function * func)
+MHD_gnutls_certificate_set_params_function (MHD_gtls_cert_credentials_t res,
+                                        MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }
 
 /**
- * MHD_gnutls_certificate_set_verify_flags - This function will set the flags to be used at certificate verification
- * @res: is a mhd_gtls_cert_credentials_t structure
+ * MHD__gnutls_certificate_set_verify_flags - This function will set the flags to be used at certificate verification
+ * @res: is a MHD_gtls_cert_credentials_t structure
  * @flags: are the flags
  *
  * This function will set the flags to be used at verification of the
  * certificates.  Flags must be OR of the
- * #gnutls_certificate_verify_flags enumerations.
+ * #MHD_gnutls_certificate_verify_flags enumerations.
  *
  **/
 void
-MHD_gnutls_certificate_set_verify_flags (mhd_gtls_cert_credentials_t
+MHD__gnutls_certificate_set_verify_flags (MHD_gtls_cert_credentials_t
                                          res, unsigned int flags)
 {
   res->verify_flags = flags;
 }
 
 /**
- * MHD_gnutls_certificate_set_verify_limits - This function will set the upper limits to be used at certificate verification
- * @res: is a gnutls_certificate_credentials structure
+ * MHD__gnutls_certificate_set_verify_limits - This function will set the upper limits to be used at certificate verification
+ * @res: is a MHD_gnutls_certificate_credentials structure
  * @max_bits: is the number of bits of an acceptable certificate (default 8200)
  * @max_depth: is maximum depth of the verification of a certificate chain (default 5)
  *
@@ -584,7 +584,7 @@ MHD_gnutls_certificate_set_verify_flags (mhd_gtls_cert_credentials_t
  *
  **/
 void
-MHD_gnutls_certificate_set_verify_limits (mhd_gtls_cert_credentials_t
+MHD__gnutls_certificate_set_verify_limits (MHD_gtls_cert_credentials_t
                                           res,
                                           unsigned int max_bits,
                                           unsigned int max_depth)
@@ -594,8 +594,8 @@ MHD_gnutls_certificate_set_verify_limits (mhd_gtls_cert_credentials_t
 }
 
 /**
- * MHD_gnutls_certificate_set_rsa_export_params - This function will set the RSA parameters for a server to use
- * @res: is a mhd_gtls_cert_credentials_t structure
+ * MHD__gnutls_certificate_set_rsa_export_params - This function will set the RSA parameters for a server to use
+ * @res: is a MHD_gtls_cert_credentials_t structure
  * @rsa_params: is a structure that holds temporary RSA parameters.
  *
  * This function will set the temporary RSA parameters for a certificate
@@ -604,17 +604,17 @@ MHD_gnutls_certificate_set_verify_limits (mhd_gtls_cert_credentials_t
  *
  **/
 void
-MHD_gnutls_certificate_set_rsa_export_params (mhd_gtls_cert_credentials_t
+MHD__gnutls_certificate_set_rsa_export_params (MHD_gtls_cert_credentials_t
                                               res,
-                                              mhd_gtls_rsa_params_t
+                                              MHD_gtls_rsa_params_t
                                               rsa_params)
 {
   res->rsa_params = rsa_params;
 }
 
 /**
- * gnutls_anon_set_params_function - This function will set the DH or RSA parameters callback
- * @res: is a mhd_gtls_anon_server_credentials_t structure
+ * MHD_gnutls_anon_set_params_function - This function will set the DH or RSA parameters callback
+ * @res: is a MHD_gtls_anon_server_credentials_t structure
  * @func: is the function to be called
  *
  * This function will set a callback in order for the server to get the
@@ -623,8 +623,8 @@ MHD_gnutls_certificate_set_rsa_export_params (mhd_gtls_cert_credentials_t
  *
  **/
 void
-gnutls_anon_set_params_function (mhd_gtls_anon_server_credentials_t res,
-                                 gnutls_params_function * func)
+MHD_gnutls_anon_set_params_function (MHD_gtls_anon_server_credentials_t res,
+                                 MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }

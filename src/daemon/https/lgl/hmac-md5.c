@@ -30,11 +30,11 @@
 #define OPAD 0x5c
 
 int
-hmac_md5 (const void *key, size_t keylen,
+MHD_hmac_md5 (const void *key, size_t keylen,
           const void *in, size_t inlen, void *resbuf)
 {
-  struct md5_ctx inner;
-  struct md5_ctx outer;
+  struct MHD_md5_ctx inner;
+  struct MHD_md5_ctx outer;
   char optkeybuf[16];
   char block[64];
   char innerhash[16];
@@ -43,11 +43,11 @@ hmac_md5 (const void *key, size_t keylen,
 
   if (keylen > 64)
     {
-      struct md5_ctx keyhash;
+      struct MHD_md5_ctx keyhash;
 
-      md5_init_ctx (&keyhash);
-      md5_process_bytes (key, keylen, &keyhash);
-      md5_finish_ctx (&keyhash, optkeybuf);
+      MHD_md5_init_ctx (&keyhash);
+      MHD_md5_process_bytes (key, keylen, &keyhash);
+      MHD_md5_finish_ctx (&keyhash, optkeybuf);
 
       key = optkeybuf;
       keylen = 16;
@@ -55,27 +55,27 @@ hmac_md5 (const void *key, size_t keylen,
 
   /* Compute INNERHASH from KEY and IN.  */
 
-  md5_init_ctx (&inner);
+  MHD_md5_init_ctx (&inner);
 
   memset (block, IPAD, sizeof (block));
-  memxor (block, key, keylen);
+  MHD_memxor (block, key, keylen);
 
-  md5_process_block (block, 64, &inner);
-  md5_process_bytes (in, inlen, &inner);
+  MHD_md5_process_block (block, 64, &inner);
+  MHD_md5_process_bytes (in, inlen, &inner);
 
-  md5_finish_ctx (&inner, innerhash);
+  MHD_md5_finish_ctx (&inner, innerhash);
 
   /* Compute result from KEY and INNERHASH.  */
 
-  md5_init_ctx (&outer);
+  MHD_md5_init_ctx (&outer);
 
   memset (block, OPAD, sizeof (block));
-  memxor (block, key, keylen);
+  MHD_memxor (block, key, keylen);
 
-  md5_process_block (block, 64, &outer);
-  md5_process_bytes (innerhash, 16, &outer);
+  MHD_md5_process_block (block, 64, &outer);
+  MHD_md5_process_bytes (innerhash, 16, &outer);
 
-  md5_finish_ctx (&outer, resbuf);
+  MHD_md5_finish_ctx (&outer, resbuf);
 
   return 0;
 }

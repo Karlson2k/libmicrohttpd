@@ -22,7 +22,7 @@
  *
  */
 
-int mhd_gtls_session_pack (mhd_gtls_session_t session,
-                           gnutls_datum_t * packed_session);
-int mhd_gtls_session_unpack (mhd_gtls_session_t session,
-                             const gnutls_datum_t * packed_session);
+int MHD_gtls_session_pack (MHD_gtls_session_t session,
+                           MHD_gnutls_datum_t * packed_session);
+int MHD_gtls_session_unpack (MHD_gtls_session_t session,
+                             const MHD_gnutls_datum_t * packed_session);

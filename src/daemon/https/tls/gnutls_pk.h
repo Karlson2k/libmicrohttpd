@@ -25,22 +25,22 @@
 #ifndef GNUTLS_PK_H
 #define GNUTLS_PK_H
 
-int mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
-                                const gnutls_datum_t * plaintext,
+int MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
+                                const MHD_gnutls_datum_t * plaintext,
                                 mpi_t * params, unsigned params_len,
                                 unsigned btype);
-int mhd_gtls_dsa_sign (gnutls_datum_t * signature,
-                       const gnutls_datum_t * plaintext, mpi_t * params,
+int MHD_gtls_dsa_sign (MHD_gnutls_datum_t * signature,
+                       const MHD_gnutls_datum_t * plaintext, mpi_t * params,
                        unsigned params_len);
-int mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
-                                const gnutls_datum_t * ciphertext,
+int MHD_gtls_pkcs1_rsa_decrypt (MHD_gnutls_datum_t * plaintext,
+                                const MHD_gnutls_datum_t * ciphertext,
                                 mpi_t * params, unsigned params_len,
                                 unsigned btype);
-int mhd_gtls_rsa_verify (const gnutls_datum_t * vdata,
-                         const gnutls_datum_t * ciphertext, mpi_t * params,
+int MHD_gtls_rsa_verify (const MHD_gnutls_datum_t * vdata,
+                         const MHD_gnutls_datum_t * ciphertext, mpi_t * params,
                          int params_len, int btype);
-int mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
-                         const gnutls_datum_t * sig_value, mpi_t * params,
+int MHD_gtls_dsa_verify (const MHD_gnutls_datum_t * vdata,
+                         const MHD_gnutls_datum_t * sig_value, mpi_t * params,
                          int params_len);
 
 #endif /* GNUTLS_PK_H */

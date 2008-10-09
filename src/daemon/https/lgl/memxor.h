@@ -1,4 +1,4 @@
-/* memxor.h -- perform binary exclusive OR operation on memory blocks.
+/* MHD_memxor.h -- perform binary exclusive OR operation on memory blocks.
    Copyright (C) 2005 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software Foundation,
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
-/* Written by Simon Josefsson.  The interface was inspired by memxor
+/* Written by Simon Josefsson.  The interface was inspired by MHD_memxor
    in Niels Möller's Nettle. */
 
 #ifndef MEMXOR_H
@@ -26,6 +26,6 @@
 /* Compute binary exclusive OR of memory areas DEST and SRC, putting
    the result in DEST, of length N bytes.  Returns a pointer to
    DEST. */
-void *memxor (void *restrict dest, const void *restrict src, size_t n);
+void *MHD_memxor (void *restrict dest, const void *restrict src, size_t n);
 
 #endif /* MEMXOR_H */

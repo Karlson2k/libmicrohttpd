@@ -35,11 +35,11 @@
 #include <gstr.h>
 
 
-extern char _asn1_identifierMissing[];
+extern char MHD__asn1_identifierMissing[];
 
 
 /******************************************************/
-/* Function : _asn1_add_node_only                     */
+/* Function : MHD__asn1_add_node_only                     */
 /* Description: creates a new NODE_ASN element.       */
 /* Parameters:                                        */
 /*   type: type of the new element (see TYPE_         */
@@ -47,11 +47,11 @@ extern char _asn1_identifierMissing[];
 /* Return: pointer to the new element.                */
 /******************************************************/
 node_asn *
-_asn1_add_node_only (unsigned int type)
+MHD__asn1_add_node_only (unsigned int type)
 {
   node_asn *punt;
 
-  punt = (node_asn *) _asn1_calloc (1, sizeof (node_asn));
+  punt = (node_asn *) MHD__asn1_calloc (1, sizeof (node_asn));
   if (punt == NULL)
     return NULL;
 
@@ -62,7 +62,7 @@ _asn1_add_node_only (unsigned int type)
 
 
 /******************************************************************/
-/* Function : _asn1_find_left                                     */
+/* Function : MHD__asn1_find_left                                     */
 /* Description: returns the NODE_ASN element with RIGHT field that*/
 /*              points the element NODE.                          */
 /* Parameters:                                                    */
@@ -70,7 +70,7 @@ _asn1_add_node_only (unsigned int type)
 /* Return: NULL if not found.                                     */
 /******************************************************************/
 node_asn *
-_asn1_find_left (node_asn * node)
+MHD__asn1_find_left (node_asn * node)
 {
   if ((node == NULL) || (node->left == NULL) || (node->left->down == node))
     return NULL;
@@ -79,8 +79,8 @@ _asn1_find_left (node_asn * node)
 }
 
 
-asn1_retCode
-_asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
+MHD__asn1_retCode
+MHD__asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
                                char *vector_name)
 {
   FILE *file;
@@ -136,7 +136,7 @@ _asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
         {
           while (1)
             {
-              p = _asn1_find_up (p);
+              p = MHD__asn1_find_up (p);
               if (p == pointer)
                 {
                   p = NULL;
@@ -160,14 +160,14 @@ _asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
 
 
 /**
-  * asn1_array2tree - Creates the structures needed to manage the ASN1 definitions.
+  * MHD__asn1_array2tree - Creates the structures needed to manage the ASN1 definitions.
   * @array: specify the array that contains ASN.1 declarations
   * @definitions: return the pointer to the structure created by
   *   *ARRAY ASN.1 declarations
   * @errorDescription: return the error description.
   *
   * Creates the structures needed to manage the ASN.1 definitions.
-  * @array is a vector created by asn1_parser2array().
+  * @array is a vector created by MHD__asn1_parser2array().
   *
   * Returns:
   *
@@ -180,14 +180,14 @@ _asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
   *
   * ASN1_ARRAY_ERROR: The array pointed by @array is wrong.
   **/
-asn1_retCode
-asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
+MHD__asn1_retCode
+MHD__asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
                  char *errorDescription)
 {
   node_asn *p, *p_last = NULL;
   unsigned long k;
   int move;
-  asn1_retCode result;
+  MHD__asn1_retCode result;
 
 
   if (*definitions != ASN1_TYPE_EMPTY)
@@ -198,19 +198,19 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
   k = 0;
   while (array[k].value || array[k].type || array[k].name)
     {
-      p = _asn1_add_node (array[k].type & (~CONST_DOWN));
+      p = MHD__asn1_add_node (array[k].type & (~CONST_DOWN));
       if (array[k].name)
-        _asn1_set_name (p, array[k].name);
+        MHD__asn1_set_name (p, array[k].name);
       if (array[k].value)
-        _asn1_set_value (p, array[k].value, strlen (array[k].value) + 1);
+        MHD__asn1_set_value (p, array[k].value, strlen (array[k].value) + 1);
 
       if (*definitions == NULL)
         *definitions = p;
 
       if (move == DOWN)
-        _asn1_set_down (p_last, p);
+        MHD__asn1_set_down (p_last, p);
       else if (move == RIGHT)
-        _asn1_set_right (p_last, p);
+        MHD__asn1_set_right (p_last, p);
 
       p_last = p;
 
@@ -225,7 +225,7 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
               if (p_last == *definitions)
                 break;
 
-              p_last = _asn1_find_up (p_last);
+              p_last = MHD__asn1_find_up (p_last);
 
               if (p_last == NULL)
                 break;
@@ -243,11 +243,11 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
 
   if (p_last == *definitions)
     {
-      result = _asn1_check_identifier (*definitions);
+      result = MHD__asn1_check_identifier (*definitions);
       if (result == ASN1_SUCCESS)
         {
-          _asn1_change_integer_value (*definitions);
-          _asn1_expand_object_id (*definitions);
+          MHD__asn1_change_integer_value (*definitions);
+          MHD__asn1_expand_object_id (*definitions);
         }
     }
   else
@@ -260,7 +260,7 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
       if (result == ASN1_IDENTIFIER_NOT_FOUND)
         {
           Estrcpy (errorDescription, ":: identifier '");
-          Estrcat (errorDescription, _asn1_identifierMissing);
+          Estrcat (errorDescription, MHD__asn1_identifierMissing);
           Estrcat (errorDescription, "' not found");
         }
       else
@@ -269,17 +269,17 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
 
   if (result != ASN1_SUCCESS)
     {
-      _asn1_delete_list_and_nodes ();
+      MHD__asn1_delete_list_and_nodes ();
       *definitions = ASN1_TYPE_EMPTY;
     }
   else
-    _asn1_delete_list ();
+    MHD__asn1_delete_list ();
 
   return result;
 }
 
 /**
-  * asn1_delete_structure - Deletes the structure pointed by *ROOT.
+  * MHD__asn1_delete_structure - Deletes the structure pointed by *ROOT.
   * @structure: pointer to the structure that you want to delete.
   *
   * Deletes the structure *@structure.  At the end, *@structure is set
@@ -292,8 +292,8 @@ asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
   * ASN1_ELEMENT_NOT_FOUND: *@structure was ASN1_TYPE_EMPTY.
   *
   **/
-asn1_retCode
-asn1_delete_structure (ASN1_TYPE * structure)
+MHD__asn1_retCode
+MHD__asn1_delete_structure (ASN1_TYPE * structure)
 {
   node_asn *p, *p2, *p3;
 
@@ -312,19 +312,19 @@ asn1_delete_structure (ASN1_TYPE * structure)
           p2 = p->right;
           if (p != *structure)
             {
-              p3 = _asn1_find_up (p);
-              _asn1_set_down (p3, p2);
-              _asn1_remove_node (p);
+              p3 = MHD__asn1_find_up (p);
+              MHD__asn1_set_down (p3, p2);
+              MHD__asn1_remove_node (p);
               p = p3;
             }
           else
             {                   /* p==root */
-              p3 = _asn1_find_left (p);
+              p3 = MHD__asn1_find_left (p);
               if (!p3)
                 {
-                  p3 = _asn1_find_up (p);
+                  p3 = MHD__asn1_find_up (p);
                   if (p3)
-                    _asn1_set_down (p3, p2);
+                    MHD__asn1_set_down (p3, p2);
                   else
                     {
                       if (p->right)
@@ -332,8 +332,8 @@ asn1_delete_structure (ASN1_TYPE * structure)
                     }
                 }
               else
-                _asn1_set_right (p3, p2);
-              _asn1_remove_node (p);
+                MHD__asn1_set_right (p3, p2);
+              MHD__asn1_remove_node (p);
               p = NULL;
             }
         }
@@ -346,7 +346,7 @@ asn1_delete_structure (ASN1_TYPE * structure)
 
 
 /**
-  * asn1_delete_element - Deletes the element of a structure.
+  * MHD__asn1_delete_element - Deletes the element of a structure.
   * @structure: pointer to the structure that contains the element you
   *   want to delete.
   * @element_name: element's name you want to delete.
@@ -360,34 +360,34 @@ asn1_delete_structure (ASN1_TYPE * structure)
   * ASN1_ELEMENT_NOT_FOUND: The name element was not found.
   *
   **/
-asn1_retCode
-asn1_delete_element (ASN1_TYPE structure, const char *element_name)
+MHD__asn1_retCode
+MHD__asn1_delete_element (ASN1_TYPE structure, const char *element_name)
 {
   node_asn *p2, *p3, *source_node;
 
-  source_node = asn1_find_node (structure, element_name);
+  source_node = MHD__asn1_find_node (structure, element_name);
 
   if (source_node == ASN1_TYPE_EMPTY)
     return ASN1_ELEMENT_NOT_FOUND;
 
   p2 = source_node->right;
-  p3 = _asn1_find_left (source_node);
+  p3 = MHD__asn1_find_left (source_node);
   if (!p3)
     {
-      p3 = _asn1_find_up (source_node);
+      p3 = MHD__asn1_find_up (source_node);
       if (p3)
-        _asn1_set_down (p3, p2);
+        MHD__asn1_set_down (p3, p2);
       else if (source_node->right)
         source_node->right->left = NULL;
     }
   else
-    _asn1_set_right (p3, p2);
+    MHD__asn1_set_right (p3, p2);
 
-  return asn1_delete_structure (&source_node);
+  return MHD__asn1_delete_structure (&source_node);
 }
 
 node_asn *
-_asn1_copy_structure3 (node_asn * source_node)
+MHD__asn1_copy_structure3 (node_asn * source_node)
 {
   node_asn *dest_node, *p_s, *p_d, *p_d_prev;
   int move;
@@ -395,7 +395,7 @@ _asn1_copy_structure3 (node_asn * source_node)
   if (source_node == NULL)
     return NULL;
 
-  dest_node = _asn1_add_node_only (source_node->type);
+  dest_node = MHD__asn1_add_node_only (source_node->type);
 
   p_s = source_node;
   p_d = dest_node;
@@ -407,9 +407,9 @@ _asn1_copy_structure3 (node_asn * source_node)
       if (move != UP)
         {
           if (p_s->name)
-            _asn1_set_name (p_d, p_s->name);
+            MHD__asn1_set_name (p_d, p_s->name);
           if (p_s->value)
-            _asn1_set_value (p_d, p_s->value, p_s->value_len);
+            MHD__asn1_set_value (p_d, p_s->value, p_s->value_len);
           move = DOWN;
         }
       else
@@ -421,8 +421,8 @@ _asn1_copy_structure3 (node_asn * source_node)
             {
               p_s = p_s->down;
               p_d_prev = p_d;
-              p_d = _asn1_add_node_only (p_s->type);
-              _asn1_set_down (p_d_prev, p_d);
+              p_d = MHD__asn1_add_node_only (p_s->type);
+              MHD__asn1_set_down (p_d_prev, p_d);
             }
           else
             move = RIGHT;
@@ -437,16 +437,16 @@ _asn1_copy_structure3 (node_asn * source_node)
             {
               p_s = p_s->right;
               p_d_prev = p_d;
-              p_d = _asn1_add_node_only (p_s->type);
-              _asn1_set_right (p_d_prev, p_d);
+              p_d = MHD__asn1_add_node_only (p_s->type);
+              MHD__asn1_set_right (p_d_prev, p_d);
             }
           else
             move = UP;
         }
       if (move == UP)
         {
-          p_s = _asn1_find_up (p_s);
-          p_d = _asn1_find_up (p_d);
+          p_s = MHD__asn1_find_up (p_s);
+          p_d = MHD__asn1_find_up (p_d);
         }
     }
   while (p_s != source_node);
@@ -456,19 +456,19 @@ _asn1_copy_structure3 (node_asn * source_node)
 
 
 node_asn *
-_asn1_copy_structure2 (node_asn * root, const char *source_name)
+MHD__asn1_copy_structure2 (node_asn * root, const char *source_name)
 {
   node_asn *source_node;
 
-  source_node = asn1_find_node (root, source_name);
+  source_node = MHD__asn1_find_node (root, source_name);
 
-  return _asn1_copy_structure3 (source_node);
+  return MHD__asn1_copy_structure3 (source_node);
 
 }
 
 
-asn1_retCode
-_asn1_type_choice_config (node_asn * node)
+MHD__asn1_retCode
+MHD__asn1_type_choice_config (node_asn * node)
 {
   node_asn *p, *p2, *p3, *p4;
   int move, tlen;
@@ -491,19 +491,19 @@ _asn1_type_choice_config (node_asn * node)
                   if (type_field (p2->type) != TYPE_TAG)
                     {
                       p2->type |= CONST_TAG;
-                      p3 = _asn1_find_left (p2);
+                      p3 = MHD__asn1_find_left (p2);
                       while (p3)
                         {
                           if (type_field (p3->type) == TYPE_TAG)
                             {
-                              p4 = _asn1_add_node_only (p3->type);
+                              p4 = MHD__asn1_add_node_only (p3->type);
                               tlen = strlen (p3->value);
                               if (tlen > 0)
-                                _asn1_set_value (p4, p3->value, tlen + 1);
-                              _asn1_set_right (p4, p2->down);
-                              _asn1_set_down (p2, p4);
+                                MHD__asn1_set_value (p4, p3->value, tlen + 1);
+                              MHD__asn1_set_right (p4, p2->down);
+                              MHD__asn1_set_down (p2, p4);
                             }
-                          p3 = _asn1_find_left (p3);
+                          p3 = MHD__asn1_find_left (p3);
                         }
                     }
                   p2 = p2->right;
@@ -514,7 +514,7 @@ _asn1_type_choice_config (node_asn * node)
                 {
                   p3 = p2->right;
                   if (type_field (p2->type) == TYPE_TAG)
-                    asn1_delete_structure (&p2);
+                    MHD__asn1_delete_structure (&p2);
                   p2 = p3;
                 }
             }
@@ -545,15 +545,15 @@ _asn1_type_choice_config (node_asn * node)
             move = UP;
         }
       if (move == UP)
-        p = _asn1_find_up (p);
+        p = MHD__asn1_find_up (p);
     }
 
   return ASN1_SUCCESS;
 }
 
 
-asn1_retCode
-_asn1_expand_identifier (node_asn ** node, node_asn * root)
+MHD__asn1_retCode
+MHD__asn1_expand_identifier (node_asn ** node, node_asn * root)
 {
   node_asn *p, *p2, *p3;
   char name2[MAX_NAME_SIZE + 2];
@@ -571,15 +571,15 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
         {
           if (type_field (p->type) == TYPE_IDENTIFIER)
             {
-              _asn1_str_cpy (name2, sizeof (name2), root->name);
-              _asn1_str_cat (name2, sizeof (name2), ".");
-              _asn1_str_cat (name2, sizeof (name2), p->value);
-              p2 = _asn1_copy_structure2 (root, name2);
+              MHD__asn1_str_cpy (name2, sizeof (name2), root->name);
+              MHD__asn1_str_cat (name2, sizeof (name2), ".");
+              MHD__asn1_str_cat (name2, sizeof (name2), p->value);
+              p2 = MHD__asn1_copy_structure2 (root, name2);
               if (p2 == NULL)
                 {
                   return ASN1_IDENTIFIER_NOT_FOUND;
                 }
-              _asn1_set_name (p2, p->name);
+              MHD__asn1_set_name (p2, p->name);
               p2->right = p->right;
               p2->left = p->left;
               if (p->right)
@@ -589,18 +589,18 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
                 {
                   while (p3->right)
                     p3 = p3->right;
-                  _asn1_set_right (p3, p2->down);
-                  _asn1_set_down (p2, p->down);
+                  MHD__asn1_set_right (p3, p2->down);
+                  MHD__asn1_set_down (p2, p->down);
                 }
 
-              p3 = _asn1_find_left (p);
+              p3 = MHD__asn1_find_left (p);
               if (p3)
-                _asn1_set_right (p3, p2);
+                MHD__asn1_set_right (p3, p2);
               else
                 {
-                  p3 = _asn1_find_up (p);
+                  p3 = MHD__asn1_find_up (p);
                   if (p3)
-                    _asn1_set_down (p3, p2);
+                    MHD__asn1_set_down (p3, p2);
                   else
                     {
                       p2->left = NULL;
@@ -622,7 +622,7 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
 
               if (p == *node)
                 *node = p2;
-              _asn1_remove_node (p);
+              MHD__asn1_remove_node (p);
               p = p2;
               move = DOWN;
               continue;
@@ -654,7 +654,7 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
             move = UP;
         }
       if (move == UP)
-        p = _asn1_find_up (p);
+        p = MHD__asn1_find_up (p);
     }
 
   return ASN1_SUCCESS;
@@ -662,7 +662,7 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
 
 
 /**
-  * asn1_create_element - Creates a structure of type SOURCE_NAME.
+  * MHD__asn1_create_element - Creates a structure of type SOURCE_NAME.
   * @definitions: pointer to the structure returned by "parser_asn1" function
   * @source_name: the name of the type of the new structure (must be
   *   inside p_structure).
@@ -671,7 +671,7 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
   * Creates a structure of type @source_name.  Example using
   *  "pkix.asn":
   *
-  * rc = asn1_create_structure(cert_def, "PKIX1.Certificate",
+  * rc = MHD__asn1_create_structure(cert_def, "PKIX1.Certificate",
   * certptr);
   *
   * Returns:
@@ -680,22 +680,22 @@ _asn1_expand_identifier (node_asn ** node, node_asn * root)
   *
   * ASN1_ELEMENT_NOT_FOUND: SOURCE_NAME isn't known
   **/
-asn1_retCode
-asn1_create_element (ASN1_TYPE definitions, const char *source_name,
+MHD__asn1_retCode
+MHD__asn1_create_element (ASN1_TYPE definitions, const char *source_name,
                      ASN1_TYPE * element)
 {
   node_asn *dest_node;
   int res;
 
-  dest_node = _asn1_copy_structure2 (definitions, source_name);
+  dest_node = MHD__asn1_copy_structure2 (definitions, source_name);
 
   if (dest_node == NULL)
     return ASN1_ELEMENT_NOT_FOUND;
 
-  _asn1_set_name (dest_node, "");
+  MHD__asn1_set_name (dest_node, "");
 
-  res = _asn1_expand_identifier (&dest_node, definitions);
-  _asn1_type_choice_config (dest_node);
+  res = MHD__asn1_expand_identifier (&dest_node, definitions);
+  MHD__asn1_type_choice_config (dest_node);
 
   *element = dest_node;
 
@@ -704,7 +704,7 @@ asn1_create_element (ASN1_TYPE definitions, const char *source_name,
 
 
 /**
-  * asn1_print_structure - Prints on the standard output the structure's tree
+  * MHD__asn1_print_structure - Prints on the standard output the structure's tree
   * @out: pointer to the output file (e.g. stdout).
   * @structure: pointer to the structure that you want to visit.
   * @name: an element of the structure
@@ -716,7 +716,7 @@ asn1_create_element (ASN1_TYPE definitions, const char *source_name,
   * from the @name element inside the structure @structure.
   **/
 void
-asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
+MHD__asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
                       int mode)
 {
   node_asn *p, *root;
@@ -725,7 +725,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
   if (out == NULL)
     return;
 
-  root = asn1_find_node (structure, name);
+  root = MHD__asn1_find_node (structure, name);
 
   if (root == NULL)
     return;
@@ -872,7 +872,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len2 = -1;
-                  len = asn1_get_length_der (p->value, p->value_len, &len2);
+                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
                   fprintf (out, "  value:0x");
                   if (len > 0)
                     for (k = 0; k < len; k++)
@@ -883,7 +883,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len2 = -1;
-                  len = asn1_get_length_der (p->value, p->value_len, &len2);
+                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
                   fprintf (out, "  value:0x");
                   if (len > 0)
                     for (k = 0; k < len; k++)
@@ -907,7 +907,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len2 = -1;
-                  len = asn1_get_length_der (p->value, p->value_len, &len2);
+                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
                   if (len > 0)
                     {
                       fprintf (out, "  value(%i):",
@@ -921,7 +921,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len2 = -1;
-                  len = asn1_get_length_der (p->value, p->value_len, &len2);
+                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
                   fprintf (out, "  value:");
                   if (len > 0)
                     for (k = 0; k < len; k++)
@@ -932,7 +932,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len2 = -1;
-                  len = asn1_get_length_der (p->value, p->value_len, &len2);
+                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
                   fprintf (out, "  value:");
                   if (len > 0)
                     for (k = 0; k < len; k++)
@@ -947,7 +947,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
               if (p->value)
                 {
                   len3 = -1;
-                  len2 = asn1_get_length_der (p->value, p->value_len, &len3);
+                  len2 = MHD__asn1_get_length_der (p->value, p->value_len, &len3);
                   fprintf (out, "  value:");
                   if (len2 > 0)
                     for (k = 0; k < len2; k++)
@@ -1048,7 +1048,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
         {
           while (1)
             {
-              p = _asn1_find_up (p);
+              p = MHD__asn1_find_up (p);
               if (p == root)
                 {
                   p = NULL;
@@ -1068,7 +1068,7 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
 
 
 /**
-  * asn1_number_of_elements - Counts the number of elements of a structure.
+  * MHD__asn1_number_of_elements - Counts the number of elements of a structure.
   * @element: pointer to the root of an ASN1 structure.
   * @name: the name of a sub-structure of ROOT.
   * @num: pointer to an integer where the result will be stored
@@ -1085,8 +1085,8 @@ asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
   *  ASN1_GENERIC_ERROR: Pointer num equal to NULL.
   *
   **/
-asn1_retCode
-asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
+MHD__asn1_retCode
+MHD__asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
 {
   node_asn *node, *p;
 
@@ -1095,7 +1095,7 @@ asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
 
   *num = 0;
 
-  node = asn1_find_node (element, name);
+  node = MHD__asn1_find_node (element, name);
   if (node == NULL)
     return ASN1_ELEMENT_NOT_FOUND;
 
@@ -1113,7 +1113,7 @@ asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
 
 
 /**
-  * asn1_find_structure_from_oid - Locate structure defined by a specific OID.
+  * MHD__asn1_find_structure_from_oid - Locate structure defined by a specific OID.
   * @definitions: ASN1 definitions
   * @oidValue: value of the OID to search (e.g. "1.2.3.4").
   *
@@ -1125,13 +1125,13 @@ asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
   *
   **/
 const char *
-asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
+MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
 {
   char definitionsName[MAX_NAME_SIZE], name[2 * MAX_NAME_SIZE + 1];
   char value[MAX_NAME_SIZE];
   ASN1_TYPE p;
   int len;
-  asn1_retCode result;
+  MHD__asn1_retCode result;
 
   if ((definitions == ASN1_TYPE_EMPTY) || (oidValue == NULL))
     return NULL;                /* ASN1_ELEMENT_NOT_FOUND; */
@@ -1151,7 +1151,7 @@ asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
           strcat (name, p->name);
 
           len = MAX_NAME_SIZE;
-          result = asn1_read_value (definitions, name, value, &len);
+          result = MHD__asn1_read_value (definitions, name, value, &len);
 
           if ((result == ASN1_SUCCESS) && (!strcmp (oidValue, value)))
             {
@@ -1169,7 +1169,7 @@ asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
 }
 
 /**
- * asn1_copy_node:
+ * MHD__asn1_copy_node:
  * @dst: Destination ASN1_TYPE node.
  * @dst_name: Field name in destination node.
  * @src: Source ASN1_TYPE node.
@@ -1179,8 +1179,8 @@ asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
  *
  * Return value: Return ASN1_SUCCESS on success.
  **/
-asn1_retCode
-asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
+MHD__asn1_retCode
+MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
                 ASN1_TYPE src, const char *src_name)
 {
 /* FIXME: rewrite using copy_structure().
@@ -1191,31 +1191,31 @@ asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
   void *data = NULL;
   int size = 0;
 
-  result = asn1_der_coding (src, src_name, NULL, &size, NULL);
+  result = MHD__asn1_der_coding (src, src_name, NULL, &size, NULL);
   if (result != ASN1_MEM_ERROR)
     return result;
 
-  data = _asn1_malloc (size);
+  data = MHD__asn1_malloc (size);
   if (data == NULL)
     return ASN1_MEM_ERROR;
 
-  result = asn1_der_coding (src, src_name, data, &size, NULL);
+  result = MHD__asn1_der_coding (src, src_name, data, &size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      _asn1_free (data);
+      MHD__asn1_free (data);
       return result;
     }
 
-  dst_node = asn1_find_node (dst, dst_name);
+  dst_node = MHD__asn1_find_node (dst, dst_name);
   if (dst_node == NULL)
     {
-      _asn1_free (data);
+      MHD__asn1_free (data);
       return ASN1_ELEMENT_NOT_FOUND;
     }
 
-  result = asn1_der_decoding (&dst_node, data, size, NULL);
+  result = MHD__asn1_der_decoding (&dst_node, data, size, NULL);
 
-  _asn1_free (data);
+  MHD__asn1_free (data);
 
   return result;
 }

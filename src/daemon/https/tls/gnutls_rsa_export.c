@@ -46,7 +46,7 @@
  * We only support limited key sizes.
  */
 const mpi_t *
-_gnutls_rsa_params_to_mpi (mhd_gtls_rsa_params_t rsa_params)
+MHD__gnutls_rsa_params_to_mpi (MHD_gtls_rsa_params_t rsa_params)
 {
   if (rsa_params == NULL)
     {
@@ -61,7 +61,7 @@ _gnutls_rsa_params_to_mpi (mhd_gtls_rsa_params_t rsa_params)
  * prime1 - p (3), prime2 - q(4), u (5).
  */
 int
-_gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
+MHD__gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 {
 
   int ret;
@@ -70,7 +70,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   ret = gcry_sexp_build (&parms, NULL, "(genkey(rsa(nbits %d)))", bits);
   if (ret != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -80,14 +80,14 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 
   if (ret != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   list = gcry_sexp_find_token (key, "n", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -98,7 +98,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "e", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -109,7 +109,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "d", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -120,7 +120,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "p", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -132,7 +132,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "q", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -144,7 +144,7 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
   list = gcry_sexp_find_token (key, "u", 0);
   if (list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (key);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -154,12 +154,12 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 
   gcry_sexp_release (key);
 
-  _gnutls_dump_mpi ("n: ", resarr[0]);
-  _gnutls_dump_mpi ("e: ", resarr[1]);
-  _gnutls_dump_mpi ("d: ", resarr[2]);
-  _gnutls_dump_mpi ("p: ", resarr[3]);
-  _gnutls_dump_mpi ("q: ", resarr[4]);
-  _gnutls_dump_mpi ("u: ", resarr[5]);
+  MHD__gnutls_dump_mpi ("n: ", resarr[0]);
+  MHD__gnutls_dump_mpi ("e: ", resarr[1]);
+  MHD__gnutls_dump_mpi ("d: ", resarr[2]);
+  MHD__gnutls_dump_mpi ("p: ", resarr[3]);
+  MHD__gnutls_dump_mpi ("q: ", resarr[4]);
+  MHD__gnutls_dump_mpi ("u: ", resarr[5]);
 
   *resarr_len = 6;
 
@@ -168,21 +168,21 @@ _gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits)
 }
 
 /**
-  * MHD_gnutls_rsa_params_init - This function will initialize the temporary RSA parameters
+  * MHD__gnutls_rsa_params_init - This function will initialize the temporary RSA parameters
   * @rsa_params: Is a structure that will hold the parameters
   *
   * This function will initialize the temporary RSA parameters structure.
   *
   **/
 int
-MHD_gnutls_rsa_params_init (mhd_gtls_rsa_params_t * rsa_params)
+MHD__gnutls_rsa_params_init (MHD_gtls_rsa_params_t * rsa_params)
 {
   int ret;
 
-  ret = gnutls_x509_privkey_init (rsa_params);
+  ret = MHD_gnutls_x509_privkey_init (rsa_params);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -192,20 +192,20 @@ MHD_gnutls_rsa_params_init (mhd_gtls_rsa_params_t * rsa_params)
 }
 
 /**
-  * MHD_gnutls_rsa_params_deinit - This function will deinitialize the RSA parameters
+  * MHD__gnutls_rsa_params_deinit - This function will deinitialize the RSA parameters
   * @rsa_params: Is a structure that holds the parameters
   *
   * This function will deinitialize the RSA parameters structure.
   *
   **/
 void
-MHD_gnutls_rsa_params_deinit (mhd_gtls_rsa_params_t rsa_params)
+MHD__gnutls_rsa_params_deinit (MHD_gtls_rsa_params_t rsa_params)
 {
-  gnutls_x509_privkey_deinit (rsa_params);
+  MHD_gnutls_x509_privkey_deinit (rsa_params);
 }
 
 /**
-  * MHD_gnutls_rsa_params_generate2 - This function will generate temporary RSA parameters
+  * MHD__gnutls_rsa_params_generate2 - This function will generate temporary RSA parameters
   * @params: The structure where the parameters will be stored
   * @bits: is the prime's number of bits
   *
@@ -220,8 +220,8 @@ MHD_gnutls_rsa_params_deinit (mhd_gtls_rsa_params_t rsa_params)
   *
   **/
 int
-MHD_gnutls_rsa_params_generate2 (mhd_gtls_rsa_params_t params,
+MHD__gnutls_rsa_params_generate2 (MHD_gtls_rsa_params_t params,
                                  unsigned int bits)
 {
-  return gnutls_x509_privkey_generate (params, MHD_GNUTLS_PK_RSA, bits, 0);
+  return MHD_gnutls_x509_privkey_generate (params, MHD_GNUTLS_PK_RSA, bits, 0);
 }

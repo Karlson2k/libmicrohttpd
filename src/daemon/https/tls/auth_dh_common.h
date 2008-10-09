@@ -29,19 +29,19 @@ typedef struct
 {
   int secret_bits;
 
-  gnutls_datum_t prime;
-  gnutls_datum_t generator;
-  gnutls_datum_t public_key;
-} mhd_gtls_dh_info_st;
+  MHD_gnutls_datum_t prime;
+  MHD_gnutls_datum_t generator;
+  MHD_gnutls_datum_t public_key;
+} MHD_gtls_dh_info_st;
 
-void mhd_gtls_free_dh_info (mhd_gtls_dh_info_st * dh);
-int mhd_gtls_gen_dh_common_client_kx (mhd_gtls_session_t, opaque **);
-int mhd_gtls_proc_dh_common_client_kx (mhd_gtls_session_t session,
+void MHD_gtls_free_dh_info (MHD_gtls_dh_info_st * dh);
+int MHD_gtls_gen_dh_common_client_kx (MHD_gtls_session_t, opaque **);
+int MHD_gtls_proc_dh_common_client_kx (MHD_gtls_session_t session,
                                        opaque * data, size_t _data_size,
                                        mpi_t p, mpi_t g);
-int mhd_gtls_dh_common_print_server_kx (mhd_gtls_session_t, mpi_t g, mpi_t p,
+int MHD_gtls_dh_common_print_server_kx (MHD_gtls_session_t, mpi_t g, mpi_t p,
                                         opaque ** data, int psk);
-int mhd_gtls_proc_dh_common_server_kx (mhd_gtls_session_t session,
+int MHD_gtls_proc_dh_common_server_kx (MHD_gtls_session_t session,
                                        opaque * data, size_t _data_size,
                                        int psk);
 

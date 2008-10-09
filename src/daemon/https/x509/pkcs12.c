@@ -46,26 +46,26 @@
  * which holds them. Returns an ASN1_TYPE of authenticatedSafe.
  */
 static int
-_decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
-                          gnutls_datum_t * raw)
+_decodeMHD_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
+                          MHD_gnutls_datum_t * raw)
 {
   char oid[128];
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
-  gnutls_datum_t auth_safe = { NULL, 0 };
+  MHD_gnutls_datum_t auth_safe = { NULL, 0 };
   int tmp_size, len, result;
 
   len = sizeof (oid) - 1;
-  result = asn1_read_value (pkcs12, "authSafe.contentType", oid, &len);
+  result = MHD__asn1_read_value (pkcs12, "authSafe.contentType", oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   if (strcmp (oid, DATA_OID) != 0)
     {
-      gnutls_assert ();
-      _gnutls_x509_log ("Unknown PKCS12 Content OID '%s'\n", oid);
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("Unknown PKCS12 Content OID '%s'\n", oid);
       return GNUTLS_E_UNKNOWN_PKCS_CONTENT_TYPE;
     }
 
@@ -74,36 +74,36 @@ _decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
 
   tmp_size = 0;
   result =
-    _gnutls_x509_read_value (pkcs12, "authSafe.content", &auth_safe, 1);
+    MHD__gnutls_x509_read_value (pkcs12, "authSafe.content", &auth_safe, 1);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   /* Step 2. Extract the authenticatedSafe.
    */
 
-  if ((result = asn1_create_element
-       (_gnutls_get_pkix (), "PKIX1.pkcs-12-AuthenticatedSafe",
+  if ((result = MHD__asn1_create_element
+       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-12-AuthenticatedSafe",
         &c2)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  result = asn1_der_decoding (&c2, auth_safe.data, auth_safe.size, NULL);
+  result = MHD__asn1_der_decoding (&c2, auth_safe.data, auth_safe.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   if (raw == NULL)
     {
-      _gnutls_free_datum (&auth_safe);
+      MHD__gnutls_free_datum (&auth_safe);
     }
   else
     {
@@ -114,19 +114,19 @@ _decode_pkcs12_auth_safe (ASN1_TYPE pkcs12, ASN1_TYPE * authen_safe,
   if (authen_safe)
     *authen_safe = c2;
   else
-    asn1_delete_structure (&c2);
+    MHD__asn1_delete_structure (&c2);
 
   return 0;
 
 cleanup:
   if (c2)
-    asn1_delete_structure (&c2);
-  _gnutls_free_datum (&auth_safe);
+    MHD__asn1_delete_structure (&c2);
+  MHD__gnutls_free_datum (&auth_safe);
   return result;
 }
 
 /**
-  * gnutls_pkcs12_init - This function initializes a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_init - This function initializes a MHD_gnutlsMHD_pkcs12_t structure
   * @pkcs12: The structure to be initialized
   *
   * This function will initialize a PKCS12 structure. PKCS12 structures
@@ -137,20 +137,20 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12)
+MHD_gnutlsMHD_pkcs12_init (MHD_gnutlsMHD_pkcs12_t * pkcs12)
 {
-  *pkcs12 = gnutls_calloc (1, sizeof (gnutls_pkcs12_int));
+  *pkcs12 = MHD_gnutls_calloc (1, sizeof (MHD_gnutlsMHD_pkcs12_int));
 
   if (*pkcs12)
     {
-      int result = asn1_create_element (_gnutls_get_pkix (),
+      int result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                         "PKIX1.pkcs-12-PFX",
                                         &(*pkcs12)->pkcs12);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          gnutls_free (*pkcs12);
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          MHD_gnutls_free (*pkcs12);
+          return MHD_gtls_asn2err (result);
         }
       return 0;                 /* success */
     }
@@ -158,33 +158,33 @@ gnutls_pkcs12_init (gnutls_pkcs12_t * pkcs12)
 }
 
 /**
-  * gnutls_pkcs12_deinit - This function deinitializes memory used by a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_deinit - This function deinitializes memory used by a MHD_gnutlsMHD_pkcs12_t structure
   * @pkcs12: The structure to be initialized
   *
   * This function will deinitialize a PKCS12 structure.
   *
   **/
 void
-gnutls_pkcs12_deinit (gnutls_pkcs12_t pkcs12)
+MHD_gnutlsMHD_pkcs12_deinit (MHD_gnutlsMHD_pkcs12_t pkcs12)
 {
   if (!pkcs12)
     return;
 
   if (pkcs12->pkcs12)
-    asn1_delete_structure (&pkcs12->pkcs12);
+    MHD__asn1_delete_structure (&pkcs12->pkcs12);
 
-  gnutls_free (pkcs12);
+  MHD_gnutls_free (pkcs12);
 }
 
 /**
-  * gnutls_pkcs12_import - This function will import a DER or PEM encoded PKCS12 structure
+  * MHD_gnutlsMHD_pkcs12_import - This function will import a DER or PEM encoded PKCS12 structure
   * @pkcs12: The structure to store the parsed PKCS12.
   * @data: The DER or PEM encoded PKCS12.
   * @format: One of DER or PEM
-  * @flags: an ORed sequence of gnutls_privkey_pkcs8_flags
+  * @flags: an ORed sequence of MHD_gnutls_privkey_pkcs8_flags
   *
   * This function will convert the given DER or PEM encoded PKCS12
-  * to the native gnutls_pkcs12_t format. The output will be stored in 'pkcs12'.
+  * to the native MHD_gnutlsMHD_pkcs12_t format. The output will be stored in 'pkcs12'.
   *
   * If the PKCS12 is PEM encoded it should have a header of "PKCS12".
   *
@@ -192,19 +192,19 @@ gnutls_pkcs12_deinit (gnutls_pkcs12_t pkcs12)
   *
   **/
 int
-gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
-                      const gnutls_datum_t * data,
-                      gnutls_x509_crt_fmt_t format, unsigned int flags)
+MHD_gnutlsMHD_pkcs12_import (MHD_gnutlsMHD_pkcs12_t pkcs12,
+                      const MHD_gnutls_datum_t * data,
+                      MHD_gnutls_x509_crt_fmt_t format, unsigned int flags)
 {
   int result = 0, need_free = 0;
-  gnutls_datum_t _data;
+  MHD_gnutls_datum_t _data;
 
   _data.data = data->data;
   _data.size = data->size;
 
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -214,14 +214,14 @@ gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
     {
       opaque *out;
 
-      result = _gnutls_fbase64_decode (PEM_PKCS12, data->data, data->size,
+      result = MHD__gnutls_fbase64_decode (PEM_PKCS12, data->data, data->size,
                                        &out);
 
       if (result <= 0)
         {
           if (result == 0)
             result = GNUTLS_E_INTERNAL_ERROR;
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
@@ -231,28 +231,28 @@ gnutls_pkcs12_import (gnutls_pkcs12_t pkcs12,
       need_free = 1;
     }
 
-  result = asn1_der_decoding (&pkcs12->pkcs12, _data.data, _data.size, NULL);
+  result = MHD__asn1_der_decoding (&pkcs12->pkcs12, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      result = mhd_gtls_asn2err (result);
-      gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   if (need_free)
-    _gnutls_free_datum (&_data);
+    MHD__gnutls_free_datum (&_data);
 
   return 0;
 
 cleanup:
   if (need_free)
-    _gnutls_free_datum (&_data);
+    MHD__gnutls_free_datum (&_data);
   return result;
 }
 
 
 /**
-  * gnutls_pkcs12_export - This function will export the pkcs12 structure
+  * MHD_gnutlsMHD_pkcs12_export - This function will export the pkcs12 structure
   * @pkcs12: Holds the pkcs12 structure
   * @format: the format of output params. One of PEM or DER.
   * @output_data: will contain a structure PEM or DER encoded
@@ -273,17 +273,17 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_export (gnutls_pkcs12_t pkcs12,
-                      gnutls_x509_crt_fmt_t format, void *output_data,
+MHD_gnutlsMHD_pkcs12_export (MHD_gnutlsMHD_pkcs12_t pkcs12,
+                      MHD_gnutls_x509_crt_fmt_t format, void *output_data,
                       size_t * output_data_size)
 {
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  return _gnutls_x509_export_int (pkcs12->pkcs12, format, PEM_PKCS12,
+  return MHD__gnutls_x509_export_int (pkcs12->pkcs12, format, PEM_PKCS12,
                                   output_data, output_data_size);
 }
 
@@ -341,44 +341,44 @@ ucs2_to_ascii (char *data, int size)
  * the given bag.
  */
 int
-_pkcs12_decode_safe_contents (const gnutls_datum_t * content,
-                              gnutls_pkcs12_bag_t bag)
+MHD_pkcs12_decode_safe_contents (const MHD_gnutls_datum_t * content,
+                              MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   char oid[128], root[MAX_NAME_SIZE];
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int len, result;
   int bag_type;
-  gnutls_datum_t attr_val;
+  MHD_gnutls_datum_t attr_val;
   int count = 0, i, attributes, j;
   size_t size;
 
   /* Step 1. Extract the SEQUENCE.
    */
 
-  if ((result = asn1_create_element
-       (_gnutls_get_pkix (), "PKIX1.pkcs-12-SafeContents",
+  if ((result = MHD__asn1_create_element
+       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-12-SafeContents",
         &c2)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  result = asn1_der_decoding (&c2, content->data, content->size, NULL);
+  result = MHD__asn1_der_decoding (&c2, content->data, content->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   /* Count the number of bags
    */
-  result = asn1_number_of_elements (c2, "", &count);
+  result = MHD__asn1_number_of_elements (c2, "", &count);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -390,11 +390,11 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
       snprintf (root, sizeof (root), "?%u.bagId", i + 1);
 
       len = sizeof (oid);
-      result = asn1_read_value (c2, root, oid, &len);
+      result = MHD__asn1_read_value (c2, root, oid, &len);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -404,7 +404,7 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
 
       if (bag_type < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
@@ -413,37 +413,37 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
 
       snprintf (root, sizeof (root), "?%u.bagValue", i + 1);
 
-      result = _gnutls_x509_read_value (c2, root, &bag->element[i].data, 0);
+      result = MHD__gnutls_x509_read_value (c2, root, &bag->element[i].data, 0);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
       if (bag_type == GNUTLS_BAG_CERTIFICATE || bag_type == GNUTLS_BAG_CRL)
         {
-          gnutls_datum_t tmp = bag->element[i].data;
+          MHD_gnutls_datum_t tmp = bag->element[i].data;
 
           result =
-            _pkcs12_decode_crt_bag (bag_type, &tmp, &bag->element[i].data);
+            MHD_pkcs12_decode_crt_bag (bag_type, &tmp, &bag->element[i].data);
           if (result < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               goto cleanup;
             }
 
-          _gnutls_free_datum (&tmp);
+          MHD__gnutls_free_datum (&tmp);
         }
 
       /* read the bag attributes
        */
       snprintf (root, sizeof (root), "?%u.bagAttributes", i + 1);
 
-      result = asn1_number_of_elements (c2, root, &attributes);
+      result = MHD__asn1_number_of_elements (c2, root, &attributes);
       if (result != ASN1_SUCCESS && result != ASN1_ELEMENT_NOT_FOUND)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -458,13 +458,13 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
                       j + 1);
 
             result =
-              _gnutls_x509_decode_and_read_attribute (c2, root, oid,
+              MHD__gnutls_x509_decode_and_read_attribute (c2, root, oid,
                                                       sizeof (oid), &attr_val,
                                                       1, 0);
 
             if (result < 0)
               {
-                gnutls_assert ();
+                MHD_gnutls_assert ();
                 continue;       /* continue in case we find some known attributes */
               }
 
@@ -473,14 +473,14 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
                 size = attr_val.size;
 
                 result =
-                  _gnutls_x509_decode_octet_string (NULL, attr_val.data, size,
+                  MHD__gnutls_x509_decode_octet_string (NULL, attr_val.data, size,
                                                     attr_val.data, &size);
                 attr_val.size = size;
                 if (result < 0)
                   {
-                    _gnutls_free_datum (&attr_val);
-                    gnutls_assert ();
-                    _gnutls_x509_log
+                    MHD__gnutls_free_datum (&attr_val);
+                    MHD_gnutls_assert ();
+                    MHD__gnutls_x509_log
                       ("Error decoding PKCS12 Bag Attribute OID '%s'\n", oid);
                     continue;
                   }
@@ -490,15 +490,15 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
               {
                 size = attr_val.size;
                 result =
-                  _gnutls_x509_decode_octet_string ("BMPString",
+                  MHD__gnutls_x509_decode_octet_string ("BMPString",
                                                     attr_val.data, size,
                                                     attr_val.data, &size);
                 attr_val.size = size;
                 if (result < 0)
                   {
-                    _gnutls_free_datum (&attr_val);
-                    gnutls_assert ();
-                    _gnutls_x509_log
+                    MHD__gnutls_free_datum (&attr_val);
+                    MHD_gnutls_assert ();
+                    MHD__gnutls_x509_log
                       ("Error decoding PKCS12 Bag Attribute OID '%s'\n", oid);
                     continue;
                   }
@@ -507,8 +507,8 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
               }
             else
               {
-                _gnutls_free_datum (&attr_val);
-                _gnutls_x509_log
+                MHD__gnutls_free_datum (&attr_val);
+                MHD__gnutls_x509_log
                   ("Unknown PKCS12 Bag Attribute OID '%s'\n", oid);
               }
           }
@@ -518,14 +518,14 @@ _pkcs12_decode_safe_contents (const gnutls_datum_t * content,
 
     }
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
 
 
   return 0;
 
 cleanup:
   if (c2)
-    asn1_delete_structure (&c2);
+    MHD__asn1_delete_structure (&c2);
   return result;
 
 }
@@ -533,41 +533,41 @@ cleanup:
 
 static int
 _parse_safe_contents (ASN1_TYPE sc, const char *sc_name,
-                      gnutls_pkcs12_bag_t bag)
+                      MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
-  gnutls_datum_t content = { NULL, 0 };
+  MHD_gnutls_datum_t content = { NULL, 0 };
   int result;
 
   /* Step 1. Extract the content.
    */
 
-  result = _gnutls_x509_read_value (sc, sc_name, &content, 1);
+  result = MHD__gnutls_x509_read_value (sc, sc_name, &content, 1);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  result = _pkcs12_decode_safe_contents (&content, bag);
+  result = MHD_pkcs12_decode_safe_contents (&content, bag);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  _gnutls_free_datum (&content);
+  MHD__gnutls_free_datum (&content);
 
   return 0;
 
 cleanup:
-  _gnutls_free_datum (&content);
+  MHD__gnutls_free_datum (&content);
   return result;
 }
 
 
 /**
-  * gnutls_pkcs12_get_bag - This function returns a Bag from a PKCS12 structure
-  * @pkcs12: should contain a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_get_bag - This function returns a Bag from a PKCS12 structure
+  * @pkcs12: should contain a MHD_gnutlsMHD_pkcs12_t structure
   * @indx: contains the index of the bag to extract
   * @bag: An initialized bag, where the contents of the bag will be copied
   *
@@ -579,8 +579,8 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
-                       int indx, gnutls_pkcs12_bag_t bag)
+MHD_gnutlsMHD_pkcs12_get_bag (MHD_gnutlsMHD_pkcs12_t pkcs12,
+                       int indx, MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result, len;
@@ -589,16 +589,16 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
 
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Step 1. decode the data.
    */
-  result = _decode_pkcs12_auth_safe (pkcs12->pkcs12, &c2, NULL);
+  result = _decodeMHD_pkcs12_auth_safe (pkcs12->pkcs12, &c2, NULL);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -608,7 +608,7 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
   snprintf (root2, sizeof (root2), "?%u.contentType", indx + 1);
 
   len = sizeof (oid) - 1;
-  result = asn1_read_value (c2, root2, oid, &len);
+  result = MHD__asn1_read_value (c2, root2, oid, &len);
 
   if (result == ASN1_ELEMENT_NOT_FOUND)
     {
@@ -618,8 +618,8 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -639,10 +639,10 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
   bag->element[0].type = GNUTLS_BAG_ENCRYPTED;
   bag->bag_elements = 1;
 
-  result = _gnutls_x509_read_value (c2, root2, &bag->element[0].data, 0);
+  result = MHD__gnutls_x509_read_value (c2, root2, &bag->element[0].data, 0);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
@@ -650,7 +650,7 @@ gnutls_pkcs12_get_bag (gnutls_pkcs12_t pkcs12,
 
 cleanup:
   if (c2)
-    asn1_delete_structure (&c2);
+    MHD__asn1_delete_structure (&c2);
   return result;
 }
 
@@ -665,21 +665,21 @@ create_empty_pfx (ASN1_TYPE pkcs12)
 
   /* Use version 3
    */
-  result = asn1_write_value (pkcs12, "version", &three, 1);
+  result = MHD__asn1_write_value (pkcs12, "version", &three, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   /* Write the content type of the data
    */
-  result = asn1_write_value (pkcs12, "authSafe.contentType", DATA_OID, 1);
+  result = MHD__asn1_write_value (pkcs12, "authSafe.contentType", DATA_OID, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -687,35 +687,35 @@ create_empty_pfx (ASN1_TYPE pkcs12)
    * null one in that case.
    */
 
-  if ((result = asn1_create_element
-       (_gnutls_get_pkix (), "PKIX1.pkcs-12-AuthenticatedSafe",
+  if ((result = MHD__asn1_create_element
+       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-12-AuthenticatedSafe",
         &c2)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   result =
-    _gnutls_x509_der_encode_and_copy (c2, "", pkcs12, "authSafe.content", 1);
+    MHD__gnutls_x509_der_encode_and_copy (c2, "", pkcs12, "authSafe.content", 1);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
 
   return 0;
 
 cleanup:
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
   return result;
 
 }
 
 /**
-  * gnutls_pkcs12_set_bag - This function inserts a Bag into a PKCS12 structure
-  * @pkcs12: should contain a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_set_bag - This function inserts a Bag into a PKCS12 structure
+  * @pkcs12: should contain a MHD_gnutlsMHD_pkcs12_t structure
   * @bag: An initialized bag
   *
   * This function will insert a Bag into the PKCS12 structure.
@@ -723,7 +723,7 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
+MHD_gnutlsMHD_pkcs12_set_bag (MHD_gnutlsMHD_pkcs12_t pkcs12, MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   ASN1_TYPE safe_cont = ASN1_TYPE_EMPTY;
@@ -733,62 +733,62 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
 
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Step 1. Check if the pkcs12 structure is empty. In that
    * case generate an empty PFX.
    */
-  result = asn1_read_value (pkcs12->pkcs12, "authSafe.content", &null, &dum);
+  result = MHD__asn1_read_value (pkcs12->pkcs12, "authSafe.content", &null, &dum);
   if (result == ASN1_VALUE_NOT_FOUND)
     {
       result = create_empty_pfx (pkcs12->pkcs12);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
     }
 
   /* Step 2. decode the authenticatedSafe.
    */
-  result = _decode_pkcs12_auth_safe (pkcs12->pkcs12, &c2, NULL);
+  result = _decodeMHD_pkcs12_auth_safe (pkcs12->pkcs12, &c2, NULL);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Step 3. Encode the bag elements into a SafeContents
    * structure.
    */
-  result = _pkcs12_encode_safe_contents (bag, &safe_cont, &enc);
+  result = MHD_pkcs12_encode_safe_contents (bag, &safe_cont, &enc);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Step 4. Insert the encoded SafeContents into the AuthenticatedSafe
    * structure.
    */
-  result = asn1_write_value (c2, "", "NEW", 1);
+  result = MHD__asn1_write_value (c2, "", "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   if (enc)
-    result = asn1_write_value (c2, "?LAST.contentType", ENC_DATA_OID, 1);
+    result = MHD__asn1_write_value (c2, "?LAST.contentType", ENC_DATA_OID, 1);
   else
-    result = asn1_write_value (c2, "?LAST.contentType", DATA_OID, 1);
+    result = MHD__asn1_write_value (c2, "?LAST.contentType", DATA_OID, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -797,56 +797,56 @@ gnutls_pkcs12_set_bag (gnutls_pkcs12_t pkcs12, gnutls_pkcs12_bag_t bag)
       /* Encrypted packets are written directly.
        */
       result =
-        asn1_write_value (c2, "?LAST.content",
+        MHD__asn1_write_value (c2, "?LAST.content",
                           bag->element[0].data.data,
                           bag->element[0].data.size);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
     }
   else
     {
       result =
-        _gnutls_x509_der_encode_and_copy (safe_cont, "", c2,
+        MHD__gnutls_x509_der_encode_and_copy (safe_cont, "", c2,
                                           "?LAST.content", 1);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
     }
 
-  asn1_delete_structure (&safe_cont);
+  MHD__asn1_delete_structure (&safe_cont);
 
 
   /* Step 5. Reencode and copy the AuthenticatedSafe into the pkcs12
    * structure.
    */
   result =
-    _gnutls_x509_der_encode_and_copy (c2, "", pkcs12->pkcs12,
+    MHD__gnutls_x509_der_encode_and_copy (c2, "", pkcs12->pkcs12,
                                       "authSafe.content", 1);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
 
   return 0;
 
 cleanup:
-  asn1_delete_structure (&c2);
-  asn1_delete_structure (&safe_cont);
+  MHD__asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&safe_cont);
   return result;
 }
 
 /**
-  * gnutls_pkcs12_generate_mac - This function generates the MAC of the PKCS12 structure
-  * @pkcs12: should contain a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_generate_mac - This function generates the MAC of the PKCS12 structure
+  * @pkcs12: should contain a MHD_gnutlsMHD_pkcs12_t structure
   * @pass: The password for the MAC
   *
   * This function will generate a MAC for the PKCS12 structure.
@@ -854,115 +854,115 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_generate_mac (gnutls_pkcs12_t pkcs12, const char *pass)
+MHD_gnutlsMHD_pkcs12_generate_mac (MHD_gnutlsMHD_pkcs12_t pkcs12, const char *pass)
 {
   opaque salt[8], key[20];
   int result;
   mac_hd_t td1 = NULL;
-  gnutls_datum_t tmp = { NULL, 0 };
+  MHD_gnutls_datum_t tmp = { NULL, 0 };
   opaque sha_mac[20];
 
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Generate the salt.
    */
-  if (gc_nonce (salt, sizeof (salt)) != GC_OK)
+  if (MHD_gc_nonce (salt, sizeof (salt)) != GC_OK)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
     }
 
   /* Write the salt into the structure.
    */
   result =
-    asn1_write_value (pkcs12->pkcs12, "macData.macSalt", salt, sizeof (salt));
+    MHD__asn1_write_value (pkcs12->pkcs12, "macData.macSalt", salt, sizeof (salt));
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   /* Generate the key.
    */
-  result = _pkcs12_string_to_key (3 /*MAC*/, salt, sizeof (salt),
+  result = MHD_pkcs12_string_to_key (3 /*MAC*/, salt, sizeof (salt),
                                   1, pass, sizeof (key), key);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   /* Get the data to be MACed
    */
-  result = _decode_pkcs12_auth_safe (pkcs12->pkcs12, NULL, &tmp);
+  result = _decodeMHD_pkcs12_auth_safe (pkcs12->pkcs12, NULL, &tmp);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   /* MAC the data
    */
-  td1 = mhd_gtls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
+  td1 = MHD_gtls_MHD_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
   if (td1 == GNUTLS_MAC_FAILED)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_INTERNAL_ERROR;
       goto cleanup;
     }
 
-  mhd_gnutls_hash (td1, tmp.data, tmp.size);
-  _gnutls_free_datum (&tmp);
+  MHD_gnutls_hash (td1, tmp.data, tmp.size);
+  MHD__gnutls_free_datum (&tmp);
 
-  mhd_gnutls_hmac_deinit (td1, sha_mac);
+  MHD_gnutls_MHD_hmac_deinit (td1, sha_mac);
 
 
   result =
-    asn1_write_value (pkcs12->pkcs12, "macData.mac.digest", sha_mac,
+    MHD__asn1_write_value (pkcs12->pkcs12, "macData.mac.digest", sha_mac,
                       sizeof (sha_mac));
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   result =
-    asn1_write_value (pkcs12->pkcs12,
+    MHD__asn1_write_value (pkcs12->pkcs12,
                       "macData.mac.digestAlgorithm.parameters", NULL, 0);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   result =
-    asn1_write_value (pkcs12->pkcs12,
+    MHD__asn1_write_value (pkcs12->pkcs12,
                       "macData.mac.digestAlgorithm.algorithm", HASH_OID_SHA1,
                       1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   return 0;
 
 cleanup:
-  _gnutls_free_datum (&tmp);
+  MHD__gnutls_free_datum (&tmp);
   return result;
 }
 
 /**
-  * gnutls_pkcs12_verify_mac - This function verifies the MAC of the PKCS12 structure
-  * @pkcs12: should contain a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_verify_mac - This function verifies the MAC of the PKCS12 structure
+  * @pkcs12: should contain a MHD_gnutlsMHD_pkcs12_t structure
   * @pass: The password for the MAC
   *
   * This function will verify the MAC for the PKCS12 structure.
@@ -970,14 +970,14 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
+MHD_gnutlsMHD_pkcs12_verify_mac (MHD_gnutlsMHD_pkcs12_t pkcs12, const char *pass)
 {
   opaque key[20];
   int result;
   unsigned int iter;
   int len;
   mac_hd_t td1 = NULL;
-  gnutls_datum_t tmp = { NULL, 0 }, salt =
+  MHD_gnutls_datum_t tmp = { NULL, 0 }, salt =
   {
   NULL, 0};
   opaque sha_mac[20];
@@ -985,7 +985,7 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
 
   if (pkcs12 == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -993,7 +993,7 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
    */
 
   result =
-    _gnutls_x509_read_uint (pkcs12->pkcs12, "macData.iterations", &iter);
+    MHD__gnutls_x509_read_uint (pkcs12->pkcs12, "macData.iterations", &iter);
   if (result < 0)
     {
       iter = 1;                 /* the default */
@@ -1003,78 +1003,78 @@ gnutls_pkcs12_verify_mac (gnutls_pkcs12_t pkcs12, const char *pass)
   /* Read the salt from the structure.
    */
   result =
-    _gnutls_x509_read_value (pkcs12->pkcs12, "macData.macSalt", &salt, 0);
+    MHD__gnutls_x509_read_value (pkcs12->pkcs12, "macData.macSalt", &salt, 0);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   /* Generate the key.
    */
-  result = _pkcs12_string_to_key (3 /*MAC*/, salt.data, salt.size,
+  result = MHD_pkcs12_string_to_key (3 /*MAC*/, salt.data, salt.size,
                                   iter, pass, sizeof (key), key);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  _gnutls_free_datum (&salt);
+  MHD__gnutls_free_datum (&salt);
 
   /* Get the data to be MACed
    */
-  result = _decode_pkcs12_auth_safe (pkcs12->pkcs12, NULL, &tmp);
+  result = _decodeMHD_pkcs12_auth_safe (pkcs12->pkcs12, NULL, &tmp);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   /* MAC the data
    */
-  td1 = mhd_gtls_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
+  td1 = MHD_gtls_MHD_hmac_init (MHD_GNUTLS_MAC_SHA1, key, sizeof (key));
   if (td1 == GNUTLS_MAC_FAILED)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_INTERNAL_ERROR;
       goto cleanup;
     }
 
-  mhd_gnutls_hash (td1, tmp.data, tmp.size);
-  _gnutls_free_datum (&tmp);
+  MHD_gnutls_hash (td1, tmp.data, tmp.size);
+  MHD__gnutls_free_datum (&tmp);
 
-  mhd_gnutls_hmac_deinit (td1, sha_mac);
+  MHD_gnutls_MHD_hmac_deinit (td1, sha_mac);
 
   len = sizeof (sha_mac_orig);
   result =
-    asn1_read_value (pkcs12->pkcs12, "macData.mac.digest", sha_mac_orig,
+    MHD__asn1_read_value (pkcs12->pkcs12, "macData.mac.digest", sha_mac_orig,
                      &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
   if (memcmp (sha_mac_orig, sha_mac, sizeof (sha_mac)) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MAC_VERIFY_FAILED;
     }
 
   return 0;
 
 cleanup:
-  _gnutls_free_datum (&tmp);
-  _gnutls_free_datum (&salt);
+  MHD__gnutls_free_datum (&tmp);
+  MHD__gnutls_free_datum (&salt);
   return result;
 }
 
 
 static int
-write_attributes (gnutls_pkcs12_bag_t bag, int elem,
+write_attributes (MHD_gnutlsMHD_pkcs12_bag_t bag, int elem,
                   ASN1_TYPE c2, const char *where)
 {
   int result;
@@ -1088,11 +1088,11 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
     {
       /* no attributes
        */
-      result = asn1_write_value (c2, where, NULL, 0);
+      result = MHD__asn1_write_value (c2, where, NULL, 0);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
       return 0;
@@ -1103,25 +1103,25 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
 
       /* Add a new Attribute
        */
-      result = asn1_write_value (c2, where, "NEW", 1);
+      result = MHD__asn1_write_value (c2, where, "NEW", 1);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
-      mhd_gtls_str_cpy (root, sizeof (root), where);
-      mhd_gtls_str_cat (root, sizeof (root), ".?LAST");
+      MHD_gtls_str_cpy (root, sizeof (root), where);
+      MHD_gtls_str_cat (root, sizeof (root), ".?LAST");
 
       result =
-        _gnutls_x509_encode_and_write_attribute (KEY_ID_OID, c2, root,
+        MHD__gnutls_x509_encode_and_write_attribute (KEY_ID_OID, c2, root,
                                                  bag->element[elem].
                                                  local_key_id.data,
                                                  bag->element[elem].
                                                  local_key_id.size, 1);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
     }
@@ -1134,21 +1134,21 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
 
       /* Add a new Attribute
        */
-      result = asn1_write_value (c2, where, "NEW", 1);
+      result = MHD__asn1_write_value (c2, where, "NEW", 1);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
       /* convert name to BMPString
        */
       size = strlen (bag->element[elem].friendly_name) * 2;
-      name = gnutls_malloc (size);
+      name = MHD_gnutls_malloc (size);
 
       if (name == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
 
@@ -1160,18 +1160,18 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
           p++;
         }
 
-      mhd_gtls_str_cpy (root, sizeof (root), where);
-      mhd_gtls_str_cat (root, sizeof (root), ".?LAST");
+      MHD_gtls_str_cpy (root, sizeof (root), where);
+      MHD_gtls_str_cat (root, sizeof (root), ".?LAST");
 
       result =
-        _gnutls_x509_encode_and_write_attribute (FRIENDLY_NAME_OID, c2,
+        MHD__gnutls_x509_encode_and_write_attribute (FRIENDLY_NAME_OID, c2,
                                                  root, name, size, 1);
 
-      gnutls_free (name);
+      MHD_gnutls_free (name);
 
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
     }
@@ -1184,7 +1184,7 @@ write_attributes (gnutls_pkcs12_bag_t bag, int elem,
  * the given datum. Enc is set to non zero if the data are encrypted;
  */
 int
-_pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
+MHD_pkcs12_encode_safe_contents (MHD_gnutlsMHD_pkcs12_bag_t bag, ASN1_TYPE * contents,
                               int *enc)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
@@ -1203,12 +1203,12 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
   /* Step 1. Create the SEQUENCE.
    */
 
-  if ((result = asn1_create_element
-       (_gnutls_get_pkix (), "PKIX1.pkcs-12-SafeContents",
+  if ((result = MHD__asn1_create_element
+       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-12-SafeContents",
         &c2)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
@@ -1218,25 +1218,25 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
       oid = bag_to_oid (bag->element[i].type);
       if (oid == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           continue;
         }
 
-      result = asn1_write_value (c2, "", "NEW", 1);
+      result = MHD__asn1_write_value (c2, "", "NEW", 1);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
       /* Copy the bag type.
        */
-      result = asn1_write_value (c2, "?LAST.bagId", oid, 1);
+      result = MHD__asn1_write_value (c2, "?LAST.bagId", oid, 1);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto cleanup;
         }
 
@@ -1245,7 +1245,7 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
       result = write_attributes (bag, i, c2, "?LAST.bagAttributes");
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
@@ -1256,37 +1256,37 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
       if (bag->element[i].type == GNUTLS_BAG_CERTIFICATE ||
           bag->element[i].type == GNUTLS_BAG_CRL)
         {
-          gnutls_datum_t tmp;
+          MHD_gnutls_datum_t tmp;
 
           /* in that case encode it to a CertBag or
            * a CrlBag.
            */
 
           result =
-            _pkcs12_encode_crt_bag (bag->element[i].type,
+            MHD_pkcs12_encode_crt_bag (bag->element[i].type,
                                     &bag->element[i].data, &tmp);
 
           if (result < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               goto cleanup;
             }
 
-          result = _gnutls_x509_write_value (c2, "?LAST.bagValue", &tmp, 0);
+          result = MHD__gnutls_x509_write_value (c2, "?LAST.bagValue", &tmp, 0);
 
-          _gnutls_free_datum (&tmp);
+          MHD__gnutls_free_datum (&tmp);
 
         }
       else
         {
 
-          result = _gnutls_x509_write_value (c2, "?LAST.bagValue",
+          result = MHD__gnutls_x509_write_value (c2, "?LAST.bagValue",
                                              &bag->element[i].data, 0);
         }
 
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
@@ -1300,7 +1300,7 @@ _pkcs12_encode_safe_contents (gnutls_pkcs12_bag_t bag, ASN1_TYPE * contents,
 
 cleanup:
   if (c2)
-    asn1_delete_structure (&c2);
+    MHD__asn1_delete_structure (&c2);
   return result;
 
 }

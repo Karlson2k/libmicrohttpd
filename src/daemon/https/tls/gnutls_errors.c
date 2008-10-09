@@ -33,21 +33,21 @@
 #define _(String) (String)
 #define N_(String) (String)
 
-extern LOG_FUNC _gnutls_log_func;
+extern LOG_FUNC MHD__gnutls_log_func;
 
 #define ERROR_ENTRY(desc, name, fatal) \
 	{ desc, #name, name, fatal}
 
-struct gnutls_error_entry
+struct MHD_gnutls_error_entry
 {
   const char *desc;
   const char *_name;
   int number;
   int fatal;
 };
-typedef struct gnutls_error_entry gnutls_error_entry;
+typedef struct MHD_gnutls_error_entry MHD_gnutls_error_entry;
 
-static const gnutls_error_entry mhd_gtls_error_algorithms[] = {
+static const MHD_gnutls_error_entry MHD_gtls_error_algorithms[] = {
   /* "Short Description", Error code define, critical (0,1) -- 1 in most cases */
   ERROR_ENTRY (N_("Success."), GNUTLS_E_SUCCESS, 0),
   ERROR_ENTRY (N_("Could not negotiate a supported cipher suite."),
@@ -246,8 +246,8 @@ static const gnutls_error_entry mhd_gtls_error_algorithms[] = {
 };
 
 #define GNUTLS_ERROR_LOOP(b) \
-        const gnutls_error_entry *p; \
-                for(p = mhd_gtls_error_algorithms; p->desc != NULL; p++) { b ; }
+        const MHD_gnutls_error_entry *p; \
+                for(p = MHD_gtls_error_algorithms; p->desc != NULL; p++) { b ; }
 
 #define GNUTLS_ERROR_ALG_LOOP(a) \
                         GNUTLS_ERROR_LOOP( if(p->number == error) { a; break; } )
@@ -329,7 +329,7 @@ MHD_gtls_strerror (int error)
  * given error code.
  */
 const char *
-_gnutls_strerror (int error)
+MHD__gnutls_strerror (int error)
 {
   const char *ret = NULL;
 
@@ -340,7 +340,7 @@ _gnutls_strerror (int error)
 }
 
 int
-mhd_gtls_asn2err (int asn_err)
+MHD_gtls_asn2err (int asn_err)
 {
   switch (asn_err)
     {
@@ -382,13 +382,13 @@ mhd_gtls_asn2err (int asn_err)
  * caller provided function
  */
 void
-mhd_gtls_log (int level, const char *fmt, ...)
+MHD_gtls_log (int level, const char *fmt, ...)
 {
   va_list args;
   char str[MAX_LOG_SIZE];
-  void (*log_func) (int, const char *) = _gnutls_log_func;
+  void (*log_func) (int, const char *) = MHD__gnutls_log_func;
 
-  if (_gnutls_log_func == NULL)
+  if (MHD__gnutls_log_func == NULL)
     return;
 
   va_start (args, fmt);
@@ -405,7 +405,7 @@ mhd_gtls_log (int level, const char *fmt, ...)
  * be called. This may affect performance.
  */
 void
-_gnutls_null_log (void *x, ...)
+MHD__gnutls_null_log (void *x, ...)
 {
   return;
 }

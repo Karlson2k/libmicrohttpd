@@ -35,11 +35,11 @@
 	his_key  = X ^ y mod p;
 
 //      generate our secret and the public value (X) for it
-	X = mhd_gtls_calc_dh_secret(&x, g, p);
+	X = MHD_gtls_calc_dh_secret(&x, g, p);
 //      now we can calculate the shared secret
-	key = mhd_gtls_calc_dh_key(Y, x, g, p);
-	mhd_gtls_mpi_release(x);
-	mhd_gtls_mpi_release(g);
+	key = MHD_gtls_calc_dh_key(Y, x, g, p);
+	MHD_gtls_mpi_release(x);
+	MHD_gtls_mpi_release(g);
 */
 
 #define MAX_BITS 18000
@@ -47,24 +47,24 @@
 /* returns the public value (X), and the secret (ret_x).
  */
 mpi_t
-mhd_gtls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
+MHD_gtls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
 {
   mpi_t e, x;
-  int x_size = _gnutls_mpi_get_nbits (prime) - 1;
+  int x_size = MHD__gnutls_mpi_get_nbits (prime) - 1;
   /* The size of the secret key is less than
    * prime/2
    */
 
   if (x_size > MAX_BITS || x_size <= 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
-  x = _gnutls_mpi_new (x_size);
+  x = MHD__gnutls_mpi_new (x_size);
   if (x == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       if (ret_x)
         *ret_x = NULL;
 
@@ -76,55 +76,55 @@ mhd_gtls_calc_dh_secret (mpi_t * ret_x, mpi_t g, mpi_t prime)
    */
   do
     {
-      _gnutls_mpi_randomize (x, (x_size / 8) * 8, GCRY_STRONG_RANDOM);
+      MHD__gnutls_mpi_randomize (x, (x_size / 8) * 8, GCRY_STRONG_RANDOM);
       /* Check whether x is zero.
        */
     }
-  while (_gnutls_mpi_cmp_ui (x, 0) == 0);
+  while (MHD__gnutls_mpi_cmp_ui (x, 0) == 0);
 
-  e = _gnutls_mpi_alloc_like (prime);
+  e = MHD__gnutls_mpi_alloc_like (prime);
   if (e == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       if (ret_x)
         *ret_x = NULL;
 
-      mhd_gtls_mpi_release (&x);
+      MHD_gtls_mpi_release (&x);
       return NULL;
     }
 
-  _gnutls_mpi_powm (e, g, x, prime);
+  MHD__gnutls_mpi_powm (e, g, x, prime);
 
   if (ret_x)
     *ret_x = x;
   else
-    mhd_gtls_mpi_release (&x);
+    MHD_gtls_mpi_release (&x);
   return e;
 }
 
 
 mpi_t
-mhd_gtls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
+MHD_gtls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
 {
   mpi_t k;
   int bits;
 
-  bits = _gnutls_mpi_get_nbits (prime);
+  bits = MHD__gnutls_mpi_get_nbits (prime);
   if (bits <= 0 || bits > MAX_BITS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
-  k = _gnutls_mpi_alloc_like (prime);
+  k = MHD__gnutls_mpi_alloc_like (prime);
   if (k == NULL)
     return NULL;
-  _gnutls_mpi_powm (k, f, x, prime);
+  MHD__gnutls_mpi_powm (k, f, x, prime);
   return k;
 }
 
 /*-
-  * mhd_gtls_get_dh_params - Returns the DH parameters pointer
+  * MHD_gtls_get_dh_params - Returns the DH parameters pointer
   * @dh_params: is an DH parameters structure, or NULL.
   * @func: is a callback function to receive the parameters or NULL.
   * @session: a gnutls session.
@@ -132,12 +132,12 @@ mhd_gtls_calc_dh_key (mpi_t f, mpi_t x, mpi_t prime)
   * This function will return the dh parameters pointer.
   *
   -*/
-mhd_gtls_dh_params_t
-mhd_gtls_get_dh_params (mhd_gtls_dh_params_t dh_params,
-                        gnutls_params_function * func,
-                        mhd_gtls_session_t session)
+MHD_gtls_dh_params_t
+MHD_gtls_get_dh_params (MHD_gtls_dh_params_t dh_params,
+                        MHD_gnutls_params_function * func,
+                        MHD_gtls_session_t session)
 {
-  gnutls_params_st params;
+  MHD_gnutls_params_st params;
   int ret;
 
   /* if cached return the cached */

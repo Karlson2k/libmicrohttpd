@@ -22,27 +22,27 @@
  *
  */
 
-/* this is not to be included by gnutls_anon.c */
+/* this is not to be included by MHD_gnutls_anon.c */
 #include <gnutls_auth.h>
 #include <auth_dh_common.h>
 
-typedef struct mhd_gtls_anon_server_credentials_st
+typedef struct MHD_gtls_anon_server_credentials_st
 {
-  mhd_gtls_dh_params_t dh_params;
+  MHD_gtls_dh_params_t dh_params;
   /* this callback is used to retrieve the DH or RSA
    * parameters.
    */
-  gnutls_params_function *params_func;
+  MHD_gnutls_params_function *params_func;
 } mhd_anon_server_credentials_st;
 
-typedef struct mhd_gtls_anon_client_credentials_st
+typedef struct MHD_gtls_anon_client_credentials_st
 {
   int dummy;
 } mhd_anon_client_credentials_st;
 
-typedef struct mhd_gtls_anon_auth_info_st
+typedef struct MHD_gtls_anon_auth_info_st
 {
-  mhd_gtls_dh_info_st dh;
+  MHD_gtls_dh_info_st dh;
 } *mhd_anon_auth_info_t;
 
-typedef struct mhd_gtls_anon_auth_info_st anon_auth_info_st;
+typedef struct MHD_gtls_anon_auth_info_st anon_auth_info_st;

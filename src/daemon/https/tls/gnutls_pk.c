@@ -40,13 +40,13 @@
 #include "common.h"
 #include "mpi.h"
 
-static int _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
+static int MHD__gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
                                mpi_t * pkey, int pkey_len);
-static int _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash,
+static int MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash,
                             mpi_t * pkey, int);
-static int _gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
+static int MHD__gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
                               mpi_t * pkey, int);
-static int _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data,
+static int MHD__gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data,
                                mpi_t * pkey, int);
 
 
@@ -54,8 +54,8 @@ static int _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data,
  * params is modulus, public exp.
  */
 int
-mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
-                            const gnutls_datum_t * plaintext,
+MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
+                            const MHD_gnutls_datum_t * plaintext,
                             mpi_t * params, unsigned params_len,
                             unsigned btype)
 {
@@ -66,21 +66,21 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
   size_t k, psize;
   size_t mod_bits;
 
-  mod_bits = _gnutls_mpi_get_nbits (params[0]);
+  mod_bits = MHD__gnutls_mpi_get_nbits (params[0]);
   k = mod_bits / 8;
   if (mod_bits % 8 != 0)
     k++;
 
   if (plaintext->size > k - 11)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_ENCRYPTION_FAILED;
     }
 
-  edata = gnutls_alloca (k);
+  edata = MHD_gnutls_alloca (k);
   if (edata == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -99,24 +99,24 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
       /* using public key */
       if (params_len < RSA_PUBLIC_PARAMS)
         {
-          gnutls_assert ();
-          gnutls_afree (edata);
+          MHD_gnutls_assert ();
+          MHD_gnutls_afree (edata);
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
-      if (gc_pseudo_random (ps, psize) != GC_OK)
+      if (MHD_gc_pseudo_random (ps, psize) != GC_OK)
         {
-          gnutls_assert ();
-          gnutls_afree (edata);
+          MHD_gnutls_assert ();
+          MHD_gnutls_afree (edata);
           return GNUTLS_E_RANDOM_FAILED;
         }
       for (i = 0; i < psize; i++)
         while (ps[i] == 0)
           {
-            if (gc_pseudo_random (&ps[i], 1) != GC_OK)
+            if (MHD_gc_pseudo_random (&ps[i], 1) != GC_OK)
               {
-                gnutls_assert ();
-                gnutls_afree (edata);
+                MHD_gnutls_assert ();
+                MHD_gnutls_afree (edata);
                 return GNUTLS_E_RANDOM_FAILED;
               }
           }
@@ -126,8 +126,8 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
 
       if (params_len < RSA_PRIVATE_PARAMS)
         {
-          gnutls_assert ();
-          gnutls_afree (edata);
+          MHD_gnutls_assert ();
+          MHD_gnutls_afree (edata);
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
@@ -135,36 +135,36 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
         ps[i] = 0xff;
       break;
     default:
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   ps[psize] = 0;
   memcpy (&ps[psize + 1], plaintext->data, plaintext->size);
 
-  if (mhd_gtls_mpi_scan_nz (&m, edata, &k) != 0)
+  if (MHD_gtls_mpi_scan_nz (&m, edata, &k) != 0)
     {
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
-  gnutls_afree (edata);
+  MHD_gnutls_afree (edata);
 
   if (btype == 2)               /* encrypt */
-    ret = _gnutls_pk_encrypt (GCRY_PK_RSA, &res, m, params, params_len);
+    ret = MHD__gnutls_pk_encrypt (GCRY_PK_RSA, &res, m, params, params_len);
   else                          /* sign */
-    ret = _gnutls_pk_sign (GCRY_PK_RSA, &res, m, params, params_len);
+    ret = MHD__gnutls_pk_sign (GCRY_PK_RSA, &res, m, params, params_len);
 
-  mhd_gtls_mpi_release (&m);
+  MHD_gtls_mpi_release (&m);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  mhd_gtls_mpi_print (NULL, &psize, res);
+  MHD_gtls_mpi_print (NULL, &psize, res);
 
   if (psize < k)
     {
@@ -179,25 +179,25 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
   else
     {                           /* psize > k !!! */
       /* This is an impossible situation */
-      gnutls_assert ();
-      mhd_gtls_mpi_release (&res);
+      MHD_gnutls_assert ();
+      MHD_gtls_mpi_release (&res);
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  ciphertext->data = gnutls_malloc (psize);
+  ciphertext->data = MHD_gnutls_malloc (psize);
   if (ciphertext->data == NULL)
     {
-      gnutls_assert ();
-      mhd_gtls_mpi_release (&res);
+      MHD_gnutls_assert ();
+      MHD_gtls_mpi_release (&res);
       return GNUTLS_E_MEMORY_ERROR;
     }
-  mhd_gtls_mpi_print (&ciphertext->data[pad], &psize, res);
+  MHD_gtls_mpi_print (&ciphertext->data[pad], &psize, res);
   for (i = 0; i < pad; i++)
     ciphertext->data[i] = 0;
 
   ciphertext->size = k;
 
-  mhd_gtls_mpi_release (&res);
+  MHD_gtls_mpi_release (&res);
 
   return 0;
 }
@@ -208,8 +208,8 @@ mhd_gtls_pkcs1_rsa_encrypt (gnutls_datum_t * ciphertext,
  * Can decrypt block type 1 and type 2 packets.
  */
 int
-mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
-                            const gnutls_datum_t * ciphertext,
+MHD_gtls_pkcs1_rsa_decrypt (MHD_gnutls_datum_t * plaintext,
+                            const MHD_gnutls_datum_t * ciphertext,
                             mpi_t * params, unsigned params_len,
                             unsigned btype)
 {
@@ -219,7 +219,7 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
   opaque *edata;
   size_t esize, mod_bits;
 
-  mod_bits = _gnutls_mpi_get_nbits (params[0]);
+  mod_bits = MHD__gnutls_mpi_get_nbits (params[0]);
   k = mod_bits / 8;
   if (mod_bits % 8 != 0)
     k++;
@@ -228,13 +228,13 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
 
   if (esize != k)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_DECRYPTION_FAILED;
     }
 
-  if (mhd_gtls_mpi_scan_nz (&c, ciphertext->data, &esize) != 0)
+  if (MHD_gtls_mpi_scan_nz (&c, ciphertext->data, &esize) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
@@ -242,30 +242,30 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
    * available.
    */
   if (btype == 2)
-    ret = _gnutls_pk_decrypt (GCRY_PK_RSA, &res, c, params, params_len);
+    ret = MHD__gnutls_pk_decrypt (GCRY_PK_RSA, &res, c, params, params_len);
   else
     {
-      ret = _gnutls_pk_encrypt (GCRY_PK_RSA, &res, c, params, params_len);
+      ret = MHD__gnutls_pk_encrypt (GCRY_PK_RSA, &res, c, params, params_len);
     }
-  mhd_gtls_mpi_release (&c);
+  MHD_gtls_mpi_release (&c);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  mhd_gtls_mpi_print (NULL, &esize, res);
-  edata = gnutls_alloca (esize + 1);
+  MHD_gtls_mpi_print (NULL, &esize, res);
+  edata = MHD_gnutls_alloca (esize + 1);
   if (edata == NULL)
     {
-      gnutls_assert ();
-      mhd_gtls_mpi_release (&res);
+      MHD_gnutls_assert ();
+      MHD_gtls_mpi_release (&res);
       return GNUTLS_E_MEMORY_ERROR;
     }
-  mhd_gtls_mpi_print (&edata[1], &esize, res);
+  MHD_gtls_mpi_print (&edata[1], &esize, res);
 
-  mhd_gtls_mpi_release (&res);
+  MHD_gtls_mpi_release (&res);
 
   /* EB = 00||BT||PS||00||D
    * (use block type 'btype')
@@ -282,8 +282,8 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
 
   if (edata[0] != 0 || edata[1] != btype)
     {
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_DECRYPTION_FAILED;
     }
 
@@ -310,7 +310,7 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
             }
           if (edata[i] != 0xff)
             {
-              _gnutls_handshake_log ("PKCS #1 padding error");
+              MHD__gnutls_handshake_log ("PKCS #1 padding error");
               /* PKCS #1 padding error.  Don't use
                  GNUTLS_E_PKCS1_WRONG_PAD here.  */
               break;
@@ -318,65 +318,65 @@ mhd_gtls_pkcs1_rsa_decrypt (gnutls_datum_t * plaintext,
         }
       break;
     default:
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_DECRYPTION_FAILED;
     }
   i++;
 
   if (ret < 0)
     {
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_DECRYPTION_FAILED;
     }
 
-  if (_gnutls_sset_datum (plaintext, &edata[i], esize - i) < 0)
+  if (MHD__gnutls_sset_datum (plaintext, &edata[i], esize - i) < 0)
     {
-      gnutls_assert ();
-      gnutls_afree (edata);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (edata);
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  gnutls_afree (edata);
+  MHD_gnutls_afree (edata);
 
   return 0;
 }
 
 
 int
-mhd_gtls_rsa_verify (const gnutls_datum_t * vdata,
-                     const gnutls_datum_t * ciphertext, mpi_t * params,
+MHD_gtls_rsa_verify (const MHD_gnutls_datum_t * vdata,
+                     const MHD_gnutls_datum_t * ciphertext, mpi_t * params,
                      int params_len, int btype)
 {
 
-  gnutls_datum_t plain;
+  MHD_gnutls_datum_t plain;
   int ret;
 
   /* decrypt signature */
   if ((ret =
-       mhd_gtls_pkcs1_rsa_decrypt (&plain, ciphertext, params, params_len,
+       MHD_gtls_pkcs1_rsa_decrypt (&plain, ciphertext, params, params_len,
                                    btype)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   if (plain.size != vdata->size)
     {
-      gnutls_assert ();
-      _gnutls_free_datum (&plain);
+      MHD_gnutls_assert ();
+      MHD__gnutls_free_datum (&plain);
       return GNUTLS_E_PK_SIG_VERIFY_FAILED;
     }
 
   if (memcmp (plain.data, vdata->data, plain.size) != 0)
     {
-      gnutls_assert ();
-      _gnutls_free_datum (&plain);
+      MHD_gnutls_assert ();
+      MHD__gnutls_free_datum (&plain);
       return GNUTLS_E_PK_SIG_VERIFY_FAILED;
     }
 
-  _gnutls_free_datum (&plain);
+  MHD__gnutls_free_datum (&plain);
 
   return 0;                     /* ok */
 }
@@ -384,45 +384,45 @@ mhd_gtls_rsa_verify (const gnutls_datum_t * vdata,
 /* encodes the Dss-Sig-Value structure
  */
 static int
-encode_ber_rs (gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
+encode_ber_rs (MHD_gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
 {
   ASN1_TYPE sig;
   int result, tot_len;
 
   if ((result =
-       asn1_create_element (_gnutls_get_gnutls_asn (),
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
                             "GNUTLS.DSASignatureValue",
                             &sig)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = _gnutls_x509_write_int (sig, "r", r, 1);
+  result = MHD__gnutls_x509_write_int (sig, "r", r, 1);
   if (result < 0)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&sig);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&sig);
       return result;
     }
 
-  result = _gnutls_x509_write_int (sig, "s", s, 1);
+  result = MHD__gnutls_x509_write_int (sig, "s", s, 1);
   if (result < 0)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&sig);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&sig);
       return result;
     }
 
   tot_len = 0;
 
-  result = _gnutls_x509_der_encode (sig, "", sig_value, 0);
+  result = MHD__gnutls_x509_der_encode (sig, "", sig_value, 0);
 
-  asn1_delete_structure (&sig);
+  MHD__asn1_delete_structure (&sig);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
@@ -433,8 +433,8 @@ encode_ber_rs (gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
 /* Do DSA signature calculation. params is p, q, g, y, x in that order.
  */
 int
-mhd_gtls_dsa_sign (gnutls_datum_t * signature,
-                   const gnutls_datum_t * hash, mpi_t * params,
+MHD_gtls_dsa_sign (MHD_gnutls_datum_t * signature,
+                   const MHD_gnutls_datum_t * hash, mpi_t * params,
                    unsigned params_len)
 {
   mpi_t rs[2], mdata;
@@ -444,35 +444,35 @@ mhd_gtls_dsa_sign (gnutls_datum_t * signature,
   k = hash->size;
   if (k < 20)
     {                           /* SHA1 or better only */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_SIGN_FAILED;
     }
 
-  if (mhd_gtls_mpi_scan_nz (&mdata, hash->data, &k) != 0)
+  if (MHD_gtls_mpi_scan_nz (&mdata, hash->data, &k) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
-  ret = _gnutls_pk_sign (GCRY_PK_DSA, rs, mdata, params, params_len);
+  ret = MHD__gnutls_pk_sign (GCRY_PK_DSA, rs, mdata, params, params_len);
   /* rs[0], rs[1] now hold r,s */
-  mhd_gtls_mpi_release (&mdata);
+  MHD_gtls_mpi_release (&mdata);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   ret = encode_ber_rs (signature, rs[0], rs[1]);
 
   /* free r,s */
-  mhd_gtls_mpi_release (&rs[0]);
-  mhd_gtls_mpi_release (&rs[1]);
+  MHD_gtls_mpi_release (&rs[0]);
+  MHD_gtls_mpi_release (&rs[1]);
 
   if (ret != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -482,46 +482,46 @@ mhd_gtls_dsa_sign (gnutls_datum_t * signature,
 /* decodes the Dss-Sig-Value structure
  */
 static int
-decode_ber_rs (const gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
+decode_ber_rs (const MHD_gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
 {
   ASN1_TYPE sig;
   int result;
 
   if ((result =
-       asn1_create_element (_gnutls_get_gnutls_asn (),
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
                             "GNUTLS.DSASignatureValue",
                             &sig)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_der_decoding (&sig, sig_value->data, sig_value->size, NULL);
+  result = MHD__asn1_der_decoding (&sig, sig_value->data, sig_value->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&sig);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&sig);
+      return MHD_gtls_asn2err (result);
     }
 
-  result = _gnutls_x509_read_int (sig, "r", r);
+  result = MHD__gnutls_x509_read_int (sig, "r", r);
   if (result < 0)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&sig);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&sig);
       return result;
     }
 
-  result = _gnutls_x509_read_int (sig, "s", s);
+  result = MHD__gnutls_x509_read_int (sig, "s", s);
   if (result < 0)
     {
-      gnutls_assert ();
-      mhd_gtls_mpi_release (s);
-      asn1_delete_structure (&sig);
+      MHD_gnutls_assert ();
+      MHD_gtls_mpi_release (s);
+      MHD__asn1_delete_structure (&sig);
       return result;
     }
 
-  asn1_delete_structure (&sig);
+  MHD__asn1_delete_structure (&sig);
 
   return 0;
 }
@@ -529,8 +529,8 @@ decode_ber_rs (const gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
 /* params is p, q, g, y in that order
  */
 int
-mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
-                     const gnutls_datum_t * sig_value, mpi_t * params,
+MHD_gtls_dsa_verify (const MHD_gnutls_datum_t * vdata,
+                     const MHD_gnutls_datum_t * sig_value, mpi_t * params,
                      int params_len)
 {
 
@@ -541,34 +541,34 @@ mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
 
   if (vdata->size != 20)
     {                           /* sha-1 only */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_SIG_VERIFY_FAILED;
     }
 
   if (decode_ber_rs (sig_value, &rs[0], &rs[1]) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
   k = vdata->size;
-  if (mhd_gtls_mpi_scan_nz (&mdata, vdata->data, &k) != 0)
+  if (MHD_gtls_mpi_scan_nz (&mdata, vdata->data, &k) != 0)
     {
-      gnutls_assert ();
-      mhd_gtls_mpi_release (&rs[0]);
-      mhd_gtls_mpi_release (&rs[1]);
+      MHD_gnutls_assert ();
+      MHD_gtls_mpi_release (&rs[0]);
+      MHD_gtls_mpi_release (&rs[1]);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
   /* decrypt signature */
-  ret = _gnutls_pk_verify (GCRY_PK_DSA, mdata, rs, params, params_len);
-  mhd_gtls_mpi_release (&mdata);
-  mhd_gtls_mpi_release (&rs[0]);
-  mhd_gtls_mpi_release (&rs[1]);
+  ret = MHD__gnutls_pk_verify (GCRY_PK_DSA, mdata, rs, params, params_len);
+  MHD_gtls_mpi_release (&mdata);
+  MHD_gtls_mpi_release (&rs[0]);
+  MHD_gtls_mpi_release (&rs[1]);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -584,7 +584,7 @@ mhd_gtls_dsa_verify (const gnutls_datum_t * vdata,
  * change the internal design to directly fit to libgcrypt.
  */
 static int
-_gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
+MHD__gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
                     mpi_t * pkey, int pkey_len)
 {
   gcry_sexp_t s_ciph, s_data, s_pkey;
@@ -601,20 +601,20 @@ _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   /* put the data into a simple list */
   if (gcry_sexp_build (&s_data, NULL, "%m", data))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (s_pkey);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -626,7 +626,7 @@ _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_ENCRYPTION_FAILED;
 
     }
@@ -635,7 +635,7 @@ _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
       gcry_sexp_t list = gcry_sexp_find_token (s_ciph, "a", 0);
       if (list == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           gcry_sexp_release (s_ciph);
           return GNUTLS_E_INTERNAL_ERROR;
         }
@@ -645,7 +645,7 @@ _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
 
       if (resarr[0] == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           gcry_sexp_release (s_ciph);
           return GNUTLS_E_INTERNAL_ERROR;
         }
@@ -656,7 +656,7 @@ _gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
 }
 
 static int
-_gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
+MHD__gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
                     int pkey_len)
 {
   gcry_sexp_t s_plain, s_data, s_pkey;
@@ -674,20 +674,20 @@ _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   /* put the data into a simple list */
   if (gcry_sexp_build (&s_data, NULL, "(enc-val(rsa(a%m)))", data))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (s_pkey);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -699,7 +699,7 @@ _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_DECRYPTION_FAILED;
 
     }
@@ -709,7 +709,7 @@ _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
 
       if (resarr[0] == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           gcry_sexp_release (s_plain);
           return GNUTLS_E_INTERNAL_ERROR;
         }
@@ -723,7 +723,7 @@ _gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
 /* in case of DSA puts into data, r,s
  */
 static int
-_gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
+MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
                  int pkey_len)
 {
   gcry_sexp_t s_hash, s_key, s_sig;
@@ -739,7 +739,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
                               pkey[0], pkey[1], pkey[2], pkey[3], pkey[4]);
       else
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
         }
 
       break;
@@ -751,25 +751,25 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
                               pkey[4], pkey[5]);
       else
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
         }
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   /* put the data into a simple list */
   if (gcry_sexp_build (&s_hash, NULL, "%m", hash))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -780,7 +780,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_SIGN_FAILED;
 
     }
@@ -793,7 +793,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
           list = gcry_sexp_find_token (s_sig, "r", 0);
           if (list == NULL)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               gcry_sexp_release (s_sig);
               return GNUTLS_E_INTERNAL_ERROR;
             }
@@ -804,7 +804,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
           list = gcry_sexp_find_token (s_sig, "s", 0);
           if (list == NULL)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               gcry_sexp_release (s_sig);
               return GNUTLS_E_INTERNAL_ERROR;
             }
@@ -817,7 +817,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
           list = gcry_sexp_find_token (s_sig, "s", 0);
           if (list == NULL)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               gcry_sexp_release (s_sig);
               return GNUTLS_E_INTERNAL_ERROR;
             }
@@ -833,7 +833,7 @@ _gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
 
 
 static int
-_gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
+MHD__gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
                    mpi_t * pkey, int pkey_len)
 {
   gcry_sexp_t s_sig, s_hash, s_pkey;
@@ -856,20 +856,20 @@ _gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   /* put the data into a simple list */
   if (gcry_sexp_build (&s_hash, NULL, "%m", hash))
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (s_pkey);
       return GNUTLS_E_INTERNAL_ERROR;
     }
@@ -885,7 +885,7 @@ _gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
       break;
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (s_pkey);
       gcry_sexp_release (s_hash);
       return GNUTLS_E_INTERNAL_ERROR;
@@ -893,7 +893,7 @@ _gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       gcry_sexp_release (s_pkey);
       gcry_sexp_release (s_hash);
       return GNUTLS_E_INTERNAL_ERROR;
@@ -907,7 +907,7 @@ _gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
 
   if (rc != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_PK_SIG_VERIFY_FAILED;
     }
 

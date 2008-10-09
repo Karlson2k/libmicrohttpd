@@ -37,7 +37,7 @@
 #include <privkey.h>
 
 /**
-  * gnutls_pkcs12_bag_init - This function initializes a gnutls_pkcs12_bag_t  structure
+  * MHD_gnutlsMHD_pkcs12_bag_init - This function initializes a MHD_gnutlsMHD_pkcs12_bag_t  structure
   * @bag: The structure to be initialized
   *
   * This function will initialize a PKCS12 bag structure. PKCS12 Bags
@@ -48,9 +48,9 @@
   *
   **/
 int
-gnutls_pkcs12_bag_init (gnutls_pkcs12_bag_t * bag)
+MHD_gnutlsMHD_pkcs12_bag_init (MHD_gnutlsMHD_pkcs12_bag_t * bag)
 {
-  *bag = gnutls_calloc (1, sizeof (gnutls_pkcs12_bag_int));
+  *bag = MHD_gnutls_calloc (1, sizeof (MHD_gnutlsMHD_pkcs12_bag_int));
 
   if (*bag)
     {
@@ -60,15 +60,15 @@ gnutls_pkcs12_bag_init (gnutls_pkcs12_bag_t * bag)
 }
 
 static inline void
-_pkcs12_bag_free_data (gnutls_pkcs12_bag_t bag)
+MHD_pkcs12_bag_free_data (MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   int i;
 
   for (i = 0; i < bag->bag_elements; i++)
     {
-      _gnutls_free_datum (&bag->element[i].data);
-      _gnutls_free_datum (&bag->element[i].local_key_id);
-      gnutls_free (bag->element[i].friendly_name);
+      MHD__gnutls_free_datum (&bag->element[i].data);
+      MHD__gnutls_free_datum (&bag->element[i].local_key_id);
+      MHD_gnutls_free (bag->element[i].friendly_name);
       bag->element[i].friendly_name = NULL;
       bag->element[i].type = 0;
     }
@@ -77,38 +77,38 @@ _pkcs12_bag_free_data (gnutls_pkcs12_bag_t bag)
 
 
 /**
-  * gnutls_pkcs12_bag_deinit - This function deinitializes memory used by a gnutls_pkcs12_t structure
+  * MHD_gnutlsMHD_pkcs12_bag_deinit - This function deinitializes memory used by a MHD_gnutlsMHD_pkcs12_t structure
   * @bag: The structure to be initialized
   *
   * This function will deinitialize a PKCS12 Bag structure.
   *
   **/
 void
-gnutls_pkcs12_bag_deinit (gnutls_pkcs12_bag_t bag)
+MHD_gnutlsMHD_pkcs12_bag_deinit (MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   if (!bag)
     return;
 
-  _pkcs12_bag_free_data (bag);
+  MHD_pkcs12_bag_free_data (bag);
 
-  gnutls_free (bag);
+  MHD_gnutls_free (bag);
 }
 
 /**
-  * gnutls_pkcs12_bag_get_type - This function returns the bag's type
+  * MHD_gnutlsMHD_pkcs12_bag_get_type - This function returns the bag's type
   * @bag: The bag
   * @indx: The element of the bag to get the type
   *
-  * This function will return the bag's type. One of the gnutls_pkcs12_bag_type_t
+  * This function will return the bag's type. One of the MHD_gnutlsMHD_pkcs12_bag_type_t
   * enumerations.
   *
   **/
-gnutls_pkcs12_bag_type_t
-gnutls_pkcs12_bag_get_type (gnutls_pkcs12_bag_t bag, int indx)
+MHD_gnutlsMHD_pkcs12_bag_type_t
+MHD_gnutlsMHD_pkcs12_bag_get_type (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -118,18 +118,18 @@ gnutls_pkcs12_bag_get_type (gnutls_pkcs12_bag_t bag, int indx)
 }
 
 /**
-  * gnutls_pkcs12_bag_get_count - This function returns the bag's elements count
+  * MHD_gnutlsMHD_pkcs12_bag_get_count - This function returns the bag's elements count
   * @bag: The bag
   *
   * This function will return the number of the elements withing the bag.
   *
   **/
 int
-gnutls_pkcs12_bag_get_count (gnutls_pkcs12_bag_t bag)
+MHD_gnutlsMHD_pkcs12_bag_get_count (MHD_gnutlsMHD_pkcs12_bag_t bag)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -137,7 +137,7 @@ gnutls_pkcs12_bag_get_count (gnutls_pkcs12_bag_t bag)
 }
 
 /**
-  * gnutls_pkcs12_bag_get_data - This function returns the bag's data
+  * MHD_gnutlsMHD_pkcs12_bag_get_data - This function returns the bag's data
   * @bag: The bag
   * @indx: The element of the bag to get the data from
   * @data: where the bag's data will be. Should be treated as constant.
@@ -150,12 +150,12 @@ gnutls_pkcs12_bag_get_count (gnutls_pkcs12_bag_t bag)
   *
   **/
 int
-gnutls_pkcs12_bag_get_data (gnutls_pkcs12_bag_t bag, int indx,
-                            gnutls_datum_t * data)
+MHD_gnutlsMHD_pkcs12_bag_get_data (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx,
+                            MHD_gnutls_datum_t * data)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -172,161 +172,161 @@ gnutls_pkcs12_bag_get_data (gnutls_pkcs12_bag_t bag, int indx,
 #define X509_CRL_OID  "1.2.840.113549.1.9.23.1"
 
 int
-_pkcs12_decode_crt_bag (gnutls_pkcs12_bag_type_t type,
-                        const gnutls_datum_t * in, gnutls_datum_t * out)
+MHD_pkcs12_decode_crt_bag (MHD_gnutlsMHD_pkcs12_bag_type_t type,
+                        const MHD_gnutls_datum_t * in, MHD_gnutls_datum_t * out)
 {
   int ret;
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
 
   if (type == GNUTLS_BAG_CERTIFICATE)
     {
-      if ((ret = asn1_create_element (_gnutls_get_pkix (),
+      if ((ret = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                       "PKIX1.pkcs-12-CertBag",
                                       &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = asn1_der_decoding (&c2, in->data, in->size, NULL);
+      ret = MHD__asn1_der_decoding (&c2, in->data, in->size, NULL);
       if (ret != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = _gnutls_x509_read_value (c2, "certValue", out, 1);
+      ret = MHD__gnutls_x509_read_value (c2, "certValue", out, 1);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
     }
   else
     {                           /* CRL */
-      if ((ret = asn1_create_element (_gnutls_get_pkix (),
+      if ((ret = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                       "PKIX1.pkcs-12-CRLBag",
                                       &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = asn1_der_decoding (&c2, in->data, in->size, NULL);
+      ret = MHD__asn1_der_decoding (&c2, in->data, in->size, NULL);
       if (ret != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = _gnutls_x509_read_value (c2, "crlValue", out, 1);
+      ret = MHD__gnutls_x509_read_value (c2, "crlValue", out, 1);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
     }
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
 
   return 0;
 
 
 cleanup:
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
   return ret;
 }
 
 
 int
-_pkcs12_encode_crt_bag (gnutls_pkcs12_bag_type_t type,
-                        const gnutls_datum_t * raw, gnutls_datum_t * out)
+MHD_pkcs12_encode_crt_bag (MHD_gnutlsMHD_pkcs12_bag_type_t type,
+                        const MHD_gnutls_datum_t * raw, MHD_gnutls_datum_t * out)
 {
   int ret;
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
 
   if (type == GNUTLS_BAG_CERTIFICATE)
     {
-      if ((ret = asn1_create_element (_gnutls_get_pkix (),
+      if ((ret = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                       "PKIX1.pkcs-12-CertBag",
                                       &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = asn1_write_value (c2, "certId", X509_CERT_OID, 1);
+      ret = MHD__asn1_write_value (c2, "certId", X509_CERT_OID, 1);
       if (ret != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = _gnutls_x509_write_value (c2, "certValue", raw, 1);
+      ret = MHD__gnutls_x509_write_value (c2, "certValue", raw, 1);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
     }
   else
     {                           /* CRL */
-      if ((ret = asn1_create_element (_gnutls_get_pkix (),
+      if ((ret = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                       "PKIX1.pkcs-12-CRLBag",
                                       &c2)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = asn1_write_value (c2, "crlId", X509_CRL_OID, 1);
+      ret = MHD__asn1_write_value (c2, "crlId", X509_CRL_OID, 1);
       if (ret != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          ret = mhd_gtls_asn2err (ret);
+          MHD_gnutls_assert ();
+          ret = MHD_gtls_asn2err (ret);
           goto cleanup;
         }
 
-      ret = _gnutls_x509_write_value (c2, "crlValue", raw, 1);
+      ret = MHD__gnutls_x509_write_value (c2, "crlValue", raw, 1);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
     }
 
-  ret = _gnutls_x509_der_encode (c2, "", out, 0);
+  ret = MHD__gnutls_x509_der_encode (c2, "", out, 0);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
 
   return 0;
 
 
 cleanup:
 
-  asn1_delete_structure (&c2);
+  MHD__asn1_delete_structure (&c2);
   return ret;
 }
 
 
 /**
-  * gnutls_pkcs12_bag_set_data - This function inserts data into the bag
+  * MHD_gnutlsMHD_pkcs12_bag_set_data - This function inserts data into the bag
   * @bag: The bag
   * @type: The data's type
   * @data: the data to be copied.
@@ -339,20 +339,20 @@ cleanup:
   *
   **/
 int
-gnutls_pkcs12_bag_set_data (gnutls_pkcs12_bag_t bag,
-                            gnutls_pkcs12_bag_type_t type,
-                            const gnutls_datum_t * data)
+MHD_gnutlsMHD_pkcs12_bag_set_data (MHD_gnutlsMHD_pkcs12_bag_t bag,
+                            MHD_gnutlsMHD_pkcs12_bag_type_t type,
+                            const MHD_gnutls_datum_t * data)
 {
   int ret;
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (bag->bag_elements == MAX_BAG_ELEMENTS - 1)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* bag is full */
       return GNUTLS_E_MEMORY_ERROR;
     }
@@ -367,18 +367,18 @@ gnutls_pkcs12_bag_set_data (gnutls_pkcs12_bag_t bag,
           bag->element[0].type == GNUTLS_BAG_PKCS8_ENCRYPTED_KEY ||
           bag->element[0].type == GNUTLS_BAG_ENCRYPTED)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INVALID_REQUEST;
         }
     }
 
   ret =
-    _gnutls_set_datum (&bag->element[bag->bag_elements].data,
+    MHD__gnutls_set_datum (&bag->element[bag->bag_elements].data,
                        data->data, data->size);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -390,84 +390,84 @@ gnutls_pkcs12_bag_set_data (gnutls_pkcs12_bag_t bag,
 }
 
 /**
-  * gnutls_pkcs12_bag_set_crt - This function inserts a certificate into the bag
+  * MHD_gnutlsMHD_pkcs12_bag_set_crt - This function inserts a certificate into the bag
   * @bag: The bag
   * @crt: the certificate to be copied.
   *
   * This function will insert the given certificate into the
-  * bag. This is just a wrapper over gnutls_pkcs12_bag_set_data().
+  * bag. This is just a wrapper over MHD_gnutlsMHD_pkcs12_bag_set_data().
   *
   * Returns the index of the added bag on success, or a negative
   * value on failure.
   *
   **/
 int
-gnutls_pkcs12_bag_set_crt (gnutls_pkcs12_bag_t bag, gnutls_x509_crt_t crt)
+MHD_gnutlsMHD_pkcs12_bag_set_crt (MHD_gnutlsMHD_pkcs12_bag_t bag, MHD_gnutls_x509_crt_t crt)
 {
   int ret;
-  gnutls_datum_t data;
+  MHD_gnutls_datum_t data;
 
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  ret = _gnutls_x509_der_encode (crt->cert, "", &data, 0);
+  ret = MHD__gnutls_x509_der_encode (crt->cert, "", &data, 0);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = gnutls_pkcs12_bag_set_data (bag, GNUTLS_BAG_CERTIFICATE, &data);
+  ret = MHD_gnutlsMHD_pkcs12_bag_set_data (bag, GNUTLS_BAG_CERTIFICATE, &data);
 
-  _gnutls_free_datum (&data);
+  MHD__gnutls_free_datum (&data);
 
   return ret;
 }
 
 /**
-  * gnutls_pkcs12_bag_set_crl - This function inserts the CRL into the bag
+  * MHD_gnutlsMHD_pkcs12_bag_set_crl - This function inserts the CRL into the bag
   * @bag: The bag
   * @crl: the CRL to be copied.
   *
   * This function will insert the given CRL into the
-  * bag. This is just a wrapper over gnutls_pkcs12_bag_set_data().
+  * bag. This is just a wrapper over MHD_gnutlsMHD_pkcs12_bag_set_data().
   *
   * Returns the index of the added bag on success, or a negative
   * value on failure.
   *
   **/
 int
-gnutls_pkcs12_bag_set_crl (gnutls_pkcs12_bag_t bag, gnutls_x509_crl_t crl)
+MHD_gnutlsMHD_pkcs12_bag_set_crl (MHD_gnutlsMHD_pkcs12_bag_t bag, MHD_gnutls_x509_crl_t crl)
 {
   int ret;
-  gnutls_datum_t data;
+  MHD_gnutls_datum_t data;
 
 
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  ret = _gnutls_x509_der_encode (crl->crl, "", &data, 0);
+  ret = MHD__gnutls_x509_der_encode (crl->crl, "", &data, 0);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = gnutls_pkcs12_bag_set_data (bag, GNUTLS_BAG_CRL, &data);
+  ret = MHD_gnutlsMHD_pkcs12_bag_set_data (bag, GNUTLS_BAG_CRL, &data);
 
-  _gnutls_free_datum (&data);
+  MHD__gnutls_free_datum (&data);
 
   return ret;
 }
 
 /**
-  * gnutls_pkcs12_bag_set_key_id - This function sets a key ID into the bag element
+  * MHD_gnutlsMHD_pkcs12_bag_set_key_id - This function sets a key ID into the bag element
   * @bag: The bag
   * @indx: The bag's element to add the id
   * @id: the ID
@@ -480,30 +480,30 @@ gnutls_pkcs12_bag_set_crl (gnutls_pkcs12_bag_t bag, gnutls_x509_crl_t crl)
   *
   **/
 int
-gnutls_pkcs12_bag_set_key_id (gnutls_pkcs12_bag_t bag, int indx,
-                              const gnutls_datum_t * id)
+MHD_gnutlsMHD_pkcs12_bag_set_key_id (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx,
+                              const MHD_gnutls_datum_t * id)
 {
   int ret;
 
 
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (indx > bag->bag_elements - 1)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  ret = _gnutls_set_datum (&bag->element[indx].local_key_id,
+  ret = MHD__gnutls_set_datum (&bag->element[indx].local_key_id,
                            id->data, id->size);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -511,7 +511,7 @@ gnutls_pkcs12_bag_set_key_id (gnutls_pkcs12_bag_t bag, int indx,
 }
 
 /**
-  * gnutls_pkcs12_bag_get_key_id - This function gets the key ID from the bag element
+  * MHD_gnutlsMHD_pkcs12_bag_get_key_id - This function gets the key ID from the bag element
   * @bag: The bag
   * @indx: The bag's element to add the id
   * @id: where the ID will be copied (to be treated as const)
@@ -523,18 +523,18 @@ gnutls_pkcs12_bag_set_key_id (gnutls_pkcs12_bag_t bag, int indx,
   *
   **/
 int
-gnutls_pkcs12_bag_get_key_id (gnutls_pkcs12_bag_t bag, int indx,
-                              gnutls_datum_t * id)
+MHD_gnutlsMHD_pkcs12_bag_get_key_id (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx,
+                              MHD_gnutls_datum_t * id)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (indx > bag->bag_elements - 1)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -545,7 +545,7 @@ gnutls_pkcs12_bag_get_key_id (gnutls_pkcs12_bag_t bag, int indx,
 }
 
 /**
-  * gnutls_pkcs12_bag_get_friendly_name - This function returns the friendly name of the bag element
+  * MHD_gnutlsMHD_pkcs12_bag_get_friendly_name - This function returns the friendly name of the bag element
   * @bag: The bag
   * @indx: The bag's element to add the id
   * @name: will hold a pointer to the name (to be treated as const)
@@ -557,18 +557,18 @@ gnutls_pkcs12_bag_get_key_id (gnutls_pkcs12_bag_t bag, int indx,
   *
   **/
 int
-gnutls_pkcs12_bag_get_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
+MHD_gnutlsMHD_pkcs12_bag_get_friendly_name (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx,
                                      char **name)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (indx > bag->bag_elements - 1)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -579,7 +579,7 @@ gnutls_pkcs12_bag_get_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
 
 
 /**
-  * gnutls_pkcs12_bag_set_friendly_name - This function sets a friendly name into the bag element
+  * MHD_gnutlsMHD_pkcs12_bag_set_friendly_name - This function sets a friendly name into the bag element
   * @bag: The bag
   * @indx: The bag's element to add the id
   * @name: the name
@@ -592,26 +592,26 @@ gnutls_pkcs12_bag_get_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
   *
   **/
 int
-gnutls_pkcs12_bag_set_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
+MHD_gnutlsMHD_pkcs12_bag_set_friendly_name (MHD_gnutlsMHD_pkcs12_bag_t bag, int indx,
                                      const char *name)
 {
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (indx > bag->bag_elements - 1)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  bag->element[indx].friendly_name = gnutls_strdup (name);
+  bag->element[indx].friendly_name = MHD_gnutls_strdup (name);
 
   if (name == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -620,7 +620,7 @@ gnutls_pkcs12_bag_set_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
 
 
 /**
-  * gnutls_pkcs12_bag_decrypt - This function will decrypt an encrypted bag
+  * MHD_gnutlsMHD_pkcs12_bag_decrypt - This function will decrypt an encrypted bag
   * @bag: The bag
   * @pass: The password used for encryption. This can only be ASCII.
   *
@@ -628,28 +628,28 @@ gnutls_pkcs12_bag_set_friendly_name (gnutls_pkcs12_bag_t bag, int indx,
   *
   **/
 int
-gnutls_pkcs12_bag_decrypt (gnutls_pkcs12_bag_t bag, const char *pass)
+MHD_gnutlsMHD_pkcs12_bag_decrypt (MHD_gnutlsMHD_pkcs12_bag_t bag, const char *pass)
 {
   int ret;
-  gnutls_datum_t dec;
+  MHD_gnutls_datum_t dec;
 
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (bag->element[0].type != GNUTLS_BAG_ENCRYPTED)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  ret = _gnutls_pkcs7_decrypt_data (&bag->element[0].data, pass, &dec);
+  ret = MHD__gnutls_pkcs7_decrypt_data (&bag->element[0].data, pass, &dec);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -657,15 +657,15 @@ gnutls_pkcs12_bag_decrypt (gnutls_pkcs12_bag_t bag, const char *pass)
    * stuff, and parse it.
    */
 
-  _gnutls_free_datum (&bag->element[0].data);
+  MHD__gnutls_free_datum (&bag->element[0].data);
 
-  ret = _pkcs12_decode_safe_contents (&dec, bag);
+  ret = MHD_pkcs12_decode_safe_contents (&dec, bag);
 
-  _gnutls_free_datum (&dec);
+  MHD__gnutls_free_datum (&dec);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -673,61 +673,61 @@ gnutls_pkcs12_bag_decrypt (gnutls_pkcs12_bag_t bag, const char *pass)
 }
 
 /**
-  * gnutls_pkcs12_bag_encrypt - This function will encrypt a bag
+  * MHD_gnutlsMHD_pkcs12_bag_encrypt - This function will encrypt a bag
   * @bag: The bag
   * @pass: The password used for encryption. This can only be ASCII.
-  * @flags: should be one of gnutls_pkcs_encrypt_flags_t elements bitwise or'd
+  * @flags: should be one of MHD_gnutls_pkcs_encrypt_flags_t elements bitwise or'd
   *
   * This function will encrypt the given bag and return 0 on success.
   *
   **/
 int
-gnutls_pkcs12_bag_encrypt (gnutls_pkcs12_bag_t bag, const char *pass,
+MHD_gnutlsMHD_pkcs12_bag_encrypt (MHD_gnutlsMHD_pkcs12_bag_t bag, const char *pass,
                            unsigned int flags)
 {
   int ret;
   ASN1_TYPE safe_cont = ASN1_TYPE_EMPTY;
-  gnutls_datum_t der = { NULL, 0 };
-  gnutls_datum_t enc = { NULL, 0 };
+  MHD_gnutls_datum_t der = { NULL, 0 };
+  MHD_gnutls_datum_t enc = { NULL, 0 };
   schema_id id;
 
   if (bag == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   if (bag->element[0].type == GNUTLS_BAG_ENCRYPTED)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
   /* Encode the whole bag to a safe contents
    * structure.
    */
-  ret = _pkcs12_encode_safe_contents (bag, &safe_cont, NULL);
+  ret = MHD_pkcs12_encode_safe_contents (bag, &safe_cont, NULL);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   /* DER encode the SafeContents.
    */
-  ret = _gnutls_x509_der_encode (safe_cont, "", &der, 0);
+  ret = MHD__gnutls_x509_der_encode (safe_cont, "", &der, 0);
 
-  asn1_delete_structure (&safe_cont);
+  MHD__asn1_delete_structure (&safe_cont);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   if (flags & GNUTLS_PKCS_PLAIN)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -742,20 +742,20 @@ gnutls_pkcs12_bag_encrypt (gnutls_pkcs12_bag_t bag, const char *pass,
 
   /* Now encrypt them.
    */
-  ret = _gnutls_pkcs7_encrypt_data (id, &der, pass, &enc);
+  ret = MHD__gnutls_pkcs7_encrypt_data (id, &der, pass, &enc);
 
-  _gnutls_free_datum (&der);
+  MHD__gnutls_free_datum (&der);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   /* encryption succeeded.
    */
 
-  _pkcs12_bag_free_data (bag);
+  MHD_pkcs12_bag_free_data (bag);
 
   bag->element[0].type = GNUTLS_BAG_ENCRYPTED;
   bag->element[0].data = enc;

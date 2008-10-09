@@ -28,105 +28,105 @@
 #include "gnutls_auth.h"
 
 /* Functions for version handling. */
-enum MHD_GNUTLS_Protocol mhd_gtls_version_lowest (mhd_gtls_session_t session);
-enum MHD_GNUTLS_Protocol mhd_gtls_version_max (mhd_gtls_session_t session);
-int mhd_gtls_version_priority (mhd_gtls_session_t session,
+enum MHD_GNUTLS_Protocol MHD_gtls_version_lowest (MHD_gtls_session_t session);
+enum MHD_GNUTLS_Protocol MHD_gtls_version_max (MHD_gtls_session_t session);
+int MHD_gtls_version_priority (MHD_gtls_session_t session,
                                enum MHD_GNUTLS_Protocol version);
-int mhd_gtls_version_is_supported (mhd_gtls_session_t session,
+int MHD_gtls_version_is_supported (MHD_gtls_session_t session,
                                    const enum MHD_GNUTLS_Protocol version);
-int mhd_gtls_version_get_major (enum MHD_GNUTLS_Protocol ver);
-int mhd_gtls_version_get_minor (enum MHD_GNUTLS_Protocol ver);
-enum MHD_GNUTLS_Protocol mhd_gtls_version_get (int major, int minor);
+int MHD_gtls_version_get_major (enum MHD_GNUTLS_Protocol ver);
+int MHD_gtls_version_get_minor (enum MHD_GNUTLS_Protocol ver);
+enum MHD_GNUTLS_Protocol MHD_gtls_version_get (int major, int minor);
 
 /* Functions for MACs. */
-int mhd_gnutls_mac_is_ok (enum MHD_GNUTLS_HashAlgorithm algorithm);
-enum MHD_GNUTLS_HashAlgorithm mhd_gtls_x509_oid2mac_algorithm (const char
+int MHD_gnutls_mac_is_ok (enum MHD_GNUTLS_HashAlgorithm algorithm);
+enum MHD_GNUTLS_HashAlgorithm MHD_gtls_x509_oid2mac_algorithm (const char
                                                                *oid);
-const char *mhd_gtls_x509_mac_to_oid (enum MHD_GNUTLS_HashAlgorithm mac);
+const char *MHD_gtls_x509_mac_to_oid (enum MHD_GNUTLS_HashAlgorithm mac);
 
 /* Functions for cipher suites. */
-int mhd_gtls_supported_ciphersuites (mhd_gtls_session_t session,
+int MHD_gtls_supported_ciphersuites (MHD_gtls_session_t session,
                                      cipher_suite_st ** ciphers);
-int mhd_gtls_supported_ciphersuites_sorted (mhd_gtls_session_t session,
+int MHD_gtls_supported_ciphersuites_sorted (MHD_gtls_session_t session,
                                             cipher_suite_st ** ciphers);
-int mhd_gtls_supported_compression_methods (mhd_gtls_session_t session,
+int MHD_gtls_supported_compression_methods (MHD_gtls_session_t session,
                                             uint8_t ** comp);
-const char *mhd_gtls_cipher_suite_get_name (cipher_suite_st * algorithm);
-enum MHD_GNUTLS_CipherAlgorithm mhd_gtls_cipher_suite_get_cipher_algo (const
+const char *MHD_gtls_cipher_suite_get_name (cipher_suite_st * algorithm);
+enum MHD_GNUTLS_CipherAlgorithm MHD_gtls_cipher_suite_get_cipher_algo (const
                                                                        cipher_suite_st
                                                                        *
                                                                        algorithm);
-enum MHD_GNUTLS_KeyExchangeAlgorithm mhd_gtls_cipher_suite_get_kx_algo (const
+enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_cipher_suite_get_kx_algo (const
                                                                         cipher_suite_st
                                                                         *
                                                                         algorithm);
-enum MHD_GNUTLS_HashAlgorithm mhd_gtls_cipher_suite_get_mac_algo (const
+enum MHD_GNUTLS_HashAlgorithm MHD_gtls_cipher_suite_get_mac_algo (const
                                                                   cipher_suite_st
                                                                   *
                                                                   algorithm);
-enum MHD_GNUTLS_Protocol mhd_gtls_cipher_suite_get_version (const
+enum MHD_GNUTLS_Protocol MHD_gtls_cipher_suite_get_version (const
                                                             cipher_suite_st *
                                                             algorithm);
-cipher_suite_st mhd_gtls_cipher_suite_get_suite_name (cipher_suite_st *
+cipher_suite_st MHD_gtls_cipher_suite_get_suite_name (cipher_suite_st *
                                                       algorithm);
 
 /* Functions for ciphers. */
-int mhd_gtls_cipher_get_block_size (enum MHD_GNUTLS_CipherAlgorithm
+int MHD_gtls_cipher_get_block_size (enum MHD_GNUTLS_CipherAlgorithm
                                     algorithm);
-int mhd_gtls_cipher_is_block (enum MHD_GNUTLS_CipherAlgorithm algorithm);
-int mhd_gtls_cipher_is_ok (enum MHD_GNUTLS_CipherAlgorithm algorithm);
-int mhd_gtls_cipher_get_iv_size (enum MHD_GNUTLS_CipherAlgorithm algorithm);
-int mhd_gtls_cipher_get_export_flag (enum MHD_GNUTLS_CipherAlgorithm
+int MHD_gtls_cipher_is_block (enum MHD_GNUTLS_CipherAlgorithm algorithm);
+int MHD_gtls_cipher_is_ok (enum MHD_GNUTLS_CipherAlgorithm algorithm);
+int MHD_gtls_cipher_get_iv_size (enum MHD_GNUTLS_CipherAlgorithm algorithm);
+int MHD_gtls_cipher_get_export_flag (enum MHD_GNUTLS_CipherAlgorithm
                                      algorithm);
 
 /* Functions for key exchange. */
-int mhd_gtls_kx_needs_dh_params (enum MHD_GNUTLS_KeyExchangeAlgorithm
+int MHD_gtls_kx_needs_dh_params (enum MHD_GNUTLS_KeyExchangeAlgorithm
                                  algorithm);
-int mhd_gtls_kx_needs_rsa_params (enum MHD_GNUTLS_KeyExchangeAlgorithm
+int MHD_gtls_kx_needs_rsa_params (enum MHD_GNUTLS_KeyExchangeAlgorithm
                                   algorithm);
-mhd_gtls_mod_auth_st *mhd_gtls_kx_auth_struct (enum
+MHD_gtls_mod_auth_st *MHD_gtls_kx_auth_struct (enum
                                                MHD_GNUTLS_KeyExchangeAlgorithm
                                                algorithm);
-int mhd_gtls_kx_is_ok (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm);
+int MHD_gtls_kx_is_ok (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm);
 
 /* Functions for compression. */
-int mhd_gtls_compression_is_ok (enum MHD_GNUTLS_CompressionMethod algorithm);
-int mhd_gtls_compression_get_num (enum MHD_GNUTLS_CompressionMethod
+int MHD_gtls_compression_is_ok (enum MHD_GNUTLS_CompressionMethod algorithm);
+int MHD_gtls_compression_get_num (enum MHD_GNUTLS_CompressionMethod
                                   algorithm);
-enum MHD_GNUTLS_CompressionMethod mhd_gtls_compression_get_id (int num);
-int mhd_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod
+enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id_from_int (int num);
+int MHD_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod
                                         algorithm);
-int mhd_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod
+int MHD_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod
                                          algorithm);
-int mhd_gtls_compression_get_wbits (enum MHD_GNUTLS_CompressionMethod
+int MHD_gtls_compression_get_wbits (enum MHD_GNUTLS_CompressionMethod
                                     algorithm);
 
 /* Type to KX mappings. */
-enum MHD_GNUTLS_KeyExchangeAlgorithm mhd_gtls_map_kx_get_kx (enum
+enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_map_kx_get_kx (enum
                                                              MHD_GNUTLS_CredentialsType
                                                              type,
                                                              int server);
-enum MHD_GNUTLS_CredentialsType mhd_gtls_map_kx_get_cred (enum
+enum MHD_GNUTLS_CredentialsType MHD_gtls_map_kx_get_cred (enum
                                                           MHD_GNUTLS_KeyExchangeAlgorithm
                                                           algorithm,
                                                           int server);
 
 /* KX to PK mapping. */
-enum MHD_GNUTLS_PublicKeyAlgorithm mhd_gtls_map_pk_get_pk (enum
+enum MHD_GNUTLS_PublicKeyAlgorithm MHD_gtls_map_pk_get_pk (enum
                                                            MHD_GNUTLS_KeyExchangeAlgorithm
                                                            kx_algorithm);
-enum MHD_GNUTLS_PublicKeyAlgorithm mhd_gtls_x509_oid2pk_algorithm (const char
+enum MHD_GNUTLS_PublicKeyAlgorithm MHD_gtls_x509_oid2pk_algorithm (const char
                                                                    *oid);
-const char *mhd_gtls_x509_pk_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm pk);
+const char *MHD_gtls_x509_pk_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm pk);
 
 enum encipher_type
 { CIPHER_ENCRYPT = 0, CIPHER_SIGN = 1, CIPHER_IGN };
 
-enum encipher_type mhd_gtls_kx_encipher_type (enum
+enum encipher_type MHD_gtls_kx_encipher_type (enum
                                               MHD_GNUTLS_KeyExchangeAlgorithm
                                               algorithm);
 
-struct mhd_gtls_compression_entry
+struct MHD_gtls_compression_entry
 {
   const char *name;
   enum MHD_GNUTLS_CompressionMethod id;
@@ -137,26 +137,26 @@ struct mhd_gtls_compression_entry
   int mem_level;
   int comp_level;
 };
-typedef struct mhd_gtls_compression_entry gnutls_compression_entry;
+typedef struct MHD_gtls_compression_entry MHD_gnutls_compression_entry;
 
 /* Functions for sign algorithms. */
-gnutls_sign_algorithm_t mhd_gtls_x509_oid2sign_algorithm (const char *oid);
-gnutls_sign_algorithm_t mhd_gtls_x509_pk_to_sign (enum
+MHD_gnutls_sign_algorithm_t MHD_gtls_x509_oid2sign_algorithm (const char *oid);
+MHD_gnutls_sign_algorithm_t MHD_gtls_x509_pk_to_sign (enum
                                                   MHD_GNUTLS_PublicKeyAlgorithm
                                                   pk,
                                                   enum
                                                   MHD_GNUTLS_HashAlgorithm
                                                   mac);
-const char *mhd_gtls_x509_sign_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm,
+const char *MHD_gtls_x509_sign_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm,
                                        enum MHD_GNUTLS_HashAlgorithm mac);
 
-int mhd_gtls_mac_priority (mhd_gtls_session_t session,
+int MHD_gtls_mac_priority (MHD_gtls_session_t session,
                            enum MHD_GNUTLS_HashAlgorithm algorithm);
-int mhd_gtls_cipher_priority (mhd_gtls_session_t session,
+int MHD_gtls_cipher_priority (MHD_gtls_session_t session,
                               enum MHD_GNUTLS_CipherAlgorithm algorithm);
-int mhd_gtls_kx_priority (mhd_gtls_session_t session,
+int MHD_gtls_kx_priority (MHD_gtls_session_t session,
                           enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm);
-int mhd_gtls_compression_priority (mhd_gtls_session_t session,
+int MHD_gtls_compression_priority (MHD_gtls_session_t session,
                                    enum MHD_GNUTLS_CompressionMethod
                                    algorithm);
 

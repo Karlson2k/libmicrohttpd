@@ -32,26 +32,26 @@
 
 
 void
-_gnutls_print_state (mhd_gtls_session_t session)
+MHD__gnutls_print_state (MHD_gtls_session_t session)
 {
 
-  _gnutls_debug_log ("GNUTLS State:\n");
-  _gnutls_debug_log ("Connection End: %d\n",
+  MHD__gnutls_debug_log ("GNUTLS State:\n");
+  MHD__gnutls_debug_log ("Connection End: %d\n",
                      session->security_parameters.entity);
-  _gnutls_debug_log ("Cipher Algorithm: %d\n",
+  MHD__gnutls_debug_log ("Cipher Algorithm: %d\n",
                      session->security_parameters.read_bulk_cipher_algorithm);
-  _gnutls_debug_log ("MAC algorithm: %d\n",
+  MHD__gnutls_debug_log ("MAC algorithm: %d\n",
                      session->security_parameters.read_mac_algorithm);
-  _gnutls_debug_log ("Compression Algorithm: %d\n",
+  MHD__gnutls_debug_log ("Compression Algorithm: %d\n",
                      session->security_parameters.read_compression_algorithm);
-  _gnutls_debug_log ("\n");
+  MHD__gnutls_debug_log ("\n");
 
 }
 
 #endif
 
 const char *
-_gnutls_packet2str (content_type_t packet)
+MHD__gnutls_packet2str (content_type_t packet)
 {
   switch (packet)
     {
@@ -72,7 +72,7 @@ _gnutls_packet2str (content_type_t packet)
 }
 
 const char *
-_gnutls_handshake2str (gnutls_handshake_description_t handshake)
+MHD__gnutls_handshake2str (MHD_gnutls_handshake_description_t handshake)
 {
 
   switch (handshake)
@@ -117,12 +117,12 @@ _gnutls_handshake2str (gnutls_handshake_description_t handshake)
 }
 
 void
-_gnutls_dump_mpi (const char *prefix, mpi_t a)
+MHD__gnutls_dump_mpi (const char *prefix, mpi_t a)
 {
   opaque buf[1024];
   size_t n = sizeof buf;
 
   if (gcry_mpi_print (GCRYMPI_FMT_HEX, buf, n, &n, a))
     strcpy (buf, "[can't print value]");        /* Flawfinder: ignore */
-  _gnutls_hard_log ("MPI: length: %d\n\t%s%s\n", (n - 1) / 2, prefix, buf);
+  MHD__gnutls_hard_log ("MPI: length: %d\n\t%s%s\n", (n - 1) / 2, prefix, buf);
 }

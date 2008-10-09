@@ -44,17 +44,17 @@
 
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
-#define gnutls_log_func LOG_FUNC
+#define MHD_gnutls_log_func LOG_FUNC
 
 /* created by asn1c */
-extern const ASN1_ARRAY_TYPE gnutls_asn1_tab[];
-extern const ASN1_ARRAY_TYPE pkix_asn1_tab[];
+extern const ASN1_ARRAY_TYPE MHD_gnutlsMHD__asn1_tab[];
+extern const ASN1_ARRAY_TYPE MHD_pkix_asn1_tab[];
 
-LOG_FUNC _gnutls_log_func;
-int _gnutls_log_level = 0;      /* default log level */
+LOG_FUNC MHD__gnutls_log_func;
+int MHD__gnutls_log_level = 0;      /* default log level */
 
-ASN1_TYPE _gnutls_pkix1_asn;
-ASN1_TYPE _gnutls_gnutls_asn;
+ASN1_TYPE MHD__gnutls_pkix1_asn;
+ASN1_TYPE MHD__gnutlsMHD__gnutls_asn;
 
 /**
  * MHD_gtls_global_set_log_function - This function sets the logging function
@@ -65,13 +65,13 @@ ASN1_TYPE _gnutls_gnutls_asn;
  * Normally you may not use this function since it is only used
  * for debugging purposes.
  *
- * gnutls_log_func is of the form,
- * void (*gnutls_log_func)( int level, const char*);
+ * MHD_gnutls_log_func is of the form,
+ * void (*MHD_gnutls_log_func)( int level, const char*);
  **/
 void
-MHD_gtls_global_set_log_function (gnutls_log_func log_func)
+MHD_gtls_global_set_log_function (MHD_gnutls_log_func log_func)
 {
-  _gnutls_log_func = log_func;
+  MHD__gnutls_log_func = log_func;
 }
 
 /**
@@ -89,10 +89,10 @@ MHD_gtls_global_set_log_function (gnutls_log_func log_func)
 void
 MHD_gtls_global_set_log_level (int level)
 {
-  _gnutls_log_level = level;
+  MHD__gnutls_log_level = level;
 }
 
-int _gnutls_is_secure_mem_null (const void *);
+int MHD__gnutls_is_secure_mem_null (const void *);
 
 /**
  * MHD_gtls_global_set_mem_functions - This function sets the memory allocation functions
@@ -108,61 +108,61 @@ int _gnutls_is_secure_mem_null (const void *);
  * This function is provided to set the memory allocation functions to
  * something other than the defaults (ie the gcrypt allocation functions).
  *
- * This function must be called before MHD_gnutls_global_init() is called.
+ * This function must be called before MHD__gnutls_global_init() is called.
  *
  **/
 void
-MHD_gtls_global_set_mem_functions (gnutls_alloc_function alloc_func,
-                                   gnutls_alloc_function
+MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function alloc_func,
+                                   MHD_gnutls_alloc_function
                                    secure_alloc_func,
-                                   gnutls_is_secure_function
+                                   MHD_gnutls_is_secure_function
                                    is_secure_func,
-                                   gnutls_realloc_function realloc_func,
-                                   gnutls_free_function free_func)
+                                   MHD_gnutls_realloc_function realloc_func,
+                                   MHD_gnutls_free_function free_func)
 {
-  gnutls_secure_malloc = secure_alloc_func;
-  gnutls_malloc = alloc_func;
-  gnutls_realloc = realloc_func;
-  gnutls_free = free_func;
+  MHD_gnutls_secure_malloc = secure_alloc_func;
+  MHD_gnutls_malloc = alloc_func;
+  MHD_gnutls_realloc = realloc_func;
+  MHD_gnutls_free = free_func;
 
   if (is_secure_func != NULL)
-    _gnutls_is_secure_memory = is_secure_func;
+    MHD__gnutls_is_secure_memory = is_secure_func;
   else
-    _gnutls_is_secure_memory = _gnutls_is_secure_mem_null;
+    MHD__gnutls_is_secure_memory = MHD__gnutls_is_secure_mem_null;
 
   /* if using the libc's default malloc
    * use libc's calloc as well.
    */
-  if (gnutls_malloc == malloc)
+  if (MHD_gnutls_malloc == malloc)
     {
-      gnutls_calloc = calloc;
+      MHD_gnutls_calloc = calloc;
     }
   else
     {                           /* use the included ones */
-      gnutls_calloc = mhd_gtls_calloc;
+      MHD_gnutls_calloc = MHD_gtls_calloc;
     }
-  gnutls_strdup = mhd_gtls_strdup;
+  MHD_gnutls_strdup = MHD_gtls_strdup;
 
 }
 
 #ifdef DEBUG
 static void
-_gnutls_gcry_log_handler (void *dummy, int level,
+MHD__gnutls_gcry_log_handler (void *dummy, int level,
                           const char *fmt, va_list list)
 {
-  mhd_gtls_log (level, fmt, list);
+  MHD_gtls_log (level, fmt, list);
 }
 #endif
 
-static int _gnutls_init = 0;
+static int MHD__gnutls_init_level = 0;
 
 /**
- * MHD_gnutls_global_init - This function initializes the global data to defaults.
+ * MHD__gnutls_global_init - This function initializes the global data to defaults.
  *
  * This function initializes the global data to defaults.
  * Every gnutls application has a global data which holds common parameters
  * shared by gnutls session structures.
- * You must call MHD_gnutls_global_deinit() when gnutls usage is no longer needed
+ * You must call MHD__gnutls_global_deinit() when gnutls usage is no longer needed
  * Returns zero on success.
  *
  * Note that this function will also initialize libgcrypt, if it has not
@@ -171,8 +171,8 @@ static int _gnutls_init = 0;
  * want to disable libgcrypt's internal lockings etc.
  *
  * This function increment a global counter, so that
- * MHD_gnutls_global_deinit() only releases resources when it has been
- * called as many times as MHD_gnutls_global_init().  This is useful when
+ * MHD__gnutls_global_deinit() only releases resources when it has been
+ * called as many times as MHD__gnutls_global_init().  This is useful when
  * GnuTLS is used by more than one library in an application.  This
  * function can be called many times, but will only do something the
  * first time.
@@ -187,13 +187,13 @@ static int _gnutls_init = 0;
  *
  **/
 int
-MHD_gnutls_global_init (void)
+MHD__gnutls_global_init (void)
 {
   int result = 0;
   int res;
   char c;
 
-  if (_gnutls_init++)
+  if (MHD__gnutls_init_level++)
     return 0;
 
 #if HAVE_WINSOCK
@@ -206,13 +206,13 @@ MHD_gnutls_global_init (void)
     err = WSAStartup (requested, &data);
     if (err != 0)
       {
-        _gnutls_debug_log ("WSAStartup failed: %d.\n", err);
+        MHD__gnutls_debug_log ("WSAStartup failed: %d.\n", err);
         return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
       }
 
     if (data.wVersion < requested)
       {
-        _gnutls_debug_log ("WSAStartup version check failed (%d < %d).\n",
+        MHD__gnutls_debug_log ("WSAStartup version check failed (%d < %d).\n",
                            data.wVersion, requested);
         WSACleanup ();
         return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
@@ -239,15 +239,15 @@ MHD_gnutls_global_init (void)
       /* this call initializes libgcrypt */
       if (gcry_check_version (p) == NULL)
         {
-          gnutls_assert ();
-          _gnutls_debug_log ("Checking for libgcrypt failed '%s'\n", p);
+          MHD_gnutls_assert ();
+          MHD__gnutls_debug_log ("Checking for libgcrypt failed '%s'\n", p);
           return GNUTLS_E_INCOMPATIBLE_GCRYPT_LIBRARY;
         }
 
       /* for gcrypt in order to be able to allocate memory */
-      gcry_set_allocation_handler (gnutls_malloc, gnutls_secure_malloc,
-                                   _gnutls_is_secure_memory, gnutls_realloc,
-                                   gnutls_free);
+      gcry_set_allocation_handler (MHD_gnutls_malloc, MHD_gnutls_secure_malloc,
+                                   MHD__gnutls_is_secure_memory, MHD_gnutls_realloc,
+                                   MHD_gnutls_free);
 
       /* gcry_control (GCRYCTL_DISABLE_INTERNAL_LOCKING, NULL, 0); */
 
@@ -257,14 +257,14 @@ MHD_gnutls_global_init (void)
       /* applications may want to override that, so we only use
        * it in debugging mode.
        */
-      gcry_set_log_handler (_gnutls_gcry_log_handler, NULL);
+      gcry_set_log_handler (MHD__gnutls_gcry_log_handler, NULL);
 #endif
     }
 
-  if (gc_init () != GC_OK)
+  if (MHD_gc_init () != GC_OK)
     {
-      gnutls_assert ();
-      _gnutls_debug_log ("Initializing crypto backend failed\n");
+      MHD_gnutls_assert ();
+      MHD__gnutls_debug_log ("Initializing crypto backend failed\n");
       return GNUTLS_E_INCOMPATIBLE_CRYPTO_LIBRARY;
     }
 
@@ -276,50 +276,50 @@ MHD_gnutls_global_init (void)
    * This should not deal with files in the final
    * version.
    */
-  res = asn1_array2tree (pkix_asn1_tab, &_gnutls_pkix1_asn, NULL);
+  res = MHD__asn1_array2tree (MHD_pkix_asn1_tab, &MHD__gnutls_pkix1_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
-      result = mhd_gtls_asn2err (res);
+      result = MHD_gtls_asn2err (res);
       return result;
     }
 
-  res = asn1_array2tree (gnutls_asn1_tab, &_gnutls_gnutls_asn, NULL);
+  res = MHD__asn1_array2tree (MHD_gnutlsMHD__asn1_tab, &MHD__gnutlsMHD__gnutls_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
-      asn1_delete_structure (&_gnutls_pkix1_asn);
-      result = mhd_gtls_asn2err (res);
+      MHD__asn1_delete_structure (&MHD__gnutls_pkix1_asn);
+      result = MHD_gtls_asn2err (res);
       return result;
     }
 
   /* Initialize the gcrypt (if used random generator) */
-  gc_pseudo_random (&c, 1);
+  MHD_gc_pseudo_random (&c, 1);
 
   return result;
 }
 
 /**
- * MHD_gnutls_global_deinit - This function deinitializes the global data
+ * MHD__gnutls_global_deinit - This function deinitializes the global data
  *
  * This function deinitializes the global data, that were initialized
- * using MHD_gnutls_global_init().
+ * using MHD__gnutls_global_init().
  *
  * Note!  This function is not thread safe.  See the discussion for
- * MHD_gnutls_global_init() for more information.
+ * MHD__gnutls_global_init() for more information.
  *
  **/
 void
-MHD_gnutls_global_deinit (void)
+MHD__gnutls_global_deinit (void)
 {
-  if (_gnutls_init == 1)
+  if (MHD__gnutls_init_level == 1)
     {
 #if HAVE_WINSOCK
       WSACleanup ();
 #endif
-      asn1_delete_structure (&_gnutls_gnutls_asn);
-      asn1_delete_structure (&_gnutls_pkix1_asn);
-      gc_done ();
+      MHD__asn1_delete_structure (&MHD__gnutlsMHD__gnutls_asn);
+      MHD__asn1_delete_structure (&MHD__gnutls_pkix1_asn);
+      MHD_gc_done ();
     }
-  _gnutls_init--;
+  MHD__gnutls_init_level--;
 }
 
 /* These functions should be elsewere. Kept here for
@@ -327,7 +327,7 @@ MHD_gnutls_global_deinit (void)
  */
 
 /**
- * MHD_gnutls_transport_set_pull_function - This function sets a read like function
+ * MHD__gnutls_transport_set_pull_function - This function sets a read like function
  * @pull_func: a callback function similar to read()
  * @session: gnutls session
  *
@@ -337,17 +337,17 @@ MHD_gnutls_global_deinit (void)
  * probably be ok.
  *
  * PULL_FUNC is of the form,
- * ssize_t (*mhd_gtls_pull_func)(gnutls_transport_ptr_t, void*, size_t);
+ * ssize_t (*MHD_gtls_pull_func)(MHD_gnutls_transport_ptr_t, void*, size_t);
  **/
 void
-MHD_gnutls_transport_set_pull_function (mhd_gtls_session_t session,
-                                        mhd_gtls_pull_func pull_func)
+MHD__gnutls_transport_set_pull_function (MHD_gtls_session_t session,
+                                        MHD_gtls_pull_func pull_func)
 {
-  session->internals._gnutls_pull_func = pull_func;
+  session->internals.MHD__gnutls_pull_func = pull_func;
 }
 
 /**
- * MHD_gnutls_transport_set_push_function - This function sets the function to send data
+ * MHD__gnutls_transport_set_push_function - This function sets the function to send data
  * @push_func: a callback function similar to write()
  * @session: gnutls session
  *
@@ -358,11 +358,11 @@ MHD_gnutls_transport_set_pull_function (mhd_gtls_session_t session,
  * specify this function for gnutls to be able to send data.
  *
  * PUSH_FUNC is of the form,
- * ssize_t (*mhd_gtls_push_func)(gnutls_transport_ptr_t, const void*, size_t);
+ * ssize_t (*MHD_gtls_push_func)(MHD_gnutls_transport_ptr_t, const void*, size_t);
  **/
 void
-MHD_gnutls_transport_set_push_function (mhd_gtls_session_t session,
-                                        mhd_gtls_push_func push_func)
+MHD__gnutls_transport_set_push_function (MHD_gtls_session_t session,
+                                        MHD_gtls_push_func push_func)
 {
-  session->internals._gnutls_push_func = push_func;
+  session->internals.MHD__gnutls_push_func = push_func;
 }

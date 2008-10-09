@@ -45,17 +45,17 @@
 #include <gnutls_x509.h>
 #include "debug.h"
 
-static gnutls_cert *alloc_and_load_x509_certs (gnutls_x509_crt_t * certs,
+static MHD_gnutls_cert *alloc_and_load_x509_certs (MHD_gnutls_x509_crt_t * certs,
                                                unsigned);
-static gnutls_privkey *alloc_and_load_x509_key (gnutls_x509_privkey_t key);
+static MHD_gnutls_privkey *alloc_and_load_x509_key (MHD_gnutls_x509_privkey_t key);
 
 
-/* Copies data from a internal certificate struct (gnutls_cert) to
+/* Copies data from a internal certificate struct (MHD_gnutls_cert) to
  * exported certificate struct (cert_auth_info_t)
  */
 static int
-_gnutls_copy_certificate_auth_info (cert_auth_info_t info,
-                                    gnutls_cert * cert, int ncerts)
+MHD__gnutls_copy_certificate_auth_info (cert_auth_info_t info,
+                                    MHD_gnutls_cert * cert, int ncerts)
 {
   /* Copy peer's information to auth_info_t
    */
@@ -69,10 +69,10 @@ _gnutls_copy_certificate_auth_info (cert_auth_info_t info,
     }
 
   info->raw_certificate_list =
-    gnutls_calloc (1, sizeof (gnutls_datum_t) * ncerts);
+    MHD_gnutls_calloc (1, sizeof (MHD_gnutls_datum_t) * ncerts);
   if (info->raw_certificate_list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -81,11 +81,11 @@ _gnutls_copy_certificate_auth_info (cert_auth_info_t info,
       if (cert->raw.size > 0)
         {
           ret =
-            _gnutls_set_datum (&info->raw_certificate_list[i],
+            MHD__gnutls_set_datum (&info->raw_certificate_list[i],
                                cert[i].raw.data, cert[i].raw.size);
           if (ret < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               goto clear;
             }
         }
@@ -97,9 +97,9 @@ _gnutls_copy_certificate_auth_info (cert_auth_info_t info,
 clear:
 
   for (j = 0; j < i; j++)
-    _gnutls_free_datum (&info->raw_certificate_list[j]);
+    MHD__gnutls_free_datum (&info->raw_certificate_list[j]);
 
-  gnutls_free (info->raw_certificate_list);
+  MHD_gnutls_free (info->raw_certificate_list);
   info->raw_certificate_list = NULL;
 
   return ret;
@@ -112,7 +112,7 @@ clear:
  * -1 otherwise.
  */
 inline static int
-_gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
+MHD__gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
                                *pk_algos, int pk_algos_length,
                                enum MHD_GNUTLS_PublicKeyAlgorithm
                                algo_to_check)
@@ -133,39 +133,39 @@ _gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
  * specified in cert.
  */
 static int
-_gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
+MHD__gnutls_cert_get_issuer_dn (MHD_gnutls_cert * cert, MHD_gnutls_datum_t * odn)
 {
   ASN1_TYPE dn;
   int len, result;
   int start, end;
 
-  if ((result = asn1_create_element
-       (_gnutls_get_pkix (), "PKIX1.Certificate", &dn)) != ASN1_SUCCESS)
+  if ((result = MHD__asn1_create_element
+       (MHD__gnutls_get_pkix (), "PKIX1.Certificate", &dn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_der_decoding (&dn, cert->raw.data, cert->raw.size, NULL);
+  result = MHD__asn1_der_decoding (&dn, cert->raw.data, cert->raw.size, NULL);
   if (result != ASN1_SUCCESS)
     {
       /* couldn't decode DER */
-      gnutls_assert ();
-      asn1_delete_structure (&dn);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dn);
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_der_decoding_startEnd (dn, cert->raw.data, cert->raw.size,
+  result = MHD__asn1_der_decoding_startEnd (dn, cert->raw.data, cert->raw.size,
                                        "tbsCertificate.issuer", &start, &end);
 
   if (result != ASN1_SUCCESS)
     {
       /* couldn't decode DER */
-      gnutls_assert ();
-      asn1_delete_structure (&dn);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dn);
+      return MHD_gtls_asn2err (result);
     }
-  asn1_delete_structure (&dn);
+  MHD__asn1_delete_structure (&dn);
 
   len = end - start + 1;
 
@@ -183,13 +183,13 @@ _gnutls_cert_get_issuer_dn (gnutls_cert * cert, gnutls_datum_t * odn)
  * CAs and sign algorithms supported by the peer server.
  */
 static int
-_find_x509_cert (const mhd_gtls_cert_credentials_t cred,
+_find_x509_cert (const MHD_gtls_cert_credentials_t cred,
                  opaque * _data, size_t _data_size,
                  const enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
                  int pk_algos_length, int *indx)
 {
   unsigned size;
-  gnutls_datum_t odn;
+  MHD_gnutls_datum_t odn;
   opaque *data = _data;
   ssize_t data_size = _data_size;
   unsigned i, j;
@@ -201,7 +201,7 @@ _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
     {
 
       DECR_LENGTH_RET (data_size, 2, 0);
-      size = mhd_gtls_read_uint16 (data);
+      size = MHD_gtls_read_uint16 (data);
       DECR_LENGTH_RET (data_size, size, 0);
       data += 2;
 
@@ -210,10 +210,10 @@ _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
           for (j = 0; j < cred->cert_list_length[i]; j++)
             {
               if ((result =
-                   _gnutls_cert_get_issuer_dn (&cred->cert_list[i][j],
+                   MHD__gnutls_cert_get_issuer_dn (&cred->cert_list[i][j],
                                                &odn)) < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return result;
                 }
 
@@ -227,7 +227,7 @@ _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
               cert_pk = cred->cert_list[i][0].subject_pk_algorithm;
 
               if ((memcmp (odn.data, data, size) == 0) &&
-                  (_gnutls_check_pk_algo_in_list
+                  (MHD__gnutls_check_pk_algo_in_list
                    (pk_algos, pk_algos_length, cert_pk) == 0))
                 {
                   *indx = i;
@@ -255,7 +255,7 @@ _find_x509_cert (const mhd_gtls_cert_credentials_t cred,
  * certificate request packet.
  */
 static int
-get_issuers_num (mhd_gtls_session_t session, opaque * data, ssize_t data_size)
+get_issuers_num (MHD_gtls_session_t session, opaque * data, ssize_t data_size)
 {
   int issuers_dn_len = 0, result;
   unsigned size;
@@ -275,7 +275,7 @@ get_issuers_num (mhd_gtls_session_t session, opaque * data, ssize_t data_size)
          */
         result = GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
         DECR_LENGTH_COM (data_size, 2, goto error);
-        size = mhd_gtls_read_uint16 (data);
+        size = MHD_gtls_read_uint16 (data);
 
         result = GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
         DECR_LENGTH_COM (data_size, size, goto error);
@@ -304,14 +304,14 @@ error:
  * packet.
  */
 static int
-get_issuers (mhd_gtls_session_t session,
-             gnutls_datum_t * issuers_dn, int issuers_len,
+get_issuers (MHD_gtls_session_t session,
+             MHD_gnutls_datum_t * issuers_dn, int issuers_len,
              opaque * data, size_t data_size)
 {
   int i;
   unsigned size;
 
-  if (gnutls_certificate_type_get (session) != MHD_GNUTLS_CRT_X509)
+  if (MHD_gnutls_certificate_type_get (session) != MHD_GNUTLS_CRT_X509)
     return 0;
 
   /* put the requested DNs to req_dn, only in case
@@ -328,7 +328,7 @@ get_issuers (mhd_gtls_session_t session,
            */
           data_size -= 2;
 
-          size = mhd_gtls_read_uint16 (data);
+          size = MHD_gtls_read_uint16 (data);
 
           data += 2;
 
@@ -345,26 +345,26 @@ get_issuers (mhd_gtls_session_t session,
 /* Calls the client get callback.
  */
 static int
-call_get_cert_callback (mhd_gtls_session_t session,
-                        gnutls_datum_t * issuers_dn,
+call_get_cert_callback (MHD_gtls_session_t session,
+                        MHD_gnutls_datum_t * issuers_dn,
                         int issuers_dn_length,
                         enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
                         int pk_algos_length)
 {
   unsigned i;
-  gnutls_cert *local_certs = NULL;
-  gnutls_privkey *local_key = NULL;
-  gnutls_retr_st st;
+  MHD_gnutls_cert *local_certs = NULL;
+  MHD_gnutls_privkey *local_key = NULL;
+  MHD_gnutls_retr_st st;
   int ret;
   enum MHD_GNUTLS_CertificateType type =
-    gnutls_certificate_type_get (session);
-  mhd_gtls_cert_credentials_t cred;
+    MHD_gnutls_certificate_type_get (session);
+  MHD_gtls_cert_credentials_t cred;
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
@@ -384,7 +384,7 @@ call_get_cert_callback (mhd_gtls_session_t session,
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -393,7 +393,7 @@ call_get_cert_callback (mhd_gtls_session_t session,
 
   if (type != st.type)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       ret = GNUTLS_E_INVALID_REQUEST;
       goto cleanup;
     }
@@ -407,12 +407,12 @@ call_get_cert_callback (mhd_gtls_session_t session,
     }
   else
     {                           /* PGP */
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       ret = GNUTLS_E_INVALID_REQUEST;
       goto cleanup;
     }
 
-  mhd_gtls_selected_certs_set (session, local_certs,
+  MHD_gtls_selected_certs_set (session, local_certs,
                                (local_certs != NULL) ? st.ncerts : 0,
                                local_key, 1);
 
@@ -426,10 +426,10 @@ cleanup:
         {
           for (i = 0; i < st.ncerts; i++)
             {
-              gnutls_x509_crt_deinit (st.cert.x509[i]);
+              MHD_gnutls_x509_crt_deinit (st.cert.x509[i]);
             }
-          gnutls_free (st.cert.x509);
-          gnutls_x509_privkey_deinit (st.key.x509);
+          MHD_gnutls_free (st.cert.x509);
+          MHD_gnutls_x509_privkey_deinit (st.key.x509);
         }
     }
   return ret;
@@ -443,24 +443,24 @@ cleanup:
  * algorithm (only in automatic mode).
  */
 static int
-_select_client_cert (mhd_gtls_session_t session,
+_select_client_cert (MHD_gtls_session_t session,
                      opaque * _data, size_t _data_size,
                      enum MHD_GNUTLS_PublicKeyAlgorithm *pk_algos,
                      int pk_algos_length)
 {
   int result;
   int indx = -1;
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
   opaque *data = _data;
   ssize_t data_size = _data_size;
   int issuers_dn_length;
-  gnutls_datum_t *issuers_dn = NULL;
+  MHD_gnutls_datum_t *issuers_dn = NULL;
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
@@ -476,17 +476,17 @@ _select_client_cert (mhd_gtls_session_t session,
           issuers_dn_length = get_issuers_num (session, data, data_size);
           if (issuers_dn_length < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return issuers_dn_length;
             }
 
           if (issuers_dn_length > 0)
             {
               issuers_dn =
-                gnutls_malloc (sizeof (gnutls_datum_t) * issuers_dn_length);
+                MHD_gnutls_malloc (sizeof (MHD_gnutls_datum_t) * issuers_dn_length);
               if (issuers_dn == NULL)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   return GNUTLS_E_MEMORY_ERROR;
                 }
 
@@ -495,7 +495,7 @@ _select_client_cert (mhd_gtls_session_t session,
                              data, data_size);
               if (result < 0)
                 {
-                  gnutls_assert ();
+                  MHD_gnutls_assert ();
                   goto cleanup;
                 }
             }
@@ -519,27 +519,27 @@ _select_client_cert (mhd_gtls_session_t session,
                            pk_algos, pk_algos_length, &indx);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return result;
         }
 
       if (indx >= 0)
         {
-          mhd_gtls_selected_certs_set (session,
+          MHD_gtls_selected_certs_set (session,
                                        &cred->cert_list[indx][0],
                                        cred->cert_list_length[indx],
                                        &cred->pkey[indx], 0);
         }
       else
         {
-          mhd_gtls_selected_certs_set (session, NULL, 0, NULL, 0);
+          MHD_gtls_selected_certs_set (session, NULL, 0, NULL, 0);
         }
 
       result = 0;
     }
 
 cleanup:
-  gnutls_free (issuers_dn);
+  MHD_gnutls_free (issuers_dn);
   return result;
 
 }
@@ -548,21 +548,21 @@ cleanup:
  */
 
 int
-mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
+MHD_gtls_gen_x509_crt (MHD_gtls_session_t session, opaque ** data)
 {
   int ret, i;
   opaque *pdata;
-  gnutls_cert *apr_cert_list;
-  gnutls_privkey *apr_pkey;
+  MHD_gnutls_cert *apr_cert_list;
+  MHD_gnutls_privkey *apr_pkey;
   int apr_cert_list_length;
 
   /* find the appropriate certificate
    */
   if ((ret =
-       mhd_gtls_get_selected_cert (session, &apr_cert_list,
+       MHD_gtls_get_selected_cert (session, &apr_cert_list,
                                    &apr_cert_list_length, &apr_pkey)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -583,19 +583,19 @@ mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
    * the one produced here )
    */
 
-  (*data) = gnutls_malloc (ret);
+  (*data) = MHD_gnutls_malloc (ret);
   pdata = (*data);
 
   if (pdata == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
-  mhd_gtls_write_uint24 (ret - 3, pdata);
+  MHD_gtls_write_uint24 (ret - 3, pdata);
   pdata += 3;
   for (i = 0; i < apr_cert_list_length; i++)
     {
-      mhd_gtls_write_datum24 (pdata, apr_cert_list[i].raw);
+      MHD_gtls_write_datum24 (pdata, apr_cert_list[i].raw);
       pdata += (3 + apr_cert_list[i].raw.size);
     }
 
@@ -603,30 +603,30 @@ mhd_gtls_gen_x509_crt (mhd_gtls_session_t session, opaque ** data)
 }
 
 int
-mhd_gtls_gen_cert_client_certificate (mhd_gtls_session_t session,
+MHD_gtls_gen_cert_client_certificate (MHD_gtls_session_t session,
                                       opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
     case MHD_GNUTLS_CRT_X509:
-      return mhd_gtls_gen_x509_crt (session, data);
+      return MHD_gtls_gen_x509_crt (session, data);
 
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
 
 int
-mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session,
+MHD_gtls_gen_cert_server_certificate (MHD_gtls_session_t session,
                                       opaque ** data)
 {
   switch (session->security_parameters.cert_type)
     {
     case MHD_GNUTLS_CRT_X509:
-      return mhd_gtls_gen_x509_crt (session, data);
+      return MHD_gtls_gen_x509_crt (session, data);
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
@@ -634,49 +634,49 @@ mhd_gtls_gen_cert_server_certificate (mhd_gtls_session_t session,
 /* Process server certificate
  */
 
-#define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) mhd_gtls_gcert_deinit(&peer_certificate_list[x])
+#define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) MHD_gtls_gcert_deinit(&peer_certificate_list[x])
 int
-mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
+MHD_gtls_proc_x509_server_certificate (MHD_gtls_session_t session,
                                        opaque * data, size_t data_size)
 {
   int size, len, ret;
   opaque *p = data;
   cert_auth_info_t info;
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
   ssize_t dsize = data_size;
   int i, j, x;
-  gnutls_cert *peer_certificate_list;
+  MHD_gnutls_cert *peer_certificate_list;
   int peer_certificate_list_size = 0;
-  gnutls_datum_t tmp;
+  MHD_gnutls_datum_t tmp;
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
 
   if ((ret =
-       mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
+       MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                                sizeof (cert_auth_info_st), 1)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  info = mhd_gtls_get_auth_info (session);
+  info = MHD_gtls_get_auth_info (session);
 
   if (data == NULL || data_size == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* no certificate was sent */
       return GNUTLS_E_NO_CERTIFICATE_FOUND;
     }
 
   DECR_LEN (dsize, 3);
-  size = mhd_gtls_read_uint24 (p);
+  size = MHD_gtls_read_uint24 (p);
   p += 3;
 
   /* some implementations send 0B 00 00 06 00 00 03 00 00 00
@@ -684,7 +684,7 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
    */
   if (size == 0 || size == 3)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* no certificate was sent */
       return GNUTLS_E_NO_CERTIFICATE_FOUND;
     }
@@ -693,7 +693,7 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
   while (i > 0)
     {
       DECR_LEN (dsize, 3);
-      len = mhd_gtls_read_uint24 (p);
+      len = MHD_gtls_read_uint24 (p);
       p += 3;
       DECR_LEN (dsize, len);
       peer_certificate_list_size++;
@@ -703,7 +703,7 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
   if (peer_certificate_list_size == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_NO_CERTIFICATE_FOUND;
     }
 
@@ -712,14 +712,14 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
    */
 
   peer_certificate_list =
-    gnutls_malloc (sizeof (gnutls_cert) * (peer_certificate_list_size));
+    MHD_gnutls_malloc (sizeof (MHD_gnutls_cert) * (peer_certificate_list_size));
 
   if (peer_certificate_list == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
-  memset (peer_certificate_list, 0, sizeof (gnutls_cert) *
+  memset (peer_certificate_list, 0, sizeof (MHD_gnutls_cert) *
           peer_certificate_list_size);
 
   p = data + 3;
@@ -731,18 +731,18 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
   for (j = 0; j < peer_certificate_list_size; j++)
     {
-      len = mhd_gtls_read_uint24 (p);
+      len = MHD_gtls_read_uint24 (p);
       p += 3;
 
       tmp.size = len;
       tmp.data = p;
 
       if ((ret =
-           mhd_gtls_x509_raw_cert_to_gcert (&peer_certificate_list
+           MHD_gtls_x509_raw_cert_to_gcert (&peer_certificate_list
                                             [j], &tmp,
                                             CERT_ONLY_EXTENSIONS)) < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto cleanup;
         }
 
@@ -751,19 +751,19 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
 
   if ((ret =
-       _gnutls_copy_certificate_auth_info (info,
+       MHD__gnutls_copy_certificate_auth_info (info,
                                            peer_certificate_list,
                                            peer_certificate_list_size)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   if ((ret =
-       _gnutls_check_key_usage (&peer_certificate_list[0],
-                                gnutls_kx_get (session))) < 0)
+       MHD__gnutls_check_key_usage (&peer_certificate_list[0],
+                                MHD_gnutls_kx_get (session))) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
@@ -771,23 +771,23 @@ mhd_gtls_proc_x509_server_certificate (mhd_gtls_session_t session,
 
 cleanup:
   CLEAR_CERTS;
-  gnutls_free (peer_certificate_list);
+  MHD_gnutls_free (peer_certificate_list);
   return ret;
 
 }
 
-#define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) mhd_gtls_gcert_deinit(&peer_certificate_list[x])
+#define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) MHD_gtls_gcert_deinit(&peer_certificate_list[x])
 
 int
-mhd_gtls_proc_cert_server_certificate (mhd_gtls_session_t session,
+MHD_gtls_proc_cert_server_certificate (MHD_gtls_session_t session,
                                        opaque * data, size_t data_size)
 {
   switch (session->security_parameters.cert_type)
     {
     case MHD_GNUTLS_CRT_X509:
-      return mhd_gtls_proc_x509_server_certificate (session, data, data_size);
+      return MHD_gtls_proc_x509_server_certificate (session, data, data_size);
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
@@ -802,7 +802,7 @@ typedef enum CertificateSigType
  * if true;
  */
 inline static int
-_gnutls_check_supported_sign_algo (CertificateSigType algo)
+MHD__gnutls_check_supported_sign_algo (CertificateSigType algo)
 {
   switch (algo)
     {
@@ -814,31 +814,31 @@ _gnutls_check_supported_sign_algo (CertificateSigType algo)
 }
 
 int
-mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
+MHD_gtls_proc_cert_cert_req (MHD_gtls_session_t session, opaque * data,
                              size_t data_size)
 {
   int size, ret;
   opaque *p;
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
   ssize_t dsize;
   int i, j;
   enum MHD_GNUTLS_PublicKeyAlgorithm pk_algos[MAX_SIGN_ALGOS];
   int pk_algos_length;
-  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD__gnutls_protocol_get_version (session);
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
   if ((ret =
-       mhd_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
+       MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_CERTIFICATE,
                                sizeof (cert_auth_info_st), 0)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -854,7 +854,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
   for (i = 0; i < size; i++, p++)
     {
       DECR_LEN (dsize, 1);
-      if ((ret = _gnutls_check_supported_sign_algo (*p)) > 0)
+      if ((ret = MHD__gnutls_check_supported_sign_algo (*p)) > 0)
         {
           if (j < MAX_SIGN_ALGOS)
             {
@@ -866,7 +866,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
 
   if (pk_algos_length == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
     }
 
@@ -885,7 +885,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
 
   /* read the certificate authorities */
   DECR_LEN (dsize, 2);
-  size = mhd_gtls_read_uint16 (p);
+  size = MHD_gtls_read_uint16 (p);
   p += 2;
 
   DECR_LEN (dsize, size);
@@ -896,7 +896,7 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
   if ((ret =
        _select_client_cert (session, p, size, pk_algos, pk_algos_length)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -909,34 +909,34 @@ mhd_gtls_proc_cert_cert_req (mhd_gtls_session_t session, opaque * data,
 }
 
 int
-mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session,
+MHD_gtls_gen_cert_client_cert_vrfy (MHD_gtls_session_t session,
                                     opaque ** data)
 {
   int ret;
-  gnutls_cert *apr_cert_list;
-  gnutls_privkey *apr_pkey;
+  MHD_gnutls_cert *apr_cert_list;
+  MHD_gnutls_privkey *apr_pkey;
   int apr_cert_list_length, size;
-  gnutls_datum_t signature;
+  MHD_gnutls_datum_t signature;
 
   *data = NULL;
 
   /* find the appropriate certificate */
   if ((ret =
-       mhd_gtls_get_selected_cert (session, &apr_cert_list,
+       MHD_gtls_get_selected_cert (session, &apr_cert_list,
                                    &apr_cert_list_length, &apr_pkey)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   if (apr_cert_list_length > 0)
     {
       if ((ret =
-           mhd_gtls_tls_sign_hdata (session,
+           MHD_gtls_tls_sign_hdata (session,
                                     &apr_cert_list[0],
                                     apr_pkey, &signature)) < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
     }
@@ -945,42 +945,42 @@ mhd_gtls_gen_cert_client_cert_vrfy (mhd_gtls_session_t session,
       return 0;
     }
 
-  *data = gnutls_malloc (signature.size + 2);
+  *data = MHD_gnutls_malloc (signature.size + 2);
   if (*data == NULL)
     {
-      _gnutls_free_datum (&signature);
+      MHD__gnutls_free_datum (&signature);
       return GNUTLS_E_MEMORY_ERROR;
     }
   size = signature.size;
-  mhd_gtls_write_uint16 (size, *data);
+  MHD_gtls_write_uint16 (size, *data);
 
   memcpy (&(*data)[2], signature.data, size);
 
-  _gnutls_free_datum (&signature);
+  MHD__gnutls_free_datum (&signature);
 
   return size + 2;
 }
 
 int
-mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t session,
+MHD_gtls_proc_cert_client_cert_vrfy (MHD_gtls_session_t session,
                                      opaque * data, size_t data_size)
 {
   int size, ret;
   ssize_t dsize = data_size;
   opaque *pdata = data;
-  gnutls_datum_t sig;
-  cert_auth_info_t info = mhd_gtls_get_auth_info (session);
-  gnutls_cert peer_cert;
+  MHD_gnutls_datum_t sig;
+  cert_auth_info_t info = MHD_gtls_get_auth_info (session);
+  MHD_gnutls_cert peer_cert;
 
   if (info == NULL || info->ncerts == 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       /* we need this in order to get peer's certificate */
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   DECR_LEN (dsize, 2);
-  size = mhd_gtls_read_uint16 (pdata);
+  size = MHD_gtls_read_uint16 (pdata);
   pdata += 2;
 
   DECR_LEN (dsize, size);
@@ -988,47 +988,47 @@ mhd_gtls_proc_cert_client_cert_vrfy (mhd_gtls_session_t session,
   sig.data = pdata;
   sig.size = size;
 
-  ret = mhd_gtls_raw_cert_to_gcert (&peer_cert,
+  ret = MHD_gtls_raw_cert_to_gcert (&peer_cert,
                                     session->security_parameters.cert_type,
                                     &info->raw_certificate_list[0],
                                     CERT_NO_COPY);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
-  if ((ret = mhd_gtls_verify_sig_hdata (session, &peer_cert, &sig)) < 0)
+  if ((ret = MHD_gtls_verify_sig_hdata (session, &peer_cert, &sig)) < 0)
     {
-      gnutls_assert ();
-      mhd_gtls_gcert_deinit (&peer_cert);
+      MHD_gnutls_assert ();
+      MHD_gtls_gcert_deinit (&peer_cert);
       return ret;
     }
-  mhd_gtls_gcert_deinit (&peer_cert);
+  MHD_gtls_gcert_deinit (&peer_cert);
 
   return 0;
 }
 
 #define CERTTYPE_SIZE 3
 int
-mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
+MHD_gtls_gen_cert_server_cert_req (MHD_gtls_session_t session, opaque ** data)
 {
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
   int size;
   opaque *pdata;
-  enum MHD_GNUTLS_Protocol ver = MHD_gnutls_protocol_get_version (session);
+  enum MHD_GNUTLS_Protocol ver = MHD__gnutls_protocol_get_version (session);
 
   /* Now we need to generate the RDN sequence. This is
    * already in the CERTIFICATE_CRED structure, to improve
    * performance.
    */
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
@@ -1044,12 +1044,12 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
        functions (see below).  */
     size += 1;
 
-  (*data) = gnutls_malloc (size);
+  (*data) = MHD_gnutls_malloc (size);
   pdata = (*data);
 
   if (pdata == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -1069,12 +1069,12 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
   if (session->security_parameters.cert_type == MHD_GNUTLS_CRT_X509 &&
       session->internals.ignore_rdn_sequence == 0)
     {
-      mhd_gtls_write_datum16 (pdata, cred->x509_rdn_sequence);
+      MHD_gtls_write_datum16 (pdata, cred->x509_rdn_sequence);
       /* pdata += cred->x509_rdn_sequence.size + 2; */
     }
   else
     {
-      mhd_gtls_write_uint16 (0, pdata);
+      MHD_gtls_write_uint16 (0, pdata);
       /* pdata+=2; */
     }
 
@@ -1090,10 +1090,10 @@ mhd_gtls_gen_cert_server_cert_req (mhd_gtls_session_t session, opaque ** data)
  *
  */
 int
-mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
-                            gnutls_cert ** apr_cert_list,
+MHD_gtls_get_selected_cert (MHD_gtls_session_t session,
+                            MHD_gnutls_cert ** apr_cert_list,
                             int *apr_cert_list_length,
-                            gnutls_privkey ** apr_pkey)
+                            MHD_gnutls_privkey ** apr_pkey)
 {
   if (session->security_parameters.entity == GNUTLS_SERVER)
     {
@@ -1107,7 +1107,7 @@ mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
 
       if (*apr_cert_list_length == 0 || *apr_cert_list == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
         }
 
@@ -1128,70 +1128,70 @@ mhd_gtls_get_selected_cert (mhd_gtls_session_t session,
   return 0;
 }
 
-/* converts the given x509 certificate to gnutls_cert* and allocates
+/* converts the given x509 certificate to MHD_gnutls_cert* and allocates
  * space for them.
  */
-static gnutls_cert *
-alloc_and_load_x509_certs (gnutls_x509_crt_t * certs, unsigned ncerts)
+static MHD_gnutls_cert *
+alloc_and_load_x509_certs (MHD_gnutls_x509_crt_t * certs, unsigned ncerts)
 {
-  gnutls_cert *local_certs;
+  MHD_gnutls_cert *local_certs;
   int ret = 0;
   unsigned i, j;
 
   if (certs == NULL)
     return NULL;
 
-  local_certs = gnutls_malloc (sizeof (gnutls_cert) * ncerts);
+  local_certs = MHD_gnutls_malloc (sizeof (MHD_gnutls_cert) * ncerts);
   if (local_certs == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
   for (i = 0; i < ncerts; i++)
     {
-      ret = mhd_gtls_x509_crt_to_gcert (&local_certs[i], certs[i], 0);
+      ret = MHD_gtls_x509_crt_to_gcert (&local_certs[i], certs[i], 0);
       if (ret < 0)
         break;
     }
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       for (j = 0; j < i; j++)
         {
-          mhd_gtls_gcert_deinit (&local_certs[j]);
+          MHD_gtls_gcert_deinit (&local_certs[j]);
         }
-      gnutls_free (local_certs);
+      MHD_gnutls_free (local_certs);
       return NULL;
     }
 
   return local_certs;
 }
 
-/* converts the given x509 key to gnutls_privkey* and allocates
+/* converts the given x509 key to MHD_gnutls_privkey* and allocates
  * space for it.
  */
-static gnutls_privkey *
-alloc_and_load_x509_key (gnutls_x509_privkey_t key)
+static MHD_gnutls_privkey *
+alloc_and_load_x509_key (MHD_gnutls_x509_privkey_t key)
 {
-  gnutls_privkey *local_key;
+  MHD_gnutls_privkey *local_key;
   int ret = 0;
 
   if (key == NULL)
     return NULL;
 
-  local_key = gnutls_malloc (sizeof (gnutls_privkey));
+  local_key = MHD_gnutls_malloc (sizeof (MHD_gnutls_privkey));
   if (local_key == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
-  ret = _gnutls_x509_privkey_to_gkey (local_key, key);
+  ret = MHD__gnutls_x509_privkey_to_gkey (local_key, key);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
@@ -1199,7 +1199,7 @@ alloc_and_load_x509_key (gnutls_x509_privkey_t key)
 }
 
 void
-mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session)
+MHD_gtls_selected_certs_deinit (MHD_gtls_session_t session)
 {
   if (session->internals.selected_need_free != 0)
     {
@@ -1207,16 +1207,16 @@ mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session)
 
       for (i = 0; i < session->internals.selected_cert_list_length; i++)
         {
-          mhd_gtls_gcert_deinit (&session->internals.selected_cert_list[i]);
+          MHD_gtls_gcert_deinit (&session->internals.selected_cert_list[i]);
         }
-      gnutls_free (session->internals.selected_cert_list);
+      MHD_gnutls_free (session->internals.selected_cert_list);
       session->internals.selected_cert_list = NULL;
       session->internals.selected_cert_list_length = 0;
 
-      mhd_gtls_gkey_deinit (session->internals.selected_key);
+      MHD_gtls_gkey_deinit (session->internals.selected_key);
       if (session->internals.selected_key)
         {
-          gnutls_free (session->internals.selected_key);
+          MHD_gnutls_free (session->internals.selected_key);
           session->internals.selected_key = NULL;
         }
     }
@@ -1225,11 +1225,11 @@ mhd_gtls_selected_certs_deinit (mhd_gtls_session_t session)
 }
 
 void
-mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
-                             gnutls_cert * certs, int ncerts,
-                             gnutls_privkey * key, int need_free)
+MHD_gtls_selected_certs_set (MHD_gtls_session_t session,
+                             MHD_gnutls_cert * certs, int ncerts,
+                             MHD_gnutls_privkey * key, int need_free)
 {
-  mhd_gtls_selected_certs_deinit (session);
+  MHD_gtls_selected_certs_deinit (session);
 
   session->internals.selected_cert_list = certs;
   session->internals.selected_cert_list_length = ncerts;
@@ -1250,19 +1250,19 @@ mhd_gtls_selected_certs_set (mhd_gtls_session_t session,
  *
  */
 int
-mhd_gtls_server_select_cert (mhd_gtls_session_t session,
+MHD_gtls_server_select_cert (MHD_gtls_session_t session,
                              enum MHD_GNUTLS_PublicKeyAlgorithm
                              requested_algo)
 {
   unsigned i;
   int idx, ret;
-  mhd_gtls_cert_credentials_t cred;
+  MHD_gtls_cert_credentials_t cred;
 
-  cred = (mhd_gtls_cert_credentials_t)
-    mhd_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
+  cred = (MHD_gtls_cert_credentials_t)
+    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
   if (cred == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
@@ -1301,7 +1301,7 @@ mhd_gtls_server_select_cert (mhd_gtls_session_t session,
    */
   if (idx >= 0 && ret == 0)
     {
-      mhd_gtls_selected_certs_set (session,
+      MHD_gtls_selected_certs_set (session,
                                    &cred->cert_list[idx][0],
                                    cred->cert_list_length[idx],
                                    &cred->pkey[idx], 0);
@@ -1313,11 +1313,11 @@ mhd_gtls_server_select_cert (mhd_gtls_session_t session,
   return ret;
 }
 
-/* Frees the mhd_gtls_rsa_info_st structure.
+/* Frees the MHD_gtls_rsa_info_st structure.
  */
 void
-mhd_gtls_free_rsa_info (rsa_info_st * rsa)
+MHD_gtls_free_rsa_info (rsa_info_st * rsa)
 {
-  _gnutls_free_datum (&rsa->modulus);
-  _gnutls_free_datum (&rsa->exponent);
+  MHD__gnutls_free_datum (&rsa->modulus);
+  MHD__gnutls_free_datum (&rsa->exponent);
 }

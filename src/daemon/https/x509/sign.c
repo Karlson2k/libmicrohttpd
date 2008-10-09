@@ -50,34 +50,34 @@
  */
 static int
 encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
-                        const gnutls_datum_t * digest, gnutls_datum_t * info)
+                        const MHD_gnutls_datum_t * digest, MHD_gnutls_datum_t * info)
 {
   ASN1_TYPE dinfo = ASN1_TYPE_EMPTY;
   int result;
   const char *algo;
 
-  algo = mhd_gtls_x509_mac_to_oid ((enum MHD_GNUTLS_HashAlgorithm) hash);
+  algo = MHD_gtls_x509_mac_to_oid ((enum MHD_GNUTLS_HashAlgorithm) hash);
   if (algo == NULL)
     {
-      gnutls_assert ();
-      _gnutls_x509_log ("Hash algorithm: %d\n", hash);
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log ("Hash algorithm: %d\n", hash);
       return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
     }
 
-  if ((result = asn1_create_element (_gnutls_get_gnutls_asn (),
+  if ((result = MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
                                      "GNUTLS.DigestInfo",
                                      &dinfo)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_write_value (dinfo, "digestAlgorithm.algorithm", algo, 1);
+  result = MHD__asn1_write_value (dinfo, "digestAlgorithm.algorithm", algo, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&dinfo);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dinfo);
+      return MHD_gtls_asn2err (result);
     }
 
   /* Write an ASN.1 NULL in the parameters field.  This matches RFC
@@ -85,43 +85,43 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
      perspective (see those documents for more information).
      Regardless of what is correct, this appears to be what most
      implementations do.  */
-  result = asn1_write_value (dinfo, "digestAlgorithm.parameters",
+  result = MHD__asn1_write_value (dinfo, "digestAlgorithm.parameters",
                              "\x05\x00", 2);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&dinfo);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dinfo);
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_write_value (dinfo, "digest", digest->data, digest->size);
+  result = MHD__asn1_write_value (dinfo, "digest", digest->data, digest->size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&dinfo);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dinfo);
+      return MHD_gtls_asn2err (result);
     }
 
   info->size = 0;
-  asn1_der_coding (dinfo, "", NULL, &info->size, NULL);
+  MHD__asn1_der_coding (dinfo, "", NULL, &info->size, NULL);
 
-  info->data = gnutls_malloc (info->size);
+  info->data = MHD_gnutls_malloc (info->size);
   if (info->data == NULL)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&dinfo);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dinfo);
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = asn1_der_coding (dinfo, "", info->data, &info->size, NULL);
+  result = MHD__asn1_der_coding (dinfo, "", info->data, &info->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      asn1_delete_structure (&dinfo);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD__asn1_delete_structure (&dinfo);
+      return MHD_gtls_asn2err (result);
     }
 
-  asn1_delete_structure (&dinfo);
+  MHD__asn1_delete_structure (&dinfo);
 
   return 0;
 }
@@ -133,45 +133,45 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
  */
 static int
 pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
-                const gnutls_datum_t * text, mpi_t * params, int params_len,
-                gnutls_datum_t * signature)
+                const MHD_gnutls_datum_t * text, mpi_t * params, int params_len,
+                MHD_gnutls_datum_t * signature)
 {
   int ret;
   opaque _digest[MAX_HASH_SIZE];
   GNUTLS_HASH_HANDLE hd;
-  gnutls_datum_t digest, info;
+  MHD_gnutls_datum_t digest, info;
 
-  hd = mhd_gtls_hash_init (HASH2MAC (hash));
+  hd = MHD_gtls_hash_init (HASH2MAC (hash));
   if (hd == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_HASH_FAILED;
     }
 
-  mhd_gnutls_hash (hd, text->data, text->size);
-  mhd_gnutls_hash_deinit (hd, _digest);
+  MHD_gnutls_hash (hd, text->data, text->size);
+  MHD_gnutls_hash_deinit (hd, _digest);
 
   digest.data = _digest;
-  digest.size = mhd_gnutls_hash_get_algo_len (HASH2MAC (hash));
+  digest.size = MHD_gnutls_hash_get_algo_len (HASH2MAC (hash));
 
   /* Encode the digest as a DigestInfo
    */
   if ((ret = encode_ber_digest_info (hash, &digest, &info)) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
   if ((ret =
-       mhd_gtls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
+       MHD_gtls_sign (MHD_GNUTLS_PK_RSA, params, params_len, &info,
                       signature)) < 0)
     {
-      gnutls_assert ();
-      _gnutls_free_datum (&info);
+      MHD_gnutls_assert ();
+      MHD__gnutls_free_datum (&info);
       return ret;
     }
 
-  _gnutls_free_datum (&info);
+  MHD__gnutls_free_datum (&info);
 
   return 0;
 }
@@ -186,9 +186,9 @@ pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
  * 'hash' is only used in PKCS1 RSA signing.
  */
 int
-_gnutls_x509_sign (const gnutls_datum_t * tbs,
+MHD__gnutls_x509_sign (const MHD_gnutls_datum_t * tbs,
                    enum MHD_GNUTLS_HashAlgorithm hash,
-                   gnutls_x509_privkey_t signer, gnutls_datum_t * signature)
+                   MHD_gnutls_x509_privkey_t signer, MHD_gnutls_datum_t * signature)
 {
   int ret;
 
@@ -200,63 +200,63 @@ _gnutls_x509_sign (const gnutls_datum_t * tbs,
                         signature);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
       return 0;
       break;
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
 }
 
-/* This is the same as the _gnutls_x509_sign, but this one will decode
+/* This is the same as the MHD__gnutls_x509_sign, but this one will decode
  * the ASN1_TYPE given, and sign the DER data. Actually used to get the DER
  * of the TBS and sign it on the fly.
  */
 int
-_gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
+MHD__gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
                        enum MHD_GNUTLS_HashAlgorithm hash,
-                       gnutls_x509_privkey_t signer,
-                       gnutls_datum_t * signature)
+                       MHD_gnutls_x509_privkey_t signer,
+                       MHD_gnutls_datum_t * signature)
 {
   int result;
   opaque *buf;
   int buf_size;
-  gnutls_datum_t tbs;
+  MHD_gnutls_datum_t tbs;
 
   buf_size = 0;
-  asn1_der_coding (cert, tbs_name, NULL, &buf_size, NULL);
+  MHD__asn1_der_coding (cert, tbs_name, NULL, &buf_size, NULL);
 
-  buf = gnutls_alloca (buf_size);
+  buf = MHD_gnutls_alloca (buf_size);
   if (buf == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = asn1_der_coding (cert, tbs_name, buf, &buf_size, NULL);
+  result = MHD__asn1_der_coding (cert, tbs_name, buf, &buf_size, NULL);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      gnutls_afree (buf);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (buf);
+      return MHD_gtls_asn2err (result);
     }
 
   tbs.data = buf;
   tbs.size = buf_size;
 
-  result = _gnutls_x509_sign (&tbs, hash, signer, signature);
-  gnutls_afree (buf);
+  result = MHD__gnutls_x509_sign (&tbs, hash, signer, signature);
+  MHD_gnutls_afree (buf);
 
   return result;
 }
 
 /*-
- * _gnutls_x509_pkix_sign - This function will sign a CRL or a certificate with a key
+ * MHD__gnutls_x509_pkix_sign - This function will sign a CRL or a certificate with a key
  * @src: should contain an ASN1_TYPE
  * @issuer: is the certificate of the certificate issuer
  * @issuer_key: holds the issuer's private key
@@ -268,76 +268,76 @@ _gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
  *
  -*/
 int
-_gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
+MHD__gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
                         enum MHD_GNUTLS_HashAlgorithm dig,
-                        gnutls_x509_crt_t issuer,
-                        gnutls_x509_privkey_t issuer_key)
+                        MHD_gnutls_x509_crt_t issuer,
+                        MHD_gnutls_x509_privkey_t issuer_key)
 {
   int result;
-  gnutls_datum_t signature;
+  MHD_gnutls_datum_t signature;
   char name[128];
 
   /* Step 1. Copy the issuer's name into the certificate.
    */
-  mhd_gtls_str_cpy (name, sizeof (name), src_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".issuer");
+  MHD_gtls_str_cpy (name, sizeof (name), src_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".issuer");
 
-  result = asn1_copy_node (src, name, issuer->cert, "tbsCertificate.subject");
+  result = MHD__asn1_copy_node (src, name, issuer->cert, "tbsCertificate.subject");
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   /* Step 1.5. Write the signature stuff in the tbsCertificate.
    */
-  mhd_gtls_str_cpy (name, sizeof (name), src_name);
-  mhd_gtls_str_cat (name, sizeof (name), ".signature");
+  MHD_gtls_str_cpy (name, sizeof (name), src_name);
+  MHD_gtls_str_cat (name, sizeof (name), ".signature");
 
-  result = _gnutls_x509_write_sig_params (src, name,
+  result = MHD__gnutls_x509_write_sig_params (src, name,
                                           issuer_key->pk_algorithm, dig,
                                           issuer_key->params,
                                           issuer_key->params_size);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* Step 2. Sign the certificate.
    */
-  result = _gnutls_x509_sign_tbs (src, src_name, dig, issuer_key, &signature);
+  result = MHD__gnutls_x509_sign_tbs (src, src_name, dig, issuer_key, &signature);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   /* write the signature (bits)
    */
   result =
-    asn1_write_value (src, "signature", signature.data, signature.size * 8);
+    MHD__asn1_write_value (src, "signature", signature.data, signature.size * 8);
 
-  _gnutls_free_datum (&signature);
+  MHD__gnutls_free_datum (&signature);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   /* Step 3. Move up and write the AlgorithmIdentifier, which is also
    * the same.
    */
 
-  result = _gnutls_x509_write_sig_params (src, "signatureAlgorithm",
+  result = MHD__gnutls_x509_write_sig_params (src, "signatureAlgorithm",
                                           issuer_key->pk_algorithm, dig,
                                           issuer_key->params,
                                           issuer_key->params_size);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 

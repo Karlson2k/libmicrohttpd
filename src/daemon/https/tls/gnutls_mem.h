@@ -29,42 +29,42 @@
 # include <dmalloc.h>
 #endif
 
-typedef void svoid;             /* for functions that allocate using gnutls_secure_malloc */
+typedef void svoid;             /* for functions that allocate using MHD_gnutls_secure_malloc */
 
-/* Use gnutls_afree() when calling alloca, or
+/* Use MHD_gnutls_afree() when calling alloca, or
  * memory leaks may occur in systems which do not
  * support alloca.
  */
 #ifdef USE_EFENCE
-# define gnutls_alloca gnutls_malloc
-# define gnutls_afree gnutls_free
+# define MHD_gnutls_alloca MHD_gnutls_malloc
+# define MHD_gnutls_afree MHD_gnutls_free
 #endif
 
 #ifdef HAVE_ALLOCA
 # ifdef HAVE_ALLOCA_H
 #  include <alloca.h>
 # endif
-# ifndef gnutls_alloca
-#  define gnutls_alloca alloca
-#  define gnutls_afree(x)
+# ifndef MHD_gnutls_alloca
+#  define MHD_gnutls_alloca alloca
+#  define MHD_gnutls_afree(x)
 # endif
 #else
-# ifndef gnutls_alloca
-#  define gnutls_alloca gnutls_malloc
-#  define gnutls_afree gnutls_free
+# ifndef MHD_gnutls_alloca
+#  define MHD_gnutls_alloca MHD_gnutls_malloc
+#  define MHD_gnutls_afree MHD_gnutls_free
 # endif
 #endif /* HAVE_ALLOCA */
 
-extern int (*_gnutls_is_secure_memory) (const void *);
+extern int (*MHD__gnutls_is_secure_memory) (const void *);
 
 /* this realloc function will return ptr if size==0, and
  * will free the ptr if the new allocation failed.
  */
-void *mhd_gtls_realloc_fast (void *ptr, size_t size);
+void *MHD_gtls_realloc_fast (void *ptr, size_t size);
 
-svoid *mhd_gtls_secure_calloc (size_t nmemb, size_t size);
+svoid *MHD_gtls_secure_calloc (size_t nmemb, size_t size);
 
-void *mhd_gtls_calloc (size_t nmemb, size_t size);
-char *mhd_gtls_strdup (const char *);
+void *MHD_gtls_calloc (size_t nmemb, size_t size);
+char *MHD_gtls_strdup (const char *);
 
 #endif /* GNUTLS_MEM_H */

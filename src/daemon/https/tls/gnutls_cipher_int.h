@@ -25,19 +25,19 @@
 #ifndef GNUTLS_CIPHER_INT
 # define GNUTLS_CIPHER_INT
 
-#define cipher_hd_t gc_cipher_handle
+#define cipher_hd_t MHD_gc_cipher_handle
 #define GNUTLS_CIPHER_FAILED NULL
 
-// TODO gc_cipher_handle -> void * x3
-void *mhd_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
-                            const gnutls_datum_t * key,
-                            const gnutls_datum_t * iv);
+// TODO MHD_gc_cipher_handle -> void * x3
+void *MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
+                            const MHD_gnutls_datum_t * key,
+                            const MHD_gnutls_datum_t * iv);
 
-int mhd_gtls_cipher_encrypt (void *handle, void *text, int textlen);
+int MHD_gtls_cipher_encrypt (void *handle, void *text, int textlen);
 
-int mhd_gtls_cipher_decrypt (void *handle,
+int MHD_gtls_cipher_decrypt (void *handle,
                              void *ciphertext, int ciphertextlen);
 
-void mhd_gnutls_cipher_deinit (void *handle);
+void MHD_gnutls_cipher_deinit (void *handle);
 
 #endif /* GNUTLS_CIPHER_INT */

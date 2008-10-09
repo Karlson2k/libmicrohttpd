@@ -29,11 +29,11 @@
 
 typedef struct
 {
-  gnutls_alert_description_t alert;
+  MHD_gnutls_alert_description_t alert;
   const char *desc;
-} gnutls_alert_entry;
+} MHD_gnutls_alert_entry;
 
-static const gnutls_alert_entry mhd_gtls_sup_alerts[] = {
+static const MHD_gnutls_alert_entry MHD_gtls_sup_alerts[] = {
   {GNUTLS_A_CLOSE_NOTIFY, "Close notify"},
   {GNUTLS_A_UNEXPECTED_MESSAGE, "Unexpected message"},
   {GNUTLS_A_BAD_RECORD_MAC, "Bad record MAC"},
@@ -67,23 +67,23 @@ static const gnutls_alert_entry mhd_gtls_sup_alerts[] = {
 };
 
 #define GNUTLS_ALERT_LOOP(b) \
-        const gnutls_alert_entry *p; \
-                for(p = mhd_gtls_sup_alerts; p->desc != NULL; p++) { b ; }
+        const MHD_gnutls_alert_entry *p; \
+                for(p = MHD_gtls_sup_alerts; p->desc != NULL; p++) { b ; }
 
 #define GNUTLS_ALERT_ID_LOOP(a) \
                         GNUTLS_ALERT_LOOP( if(p->alert == alert) { a; break; })
 
 
 /**
-  * MHD_gnutls_alert_get_name - Returns a string describing the alert number given
-  * @alert: is an alert number #mhd_gtls_session_t structure.
+  * MHD__gnutls_alert_get_name - Returns a string describing the alert number given
+  * @alert: is an alert number #MHD_gtls_session_t structure.
   *
   * This function will return a string that describes the given alert
-  * number or NULL.  See gnutls_alert_get().
+  * number or NULL.  See MHD_gnutls_alert_get().
   *
   **/
 const char *
-MHD_gnutls_alert_get_name (gnutls_alert_description_t alert)
+MHD__gnutls_alert_get_name (MHD_gnutls_alert_description_t alert)
 {
   const char *ret = NULL;
 
@@ -93,8 +93,8 @@ MHD_gnutls_alert_get_name (gnutls_alert_description_t alert)
 }
 
 /**
-  * MHD_gnutls_alert_send - This function sends an alert message to the peer
-  * @session: is a #mhd_gtls_session_t structure.
+  * MHD__gnutls_alert_send - This function sends an alert message to the peer
+  * @session: is a #MHD_gtls_session_t structure.
   * @level: is the level of the alert
   * @desc: is the alert description
   *
@@ -110,8 +110,8 @@ MHD_gnutls_alert_get_name (gnutls_alert_description_t alert)
   *
   **/
 int
-MHD_gnutls_alert_send (mhd_gtls_session_t session, gnutls_alert_level_t level,
-                       gnutls_alert_description_t desc)
+MHD__gnutls_alert_send (MHD_gtls_session_t session, MHD_gnutls_alert_level_t level,
+                       MHD_gnutls_alert_description_t desc)
 {
   uint8_t data[2];
   int ret;
@@ -120,13 +120,13 @@ MHD_gnutls_alert_send (mhd_gtls_session_t session, gnutls_alert_level_t level,
   data[0] = (uint8_t) level;
   data[1] = (uint8_t) desc;
 
-  name = MHD_gnutls_alert_get_name ((int) data[1]);
+  name = MHD__gnutls_alert_get_name ((int) data[1]);
   if (name == NULL)
     name = "(unknown)";
-  _gnutls_record_log ("REC: Sending Alert[%d|%d] - %s\n", data[0],
+  MHD__gnutls_record_log ("REC: Sending Alert[%d|%d] - %s\n", data[0],
                       data[1], name);
 
-  if ((ret = mhd_gtls_send_int (session, GNUTLS_ALERT, -1, data, 2)) >= 0)
+  if ((ret = MHD_gtls_send_int (session, GNUTLS_ALERT, -1, data, 2)) >= 0)
     return 0;
   else
     return ret;
@@ -245,8 +245,8 @@ MHD_gtls_error_to_alert (int err, int *level)
 
 
 /**
- * MHD_gnutls_alert_send_appropriate - This function sends an alert to the peer depending on the error code
- * @session: is a #mhd_gtls_session_t structure.
+ * MHD__gnutls_alert_send_appropriate - This function sends an alert to the peer depending on the error code
+ * @session: is a #MHD_gtls_session_t structure.
  * @err: is an integer
  *
  * Sends an alert to the peer depending on the error code returned by a gnutls
@@ -261,7 +261,7 @@ MHD_gtls_error_to_alert (int err, int *level)
  * Returns zero on success.
  */
 int
-MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err)
+MHD__gnutls_alert_send_appropriate (MHD_gtls_session_t session, int err)
 {
   int alert;
   int level;
@@ -272,12 +272,12 @@ MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err)
       return alert;
     }
 
-  return MHD_gnutls_alert_send (session, level, alert);
+  return MHD__gnutls_alert_send (session, level, alert);
 }
 
 /**
-  * gnutls_alert_get - Returns the last alert number received.
-  * @session: is a #mhd_gtls_session_t structure.
+  * MHD_gnutls_alert_get - Returns the last alert number received.
+  * @session: is a #MHD_gtls_session_t structure.
   *
   * This function will return the last alert number received. This
   * function should be called if GNUTLS_E_WARNING_ALERT_RECEIVED or
@@ -288,8 +288,8 @@ MHD_gnutls_alert_send_appropriate (mhd_gtls_session_t session, int err)
   * If no alert has been received the returned value is undefined.
   *
   **/
-gnutls_alert_description_t
-gnutls_alert_get (mhd_gtls_session_t session)
+MHD_gnutls_alert_description_t
+MHD_gnutls_alert_get (MHD_gtls_session_t session)
 {
   return session->internals.last_alert;
 }

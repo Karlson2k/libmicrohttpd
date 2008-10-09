@@ -40,13 +40,13 @@
 # endif
 /* We need to keep the namespace clean so define the MD5 function
    protected using leading __ .  */
-# define md5_init_ctx __md5_init_ctx
-# define md5_process_block __md5_process_block
-# define md5_process_bytes __md5_process_bytes
-# define md5_finish_ctx __md5_finish_ctx
-# define md5_read_ctx __md5_read_ctx
-# define md5_stream __md5_stream
-# define md5_buffer __md5_buffer
+# define MHD_md5_init_ctx __MHD_md5_init_ctx
+# define MHD_md5_process_block __MHD_md5_process_block
+# define MHD_md5_process_bytes __MHD_md5_process_bytes
+# define MHD_md5_finish_ctx __MHD_md5_finish_ctx
+# define MHD_md5_read_ctx __MHD_md5_read_ctx
+# define MHD_md5_stream __MHD_md5_stream
+# define MHD_md5_buffer __MHD_md5_buffer
 #endif
 
 #ifdef WORDS_BIGENDIAN
@@ -69,7 +69,7 @@ static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */  };
 /* Initialize structure containing state of computation.
    (RFC 1321, 3.3: Step 3)  */
 void
-md5_init_ctx (struct md5_ctx *ctx)
+MHD_md5_init_ctx (struct MHD_md5_ctx *ctx)
 {
   ctx->A = 0x67452301;
   ctx->B = 0xefcdab89;
@@ -86,7 +86,7 @@ md5_init_ctx (struct md5_ctx *ctx)
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32-bit value.  */
 void *
-md5_read_ctx (const struct md5_ctx *ctx, void *resbuf)
+MHD_md5_read_ctx (const struct MHD_md5_ctx *ctx, void *resbuf)
 {
   ((uint32_t *) resbuf)[0] = SWAP (ctx->A);
   ((uint32_t *) resbuf)[1] = SWAP (ctx->B);
@@ -102,7 +102,7 @@ md5_read_ctx (const struct md5_ctx *ctx, void *resbuf)
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32-bit value.  */
 void *
-md5_finish_ctx (struct md5_ctx *ctx, void *resbuf)
+MHD_md5_finish_ctx (struct MHD_md5_ctx *ctx, void *resbuf)
 {
   /* Take yet unprocessed bytes into account.  */
   uint32_t bytes = ctx->buflen;
@@ -120,23 +120,23 @@ md5_finish_ctx (struct md5_ctx *ctx, void *resbuf)
   memcpy (&((char *) ctx->buffer)[bytes], fillbuf, (size - 2) * 4 - bytes);
 
   /* Process last bytes.  */
-  md5_process_block (ctx->buffer, size * 4, ctx);
+  MHD_md5_process_block (ctx->buffer, size * 4, ctx);
 
-  return md5_read_ctx (ctx, resbuf);
+  return MHD_md5_read_ctx (ctx, resbuf);
 }
 
 /* Compute MD5 message digest for bytes read from STREAM.  The
    resulting message digest number will be written into the 16 bytes
    beginning at RESBLOCK.  */
 int
-md5_stream (FILE * stream, void *resblock)
+MHD_md5_stream (FILE * stream, void *resblock)
 {
-  struct md5_ctx ctx;
+  struct MHD_md5_ctx ctx;
   char buffer[BLOCKSIZE + 72];
   size_t sum;
 
   /* Initialize the computation context.  */
-  md5_init_ctx (&ctx);
+  MHD_md5_init_ctx (&ctx);
 
   /* Iterate over full file contents.  */
   while (1)
@@ -177,17 +177,17 @@ md5_stream (FILE * stream, void *resblock)
       /* Process buffer with BLOCKSIZE bytes.  Note that
          BLOCKSIZE % 64 == 0
        */
-      md5_process_block (buffer, BLOCKSIZE, &ctx);
+      MHD_md5_process_block (buffer, BLOCKSIZE, &ctx);
     }
 
 process_partial_block:
 
   /* Process any remaining bytes.  */
   if (sum > 0)
-    md5_process_bytes (buffer, sum, &ctx);
+    MHD_md5_process_bytes (buffer, sum, &ctx);
 
   /* Construct result in desired memory.  */
-  md5_finish_ctx (&ctx, resblock);
+  MHD_md5_finish_ctx (&ctx, resblock);
   return 0;
 }
 
@@ -196,23 +196,23 @@ process_partial_block:
    output yields to the wanted ASCII representation of the message
    digest.  */
 void *
-md5_buffer (const char *buffer, size_t len, void *resblock)
+MHD_md5_buffer (const char *buffer, size_t len, void *resblock)
 {
-  struct md5_ctx ctx;
+  struct MHD_md5_ctx ctx;
 
   /* Initialize the computation context.  */
-  md5_init_ctx (&ctx);
+  MHD_md5_init_ctx (&ctx);
 
   /* Process whole buffer but last len % 64 bytes.  */
-  md5_process_bytes (buffer, len, &ctx);
+  MHD_md5_process_bytes (buffer, len, &ctx);
 
   /* Put result in desired memory area.  */
-  return md5_finish_ctx (&ctx, resblock);
+  return MHD_md5_finish_ctx (&ctx, resblock);
 }
 
 
 void
-md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
+MHD_md5_process_bytes (const void *buffer, size_t len, struct MHD_md5_ctx *ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -226,7 +226,7 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
 
       if (ctx->buflen > 64)
         {
-          md5_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
+          MHD_md5_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
 
           ctx->buflen &= 63;
           /* The regions in the following copy operation cannot overlap.  */
@@ -248,14 +248,14 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
       if (UNALIGNED_P (buffer))
         while (len > 64)
           {
-            md5_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
+            MHD_md5_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
             buffer = (const char *) buffer + 64;
             len -= 64;
           }
       else
 #endif
         {
-          md5_process_block (buffer, len & ~63, ctx);
+          MHD_md5_process_block (buffer, len & ~63, ctx);
           buffer = (const char *) buffer + (len & ~63);
           len &= 63;
         }
@@ -270,7 +270,7 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
       left_over += len;
       if (left_over >= 64)
         {
-          md5_process_block (ctx->buffer, 64, ctx);
+          MHD_md5_process_block (ctx->buffer, 64, ctx);
           left_over -= 64;
           memcpy (ctx->buffer, &ctx->buffer[16], left_over);
         }
@@ -292,7 +292,7 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
    It is assumed that LEN % 64 == 0.  */
 
 void
-md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
+MHD_md5_process_block (const void *buffer, size_t len, struct MHD_md5_ctx *ctx)
 {
   uint32_t correct_words[16];
   const uint32_t *words = buffer;

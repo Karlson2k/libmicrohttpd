@@ -571,7 +571,7 @@ struct MHD_Connection
 
 #if HTTPS_SUPPORT
   /* TODO rename as this might be an SSL connection */
-  mhd_gtls_session_t tls_session;
+  MHD_gtls_session_t tls_session;
 #endif
 };
 
@@ -652,16 +652,16 @@ struct MHD_Daemon
   enum MHD_GNUTLS_CredentialsType cred_type;
 
   /* server x509 credintials */
-  mhd_gtls_cert_credentials_t x509_cred;
+  MHD_gtls_cert_credentials_t x509_cred;
 
   /* credentials used for anonymous authentication */
-  mhd_gtls_anon_server_credentials_t anon_cred;
+  MHD_gtls_anon_server_credentials_t anon_cred;
 
   /* cipher priority cache */
-  gnutls_priority_t priority_cache;
+  MHD_gnutls_priority_t priority_cache;
 
   /* Diffie-Hellman parameters */
-  mhd_gtls_dh_params_t dh_params;
+  MHD_gtls_dh_params_t dh_params;
 
   const char *https_mem_key;
 

@@ -99,7 +99,7 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
                               enum MHD_RequestTerminationCode
                               termination_code)
 {
-  MHD_gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+  MHD__gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
@@ -211,7 +211,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       if (connection->state == MHD_TLS_CONNECTION_INIT ||
           connection->state == MHD_TLS_HELLO_REQUEST)
         {
-          ret = MHD_gnutls_handshake (connection->tls_session);
+          ret = MHD__gnutls_handshake (connection->tls_session);
           if (ret == 0)
             {
               /* set connection state to enable HTTP processing */
@@ -249,10 +249,10 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 
     case GNUTLS_ALERT:
       /*
-       * this call of mhd_gtls_recv_int expects 0 bytes read.
+       * this call of MHD_gtls_recv_int expects 0 bytes read.
        * done to decrypt alert message
        */
-      mhd_gtls_recv_int (connection->tls_session, GNUTLS_ALERT,
+      MHD_gtls_recv_int (connection->tls_session, GNUTLS_ALERT,
                          GNUTLS_HANDSHAKE_FINISHED, 0, 0);
 
       /* CLOSE_NOTIFY */
@@ -269,7 +269,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Received TLS alert: %s\n",
-                    MHD_gnutls_alert_get_name ((int) connection->tls_session->
+                    MHD__gnutls_alert_get_name ((int) connection->tls_session->
                                                internals.last_alert));
 #endif
           return MHD_YES;

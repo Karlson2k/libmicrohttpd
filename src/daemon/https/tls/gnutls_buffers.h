@@ -22,46 +22,46 @@
  *
  */
 
-int mhd_gnutls_record_buffer_put (content_type_t type,
-                                  mhd_gtls_session_t session, opaque * data,
+int MHD_gnutls_record_buffer_put (content_type_t type,
+                                  MHD_gtls_session_t session, opaque * data,
                                   size_t length);
-int mhd_gnutls_record_buffer_get_size (content_type_t type,
-                                       mhd_gtls_session_t session);
-int mhd_gtls_record_buffer_get (content_type_t type,
-                                mhd_gtls_session_t session, opaque * data,
+int MHD_gnutls_record_buffer_get_size (content_type_t type,
+                                       MHD_gtls_session_t session);
+int MHD_gtls_record_buffer_get (content_type_t type,
+                                MHD_gtls_session_t session, opaque * data,
                                 size_t length);
-ssize_t mhd_gtls_io_read_buffered (mhd_gtls_session_t, opaque ** iptr,
+ssize_t MHD_gtls_io_read_buffered (MHD_gtls_session_t, opaque ** iptr,
                                    size_t n, content_type_t);
-void mhd_gtls_io_clear_read_buffer (mhd_gtls_session_t);
-int mhd_gtls_io_clear_peeked_data (mhd_gtls_session_t session);
+void MHD_gtls_io_clear_read_buffer (MHD_gtls_session_t);
+int MHD_gtls_io_clear_peeked_data (MHD_gtls_session_t session);
 
-ssize_t mhd_gtls_io_write_buffered (mhd_gtls_session_t, const void *iptr,
+ssize_t MHD_gtls_io_write_buffered (MHD_gtls_session_t, const void *iptr,
                                     size_t n);
-ssize_t mhd_gtls_io_write_buffered2 (mhd_gtls_session_t, const void *iptr,
+ssize_t MHD_gtls_io_write_buffered2 (MHD_gtls_session_t, const void *iptr,
                                      size_t n, const void *iptr2, size_t n2);
 
-int mhd_gtls_handshake_buffer_get_size (mhd_gtls_session_t session);
-int mhd_gtls_handshake_buffer_peek (mhd_gtls_session_t session, opaque * data,
+int MHD_gtls_handshake_buffer_get_size (MHD_gtls_session_t session);
+int MHD_gtls_handshake_buffer_peek (MHD_gtls_session_t session, opaque * data,
                                     size_t length);
-int mhd_gtls_handshake_buffer_put (mhd_gtls_session_t session, opaque * data,
+int MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
                                    size_t length);
-int mhd_gtls_handshake_buffer_clear (mhd_gtls_session_t session);
-int mhd_gtls_handshake_buffer_empty (mhd_gtls_session_t session);
-int mhd_gtls_handshake_buffer_get_ptr (mhd_gtls_session_t session,
+int MHD_gtls_handshake_buffer_clear (MHD_gtls_session_t session);
+int MHD_gtls_handshake_buffer_empty (MHD_gtls_session_t session);
+int MHD_gtls_handshake_buffer_get_ptr (MHD_gtls_session_t session,
                                        opaque ** data_ptr, size_t * length);
 
-#define _gnutls_handshake_io_buffer_clear( session) \
-        mhd_gtls_buffer_clear( &session->internals.handshake_send_buffer); \
-        mhd_gtls_buffer_clear( &session->internals.handshake_recv_buffer); \
+#define MHD__gnutls_handshake_io_buffer_clear( session) \
+        MHD_gtls_buffer_clear( &session->internals.handshake_send_buffer); \
+        MHD_gtls_buffer_clear( &session->internals.handshake_recv_buffer); \
         session->internals.handshake_send_buffer_prev_size = 0
 
-ssize_t mhd_gtls_handshake_io_recv_int (mhd_gtls_session_t, content_type_t,
-                                        gnutls_handshake_description_t,
+ssize_t MHD_gtls_handshake_io_recv_int (MHD_gtls_session_t, content_type_t,
+                                        MHD_gnutls_handshake_description_t,
                                         void *, size_t);
-ssize_t mhd_gtls_handshake_io_send_int (mhd_gtls_session_t, content_type_t,
-                                        gnutls_handshake_description_t,
+ssize_t MHD_gtls_handshake_io_send_int (MHD_gtls_session_t, content_type_t,
+                                        MHD_gnutls_handshake_description_t,
                                         const void *, size_t);
-ssize_t mhd_gtls_io_write_flush (mhd_gtls_session_t session);
-ssize_t mhd_gtls_handshake_io_write_flush (mhd_gtls_session_t session);
+ssize_t MHD_gtls_io_write_flush (MHD_gtls_session_t session);
+ssize_t MHD_gtls_handshake_io_write_flush (MHD_gtls_session_t session);
 
-size_t MHD_gtls_record_check_pending (mhd_gtls_session_t session);
+size_t MHD_gtls_record_check_pending (MHD_gtls_session_t session);

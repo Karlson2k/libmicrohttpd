@@ -31,7 +31,7 @@
 
 /**
   * MHD_gtls_session_get_id - Returns session id.
-  * @session: is a #mhd_gtls_session_t structure.
+  * @session: is a #MHD_gtls_session_t structure.
   * @session_id: is a pointer to space to hold the session id.
   * @session_id_size: is the session id's size, or it will be set by the function.
   *
@@ -46,7 +46,7 @@
   * Returns zero on success.
   **/
 int
-MHD_gtls_session_get_id (mhd_gtls_session_t session,
+MHD_gtls_session_get_id (MHD_gtls_session_t session,
                          void *session_id, size_t * session_id_size)
 {
   size_t given_session_id_size = *session_id_size;

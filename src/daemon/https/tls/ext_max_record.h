@@ -25,9 +25,9 @@
 /* Maps record size to numbers according to the
  * extensions draft.
  */
-int mhd_gtls_mre_num2record (int num);
-int mhd_gtls_mre_record2num (uint16_t record_size);
-int mhd_gtls_max_record_recv_params (mhd_gtls_session_t session,
+int MHD_gtls_mre_num2record (int num);
+int MHD_gtls_mre_record2num (uint16_t record_size);
+int MHD_gtls_max_record_recv_params (MHD_gtls_session_t session,
                                      const opaque * data, size_t data_size);
-int mhd_gtls_max_record_send_params (mhd_gtls_session_t session,
+int MHD_gtls_max_record_send_params (MHD_gtls_session_t session,
                                      opaque * data, size_t);

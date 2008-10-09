@@ -92,9 +92,9 @@
 #define DEFAULT_VERIFY_DEPTH 32
 #define DEFAULT_VERIFY_BITS 16*1024
 
-#define DECR_LEN(len, x) do { len-=x; if (len<0) {gnutls_assert(); return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;} } while (0)
-#define DECR_LENGTH_RET(len, x, RET) do { len-=x; if (len<0) {gnutls_assert(); return RET;} } while (0)
-#define DECR_LENGTH_COM(len, x, COM) do { len-=x; if (len<0) {gnutls_assert(); COM;} } while (0)
+#define DECR_LEN(len, x) do { len-=x; if (len<0) {MHD_gnutls_assert(); return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;} } while (0)
+#define DECR_LENGTH_RET(len, x, RET) do { len-=x; if (len<0) {MHD_gnutls_assert(); return RET;} } while (0)
+#define DECR_LENGTH_COM(len, x, COM) do { len-=x; if (len<0) {MHD_gnutls_assert(); COM;} } while (0)
 
 #define HASH2MAC(x) ((enum MHD_GNUTLS_HashAlgorithm)x)
 
@@ -129,11 +129,11 @@ typedef enum handshake_state_t
 
 #include <gnutls_str.h>
 
-typedef mhd_gtls_string mhd_gtls_buffer;
+typedef MHD_gtls_string MHD_gtls_buffer;
 
-#define mhd_gtls_buffer_init(buf) mhd_gtls_string_init(buf, gnutls_malloc, gnutls_realloc, gnutls_free);
-#define mhd_gtls_buffer_clear mhd_gtls_string_clear
-#define mhd_gtls_buffer_append mhd_gtls_string_append_data
+#define MHD_gtls_buffer_init(buf) MHD_gtls_string_init(buf, MHD_gnutls_malloc, MHD_gnutls_realloc, MHD_gnutls_free);
+#define MHD_gtls_buffer_clear MHD_gtls_string_clear
+#define MHD_gtls_buffer_append MHD_gtls_string_append_data
 
 /* This is the maximum number of algorithms (ciphers or macs etc).
  * keep it synced with GNUTLS_MAX_ALGORITHM_NUM in gnutls.h
@@ -179,20 +179,20 @@ typedef enum content_type_t
 typedef void (*LOG_FUNC) (int, const char *);
 
 /* Store & Retrieve functions defines:  */
-typedef struct mhd_gtls_auth_cred_st
+typedef struct MHD_gtls_auth_cred_st
 {
   enum MHD_GNUTLS_CredentialsType algorithm;
 
   /* the type of credentials depends on algorithm
    */
   void *credentials;
-  struct mhd_gtls_auth_cred_st *next;
+  struct MHD_gtls_auth_cred_st *next;
 } auth_cred_st;
 
-struct mhd_gtls_key
+struct MHD_gtls_key
 {
   /* For DH KX */
-  gnutls_datum_t key;
+  MHD_gnutls_datum_t key;
   mpi_t KEY;
   mpi_t client_Y;
   mpi_t client_g;
@@ -212,7 +212,7 @@ struct mhd_gtls_key
   /* this is used to hold the peers authentication data
    */
   /* auth_info_t structures SHOULD NOT contain malloced
-   * elements. Check gnutls_session_pack.c, and gnutls_auth.c.
+   * elements. Check MHD_gnutls_session_pack.c, and MHD_gnutls_auth.c.
    * Rememember that this should be calloced!
    */
   void *auth_info;
@@ -233,7 +233,7 @@ struct mhd_gtls_key
    * for a client certificate verify
    */
 };
-typedef struct mhd_gtls_key *mhd_gtls_key_st;
+typedef struct MHD_gtls_key *MHD_gtls_key_st;
 
 /* STATE (cont) */
 #include <gnutls_hash_int.h>
@@ -254,7 +254,7 @@ typedef struct
 {
   opaque name[MAX_SERVER_NAME_SIZE];
   unsigned name_length;
-  gnutls_server_name_type_t type;
+  MHD_gnutls_server_name_type_t type;
 } server_name_st;
 
 #define MAX_SERVER_NAME_EXTENSIONS 3
@@ -267,20 +267,20 @@ typedef struct
   opaque srp_username[MAX_SRP_USERNAME + 1];
 
   /* TLS/IA data. */
-  int gnutls_ia_enable, gnutls_ia_peer_enable;
-  int gnutls_ia_allowskip, gnutls_ia_peer_allowskip;
+  int MHD_gnutls_ia_enable, MHD_gnutls_ia_peer_enable;
+  int MHD_gnutls_ia_allowskip, MHD_gnutls_ia_peer_allowskip;
 
   /* Used by extensions that enable supplemental data. */
   int do_recv_supplemental, do_send_supplemental;
 
   /* Opaque PRF input. */
-  gnutls_oprfi_callback_func oprfi_cb;
+  MHD_gnutls_oprfi_callback_func oprfi_cb;
   void *oprfi_userdata;
   opaque *oprfi_client;
   uint16_t oprfi_client_len;
   opaque *oprfi_server;
   uint16_t oprfi_server_len;
-} mhd_gtls_ext_st;
+} MHD_gtls_ext_st;
 
 /* This flag indicates for an extension whether
  * it is useful to application level or TLS level only.
@@ -292,7 +292,7 @@ typedef enum tls_ext_parse_type_t
   EXTENSION_ANY,
   EXTENSION_APPLICATION,
   EXTENSION_TLS
-} mhd_gtls_ext_parse_type_t;
+} MHD_gtls_ext_parse_type_t;
 
 /* auth_info_t structures now MAY contain malloced
  * elements.
@@ -305,7 +305,7 @@ typedef enum tls_ext_parse_type_t
  */
 
 /* if you add anything in Security_Parameters struct, then
- * also modify CPY_COMMON in gnutls_constate.c
+ * also modify CPY_COMMON in MHD_gnutls_constate.c
  */
 
 /* Note that the security parameters structure is set up after the
@@ -314,7 +314,7 @@ typedef enum tls_ext_parse_type_t
  */
 typedef struct
 {
-  gnutls_connection_end_t entity;
+  MHD_gnutls_connection_end_t entity;
   enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
   /* we've got separate write/read bulk/macs because
    * there is a time in handshake where the peer has
@@ -339,7 +339,7 @@ typedef struct
   opaque session_id[TLS_MAX_SESSION_ID_SIZE];
   uint8_t session_id_size;
   time_t timestamp;
-  mhd_gtls_ext_st extensions;
+  MHD_gtls_ext_st extensions;
 
   /* The send size is the one requested by the programmer.
    * The recv size is the one negotiated with the peer.
@@ -351,23 +351,23 @@ typedef struct
   enum MHD_GNUTLS_Protocol version;     /* moved here */
   /* For TLS/IA.  XXX: Move to IA credential? */
   opaque inner_secret[TLS_MASTER_SIZE];
-} mhd_gtls_security_param_st;
+} MHD_gtls_security_param_st;
 
 /* This structure holds the generated keys
  */
 typedef struct
 {
-  gnutls_datum_t server_write_mac_secret;
-  gnutls_datum_t client_write_mac_secret;
-  gnutls_datum_t server_write_IV;
-  gnutls_datum_t client_write_IV;
-  gnutls_datum_t server_write_key;
-  gnutls_datum_t client_write_key;
+  MHD_gnutls_datum_t server_write_mac_secret;
+  MHD_gnutls_datum_t client_write_mac_secret;
+  MHD_gnutls_datum_t server_write_IV;
+  MHD_gnutls_datum_t client_write_IV;
+  MHD_gnutls_datum_t server_write_key;
+  MHD_gnutls_datum_t client_write_key;
   int generated_keys;           /* zero if keys have not
                                  * been generated. Non zero
                                  * otherwise.
                                  */
-} mhd_gtls_cipher_specs_st;
+} MHD_gtls_cipher_specs_st;
 
 typedef struct
 {
@@ -375,29 +375,29 @@ typedef struct
   cipher_hd_t read_cipher_state;
   comp_hd_t read_compression_state;
   comp_hd_t write_compression_state;
-  gnutls_datum_t read_mac_secret;
-  gnutls_datum_t write_mac_secret;
+  MHD_gnutls_datum_t read_mac_secret;
+  MHD_gnutls_datum_t write_mac_secret;
   uint64 read_sequence_number;
   uint64 write_sequence_number;
-} mhd_gtls_conn_stat_st;
+} MHD_gtls_conn_stat_st;
 
 typedef struct
 {
   unsigned int priority[MAX_ALGOS];
   unsigned int num_algorithms;
-} mhd_gtls_priority_st;
+} MHD_gtls_priority_st;
 
 /* For the external api */
 struct MHD_gtls_priority_st
 {
-  mhd_gtls_priority_st cipher;
-  mhd_gtls_priority_st mac;
-  mhd_gtls_priority_st kx;
-  mhd_gtls_priority_st compression;
-  mhd_gtls_priority_st protocol;
+  MHD_gtls_priority_st cipher;
+  MHD_gtls_priority_st mac;
+  MHD_gtls_priority_st kx;
+  MHD_gtls_priority_st compression;
+  MHD_gtls_priority_st protocol;
 
   /* certificate type : x509, OpenPGP, etc. */
-  mhd_gtls_priority_st cert_type;
+  MHD_gtls_priority_st cert_type;
 
   /* to disable record padding */
   int no_padding;
@@ -410,15 +410,15 @@ typedef struct MHD_gtls_dh_params_int
   /* [0] is the prime, [1] is the generator.
    */
   mpi_t params[2];
-} mhd_gtls_dh_params_st;
+} MHD_gtls_dh_params_st;
 
 typedef struct
 {
-  mhd_gtls_dh_params_t dh_params;
+  MHD_gtls_dh_params_t dh_params;
   int free_dh_params;
-  mhd_gtls_rsa_params_t rsa_params;
+  MHD_gtls_rsa_params_t rsa_params;
   int free_rsa_params;
-} mhd_gtls_internal_params_st;
+} MHD_gtls_internal_params_st;
 
 typedef struct
 {
@@ -427,19 +427,19 @@ typedef struct
   size_t header_size;
   /* this holds the length of the handshake packet */
   size_t packet_length;
-  gnutls_handshake_description_t recv_type;
-} mhd_gtls_handshake_header_buffer_st;
+  MHD_gnutls_handshake_description_t recv_type;
+} MHD_gtls_handshake_header_buffer_st;
 
 typedef struct
 {
-  mhd_gtls_buffer application_data_buffer;      /* holds data to be delivered to application layer */
-  mhd_gtls_buffer handshake_hash_buffer;        /* used to keep the last received handshake
+  MHD_gtls_buffer application_data_buffer;      /* holds data to be delivered to application layer */
+  MHD_gtls_buffer handshake_hash_buffer;        /* used to keep the last received handshake
                                                  * message */
   mac_hd_t handshake_mac_handle_sha;    /* hash of the handshake messages */
   mac_hd_t handshake_mac_handle_md5;    /* hash of the handshake messages */
 
-  mhd_gtls_buffer handshake_data_buffer;        /* this is a buffer that holds the current handshake message */
-  mhd_gtls_buffer ia_data_buffer;       /* holds inner application data (TLS/IA) */
+  MHD_gtls_buffer handshake_data_buffer;        /* this is a buffer that holds the current handshake message */
+  MHD_gtls_buffer ia_data_buffer;       /* holds inner application data (TLS/IA) */
   resumable_session_t resumable;        /* TRUE or FALSE - if we can resume that session */
   handshake_state_t handshake_state;    /* holds
                                          * a number which indicates where
@@ -471,28 +471,28 @@ typedef struct
 
   /* resumed session */
   resumable_session_t resumed;  /* RESUME_TRUE or FALSE - if we are resuming a session */
-  mhd_gtls_security_param_st resumed_security_parameters;
+  MHD_gtls_security_param_st resumed_security_parameters;
 
   /* sockets internals */
   int lowat;
 
   /* These buffers are used in the handshake
-   * protocol only. freed using _gnutls_handshake_io_buffer_clear();
+   * protocol only. freed using MHD__gnutls_handshake_io_buffer_clear();
    */
-  mhd_gtls_buffer handshake_send_buffer;
+  MHD_gtls_buffer handshake_send_buffer;
   size_t handshake_send_buffer_prev_size;
   content_type_t handshake_send_buffer_type;
-  gnutls_handshake_description_t handshake_send_buffer_htype;
+  MHD_gnutls_handshake_description_t handshake_send_buffer_htype;
   content_type_t handshake_recv_buffer_type;
-  gnutls_handshake_description_t handshake_recv_buffer_htype;
-  mhd_gtls_buffer handshake_recv_buffer;
+  MHD_gnutls_handshake_description_t handshake_recv_buffer_htype;
+  MHD_gtls_buffer handshake_recv_buffer;
 
   /* this buffer holds a record packet -mostly used for
    * non blocking IO.
    */
-  mhd_gtls_buffer record_recv_buffer;
-  mhd_gtls_buffer record_send_buffer;   /* holds cached data
-                                         * for the gnutls_io_write_buffered()
+  MHD_gtls_buffer record_recv_buffer;
+  MHD_gtls_buffer record_send_buffer;   /* holds cached data
+                                         * for the MHD_gnutls_io_write_buffered()
                                          * function.
                                          */
   size_t record_send_buffer_prev_size;  /* holds the
@@ -508,7 +508,7 @@ typedef struct
   int have_peeked_data;
 
   int expire_time;              /* after expire_time seconds this session will expire */
-  struct mhd_gtls_mod_auth_st_int *auth_struct; /* used in handshake packets and KX algorithms */
+  struct MHD_gtls_mod_auth_st_int *auth_struct; /* used in handshake packets and KX algorithms */
 
   /* TODO rm */
   int v2_hello;                 /* 0 if the client hello is v3+.
@@ -516,7 +516,7 @@ typedef struct
                                  */
   /* keeps the headers of the handshake packet
    */
-  mhd_gtls_handshake_header_buffer_st handshake_header_buffer;
+  MHD_gtls_handshake_header_buffer_st handshake_header_buffer;
 
   /* this is the highest version available
    * to the peer. (advertized version).
@@ -533,7 +533,7 @@ typedef struct
   int send_cert_req;
 
   /* bits to use for DHE and DHA
-   * use _gnutls_dh_get_prime_bits() and MHD_gnutls_dh_set_prime_bits()
+   * use MHD__gnutls_dh_get_prime_bits() and MHD__gnutls_dh_set_prime_bits()
    * to access it.
    */
   uint16_t dh_prime_bits;
@@ -542,17 +542,17 @@ typedef struct
 
   /* PUSH & PULL functions.
    */
-  mhd_gtls_pull_func _gnutls_pull_func;
-  mhd_gtls_push_func _gnutls_push_func;
+  MHD_gtls_pull_func MHD__gnutls_pull_func;
+  MHD_gtls_push_func MHD__gnutls_push_func;
   /* Holds the first argument of PUSH and PULL
    * functions;
    */
-  gnutls_transport_ptr_t transport_recv_ptr;
-  gnutls_transport_ptr_t transport_send_ptr;
+  MHD_gnutls_transport_ptr_t transport_recv_ptr;
+  MHD_gnutls_transport_ptr_t transport_send_ptr;
 
   /* post client hello callback (server side only)
    */
-  gnutls_handshake_post_client_hello_func user_hello_func;
+  MHD_gnutls_handshake_post_client_hello_func user_hello_func;
 
   /* Holds the record size requested by the
    * user.
@@ -560,12 +560,12 @@ typedef struct
   uint16_t proposed_record_size;
 
   /* holds the selected certificate and key.
-   * use mhd_gtls_selected_certs_deinit() and mhd_gtls_selected_certs_set()
+   * use MHD_gtls_selected_certs_deinit() and MHD_gtls_selected_certs_set()
    * to change them.
    */
-  gnutls_cert *selected_cert_list;
+  MHD_gnutls_cert *selected_cert_list;
   int selected_cert_list_length;
-  gnutls_privkey *selected_key;
+  MHD_gnutls_privkey *selected_key;
   int selected_need_free;
 
   /* holds the extensions we sent to the peer
@@ -615,16 +615,16 @@ typedef struct
    * credentials structure, or from a callback. That is to
    * minimize external calls.
    */
-  mhd_gtls_internal_params_st params;
+  MHD_gtls_internal_params_st params;
 
   /* This buffer is used by the record recv functions,
    * as a temporary store buffer.
    */
-  gnutls_datum_t recv_buffer;
+  MHD_gnutls_datum_t recv_buffer;
 
   /* To avoid using global variables, and especially on Windows where
    * the application may use a different errno variable than GnuTLS,
-   * it is possible to use MHD_gnutls_transport_set_errno to set a
+   * it is possible to use MHD__gnutls_transport_set_errno to set a
    * session-specific errno variable in the user-replaceable push/pull
    * functions.  This value is used by the send/recv functions.  (The
    * strange name of this variable is because 'errno' is typically
@@ -633,44 +633,44 @@ typedef struct
   int errnum;
 
   /* Function used to perform public-key signing operation during
-     handshake.  Used by gnutls_sig.c:_gnutls_tls_sign(), see also
+     handshake.  Used by MHD_gnutls_sig.c:MHD__gnutls_tls_sign(), see also
      MHD_gtls_sign_callback_set(). */
-  gnutls_sign_func sign_func;
+  MHD_gnutls_sign_func sign_func;
   void *sign_func_userdata;
 
-  /* If you add anything here, check mhd_gtls_handshake_internal_state_clear().
+  /* If you add anything here, check MHD_gtls_handshake_internal_state_clear().
    */
-} mhd_gtls_internals_st;
+} MHD_gtls_internals_st;
 
 struct MHD_gtls_session_int
 {
-  mhd_gtls_security_param_st security_parameters;
-  mhd_gtls_cipher_specs_st cipher_specs;
-  mhd_gtls_conn_stat_st connection_state;
-  mhd_gtls_internals_st internals;
-  mhd_gtls_key_st key;
+  MHD_gtls_security_param_st security_parameters;
+  MHD_gtls_cipher_specs_st cipher_specs;
+  MHD_gtls_conn_stat_st connection_state;
+  MHD_gtls_internals_st internals;
+  MHD_gtls_key_st key;
 };
 
 /* functions */
-void mhd_gtls_set_current_version (mhd_gtls_session_t session,
+void MHD_gtls_set_current_version (MHD_gtls_session_t session,
                                    enum MHD_GNUTLS_Protocol version);
 
-void mhd_gtls_free_auth_info (mhd_gtls_session_t session);
+void MHD_gtls_free_auth_info (MHD_gtls_session_t session);
 
 /* These two macros return the advertized TLS version of
  * the peer.
  */
-#define _gnutls_get_adv_version_major( session) \
+#define MHD__gnutls_get_adv_version_major( session) \
 	session->internals.adv_version_major
 
-#define _gnutls_get_adv_version_minor( session) \
+#define MHD__gnutls_get_adv_version_minor( session) \
 	session->internals.adv_version_minor
 
 #define set_adv_version( session, major, minor) \
 	session->internals.adv_version_major = major; \
 	session->internals.adv_version_minor = minor
 
-void mhd_gtls_set_adv_version (mhd_gtls_session_t, enum MHD_GNUTLS_Protocol);
-enum MHD_GNUTLS_Protocol mhd_gtls_get_adv_version (mhd_gtls_session_t);
+void MHD_gtls_set_adv_version (MHD_gtls_session_t, enum MHD_GNUTLS_Protocol);
+enum MHD_GNUTLS_Protocol MHD_gtls_get_adv_version (MHD_gtls_session_t);
 
 #endif /* GNUTLS_INT_H */

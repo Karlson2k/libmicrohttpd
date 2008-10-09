@@ -27,37 +27,37 @@
 
 #include <gnutls_int.h>
 
-void mhd_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src);
-void mhd_gtls_mem_cpy (char *dest, size_t dest_tot_size, const char *src,
+void MHD_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src);
+void MHD_gtls_mem_cpy (char *dest, size_t dest_tot_size, const char *src,
                        size_t src_size);
-void mhd_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src);
+void MHD_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src);
 
 typedef struct
 {
   opaque *data;
   size_t max_length;
   size_t length;
-  gnutls_realloc_function realloc_func;
-  gnutls_alloc_function alloc_func;
-  gnutls_free_function free_func;
-} mhd_gtls_string;
+  MHD_gnutls_realloc_function realloc_func;
+  MHD_gnutls_alloc_function alloc_func;
+  MHD_gnutls_free_function free_func;
+} MHD_gtls_string;
 
-void mhd_gtls_string_init (mhd_gtls_string *, gnutls_alloc_function,
-                           gnutls_realloc_function, gnutls_free_function);
-void mhd_gtls_string_clear (mhd_gtls_string *);
+void MHD_gtls_string_init (MHD_gtls_string *, MHD_gnutls_alloc_function,
+                           MHD_gnutls_realloc_function, MHD_gnutls_free_function);
+void MHD_gtls_string_clear (MHD_gtls_string *);
 
 /* Beware, do not clear the string, after calling this
  * function
  */
-gnutls_datum_t mhd_gtls_string2datum (mhd_gtls_string * str);
+MHD_gnutls_datum_t MHD_gtls_string2datum (MHD_gtls_string * str);
 
-int mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src);
-int mhd_gtls_string_append_str (mhd_gtls_string *, const char *str);
-int mhd_gtls_string_append_data (mhd_gtls_string *, const void *data,
+int MHD_gtls_string_copy_str (MHD_gtls_string * dest, const char *src);
+int MHD_gtls_string_append_str (MHD_gtls_string *, const char *str);
+int MHD_gtls_string_append_data (MHD_gtls_string *, const void *data,
                                  size_t data_size);
-char *mhd_gtls_bin2hex (const void *old, size_t oldlen, char *buffer,
+char *MHD_gtls_bin2hex (const void *old, size_t oldlen, char *buffer,
                         size_t buffer_size);
-int mhd_gtls_hex2bin (const opaque * hex_data, int hex_size,
+int MHD_gtls_hex2bin (const opaque * hex_data, int hex_size,
                       opaque * bin_data, size_t * bin_size);
 
 #endif

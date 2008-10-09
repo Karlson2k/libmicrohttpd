@@ -71,31 +71,31 @@ struct pbe_enc_params
 static int generate_key (schema_id schema, const char *password,
                          struct pbkdf2_params *kdf_params,
                          struct pbe_enc_params *enc_params,
-                         gnutls_datum_t * key);
+                         MHD_gnutls_datum_t * key);
 static int read_pbkdf2_params (ASN1_TYPE pbes2_asn,
-                               const gnutls_datum_t * der,
+                               const MHD_gnutls_datum_t * der,
                                struct pbkdf2_params *params);
 static int read_pbe_enc_params (ASN1_TYPE pbes2_asn,
-                                const gnutls_datum_t * der,
+                                const MHD_gnutls_datum_t * der,
                                 struct pbe_enc_params *params);
 static int decrypt_data (schema_id, ASN1_TYPE pkcs8_asn, const char *root,
                          const char *password,
                          const struct pbkdf2_params *kdf_params,
                          const struct pbe_enc_params *enc_params,
-                         gnutls_datum_t * decrypted_data);
-static int decode_private_key_info (const gnutls_datum_t * der,
-                                    gnutls_x509_privkey_t pkey);
+                         MHD_gnutls_datum_t * decrypted_data);
+static int decode_private_key_info (const MHD_gnutls_datum_t * der,
+                                    MHD_gnutls_x509_privkey_t pkey);
 static int write_schema_params (schema_id schema, ASN1_TYPE pkcs8_asn,
                                 const char *where,
                                 const struct pbkdf2_params *kdf_params,
                                 const struct pbe_enc_params *enc_params);
-static int encrypt_data (const gnutls_datum_t * plain,
+static int encrypt_data (const MHD_gnutls_datum_t * plain,
                          const struct pbe_enc_params *enc_params,
-                         gnutls_datum_t * key, gnutls_datum_t * encrypted);
+                         MHD_gnutls_datum_t * key, MHD_gnutls_datum_t * encrypted);
 
-static int read_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
+static int readMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
                                    struct pbkdf2_params *params);
-static int write_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
+static int writeMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
                                     const struct pbkdf2_params *params);
 
 #define PEM_PKCS8 "ENCRYPTED PRIVATE KEY"
@@ -120,7 +120,7 @@ check_schema (const char *oid)
   if (strcmp (oid, PKCS12_PBE_RC2_40_SHA1_OID) == 0)
     return PKCS12_RC2_40_SHA1;
 
-  _gnutls_x509_log ("PKCS encryption schema OID '%s' is unsupported.\n", oid);
+  MHD__gnutls_x509_log ("PKCS encryption schema OID '%s' is unsupported.\n", oid);
 
   return GNUTLS_E_UNKNOWN_CIPHER_TYPE;
 }
@@ -136,7 +136,7 @@ read_pkcs_schema_params (schema_id schema, const char *password,
 {
   ASN1_TYPE pbes2_asn = ASN1_TYPE_EMPTY;
   int result;
-  gnutls_datum_t tmp;
+  MHD_gnutls_datum_t tmp;
 
   switch (schema)
     {
@@ -147,22 +147,22 @@ read_pkcs_schema_params (schema_id schema, const char *password,
        * functions.
        */
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (),
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                 "PKIX1.pkcs-5-PBES2-params",
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
       /* Decode the parameters.
        */
-      result = asn1_der_decoding (&pbes2_asn, data, data_size, NULL);
+      result = MHD__asn1_der_decoding (&pbes2_asn, data, data_size, NULL);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
@@ -172,20 +172,20 @@ read_pkcs_schema_params (schema_id schema, const char *password,
       result = read_pbkdf2_params (pbes2_asn, &tmp, kdf_params);
       if (result < 0)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
       result = read_pbe_enc_params (pbes2_asn, &tmp, enc_params);
       if (result < 0)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
-      asn1_delete_structure (&pbes2_asn);
+      MHD__asn1_delete_structure (&pbes2_asn);
       return 0;
       break;
 
@@ -210,48 +210,48 @@ read_pkcs_schema_params (schema_id schema, const char *password,
         }
 
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (),
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                 "PKIX1.pkcs-12-PbeParams",
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
       /* Decode the parameters.
        */
-      result = asn1_der_decoding (&pbes2_asn, data, data_size, NULL);
+      result = MHD__asn1_der_decoding (&pbes2_asn, data, data_size, NULL);
       if (result != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
-      result = read_pkcs12_kdf_params (pbes2_asn, kdf_params);
+      result = readMHD_pkcs12_kdf_params (pbes2_asn, kdf_params);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
       if (enc_params->iv_size)
         {
           result =
-            _pkcs12_string_to_key (2 /*IV*/, kdf_params->salt,
+            MHD_pkcs12_string_to_key (2 /*IV*/, kdf_params->salt,
                                    kdf_params->salt_size,
                                    kdf_params->iter_count, password,
                                    enc_params->iv_size, enc_params->iv);
           if (result < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               goto error;
             }
 
         }
 
-      asn1_delete_structure (&pbes2_asn);
+      MHD__asn1_delete_structure (&pbes2_asn);
 
       return 0;
       break;
@@ -261,21 +261,21 @@ read_pkcs_schema_params (schema_id schema, const char *password,
   return GNUTLS_E_UNKNOWN_CIPHER_TYPE;
 
 error:
-  asn1_delete_structure (&pbes2_asn);
+  MHD__asn1_delete_structure (&pbes2_asn);
   return result;
 }
 
 /* Converts a PKCS #8 key to
- * an internal structure (gnutls_private_key)
+ * an internal structure (MHD_gnutls_private_key)
  * (normally a PKCS #1 encoded RSA key)
  */
 static int
-decode_pkcs8_key (const gnutls_datum_t * raw_key,
-                  const char *password, gnutls_x509_privkey_t pkey)
+decode_pkcs8_key (const MHD_gnutls_datum_t * raw_key,
+                  const char *password, MHD_gnutls_x509_privkey_t pkey)
 {
   int result, len;
   char enc_oid[64];
-  gnutls_datum_t tmp;
+  MHD_gnutls_datum_t tmp;
   ASN1_TYPE pbes2_asn = ASN1_TYPE_EMPTY, pkcs8_asn = ASN1_TYPE_EMPTY;
   int params_start, params_end, params_len;
   struct pbkdf2_params kdf_params;
@@ -283,20 +283,20 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
   schema_id schema;
 
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-8-EncryptedPrivateKeyInfo",
                             &pkcs8_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  result = asn1_der_decoding (&pkcs8_asn, raw_key->data, raw_key->size, NULL);
+  result = MHD__asn1_der_decoding (&pkcs8_asn, raw_key->data, raw_key->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -304,17 +304,17 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
    */
   len = sizeof (enc_oid);
   result =
-    asn1_read_value (pkcs8_asn, "encryptionAlgorithm.algorithm",
+    MHD__asn1_read_value (pkcs8_asn, "encryptionAlgorithm.algorithm",
                      enc_oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   if ((result = check_schema (enc_oid)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
@@ -323,14 +323,14 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
   /* Get the DER encoding of the parameters.
    */
   result =
-    asn1_der_decoding_startEnd (pkcs8_asn, raw_key->data,
+    MHD__asn1_der_decoding_startEnd (pkcs8_asn, raw_key->data,
                                 raw_key->size,
                                 "encryptionAlgorithm.parameters",
                                 &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
   params_len = params_end - params_start + 1;
@@ -348,14 +348,14 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
                   &kdf_params, &enc_params, &tmp);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
-  asn1_delete_structure (&pkcs8_asn);
+  MHD__asn1_delete_structure (&pkcs8_asn);
 
   result = decode_private_key_info (&tmp, pkey);
-  _gnutls_free_datum (&tmp);
+  MHD__gnutls_free_datum (&tmp);
 
   if (result < 0)
     {
@@ -378,106 +378,106 @@ decode_pkcs8_key (const gnutls_datum_t * raw_key,
           result = GNUTLS_E_DECRYPTION_FAILED;
         }
 
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbes2_asn);
-  asn1_delete_structure (&pkcs8_asn);
+  MHD__asn1_delete_structure (&pbes2_asn);
+  MHD__asn1_delete_structure (&pkcs8_asn);
   return result;
 }
 
 /* Decodes an RSA privateKey from a PKCS8 structure.
  */
 static int
-_decode_pkcs8_rsa_key (ASN1_TYPE pkcs8_asn, gnutls_x509_privkey_t pkey)
+_decode_pkcs8_rsa_key (ASN1_TYPE pkcs8_asn, MHD_gnutls_x509_privkey_t pkey)
 {
   int ret;
-  gnutls_datum_t tmp;
+  MHD_gnutls_datum_t tmp;
 
-  ret = _gnutls_x509_read_value (pkcs8_asn, "privateKey", &tmp, 0);
+  ret = MHD__gnutls_x509_read_value (pkcs8_asn, "privateKey", &tmp, 0);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
-  pkey->key = _gnutls_privkey_decode_pkcs1_rsa_key (&tmp, pkey);
-  _gnutls_free_datum (&tmp);
+  pkey->key = MHD__gnutls_privkey_decode_pkcs1_rsa_key (&tmp, pkey);
+  MHD__gnutls_free_datum (&tmp);
   if (pkey->key == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   return 0;
 
 error:
-  gnutls_x509_privkey_deinit (pkey);
+  MHD_gnutls_x509_privkey_deinit (pkey);
   return ret;
 }
 
 /* TODO rm if unsed - we will probable support only RSA certificates */
 /* Decodes an DSA privateKey and params from a PKCS8 structure.
 static int
-_decode_pkcs8_dsa_key (ASN1_TYPE pkcs8_asn, gnutls_x509_privkey pkey)
+_decode_pkcs8_dsa_key (ASN1_TYPE pkcs8_asn, MHD_gnutls_x509_privkey pkey)
   {
     int ret;
-    gnutls_datum tmp;
+    MHD_gnutls_datum tmp;
 
-    ret = _gnutls_x509_read_value (pkcs8_asn, "privateKey", &tmp, 0);
+    ret = MHD__gnutls_x509_read_value (pkcs8_asn, "privateKey", &tmp, 0);
     if (ret < 0)
       {
-        gnutls_assert ();
+        MHD_gnutls_assert ();
         goto error;
       }
 
-    ret = _gnutls_x509_read_der_int (tmp.data, tmp.size, &pkey->params[4]);
-    _gnutls_free_datum (&tmp);
+    ret = MHD__gnutls_x509_read_der_int (tmp.data, tmp.size, &pkey->params[4]);
+    MHD__gnutls_free_datum (&tmp);
 
     if (ret < 0)
       {
-        gnutls_assert ();
+        MHD_gnutls_assert ();
         goto error;
       }
 
     ret =
-    _gnutls_x509_read_value (pkcs8_asn, "privateKeyAlgorithm.parameters",
+    MHD__gnutls_x509_read_value (pkcs8_asn, "privateKeyAlgorithm.parameters",
         &tmp, 0);
     if (ret < 0)
       {
-        gnutls_assert ();
+        MHD_gnutls_assert ();
         goto error;
       }
 
-    ret = _gnutls_x509_read_dsa_params (tmp.data, tmp.size, pkey->params);
-    _gnutls_free_datum (&tmp);
+    ret = MHD__gnutls_x509_read_dsa_params (tmp.data, tmp.size, pkey->params);
+    MHD__gnutls_free_datum (&tmp);
     if (ret < 0)
       {
-        gnutls_assert ();
+        MHD_gnutls_assert ();
         goto error;
       }
 
     the public key can be generated as g^x mod p
-    pkey->params[3] = _gnutls_mpi_alloc_like (pkey->params[0]);
+    pkey->params[3] = MHD__gnutls_mpi_alloc_like (pkey->params[0]);
     if (pkey->params[3] == NULL)
       {
-        gnutls_assert ();
+        MHD_gnutls_assert ();
         goto error;
       }
 
-    _gnutls_mpi_powm (pkey->params[3], pkey->params[2], pkey->params[4],
+    MHD__gnutls_mpi_powm (pkey->params[3], pkey->params[2], pkey->params[4],
         pkey->params[0]);
 
     if (!pkey->crippled)
       {
-        ret = _gnutls_asn1_encode_dsa (&pkey->key, pkey->params);
+        ret = MHD__gnutlsMHD__asn1_encode_dsa (&pkey->key, pkey->params);
         if (ret < 0)
           {
-            gnutls_assert ();
+            MHD_gnutls_assert ();
             goto error;
           }
       }
@@ -487,34 +487,34 @@ _decode_pkcs8_dsa_key (ASN1_TYPE pkcs8_asn, gnutls_x509_privkey pkey)
     return 0;
 
     error:
-    gnutls_x509_privkey_deinit (pkey);
+    MHD_gnutls_x509_privkey_deinit (pkey);
     return ret;
   }
 */
 
 static int
-decode_private_key_info (const gnutls_datum_t * der,
-                         gnutls_x509_privkey_t pkey)
+decode_private_key_info (const MHD_gnutls_datum_t * der,
+                         MHD_gnutls_x509_privkey_t pkey)
 {
   int result, len;
   opaque oid[64];
   ASN1_TYPE pkcs8_asn = ASN1_TYPE_EMPTY;
 
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-8-PrivateKeyInfo",
                             &pkcs8_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  result = asn1_der_decoding (&pkcs8_asn, der->data, der->size, NULL);
+  result = MHD__asn1_der_decoding (&pkcs8_asn, der->data, der->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -522,11 +522,11 @@ decode_private_key_info (const gnutls_datum_t * der,
    */
   len = sizeof (oid);
   result =
-    asn1_read_value (pkcs8_asn, "privateKeyAlgorithm.algorithm", oid, &len);
+    MHD__asn1_read_value (pkcs8_asn, "privateKeyAlgorithm.algorithm", oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -536,8 +536,8 @@ decode_private_key_info (const gnutls_datum_t * der,
     pkey->pk_algorithm = MHD_GNUTLS_PK_RSA;
   else
     {
-      gnutls_assert ();
-      _gnutls_x509_log
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log
         ("PKCS #8 private key OID '%s' is unsupported.\n", oid);
       result = GNUTLS_E_UNKNOWN_PK_ALGORITHM;
       goto error;
@@ -550,21 +550,21 @@ decode_private_key_info (const gnutls_datum_t * der,
     result = _decode_pkcs8_rsa_key (pkcs8_asn, pkey);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return result;
     }
 
   result = 0;
 
 error:
-  asn1_delete_structure (&pkcs8_asn);
+  MHD__asn1_delete_structure (&pkcs8_asn);
 
   return result;
 
 }
 
 /**
- * gnutls_x509_privkey_import_pkcs8 - This function will import a DER or PEM PKCS8 encoded key
+ * MHD_gnutls_x509_privkey_import_pkcs8 - This function will import a DER or PEM PKCS8 encoded key
  * @key: The structure to store the parsed key
  * @data: The DER or PEM encoded key.
  * @format: One of DER or PEM
@@ -572,7 +572,7 @@ error:
  * @flags: 0 if encrypted or GNUTLS_PKCS_PLAIN if not encrypted.
  *
  * This function will convert the given DER or PEM encoded PKCS8 2.0 encrypted key
- * to the native gnutls_x509_privkey_t format. The output will be stored in @key.
+ * to the native MHD_gnutls_x509_privkey_t format. The output will be stored in @key.
  * Both RSA and DSA keys can be imported, and flags can only be used to indicate
  * an unencrypted key.
  *
@@ -587,17 +587,17 @@ error:
  *
  **/
 int
-gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
-                                  const gnutls_datum_t * data,
-                                  gnutls_x509_crt_fmt_t format,
+MHD_gnutls_x509_privkey_import_pkcs8 (MHD_gnutls_x509_privkey_t key,
+                                  const MHD_gnutls_datum_t * data,
+                                  MHD_gnutls_x509_crt_fmt_t format,
                                   const char *password, unsigned int flags)
 {
   int result = 0, need_free = 0;
-  gnutls_datum_t _data;
+  MHD_gnutls_datum_t _data;
 
   if (key == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -615,20 +615,20 @@ gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
       /* Try the first header
        */
       result =
-        _gnutls_fbase64_decode (PEM_UNENCRYPTED_PKCS8,
+        MHD__gnutls_fbase64_decode (PEM_UNENCRYPTED_PKCS8,
                                 data->data, data->size, &out);
 
       if (result < 0)
         {                       /* Try the encrypted header
                                  */
           result =
-            _gnutls_fbase64_decode (PEM_PKCS8, data->data, data->size, &out);
+            MHD__gnutls_fbase64_decode (PEM_PKCS8, data->data, data->size, &out);
 
           if (result <= 0)
             {
               if (result == 0)
                 result = GNUTLS_E_INTERNAL_ERROR;
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return result;
             }
         }
@@ -652,12 +652,12 @@ gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto cleanup;
     }
 
   if (need_free)
-    _gnutls_free_datum (&_data);
+    MHD__gnutls_free_datum (&_data);
 
   /* The key has now been decoded.
    */
@@ -667,7 +667,7 @@ gnutls_x509_privkey_import_pkcs8 (gnutls_x509_privkey_t key,
 cleanup:
   key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
   if (need_free)
-    _gnutls_free_datum (&_data);
+    MHD__gnutls_free_datum (&_data);
   return result;
 }
 
@@ -675,7 +675,7 @@ cleanup:
  */
 static int
 read_pbkdf2_params (ASN1_TYPE pbes2_asn,
-                    const gnutls_datum_t * der, struct pbkdf2_params *params)
+                    const MHD_gnutls_datum_t * der, struct pbkdf2_params *params)
 {
   int params_start, params_end;
   int params_len, len, result;
@@ -688,30 +688,30 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
    */
   len = sizeof (oid);
   result =
-    asn1_read_value (pbes2_asn, "keyDerivationFunc.algorithm", oid, &len);
+    MHD__asn1_read_value (pbes2_asn, "keyDerivationFunc.algorithm", oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
-  _gnutls_hard_log ("keyDerivationFunc.algorithm: %s\n", oid);
+  MHD__gnutls_hard_log ("keyDerivationFunc.algorithm: %s\n", oid);
 
   if (strcmp (oid, PBKDF2_OID) != 0)
     {
-      gnutls_assert ();
-      _gnutls_x509_log
+      MHD_gnutls_assert ();
+      MHD__gnutls_x509_log
         ("PKCS #8 key derivation OID '%s' is unsupported.\n", oid);
-      return mhd_gtls_asn2err (result);
+      return MHD_gtls_asn2err (result);
     }
 
   result =
-    asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
+    MHD__asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
                                 "keyDerivationFunc.parameters",
                                 &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
   params_len = params_end - params_start + 1;
 
@@ -719,58 +719,58 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
    * functions.
    */
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-5-PBKDF2-params",
                             &pbkdf2_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   result =
-    asn1_der_decoding (&pbkdf2_asn, &der->data[params_start],
+    MHD__asn1_der_decoding (&pbkdf2_asn, &der->data[params_start],
                        params_len, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* read the salt */
   params->salt_size = sizeof (params->salt);
   result =
-    asn1_read_value (pbkdf2_asn, "salt.specified", params->salt,
+    MHD__asn1_read_value (pbkdf2_asn, "salt.specified", params->salt,
                      &params->salt_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("salt.specified.size: %d\n", params->salt_size);
+  MHD__gnutls_hard_log ("salt.specified.size: %d\n", params->salt_size);
 
   /* read the iteration count
    */
   result =
-    _gnutls_x509_read_uint (pbkdf2_asn, "iterationCount",
+    MHD__gnutls_x509_read_uint (pbkdf2_asn, "iterationCount",
                             &params->iter_count);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
-  _gnutls_hard_log ("iterationCount: %d\n", params->iter_count);
+  MHD__gnutls_hard_log ("iterationCount: %d\n", params->iter_count);
 
   /* read the keylength, if it is set.
    */
   result =
-    _gnutls_x509_read_uint (pbkdf2_asn, "keyLength", &params->key_size);
+    MHD__gnutls_x509_read_uint (pbkdf2_asn, "keyLength", &params->key_size);
   if (result < 0)
     {
       params->key_size = 0;
     }
-  _gnutls_hard_log ("keyLength: %d\n", params->key_size);
+  MHD__gnutls_hard_log ("keyLength: %d\n", params->key_size);
 
   /* We don't read the PRF. We only use the default.
    */
@@ -778,7 +778,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   return 0;
 
 error:
-  asn1_delete_structure (&pbkdf2_asn);
+  MHD__asn1_delete_structure (&pbkdf2_asn);
   return result;
 
 }
@@ -786,7 +786,7 @@ error:
 /* Reads the PBE parameters from PKCS-12 schemas (*&#%*&#% RSA).
  */
 static int
-read_pkcs12_kdf_params (ASN1_TYPE pbes2_asn, struct pbkdf2_params *params)
+readMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn, struct pbkdf2_params *params)
 {
   int result;
 
@@ -795,25 +795,25 @@ read_pkcs12_kdf_params (ASN1_TYPE pbes2_asn, struct pbkdf2_params *params)
   /* read the salt */
   params->salt_size = sizeof (params->salt);
   result =
-    asn1_read_value (pbes2_asn, "salt", params->salt, &params->salt_size);
+    MHD__asn1_read_value (pbes2_asn, "salt", params->salt, &params->salt_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("salt.size: %d\n", params->salt_size);
+  MHD__gnutls_hard_log ("salt.size: %d\n", params->salt_size);
 
   /* read the iteration count
    */
   result =
-    _gnutls_x509_read_uint (pbes2_asn, "iterations", &params->iter_count);
+    MHD__gnutls_x509_read_uint (pbes2_asn, "iterations", &params->iter_count);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
-  _gnutls_hard_log ("iterationCount: %d\n", params->iter_count);
+  MHD__gnutls_hard_log ("iterationCount: %d\n", params->iter_count);
 
   params->key_size = 0;
 
@@ -827,7 +827,7 @@ error:
 /* Writes the PBE parameters for PKCS-12 schemas.
  */
 static int
-write_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
+writeMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
                          const struct pbkdf2_params *kdf_params)
 {
   int result;
@@ -835,27 +835,27 @@ write_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
   /* write the salt
    */
   result =
-    asn1_write_value (pbes2_asn, "salt",
+    MHD__asn1_write_value (pbes2_asn, "salt",
                       kdf_params->salt, kdf_params->salt_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("salt.size: %d\n", kdf_params->salt_size);
+  MHD__gnutls_hard_log ("salt.size: %d\n", kdf_params->salt_size);
 
   /* write the iteration count
    */
   result =
-    _gnutls_x509_write_uint32 (pbes2_asn, "iterations",
+    MHD__gnutls_x509_write_uint32 (pbes2_asn, "iterations",
                                kdf_params->iter_count);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
-  _gnutls_hard_log ("iterationCount: %d\n", kdf_params->iter_count);
+  MHD__gnutls_hard_log ("iterationCount: %d\n", kdf_params->iter_count);
 
   return 0;
 
@@ -884,13 +884,13 @@ oid2cipher (const char *oid, enum MHD_GNUTLS_CipherAlgorithm *algo)
       return 0;
     }
 
-  _gnutls_x509_log ("PKCS #8 encryption OID '%s' is unsupported.\n", oid);
+  MHD__gnutls_x509_log ("PKCS #8 encryption OID '%s' is unsupported.\n", oid);
   return GNUTLS_E_UNKNOWN_CIPHER_TYPE;
 }
 
 static int
 read_pbe_enc_params (ASN1_TYPE pbes2_asn,
-                     const gnutls_datum_t * der,
+                     const MHD_gnutls_datum_t * der,
                      struct pbe_enc_params *params)
 {
   int params_start, params_end;
@@ -904,66 +904,66 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
    */
   len = sizeof (oid);
   result =
-    asn1_read_value (pbes2_asn, "encryptionScheme.algorithm", oid, &len);
+    MHD__asn1_read_value (pbes2_asn, "encryptionScheme.algorithm", oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
-  _gnutls_hard_log ("encryptionScheme.algorithm: %s\n", oid);
+  MHD__gnutls_hard_log ("encryptionScheme.algorithm: %s\n", oid);
 
   if ((result = oid2cipher (oid, &params->cipher)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   result =
-    asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
+    MHD__asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
                                 "encryptionScheme.parameters",
                                 &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
   params_len = params_end - params_start + 1;
 
   /* Now check the encryption parameters.
    */
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-5-des-EDE3-CBC-params",
                             &pbe_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   result =
-    asn1_der_decoding (&pbe_asn, &der->data[params_start], params_len, NULL);
+    MHD__asn1_der_decoding (&pbe_asn, &der->data[params_start], params_len, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* read the IV */
   params->iv_size = sizeof (params->iv);
-  result = asn1_read_value (pbe_asn, "", params->iv, &params->iv_size);
+  result = MHD__asn1_read_value (pbe_asn, "", params->iv, &params->iv_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("IV.size: %d\n", params->iv_size);
+  MHD__gnutls_hard_log ("IV.size: %d\n", params->iv_size);
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbe_asn);
+  MHD__asn1_delete_structure (&pbe_asn);
   return result;
 
 }
@@ -973,49 +973,49 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
               const char *root, const char *password,
               const struct pbkdf2_params *kdf_params,
               const struct pbe_enc_params *enc_params,
-              gnutls_datum_t * decrypted_data)
+              MHD_gnutls_datum_t * decrypted_data)
 {
   int result;
   int data_size;
   opaque *data = NULL, *key = NULL;
-  gnutls_datum_t dkey, d_iv;
+  MHD_gnutls_datum_t dkey, d_iv;
   cipher_hd_t ch = NULL;
   int key_size;
 
   data_size = 0;
-  result = asn1_read_value (pkcs8_asn, root, NULL, &data_size);
+  result = MHD__asn1_read_value (pkcs8_asn, root, NULL, &data_size);
   if (result != ASN1_MEM_ERROR)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  data = gnutls_malloc (data_size);
+  data = MHD_gnutls_malloc (data_size);
   if (data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = asn1_read_value (pkcs8_asn, root, data, &data_size);
+  result = MHD__asn1_read_value (pkcs8_asn, root, data, &data_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   if (kdf_params->key_size == 0)
     {
-      key_size = MHD_gnutls_cipher_get_key_size (enc_params->cipher);
+      key_size = MHD__gnutls_cipher_get_key_size (enc_params->cipher);
     }
   else
     key_size = kdf_params->key_size;
 
-  key = gnutls_alloca (key_size);
+  key = MHD_gnutls_alloca (key_size);
   if (key == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_MEMORY_ERROR;
       goto error;
     }
@@ -1024,13 +1024,13 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
    */
   if (schema == PBES2)
     {
-      result = gc_pbkdf2_sha1 (password, strlen (password),
+      result = MHD_gc_pbkdf2_sha1 (password, strlen (password),
                                kdf_params->salt, kdf_params->salt_size,
                                kdf_params->iter_count, key, key_size);
 
       if (result != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           result = GNUTLS_E_DECRYPTION_FAILED;
           goto error;
         }
@@ -1038,14 +1038,14 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
   else
     {
       result =
-        _pkcs12_string_to_key (1 /*KEY*/, kdf_params->salt,
+        MHD_pkcs12_string_to_key (1 /*KEY*/, kdf_params->salt,
                                kdf_params->salt_size,
                                kdf_params->iter_count, password,
                                key_size, key);
 
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
     }
@@ -1057,41 +1057,41 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
 
   d_iv.data = (opaque *) enc_params->iv;
   d_iv.size = enc_params->iv_size;
-  ch = mhd_gtls_cipher_init (enc_params->cipher, &dkey, &d_iv);
+  ch = MHD_gtls_cipher_init (enc_params->cipher, &dkey, &d_iv);
 
-  gnutls_afree (key);
+  MHD_gnutls_afree (key);
   key = NULL;
 
   if (ch == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_DECRYPTION_FAILED;
       goto error;
     }
 
-  result = mhd_gtls_cipher_decrypt (ch, data, data_size);
+  result = MHD_gtls_cipher_decrypt (ch, data, data_size);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   decrypted_data->data = data;
 
-  if (mhd_gtls_cipher_get_block_size (enc_params->cipher) != 1)
+  if (MHD_gtls_cipher_get_block_size (enc_params->cipher) != 1)
     decrypted_data->size = data_size - data[data_size - 1];
   else
     decrypted_data->size = data_size;
 
-  mhd_gnutls_cipher_deinit (ch);
+  MHD_gnutls_cipher_deinit (ch);
 
   return 0;
 
 error:
-  gnutls_free (data);
-  gnutls_afree (key);
+  MHD_gnutls_free (data);
+  MHD_gnutls_afree (key);
   if (ch != NULL)
-    mhd_gnutls_cipher_deinit (ch);
+    MHD_gnutls_cipher_deinit (ch);
   return result;
 }
 
@@ -1108,97 +1108,97 @@ write_pbkdf2_params (ASN1_TYPE pbes2_asn,
   /* Write the key derivation algorithm
    */
   result =
-    asn1_write_value (pbes2_asn, "keyDerivationFunc.algorithm",
+    MHD__asn1_write_value (pbes2_asn, "keyDerivationFunc.algorithm",
                       PBKDF2_OID, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   /* Now write the key derivation and the encryption
    * functions.
    */
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-5-PBKDF2-params",
                             &pbkdf2_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  result = asn1_write_value (pbkdf2_asn, "salt", "specified", 1);
+  result = MHD__asn1_write_value (pbkdf2_asn, "salt", "specified", 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* write the salt
    */
   result =
-    asn1_write_value (pbkdf2_asn, "salt.specified",
+    MHD__asn1_write_value (pbkdf2_asn, "salt.specified",
                       kdf_params->salt, kdf_params->salt_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("salt.specified.size: %d\n", kdf_params->salt_size);
+  MHD__gnutls_hard_log ("salt.specified.size: %d\n", kdf_params->salt_size);
 
   /* write the iteration count
    */
-  mhd_gtls_write_uint32 (kdf_params->iter_count, tmp);
+  MHD_gtls_write_uint32 (kdf_params->iter_count, tmp);
 
-  result = asn1_write_value (pbkdf2_asn, "iterationCount", tmp, 4);
+  result = MHD__asn1_write_value (pbkdf2_asn, "iterationCount", tmp, 4);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("iterationCount: %d\n", kdf_params->iter_count);
+  MHD__gnutls_hard_log ("iterationCount: %d\n", kdf_params->iter_count);
 
   /* write the keylength, if it is set.
    */
-  result = asn1_write_value (pbkdf2_asn, "keyLength", NULL, 0);
+  result = MHD__asn1_write_value (pbkdf2_asn, "keyLength", NULL, 0);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* We write an emptry prf.
    */
-  result = asn1_write_value (pbkdf2_asn, "prf", NULL, 0);
+  result = MHD__asn1_write_value (pbkdf2_asn, "prf", NULL, 0);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* now encode them an put the DER output
    * in the keyDerivationFunc.parameters
    */
-  result = _gnutls_x509_der_encode_and_copy (pbkdf2_asn, "",
+  result = MHD__gnutls_x509_der_encode_and_copy (pbkdf2_asn, "",
                                              pbes2_asn,
                                              "keyDerivationFunc.parameters",
                                              0);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbkdf2_asn);
+  MHD__asn1_delete_structure (&pbkdf2_asn);
   return result;
 
 }
@@ -1213,53 +1213,53 @@ write_pbe_enc_params (ASN1_TYPE pbes2_asn,
   /* Write the encryption algorithm
    */
   result =
-    asn1_write_value (pbes2_asn, "encryptionScheme.algorithm",
+    MHD__asn1_write_value (pbes2_asn, "encryptionScheme.algorithm",
                       DES_EDE3_CBC_OID, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
-  _gnutls_hard_log ("encryptionScheme.algorithm: %s\n", DES_EDE3_CBC_OID);
+  MHD__gnutls_hard_log ("encryptionScheme.algorithm: %s\n", DES_EDE3_CBC_OID);
 
   /* Now check the encryption parameters.
    */
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-5-des-EDE3-CBC-params",
                             &pbe_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   /* read the salt */
-  result = asn1_write_value (pbe_asn, "", params->iv, params->iv_size);
+  result = MHD__asn1_write_value (pbe_asn, "", params->iv, params->iv_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
-  _gnutls_hard_log ("IV.size: %d\n", params->iv_size);
+  MHD__gnutls_hard_log ("IV.size: %d\n", params->iv_size);
 
   /* now encode them an put the DER output
    * in the encryptionScheme.parameters
    */
-  result = _gnutls_x509_der_encode_and_copy (pbe_asn, "",
+  result = MHD__gnutls_x509_der_encode_and_copy (pbe_asn, "",
                                              pbes2_asn,
                                              "encryptionScheme.parameters",
                                              0);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbe_asn);
+  MHD__asn1_delete_structure (&pbe_asn);
   return result;
 
 }
@@ -1270,7 +1270,7 @@ static int
 generate_key (schema_id schema,
               const char *password,
               struct pbkdf2_params *kdf_params,
-              struct pbe_enc_params *enc_params, gnutls_datum_t * key)
+              struct pbe_enc_params *enc_params, MHD_gnutls_datum_t * key)
 {
   opaque rnd[2];
   int ret;
@@ -1286,9 +1286,9 @@ generate_key (schema_id schema,
   else if (schema == PKCS12_RC2_40_SHA1)
     enc_params->cipher = MHD_GNUTLS_CIPHER_RC2_40_CBC;
 
-  if (gc_pseudo_random (rnd, 2) != GC_OK)
+  if (MHD_gc_pseudo_random (rnd, 2) != GC_OK)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
     }
 
@@ -1302,22 +1302,22 @@ generate_key (schema_id schema,
   else
     kdf_params->salt_size = 8;
 
-  if (gc_pseudo_random (kdf_params->salt, kdf_params->salt_size) != GC_OK)
+  if (MHD_gc_pseudo_random (kdf_params->salt, kdf_params->salt_size) != GC_OK)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
     }
 
   kdf_params->iter_count = 256 + rnd[0];
   key->size = kdf_params->key_size =
-    MHD_gnutls_cipher_get_key_size (enc_params->cipher);
+    MHD__gnutls_cipher_get_key_size (enc_params->cipher);
 
-  enc_params->iv_size = mhd_gtls_cipher_get_iv_size (enc_params->cipher);
+  enc_params->iv_size = MHD_gtls_cipher_get_iv_size (enc_params->cipher);
 
-  key->data = gnutls_secure_malloc (key->size);
+  key->data = MHD_gnutls_secure_malloc (key->size);
   if (key->data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -1327,33 +1327,33 @@ generate_key (schema_id schema,
   if (schema == PBES2)
     {
 
-      ret = gc_pbkdf2_sha1 (password, strlen (password),
+      ret = MHD_gc_pbkdf2_sha1 (password, strlen (password),
                             kdf_params->salt, kdf_params->salt_size,
                             kdf_params->iter_count,
                             key->data, kdf_params->key_size);
       if (ret != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_ENCRYPTION_FAILED;
         }
 
       if (enc_params->iv_size &&
-          gc_nonce (enc_params->iv, enc_params->iv_size) != GC_OK)
+          MHD_gc_nonce (enc_params->iv, enc_params->iv_size) != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
         }
     }
   else
     {                           /* PKCS12 schemas */
       ret =
-        _pkcs12_string_to_key (1 /*KEY*/, kdf_params->salt,
+        MHD_pkcs12_string_to_key (1 /*KEY*/, kdf_params->salt,
                                kdf_params->salt_size,
                                kdf_params->iter_count, password,
                                kdf_params->key_size, key->data);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
 
@@ -1362,13 +1362,13 @@ generate_key (schema_id schema,
       if (enc_params->iv_size)
         {
           ret =
-            _pkcs12_string_to_key (2 /*IV*/, kdf_params->salt,
+            MHD_pkcs12_string_to_key (2 /*IV*/, kdf_params->salt,
                                    kdf_params->salt_size,
                                    kdf_params->iter_count, password,
                                    enc_params->iv_size, enc_params->iv);
           if (ret < 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return ret;
             }
         }
@@ -1392,99 +1392,99 @@ write_schema_params (schema_id schema, ASN1_TYPE pkcs8_asn,
   if (schema == PBES2)
     {
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (),
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                 "PKIX1.pkcs-5-PBES2-params",
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          return mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          return MHD_gtls_asn2err (result);
         }
 
       result = write_pbkdf2_params (pbes2_asn, kdf_params);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
       result = write_pbe_enc_params (pbes2_asn, enc_params);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
-      result = _gnutls_x509_der_encode_and_copy (pbes2_asn, "",
+      result = MHD__gnutls_x509_der_encode_and_copy (pbes2_asn, "",
                                                  pkcs8_asn, where, 0);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
-      asn1_delete_structure (&pbes2_asn);
+      MHD__asn1_delete_structure (&pbes2_asn);
     }
   else
     {                           /* PKCS12 schemas */
 
       if ((result =
-           asn1_create_element (_gnutls_get_pkix (),
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                                 "PKIX1.pkcs-12-PbeParams",
                                 &pbes2_asn)) != ASN1_SUCCESS)
         {
-          gnutls_assert ();
-          result = mhd_gtls_asn2err (result);
+          MHD_gnutls_assert ();
+          result = MHD_gtls_asn2err (result);
           goto error;
         }
 
-      result = write_pkcs12_kdf_params (pbes2_asn, kdf_params);
+      result = writeMHD_pkcs12_kdf_params (pbes2_asn, kdf_params);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
-      result = _gnutls_x509_der_encode_and_copy (pbes2_asn, "",
+      result = MHD__gnutls_x509_der_encode_and_copy (pbes2_asn, "",
                                                  pkcs8_asn, where, 0);
       if (result < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           goto error;
         }
 
-      asn1_delete_structure (&pbes2_asn);
+      MHD__asn1_delete_structure (&pbes2_asn);
 
     }
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbes2_asn);
+  MHD__asn1_delete_structure (&pbes2_asn);
   return result;
 
 }
 
 static int
-encrypt_data (const gnutls_datum_t * plain,
+encrypt_data (const MHD_gnutls_datum_t * plain,
               const struct pbe_enc_params *enc_params,
-              gnutls_datum_t * key, gnutls_datum_t * encrypted)
+              MHD_gnutls_datum_t * key, MHD_gnutls_datum_t * encrypted)
 {
   int result;
   int data_size;
   opaque *data = NULL;
-  gnutls_datum_t d_iv;
+  MHD_gnutls_datum_t d_iv;
   cipher_hd_t ch = NULL;
   opaque pad, pad_size;
 
-  pad_size = mhd_gtls_cipher_get_block_size (enc_params->cipher);
+  pad_size = MHD_gtls_cipher_get_block_size (enc_params->cipher);
 
   if (pad_size == 1)            /* stream */
     pad_size = 0;
 
-  data = gnutls_malloc (plain->size + pad_size);
+  data = MHD_gnutls_malloc (plain->size + pad_size);
   if (data == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -1504,33 +1504,33 @@ encrypt_data (const gnutls_datum_t * plain,
 
   d_iv.data = (opaque *) enc_params->iv;
   d_iv.size = enc_params->iv_size;
-  ch = mhd_gtls_cipher_init (enc_params->cipher, key, &d_iv);
+  ch = MHD_gtls_cipher_init (enc_params->cipher, key, &d_iv);
 
   if (ch == GNUTLS_CIPHER_FAILED)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_ENCRYPTION_FAILED;
       goto error;
     }
 
-  result = mhd_gtls_cipher_encrypt (ch, data, data_size);
+  result = MHD_gtls_cipher_encrypt (ch, data, data_size);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   encrypted->data = data;
   encrypted->size = data_size;
 
-  mhd_gnutls_cipher_deinit (ch);
+  MHD_gnutls_cipher_deinit (ch);
 
   return 0;
 
 error:
-  gnutls_free (data);
+  MHD_gnutls_free (data);
   if (ch != NULL)
-    mhd_gnutls_cipher_deinit (ch);
+    MHD_gnutls_cipher_deinit (ch);
   return result;
 }
 
@@ -1538,12 +1538,12 @@ error:
  * and stored in dec.
  */
 int
-_gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
-                            const char *password, gnutls_datum_t * dec)
+MHD__gnutls_pkcs7_decrypt_data (const MHD_gnutls_datum_t * data,
+                            const char *password, MHD_gnutls_datum_t * dec)
 {
   int result, len;
   char enc_oid[64];
-  gnutls_datum_t tmp;
+  MHD_gnutls_datum_t tmp;
   ASN1_TYPE pbes2_asn = ASN1_TYPE_EMPTY, pkcs7_asn = ASN1_TYPE_EMPTY;
   int params_start, params_end, params_len;
   struct pbkdf2_params kdf_params;
@@ -1551,20 +1551,20 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   schema_id schema;
 
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-7-EncryptedData",
                             &pkcs7_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  result = asn1_der_decoding (&pkcs7_asn, data->data, data->size, NULL);
+  result = MHD__asn1_der_decoding (&pkcs7_asn, data->data, data->size, NULL);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -1572,19 +1572,19 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
    */
   len = sizeof (enc_oid);
   result =
-    asn1_read_value (pkcs7_asn,
+    MHD__asn1_read_value (pkcs7_asn,
                      "encryptedContentInfo.contentEncryptionAlgorithm.algorithm",
                      enc_oid, &len);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   if ((result = check_schema (enc_oid)) < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
   schema = result;
@@ -1592,13 +1592,13 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
   /* Get the DER encoding of the parameters.
    */
   result =
-    asn1_der_decoding_startEnd (pkcs7_asn, data->data, data->size,
+    MHD__asn1_der_decoding_startEnd (pkcs7_asn, data->data, data->size,
                                 "encryptedContentInfo.contentEncryptionAlgorithm.parameters",
                                 &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
   params_len = params_end - params_start + 1;
@@ -1609,8 +1609,8 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
                              params_len, &kdf_params, &enc_params);
   if (result < ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -1624,19 +1624,19 @@ _gnutls_pkcs7_decrypt_data (const gnutls_datum_t * data,
                   &kdf_params, &enc_params, &tmp);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
-  asn1_delete_structure (&pkcs7_asn);
+  MHD__asn1_delete_structure (&pkcs7_asn);
 
   *dec = tmp;
 
   return 0;
 
 error:
-  asn1_delete_structure (&pbes2_asn);
-  asn1_delete_structure (&pkcs7_asn);
+  MHD__asn1_delete_structure (&pbes2_asn);
+  MHD__asn1_delete_structure (&pkcs7_asn);
   return result;
 }
 
@@ -1644,24 +1644,24 @@ error:
  * and stored in enc.
  */
 int
-_gnutls_pkcs7_encrypt_data (schema_id schema,
-                            const gnutls_datum_t * data,
-                            const char *password, gnutls_datum_t * enc)
+MHD__gnutls_pkcs7_encrypt_data (schema_id schema,
+                            const MHD_gnutls_datum_t * data,
+                            const char *password, MHD_gnutls_datum_t * enc)
 {
   int result;
-  gnutls_datum_t key = { NULL, 0 };
-  gnutls_datum_t tmp = { NULL, 0 };
+  MHD_gnutls_datum_t key = { NULL, 0 };
+  MHD_gnutls_datum_t tmp = { NULL, 0 };
   ASN1_TYPE pkcs7_asn = ASN1_TYPE_EMPTY;
   struct pbkdf2_params kdf_params;
   struct pbe_enc_params enc_params;
 
   if ((result =
-       asn1_create_element (_gnutls_get_pkix (),
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
                             "PKIX1.pkcs-7-EncryptedData",
                             &pkcs7_asn)) != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -1671,25 +1671,25 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
     {
     case PBES2:
       result =
-        asn1_write_value (pkcs7_asn,
+        MHD__asn1_write_value (pkcs7_asn,
                           "encryptedContentInfo.contentEncryptionAlgorithm.algorithm",
                           PBES2_OID, 1);
       break;
     case PKCS12_3DES_SHA1:
       result =
-        asn1_write_value (pkcs7_asn,
+        MHD__asn1_write_value (pkcs7_asn,
                           "encryptedContentInfo.contentEncryptionAlgorithm.algorithm",
                           PKCS12_PBE_3DES_SHA1_OID, 1);
       break;
     case PKCS12_ARCFOUR_SHA1:
       result =
-        asn1_write_value (pkcs7_asn,
+        MHD__asn1_write_value (pkcs7_asn,
                           "encryptedContentInfo.contentEncryptionAlgorithm.algorithm",
                           PKCS12_PBE_ARCFOUR_SHA1_OID, 1);
       break;
     case PKCS12_RC2_40_SHA1:
       result =
-        asn1_write_value (pkcs7_asn,
+        MHD__asn1_write_value (pkcs7_asn,
                           "encryptedContentInfo.contentEncryptionAlgorithm.algorithm",
                           PKCS12_PBE_RC2_40_SHA1_OID, 1);
       break;
@@ -1698,8 +1698,8 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
@@ -1709,7 +1709,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   result = generate_key (schema, password, &kdf_params, &enc_params, &key);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
@@ -1718,7 +1718,7 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
                                 &kdf_params, &enc_params);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
@@ -1728,70 +1728,70 @@ _gnutls_pkcs7_encrypt_data (schema_id schema,
   result = encrypt_data (data, &enc_params, &key, &tmp);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   /* write the encrypted data.
    */
   result =
-    asn1_write_value (pkcs7_asn,
+    MHD__asn1_write_value (pkcs7_asn,
                       "encryptedContentInfo.encryptedContent", tmp.data,
                       tmp.size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  _gnutls_free_datum (&tmp);
-  _gnutls_free_datum (&key);
+  MHD__gnutls_free_datum (&tmp);
+  MHD__gnutls_free_datum (&key);
 
   /* Now write the rest of the pkcs-7 stuff.
    */
 
-  result = _gnutls_x509_write_uint32 (pkcs7_asn, "version", 0);
+  result = MHD__gnutls_x509_write_uint32 (pkcs7_asn, "version", 0);
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
   result =
-    asn1_write_value (pkcs7_asn, "encryptedContentInfo.contentType",
+    MHD__asn1_write_value (pkcs7_asn, "encryptedContentInfo.contentType",
                       DATA_OID, 1);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  result = asn1_write_value (pkcs7_asn, "unprotectedAttrs", NULL, 0);
+  result = MHD__asn1_write_value (pkcs7_asn, "unprotectedAttrs", NULL, 0);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      result = mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      result = MHD_gtls_asn2err (result);
       goto error;
     }
 
   /* Now encode and copy the DER stuff.
    */
-  result = _gnutls_x509_der_encode (pkcs7_asn, "", enc, 0);
+  result = MHD__gnutls_x509_der_encode (pkcs7_asn, "", enc, 0);
 
-  asn1_delete_structure (&pkcs7_asn);
+  MHD__asn1_delete_structure (&pkcs7_asn);
 
   if (result < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       goto error;
     }
 
 error:
-  _gnutls_free_datum (&key);
-  _gnutls_free_datum (&tmp);
-  asn1_delete_structure (&pkcs7_asn);
+  MHD__gnutls_free_datum (&key);
+  MHD__gnutls_free_datum (&tmp);
+  MHD__asn1_delete_structure (&pkcs7_asn);
   return result;
 }
 

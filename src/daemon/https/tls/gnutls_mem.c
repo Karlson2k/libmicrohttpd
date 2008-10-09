@@ -26,40 +26,40 @@
 #include <gnutls_errors.h>
 #include <gnutls_num.h>
 
-gnutls_alloc_function gnutls_secure_malloc = malloc;
-gnutls_alloc_function gnutls_malloc = malloc;
-gnutls_free_function gnutls_free = free;
-gnutls_realloc_function gnutls_realloc = realloc;
+MHD_gnutls_alloc_function MHD_gnutls_secure_malloc = malloc;
+MHD_gnutls_alloc_function MHD_gnutls_malloc = malloc;
+MHD_gnutls_free_function MHD_gnutls_free = free;
+MHD_gnutls_realloc_function MHD_gnutls_realloc = realloc;
 
-void *(*gnutls_calloc) (size_t, size_t) = calloc;
-char *(*gnutls_strdup) (const char *) = mhd_gtls_strdup;
+void *(*MHD_gnutls_calloc) (size_t, size_t) = calloc;
+char *(*MHD_gnutls_strdup) (const char *) = MHD_gtls_strdup;
 
 int
-_gnutls_is_secure_mem_null (const void *ign)
+MHD__gnutls_is_secure_mem_null (const void *ign)
 {
   return 0;
 }
 
-int (*_gnutls_is_secure_memory) (const void *) = _gnutls_is_secure_mem_null;
+int (*MHD__gnutls_is_secure_memory) (const void *) = MHD__gnutls_is_secure_mem_null;
 
 
 void *
-mhd_gtls_calloc (size_t nmemb, size_t size)
+MHD_gtls_calloc (size_t nmemb, size_t size)
 {
   void *ret;
   size *= nmemb;
-  ret = gnutls_malloc (size);
+  ret = MHD_gnutls_malloc (size);
   if (ret != NULL)
     memset (ret, 0, size);
   return ret;
 }
 
 svoid *
-mhd_gtls_secure_calloc (size_t nmemb, size_t size)
+MHD_gtls_secure_calloc (size_t nmemb, size_t size)
 {
   svoid *ret;
   size *= nmemb;
-  ret = gnutls_secure_malloc (size);
+  ret = MHD_gnutls_secure_malloc (size);
   if (ret != NULL)
     memset (ret, 0, size);
   return ret;
@@ -69,29 +69,29 @@ mhd_gtls_secure_calloc (size_t nmemb, size_t size)
  * fails.
  */
 void *
-mhd_gtls_realloc_fast (void *ptr, size_t size)
+MHD_gtls_realloc_fast (void *ptr, size_t size)
 {
   void *ret;
 
   if (size == 0)
     return ptr;
 
-  ret = gnutls_realloc (ptr, size);
+  ret = MHD_gnutls_realloc (ptr, size);
   if (ret == NULL)
     {
-      gnutls_free (ptr);
+      MHD_gnutls_free (ptr);
     }
 
   return ret;
 }
 
 char *
-mhd_gtls_strdup (const char *str)
+MHD_gtls_strdup (const char *str)
 {
   size_t siz = strlen (str) + 1;
   char *ret;
 
-  ret = gnutls_malloc (siz);
+  ret = MHD_gnutls_malloc (siz);
   if (ret != NULL)
     memcpy (ret, str, siz);
   return ret;
@@ -103,7 +103,7 @@ mhd_gtls_strdup (const char *str)
  */
 
 /**
-  * gnutls_malloc - Allocates and returns data
+  * MHD_gnutls_malloc - Allocates and returns data
   *
   * This function will allocate 's' bytes data, and
   * return a pointer to memory. This function is supposed
@@ -113,12 +113,12 @@ mhd_gtls_strdup (const char *str)
   *
   **/
 void *
-gnutls_malloc (size_t s)
+MHD_gnutls_malloc (size_t s)
 {
 }
 
 /**
-  * gnutls_free - Returns a free() like function
+  * MHD_gnutls_free - Returns a free() like function
   * @d: pointer to memory
   *
   * This function will free data pointed by ptr.
@@ -127,7 +127,7 @@ gnutls_malloc (size_t s)
   *
   **/
 void
-gnutls_free (void *ptr)
+MHD_gnutls_free (void *ptr)
 {
 }
 

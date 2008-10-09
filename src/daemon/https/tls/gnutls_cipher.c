@@ -42,7 +42,7 @@
 #include <gc.h>
 
 inline static int
-is_write_comp_null (mhd_gtls_session_t session)
+is_write_comp_null (MHD_gtls_session_t session)
 {
   if (session->security_parameters.write_compression_algorithm ==
       MHD_GNUTLS_COMP_NULL)
@@ -52,7 +52,7 @@ is_write_comp_null (mhd_gtls_session_t session)
 }
 
 inline static int
-is_read_comp_null (mhd_gtls_session_t session)
+is_read_comp_null (MHD_gtls_session_t session)
 {
   if (session->security_parameters.read_compression_algorithm ==
       MHD_GNUTLS_COMP_NULL)
@@ -68,13 +68,13 @@ is_read_comp_null (mhd_gtls_session_t session)
  * If random pad != 0 then the random pad data will be appended.
  */
 int
-mhd_gtls_encrypt (mhd_gtls_session_t session, const opaque * headers,
+MHD_gtls_encrypt (MHD_gtls_session_t session, const opaque * headers,
                   size_t headers_size, const opaque * data,
                   size_t data_size, opaque * ciphertext,
                   size_t ciphertext_size, content_type_t type, int random_pad)
 {
-  gnutls_datum_t plain;
-  gnutls_datum_t comp;
+  MHD_gnutls_datum_t plain;
+  MHD_gnutls_datum_t comp;
   int ret;
   int free_comp = 1;
 
@@ -91,31 +91,31 @@ mhd_gtls_encrypt (mhd_gtls_session_t session, const opaque * headers,
       /* Here comp is allocated and must be
        * freed.
        */
-      ret = _gnutls_m_plaintext2compressed (session, &comp, &plain);
+      ret = MHD__gnutls_m_plaintext2compressed (session, &comp, &plain);
       if (ret < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
     }
 
-  ret = mhd_gtls_compressed2ciphertext (session, &ciphertext[headers_size],
+  ret = MHD_gtls_compressed2ciphertext (session, &ciphertext[headers_size],
                                         ciphertext_size - headers_size,
                                         comp, type, random_pad);
 
   if (free_comp)
-    _gnutls_free_datum (&comp);
+    MHD__gnutls_free_datum (&comp);
 
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
 
   /* copy the headers */
   memcpy (ciphertext, headers, headers_size);
-  mhd_gtls_write_uint16 (ret, &ciphertext[3]);
+  MHD_gtls_write_uint16 (ret, &ciphertext[3]);
 
   return ret + headers_size;
 }
@@ -124,12 +124,12 @@ mhd_gtls_encrypt (mhd_gtls_session_t session, const opaque * headers,
  * Returns the decrypted data length.
  */
 int
-mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
+MHD_gtls_decrypt (MHD_gtls_session_t session, opaque * ciphertext,
                   size_t ciphertext_size, uint8_t * data,
                   size_t max_data_size, content_type_t type)
 {
-  gnutls_datum_t gtxt;
-  gnutls_datum_t gcipher;
+  MHD_gnutls_datum_t gtxt;
+  MHD_gnutls_datum_t gcipher;
   int ret;
 
   if (ciphertext_size == 0)
@@ -139,7 +139,7 @@ mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
   gcipher.data = ciphertext;
 
   ret =
-    mhd_gtls_ciphertext2compressed (session, data, max_data_size,
+    MHD_gtls_ciphertext2compressed (session, data, max_data_size,
                                     gcipher, type);
   if (ret < 0)
     {
@@ -153,14 +153,14 @@ mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
     }
   else
     {
-      gnutls_datum_t gcomp;
+      MHD_gnutls_datum_t gcomp;
 
       /* compression has this malloc overhead.
        */
 
       gcomp.data = data;
       gcomp.size = ret;
-      ret = _gnutls_m_compressed2plaintext (session, &gtxt, &gcomp);
+      ret = MHD__gnutls_m_compressed2plaintext (session, &gtxt, &gcomp);
       if (ret < 0)
         {
           return ret;
@@ -168,8 +168,8 @@ mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
 
       if (gtxt.size > MAX_RECORD_RECV_SIZE)
         {
-          gnutls_assert ();
-          _gnutls_free_datum (&gtxt);
+          MHD_gnutls_assert ();
+          MHD__gnutls_free_datum (&gtxt);
           /* This shouldn't have happen and
            * is a TLS fatal error.
            */
@@ -179,15 +179,15 @@ mhd_gtls_decrypt (mhd_gtls_session_t session, opaque * ciphertext,
       /* This check is not really needed */
       if (max_data_size < MAX_RECORD_RECV_SIZE)
         {
-          gnutls_assert ();
-          _gnutls_free_datum (&gtxt);
+          MHD_gnutls_assert ();
+          MHD__gnutls_free_datum (&gtxt);
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
       memcpy (data, gtxt.data, gtxt.size);
       ret = gtxt.size;
 
-      _gnutls_free_datum (&gtxt);
+      MHD__gnutls_free_datum (&gtxt);
     }
 
   return ret;
@@ -204,11 +204,11 @@ mac_init (enum MHD_GNUTLS_HashAlgorithm mac, opaque * secret, int secret_size,
 
   if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {                           /* SSL 3.0 */
-      td = mhd_gnutls_mac_init_ssl3 (mac, secret, secret_size);
+      td = MHD_gnutls_mac_init_ssl3 (mac, secret, secret_size);
     }
   else
     {                           /* TLS 1.x */
-      td = mhd_gtls_hmac_init (mac, secret, secret_size);
+      td = MHD_gtls_MHD_hmac_init (mac, secret, secret_size);
     }
 
   return td;
@@ -219,16 +219,16 @@ mac_deinit (mac_hd_t td, opaque * res, int ver)
 {
   if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
     {                           /* SSL 3.0 */
-      mhd_gnutls_mac_deinit_ssl3 (td, res);
+      MHD_gnutls_mac_deinit_ssl3 (td, res);
     }
   else
     {
-      mhd_gnutls_hmac_deinit (td, res);
+      MHD_gnutls_MHD_hmac_deinit (td, res);
     }
 }
 
 inline static int
-calc_enc_length (mhd_gtls_session_t session, int data_size,
+calc_enc_length (MHD_gtls_session_t session, int data_size,
                  int hash_size, uint8_t * pad, int random_pad,
                  cipher_type_t block_algo, uint16_t blocksize)
 {
@@ -244,9 +244,9 @@ calc_enc_length (mhd_gtls_session_t session, int data_size,
 
       break;
     case CIPHER_BLOCK:
-      if (gc_nonce (&rnd, 1) != GC_OK)
+      if (MHD_gc_nonce (&rnd, 1) != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
         }
 
@@ -276,7 +276,7 @@ calc_enc_length (mhd_gtls_session_t session, int data_size,
 
       break;
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -289,9 +289,9 @@ calc_enc_length (mhd_gtls_session_t session, int data_size,
  * return the actual encrypted data length.
  */
 int
-mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
+MHD_gtls_compressed2ciphertext (MHD_gtls_session_t session,
                                 opaque * cipher_data, int cipher_size,
-                                gnutls_datum_t compressed,
+                                MHD_gnutls_datum_t compressed,
                                 content_type_t _type, int random_pad)
 {
   uint8_t MAC[MAX_HASH_SIZE];
@@ -302,21 +302,21 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
   uint8_t type = _type;
   uint8_t major, minor;
   int hash_size =
-    mhd_gnutls_hash_get_algo_len (session->security_parameters.
+    MHD_gnutls_hash_get_algo_len (session->security_parameters.
                                   write_mac_algorithm);
   enum MHD_GNUTLS_Protocol ver;
   int blocksize =
-    mhd_gtls_cipher_get_block_size (session->security_parameters.
+    MHD_gtls_cipher_get_block_size (session->security_parameters.
                                     write_bulk_cipher_algorithm);
   cipher_type_t block_algo =
-    mhd_gtls_cipher_is_block (session->security_parameters.
+    MHD_gtls_cipher_is_block (session->security_parameters.
                               write_bulk_cipher_algorithm);
   opaque *data_ptr;
 
 
-  ver = MHD_gnutls_protocol_get_version (session);
-  minor = mhd_gtls_version_get_minor (ver);
-  major = mhd_gtls_version_get_major (ver);
+  ver = MHD__gnutls_protocol_get_version (session);
+  minor = MHD_gtls_version_get_minor (ver);
+  major = MHD_gtls_version_get_major (ver);
 
 
   /* Initialize MAC */
@@ -328,26 +328,26 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
       && session->security_parameters.write_mac_algorithm !=
       MHD_GNUTLS_MAC_NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-  c_length = mhd_gtls_conv_uint16 (compressed.size);
+  c_length = MHD_gtls_conv_uint16 (compressed.size);
 
   if (td != GNUTLS_MAC_FAILED)
     {                           /* actually when the algorithm in not the NULL one */
-      mhd_gnutls_hash (td,
+      MHD_gnutls_hash (td,
                        UINT64DATA (session->connection_state.
                                    write_sequence_number), 8);
 
-      mhd_gnutls_hash (td, &type, 1);
+      MHD_gnutls_hash (td, &type, 1);
       if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
         {                       /* TLS 1.0 or higher */
-          mhd_gnutls_hash (td, &major, 1);
-          mhd_gnutls_hash (td, &minor, 1);
+          MHD_gnutls_hash (td, &major, 1);
+          MHD_gnutls_hash (td, &minor, 1);
         }
-      mhd_gnutls_hash (td, &c_length, 2);
-      mhd_gnutls_hash (td, compressed.data, compressed.size);
+      MHD_gnutls_hash (td, &c_length, 2);
+      MHD_gnutls_hash (td, compressed.data, compressed.size);
       mac_deinit (td, MAC, ver);
     }
 
@@ -359,7 +359,7 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
                      random_pad, block_algo, blocksize);
   if (length < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return length;
     }
 
@@ -367,7 +367,7 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
    */
   if (cipher_size < length)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -377,9 +377,9 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
     {
       /* copy the random IV.
        */
-      if (gc_nonce (data_ptr, blocksize) != GC_OK)
+      if (MHD_gc_nonce (data_ptr, blocksize) != GC_OK)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
         }
       data_ptr += blocksize;
@@ -402,11 +402,11 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
   /* Actual encryption (inplace).
    */
   ret =
-    mhd_gtls_cipher_encrypt (session->connection_state.write_cipher_state,
+    MHD_gtls_cipher_encrypt (session->connection_state.write_cipher_state,
                              cipher_data, length);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 
@@ -417,10 +417,10 @@ mhd_gtls_compressed2ciphertext (mhd_gtls_session_t session,
  * Returns the actual compressed packet size.
  */
 int
-mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
+MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
                                 opaque * compress_data,
                                 int compress_size,
-                                gnutls_datum_t ciphertext, uint8_t type)
+                                MHD_gnutls_datum_t ciphertext, uint8_t type)
 {
   uint8_t MAC[MAX_HASH_SIZE];
   uint16_t c_length;
@@ -432,15 +432,15 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
   uint8_t major, minor;
   enum MHD_GNUTLS_Protocol ver;
   int hash_size =
-    mhd_gnutls_hash_get_algo_len (session->security_parameters.
+    MHD_gnutls_hash_get_algo_len (session->security_parameters.
                                   read_mac_algorithm);
 
-  ver = MHD_gnutls_protocol_get_version (session);
-  minor = mhd_gtls_version_get_minor (ver);
-  major = mhd_gtls_version_get_major (ver);
+  ver = MHD__gnutls_protocol_get_version (session);
+  minor = MHD_gtls_version_get_minor (ver);
+  major = MHD_gtls_version_get_major (ver);
 
   blocksize =
-    mhd_gtls_cipher_get_block_size (session->security_parameters.
+    MHD_gtls_cipher_get_block_size (session->security_parameters.
                                     read_bulk_cipher_algorithm);
 
   /* initialize MAC
@@ -453,23 +453,23 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
       && session->security_parameters.read_mac_algorithm !=
       MHD_GNUTLS_MAC_NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
 
   /* actual decryption (inplace)
    */
-  switch (mhd_gtls_cipher_is_block
+  switch (MHD_gtls_cipher_is_block
           (session->security_parameters.read_bulk_cipher_algorithm))
     {
     case CIPHER_STREAM:
       if ((ret =
-           mhd_gtls_cipher_decrypt (session->connection_state.
+           MHD_gtls_cipher_decrypt (session->connection_state.
                                     read_cipher_state, ciphertext.data,
                                     ciphertext.size)) < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
 
@@ -479,16 +479,16 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
     case CIPHER_BLOCK:
       if ((ciphertext.size < blocksize) || (ciphertext.size % blocksize != 0))
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_DECRYPTION_FAILED;
         }
 
       if ((ret =
-           mhd_gtls_cipher_decrypt (session->connection_state.
+           MHD_gtls_cipher_decrypt (session->connection_state.
                                     read_cipher_state, ciphertext.data,
                                     ciphertext.size)) < 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return ret;
         }
 
@@ -501,7 +501,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
 
           if (ciphertext.size == 0)
             {
-              gnutls_assert ();
+              MHD_gnutls_assert ();
               return GNUTLS_E_DECRYPTION_FAILED;
             }
         }
@@ -512,7 +512,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
 
       if (pad > ciphertext.size - hash_size)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           /* We do not fail here. We check below for the
            * the pad_failed. If zero means success.
            */
@@ -530,33 +530,33 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
           }
       break;
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
   if (length < 0)
     length = 0;
-  c_length = mhd_gtls_conv_uint16 ((uint16_t) length);
+  c_length = MHD_gtls_conv_uint16 ((uint16_t) length);
 
   /* Pass the type, version, length and compressed through
    * MAC.
    */
   if (td != GNUTLS_MAC_FAILED)
     {
-      mhd_gnutls_hash (td,
+      MHD_gnutls_hash (td,
                        UINT64DATA (session->connection_state.
                                    read_sequence_number), 8);
 
-      mhd_gnutls_hash (td, &type, 1);
+      MHD_gnutls_hash (td, &type, 1);
       if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
         {                       /* TLS 1.x */
-          mhd_gnutls_hash (td, &major, 1);
-          mhd_gnutls_hash (td, &minor, 1);
+          MHD_gnutls_hash (td, &major, 1);
+          MHD_gnutls_hash (td, &minor, 1);
         }
-      mhd_gnutls_hash (td, &c_length, 2);
+      MHD_gnutls_hash (td, &c_length, 2);
 
       if (length > 0)
-        mhd_gnutls_hash (td, ciphertext.data, length);
+        MHD_gnutls_hash (td, ciphertext.data, length);
 
       mac_deinit (td, MAC, ver);
     }
@@ -571,7 +571,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
    */
   if (memcmp (MAC, &ciphertext.data[length], hash_size) != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_DECRYPTION_FAILED;
     }
 
@@ -579,7 +579,7 @@ mhd_gtls_ciphertext2compressed (mhd_gtls_session_t session,
    */
   if (compress_size < length)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_DECOMPRESSION_FAILED;
     }
   memcpy (compress_data, ciphertext.data, length);

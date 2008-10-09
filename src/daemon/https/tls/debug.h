@@ -23,8 +23,8 @@
  */
 
 #ifdef DEBUG
-void _gnutls_print_state (mhd_gtls_session_t session);
+void MHD__gnutls_print_state (MHD_gtls_session_t session);
 #endif
-const char *_gnutls_packet2str (content_type_t packet);
-const char *_gnutls_handshake2str (gnutls_handshake_description_t handshake);
-void _gnutls_dump_mpi (const char *prefix, mpi_t a);
+const char *MHD__gnutls_packet2str (content_type_t packet);
+const char *MHD__gnutls_handshake2str (MHD_gnutls_handshake_description_t handshake);
+void MHD__gnutls_dump_mpi (const char *prefix, mpi_t a);

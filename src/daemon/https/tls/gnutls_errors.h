@@ -28,46 +28,46 @@
 
 #ifdef __FILE__
 # ifdef __LINE__
-#  define gnutls_assert() _gnutls_debug_log( "ASSERT: %s:%d\n", __FILE__,__LINE__);
+#  define MHD_gnutls_assert() MHD__gnutls_debug_log( "ASSERT: %s:%d\n", __FILE__,__LINE__);
 # else
-#  define gnutls_assert()
+#  define MHD_gnutls_assert()
 # endif
 #else /* __FILE__ not defined */
-# define gnutls_assert()
+# define MHD_gnutls_assert()
 #endif
 
-int mhd_gtls_asn2err (int asn_err);
-void mhd_gtls_log (int, const char *fmt, ...);
+int MHD_gtls_asn2err (int asn_err);
+void MHD_gtls_log (int, const char *fmt, ...);
 
-extern int _gnutls_log_level;
+extern int MHD__gnutls_log_level;
 
 #ifdef C99_MACROS
-#define LEVEL(l, ...) if (_gnutls_log_level >= l || _gnutls_log_level > 9) \
-	mhd_gtls_log( l, __VA_ARGS__)
+#define LEVEL(l, ...) if (MHD__gnutls_log_level >= l || MHD__gnutls_log_level > 9) \
+	MHD_gtls_log( l, __VA_ARGS__)
 
-#define LEVEL_EQ(l, ...) if (_gnutls_log_level == l || _gnutls_log_level > 9) \
-	mhd_gtls_log( l, __VA_ARGS__)
+#define LEVEL_EQ(l, ...) if (MHD__gnutls_log_level == l || MHD__gnutls_log_level > 9) \
+	MHD_gtls_log( l, __VA_ARGS__)
 
-# define _gnutls_debug_log(...) LEVEL(2, __VA_ARGS__)
-# define _gnutls_handshake_log(...) LEVEL(3, __VA_ARGS__)
-# define _gnutls_io_log(...) LEVEL_EQ(5, __VA_ARGS__)
-# define _gnutls_buffers_log(...) LEVEL_EQ(6, __VA_ARGS__)
-# define _gnutls_hard_log(...) LEVEL(9, __VA_ARGS__)
-# define _gnutls_record_log(...) LEVEL(4, __VA_ARGS__)
-# define _gnutls_read_log(...) LEVEL_EQ(7, __VA_ARGS__)
-# define _gnutls_write_log(...) LEVEL_EQ(7, __VA_ARGS__)
-# define _gnutls_x509_log(...) LEVEL(1, __VA_ARGS__)
+# define MHD__gnutls_debug_log(...) LEVEL(2, __VA_ARGS__)
+# define MHD__gnutls_handshake_log(...) LEVEL(3, __VA_ARGS__)
+# define MHD__gnutls_io_log(...) LEVEL_EQ(5, __VA_ARGS__)
+# define MHD__gnutls_buffers_log(...) LEVEL_EQ(6, __VA_ARGS__)
+# define MHD__gnutls_hard_log(...) LEVEL(9, __VA_ARGS__)
+# define MHD__gnutls_record_log(...) LEVEL(4, __VA_ARGS__)
+# define MHD__gnutls_read_log(...) LEVEL_EQ(7, __VA_ARGS__)
+# define MHD__gnutls_write_log(...) LEVEL_EQ(7, __VA_ARGS__)
+# define MHD__gnutls_x509_log(...) LEVEL(1, __VA_ARGS__)
 #else
-# define _gnutls_debug_log _gnutls_null_log
-# define _gnutls_handshake_log _gnutls_null_log
-# define _gnutls_io_log _gnutls_null_log
-# define _gnutls_buffers_log _gnutls_null_log
-# define _gnutls_hard_log _gnutls_null_log
-# define _gnutls_record_log _gnutls_null_log
-# define _gnutls_read_log _gnutls_null_log
-# define _gnutls_write_log _gnutls_null_log
-# define _gnutls_x509_log _gnutls_null_log
+# define MHD__gnutls_debug_log MHD__gnutls_null_log
+# define MHD__gnutls_handshake_log MHD__gnutls_null_log
+# define MHD__gnutls_io_log MHD__gnutls_null_log
+# define MHD__gnutls_buffers_log MHD__gnutls_null_log
+# define MHD__gnutls_hard_log MHD__gnutls_null_log
+# define MHD__gnutls_record_log MHD__gnutls_null_log
+# define MHD__gnutls_read_log MHD__gnutls_null_log
+# define MHD__gnutls_write_log MHD__gnutls_null_log
+# define MHD__gnutls_x509_log MHD__gnutls_null_log
 
-void _gnutls_null_log (void *, ...);
+void MHD__gnutls_null_log (void *, ...);
 
 #endif /* C99_MACROS */

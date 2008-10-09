@@ -37,21 +37,21 @@
 #define OID_LDAP_UID			"0.9.2342.19200300.100.1.1"
 #define OID_PKCS9_EMAIL 			"1.2.840.113549.1.9.1"
 
-int _gnutls_x509_parse_dn (ASN1_TYPE asn1_struct,
-                           const char *asn1_rdn_name, char *buf,
+int MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
+                           const char *MHD__asn1_rdn_name, char *buf,
                            size_t * sizeof_buf);
 
-int _gnutls_x509_parse_dn_oid (ASN1_TYPE asn1_struct,
-                               const char *asn1_rdn_name, const char *oid,
+int MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
+                               const char *MHD__asn1_rdn_name, const char *oid,
                                int indx, unsigned int raw_flag, void *buf,
                                size_t * sizeof_buf);
 
-int _gnutls_x509_set_dn_oid (ASN1_TYPE asn1_struct,
-                             const char *asn1_rdn_name, const char *oid,
+int MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
+                             const char *MHD__asn1_rdn_name, const char *oid,
                              int raw_flag, const char *name, int sizeof_name);
 
-int _gnutls_x509_get_dn_oid (ASN1_TYPE asn1_struct,
-                             const char *asn1_rdn_name,
+int MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
+                             const char *MHD__asn1_rdn_name,
                              int indx, void *_oid, size_t * sizeof_oid);
 
 

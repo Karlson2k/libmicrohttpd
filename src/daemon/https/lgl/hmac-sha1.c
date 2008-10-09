@@ -30,11 +30,11 @@
 #define OPAD 0x5c
 
 int
-hmac_sha1 (const void *key, size_t keylen,
+MHD_hmac_sha1 (const void *key, size_t keylen,
            const void *in, size_t inlen, void *resbuf)
 {
-  struct sha1_ctx inner;
-  struct sha1_ctx outer;
+  struct MHD_sha1_ctx inner;
+  struct MHD_sha1_ctx outer;
   char optkeybuf[20];
   char block[64];
   char innerhash[20];
@@ -43,11 +43,11 @@ hmac_sha1 (const void *key, size_t keylen,
 
   if (keylen > 64)
     {
-      struct sha1_ctx keyhash;
+      struct MHD_sha1_ctx keyhash;
 
-      sha1_init_ctx (&keyhash);
-      sha1_process_bytes (key, keylen, &keyhash);
-      sha1_finish_ctx (&keyhash, optkeybuf);
+      MHD_sha1_init_ctx (&keyhash);
+      MHD_sha1_process_bytes (key, keylen, &keyhash);
+      MHD_sha1_finish_ctx (&keyhash, optkeybuf);
 
       key = optkeybuf;
       keylen = 20;
@@ -55,27 +55,27 @@ hmac_sha1 (const void *key, size_t keylen,
 
   /* Compute INNERHASH from KEY and IN.  */
 
-  sha1_init_ctx (&inner);
+  MHD_sha1_init_ctx (&inner);
 
   memset (block, IPAD, sizeof (block));
-  memxor (block, key, keylen);
+  MHD_memxor (block, key, keylen);
 
-  sha1_process_block (block, 64, &inner);
-  sha1_process_bytes (in, inlen, &inner);
+  MHD_sha1_process_block (block, 64, &inner);
+  MHD_sha1_process_bytes (in, inlen, &inner);
 
-  sha1_finish_ctx (&inner, innerhash);
+  MHD_sha1_finish_ctx (&inner, innerhash);
 
   /* Compute result from KEY and INNERHASH.  */
 
-  sha1_init_ctx (&outer);
+  MHD_sha1_init_ctx (&outer);
 
   memset (block, OPAD, sizeof (block));
-  memxor (block, key, keylen);
+  MHD_memxor (block, key, keylen);
 
-  sha1_process_block (block, 64, &outer);
-  sha1_process_bytes (innerhash, 20, &outer);
+  MHD_sha1_process_block (block, 64, &outer);
+  MHD_sha1_process_bytes (innerhash, 20, &outer);
 
-  sha1_finish_ctx (&outer, resbuf);
+  MHD_sha1_finish_ctx (&outer, resbuf);
 
   return 0;
 }

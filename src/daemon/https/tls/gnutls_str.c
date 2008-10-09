@@ -34,7 +34,7 @@
  * They should be used only with null terminated strings.
  */
 void
-mhd_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src)
+MHD_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
   size_t dest_size = strlen (dest);
@@ -54,7 +54,7 @@ mhd_gtls_str_cat (char *dest, size_t dest_tot_size, const char *src)
 }
 
 void
-mhd_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
+MHD_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 {
   size_t str_size = strlen (src);
 
@@ -73,7 +73,7 @@ mhd_gtls_str_cpy (char *dest, size_t dest_tot_size, const char *src)
 }
 
 void
-mhd_gtls_mem_cpy (char *dest,
+MHD_gtls_mem_cpy (char *dest,
                   size_t dest_tot_size, const char *src, size_t src_size)
 {
 
@@ -91,10 +91,10 @@ mhd_gtls_mem_cpy (char *dest,
 }
 
 void
-mhd_gtls_string_init (mhd_gtls_string * str,
-                      gnutls_alloc_function alloc_func,
-                      gnutls_realloc_function realloc_func,
-                      gnutls_free_function free_func)
+MHD_gtls_string_init (MHD_gtls_string * str,
+                      MHD_gnutls_alloc_function alloc_func,
+                      MHD_gnutls_realloc_function realloc_func,
+                      MHD_gnutls_free_function free_func)
 {
   str->data = NULL;
   str->max_length = 0;
@@ -106,7 +106,7 @@ mhd_gtls_string_init (mhd_gtls_string * str,
 }
 
 void
-mhd_gtls_string_clear (mhd_gtls_string * str)
+MHD_gtls_string_clear (MHD_gtls_string * str)
 {
   if (str == NULL || str->data == NULL)
     return;
@@ -119,10 +119,10 @@ mhd_gtls_string_clear (mhd_gtls_string * str)
 
 /* This one does not copy the string.
  */
-gnutls_datum_t
-mhd_gtls_string2datum (mhd_gtls_string * str)
+MHD_gnutls_datum_t
+MHD_gtls_string2datum (MHD_gtls_string * str)
 {
-  gnutls_datum_t ret;
+  MHD_gnutls_datum_t ret;
 
   ret.data = str->data;
   ret.size = str->length;
@@ -133,7 +133,7 @@ mhd_gtls_string2datum (mhd_gtls_string * str)
 #define MIN_CHUNK 256
 
 int
-mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src)
+MHD_gtls_string_copy_str (MHD_gtls_string * dest, const char *src)
 {
   size_t src_len = strlen (src);
   size_t max;
@@ -150,7 +150,7 @@ mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src)
       dest->data = dest->realloc_func (dest->data, max);
       if (dest->data == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
       dest->max_length = MAX (MIN_CHUNK, src_len);
@@ -163,7 +163,7 @@ mhd_gtls_string_copy_str (mhd_gtls_string * dest, const char *src)
 }
 
 int
-mhd_gtls_string_append_str (mhd_gtls_string * dest, const char *src)
+MHD_gtls_string_append_str (MHD_gtls_string * dest, const char *src)
 {
   size_t src_len = strlen (src);
   size_t tot_len = src_len + dest->length;
@@ -183,7 +183,7 @@ mhd_gtls_string_append_str (mhd_gtls_string * dest, const char *src)
       dest->data = dest->realloc_func (dest->data, new_len);
       if (dest->data == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
       dest->max_length = new_len;
@@ -196,7 +196,7 @@ mhd_gtls_string_append_str (mhd_gtls_string * dest, const char *src)
 }
 
 int
-mhd_gtls_string_append_data (mhd_gtls_string * dest,
+MHD_gtls_string_append_data (MHD_gtls_string * dest,
                              const void *data, size_t data_size)
 {
   size_t tot_len = data_size + dest->length;
@@ -215,7 +215,7 @@ mhd_gtls_string_append_data (mhd_gtls_string * dest,
       dest->data = dest->realloc_func (dest->data, new_len);
       if (dest->data == NULL)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_MEMORY_ERROR;
         }
       dest->max_length = new_len;
@@ -233,7 +233,7 @@ mhd_gtls_string_append_data (mhd_gtls_string * dest,
  * truncated hex string is returned (always null terminated).
  */
 char *
-mhd_gtls_bin2hex (const void *_old,
+MHD_gtls_bin2hex (const void *_old,
                   size_t oldlen, char *buffer, size_t buffer_size)
 {
   unsigned int i, j;
@@ -252,7 +252,7 @@ mhd_gtls_bin2hex (const void *_old,
 /* just a hex2bin function.
  */
 int
-mhd_gtls_hex2bin (const opaque * hex_data,
+MHD_gtls_hex2bin (const opaque * hex_data,
                   int hex_size, opaque * bin_data, size_t * bin_size)
 {
   int i, j;
@@ -265,7 +265,7 @@ mhd_gtls_hex2bin (const opaque * hex_data,
 
   if (*bin_size < (size_t) hex_size)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_SHORT_MEMORY_BUFFER;
     }
 
@@ -277,7 +277,7 @@ mhd_gtls_hex2bin (const opaque * hex_data,
       val = strtoul ((char *) hex2_data, NULL, 16);
       if (val == ULONG_MAX)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           return GNUTLS_E_SRP_PWD_PARSING_ERROR;
         }
       bin_data[j] = val;

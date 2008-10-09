@@ -14,7 +14,6 @@ liblgl_la_LDFLAGS = -lgcrypt
 liblgl_la_SOURCES = \
 sha1.c sha1.h \
 gc-libgcrypt.c \
-time_r.c \
 rijndael-api-fst.c rijndael-api-fst.h \
 gc-pbkdf2-sha1.c gc.h \
 rijndael-alg-fst.c rijndael-alg-fst.h \

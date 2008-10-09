@@ -36,23 +36,23 @@
 static const int anon_dummy;
 
 /**
-  * MHD_gnutls_anon_free_server_credentials - Used to free an allocated mhd_gtls_anon_server_credentials_t structure
-  * @sc: is an #mhd_gtls_anon_server_credentials_t structure.
+  * MHD__gnutls_anon_free_server_credentials - Used to free an allocated MHD_gtls_anon_server_credentials_t structure
+  * @sc: is an #MHD_gtls_anon_server_credentials_t structure.
   *
   * This structure is complex enough to manipulate directly thus this
   * helper function is provided in order to free (deallocate) it.
   **/
 void
-MHD_gnutls_anon_free_server_credentials (mhd_gtls_anon_server_credentials_t
+MHD__gnutls_anon_free_server_credentials (MHD_gtls_anon_server_credentials_t
                                          sc)
 {
 
-  gnutls_free (sc);
+  MHD_gnutls_free (sc);
 }
 
 /**
-  * MHD_gnutls_anon_allocate_server_credentials - Used to allocate an mhd_gtls_anon_server_credentials_t structure
-  * @sc: is a pointer to an #mhd_gtls_anon_server_credentials_t structure.
+  * MHD__gnutls_anon_allocate_server_credentials - Used to allocate an MHD_gtls_anon_server_credentials_t structure
+  * @sc: is a pointer to an #MHD_gtls_anon_server_credentials_t structure.
   *
   * This structure is complex enough to manipulate directly thus this
   * helper function is provided in order to allocate it.
@@ -60,10 +60,10 @@ MHD_gnutls_anon_free_server_credentials (mhd_gtls_anon_server_credentials_t
   * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
   **/
 int
-  MHD_gnutls_anon_allocate_server_credentials
-  (mhd_gtls_anon_server_credentials_t * sc)
+  MHD__gnutls_anon_allocate_server_credentials
+  (MHD_gtls_anon_server_credentials_t * sc)
 {
-  *sc = gnutls_calloc (1, sizeof (mhd_anon_server_credentials_st));
+  *sc = MHD_gnutls_calloc (1, sizeof (mhd_anon_server_credentials_st));
   if (*sc == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -72,21 +72,21 @@ int
 
 
 /**
-  * MHD_gnutls_anon_free_client_credentials - Used to free an allocated mhd_gtls_anon_client_credentials_t structure
-  * @sc: is an #mhd_gtls_anon_client_credentials_t structure.
+  * MHD__gnutls_anon_free_client_credentials - Used to free an allocated MHD_gtls_anon_client_credentials_t structure
+  * @sc: is an #MHD_gtls_anon_client_credentials_t structure.
   *
   * This structure is complex enough to manipulate directly thus this
   * helper function is provided in order to free (deallocate) it.
   **/
 void
-MHD_gnutls_anon_free_client_credentials (mhd_gtls_anon_client_credentials_t
+MHD__gnutls_anon_free_client_credentials (MHD_gtls_anon_client_credentials_t
                                          sc)
 {
 }
 
 /**
- * MHD_gnutls_anon_allocate_client_credentials - Used to allocate a credentials structure
- * @sc: is a pointer to an #mhd_gtls_anon_client_credentials_t structure.
+ * MHD__gnutls_anon_allocate_client_credentials - Used to allocate a credentials structure
+ * @sc: is a pointer to an #MHD_gtls_anon_client_credentials_t structure.
  *
  * This structure is complex enough to manipulate directly thus
  * this helper function is provided in order to allocate it.
@@ -94,8 +94,8 @@ MHD_gnutls_anon_free_client_credentials (mhd_gtls_anon_client_credentials_t
  * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
  **/
 int
-  MHD_gnutls_anon_allocate_client_credentials
-  (mhd_gtls_anon_client_credentials_t * sc)
+  MHD__gnutls_anon_allocate_client_credentials
+  (MHD_gtls_anon_client_credentials_t * sc)
 {
   /* anon_dummy is only there for *sc not to be null.
    * it is not used at all;
@@ -106,8 +106,8 @@ int
 }
 
 /**
-  * MHD_gnutls_anon_set_server_dh_params - This function will set the DH parameters for a server to use
-  * @res: is a mhd_gtls_anon_server_credentials_t structure
+  * MHD__gnutls_anon_set_server_dh_params - This function will set the DH parameters for a server to use
+  * @res: is a MHD_gtls_anon_server_credentials_t structure
   * @dh_params: is a structure that holds diffie hellman parameters.
   *
   * This function will set the diffie hellman parameters for an
@@ -115,15 +115,15 @@ int
   * Anonymous Diffie Hellman cipher suites.
   **/
 void
-MHD_gnutls_anon_set_server_dh_params (mhd_gtls_anon_server_credentials_t res,
-                                      mhd_gtls_dh_params_t dh_params)
+MHD__gnutls_anon_set_server_dh_params (MHD_gtls_anon_server_credentials_t res,
+                                      MHD_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
 
 /**
-  * MHD_gnutls_anon_set_server_params_function - This function will set the DH parameters callback
-  * @res: is a mhd_gtls_cert_credentials_t structure
+  * MHD__gnutls_anon_set_server_params_function - This function will set the DH parameters callback
+  * @res: is a MHD_gtls_cert_credentials_t structure
   * @func: is the function to be called
   *
   * This function will set a callback in order for the server to get
@@ -131,9 +131,9 @@ MHD_gnutls_anon_set_server_dh_params (mhd_gtls_anon_server_credentials_t res,
   * callback should return zero on success.
   **/
 void
-MHD_gnutls_anon_set_server_params_function (mhd_gtls_anon_server_credentials_t
+MHD__gnutls_anon_set_server_params_function (MHD_gtls_anon_server_credentials_t
                                             res,
-                                            gnutls_params_function * func)
+                                            MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }

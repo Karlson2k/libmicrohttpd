@@ -31,14 +31,14 @@
  * decompress.
  */
 comp_hd_t
-mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
+MHD_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
 {
   comp_hd_t ret;
 
-  ret = gnutls_malloc (sizeof (struct comp_hd_t_STRUCT));
+  ret = MHD_gnutls_malloc (sizeof (struct comp_hd_t_STRUCT));
   if (ret == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return NULL;
     }
 
@@ -54,14 +54,14 @@ mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
         int comp_level;
         z_stream *zhandle;
 
-        window_bits = mhd_gtls_compression_get_wbits (method);
-        mem_level = mhd_gtls_compression_get_mem_level (method);
-        comp_level = mhd_gtls_compression_get_comp_level (method);
+        window_bits = MHD_gtls_compression_get_wbits (method);
+        mem_level = MHD_gtls_compression_get_mem_level (method);
+        comp_level = MHD_gtls_compression_get_comp_level (method);
 
-        ret->handle = gnutls_malloc (sizeof (z_stream));
+        ret->handle = MHD_gnutls_malloc (sizeof (z_stream));
         if (ret->handle == NULL)
           {
-            gnutls_assert ();
+            MHD_gnutls_assert ();
             goto cleanup_ret;
           }
 
@@ -81,8 +81,8 @@ mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
           }
         if (err != Z_OK)
           {
-            gnutls_assert ();
-            gnutls_free (ret->handle);
+            MHD_gnutls_assert ();
+            MHD_gnutls_free (ret->handle);
             goto cleanup_ret;
           }
         break;
@@ -94,7 +94,7 @@ mhd_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
   return ret;
 
 cleanup_ret:
-  gnutls_free (ret);
+  MHD_gnutls_free (ret);
   return NULL;
 }
 
@@ -102,7 +102,7 @@ cleanup_ret:
  * decompress.
  */
 void
-mhd_gtls_comp_deinit (comp_hd_t handle, int d)
+MHD_gtls_comp_deinit (comp_hd_t handle, int d)
 {
   if (handle != NULL)
     {
@@ -119,8 +119,8 @@ mhd_gtls_comp_deinit (comp_hd_t handle, int d)
         default:
           break;
         }
-      gnutls_free (handle->handle);
-      gnutls_free (handle);
+      MHD_gnutls_free (handle->handle);
+      MHD_gnutls_free (handle);
 
     }
 }
@@ -129,7 +129,7 @@ mhd_gtls_comp_deinit (comp_hd_t handle, int d)
  */
 
 int
-mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
+MHD_gtls_compress (comp_hd_t handle, const opaque * plain,
                    size_t plain_size, opaque ** compressed,
                    size_t max_comp_size)
 {
@@ -139,7 +139,7 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
    */
   if (handle == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -153,10 +153,10 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
         z_stream *zhandle;
 
         size = (plain_size + plain_size) + 10;
-        *compressed = gnutls_malloc (size);
+        *compressed = MHD_gnutls_malloc (size);
         if (*compressed == NULL)
           {
-            gnutls_assert ();
+            MHD_gnutls_assert ();
             return GNUTLS_E_MEMORY_ERROR;
           }
 
@@ -171,8 +171,8 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
 
         if (err != Z_OK || zhandle->avail_in != 0)
           {
-            gnutls_assert ();
-            gnutls_free (*compressed);
+            MHD_gnutls_assert ();
+            MHD_gnutls_free (*compressed);
             *compressed = NULL;
             return GNUTLS_E_COMPRESSION_FAILED;
           }
@@ -182,18 +182,18 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
       }
 #endif
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }                           /* switch */
 
 #ifdef COMPRESSION_DEBUG
-  _gnutls_debug_log ("Compression ratio: %f\n",
+  MHD__gnutls_debug_log ("Compression ratio: %f\n",
                      (float) ((float) compressed_size / (float) plain_size));
 #endif
 
   if ((size_t) compressed_size > max_comp_size)
     {
-      gnutls_free (*compressed);
+      MHD_gnutls_free (*compressed);
       *compressed = NULL;
       return GNUTLS_E_COMPRESSION_FAILED;
     }
@@ -204,7 +204,7 @@ mhd_gtls_compress (comp_hd_t handle, const opaque * plain,
 
 
 int
-mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
+MHD_gtls_decompress (comp_hd_t handle, opaque * compressed,
                      size_t compressed_size, opaque ** plain,
                      size_t max_record_size)
 {
@@ -212,7 +212,7 @@ mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
 
   if (compressed_size > max_record_size + EXTRA_COMP_SIZE)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_DECOMPRESSION_FAILED;
     }
 
@@ -221,7 +221,7 @@ mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
 
   if (handle == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
@@ -247,10 +247,10 @@ mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
         do
           {
             out_size += 512;
-            *plain = mhd_gtls_realloc_fast (*plain, out_size);
+            *plain = MHD_gtls_realloc_fast (*plain, out_size);
             if (*plain == NULL)
               {
-                gnutls_assert ();
+                MHD_gnutls_assert ();
                 return GNUTLS_E_MEMORY_ERROR;
               }
 
@@ -268,8 +268,8 @@ mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
 
         if (err != Z_OK)
           {
-            gnutls_assert ();
-            gnutls_free (*plain);
+            MHD_gnutls_assert ();
+            MHD_gnutls_free (*plain);
             *plain = NULL;
             return GNUTLS_E_DECOMPRESSION_FAILED;
           }
@@ -279,14 +279,14 @@ mhd_gtls_decompress (comp_hd_t handle, opaque * compressed,
       }
 #endif
     default:
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }                           /* switch */
 
   if ((size_t) plain_size > max_record_size)
     {
-      gnutls_assert ();
-      gnutls_free (*plain);
+      MHD_gnutls_assert ();
+      MHD_gnutls_free (*plain);
       *plain = NULL;
       return GNUTLS_E_DECOMPRESSION_FAILED;
     }

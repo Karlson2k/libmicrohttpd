@@ -35,7 +35,7 @@
  */
 
 void
-mhd_gtls_mpi_release (mpi_t * x)
+MHD_gtls_mpi_release (mpi_t * x)
 {
   if (*x == NULL)
     return;
@@ -46,7 +46,7 @@ mhd_gtls_mpi_release (mpi_t * x)
 /* returns zero on success
  */
 int
-mhd_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+MHD_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 {
   int ret;
 
@@ -60,7 +60,7 @@ mhd_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 /* returns zero on success. Fails if the number is zero.
  */
 int
-mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
+MHD_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 {
   int ret;
 
@@ -70,9 +70,9 @@ mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 
   /* MPIs with 0 bits are illegal
    */
-  if (_gnutls_mpi_get_nbits (*ret_mpi) == 0)
+  if (MHD__gnutls_mpi_get_nbits (*ret_mpi) == 0)
     {
-      mhd_gtls_mpi_release (ret_mpi);
+      MHD_gtls_mpi_release (ret_mpi);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
@@ -80,7 +80,7 @@ mhd_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 }
 
 int
-mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
+MHD_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
                        size_t * nbytes)
 {
   int ret;
@@ -90,9 +90,9 @@ mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
 
   /* MPIs with 0 bits are illegal
    */
-  if (_gnutls_mpi_get_nbits (*ret_mpi) == 0)
+  if (MHD__gnutls_mpi_get_nbits (*ret_mpi) == 0)
     {
-      mhd_gtls_mpi_release (ret_mpi);
+      MHD_gtls_mpi_release (ret_mpi);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
@@ -100,7 +100,7 @@ mhd_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
 }
 
 int
-mhd_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
+MHD_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;
 
@@ -116,7 +116,7 @@ mhd_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 
 /* Always has the first bit zero */
 int
-mhd_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
+MHD_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;
 
@@ -132,7 +132,7 @@ mhd_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
 
 /* Always has the first bit zero */
 int
-mhd_gtls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
+MHD_gtls_mpi_dprint_lz (MHD_gnutls_datum_t * dest, const mpi_t a)
 {
   int ret;
   opaque *buf = NULL;
@@ -144,7 +144,7 @@ mhd_gtls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
   gcry_mpi_print (GCRYMPI_FMT_STD, NULL, 0, &bytes, a);
 
   if (bytes != 0)
-    buf = gnutls_malloc (bytes);
+    buf = MHD_gnutls_malloc (bytes);
   if (buf == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -156,12 +156,12 @@ mhd_gtls_mpi_dprint_lz (gnutls_datum_t * dest, const mpi_t a)
       return 0;
     }
 
-  gnutls_free (buf);
+  MHD_gnutls_free (buf);
   return GNUTLS_E_MPI_PRINT_FAILED;
 }
 
 int
-mhd_gtls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
+MHD_gtls_mpi_dprint (MHD_gnutls_datum_t * dest, const mpi_t a)
 {
   int ret;
   opaque *buf = NULL;
@@ -173,7 +173,7 @@ mhd_gtls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
   gcry_mpi_print (GCRYMPI_FMT_USG, NULL, 0, &bytes, a);
 
   if (bytes != 0)
-    buf = gnutls_malloc (bytes);
+    buf = MHD_gnutls_malloc (bytes);
   if (buf == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -185,7 +185,7 @@ mhd_gtls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
       return 0;
     }
 
-  gnutls_free (buf);
+  MHD_gnutls_free (buf);
   return GNUTLS_E_MPI_PRINT_FAILED;
 }
 
@@ -195,7 +195,7 @@ mhd_gtls_mpi_dprint (gnutls_datum_t * dest, const mpi_t a)
  * steps.
  */
 int
-_gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
+MHD__gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
 {
   int result;
   size_t s_len;
@@ -203,37 +203,37 @@ _gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
   int tmpstr_size;
 
   tmpstr_size = 0;
-  result = asn1_read_value (node, value, NULL, &tmpstr_size);
+  result = MHD__asn1_read_value (node, value, NULL, &tmpstr_size);
   if (result != ASN1_MEM_ERROR)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
-  tmpstr = gnutls_alloca (tmpstr_size);
+  tmpstr = MHD_gnutls_alloca (tmpstr_size);
   if (tmpstr == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = asn1_read_value (node, value, tmpstr, &tmpstr_size);
+  result = MHD__asn1_read_value (node, value, tmpstr, &tmpstr_size);
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      gnutls_afree (tmpstr);
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (tmpstr);
+      return MHD_gtls_asn2err (result);
     }
 
   s_len = tmpstr_size;
-  if (mhd_gtls_mpi_scan (ret_mpi, tmpstr, &s_len) != 0)
+  if (MHD_gtls_mpi_scan (ret_mpi, tmpstr, &s_len) != 0)
     {
-      gnutls_assert ();
-      gnutls_afree (tmpstr);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (tmpstr);
       return GNUTLS_E_MPI_SCAN_FAILED;
     }
 
-  gnutls_afree (tmpstr);
+  MHD_gnutls_afree (tmpstr);
 
   return 0;
 }
@@ -241,7 +241,7 @@ _gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
 /* Writes the specified integer into the specified node.
  */
 int
-_gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
+MHD__gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
 {
   opaque *tmpstr;
   size_t s_len;
@@ -249,37 +249,37 @@ _gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
 
   s_len = 0;
   if (lz)
-    result = mhd_gtls_mpi_print_lz (NULL, &s_len, mpi);
+    result = MHD_gtls_mpi_print_lz (NULL, &s_len, mpi);
   else
-    result = mhd_gtls_mpi_print (NULL, &s_len, mpi);
+    result = MHD_gtls_mpi_print (NULL, &s_len, mpi);
 
-  tmpstr = gnutls_alloca (s_len);
+  tmpstr = MHD_gnutls_alloca (s_len);
   if (tmpstr == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
   if (lz)
-    result = mhd_gtls_mpi_print_lz (tmpstr, &s_len, mpi);
+    result = MHD_gtls_mpi_print_lz (tmpstr, &s_len, mpi);
   else
-    result = mhd_gtls_mpi_print (tmpstr, &s_len, mpi);
+    result = MHD_gtls_mpi_print (tmpstr, &s_len, mpi);
 
   if (result != 0)
     {
-      gnutls_assert ();
-      gnutls_afree (tmpstr);
+      MHD_gnutls_assert ();
+      MHD_gnutls_afree (tmpstr);
       return GNUTLS_E_MPI_PRINT_FAILED;
     }
 
-  result = asn1_write_value (node, value, tmpstr, s_len);
+  result = MHD__asn1_write_value (node, value, tmpstr, s_len);
 
-  gnutls_afree (tmpstr);
+  MHD_gnutls_afree (tmpstr);
 
   if (result != ASN1_SUCCESS)
     {
-      gnutls_assert ();
-      return mhd_gtls_asn2err (result);
+      MHD_gnutls_assert ();
+      return MHD_gtls_asn2err (result);
     }
 
   return 0;

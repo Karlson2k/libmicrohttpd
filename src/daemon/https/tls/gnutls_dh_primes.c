@@ -36,7 +36,7 @@
 /* returns the prime and the generator of DH params.
  */
 const mpi_t *
-mhd_gtls_dh_params_to_mpi (mhd_gtls_dh_params_t dh_primes)
+MHD_gtls_dh_params_to_mpi (MHD_gtls_dh_params_t dh_primes)
 {
   if (dh_primes == NULL || dh_primes->params[1] == NULL
       || dh_primes->params[0] == NULL)
@@ -48,7 +48,7 @@ mhd_gtls_dh_params_to_mpi (mhd_gtls_dh_params_t dh_primes)
 }
 
 int
-mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
+MHD_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
 {
   mpi_t g = NULL, prime = NULL;
   gcry_error_t err;
@@ -75,7 +75,7 @@ mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
 
       if (times)
         {
-          mhd_gtls_mpi_release (&prime);
+          MHD_gtls_mpi_release (&prime);
           gcry_prime_release_factors (factors);
         }
 
@@ -85,7 +85,7 @@ mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
 
       if (err != 0)
         {
-          gnutls_assert ();
+          MHD_gnutls_assert ();
           result = GNUTLS_E_INTERNAL_ERROR;
           goto cleanup;
         }
@@ -98,7 +98,7 @@ mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
 
   if (err != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_INTERNAL_ERROR;
       goto cleanup;
     }
@@ -108,7 +108,7 @@ mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
   err = gcry_prime_group_generator (&g, prime, factors, NULL);
   if (err != 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       result = GNUTLS_E_INTERNAL_ERROR;
       goto cleanup;
     }
@@ -119,17 +119,17 @@ mhd_gtls_dh_generate_prime (mpi_t * ret_g, mpi_t * ret_n, unsigned int bits)
   if (ret_g)
     *ret_g = g;
   else
-    mhd_gtls_mpi_release (&g);
+    MHD_gtls_mpi_release (&g);
   if (ret_n)
     *ret_n = prime;
   else
-    mhd_gtls_mpi_release (&prime);
+    MHD_gtls_mpi_release (&prime);
 
   return 0;
 
 cleanup:gcry_prime_release_factors (factors);
-  mhd_gtls_mpi_release (&g);
-  mhd_gtls_mpi_release (&prime);
+  MHD_gtls_mpi_release (&g);
+  MHD_gtls_mpi_release (&prime);
 
   return result;
 
@@ -139,20 +139,20 @@ cleanup:gcry_prime_release_factors (factors);
  * generated one.
  */
 /**
- * MHD_gnutls_dh_params_init - This function will initialize the DH parameters
+ * MHD__gnutls_dh_params_init - This function will initialize the DH parameters
  * @dh_params: Is a structure that will hold the prime numbers
  *
  * This function will initialize the DH parameters structure.
  *
  **/
 int
-MHD_gnutls_dh_params_init (mhd_gtls_dh_params_t * dh_params)
+MHD__gnutls_dh_params_init (MHD_gtls_dh_params_t * dh_params)
 {
 
-  (*dh_params) = gnutls_calloc (1, sizeof (mhd_gtls_dh_params_st));
+  (*dh_params) = MHD_gnutls_calloc (1, sizeof (MHD_gtls_dh_params_st));
   if (*dh_params == NULL)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
     }
 
@@ -161,33 +161,33 @@ MHD_gnutls_dh_params_init (mhd_gtls_dh_params_t * dh_params)
 }
 
 /**
- * MHD_gnutls_dh_params_deinit - This function will deinitialize the DH parameters
+ * MHD__gnutls_dh_params_deinit - This function will deinitialize the DH parameters
  * @dh_params: Is a structure that holds the prime numbers
  *
  * This function will deinitialize the DH parameters structure.
  *
  **/
 void
-MHD_gnutls_dh_params_deinit (mhd_gtls_dh_params_t dh_params)
+MHD__gnutls_dh_params_deinit (MHD_gtls_dh_params_t dh_params)
 {
   if (dh_params == NULL)
     return;
 
-  mhd_gtls_mpi_release (&dh_params->params[0]);
-  mhd_gtls_mpi_release (&dh_params->params[1]);
+  MHD_gtls_mpi_release (&dh_params->params[0]);
+  MHD_gtls_mpi_release (&dh_params->params[1]);
 
-  gnutls_free (dh_params);
+  MHD_gnutls_free (dh_params);
 
 }
 
 /**
- * MHD_gnutls_dh_params_generate2 - This function will generate new DH parameters
+ * MHD__gnutls_dh_params_generate2 - This function will generate new DH parameters
  * @params: Is the structure that the DH parameters will be stored
  * @bits: is the prime's number of bits
  *
  * This function will generate a new pair of prime and generator for use in
  * the Diffie-Hellman key exchange. The new parameters will be allocated using
- * gnutls_malloc() and will be stored in the appropriate datum.
+ * MHD_gnutls_malloc() and will be stored in the appropriate datum.
  * This function is normally slow.
  *
  * Note that the bits value should be one of 768, 1024, 2048, 3072 or 4096.
@@ -197,16 +197,16 @@ MHD_gnutls_dh_params_deinit (mhd_gtls_dh_params_t dh_params)
  *
  **/
 int
-MHD_gnutls_dh_params_generate2 (mhd_gtls_dh_params_t params,
+MHD__gnutls_dh_params_generate2 (MHD_gtls_dh_params_t params,
                                 unsigned int bits)
 {
   int ret;
 
   ret =
-    mhd_gtls_dh_generate_prime (&params->params[1], &params->params[0], bits);
+    MHD_gtls_dh_generate_prime (&params->params[1], &params->params[0], bits);
   if (ret < 0)
     {
-      gnutls_assert ();
+      MHD_gnutls_assert ();
       return ret;
     }
 

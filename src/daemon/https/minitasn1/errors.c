@@ -30,14 +30,14 @@
 #define LIBTASN1_ERROR_ENTRY(name) \
 	{ #name, name }
 
-struct libtasn1_error_entry
+struct MHD__libtasn1_error_entry
 {
   const char *name;
   int number;
 };
-typedef struct libtasn1_error_entry libtasn1_error_entry;
+typedef struct MHD__libtasn1_error_entry MHD__libtasn1_error_entry;
 
-static const libtasn1_error_entry error_algorithms[] = {
+static const MHD__libtasn1_error_entry error_algorithms[] = {
   LIBTASN1_ERROR_ENTRY (ASN1_SUCCESS),
   LIBTASN1_ERROR_ENTRY (ASN1_FILE_NOT_FOUND),
   LIBTASN1_ERROR_ENTRY (ASN1_ELEMENT_NOT_FOUND),
@@ -60,7 +60,7 @@ static const libtasn1_error_entry error_algorithms[] = {
 };
 
 #define LIBTASN1_ERROR_LOOP(b) \
-        const libtasn1_error_entry *p; \
+        const MHD__libtasn1_error_entry *p; \
                 for(p = error_algorithms; p->name != NULL; p++) { b ; }
 
 #define LIBTASN1_ERROR_ALG_LOOP(a) \
@@ -69,14 +69,14 @@ static const libtasn1_error_entry error_algorithms[] = {
 
 
 /**
-  * libtasn1_perror - prints a string to stderr with a description of an error
+  * MHD__libtasn1_perror - prints a string to stderr with a description of an error
   * @error: is an error returned by a libtasn1 function.
   *
   * This function is like perror(). The only difference is that it
   * accepts an error returned by a libtasn1 function.
   **/
 void
-libtasn1_perror (asn1_retCode error)
+MHD__libtasn1_perror (MHD__asn1_retCode error)
 {
   const char *ret = NULL;
 
@@ -89,7 +89,7 @@ libtasn1_perror (asn1_retCode error)
 
 
 /**
-  * libtasn1_strerror - Returns a string with a description of an error
+  * MHD__libtasn1_strerror - Returns a string with a description of an error
   * @error: is an error returned by a libtasn1 function.
   *
   * This function is similar to strerror(). The only difference is
@@ -99,7 +99,7 @@ libtasn1_perror (asn1_retCode error)
   *   code.
   **/
 const char *
-libtasn1_strerror (asn1_retCode error)
+MHD__libtasn1_strerror (MHD__asn1_retCode error)
 {
   const char *ret = NULL;
 
@@ -113,7 +113,7 @@ libtasn1_strerror (asn1_retCode error)
  */
 #ifdef LIBTASN1_DEBUG
 void
-_libtasn1_log (const char *fmt, ...)
+MHD__libtasn1_log (const char *fmt, ...)
 {
   va_list args;
   char str[MAX_LOG_SIZE];
@@ -128,7 +128,7 @@ _libtasn1_log (const char *fmt, ...)
 }
 #else /* not DEBUG */
 void
-_libtasn1_log (const char *fmt, ...)
+MHD__libtasn1_log (const char *fmt, ...)
 {
   return;
 }

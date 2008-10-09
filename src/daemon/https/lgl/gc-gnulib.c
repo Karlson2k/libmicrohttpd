@@ -68,13 +68,13 @@
 #undef close
 
 Gc_rc
-gc_init (void)
+MHD_gc_init (void)
 {
   return GC_OK;
 }
 
 void
-gc_done (void)
+MHD_gc_done (void)
 {
   return;
 }
@@ -139,19 +139,19 @@ randomize (int level, char *data, size_t datalen)
 }
 
 Gc_rc
-gc_nonce (char *data, size_t datalen)
+MHD_gc_nonce (char *data, size_t datalen)
 {
   return randomize (0, data, datalen);
 }
 
 Gc_rc
-gc_pseudo_random (char *data, size_t datalen)
+MHD_gc_pseudo_random (char *data, size_t datalen)
 {
   return randomize (1, data, datalen);
 }
 
 Gc_rc
-gc_random (char *data, size_t datalen)
+MHD_gc_random (char *data, size_t datalen)
 {
   return randomize (2, data, datalen);
 }
@@ -160,17 +160,17 @@ gc_random (char *data, size_t datalen)
 
 /* Memory allocation. */
 void
-gc_set_allocators (gc_malloc_t func_malloc,
-                   gc_malloc_t secure_malloc,
-                   gc_secure_check_t secure_check,
-                   gc_realloc_t func_realloc, gc_free_t func_free)
+MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
+                   MHD_gc_malloc_t secure_malloc,
+                   MHD_gc_secure_check_t secure_check,
+                   MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
 {
   return;
 }
 
 /* Ciphers. */
 
-typedef struct _gc_cipher_ctx
+typedef struct _MHD_gc_cipher_ctx
 {
   Gc_cipher alg;
   Gc_cipher_mode mode;
@@ -182,20 +182,20 @@ typedef struct _gc_cipher_ctx
   arcfour_context arcfourContext;
 #endif
 #ifdef GNULIB_GC_DES
-  gl_des_ctx desContext;
+  MHD_gl_des_ctx desContext;
 #endif
 #ifdef GNULIB_GC_RIJNDAEL
   rijndaelKeyInstance aesEncKey;
   rijndaelKeyInstance aesDecKey;
   rijndaelCipherInstance aesContext;
 #endif
-} _gc_cipher_ctx;
+} _MHD_gc_cipher_ctx;
 
 Gc_rc
-gc_cipher_open (Gc_cipher alg,
-                Gc_cipher_mode mode, gc_cipher_handle * outhandle)
+MHD_gc_cipher_open (Gc_cipher alg,
+                Gc_cipher_mode mode, MHD_gc_cipher_handle * outhandle)
 {
-  _gc_cipher_ctx *ctx;
+  _MHD_gc_cipher_ctx *ctx;
   Gc_rc rc = GC_OK;
 
   ctx = calloc (sizeof (*ctx), 1);
@@ -277,9 +277,9 @@ gc_cipher_open (Gc_cipher alg,
 }
 
 Gc_rc
-gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
+MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *key)
 {
-  _gc_cipher_ctx *ctx = handle;
+  _MHD_gc_cipher_ctx *ctx = handle;
 
   switch (ctx->alg)
     {
@@ -300,7 +300,7 @@ gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
     case GC_DES:
       if (keylen != 8)
         return GC_INVALID_CIPHER;
-      gl_des_setkey (&ctx->desContext, key);
+      MHD_gl_des_setkey (&ctx->desContext, key);
       break;
 #endif
 
@@ -341,9 +341,9 @@ gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
 }
 
 Gc_rc
-gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv)
+MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
 {
-  _gc_cipher_ctx *ctx = handle;
+  _MHD_gc_cipher_ctx *ctx = handle;
 
   switch (ctx->alg)
     {
@@ -395,9 +395,9 @@ gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv)
 }
 
 Gc_rc
-gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
 {
-  _gc_cipher_ctx *ctx = handle;
+  _MHD_gc_cipher_ctx *ctx = handle;
 
   switch (ctx->alg)
     {
@@ -438,7 +438,7 @@ gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
 #ifdef GNULIB_GC_DES
     case GC_DES:
       for (; len >= 8; len -= 8, data += 8)
-        gl_des_ecb_encrypt (&ctx->desContext, data, data);
+        MHD_gl_des_ecb_encrypt (&ctx->desContext, data, data);
       break;
 #endif
 
@@ -465,9 +465,9 @@ gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
 }
 
 Gc_rc
-gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
 {
-  _gc_cipher_ctx *ctx = handle;
+  _MHD_gc_cipher_ctx *ctx = handle;
 
   switch (ctx->alg)
     {
@@ -510,7 +510,7 @@ gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
 #ifdef GNULIB_GC_DES
     case GC_DES:
       for (; len >= 8; len -= 8, data += 8)
-        gl_des_ecb_decrypt (&ctx->desContext, data, data);
+        MHD_gl_des_ecb_decrypt (&ctx->desContext, data, data);
       break;
 #endif
 
@@ -537,9 +537,9 @@ gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
 }
 
 Gc_rc
-gc_cipher_close (gc_cipher_handle handle)
+MHD_gc_cipher_close (MHD_gc_cipher_handle handle)
 {
-  _gc_cipher_ctx *ctx = handle;
+  _MHD_gc_cipher_ctx *ctx = handle;
 
   if (ctx)
     free (ctx);
@@ -551,23 +551,23 @@ gc_cipher_close (gc_cipher_handle handle)
 
 #define MAX_DIGEST_SIZE 20
 
-typedef struct _gc_hash_ctx
+typedef struct _MHD_gc_hash_ctx
 {
   Gc_hash alg;
   Gc_hash_mode mode;
   char hash[MAX_DIGEST_SIZE];
 #ifdef GNULIB_GC_MD5
-  struct md5_ctx md5Context;
+  struct MHD_md5_ctx md5Context;
 #endif
 #ifdef GNULIB_GC_SHA1
-  struct sha1_ctx sha1Context;
+  struct MHD_sha1_ctx sha1Context;
 #endif
-} _gc_hash_ctx;
+} _MHD_gc_hash_ctx;
 
 Gc_rc
-gc_hash_open (Gc_hash hash, Gc_hash_mode mode, gc_hash_handle * outhandle)
+MHD_gc_hash_open (Gc_hash hash, Gc_hash_mode mode, MHD_gc_hash_handle * outhandle)
 {
-  _gc_hash_ctx *ctx;
+  _MHD_gc_hash_ctx *ctx;
   Gc_rc rc = GC_OK;
 
   ctx = calloc (sizeof (*ctx), 1);
@@ -581,13 +581,13 @@ gc_hash_open (Gc_hash hash, Gc_hash_mode mode, gc_hash_handle * outhandle)
     {
 #ifdef GNULIB_GC_MD5
     case GC_MD5:
-      md5_init_ctx (&ctx->md5Context);
+      MHD_md5_init_ctx (&ctx->md5Context);
       break;
 #endif
 
 #ifdef GNULIB_GC_SHA1
     case GC_SHA1:
-      sha1_init_ctx (&ctx->sha1Context);
+      MHD_sha1_init_ctx (&ctx->sha1Context);
       break;
 #endif
 
@@ -615,10 +615,10 @@ gc_hash_open (Gc_hash hash, Gc_hash_mode mode, gc_hash_handle * outhandle)
 }
 
 Gc_rc
-gc_hash_clone (gc_hash_handle handle, gc_hash_handle * outhandle)
+MHD_gc_hash_clone (MHD_gc_hash_handle handle, MHD_gc_hash_handle * outhandle)
 {
-  _gc_hash_ctx *in = handle;
-  _gc_hash_ctx *out;
+  _MHD_gc_hash_ctx *in = handle;
+  _MHD_gc_hash_ctx *out;
 
   *outhandle = out = calloc (sizeof (*out), 1);
   if (!out)
@@ -630,7 +630,7 @@ gc_hash_clone (gc_hash_handle handle, gc_hash_handle * outhandle)
 }
 
 size_t
-gc_hash_digest_length (Gc_hash hash)
+MHD_gc_hash_digest_length (Gc_hash hash)
 {
   size_t len;
 
@@ -664,21 +664,21 @@ gc_hash_digest_length (Gc_hash hash)
 }
 
 void
-gc_hash_write (gc_hash_handle handle, size_t len, const char *data)
+MHD_gc_hash_write (MHD_gc_hash_handle handle, size_t len, const char *data)
 {
-  _gc_hash_ctx *ctx = handle;
+  _MHD_gc_hash_ctx *ctx = handle;
 
   switch (ctx->alg)
     {
 #ifdef GNULIB_GC_MD5
     case GC_MD5:
-      md5_process_bytes (data, len, &ctx->md5Context);
+      MHD_md5_process_bytes (data, len, &ctx->md5Context);
       break;
 #endif
 
 #ifdef GNULIB_GC_SHA1
     case GC_SHA1:
-      sha1_process_bytes (data, len, &ctx->sha1Context);
+      MHD_sha1_process_bytes (data, len, &ctx->sha1Context);
       break;
 #endif
 
@@ -688,23 +688,23 @@ gc_hash_write (gc_hash_handle handle, size_t len, const char *data)
 }
 
 const char *
-gc_hash_read (gc_hash_handle handle)
+MHD_gc_hash_read (MHD_gc_hash_handle handle)
 {
-  _gc_hash_ctx *ctx = handle;
+  _MHD_gc_hash_ctx *ctx = handle;
   const char *ret = NULL;
 
   switch (ctx->alg)
     {
 #ifdef GNULIB_GC_MD5
     case GC_MD5:
-      md5_finish_ctx (&ctx->md5Context, ctx->hash);
+      MHD_md5_finish_ctx (&ctx->md5Context, ctx->hash);
       ret = ctx->hash;
       break;
 #endif
 
 #ifdef GNULIB_GC_SHA1
     case GC_SHA1:
-      sha1_finish_ctx (&ctx->sha1Context, ctx->hash);
+      MHD_sha1_finish_ctx (&ctx->sha1Context, ctx->hash);
       ret = ctx->hash;
       break;
 #endif
@@ -717,27 +717,27 @@ gc_hash_read (gc_hash_handle handle)
 }
 
 void
-gc_hash_close (gc_hash_handle handle)
+MHD_gc_hash_close (MHD_gc_hash_handle handle)
 {
-  _gc_hash_ctx *ctx = handle;
+  _MHD_gc_hash_ctx *ctx = handle;
 
   free (ctx);
 }
 
 Gc_rc
-gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *resbuf)
+MHD_gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *resbuf)
 {
   switch (hash)
     {
 #ifdef GNULIB_GC_MD5
     case GC_MD5:
-      md5_buffer (in, inlen, resbuf);
+      MHD_md5_buffer (in, inlen, resbuf);
       break;
 #endif
 
 #ifdef GNULIB_GC_SHA1
     case GC_SHA1:
-      sha1_buffer (in, inlen, resbuf);
+      MHD_sha1_buffer (in, inlen, resbuf);
       break;
 #endif
 
@@ -750,38 +750,38 @@ gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *resbuf)
 
 #ifdef GNULIB_GC_MD5
 Gc_rc
-gc_md5 (const void *in, size_t inlen, void *resbuf)
+MHD_gc_md5 (const void *in, size_t inlen, void *resbuf)
 {
-  md5_buffer (in, inlen, resbuf);
+  MHD_md5_buffer (in, inlen, resbuf);
   return GC_OK;
 }
 #endif
 
 #ifdef GNULIB_GC_SHA1
 Gc_rc
-gc_sha1 (const void *in, size_t inlen, void *resbuf)
+MHD_gc_sha1 (const void *in, size_t inlen, void *resbuf)
 {
-  sha1_buffer (in, inlen, resbuf);
+  MHD_sha1_buffer (in, inlen, resbuf);
   return GC_OK;
 }
 #endif
 
 #ifdef GNULIB_GC_HMAC_MD5
 Gc_rc
-gc_hmac_md5 (const void *key, size_t keylen,
+MHD_gc_MHD_hmac_md5 (const void *key, size_t keylen,
              const void *in, size_t inlen, char *resbuf)
 {
-  hmac_md5 (key, keylen, in, inlen, resbuf);
+  MHD_hmac_md5 (key, keylen, in, inlen, resbuf);
   return GC_OK;
 }
 #endif
 
 #ifdef GNULIB_GC_HMAC_SHA1
 Gc_rc
-gc_hmac_sha1 (const void *key,
+MHD_gc_MHD_hmac_sha1 (const void *key,
               size_t keylen, const void *in, size_t inlen, char *resbuf)
 {
-  hmac_sha1 (key, keylen, in, inlen, resbuf);
+  MHD_hmac_sha1 (key, keylen, in, inlen, resbuf);
   return GC_OK;
 }
 #endif
