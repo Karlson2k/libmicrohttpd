@@ -68,8 +68,7 @@ fi
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
-     CFLAGS="-no-cpp-precomp $CFLAGS"
-     LDFLAGS="-flat_namespace -undefined suppress $LDFLAGS"
+     CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      ;;
 linux*)
