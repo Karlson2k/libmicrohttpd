@@ -39,6 +39,7 @@ Free Documentation License".
 * Supporting basic authentication::
 * Processing POST data::
 * Improved processing of POST data::
+* Adding a layer of security::
 * Bibliography::
 * License text::
 * Example programs::
@@ -72,6 +73,10 @@ Free Documentation License".
 @chapter Improved processing of POST data 
 @include chapters/largerpost.inc
 
+@node Adding a layer of security
+@chapter Adding a layer of security
+@include chapters/tlsauthentication.inc
+
 @node Bibliography
 @appendix Bibliography
 @include chapters/bibliography.inc
@@ -89,6 +94,7 @@ Free Documentation License".
 * basicauthentication.c::
 * simplepost.c::
 * largepost.c::
+* tlsauthentication.c::
 @end menu
 
 @node hellobrowser.c
@@ -127,5 +133,10 @@ Free Documentation License".
 @verbatiminclude examples/largepost.c
 @end smalldisplay
 
+@node tlsauthentication.c
+@section tlsauthentication.c
+@smalldisplay
+@verbatiminclude examples/tlsauthentication.c
+@end smalldisplay
 
 @bye
