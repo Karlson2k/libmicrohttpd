@@ -273,7 +273,7 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
 
           if (!printable || result < 0)
             result =
-              MHD__gnutls_x509_data2hex (value2, len, string, &sizeof_string);
+              MHD__gnutls_x509_data2hex ((const unsigned char*) value2, len, (unsigned char*) string, &sizeof_string);
 
           if (result < 0)
             {
@@ -477,7 +477,7 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
                                                     cbuf, sizeof_buf);
                   else
                     result =
-                      MHD__gnutls_x509_data2hex (buf, len, cbuf, sizeof_buf);
+                      MHD__gnutls_x509_data2hex (buf, len, (unsigned char*) cbuf, sizeof_buf);
 
                   if (result < 0)
                     {

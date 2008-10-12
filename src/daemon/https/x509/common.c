@@ -381,7 +381,7 @@ MHD__gnutls_x509_oid_data2string (const char *oid,
             }
           else
             {
-              result = MHD__gnutls_x509_data2hex (str, len, res, res_size);
+              result = MHD__gnutls_x509_data2hex ((const unsigned char*) str, len, (unsigned char*) res, res_size);
               if (result < 0)
                 {
                   MHD_gnutls_assert ();
@@ -425,8 +425,8 @@ MHD__gnutls_x509_data2hex (const opaque * data,
 
       if (out)
         {
-          strcpy (out, "#");
-          strcat (out, res);
+          strcpy ((char*) out, "#");
+          strcat ((char*) out, res);
         }
 
       return 0;
@@ -521,7 +521,7 @@ mktime_utc (const struct fake_tm *tm)
  * month|day|hour|minute|sec* (2 chars each)
  * and year is given. Returns a time_t date.
  */
-time_t
+static time_t
 MHD__gnutls_x509_time2gtime (const char *ttime, int year)
 {
   char xx[3];
@@ -588,7 +588,7 @@ MHD__gnutls_x509_time2gtime (const char *ttime, int year)
  *
  * (seconds are optional)
  */
-time_t
+static time_t
 MHD__gnutls_x509_utcTime2gtime (const char *ttime)
 {
   char xx[3];
@@ -614,44 +614,11 @@ MHD__gnutls_x509_utcTime2gtime (const char *ttime)
   return MHD__gnutls_x509_time2gtime (ttime, year);
 }
 
-/* returns a time value that contains the given time.
- * The given time is expressed as:
- * YEAR(2)|MONTH(2)|DAY(2)|HOUR(2)|MIN(2)|SEC(2)
- */
-int
-MHD__gnutls_x509_gtime2utcTime (time_t gtime, char *str_time, int str_time_size)
-{
-  size_t ret;
-
-#ifdef HAVE_GMTIME_R
-  struct tm _tm;
-
-  gmtime_r (&gtime, &_tm);
-
-  ret = strftime (str_time, str_time_size, "%y%m%d%H%M%SZ", &_tm);
-#else
-  struct tm *_tm;
-
-  _tm = gmtime (&gtime);
-
-  ret = strftime (str_time, str_time_size, "%y%m%d%H%M%SZ", _tm);
-#endif
-
-  if (!ret)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_SHORT_MEMORY_BUFFER;
-    }
-
-  return 0;
-
-}
-
 /* returns a time_t value that contains the given time.
  * The given time is expressed as:
  * YEAR(4)|MONTH(2)|DAY(2)|HOUR(2)|MIN(2)|SEC(2)*
  */
-time_t
+static time_t
 MHD__gnutls_x509_generalTime2gtime (const char *ttime)
 {
   char xx[5];
@@ -735,43 +702,6 @@ MHD__gnutls_x509_get_time (ASN1_TYPE c2, const char *when)
   return c_time;
 }
 
-/* Sets the time in time_t in the ASN1_TYPE given. Where should
- * be something like "tbsCertList.thisUpdate".
- */
-int
-MHD__gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim)
-{
-  char str_time[MAX_TIME];
-  char name[128];
-  int result, len;
-
-  MHD_gtls_str_cpy (name, sizeof (name), where);
-
-  if ((result = MHD__asn1_write_value (c2, name, "utcTime", 1)) < 0)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  result = MHD__gnutls_x509_gtime2utcTime (tim, str_time, sizeof (str_time));
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  MHD_gtls_str_cat (name, sizeof (name), ".utcTime");
-
-  len = strlen (str_time);
-  result = MHD__asn1_write_value (c2, name, str_time, len);
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  return 0;
-}
 
 MHD_gnutls_x509_subject_alt_name_t
 MHD__gnutls_x509_san_find_type (char *str_type)

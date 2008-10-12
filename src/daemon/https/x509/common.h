@@ -58,10 +58,6 @@
 #define SIG_GOST_R3410_94_OID "1.2.643.2.2.4"
 #define SIG_GOST_R3410_2001_OID "1.2.643.2.2.3"
 
-time_t MHD__gnutls_x509_utcTime2gtime (const char *ttime);
-time_t MHD__gnutls_x509_generalTime2gtime (const char *ttime);
-int MHD__gnutls_x509_set_time (ASN1_TYPE c2, const char *where, time_t tim);
-
 int MHD__gnutls_x509_decode_octet_string (const char *string_type,
                                       const opaque * der, size_t der_size,
                                       opaque * output, size_t * output_size);

@@ -36,33 +36,3 @@ int MHD__gnutls_x509_ext_extract_basicConstraints (int *CA,
                                                int *pathLenConstraint,
                                                opaque * extnValue,
                                                int extnValueLen);
-int MHD__gnutls_x509_crt_set_extension (MHD_gnutls_x509_crt_t cert,
-                                    const char *extension_id,
-                                    const MHD_gnutls_datum_t * ext_data,
-                                    unsigned int critical);
-int MHD__gnutls_x509_ext_gen_basicConstraints (int CA, int pathLenConstraint,
-                                           MHD_gnutls_datum_t * der_ext);
-int MHD__gnutls_x509_ext_gen_keyUsage (uint16_t usage, MHD_gnutls_datum_t * der_ext);
-int MHD__gnutls_x509_ext_gen_subject_alt_name (MHD_gnutls_x509_subject_alt_name_t
-                                           type, const char *data_string,
-                                           MHD_gnutls_datum_t * der_ext);
-int MHD__gnutls_x509_ext_gen_crl_dist_points (MHD_gnutls_x509_subject_alt_name_t
-                                          type, const void *data_string,
-                                          unsigned int reason_flags,
-                                          MHD_gnutls_datum_t * der_ext);
-int MHD__gnutls_x509_ext_gen_key_id (const void *id, size_t id_size,
-                                 MHD_gnutls_datum_t * der_data);
-int MHD__gnutls_x509_ext_gen_auth_key_id (const void *id, size_t id_size,
-                                      MHD_gnutls_datum_t * der_data);
-
-int MHD__gnutls_x509_ext_extract_proxyCertInfo (int *pathLenConstraint,
-                                            char **policyLanguage,
-                                            char **policy,
-                                            size_t * sizeof_policy,
-                                            opaque * extnValue,
-                                            int extnValueLen);
-int MHD__gnutls_x509_ext_gen_proxyCertInfo (int pathLenConstraint,
-                                        const char *policyLanguage,
-                                        const char *policy,
-                                        size_t sizeof_policy,
-                                        MHD_gnutls_datum_t * der_ext);

@@ -22,15 +22,7 @@
  *
  */
 
-int MHD__gnutls_x509_sign (const MHD_gnutls_datum_t * tbs,
-                       enum MHD_GNUTLS_HashAlgorithm hash,
-                       MHD_gnutls_x509_privkey_t signer,
-                       MHD_gnutls_datum_t * signature);
 int MHD__gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
                            enum MHD_GNUTLS_HashAlgorithm hash,
                            MHD_gnutls_x509_privkey_t signer,
                            MHD_gnutls_datum_t * signature);
-int MHD__gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
-                            enum MHD_GNUTLS_HashAlgorithm,
-                            MHD_gnutls_x509_crt_t issuer,
-                            MHD_gnutls_x509_privkey_t issuer_key);

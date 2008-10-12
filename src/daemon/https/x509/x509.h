@@ -92,33 +92,9 @@ extern "C"
   int MHD_gnutls_x509_crt_import (MHD_gnutls_x509_crt_t cert,
                               const MHD_gnutls_datum_t * data,
                               MHD_gnutls_x509_crt_fmt_t format);
-  int MHD_gnutls_x509_crt_list_import (MHD_gnutls_x509_crt_t * certs,
-                                   unsigned int *cert_max,
-                                   const MHD_gnutls_datum_t * data,
-                                   MHD_gnutls_x509_crt_fmt_t format,
-                                   unsigned int flags);
   int MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
                               MHD_gnutls_x509_crt_fmt_t format,
                               void *output_data, size_t * output_data_size);
-  int MHD_gnutls_x509_crt_get_issuer_dn (MHD_gnutls_x509_crt_t cert,
-                                     char *buf, size_t * sizeof_buf);
-  int MHD_gnutls_x509_crt_get_issuer_dn_oid (MHD_gnutls_x509_crt_t cert,
-                                         int indx,
-                                         void *oid, size_t * sizeof_oid);
-  int MHD_gnutls_x509_crt_get_issuer_dn_by_oid (MHD_gnutls_x509_crt_t cert,
-                                            const char *oid,
-                                            int indx,
-                                            unsigned int raw_flag,
-                                            void *buf, size_t * sizeof_buf);
-  int MHD_gnutls_x509_crt_get_dn (MHD_gnutls_x509_crt_t cert,
-                              char *buf, size_t * sizeof_buf);
-  int MHD_gnutls_x509_crt_get_dn_oid (MHD_gnutls_x509_crt_t cert,
-                                  int indx, void *oid, size_t * sizeof_oid);
-  int MHD_gnutls_x509_crt_get_dn_by_oid (MHD_gnutls_x509_crt_t cert,
-                                     const char *oid,
-                                     int indx,
-                                     unsigned int raw_flag,
-                                     void *buf, size_t * sizeof_buf);
   int MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert,
                                       const char *hostname);
 
@@ -126,22 +102,6 @@ extern "C"
   int MHD_gnutls_x509_crt_get_signature (MHD_gnutls_x509_crt_t cert,
                                      char *sig, size_t * sizeof_sig);
   int MHD_gnutls_x509_crt_get_version (MHD_gnutls_x509_crt_t cert);
-  int MHD_gnutls_x509_crt_get_key_id (MHD_gnutls_x509_crt_t crt,
-                                  unsigned int flags,
-                                  unsigned char *output_data,
-                                  size_t * output_data_size);
-
-  int MHD_gnutls_x509_crt_set_authority_key_id (MHD_gnutls_x509_crt_t cert,
-                                            const void *id, size_t id_size);
-  int MHD_gnutls_x509_crt_get_authority_key_id (MHD_gnutls_x509_crt_t cert,
-                                            void *ret,
-                                            size_t * ret_size,
-                                            unsigned int *critical);
-
-  int MHD_gnutls_x509_crt_get_subject_key_id (MHD_gnutls_x509_crt_t cert,
-                                          void *ret,
-                                          size_t * ret_size,
-                                          unsigned int *critical);
 
 #define GNUTLS_CRL_REASON_UNUSED 128
 #define GNUTLS_CRL_REASON_KEY_COMPROMISE 64
@@ -153,20 +113,6 @@ extern "C"
 #define GNUTLS_CRL_REASON_PRIVILEGE_WITHDRAWN 1
 #define GNUTLS_CRL_REASON_AA_COMPROMISE 32768
 
-  int MHD_gnutls_x509_crt_get_crl_dist_points (MHD_gnutls_x509_crt_t cert,
-                                           unsigned int seq,
-                                           void *ret,
-                                           size_t * ret_size,
-                                           unsigned int *reason_flags,
-                                           unsigned int *critical);
-  int MHD_gnutls_x509_crt_set_crl_dist_points (MHD_gnutls_x509_crt_t crt,
-                                           MHD_gnutls_x509_subject_alt_name_t
-                                           type,
-                                           const void *data_string,
-                                           unsigned int reason_flags);
-  int MHD_gnutls_x509_crt_cpy_crl_dist_points (MHD_gnutls_x509_crt_t dst,
-                                           MHD_gnutls_x509_crt_t src);
-
   time_t MHD_gnutls_x509_crt_get_activation_time (MHD_gnutls_x509_crt_t cert);
   time_t MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert);
   int MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
@@ -174,36 +120,13 @@ extern "C"
 
   int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
                                         unsigned int *bits);
-  int MHD_gnutls_x509_crt_get_pk_rsa_raw (MHD_gnutls_x509_crt_t crt,
-                                      MHD_gnutls_datum_t * m, MHD_gnutls_datum_t * e);
-  int MHD_gnutls_x509_crt_get_pk_dsa_raw (MHD_gnutls_x509_crt_t crt,
-                                      MHD_gnutls_datum_t * p,
-                                      MHD_gnutls_datum_t * q,
-                                      MHD_gnutls_datum_t * g, MHD_gnutls_datum_t * y);
-
   int MHD_gnutls_x509_crt_get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
                                             unsigned int seq,
                                             void *ret,
                                             size_t * ret_size,
                                             unsigned int *critical);
-  int MHD_gnutls_x509_crt_get_subject_alt_name2 (MHD_gnutls_x509_crt_t cert,
-                                             unsigned int seq,
-                                             void *ret,
-                                             size_t * ret_size,
-                                             unsigned int *ret_type,
-                                             unsigned int *critical);
-
-  int MHD_gnutls_x509_crt_get_subject_alt_othername_oid (MHD_gnutls_x509_crt_t cert,
-                                                     unsigned int seq,
-                                                     void *ret,
-                                                     size_t * ret_size);
-
   int MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
                                      unsigned int *critical);
-  int MHD_gnutls_x509_crt_get_basic_constraints (MHD_gnutls_x509_crt_t cert,
-                                             unsigned int *critical,
-                                             int *ca, int *pathlen);
-
 /* The key_usage flags are defined in gnutls.h. They are the
  * GNUTLS_KEY_* definitions.
  */
@@ -213,34 +136,9 @@ extern "C"
   int MHD_gnutls_x509_crt_set_key_usage (MHD_gnutls_x509_crt_t crt,
                                      unsigned int usage);
 
-  int MHD_gnutls_x509_crt_get_proxy (MHD_gnutls_x509_crt_t cert,
-                                 unsigned int *critical,
-                                 int *pathlen,
-                                 char **policyLanguage,
-                                 char **policy, size_t * sizeof_policy);
-
   int MHD_gnutls_x509_dn_oid_known (const char *oid);
 
-/* Read extensions by OID. */
-  int MHD_gnutls_x509_crt_get_extension_oid (MHD_gnutls_x509_crt_t cert,
-                                         int indx,
-                                         void *oid, size_t * sizeof_oid);
-  int MHD_gnutls_x509_crt_get_extension_by_oid (MHD_gnutls_x509_crt_t cert,
-                                            const char *oid,
-                                            int indx,
-                                            void *buf,
-                                            size_t * sizeof_buf,
-                                            unsigned int *critical);
-
 /* Read extensions by sequence number. */
-  int MHD_gnutls_x509_crt_get_extension_info (MHD_gnutls_x509_crt_t cert,
-                                          int indx,
-                                          void *oid,
-                                          size_t * sizeof_oid, int *critical);
-  int MHD_gnutls_x509_crt_get_extension_data (MHD_gnutls_x509_crt_t cert,
-                                          int indx,
-                                          void *data, size_t * sizeof_data);
-
   int MHD_gnutls_x509_crt_set_extension_by_oid (MHD_gnutls_x509_crt_t crt,
                                             const char *oid,
                                             const void *buf,
@@ -344,12 +242,6 @@ extern "C"
 
   int MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert,
                                    MHD_gnutls_x509_dn_t * dn);
-  int MHD_gnutls_x509_crt_get_issuer (MHD_gnutls_x509_crt_t cert,
-                                  MHD_gnutls_x509_dn_t * dn);
-  int MHD_gnutls_x509_dn_get_rdn_ava (MHD_gnutls_x509_dn_t dn,
-                                  int irdn,
-                                  int iava, MHD_gnutls_x509_ava_st * avast);
-
 /* CRL handling functions.
  */
   int MHD_gnutls_x509_crl_init (MHD_gnutls_x509_crl_t * crl);
@@ -362,8 +254,6 @@ extern "C"
                               MHD_gnutls_x509_crt_fmt_t format,
                               void *output_data, size_t * output_data_size);
 
-  int MHD_gnutls_x509_crl_get_issuer_dn (const MHD_gnutls_x509_crl_t crl,
-                                     char *buf, size_t * sizeof_buf);
   int MHD_gnutls_x509_crl_get_issuer_dn_by_oid (MHD_gnutls_x509_crl_t crl,
                                             const char *oid,
                                             int indx,
@@ -508,21 +398,6 @@ extern "C"
                                         const MHD_gnutls_x509_crl_t *
                                         crl_list, int crl_list_length);
 
-  int MHD_gnutls_x509_crt_get_fingerprint (MHD_gnutls_x509_crt_t cert,
-                                       enum MHD_GNUTLS_HashAlgorithm algo,
-                                       void *buf, size_t * sizeof_buf);
-
-  int MHD_gnutls_x509_crt_get_key_purpose_oid (MHD_gnutls_x509_crt_t cert,
-                                           int indx,
-                                           void *oid,
-                                           size_t * sizeof_oid,
-                                           unsigned int *critical);
-  int MHD_gnutls_x509_crt_set_key_purpose_oid (MHD_gnutls_x509_crt_t cert,
-                                           const void *oid,
-                                           unsigned int critical);
-
-/* Private key handling.
- */
 
 /* Flags for the MHD_gnutls_x509_privkey_export_pkcs8() function.
  */
@@ -601,10 +476,6 @@ extern "C"
                                        unsigned int flags,
                                        const MHD_gnutls_datum_t * data,
                                        const MHD_gnutls_datum_t * signature);
-  int MHD_gnutls_x509_crt_verify_data (MHD_gnutls_x509_crt_t crt,
-                                   unsigned int flags,
-                                   const MHD_gnutls_datum_t * data,
-                                   const MHD_gnutls_datum_t * signature);
 
 /* Certificate request stuff.
  */
@@ -752,8 +623,6 @@ int MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
                                    unsigned int *critical);
 int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
                                       unsigned int *bits);
-
-int MHD__gnutls_x509_crt_cpy (MHD_gnutls_x509_crt_t dest, MHD_gnutls_x509_crt_t src);
 
 int MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
                                 void *result, size_t * result_size);

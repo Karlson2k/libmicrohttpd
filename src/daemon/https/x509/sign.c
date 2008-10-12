@@ -103,7 +103,7 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
     }
 
   info->size = 0;
-  MHD__asn1_der_coding (dinfo, "", NULL, &info->size, NULL);
+  MHD__asn1_der_coding (dinfo, "", NULL, (int*) &info->size, NULL);
 
   info->data = MHD_gnutls_malloc (info->size);
   if (info->data == NULL)
@@ -113,7 +113,7 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = MHD__asn1_der_coding (dinfo, "", info->data, &info->size, NULL);
+  result = MHD__asn1_der_coding (dinfo, "", info->data, (int*) &info->size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -185,7 +185,7 @@ pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
  * 'signature' will hold the signature!
  * 'hash' is only used in PKCS1 RSA signing.
  */
-int
+static int
 MHD__gnutls_x509_sign (const MHD_gnutls_datum_t * tbs,
                    enum MHD_GNUTLS_HashAlgorithm hash,
                    MHD_gnutls_x509_privkey_t signer, MHD_gnutls_datum_t * signature)
@@ -255,93 +255,5 @@ MHD__gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
   return result;
 }
 
-/*-
- * MHD__gnutls_x509_pkix_sign - This function will sign a CRL or a certificate with a key
- * @src: should contain an ASN1_TYPE
- * @issuer: is the certificate of the certificate issuer
- * @issuer_key: holds the issuer's private key
- *
- * This function will sign a CRL or a certificate with the issuer's private key, and
- * will copy the issuer's information into the CRL or certificate.
- *
- * Returns 0 on success.
- *
- -*/
-int
-MHD__gnutls_x509_pkix_sign (ASN1_TYPE src, const char *src_name,
-                        enum MHD_GNUTLS_HashAlgorithm dig,
-                        MHD_gnutls_x509_crt_t issuer,
-                        MHD_gnutls_x509_privkey_t issuer_key)
-{
-  int result;
-  MHD_gnutls_datum_t signature;
-  char name[128];
-
-  /* Step 1. Copy the issuer's name into the certificate.
-   */
-  MHD_gtls_str_cpy (name, sizeof (name), src_name);
-  MHD_gtls_str_cat (name, sizeof (name), ".issuer");
-
-  result = MHD__asn1_copy_node (src, name, issuer->cert, "tbsCertificate.subject");
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  /* Step 1.5. Write the signature stuff in the tbsCertificate.
-   */
-  MHD_gtls_str_cpy (name, sizeof (name), src_name);
-  MHD_gtls_str_cat (name, sizeof (name), ".signature");
-
-  result = MHD__gnutls_x509_write_sig_params (src, name,
-                                          issuer_key->pk_algorithm, dig,
-                                          issuer_key->params,
-                                          issuer_key->params_size);
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  /* Step 2. Sign the certificate.
-   */
-  result = MHD__gnutls_x509_sign_tbs (src, src_name, dig, issuer_key, &signature);
-
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  /* write the signature (bits)
-   */
-  result =
-    MHD__asn1_write_value (src, "signature", signature.data, signature.size * 8);
-
-  MHD__gnutls_free_datum (&signature);
-
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  /* Step 3. Move up and write the AlgorithmIdentifier, which is also
-   * the same.
-   */
-
-  result = MHD__gnutls_x509_write_sig_params (src, "signatureAlgorithm",
-                                          issuer_key->pk_algorithm, dig,
-                                          issuer_key->params,
-                                          issuer_key->params_size);
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  return 0;
-}
 
 #endif
