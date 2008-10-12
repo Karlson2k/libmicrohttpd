@@ -39,8 +39,8 @@
 #include <dsa.h>
 #include <verify.h>
 
-static int MHD__gnutlsMHD__asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params);
-int MHD__gnutlsMHD__asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params);
+static int MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params);
+int MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params);
 
 /* remove this when libgcrypt can handle the PKCS #1 coefficients from
  * rsa keys
@@ -127,7 +127,7 @@ MHD_gnutls_x509_privkey_cpy (MHD_gnutls_x509_privkey_t dst, MHD_gnutls_x509_priv
       switch (dst->pk_algorithm)
         {
         case MHD_GNUTLS_PK_RSA:
-          ret = MHD__gnutlsMHD__asn1_encode_rsa (&dst->key, dst->params);
+          ret = MHD__gnutls_asn1_encode_rsa (&dst->key, dst->params);
           if (ret < 0)
             {
               MHD_gnutls_assert ();
@@ -439,7 +439,7 @@ MHD_gnutls_x509_privkey_import_rsa_raw (MHD_gnutls_x509_privkey_t key,
 
   if (!key->crippled)
     {
-      ret = MHD__gnutlsMHD__asn1_encode_rsa (&key->key, key->params);
+      ret = MHD__gnutls_asn1_encode_rsa (&key->key, key->params);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -481,7 +481,7 @@ MHD_gnutls_x509_privkey_get_pk_algorithm (MHD_gnutls_x509_privkey_t key)
 /* Encodes the RSA parameters into an ASN.1 RSA private key structure.
  */
 static int
-MHD__gnutlsMHD__asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
+MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
 {
   int result, i;
   size_t size[8], total;
@@ -712,7 +712,7 @@ cleanup:MHD_gtls_mpi_release (&u);
 /* Encodes the DSA parameters into an ASN.1 DSAPrivateKey structure.
  */
 int
-MHD__gnutlsMHD__asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
+MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
 {
   int result, i;
   size_t size[DSA_PRIVATE_PARAMS], total;
@@ -823,328 +823,3 @@ cleanup:MHD__asn1_delete_structure (c2);
   return result;
 }
 
-/**
- * MHD_gnutls_x509_privkey_generate - This function will generate a private key
- * @key: should contain a MHD_gnutls_x509_privkey_t structure
- * @algo: is one of RSA or DSA.
- * @bits: the size of the modulus
- * @flags: unused for now. Must be 0.
- *
- * This function will generate a random private key. Note that
- * this function must be called on an empty private key.
- *
- * Returns 0 on success or a negative value on error.
- *
- **/
-int
-MHD_gnutls_x509_privkey_generate (MHD_gnutls_x509_privkey_t key,
-                              enum MHD_GNUTLS_PublicKeyAlgorithm algo,
-                              unsigned int bits, unsigned int flags)
-{
-  int ret, params_len;
-  int i;
-
-  if (key == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  switch (algo)
-    {
-    case MHD_GNUTLS_PK_RSA:
-      ret = MHD__gnutls_rsa_generate_params (key->params, &params_len, bits);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-
-      if (!key->crippled)
-        {
-          ret = MHD__gnutlsMHD__asn1_encode_rsa (&key->key, key->params);
-          if (ret < 0)
-            {
-              MHD_gnutls_assert ();
-              goto cleanup;
-            }
-        }
-
-      key->params_size = params_len;
-      key->pk_algorithm = MHD_GNUTLS_PK_RSA;
-
-      break;
-    default:
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  return 0;
-
-cleanup:key->pk_algorithm = MHD_GNUTLS_PK_UNKNOWN;
-  key->params_size = 0;
-  for (i = 0; i < params_len; i++)
-    MHD_gtls_mpi_release (&key->params[i]);
-
-  return ret;
-}
-
-/**
- * MHD_gnutls_x509_privkey_get_key_id - Return unique ID of the key's parameters
- * @key: Holds the key
- * @flags: should be 0 for now
- * @output_data: will contain the key ID
- * @output_data_size: holds the size of output_data (and will be
- *   replaced by the actual size of parameters)
- *
- * This function will return a unique ID the depends on the public key
- * parameters. This ID can be used in checking whether a certificate
- * corresponds to the given key.
- *
- * If the buffer provided is not long enough to hold the output, then
- * *output_data_size is updated and GNUTLS_E_SHORT_MEMORY_BUFFER will
- * be returned.  The output will normally be a SHA-1 hash output,
- * which is 20 bytes.
- *
- * Return value: In case of failure a negative value will be
- *   returned, and 0 on success.
- *
- **/
-int
-MHD_gnutls_x509_privkey_get_key_id (MHD_gnutls_x509_privkey_t key,
-                                unsigned int flags,
-                                unsigned char *output_data,
-                                size_t * output_data_size)
-{
-  int result;
-  GNUTLS_HASH_HANDLE hd;
-  MHD_gnutls_datum_t der = { NULL,
-    0
-  };
-
-  if (key == NULL || key->crippled)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  if (*output_data_size < 20)
-    {
-      MHD_gnutls_assert ();
-      *output_data_size = 20;
-      return GNUTLS_E_SHORT_MEMORY_BUFFER;
-    }
-
-  if (key->pk_algorithm == MHD_GNUTLS_PK_RSA)
-    {
-      result = MHD__gnutls_x509_write_rsa_params (key->params, key->params_size,
-                                              &der);
-      if (result < 0)
-        {
-          MHD_gnutls_assert ();
-          goto cleanup;
-        }
-    }
-  else
-    return GNUTLS_E_INTERNAL_ERROR;
-
-  hd = MHD_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
-  if (hd == GNUTLS_HASH_FAILED)
-    {
-      MHD_gnutls_assert ();
-      result = GNUTLS_E_INTERNAL_ERROR;
-      goto cleanup;
-    }
-
-  MHD_gnutls_hash (hd, der.data, der.size);
-
-  MHD_gnutls_hash_deinit (hd, output_data);
-  *output_data_size = 20;
-
-  result = 0;
-
-cleanup:
-
-  MHD__gnutls_free_datum (&der);
-  return result;
-}
-
-#ifdef ENABLE_PKI
-
-/**
- * MHD_gnutls_x509_privkey_sign_data - This function will sign the given data using the private key params
- * @key: Holds the key
- * @digest: should be MD5 or SHA1
- * @flags: should be 0 for now
- * @data: holds the data to be signed
- * @signature: will contain the signature
- * @signature_size: holds the size of signature (and will be replaced
- *   by the new size)
- *
- * This function will sign the given data using a signature algorithm
- * supported by the private key. Signature algorithms are always used
- * together with a hash functions.  Different hash functions may be
- * used for the RSA algorithm, but only SHA-1 for the DSA keys.
- *
- * If the buffer provided is not long enough to hold the output, then
- * *signature_size is updated and GNUTLS_E_SHORT_MEMORY_BUFFER will
- * be returned.
- *
- * In case of failure a negative value will be returned, and
- * 0 on success.
- *
- **/
-int
-MHD_gnutls_x509_privkey_sign_data (MHD_gnutls_x509_privkey_t key,
-                               enum MHD_GNUTLS_HashAlgorithm digest,
-                               unsigned int flags,
-                               const MHD_gnutls_datum_t * data,
-                               void *signature, size_t * signature_size)
-{
-  int result;
-  MHD_gnutls_datum_t sig = { NULL, 0 };
-
-  if (key == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  result = MHD__gnutls_x509_sign (data, digest, key, &sig);
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  if (*signature_size < sig.size)
-    {
-      *signature_size = sig.size;
-      MHD__gnutls_free_datum (&sig);
-      return GNUTLS_E_SHORT_MEMORY_BUFFER;
-    }
-
-  *signature_size = sig.size;
-  memcpy (signature, sig.data, sig.size);
-
-  MHD__gnutls_free_datum (&sig);
-
-  return 0;
-}
-
-/**
- * MHD_gnutls_x509_privkey_sign_hash - This function will sign the given data using the private key params
- * @key: Holds the key
- * @hash: holds the data to be signed
- * @signature: will contain newly allocated signature
- *
- * This function will sign the given hash using the private key.
- *
- * Return value: In case of failure a negative value will be returned,
- * and 0 on success.
- **/
-int
-MHD_gnutls_x509_privkey_sign_hash (MHD_gnutls_x509_privkey_t key,
-                               const MHD_gnutls_datum_t * hash,
-                               MHD_gnutls_datum_t * signature)
-{
-  int result;
-
-  if (key == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  result = MHD_gtls_sign (key->pk_algorithm, key->params,
-                          key->params_size, hash, signature);
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  return 0;
-}
-
-/**
- * MHD_gnutls_x509_privkey_verify_data - This function will verify the given signed data.
- * @key: Holds the key
- * @flags: should be 0 for now
- * @data: holds the data to be signed
- * @signature: contains the signature
- *
- * This function will verify the given signed data, using the parameters in the
- * private key.
- *
- * In case of a verification failure 0 is returned, and
- * 1 on success.
- *
- **/
-int
-MHD_gnutls_x509_privkey_verify_data (MHD_gnutls_x509_privkey_t key,
-                                 unsigned int flags,
-                                 const MHD_gnutls_datum_t * data,
-                                 const MHD_gnutls_datum_t * signature)
-{
-  int result;
-
-  if (key == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  result = MHD__gnutls_x509_privkey_verify_signature (data, signature, key);
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return 0;
-    }
-
-  return result;
-}
-
-/**
- * MHD_gnutls_x509_privkey_fix - This function will recalculate some parameters of the key.
- * @key: Holds the key
- *
- * This function will recalculate the secondary parameters in a key.
- * In RSA keys, this can be the coefficient and exponent1,2.
- *
- * Return value: In case of failure a negative value will be
- *   returned, and 0 on success.
- *
- **/
-int
-MHD_gnutls_x509_privkey_fix (MHD_gnutls_x509_privkey_t key)
-{
-  int ret;
-
-  if (key == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  if (!key->crippled)
-    MHD__asn1_delete_structure (&key->key);
-  switch (key->pk_algorithm)
-    {
-    case MHD_GNUTLS_PK_RSA:
-      ret = MHD__gnutlsMHD__asn1_encode_rsa (&key->key, key->params);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-      break;
-    default:
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  return 0;
-}
-
-#endif

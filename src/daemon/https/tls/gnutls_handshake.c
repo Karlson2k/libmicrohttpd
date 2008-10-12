@@ -59,13 +59,39 @@
 #define TRUE 1
 #define FALSE 0
 
+
+/* This should be sufficient by now. It should hold all the extensions
+ * plus the headers in a hello message.
+ */
+#define MAX_EXT_DATA_LENGTH 1024
+
+
+static int MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
+                                           cipher_suite_st ** cipherSuites,
+                                           int numCipherSuites,
+                                           enum
+                                           MHD_GNUTLS_PublicKeyAlgorithm);
+static int MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
+                                  int datalen);
+
+static int MHD_gtls_generate_session_id (opaque * session_id, uint8_t * len);
+
+static int MHD_gtls_handshake_common (MHD_gtls_session_t session);
+
+static int MHD_gtls_handshake_server (MHD_gtls_session_t session);
+
+#if MHD_DEBUG_TLS
+static int MHD_gtls_handshake_client (MHD_gtls_session_t session);
+#endif
+
+
 static int MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
                                               opaque * data, int datalen);
 
 
 /* Clears the handshake hash buffers and handles.
  */
-inline static void
+static void
 MHD__gnutls_handshake_hash_buffers_clear (MHD_gtls_session_t session)
 {
   MHD_gnutls_hash_deinit (session->internals.handshake_mac_handle_md5, NULL);
@@ -119,13 +145,13 @@ resume_copy_required_values (MHD_gtls_session_t session)
     session->internals.resumed_security_parameters.session_id_size;
 }
 
-void
+static void
 MHD_gtls_set_server_random (MHD_gtls_session_t session, uint8_t * rnd)
 {
   memcpy (session->security_parameters.server_random, rnd, TLS_RANDOM_SIZE);
 }
 
-void
+static void
 MHD_gtls_set_client_random (MHD_gtls_session_t session, uint8_t * rnd)
 {
   memcpy (session->security_parameters.client_random, rnd, TLS_RANDOM_SIZE);
@@ -243,7 +269,7 @@ MHD__gnutls_finished (MHD_gtls_session_t session, int type, void *ret)
 /* this function will produce TLS_RANDOM_SIZE==32 bytes of random data
  * and put it to dst.
  */
-int
+static int
 MHD_gtls_tls_create_random (opaque * dst)
 {
   uint32_t tim;
@@ -257,7 +283,7 @@ MHD_gtls_tls_create_random (opaque * dst)
   /* generate server random value */
   MHD_gtls_write_uint32 (tim, dst);
 
-  if (MHD_gc_nonce (&dst[4], TLS_RANDOM_SIZE - 4) != GC_OK)
+  if (MHD_gc_nonce ((char*) &dst[4], TLS_RANDOM_SIZE - 4) != GC_OK)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
@@ -268,7 +294,7 @@ MHD_gtls_tls_create_random (opaque * dst)
 
 /* returns the 0 on success or a negative value.
  */
-int
+static int
 MHD_gtls_negotiate_version (MHD_gtls_session_t session,
                             enum MHD_GNUTLS_Protocol adv_version)
 {
@@ -299,7 +325,7 @@ MHD_gtls_negotiate_version (MHD_gtls_session_t session,
   return ret;
 }
 
-int
+static int
 MHD_gtls_user_hello_func (MHD_gtls_session_t session,
                           enum MHD_GNUTLS_Protocol adv_version)
 {
@@ -469,7 +495,7 @@ MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
 
 /* here we hash all pending data.
  */
-inline static int
+static int
 MHD__gnutls_handshake_hash_pending (MHD_gtls_session_t session)
 {
   size_t siz;
@@ -669,7 +695,7 @@ MHD__gnutls_server_find_pk_algos_in_ciphersuites (const opaque *
 /* This selects the best supported ciphersuite from the given ones. Then
  * it adds the suite to the session and performs some checks.
  */
-int
+static int
 MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
                               int datalen)
 {
@@ -1270,6 +1296,7 @@ MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t ** data,
   return ret;
 }
 
+#if MHD_DEBUG_TLS
 /* This function checks if the given cipher suite is supported, and sets it
  * to the session;
  */
@@ -1352,6 +1379,7 @@ MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session, opaque suite[2])
   return 0;
 }
 
+
 /* This function sets the given comp method to the session.
  */
 static int
@@ -1407,7 +1435,8 @@ MHD__gnutls_client_check_if_resuming (MHD_gtls_session_t session,
   MHD__gnutls_handshake_log ("HSK[%x]: SessionID length: %d\n", session,
                          session_id_len);
   MHD__gnutls_handshake_log ("HSK[%x]: SessionID: %s\n", session,
-                         MHD_gtls_bin2hex (session_id, session_id_len, buf,
+                         MHD_gtls_bin2hex (session_id, session_id_len, 
+					   (char*) buf,
                                            sizeof (buf)));
 
   if (session_id_len > 0 &&
@@ -1437,7 +1466,6 @@ MHD__gnutls_client_check_if_resuming (MHD_gtls_session_t session,
       return -1;
     }
 }
-
 
 /* This function reads and parses the server hello handshake message.
  * This function also restores resumed parameters if we are resuming a
@@ -1653,12 +1681,6 @@ MHD__gnutls_copy_comp_methods (MHD_gtls_session_t session,
   return datalen;
 }
 
-/* This should be sufficient by now. It should hold all the extensions
- * plus the headers in a hello message.
- */
-#define MAX_EXT_DATA_LENGTH 1024
-
-#if MHD_DEBUG_TLS
 /* This function sends the client hello handshake message.
  */
 static int
@@ -1930,7 +1952,7 @@ MHD__gnutls_send_server_hello (MHD_gtls_session_t session, int again)
 
       MHD__gnutls_handshake_log ("HSK[%x]: SessionID: %s\n", session,
                              MHD_gtls_bin2hex (SessionID, session_id_len,
-                                               buf, sizeof (buf)));
+                                               (char*) buf, sizeof (buf)));
 
       memcpy (&data[pos],
               session->security_parameters.current_cipher_suite.suite, 2);
@@ -2273,7 +2295,7 @@ MHD__gnutls_handshake (MHD_gtls_session_t session)
  * MHD_gtls_handshake_client
  * This function performs the client side of the handshake of the TLS/SSL protocol.
  */
-int
+static int
 MHD_gtls_handshake_client (MHD_gtls_session_t session)
 {
   int ret = 0;
@@ -2515,7 +2537,7 @@ MHD__gnutls_recv_handshake_final (MHD_gtls_session_t session, int init)
   * This function does the server stuff of the handshake protocol.
   */
 
-int
+static int
 MHD_gtls_handshake_server (MHD_gtls_session_t session)
 {
   int ret = 0;
@@ -2616,7 +2638,7 @@ MHD_gtls_handshake_server (MHD_gtls_session_t session)
   return 0;
 }
 
-int
+static int
 MHD_gtls_handshake_common (MHD_gtls_session_t session)
 {
   int ret = 0;
@@ -2651,12 +2673,12 @@ MHD_gtls_handshake_common (MHD_gtls_session_t session)
 
 }
 
-int
+static int
 MHD_gtls_generate_session_id (opaque * session_id, uint8_t * len)
 {
   *len = TLS_MAX_SESSION_ID_SIZE;
 
-  if (MHD_gc_nonce (session_id, *len) != GC_OK)
+  if (MHD_gc_nonce ((char*) session_id, *len) != GC_OK)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
@@ -2811,7 +2833,7 @@ check_server_params (MHD_gtls_session_t session,
  * This does a more high level check than  MHD_gnutls_supported_ciphersuites(),
  * by checking certificates etc.
  */
-int
+static int
 MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
                                        cipher_suite_st ** cipherSuites,
                                        int numCipherSuites,
@@ -2939,75 +2961,9 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
 
 }
 
-/**
-  * MHD__gnutls_handshake_set_max_packet_length - This function will set the maximum length of a handshake message
-  * @session: is a #MHD_gtls_session_t structure.
-  * @max: is the maximum number.
-  *
-  * This function will set the maximum size of a handshake message.
-  * Handshake messages over this size are rejected.  The default value
-  * is 16kb which is large enough. Set this to 0 if you do not want to
-  * set an upper limit.
-  *
-  **/
-void
-MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session,
-                                            size_t max)
-{
-  session->internals.max_handshake_data_buffer_size = max;
-}
-
-void
-MHD_gtls_set_adv_version (MHD_gtls_session_t session,
-                          enum MHD_GNUTLS_Protocol ver)
-{
-  set_adv_version (session, MHD_gtls_version_get_major (ver),
-                   MHD_gtls_version_get_minor (ver));
-}
-
 enum MHD_GNUTLS_Protocol
 MHD_gtls_get_adv_version (MHD_gtls_session_t session)
 {
   return MHD_gtls_version_get (MHD__gnutls_get_adv_version_major (session),
                                MHD__gnutls_get_adv_version_minor (session));
-}
-
-/**
-  * MHD_gtls_handshake_get_last_in - Returns the last handshake message received.
-  * @session: is a #MHD_gtls_session_t structure.
-  *
-  * This function is only useful to check where the last performed
-  * handshake failed.  If the previous handshake succeed or was not
-  * performed at all then no meaningful value will be returned.
-  *
-  * Check %MHD_gnutls_handshake_description_t in gnutls.h for the
-  * available handshake descriptions.
-  *
-  * Returns: the last handshake message type received, a
-  * %MHD_gnutls_handshake_description_t.
-  **/
-MHD_gnutls_handshake_description_t
-MHD_gtls_handshake_get_last_in (MHD_gtls_session_t session)
-{
-  return session->internals.last_handshake_in;
-}
-
-/**
-  * MHD_gtls_handshake_get_last_out - Returns the last handshake message sent.
-  * @session: is a #MHD_gtls_session_t structure.
-  *
-  * This function is only useful to check where the last performed
-  * handshake failed.  If the previous handshake succeed or was not
-  * performed at all then no meaningful value will be returned.
-  *
-  * Check %MHD_gnutls_handshake_description_t in gnutls.h for the
-  * available handshake descriptions.
-  *
-  * Returns: the last handshake message type sent, a
-  * %MHD_gnutls_handshake_description_t.
-  **/
-MHD_gnutls_handshake_description_t
-MHD_gtls_handshake_get_last_out (MHD_gtls_session_t session)
-{
-  return session->internals.last_handshake_out;
 }

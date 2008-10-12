@@ -24,4 +24,4 @@
 
 const mpi_t *MHD__gnutls_rsa_params_to_mpi (MHD_gtls_rsa_params_t);
 int MHD__gnutls_peers_cert_less_512 (MHD_gtls_session_t session);
-int MHD__gnutls_rsa_generate_params (mpi_t * resarr, int *resarr_len, int bits);
+

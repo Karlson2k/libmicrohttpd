@@ -560,8 +560,6 @@ extern "C"
                                           const MHD_gnutls_datum_t * p,
                                           const MHD_gnutls_datum_t * q,
                                           const MHD_gnutls_datum_t * u);
-  int MHD_gnutls_x509_privkey_fix (MHD_gnutls_x509_privkey_t key);
-
   int MHD_gnutls_x509_privkey_export_dsa_raw (MHD_gnutls_x509_privkey_t key,
                                           MHD_gnutls_datum_t * p,
                                           MHD_gnutls_datum_t * q,
@@ -581,10 +579,6 @@ extern "C"
                                       unsigned char *output_data,
                                       size_t * output_data_size);
 
-  int MHD_gnutls_x509_privkey_generate (MHD_gnutls_x509_privkey_t key,
-                                    enum MHD_GNUTLS_PublicKeyAlgorithm algo,
-                                    unsigned int bits, unsigned int flags);
-
   int MHD_gnutls_x509_privkey_export (MHD_gnutls_x509_privkey_t key,
                                   MHD_gnutls_x509_crt_fmt_t format,
                                   void *output_data,
@@ -603,14 +597,6 @@ extern "C"
                                           MHD_gnutls_datum_t * q,
                                           MHD_gnutls_datum_t * u);
 
-/* Signing stuff.
- */
-  int MHD_gnutls_x509_privkey_sign_data (MHD_gnutls_x509_privkey_t key,
-                                     enum MHD_GNUTLS_HashAlgorithm digest,
-                                     unsigned int flags,
-                                     const MHD_gnutls_datum_t * data,
-                                     void *signature,
-                                     size_t * signature_size);
   int MHD_gnutls_x509_privkey_verify_data (MHD_gnutls_x509_privkey_t key,
                                        unsigned int flags,
                                        const MHD_gnutls_datum_t * data,
@@ -619,10 +605,6 @@ extern "C"
                                    unsigned int flags,
                                    const MHD_gnutls_datum_t * data,
                                    const MHD_gnutls_datum_t * signature);
-
-  int MHD_gnutls_x509_privkey_sign_hash (MHD_gnutls_x509_privkey_t key,
-                                     const MHD_gnutls_datum_t * hash,
-                                     MHD_gnutls_datum_t * signature);
 
 /* Certificate request stuff.
  */

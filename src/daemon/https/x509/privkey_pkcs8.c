@@ -474,7 +474,7 @@ _decode_pkcs8_dsa_key (ASN1_TYPE pkcs8_asn, MHD_gnutls_x509_privkey pkey)
 
     if (!pkey->crippled)
       {
-        ret = MHD__gnutlsMHD__asn1_encode_dsa (&pkey->key, pkey->params);
+        ret = MHD__gnutls_asn1_encode_dsa (&pkey->key, pkey->params);
         if (ret < 0)
           {
             MHD_gnutls_assert ();

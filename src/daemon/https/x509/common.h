@@ -116,7 +116,7 @@ int MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
                                              MHD_GNUTLS_PublicKeyAlgorithm
                                              pk_algorithm, mpi_t * params,
                                              int params_size);
-int MHD__gnutlsMHD__asn1_copy_node (ASN1_TYPE * dst, const char *dst_name,
+int MHD__gnutls_asn1_copy_node (ASN1_TYPE * dst, const char *dst_name,
                             ASN1_TYPE src, const char *src_name);
 
 int MHD__gnutls_x509_get_signed_data (ASN1_TYPE src, const char *src_name,

@@ -288,11 +288,6 @@ extern "C"
 
   void MHD_gtls_handshake_set_private_extensions (MHD_gtls_session_t session,
                                                   int allow);
-    MHD_gnutls_handshake_description_t
-    MHD_gtls_handshake_get_last_out (MHD_gtls_session_t session);
-    MHD_gnutls_handshake_description_t
-    MHD_gtls_handshake_get_last_in (MHD_gtls_session_t session);
-
 /*
  * Record layer functions.
  */

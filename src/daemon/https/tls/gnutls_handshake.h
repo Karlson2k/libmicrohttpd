@@ -36,29 +36,6 @@ int MHD_gtls_recv_hello (MHD_gtls_session_t session, opaque * data,
 int MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t **, int *,
                              MHD_gnutls_handshake_description_t,
                              Optional optional);
-int MHD_gtls_generate_session_id (opaque * session_id, uint8_t * len);
-int MHD_gtls_handshake_common (MHD_gtls_session_t session);
-int MHD_gtls_handshake_server (MHD_gtls_session_t session);
-void MHD_gtls_set_server_random (MHD_gtls_session_t session, uint8_t * rnd);
-void MHD_gtls_set_client_random (MHD_gtls_session_t session, uint8_t * rnd);
-int MHD_gtls_tls_create_random (opaque * dst);
-int MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
-                                           cipher_suite_st ** cipherSuites,
-                                           int numCipherSuites,
-                                           enum
-                                           MHD_GNUTLS_PublicKeyAlgorithm);
-int MHD_gtls_find_pk_algos_in_ciphersuites (opaque * data, int datalen);
-int MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
-                                  int datalen);
-
-int MHD_gtls_negotiate_version (MHD_gtls_session_t session,
-                                enum MHD_GNUTLS_Protocol adv_version);
-int MHD_gtls_user_hello_func (MHD_gtls_session_t,
-                              enum MHD_GNUTLS_Protocol adv_version);
-
-#if MHD_DEBUG_TLS
-int MHD_gtls_handshake_client (MHD_gtls_session_t session);
-#endif
 
 #define STATE session->internals.handshake_state
 /* This returns true if we have got there
