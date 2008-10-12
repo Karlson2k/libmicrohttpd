@@ -1159,8 +1159,6 @@ MHD__gnutls_certificate_set_x509_crl_mem (MHD_gtls_cert_credentials_t
   return ret;
 }
 
-#include <pkcs12.h>
-
 /**
   * MHD__gnutls_certificate_free_crls - Used to free all the CRLs from a MHD_gtls_cert_credentials_t structure
   * @sc: is an #MHD_gtls_cert_credentials_t structure.
