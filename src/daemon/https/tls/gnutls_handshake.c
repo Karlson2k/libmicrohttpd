@@ -145,6 +145,24 @@ resume_copy_required_values (MHD_gtls_session_t session)
     session->internals.resumed_security_parameters.session_id_size;
 }
 
+/**
+  * gnutls_handshake_set_max_packet_length - This function will set the maximum length of a handshake message
+  * @session: is a #gnutls_session_t structure.
+  * @max: is the maximum number.
+  *
+  * This function will set the maximum size of a handshake message.
+  * Handshake messages over this size are rejected.
+  * The default value is 16kb which is large enough. Set this to 0 if you do not want
+  * to set an upper limit.
+  *
+  **/
+void
+MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session, size_t max)
+{
+  session->internals.max_handshake_data_buffer_size = max;
+}
+
+
 static void
 MHD_gtls_set_server_random (MHD_gtls_session_t session, uint8_t * rnd)
 {
