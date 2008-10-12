@@ -69,6 +69,7 @@ oprfi_recv_server (MHD_gtls_session_t session,
   return 0;
 }
 
+#if MHD_DEBUG_TLS
 static int
 oprfi_recv_client (MHD_gtls_session_t session,
                    const opaque * data, size_t _data_size)
@@ -110,6 +111,7 @@ oprfi_recv_client (MHD_gtls_session_t session,
 
   return 0;
 }
+#endif
 
 int
 MHD_gtls_oprfi_recv_params (MHD_gtls_session_t session,
@@ -123,6 +125,7 @@ MHD_gtls_oprfi_recv_params (MHD_gtls_session_t session,
     return oprfi_recv_server (session, data, data_size);
 }
 
+#if MHD_DEBUG_TLS
 static int
 oprfi_send_client (MHD_gtls_session_t session, opaque * data,
                    size_t _data_size)
@@ -144,6 +147,7 @@ oprfi_send_client (MHD_gtls_session_t session, opaque * data,
 
   return 2 + oprf_size;
 }
+#endif
 
 static int
 oprfi_send_server (MHD_gtls_session_t session, opaque * data,
