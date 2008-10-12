@@ -80,9 +80,9 @@ MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
 
   if (err == 0)
     {
-      MHD_gc_cipher_setkey (ret, key->size, key->data);
+      MHD_gc_cipher_setkey (ret, key->size, (const char*) key->data);
       if (iv->data != NULL && iv->size > 0)
-        MHD_gc_cipher_setiv (ret, iv->size, iv->data);
+        MHD_gc_cipher_setiv (ret, iv->size, (const char*) iv->data);
     }
   else if (cipher != MHD_GNUTLS_CIPHER_NULL)
     {

@@ -291,7 +291,7 @@ MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t session, opaque * data,
 
       /* we do not need strong random numbers here.
        */
-      if (MHD_gc_nonce (session->key->key.data, session->key->key.size) != GC_OK)
+      if (MHD_gc_nonce ((char*) session->key->key.data, session->key->key.size) != GC_OK)
         {
           MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
@@ -352,7 +352,7 @@ MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t session, opaque ** data)
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  if (MHD_gc_pseudo_random (session->key->key.data,
+  if (MHD_gc_pseudo_random ((char*) session->key->key.data,
                         session->key->key.size) != GC_OK)
     {
       MHD_gnutls_assert ();

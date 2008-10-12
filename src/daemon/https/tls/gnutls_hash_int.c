@@ -133,7 +133,7 @@ MHD_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest)
 
   maclen = MHD_gnutls_hash_get_algo_len (handle->algorithm);
 
-  mac = MHD_gc_hash_read (handle->handle);
+  mac = (unsigned char*) MHD_gc_hash_read (handle->handle);
   if (digest != NULL)
     memcpy (digest, mac, maclen);
 
@@ -178,7 +178,7 @@ MHD_gnutls_MHD_hmac_deinit (mac_hd_t handle, void *digest)
 
   maclen = MHD_gnutls_hash_get_algo_len (handle->algorithm);
 
-  mac = MHD_gc_hash_read (handle->handle);
+  mac = (unsigned char*) MHD_gc_hash_read (handle->handle);
 
   if (digest != NULL)
     memcpy (digest, mac, maclen);

@@ -244,7 +244,7 @@ calc_enc_length (MHD_gtls_session_t session, int data_size,
 
       break;
     case CIPHER_BLOCK:
-      if (MHD_gc_nonce (&rnd, 1) != GC_OK)
+      if (MHD_gc_nonce ((char*) &rnd, 1) != GC_OK)
         {
           MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
@@ -377,7 +377,7 @@ MHD_gtls_compressed2ciphertext (MHD_gtls_session_t session,
     {
       /* copy the random IV.
        */
-      if (MHD_gc_nonce (data_ptr, blocksize) != GC_OK)
+      if (MHD_gc_nonce ((char*) data_ptr, blocksize) != GC_OK)
         {
           MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;

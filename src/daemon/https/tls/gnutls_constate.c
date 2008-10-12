@@ -107,7 +107,7 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
   else
     {                           /* TLS 1.0 */
       ret =
-        MHD_gtls_PRF (session, session->security_parameters.master_secret,
+        MHD_gtls_PRF (session, (const unsigned char*) session->security_parameters.master_secret,
                       TLS_MASTER_SIZE, keyexp, keyexp_length,
                       rnd, 2 * TLS_RANDOM_SIZE, block_size, key_block);
     }
@@ -342,7 +342,7 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
         }
       else
         {                       /* TLS 1.0 */
-          ret = MHD_gtls_PRF (session, "", 0,
+          ret = MHD_gtls_PRF (session, (const unsigned char*) "", 0,
                               ivblock, ivblock_length, rrnd,
                               2 * TLS_RANDOM_SIZE, IV_size * 2, iv_block);
         }

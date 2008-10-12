@@ -104,7 +104,7 @@ MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
-      if (MHD_gc_pseudo_random (ps, psize) != GC_OK)
+      if (MHD_gc_pseudo_random ((char*)ps, psize) != GC_OK)
         {
           MHD_gnutls_assert ();
           MHD_gnutls_afree (edata);
@@ -113,7 +113,7 @@ MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
       for (i = 0; i < psize; i++)
         while (ps[i] == 0)
           {
-            if (MHD_gc_pseudo_random (&ps[i], 1) != GC_OK)
+            if (MHD_gc_pseudo_random ((char*) &ps[i], 1) != GC_OK)
               {
                 MHD_gnutls_assert ();
                 MHD_gnutls_afree (edata);

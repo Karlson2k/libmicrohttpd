@@ -808,9 +808,9 @@ MHD__gnutls_check_supported_sign_algo (CertificateSigType algo)
     {
     case RSA_SIGN:
       return MHD_GNUTLS_PK_RSA;
+    default:
+      return -1;
     }
-
-  return -1;
 }
 
 int

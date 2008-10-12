@@ -147,10 +147,11 @@ int
 MHD_gtls_cert_type_send_params (MHD_gtls_session_t session, opaque * data,
                                 size_t data_size)
 {
-  unsigned len, i;
+  unsigned int len;
 
   /* this function sends the client extension data (dnsname) */
 #if MHD_DEBUG_TLS
+  unsigned int i;
   if (session->security_parameters.entity == GNUTLS_CLIENT)
     {
 

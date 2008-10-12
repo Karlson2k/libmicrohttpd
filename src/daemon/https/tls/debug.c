@@ -123,6 +123,6 @@ MHD__gnutls_dump_mpi (const char *prefix, mpi_t a)
   size_t n = sizeof buf;
 
   if (gcry_mpi_print (GCRYMPI_FMT_HEX, buf, n, &n, a))
-    strcpy (buf, "[can't print value]");        /* Flawfinder: ignore */
+    strcpy ((char*) buf, "[can't print value]");        /* Flawfinder: ignore */
   MHD__gnutls_hard_log ("MPI: length: %d\n\t%s%s\n", (n - 1) / 2, prefix, buf);
 }

@@ -46,7 +46,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 /* x509 */
 #include "common.h"
 #include "x509.h"
@@ -337,10 +336,10 @@ parse_pem_cert_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
 
   /* move to the certificate
    */
-  ptr = MHD_memmem (input_cert, input_cert_size,
+  ptr = memmem (input_cert, input_cert_size,
                 PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
   if (ptr == NULL)
-    ptr = MHD_memmem (input_cert, input_cert_size,
+    ptr = memmem (input_cert, input_cert_size,
                   PEM_CERT_SEP2, sizeof (PEM_CERT_SEP2) - 1);
 
   if (ptr == NULL)
@@ -396,9 +395,9 @@ parse_pem_cert_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
         {
           char *ptr3;
 
-          ptr3 = MHD_memmem (ptr, size, PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
+          ptr3 = memmem (ptr, size, PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
           if (ptr3 == NULL)
-            ptr3 = MHD_memmem (ptr, size, PEM_CERT_SEP2,
+            ptr3 = memmem (ptr, size, PEM_CERT_SEP2,
                            sizeof (PEM_CERT_SEP2) - 1);
 
           ptr = ptr3;
@@ -794,10 +793,10 @@ parse_pem_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
 
   /* move to the certificate
    */
-  ptr = MHD_memmem (input_cert, input_cert_size,
+  ptr = memmem (input_cert, input_cert_size,
                 PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
   if (ptr == NULL)
-    ptr = MHD_memmem (input_cert, input_cert_size,
+    ptr = memmem (input_cert, input_cert_size,
                   PEM_CERT_SEP2, sizeof (PEM_CERT_SEP2) - 1);
 
   if (ptr == NULL)
@@ -855,9 +854,9 @@ parse_pem_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
         {
           char *ptr3;
 
-          ptr3 = MHD_memmem (ptr, size, PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
+          ptr3 = memmem (ptr, size, PEM_CERT_SEP, sizeof (PEM_CERT_SEP) - 1);
           if (ptr3 == NULL)
-            ptr3 = MHD_memmem (ptr, size,
+            ptr3 = memmem (ptr, size,
                            PEM_CERT_SEP2, sizeof (PEM_CERT_SEP2) - 1);
 
           ptr = (const opaque *) ptr3;
@@ -977,7 +976,7 @@ parse_pem_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
 
   /* move to the certificate
    */
-  ptr = MHD_memmem (input_crl, input_crl_size,
+  ptr = memmem (input_crl, input_crl_size,
                 PEM_CRL_SEP, sizeof (PEM_CRL_SEP) - 1);
   if (ptr == NULL)
     {
@@ -1033,7 +1032,7 @@ parse_pem_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
       size = input_crl_size - (ptr - input_crl);
 
       if (size > 0)
-        ptr = MHD_memmem (ptr, size, PEM_CRL_SEP, sizeof (PEM_CRL_SEP) - 1);
+        ptr = memmem (ptr, size, PEM_CRL_SEP, sizeof (PEM_CRL_SEP) - 1);
       else
         ptr = NULL;
       i++;

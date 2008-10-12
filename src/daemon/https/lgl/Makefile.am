@@ -20,7 +20,6 @@ rijndael-alg-fst.c rijndael-alg-fst.h \
 hmac-md5.c hmac.h \
 hmac-sha1.c \
 memxor.c memxor.h\
-memmem.c \
 strverscmp.c strverscmp.h \
 md5.c md5.h \
 des.c des.h

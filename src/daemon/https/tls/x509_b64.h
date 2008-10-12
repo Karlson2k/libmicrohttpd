@@ -22,8 +22,6 @@
  *
  */
 
-int MHD__gnutls_base64_encode (const uint8_t * data, size_t data_size,
-                           uint8_t ** result);
 int MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
                             int data_size, uint8_t ** result);
 int MHD__gnutls_base64_decode (const uint8_t * data, size_t data_size,
