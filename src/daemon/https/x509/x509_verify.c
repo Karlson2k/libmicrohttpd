@@ -601,36 +601,6 @@ _pkcs1_rsa_verify_sig (const MHD_gnutls_datum_t * text,
   return 0;
 }
 
-/* Hashes input data and verifies a DSA signature.
- */
-static int
-dsa_verify_sig (const MHD_gnutls_datum_t * text,
-                const MHD_gnutls_datum_t * signature,
-                mpi_t * params, int params_len)
-{
-  int ret;
-  opaque _digest[MAX_HASH_SIZE];
-  MHD_gnutls_datum_t digest;
-  GNUTLS_HASH_HANDLE hd;
-
-  hd = MHD_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
-  if (hd == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_HASH_FAILED;
-    }
-
-  MHD_gnutls_hash (hd, text->data, text->size);
-  MHD_gnutls_hash_deinit (hd, _digest);
-
-  digest.data = _digest;
-  digest.size = 20;
-
-  ret = MHD_gtls_dsa_verify (&digest, signature, params, params_len);
-
-  return ret;
-}
-
 /* Verifies the signature data, and returns 0 if not verified,
  * or 1 otherwise.
  */

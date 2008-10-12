@@ -256,7 +256,7 @@ MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t cert)
       return result;
     }
 
-  result = MHD_gtls_x509_oid2sign_algorithm (sa.data);
+  result = MHD_gtls_x509_oid2sign_algorithm ((const char*) sa.data);
 
   MHD__gnutls_free_datum (&sa);
 
@@ -533,7 +533,7 @@ parse_general_name (ASN1_TYPE src,
       return MHD_gtls_asn2err (result);
     }
 
-  type = MHD__gnutls_x509_san_find_type (choice_type);
+  type = MHD__gnutls_x509_san_find_type ((char*) choice_type);
   if (type == (MHD_gnutls_x509_subject_alt_name_t) - 1)
     {
       MHD_gnutls_assert ();
@@ -636,7 +636,7 @@ parse_general_name (ASN1_TYPE src,
       size_t orig_name_size = *name_size;
 
       MHD_gtls_str_cat (nptr, sizeof (nptr), ".");
-      MHD_gtls_str_cat (nptr, sizeof (nptr), choice_type);
+      MHD_gtls_str_cat (nptr, sizeof (nptr), (const char*) choice_type);
 
       len = *name_size;
       result = MHD__asn1_read_value (src, nptr, name, &len);
@@ -941,72 +941,6 @@ MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
   return 0;
 }
 
-
-/**
- * MHD_gnutls_x509_crt_get_extension_by_oid - This function returns the specified extension
- * @cert: should contain a MHD_gnutls_x509_crt_t structure
- * @oid: holds an Object Identified in null terminated string
- * @indx: In case multiple same OIDs exist in the extensions, this specifies which to send. Use zero to get the first one.
- * @buf: a pointer to a structure to hold the name (may be null)
- * @sizeof_buf: initially holds the size of @buf
- * @critical: will be non zero if the extension is marked as critical
- *
- * This function will return the extension specified by the OID in the certificate.
- * The extensions will be returned as binary data DER encoded, in the provided
- * buffer.
- *
- * A negative value may be returned in case of parsing error.
- * If the certificate does not contain the specified extension
- * GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE will be returned.
- *
- **/
-static int
-MHD_gnutls_x509_crt_get_extension_by_oid (MHD_gnutls_x509_crt_t cert,
-                                      const char *oid,
-                                      int indx,
-                                      void *buf,
-                                      size_t * sizeof_buf,
-                                      unsigned int *critical)
-{
-  int result;
-  MHD_gnutls_datum_t output;
-
-  if (cert == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  if ((result = MHD__gnutls_x509_crt_get_extension (cert, oid, indx, &output,
-                                                critical)) < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  if (output.size == 0 || output.data == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
-    }
-
-  if (output.size > (unsigned int) *sizeof_buf)
-    {
-      *sizeof_buf = output.size;
-      MHD__gnutls_free_datum (&output);
-      return GNUTLS_E_SHORT_MEMORY_BUFFER;
-    }
-
-  *sizeof_buf = output.size;
-
-  if (buf)
-    memcpy (buf, output.data, output.size);
-
-  MHD__gnutls_free_datum (&output);
-
-  return 0;
-
-}
 
 static int
 MHD__gnutls_x509_crt_get_raw_dn2 (MHD_gnutls_x509_crt_t cert,

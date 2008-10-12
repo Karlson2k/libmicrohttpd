@@ -35,7 +35,7 @@
 static int
 MHD_pkcs12_check_pass (const char *pass, size_t plen)
 {
-  const unsigned char *p = pass;
+  const char *p = pass;
   unsigned int i;
 
   for (i = 0; i < plen; i++)
@@ -115,13 +115,13 @@ MHD_pkcs12_string_to_key (unsigned int id, const opaque * salt,
       for (i = 0; i < 64; i++)
         {
           unsigned char lid = id & 0xFF;
-          MHD_gc_hash_write (md, 1, &lid);
+          MHD_gc_hash_write (md, 1, (const char*) &lid);
         }
-      MHD_gc_hash_write (md, pw ? 128 : 64, buf_i);
+      MHD_gc_hash_write (md, pw ? 128 : 64, (const char*) buf_i);
       memcpy (hash, MHD_gc_hash_read (md), 20);
       MHD_gc_hash_close (md);
       for (i = 1; i < iter; i++)
-        MHD_gc_hash_buffer (GC_SHA1, hash, 20, hash);
+        MHD_gc_hash_buffer (GC_SHA1, hash, 20, (char*) hash);
       for (i = 0; i < 20 && cur_keylen < req_keylen; i++)
         keybuf[cur_keylen++] = hash[i];
       if (cur_keylen == req_keylen)
