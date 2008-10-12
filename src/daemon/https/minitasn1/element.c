@@ -281,7 +281,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
   node_asn *node, *p, *p2;
   unsigned char *temp, *value_temp = NULL, *default_temp = NULL;
   int len2, k, k2, negative;
-  const unsigned char *value = ivalue;
+  const char *value = ivalue;
 
   node = MHD__asn1_find_node (node_root, name);
   if (node == NULL)
@@ -374,10 +374,10 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
                           if (value_temp == NULL)
                             return ASN1_MEM_ALLOC_ERROR;
 
-                          MHD__asn1_convert_integer (p->value,
-                                                 value_temp,
-                                                 SIZEOF_UNSIGNED_LONG_INT,
-                                                 &len);
+                          MHD__asn1_convert_integer ((const char*) p->value,
+						     value_temp,
+						     SIZEOF_UNSIGNED_LONG_INT,
+						     &len);
                           break;
                         }
                     }
@@ -446,7 +446,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
 		  return ASN1_MEM_ALLOC_ERROR;
 		}
 
-              MHD__asn1_convert_integer (p->value, default_temp,
+              MHD__asn1_convert_integer ((const char*) p->value, default_temp,
                                      SIZEOF_UNSIGNED_LONG_INT, &len2);
             }
           else
@@ -461,7 +461,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
                 {
                   if (type_field (p2->type) == TYPE_CONSTANT)
                     {
-                      if ((p2->name) && (!strcmp (p2->name, p->value)))
+                      if ((p2->name) && (!strcmp (p2->name,(const char*)  p->value)))
                         {
                           default_temp =
                             (unsigned char *)
@@ -472,7 +472,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
 			      return ASN1_MEM_ALLOC_ERROR;
 			    }
 
-                          MHD__asn1_convert_integer (p2->value,
+                          MHD__asn1_convert_integer ((const char*) p2->value,
                                                  default_temp,
                                                  SIZEOF_UNSIGNED_LONG_INT,
                                                  &len2);
@@ -512,7 +512,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
           p = node->down;
           while (type_field (p->type) != TYPE_DEFAULT)
             p = p->right;
-          if (!strcmp (value, p->value))
+          if (!strcmp (value,(const char*)  p->value))
             {
               MHD__asn1_set_value (node, NULL, 0);
               break;
@@ -574,7 +574,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
       if (temp == NULL)
         return ASN1_MEM_ALLOC_ERROR;
 
-      MHD__asn1_octet_der (value, len, temp, &len2);
+      MHD__asn1_octet_der ((const unsigned char*) value, len, temp, &len2);
       MHD__asn1_set_value (node, temp, len2);
       MHD__asn1_afree (temp);
       break;
@@ -586,7 +586,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
       if (temp == NULL)
         return ASN1_MEM_ALLOC_ERROR;
 
-      MHD__asn1_octet_der (value, len, temp, &len2);
+      MHD__asn1_octet_der ((const unsigned char*)value, len, temp, &len2);
       MHD__asn1_set_value (node, temp, len2);
       MHD__asn1_afree (temp);
       break;
@@ -598,7 +598,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
       if (temp == NULL)
         return ASN1_MEM_ALLOC_ERROR;
 
-      MHD__asn1_bit_der (value, len, temp, &len2);
+      MHD__asn1_bit_der ((const unsigned char*)value, len, temp, &len2);
       MHD__asn1_set_value (node, temp, len2);
       MHD__asn1_afree (temp);
       break;
@@ -632,7 +632,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
       if (temp == NULL)
         return ASN1_MEM_ALLOC_ERROR;
 
-      MHD__asn1_octet_der (value, len, temp, &len2);
+      MHD__asn1_octet_der ((const unsigned char*)value, len, temp, &len2);
       MHD__asn1_set_value (node, temp, len2);
       MHD__asn1_afree (temp);
       break;
@@ -749,7 +749,7 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
   node_asn *node, *p, *p2;
   int len2, len3;
   int value_size = *len;
-  unsigned char *value = ivalue;
+  char *value = ivalue;
 
   node = MHD__asn1_find_node (root, name);
   if (node == NULL)
@@ -801,7 +801,7 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
               || (p->value[0] == '+'))
             {
               if (MHD__asn1_convert_integer
-                  (p->value, value, value_size, len) != ASN1_SUCCESS)
+                  ((const char*) p->value, (unsigned char*) value, value_size, len) != ASN1_SUCCESS)
                 return ASN1_MEM_ERROR;
             }
           else
@@ -811,10 +811,10 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
                 {
                   if (type_field (p2->type) == TYPE_CONSTANT)
                     {
-                      if ((p2->name) && (!strcmp (p2->name, p->value)))
+                      if ((p2->name) && (!strcmp (p2->name, (const char*) p->value)))
                         {
                           if (MHD__asn1_convert_integer
-                              (p2->value, value, value_size,
+                              ((const char*) p2->value, (unsigned char*) value, value_size,
                                len) != ASN1_SUCCESS)
                             return ASN1_MEM_ERROR;
                           break;
@@ -828,7 +828,7 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
         {
           len2 = -1;
           if (MHD__asn1_get_octet_der
-              (node->value, node->value_len, &len2, value, value_size,
+              (node->value, node->value_len, &len2, (unsigned char*) value, value_size,
                len) != ASN1_SUCCESS)
             return ASN1_MEM_ERROR;
         }
@@ -842,7 +842,7 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
             {
               if (type_field (p->type) == TYPE_CONSTANT)
                 {
-                  ADD_STR_VALUE (value, value_size, p->value);
+                  ADD_STR_VALUE (value, value_size, (const char*) p->value);
                   if (p->right)
                     {
                       ADD_STR_VALUE (value, value_size, ".");
@@ -857,34 +857,34 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
           p = node->down;
           while (type_field (p->type) != TYPE_DEFAULT)
             p = p->right;
-          PUT_STR_VALUE (value, value_size, p->value);
+          PUT_STR_VALUE (value, value_size, (const char*)  p->value);
         }
       else
         {
-          PUT_STR_VALUE (value, value_size, node->value);
+          PUT_STR_VALUE (value, value_size, (const char*)  node->value);
         }
       break;
     case TYPE_TIME:
-      PUT_STR_VALUE (value, value_size, node->value);
+      PUT_STR_VALUE (value, value_size, (const char*) node->value);
       break;
     case TYPE_OCTET_STRING:
       len2 = -1;
       if (MHD__asn1_get_octet_der
-          (node->value, node->value_len, &len2, value, value_size,
+          (node->value, node->value_len, &len2, (unsigned char*) value, value_size,
            len) != ASN1_SUCCESS)
         return ASN1_MEM_ERROR;
       break;
     case TYPE_GENERALSTRING:
       len2 = -1;
       if (MHD__asn1_get_octet_der
-          (node->value, node->value_len, &len2, value, value_size,
+          (node->value, node->value_len, &len2, (unsigned char*) value, value_size,
            len) != ASN1_SUCCESS)
         return ASN1_MEM_ERROR;
       break;
     case TYPE_BIT_STRING:
       len2 = -1;
       if (MHD__asn1_get_bit_der
-          (node->value, node->value_len, &len2, value, value_size,
+          (node->value, node->value_len, &len2, (unsigned char*) value, value_size,
            len) != ASN1_SUCCESS)
         return ASN1_MEM_ERROR;
       break;
@@ -906,123 +906,3 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue, int *len)
 }
 
 
-/**
-  * MHD__asn1_read_tag - Returns the TAG of one element inside a structure
-  * @root: pointer to a structure
-  * @name: the name of the element inside a structure.
-  * @tagValue:  variable that will contain the TAG value.
-  * @classValue: variable that will specify the TAG type.
-  *
-  * Returns the TAG and the CLASS of one element inside a structure.
-  * CLASS can have one of these constants: %ASN1_CLASS_APPLICATION,
-  * %ASN1_CLASS_UNIVERSAL, %ASN1_CLASS_PRIVATE or
-  * %ASN1_CLASS_CONTEXT_SPECIFIC.
-  *
-  * Returns:
-  *
-  *   ASN1_SUCCESS: Set value OK.
-  *
-  *   ASN1_ELEMENT_NOT_FOUND: NAME is not a valid element.
-  *
-  **/
-MHD__asn1_retCode
-MHD__asn1_read_tag (node_asn * root, const char *name, int *tagValue,
-               int *classValue)
-{
-  node_asn *node, *p, *pTag;
-
-  node = MHD__asn1_find_node (root, name);
-  if (node == NULL)
-    return ASN1_ELEMENT_NOT_FOUND;
-
-  p = node->down;
-
-  /* pTag will points to the IMPLICIT TAG */
-  pTag = NULL;
-  if (node->type & CONST_TAG)
-    {
-      while (p)
-        {
-          if (type_field (p->type) == TYPE_TAG)
-            {
-              if ((p->type & CONST_IMPLICIT) && (pTag == NULL))
-                pTag = p;
-              else if (p->type & CONST_EXPLICIT)
-                pTag = NULL;
-            }
-          p = p->right;
-        }
-    }
-
-  if (pTag)
-    {
-      *tagValue = strtoul (pTag->value, NULL, 10);
-
-      if (pTag->type & CONST_APPLICATION)
-        *classValue = ASN1_CLASS_APPLICATION;
-      else if (pTag->type & CONST_UNIVERSAL)
-        *classValue = ASN1_CLASS_UNIVERSAL;
-      else if (pTag->type & CONST_PRIVATE)
-        *classValue = ASN1_CLASS_PRIVATE;
-      else
-        *classValue = ASN1_CLASS_CONTEXT_SPECIFIC;
-    }
-  else
-    {
-      *classValue = ASN1_CLASS_UNIVERSAL;
-
-      switch (type_field (node->type))
-        {
-        case TYPE_NULL:
-          *tagValue = ASN1_TAG_NULL;
-          break;
-        case TYPE_BOOLEAN:
-          *tagValue = ASN1_TAG_BOOLEAN;
-          break;
-        case TYPE_INTEGER:
-          *tagValue = ASN1_TAG_INTEGER;
-          break;
-        case TYPE_ENUMERATED:
-          *tagValue = ASN1_TAG_ENUMERATED;
-          break;
-        case TYPE_OBJECT_ID:
-          *tagValue = ASN1_TAG_OBJECT_ID;
-          break;
-        case TYPE_TIME:
-          if (node->type & CONST_UTC)
-            {
-              *tagValue = ASN1_TAG_UTCTime;
-            }
-          else
-            *tagValue = ASN1_TAG_GENERALIZEDTime;
-          break;
-        case TYPE_OCTET_STRING:
-          *tagValue = ASN1_TAG_OCTET_STRING;
-          break;
-        case TYPE_GENERALSTRING:
-          *tagValue = ASN1_TAG_GENERALSTRING;
-          break;
-        case TYPE_BIT_STRING:
-          *tagValue = ASN1_TAG_BIT_STRING;
-          break;
-        case TYPE_SEQUENCE:
-        case TYPE_SEQUENCE_OF:
-          *tagValue = ASN1_TAG_SEQUENCE;
-          break;
-        case TYPE_SET:
-        case TYPE_SET_OF:
-          *tagValue = ASN1_TAG_SET;
-          break;
-        case TYPE_TAG:
-        case TYPE_CHOICE:
-        case TYPE_ANY:
-          break;
-        default:
-          break;
-        }
-    }
-
-
-  return ASN1_SUCCESS;
-
-}

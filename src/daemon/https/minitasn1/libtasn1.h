@@ -150,9 +150,6 @@ extern "C"
                                 ASN1_TYPE * definitions,
                                 char *errorDescription);
 
-  void MHD__asn1_print_structure (FILE * out, ASN1_TYPE structure,
-                             const char *name, int mode);
-
   MHD__asn1_retCode MHD__asn1_create_element (ASN1_TYPE definitions,
                                     const char *source_name,
                                     ASN1_TYPE * element);
@@ -177,31 +174,13 @@ extern "C"
   MHD__asn1_retCode MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider,
                                   int len, char *errorDescription);
 
-  MHD__asn1_retCode MHD__asn1_der_decoding_element (ASN1_TYPE * structure,
-                                          const char *elementName,
-                                          const void *ider, int len,
-                                          char *errorDescription);
-
   MHD__asn1_retCode MHD__asn1_der_decoding_startEnd (ASN1_TYPE element,
                                            const void *ider, int len,
                                            const char *name_element,
                                            int *start, int *end);
 
-  MHD__asn1_retCode MHD__asn1_expand_any_defined_by (ASN1_TYPE definitions,
-                                           ASN1_TYPE * element);
-
-  MHD__asn1_retCode MHD__asn1_expand_octet_string (ASN1_TYPE definitions,
-                                         ASN1_TYPE * element,
-                                         const char *octetName,
-                                         const char *objectName);
-
-  MHD__asn1_retCode MHD__asn1_read_tag (node_asn * root, const char *name,
-                              int *tagValue, int *classValue);
-
   const char *MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
                                             const char *oidValue);
-
-  const char *MHD__asn1_check_version (const char *req_version);
 
   const char *MHD__libtasn1_strerror (MHD__asn1_retCode error);
 

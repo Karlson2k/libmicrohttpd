@@ -15,17 +15,7 @@ node_asn *MHD__asn1_set_name (node_asn * node, const char *name);
 
 node_asn *MHD__asn1_set_right (node_asn * node, node_asn * right);
 
-node_asn *MHD__asn1_get_right (node_asn * node);
-
-node_asn *MHD__asn1_get_last_right (node_asn * node);
-
 node_asn *MHD__asn1_set_down (node_asn * node, node_asn * down);
-
-char *MHD__asn1_get_name (node_asn * node);
-
-node_asn *MHD__asn1_get_down (node_asn * node);
-
-node_asn *MHD__asn1_mod_type (node_asn * node, unsigned int value);
 
 void MHD__asn1_remove_node (node_asn * node);
 
@@ -41,10 +31,7 @@ MHD__asn1_retCode MHD__asn1_change_integer_value (ASN1_TYPE node);
 
 MHD__asn1_retCode MHD__asn1_expand_object_id (ASN1_TYPE node);
 
-MHD__asn1_retCode MHD__asn1_type_set_config (ASN1_TYPE node);
-
 MHD__asn1_retCode MHD__asn1_check_identifier (ASN1_TYPE node);
 
-MHD__asn1_retCode MHD__asn1_set_default_tag (ASN1_TYPE node);
 
 #endif

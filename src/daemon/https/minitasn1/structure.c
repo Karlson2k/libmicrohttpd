@@ -37,6 +37,9 @@
 
 extern char MHD__asn1_identifierMissing[];
 
+static node_asn *MHD__asn1_copy_structure2 (node_asn * root, const char *source_name);
+
+
 
 /******************************************************/
 /* Function : MHD__asn1_add_node_only                     */
@@ -78,85 +81,6 @@ MHD__asn1_find_left (node_asn * node)
   return node->left;
 }
 
-
-MHD__asn1_retCode
-MHD__asn1_create_static_structure (ASN1_TYPE pointer, char *output_file_name,
-                               char *vector_name)
-{
-  FILE *file;
-  node_asn *p;
-  unsigned long t;
-
-  file = fopen (output_file_name, "w");
-
-  if (file == NULL)
-    return ASN1_FILE_NOT_FOUND;
-
-  fprintf (file, "#if HAVE_CONFIG_H\n");
-  fprintf (file, "# include \"config.h\"\n");
-  fprintf (file, "#endif\n\n");
-
-  fprintf (file, "#include <libtasn1.h>\n\n");
-
-  fprintf (file, "extern const ASN1_ARRAY_TYPE %s[]={\n", vector_name);
-
-  p = pointer;
-
-  while (p)
-    {
-      fprintf (file, "  {");
-
-      if (p->name)
-        fprintf (file, "\"%s\",", p->name);
-      else
-        fprintf (file, "0,");
-
-      t = p->type;
-      if (p->down)
-        t |= CONST_DOWN;
-      if (p->right)
-        t |= CONST_RIGHT;
-
-      fprintf (file, "%lu,", t);
-
-      if (p->value)
-        fprintf (file, "\"%s\"},\n", p->value);
-      else
-        fprintf (file, "0},\n");
-
-      if (p->down)
-        {
-          p = p->down;
-        }
-      else if (p->right)
-        {
-          p = p->right;
-        }
-      else
-        {
-          while (1)
-            {
-              p = MHD__asn1_find_up (p);
-              if (p == pointer)
-                {
-                  p = NULL;
-                  break;
-                }
-              if (p->right)
-                {
-                  p = p->right;
-                  break;
-                }
-            }
-        }
-    }
-
-  fprintf (file, "  {0,0,0}\n};\n");
-
-  fclose (file);
-
-  return ASN1_SUCCESS;
-}
 
 
 /**
@@ -455,7 +379,7 @@ MHD__asn1_copy_structure3 (node_asn * source_node)
 }
 
 
-node_asn *
+static node_asn *
 MHD__asn1_copy_structure2 (node_asn * root, const char *source_name)
 {
   node_asn *source_node;
@@ -467,7 +391,7 @@ MHD__asn1_copy_structure2 (node_asn * root, const char *source_name)
 }
 
 
-MHD__asn1_retCode
+static MHD__asn1_retCode
 MHD__asn1_type_choice_config (node_asn * node)
 {
   node_asn *p, *p2, *p3, *p4;
@@ -497,7 +421,7 @@ MHD__asn1_type_choice_config (node_asn * node)
                           if (type_field (p3->type) == TYPE_TAG)
                             {
                               p4 = MHD__asn1_add_node_only (p3->type);
-                              tlen = strlen (p3->value);
+                              tlen = strlen ((const char*) p3->value);
                               if (tlen > 0)
                                 MHD__asn1_set_value (p4, p3->value, tlen + 1);
                               MHD__asn1_set_right (p4, p2->down);
@@ -552,7 +476,7 @@ MHD__asn1_type_choice_config (node_asn * node)
 }
 
 
-MHD__asn1_retCode
+static MHD__asn1_retCode
 MHD__asn1_expand_identifier (node_asn ** node, node_asn * root)
 {
   node_asn *p, *p2, *p3;
@@ -573,7 +497,7 @@ MHD__asn1_expand_identifier (node_asn ** node, node_asn * root)
             {
               MHD__asn1_str_cpy (name2, sizeof (name2), root->name);
               MHD__asn1_str_cat (name2, sizeof (name2), ".");
-              MHD__asn1_str_cat (name2, sizeof (name2), p->value);
+              MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p->value);
               p2 = MHD__asn1_copy_structure2 (root, name2);
               if (p2 == NULL)
                 {
@@ -701,370 +625,6 @@ MHD__asn1_create_element (ASN1_TYPE definitions, const char *source_name,
 
   return res;
 }
-
-
-/**
-  * MHD__asn1_print_structure - Prints on the standard output the structure's tree
-  * @out: pointer to the output file (e.g. stdout).
-  * @structure: pointer to the structure that you want to visit.
-  * @name: an element of the structure
-  * @mode: specify how much of the structure to print, can be
-  *   %ASN1_PRINT_NAME, %ASN1_PRINT_NAME_TYPE,
-  *   %ASN1_PRINT_NAME_TYPE_VALUE, or %ASN1_PRINT_ALL.
-  *
-  * Prints on the @out file descriptor the structure's tree starting
-  * from the @name element inside the structure @structure.
-  **/
-void
-MHD__asn1_print_structure (FILE * out, ASN1_TYPE structure, const char *name,
-                      int mode)
-{
-  node_asn *p, *root;
-  int k, indent = 0, len, len2, len3;
-
-  if (out == NULL)
-    return;
-
-  root = MHD__asn1_find_node (structure, name);
-
-  if (root == NULL)
-    return;
-
-  p = root;
-  while (p)
-    {
-      if (mode == ASN1_PRINT_ALL)
-        {
-          for (k = 0; k < indent; k++)
-            fprintf (out, " ");
-          fprintf (out, "name:");
-          if (p->name)
-            fprintf (out, "%s  ", p->name);
-          else
-            fprintf (out, "NULL  ");
-        }
-      else
-        {
-          switch (type_field (p->type))
-            {
-            case TYPE_CONSTANT:
-            case TYPE_TAG:
-            case TYPE_SIZE:
-              break;
-            default:
-              for (k = 0; k < indent; k++)
-                fprintf (out, " ");
-              fprintf (out, "name:");
-              if (p->name)
-                fprintf (out, "%s  ", p->name);
-              else
-                fprintf (out, "NULL  ");
-            }
-        }
-
-      if (mode != ASN1_PRINT_NAME)
-        {
-          switch (type_field (p->type))
-            {
-            case TYPE_CONSTANT:
-              if (mode == ASN1_PRINT_ALL)
-                fprintf (out, "type:CONST");
-              break;
-            case TYPE_TAG:
-              if (mode == ASN1_PRINT_ALL)
-                fprintf (out, "type:TAG");
-              break;
-            case TYPE_SIZE:
-              if (mode == ASN1_PRINT_ALL)
-                fprintf (out, "type:SIZE");
-              break;
-            case TYPE_DEFAULT:
-              fprintf (out, "type:DEFAULT");
-              break;
-            case TYPE_NULL:
-              fprintf (out, "type:NULL");
-              break;
-            case TYPE_IDENTIFIER:
-              fprintf (out, "type:IDENTIFIER");
-              break;
-            case TYPE_INTEGER:
-              fprintf (out, "type:INTEGER");
-              break;
-            case TYPE_ENUMERATED:
-              fprintf (out, "type:ENUMERATED");
-              break;
-            case TYPE_TIME:
-              fprintf (out, "type:TIME");
-              break;
-            case TYPE_BOOLEAN:
-              fprintf (out, "type:BOOLEAN");
-              break;
-            case TYPE_SEQUENCE:
-              fprintf (out, "type:SEQUENCE");
-              break;
-            case TYPE_BIT_STRING:
-              fprintf (out, "type:BIT_STR");
-              break;
-            case TYPE_OCTET_STRING:
-              fprintf (out, "type:OCT_STR");
-              break;
-            case TYPE_GENERALSTRING:
-              fprintf (out, "type:GENERALSTRING");
-              break;
-            case TYPE_SEQUENCE_OF:
-              fprintf (out, "type:SEQ_OF");
-              break;
-            case TYPE_OBJECT_ID:
-              fprintf (out, "type:OBJ_ID");
-              break;
-            case TYPE_ANY:
-              fprintf (out, "type:ANY");
-              break;
-            case TYPE_SET:
-              fprintf (out, "type:SET");
-              break;
-            case TYPE_SET_OF:
-              fprintf (out, "type:SET_OF");
-              break;
-            case TYPE_CHOICE:
-              fprintf (out, "type:CHOICE");
-              break;
-            case TYPE_DEFINITIONS:
-              fprintf (out, "type:DEFINITIONS");
-              break;
-            default:
-              break;
-            }
-        }
-
-      if ((mode == ASN1_PRINT_NAME_TYPE_VALUE) || (mode == ASN1_PRINT_ALL))
-        {
-          switch (type_field (p->type))
-            {
-            case TYPE_CONSTANT:
-              if (mode == ASN1_PRINT_ALL)
-                if (p->value)
-                  fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_TAG:
-              if (mode == ASN1_PRINT_ALL)
-                if (p->value)
-                  fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_SIZE:
-              if (mode == ASN1_PRINT_ALL)
-                if (p->value)
-                  fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_DEFAULT:
-              if (p->value)
-                fprintf (out, "  value:%s", p->value);
-              else if (p->type & CONST_TRUE)
-                fprintf (out, "  value:TRUE");
-              else if (p->type & CONST_FALSE)
-                fprintf (out, "  value:FALSE");
-              break;
-            case TYPE_IDENTIFIER:
-              if (p->value)
-                fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_INTEGER:
-              if (p->value)
-                {
-                  len2 = -1;
-                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
-                  fprintf (out, "  value:0x");
-                  if (len > 0)
-                    for (k = 0; k < len; k++)
-                      fprintf (out, "%02x", (p->value)[k + len2]);
-                }
-              break;
-            case TYPE_ENUMERATED:
-              if (p->value)
-                {
-                  len2 = -1;
-                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
-                  fprintf (out, "  value:0x");
-                  if (len > 0)
-                    for (k = 0; k < len; k++)
-                      fprintf (out, "%02x", (p->value)[k + len2]);
-                }
-              break;
-            case TYPE_TIME:
-              if (p->value)
-                fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_BOOLEAN:
-              if (p->value)
-                {
-                  if (p->value[0] == 'T')
-                    fprintf (out, "  value:TRUE");
-                  else if (p->value[0] == 'F')
-                    fprintf (out, "  value:FALSE");
-                }
-              break;
-            case TYPE_BIT_STRING:
-              if (p->value)
-                {
-                  len2 = -1;
-                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
-                  if (len > 0)
-                    {
-                      fprintf (out, "  value(%i):",
-                               (len - 1) * 8 - (p->value[len2]));
-                      for (k = 1; k < len; k++)
-                        fprintf (out, "%02x", (p->value)[k + len2]);
-                    }
-                }
-              break;
-            case TYPE_OCTET_STRING:
-              if (p->value)
-                {
-                  len2 = -1;
-                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
-                  fprintf (out, "  value:");
-                  if (len > 0)
-                    for (k = 0; k < len; k++)
-                      fprintf (out, "%02x", (p->value)[k + len2]);
-                }
-              break;
-            case TYPE_GENERALSTRING:
-              if (p->value)
-                {
-                  len2 = -1;
-                  len = MHD__asn1_get_length_der (p->value, p->value_len, &len2);
-                  fprintf (out, "  value:");
-                  if (len > 0)
-                    for (k = 0; k < len; k++)
-                      fprintf (out, "%02x", (p->value)[k + len2]);
-                }
-              break;
-            case TYPE_OBJECT_ID:
-              if (p->value)
-                fprintf (out, "  value:%s", p->value);
-              break;
-            case TYPE_ANY:
-              if (p->value)
-                {
-                  len3 = -1;
-                  len2 = MHD__asn1_get_length_der (p->value, p->value_len, &len3);
-                  fprintf (out, "  value:");
-                  if (len2 > 0)
-                    for (k = 0; k < len2; k++)
-                      fprintf (out, "%02x", (p->value)[k + len3]);
-                }
-              break;
-            case TYPE_SET:
-            case TYPE_SET_OF:
-            case TYPE_CHOICE:
-            case TYPE_DEFINITIONS:
-            case TYPE_SEQUENCE_OF:
-            case TYPE_SEQUENCE:
-            case TYPE_NULL:
-              break;
-            default:
-              break;
-            }
-        }
-
-      if (mode == ASN1_PRINT_ALL)
-        {
-          if (p->type & 0x1FFFFF00)
-            {
-              fprintf (out, "  attr:");
-              if (p->type & CONST_UNIVERSAL)
-                fprintf (out, "UNIVERSAL,");
-              if (p->type & CONST_PRIVATE)
-                fprintf (out, "PRIVATE,");
-              if (p->type & CONST_APPLICATION)
-                fprintf (out, "APPLICATION,");
-              if (p->type & CONST_EXPLICIT)
-                fprintf (out, "EXPLICIT,");
-              if (p->type & CONST_IMPLICIT)
-                fprintf (out, "IMPLICIT,");
-              if (p->type & CONST_TAG)
-                fprintf (out, "TAG,");
-              if (p->type & CONST_DEFAULT)
-                fprintf (out, "DEFAULT,");
-              if (p->type & CONST_TRUE)
-                fprintf (out, "TRUE,");
-              if (p->type & CONST_FALSE)
-                fprintf (out, "FALSE,");
-              if (p->type & CONST_LIST)
-                fprintf (out, "LIST,");
-              if (p->type & CONST_MIN_MAX)
-                fprintf (out, "MIN_MAX,");
-              if (p->type & CONST_OPTION)
-                fprintf (out, "OPTION,");
-              if (p->type & CONST_1_PARAM)
-                fprintf (out, "1_PARAM,");
-              if (p->type & CONST_SIZE)
-                fprintf (out, "SIZE,");
-              if (p->type & CONST_DEFINED_BY)
-                fprintf (out, "DEF_BY,");
-              if (p->type & CONST_GENERALIZED)
-                fprintf (out, "GENERALIZED,");
-              if (p->type & CONST_UTC)
-                fprintf (out, "UTC,");
-              if (p->type & CONST_SET)
-                fprintf (out, "SET,");
-              if (p->type & CONST_NOT_USED)
-                fprintf (out, "NOT_USED,");
-              if (p->type & CONST_ASSIGN)
-                fprintf (out, "ASSIGNMENT,");
-            }
-        }
-
-      if (mode == ASN1_PRINT_ALL)
-        {
-          fprintf (out, "\n");
-        }
-      else
-        {
-          switch (type_field (p->type))
-            {
-            case TYPE_CONSTANT:
-            case TYPE_TAG:
-            case TYPE_SIZE:
-              break;
-            default:
-              fprintf (out, "\n");
-            }
-        }
-
-      if (p->down)
-        {
-          p = p->down;
-          indent += 2;
-        }
-      else if (p == root)
-        {
-          p = NULL;
-          break;
-        }
-      else if (p->right)
-        p = p->right;
-      else
-        {
-          while (1)
-            {
-              p = MHD__asn1_find_up (p);
-              if (p == root)
-                {
-                  p = NULL;
-                  break;
-                }
-              indent -= 2;
-              if (p->right)
-                {
-                  p = p->right;
-                  break;
-                }
-            }
-        }
-    }
-}
-
 
 
 /**

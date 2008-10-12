@@ -27,6 +27,8 @@
 #include "structure.h"
 #include "element.h"
 
+
+
 char MHD__asn1_identifierMissing[MAX_NAME_SIZE + 1];        /* identifier name not found */
 
 /***********************************************/
@@ -279,42 +281,6 @@ MHD__asn1_set_right (node_asn * node, node_asn * right)
 }
 
 /******************************************************************/
-/* Function : MHD__asn1_get_right                                     */
-/* Description: returns the element pointed by the RIGHT field of */
-/*              a NODE_ASN element.                               */
-/* Parameters:                                                    */
-/*   node: NODE_ASN element pointer.                              */
-/* Return: field RIGHT of NODE.                                   */
-/******************************************************************/
-node_asn *
-MHD__asn1_get_right (node_asn * node)
-{
-  if (node == NULL)
-    return NULL;
-  return node->right;
-}
-
-/******************************************************************/
-/* Function : MHD__asn1_get_last_right                                */
-/* Description: return the last element along the right chain.    */
-/* Parameters:                                                    */
-/*   node: starting element pointer.                              */
-/* Return: pointer to the last element along the right chain.     */
-/******************************************************************/
-node_asn *
-MHD__asn1_get_last_right (node_asn * node)
-{
-  node_asn *p;
-
-  if (node == NULL)
-    return NULL;
-  p = node;
-  while (p->right)
-    p = p->right;
-  return p;
-}
-
-/******************************************************************/
 /* Function : MHD__asn1_set_down                                      */
 /* Description: sets the field DOWN in a NODE_ASN element.        */
 /* Parameters:                                                    */
@@ -333,58 +299,6 @@ MHD__asn1_set_down (node_asn * node, node_asn * down)
     down->left = node;
   return node;
 }
-
-/******************************************************************/
-/* Function : MHD__asn1_get_down                                      */
-/* Description: returns the element pointed by the DOWN field of  */
-/*              a NODE_ASN element.                               */
-/* Parameters:                                                    */
-/*   node: NODE_ASN element pointer.                              */
-/* Return: field DOWN of NODE.                                    */
-/******************************************************************/
-node_asn *
-MHD__asn1_get_down (node_asn * node)
-{
-  if (node == NULL)
-    return NULL;
-  return node->down;
-}
-
-/******************************************************************/
-/* Function : MHD__asn1_get_name                                      */
-/* Description: returns the name of a NODE_ASN element.           */
-/* Parameters:                                                    */
-/*   node: NODE_ASN element pointer.                              */
-/* Return: a null terminated string.                              */
-/******************************************************************/
-char *
-MHD__asn1_get_name (node_asn * node)
-{
-  if (node == NULL)
-    return NULL;
-  return node->name;
-}
-
-/******************************************************************/
-/* Function : MHD__asn1_mod_type                                      */
-/* Description: change the field TYPE of an NODE_ASN element.     */
-/*              The new value is the old one | (bitwise or) the   */
-/*              paramener VALUE.                                  */
-/* Parameters:                                                    */
-/*   node: NODE_ASN element pointer.                              */
-/*   value: the integer value that must be or-ed with the current */
-/*          value of field TYPE.                                  */
-/* Return: NODE pointer.                                          */
-/******************************************************************/
-node_asn *
-MHD__asn1_mod_type (node_asn * node, unsigned int value)
-{
-  if (node == NULL)
-    return node;
-  node->type |= value;
-  return node;
-}
-
 
 /******************************************************************/
 /* Function : MHD__asn1_remove_node                                   */
@@ -529,7 +443,7 @@ MHD__asn1_change_integer_value (ASN1_TYPE node)
         {
           if (p->value)
             {
-              MHD__asn1_convert_integer (p->value, val, sizeof (val), &len);
+              MHD__asn1_convert_integer ((const char*) p->value, val, sizeof (val), &len);
               MHD__asn1_octet_der (val, len, val2, &len);
               MHD__asn1_set_value (p, val2, len);
             }
@@ -607,7 +521,7 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                     {
                       MHD__asn1_str_cpy (name2, sizeof (name2), name_root);
                       MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                      MHD__asn1_str_cat (name2, sizeof (name2), p2->value);
+                      MHD__asn1_str_cat (name2, sizeof (name2), (const char*)  p2->value);
                       p3 = MHD__asn1_find_node (node, name2);
                       if (!p3 || (type_field (p3->type) != TYPE_OBJECT_ID) ||
                           !(p3->type & CONST_ASSIGN))
@@ -622,7 +536,7 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                             {
                               p5 = MHD__asn1_add_node_only (TYPE_CONSTANT);
                               MHD__asn1_set_name (p5, p4->name);
-                              tlen = strlen (p4->value);
+                              tlen = strlen ( (const char*) p4->value);
                               if (tlen > 0)
                                 MHD__asn1_set_value (p5, p4->value, tlen + 1);
                               if (p2 == p)
@@ -693,7 +607,7 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                 {
                   MHD__asn1_str_cpy (name2, sizeof (name2), name_root);
                   MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                  MHD__asn1_str_cat (name2, sizeof (name2), p2->value);
+                  MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
                   p3 = MHD__asn1_find_node (node, name2);
                   if (!p3 || (type_field (p3->type) != TYPE_OBJECT_ID) ||
                       !(p3->type & CONST_ASSIGN))
@@ -706,7 +620,7 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                         {
                           if (name2[0])
                             MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                          MHD__asn1_str_cat (name2, sizeof (name2), p4->value);
+                          MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p4->value);
                         }
                       p4 = p4->right;
                     }
@@ -748,77 +662,6 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
   return ASN1_SUCCESS;
 }
 
-
-/******************************************************************/
-/* Function : MHD__asn1_type_set_config                               */
-/* Description: sets the CONST_SET and CONST_NOT_USED properties  */
-/*   in the fields of the SET elements.                           */
-/* Parameters:                                                    */
-/*   node: root of an ASN1 element.                               */
-/* Return:                                                        */
-/*   ASN1_ELEMENT_NOT_FOUND if NODE is NULL,                       */
-/*   otherwise ASN1_SUCCESS                                             */
-/******************************************************************/
-MHD__asn1_retCode
-MHD__asn1_type_set_config (ASN1_TYPE node)
-{
-  node_asn *p, *p2;
-  int move;
-
-  if (node == NULL)
-    return ASN1_ELEMENT_NOT_FOUND;
-
-  p = node;
-  move = DOWN;
-
-  while (!((p == node) && (move == UP)))
-    {
-      if (move != UP)
-        {
-          if (type_field (p->type) == TYPE_SET)
-            {
-              p2 = p->down;
-              while (p2)
-                {
-                  if (type_field (p2->type) != TYPE_TAG)
-                    p2->type |= CONST_SET | CONST_NOT_USED;
-                  p2 = p2->right;
-                }
-            }
-          move = DOWN;
-        }
-      else
-        move = RIGHT;
-
-      if (move == DOWN)
-        {
-          if (p->down)
-            p = p->down;
-          else
-            move = RIGHT;
-        }
-
-      if (p == node)
-        {
-          move = UP;
-          continue;
-        }
-
-      if (move == RIGHT)
-        {
-          if (p->right)
-            p = p->right;
-          else
-            move = UP;
-        }
-      if (move == UP)
-        p = MHD__asn1_find_up (p);
-    }
-
-  return ASN1_SUCCESS;
-}
-
-
 /******************************************************************/
 /* Function : MHD__asn1_check_identifier                              */
 /* Description: checks the definitions of all the identifiers     */
@@ -848,11 +691,11 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
         {
           MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
           MHD__asn1_str_cat (name2, sizeof (name2), ".");
-          MHD__asn1_str_cat (name2, sizeof (name2), p->value);
+          MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p->value);
           p2 = MHD__asn1_find_node (node, name2);
           if (p2 == NULL)
             {
-              strcpy (MHD__asn1_identifierMissing, p->value);
+              strcpy (MHD__asn1_identifierMissing, (const char*) p->value);
               return ASN1_IDENTIFIER_NOT_FOUND;
             }
         }
@@ -864,8 +707,8 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
             {
               MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
               MHD__asn1_str_cat (name2, sizeof (name2), ".");
-              MHD__asn1_str_cat (name2, sizeof (name2), p2->value);
-              strcpy (MHD__asn1_identifierMissing, p2->value);
+              MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
+              strcpy (MHD__asn1_identifierMissing, (const char*) p2->value);
               p2 = MHD__asn1_find_node (node, name2);
               if (!p2 || (type_field (p2->type) != TYPE_OBJECT_ID) ||
                   !(p2->type & CONST_ASSIGN))
@@ -884,8 +727,8 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
                 {
                   MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
                   MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                  MHD__asn1_str_cat (name2, sizeof (name2), p2->value);
-                  strcpy (MHD__asn1_identifierMissing, p2->value);
+                  MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
+                  strcpy (MHD__asn1_identifierMissing, (const char*) p2->value);
                   p2 = MHD__asn1_find_node (node, name2);
                   if (!p2 || (type_field (p2->type) != TYPE_OBJECT_ID) ||
                       !(p2->type & CONST_ASSIGN))
@@ -922,151 +765,4 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
     }
 
   return ASN1_SUCCESS;
-}
-
-
-/******************************************************************/
-/* Function : MHD__asn1_set_default_tag                               */
-/* Description: sets the default IMPLICIT or EXPLICIT property in */
-/*   the tagged elements that don't have this declaration.        */
-/* Parameters:                                                    */
-/*   node: pointer to a DEFINITIONS element.                      */
-/* Return:                                                        */
-/*   ASN1_ELEMENT_NOT_FOUND if NODE is NULL or not a pointer to   */
-/*     a DEFINITIONS element,                                     */
-/*   otherwise ASN1_SUCCESS                                       */
-/******************************************************************/
-MHD__asn1_retCode
-MHD__asn1_set_default_tag (ASN1_TYPE node)
-{
-  node_asn *p;
-
-  if ((node == NULL) || (type_field (node->type) != TYPE_DEFINITIONS))
-    return ASN1_ELEMENT_NOT_FOUND;
-
-  p = node;
-  while (p)
-    {
-      if ((type_field (p->type) == TYPE_TAG) &&
-          !(p->type & CONST_EXPLICIT) && !(p->type & CONST_IMPLICIT))
-        {
-          if (node->type & CONST_EXPLICIT)
-            p->type |= CONST_EXPLICIT;
-          else
-            p->type |= CONST_IMPLICIT;
-        }
-
-      if (p->down)
-        {
-          p = p->down;
-        }
-      else if (p->right)
-        p = p->right;
-      else
-        {
-          while (1)
-            {
-              p = MHD__asn1_find_up (p);
-              if (p == node)
-                {
-                  p = NULL;
-                  break;
-                }
-              if (p->right)
-                {
-                  p = p->right;
-                  break;
-                }
-            }
-        }
-    }
-
-  return ASN1_SUCCESS;
-}
-
-
-
-static const char *
-parse_version_number (const char *s, int *number)
-{
-  int val = 0;
-
-  if (*s == '0' && isdigit (s[1]))
-    return NULL;                /* leading zeros are not allowed */
-  for (; isdigit (*s); s++)
-    {
-      val *= 10;
-      val += *s - '0';
-    }
-  *number = val;
-  return val < 0 ? NULL : s;
-}
-
-/* The parse version functions were copied from libgcrypt.
- */
-static const char *
-parse_version_string (const char *s, int *major, int *minor, int *micro)
-{
-  s = parse_version_number (s, major);
-  if (!s || *s != '.')
-    return NULL;
-  s++;
-  s = parse_version_number (s, minor);
-  if (!s)
-    return NULL;
-  if (*s != '.')
-    {
-      *micro = 0;
-      return s;
-    }
-  s++;
-  s = parse_version_number (s, micro);
-  if (!s)
-    return NULL;
-  return s;                     /* patchlevel */
-}
-
-/**
- * MHD__asn1_check_version - check for library version
- * @req_version: Required version number, or NULL.
- *
- * Check that the the version of the library is at minimum the
- * requested one and return the version string; return %NULL if the
- * condition is not satisfied.  If a %NULL is passed to this function,
- * no check is done, but the version string is simply returned.
- *
- * See %LIBTASN1_VERSION for a suitable @req_version string.
- *
- * Return value: Version string of run-time library, or %NULL if the
- *   run-time library does not meet the required version number.
- */
-const char *
-MHD__asn1_check_version (const char *req_version)
-{
-  const char *ver = LIBTASN1_VERSION;
-  int my_major, my_minor, my_micro;
-  int rq_major, rq_minor, rq_micro;
-  const char *my_plvl, *rq_plvl;
-
-  if (!req_version)
-    return ver;
-
-  my_plvl = parse_version_string (ver, &my_major, &my_minor, &my_micro);
-  if (!my_plvl)
-    return NULL;                /* very strange our own version is bogus */
-  rq_plvl = parse_version_string (req_version, &rq_major, &rq_minor,
-                                  &rq_micro);
-  if (!rq_plvl)
-    return NULL;                /* req version string is invalid */
-
-  if (my_major > rq_major
-      || (my_major == rq_major && my_minor > rq_minor)
-      || (my_major == rq_major && my_minor == rq_minor
-          && my_micro > rq_micro)
-      || (my_major == rq_major && my_minor == rq_minor
-          && my_micro == rq_micro && strcmp (my_plvl, rq_plvl) >= 0))
-    {
-      return ver;
-    }
-  return NULL;
 }
