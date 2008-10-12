@@ -159,6 +159,7 @@ have_inet6=no
 )
 AC_MSG_RESULT($have_inet6)
 
+
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
 LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
@@ -316,6 +317,10 @@ AC_ARG_ENABLE([x509],
    [enable_x509="yes"])
 AC_MSG_RESULT($enable_x509)
 
+# test for libz (optional feature for HTTPS)
+zlib=1
+AC_CHECK_LIB(z, compress,,zlib=0)
+AM_CONDITIONAL(HAVE_LIBZ, test x$zlib = x1)
 
 # Symbols required by GNU_TLS 
 AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
@@ -387,12 +392,16 @@ AC_MSG_NOTICE([Configuration Summary:
 
 if test "$enable_HTTPS" = "yes"
 then
-AC_MSG_NOTICE([HTTPS subsystem configuration:
+ AC_MSG_NOTICE([HTTPS subsystem configuration:
   TLS support:       ${enable_TLS}
   SSLv3 support:     ${enable_SSL}
   x509 support:      ${enable_x509}
   Client code dep.:  ${MSG_CLIENT_SIDE}    		
-])
+ ])
+ if test "$zlib" != 1
+ then
+  AC_MSG_NOTICE([WARNING: deflate feature for HTTPS disabled (no zlib)])
+ fi
 fi  
 
 

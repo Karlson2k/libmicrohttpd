@@ -70,11 +70,14 @@ reasonably complete.
 
 Missing features:
 =================
-- SSL code is still too large (plenty of dead or
-  unnecessary code imported from gnuTLS)
+- SSL code is still too large:
+  - plenty of dead or unnecessary code imported from gnuTLS
+  => hunt for more dead code!
+  - some code is replicated (also in libgcrypt)
+  - libgcrypt is used, and is also bloated
+  => integrate required portions of libgcrypt into our tree
+     instead of linking against it
 - Make sure SSL works on non-GNU/Linux platforms
-- Fix compiler warnings in gnuTLS code 
-  (largely signed vs. unsigned char)
 
 
 Untested features:
@@ -101,5 +104,4 @@ Missing documentation:
 - tutorial:
   * clean up English
   * make sure everything is accurate
-  * change example code to follow GNU coding conventions
-  * provide examples for using SSL
+
