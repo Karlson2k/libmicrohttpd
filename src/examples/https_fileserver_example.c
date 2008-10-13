@@ -22,7 +22,7 @@
  *
  * Usage :
  *
- *  'http_fileserver_example HTTP-PORT SECONDS-TO-RUN [CERTIFICATE PATH, KEY PATH]'
+ *  'http_fileserver_example HTTP-PORT SECONDS-TO-RUN'
  *
  * The certificate & key are required by the server to operate,  Omitting the
  * path arguments will cause the server to use the hard coded example certificate & key.
