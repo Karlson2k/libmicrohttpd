@@ -31,7 +31,6 @@
 #include "gnutls_errors.h"
 #include "gnutls_dh.h"
 #include "gnutls_num.h"
-#include "libtasn1.h"
 #include "gnutls_datum.h"
 #include "auth_cert.h"
 #include <gnutls_pk.h>

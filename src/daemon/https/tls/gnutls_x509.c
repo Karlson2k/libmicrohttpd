@@ -29,7 +29,6 @@
 #include <auth_cert.h>
 #include "gnutls_dh.h"
 #include "gnutls_num.h"
-#include "libtasn1.h"
 #include "gnutls_datum.h"
 #include <gnutls_pk.h>
 #include <gnutls_algorithms.h>
@@ -141,8 +140,7 @@ MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
    */
   peer_certificate_list_size = info->ncerts;
   peer_certificate_list =
-    MHD_gnutls_calloc (1,
-                       peer_certificate_list_size *
+    MHD_gnutls_calloc (peer_certificate_list_size,
                        sizeof (MHD_gnutls_x509_crt_t));
   if (peer_certificate_list == NULL)
     {

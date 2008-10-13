@@ -1012,7 +1012,7 @@ MHD_gtls_send_handshake (MHD_gtls_session_t session, void *i_data,
 
   MHD__gnutls_handshake_log ("HSK[%x]: %s was sent [%ld bytes]\n",
                              session, MHD__gnutls_handshake2str (type),
-                             datasize);
+                             (long) datasize);
 
   MHD_gnutls_afree (data);
 

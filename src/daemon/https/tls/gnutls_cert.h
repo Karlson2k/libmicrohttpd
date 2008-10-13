@@ -26,7 +26,6 @@
 # define GNUTLS_CERT_H
 
 #include <gnutls_pk.h>
-#include <libtasn1.h>
 #include "x509.h"
 
 #define MAX_PUBLIC_PARAMS_SIZE 4        /* ok for RSA and DSA */

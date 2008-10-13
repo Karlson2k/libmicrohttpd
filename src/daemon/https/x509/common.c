@@ -410,39 +410,33 @@ MHD__gnutls_x509_data2hex (const opaque * data,
 {
   char *res;
   char escaped[MAX_STRING_LEN];
+  unsigned int size;
 
   if (2 * data_size + 1 > MAX_STRING_LEN)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
-
   res = MHD_gtls_bin2hex (data, data_size, escaped, sizeof (escaped));
-
-  if (res)
-    {
-      unsigned int size = strlen (res) + 1;
-      if (size + 1 > *sizeof_out)
-        {
-          *sizeof_out = size;
-          return GNUTLS_E_SHORT_MEMORY_BUFFER;
-        }
-      *sizeof_out = size;       /* -1 for the null +1 for the '#' */
-
-      if (out)
-        {
-          strcpy ((char *) out, "#");
-          strcat ((char *) out, res);
-        }
-
-      return 0;
-    }
-  else
+  if (!res)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
     }
-
+  
+  size = strlen (res) + 1;
+  if (size + 1 > *sizeof_out)
+    {
+      *sizeof_out = size;
+      return GNUTLS_E_SHORT_MEMORY_BUFFER;
+    }
+  *sizeof_out = size;   /* -1 for the null +1 for the '#' */
+  
+  if (out)
+    {
+      strcpy ((char*) out, "#");
+      strcat ((char*) out, res);
+    }
   return 0;
 }
 

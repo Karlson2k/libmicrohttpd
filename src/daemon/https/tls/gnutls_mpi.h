@@ -27,8 +27,6 @@
 
 # include <gnutls_int.h>
 # include <gcrypt.h>
-# include <libtasn1.h>
-/* lgl */
 # include "gc.h"
 
 typedef gcry_mpi_t mpi_t;

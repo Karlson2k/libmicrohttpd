@@ -30,7 +30,6 @@
 #include <gnutls_errors.h>
 #include <auth_cert.h>
 #include <gnutls_cert.h>
-#include <libtasn1.h>
 #include <gnutls_datum.h>
 #include <gnutls_mpi.h>
 #include <gnutls_global.h>

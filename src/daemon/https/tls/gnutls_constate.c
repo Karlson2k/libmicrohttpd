@@ -59,9 +59,6 @@ int
 MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
                       int key_size, int export_flag)
 {
-
-/* FIXME: This function is too long
- */
   opaque *key_block;
   opaque rnd[2 * TLS_RANDOM_SIZE];
   opaque rrnd[2 * TLS_RANDOM_SIZE];

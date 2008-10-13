@@ -33,6 +33,7 @@ extern "C"
 #endif
 
 #include <gnutls.h>
+#include <libtasn1.h>
 #include "gnutls_mpi.h"
 
 /* Some OIDs usually found in Distinguished names, or
