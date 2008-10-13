@@ -547,7 +547,7 @@ enum MHD_GNUTLS_CredentialsType
    * We have a x.509 certificate.
    */
   MHD_GNUTLS_CRD_CERTIFICATE = 1,
-  
+
   /**
    * We have no certificate ("anonymous").
    */
@@ -579,8 +579,8 @@ enum MHD_GNUTLS_HashAlgorithm
   MHD_GNUTLS_MAC_SHA1,
   MHD_GNUTLS_MAC_SHA256
 #if 0
-  /* unsupported */
-  MHD_GNUTLS_MAC_SHA384,
+    /* unsupported */
+    MHD_GNUTLS_MAC_SHA384,
   MHD_GNUTLS_MAC_SHA512
 #endif
 };
@@ -592,7 +592,7 @@ enum MHD_GNUTLS_HashAlgorithm
  */
 enum MHD_GNUTLS_CompressionMethod
 {
-  MHD_GNUTLS_COMP_UNKNOWN = 0,		       
+  MHD_GNUTLS_COMP_UNKNOWN = 0,
 
   /**
    * No compression.
@@ -639,8 +639,8 @@ enum MHD_GNUTLS_PublicKeyAlgorithm
   MHD_GNUTLS_PK_UNKNOWN = 0,
   MHD_GNUTLS_PK_RSA = 1
 #if 0
-  /* unsupported */
-  MHD_GNUTLS_PK_DSA
+    /* unsupported */
+    MHD_GNUTLS_PK_DSA
 #endif
 };
 
@@ -962,7 +962,7 @@ void MHD_stop_daemon (struct MHD_Daemon *daemon);
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
  * @param write_fd_set write set
- * @param except_fd_set except set 
+ * @param except_fd_set except set
  * @param max_fd increased to largest FD added (if larger
  *               than existing value)
  * @return MHD_YES on success, MHD_NO if this
@@ -979,7 +979,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * (only needed if connection timeout is used).  The
  * returned value is how long select should at most
  * block, not the timeout value set for connections.
- * 
+ *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return MHD_YES on success, MHD_NO if timeouts are

@@ -25,7 +25,8 @@
 #include "x509.h"
 
 ASN1_TYPE MHD__gnutls_privkey_decode_pkcs1_rsa_key (const MHD_gnutls_datum_t *
-                                                raw_key,
-                                                MHD_gnutls_x509_privkey_t pkey);
+                                                    raw_key,
+                                                    MHD_gnutls_x509_privkey_t
+                                                    pkey);
 
 int MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params);

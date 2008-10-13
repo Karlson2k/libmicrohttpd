@@ -37,8 +37,8 @@ int MHD_gtls_pkcs1_rsa_decrypt (MHD_gnutls_datum_t * plaintext,
                                 mpi_t * params, unsigned params_len,
                                 unsigned btype);
 int MHD_gtls_rsa_verify (const MHD_gnutls_datum_t * vdata,
-                         const MHD_gnutls_datum_t * ciphertext, mpi_t * params,
-                         int params_len, int btype);
+                         const MHD_gnutls_datum_t * ciphertext,
+                         mpi_t * params, int params_len, int btype);
 int MHD_gtls_dsa_verify (const MHD_gnutls_datum_t * vdata,
                          const MHD_gnutls_datum_t * sig_value, mpi_t * params,
                          int params_len);

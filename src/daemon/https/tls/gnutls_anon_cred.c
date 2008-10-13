@@ -44,7 +44,7 @@ static const int anon_dummy;
   **/
 void
 MHD__gnutls_anon_free_server_credentials (MHD_gtls_anon_server_credentials_t
-                                         sc)
+                                          sc)
 {
 
   MHD_gnutls_free (sc);
@@ -80,7 +80,7 @@ int
   **/
 void
 MHD__gnutls_anon_free_client_credentials (MHD_gtls_anon_client_credentials_t
-                                         sc)
+                                          sc)
 {
 }
 
@@ -116,7 +116,7 @@ int
   **/
 void
 MHD__gnutls_anon_set_server_dh_params (MHD_gtls_anon_server_credentials_t res,
-                                      MHD_gtls_dh_params_t dh_params)
+                                       MHD_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
@@ -131,9 +131,8 @@ MHD__gnutls_anon_set_server_dh_params (MHD_gtls_anon_server_credentials_t res,
   * callback should return zero on success.
   **/
 void
-MHD__gnutls_anon_set_server_params_function (MHD_gtls_anon_server_credentials_t
-                                            res,
-                                            MHD_gnutls_params_function * func)
+MHD__gnutls_anon_set_server_params_function
+  (MHD_gtls_anon_server_credentials_t res, MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }

@@ -91,7 +91,7 @@ MHD__gnutls_credentials_clear (MHD_gtls_session_t session)
   **/
 int
 MHD__gnutls_credentials_set (MHD_gtls_session_t session,
-                            enum MHD_GNUTLS_CredentialsType type, void *cred)
+                             enum MHD_GNUTLS_CredentialsType type, void *cred)
 {
   auth_cred_st *ccred = NULL, *pcred = NULL;
   int exists = 0;
@@ -170,8 +170,9 @@ MHD_gtls_auth_get_type (MHD_gtls_session_t session)
 
   return
     MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->security_parameters.
-                               current_cipher_suite), server);
+                              (&session->
+                               security_parameters.current_cipher_suite),
+                              server);
 }
 
 /**
@@ -188,8 +189,8 @@ MHD_gtls_auth_server_get_type (MHD_gtls_session_t session)
 {
   return
     MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->security_parameters.
-                               current_cipher_suite), 1);
+                              (&session->
+                               security_parameters.current_cipher_suite), 1);
 }
 
 /**
@@ -206,8 +207,8 @@ MHD_gtls_auth_client_get_type (MHD_gtls_session_t session)
 {
   return
     MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->security_parameters.
-                               current_cipher_suite), 0);
+                              (&session->
+                               security_parameters.current_cipher_suite), 0);
 }
 
 

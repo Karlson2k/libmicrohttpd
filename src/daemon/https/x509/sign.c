@@ -50,7 +50,8 @@
  */
 static int
 encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
-                        const MHD_gnutls_datum_t * digest, MHD_gnutls_datum_t * info)
+                        const MHD_gnutls_datum_t * digest,
+                        MHD_gnutls_datum_t * info)
 {
   ASN1_TYPE dinfo = ASN1_TYPE_EMPTY;
   int result;
@@ -65,14 +66,15 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
     }
 
   if ((result = MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
-                                     "GNUTLS.DigestInfo",
-                                     &dinfo)) != ASN1_SUCCESS)
+                                          "GNUTLS.DigestInfo",
+                                          &dinfo)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
-  result = MHD__asn1_write_value (dinfo, "digestAlgorithm.algorithm", algo, 1);
+  result =
+    MHD__asn1_write_value (dinfo, "digestAlgorithm.algorithm", algo, 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -86,7 +88,7 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
      Regardless of what is correct, this appears to be what most
      implementations do.  */
   result = MHD__asn1_write_value (dinfo, "digestAlgorithm.parameters",
-                             "\x05\x00", 2);
+                                  "\x05\x00", 2);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -94,7 +96,8 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
       return MHD_gtls_asn2err (result);
     }
 
-  result = MHD__asn1_write_value (dinfo, "digest", digest->data, digest->size);
+  result =
+    MHD__asn1_write_value (dinfo, "digest", digest->data, digest->size);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -103,7 +106,7 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
     }
 
   info->size = 0;
-  MHD__asn1_der_coding (dinfo, "", NULL, (int*) &info->size, NULL);
+  MHD__asn1_der_coding (dinfo, "", NULL, (int *) &info->size, NULL);
 
   info->data = MHD_gnutls_malloc (info->size);
   if (info->data == NULL)
@@ -113,7 +116,8 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  result = MHD__asn1_der_coding (dinfo, "", info->data, (int*) &info->size, NULL);
+  result =
+    MHD__asn1_der_coding (dinfo, "", info->data, (int *) &info->size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -133,8 +137,8 @@ encode_ber_digest_info (enum MHD_GNUTLS_HashAlgorithm hash,
  */
 static int
 pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
-                const MHD_gnutls_datum_t * text, mpi_t * params, int params_len,
-                MHD_gnutls_datum_t * signature)
+                const MHD_gnutls_datum_t * text, mpi_t * params,
+                int params_len, MHD_gnutls_datum_t * signature)
 {
   int ret;
   opaque _digest[MAX_HASH_SIZE];
@@ -187,8 +191,9 @@ pkcs1_rsa_sign (enum MHD_GNUTLS_HashAlgorithm hash,
  */
 static int
 MHD__gnutls_x509_sign (const MHD_gnutls_datum_t * tbs,
-                   enum MHD_GNUTLS_HashAlgorithm hash,
-                   MHD_gnutls_x509_privkey_t signer, MHD_gnutls_datum_t * signature)
+                       enum MHD_GNUTLS_HashAlgorithm hash,
+                       MHD_gnutls_x509_privkey_t signer,
+                       MHD_gnutls_datum_t * signature)
 {
   int ret;
 
@@ -218,9 +223,9 @@ MHD__gnutls_x509_sign (const MHD_gnutls_datum_t * tbs,
  */
 int
 MHD__gnutls_x509_sign_tbs (ASN1_TYPE cert, const char *tbs_name,
-                       enum MHD_GNUTLS_HashAlgorithm hash,
-                       MHD_gnutls_x509_privkey_t signer,
-                       MHD_gnutls_datum_t * signature)
+                           enum MHD_GNUTLS_HashAlgorithm hash,
+                           MHD_gnutls_x509_privkey_t signer,
+                           MHD_gnutls_datum_t * signature)
 {
   int result;
   opaque *buf;

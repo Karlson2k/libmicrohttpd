@@ -241,7 +241,8 @@ MHD__gnutls_x509_read_int (ASN1_TYPE node, const char *value, mpi_t * ret_mpi)
 /* Writes the specified integer into the specified node.
  */
 int
-MHD__gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi, int lz)
+MHD__gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi,
+                            int lz)
 {
   opaque *tmpstr;
   size_t s_len;

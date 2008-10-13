@@ -138,7 +138,7 @@ typedef struct
    128, 192 or 256. Returns 0 on success, or an error code. */
 extern rijndael_rc
 MHD_rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
-                 size_t keyLen, const char *keyMaterial);
+                     size_t keyLen, const char *keyMaterial);
 
 /* Initialize cipher state CIPHER for encryption MODE (e.g.,
    RIJNDAEL_MODE_CBC) with initialization vector IV, a hex string of
@@ -146,7 +146,7 @@ MHD_rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
    not need an IV (i.e., RIJNDAEL_MODE_ECB).  */
 extern rijndael_rc
 MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher,
-                    rijndael_mode mode, const char *IV);
+                            rijndael_mode mode, const char *IV);
 
 /* Encrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
@@ -157,8 +157,9 @@ MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher,
    negative rijndael_rc error code. */
 extern int
 MHD_rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
-                      const rijndaelKeyInstance * key,
-                      const char *input, size_t inputLen, char *outBuffer);
+                          const rijndaelKeyInstance * key,
+                          const char *input, size_t inputLen,
+                          char *outBuffer);
 
 /* Encrypt data in INPUT, of INPUTOCTETS bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
@@ -171,8 +172,9 @@ MHD_rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
    negative rijndael_rc error code. */
 extern int
 MHD_rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
-                    const rijndaelKeyInstance * key,
-                    const char *input, size_t inputOctets, char *outBuffer);
+                        const rijndaelKeyInstance * key,
+                        const char *input, size_t inputOctets,
+                        char *outBuffer);
 
 /* Decrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
@@ -183,8 +185,9 @@ MHD_rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
    negative rijndael_rc error code. */
 extern int
 MHD_rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
-                      const rijndaelKeyInstance * key,
-                      const char *input, size_t inputLen, char *outBuffer);
+                          const rijndaelKeyInstance * key,
+                          const char *input, size_t inputLen,
+                          char *outBuffer);
 
 /* Decrypt data in INPUT, of INPUTOCTETS bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
@@ -197,7 +200,8 @@ MHD_rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
    negative rijndael_rc error code. */
 extern int
 MHD_rijndaelPadDecrypt (rijndaelCipherInstance * cipher,
-                    const rijndaelKeyInstance * key,
-                    const char *input, size_t inputOctets, char *outBuffer);
+                        const rijndaelKeyInstance * key,
+                        const char *input, size_t inputOctets,
+                        char *outBuffer);
 
 #endif /* __RIJNDAEL_API_FST_H */

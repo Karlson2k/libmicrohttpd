@@ -9,7 +9,7 @@
 node_asn *MHD__asn1_add_node (unsigned int type);
 
 node_asn *MHD__asn1_set_value (node_asn * node, const void *value,
-                           unsigned int len);
+                               unsigned int len);
 
 node_asn *MHD__asn1_set_name (node_asn * node, const char *name);
 

@@ -25,7 +25,7 @@
 #include <libtasn1.h>
 
 int MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
-                                    unsigned int *status);
+                                        unsigned int *status);
 
 #define PEM_CERT_SEP2 "-----BEGIN X509 CERTIFICATE"
 #define PEM_CERT_SEP "-----BEGIN CERTIFICATE"
@@ -36,13 +36,15 @@ int MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
 #define PEM_KEY_DSA_SEP "-----BEGIN DSA"
 
 int MHD__gnutls_check_key_usage (const MHD_gnutls_cert * cert,
-                             enum MHD_GNUTLS_KeyExchangeAlgorithm alg);
+                                 enum MHD_GNUTLS_KeyExchangeAlgorithm alg);
 
-int MHD__gnutls_x509_read_rsa_params (opaque * der, int dersize, mpi_t * params);
-int MHD__gnutls_x509_read_dsa_pubkey (opaque * der, int dersize, mpi_t * params);
+int MHD__gnutls_x509_read_rsa_params (opaque * der, int dersize,
+                                      mpi_t * params);
+int MHD__gnutls_x509_read_dsa_pubkey (opaque * der, int dersize,
+                                      mpi_t * params);
 
 int MHD__gnutls_x509_raw_privkey_to_gkey (MHD_gnutls_privkey * privkey,
-                                      const MHD_gnutls_datum_t * raw_key,
-                                      MHD_gnutls_x509_crt_fmt_t type);
+                                          const MHD_gnutls_datum_t * raw_key,
+                                          MHD_gnutls_x509_crt_fmt_t type);
 int MHD__gnutls_x509_privkey_to_gkey (MHD_gnutls_privkey * privkey,
-                                  MHD_gnutls_x509_privkey_t);
+                                      MHD_gnutls_x509_privkey_t);

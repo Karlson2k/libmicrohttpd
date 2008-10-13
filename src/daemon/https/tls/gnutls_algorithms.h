@@ -93,7 +93,8 @@ int MHD_gtls_kx_is_ok (enum MHD_GNUTLS_KeyExchangeAlgorithm algorithm);
 int MHD_gtls_compression_is_ok (enum MHD_GNUTLS_CompressionMethod algorithm);
 int MHD_gtls_compression_get_num (enum MHD_GNUTLS_CompressionMethod
                                   algorithm);
-enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id_from_int (int num);
+enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id_from_int (int
+                                                                        num);
 int MHD_gtls_compression_get_mem_level (enum MHD_GNUTLS_CompressionMethod
                                         algorithm);
 int MHD_gtls_compression_get_comp_level (enum MHD_GNUTLS_CompressionMethod
@@ -140,13 +141,14 @@ struct MHD_gtls_compression_entry
 typedef struct MHD_gtls_compression_entry MHD_gnutls_compression_entry;
 
 /* Functions for sign algorithms. */
-MHD_gnutls_sign_algorithm_t MHD_gtls_x509_oid2sign_algorithm (const char *oid);
+MHD_gnutls_sign_algorithm_t MHD_gtls_x509_oid2sign_algorithm (const char
+                                                              *oid);
 MHD_gnutls_sign_algorithm_t MHD_gtls_x509_pk_to_sign (enum
-                                                  MHD_GNUTLS_PublicKeyAlgorithm
-                                                  pk,
-                                                  enum
-                                                  MHD_GNUTLS_HashAlgorithm
-                                                  mac);
+                                                      MHD_GNUTLS_PublicKeyAlgorithm
+                                                      pk,
+                                                      enum
+                                                      MHD_GNUTLS_HashAlgorithm
+                                                      mac);
 const char *MHD_gtls_x509_sign_to_oid (enum MHD_GNUTLS_PublicKeyAlgorithm,
                                        enum MHD_GNUTLS_HashAlgorithm mac);
 

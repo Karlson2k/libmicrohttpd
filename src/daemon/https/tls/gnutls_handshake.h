@@ -37,7 +37,8 @@ int MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t **, int *,
                              MHD_gnutls_handshake_description_t,
                              Optional optional);
 void
-MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session, size_t max);
+MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session,
+                                             size_t max);
 
 #define STATE session->internals.handshake_state
 /* This returns true if we have got there

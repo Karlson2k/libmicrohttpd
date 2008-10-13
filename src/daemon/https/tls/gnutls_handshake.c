@@ -67,12 +67,13 @@
 
 
 static int MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
-                                           cipher_suite_st ** cipherSuites,
-                                           int numCipherSuites,
-                                           enum
-                                           MHD_GNUTLS_PublicKeyAlgorithm);
-static int MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
-                                  int datalen);
+                                                  cipher_suite_st **
+                                                  cipherSuites,
+                                                  int numCipherSuites,
+                                                  enum
+                                                  MHD_GNUTLS_PublicKeyAlgorithm);
+static int MHD_gtls_server_select_suite (MHD_gtls_session_t session,
+                                         opaque * data, int datalen);
 
 static int MHD_gtls_generate_session_id (opaque * session_id, uint8_t * len);
 
@@ -86,7 +87,7 @@ static int MHD_gtls_handshake_client (MHD_gtls_session_t session);
 
 
 static int MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
-                                              opaque * data, int datalen);
+                                                  opaque * data, int datalen);
 
 
 /* Clears the handshake hash buffers and handles.
@@ -119,8 +120,8 @@ resume_copy_required_values (MHD_gtls_session_t session)
    * hello message.
    */
   memcpy (session->security_parameters.current_cipher_suite.suite,
-          session->internals.resumed_security_parameters.
-          current_cipher_suite.suite, 2);
+          session->internals.resumed_security_parameters.current_cipher_suite.
+          suite, 2);
 
   session->internals.compression_method =
     session->internals.resumed_security_parameters.read_compression_algorithm;
@@ -132,8 +133,9 @@ resume_copy_required_values (MHD_gtls_session_t session)
     session->internals.resumed_security_parameters.entity;
 
   MHD_gtls_set_current_version (session,
-                                session->internals.
-                                resumed_security_parameters.version);
+                                session->
+                                internals.resumed_security_parameters.
+                                version);
 
   session->security_parameters.cert_type =
     session->internals.resumed_security_parameters.cert_type;
@@ -157,7 +159,8 @@ resume_copy_required_values (MHD_gtls_session_t session)
   *
   **/
 void
-MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session, size_t max)
+MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session,
+                                             size_t max)
 {
   session->internals.max_handshake_data_buffer_size = max;
 }
@@ -215,11 +218,13 @@ MHD__gnutls_ssl3_finished (MHD_gtls_session_t session, int type, opaque * ret)
   MHD_gnutls_hash (td_sha, mesg, siz);
 
   MHD_gnutls_mac_deinit_ssl3_handshake (td_md5, ret,
-                                        session->security_parameters.
-                                        master_secret, TLS_MASTER_SIZE);
+                                        session->
+                                        security_parameters.master_secret,
+                                        TLS_MASTER_SIZE);
   MHD_gnutls_mac_deinit_ssl3_handshake (td_sha, &ret[16],
-                                        session->security_parameters.
-                                        master_secret, TLS_MASTER_SIZE);
+                                        session->
+                                        security_parameters.master_secret,
+                                        TLS_MASTER_SIZE);
 
   return 0;
 }
@@ -255,7 +260,7 @@ MHD__gnutls_finished (MHD_gtls_session_t session, int type, void *ret)
     {
       MHD_gnutls_assert ();
       if (td_md5 != NULL)
-	MHD_gnutls_hash_deinit (td_md5, NULL);
+        MHD_gnutls_hash_deinit (td_md5, NULL);
       return GNUTLS_E_HASH_FAILED;
     }
 
@@ -301,7 +306,7 @@ MHD_gtls_tls_create_random (opaque * dst)
   /* generate server random value */
   MHD_gtls_write_uint32 (tim, dst);
 
-  if (MHD_gc_nonce ((char*) &dst[4], TLS_RANDOM_SIZE - 4) != GC_OK)
+  if (MHD_gc_nonce ((char *) &dst[4], TLS_RANDOM_SIZE - 4) != GC_OK)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
@@ -377,7 +382,7 @@ MHD_gtls_user_hello_func (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
-                           int datalen)
+                               int datalen)
 {
   uint8_t session_id_len;
   int pos = 0, ret = 0;
@@ -390,7 +395,7 @@ MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
   DECR_LEN (len, 2);
 
   MHD__gnutls_handshake_log ("HSK[%x]: Client's version: %d.%d\n", session,
-                         data[pos], data[pos + 1]);
+                             data[pos], data[pos + 1]);
 
   adv_version = MHD_gtls_version_get (data[pos], data[pos + 1]);
   set_adv_version (session, data[pos], data[pos + 1]);
@@ -437,8 +442,8 @@ MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
   else
     {
       MHD_gtls_generate_session_id (session->security_parameters.session_id,
-                                    &session->security_parameters.
-                                    session_id_size);
+                                    &session->
+                                    security_parameters.session_id_size);
 
       session->internals.resumed = RESUME_FALSE;
     }
@@ -573,18 +578,20 @@ MHD__gnutls_send_finished (MHD_gtls_session_t session, int again)
           return ret;
         }
 
-      if (MHD__gnutls_protocol_get_version (session) == MHD_GNUTLS_PROTOCOL_SSL3)
+      if (MHD__gnutls_protocol_get_version (session) ==
+          MHD_GNUTLS_PROTOCOL_SSL3)
         {
           ret =
             MHD__gnutls_ssl3_finished (session,
-                                   session->security_parameters.entity, data);
+                                       session->security_parameters.entity,
+                                       data);
           data_size = 36;
         }
       else
         {                       /* TLS 1.0 */
           ret =
             MHD__gnutls_finished (session,
-                              session->security_parameters.entity, data);
+                                  session->security_parameters.entity, data);
           data_size = 12;
         }
 
@@ -645,15 +652,15 @@ MHD__gnutls_recv_finished (MHD_gtls_session_t session)
     {
       ret =
         MHD__gnutls_ssl3_finished (session,
-                               (session->security_parameters.entity + 1) % 2,
-                               data);
+                                   (session->security_parameters.entity +
+                                    1) % 2, data);
     }
   else
     {                           /* TLS 1.0 */
       ret =
         MHD__gnutls_finished (session,
-                          (session->security_parameters.entity +
-                           1) % 2, data);
+                              (session->security_parameters.entity +
+                               1) % 2, data);
     }
 
   if (ret < 0)
@@ -678,7 +685,7 @@ MHD__gnutls_recv_finished (MHD_gtls_session_t session)
  */
 static int
 MHD__gnutls_server_find_pk_algos_in_ciphersuites (const opaque *
-                                              data, int datalen)
+                                                  data, int datalen)
 {
   int j;
   enum MHD_GNUTLS_PublicKeyAlgorithm algo = GNUTLS_PK_NONE, prev_algo = 0;
@@ -763,12 +770,13 @@ MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
   for (j = 0; j < datalen; j += 2)
     {
       memcpy (&cs.suite, &data[j], 2);
-      MHD__gnutls_handshake_log ("\t%s\n", MHD_gtls_cipher_suite_get_name (&cs));
+      MHD__gnutls_handshake_log ("\t%s\n",
+                                 MHD_gtls_cipher_suite_get_name (&cs));
     }
   MHD__gnutls_handshake_log ("HSK[%x]: Supported cipher suites: \n", session);
   for (j = 0; j < x; j++)
     MHD__gnutls_handshake_log ("\t%s\n",
-                           MHD_gtls_cipher_suite_get_name (&ciphers[j]));
+                               MHD_gtls_cipher_suite_get_name (&ciphers[j]));
 #endif
   memset (session->security_parameters.current_cipher_suite.suite, '\0', 2);
 
@@ -806,9 +814,9 @@ finish:
    */
   if (MHD_gtls_get_kx_cred
       (session,
-       MHD_gtls_cipher_suite_get_kx_algo (&session->security_parameters.
-                                          current_cipher_suite), &err) == NULL
-      && err != 0)
+       MHD_gtls_cipher_suite_get_kx_algo (&session->
+                                          security_parameters.current_cipher_suite),
+       &err) == NULL && err != 0)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
@@ -821,8 +829,8 @@ finish:
    */
   session->internals.auth_struct =
     MHD_gtls_kx_auth_struct (MHD_gtls_cipher_suite_get_kx_algo
-                             (&session->security_parameters.
-                              current_cipher_suite));
+                             (&session->
+                              security_parameters.current_cipher_suite));
   if (session->internals.auth_struct == NULL)
     {
 
@@ -842,7 +850,7 @@ finish:
  */
 static int
 MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
-                                   opaque * data, int datalen)
+                                       opaque * data, int datalen)
 {
   int x, i, j;
   uint8_t *comps;
@@ -871,8 +879,8 @@ MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
 
               MHD__gnutls_handshake_log
                 ("HSK[%x]: Selected Compression Method: %s\n", session,
-                 MHD_gtls_compression_get_name (session->internals.
-                                                  compression_method));
+                 MHD_gtls_compression_get_name (session->
+                                                internals.compression_method));
 
 
               return 0;
@@ -896,7 +904,8 @@ MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_send_empty_handshake (MHD_gtls_session_t session,
-                              MHD_gnutls_handshake_description_t type, int again)
+                                  MHD_gnutls_handshake_description_t type,
+                                  int again)
 {
   opaque data = 0;
   opaque *ptr;
@@ -913,8 +922,8 @@ MHD__gnutls_send_empty_handshake (MHD_gtls_session_t session,
 /* This function will hash the handshake message we sent. */
 static int
 MHD__gnutls_handshake_hash_add_sent (MHD_gtls_session_t session,
-                                 MHD_gnutls_handshake_description_t type,
-                                 opaque * dataptr, uint32_t datalen)
+                                     MHD_gnutls_handshake_description_t type,
+                                     opaque * dataptr, uint32_t datalen)
 {
   int ret;
 
@@ -987,7 +996,8 @@ MHD_gtls_send_handshake (MHD_gtls_session_t session, void *i_data,
    */
   if (type != GNUTLS_HANDSHAKE_HELLO_REQUEST)
     if ((ret =
-         MHD__gnutls_handshake_hash_add_sent (session, type, data, datasize)) < 0)
+         MHD__gnutls_handshake_hash_add_sent (session, type, data,
+                                              datasize)) < 0)
       {
         MHD_gnutls_assert ();
         MHD_gnutls_afree (data);
@@ -1001,7 +1011,8 @@ MHD_gtls_send_handshake (MHD_gtls_session_t session, void *i_data,
                                     data, datasize);
 
   MHD__gnutls_handshake_log ("HSK[%x]: %s was sent [%ld bytes]\n",
-                         session, MHD__gnutls_handshake2str (type), datasize);
+                             session, MHD__gnutls_handshake2str (type),
+                             datasize);
 
   MHD_gnutls_afree (data);
 
@@ -1017,8 +1028,9 @@ MHD_gtls_send_handshake (MHD_gtls_session_t session, void *i_data,
 #define SSL2_HEADERS 1
 static int
 MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
-                               MHD_gnutls_handshake_description_t type,
-                               MHD_gnutls_handshake_description_t * recv_type)
+                                   MHD_gnutls_handshake_description_t type,
+                                   MHD_gnutls_handshake_description_t *
+                                   recv_type)
 {
   int ret;
   uint32_t length32 = 0;
@@ -1032,8 +1044,8 @@ MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
   if (session->internals.handshake_header_buffer.header_size ==
       handshake_header_size || (session->internals.v2_hello != 0
                                 && type == GNUTLS_HANDSHAKE_CLIENT_HELLO
-                                && session->internals.
-                                handshake_header_buffer.packet_length > 0))
+                                && session->internals.handshake_header_buffer.
+                                packet_length > 0))
     {
 
       *recv_type = session->internals.handshake_header_buffer.recv_type;
@@ -1076,11 +1088,13 @@ MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
         MHD_gtls_handshake_io_recv_int (session, GNUTLS_HANDSHAKE,
                                         type,
                                         &dataptr
-                                        [session->internals.
-                                         handshake_header_buffer.header_size],
+                                        [session->
+                                         internals.handshake_header_buffer.
+                                         header_size],
                                         HANDSHAKE_HEADER_SIZE -
-                                        session->internals.
-                                        handshake_header_buffer.header_size);
+                                        session->
+                                        internals.handshake_header_buffer.
+                                        header_size);
       if (ret <= 0)
         {
           MHD_gnutls_assert ();
@@ -1102,8 +1116,9 @@ MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
       handshake_header_size = HANDSHAKE_HEADER_SIZE;
 
       MHD__gnutls_handshake_log ("HSK[%x]: %s was received [%ld bytes]\n",
-                             session, MHD__gnutls_handshake2str (dataptr[0]),
-                             length32 + HANDSHAKE_HEADER_SIZE);
+                                 session,
+                                 MHD__gnutls_handshake2str (dataptr[0]),
+                                 length32 + HANDSHAKE_HEADER_SIZE);
 
     }
   else
@@ -1115,8 +1130,9 @@ MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
       *recv_type = dataptr[0];
 
       MHD__gnutls_handshake_log ("HSK[%x]: %s(v2) was received [%ld bytes]\n",
-                             session, MHD__gnutls_handshake2str (*recv_type),
-                             length32 + handshake_header_size);
+                                 session,
+                                 MHD__gnutls_handshake2str (*recv_type),
+                                 length32 + handshake_header_size);
 
       if (*recv_type != GNUTLS_HANDSHAKE_CLIENT_HELLO)
         {                       /* it should be one or nothing */
@@ -1147,9 +1163,10 @@ MHD__gnutls_recv_handshake_header (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_handshake_hash_add_recvd (MHD_gtls_session_t session,
-                                  MHD_gnutls_handshake_description_t recv_type,
-                                  opaque * header, uint16_t header_size,
-                                  opaque * dataptr, uint32_t datalen)
+                                      MHD_gnutls_handshake_description_t
+                                      recv_type, opaque * header,
+                                      uint16_t header_size, opaque * dataptr,
+                                      uint32_t datalen)
 {
   int ret;
 
@@ -1195,7 +1212,8 @@ MHD__gnutls_handshake_hash_add_recvd (MHD_gtls_session_t session,
  */
 int
 MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t ** data,
-                         int *datalen, MHD_gnutls_handshake_description_t type,
+                         int *datalen,
+                         MHD_gnutls_handshake_description_t type,
                          Optional optional)
 {
   int ret;
@@ -1259,11 +1277,12 @@ MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t ** data,
 
 
   ret = MHD__gnutls_handshake_hash_add_recvd (session, recv_type,
-                                          session->internals.
-                                          handshake_header_buffer.header,
-                                          session->internals.
-                                          handshake_header_buffer.header_size,
-                                          dataptr, length32);
+                                              session->
+                                              internals.handshake_header_buffer.
+                                              header,
+                                              session->
+                                              internals.handshake_header_buffer.
+                                              header_size, dataptr, length32);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -1319,7 +1338,8 @@ MHD_gtls_recv_handshake (MHD_gtls_session_t session, uint8_t ** data,
  * to the session;
  */
 static int
-MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session, opaque suite[2])
+MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session,
+                                    opaque suite[2])
 {
   uint8_t z;
   cipher_suite_st *cipher_suites;
@@ -1355,9 +1375,9 @@ MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session, opaque suite[2])
   memcpy (session->security_parameters.current_cipher_suite.suite, suite, 2);
 
   MHD__gnutls_handshake_log ("HSK[%x]: Selected cipher suite: %s\n", session,
-                         MHD_gtls_cipher_suite_get_name
-                         (&session->security_parameters.
-                          current_cipher_suite));
+                             MHD_gtls_cipher_suite_get_name
+                             (&session->
+                              security_parameters.current_cipher_suite));
 
 
   /* check if the credentials (username, public key etc.) are ok.
@@ -1380,8 +1400,8 @@ MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session, opaque suite[2])
    */
   session->internals.auth_struct =
     MHD_gtls_kx_auth_struct (MHD_gtls_cipher_suite_get_kx_algo
-                             (&session->security_parameters.
-                              current_cipher_suite));
+                             (&session->
+                              security_parameters.current_cipher_suite));
 
   if (session->internals.auth_struct == NULL)
     {
@@ -1402,7 +1422,7 @@ MHD__gnutls_client_set_ciphersuite (MHD_gtls_session_t session, opaque suite[2])
  */
 static int
 MHD__gnutls_client_set_comp_method (MHD_gtls_session_t session,
-                                opaque comp_method)
+                                    opaque comp_method)
 {
   int comp_methods_num;
   uint8_t *compression_methods;
@@ -1446,16 +1466,15 @@ MHD__gnutls_client_set_comp_method (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_client_check_if_resuming (MHD_gtls_session_t session,
-                                  opaque * session_id, int session_id_len)
+                                      opaque * session_id, int session_id_len)
 {
   opaque buf[2 * TLS_MAX_SESSION_ID_SIZE + 1];
 
   MHD__gnutls_handshake_log ("HSK[%x]: SessionID length: %d\n", session,
-                         session_id_len);
+                             session_id_len);
   MHD__gnutls_handshake_log ("HSK[%x]: SessionID: %s\n", session,
-                         MHD_gtls_bin2hex (session_id, session_id_len, 
-					   (char*) buf,
-                                           sizeof (buf)));
+                             MHD_gtls_bin2hex (session_id, session_id_len,
+                                               (char *) buf, sizeof (buf)));
 
   if (session_id_len > 0 &&
       session->internals.resumed_security_parameters.session_id_size ==
@@ -1491,7 +1510,7 @@ MHD__gnutls_client_check_if_resuming (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_read_server_hello (MHD_gtls_session_t session,
-                           opaque * data, int datalen)
+                               opaque * data, int datalen)
 {
   uint8_t session_id_len = 0;
   int pos = 0;
@@ -1506,7 +1525,7 @@ MHD__gnutls_read_server_hello (MHD_gtls_session_t session,
     }
 
   MHD__gnutls_handshake_log ("HSK[%x]: Server's version: %d.%d\n",
-                         session, data[pos], data[pos + 1]);
+                             session, data[pos], data[pos + 1]);
 
   DECR_LEN (len, 2);
   version = MHD_gtls_version_get (data[pos], data[pos + 1]);
@@ -1594,7 +1613,7 @@ MHD__gnutls_read_server_hello (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_copy_ciphersuites (MHD_gtls_session_t session,
-                           opaque * ret_data, size_t ret_data_size)
+                               opaque * ret_data, size_t ret_data_size)
 {
   int ret, i;
   cipher_suite_st *cipher_suites;
@@ -1662,7 +1681,7 @@ MHD__gnutls_copy_ciphersuites (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_copy_comp_methods (MHD_gtls_session_t session,
-                           opaque * ret_data, size_t ret_data_size)
+                               opaque * ret_data, size_t ret_data_size)
 {
   int ret, i;
   uint8_t *compression_methods, comp_num;
@@ -1921,7 +1940,7 @@ MHD__gnutls_send_server_hello (MHD_gtls_session_t session, int again)
            */
           MHD_gnutls_assert ();
           ret = MHD__gnutls_alert_send (session, GNUTLS_AL_FATAL,
-                                       GNUTLS_A_UNKNOWN_PSK_IDENTITY);
+                                        GNUTLS_A_UNKNOWN_PSK_IDENTITY);
           if (ret < 0)
             {
               MHD_gnutls_assert ();
@@ -1969,16 +1988,17 @@ MHD__gnutls_send_server_hello (MHD_gtls_session_t session, int again)
       pos += session_id_len;
 
       MHD__gnutls_handshake_log ("HSK[%x]: SessionID: %s\n", session,
-                             MHD_gtls_bin2hex (SessionID, session_id_len,
-                                               (char*) buf, sizeof (buf)));
+                                 MHD_gtls_bin2hex (SessionID, session_id_len,
+                                                   (char *) buf,
+                                                   sizeof (buf)));
 
       memcpy (&data[pos],
               session->security_parameters.current_cipher_suite.suite, 2);
       pos += 2;
 
       comp =
-        (uint8_t) MHD_gtls_compression_get_num (session->
-                                                internals.compression_method);
+        (uint8_t) MHD_gtls_compression_get_num (session->internals.
+                                                compression_method);
       data[pos++] = comp;
 
 
@@ -2103,7 +2123,7 @@ MHD__gnutls_rehandshake (MHD_gtls_session_t session)
 
   ret =
     MHD__gnutls_send_empty_handshake (session, GNUTLS_HANDSHAKE_HELLO_REQUEST,
-                                  AGAIN (STATE50));
+                                      AGAIN (STATE50));
   STATE = STATE50;
 
   if (ret < 0)
@@ -2260,14 +2280,14 @@ MHD__gnutls_handshake (MHD_gtls_session_t session)
     }
 #if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
-      {
-        ret = MHD_gtls_handshake_client (session);
-      }
-    else
+    {
+      ret = MHD_gtls_handshake_client (session);
+    }
+  else
 #endif
-      {
-        ret = MHD_gtls_handshake_server (session);
-      }
+    {
+      ret = MHD_gtls_handshake_server (session);
+    }
 
   if (ret < 0)
     {
@@ -2323,13 +2343,11 @@ MHD_gtls_handshake_client (MHD_gtls_session_t session)
 
   if (session->internals.resumed_security_parameters.session_id_size > 0)
     MHD__gnutls_handshake_log ("HSK[%x]: Ask to resume: %s\n", session,
-                           MHD_gtls_bin2hex (session->internals.
-                                             resumed_security_parameters.
-                                             session_id,
-                                             session->internals.
-                                             resumed_security_parameters.
-                                             session_id_size, buf,
-                                             sizeof (buf)));
+                               MHD_gtls_bin2hex (session->
+                                                 internals.resumed_security_parameters.session_id,
+                                                 session->
+                                                 internals.resumed_security_parameters.session_id_size,
+                                                 buf, sizeof (buf)));
 #endif
 
   switch (STATE)
@@ -2613,8 +2631,8 @@ MHD_gtls_handshake_server (MHD_gtls_session_t session)
       if (session->internals.resumed == RESUME_FALSE)   /* if we are not resuming */
         ret =
           MHD__gnutls_send_empty_handshake (session,
-                                        GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
-                                        AGAIN (STATE6));
+                                            GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
+                                            AGAIN (STATE6));
       STATE = STATE6;
       IMED_RET ("send server hello done", ret);
 
@@ -2696,7 +2714,7 @@ MHD_gtls_generate_session_id (opaque * session_id, uint8_t * len)
 {
   *len = TLS_MAX_SESSION_ID_SIZE;
 
-  if (MHD_gc_nonce ((char*) session_id, *len) != GC_OK)
+  if (MHD_gc_nonce ((char *) session_id, *len) != GC_OK)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;
@@ -2804,7 +2822,8 @@ check_server_params (MHD_gtls_session_t session,
     {
       MHD_gnutls_psk_server_credentials_t psk_cred =
         (MHD_gnutls_psk_server_credentials_t) MHD_gtls_get_cred (session->key,
-                                                             cred_type, NULL);
+                                                                 cred_type,
+                                                                 NULL);
 
       if (psk_cred != NULL)
         {
@@ -2889,8 +2908,9 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
       if (ret < 0)
         {
           MHD_gnutls_assert ();
-          MHD__gnutls_x509_log ("Could not find an appropriate certificate: %s\n",
-                            MHD_gtls_strerror (ret));
+          MHD__gnutls_x509_log
+            ("Could not find an appropriate certificate: %s\n",
+             MHD_gtls_strerror (ret));
           cert_cred = NULL;
         }
     }
@@ -2954,8 +2974,8 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
         {
 
           MHD__gnutls_handshake_log ("HSK[%x]: Keeping ciphersuite: %s\n",
-                                 session,
-                                 MHD_gtls_cipher_suite_get_name (&cs));
+                                     session,
+                                     MHD_gtls_cipher_suite_get_name (&cs));
 
           memcpy (newSuite[newSuiteSize].suite, (*cipherSuites)[i].suite, 2);
           newSuiteSize++;
@@ -2963,8 +2983,8 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
       else
         {
           MHD__gnutls_handshake_log ("HSK[%x]: Removing ciphersuite: %s\n",
-                                 session,
-                                 MHD_gtls_cipher_suite_get_name (&cs));
+                                     session,
+                                     MHD_gtls_cipher_suite_get_name (&cs));
 
         }
     }

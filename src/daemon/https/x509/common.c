@@ -258,8 +258,9 @@ MHD__gnutls_x509_oid2ldap_string (const char *oid)
  */
 int
 MHD__gnutls_x509_oid_data2string (const char *oid,
-                              void *value,
-                              int value_size, char *res, size_t * res_size)
+                                  void *value,
+                                  int value_size, char *res,
+                                  size_t * res_size)
 {
   char str[MAX_STRING_LEN], tmpname[128];
   const char *ANAME = NULL;
@@ -292,17 +293,19 @@ MHD__gnutls_x509_oid_data2string (const char *oid,
   MHD_gtls_str_cat (str, sizeof (str), ANAME);
 
   if ((result = MHD__asn1_create_element (MHD__gnutls_get_pkix (), str,
-                                     &tmpasn)) != ASN1_SUCCESS)
+                                          &tmpasn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
-  if ((result = MHD__asn1_der_decoding (&tmpasn, value, value_size, MHD__asn1_err))
-      != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_der_decoding (&tmpasn, value, value_size,
+                               MHD__asn1_err)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
-      MHD__gnutls_x509_log ("MHD__asn1_der_decoding: %s:%s\n", str, MHD__asn1_err);
+      MHD__gnutls_x509_log ("MHD__asn1_der_decoding: %s:%s\n", str,
+                            MHD__asn1_err);
       MHD__asn1_delete_structure (&tmpasn);
       return MHD_gtls_asn2err (result);
     }
@@ -381,7 +384,9 @@ MHD__gnutls_x509_oid_data2string (const char *oid,
             }
           else
             {
-              result = MHD__gnutls_x509_data2hex ((const unsigned char*) str, len, (unsigned char*) res, res_size);
+              result =
+                MHD__gnutls_x509_data2hex ((const unsigned char *) str, len,
+                                           (unsigned char *) res, res_size);
               if (result < 0)
                 {
                   MHD_gnutls_assert ();
@@ -400,7 +405,8 @@ MHD__gnutls_x509_oid_data2string (const char *oid,
  */
 int
 MHD__gnutls_x509_data2hex (const opaque * data,
-                       size_t data_size, opaque * out, size_t * sizeof_out)
+                           size_t data_size, opaque * out,
+                           size_t * sizeof_out)
 {
   char *res;
   char escaped[MAX_STRING_LEN];
@@ -425,8 +431,8 @@ MHD__gnutls_x509_data2hex (const opaque * data,
 
       if (out)
         {
-          strcpy ((char*) out, "#");
-          strcat ((char*) out, res);
+          strcpy ((char *) out, "#");
+          strcat ((char *) out, res);
         }
 
       return 0;
@@ -726,10 +732,10 @@ MHD__gnutls_x509_san_find_type (char *str_type)
  */
 int
 MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
-                         MHD_gnutls_x509_crt_fmt_t format,
-                         char *pem_header,
-                         unsigned char *output_data,
-                         size_t * output_data_size)
+                             MHD_gnutls_x509_crt_fmt_t format,
+                             char *pem_header,
+                             unsigned char *output_data,
+                             size_t * output_data_size)
 {
   int result, len;
 
@@ -741,8 +747,9 @@ MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
 
       len = *output_data_size;
 
-      if ((result = MHD__asn1_der_coding (MHD__asn1_data, "", output_data, &len,
-                                     NULL)) != ASN1_SUCCESS)
+      if ((result =
+           MHD__asn1_der_coding (MHD__asn1_data, "", output_data, &len,
+                                 NULL)) != ASN1_SUCCESS)
         {
           *output_data_size = len;
           if (result == ASN1_MEM_ERROR)
@@ -768,7 +775,8 @@ MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
           return result;
         }
 
-      result = MHD__gnutls_fbase64_encode (pem_header, tmp.data, tmp.size, &out);
+      result =
+        MHD__gnutls_fbase64_encode (pem_header, tmp.data, tmp.size, &out);
 
       MHD__gnutls_free_datum (&tmp);
 
@@ -815,9 +823,9 @@ MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
  */
 int
 MHD__gnutls_x509_decode_octet_string (const char *string_type,
-                                  const opaque * der,
-                                  size_t der_size,
-                                  opaque * output, size_t * output_size)
+                                      const opaque * der,
+                                      size_t der_size,
+                                      opaque * output, size_t * output_size)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result, tmp_output_size;
@@ -833,7 +841,7 @@ MHD__gnutls_x509_decode_octet_string (const char *string_type,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (), strname,
-                            &c2)) != ASN1_SUCCESS)
+                                 &c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -875,7 +883,8 @@ cleanup:if (c2)
  */
 int
 MHD__gnutls_x509_read_value (ASN1_TYPE c,
-                         const char *root, MHD_gnutls_datum_t * ret, int flags)
+                             const char *root, MHD_gnutls_datum_t * ret,
+                             int flags)
 {
   int len = 0, result;
   size_t slen;
@@ -917,7 +926,8 @@ MHD__gnutls_x509_read_value (ASN1_TYPE c,
   if (flags == 1)
     {
       slen = len;
-      result = MHD__gnutls_x509_decode_octet_string (NULL, tmp, slen, tmp, &slen);
+      result =
+        MHD__gnutls_x509_decode_octet_string (NULL, tmp, slen, tmp, &slen);
       if (result < 0)
         {
           MHD_gnutls_assert ();
@@ -942,7 +952,8 @@ cleanup:MHD_gnutls_free (tmp);
  */
 int
 MHD__gnutls_x509_der_encode (ASN1_TYPE src,
-                         const char *src_name, MHD_gnutls_datum_t * res, int str)
+                             const char *src_name, MHD_gnutls_datum_t * res,
+                             int str)
 {
   int size, result;
   int asize;
@@ -984,8 +995,9 @@ MHD__gnutls_x509_der_encode (ASN1_TYPE src,
   if (str)
     {
       if ((result =
-           MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
-                                &c2)) != ASN1_SUCCESS)
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
+                                     "PKIX1.pkcs-7-Data",
+                                     &c2)) != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
           result = MHD_gtls_asn2err (result);
@@ -1030,9 +1042,9 @@ cleanup:MHD_gnutls_free (data);
  */
 int
 MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
-                                  const char *src_name,
-                                  ASN1_TYPE dest,
-                                  const char *dest_name, int str)
+                                      const char *src_name,
+                                      ASN1_TYPE dest,
+                                      const char *dest_name, int str)
 {
   int result;
   MHD_gnutls_datum_t encoded;
@@ -1047,7 +1059,8 @@ MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
 
   /* Write the data.
    */
-  result = MHD__asn1_write_value (dest, dest_name, encoded.data, encoded.size);
+  result =
+    MHD__asn1_write_value (dest, dest_name, encoded.data, encoded.size);
 
   MHD__gnutls_free_datum (&encoded);
 
@@ -1065,8 +1078,8 @@ MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
  */
 int
 MHD__gnutls_x509_write_value (ASN1_TYPE c,
-                          const char *root,
-                          const MHD_gnutls_datum_t * data, int str)
+                              const char *root,
+                              const MHD_gnutls_datum_t * data, int str)
 {
   int result;
   int asize;
@@ -1088,8 +1101,9 @@ MHD__gnutls_x509_write_value (ASN1_TYPE c,
       /* Convert it to OCTET STRING
        */
       if ((result =
-           MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-Data",
-                                &c2)) != ASN1_SUCCESS)
+           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
+                                     "PKIX1.pkcs-7-Data",
+                                     &c2)) != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
           result = MHD_gtls_asn2err (result);
@@ -1144,10 +1158,11 @@ cleanup:if (val.data != data->data)
  */
 int
 MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
-                                         const char *dst_name,
-                                         enum MHD_GNUTLS_PublicKeyAlgorithm
-                                         pk_algorithm,
-                                         mpi_t * params, int params_size)
+                                             const char *dst_name,
+                                             enum
+                                             MHD_GNUTLS_PublicKeyAlgorithm
+                                             pk_algorithm, mpi_t * params,
+                                             int params_size)
 {
   const char *pk;
   MHD_gnutls_datum_t der = { NULL,
@@ -1219,7 +1234,7 @@ MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
  */
 int
 MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
-                               const char *src_name, unsigned int *bits)
+                                   const char *src_name, unsigned int *bits)
 {
   int result;
   opaque *str = NULL;
@@ -1295,7 +1310,8 @@ MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
     {
     case MHD_GNUTLS_PK_RSA:
       {
-        if ((result = MHD__gnutls_x509_read_rsa_params (str, len, params)) < 0)
+        if ((result =
+             MHD__gnutls_x509_read_rsa_params (str, len, params)) < 0)
           {
             MHD_gnutls_assert ();
             return result;
@@ -1321,8 +1337,8 @@ MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
  */
 int
 MHD__gnutls_x509_get_signed_data (ASN1_TYPE src,
-                              const char *src_name,
-                              MHD_gnutls_datum_t * signed_data)
+                                  const char *src_name,
+                                  MHD_gnutls_datum_t * signed_data)
 {
   MHD_gnutls_datum_t der;
   int start, end, result;
@@ -1337,7 +1353,7 @@ MHD__gnutls_x509_get_signed_data (ASN1_TYPE src,
   /* Get the signed data
    */
   result = MHD__asn1_der_decoding_startEnd (src, der.data, der.size, src_name,
-                                       &start, &end);
+                                            &start, &end);
   if (result != ASN1_SUCCESS)
     {
       result = MHD_gtls_asn2err (result);
@@ -1345,7 +1361,8 @@ MHD__gnutls_x509_get_signed_data (ASN1_TYPE src,
       goto cleanup;
     }
 
-  result = MHD__gnutls_set_datum (signed_data, &der.data[start], end - start + 1);
+  result =
+    MHD__gnutls_set_datum (signed_data, &der.data[start], end - start + 1);
 
   if (result < 0)
     {
@@ -1365,7 +1382,8 @@ cleanup:MHD__gnutls_free_datum (&der);
  */
 int
 MHD__gnutls_x509_get_signature (ASN1_TYPE src,
-                            const char *src_name, MHD_gnutls_datum_t * signature)
+                                const char *src_name,
+                                MHD_gnutls_datum_t * signature)
 {
   int bits, result, len;
 

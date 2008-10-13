@@ -133,7 +133,7 @@ MHD_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest)
 
   maclen = MHD_gnutls_hash_get_algo_len (handle->algorithm);
 
-  mac = (unsigned char*) MHD_gc_hash_read (handle->handle);
+  mac = (unsigned char *) MHD_gc_hash_read (handle->handle);
   if (digest != NULL)
     memcpy (digest, mac, maclen);
 
@@ -145,7 +145,7 @@ MHD_gnutls_hash_deinit (GNUTLS_HASH_HANDLE handle, void *digest)
 
 mac_hd_t
 MHD_gtls_MHD_hmac_init (enum MHD_GNUTLS_HashAlgorithm algorithm,
-                    const void *key, int keylen)
+                        const void *key, int keylen)
 {
   mac_hd_t ret;
   int result;
@@ -154,7 +154,8 @@ MHD_gtls_MHD_hmac_init (enum MHD_GNUTLS_HashAlgorithm algorithm,
   if (ret == NULL)
     return GNUTLS_MAC_FAILED;
 
-  result = MHD_gc_hash_open (MHD__gnutls_mac2gc (algorithm), GC_HMAC, &ret->handle);
+  result =
+    MHD_gc_hash_open (MHD__gnutls_mac2gc (algorithm), GC_HMAC, &ret->handle);
   if (result)
     {
       MHD_gnutls_free (ret);
@@ -178,7 +179,7 @@ MHD_gnutls_MHD_hmac_deinit (mac_hd_t handle, void *digest)
 
   maclen = MHD_gnutls_hash_get_algo_len (handle->algorithm);
 
-  mac = (unsigned char*) MHD_gc_hash_read (handle->handle);
+  mac = (unsigned char *) MHD_gc_hash_read (handle->handle);
 
   if (digest != NULL)
     memcpy (digest, mac, maclen);

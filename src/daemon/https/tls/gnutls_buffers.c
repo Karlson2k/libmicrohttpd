@@ -137,19 +137,19 @@ MHD_gnutls_record_buffer_put (content_type_t type,
     case GNUTLS_APPLICATION_DATA:
       buf = &session->internals.application_data_buffer;
       MHD__gnutls_buffers_log ("BUF[REC]: Inserted %d bytes of Data(%d)\n",
-                           length, type);
+                               length, type);
       break;
 
     case GNUTLS_HANDSHAKE:
       buf = &session->internals.handshake_data_buffer;
       MHD__gnutls_buffers_log ("BUF[HSK]: Inserted %d bytes of Data(%d)\n",
-                           length, type);
+                               length, type);
       break;
 
     case GNUTLS_INNER_APPLICATION:
       buf = &session->internals.ia_data_buffer;
-      MHD__gnutls_buffers_log ("BUF[IA]: Inserted %d bytes of Data(%d)\n", length,
-                           type);
+      MHD__gnutls_buffers_log ("BUF[IA]: Inserted %d bytes of Data(%d)\n",
+                               length, type);
       break;
 
     default:
@@ -223,7 +223,7 @@ MHD_gtls_record_buffer_get (content_type_t type, MHD_gtls_session_t session,
         }
 
       MHD__gnutls_buffers_log ("BUFFER[REC][AD]: Read %d bytes of Data(%d)\n",
-                           length, type);
+                               length, type);
 
       session->internals.application_data_buffer.length -= length;
       memcpy (data, session->internals.application_data_buffer.data, length);
@@ -246,7 +246,7 @@ MHD_gtls_record_buffer_get (content_type_t type, MHD_gtls_session_t session,
         }
 
       MHD__gnutls_buffers_log ("BUF[REC][HD]: Read %d bytes of Data(%d)\n",
-                           length, type);
+                               length, type);
 
       session->internals.handshake_data_buffer.length -= length;
       memcpy (data, session->internals.handshake_data_buffer.data, length);
@@ -263,7 +263,7 @@ MHD_gtls_record_buffer_get (content_type_t type, MHD_gtls_session_t session,
         length = session->internals.ia_data_buffer.length;
 
       MHD__gnutls_buffers_log ("BUF[REC][IA]: Read %d bytes of Data(%d)\n",
-                           length, type);
+                               length, type);
 
       session->internals.ia_data_buffer.length -= length;
       memcpy (data, session->internals.ia_data_buffer.data, length);
@@ -290,7 +290,7 @@ MHD_gtls_record_buffer_get (content_type_t type, MHD_gtls_session_t session,
  */
 static ssize_t
 MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
-              size_t sizeOfPtr, int flags)
+                  size_t sizeOfPtr, int flags)
 {
   size_t left;
   ssize_t i = 0;
@@ -333,16 +333,17 @@ MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
         }
       else
         i = session->internals.MHD__gnutls_pull_func (fd,
-                                                  &ptr[sizeOfPtr - left],
-                                                  left);
+                                                      &ptr[sizeOfPtr - left],
+                                                      left);
 
       if (i < 0)
         {
           int err = session->internals.errnum ? session->internals.errnum
             : errno;
 
-          MHD__gnutls_read_log ("READ: %d returned from %d, errno=%d gerrno=%d\n",
-                            i, fd, errno, session->internals.errnum);
+          MHD__gnutls_read_log
+            ("READ: %d returned from %d, errno=%d gerrno=%d\n", i, fd, errno,
+             session->internals.errnum);
 
           if (err == EAGAIN || err == EINTR)
             {
@@ -350,7 +351,7 @@ MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
                 {
 
                   MHD__gnutls_read_log ("READ: returning %d bytes from %d\n",
-                                    sizeOfPtr - left, fd);
+                                        sizeOfPtr - left, fd);
 
                   goto finish;
                 }
@@ -386,8 +387,8 @@ finish:
       char line[128];
       char tmp[16];
 
-      MHD__gnutls_read_log ("READ: read %d bytes from %d\n", (sizeOfPtr - left),
-                        fd);
+      MHD__gnutls_read_log ("READ: read %d bytes from %d\n",
+                            (sizeOfPtr - left), fd);
 
       for (x = 0; x < ((sizeOfPtr - left) / 16) + 1; x++)
         {
@@ -486,7 +487,7 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
 
   if (sizeOfPtr > MAX_RECV_SIZE || sizeOfPtr == 0)
     {
-      MHD_gnutls_assert ();         /* internal error */
+      MHD_gnutls_assert ();     /* internal error */
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -536,7 +537,7 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
   if ((session->internals.record_recv_buffer.length + recvdata)
       > MAX_RECV_SIZE)
     {
-      MHD_gnutls_assert ();         /* internal error */
+      MHD_gnutls_assert ();     /* internal error */
       return GNUTLS_E_INVALID_REQUEST;
     }
 
@@ -559,7 +560,8 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
   /* READ DATA - but leave RCVLOWAT bytes in the kernel buffer. */
   if (recvdata - recvlowat > 0)
     {
-      ret = MHD__gnutls_read (session, &buf[buf_pos], recvdata - recvlowat, 0);
+      ret =
+        MHD__gnutls_read (session, &buf[buf_pos], recvdata - recvlowat, 0);
 
       /* return immediately if we got an interrupt or eagain
        * error.
@@ -574,8 +576,9 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
    */
   if (ret > 0)
     {
-      MHD__gnutls_read_log ("RB: Have %d bytes into buffer. Adding %d bytes.\n",
-                        session->internals.record_recv_buffer.length, ret);
+      MHD__gnutls_read_log
+        ("RB: Have %d bytes into buffer. Adding %d bytes.\n",
+         session->internals.record_recv_buffer.length, ret);
       MHD__gnutls_read_log ("RB: Requested %d bytes\n", sizeOfPtr);
       session->internals.record_recv_buffer.length += ret;
     }
@@ -598,7 +601,8 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
 
       if (ret2 > 0)
         {
-          MHD__gnutls_read_log ("RB-PEEK: Read %d bytes in PEEK MODE.\n", ret2);
+          MHD__gnutls_read_log ("RB-PEEK: Read %d bytes in PEEK MODE.\n",
+                                ret2);
           MHD__gnutls_read_log
             ("RB-PEEK: Have %d bytes into buffer. Adding %d bytes.\nRB: Requested %d bytes\n",
              session->internals.record_recv_buffer.length, ret2, sizeOfPtr);
@@ -652,7 +656,7 @@ MHD_gtls_io_read_buffered (MHD_gtls_session_t session, opaque ** iptr,
 
 inline static int
 MHD__gnutls_buffer_insert (MHD_gtls_buffer * buffer,
-                       const opaque * _data, size_t data_size)
+                           const opaque * _data, size_t data_size)
 {
 
   if ((MEMSUB (_data, buffer->data) >= 0)
@@ -691,7 +695,7 @@ MHD__gnutls_buffer_insert (MHD_gtls_buffer * buffer,
 
 inline static int
 MHD__gnutls_buffer_get (MHD_gtls_buffer * buffer,
-                    const opaque ** ptr, size_t * ptr_size)
+                        const opaque ** ptr, size_t * ptr_size)
 {
   *ptr_size = buffer->length;
   *ptr = buffer->data;
@@ -742,7 +746,8 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
   if (iptr == NULL)
     {
       /* checking is handled above */
-      ret = MHD__gnutls_buffer_get (&session->internals.record_send_buffer, &ptr,
+      ret =
+        MHD__gnutls_buffer_get (&session->internals.record_send_buffer, &ptr,
                                 &n);
       if (ret < 0)
         {
@@ -750,8 +755,8 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
           return ret;
         }
 
-      MHD__gnutls_write_log ("WRITE: Restoring old write. (%d bytes to send)\n",
-                         n);
+      MHD__gnutls_write_log
+        ("WRITE: Restoring old write. (%d bytes to send)\n", n);
     }
 
   MHD__gnutls_write_log ("WRITE: Will write %d bytes to %d.\n", n, fd);
@@ -789,7 +794,8 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
 #endif
         }
       else
-        i = session->internals.MHD__gnutls_push_func (fd, &ptr[n - left], left);
+        i =
+          session->internals.MHD__gnutls_push_func (fd, &ptr[n - left], left);
 
       if (i == -1)
         {
@@ -801,8 +807,9 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
               session->internals.record_send_buffer_prev_size += n - left;
 
               retval =
-                MHD__gnutls_buffer_insert (&session->internals.record_send_buffer,
-                                       &ptr[n - left], left);
+                MHD__gnutls_buffer_insert (&session->internals.
+                                           record_send_buffer, &ptr[n - left],
+                                           left);
               if (retval < 0)
                 {
                   MHD_gnutls_assert ();
@@ -881,7 +888,7 @@ MHD_gtls_io_write_flush (MHD_gtls_session_t session)
 
   ret = MHD_gtls_io_write_buffered (session, NULL, 0);
   MHD__gnutls_write_log ("WRITE FLUSH: %d [buffer: %d]\n", ret,
-                     session->internals.record_send_buffer.length);
+                         session->internals.record_send_buffer.length);
 
   return ret;
 }
@@ -935,7 +942,7 @@ MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
        */
       MHD_gnutls_assert ();
       ret = MHD__gnutls_buffer_get (&session->internals.handshake_send_buffer,
-                                &ptr, &n);
+                                    &ptr, &n);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -957,7 +964,7 @@ MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
       size_t sum = 0, x, j;
 
       MHD__gnutls_write_log ("HWRITE: will write %d bytes to %d.\n", n,
-                         MHD_gnutls_transport_get_ptr (session));
+                             MHD_gnutls_transport_get_ptr (session));
       for (x = 0; x < ((n) / 16) + 1; x++)
         {
           if (sum > n)
@@ -968,7 +975,8 @@ MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
             {
               if (sum < n)
                 {
-                  MHD__gnutls_write_log ("%.2x ", ((unsigned char *) ptr)[sum++]);
+                  MHD__gnutls_write_log ("%.2x ",
+                                         ((unsigned char *) ptr)[sum++]);
                 }
               else
                 break;
@@ -1009,9 +1017,9 @@ MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
               MHD_gnutls_assert ();
 
               retval =
-                MHD__gnutls_buffer_insert (&session->internals.
-                                       handshake_send_buffer, &ptr[n - left],
-                                       left);
+                MHD__gnutls_buffer_insert (&session->
+                                           internals.handshake_send_buffer,
+                                           &ptr[n - left], left);
               if (retval < 0)
                 {
                   MHD_gnutls_assert ();
@@ -1112,8 +1120,9 @@ MHD_gtls_handshake_io_recv_int (MHD_gtls_session_t session,
 
               session->internals.handshake_recv_buffer.data
                 =
-                MHD_gtls_realloc_fast (session->internals.
-                                       handshake_recv_buffer.data, dsize);
+                MHD_gtls_realloc_fast (session->
+                                       internals.handshake_recv_buffer.data,
+                                       dsize);
               if (session->internals.handshake_recv_buffer.data == NULL)
                 {
                   MHD_gnutls_assert ();
@@ -1164,13 +1173,9 @@ MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
 
   if ((session->internals.max_handshake_data_buffer_size > 0) && ((length
                                                                    +
-                                                                   session->
-                                                                   internals.
-                                                                   handshake_hash_buffer.
-                                                                   length) >
-                                                                  session->
-                                                                  internals.
-                                                                  max_handshake_data_buffer_size))
+                                                                   session->internals.handshake_hash_buffer.length)
+                                                                  >
+                                                                  session->internals.max_handshake_data_buffer_size))
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;
@@ -1224,7 +1229,7 @@ MHD_gtls_handshake_buffer_get_ptr (MHD_gtls_session_t session,
     *length = session->internals.handshake_hash_buffer.length;
 
   MHD__gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n",
-		       session->internals.handshake_hash_buffer.length);
+                           session->internals.handshake_hash_buffer.length);
 
   if (data_ptr != NULL)
     *data_ptr = session->internals.handshake_hash_buffer.data;

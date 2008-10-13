@@ -154,9 +154,9 @@ MHD_gtls_parse_extensions (MHD_gtls_session_t session,
     for (i = 0; i < session->internals.extensions_sent_size; i++)
       {
         MHD__gnutls_debug_log ("EXT[%d]: expecting extension '%s'\n",
-                           session,
-                           MHD_gtls_extension_get_name
-                           (session->internals.extensions_sent[i]));
+                               session,
+                               MHD_gtls_extension_get_name
+                               (session->internals.extensions_sent[i]));
       }
 #endif
 
@@ -173,7 +173,7 @@ MHD_gtls_parse_extensions (MHD_gtls_session_t session,
       pos += 2;
 
       MHD__gnutls_debug_log ("EXT[%x]: Received extension '%s/%d'\n", session,
-                         MHD_gtls_extension_get_name (type), type);
+                             MHD_gtls_extension_get_name (type), type);
 
       if ((ret = MHD__gnutls_extension_list_check (session, type)) < 0)
         {
@@ -217,8 +217,9 @@ MHD__gnutls_extension_list_add (MHD_gtls_session_t session, uint16_t type)
     {
       if (session->internals.extensions_sent_size < MAX_EXT_TYPES)
         {
-          session->internals.extensions_sent[session->internals.
-                                             extensions_sent_size] = type;
+          session->internals.extensions_sent[session->
+                                             internals.extensions_sent_size] =
+            type;
           session->internals.extensions_sent_size++;
         }
       else
@@ -288,7 +289,7 @@ MHD_gtls_gen_extensions (MHD_gtls_session_t session, opaque * data,
           MHD__gnutls_extension_list_add (session, p->type);
 
           MHD__gnutls_debug_log ("EXT[%x]: Sending extension %s\n", session,
-                             MHD_gtls_extension_get_name (p->type));
+                                 MHD_gtls_extension_get_name (p->type));
         }
       else if (size < 0)
         {

@@ -22,4 +22,5 @@
  *
  */
 
-int MHD__gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len, int bits);
+int MHD__gnutls_dsa_generate_params (mpi_t * resarr, int *resarr_len,
+                                     int bits);

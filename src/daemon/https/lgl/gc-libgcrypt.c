@@ -90,9 +90,9 @@ MHD_gc_random (char *data, size_t datalen)
 
 void
 MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
-                   MHD_gc_malloc_t secure_malloc,
-                   MHD_gc_secure_check_t secure_check,
-                   MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
+                       MHD_gc_malloc_t secure_malloc,
+                       MHD_gc_secure_check_t secure_check,
+                       MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
 {
   gcry_set_allocation_handler (func_malloc, secure_malloc, secure_check,
                                func_realloc, func_free);
@@ -102,7 +102,7 @@ MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
 
 Gc_rc
 MHD_gc_cipher_open (Gc_cipher alg,
-                Gc_cipher_mode mode, MHD_gc_cipher_handle * outhandle)
+                    Gc_cipher_mode mode, MHD_gc_cipher_handle * outhandle)
 {
   int gcryalg, gcrymode;
   gcry_error_t err;
@@ -179,7 +179,8 @@ MHD_gc_cipher_open (Gc_cipher alg,
 }
 
 Gc_rc
-MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *key)
+MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen,
+                      const char *key)
 {
   gcry_error_t err;
 
@@ -191,7 +192,8 @@ MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *ke
 }
 
 Gc_rc
-MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
+MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen,
+                     const char *iv)
 {
   gcry_error_t err;
 
@@ -203,7 +205,8 @@ MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
 }
 
 Gc_rc
-MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len,
+                              char *data)
 {
   if (gcry_cipher_encrypt ((gcry_cipher_hd_t) handle, data, len, NULL, len) !=
       0)
@@ -213,7 +216,8 @@ MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
 }
 
 Gc_rc
-MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len,
+                              char *data)
 {
   if (gcry_cipher_decrypt ((gcry_cipher_hd_t) handle, data, len, NULL, len) !=
       0)
@@ -240,7 +244,8 @@ typedef struct _MHD_gc_hash_ctx
 } _MHD_gc_hash_ctx;
 
 Gc_rc
-MHD_gc_hash_open (Gc_hash hash, Gc_hash_mode mode, MHD_gc_hash_handle * outhandle)
+MHD_gc_hash_open (Gc_hash hash, Gc_hash_mode mode,
+                  MHD_gc_hash_handle * outhandle)
 {
   _MHD_gc_hash_ctx *ctx;
   int gcryalg = 0, gcrymode = 0;
@@ -391,7 +396,8 @@ MHD_gc_hash_digest_length (Gc_hash hash)
 }
 
 void
-MHD_gc_hash_MHD_hmac_setkey (MHD_gc_hash_handle handle, size_t len, const char *key)
+MHD_gc_hash_MHD_hmac_setkey (MHD_gc_hash_handle handle, size_t len,
+                             const char *key)
 {
   _MHD_gc_hash_ctx *ctx = handle;
   gcry_md_setkey (ctx->gch, key, len);
@@ -411,7 +417,7 @@ MHD_gc_hash_read (MHD_gc_hash_handle handle)
   const char *digest;
   {
     gcry_md_final (ctx->gch);
-    digest = (const char*) gcry_md_read (ctx->gch, 0);
+    digest = (const char *) gcry_md_read (ctx->gch, 0);
   }
 
   return digest;
@@ -547,7 +553,7 @@ MHD_gc_sha1 (const void *in, size_t inlen, void *resbuf)
 #ifdef GNULIB_GC_HMAC_MD5
 Gc_rc
 MHD_gc_MHD_hmac_md5 (const void *key, size_t keylen,
-             const void *in, size_t inlen, char *resbuf)
+                     const void *in, size_t inlen, char *resbuf)
 {
   size_t hlen = gcry_md_get_algo_dlen (GCRY_MD_MD5);
   gcry_md_hd_t mdh;
@@ -587,7 +593,8 @@ MHD_gc_MHD_hmac_md5 (const void *key, size_t keylen,
 #ifdef GNULIB_GC_HMAC_SHA1
 Gc_rc
 MHD_gc_MHD_hmac_sha1 (const void *key,
-              size_t keylen, const void *in, size_t inlen, char *resbuf)
+                      size_t keylen, const void *in, size_t inlen,
+                      char *resbuf)
 {
   size_t hlen = gcry_md_get_algo_dlen (GCRY_MD_SHA1);
   gcry_md_hd_t mdh;

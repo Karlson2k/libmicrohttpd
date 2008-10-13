@@ -59,8 +59,8 @@ MHD_gnutls_x509_crq_init (MHD_gnutls_x509_crq_t * crq)
   if (*crq)
     {
       int result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                        "PKIX1.pkcs-10-CertificationRequest",
-                                        &((*crq)->crq));
+                                             "PKIX1.pkcs-10-CertificationRequest",
+                                             &((*crq)->crq));
       if (result != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
@@ -110,8 +110,8 @@ MHD_gnutls_x509_crq_deinit (MHD_gnutls_x509_crq_t crq)
   **/
 int
 MHD_gnutls_x509_crq_import (MHD_gnutls_x509_crq_t crq,
-                        const MHD_gnutls_datum_t * data,
-                        MHD_gnutls_x509_crt_fmt_t format)
+                            const MHD_gnutls_datum_t * data,
+                            MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -132,7 +132,8 @@ MHD_gnutls_x509_crq_import (MHD_gnutls_x509_crq_t crq,
       opaque *out;
 
       /* Try the first header */
-      result = MHD__gnutls_fbase64_decode (PEM_CRQ, data->data, data->size, &out);
+      result =
+        MHD__gnutls_fbase64_decode (PEM_CRQ, data->data, data->size, &out);
 
       if (result <= 0)          /* Go for the second header */
         result =
@@ -189,7 +190,8 @@ cleanup:
   *
   **/
 int
-MHD_gnutls_x509_crq_get_dn (MHD_gnutls_x509_crq_t crq, char *buf, size_t * sizeof_buf)
+MHD_gnutls_x509_crq_get_dn (MHD_gnutls_x509_crq_t crq, char *buf,
+                            size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
@@ -198,8 +200,8 @@ MHD_gnutls_x509_crq_get_dn (MHD_gnutls_x509_crq_t crq, char *buf, size_t * sizeo
     }
 
   return MHD__gnutls_x509_parse_dn (crq->crq,
-                                "certificationRequestInfo.subject.rdnSequence",
-                                buf, sizeof_buf);
+                                    "certificationRequestInfo.subject.rdnSequence",
+                                    buf, sizeof_buf);
 }
 
 /**
@@ -232,8 +234,8 @@ MHD_gnutls_x509_crq_get_dn (MHD_gnutls_x509_crq_t crq, char *buf, size_t * sizeo
   **/
 int
 MHD_gnutls_x509_crq_get_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
-                               int indx, unsigned int raw_flag,
-                               void *buf, size_t * sizeof_buf)
+                                   int indx, unsigned int raw_flag,
+                                   void *buf, size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
@@ -242,8 +244,8 @@ MHD_gnutls_x509_crq_get_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
     }
 
   return MHD__gnutls_x509_parse_dn_oid (crq->crq,
-                                    "certificationRequestInfo.subject.rdnSequence",
-                                    oid, indx, raw_flag, buf, sizeof_buf);
+                                        "certificationRequestInfo.subject.rdnSequence",
+                                        oid, indx, raw_flag, buf, sizeof_buf);
 }
 
 /**
@@ -265,7 +267,7 @@ MHD_gnutls_x509_crq_get_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
   **/
 int
 MHD_gnutls_x509_crq_get_dn_oid (MHD_gnutls_x509_crq_t crq,
-                            int indx, void *oid, size_t * sizeof_oid)
+                                int indx, void *oid, size_t * sizeof_oid)
 {
   if (crq == NULL)
     {
@@ -274,8 +276,8 @@ MHD_gnutls_x509_crq_get_dn_oid (MHD_gnutls_x509_crq_t crq,
     }
 
   return MHD__gnutls_x509_get_dn_oid (crq->crq,
-                                  "certificationRequestInfo.subject.rdnSequence",
-                                  indx, oid, sizeof_oid);
+                                      "certificationRequestInfo.subject.rdnSequence",
+                                      indx, oid, sizeof_oid);
 }
 
 /* Parses an Attribute list in the MHD__asn1_struct, and searches for the
@@ -319,7 +321,8 @@ parse_attribute (ASN1_TYPE MHD__asn1_struct,
         snprintf (tmpbuffer1, sizeof (tmpbuffer1), "?%u", k1);
 
       len = sizeof (value) - 1;
-      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
+      result =
+        MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         {
@@ -362,7 +365,8 @@ parse_attribute (ASN1_TYPE MHD__asn1_struct,
                     tmpbuffer1, indx + 1);
 
           len = sizeof (value) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, value, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, value, &len);
 
           if (result != ASN1_SUCCESS)
             {
@@ -434,7 +438,7 @@ cleanup:
   **/
 int
 MHD_gnutls_x509_crq_get_challenge_password (MHD_gnutls_x509_crq_t crq,
-                                        char *pass, size_t * sizeof_pass)
+                                            char *pass, size_t * sizeof_pass)
 {
   if (crq == NULL)
     {
@@ -461,8 +465,8 @@ MHD_gnutls_x509_crq_get_challenge_password (MHD_gnutls_x509_crq_t crq,
   **/
 int
 MHD_gnutls_x509_crq_set_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
-                                      const char *oid, void *buf,
-                                      size_t sizeof_buf)
+                                          const char *oid, void *buf,
+                                          size_t sizeof_buf)
 {
   int result;
 
@@ -476,7 +480,7 @@ MHD_gnutls_x509_crq_set_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
    */
   result =
     MHD__asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
-                      "NEW", 1);
+                           "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -485,9 +489,9 @@ MHD_gnutls_x509_crq_set_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
 
   result =
     MHD__gnutls_x509_encode_and_write_attribute (oid,
-                                             crq->crq,
-                                             "certificationRequestInfo.attributes.?LAST",
-                                             buf, sizeof_buf, 1);
+                                                 crq->crq,
+                                                 "certificationRequestInfo.attributes.?LAST",
+                                                 buf, sizeof_buf, 1);
 
   if (result < 0)
     {
@@ -515,8 +519,8 @@ MHD_gnutls_x509_crq_set_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
   **/
 int
 MHD_gnutls_x509_crq_get_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
-                                      const char *oid, int indx, void *buf,
-                                      size_t * sizeof_buf)
+                                          const char *oid, int indx,
+                                          void *buf, size_t * sizeof_buf)
 {
   if (crq == NULL)
     {
@@ -550,8 +554,8 @@ MHD_gnutls_x509_crq_get_attribute_by_oid (MHD_gnutls_x509_crq_t crq,
   **/
 int
 MHD_gnutls_x509_crq_set_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
-                               unsigned int raw_flag, const void *data,
-                               unsigned int sizeof_data)
+                                   unsigned int raw_flag, const void *data,
+                                   unsigned int sizeof_data)
 {
   if (sizeof_data == 0 || data == NULL || crq == NULL)
     {
@@ -559,8 +563,8 @@ MHD_gnutls_x509_crq_set_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
     }
 
   return MHD__gnutls_x509_set_dn_oid (crq->crq,
-                                  "certificationRequestInfo.subject", oid,
-                                  raw_flag, data, sizeof_data);
+                                      "certificationRequestInfo.subject", oid,
+                                      raw_flag, data, sizeof_data);
 }
 
 /**
@@ -575,7 +579,8 @@ MHD_gnutls_x509_crq_set_dn_by_oid (MHD_gnutls_x509_crq_t crq, const char *oid,
   *
   **/
 int
-MHD_gnutls_x509_crq_set_version (MHD_gnutls_x509_crq_t crq, unsigned int version)
+MHD_gnutls_x509_crq_set_version (MHD_gnutls_x509_crq_t crq,
+                                 unsigned int version)
 {
   int result;
   unsigned char null = version;
@@ -590,7 +595,8 @@ MHD_gnutls_x509_crq_set_version (MHD_gnutls_x509_crq_t crq, unsigned int version
     null--;
 
   result =
-    MHD__asn1_write_value (crq->crq, "certificationRequestInfo.version", &null, 1);
+    MHD__asn1_write_value (crq->crq, "certificationRequestInfo.version",
+                           &null, 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -624,7 +630,7 @@ MHD_gnutls_x509_crq_get_version (MHD_gnutls_x509_crq_t crq)
   len = sizeof (version);
   if ((result =
        MHD__asn1_read_value (crq->crq, "certificationRequestInfo.version",
-                        version, &len)) != ASN1_SUCCESS)
+                             version, &len)) != ASN1_SUCCESS)
     {
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
@@ -648,7 +654,8 @@ MHD_gnutls_x509_crq_get_version (MHD_gnutls_x509_crq_t crq)
   *
   **/
 int
-MHD_gnutls_x509_crq_set_key (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key)
+MHD_gnutls_x509_crq_set_key (MHD_gnutls_x509_crq_t crq,
+                             MHD_gnutls_x509_privkey_t key)
 {
   int result;
 
@@ -659,10 +666,10 @@ MHD_gnutls_x509_crq_set_key (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_
     }
 
   result = MHD__gnutls_x509_encode_and_copy_PKI_params (crq->crq,
-                                                    "certificationRequestInfo.subjectPKInfo",
-                                                    key->pk_algorithm,
-                                                    key->params,
-                                                    key->params_size);
+                                                        "certificationRequestInfo.subjectPKInfo",
+                                                        key->pk_algorithm,
+                                                        key->params,
+                                                        key->params_size);
 
   if (result < 0)
     {
@@ -685,7 +692,7 @@ MHD_gnutls_x509_crq_set_key (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_
   **/
 int
 MHD_gnutls_x509_crq_set_challenge_password (MHD_gnutls_x509_crq_t crq,
-                                        const char *pass)
+                                            const char *pass)
 {
   int result;
 
@@ -699,7 +706,7 @@ MHD_gnutls_x509_crq_set_challenge_password (MHD_gnutls_x509_crq_t crq,
    */
   result =
     MHD__asn1_write_value (crq->crq, "certificationRequestInfo.attributes",
-                      "NEW", 1);
+                           "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -708,9 +715,9 @@ MHD_gnutls_x509_crq_set_challenge_password (MHD_gnutls_x509_crq_t crq,
 
   result =
     MHD__gnutls_x509_encode_and_write_attribute ("1.2.840.113549.1.9.7",
-                                             crq->crq,
-                                             "certificationRequestInfo.attributes.?LAST",
-                                             pass, strlen (pass), 1);
+                                                 crq->crq,
+                                                 "certificationRequestInfo.attributes.?LAST",
+                                                 pass, strlen (pass), 1);
 
   if (result < 0)
     {
@@ -739,8 +746,10 @@ MHD_gnutls_x509_crq_set_challenge_password (MHD_gnutls_x509_crq_t crq,
   *
   **/
 int
-MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key,
-                       enum MHD_GNUTLS_HashAlgorithm dig, unsigned int flags)
+MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq,
+                           MHD_gnutls_x509_privkey_t key,
+                           enum MHD_GNUTLS_HashAlgorithm dig,
+                           unsigned int flags)
 {
   int result;
   MHD_gnutls_datum_t signature;
@@ -755,7 +764,7 @@ MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t 
    */
   result =
     MHD__gnutls_x509_sign_tbs (crq->crq, "certificationRequestInfo",
-                           dig, key, &signature);
+                               dig, key, &signature);
 
   if (result < 0)
     {
@@ -767,7 +776,7 @@ MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t 
    */
   result =
     MHD__asn1_write_value (crq->crq, "signature", signature.data,
-                      signature.size * 8);
+                           signature.size * 8);
 
   MHD__gnutls_free_datum (&signature);
 
@@ -780,8 +789,8 @@ MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t 
   /* Step 3. Write the signatureAlgorithm field.
    */
   result = MHD__gnutls_x509_write_sig_params (crq->crq, "signatureAlgorithm",
-                                          key->pk_algorithm, dig, key->params,
-                                          key->params_size);
+                                              key->pk_algorithm, dig,
+                                              key->params, key->params_size);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -803,7 +812,8 @@ MHD_gnutls_x509_crq_sign2 (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t 
   *
   **/
 int
-MHD_gnutls_x509_crq_sign (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t key)
+MHD_gnutls_x509_crq_sign (MHD_gnutls_x509_crq_t crq,
+                          MHD_gnutls_x509_privkey_t key)
 {
   return MHD_gnutls_x509_crq_sign2 (crq, key, MHD_GNUTLS_MAC_SHA1, 0);
 }
@@ -831,8 +841,8 @@ MHD_gnutls_x509_crq_sign (MHD_gnutls_x509_crq_t crq, MHD_gnutls_x509_privkey_t k
   **/
 int
 MHD_gnutls_x509_crq_export (MHD_gnutls_x509_crq_t crq,
-                        MHD_gnutls_x509_crt_fmt_t format, void *output_data,
-                        size_t * output_data_size)
+                            MHD_gnutls_x509_crt_fmt_t format,
+                            void *output_data, size_t * output_data_size)
 {
   if (crq == NULL)
     {
@@ -841,7 +851,7 @@ MHD_gnutls_x509_crq_export (MHD_gnutls_x509_crq_t crq,
     }
 
   return MHD__gnutls_x509_export_int (crq->crq, format, PEM_CRQ,
-                                  output_data, output_data_size);
+                                      output_data, output_data_size);
 }
 
 /**
@@ -862,7 +872,8 @@ MHD_gnutls_x509_crq_export (MHD_gnutls_x509_crq_t crq,
   *
   **/
 int
-MHD_gnutls_x509_crq_get_pk_algorithm (MHD_gnutls_x509_crq_t crq, unsigned int *bits)
+MHD_gnutls_x509_crq_get_pk_algorithm (MHD_gnutls_x509_crq_t crq,
+                                      unsigned int *bits)
 {
   int result;
 
@@ -874,8 +885,8 @@ MHD_gnutls_x509_crq_get_pk_algorithm (MHD_gnutls_x509_crq_t crq, unsigned int *b
 
   result =
     MHD__gnutls_x509_get_pk_algorithm (crq->crq,
-                                   "certificationRequestInfo.subjectPKInfo",
-                                   bits);
+                                       "certificationRequestInfo.subjectPKInfo",
+                                       bits);
   if (result < 0)
     {
       MHD_gnutls_assert ();

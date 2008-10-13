@@ -47,6 +47,7 @@ int MHD_gtls_verify_sig_params (MHD_gtls_session_t session,
 
 int MHD_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                    mpi_t * params, int params_size,
-                   const MHD_gnutls_datum_t * data, MHD_gnutls_datum_t * signature);
+                   const MHD_gnutls_datum_t * data,
+                   MHD_gnutls_datum_t * signature);
 
 #endif

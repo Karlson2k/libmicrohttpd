@@ -69,4 +69,3 @@ MHD_gtls_session_get_id (MHD_gtls_session_t session,
 
   return 0;
 }
-

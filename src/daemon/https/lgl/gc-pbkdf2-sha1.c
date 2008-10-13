@@ -53,8 +53,8 @@
 
 Gc_rc
 MHD_gc_pbkdf2_sha1 (const char *P, size_t Plen,
-                const char *S, size_t Slen,
-                unsigned int c, char *DK, size_t dkLen)
+                    const char *S, size_t Slen,
+                    unsigned int c, char *DK, size_t dkLen)
 {
   unsigned int hLen = 20;
   char U[20];

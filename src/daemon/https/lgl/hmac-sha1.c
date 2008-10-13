@@ -31,7 +31,7 @@
 
 int
 MHD_hmac_sha1 (const void *key, size_t keylen,
-           const void *in, size_t inlen, void *resbuf)
+               const void *in, size_t inlen, void *resbuf)
 {
   struct MHD_sha1_ctx inner;
   struct MHD_sha1_ctx outer;

@@ -45,9 +45,10 @@
 #include <gnutls_x509.h>
 #include "debug.h"
 
-static MHD_gnutls_cert *alloc_and_load_x509_certs (MHD_gnutls_x509_crt_t * certs,
-                                               unsigned);
-static MHD_gnutls_privkey *alloc_and_load_x509_key (MHD_gnutls_x509_privkey_t key);
+static MHD_gnutls_cert *alloc_and_load_x509_certs (MHD_gnutls_x509_crt_t *
+                                                   certs, unsigned);
+static MHD_gnutls_privkey *alloc_and_load_x509_key (MHD_gnutls_x509_privkey_t
+                                                    key);
 
 
 /* Copies data from a internal certificate struct (MHD_gnutls_cert) to
@@ -55,7 +56,7 @@ static MHD_gnutls_privkey *alloc_and_load_x509_key (MHD_gnutls_x509_privkey_t ke
  */
 static int
 MHD__gnutls_copy_certificate_auth_info (cert_auth_info_t info,
-                                    MHD_gnutls_cert * cert, int ncerts)
+                                        MHD_gnutls_cert * cert, int ncerts)
 {
   /* Copy peer's information to auth_info_t
    */
@@ -82,7 +83,7 @@ MHD__gnutls_copy_certificate_auth_info (cert_auth_info_t info,
         {
           ret =
             MHD__gnutls_set_datum (&info->raw_certificate_list[i],
-                               cert[i].raw.data, cert[i].raw.size);
+                                   cert[i].raw.data, cert[i].raw.size);
           if (ret < 0)
             {
               MHD_gnutls_assert ();
@@ -113,9 +114,9 @@ clear:
  */
 inline static int
 MHD__gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
-                               *pk_algos, int pk_algos_length,
-                               enum MHD_GNUTLS_PublicKeyAlgorithm
-                               algo_to_check)
+                                   *pk_algos, int pk_algos_length,
+                                   enum MHD_GNUTLS_PublicKeyAlgorithm
+                                   algo_to_check)
 {
   int i;
   for (i = 0; i < pk_algos_length; i++)
@@ -133,7 +134,8 @@ MHD__gnutls_check_pk_algo_in_list (const enum MHD_GNUTLS_PublicKeyAlgorithm
  * specified in cert.
  */
 static int
-MHD__gnutls_cert_get_issuer_dn (MHD_gnutls_cert * cert, MHD_gnutls_datum_t * odn)
+MHD__gnutls_cert_get_issuer_dn (MHD_gnutls_cert * cert,
+                                MHD_gnutls_datum_t * odn)
 {
   ASN1_TYPE dn;
   int len, result;
@@ -155,8 +157,9 @@ MHD__gnutls_cert_get_issuer_dn (MHD_gnutls_cert * cert, MHD_gnutls_datum_t * odn
       return MHD_gtls_asn2err (result);
     }
 
-  result = MHD__asn1_der_decoding_startEnd (dn, cert->raw.data, cert->raw.size,
-                                       "tbsCertificate.issuer", &start, &end);
+  result =
+    MHD__asn1_der_decoding_startEnd (dn, cert->raw.data, cert->raw.size,
+                                     "tbsCertificate.issuer", &start, &end);
 
   if (result != ASN1_SUCCESS)
     {
@@ -211,7 +214,7 @@ _find_x509_cert (const MHD_gtls_cert_credentials_t cred,
             {
               if ((result =
                    MHD__gnutls_cert_get_issuer_dn (&cred->cert_list[i][j],
-                                               &odn)) < 0)
+                                                   &odn)) < 0)
                 {
                   MHD_gnutls_assert ();
                   return result;
@@ -483,7 +486,8 @@ _select_client_cert (MHD_gtls_session_t session,
           if (issuers_dn_length > 0)
             {
               issuers_dn =
-                MHD_gnutls_malloc (sizeof (MHD_gnutls_datum_t) * issuers_dn_length);
+                MHD_gnutls_malloc (sizeof (MHD_gnutls_datum_t) *
+                                   issuers_dn_length);
               if (issuers_dn == NULL)
                 {
                   MHD_gnutls_assert ();
@@ -712,7 +716,8 @@ MHD_gtls_proc_x509_server_certificate (MHD_gtls_session_t session,
    */
 
   peer_certificate_list =
-    MHD_gnutls_malloc (sizeof (MHD_gnutls_cert) * (peer_certificate_list_size));
+    MHD_gnutls_malloc (sizeof (MHD_gnutls_cert) *
+                       (peer_certificate_list_size));
 
   if (peer_certificate_list == NULL)
     {
@@ -752,8 +757,9 @@ MHD_gtls_proc_x509_server_certificate (MHD_gtls_session_t session,
 
   if ((ret =
        MHD__gnutls_copy_certificate_auth_info (info,
-                                           peer_certificate_list,
-                                           peer_certificate_list_size)) < 0)
+                                               peer_certificate_list,
+                                               peer_certificate_list_size)) <
+      0)
     {
       MHD_gnutls_assert ();
       goto cleanup;
@@ -761,7 +767,7 @@ MHD_gtls_proc_x509_server_certificate (MHD_gtls_session_t session,
 
   if ((ret =
        MHD__gnutls_check_key_usage (&peer_certificate_list[0],
-                                MHD_gnutls_kx_get (session))) < 0)
+                                    MHD_gnutls_kx_get (session))) < 0)
     {
       MHD_gnutls_assert ();
       goto cleanup;

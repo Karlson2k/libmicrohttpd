@@ -71,11 +71,10 @@ _set_priority (MHD_gtls_priority_st * st, const int *list)
 {
   int num = 0;
 
-  while ( (list[num] != 0) &&
-	  (num < MAX_ALGOS) )
+  while ((list[num] != 0) && (num < MAX_ALGOS))
     num++;
   st->num_algorithms = num;
-  memcpy(st->priority, list, num * sizeof(int));
+  memcpy (st->priority, list, num * sizeof (int));
   return 0;
 }
 
@@ -142,7 +141,7 @@ MHD__gnutls_mac_set_priority (MHD_gtls_session_t session, const int *list)
  **/
 int
 MHD__gnutls_compression_set_priority (MHD_gtls_session_t session,
-                                     const int *list)
+                                      const int *list)
 {
   return _set_priority (&session->internals.priorities.compression, list);
 }
@@ -160,7 +159,8 @@ MHD__gnutls_compression_set_priority (MHD_gtls_session_t session,
  *
  **/
 int
-MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session, const int *list)
+MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session,
+                                   const int *list)
 {
   int ret;
 
@@ -190,7 +190,7 @@ MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session, const int *list)
  **/
 int
 MHD__gnutls_certificate_type_set_priority (MHD_gtls_session_t session,
-                                          const int *list)
+                                           const int *list)
 {
 #if ENABLE_OPENPGP
   return _set_priority (&session->internals.priorities.cert_type, list);
@@ -243,7 +243,7 @@ typedef void (rmadd_func) (MHD_gtls_priority_st * priority_list, int alg);
  **/
 int
 MHD__gnutls_priority_set (MHD_gtls_session_t session,
-                         MHD_gnutls_priority_t priority)
+                          MHD_gnutls_priority_t priority)
 {
   if (priority == NULL)
     {
@@ -326,7 +326,8 @@ int
 MHD_tls_set_default_priority (MHD_gnutls_priority_t * priority_cache,
                               const char *priorities, const char **err_pos)
 {
-  *priority_cache = MHD_gnutls_calloc (1, sizeof (struct MHD_gtls_priority_st));
+  *priority_cache =
+    MHD_gnutls_calloc (1, sizeof (struct MHD_gtls_priority_st));
   if (*priority_cache == NULL)
     {
       MHD_gnutls_assert ();
@@ -375,7 +376,7 @@ MHD__gnutls_priority_deinit (MHD_gnutls_priority_t priority_cache)
  **/
 int
 MHD__gnutls_priority_set_direct (MHD_gtls_session_t session,
-                                const char *priorities, const char **err_pos)
+                                 const char *priorities, const char **err_pos)
 {
   MHD_gnutls_priority_t prio;
   int ret;

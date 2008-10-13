@@ -211,32 +211,36 @@ extern "C"
   } MHD_gnutls_params_st;
 
   typedef int MHD_gnutls_params_function (MHD_gtls_session_t,
-                                      MHD_gnutls_params_type_t,
-                                      MHD_gnutls_params_st *);
+                                          MHD_gnutls_params_type_t,
+                                          MHD_gnutls_params_st *);
 
 /* internal functions */
   int MHD__gnutls_global_init (void);
   void MHD__gnutls_global_deinit (void);
 
   int MHD__gnutls_init (MHD_gtls_session_t * session,
-                       MHD_gnutls_connection_end_t con_end);
+                        MHD_gnutls_connection_end_t con_end);
   void MHD__gnutls_deinit (MHD_gtls_session_t session);
 
-  int MHD__gnutls_bye (MHD_gtls_session_t session, MHD_gnutls_close_request_t how);
+  int MHD__gnutls_bye (MHD_gtls_session_t session,
+                       MHD_gnutls_close_request_t how);
   int MHD__gnutls_handshake (MHD_gtls_session_t session);
   int MHD__gnutls_rehandshake (MHD_gtls_session_t session);
 
   int MHD_gtls_handshake_client (MHD_gtls_session_t session);
 
-  MHD_gnutls_alert_description_t MHD_gnutls_alert_get (MHD_gtls_session_t session);
+  MHD_gnutls_alert_description_t MHD_gnutls_alert_get (MHD_gtls_session_t
+                                                       session);
   int MHD__gnutls_alert_send (MHD_gtls_session_t session,
-                             MHD_gnutls_alert_level_t level,
-                             MHD_gnutls_alert_description_t desc);
-  int MHD__gnutls_alert_send_appropriate (MHD_gtls_session_t session, int err);
-  const char *MHD__gnutls_alert_get_name (MHD_gnutls_alert_description_t alert);
+                              MHD_gnutls_alert_level_t level,
+                              MHD_gnutls_alert_description_t desc);
+  int MHD__gnutls_alert_send_appropriate (MHD_gtls_session_t session,
+                                          int err);
+  const char *MHD__gnutls_alert_get_name (MHD_gnutls_alert_description_t
+                                          alert);
 
-  enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get (MHD_gtls_session_t
-                                                        session);
+  enum MHD_GNUTLS_CompressionMethod
+    MHD_gtls_compression_get (MHD_gtls_session_t session);
 //  enum MHD_GNUTLS_CipherAlgorithm MHD_gnutls_cipher_get (MHD_gtls_session_t session);
 //  enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gnutls_kx_get (MHD_gtls_session_t session);
 //  enum MHD_GNUTLS_HashAlgorithm MHD_gnutls_mac_get (MHD_gtls_session_t session);
@@ -244,23 +248,23 @@ extern "C"
 //                                                         session);
 
   size_t MHD__gnutls_cipher_get_key_size (enum MHD_GNUTLS_CipherAlgorithm
-                                         algorithm);
+                                          algorithm);
   size_t MHD__gnutls_mac_get_key_size (enum MHD_GNUTLS_HashAlgorithm
-                                      algorithm);
+                                       algorithm);
 
 /* the name of the specified algorithms */
   const char *MHD__gnutls_cipher_get_name (enum MHD_GNUTLS_CipherAlgorithm
-                                          algorithm);
+                                           algorithm);
   const char *MHD__gnutls_mac_get_name (enum MHD_GNUTLS_HashAlgorithm
-                                       algorithm);
+                                        algorithm);
   const char *MHD_gtls_compression_get_name (enum
-                                               MHD_GNUTLS_CompressionMethod
-                                               algorithm);
+                                             MHD_GNUTLS_CompressionMethod
+                                             algorithm);
   const char *MHD__gnutls_kx_get_name (enum MHD_GNUTLS_KeyExchangeAlgorithm
-                                      algorithm);
+                                       algorithm);
   const char *MHD__gnutls_certificate_type_get_name (enum
-                                                    MHD_GNUTLS_CertificateType
-                                                    type);
+                                                     MHD_GNUTLS_CertificateType
+                                                     type);
 
   enum MHD_GNUTLS_HashAlgorithm MHD_gtls_mac_get_id (const char *name);
   enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id (const char
@@ -292,9 +296,9 @@ extern "C"
  * Record layer functions.
  */
   ssize_t MHD__gnutls_record_send (MHD_gtls_session_t session,
-                                  const void *data, size_t sizeofdata);
+                                   const void *data, size_t sizeofdata);
   ssize_t MHD__gnutls_record_recv (MHD_gtls_session_t session, void *data,
-                                  size_t sizeofdata);
+                                   size_t sizeofdata);
 
   /* provides extra compatibility */
   void MHD_gtls_record_disable_padding (MHD_gtls_session_t session);
@@ -303,19 +307,19 @@ extern "C"
   int MHD__gnutls_record_get_direction (MHD_gtls_session_t session);
   size_t MHD__gnutls_record_get_max_size (MHD_gtls_session_t session);
   ssize_t MHD__gnutls_record_set_max_size (MHD_gtls_session_t session,
-                                          size_t size);
+                                           size_t size);
 
 
   int MHD__gnutls_prf (MHD_gtls_session_t session,
-                      size_t label_size, const char *label,
-                      int server_random_first,
-                      size_t extra_size, const char *extra,
-                      size_t outsize, char *out);
+                       size_t label_size, const char *label,
+                       int server_random_first,
+                       size_t extra_size, const char *extra,
+                       size_t outsize, char *out);
 
   int MHD__gnutls_prf_raw (MHD_gtls_session_t session,
-                          size_t label_size, const char *label,
-                          size_t seed_size, const char *seed,
-                          size_t outsize, char *out);
+                           size_t label_size, const char *label,
+                           size_t seed_size, const char *seed,
+                           size_t outsize, char *out);
 
 /*
  * TLS Extensions
@@ -326,12 +330,12 @@ extern "C"
   } MHD_gnutls_server_name_type_t;
 
   int MHD__gnutls_server_name_set (MHD_gtls_session_t session,
-                                  MHD_gnutls_server_name_type_t type,
-                                  const void *name, size_t name_length);
+                                   MHD_gnutls_server_name_type_t type,
+                                   const void *name, size_t name_length);
 
   int MHD__gnutls_server_name_get (MHD_gtls_session_t session,
-                                  void *data, size_t * data_length,
-                                  unsigned int *type, unsigned int indx);
+                                   void *data, size_t * data_length,
+                                   unsigned int *type, unsigned int indx);
 
   /* Opaque PRF Input
    * http://tools.ietf.org/id/draft-rescorla-tls-opaque-prf-input-00.txt
@@ -342,10 +346,11 @@ extern "C"
                                   size_t len, unsigned char *data);
 
   typedef int (*MHD_gnutls_oprfi_callback_func) (MHD_gtls_session_t session,
-                                             void *userdata,
-                                             size_t oprfi_len,
-                                             const unsigned char *in_oprfi,
-                                             unsigned char *out_oprfi);
+                                                 void *userdata,
+                                                 size_t oprfi_len,
+                                                 const unsigned char
+                                                 *in_oprfi,
+                                                 unsigned char *out_oprfi);
 
   void
     MHD_gtls_oprfi_enable_server (MHD_gtls_session_t session,
@@ -362,32 +367,35 @@ extern "C"
     (MHD_gnutls_supplemental_data_format_type_t type);
 
   int MHD__gnutls_cipher_set_priority (MHD_gtls_session_t session,
-                                      const int *list);
+                                       const int *list);
   int MHD__gnutls_mac_set_priority (MHD_gtls_session_t session,
-                                   const int *list);
+                                    const int *list);
   int MHD__gnutls_compression_set_priority (MHD_gtls_session_t session,
-                                           const int *list);
+                                            const int *list);
   int MHD__gnutls_kx_set_priority (MHD_gtls_session_t session,
-                                  const int *list);
+                                   const int *list);
   int MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session,
-                                        const int *list);
+                                         const int *list);
   int MHD__gnutls_certificate_type_set_priority (MHD_gtls_session_t session,
-                                                const int *list);
+                                                 const int *list);
 
-  int MHD_tls_set_default_priority (MHD_gnutls_priority_t *, const char *priority,
+  int MHD_tls_set_default_priority (MHD_gnutls_priority_t *,
+                                    const char *priority,
                                     const char **err_pos);
   void MHD__gnutls_priority_deinit (MHD_gnutls_priority_t);
 
-  int MHD__gnutls_priority_set (MHD_gtls_session_t session, MHD_gnutls_priority_t);
+  int MHD__gnutls_priority_set (MHD_gtls_session_t session,
+                                MHD_gnutls_priority_t);
   int MHD__gnutls_priority_set_direct (MHD_gtls_session_t session,
-                                      const char *priority,
-                                      const char **err_pos);
+                                       const char *priority,
+                                       const char **err_pos);
 
 /* get the currently used protocol version */
-  enum MHD_GNUTLS_Protocol MHD__gnutls_protocol_get_version (MHD_gtls_session_t
-                                                            session);
+  enum MHD_GNUTLS_Protocol
+    MHD__gnutls_protocol_get_version (MHD_gtls_session_t session);
 
-  const char *MHD__gnutls_protocol_get_name (enum MHD_GNUTLS_Protocol version);
+  const char *MHD__gnutls_protocol_get_name (enum MHD_GNUTLS_Protocol
+                                             version);
 
 /*
  * get/set session
@@ -412,13 +420,14 @@ extern "C"
 
   int MHD_gtls_session_is_resumed (MHD_gtls_session_t session);
 
-  typedef int (*MHD_gnutls_handshake_post_client_hello_func) (MHD_gtls_session_t);
+  typedef
+    int (*MHD_gnutls_handshake_post_client_hello_func) (MHD_gtls_session_t);
   void
     MHD__gnutls_handshake_set_post_client_hello_function (MHD_gtls_session_t,
-                                                         MHD_gnutls_handshake_post_client_hello_func);
+                                                          MHD_gnutls_handshake_post_client_hello_func);
 
-  void MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t session,
-                                                   size_t max);
+  void MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t
+                                                    session, size_t max);
 
 /*
  * Functions for setting/clearing credentials
@@ -429,8 +438,8 @@ extern "C"
  * cred is a structure defined by the kx algorithm
  */
   int MHD__gnutls_credentials_set (MHD_gtls_session_t session,
-                                  enum MHD_GNUTLS_CredentialsType type,
-                                  void *cred);
+                                   enum MHD_GNUTLS_CredentialsType type,
+                                   void *cred);
 
 /* Credential structures - used in MHD__gnutls_credentials_set(); */
   struct MHD_gtls_certificate_credentials_st;
@@ -453,12 +462,13 @@ extern "C"
 
   void
     MHD__gnutls_anon_set_server_dh_params (MHD_gtls_anon_server_credentials_t
-                                          res,
-                                          MHD_gtls_dh_params_t dh_params);
+                                           res,
+                                           MHD_gtls_dh_params_t dh_params);
 
   void
     MHD__gnutls_anon_set_server_params_function
-    (MHD_gtls_anon_server_credentials_t res, MHD_gnutls_params_function * func);
+    (MHD_gtls_anon_server_credentials_t res,
+     MHD_gnutls_params_function * func);
 
   void
     MHD__gnutls_anon_free_client_credentials
@@ -468,10 +478,10 @@ extern "C"
     (MHD_gtls_anon_client_credentials_t * sc);
 
   void MHD__gnutls_certificate_free_credentials (MHD_gtls_cert_credentials_t
-                                                sc);
+                                                 sc);
   int
     MHD__gnutls_certificate_allocate_credentials (MHD_gtls_cert_credentials_t
-                                                 * res);
+                                                  * res);
 
   void MHD__gnutls_certificate_free_keys (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_cas (MHD_gtls_cert_credentials_t sc);
@@ -479,50 +489,60 @@ extern "C"
   void MHD__gnutls_certificate_free_crls (MHD_gtls_cert_credentials_t sc);
 
   void MHD__gnutls_certificate_set_dh_params (MHD_gtls_cert_credentials_t res,
-                                             MHD_gtls_dh_params_t dh_params);
+                                              MHD_gtls_dh_params_t dh_params);
   void
     MHD__gnutls_certificate_set_rsa_export_params (MHD_gtls_cert_credentials_t
-                                                  res,
-                                                  MHD_gtls_rsa_params_t
-                                                  rsa_params);
+                                                   res,
+                                                   MHD_gtls_rsa_params_t
+                                                   rsa_params);
   void MHD__gnutls_certificate_set_verify_flags (MHD_gtls_cert_credentials_t
-                                                res, unsigned int flags);
+                                                 res, unsigned int flags);
   void MHD__gnutls_certificate_set_verify_limits (MHD_gtls_cert_credentials_t
-                                                 res, unsigned int max_bits,
-                                                 unsigned int max_depth);
+                                                  res, unsigned int max_bits,
+                                                  unsigned int max_depth);
 
   int MHD__gnutls_certificate_set_x509_trust_file (MHD_gtls_cert_credentials_t
-                                                  res, const char *CAFILE,
-                                                  MHD_gnutls_x509_crt_fmt_t type);
+                                                   res, const char *CAFILE,
+                                                   MHD_gnutls_x509_crt_fmt_t
+                                                   type);
   int MHD__gnutls_certificate_set_x509_trust_mem (MHD_gtls_cert_credentials_t
-                                                 res,
-                                                 const MHD_gnutls_datum_t * CA,
-                                                 MHD_gnutls_x509_crt_fmt_t type);
+                                                  res,
+                                                  const MHD_gnutls_datum_t *
+                                                  CA,
+                                                  MHD_gnutls_x509_crt_fmt_t
+                                                  type);
 
   int MHD__gnutls_certificate_set_x509_crl_file (MHD_gtls_cert_credentials_t
-                                                res, const char *crlfile,
-                                                MHD_gnutls_x509_crt_fmt_t type);
+                                                 res, const char *crlfile,
+                                                 MHD_gnutls_x509_crt_fmt_t
+                                                 type);
   int MHD__gnutls_certificate_set_x509_crl_mem (MHD_gtls_cert_credentials_t
-                                               res,
-                                               const MHD_gnutls_datum_t * CRL,
-                                               MHD_gnutls_x509_crt_fmt_t type);
+                                                res,
+                                                const MHD_gnutls_datum_t *
+                                                CRL,
+                                                MHD_gnutls_x509_crt_fmt_t
+                                                type);
 
   /*
    * CERTFILE is an x509 certificate in PEM form.
    * KEYFILE is a pkcs-1 private key in PEM form (for RSA keys).
    */
   int MHD__gnutls_certificate_set_x509_key_file (MHD_gtls_cert_credentials_t
-                                                res, const char *CERTFILE,
-                                                const char *KEYFILE,
-                                                MHD_gnutls_x509_crt_fmt_t type);
+                                                 res, const char *CERTFILE,
+                                                 const char *KEYFILE,
+                                                 MHD_gnutls_x509_crt_fmt_t
+                                                 type);
   int MHD__gnutls_certificate_set_x509_key_mem (MHD_gtls_cert_credentials_t
-                                               res,
-                                               const MHD_gnutls_datum_t * CERT,
-                                               const MHD_gnutls_datum_t * KEY,
-                                               MHD_gnutls_x509_crt_fmt_t type);
+                                                res,
+                                                const MHD_gnutls_datum_t *
+                                                CERT,
+                                                const MHD_gnutls_datum_t *
+                                                KEY,
+                                                MHD_gnutls_x509_crt_fmt_t
+                                                type);
 
   void MHD__gnutls_certificate_send_x509_rdn_sequence (MHD_gtls_session_t
-                                                      session, int status);
+                                                       session, int status);
 
 /*
  * New functions to allow setting already parsed X.509 stuff.
@@ -558,7 +578,8 @@ extern "C"
   typedef void *(*MHD_gnutls_realloc_function) (void *, size_t);
 
   extern void
-    MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function gt_alloc_func,
+    MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function
+                                       gt_alloc_func,
                                        MHD_gnutls_alloc_function
                                        gt_secure_alloc_func,
                                        MHD_gnutls_is_secure_function
@@ -586,14 +607,14 @@ extern "C"
   int MHD__gnutls_dh_params_init (MHD_gtls_dh_params_t * dh_params);
   void MHD__gnutls_dh_params_deinit (MHD_gtls_dh_params_t dh_params);
   int MHD__gnutls_dh_params_generate2 (MHD_gtls_dh_params_t params,
-                                      unsigned int bits);
+                                       unsigned int bits);
 
 
 /* RSA params */
   int MHD__gnutls_rsa_params_init (MHD_gtls_rsa_params_t * rsa_params);
   void MHD__gnutls_rsa_params_deinit (MHD_gtls_rsa_params_t rsa_params);
   int MHD__gnutls_rsa_params_generate2 (MHD_gtls_rsa_params_t params,
-                                       unsigned int bits);
+                                        unsigned int bits);
 
 
 /*
@@ -601,21 +622,21 @@ extern "C"
  */
   typedef ssize_t (*MHD_gtls_pull_func) (MHD_gnutls_transport_ptr_t, void *,
                                          size_t);
-  typedef ssize_t (*MHD_gtls_push_func) (MHD_gnutls_transport_ptr_t, const void *,
-                                         size_t);
+  typedef ssize_t (*MHD_gtls_push_func) (MHD_gnutls_transport_ptr_t,
+                                         const void *, size_t);
   void MHD__gnutls_transport_set_ptr (MHD_gtls_session_t session,
-                                     MHD_gnutls_transport_ptr_t ptr);
+                                      MHD_gnutls_transport_ptr_t ptr);
   void MHD__gnutls_transport_set_ptr2 (MHD_gtls_session_t session,
-                                      MHD_gnutls_transport_ptr_t recv_ptr,
-                                      MHD_gnutls_transport_ptr_t send_ptr);
+                                       MHD_gnutls_transport_ptr_t recv_ptr,
+                                       MHD_gnutls_transport_ptr_t send_ptr);
 
   void MHD__gnutls_transport_set_lowat (MHD_gtls_session_t session, int num);
 
 
   void MHD__gnutls_transport_set_push_function (MHD_gtls_session_t session,
-                                               MHD_gtls_push_func push_func);
+                                                MHD_gtls_push_func push_func);
   void MHD__gnutls_transport_set_pull_function (MHD_gtls_session_t session,
-                                               MHD_gtls_pull_func pull_func);
+                                                MHD_gtls_pull_func pull_func);
 
   void MHD__gnutls_transport_set_errno (MHD_gtls_session_t session, int err);
   void MHD__gnutls_transport_set_global_errno (int err);
@@ -630,8 +651,8 @@ extern "C"
  * this function returns the hash of the given data.
  */
   int MHD__gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
-                              const MHD_gnutls_datum_t * data, void *result,
-                              size_t * result_size);
+                               const MHD_gnutls_datum_t * data, void *result,
+                               size_t * result_size);
 
   typedef enum MHD_gnutls_x509_subject_alt_name_t
   {
@@ -664,21 +685,19 @@ extern "C"
     unsigned int deinit_all;    /* if non zero all keys will be deinited */
   } MHD_gnutls_retr_st;
 
-  typedef int MHD_gnutls_certificate_client_retrieve_function (MHD_gtls_session_t,
-                                                           const
-                                                           MHD_gnutls_datum_t *
-                                                           req_ca_rdn,
-                                                           int nreqs,
-                                                           const
-                                                           enum
-                                                           MHD_GNUTLS_PublicKeyAlgorithm
-                                                           *pk_algos,
-                                                           int
-                                                           pk_algos_length,
-                                                           MHD_gnutls_retr_st *);
+  typedef int
+    MHD_gnutls_certificate_client_retrieve_function (MHD_gtls_session_t,
+                                                     const MHD_gnutls_datum_t
+                                                     * req_ca_rdn, int nreqs,
+                                                     const enum
+                                                     MHD_GNUTLS_PublicKeyAlgorithm
+                                                     *pk_algos,
+                                                     int pk_algos_length,
+                                                     MHD_gnutls_retr_st *);
 
-  typedef int MHD_gnutls_certificate_server_retrieve_function (MHD_gtls_session_t,
-                                                           MHD_gnutls_retr_st *);
+  typedef int
+    MHD_gnutls_certificate_server_retrieve_function (MHD_gtls_session_t,
+                                                     MHD_gnutls_retr_st *);
 
   /*
    * Functions that allow auth_info_t structures handling
@@ -694,16 +713,16 @@ extern "C"
    * DH
    */
   void MHD__gnutls_dh_set_prime_bits (MHD_gtls_session_t session,
-                                     unsigned int bits);
+                                      unsigned int bits);
   int MHD__gnutls_dh_get_secret_bits (MHD_gtls_session_t session);
   int MHD__gnutls_dh_get_peers_public_bits (MHD_gtls_session_t session);
   int MHD__gnutls_dh_get_prime_bits (MHD_gtls_session_t session);
 
   int MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
-                               MHD_gnutls_datum_t * raw_gen,
-                               MHD_gnutls_datum_t * raw_prime);
+                                MHD_gnutls_datum_t * raw_gen,
+                                MHD_gnutls_datum_t * raw_prime);
   int MHD__gnutls_dh_get_pubkey (MHD_gtls_session_t session,
-                                MHD_gnutls_datum_t * raw_key);
+                                 MHD_gnutls_datum_t * raw_key);
 
   /*
    * RSA
@@ -715,17 +734,18 @@ extern "C"
 
   /* External signing callback.  Experimental. */
   typedef int (*MHD_gnutls_sign_func) (MHD_gtls_session_t session,
-                                   void *userdata,
-                                   enum MHD_GNUTLS_CertificateType cert_type,
-                                   const MHD_gnutls_datum_t * cert,
-                                   const MHD_gnutls_datum_t * hash,
-                                   MHD_gnutls_datum_t * signature);
+                                       void *userdata,
+                                       enum MHD_GNUTLS_CertificateType
+                                       cert_type,
+                                       const MHD_gnutls_datum_t * cert,
+                                       const MHD_gnutls_datum_t * hash,
+                                       MHD_gnutls_datum_t * signature);
 
   void MHD_gtls_sign_callback_set (MHD_gtls_session_t session,
                                    MHD_gnutls_sign_func sign_func,
                                    void *userdata);
-    MHD_gnutls_sign_func MHD_gtls_sign_callback_get (MHD_gtls_session_t session,
-                                                 void **userdata);
+  MHD_gnutls_sign_func MHD_gtls_sign_callback_get (MHD_gtls_session_t session,
+                                                   void **userdata);
 
   /* These are set on the credentials structure.
    */
@@ -742,11 +762,11 @@ extern "C"
 
   /* get data from the session */
   const MHD_gnutls_datum_t *MHD_gtls_certificate_get_peers (MHD_gtls_session_t
-                                                        session,
-                                                        unsigned int
-                                                        *list_size);
+                                                            session,
+                                                            unsigned int
+                                                            *list_size);
   const MHD_gnutls_datum_t *MHD_gtls_certificate_get_ours (MHD_gtls_session_t
-                                                       session);
+                                                           session);
 
   time_t MHD_gtls_certificate_activation_time_peers (MHD_gtls_session_t
                                                      session);
@@ -762,8 +782,8 @@ extern "C"
   int MHD_gtls_certificate_verify_peers (MHD_gtls_session_t session);
 
   int MHD_gtls_pem_base64_encode (const char *msg,
-                                  const MHD_gnutls_datum_t * data, char *result,
-                                  size_t * result_size);
+                                  const MHD_gnutls_datum_t * data,
+                                  char *result, size_t * result_size);
   int MHD_gtls_pem_base64_decode (const char *header,
                                   const MHD_gnutls_datum_t * b64_data,
                                   unsigned char *result,

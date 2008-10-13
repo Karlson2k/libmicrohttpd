@@ -199,7 +199,8 @@ MHD_sha1_buffer (const char *buffer, size_t len, void *resblock)
 }
 
 void
-MHD_sha1_process_bytes (const void *buffer, size_t len, struct MHD_sha1_ctx *ctx)
+MHD_sha1_process_bytes (const void *buffer, size_t len,
+                        struct MHD_sha1_ctx *ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -235,7 +236,8 @@ MHD_sha1_process_bytes (const void *buffer, size_t len, struct MHD_sha1_ctx *ctx
       if (UNALIGNED_P (buffer))
         while (len > 64)
           {
-            MHD_sha1_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
+            MHD_sha1_process_block (memcpy (ctx->buffer, buffer, 64), 64,
+                                    ctx);
             buffer = (const char *) buffer + 64;
             len -= 64;
           }
@@ -284,7 +286,8 @@ MHD_sha1_process_bytes (const void *buffer, size_t len, struct MHD_sha1_ctx *ctx
    Most of this code comes from GnuPG's cipher/sha1.c.  */
 
 void
-MHD_sha1_process_block (const void *buffer, size_t len, struct MHD_sha1_ctx *ctx)
+MHD_sha1_process_block (const void *buffer, size_t len,
+                        struct MHD_sha1_ctx *ctx)
 {
   const uint32_t *words = buffer;
   size_t nwords = len / sizeof (uint32_t);

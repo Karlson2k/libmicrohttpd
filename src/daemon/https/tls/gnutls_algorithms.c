@@ -352,7 +352,8 @@ const int MHD__gnutls_comp_algorithms_size = MAX_COMP_METHODS;
 
 /* the compression entry is defined in MHD_gnutls_algorithms.h */
 
-MHD_gnutls_compression_entry MHD__gnutls_compression_algorithms[MAX_COMP_METHODS] =
+MHD_gnutls_compression_entry
+  MHD__gnutls_compression_algorithms[MAX_COMP_METHODS] =
   { GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
 #ifdef HAVE_LIBZ
   /* draft-ietf-tls-compression-02 */
@@ -1310,7 +1311,7 @@ MHD_gtls_version_lowest (MHD_gtls_session_t session)
       }
 
   if (min == 0xff)
-    return MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN;  /* unknown version */
+    return MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN; /* unknown version */
 
   return min;
 }
@@ -1333,7 +1334,7 @@ MHD_gtls_version_max (MHD_gtls_session_t session)
       }
 
   if (max == 0x00)
-    return MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN;  /* unknown version */
+    return MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN; /* unknown version */
 
   return max;
 }
@@ -1542,11 +1543,11 @@ MHD__gnutls_cipher_suite_is_ok (cipher_suite_st * suite)
 #define MAX_ELEM_SIZE 4
 static inline int
 MHD__gnutls_partition (MHD_gtls_session_t session,
-                   void *_base,
-                   size_t nmemb,
-                   size_t size,
-                   int (*compar) (MHD_gtls_session_t,
-                                  const void *, const void *))
+                       void *_base,
+                       size_t nmemb,
+                       size_t size,
+                       int (*compar) (MHD_gtls_session_t,
+                                      const void *, const void *))
 {
   uint8_t *base = _base;
   uint8_t tmp[MAX_ELEM_SIZE];
@@ -1590,10 +1591,11 @@ MHD__gnutls_partition (MHD_gtls_session_t session,
 
 static void
 MHD__gnutls_qsort (MHD_gtls_session_t session,
-               void *_base,
-               size_t nmemb,
-               size_t size,
-               int (*compar) (MHD_gtls_session_t, const void *, const void *))
+                   void *_base,
+                   size_t nmemb,
+                   size_t size,
+                   int (*compar) (MHD_gtls_session_t, const void *,
+                                  const void *))
 {
   unsigned int pivot;
   char *base = _base;
@@ -1613,9 +1615,9 @@ MHD__gnutls_qsort (MHD_gtls_session_t session,
   pivot = MHD__gnutls_partition (session, _base, nmemb, size, compar);
 
   MHD__gnutls_qsort (session, base, pivot < nmemb ? pivot + 1
-                 : pivot, size, compar);
-  MHD__gnutls_qsort (session, &base[(pivot + 1) * size], nmemb - pivot - 1, size,
-                 compar);
+                     : pivot, size, compar);
+  MHD__gnutls_qsort (session, &base[(pivot + 1) * size], nmemb - pivot - 1,
+                     size, compar);
 }
 
 /* a compare function for KX algorithms (using priorities).
@@ -1623,7 +1625,7 @@ MHD__gnutls_qsort (MHD_gtls_session_t session,
  */
 static int
 MHD__gnutls_compare_algo (MHD_gtls_session_t session,
-                      const void *i_A1, const void *i_A2)
+                          const void *i_A1, const void *i_A2)
 {
   enum MHD_GNUTLS_KeyExchangeAlgorithm kA1 =
     MHD_gtls_cipher_suite_get_kx_algo ((const cipher_suite_st *) i_A1);
@@ -1662,8 +1664,8 @@ MHD__gnutls_compare_algo (MHD_gtls_session_t session,
 #ifdef SORT_DEBUG
 static void
 MHD__gnutls_bsort (MHD_gtls_session_t session, void *_base, size_t nmemb,
-               size_t size, int (*compar) (MHD_gtls_session_t, const void *,
-                                           const void *))
+                   size_t size, int (*compar) (MHD_gtls_session_t,
+                                               const void *, const void *))
 {
   unsigned int i, j;
   int full = nmemb * size;
@@ -1704,17 +1706,17 @@ MHD_gtls_supported_ciphersuites_sorted (MHD_gtls_session_t session,
   MHD__gnutls_debug_log ("Unsorted: \n");
   for (i = 0; i < count; i++)
     MHD__gnutls_debug_log ("\t%d: %s\n", i,
-                       MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
+                           MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
 #endif
 
   MHD__gnutls_qsort (session, *ciphers, count, sizeof (cipher_suite_st),
-                 MHD__gnutls_compare_algo);
+                     MHD__gnutls_compare_algo);
 
 #ifdef SORT_DEBUG
   MHD__gnutls_debug_log ("Sorted: \n");
   for (i = 0; i < count; i++)
     MHD__gnutls_debug_log ("\t%d: %s\n", i,
-                       MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
+                           MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
 #endif
 
   return count;
@@ -1832,15 +1834,16 @@ MHD_gtls_supported_compression_methods (MHD_gtls_session_t session,
 {
   unsigned int i, j;
 
-  *comp = MHD_gnutls_malloc (sizeof (uint8_t) * SUPPORTED_COMPRESSION_METHODS);
+  *comp =
+    MHD_gnutls_malloc (sizeof (uint8_t) * SUPPORTED_COMPRESSION_METHODS);
   if (*comp == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
   for (i = j = 0; i < SUPPORTED_COMPRESSION_METHODS; i++)
     {
       int tmp =
-        MHD_gtls_compression_get_num (session->internals.priorities.
-                                      compression.priority[i]);
+        MHD_gtls_compression_get_num (session->internals.
+                                      priorities.compression.priority[i]);
 
       /* remove private compression algorithms, if requested.
        */

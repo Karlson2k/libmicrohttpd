@@ -25,6 +25,6 @@
 #include <gnutls_int.h>
 
 int MHD__gnutls_parse_supplemental (MHD_gtls_session_t session,
-                                const uint8_t * data, int data_size);
+                                    const uint8_t * data, int data_size);
 int MHD__gnutls_gen_supplemental (MHD_gtls_session_t session,
-                              MHD_gtls_buffer * buf);
+                                  MHD_gtls_buffer * buf);

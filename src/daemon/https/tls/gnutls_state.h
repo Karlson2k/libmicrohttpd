@@ -28,11 +28,11 @@
 #include <gnutls_int.h>
 
 void MHD__gnutls_session_cert_type_set (MHD_gtls_session_t session,
-                                    enum MHD_GNUTLS_CertificateType);
+                                        enum MHD_GNUTLS_CertificateType);
 enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gnutls_kx_get (MHD_gtls_session_t
-                                                    session);
+                                                        session);
 enum MHD_GNUTLS_CipherAlgorithm MHD_gnutls_cipher_get (MHD_gtls_session_t
-                                                   session);
+                                                       session);
 enum MHD_GNUTLS_CertificateType
 MHD_gnutls_certificate_type_get (MHD_gtls_session_t);
 
@@ -72,6 +72,6 @@ int MHD_gtls_PRF (MHD_gtls_session_t session,
                   int total_bytes, void *ret);
 
 int MHD__gnutls_init (MHD_gtls_session_t * session,
-                     MHD_gnutls_connection_end_t con_end);
+                      MHD_gnutls_connection_end_t con_end);
 
 #define DEFAULT_CERT_TYPE MHD_GNUTLS_CRT_X509

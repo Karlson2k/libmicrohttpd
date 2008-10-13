@@ -69,7 +69,8 @@ _decode_pkcs7_signed_data (ASN1_TYPE pkcs7, ASN1_TYPE * sdata,
     }
 
   if ((result = MHD__asn1_create_element
-       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-SignedData", &c2)) != ASN1_SUCCESS)
+       (MHD__gnutls_get_pkix (), "PKIX1.pkcs-7-SignedData",
+        &c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -158,8 +159,8 @@ MHD_gnutls_pkcs7_init (MHD_gnutls_pkcs7_t * pkcs7)
   if (*pkcs7)
     {
       int result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                        "PKIX1.pkcs-7-ContentInfo",
-                                        &(*pkcs7)->pkcs7);
+                                             "PKIX1.pkcs-7-ContentInfo",
+                                             &(*pkcs7)->pkcs7);
       if (result != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
@@ -205,8 +206,9 @@ MHD_gnutls_pkcs7_deinit (MHD_gnutls_pkcs7_t pkcs7)
   *
   **/
 int
-MHD_gnutls_pkcs7_import (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t * data,
-                     MHD_gnutls_x509_crt_fmt_t format)
+MHD_gnutls_pkcs7_import (MHD_gnutls_pkcs7_t pkcs7,
+                         const MHD_gnutls_datum_t * data,
+                         MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -224,7 +226,7 @@ MHD_gnutls_pkcs7_import (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t * da
       opaque *out;
 
       result = MHD__gnutls_fbase64_decode (PEM_PKCS7, data->data, data->size,
-                                       &out);
+                                           &out);
 
       if (result <= 0)
         {
@@ -241,7 +243,8 @@ MHD_gnutls_pkcs7_import (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t * da
     }
 
 
-  result = MHD__asn1_der_decoding (&pkcs7->pkcs7, _data.data, _data.size, NULL);
+  result =
+    MHD__asn1_der_decoding (&pkcs7->pkcs7, _data.data, _data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
       result = MHD_gtls_asn2err (result);
@@ -277,8 +280,8 @@ cleanup:
   **/
 int
 MHD_gnutls_pkcs7_get_crt_raw (MHD_gnutls_pkcs7_t pkcs7,
-                          int indx, void *certificate,
-                          size_t * certificate_size)
+                              int indx, void *certificate,
+                              size_t * certificate_size)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result, len;
@@ -327,7 +330,7 @@ MHD_gnutls_pkcs7_get_crt_raw (MHD_gnutls_pkcs7_t pkcs7,
       int start, end;
 
       result = MHD__asn1_der_decoding_startEnd (c2, tmp.data, tmp.size,
-                                           root2, &start, &end);
+                                                root2, &start, &end);
 
       if (result != ASN1_SUCCESS)
         {
@@ -432,14 +435,14 @@ MHD_gnutls_pkcs7_get_crt_count (MHD_gnutls_pkcs7_t pkcs7)
   **/
 int
 MHD_gnutls_pkcs7_export (MHD_gnutls_pkcs7_t pkcs7,
-                     MHD_gnutls_x509_crt_fmt_t format, void *output_data,
-                     size_t * output_data_size)
+                         MHD_gnutls_x509_crt_fmt_t format, void *output_data,
+                         size_t * output_data_size)
 {
   if (pkcs7 == NULL)
     return GNUTLS_E_INVALID_REQUEST;
 
   return MHD__gnutls_x509_export_int (pkcs7->pkcs7, format, PEM_PKCS7,
-                                  output_data, output_data_size);
+                                      output_data, output_data_size);
 }
 
 /* Creates an empty signed data structure in the pkcs7
@@ -478,7 +481,7 @@ create_empty_signed_data (ASN1_TYPE pkcs7, ASN1_TYPE * sdata)
   /* id-data */
   result =
     MHD__asn1_write_value (*sdata, "encapContentInfo.eContentType",
-                      "1.2.840.113549.1.7.5", 1);
+                           "1.2.840.113549.1.7.5", 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -486,7 +489,8 @@ create_empty_signed_data (ASN1_TYPE pkcs7, ASN1_TYPE * sdata)
       goto cleanup;
     }
 
-  result = MHD__asn1_write_value (*sdata, "encapContentInfo.eContent", NULL, 0);
+  result =
+    MHD__asn1_write_value (*sdata, "encapContentInfo.eContent", NULL, 0);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -531,7 +535,8 @@ cleanup:
   *
   **/
 int
-MHD_gnutls_pkcs7_set_crt_raw (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t * crt)
+MHD_gnutls_pkcs7_set_crt_raw (MHD_gnutls_pkcs7_t pkcs7,
+                              const MHD_gnutls_datum_t * crt)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result;
@@ -585,7 +590,7 @@ MHD_gnutls_pkcs7_set_crt_raw (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t
 
   result =
     MHD__asn1_write_value (c2, "certificates.?LAST.certificate", crt->data,
-                      crt->size);
+                           crt->size);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -735,7 +740,7 @@ cleanup:
   **/
 int
 MHD_gnutls_pkcs7_get_crl_raw (MHD_gnutls_pkcs7_t pkcs7,
-                          int indx, void *crl, size_t * crl_size)
+                              int indx, void *crl, size_t * crl_size)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result;
@@ -763,7 +768,7 @@ MHD_gnutls_pkcs7_get_crl_raw (MHD_gnutls_pkcs7_t pkcs7,
   /* Get the raw CRL
    */
   result = MHD__asn1_der_decoding_startEnd (c2, tmp.data, tmp.size,
-                                       root2, &start, &end);
+                                            root2, &start, &end);
 
   if (result != ASN1_SUCCESS)
     {
@@ -849,7 +854,8 @@ MHD_gnutls_pkcs7_get_crl_count (MHD_gnutls_pkcs7_t pkcs7)
   *
   **/
 int
-MHD_gnutls_pkcs7_set_crl_raw (MHD_gnutls_pkcs7_t pkcs7, const MHD_gnutls_datum_t * crl)
+MHD_gnutls_pkcs7_set_crl_raw (MHD_gnutls_pkcs7_t pkcs7,
+                              const MHD_gnutls_datum_t * crl)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result;

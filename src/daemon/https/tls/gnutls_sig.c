@@ -38,10 +38,10 @@
 #include <gnutls_kx.h>
 
 static int MHD__gnutls_tls_sign (MHD_gtls_session_t session,
-                             MHD_gnutls_cert * cert,
-                             MHD_gnutls_privkey * pkey,
-                             const MHD_gnutls_datum_t * hash_concat,
-                             MHD_gnutls_datum_t * signature);
+                                 MHD_gnutls_cert * cert,
+                                 MHD_gnutls_privkey * pkey,
+                                 const MHD_gnutls_datum_t * hash_concat,
+                                 MHD_gnutls_datum_t * signature);
 
 /* Generates a signature of all the previous sent packets in the
  * handshake procedure. (20040227: now it works for SSL 3.0 as well)
@@ -49,7 +49,8 @@ static int MHD__gnutls_tls_sign (MHD_gtls_session_t session,
 int
 MHD_gtls_tls_sign_hdata (MHD_gtls_session_t session,
                          MHD_gnutls_cert * cert,
-                         MHD_gnutls_privkey * pkey, MHD_gnutls_datum_t * signature)
+                         MHD_gnutls_privkey * pkey,
+                         MHD_gnutls_datum_t * signature)
 {
   MHD_gnutls_datum_t dconcat;
   int ret;
@@ -75,8 +76,9 @@ MHD_gtls_tls_sign_hdata (MHD_gtls_session_t session,
         }
 
       MHD_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                            session->security_parameters.
-                                            master_secret, TLS_MASTER_SIZE);
+                                            session->
+                                            security_parameters.master_secret,
+                                            TLS_MASTER_SIZE);
     }
   else
     MHD_gnutls_hash_deinit (td_sha, &concat[16]);
@@ -94,8 +96,9 @@ MHD_gtls_tls_sign_hdata (MHD_gtls_session_t session,
 
       if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
         MHD_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                              session->security_parameters.
-                                              master_secret, TLS_MASTER_SIZE);
+                                              session->
+                                              security_parameters.master_secret,
+                                              TLS_MASTER_SIZE);
       else
         MHD_gnutls_hash_deinit (td_md5, concat);
 
@@ -122,7 +125,8 @@ int
 MHD_gtls_tls_sign_params (MHD_gtls_session_t session,
                           MHD_gnutls_cert * cert,
                           MHD_gnutls_privkey * pkey,
-                          MHD_gnutls_datum_t * params, MHD_gnutls_datum_t * signature)
+                          MHD_gnutls_datum_t * params,
+                          MHD_gnutls_datum_t * signature)
 {
   MHD_gnutls_datum_t dconcat;
   int ret;
@@ -207,7 +211,8 @@ int
 MHD_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                mpi_t * params,
                int params_size,
-               const MHD_gnutls_datum_t * data, MHD_gnutls_datum_t * signature)
+               const MHD_gnutls_datum_t * data,
+               MHD_gnutls_datum_t * signature)
 {
   int ret;
 
@@ -239,10 +244,10 @@ MHD_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
  */
 static int
 MHD__gnutls_tls_sign (MHD_gtls_session_t session,
-                  MHD_gnutls_cert * cert,
-                  MHD_gnutls_privkey * pkey,
-                  const MHD_gnutls_datum_t * hash_concat,
-                  MHD_gnutls_datum_t * signature)
+                      MHD_gnutls_cert * cert,
+                      MHD_gnutls_privkey * pkey,
+                      const MHD_gnutls_datum_t * hash_concat,
+                      MHD_gnutls_datum_t * signature)
 {
 
   /* If our certificate supports signing
@@ -263,8 +268,8 @@ MHD__gnutls_tls_sign (MHD_gtls_session_t session,
         return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 
       return (*session->internals.sign_func) (session,
-                                              session->internals.
-                                              sign_func_userdata,
+                                              session->
+                                              internals.sign_func_userdata,
                                               cert->cert_type, &cert->raw,
                                               hash_concat, signature);
     }
@@ -275,13 +280,13 @@ MHD__gnutls_tls_sign (MHD_gtls_session_t session,
 
 static int
 MHD__gnutls_verify_sig (MHD_gnutls_cert * cert,
-                    const MHD_gnutls_datum_t * hash_concat,
-                    MHD_gnutls_datum_t * signature, size_t sha1pos)
+                        const MHD_gnutls_datum_t * hash_concat,
+                        MHD_gnutls_datum_t * signature, size_t sha1pos)
 {
   int ret;
   MHD_gnutls_datum_t vdata;
 
-  if ( (cert == NULL) || (cert->version == 0) )
+  if ((cert == NULL) || (cert->version == 0))
     {                           /* this is the only way to check
                                  * if it is initialized
                                  */
@@ -328,7 +333,8 @@ MHD__gnutls_verify_sig (MHD_gnutls_cert * cert,
  */
 int
 MHD_gtls_verify_sig_hdata (MHD_gtls_session_t session,
-                           MHD_gnutls_cert * cert, MHD_gnutls_datum_t * signature)
+                           MHD_gnutls_cert * cert,
+                           MHD_gnutls_datum_t * signature)
 {
   int ret;
   opaque concat[36];
@@ -362,11 +368,13 @@ MHD_gtls_verify_sig_hdata (MHD_gtls_session_t session,
         }
 
       MHD_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                            session->security_parameters.
-                                            master_secret, TLS_MASTER_SIZE);
+                                            session->
+                                            security_parameters.master_secret,
+                                            TLS_MASTER_SIZE);
       MHD_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                            session->security_parameters.
-                                            master_secret, TLS_MASTER_SIZE);
+                                            session->
+                                            security_parameters.master_secret,
+                                            TLS_MASTER_SIZE);
     }
   else
     {

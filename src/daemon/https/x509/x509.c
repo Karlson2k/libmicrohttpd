@@ -51,14 +51,15 @@
 int
 MHD_gnutls_x509_crt_init (MHD_gnutls_x509_crt_t * cert)
 {
-  MHD_gnutls_x509_crt_t tmp = MHD_gnutls_calloc (1, sizeof (MHD_gnutls_x509_crt_int));
+  MHD_gnutls_x509_crt_t tmp =
+    MHD_gnutls_calloc (1, sizeof (MHD_gnutls_x509_crt_int));
   int result;
 
   if (!tmp)
     return GNUTLS_E_MEMORY_ERROR;
 
   result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                "PKIX1.Certificate", &tmp->cert);
+                                     "PKIX1.Certificate", &tmp->cert);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -107,8 +108,8 @@ MHD_gnutls_x509_crt_deinit (MHD_gnutls_x509_crt_t cert)
  **/
 int
 MHD_gnutls_x509_crt_import (MHD_gnutls_x509_crt_t cert,
-                        const MHD_gnutls_datum_t * data,
-                        MHD_gnutls_x509_crt_fmt_t format)
+                            const MHD_gnutls_datum_t * data,
+                            MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -130,14 +131,15 @@ MHD_gnutls_x509_crt_import (MHD_gnutls_x509_crt_t cert,
       opaque *out;
 
       /* Try the first header */
-      result = MHD__gnutls_fbase64_decode (PEM_X509_CERT2, data->data, data->size,
-                                       &out);
+      result =
+        MHD__gnutls_fbase64_decode (PEM_X509_CERT2, data->data, data->size,
+                                    &out);
 
       if (result <= 0)
         {
           /* try for the second header */
           result = MHD__gnutls_fbase64_decode (PEM_X509_CERT, data->data,
-                                           data->size, &out);
+                                               data->size, &out);
 
           if (result <= 0)
             {
@@ -205,10 +207,10 @@ cleanup:MHD_gnutls_free (signature);
  **/
 int
 MHD_gnutls_x509_crt_get_dn_by_oid (MHD_gnutls_x509_crt_t cert,
-                               const char *oid,
-                               int indx,
-                               unsigned int raw_flag,
-                               void *buf, size_t * sizeof_buf)
+                                   const char *oid,
+                                   int indx,
+                                   unsigned int raw_flag,
+                                   void *buf, size_t * sizeof_buf)
 {
   if (cert == NULL)
     {
@@ -217,8 +219,8 @@ MHD_gnutls_x509_crt_get_dn_by_oid (MHD_gnutls_x509_crt_t cert,
     }
 
   return MHD__gnutls_x509_parse_dn_oid (cert->cert,
-                                    "tbsCertificate.subject.rdnSequence", oid,
-                                    indx, raw_flag, buf, sizeof_buf);
+                                        "tbsCertificate.subject.rdnSequence",
+                                        oid, indx, raw_flag, buf, sizeof_buf);
 }
 
 /**
@@ -247,8 +249,8 @@ MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t cert)
    * read. They will be read from the issuer's certificate if needed.
    */
   result =
-    MHD__gnutls_x509_read_value (cert->cert, "signatureAlgorithm.algorithm", &sa,
-                             0);
+    MHD__gnutls_x509_read_value (cert->cert, "signatureAlgorithm.algorithm",
+                                 &sa, 0);
 
   if (result < 0)
     {
@@ -256,7 +258,7 @@ MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t cert)
       return result;
     }
 
-  result = MHD_gtls_x509_oid2sign_algorithm ((const char*) sa.data);
+  result = MHD_gtls_x509_oid2sign_algorithm ((const char *) sa.data);
 
   MHD__gnutls_free_datum (&sa);
 
@@ -275,7 +277,7 @@ MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t cert)
  **/
 int
 MHD_gnutls_x509_crt_get_signature (MHD_gnutls_x509_crt_t cert,
-                               char *sig, size_t * sizeof_sig)
+                                   char *sig, size_t * sizeof_sig)
 {
   int result;
   int bits, len;
@@ -342,7 +344,7 @@ MHD_gnutls_x509_crt_get_version (MHD_gnutls_x509_crt_t cert)
   len = sizeof (version);
   if ((result =
        MHD__asn1_read_value (cert->cert, "tbsCertificate.version", version,
-                        &len)) != ASN1_SUCCESS)
+                             &len)) != ASN1_SUCCESS)
     {
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
@@ -373,7 +375,7 @@ MHD_gnutls_x509_crt_get_activation_time (MHD_gnutls_x509_crt_t cert)
     }
 
   return MHD__gnutls_x509_get_time (cert->cert,
-                                "tbsCertificate.validity.notBefore");
+                                    "tbsCertificate.validity.notBefore");
 }
 
 /**
@@ -395,7 +397,7 @@ MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert)
     }
 
   return MHD__gnutls_x509_get_time (cert->cert,
-                                "tbsCertificate.validity.notAfter");
+                                    "tbsCertificate.validity.notAfter");
 }
 
 /**
@@ -415,7 +417,7 @@ MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert)
  **/
 int
 MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
-                            void *result, size_t * result_size)
+                                void *result, size_t * result_size)
 {
   int ret, len;
 
@@ -428,7 +430,8 @@ MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
   len = *result_size;
   ret
     =
-    MHD__asn1_read_value (cert->cert, "tbsCertificate.serialNumber", result, &len);
+    MHD__asn1_read_value (cert->cert, "tbsCertificate.serialNumber", result,
+                          &len);
   *result_size = len;
 
   if (ret != ASN1_SUCCESS)
@@ -459,7 +462,8 @@ MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
  *
  **/
 int
-MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert, unsigned int *bits)
+MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
+                                      unsigned int *bits)
 {
   int result;
 
@@ -470,8 +474,8 @@ MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert, unsigned int *
     }
 
   result = MHD__gnutls_x509_get_pk_algorithm (cert->cert,
-                                          "tbsCertificate.subjectPublicKeyInfo",
-                                          bits);
+                                              "tbsCertificate.subjectPublicKeyInfo",
+                                              bits);
 
   if (result < 0)
     {
@@ -533,7 +537,7 @@ parse_general_name (ASN1_TYPE src,
       return MHD_gtls_asn2err (result);
     }
 
-  type = MHD__gnutls_x509_san_find_type ((char*) choice_type);
+  type = MHD__gnutls_x509_san_find_type ((char *) choice_type);
   if (type == (MHD_gnutls_x509_subject_alt_name_t) - 1)
     {
       MHD_gnutls_assert ();
@@ -591,8 +595,8 @@ parse_general_name (ASN1_TYPE src,
               ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
 
               result =
-                MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.XmppAddr",
-                                     &c2);
+                MHD__asn1_create_element (MHD__gnutls_get_pkix (),
+                                          "PKIX1.XmppAddr", &c2);
               if (result != ASN1_SUCCESS)
                 {
                   MHD_gnutls_assert ();
@@ -636,7 +640,7 @@ parse_general_name (ASN1_TYPE src,
       size_t orig_name_size = *name_size;
 
       MHD_gtls_str_cat (nptr, sizeof (nptr), ".");
-      MHD_gtls_str_cat (nptr, sizeof (nptr), (const char*) choice_type);
+      MHD_gtls_str_cat (nptr, sizeof (nptr), (const char *) choice_type);
 
       len = *name_size;
       result = MHD__asn1_read_value (src, nptr, name, &len);
@@ -700,7 +704,7 @@ get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
 
   if ((result =
        MHD__gnutls_x509_crt_get_extension (cert, "2.5.29.17", 0, &dnsname,
-                                       critical)) < 0)
+                                           critical)) < 0)
     {
       return result;
     }
@@ -712,7 +716,8 @@ get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
     }
 
   result =
-    MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.SubjectAltName", &c2);
+    MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.SubjectAltName",
+                              &c2);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -781,10 +786,10 @@ get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
  **/
 int
 MHD_gnutls_x509_crt_get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
-                                      unsigned int seq,
-                                      void *ret,
-                                      size_t * ret_size,
-                                      unsigned int *critical)
+                                          unsigned int seq,
+                                          void *ret,
+                                          size_t * ret_size,
+                                          unsigned int *critical)
 {
   return get_subject_alt_name (cert, seq, ret, ret_size, NULL, critical, 0);
 }
@@ -811,8 +816,8 @@ MHD_gnutls_x509_crt_get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
  **/
 static int
 MHD_gnutls_x509_crt_get_basic_constraints (MHD_gnutls_x509_crt_t cert,
-                                       unsigned int *critical,
-                                       int *ca, int *pathlen)
+                                           unsigned int *critical,
+                                           int *ca, int *pathlen)
 {
   int result;
   MHD_gnutls_datum_t basicConstraints;
@@ -825,8 +830,8 @@ MHD_gnutls_x509_crt_get_basic_constraints (MHD_gnutls_x509_crt_t cert,
     }
 
   if ((result = MHD__gnutls_x509_crt_get_extension (cert, "2.5.29.19", 0,
-                                                &basicConstraints, critical))
-      < 0)
+                                                    &basicConstraints,
+                                                    critical)) < 0)
     {
       return result;
     }
@@ -838,8 +843,10 @@ MHD_gnutls_x509_crt_get_basic_constraints (MHD_gnutls_x509_crt_t cert,
     }
 
   result = MHD__gnutls_x509_ext_extract_basicConstraints (&tmp_ca, pathlen,
-                                                      basicConstraints.data,
-                                                      basicConstraints.size);
+                                                          basicConstraints.
+                                                          data,
+                                                          basicConstraints.
+                                                          size);
   if (ca)
     *ca = tmp_ca;
   MHD__gnutls_free_datum (&basicConstraints);
@@ -872,11 +879,12 @@ MHD_gnutls_x509_crt_get_basic_constraints (MHD_gnutls_x509_crt_t cert,
  *
  **/
 int
-MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert, unsigned int *critical)
+MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
+                                   unsigned int *critical)
 {
   int ca, pathlen;
   return MHD_gnutls_x509_crt_get_basic_constraints (cert, critical, &ca,
-                                                &pathlen);
+                                                    &pathlen);
 }
 
 /**
@@ -900,8 +908,8 @@ MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert, unsigned int *cri
  **/
 int
 MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
-                               unsigned int *key_usage,
-                               unsigned int *critical)
+                                   unsigned int *key_usage,
+                                   unsigned int *critical)
 {
   int result;
   MHD_gnutls_datum_t keyUsage;
@@ -915,7 +923,7 @@ MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
 
   if ((result =
        MHD__gnutls_x509_crt_get_extension (cert, "2.5.29.15", 0, &keyUsage,
-                                       critical)) < 0)
+                                           critical)) < 0)
     {
       return result;
     }
@@ -927,7 +935,7 @@ MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
     }
 
   result = MHD__gnutls_x509_ext_extract_keyUsage (&_usage, keyUsage.data,
-                                              keyUsage.size);
+                                                  keyUsage.size);
   MHD__gnutls_free_datum (&keyUsage);
 
   *key_usage = _usage;
@@ -944,7 +952,8 @@ MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
 
 static int
 MHD__gnutls_x509_crt_get_raw_dn2 (MHD_gnutls_x509_crt_t cert,
-                              const char *whom, MHD_gnutls_datum_t * start)
+                                  const char *whom,
+                                  MHD_gnutls_datum_t * start)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result, len1;
@@ -956,22 +965,24 @@ MHD__gnutls_x509_crt_get_raw_dn2 (MHD_gnutls_x509_crt_t cert,
   /* get the issuer of 'cert'
    */
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.TBSCertificate",
-                            &c2)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_get_pkix (),
+                                 "PKIX1.TBSCertificate",
+                                 &c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
   result = MHD__gnutls_x509_get_signed_data (cert->cert, "tbsCertificate",
-                                         &signed_data);
+                                             &signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  result = MHD__asn1_der_decoding (&c2, signed_data.data, signed_data.size, NULL);
+  result =
+    MHD__asn1_der_decoding (&c2, signed_data.data, signed_data.size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -980,8 +991,9 @@ MHD__gnutls_x509_crt_get_raw_dn2 (MHD_gnutls_x509_crt_t cert,
       goto cleanup;
     }
 
-  result = MHD__asn1_der_decoding_startEnd (c2, signed_data.data, signed_data.size,
-                                       whom, &start1, &end1);
+  result =
+    MHD__asn1_der_decoding_startEnd (c2, signed_data.data, signed_data.size,
+                                     whom, &start1, &end1);
 
   if (result != ASN1_SUCCESS)
     {
@@ -1014,7 +1026,7 @@ cleanup:MHD__asn1_delete_structure (&c2);
  **/
 int
 MHD_gnutls_x509_crt_get_raw_issuer_dn (MHD_gnutls_x509_crt_t cert,
-                                   MHD_gnutls_datum_t * start)
+                                       MHD_gnutls_datum_t * start)
 {
   return MHD__gnutls_x509_crt_get_raw_dn2 (cert, "issuer", start);
 }
@@ -1031,13 +1043,15 @@ MHD_gnutls_x509_crt_get_raw_issuer_dn (MHD_gnutls_x509_crt_t cert,
  *
  **/
 int
-MHD_gnutls_x509_crt_get_raw_dn (MHD_gnutls_x509_crt_t cert, MHD_gnutls_datum_t * start)
+MHD_gnutls_x509_crt_get_raw_dn (MHD_gnutls_x509_crt_t cert,
+                                MHD_gnutls_datum_t * start)
 {
   return MHD__gnutls_x509_crt_get_raw_dn2 (cert, "subject", start);
 }
 
 static int
-get_dn (MHD_gnutls_x509_crt_t cert, const char *whom, MHD_gnutls_x509_dn_t * dn)
+get_dn (MHD_gnutls_x509_crt_t cert, const char *whom,
+        MHD_gnutls_x509_dn_t * dn)
 {
   *dn = MHD__asn1_find_node (cert->cert, whom);
   if (!*dn)
@@ -1056,7 +1070,8 @@ get_dn (MHD_gnutls_x509_crt_t cert, const char *whom, MHD_gnutls_x509_dn_t * dn)
  * Returns: Returns 0 on success, or an error code.
  **/
 int
-MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert, MHD_gnutls_x509_dn_t * dn)
+MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert,
+                                 MHD_gnutls_x509_dn_t * dn)
 {
   return get_dn (cert, "tbsCertificate.subject.rdnSequence", dn);
 }
@@ -1083,8 +1098,8 @@ MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert, MHD_gnutls_x509_dn_
  **/
 int
 MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
-                        MHD_gnutls_x509_crt_fmt_t format,
-                        void *output_data, size_t * output_data_size)
+                            MHD_gnutls_x509_crt_fmt_t format,
+                            void *output_data, size_t * output_data_size)
 {
   if (cert == NULL)
     {
@@ -1093,7 +1108,7 @@ MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
     }
 
   return MHD__gnutls_x509_export_int (cert->cert, format, "CERTIFICATE",
-                                  output_data, output_data_size);
+                                      output_data, output_data_size);
 }
 
 #ifdef ENABLE_PKI
@@ -1112,8 +1127,8 @@ MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
  **/
 int
 MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
-                                  const MHD_gnutls_x509_crl_t * crl_list,
-                                  int crl_list_length)
+                                      const MHD_gnutls_x509_crl_t * crl_list,
+                                      int crl_list_length)
 {
   opaque serial[64];
   opaque cert_serial[64];
@@ -1160,7 +1175,8 @@ MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
       /* Step 2. Read the certificate's serial number
        */
       cert_serial_size = sizeof (cert_serial);
-      ret = MHD_gnutls_x509_crt_get_serial (cert, cert_serial, &cert_serial_size);
+      ret =
+        MHD_gnutls_x509_crt_get_serial (cert, cert_serial, &cert_serial_size);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -1182,7 +1198,7 @@ MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
         {
           serial_size = sizeof (serial);
           ret = MHD_gnutls_x509_crl_get_crt_serial (crl_list[j], i, serial,
-                                                &serial_size, NULL);
+                                                    &serial_size, NULL);
 
           if (ret < 0)
             {
@@ -1205,4 +1221,3 @@ MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
 }
 
 #endif
-

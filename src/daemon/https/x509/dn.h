@@ -38,21 +38,23 @@
 #define OID_PKCS9_EMAIL 			"1.2.840.113549.1.9.1"
 
 int MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
-                           const char *MHD__asn1_rdn_name, char *buf,
-                           size_t * sizeof_buf);
-
-int MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                               const char *MHD__asn1_rdn_name, const char *oid,
-                               int indx, unsigned int raw_flag, void *buf,
+                               const char *MHD__asn1_rdn_name, char *buf,
                                size_t * sizeof_buf);
 
+int MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
+                                   const char *MHD__asn1_rdn_name,
+                                   const char *oid, int indx,
+                                   unsigned int raw_flag, void *buf,
+                                   size_t * sizeof_buf);
+
 int MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                             const char *MHD__asn1_rdn_name, const char *oid,
-                             int raw_flag, const char *name, int sizeof_name);
+                                 const char *MHD__asn1_rdn_name,
+                                 const char *oid, int raw_flag,
+                                 const char *name, int sizeof_name);
 
 int MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                             const char *MHD__asn1_rdn_name,
-                             int indx, void *_oid, size_t * sizeof_oid);
+                                 const char *MHD__asn1_rdn_name,
+                                 int indx, void *_oid, size_t * sizeof_oid);
 
 
 #endif

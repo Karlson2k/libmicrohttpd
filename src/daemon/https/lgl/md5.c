@@ -212,7 +212,8 @@ MHD_md5_buffer (const char *buffer, size_t len, void *resblock)
 
 
 void
-MHD_md5_process_bytes (const void *buffer, size_t len, struct MHD_md5_ctx *ctx)
+MHD_md5_process_bytes (const void *buffer, size_t len,
+                       struct MHD_md5_ctx *ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -292,7 +293,8 @@ MHD_md5_process_bytes (const void *buffer, size_t len, struct MHD_md5_ctx *ctx)
    It is assumed that LEN % 64 == 0.  */
 
 void
-MHD_md5_process_block (const void *buffer, size_t len, struct MHD_md5_ctx *ctx)
+MHD_md5_process_block (const void *buffer, size_t len,
+                       struct MHD_md5_ctx *ctx)
 {
   uint32_t correct_words[16];
   const uint32_t *words = buffer;

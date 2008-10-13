@@ -84,7 +84,8 @@ MHD__gnutls_hostname_compare (const char *certname, const char *hostname)
   * Returns non zero for a successful match, and zero on failure.
   **/
 int
-MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert, const char *hostname)
+MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert,
+                                    const char *hostname)
 {
 
   char dnsname[MAX_CN];
@@ -112,8 +113,8 @@ MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert, const char *host
 
       dnsnamesize = sizeof (dnsname);
       ret = MHD_gnutls_x509_crt_get_subject_alt_name (cert, i,
-                                                  dnsname, &dnsnamesize,
-                                                  NULL);
+                                                      dnsname, &dnsnamesize,
+                                                      NULL);
 
       if (ret == GNUTLS_SAN_DNSNAME)
         {
@@ -141,7 +142,7 @@ MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert, const char *host
        */
       dnsnamesize = sizeof (dnsname);
       if (MHD_gnutls_x509_crt_get_dn_by_oid (cert, OID_X520_COMMON_NAME, 0,
-                                         0, dnsname, &dnsnamesize) < 0)
+                                             0, dnsname, &dnsnamesize) < 0)
         {
           /* got an error, can't find a name
            */

@@ -44,8 +44,9 @@ MHD__gnutls_x509_read_rsa_params (opaque * der, int dersize, mpi_t * params)
   ASN1_TYPE spk = ASN1_TYPE_EMPTY;
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.RSAPublicKey",
-                            &spk)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.RSAPublicKey",
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -94,7 +95,7 @@ MHD__gnutls_x509_read_dsa_params (opaque * der, int dersize, mpi_t * params)
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.Dss-Parms",
-                            &spk)) != ASN1_SUCCESS)
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -161,8 +162,9 @@ MHD__gnutls_x509_read_der_int (opaque * der, int dersize, mpi_t * out)
 
   /* == INTEGER */
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.DSAPublicKey",
-                            &spk)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.DSAPublicKey",
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -206,7 +208,7 @@ MHD__gnutls_x509_read_dsa_pubkey (opaque * der, int dersize, mpi_t * params)
  */
 int
 MHD__gnutls_x509_crt_get_mpis (MHD_gnutls_x509_crt_t cert,
-                           mpi_t * params, int *params_size)
+                               mpi_t * params, int *params_size)
 {
   int result;
   int pk_algorithm;
@@ -220,8 +222,8 @@ MHD__gnutls_x509_crt_get_mpis (MHD_gnutls_x509_crt_t cert,
    */
   result
     = MHD__gnutls_x509_read_value (cert->cert,
-                               "tbsCertificate.subjectPublicKeyInfo.subjectPublicKey",
-                               &tmp, 2);
+                                   "tbsCertificate.subjectPublicKeyInfo.subjectPublicKey",
+                                   &tmp, 2);
 
   if (result < 0)
     {
@@ -276,7 +278,7 @@ error:MHD__gnutls_free_datum (&tmp);
  */
 int
 MHD__gnutls_x509_write_rsa_params (mpi_t * params,
-                               int params_size, MHD_gnutls_datum_t * der)
+                                   int params_size, MHD_gnutls_datum_t * der)
 {
   int result;
   ASN1_TYPE spk = ASN1_TYPE_EMPTY;
@@ -292,8 +294,9 @@ MHD__gnutls_x509_write_rsa_params (mpi_t * params,
     }
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.RSAPublicKey",
-                            &spk)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.RSAPublicKey",
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -334,11 +337,11 @@ cleanup:MHD__asn1_delete_structure (&spk);
  */
 int
 MHD__gnutls_x509_write_sig_params (ASN1_TYPE dst,
-                               const char *dst_name,
-                               enum MHD_GNUTLS_PublicKeyAlgorithm
-                               pk_algorithm,
-                               enum MHD_GNUTLS_HashAlgorithm dig,
-                               mpi_t * params, int params_size)
+                                   const char *dst_name,
+                                   enum MHD_GNUTLS_PublicKeyAlgorithm
+                                   pk_algorithm,
+                                   enum MHD_GNUTLS_HashAlgorithm dig,
+                                   mpi_t * params, int params_size)
 {
   int result;
   char name[128];
@@ -391,7 +394,7 @@ MHD__gnutls_x509_write_sig_params (ASN1_TYPE dst,
  */
 int
 MHD__gnutls_x509_write_dsa_params (mpi_t * params,
-                               int params_size, MHD_gnutls_datum_t * der)
+                                   int params_size, MHD_gnutls_datum_t * der)
 {
   int result;
   ASN1_TYPE spk = ASN1_TYPE_EMPTY;
@@ -407,8 +410,9 @@ MHD__gnutls_x509_write_dsa_params (mpi_t * params,
     }
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.DSAParameters",
-                            &spk)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.DSAParameters",
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -456,7 +460,8 @@ cleanup:MHD__asn1_delete_structure (&spk);
  */
 int
 MHD__gnutls_x509_write_dsa_public_key (mpi_t * params,
-                                   int params_size, MHD_gnutls_datum_t * der)
+                                       int params_size,
+                                       MHD_gnutls_datum_t * der)
 {
   int result;
   ASN1_TYPE spk = ASN1_TYPE_EMPTY;
@@ -472,8 +477,9 @@ MHD__gnutls_x509_write_dsa_public_key (mpi_t * params,
     }
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.DSAPublicKey",
-                            &spk)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.DSAPublicKey",
+                                 &spk)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -505,7 +511,8 @@ cleanup:MHD__asn1_delete_structure (&spk);
  * steps.
  */
 int
-MHD__gnutls_x509_read_uint (ASN1_TYPE node, const char *value, unsigned int *ret)
+MHD__gnutls_x509_read_uint (ASN1_TYPE node, const char *value,
+                            unsigned int *ret)
 {
   int len, result;
   opaque *tmpstr;
@@ -557,7 +564,8 @@ MHD__gnutls_x509_read_uint (ASN1_TYPE node, const char *value, unsigned int *ret
 /* Writes the specified integer into the specified node.
  */
 int
-MHD__gnutls_x509_write_uint32 (ASN1_TYPE node, const char *value, uint32_t num)
+MHD__gnutls_x509_write_uint32 (ASN1_TYPE node, const char *value,
+                               uint32_t num)
 {
   opaque tmpstr[4];
   int result;

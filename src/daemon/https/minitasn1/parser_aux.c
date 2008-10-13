@@ -29,7 +29,7 @@
 
 
 
-char MHD__asn1_identifierMissing[MAX_NAME_SIZE + 1];        /* identifier name not found */
+char MHD__asn1_identifierMissing[MAX_NAME_SIZE + 1];    /* identifier name not found */
 
 /***********************************************/
 /* Type: list_type                             */
@@ -443,7 +443,8 @@ MHD__asn1_change_integer_value (ASN1_TYPE node)
         {
           if (p->value)
             {
-              MHD__asn1_convert_integer ((const char*) p->value, val, sizeof (val), &len);
+              MHD__asn1_convert_integer ((const char *) p->value, val,
+                                         sizeof (val), &len);
               MHD__asn1_octet_der (val, len, val2, &len);
               MHD__asn1_set_value (p, val2, len);
             }
@@ -521,7 +522,8 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                     {
                       MHD__asn1_str_cpy (name2, sizeof (name2), name_root);
                       MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                      MHD__asn1_str_cat (name2, sizeof (name2), (const char*)  p2->value);
+                      MHD__asn1_str_cat (name2, sizeof (name2),
+                                         (const char *) p2->value);
                       p3 = MHD__asn1_find_node (node, name2);
                       if (!p3 || (type_field (p3->type) != TYPE_OBJECT_ID) ||
                           !(p3->type & CONST_ASSIGN))
@@ -536,7 +538,7 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                             {
                               p5 = MHD__asn1_add_node_only (TYPE_CONSTANT);
                               MHD__asn1_set_name (p5, p4->name);
-                              tlen = strlen ( (const char*) p4->value);
+                              tlen = strlen ((const char *) p4->value);
                               if (tlen > 0)
                                 MHD__asn1_set_value (p5, p4->value, tlen + 1);
                               if (p2 == p)
@@ -607,7 +609,8 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                 {
                   MHD__asn1_str_cpy (name2, sizeof (name2), name_root);
                   MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                  MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
+                  MHD__asn1_str_cat (name2, sizeof (name2),
+                                     (const char *) p2->value);
                   p3 = MHD__asn1_find_node (node, name2);
                   if (!p3 || (type_field (p3->type) != TYPE_OBJECT_ID) ||
                       !(p3->type & CONST_ASSIGN))
@@ -620,7 +623,8 @@ MHD__asn1_expand_object_id (ASN1_TYPE node)
                         {
                           if (name2[0])
                             MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                          MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p4->value);
+                          MHD__asn1_str_cat (name2, sizeof (name2),
+                                             (const char *) p4->value);
                         }
                       p4 = p4->right;
                     }
@@ -691,11 +695,11 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
         {
           MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
           MHD__asn1_str_cat (name2, sizeof (name2), ".");
-          MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p->value);
+          MHD__asn1_str_cat (name2, sizeof (name2), (const char *) p->value);
           p2 = MHD__asn1_find_node (node, name2);
           if (p2 == NULL)
             {
-              strcpy (MHD__asn1_identifierMissing, (const char*) p->value);
+              strcpy (MHD__asn1_identifierMissing, (const char *) p->value);
               return ASN1_IDENTIFIER_NOT_FOUND;
             }
         }
@@ -707,8 +711,9 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
             {
               MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
               MHD__asn1_str_cat (name2, sizeof (name2), ".");
-              MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
-              strcpy (MHD__asn1_identifierMissing, (const char*) p2->value);
+              MHD__asn1_str_cat (name2, sizeof (name2),
+                                 (const char *) p2->value);
+              strcpy (MHD__asn1_identifierMissing, (const char *) p2->value);
               p2 = MHD__asn1_find_node (node, name2);
               if (!p2 || (type_field (p2->type) != TYPE_OBJECT_ID) ||
                   !(p2->type & CONST_ASSIGN))
@@ -727,8 +732,10 @@ MHD__asn1_check_identifier (ASN1_TYPE node)
                 {
                   MHD__asn1_str_cpy (name2, sizeof (name2), node->name);
                   MHD__asn1_str_cat (name2, sizeof (name2), ".");
-                  MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p2->value);
-                  strcpy (MHD__asn1_identifierMissing, (const char*) p2->value);
+                  MHD__asn1_str_cat (name2, sizeof (name2),
+                                     (const char *) p2->value);
+                  strcpy (MHD__asn1_identifierMissing,
+                          (const char *) p2->value);
                   p2 = MHD__asn1_find_node (node, name2);
                   if (!p2 || (type_field (p2->type) != TYPE_OBJECT_ID) ||
                       !(p2->type & CONST_ASSIGN))

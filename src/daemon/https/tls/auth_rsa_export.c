@@ -60,7 +60,7 @@ const MHD_gtls_mod_auth_st MHD_rsa_export_auth_struct = {
   MHD_gtls_proc_cert_server_certificate,
   MHD__gnutls_proc_cert_client_certificate,
   proc_rsa_export_server_kx,
-  MHD__gnutls_proc_rsa_client_kx,   /* proc client kx */
+  MHD__gnutls_proc_rsa_client_kx,       /* proc client kx */
   MHD_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
   MHD_gtls_proc_cert_cert_req   /* proc server cert request */
 };

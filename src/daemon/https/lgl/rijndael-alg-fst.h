@@ -56,12 +56,12 @@
 #define RIJNDAEL_MAXNR 14
 
 int MHD_rijndaelKeySetupEnc (uint32_t rk[ /*4*(Nr + 1) */ ],
-                         const char cipherKey[], size_t keyBits);
+                             const char cipherKey[], size_t keyBits);
 int MHD_rijndaelKeySetupDec (uint32_t rk[ /*4*(Nr + 1) */ ],
-                         const char cipherKey[], size_t keyBits);
+                             const char cipherKey[], size_t keyBits);
 void MHD_rijndaelEncrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                      const char pt[16], char ct[16]);
+                          const char pt[16], char ct[16]);
 void MHD_rijndaelDecrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                      const char ct[16], char pt[16]);
+                          const char ct[16], char pt[16]);
 
 #endif /* __RIJNDAEL_ALG_FST_H */

@@ -37,4 +37,5 @@ int MHD_gtls_compressed2ciphertext (MHD_gtls_session_t session,
                                     content_type_t _type, int random_pad);
 int MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
                                     opaque * compress_data, int compress_size,
-                                    MHD_gnutls_datum_t ciphertext, uint8_t type);
+                                    MHD_gnutls_datum_t ciphertext,
+                                    uint8_t type);

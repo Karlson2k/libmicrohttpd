@@ -33,24 +33,30 @@ get_file_size (const char *filename)
     return 0;
 }
 
-char* 
-load_file (const char* filename)
+char *
+load_file (const char *filename)
 {
   FILE *fp;
   char *buffer;
   long size;
 
   size = get_file_size (filename);
-  if (size == 0) return NULL;
+  if (size == 0)
+    return NULL;
 
   fp = fopen (filename, "rb");
-  if (!fp) return NULL;
+  if (!fp)
+    return NULL;
 
   buffer = malloc (size);
-  if (!buffer) {fclose (fp); return NULL;}
+  if (!buffer)
+    {
+      fclose (fp);
+      return NULL;
+    }
 
   if (size != fread (buffer, 1, size, fp))
-    {  
+    {
       free (buffer);
       buffer = NULL;
     }
@@ -184,22 +190,23 @@ main ()
   cert_pem = load_file (SERVERCERTFILE);
 
   if ((key_pem == NULL) || (cert_pem == NULL))
-  {
-    printf ("The key/certificate files could not be read.\n");
-    return 1;
-  }
+    {
+      printf ("The key/certificate files could not be read.\n");
+      return 1;
+    }
 
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY |  MHD_USE_SSL, PORT, NULL, NULL,
-                             &answer_to_connection, NULL, 
-                             MHD_OPTION_HTTPS_MEM_KEY, key_pem, MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
-                             MHD_OPTION_END);
+  daemon =
+    MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL, PORT, NULL,
+                      NULL, &answer_to_connection, NULL,
+                      MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                      MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
   if (NULL == daemon)
     {
       printf ("%s\n", cert_pem);
-  
+
       free (key_pem);
       free (cert_pem);
-  
+
       return 1;
     }
 
@@ -208,7 +215,7 @@ main ()
   MHD_stop_daemon (daemon);
   free (key_pem);
   free (cert_pem);
-  
+
   return 0;
 }
 
@@ -250,4 +257,3 @@ string_to_base64 (const char *message)
 
   return tmp;
 }
-

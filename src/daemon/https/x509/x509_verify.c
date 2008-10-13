@@ -42,20 +42,21 @@
 #include <verify.h>
 
 static int MHD__gnutls_verify_certificate2 (MHD_gnutls_x509_crt_t cert,
-                                        const MHD_gnutls_x509_crt_t * trusted_cas,
-                                        int tcas_size,
-                                        unsigned int flags,
-                                        unsigned int *output);
+                                            const MHD_gnutls_x509_crt_t *
+                                            trusted_cas, int tcas_size,
+                                            unsigned int flags,
+                                            unsigned int *output);
 int MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * signed_data,
-                                   const MHD_gnutls_datum_t * signature,
-                                   MHD_gnutls_x509_crt_t issuer);
+                                       const MHD_gnutls_datum_t * signature,
+                                       MHD_gnutls_x509_crt_t issuer);
 
 static
-  int is_crl_issuer (MHD_gnutls_x509_crl_t crl, MHD_gnutls_x509_crt_t issuer_cert);
+  int is_crl_issuer (MHD_gnutls_x509_crl_t crl,
+                     MHD_gnutls_x509_crt_t issuer_cert);
 static int MHD__gnutls_verify_crl2 (MHD_gnutls_x509_crl_t crl,
-                                const MHD_gnutls_x509_crt_t * trusted_cas,
-                                int tcas_size,
-                                unsigned int flags, unsigned int *output);
+                                    const MHD_gnutls_x509_crt_t * trusted_cas,
+                                    int tcas_size, unsigned int flags,
+                                    unsigned int *output);
 
 /* Checks if the issuer of a certificate is a
  * Certificate Authority, or if the certificate is the same
@@ -88,7 +89,7 @@ check_if_ca (MHD_gnutls_x509_crt_t cert,
    */
 
   result = MHD__gnutls_x509_get_signed_data (issuer->cert, "tbsCertificate",
-                                         &issuer_signed_data);
+                                             &issuer_signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -96,7 +97,7 @@ check_if_ca (MHD_gnutls_x509_crt_t cert,
     }
 
   result = MHD__gnutls_x509_get_signed_data (cert->cert, "tbsCertificate",
-                                         &cert_signed_data);
+                                             &cert_signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -104,7 +105,7 @@ check_if_ca (MHD_gnutls_x509_crt_t cert,
     }
 
   result = MHD__gnutls_x509_get_signature (issuer->cert, "signature",
-                                       &issuer_signature);
+                                           &issuer_signature);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -228,9 +229,9 @@ find_issuer (MHD_gnutls_x509_crt_t cert,
  */
 static int
 MHD__gnutls_verify_certificate2 (MHD_gnutls_x509_crt_t cert,
-                             const MHD_gnutls_x509_crt_t * trusted_cas,
-                             int tcas_size,
-                             unsigned int flags, unsigned int *output)
+                                 const MHD_gnutls_x509_crt_t * trusted_cas,
+                                 int tcas_size,
+                                 unsigned int flags, unsigned int *output)
 {
   MHD_gnutls_datum_t cert_signed_data = { NULL,
     0
@@ -287,7 +288,7 @@ MHD__gnutls_verify_certificate2 (MHD_gnutls_x509_crt_t cert,
     }
 
   result = MHD__gnutls_x509_get_signed_data (cert->cert, "tbsCertificate",
-                                         &cert_signed_data);
+                                             &cert_signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -303,7 +304,7 @@ MHD__gnutls_verify_certificate2 (MHD_gnutls_x509_crt_t cert,
     }
 
   ret = MHD__gnutls_x509_verify_signature (&cert_signed_data, &cert_signature,
-                                       issuer);
+                                           issuer);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -360,7 +361,7 @@ cleanup:MHD__gnutls_free_datum (&cert_signed_data);
  **/
 int
 MHD_gnutls_x509_crt_check_issuer (MHD_gnutls_x509_crt_t cert,
-                              MHD_gnutls_x509_crt_t issuer)
+                                  MHD_gnutls_x509_crt_t issuer)
 {
   return is_issuer (cert, issuer);
 }
@@ -377,12 +378,12 @@ MHD_gnutls_x509_crt_check_issuer (MHD_gnutls_x509_crt_t cert,
  * lead to a trusted CA in order to be trusted.
  */
 static unsigned int
-MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t * certificate_list,
-                                 int clist_size,
-                                 const MHD_gnutls_x509_crt_t * trusted_cas,
-                                 int tcas_size,
-                                 const MHD_gnutls_x509_crl_t * CRLs,
-                                 int crls_size, unsigned int flags)
+MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t *
+                                     certificate_list, int clist_size,
+                                     const MHD_gnutls_x509_crt_t *
+                                     trusted_cas, int tcas_size,
+                                     const MHD_gnutls_x509_crl_t * CRLs,
+                                     int crls_size, unsigned int flags)
 {
   int i = 0, ret;
   unsigned int status = 0, output;
@@ -394,7 +395,8 @@ MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t * certificate_l
    * in self signed etc certificates.
    */
   ret = MHD__gnutls_verify_certificate2 (certificate_list[clist_size - 1],
-                                     trusted_cas, tcas_size, flags, &output);
+                                         trusted_cas, tcas_size, flags,
+                                         &output);
 
   if (ret == 0)
     {
@@ -414,7 +416,7 @@ MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t * certificate_l
   for (i = 0; i < clist_size; i++)
     {
       ret = MHD_gnutls_x509_crt_check_revocation (certificate_list[i],
-                                              CRLs, crls_size);
+                                                  CRLs, crls_size);
       if (ret == 1)
         {                       /* revoked */
           status |= GNUTLS_CERT_REVOKED;
@@ -429,7 +431,7 @@ MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t * certificate_l
    * leads to a trusted party by us, not the server's).
    */
   if (MHD_gnutls_x509_crt_check_issuer (certificate_list[clist_size - 1],
-                                    certificate_list[clist_size - 1]) > 0
+                                        certificate_list[clist_size - 1]) > 0
       && clist_size > 0)
     {
       clist_size--;
@@ -448,8 +450,8 @@ MHD__gnutls_x509_verify_certificate (const MHD_gnutls_x509_crt_t * certificate_l
       if (!(flags & GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT))
         flags ^= GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT;
       if ((ret = MHD__gnutls_verify_certificate2 (certificate_list[i - 1],
-                                              &certificate_list[i], 1, flags,
-                                              NULL)) == 0)
+                                                  &certificate_list[i], 1,
+                                                  flags, NULL)) == 0)
         {
           status |= GNUTLS_CERT_INVALID;
           return status;
@@ -474,8 +476,8 @@ decode_ber_digest_info (const MHD_gnutls_datum_t * info,
   int len;
 
   if ((result = MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
-                                     "GNUTLS.DigestInfo",
-                                     &dinfo)) != ASN1_SUCCESS)
+                                          "GNUTLS.DigestInfo",
+                                          &dinfo)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -490,7 +492,8 @@ decode_ber_digest_info (const MHD_gnutls_datum_t * info,
     }
 
   len = sizeof (str) - 1;
-  result = MHD__asn1_read_value (dinfo, "digestAlgorithm.algorithm", str, &len);
+  result =
+    MHD__asn1_read_value (dinfo, "digestAlgorithm.algorithm", str, &len);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -511,7 +514,8 @@ decode_ber_digest_info (const MHD_gnutls_datum_t * info,
     }
 
   len = sizeof (str) - 1;
-  result = MHD__asn1_read_value (dinfo, "digestAlgorithm.parameters", str, &len);
+  result =
+    MHD__asn1_read_value (dinfo, "digestAlgorithm.parameters", str, &len);
   /* To avoid permitting garbage in the parameters field, either the
      parameters field is not present, or it contains 0x05 0x00. */
   if (!
@@ -640,8 +644,8 @@ verify_sig (const MHD_gnutls_datum_t * tbs,
  */
 int
 MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
-                               const MHD_gnutls_datum_t * signature,
-                               MHD_gnutls_x509_crt_t issuer)
+                                   const MHD_gnutls_datum_t * signature,
+                                   MHD_gnutls_x509_crt_t issuer)
 {
   mpi_t issuer_params[MAX_PUBLIC_PARAMS_SIZE];
   int ret, issuer_params_size, i;
@@ -650,16 +654,18 @@ MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
    */
   issuer_params_size = MAX_PUBLIC_PARAMS_SIZE;
   ret =
-    MHD__gnutls_x509_crt_get_mpis (issuer, issuer_params, &issuer_params_size);
+    MHD__gnutls_x509_crt_get_mpis (issuer, issuer_params,
+                                   &issuer_params_size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
       return ret;
     }
 
-  ret = verify_sig (tbs, signature, MHD_gnutls_x509_crt_get_pk_algorithm (issuer,
-                                                                      NULL),
-                    issuer_params, issuer_params_size);
+  ret =
+    verify_sig (tbs, signature,
+                MHD_gnutls_x509_crt_get_pk_algorithm (issuer, NULL),
+                issuer_params, issuer_params_size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -683,8 +689,9 @@ MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
  */
 int
 MHD__gnutls_x509_privkey_verify_signature (const MHD_gnutls_datum_t * tbs,
-                                       const MHD_gnutls_datum_t * signature,
-                                       MHD_gnutls_x509_privkey_t issuer)
+                                           const MHD_gnutls_datum_t *
+                                           signature,
+                                           MHD_gnutls_x509_privkey_t issuer)
 {
   int ret;
 
@@ -734,12 +741,12 @@ MHD__gnutls_x509_privkey_verify_signature (const MHD_gnutls_datum_t * tbs,
  **/
 int
 MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t * cert_list,
-                             int cert_list_length,
-                             const MHD_gnutls_x509_crt_t * CA_list,
-                             int CA_list_length,
-                             const MHD_gnutls_x509_crl_t * CRL_list,
-                             int CRL_list_length,
-                             unsigned int flags, unsigned int *verify)
+                                 int cert_list_length,
+                                 const MHD_gnutls_x509_crt_t * CA_list,
+                                 int CA_list_length,
+                                 const MHD_gnutls_x509_crl_t * CRL_list,
+                                 int CRL_list_length,
+                                 unsigned int flags, unsigned int *verify)
 {
   if (cert_list == NULL || cert_list_length == 0)
     return GNUTLS_E_NO_CERTIFICATE_FOUND;
@@ -747,9 +754,9 @@ MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t * cert_list,
   /* Verify certificate
    */
   *verify = MHD__gnutls_x509_verify_certificate (cert_list, cert_list_length,
-                                             CA_list, CA_list_length,
-                                             CRL_list, CRL_list_length,
-                                             flags);
+                                                 CA_list, CA_list_length,
+                                                 CRL_list, CRL_list_length,
+                                                 flags);
 
   return 0;
 }
@@ -770,15 +777,15 @@ MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t * cert_list,
  **/
 int
 MHD_gnutls_x509_crt_verify (MHD_gnutls_x509_crt_t cert,
-                        const MHD_gnutls_x509_crt_t * CA_list,
-                        int CA_list_length,
-                        unsigned int flags, unsigned int *verify)
+                            const MHD_gnutls_x509_crt_t * CA_list,
+                            int CA_list_length,
+                            unsigned int flags, unsigned int *verify)
 {
   int ret;
   /* Verify certificate
    */
   ret = MHD__gnutls_verify_certificate2 (cert, CA_list, CA_list_length, flags,
-                                     verify);
+                                         verify);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -804,7 +811,7 @@ MHD_gnutls_x509_crt_verify (MHD_gnutls_x509_crt_t cert,
  **/
 int
 MHD_gnutls_x509_crl_check_issuer (MHD_gnutls_x509_crl_t cert,
-                              MHD_gnutls_x509_crt_t issuer)
+                                  MHD_gnutls_x509_crt_t issuer)
 {
   return is_crl_issuer (cert, issuer);
 }
@@ -826,9 +833,9 @@ MHD_gnutls_x509_crl_check_issuer (MHD_gnutls_x509_crl_t cert,
  **/
 int
 MHD_gnutls_x509_crl_verify (MHD_gnutls_x509_crl_t crl,
-                        const MHD_gnutls_x509_crt_t * CA_list,
-                        int CA_list_length, unsigned int flags,
-                        unsigned int *verify)
+                            const MHD_gnutls_x509_crt_t * CA_list,
+                            int CA_list_length, unsigned int flags,
+                            unsigned int *verify)
 {
   int ret;
   /* Verify crl
@@ -906,8 +913,9 @@ find_crl_issuer (MHD_gnutls_x509_crl_t crl,
  */
 static int
 MHD__gnutls_verify_crl2 (MHD_gnutls_x509_crl_t crl,
-                     const MHD_gnutls_x509_crt_t * trusted_cas,
-                     int tcas_size, unsigned int flags, unsigned int *output)
+                         const MHD_gnutls_x509_crt_t * trusted_cas,
+                         int tcas_size, unsigned int flags,
+                         unsigned int *output)
 {
   /* CRL is ignored for now */
   MHD_gnutls_datum_t crl_signed_data = { NULL, 0 };
@@ -951,14 +959,16 @@ MHD__gnutls_verify_crl2 (MHD_gnutls_x509_crl_t crl,
     }
 
   result =
-    MHD__gnutls_x509_get_signed_data (crl->crl, "tbsCertList", &crl_signed_data);
+    MHD__gnutls_x509_get_signed_data (crl->crl, "tbsCertList",
+                                      &crl_signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
       goto cleanup;
     }
 
-  result = MHD__gnutls_x509_get_signature (crl->crl, "signature", &crl_signature);
+  result =
+    MHD__gnutls_x509_get_signature (crl->crl, "signature", &crl_signature);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -966,7 +976,8 @@ MHD__gnutls_verify_crl2 (MHD_gnutls_x509_crl_t crl,
     }
 
   ret =
-    MHD__gnutls_x509_verify_signature (&crl_signed_data, &crl_signature, issuer);
+    MHD__gnutls_x509_verify_signature (&crl_signed_data, &crl_signature,
+                                       issuer);
   if (ret < 0)
     {
       MHD_gnutls_assert ();

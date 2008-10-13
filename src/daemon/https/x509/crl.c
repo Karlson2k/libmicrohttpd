@@ -56,8 +56,8 @@ MHD_gnutls_x509_crl_init (MHD_gnutls_x509_crl_t * crl)
   if (*crl)
     {
       int result = MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                        "PKIX1.CertificateList",
-                                        &(*crl)->crl);
+                                             "PKIX1.CertificateList",
+                                             &(*crl)->crl);
       if (result != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
@@ -104,8 +104,8 @@ MHD_gnutls_x509_crl_deinit (MHD_gnutls_x509_crl_t crl)
   **/
 int
 MHD_gnutls_x509_crl_import (MHD_gnutls_x509_crl_t crl,
-                        const MHD_gnutls_datum_t * data,
-                        MHD_gnutls_x509_crt_fmt_t format)
+                            const MHD_gnutls_datum_t * data,
+                            MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -125,7 +125,8 @@ MHD_gnutls_x509_crl_import (MHD_gnutls_x509_crl_t crl,
     {
       opaque *out;
 
-      result = MHD__gnutls_fbase64_decode (PEM_CRL, data->data, data->size, &out);
+      result =
+        MHD__gnutls_fbase64_decode (PEM_CRL, data->data, data->size, &out);
 
       if (result <= 0)
         {
@@ -181,7 +182,7 @@ cleanup:
   **/
 int
 MHD_gnutls_x509_crl_get_issuer_dn (const MHD_gnutls_x509_crl_t crl, char *buf,
-                               size_t * sizeof_buf)
+                                   size_t * sizeof_buf)
 {
   if (crl == NULL)
     {
@@ -190,8 +191,8 @@ MHD_gnutls_x509_crl_get_issuer_dn (const MHD_gnutls_x509_crl_t crl, char *buf,
     }
 
   return MHD__gnutls_x509_parse_dn (crl->crl,
-                                "tbsCertList.issuer.rdnSequence",
-                                buf, sizeof_buf);
+                                    "tbsCertList.issuer.rdnSequence",
+                                    buf, sizeof_buf);
 }
 
 /**
@@ -221,9 +222,9 @@ MHD_gnutls_x509_crl_get_issuer_dn (const MHD_gnutls_x509_crl_t crl, char *buf,
   **/
 int
 MHD_gnutls_x509_crl_get_issuer_dn_by_oid (MHD_gnutls_x509_crl_t crl,
-                                      const char *oid, int indx,
-                                      unsigned int raw_flag, void *buf,
-                                      size_t * sizeof_buf)
+                                          const char *oid, int indx,
+                                          unsigned int raw_flag, void *buf,
+                                          size_t * sizeof_buf)
 {
   if (crl == NULL)
     {
@@ -232,8 +233,8 @@ MHD_gnutls_x509_crl_get_issuer_dn_by_oid (MHD_gnutls_x509_crl_t crl,
     }
 
   return MHD__gnutls_x509_parse_dn_oid (crl->crl,
-                                    "tbsCertList.issuer.rdnSequence",
-                                    oid, indx, raw_flag, buf, sizeof_buf);
+                                        "tbsCertList.issuer.rdnSequence",
+                                        oid, indx, raw_flag, buf, sizeof_buf);
 }
 
 /**
@@ -255,7 +256,7 @@ MHD_gnutls_x509_crl_get_issuer_dn_by_oid (MHD_gnutls_x509_crl_t crl,
   **/
 int
 MHD_gnutls_x509_crl_get_dn_oid (MHD_gnutls_x509_crl_t crl,
-                            int indx, void *oid, size_t * sizeof_oid)
+                                int indx, void *oid, size_t * sizeof_oid)
 {
   if (crl == NULL)
     {
@@ -264,8 +265,8 @@ MHD_gnutls_x509_crl_get_dn_oid (MHD_gnutls_x509_crl_t crl,
     }
 
   return MHD__gnutls_x509_get_dn_oid (crl->crl,
-                                  "tbsCertList.issuer.rdnSequence", indx,
-                                  oid, sizeof_oid);
+                                      "tbsCertList.issuer.rdnSequence", indx,
+                                      oid, sizeof_oid);
 }
 
 
@@ -297,7 +298,7 @@ MHD_gnutls_x509_crl_get_signature_algorithm (MHD_gnutls_x509_crl_t crl)
 
   result =
     MHD__gnutls_x509_read_value (crl->crl, "signatureAlgorithm.algorithm",
-                             &sa, 0);
+                                 &sa, 0);
 
   if (result < 0)
     {
@@ -324,7 +325,7 @@ MHD_gnutls_x509_crl_get_signature_algorithm (MHD_gnutls_x509_crl_t crl)
  **/
 int
 MHD_gnutls_x509_crl_get_signature (MHD_gnutls_x509_crl_t crl,
-                               char *sig, size_t * sizeof_sig)
+                                   char *sig, size_t * sizeof_sig)
 {
   int result;
   int bits, len;
@@ -391,7 +392,7 @@ MHD_gnutls_x509_crl_get_version (MHD_gnutls_x509_crl_t crl)
   len = sizeof (version);
   if ((result =
        MHD__asn1_read_value (crl->crl, "tbsCertList.version", version,
-                        &len)) != ASN1_SUCCESS)
+                             &len)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -468,7 +469,7 @@ MHD_gnutls_x509_crl_get_crt_count (MHD_gnutls_x509_crl_t crl)
 
   result =
     MHD__asn1_number_of_elements (crl->crl,
-                             "tbsCertList.revokedCertificates", &count);
+                                  "tbsCertList.revokedCertificates", &count);
 
   if (result != ASN1_SUCCESS)
     {
@@ -495,8 +496,8 @@ MHD_gnutls_x509_crl_get_crt_count (MHD_gnutls_x509_crl_t crl)
   **/
 int
 MHD_gnutls_x509_crl_get_crt_serial (MHD_gnutls_x509_crl_t crl, int indx,
-                                unsigned char *serial,
-                                size_t * serial_size, time_t * t)
+                                    unsigned char *serial,
+                                    size_t * serial_size, time_t * t)
 {
 
   int result, _serial_size;
@@ -515,7 +516,8 @@ MHD_gnutls_x509_crl_get_crt_serial (MHD_gnutls_x509_crl_t crl, int indx,
             "tbsCertList.revokedCertificates.?%u.revocationDate", indx + 1);
 
   _serial_size = *serial_size;
-  result = MHD__asn1_read_value (crl->crl, serial_name, serial, &_serial_size);
+  result =
+    MHD__asn1_read_value (crl->crl, serial_name, serial, &_serial_size);
 
   *serial_size = _serial_size;
   if (result != ASN1_SUCCESS)
@@ -547,7 +549,7 @@ MHD_gnutls_x509_crl_get_crt_serial (MHD_gnutls_x509_crl_t crl, int indx,
   -*/
 int
 MHD__gnutls_x509_crl_get_raw_issuer_dn (MHD_gnutls_x509_crl_t crl,
-                                    MHD_gnutls_datum_t * dn)
+                                        MHD_gnutls_datum_t * dn)
 {
   ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
   int result, len1;
@@ -564,14 +566,15 @@ MHD__gnutls_x509_crl_get_raw_issuer_dn (MHD_gnutls_x509_crl_t crl,
    */
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (), "PKIX1.TBSCertList",
-                            &c2)) != ASN1_SUCCESS)
+                                 &c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
   result =
-    MHD__gnutls_x509_get_signed_data (crl->crl, "tbsCertList", &crl_signed_data);
+    MHD__gnutls_x509_get_signed_data (crl->crl, "tbsCertList",
+                                      &crl_signed_data);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -579,7 +582,8 @@ MHD__gnutls_x509_crl_get_raw_issuer_dn (MHD_gnutls_x509_crl_t crl,
     }
 
   result =
-    MHD__asn1_der_decoding (&c2, crl_signed_data.data, crl_signed_data.size, NULL);
+    MHD__asn1_der_decoding (&c2, crl_signed_data.data, crl_signed_data.size,
+                            NULL);
   if (result != ASN1_SUCCESS)
     {
       /* couldn't decode DER */
@@ -591,8 +595,8 @@ MHD__gnutls_x509_crl_get_raw_issuer_dn (MHD_gnutls_x509_crl_t crl,
 
   result =
     MHD__asn1_der_decoding_startEnd (c2, crl_signed_data.data,
-                                crl_signed_data.size, "issuer",
-                                &start1, &end1);
+                                     crl_signed_data.size, "issuer",
+                                     &start1, &end1);
 
   if (result != ASN1_SUCCESS)
     {
@@ -633,8 +637,8 @@ cleanup:
   **/
 int
 MHD_gnutls_x509_crl_export (MHD_gnutls_x509_crl_t crl,
-                        MHD_gnutls_x509_crt_fmt_t format, void *output_data,
-                        size_t * output_data_size)
+                            MHD_gnutls_x509_crt_fmt_t format,
+                            void *output_data, size_t * output_data_size)
 {
   if (crl == NULL)
     {
@@ -643,7 +647,7 @@ MHD_gnutls_x509_crl_export (MHD_gnutls_x509_crl_t crl,
     }
 
   return MHD__gnutls_x509_export_int (crl->crl, format, PEM_CRL,
-                                  output_data, output_data_size);
+                                      output_data, output_data_size);
 }
 
 /*-
@@ -657,14 +661,16 @@ MHD_gnutls_x509_crl_export (MHD_gnutls_x509_crl_t crl,
   *
   -*/
 int
-MHD__gnutls_x509_crl_cpy (MHD_gnutls_x509_crl_t dest, MHD_gnutls_x509_crl_t src)
+MHD__gnutls_x509_crl_cpy (MHD_gnutls_x509_crl_t dest,
+                          MHD_gnutls_x509_crl_t src)
 {
   int ret;
   size_t der_size;
   opaque *der;
   MHD_gnutls_datum_t tmp;
 
-  ret = MHD_gnutls_x509_crl_export (src, GNUTLS_X509_FMT_DER, NULL, &der_size);
+  ret =
+    MHD_gnutls_x509_crl_export (src, GNUTLS_X509_FMT_DER, NULL, &der_size);
   if (ret != GNUTLS_E_SHORT_MEMORY_BUFFER)
     {
       MHD_gnutls_assert ();

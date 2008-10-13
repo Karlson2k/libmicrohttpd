@@ -104,7 +104,8 @@ MHD_gnutls_x509_privkey_deinit (MHD_gnutls_x509_privkey_t key)
  *
  **/
 int
-MHD_gnutls_x509_privkey_cpy (MHD_gnutls_x509_privkey_t dst, MHD_gnutls_x509_privkey_t src)
+MHD_gnutls_x509_privkey_cpy (MHD_gnutls_x509_privkey_t dst,
+                             MHD_gnutls_x509_privkey_t src)
 {
   int i, ret;
 
@@ -148,14 +149,14 @@ MHD_gnutls_x509_privkey_cpy (MHD_gnutls_x509_privkey_t dst, MHD_gnutls_x509_priv
  */
 ASN1_TYPE
 MHD__gnutls_privkey_decode_pkcs1_rsa_key (const MHD_gnutls_datum_t * raw_key,
-                                      MHD_gnutls_x509_privkey_t pkey)
+                                          MHD_gnutls_x509_privkey_t pkey)
 {
   int result;
   ASN1_TYPE pkey_asn;
 
   if ((result = MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
-                                     "GNUTLS.RSAPrivateKey",
-                                     &pkey_asn)) != ASN1_SUCCESS)
+                                          "GNUTLS.RSAPrivateKey",
+                                          &pkey_asn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return NULL;
@@ -168,43 +169,44 @@ MHD__gnutls_privkey_decode_pkcs1_rsa_key (const MHD_gnutls_datum_t * raw_key,
       return NULL;
     }
 
-  result = MHD__asn1_der_decoding (&pkey_asn, raw_key->data, raw_key->size, NULL);
+  result =
+    MHD__asn1_der_decoding (&pkey_asn, raw_key->data, raw_key->size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       goto error;
     }
 
-  if ((result = MHD__gnutls_x509_read_int (pkey_asn, "modulus", &pkey->params[0]))
-      < 0)
+  if ((result =
+       MHD__gnutls_x509_read_int (pkey_asn, "modulus", &pkey->params[0])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
     }
 
   if ((result = MHD__gnutls_x509_read_int (pkey_asn, "publicExponent",
-                                       &pkey->params[1])) < 0)
+                                           &pkey->params[1])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
     }
 
   if ((result = MHD__gnutls_x509_read_int (pkey_asn, "privateExponent",
-                                       &pkey->params[2])) < 0)
+                                           &pkey->params[2])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
     }
 
-  if ((result = MHD__gnutls_x509_read_int (pkey_asn, "prime1", &pkey->params[3]))
-      < 0)
+  if ((result =
+       MHD__gnutls_x509_read_int (pkey_asn, "prime1", &pkey->params[3])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
     }
 
-  if ((result = MHD__gnutls_x509_read_int (pkey_asn, "prime2", &pkey->params[4]))
-      < 0)
+  if ((result =
+       MHD__gnutls_x509_read_int (pkey_asn, "prime2", &pkey->params[4])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
@@ -227,7 +229,7 @@ MHD__gnutls_privkey_decode_pkcs1_rsa_key (const MHD_gnutls_datum_t * raw_key,
   /* p, q */
 #else
   if ((result = MHD__gnutls_x509_read_int (pkey_asn, "coefficient",
-                                       &pkey->params[5])) < 0)
+                                           &pkey->params[5])) < 0)
     {
       MHD_gnutls_assert ();
       goto error;
@@ -267,8 +269,8 @@ error:MHD__asn1_delete_structure (&pkey_asn);
  **/
 int
 MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
-                            const MHD_gnutls_datum_t * data,
-                            MHD_gnutls_x509_crt_fmt_t format)
+                                const MHD_gnutls_datum_t * data,
+                                MHD_gnutls_x509_crt_fmt_t format)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -291,7 +293,9 @@ MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
 
       /* Try the first header */
       result
-        = MHD__gnutls_fbase64_decode (PEM_KEY_RSA, data->data, data->size, &out);
+        =
+        MHD__gnutls_fbase64_decode (PEM_KEY_RSA, data->data, data->size,
+                                    &out);
       key->pk_algorithm = MHD_GNUTLS_PK_RSA;
 
       _data.data = out;
@@ -360,12 +364,12 @@ MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
  **/
 int
 MHD_gnutls_x509_privkey_import_rsa_raw (MHD_gnutls_x509_privkey_t key,
-                                    const MHD_gnutls_datum_t * m,
-                                    const MHD_gnutls_datum_t * e,
-                                    const MHD_gnutls_datum_t * d,
-                                    const MHD_gnutls_datum_t * p,
-                                    const MHD_gnutls_datum_t * q,
-                                    const MHD_gnutls_datum_t * u)
+                                        const MHD_gnutls_datum_t * m,
+                                        const MHD_gnutls_datum_t * e,
+                                        const MHD_gnutls_datum_t * d,
+                                        const MHD_gnutls_datum_t * p,
+                                        const MHD_gnutls_datum_t * q,
+                                        const MHD_gnutls_datum_t * u)
 {
   int i = 0, ret;
   size_t siz = 0;
@@ -417,7 +421,8 @@ MHD_gnutls_x509_privkey_import_rsa_raw (MHD_gnutls_x509_privkey_t key,
     }
 
 #ifdef CALC_COEFF
-  key->params[5] = MHD__gnutls_mpi_snew (MHD__gnutls_mpi_get_nbits (key->params[0]));
+  key->params[5] =
+    MHD__gnutls_mpi_snew (MHD__gnutls_mpi_get_nbits (key->params[0]));
 
   if (key->params[5] == NULL)
     {
@@ -501,7 +506,7 @@ MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
 
   /* Now generate exp1 and exp2
    */
-  exp1 = MHD__gnutls_mpi_salloc_like (params[0]);   /* like modulus */
+  exp1 = MHD__gnutls_mpi_salloc_like (params[0]);       /* like modulus */
   if (exp1 == NULL)
     {
       MHD_gnutls_assert ();
@@ -600,8 +605,8 @@ MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
    */
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.RSAPrivateKey",
-                            c2)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.RSAPrivateKey", c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -618,16 +623,18 @@ MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "publicExponent", pube_data, size[1]))
-      != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "publicExponent", pube_data,
+                              size[1])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "privateExponent", prie_data, size[2]))
-      != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "privateExponent", prie_data,
+                              size[2])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -682,14 +689,15 @@ MHD__gnutls_asn1_encode_rsa (ASN1_TYPE * c2, mpi_t * params)
   MHD_gnutls_free (all_data);
 
   if ((result = MHD__asn1_write_value (*c2, "otherPrimeInfos",
-                                  NULL, 0)) != ASN1_SUCCESS)
+                                       NULL, 0)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -760,8 +768,8 @@ MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
    */
 
   if ((result =
-       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (), "GNUTLS.DSAPrivateKey",
-                            c2)) != ASN1_SUCCESS)
+       MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
+                                 "GNUTLS.DSAPrivateKey", c2)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -770,28 +778,32 @@ MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
 
   /* Write PRIME
    */
-  if ((result = MHD__asn1_write_value (*c2, "p", p_data, size[0])) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "p", p_data, size[0])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "q", q_data, size[1])) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "q", q_data, size[1])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "g", g_data, size[2])) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "g", g_data, size[2])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto cleanup;
     }
 
-  if ((result = MHD__asn1_write_value (*c2, "Y", y_data, size[3])) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "Y", y_data, size[3])) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -808,7 +820,8 @@ MHD__gnutls_asn1_encode_dsa (ASN1_TYPE * c2, mpi_t * params)
 
   MHD_gnutls_free (all_data);
 
-  if ((result = MHD__asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
+  if ((result =
+       MHD__asn1_write_value (*c2, "version", &null, 1)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -822,4 +835,3 @@ cleanup:MHD__asn1_delete_structure (c2);
 
   return result;
 }
-

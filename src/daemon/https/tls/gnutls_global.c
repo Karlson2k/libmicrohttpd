@@ -51,7 +51,7 @@ extern const ASN1_ARRAY_TYPE MHD_gnutlsMHD__asn1_tab[];
 extern const ASN1_ARRAY_TYPE MHD_pkix_asn1_tab[];
 
 LOG_FUNC MHD__gnutls_log_func;
-int MHD__gnutls_log_level = 0;      /* default log level */
+int MHD__gnutls_log_level = 0;  /* default log level */
 
 ASN1_TYPE MHD__gnutls_pkix1_asn;
 ASN1_TYPE MHD__gnutlsMHD__gnutls_asn;
@@ -148,7 +148,7 @@ MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function alloc_func,
 #ifdef DEBUG
 static void
 MHD__gnutls_gcry_log_handler (void *dummy, int level,
-                          const char *fmt, va_list list)
+                              const char *fmt, va_list list)
 {
   MHD_gtls_log (level, fmt, list);
 }
@@ -213,7 +213,7 @@ MHD__gnutls_global_init (void)
     if (data.wVersion < requested)
       {
         MHD__gnutls_debug_log ("WSAStartup version check failed (%d < %d).\n",
-                           data.wVersion, requested);
+                               data.wVersion, requested);
         WSACleanup ();
         return GNUTLS_E_LIBRARY_VERSION_MISMATCH;
       }
@@ -245,9 +245,10 @@ MHD__gnutls_global_init (void)
         }
 
       /* for gcrypt in order to be able to allocate memory */
-      gcry_set_allocation_handler (MHD_gnutls_malloc, MHD_gnutls_secure_malloc,
-                                   MHD__gnutls_is_secure_memory, MHD_gnutls_realloc,
-                                   MHD_gnutls_free);
+      gcry_set_allocation_handler (MHD_gnutls_malloc,
+                                   MHD_gnutls_secure_malloc,
+                                   MHD__gnutls_is_secure_memory,
+                                   MHD_gnutls_realloc, MHD_gnutls_free);
 
       /* gcry_control (GCRYCTL_DISABLE_INTERNAL_LOCKING, NULL, 0); */
 
@@ -276,14 +277,17 @@ MHD__gnutls_global_init (void)
    * This should not deal with files in the final
    * version.
    */
-  res = MHD__asn1_array2tree (MHD_pkix_asn1_tab, &MHD__gnutls_pkix1_asn, NULL);
+  res =
+    MHD__asn1_array2tree (MHD_pkix_asn1_tab, &MHD__gnutls_pkix1_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
       result = MHD_gtls_asn2err (res);
       return result;
     }
 
-  res = MHD__asn1_array2tree (MHD_gnutlsMHD__asn1_tab, &MHD__gnutlsMHD__gnutls_asn, NULL);
+  res =
+    MHD__asn1_array2tree (MHD_gnutlsMHD__asn1_tab,
+                          &MHD__gnutlsMHD__gnutls_asn, NULL);
   if (res != ASN1_SUCCESS)
     {
       MHD__asn1_delete_structure (&MHD__gnutls_pkix1_asn);
@@ -341,7 +345,7 @@ MHD__gnutls_global_deinit (void)
  **/
 void
 MHD__gnutls_transport_set_pull_function (MHD_gtls_session_t session,
-                                        MHD_gtls_pull_func pull_func)
+                                         MHD_gtls_pull_func pull_func)
 {
   session->internals.MHD__gnutls_pull_func = pull_func;
 }
@@ -362,7 +366,7 @@ MHD__gnutls_transport_set_pull_function (MHD_gtls_session_t session,
  **/
 void
 MHD__gnutls_transport_set_push_function (MHD_gtls_session_t session,
-                                        MHD_gtls_push_func push_func)
+                                         MHD_gtls_push_func push_func)
 {
   session->internals.MHD__gnutls_push_func = push_func;
 }

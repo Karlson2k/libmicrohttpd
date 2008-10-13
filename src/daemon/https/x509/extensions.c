@@ -46,8 +46,9 @@
  */
 int
 MHD__gnutls_x509_crt_get_extension (MHD_gnutls_x509_crt_t cert,
-                                const char *extension_id, int indx,
-                                MHD_gnutls_datum_t * ret, unsigned int *_critical)
+                                    const char *extension_id, int indx,
+                                    MHD_gnutls_datum_t * ret,
+                                    unsigned int *_critical)
 {
   int k, result, len;
   char name[MAX_NAME_SIZE], name2[MAX_NAME_SIZE];
@@ -136,7 +137,8 @@ MHD__gnutls_x509_crt_get_extension (MHD_gnutls_x509_crt_t cert,
               MHD_gtls_str_cpy (name2, sizeof (name2), name);
               MHD_gtls_str_cat (name2, sizeof (name2), ".extnValue");
 
-              result = MHD__gnutls_x509_read_value (cert->cert, name2, &value, 0);
+              result =
+                MHD__gnutls_x509_read_value (cert->cert, name2, &value, 0);
               if (result < 0)
                 {
                   MHD_gnutls_assert ();
@@ -177,7 +179,8 @@ MHD__gnutls_x509_crt_get_extension (MHD_gnutls_x509_crt_t cert,
  */
 int
 MHD__gnutls_x509_crt_get_extension_oid (MHD_gnutls_x509_crt_t cert,
-                                    int indx, void *oid, size_t * sizeof_oid)
+                                        int indx, void *oid,
+                                        size_t * sizeof_oid)
 {
   int k, result, len;
   char name[MAX_NAME_SIZE], name2[MAX_NAME_SIZE];
@@ -264,7 +267,7 @@ MHD__gnutls_x509_crt_get_extension_oid (MHD_gnutls_x509_crt_t cert,
  */
 int
 MHD__gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
-                                   opaque * extnValue, int extnValueLen)
+                                       opaque * extnValue, int extnValueLen)
 {
   ASN1_TYPE ext = ASN1_TYPE_EMPTY;
   int len, result;
@@ -309,16 +312,17 @@ MHD__gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
  */
 int
 MHD__gnutls_x509_ext_extract_basicConstraints (int *CA,
-                                           int *pathLenConstraint,
-                                           opaque * extnValue,
-                                           int extnValueLen)
+                                               int *pathLenConstraint,
+                                               opaque * extnValue,
+                                               int extnValueLen)
 {
   ASN1_TYPE ext = ASN1_TYPE_EMPTY;
   char str[128];
   int len, result;
 
   if ((result = MHD__asn1_create_element
-       (MHD__gnutls_get_pkix (), "PKIX1.BasicConstraints", &ext)) != ASN1_SUCCESS)
+       (MHD__gnutls_get_pkix (), "PKIX1.BasicConstraints",
+        &ext)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -335,7 +339,8 @@ MHD__gnutls_x509_ext_extract_basicConstraints (int *CA,
   if (pathLenConstraint)
     {
       result = MHD__gnutls_x509_read_uint (ext, "pathLenConstraint",
-					   (unsigned int*) pathLenConstraint);
+                                           (unsigned int *)
+                                           pathLenConstraint);
       if (result == GNUTLS_E_ASN1_ELEMENT_NOT_FOUND)
         *pathLenConstraint = -1;
       else if (result != GNUTLS_E_SUCCESS)

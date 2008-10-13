@@ -57,7 +57,7 @@ const MHD_gtls_mod_auth_st MHD_gtls_rsa_auth_struct = {
   MHD_gtls_proc_cert_server_certificate,
   MHD__gnutls_proc_cert_client_certificate,
   NULL,                         /* proc server kx */
-  MHD__gnutls_proc_rsa_client_kx,   /* proc client kx */
+  MHD__gnutls_proc_rsa_client_kx,       /* proc client kx */
   MHD_gtls_proc_cert_client_cert_vrfy,  /* proc client cert vrfy */
   MHD_gtls_proc_cert_cert_req   /* proc server cert request */
 };
@@ -66,8 +66,8 @@ const MHD_gtls_mod_auth_st MHD_gtls_rsa_auth_struct = {
  */
 int
 MHD__gnutls_get_public_rsa_params (MHD_gtls_session_t session,
-                               mpi_t params[MAX_PUBLIC_PARAMS_SIZE],
-                               int *params_len)
+                                   mpi_t params[MAX_PUBLIC_PARAMS_SIZE],
+                                   int *params_len)
 {
   int ret;
   cert_auth_info_t info;
@@ -148,7 +148,7 @@ MHD__gnutls_get_public_rsa_params (MHD_gtls_session_t session,
  */
 int
 MHD__gnutls_get_private_rsa_params (MHD_gtls_session_t session,
-                                mpi_t ** params, int *params_size)
+                                    mpi_t ** params, int *params_size)
 {
   int bits;
   MHD_gtls_cert_credentials_t cred;
@@ -169,8 +169,8 @@ MHD__gnutls_get_private_rsa_params (MHD_gtls_session_t session,
     }
 
   bits =
-    MHD__gnutls_mpi_get_nbits (session->internals.selected_cert_list[0].
-                           params[0]);
+    MHD__gnutls_mpi_get_nbits (session->internals.
+                               selected_cert_list[0].params[0]);
 
   if (MHD_gtls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)
@@ -207,7 +207,7 @@ MHD__gnutls_get_private_rsa_params (MHD_gtls_session_t session,
 
 int
 MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t session, opaque * data,
-                            size_t _data_size)
+                                size_t _data_size)
 {
   MHD_gnutls_datum_t plaintext;
   MHD_gnutls_datum_t ciphertext;
@@ -291,7 +291,8 @@ MHD__gnutls_proc_rsa_client_kx (MHD_gtls_session_t session, opaque * data,
 
       /* we do not need strong random numbers here.
        */
-      if (MHD_gc_nonce ((char*) session->key->key.data, session->key->key.size) != GC_OK)
+      if (MHD_gc_nonce
+          ((char *) session->key->key.data, session->key->key.size) != GC_OK)
         {
           MHD_gnutls_assert ();
           return GNUTLS_E_RANDOM_FAILED;
@@ -321,7 +322,7 @@ int
 MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t session, opaque ** data)
 {
   cert_auth_info_t auth;
-  MHD_gnutls_datum_t sdata;         /* data to send */
+  MHD_gnutls_datum_t sdata;     /* data to send */
   mpi_t params[MAX_PUBLIC_PARAMS_SIZE];
   int params_len = MAX_PUBLIC_PARAMS_SIZE;
   int ret, i;
@@ -330,7 +331,7 @@ MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t session, opaque ** data)
   if (session->key == NULL)
     {
       MHD_gnutls_assert ();
-      return GNUTLS_E_INSUFFICIENT_CREDENTIALS;  
+      return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
 
   auth = session->key->auth_info;
@@ -352,8 +353,8 @@ MHD__gnutls_gen_rsa_client_kx (MHD_gtls_session_t session, opaque ** data)
       return GNUTLS_E_MEMORY_ERROR;
     }
 
-  if (MHD_gc_pseudo_random ((char*) session->key->key.data,
-                        session->key->key.size) != GC_OK)
+  if (MHD_gc_pseudo_random ((char *) session->key->key.data,
+                            session->key->key.size) != GC_OK)
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_RANDOM_FAILED;

@@ -117,9 +117,9 @@ typedef struct MHD_gtls_cert_auth_info_st
   MHD_gtls_dh_info_st dh;
   rsa_info_st rsa_export;
 
-  MHD_gnutls_datum_t *raw_certificate_list; /* holds the raw certificate of the
-                                         * peer.
-                                         */
+  MHD_gnutls_datum_t *raw_certificate_list;     /* holds the raw certificate of the
+                                                 * peer.
+                                                 */
   unsigned int ncerts;          /* holds the size of the list above */
 } *cert_auth_info_t;
 

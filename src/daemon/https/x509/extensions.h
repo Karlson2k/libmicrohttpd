@@ -23,16 +23,17 @@
  */
 
 int MHD__gnutls_x509_crt_get_extension (MHD_gnutls_x509_crt_t cert,
-                                    const char *extension_id, int indx,
-                                    MHD_gnutls_datum_t * ret,
-                                    unsigned int *critical);
+                                        const char *extension_id, int indx,
+                                        MHD_gnutls_datum_t * ret,
+                                        unsigned int *critical);
 
 int MHD__gnutls_x509_crt_get_extension_oid (MHD_gnutls_x509_crt_t cert,
-                                        int indx, void *ret,
-                                        size_t * ret_size);
+                                            int indx, void *ret,
+                                            size_t * ret_size);
 int MHD__gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
-                                       opaque * extnValue, int extnValueLen);
+                                           opaque * extnValue,
+                                           int extnValueLen);
 int MHD__gnutls_x509_ext_extract_basicConstraints (int *CA,
-                                               int *pathLenConstraint,
-                                               opaque * extnValue,
-                                               int extnValueLen);
+                                                   int *pathLenConstraint,
+                                                   opaque * extnValue,
+                                                   int extnValueLen);

@@ -82,7 +82,7 @@ static int decrypt_data (schema_id, ASN1_TYPE pkcs8_asn, const char *root,
 static int decode_private_key_info (const MHD_gnutls_datum_t * der,
                                     MHD_gnutls_x509_privkey_t pkey);
 static int readMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn,
-                                   struct pbkdf2_params *params);
+                                      struct pbkdf2_params *params);
 
 #define PEM_PKCS8 "ENCRYPTED PRIVATE KEY"
 #define PEM_UNENCRYPTED_PKCS8 "PRIVATE KEY"
@@ -106,7 +106,8 @@ check_schema (const char *oid)
   if (strcmp (oid, PKCS12_PBE_RC2_40_SHA1_OID) == 0)
     return PKCS12_RC2_40_SHA1;
 
-  MHD__gnutls_x509_log ("PKCS encryption schema OID '%s' is unsupported.\n", oid);
+  MHD__gnutls_x509_log ("PKCS encryption schema OID '%s' is unsupported.\n",
+                        oid);
 
   return GNUTLS_E_UNKNOWN_CIPHER_TYPE;
 }
@@ -134,8 +135,8 @@ read_pkcs_schema_params (schema_id schema, const char *password,
        */
       if ((result =
            MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                "PKIX1.pkcs-5-PBES2-params",
-                                &pbes2_asn)) != ASN1_SUCCESS)
+                                     "PKIX1.pkcs-5-PBES2-params",
+                                     &pbes2_asn)) != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
           result = MHD_gtls_asn2err (result);
@@ -197,8 +198,8 @@ read_pkcs_schema_params (schema_id schema, const char *password,
 
       if ((result =
            MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                "PKIX1.pkcs-12-PbeParams",
-                                &pbes2_asn)) != ASN1_SUCCESS)
+                                     "PKIX1.pkcs-12-PbeParams",
+                                     &pbes2_asn)) != ASN1_SUCCESS)
         {
           MHD_gnutls_assert ();
           result = MHD_gtls_asn2err (result);
@@ -226,9 +227,9 @@ read_pkcs_schema_params (schema_id schema, const char *password,
         {
           result =
             MHD_pkcs12_string_to_key (2 /*IV*/, kdf_params->salt,
-                                   kdf_params->salt_size,
-                                   kdf_params->iter_count, password,
-                                   enc_params->iv_size, enc_params->iv);
+                                      kdf_params->salt_size,
+                                      kdf_params->iter_count, password,
+                                      enc_params->iv_size, enc_params->iv);
           if (result < 0)
             {
               MHD_gnutls_assert ();
@@ -270,15 +271,16 @@ decode_pkcs8_key (const MHD_gnutls_datum_t * raw_key,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.pkcs-8-EncryptedPrivateKeyInfo",
-                            &pkcs8_asn)) != ASN1_SUCCESS)
+                                 "PKIX1.pkcs-8-EncryptedPrivateKeyInfo",
+                                 &pkcs8_asn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
       goto error;
     }
 
-  result = MHD__asn1_der_decoding (&pkcs8_asn, raw_key->data, raw_key->size, NULL);
+  result =
+    MHD__asn1_der_decoding (&pkcs8_asn, raw_key->data, raw_key->size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -291,7 +293,7 @@ decode_pkcs8_key (const MHD_gnutls_datum_t * raw_key,
   len = sizeof (enc_oid);
   result =
     MHD__asn1_read_value (pkcs8_asn, "encryptionAlgorithm.algorithm",
-                     enc_oid, &len);
+                          enc_oid, &len);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -310,9 +312,9 @@ decode_pkcs8_key (const MHD_gnutls_datum_t * raw_key,
    */
   result =
     MHD__asn1_der_decoding_startEnd (pkcs8_asn, raw_key->data,
-                                raw_key->size,
-                                "encryptionAlgorithm.parameters",
-                                &params_start, &params_end);
+                                     raw_key->size,
+                                     "encryptionAlgorithm.parameters",
+                                     &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -416,8 +418,8 @@ decode_private_key_info (const MHD_gnutls_datum_t * der,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.pkcs-8-PrivateKeyInfo",
-                            &pkcs8_asn)) != ASN1_SUCCESS)
+                                 "PKIX1.pkcs-8-PrivateKeyInfo",
+                                 &pkcs8_asn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       result = MHD_gtls_asn2err (result);
@@ -436,7 +438,8 @@ decode_private_key_info (const MHD_gnutls_datum_t * der,
    */
   len = sizeof (oid);
   result =
-    MHD__asn1_read_value (pkcs8_asn, "privateKeyAlgorithm.algorithm", oid, &len);
+    MHD__asn1_read_value (pkcs8_asn, "privateKeyAlgorithm.algorithm", oid,
+                          &len);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -446,7 +449,7 @@ decode_private_key_info (const MHD_gnutls_datum_t * der,
 
   /* we only support RSA and DSA private keys.
    */
-  if (strcmp ((const char*) oid, PK_PKIX1_RSA_OID) == 0)
+  if (strcmp ((const char *) oid, PK_PKIX1_RSA_OID) == 0)
     pkey->pk_algorithm = MHD_GNUTLS_PK_RSA;
   else
     {
@@ -502,9 +505,10 @@ error:
  **/
 int
 MHD_gnutls_x509_privkey_import_pkcs8 (MHD_gnutls_x509_privkey_t key,
-                                  const MHD_gnutls_datum_t * data,
-                                  MHD_gnutls_x509_crt_fmt_t format,
-                                  const char *password, unsigned int flags)
+                                      const MHD_gnutls_datum_t * data,
+                                      MHD_gnutls_x509_crt_fmt_t format,
+                                      const char *password,
+                                      unsigned int flags)
 {
   int result = 0, need_free = 0;
   MHD_gnutls_datum_t _data;
@@ -530,13 +534,14 @@ MHD_gnutls_x509_privkey_import_pkcs8 (MHD_gnutls_x509_privkey_t key,
        */
       result =
         MHD__gnutls_fbase64_decode (PEM_UNENCRYPTED_PKCS8,
-                                data->data, data->size, &out);
+                                    data->data, data->size, &out);
 
       if (result < 0)
         {                       /* Try the encrypted header
                                  */
           result =
-            MHD__gnutls_fbase64_decode (PEM_PKCS8, data->data, data->size, &out);
+            MHD__gnutls_fbase64_decode (PEM_PKCS8, data->data, data->size,
+                                        &out);
 
           if (result <= 0)
             {
@@ -589,7 +594,8 @@ cleanup:
  */
 static int
 read_pbkdf2_params (ASN1_TYPE pbes2_asn,
-                    const MHD_gnutls_datum_t * der, struct pbkdf2_params *params)
+                    const MHD_gnutls_datum_t * der,
+                    struct pbkdf2_params *params)
 {
   int params_start, params_end;
   int params_len, len, result;
@@ -602,7 +608,8 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
    */
   len = sizeof (oid);
   result =
-    MHD__asn1_read_value (pbes2_asn, "keyDerivationFunc.algorithm", oid, &len);
+    MHD__asn1_read_value (pbes2_asn, "keyDerivationFunc.algorithm", oid,
+                          &len);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -620,8 +627,8 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
 
   result =
     MHD__asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
-                                "keyDerivationFunc.parameters",
-                                &params_start, &params_end);
+                                     "keyDerivationFunc.parameters",
+                                     &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -634,8 +641,8 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
    */
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.pkcs-5-PBKDF2-params",
-                            &pbkdf2_asn)) != ASN1_SUCCESS)
+                                 "PKIX1.pkcs-5-PBKDF2-params",
+                                 &pbkdf2_asn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -643,7 +650,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
 
   result =
     MHD__asn1_der_decoding (&pbkdf2_asn, &der->data[params_start],
-                       params_len, NULL);
+                            params_len, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -655,7 +662,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
   params->salt_size = sizeof (params->salt);
   result =
     MHD__asn1_read_value (pbkdf2_asn, "salt.specified", params->salt,
-                     &params->salt_size);
+                          &params->salt_size);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -668,7 +675,7 @@ read_pbkdf2_params (ASN1_TYPE pbes2_asn,
    */
   result =
     MHD__gnutls_x509_read_uint (pbkdf2_asn, "iterationCount",
-                            &params->iter_count);
+                                &params->iter_count);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -709,7 +716,8 @@ readMHD_pkcs12_kdf_params (ASN1_TYPE pbes2_asn, struct pbkdf2_params *params)
   /* read the salt */
   params->salt_size = sizeof (params->salt);
   result =
-    MHD__asn1_read_value (pbes2_asn, "salt", params->salt, &params->salt_size);
+    MHD__asn1_read_value (pbes2_asn, "salt", params->salt,
+                          &params->salt_size);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -794,8 +802,8 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
 
   result =
     MHD__asn1_der_decoding_startEnd (pbes2_asn, der->data, der->size,
-                                "encryptionScheme.parameters",
-                                &params_start, &params_end);
+                                     "encryptionScheme.parameters",
+                                     &params_start, &params_end);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -807,15 +815,16 @@ read_pbe_enc_params (ASN1_TYPE pbes2_asn,
    */
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.pkcs-5-des-EDE3-CBC-params",
-                            &pbe_asn)) != ASN1_SUCCESS)
+                                 "PKIX1.pkcs-5-des-EDE3-CBC-params",
+                                 &pbe_asn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
   result =
-    MHD__asn1_der_decoding (&pbe_asn, &der->data[params_start], params_len, NULL);
+    MHD__asn1_der_decoding (&pbe_asn, &der->data[params_start], params_len,
+                            NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -899,9 +908,10 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
   if (schema == PBES2)
     {
       result = MHD_gc_pbkdf2_sha1 (password, strlen (password),
-				   (const char*) kdf_params->salt, kdf_params->salt_size,
-				   kdf_params->iter_count,
-				   (char*) key, key_size);
+                                   (const char *) kdf_params->salt,
+                                   kdf_params->salt_size,
+                                   kdf_params->iter_count, (char *) key,
+                                   key_size);
 
       if (result != GC_OK)
         {
@@ -914,9 +924,9 @@ decrypt_data (schema_id schema, ASN1_TYPE pkcs8_asn,
     {
       result =
         MHD_pkcs12_string_to_key (1 /*KEY*/, kdf_params->salt,
-                               kdf_params->salt_size,
-                               kdf_params->iter_count, password,
-                               key_size, key);
+                                  kdf_params->salt_size,
+                                  kdf_params->iter_count, password,
+                                  key_size, key);
 
       if (result < 0)
         {

@@ -141,6 +141,7 @@ AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/
 # IPv6
 AC_MSG_CHECKING(for IPv6)
 AC_TRY_COMPILE([
+#include <stdio.h>
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -151,6 +152,7 @@ AC_TRY_COMPILE([
 int af=AF_INET6;
 int pf=PF_INET6;
 struct sockaddr_in6 sa;
+printf("%d %d %p\n", af, pf, &sa);
 ],[
 have_inet6=yes;
 AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])

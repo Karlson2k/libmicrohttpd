@@ -81,37 +81,40 @@ extern "C"
   int MHD_gnutls_pkcs12_init (MHD_gnutls_pkcs12_t * pkcs12);
   void MHD_gnutls_pkcs12_deinit (MHD_gnutls_pkcs12_t pkcs12);
   int MHD_gnutls_pkcs12_import (MHD_gnutls_pkcs12_t pkcs12,
-                            const MHD_gnutls_datum_t * data,
-                            MHD_gnutls_x509_crt_fmt_t format, unsigned int flags);
+                                const MHD_gnutls_datum_t * data,
+                                MHD_gnutls_x509_crt_fmt_t format,
+                                unsigned int flags);
   int MHD_gnutls_pkcs12_export (MHD_gnutls_pkcs12_t pkcs12,
-                            MHD_gnutls_x509_crt_fmt_t format,
-                            void *output_data, size_t * output_data_size);
+                                MHD_gnutls_x509_crt_fmt_t format,
+                                void *output_data, size_t * output_data_size);
 
-  int MHD_gnutls_pkcs12_bag_decrypt (MHD_gnutls_pkcs12_bag_t bag, const char *pass);
+  int MHD_gnutls_pkcs12_bag_decrypt (MHD_gnutls_pkcs12_bag_t bag,
+                                     const char *pass);
   int MHD_gnutls_pkcs12_bag_encrypt (MHD_gnutls_pkcs12_bag_t bag,
-                                 const char *pass, unsigned int flags);
+                                     const char *pass, unsigned int flags);
 
   int MHD_gnutls_pkcs12_bag_get_data (MHD_gnutls_pkcs12_bag_t bag,
-                                  int indx, MHD_gnutls_datum_t * data);
+                                      int indx, MHD_gnutls_datum_t * data);
   int MHD_gnutls_pkcs12_bag_set_data (MHD_gnutls_pkcs12_bag_t bag,
-                                  MHD_gnutls_pkcs12_bag_type_t type,
-                                  const MHD_gnutls_datum_t * data);
+                                      MHD_gnutls_pkcs12_bag_type_t type,
+                                      const MHD_gnutls_datum_t * data);
   int MHD_gnutls_pkcs12_bag_set_crl (MHD_gnutls_pkcs12_bag_t bag,
-                                 MHD_gnutls_x509_crl_t crl);
+                                     MHD_gnutls_x509_crl_t crl);
   int MHD_gnutls_pkcs12_bag_set_crt (MHD_gnutls_pkcs12_bag_t bag,
-                                 MHD_gnutls_x509_crt_t crt);
+                                     MHD_gnutls_x509_crt_t crt);
 
   int MHD_gnutls_pkcs12_bag_get_count (MHD_gnutls_pkcs12_bag_t bag);
 
   int MHD_gnutls_pkcs12_bag_get_key_id (MHD_gnutls_pkcs12_bag_t bag,
-                                    int indx, MHD_gnutls_datum_t * id);
+                                        int indx, MHD_gnutls_datum_t * id);
   int MHD_gnutls_pkcs12_bag_set_key_id (MHD_gnutls_pkcs12_bag_t bag,
-                                    int indx, const MHD_gnutls_datum_t * id);
+                                        int indx,
+                                        const MHD_gnutls_datum_t * id);
 
   int MHD_gnutls_pkcs12_bag_get_friendly_name (MHD_gnutls_pkcs12_bag_t bag,
-                                           int indx, char **name);
+                                               int indx, char **name);
   int MHD_gnutls_pkcs12_bag_set_friendly_name (MHD_gnutls_pkcs12_bag_t bag,
-                                           int indx, const char *name);
+                                               int indx, const char *name);
 
 #ifdef __cplusplus
 }
@@ -136,10 +139,10 @@ typedef enum schema_id
 } schema_id;
 
 int MHD_pkcs12_string_to_key (unsigned int id,
-                           const opaque * salt,
-                           unsigned int salt_size,
-                           unsigned int iter,
-                           const char *pw,
-                           unsigned int req_keylen, opaque * keybuf);
+                              const opaque * salt,
+                              unsigned int salt_size,
+                              unsigned int iter,
+                              const char *pw,
+                              unsigned int req_keylen, opaque * keybuf);
 
 #endif /* GNUTLS_PKCS12_H */

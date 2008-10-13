@@ -31,7 +31,7 @@
 
 int
 MHD_hmac_md5 (const void *key, size_t keylen,
-          const void *in, size_t inlen, void *resbuf)
+              const void *in, size_t inlen, void *resbuf)
 {
   struct MHD_md5_ctx inner;
   struct MHD_md5_ctx outer;

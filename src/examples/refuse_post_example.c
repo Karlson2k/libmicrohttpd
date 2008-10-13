@@ -24,7 +24,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 
-const char* askpage = "<html><body>\n\
+const char *askpage = "<html><body>\n\
                        Upload a file, please!<br>\n\
                        <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
                        <input name=\"file\" type=\"file\">\n\
@@ -48,20 +48,23 @@ ahc_echo (void *cls,
 
   if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "POST")))
     return MHD_NO;              /* unexpected method */
-  
+
   if (&aptr != *ptr)
     {
       *ptr = &aptr;
 
       /* always to busy for POST requests */
       if (0 == strcmp (method, "POST"))
-      {
-        response = MHD_create_response_from_data (strlen (BUSYPAGE),
-                                            (void *) BUSYPAGE, MHD_NO, MHD_NO);
-        ret = MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE, response);
-        MHD_destroy_response (response);
-        return ret;
-      }
+        {
+          response = MHD_create_response_from_data (strlen (BUSYPAGE),
+                                                    (void *) BUSYPAGE, MHD_NO,
+                                                    MHD_NO);
+          ret =
+            MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE,
+                                response);
+          MHD_destroy_response (response);
+          return ret;
+        }
     }
 
   *ptr = NULL;                  /* reset when done */
@@ -84,7 +87,8 @@ main (int argc, char *const *argv)
     }
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, (void *) askpage, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, (void *) askpage,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 1;
   sleep (atoi (argv[2]));

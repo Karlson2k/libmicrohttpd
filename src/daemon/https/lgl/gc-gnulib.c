@@ -161,9 +161,9 @@ MHD_gc_random (char *data, size_t datalen)
 /* Memory allocation. */
 void
 MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
-                   MHD_gc_malloc_t secure_malloc,
-                   MHD_gc_secure_check_t secure_check,
-                   MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
+                       MHD_gc_malloc_t secure_malloc,
+                       MHD_gc_secure_check_t secure_check,
+                       MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
 {
   return;
 }
@@ -193,7 +193,7 @@ typedef struct _MHD_gc_cipher_ctx
 
 Gc_rc
 MHD_gc_cipher_open (Gc_cipher alg,
-                Gc_cipher_mode mode, MHD_gc_cipher_handle * outhandle)
+                    Gc_cipher_mode mode, MHD_gc_cipher_handle * outhandle)
 {
   _MHD_gc_cipher_ctx *ctx;
   Gc_rc rc = GC_OK;
@@ -277,7 +277,8 @@ MHD_gc_cipher_open (Gc_cipher alg,
 }
 
 Gc_rc
-MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *key)
+MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen,
+                      const char *key)
 {
   _MHD_gc_cipher_ctx *ctx = handle;
 
@@ -317,16 +318,18 @@ MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *ke
           sprintf (&keyMaterial[2 * i], "%02x", key[i] & 0xFF);
 
         rc = MHD_rijndaelMakeKey (&ctx->aesEncKey, RIJNDAEL_DIR_ENCRYPT,
-                              keylen * 8, keyMaterial);
+                                  keylen * 8, keyMaterial);
         if (rc < 0)
           return GC_INVALID_CIPHER;
 
         rc = MHD_rijndaelMakeKey (&ctx->aesDecKey, RIJNDAEL_DIR_DECRYPT,
-                              keylen * 8, keyMaterial);
+                                  keylen * 8, keyMaterial);
         if (rc < 0)
           return GC_INVALID_CIPHER;
 
-        rc = MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB, NULL);
+        rc =
+          MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB,
+                                      NULL);
         if (rc < 0)
           return GC_INVALID_CIPHER;
       }
@@ -341,7 +344,8 @@ MHD_gc_cipher_setkey (MHD_gc_cipher_handle handle, size_t keylen, const char *ke
 }
 
 Gc_rc
-MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
+MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen,
+                     const char *iv)
 {
   _MHD_gc_cipher_ctx *ctx = handle;
 
@@ -374,8 +378,9 @@ MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
             for (i = 0; i < ivlen; i++)
               sprintf (&ivMaterial[2 * i], "%02x", iv[i] & 0xFF);
 
-            rc = MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
-                                     ivMaterial);
+            rc =
+              MHD_MHD_rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
+                                          ivMaterial);
             if (rc < 0)
               return GC_INVALID_CIPHER;
           }
@@ -395,7 +400,8 @@ MHD_gc_cipher_setiv (MHD_gc_cipher_handle handle, size_t ivlen, const char *iv)
 }
 
 Gc_rc
-MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len,
+                              char *data)
 {
   _MHD_gc_cipher_ctx *ctx = handle;
 
@@ -450,7 +456,7 @@ MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
         int nblocks;
 
         nblocks = MHD_rijndaelBlockEncrypt (&ctx->aesContext, &ctx->aesEncKey,
-                                        data, 8 * len, data);
+                                            data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;
       }
@@ -465,7 +471,8 @@ MHD_gc_cipher_encrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
 }
 
 Gc_rc
-MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *data)
+MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len,
+                              char *data)
 {
   _MHD_gc_cipher_ctx *ctx = handle;
 
@@ -522,7 +529,7 @@ MHD_gc_cipher_decrypt_inline (MHD_gc_cipher_handle handle, size_t len, char *dat
         int nblocks;
 
         nblocks = MHD_rijndaelBlockDecrypt (&ctx->aesContext, &ctx->aesDecKey,
-                                        data, 8 * len, data);
+                                            data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;
       }
@@ -565,7 +572,8 @@ typedef struct _MHD_gc_hash_ctx
 } _MHD_gc_hash_ctx;
 
 Gc_rc
-MHD_gc_hash_open (Gc_hash hash, Gc_hash_mode mode, MHD_gc_hash_handle * outhandle)
+MHD_gc_hash_open (Gc_hash hash, Gc_hash_mode mode,
+                  MHD_gc_hash_handle * outhandle)
 {
   _MHD_gc_hash_ctx *ctx;
   Gc_rc rc = GC_OK;
@@ -769,7 +777,7 @@ MHD_gc_sha1 (const void *in, size_t inlen, void *resbuf)
 #ifdef GNULIB_GC_HMAC_MD5
 Gc_rc
 MHD_gc_MHD_hmac_md5 (const void *key, size_t keylen,
-             const void *in, size_t inlen, char *resbuf)
+                     const void *in, size_t inlen, char *resbuf)
 {
   MHD_hmac_md5 (key, keylen, in, inlen, resbuf);
   return GC_OK;
@@ -779,7 +787,8 @@ MHD_gc_MHD_hmac_md5 (const void *key, size_t keylen,
 #ifdef GNULIB_GC_HMAC_SHA1
 Gc_rc
 MHD_gc_MHD_hmac_sha1 (const void *key,
-              size_t keylen, const void *in, size_t inlen, char *resbuf)
+                      size_t keylen, const void *in, size_t inlen,
+                      char *resbuf)
 {
   MHD_hmac_sha1 (key, keylen, in, inlen, resbuf);
   return GC_OK;

@@ -36,5 +36,6 @@ int MHD_gtls_datum_append_m (MHD_gnutls_datum_t * dat, const void *data,
                              size_t data_size, MHD_gnutls_realloc_function);
 #define MHD__gnutls_datum_append(x,y,z) MHD_gtls_datum_append_m(x,y,z, MHD_gnutls_realloc)
 
-void MHD_gtls_free_datum_m (MHD_gnutls_datum_t * dat, MHD_gnutls_free_function);
+void MHD_gtls_free_datum_m (MHD_gnutls_datum_t * dat,
+                            MHD_gnutls_free_function);
 #define MHD__gnutls_free_datum(x) MHD_gtls_free_datum_m(x, MHD_gnutls_free)

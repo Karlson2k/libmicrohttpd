@@ -58,7 +58,8 @@ oprfi_recv_server (MHD_gtls_session_t session,
 
   /* Store incoming data. */
   session->security_parameters.extensions.oprfi_client_len = len;
-  session->security_parameters.extensions.oprfi_client = MHD_gnutls_malloc (len);
+  session->security_parameters.extensions.oprfi_client =
+    MHD_gnutls_malloc (len);
   if (!session->security_parameters.extensions.oprfi_client)
     {
       MHD_gnutls_assert ();
@@ -101,7 +102,8 @@ oprfi_recv_client (MHD_gtls_session_t session,
 
   /* Store incoming data. */
   session->security_parameters.extensions.oprfi_server_len = len;
-  session->security_parameters.extensions.oprfi_server = MHD_gnutls_malloc (len);
+  session->security_parameters.extensions.oprfi_server =
+    MHD_gnutls_malloc (len);
   if (!session->security_parameters.extensions.oprfi_server)
     {
       MHD_gnutls_assert ();
@@ -165,7 +167,8 @@ oprfi_send_server (MHD_gtls_session_t session, opaque * data,
   session->security_parameters.extensions.oprfi_server_len =
     session->security_parameters.extensions.oprfi_client_len;
   session->security_parameters.extensions.oprfi_server =
-    MHD_gnutls_malloc (session->security_parameters.extensions.oprfi_server_len);
+    MHD_gnutls_malloc (session->security_parameters.extensions.
+                       oprfi_server_len);
   if (!session->security_parameters.extensions.oprfi_server)
     {
       MHD_gnutls_assert ();
@@ -186,8 +189,8 @@ oprfi_send_server (MHD_gtls_session_t session, opaque * data,
     }
 
   DECR_LENGTH_RET (data_size, 2, GNUTLS_E_SHORT_MEMORY_BUFFER);
-  MHD_gtls_write_uint16 (session->security_parameters.
-                         extensions.oprfi_server_len, p);
+  MHD_gtls_write_uint16 (session->security_parameters.extensions.
+                         oprfi_server_len, p);
   p += 2;
 
   DECR_LENGTH_RET (data_size,
@@ -206,10 +209,10 @@ MHD_gtls_oprfi_send_params (MHD_gtls_session_t session,
 {
 #if MHD_DEBUG_TLS
   if (session->security_parameters.entity == GNUTLS_CLIENT)
-	   return oprfi_send_client (session, data, data_size);
+    return oprfi_send_client (session, data, data_size);
   else
 #endif
-       return oprfi_send_server (session, data, data_size);
+    return oprfi_send_server (session, data, data_size);
 }
 
 /**
@@ -255,7 +258,8 @@ MHD_gtls_oprfi_enable_client (MHD_gtls_session_t session,
  **/
 void
 MHD_gtls_oprfi_enable_server (MHD_gtls_session_t session,
-                              MHD_gnutls_oprfi_callback_func cb, void *userdata)
+                              MHD_gnutls_oprfi_callback_func cb,
+                              void *userdata)
 {
   session->security_parameters.extensions.oprfi_cb = cb;
   session->security_parameters.extensions.oprfi_userdata = userdata;

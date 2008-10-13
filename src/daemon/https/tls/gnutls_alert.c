@@ -110,8 +110,9 @@ MHD__gnutls_alert_get_name (MHD_gnutls_alert_description_t alert)
   *
   **/
 int
-MHD__gnutls_alert_send (MHD_gtls_session_t session, MHD_gnutls_alert_level_t level,
-                       MHD_gnutls_alert_description_t desc)
+MHD__gnutls_alert_send (MHD_gtls_session_t session,
+                        MHD_gnutls_alert_level_t level,
+                        MHD_gnutls_alert_description_t desc)
 {
   uint8_t data[2];
   int ret;
@@ -124,7 +125,7 @@ MHD__gnutls_alert_send (MHD_gtls_session_t session, MHD_gnutls_alert_level_t lev
   if (name == NULL)
     name = "(unknown)";
   MHD__gnutls_record_log ("REC: Sending Alert[%d|%d] - %s\n", data[0],
-                      data[1], name);
+                          data[1], name);
 
   if ((ret = MHD_gtls_send_int (session, GNUTLS_ALERT, -1, data, 2)) >= 0)
     return 0;

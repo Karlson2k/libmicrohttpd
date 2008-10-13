@@ -37,7 +37,8 @@
 
 extern char MHD__asn1_identifierMissing[];
 
-static node_asn *MHD__asn1_copy_structure2 (node_asn * root, const char *source_name);
+static node_asn *MHD__asn1_copy_structure2 (node_asn * root,
+                                            const char *source_name);
 
 
 
@@ -106,7 +107,7 @@ MHD__asn1_find_left (node_asn * node)
   **/
 MHD__asn1_retCode
 MHD__asn1_array2tree (const ASN1_ARRAY_TYPE * array, ASN1_TYPE * definitions,
-                 char *errorDescription)
+                      char *errorDescription)
 {
   node_asn *p, *p_last = NULL;
   unsigned long k;
@@ -421,7 +422,7 @@ MHD__asn1_type_choice_config (node_asn * node)
                           if (type_field (p3->type) == TYPE_TAG)
                             {
                               p4 = MHD__asn1_add_node_only (p3->type);
-                              tlen = strlen ((const char*) p3->value);
+                              tlen = strlen ((const char *) p3->value);
                               if (tlen > 0)
                                 MHD__asn1_set_value (p4, p3->value, tlen + 1);
                               MHD__asn1_set_right (p4, p2->down);
@@ -497,7 +498,8 @@ MHD__asn1_expand_identifier (node_asn ** node, node_asn * root)
             {
               MHD__asn1_str_cpy (name2, sizeof (name2), root->name);
               MHD__asn1_str_cat (name2, sizeof (name2), ".");
-              MHD__asn1_str_cat (name2, sizeof (name2), (const char*) p->value);
+              MHD__asn1_str_cat (name2, sizeof (name2),
+                                 (const char *) p->value);
               p2 = MHD__asn1_copy_structure2 (root, name2);
               if (p2 == NULL)
                 {
@@ -606,7 +608,7 @@ MHD__asn1_expand_identifier (node_asn ** node, node_asn * root)
   **/
 MHD__asn1_retCode
 MHD__asn1_create_element (ASN1_TYPE definitions, const char *source_name,
-                     ASN1_TYPE * element)
+                          ASN1_TYPE * element)
 {
   node_asn *dest_node;
   int res;
@@ -685,7 +687,8 @@ MHD__asn1_number_of_elements (ASN1_TYPE element, const char *name, int *num)
   *
   **/
 const char *
-MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
+MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
+                                   const char *oidValue)
 {
   char definitionsName[MAX_NAME_SIZE], name[2 * MAX_NAME_SIZE + 1];
   char value[MAX_NAME_SIZE];
@@ -741,7 +744,7 @@ MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions, const char *oidValue)
  **/
 MHD__asn1_retCode
 MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
-                ASN1_TYPE src, const char *src_name)
+                     ASN1_TYPE src, const char *src_name)
 {
 /* FIXME: rewrite using copy_structure().
  * It seems quite hard to do.

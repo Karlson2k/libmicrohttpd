@@ -88,8 +88,8 @@ str_escape (char *str, char *buffer, unsigned int buffer_size)
  */
 int
 MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
-                       const char *MHD__asn1_rdn_name, char *buf,
-                       size_t * sizeof_buf)
+                           const char *MHD__asn1_rdn_name, char *buf,
+                           size_t * sizeof_buf)
 {
   MHD_gtls_string out_str;
   int k2, k1, result;
@@ -115,7 +115,8 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
   else
     *sizeof_buf = 0;
 
-  MHD_gtls_string_init (&out_str, MHD_gnutls_malloc, MHD_gnutls_realloc, MHD_gnutls_free);
+  MHD_gtls_string_init (&out_str, MHD_gnutls_malloc, MHD_gnutls_realloc,
+                        MHD_gnutls_free);
 
   k1 = 0;
   do
@@ -125,13 +126,14 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
       /* create a string like "tbsCertList.issuer.rdnSequence.?1"
        */
       if (MHD__asn1_rdn_name[0] != 0)
-        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u", MHD__asn1_rdn_name,
-                  k1);
+        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u",
+                  MHD__asn1_rdn_name, k1);
       else
         snprintf (tmpbuffer1, sizeof (tmpbuffer1), "?%u", k1);
 
       len = sizeof (value) - 1;
-      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
+      result =
+        MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         {
@@ -162,7 +164,8 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
            */
 
           len = sizeof (value) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             break;
@@ -179,7 +182,8 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
           MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
 
           len = sizeof (oid) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             break;
@@ -196,7 +200,8 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
           MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".value");
 
           len = 0;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, NULL, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, NULL, &len);
 
           value2 = MHD_gnutls_malloc (len);
           if (value2 == NULL)
@@ -206,7 +211,8 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
               goto cleanup;
             }
 
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, value2, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, value2, &len);
 
           if (result != ASN1_SUCCESS)
             {
@@ -268,12 +274,14 @@ MHD__gnutls_x509_parse_dn (ASN1_TYPE MHD__asn1_struct,
           if (printable)
             result =
               MHD__gnutls_x509_oid_data2string (oid,
-                                            value2, len,
-                                            string, &sizeof_string);
+                                                value2, len,
+                                                string, &sizeof_string);
 
           if (!printable || result < 0)
             result =
-              MHD__gnutls_x509_data2hex ((const unsigned char*) value2, len, (unsigned char*) string, &sizeof_string);
+              MHD__gnutls_x509_data2hex ((const unsigned char *) value2, len,
+                                         (unsigned char *) string,
+                                         &sizeof_string);
 
           if (result < 0)
             {
@@ -338,10 +346,10 @@ cleanup:
  */
 int
 MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                           const char *MHD__asn1_rdn_name,
-                           const char *given_oid, int indx,
-                           unsigned int raw_flag,
-                           void *buf, size_t * sizeof_buf)
+                               const char *MHD__asn1_rdn_name,
+                               const char *given_oid, int indx,
+                               unsigned int raw_flag,
+                               void *buf, size_t * sizeof_buf)
 {
   int k2, k1, result;
   char tmpbuffer1[MAX_NAME_SIZE];
@@ -366,13 +374,14 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
       /* create a string like "tbsCertList.issuer.rdnSequence.?1"
        */
       if (MHD__asn1_rdn_name[0] != 0)
-        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u", MHD__asn1_rdn_name,
-                  k1);
+        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u",
+                  MHD__asn1_rdn_name, k1);
       else
         snprintf (tmpbuffer1, sizeof (tmpbuffer1), "?%u", k1);
 
       len = sizeof (value) - 1;
-      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
+      result =
+        MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         {
@@ -404,7 +413,8 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
            */
 
           len = sizeof (value) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             {
@@ -423,7 +433,8 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
           MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
 
           len = sizeof (oid) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             break;
@@ -443,7 +454,9 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
               MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".value");
 
               len = *sizeof_buf;
-              result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, buf, &len);
+              result =
+                MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, buf,
+                                      &len);
 
               if (result != ASN1_SUCCESS)
                 {
@@ -474,10 +487,12 @@ MHD__gnutls_x509_parse_dn_oid (ASN1_TYPE MHD__asn1_struct,
                   if (printable == 1)
                     result =
                       MHD__gnutls_x509_oid_data2string (oid, buf, len,
-                                                    cbuf, sizeof_buf);
+                                                        cbuf, sizeof_buf);
                   else
                     result =
-                      MHD__gnutls_x509_data2hex (buf, len, (unsigned char*) cbuf, sizeof_buf);
+                      MHD__gnutls_x509_data2hex (buf, len,
+                                                 (unsigned char *) cbuf,
+                                                 sizeof_buf);
 
                   if (result < 0)
                     {
@@ -515,8 +530,8 @@ cleanup:
  */
 int
 MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                         const char *MHD__asn1_rdn_name,
-                         int indx, void *_oid, size_t * sizeof_oid)
+                             const char *MHD__asn1_rdn_name,
+                             int indx, void *_oid, size_t * sizeof_oid)
 {
   int k2, k1, result;
   char tmpbuffer1[MAX_NAME_SIZE];
@@ -535,13 +550,14 @@ MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
       /* create a string like "tbsCertList.issuer.rdnSequence.?1"
        */
       if (MHD__asn1_rdn_name[0] != 0)
-        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u", MHD__asn1_rdn_name,
-                  k1);
+        snprintf (tmpbuffer1, sizeof (tmpbuffer1), "%s.?%u",
+                  MHD__asn1_rdn_name, k1);
       else
         snprintf (tmpbuffer1, sizeof (tmpbuffer1), "?%u", k1);
 
       len = sizeof (value) - 1;
-      result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
+      result =
+        MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer1, value, &len);
 
       if (result == ASN1_ELEMENT_NOT_FOUND)
         {
@@ -573,7 +589,8 @@ MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
            */
 
           len = sizeof (value) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer2, value, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             {
@@ -592,7 +609,8 @@ MHD__gnutls_x509_get_dn_oid (ASN1_TYPE MHD__asn1_struct,
           MHD_gtls_str_cat (tmpbuffer3, sizeof (tmpbuffer3), ".type");
 
           len = sizeof (oid) - 1;
-          result = MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
+          result =
+            MHD__asn1_read_value (MHD__asn1_struct, tmpbuffer3, oid, &len);
 
           if (result == ASN1_ELEMENT_NOT_FOUND)
             break;
@@ -640,10 +658,10 @@ cleanup:
  */
 int
 MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
-                                         ASN1_TYPE MHD__asn1_struct,
-                                         const char *where,
-                                         const void *_data,
-                                         int sizeof_data, int multi)
+                                             ASN1_TYPE MHD__asn1_struct,
+                                             const char *where,
+                                             const void *_data,
+                                             int sizeof_data, int multi)
 {
   const char *val_name;
   const opaque *data = _data;
@@ -654,7 +672,8 @@ MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
 
   /* Find how to encode the data.
    */
-  val_name = MHD__asn1_find_structure_from_oid (MHD__gnutls_get_pkix (), given_oid);
+  val_name =
+    MHD__asn1_find_structure_from_oid (MHD__gnutls_get_pkix (), given_oid);
   if (val_name == NULL)
     {
       MHD_gnutls_assert ();
@@ -736,7 +755,8 @@ MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
 
     }
 
-  result = MHD__gnutls_x509_der_encode_and_copy (c2, "", MHD__asn1_struct, tmp, 0);
+  result =
+    MHD__gnutls_x509_der_encode_and_copy (c2, "", MHD__asn1_struct, tmp, 0);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -763,8 +783,9 @@ MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
  */
 static int
 MHD__gnutls_x509_write_attribute (const char *given_oid,
-                              ASN1_TYPE MHD__asn1_struct, const char *where,
-                              const void *_data, int sizeof_data)
+                                  ASN1_TYPE MHD__asn1_struct,
+                                  const char *where, const void *_data,
+                                  int sizeof_data)
 {
   char tmp[128];
   int result;
@@ -808,9 +829,10 @@ MHD__gnutls_x509_write_attribute (const char *given_oid,
  */
 int
 MHD__gnutls_x509_decode_and_read_attribute (ASN1_TYPE MHD__asn1_struct,
-                                        const char *where, char *oid,
-                                        int oid_size, MHD_gnutls_datum_t * value,
-                                        int multi, int octet_string)
+                                            const char *where, char *oid,
+                                            int oid_size,
+                                            MHD_gnutls_datum_t * value,
+                                            int multi, int octet_string)
 {
   char tmpbuffer[128];
   int len, result;
@@ -840,7 +862,8 @@ MHD__gnutls_x509_decode_and_read_attribute (ASN1_TYPE MHD__asn1_struct,
     MHD_gtls_str_cat (tmpbuffer, sizeof (tmpbuffer), "s.?1");   /* .values.?1 */
 
   result =
-    MHD__gnutls_x509_read_value (MHD__asn1_struct, tmpbuffer, value, octet_string);
+    MHD__gnutls_x509_read_value (MHD__asn1_struct, tmpbuffer, value,
+                                 octet_string);
   if (result < 0)
     {
       MHD_gnutls_assert ();
@@ -860,8 +883,9 @@ MHD__gnutls_x509_decode_and_read_attribute (ASN1_TYPE MHD__asn1_struct,
  */
 int
 MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
-                         const char *MHD__asn1_name, const char *given_oid,
-                         int raw_flag, const char *name, int sizeof_name)
+                             const char *MHD__asn1_name,
+                             const char *given_oid, int raw_flag,
+                             const char *name, int sizeof_name)
 {
   int result;
   char tmp[MAX_NAME_SIZE], MHD__asn1_rdn_name[MAX_NAME_SIZE];
@@ -874,19 +898,24 @@ MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
 
   /* create the rdnSequence
    */
-  result = MHD__asn1_write_value (MHD__asn1_struct, MHD__asn1_name, "rdnSequence", 1);
+  result =
+    MHD__asn1_write_value (MHD__asn1_struct, MHD__asn1_name, "rdnSequence",
+                           1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
-  MHD_gtls_str_cpy (MHD__asn1_rdn_name, sizeof (MHD__asn1_rdn_name), MHD__asn1_name);
-  MHD_gtls_str_cat (MHD__asn1_rdn_name, sizeof (MHD__asn1_rdn_name), ".rdnSequence");
+  MHD_gtls_str_cpy (MHD__asn1_rdn_name, sizeof (MHD__asn1_rdn_name),
+                    MHD__asn1_name);
+  MHD_gtls_str_cat (MHD__asn1_rdn_name, sizeof (MHD__asn1_rdn_name),
+                    ".rdnSequence");
 
   /* create a new element
    */
-  result = MHD__asn1_write_value (MHD__asn1_struct, MHD__asn1_rdn_name, "NEW", 1);
+  result =
+    MHD__asn1_write_value (MHD__asn1_struct, MHD__asn1_rdn_name, "NEW", 1);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -915,14 +944,15 @@ MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
     {
       result =
         MHD__gnutls_x509_encode_and_write_attribute (given_oid,
-                                                 MHD__asn1_struct,
-                                                 tmp, name, sizeof_name, 0);
+                                                     MHD__asn1_struct,
+                                                     tmp, name, sizeof_name,
+                                                     0);
     }
   else
     {
       result =
         MHD__gnutls_x509_write_attribute (given_oid, MHD__asn1_struct,
-                                      tmp, name, sizeof_name);
+                                          tmp, name, sizeof_name);
     }
 
   if (result < 0)
@@ -952,7 +982,7 @@ MHD__gnutls_x509_set_dn_oid (ASN1_TYPE MHD__asn1_struct,
   **/
 int
 MHD_gnutls_x509_rdn_get (const MHD_gnutls_datum_t * idn,
-                     char *buf, size_t * sizeof_buf)
+                         char *buf, size_t * sizeof_buf)
 {
   int result;
   ASN1_TYPE dn = ASN1_TYPE_EMPTY;
@@ -969,7 +999,7 @@ MHD_gnutls_x509_rdn_get (const MHD_gnutls_datum_t * idn,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.Name", &dn)) != ASN1_SUCCESS)
+                                 "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -1010,9 +1040,10 @@ MHD_gnutls_x509_rdn_get (const MHD_gnutls_datum_t * idn,
   *
   **/
 int
-MHD_gnutls_x509_rdn_get_by_oid (const MHD_gnutls_datum_t * idn, const char *oid,
-                            int indx, unsigned int raw_flag,
-                            void *buf, size_t * sizeof_buf)
+MHD_gnutls_x509_rdn_get_by_oid (const MHD_gnutls_datum_t * idn,
+                                const char *oid, int indx,
+                                unsigned int raw_flag, void *buf,
+                                size_t * sizeof_buf)
 {
   int result;
   ASN1_TYPE dn = ASN1_TYPE_EMPTY;
@@ -1024,7 +1055,7 @@ MHD_gnutls_x509_rdn_get_by_oid (const MHD_gnutls_datum_t * idn, const char *oid,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.Name", &dn)) != ASN1_SUCCESS)
+                                 "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -1041,7 +1072,7 @@ MHD_gnutls_x509_rdn_get_by_oid (const MHD_gnutls_datum_t * idn, const char *oid,
 
   result =
     MHD__gnutls_x509_parse_dn_oid (dn, "rdnSequence", oid, indx,
-                               raw_flag, buf, sizeof_buf);
+                                   raw_flag, buf, sizeof_buf);
 
   MHD__asn1_delete_structure (&dn);
   return result;
@@ -1064,7 +1095,7 @@ MHD_gnutls_x509_rdn_get_by_oid (const MHD_gnutls_datum_t * idn, const char *oid,
   **/
 int
 MHD_gnutls_x509_rdn_get_oid (const MHD_gnutls_datum_t * idn,
-                         int indx, void *buf, size_t * sizeof_buf)
+                             int indx, void *buf, size_t * sizeof_buf)
 {
   int result;
   ASN1_TYPE dn = ASN1_TYPE_EMPTY;
@@ -1076,7 +1107,7 @@ MHD_gnutls_x509_rdn_get_oid (const MHD_gnutls_datum_t * idn,
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                            "PKIX1.Name", &dn)) != ASN1_SUCCESS)
+                                 "PKIX1.Name", &dn)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -1091,7 +1122,8 @@ MHD_gnutls_x509_rdn_get_oid (const MHD_gnutls_datum_t * idn,
       return MHD_gtls_asn2err (result);
     }
 
-  result = MHD__gnutls_x509_get_dn_oid (dn, "rdnSequence", indx, buf, sizeof_buf);
+  result =
+    MHD__gnutls_x509_get_dn_oid (dn, "rdnSequence", indx, buf, sizeof_buf);
 
   MHD__asn1_delete_structure (&dn);
   return result;
@@ -1108,7 +1140,7 @@ MHD_gnutls_x509_rdn_get_oid (const MHD_gnutls_datum_t * idn,
  */
 int
 MHD__gnutls_x509_compare_raw_dn (const MHD_gnutls_datum_t * dn1,
-                             const MHD_gnutls_datum_t * dn2)
+                                 const MHD_gnutls_datum_t * dn2)
 {
 
   if (dn1->size != dn2->size)

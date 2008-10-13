@@ -29,7 +29,8 @@
 
 cipher_hd_t
 MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
-                      const MHD_gnutls_datum_t * key, const MHD_gnutls_datum_t * iv)
+                      const MHD_gnutls_datum_t * key,
+                      const MHD_gnutls_datum_t * iv)
 {
   cipher_hd_t ret = NULL;
   int err = GC_INVALID_CIPHER;  /* doesn't matter */
@@ -80,9 +81,9 @@ MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
 
   if (err == 0)
     {
-      MHD_gc_cipher_setkey (ret, key->size, (const char*) key->data);
+      MHD_gc_cipher_setkey (ret, key->size, (const char *) key->data);
       if (iv->data != NULL && iv->size > 0)
-        MHD_gc_cipher_setiv (ret, iv->size, (const char*) iv->data);
+        MHD_gc_cipher_setiv (ret, iv->size, (const char *) iv->data);
     }
   else if (cipher != MHD_GNUTLS_CIPHER_NULL)
     {
@@ -114,7 +115,8 @@ MHD_gtls_cipher_decrypt (cipher_hd_t handle, void *ciphertext,
 {
   if (handle != GNUTLS_CIPHER_FAILED)
     {
-      if (MHD_gc_cipher_decrypt_inline (handle, ciphertextlen, ciphertext) != 0)
+      if (MHD_gc_cipher_decrypt_inline (handle, ciphertextlen, ciphertext) !=
+          0)
         {
           MHD_gnutls_assert ();
           return GNUTLS_E_INTERNAL_ERROR;

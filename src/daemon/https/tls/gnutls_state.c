@@ -44,7 +44,7 @@
 
 void
 MHD__gnutls_session_cert_type_set (MHD_gtls_session_t session,
-                               enum MHD_GNUTLS_CertificateType ct)
+                                   enum MHD_GNUTLS_CertificateType ct)
 {
   session->security_parameters.cert_type = ct;
 }
@@ -236,7 +236,7 @@ MHD_gtls_handshake_internal_state_clear (MHD_gtls_session_t session)
 /* TODO rm redundent pointer ref */
 int
 MHD__gnutls_init (MHD_gtls_session_t * session,
-                 MHD_gnutls_connection_end_t con_end)
+                  MHD_gnutls_connection_end_t con_end)
 {
   *session = MHD_gnutls_calloc (1, sizeof (struct MHD_gtls_session_int));
   if (*session == NULL)
@@ -286,10 +286,10 @@ MHD__gnutls_init (MHD_gtls_session_t * session,
 
   MHD__gnutls_dh_set_prime_bits ((*session), MIN_DH_BITS);
 
-  MHD__gnutls_transport_set_lowat ((*session), DEFAULT_LOWAT);   /* the default for tcp */
+  MHD__gnutls_transport_set_lowat ((*session), DEFAULT_LOWAT);  /* the default for tcp */
 
   MHD__gnutls_handshake_set_max_packet_length ((*session),
-                                              MAX_HANDSHAKE_PACKET_SIZE);
+                                               MAX_HANDSHAKE_PACKET_SIZE);
 
   /* Allocate a minimum size for recv_data
    * This is allocated in order to avoid small messages, making
@@ -612,7 +612,7 @@ MHD_gtls_dh_set_group (MHD_gtls_session_t session, mpi_t gen, mpi_t prime)
  **/
 void
 MHD__gnutls_certificate_send_x509_rdn_sequence (MHD_gtls_session_t session,
-                                               int status)
+                                                int status)
 {
   session->internals.ignore_rdn_sequence = status;
 }
@@ -630,7 +630,8 @@ MHD__gnutls_certificate_send_x509_rdn_sequence (MHD_gtls_session_t session,
  -*/
 void
 MHD__gnutls_record_set_default_version (MHD_gtls_session_t session,
-                                    unsigned char major, unsigned char minor)
+                                        unsigned char major,
+                                        unsigned char minor)
 {
   session->internals.default_record_version[0] = major;
   session->internals.default_record_version[1] = minor;
@@ -661,9 +662,9 @@ MHD_gtls_handshake_set_private_extensions (MHD_gtls_session_t session,
 
 inline static int
 MHD__gnutls_cal_PRF_A (enum MHD_GNUTLS_HashAlgorithm algorithm,
-                   const void *secret,
-                   int secret_size,
-                   const void *seed, int seed_size, void *result)
+                       const void *secret,
+                       int secret_size,
+                       const void *seed, int seed_size, void *result)
 {
   mac_hd_t td1;
 
@@ -687,10 +688,10 @@ MHD__gnutls_cal_PRF_A (enum MHD_GNUTLS_HashAlgorithm algorithm,
  */
 static int
 MHD__gnutls_P_hash (enum MHD_GNUTLS_HashAlgorithm algorithm,
-                const opaque * secret,
-                int secret_size,
-                const opaque * seed,
-                int seed_size, int total_bytes, opaque * ret)
+                    const opaque * secret,
+                    int secret_size,
+                    const opaque * seed,
+                    int seed_size, int total_bytes, opaque * ret)
 {
 
   mac_hd_t td2;
@@ -730,8 +731,9 @@ MHD__gnutls_P_hash (enum MHD_GNUTLS_HashAlgorithm algorithm,
         }
 
       /* here we calculate A(i+1) */
-      if ((result = MHD__gnutls_cal_PRF_A (algorithm, secret, secret_size, Atmp,
-                                       A_size, Atmp)) < 0)
+      if ((result =
+           MHD__gnutls_cal_PRF_A (algorithm, secret, secret_size, Atmp,
+                                  A_size, Atmp)) < 0)
         {
           MHD_gnutls_assert ();
           MHD_gnutls_MHD_hmac_deinit (td2, final);
@@ -816,7 +818,7 @@ MHD_gtls_PRF (MHD_gtls_session_t session,
     {
       result =
         MHD__gnutls_P_hash (MHD_GNUTLS_MAC_SHA1, secret, secret_size, s_seed,
-                        s_seed_size, total_bytes, ret);
+                            s_seed_size, total_bytes, ret);
       if (result < 0)
         {
           MHD_gnutls_assert ();
@@ -837,7 +839,7 @@ MHD_gtls_PRF (MHD_gtls_session_t session,
 
       result =
         MHD__gnutls_P_hash (MHD_GNUTLS_MAC_MD5, s1, l_s, s_seed, s_seed_size,
-                        total_bytes, o1);
+                            total_bytes, o1);
       if (result < 0)
         {
           MHD_gnutls_assert ();
@@ -846,7 +848,7 @@ MHD_gtls_PRF (MHD_gtls_session_t session,
 
       result =
         MHD__gnutls_P_hash (MHD_GNUTLS_MAC_SHA1, s2, l_s, s_seed, s_seed_size,
-                        total_bytes, o2);
+                            total_bytes, o2);
       if (result < 0)
         {
           MHD_gnutls_assert ();
@@ -893,10 +895,10 @@ MHD_gtls_PRF (MHD_gtls_session_t session,
  **/
 int
 MHD__gnutls_prf_raw (MHD_gtls_session_t session,
-                    size_t label_size,
-                    const char *label,
-                    size_t seed_size, const char *seed, size_t outsize,
-                    char *out)
+                     size_t label_size,
+                     const char *label,
+                     size_t seed_size, const char *seed, size_t outsize,
+                     char *out)
 {
   int ret;
 
@@ -938,11 +940,11 @@ MHD__gnutls_prf_raw (MHD_gtls_session_t session,
  **/
 int
 MHD__gnutls_prf (MHD_gtls_session_t session,
-                size_t label_size,
-                const char *label,
-                int server_random_first,
-                size_t extra_size, const char *extra, size_t outsize,
-                char *out)
+                 size_t label_size,
+                 const char *label,
+                 int server_random_first,
+                 size_t extra_size, const char *extra, size_t outsize,
+                 char *out)
 {
   int ret;
   opaque *seed;
@@ -1050,8 +1052,8 @@ MHD_gtls_session_is_resumed (MHD_gtls_session_t session)
           && session->security_parameters.session_id_size
           == session->internals.resumed_security_parameters.session_id_size
           && memcmp (session->security_parameters.session_id,
-                     session->internals.resumed_security_parameters.
-                     session_id,
+                     session->internals.
+                     resumed_security_parameters.session_id,
                      session->security_parameters.session_id_size) == 0)
         return 1;
     }
@@ -1078,8 +1080,8 @@ MHD_gtls_session_is_export (MHD_gtls_session_t session)
   enum MHD_GNUTLS_CipherAlgorithm cipher;
 
   cipher =
-    MHD_gtls_cipher_suite_get_cipher_algo (&session->security_parameters.
-                                           current_cipher_suite);
+    MHD_gtls_cipher_suite_get_cipher_algo (&session->
+                                           security_parameters.current_cipher_suite);
 
   if (MHD_gtls_cipher_get_export_flag (cipher) != 0)
     return 1;
@@ -1151,7 +1153,7 @@ MHD__gnutls_record_get_direction (MHD_gtls_session_t session)
  -*/
 void
 MHD__gnutls_rsa_pms_set_version (MHD_gtls_session_t session,
-                             unsigned char major, unsigned char minor)
+                                 unsigned char major, unsigned char minor)
 {
   session->internals.rsa_pms_version[0] = major;
   session->internals.rsa_pms_version[1] = minor;
@@ -1181,9 +1183,9 @@ MHD__gnutls_rsa_pms_set_version (MHD_gtls_session_t session,
  **/
 void
 MHD__gnutls_handshake_set_post_client_hello_function (MHD_gtls_session_t
-                                                     session,
-                                                     MHD_gnutls_handshake_post_client_hello_func
-                                                     func)
+                                                      session,
+                                                      MHD_gnutls_handshake_post_client_hello_func
+                                                      func)
 {
   session->internals.user_hello_func = func;
 }

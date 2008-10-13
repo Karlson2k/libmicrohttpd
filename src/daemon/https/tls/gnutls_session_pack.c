@@ -50,7 +50,8 @@ static int unpack_certificate_auth_info (MHD_gtls_session_t,
                                          packed_session);
 
 static int unpack_security_parameters (MHD_gtls_session_t session,
-                                       const MHD_gnutls_datum_t * packed_session);
+                                       const MHD_gnutls_datum_t *
+                                       packed_session);
 static int pack_security_parameters (MHD_gtls_session_t session,
                                      MHD_gnutls_datum_t * packed_session);
 
@@ -180,7 +181,8 @@ unpack_anon_auth_info (MHD_gtls_session_t session,
 
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret =
+    MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -191,7 +193,8 @@ unpack_anon_auth_info (MHD_gtls_session_t session,
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos],
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -203,7 +206,7 @@ unpack_anon_auth_info (MHD_gtls_session_t session,
   pos += 4;
   ret =
     MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
-                       size);
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -534,7 +537,8 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
 
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret =
+    MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -545,7 +549,8 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos],
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -557,7 +562,7 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
   pos += 4;
   ret =
     MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
-                       size);
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -569,7 +574,7 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
   pos += 4;
   ret =
     MHD__gnutls_set_datum (&info->rsa_export.modulus,
-                       &packed_session->data[pos], size);
+                           &packed_session->data[pos], size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -581,7 +586,7 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
   pos += 4;
   ret =
     MHD__gnutls_set_datum (&info->rsa_export.exponent,
-                       &packed_session->data[pos], size);
+                           &packed_session->data[pos], size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -611,7 +616,7 @@ unpack_certificate_auth_info (MHD_gtls_session_t session,
 
       ret =
         MHD__gnutls_set_datum (&info->raw_certificate_list[i],
-                           &packed_session->data[pos], size);
+                               &packed_session->data[pos], size);
       pos += size;
 
       if (ret < 0)
@@ -881,7 +886,8 @@ unpack_psk_auth_info (MHD_gtls_session_t session,
 
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
-  ret = MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
+  ret =
+    MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -892,7 +898,8 @@ unpack_psk_auth_info (MHD_gtls_session_t session,
   size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
   pos += 4;
   ret =
-    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos], size);
+    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos],
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -904,7 +911,7 @@ unpack_psk_auth_info (MHD_gtls_session_t session,
   pos += 4;
   ret =
     MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
-                       size);
+                           size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -1045,8 +1052,9 @@ pack_security_parameters (MHD_gtls_session_t session,
           session->security_parameters.extensions.srp_username, len);
   pos += len;
 
-  MHD_gtls_write_uint16 (session->security_parameters.extensions.
-                         server_names_size, &packed_session->data[pos]);
+  MHD_gtls_write_uint16 (session->security_parameters.
+                         extensions.server_names_size,
+                         &packed_session->data[pos]);
   pos += 2;
 
   for (i = 0; i < session->security_parameters.extensions.server_names_size;
@@ -1054,15 +1062,15 @@ pack_security_parameters (MHD_gtls_session_t session,
     {
       packed_session->data[pos++] =
         session->security_parameters.extensions.server_names[i].type;
-      MHD_gtls_write_uint16 (session->security_parameters.extensions.
-                             server_names[i].name_length,
+      MHD_gtls_write_uint16 (session->security_parameters.
+                             extensions.server_names[i].name_length,
                              &packed_session->data[pos]);
       pos += 2;
 
       memcpy (&packed_session->data[pos],
               session->security_parameters.extensions.server_names[i].name,
-              session->security_parameters.extensions.server_names[i].
-              name_length);
+              session->security_parameters.extensions.
+              server_names[i].name_length);
       pos +=
         session->security_parameters.extensions.server_names[i].name_length;
     }
@@ -1121,10 +1129,10 @@ unpack_security_parameters (MHD_gtls_session_t session,
     packed_session->data[pos++];
   session->internals.resumed_security_parameters.write_compression_algorithm =
     packed_session->data[pos++];
-  session->internals.resumed_security_parameters.current_cipher_suite.
-    suite[0] = packed_session->data[pos++];
-  session->internals.resumed_security_parameters.current_cipher_suite.
-    suite[1] = packed_session->data[pos++];
+  session->internals.resumed_security_parameters.
+    current_cipher_suite.suite[0] = packed_session->data[pos++];
+  session->internals.resumed_security_parameters.
+    current_cipher_suite.suite[1] = packed_session->data[pos++];
 
   session->internals.resumed_security_parameters.cert_type =
     packed_session->data[pos++];
@@ -1173,34 +1181,35 @@ unpack_security_parameters (MHD_gtls_session_t session,
 
   /* SRP */
   len = packed_session->data[pos++];    /* srp username length */
-  memcpy (session->internals.resumed_security_parameters.extensions.
-          srp_username, &packed_session->data[pos], len);
-  session->internals.resumed_security_parameters.extensions.
-    srp_username[len] = 0;
+  memcpy (session->internals.resumed_security_parameters.
+          extensions.srp_username, &packed_session->data[pos], len);
+  session->internals.resumed_security_parameters.
+    extensions.srp_username[len] = 0;
   pos += len;
 
-  session->internals.resumed_security_parameters.extensions.
-    server_names_size = MHD_gtls_read_uint16 (&packed_session->data[pos]);
+  session->internals.resumed_security_parameters.
+    extensions.server_names_size =
+    MHD_gtls_read_uint16 (&packed_session->data[pos]);
   pos += 2;
   for (i = 0;
        i <
-       session->internals.resumed_security_parameters.extensions.
-       server_names_size; i++)
+       session->internals.resumed_security_parameters.
+       extensions.server_names_size; i++)
     {
-      session->internals.resumed_security_parameters.extensions.
-        server_names[i].type = packed_session->data[pos++];
-      session->internals.resumed_security_parameters.extensions.
-        server_names[i].name_length =
+      session->internals.resumed_security_parameters.
+        extensions.server_names[i].type = packed_session->data[pos++];
+      session->internals.resumed_security_parameters.
+        extensions.server_names[i].name_length =
         MHD_gtls_read_uint16 (&packed_session->data[pos]);
       pos += 2;
 
-      memcpy (session->internals.resumed_security_parameters.extensions.
-              server_names[i].name, &packed_session->data[pos],
-              session->internals.resumed_security_parameters.extensions.
-              server_names[i].name_length);
+      memcpy (session->internals.resumed_security_parameters.
+              extensions.server_names[i].name, &packed_session->data[pos],
+              session->internals.resumed_security_parameters.
+              extensions.server_names[i].name_length);
       pos +=
-        session->internals.resumed_security_parameters.extensions.
-        server_names[i].name_length;
+        session->internals.resumed_security_parameters.
+        extensions.server_names[i].name_length;
     }
   return 0;
 }

@@ -74,7 +74,8 @@ MHD__gnutls_dh_set_prime_bits (MHD_gtls_session_t session, unsigned int bits)
  **/
 int
 MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
-                         MHD_gnutls_datum_t * raw_gen, MHD_gnutls_datum_t * raw_prime)
+                          MHD_gnutls_datum_t * raw_gen,
+                          MHD_gnutls_datum_t * raw_prime)
 {
   MHD_gtls_dh_info_st *dh;
   int ret;
@@ -107,7 +108,8 @@ MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
       return ret;
     }
 
-  ret = MHD__gnutls_set_datum (raw_gen, dh->generator.data, dh->generator.size);
+  ret =
+    MHD__gnutls_set_datum (raw_gen, dh->generator.data, dh->generator.size);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -132,7 +134,7 @@ MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
  **/
 int
 MHD__gnutls_dh_get_pubkey (MHD_gtls_session_t session,
-                          MHD_gnutls_datum_t * raw_key)
+                           MHD_gnutls_datum_t * raw_key)
 {
   MHD_gtls_dh_info_st *dh;
   mhd_anon_auth_info_t anon_info;
@@ -172,7 +174,7 @@ MHD__gnutls_dh_get_pubkey (MHD_gtls_session_t session,
     }
 
   return MHD__gnutls_set_datum (raw_key, dh->public_key.data,
-                            dh->public_key.size);
+                                dh->public_key.size);
 }
 
 /**
@@ -203,7 +205,7 @@ MHD_gtls_rsa_export_get_pubkey (MHD_gtls_session_t session,
         return GNUTLS_E_INTERNAL_ERROR;
 
       ret = MHD__gnutls_set_datum (modulus, info->rsa_export.modulus.data,
-                               info->rsa_export.modulus.size);
+                                   info->rsa_export.modulus.size);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -211,7 +213,7 @@ MHD_gtls_rsa_export_get_pubkey (MHD_gtls_session_t session,
         }
 
       ret = MHD__gnutls_set_datum (exponent, info->rsa_export.exponent.data,
-                               info->rsa_export.exponent.size);
+                                   info->rsa_export.exponent.size);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -491,8 +493,8 @@ MHD_gtls_certificate_client_get_request_status (MHD_gtls_session_t session)
  **/
 int
 MHD__gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
-                        const MHD_gnutls_datum_t * data,
-                        void *result, size_t * result_size)
+                         const MHD_gnutls_datum_t * data,
+                         void *result, size_t * result_size)
 {
   GNUTLS_HASH_HANDLE td;
   int hash_len = MHD_gnutls_hash_get_algo_len (HASH2MAC (algo));
@@ -533,7 +535,7 @@ MHD__gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
  **/
 void
 MHD__gnutls_certificate_set_dh_params (MHD_gtls_cert_credentials_t res,
-                                      MHD_gtls_dh_params_t dh_params)
+                                       MHD_gtls_dh_params_t dh_params)
 {
   res->dh_params = dh_params;
 }
@@ -550,7 +552,7 @@ MHD__gnutls_certificate_set_dh_params (MHD_gtls_cert_credentials_t res,
  **/
 void
 MHD_gnutls_certificate_set_params_function (MHD_gtls_cert_credentials_t res,
-                                        MHD_gnutls_params_function * func)
+                                            MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }
@@ -567,7 +569,7 @@ MHD_gnutls_certificate_set_params_function (MHD_gtls_cert_credentials_t res,
  **/
 void
 MHD__gnutls_certificate_set_verify_flags (MHD_gtls_cert_credentials_t
-                                         res, unsigned int flags)
+                                          res, unsigned int flags)
 {
   res->verify_flags = flags;
 }
@@ -585,9 +587,9 @@ MHD__gnutls_certificate_set_verify_flags (MHD_gtls_cert_credentials_t
  **/
 void
 MHD__gnutls_certificate_set_verify_limits (MHD_gtls_cert_credentials_t
-                                          res,
-                                          unsigned int max_bits,
-                                          unsigned int max_depth)
+                                           res,
+                                           unsigned int max_bits,
+                                           unsigned int max_depth)
 {
   res->verify_depth = max_depth;
   res->verify_bits = max_bits;
@@ -605,9 +607,9 @@ MHD__gnutls_certificate_set_verify_limits (MHD_gtls_cert_credentials_t
  **/
 void
 MHD__gnutls_certificate_set_rsa_export_params (MHD_gtls_cert_credentials_t
-                                              res,
-                                              MHD_gtls_rsa_params_t
-                                              rsa_params)
+                                               res,
+                                               MHD_gtls_rsa_params_t
+                                               rsa_params)
 {
   res->rsa_params = rsa_params;
 }
@@ -624,7 +626,7 @@ MHD__gnutls_certificate_set_rsa_export_params (MHD_gtls_cert_credentials_t
  **/
 void
 MHD_gnutls_anon_set_params_function (MHD_gtls_anon_server_credentials_t res,
-                                 MHD_gnutls_params_function * func)
+                                     MHD_gnutls_params_function * func)
 {
   res->params_func = func;
 }

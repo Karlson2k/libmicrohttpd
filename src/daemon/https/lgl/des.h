@@ -62,12 +62,14 @@ extern void MHD_gl_des_setkey (MHD_gl_des_ctx * ctx, const char *key);
 /* Fill a DES context CTX with subkeys calculated from 64bit KEY, with
  * weak key checking.  Does not check parity bits, but simply ignore
  * them. */
-extern bool MHD_gl_des_makekey (MHD_gl_des_ctx * ctx, const char *key, size_t keylen);
+extern bool MHD_gl_des_makekey (MHD_gl_des_ctx * ctx, const char *key,
+                                size_t keylen);
 
 /* Electronic Codebook Mode DES encryption/decryption of data
  * according to 'mode'. */
 extern void
-MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *from, char *to, int mode);
+MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *from, char *to,
+                      int mode);
 
 #define MHD_gl_des_ecb_encrypt(ctx, from, to)  MHD_gl_des_ecb_crypt(ctx, from, to, 0)
 #define MHD_gl_des_ecb_decrypt(ctx, from, to)  MHD_gl_des_ecb_crypt(ctx, from, to, 1)
@@ -80,7 +82,8 @@ MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *from, char *to, int mode
  * 64bit keys in KEY1 and KEY2.  Does not check the parity bits of the
  * keys, but simply ignore them.  Does not check for weak keys. */
 extern void
-MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1, const char *key2);
+MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1,
+                      const char *key2);
 
 /*
  * Fill a Triple-DES context CTX with subkeys calculated from three
@@ -89,7 +92,7 @@ MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1, const char *key2)
  * keys. */
 extern void
 MHD_gl_3des_set3keys (MHD_gl_3des_ctx * ctx,
-                  const char *key1, const char *key2, const char *key3);
+                      const char *key1, const char *key2, const char *key3);
 
 /* Fill a Triple-DES context CTX with subkeys calculated from three
  * concatenated 64bit keys in KEY, with weak key checking.  Does not
@@ -101,7 +104,8 @@ MHD_gl_3des_makekey (MHD_gl_3des_ctx * ctx, const char *key, size_t keylen);
  * according to 'mode'.  Sometimes this mode is named 'EDE' mode
  * (Encryption-Decryption-Encryption). */
 extern void
-MHD_gl_3des_ecb_crypt (MHD_gl_3des_ctx * ctx, const char *from, char *to, int mode);
+MHD_gl_3des_ecb_crypt (MHD_gl_3des_ctx * ctx, const char *from, char *to,
+                       int mode);
 
 #define MHD_gl_3des_ecb_encrypt(ctx, from, to) MHD_gl_3des_ecb_crypt(ctx,from,to,0)
 #define MHD_gl_3des_ecb_decrypt(ctx, from, to) MHD_gl_3des_ecb_crypt(ctx,from,to,1)

@@ -763,7 +763,7 @@ static const uint32_t rcon[] = {
  */
 int
 MHD_rijndaelKeySetupEnc (uint32_t rk[ /*4*(Nr + 1) */ ],
-                     const char cipherKey[], size_t keyBits)
+                         const char cipherKey[], size_t keyBits)
 {
   size_t i = 0;
   uint32_t temp;
@@ -858,7 +858,7 @@ MHD_rijndaelKeySetupEnc (uint32_t rk[ /*4*(Nr + 1) */ ],
  */
 int
 MHD_rijndaelKeySetupDec (uint32_t rk[ /*4*(Nr + 1) */ ],
-                     const char cipherKey[], size_t keyBits)
+                         const char cipherKey[], size_t keyBits)
 {
   size_t Nr, i, j;
   uint32_t temp;
@@ -912,7 +912,7 @@ MHD_rijndaelKeySetupDec (uint32_t rk[ /*4*(Nr + 1) */ ],
 
 void
 MHD_rijndaelEncrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                 const char pt[16], char ct[16])
+                     const char pt[16], char ct[16])
 {
   uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
   size_t r;
@@ -1003,7 +1003,7 @@ MHD_rijndaelEncrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
 
 void
 MHD_rijndaelDecrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                 const char ct[16], char pt[16])
+                     const char ct[16], char pt[16])
 {
   uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
   size_t r;

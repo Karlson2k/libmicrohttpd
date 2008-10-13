@@ -57,7 +57,7 @@ static const int servwrite_length = sizeof (servwrite) - 1;
  */
 int
 MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
-                  int key_size, int export_flag)
+                      int key_size, int export_flag)
 {
 
 /* FIXME: This function is too long
@@ -107,8 +107,9 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
   else
     {                           /* TLS 1.0 */
       ret =
-        MHD_gtls_PRF (session, (const unsigned char*) session->security_parameters.master_secret,
-                      TLS_MASTER_SIZE, keyexp, keyexp_length,
+        MHD_gtls_PRF (session,
+                      (const unsigned char *) session->security_parameters.
+                      master_secret, TLS_MASTER_SIZE, keyexp, keyexp_length,
                       rnd, 2 * TLS_RANDOM_SIZE, block_size, key_block);
     }
 
@@ -120,8 +121,8 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
     }
 
   MHD__gnutls_hard_log ("INT: KEY BLOCK[%d]: %s\n", block_size,
-                    MHD_gtls_bin2hex (key_block, block_size, buf,
-                                      sizeof (buf)));
+                        MHD_gtls_bin2hex (key_block, block_size, buf,
+                                          sizeof (buf)));
 
   pos = 0;
   if (hash_size > 0)
@@ -187,7 +188,8 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
 
           /* generate the final keys */
 
-          if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
+          if (session->security_parameters.version ==
+              MHD_GNUTLS_PROTOCOL_SSL3)
             {                   /* SSL 3 */
               ret =
                 MHD_gnutls_ssl3_hash_md5 (&key_block[pos],
@@ -219,7 +221,8 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
           client_write_key_size = EXPORT_FINAL_KEY_SIZE;
           pos += key_size;
 
-          if (session->security_parameters.version == MHD_GNUTLS_PROTOCOL_SSL3)
+          if (session->security_parameters.version ==
+              MHD_GNUTLS_PROTOCOL_SSL3)
             {                   /* SSL 3 */
               ret =
                 MHD_gnutls_ssl3_hash_md5 (&key_block[pos], key_size,
@@ -259,10 +262,10 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
           return GNUTLS_E_MEMORY_ERROR;
         }
       MHD__gnutls_hard_log ("INT: CLIENT WRITE KEY [%d]: %s\n",
-                        client_write_key_size,
-                        MHD_gtls_bin2hex (client_write_key,
-                                          client_write_key_size, buf,
-                                          sizeof (buf)));
+                            client_write_key_size,
+                            MHD_gtls_bin2hex (client_write_key,
+                                              client_write_key_size, buf,
+                                              sizeof (buf)));
 
       if (MHD__gnutls_sset_datum
           (&session->cipher_specs.server_write_key,
@@ -275,10 +278,10 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
         }
 
       MHD__gnutls_hard_log ("INT: SERVER WRITE KEY [%d]: %s\n",
-                        server_write_key_size,
-                        MHD_gtls_bin2hex (server_write_key,
-                                          server_write_key_size, buf,
-                                          sizeof (buf)));
+                            server_write_key_size,
+                            MHD_gtls_bin2hex (server_write_key,
+                                              server_write_key_size, buf,
+                                              sizeof (buf)));
 
       if (free_keys != 0)
         {
@@ -342,7 +345,7 @@ MHD__gnutls_set_keys (MHD_gtls_session_t session, int hash_size, int IV_size,
         }
       else
         {                       /* TLS 1.0 */
-          ret = MHD_gtls_PRF (session, (const unsigned char*) "", 0,
+          ret = MHD_gtls_PRF (session, (const unsigned char *) "", 0,
                               ivblock, ivblock_length, rrnd,
                               2 * TLS_RANDOM_SIZE, IV_size * 2, iv_block);
         }
@@ -400,7 +403,7 @@ MHD__gnutls_set_read_keys (MHD_gtls_session_t session)
   export_flag = MHD_gtls_cipher_get_export_flag (algo);
 
   return MHD__gnutls_set_keys (session, hash_size, IV_size, key_size,
-                           export_flag);
+                               export_flag);
 }
 
 int
@@ -421,7 +424,7 @@ MHD__gnutls_set_write_keys (MHD_gtls_session_t session)
   export_flag = MHD_gtls_cipher_get_export_flag (algo);
 
   return MHD__gnutls_set_keys (session, hash_size, IV_size, key_size,
-                           export_flag);
+                               export_flag);
 }
 
 #define CPY_COMMON dst->entity = src->entity; \
@@ -442,7 +445,8 @@ MHD__gnutls_set_write_keys (MHD_gtls_session_t session)
 
 static void
 MHD__gnutls_cpy_read_security_parameters (MHD_gtls_security_param_st *
-                                      dst, MHD_gtls_security_param_st * src)
+                                          dst,
+                                          MHD_gtls_security_param_st * src)
 {
   CPY_COMMON;
 
@@ -453,7 +457,8 @@ MHD__gnutls_cpy_read_security_parameters (MHD_gtls_security_param_st *
 
 static void
 MHD__gnutls_cpy_write_security_parameters (MHD_gtls_security_param_st *
-                                       dst, MHD_gtls_security_param_st * src)
+                                           dst,
+                                           MHD_gtls_security_param_st * src)
 {
   CPY_COMMON;
 
@@ -504,35 +509,35 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
     {
       rc = MHD_gtls_set_read_cipher (session,
                                      MHD_gtls_cipher_suite_get_cipher_algo
-                                     (&session->security_parameters.
-                                      current_cipher_suite));
+                                     (&session->
+                                      security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
       rc = MHD_gtls_set_read_mac (session,
                                   MHD_gtls_cipher_suite_get_mac_algo
-                                  (&session->security_parameters.
-                                   current_cipher_suite));
+                                  (&session->
+                                   security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
 
       rc = MHD_gtls_set_kx (session,
                             MHD_gtls_cipher_suite_get_kx_algo
-                            (&session->security_parameters.
-                             current_cipher_suite));
+                            (&session->
+                             security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
 
       rc = MHD_gtls_set_read_compression (session,
-                                          session->internals.
-                                          compression_method);
+                                          session->
+                                          internals.compression_method);
       if (rc < 0)
         return rc;
     }
   else
     {                           /* RESUME_TRUE */
       MHD__gnutls_cpy_read_security_parameters (&session->security_parameters,
-                                            &session->internals.
-                                            resumed_security_parameters);
+                                                &session->
+                                                internals.resumed_security_parameters);
     }
 
 
@@ -541,10 +546,10 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
     return rc;
 
   MHD__gnutls_handshake_log ("HSK[%x]: Cipher Suite: %s\n",
-                         session,
-                         MHD_gtls_cipher_suite_get_name
-                         (&session->security_parameters.
-                          current_cipher_suite));
+                             session,
+                             MHD_gtls_cipher_suite_get_name
+                             (&session->
+                              security_parameters.current_cipher_suite));
 
   if (MHD_gtls_compression_is_ok
       (session->security_parameters.read_compression_algorithm) != 0)
@@ -574,8 +579,8 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
 
 
   mac_size =
-    MHD_gnutls_hash_get_algo_len (session->security_parameters.
-                                  read_mac_algorithm);
+    MHD_gnutls_hash_get_algo_len (session->
+                                  security_parameters.read_mac_algorithm);
 
   MHD__gnutls_handshake_log
     ("HSK[%x]: Initializing internal [read] cipher sessions\n", session);
@@ -586,8 +591,8 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
       /* initialize cipher session
        */
       session->connection_state.read_cipher_state =
-        MHD_gtls_cipher_init (session->security_parameters.
-                              read_bulk_cipher_algorithm,
+        MHD_gtls_cipher_init (session->
+                              security_parameters.read_bulk_cipher_algorithm,
                               &session->cipher_specs.client_write_key,
                               &session->cipher_specs.client_write_IV);
       if (session->connection_state.read_cipher_state == GNUTLS_CIPHER_FAILED
@@ -603,11 +608,10 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
        */
       if (mac_size > 0)
         {
-          if (MHD__gnutls_sset_datum (&session->connection_state.read_mac_secret,
-                                  session->cipher_specs.
-                                  client_write_mac_secret.data,
-                                  session->cipher_specs.
-                                  client_write_mac_secret.size) < 0)
+          if (MHD__gnutls_sset_datum
+              (&session->connection_state.read_mac_secret,
+               session->cipher_specs.client_write_mac_secret.data,
+               session->cipher_specs.client_write_mac_secret.size) < 0)
             {
               MHD_gnutls_assert ();
               return GNUTLS_E_MEMORY_ERROR;
@@ -619,8 +623,8 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
 #if MHD_DEBUG_TLS
     case GNUTLS_CLIENT:
       session->connection_state.read_cipher_state =
-        MHD_gtls_cipher_init (session->security_parameters.
-                              read_bulk_cipher_algorithm,
+        MHD_gtls_cipher_init (session->
+                              security_parameters.read_bulk_cipher_algorithm,
                               &session->cipher_specs.server_write_key,
                               &session->cipher_specs.server_write_IV);
 
@@ -638,11 +642,10 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
        */
       if (mac_size > 0)
         {
-          if (MHD__gnutls_sset_datum (&session->connection_state.read_mac_secret,
-                                  session->cipher_specs.
-                                  server_write_mac_secret.data,
-                                  session->cipher_specs.
-                                  server_write_mac_secret.size) < 0)
+          if (MHD__gnutls_sset_datum
+              (&session->connection_state.read_mac_secret,
+               session->cipher_specs.server_write_mac_secret.data,
+               session->cipher_specs.server_write_mac_secret.size) < 0)
             {
               MHD_gnutls_assert ();
               return GNUTLS_E_MEMORY_ERROR;
@@ -657,8 +660,8 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
     }
 
   session->connection_state.read_compression_state =
-    MHD_gtls_comp_init (session->security_parameters.
-                        read_compression_algorithm, 1);
+    MHD_gtls_comp_init (session->
+                        security_parameters.read_compression_algorithm, 1);
 
   if (session->connection_state.read_compression_state == GNUTLS_COMP_FAILED)
     {
@@ -689,35 +692,36 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
     {
       rc = MHD_gtls_set_write_cipher (session,
                                       MHD_gtls_cipher_suite_get_cipher_algo
-                                      (&session->security_parameters.
-                                       current_cipher_suite));
+                                      (&session->
+                                       security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
       rc = MHD_gtls_set_write_mac (session,
                                    MHD_gtls_cipher_suite_get_mac_algo
-                                   (&session->security_parameters.
-                                    current_cipher_suite));
+                                   (&session->
+                                    security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
 
       rc = MHD_gtls_set_kx (session,
                             MHD_gtls_cipher_suite_get_kx_algo
-                            (&session->security_parameters.
-                             current_cipher_suite));
+                            (&session->
+                             security_parameters.current_cipher_suite));
       if (rc < 0)
         return rc;
 
       rc = MHD_gtls_set_write_compression (session,
-                                           session->internals.
-                                           compression_method);
+                                           session->
+                                           internals.compression_method);
       if (rc < 0)
         return rc;
     }
   else
     {                           /* RESUME_TRUE */
-      MHD__gnutls_cpy_write_security_parameters (&session->security_parameters,
-                                             &session->internals.
-                                             resumed_security_parameters);
+      MHD__gnutls_cpy_write_security_parameters (&session->
+                                                 security_parameters,
+                                                 &session->
+                                                 internals.resumed_security_parameters);
     }
 
   rc = MHD__gnutls_set_write_keys (session);
@@ -725,9 +729,9 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
     return rc;
 
   MHD__gnutls_handshake_log ("HSK[%x]: Cipher Suite: %s\n", session,
-                         MHD_gtls_cipher_suite_get_name
-                         (&session->security_parameters.
-                          current_cipher_suite));
+                             MHD_gtls_cipher_suite_get_name
+                             (&session->
+                              security_parameters.current_cipher_suite));
 
   if (MHD_gtls_compression_is_ok
       (session->security_parameters.write_compression_algorithm) != 0)
@@ -758,8 +762,8 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
                           0);
 
   mac_size =
-    MHD_gnutls_hash_get_algo_len (session->security_parameters.
-                                  write_mac_algorithm);
+    MHD_gnutls_hash_get_algo_len (session->
+                                  security_parameters.write_mac_algorithm);
 
   MHD__gnutls_handshake_log
     ("HSK[%x]: Initializing internal [write] cipher sessions\n", session);
@@ -770,8 +774,8 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
       /* initialize cipher session
        */
       session->connection_state.write_cipher_state =
-        MHD_gtls_cipher_init (session->security_parameters.
-                              write_bulk_cipher_algorithm,
+        MHD_gtls_cipher_init (session->
+                              security_parameters.write_bulk_cipher_algorithm,
                               &session->cipher_specs.server_write_key,
                               &session->cipher_specs.server_write_IV);
 
@@ -790,11 +794,10 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
        */
       if (mac_size > 0)
         {
-          if (MHD__gnutls_sset_datum (&session->connection_state.write_mac_secret,
-                                  session->cipher_specs.
-                                  server_write_mac_secret.data,
-                                  session->cipher_specs.
-                                  server_write_mac_secret.size) < 0)
+          if (MHD__gnutls_sset_datum
+              (&session->connection_state.write_mac_secret,
+               session->cipher_specs.server_write_mac_secret.data,
+               session->cipher_specs.server_write_mac_secret.size) < 0)
             {
               MHD_gnutls_assert ();
               return GNUTLS_E_MEMORY_ERROR;
@@ -807,8 +810,8 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
 #if MHD_DEBUG_TLS
     case GNUTLS_CLIENT:
       session->connection_state.write_cipher_state =
-        MHD_gtls_cipher_init (session->security_parameters.
-                              write_bulk_cipher_algorithm,
+        MHD_gtls_cipher_init (session->
+                              security_parameters.write_bulk_cipher_algorithm,
                               &session->cipher_specs.client_write_key,
                               &session->cipher_specs.client_write_IV);
 
@@ -825,11 +828,10 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
        */
       if (mac_size > 0)
         {
-          if (MHD__gnutls_sset_datum (&session->connection_state.write_mac_secret,
-                                  session->cipher_specs.
-                                  client_write_mac_secret.data,
-                                  session->cipher_specs.
-                                  client_write_mac_secret.size) < 0)
+          if (MHD__gnutls_sset_datum
+              (&session->connection_state.write_mac_secret,
+               session->cipher_specs.client_write_mac_secret.data,
+               session->cipher_specs.client_write_mac_secret.size) < 0)
             {
               MHD_gnutls_assert ();
               return GNUTLS_E_MEMORY_ERROR;
@@ -845,8 +847,8 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
 
 
   session->connection_state.write_compression_state =
-    MHD_gtls_comp_init (session->security_parameters.
-                        write_compression_algorithm, 0);
+    MHD_gtls_comp_init (session->
+                        security_parameters.write_compression_algorithm, 0);
 
   if (session->connection_state.write_compression_state == GNUTLS_COMP_FAILED)
     {

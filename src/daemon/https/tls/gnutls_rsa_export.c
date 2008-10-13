@@ -61,4 +61,3 @@ MHD__gnutls_rsa_params_deinit (MHD_gtls_rsa_params_t rsa_params)
 {
   MHD_gnutls_x509_privkey_deinit (rsa_params);
 }
-

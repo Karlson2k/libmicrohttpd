@@ -35,12 +35,14 @@
 
 
 static void
-MHD__asn1_error_description_tag_error (node_asn * node, char *ErrorDescription)
+MHD__asn1_error_description_tag_error (node_asn * node,
+                                       char *ErrorDescription)
 {
 
   Estrcpy (ErrorDescription, ":: tag error near element '");
-  MHD__asn1_hierarchical_name (node, ErrorDescription + strlen (ErrorDescription),
-                           MAX_ERROR_DESCRIPTION_SIZE - 40);
+  MHD__asn1_hierarchical_name (node,
+                               ErrorDescription + strlen (ErrorDescription),
+                               MAX_ERROR_DESCRIPTION_SIZE - 40);
   Estrcat (ErrorDescription, "'");
 
 }
@@ -117,7 +119,7 @@ MHD__asn1_get_length_der (const unsigned char *der, int der_len, int *len)
  **/
 int
 MHD__asn1_get_tag_der (const unsigned char *der, int der_len,
-                  unsigned char *cls, int *len, unsigned long *tag)
+                       unsigned char *cls, int *len, unsigned long *tag)
 {
   int punt, ris;
 
@@ -178,8 +180,8 @@ MHD__asn1_get_tag_der (const unsigned char *der, int der_len,
  **/
 int
 MHD__asn1_get_octet_der (const unsigned char *der, int der_len,
-                    int *ret_len, unsigned char *str, int str_size,
-                    int *str_len)
+                         int *ret_len, unsigned char *str, int str_size,
+                         int *str_len)
 {
   int len_len;
 
@@ -209,7 +211,7 @@ MHD__asn1_get_octet_der (const unsigned char *der, int der_len,
  */
 static int
 MHD__asn1_get_time_der (const unsigned char *der, int der_len, int *ret_len,
-                    char *str, int str_size)
+                        char *str, int str_size)
 {
   int len_len, str_len;
 
@@ -228,8 +230,8 @@ MHD__asn1_get_time_der (const unsigned char *der, int der_len, int *ret_len,
 
 
 static void
-MHD__asn1_get_objectid_der (const unsigned char *der, int der_len, int *ret_len,
-                        char *str, int str_size)
+MHD__asn1_get_objectid_der (const unsigned char *der, int der_len,
+                            int *ret_len, char *str, int str_size)
 {
   int len_len, len, k;
   char temp[20];
@@ -286,8 +288,8 @@ MHD__asn1_get_objectid_der (const unsigned char *der, int der_len, int *ret_len,
  **/
 int
 MHD__asn1_get_bit_der (const unsigned char *der, int der_len,
-                  int *ret_len, unsigned char *str, int str_size,
-                  int *bit_len)
+                       int *ret_len, unsigned char *str, int str_size,
+                       int *bit_len)
 {
   int len_len, len_byte;
 
@@ -314,8 +316,8 @@ MHD__asn1_get_bit_der (const unsigned char *der, int der_len,
 
 
 static int
-MHD__asn1_extract_tag_der (node_asn * node, const unsigned char *der, int der_len,
-                       int *ret_len)
+MHD__asn1_extract_tag_der (node_asn * node, const unsigned char *der,
+                           int der_len, int *ret_len)
 {
   node_asn *p;
   int counter, len2, len3, is_tag_implicit;
@@ -353,8 +355,8 @@ MHD__asn1_extract_tag_der (node_asn * node, const unsigned char *der, int der_le
                     return ASN1_DER_ERROR;
                   counter += len2;
                   len3 =
-                    MHD__asn1_get_length_der (der + counter, der_len - counter,
-                                         &len2);
+                    MHD__asn1_get_length_der (der + counter,
+                                              der_len - counter, &len2);
                   if (len3 < 0)
                     return ASN1_DER_ERROR;
                   counter += len2;
@@ -567,7 +569,8 @@ MHD__asn1_delete_not_used (node_asn * node)
 
 
 static MHD__asn1_retCode
-MHD__asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
+MHD__asn1_get_octet_string (const unsigned char *der, node_asn * node,
+                            int *len)
 {
   int len2, len3, counter, counter2, counter_end, tot_len, indefinite;
   unsigned char *temp, *temp2;
@@ -606,7 +609,8 @@ MHD__asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
 
           counter++;
 
-          len2 = MHD__asn1_get_length_der (der + counter, *len - counter, &len3);
+          len2 =
+            MHD__asn1_get_length_der (der + counter, *len - counter, &len3);
           if (len2 <= 0)
             return ASN1_DER_ERROR;
 
@@ -629,10 +633,10 @@ MHD__asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
           temp2 = temp + len2;
           len2 = MHD__asn1_get_length_der (der, *len, &len3);
           if (len2 < -1)
-	    {
-	      MHD__asn1_afree (temp);
-	      return ASN1_DER_ERROR;
-	    }
+            {
+              MHD__asn1_afree (temp);
+              return ASN1_DER_ERROR;
+            }
           counter2 = len3 + 1;
 
           if (indefinite == -1)
@@ -643,12 +647,13 @@ MHD__asn1_get_octet_string (const unsigned char *der, node_asn * node, int *len)
           while (counter2 < counter_end)
             {
               len2 =
-                MHD__asn1_get_length_der (der + counter2, *len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter2, *len - counter,
+                                          &len3);
               if (len2 < -1)
-		{
-		  MHD__asn1_afree (temp);
-		  return ASN1_DER_ERROR;
-		}
+                {
+                  MHD__asn1_afree (temp);
+                  return ASN1_DER_ERROR;
+                }
 
               /* FIXME: to be checked. Is this ok? Has the
                * size been checked before?
@@ -757,7 +762,7 @@ MHD__asn1_get_indefinite_length_string (const unsigned char *der, int *len)
 
 MHD__asn1_retCode
 MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
-                   char *errorDescription)
+                        char *errorDescription)
 {
   node_asn *node, *p, *p2, *p3;
   char temp[128];
@@ -789,7 +794,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
           if (p->type & CONST_SET)
             {
               p2 = MHD__asn1_find_up (p);
-              len2 = strtol ((const char*) p2->value, NULL, 10);
+              len2 = strtol ((const char *) p2->value, NULL, 10);
               if (len2 == -1)
                 {
                   if (!der[counter] && !der[counter + 1])
@@ -819,7 +824,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
                       if (type_field (p2->type) != TYPE_CHOICE)
                         ris =
                           MHD__asn1_extract_tag_der (p2, der + counter,
-                                                 len - counter, &len2);
+                                                     len - counter, &len2);
                       else
                         {
                           p3 = p2->down;
@@ -827,7 +832,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
                             {
                               ris =
                                 MHD__asn1_extract_tag_der (p3, der + counter,
-                                                       len - counter, &len2);
+                                                           len - counter,
+                                                           &len2);
                               if (ris == ASN1_SUCCESS)
                                 break;
                               p3 = p3->right;
@@ -852,7 +858,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
           if ((p->type & CONST_OPTION) || (p->type & CONST_DEFAULT))
             {
               p2 = MHD__asn1_find_up (p);
-              len2 = strtol ((const char*) p2->value, NULL, 10);
+              len2 = strtol ((const char *) p2->value, NULL, 10);
               if (counter == len2)
                 {
                   if (p->right)
@@ -878,7 +884,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
                   if (counter < len)
                     ris =
                       MHD__asn1_extract_tag_der (p->down, der + counter,
-                                             len - counter, &len2);
+                                                 len - counter, &len2);
                   else
                     ris = ASN1_DER_ERROR;
                   if (ris == ASN1_SUCCESS)
@@ -917,14 +923,15 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
           if ((p->type & CONST_OPTION) || (p->type & CONST_DEFAULT))
             {
               p2 = MHD__asn1_find_up (p);
-              len2 = strtol ((const char*) p2->value, NULL, 10);
+              len2 = strtol ((const char *) p2->value, NULL, 10);
               if ((len2 != -1) && (counter > len2))
                 ris = ASN1_TAG_ERROR;
             }
 
           if (ris == ASN1_SUCCESS)
             ris =
-              MHD__asn1_extract_tag_der (p, der + counter, len - counter, &len2);
+              MHD__asn1_extract_tag_der (p, der + counter, len - counter,
+                                         &len2);
           if (ris != ASN1_SUCCESS)
             {
               if (p->type & CONST_OPTION)
@@ -940,7 +947,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               else
                 {
                   if (errorDescription != NULL)
-                    MHD__asn1_error_description_tag_error (p, errorDescription);
+                    MHD__asn1_error_description_tag_error (p,
+                                                           errorDescription);
 
                   MHD__asn1_delete_structure (element);
                   return ASN1_TAG_ERROR;
@@ -978,7 +986,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
             case TYPE_INTEGER:
             case TYPE_ENUMERATED:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               if (len2 + len3 > len - counter)
@@ -989,7 +998,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               break;
             case TYPE_OBJECT_ID:
               MHD__asn1_get_objectid_der (der + counter, len - counter, &len2,
-                                      temp, sizeof (temp));
+                                          temp, sizeof (temp));
               tlen = strlen (temp);
               if (tlen > 0)
                 MHD__asn1_set_value (p, temp, tlen + 1);
@@ -998,8 +1007,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               break;
             case TYPE_TIME:
               result =
-                MHD__asn1_get_time_der (der + counter, len - counter, &len2, temp,
-                                    sizeof (temp) - 1);
+                MHD__asn1_get_time_der (der + counter, len - counter, &len2,
+                                        temp, sizeof (temp) - 1);
               if (result != ASN1_SUCCESS)
                 {
                   MHD__asn1_delete_structure (element);
@@ -1021,7 +1030,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               break;
             case TYPE_GENERALSTRING:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               if (len3 + len2 > len - counter)
@@ -1032,7 +1042,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               break;
             case TYPE_BIT_STRING:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               if (len3 + len2 > len - counter)
@@ -1045,7 +1056,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
             case TYPE_SET:
               if (move == UP)
                 {
-                  len2 = strtol ( (const char*) p->value, NULL, 10);
+                  len2 = strtol ((const char *) p->value, NULL, 10);
                   MHD__asn1_set_value (p, NULL, 0);
                   if (len2 == -1)
                     {           /* indefinite length method */
@@ -1074,7 +1085,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               else
                 {               /* move==DOWN || move==RIGHT */
                   len3 =
-                    MHD__asn1_get_length_der (der + counter, len - counter, &len2);
+                    MHD__asn1_get_length_der (der + counter, len - counter,
+                                              &len2);
                   if (len3 < -1)
                     return ASN1_DER_ERROR;
                   counter += len2;
@@ -1113,7 +1125,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
             case TYPE_SET_OF:
               if (move == UP)
                 {
-                  len2 = strtol ( (const char*) p->value, NULL, 10);
+                  len2 = strtol ((const char *) p->value, NULL, 10);
                   if (len2 == -1)
                     {           /* indefinite length method */
                       if ((counter + 2) > len)
@@ -1152,7 +1164,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
               else
                 {               /* move==DOWN || move==RIGHT */
                   len3 =
-                    MHD__asn1_get_length_der (der + counter, len - counter, &len2);
+                    MHD__asn1_get_length_der (der + counter, len - counter,
+                                              &len2);
                   if (len3 < -1)
                     return ASN1_DER_ERROR;
                   counter += len2;
@@ -1190,7 +1203,7 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
                 return ASN1_DER_ERROR;
               len4 =
                 MHD__asn1_get_length_der (der + counter + len2,
-                                     len - counter - len2, &len3);
+                                          len - counter - len2, &len3);
               if (len4 < -1)
                 return ASN1_DER_ERROR;
               if (len4 > len - counter + len2 + len3)
@@ -1199,14 +1212,16 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
                 {
                   len2 += len4;
                   MHD__asn1_length_der (len2 + len3, NULL, &len4);
-                  temp2 = (unsigned char *) MHD__asn1_alloca (len2 + len3 + len4);
+                  temp2 =
+                    (unsigned char *) MHD__asn1_alloca (len2 + len3 + len4);
                   if (temp2 == NULL)
                     {
                       MHD__asn1_delete_structure (element);
                       return ASN1_MEM_ALLOC_ERROR;
                     }
 
-                  MHD__asn1_octet_der (der + counter, len2 + len3, temp2, &len4);
+                  MHD__asn1_octet_der (der + counter, len2 + len3, temp2,
+                                       &len4);
                   MHD__asn1_set_value (p, temp2, len4);
                   MHD__asn1_afree (temp2);
                   counter += len2 + len3;
@@ -1221,7 +1236,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
 
                   len2 = len - counter;
                   ris =
-                    MHD__asn1_get_indefinite_length_string (der + counter, &len2);
+                    MHD__asn1_get_indefinite_length_string (der + counter,
+                                                            &len2);
                   if (ris != ASN1_SUCCESS)
                     {
                       MHD__asn1_delete_structure (element);
@@ -1328,7 +1344,8 @@ MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider, int len,
   **/
 MHD__asn1_retCode
 MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
-                            const char *name_element, int *start, int *end)
+                                 const char *name_element, int *start,
+                                 int *end)
 {
   node_asn *node, *node_to_find, *p, *p2, *p3;
   int counter, len2, len3, len4, move, ris;
@@ -1369,7 +1386,7 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
           if (p->type & CONST_SET)
             {
               p2 = MHD__asn1_find_up (p);
-              len2 = strtol ( (const char* ) p2->value, NULL, 10);
+              len2 = strtol ((const char *) p2->value, NULL, 10);
               if (len2 == -1)
                 {
                   if (!der[counter] && !der[counter + 1])
@@ -1396,13 +1413,13 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
                       if (type_field (p2->type) != TYPE_CHOICE)
                         ris =
                           MHD__asn1_extract_tag_der (p2, der + counter,
-                                                 len - counter, &len2);
+                                                     len - counter, &len2);
                       else
                         {
                           p3 = p2->down;
                           ris =
                             MHD__asn1_extract_tag_der (p3, der + counter,
-                                                   len - counter, &len2);
+                                                       len - counter, &len2);
                         }
                       if (ris == ASN1_SUCCESS)
                         {
@@ -1425,14 +1442,15 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               p = p->down;
               ris =
                 MHD__asn1_extract_tag_der (p, der + counter, len - counter,
-                                       &len2);
+                                           &len2);
               if (p == node_to_find)
                 *start = counter;
             }
 
           if (ris == ASN1_SUCCESS)
             ris =
-              MHD__asn1_extract_tag_der (p, der + counter, len - counter, &len2);
+              MHD__asn1_extract_tag_der (p, der + counter, len - counter,
+                                         &len2);
           if (ris != ASN1_SUCCESS)
             {
               if (p->type & CONST_OPTION)
@@ -1472,7 +1490,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
             case TYPE_INTEGER:
             case TYPE_ENUMERATED:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               counter += len3 + len2;
@@ -1480,7 +1499,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               break;
             case TYPE_OBJECT_ID:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               counter += len2 + len3;
@@ -1488,7 +1508,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               break;
             case TYPE_TIME:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               counter += len2 + len3;
@@ -1504,7 +1525,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               break;
             case TYPE_GENERALSTRING:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               counter += len3 + len2;
@@ -1512,7 +1534,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               break;
             case TYPE_BIT_STRING:
               len2 =
-                MHD__asn1_get_length_der (der + counter, len - counter, &len3);
+                MHD__asn1_get_length_der (der + counter, len - counter,
+                                          &len3);
               if (len2 < 0)
                 return ASN1_DER_ERROR;
               counter += len3 + len2;
@@ -1523,7 +1546,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               if (move != UP)
                 {
                   len3 =
-                    MHD__asn1_get_length_der (der + counter, len - counter, &len2);
+                    MHD__asn1_get_length_der (der + counter, len - counter,
+                                              &len2);
                   if (len3 < -1)
                     return ASN1_DER_ERROR;
                   counter += len2;
@@ -1544,7 +1568,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
               if (move != UP)
                 {
                   len3 =
-                    MHD__asn1_get_length_der (der + counter, len - counter, &len2);
+                    MHD__asn1_get_length_der (der + counter, len - counter,
+                                              &len2);
                   if (len3 < -1)
                     return ASN1_DER_ERROR;
                   counter += len2;
@@ -1576,7 +1601,7 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
 
               len4 =
                 MHD__asn1_get_length_der (der + counter + len2,
-                                     len - counter - len2, &len3);
+                                          len - counter - len2, &len3);
               if (len4 < -1)
                 return ASN1_DER_ERROR;
 
@@ -1594,7 +1619,8 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
 
                   len2 = len - counter;
                   ris =
-                    MHD__asn1_get_indefinite_length_string (der + counter, &len2);
+                    MHD__asn1_get_indefinite_length_string (der + counter,
+                                                            &len2);
                   if (ris != ASN1_SUCCESS)
                     return ris;
                   counter += len2;
@@ -1646,5 +1672,3 @@ MHD__asn1_der_decoding_startEnd (ASN1_TYPE element, const void *ider, int len,
 
   return ASN1_ELEMENT_NOT_FOUND;
 }
-
-

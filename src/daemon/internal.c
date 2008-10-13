@@ -128,9 +128,7 @@ MHD_http_unescape (char *val)
   while (NULL != (esc = strstr (val, "%")))
     {
       if ((1 == SSCANF (&esc[1],
-                        "%2x", &num)) || 
-	  (1 == SSCANF (&esc[1],
-			"%2X", &num)))
+                        "%2x", &num)) || (1 == SSCANF (&esc[1], "%2X", &num)))
         {
           esc[0] = (unsigned char) num;
           memmove (&esc[1], &esc[3], strlen (&esc[3]) + 1);

@@ -43,7 +43,7 @@ extern "C"
   /* (null character included)    */
 
 
-  typedef int MHD__asn1_retCode;     /* type returned by libtasn1 functions */
+  typedef int MHD__asn1_retCode;        /* type returned by libtasn1 functions */
 
   /*****************************************/
   /*  Errors returned by libtasn1 functions */
@@ -138,49 +138,53 @@ extern "C"
   /***********************************/
 
   MHD__asn1_retCode MHD__asn1_parser2tree (const char *file_name,
-                                 ASN1_TYPE * definitions,
-                                 char *errorDescription);
+                                           ASN1_TYPE * definitions,
+                                           char *errorDescription);
 
   MHD__asn1_retCode MHD__asn1_parser2array (const char *inputFileName,
-                                  const char *outputFileName,
-                                  const char *vectorName,
-                                  char *errorDescription);
+                                            const char *outputFileName,
+                                            const char *vectorName,
+                                            char *errorDescription);
 
   MHD__asn1_retCode MHD__asn1_array2tree (const ASN1_ARRAY_TYPE * array,
-                                ASN1_TYPE * definitions,
-                                char *errorDescription);
+                                          ASN1_TYPE * definitions,
+                                          char *errorDescription);
 
   MHD__asn1_retCode MHD__asn1_create_element (ASN1_TYPE definitions,
-                                    const char *source_name,
-                                    ASN1_TYPE * element);
+                                              const char *source_name,
+                                              ASN1_TYPE * element);
 
   MHD__asn1_retCode MHD__asn1_delete_structure (ASN1_TYPE * structure);
 
   MHD__asn1_retCode MHD__asn1_delete_element (ASN1_TYPE structure,
-                                    const char *element_name);
+                                              const char *element_name);
 
-  MHD__asn1_retCode MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
-                                 const void *ivalue, int len);
+  MHD__asn1_retCode MHD__asn1_write_value (ASN1_TYPE node_root,
+                                           const char *name,
+                                           const void *ivalue, int len);
 
   MHD__asn1_retCode MHD__asn1_read_value (ASN1_TYPE root, const char *name,
-                                void *ivalue, int *len);
+                                          void *ivalue, int *len);
 
-  MHD__asn1_retCode MHD__asn1_number_of_elements (ASN1_TYPE element, const char *name,
-                                        int *num);
+  MHD__asn1_retCode MHD__asn1_number_of_elements (ASN1_TYPE element,
+                                                  const char *name, int *num);
 
   MHD__asn1_retCode MHD__asn1_der_coding (ASN1_TYPE element, const char *name,
-                                void *ider, int *len, char *ErrorDescription);
+                                          void *ider, int *len,
+                                          char *ErrorDescription);
 
-  MHD__asn1_retCode MHD__asn1_der_decoding (ASN1_TYPE * element, const void *ider,
-                                  int len, char *errorDescription);
+  MHD__asn1_retCode MHD__asn1_der_decoding (ASN1_TYPE * element,
+                                            const void *ider, int len,
+                                            char *errorDescription);
 
   MHD__asn1_retCode MHD__asn1_der_decoding_startEnd (ASN1_TYPE element,
-                                           const void *ider, int len,
-                                           const char *name_element,
-                                           int *start, int *end);
+                                                     const void *ider,
+                                                     int len,
+                                                     const char *name_element,
+                                                     int *start, int *end);
 
   const char *MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
-                                            const char *oidValue);
+                                                 const char *oidValue);
 
   const char *MHD__libtasn1_strerror (MHD__asn1_retCode error);
 
@@ -189,34 +193,37 @@ extern "C"
   /* DER utility functions. */
 
   int MHD__asn1_get_tag_der (const unsigned char *der, int der_len,
-                        unsigned char *cls, int *len, unsigned long *tag);
+                             unsigned char *cls, int *len,
+                             unsigned long *tag);
 
   void MHD__asn1_octet_der (const unsigned char *str, int str_len,
-                       unsigned char *der, int *der_len);
+                            unsigned char *der, int *der_len);
 
-  MHD__asn1_retCode MHD__asn1_get_octet_der (const unsigned char *der, int der_len,
-                                   int *ret_len, unsigned char *str,
-                                   int str_size, int *str_len);
+  MHD__asn1_retCode MHD__asn1_get_octet_der (const unsigned char *der,
+                                             int der_len, int *ret_len,
+                                             unsigned char *str, int str_size,
+                                             int *str_len);
 
   void MHD__asn1_bit_der (const unsigned char *str, int bit_len,
-                     unsigned char *der, int *der_len);
+                          unsigned char *der, int *der_len);
 
-  MHD__asn1_retCode MHD__asn1_get_bit_der (const unsigned char *der, int der_len,
-                                 int *ret_len, unsigned char *str,
-                                 int str_size, int *bit_len);
+  MHD__asn1_retCode MHD__asn1_get_bit_der (const unsigned char *der,
+                                           int der_len, int *ret_len,
+                                           unsigned char *str, int str_size,
+                                           int *bit_len);
 
   signed long MHD__asn1_get_length_der (const unsigned char *der, int der_len,
-                                   int *len);
+                                        int *len);
 
   void MHD__asn1_length_der (unsigned long int len, unsigned char *ans,
-                        int *ans_len);
+                             int *ans_len);
 
   /* Other utility functions. */
 
   ASN1_TYPE MHD__asn1_find_node (ASN1_TYPE pointer, const char *name);
 
   MHD__asn1_retCode MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
-                               ASN1_TYPE src, const char *src_name);
+                                         ASN1_TYPE src, const char *src_name);
 
 #ifdef __cplusplus
 }

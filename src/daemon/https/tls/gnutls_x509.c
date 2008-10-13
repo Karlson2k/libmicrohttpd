@@ -103,7 +103,7 @@ check_bits (MHD_gnutls_x509_crt_t crt, unsigned int max_bits)
   -*/
 int
 MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
-                                unsigned int *status)
+                                    unsigned int *status)
 {
   cert_auth_info_t info;
   MHD_gtls_cert_credentials_t cred;
@@ -142,7 +142,8 @@ MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
   peer_certificate_list_size = info->ncerts;
   peer_certificate_list =
     MHD_gnutls_calloc (1,
-                   peer_certificate_list_size * sizeof (MHD_gnutls_x509_crt_t));
+                       peer_certificate_list_size *
+                       sizeof (MHD_gnutls_x509_crt_t));
   if (peer_certificate_list == NULL)
     {
       MHD_gnutls_assert ();
@@ -161,8 +162,8 @@ MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
 
       ret =
         MHD_gnutls_x509_crt_import (peer_certificate_list[i],
-                                &info->raw_certificate_list[i],
-                                GNUTLS_X509_FMT_DER);
+                                    &info->raw_certificate_list[i],
+                                    GNUTLS_X509_FMT_DER);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -184,10 +185,10 @@ MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
    */
   ret =
     MHD_gnutls_x509_crt_list_verify (peer_certificate_list,
-                                 peer_certificate_list_size,
-                                 cred->x509_ca_list, cred->x509_ncas,
-                                 cred->x509_crl_list, cred->x509_ncrls,
-                                 cred->verify_flags, status);
+                                     peer_certificate_list_size,
+                                     cred->x509_ca_list, cred->x509_ncas,
+                                     cred->x509_crl_list, cred->x509_ncrls,
+                                     cred->verify_flags, status);
 
   CLEAR_CERTS;
 
@@ -221,13 +222,14 @@ MHD__gnutls_check_key_cert_match (MHD_gtls_cert_credentials_t res)
     }
 
   MHD__gnutls_x509_write_rsa_params (res->pkey[res->ncerts - 1].params,
-                                 res->pkey[res->ncerts -
-                                           1].params_size, &kid);
+                                     res->pkey[res->ncerts -
+                                               1].params_size, &kid);
 
 
-  MHD__gnutls_x509_write_rsa_params (res->cert_list[res->ncerts - 1][0].params,
-                                 res->cert_list[res->ncerts -
-                                                1][0].params_size, &cid);
+  MHD__gnutls_x509_write_rsa_params (res->cert_list[res->ncerts - 1][0].
+                                     params,
+                                     res->cert_list[res->ncerts -
+                                                    1][0].params_size, &cid);
 
   if (cid.size != kid.size)
     {
@@ -265,7 +267,7 @@ parse_crt_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
 
   *cert_list =
     (MHD_gnutls_cert *) MHD_gtls_realloc_fast (*cert_list,
-                                           i * sizeof (MHD_gnutls_cert));
+                                               i * sizeof (MHD_gnutls_cert));
 
   if (*cert_list == NULL)
     {
@@ -286,7 +288,7 @@ parse_crt_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
 }
 
 /* Reads a DER encoded certificate list from memory and stores it to
- * a MHD_gnutls_cert structure. 
+ * a MHD_gnutls_cert structure.
  * Returns the number of certificates parsed.
  */
 static int
@@ -355,7 +357,9 @@ parse_pem_cert_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
   do
     {
 
-      siz2 = MHD__gnutls_fbase64_decode (NULL, (const unsigned char*) ptr, size, &ptr2);
+      siz2 =
+        MHD__gnutls_fbase64_decode (NULL, (const unsigned char *) ptr, size,
+                                    &ptr2);
 
       if (siz2 < 0)
         {
@@ -365,7 +369,8 @@ parse_pem_cert_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
 
       *cert_list =
         (MHD_gnutls_cert *) MHD_gtls_realloc_fast (*cert_list,
-                                               i * sizeof (MHD_gnutls_cert));
+                                                   i *
+                                                   sizeof (MHD_gnutls_cert));
 
       if (*cert_list == NULL)
         {
@@ -382,7 +387,7 @@ parse_pem_cert_mem (MHD_gnutls_cert ** cert_list, unsigned *ncerts,
           MHD_gnutls_assert ();
           return ret;
         }
-      MHD__gnutls_free_datum (&tmp);        /* free ptr2 */
+      MHD__gnutls_free_datum (&tmp);    /* free ptr2 */
 
       /* now we move ptr after the pem header
        */
@@ -453,8 +458,8 @@ read_cert_mem (MHD_gtls_cert_credentials_t res, const void *cert,
 
   if (type == GNUTLS_X509_FMT_DER)
     ret = parse_der_cert_mem (&res->cert_list[res->ncerts],
-                                &res->cert_list_length[res->ncerts],
-			      cert, cert_size);
+                              &res->cert_list_length[res->ncerts],
+                              cert, cert_size);
   else
     ret =
       parse_pem_cert_mem (&res->cert_list[res->ncerts],
@@ -473,7 +478,7 @@ read_cert_mem (MHD_gtls_cert_credentials_t res, const void *cert,
 
 int
 MHD__gnutls_x509_privkey_to_gkey (MHD_gnutls_privkey * dest,
-                              MHD_gnutls_x509_privkey_t src)
+                                  MHD_gnutls_x509_privkey_t src)
 {
   int i, ret;
 
@@ -519,8 +524,8 @@ MHD_gtls_gkey_deinit (MHD_gnutls_privkey * key)
 
 int
 MHD__gnutls_x509_raw_privkey_to_gkey (MHD_gnutls_privkey * privkey,
-                                  const MHD_gnutls_datum_t * raw_key,
-                                  MHD_gnutls_x509_crt_fmt_t type)
+                                      const MHD_gnutls_datum_t * raw_key,
+                                      MHD_gnutls_x509_crt_fmt_t type)
 {
   MHD_gnutls_x509_privkey_t tmpkey;
   int ret;
@@ -539,7 +544,7 @@ MHD__gnutls_x509_raw_privkey_to_gkey (MHD_gnutls_privkey * privkey,
   if (ret < 0)
     ret =
       MHD_gnutls_x509_privkey_import_pkcs8 (tmpkey, raw_key, type, NULL,
-                                        GNUTLS_PKCS_PLAIN);
+                                            GNUTLS_PKCS_PLAIN);
 #endif
 
   if (ret < 0)
@@ -591,7 +596,7 @@ read_key_mem (MHD_gtls_cert_credentials_t res,
 
       ret =
         MHD__gnutls_x509_raw_privkey_to_gkey (&res->pkey[res->ncerts], &tmp,
-                                          type);
+                                              type);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -636,9 +641,10 @@ read_key_mem (MHD_gtls_cert_credentials_t res,
   **/
 int
 MHD__gnutls_certificate_set_x509_key_mem (MHD_gtls_cert_credentials_t
-                                         res, const MHD_gnutls_datum_t * cert,
-                                         const MHD_gnutls_datum_t * key,
-                                         MHD_gnutls_x509_crt_fmt_t type)
+                                          res,
+                                          const MHD_gnutls_datum_t * cert,
+                                          const MHD_gnutls_datum_t * key,
+                                          MHD_gnutls_x509_crt_fmt_t type)
 {
   int ret;
 
@@ -684,7 +690,8 @@ generate_rdn_seq (MHD_gtls_cert_credentials_t res)
   size = 0;
   for (i = 0; i < res->x509_ncas; i++)
     {
-      if ((ret = MHD_gnutls_x509_crt_get_raw_dn (res->x509_ca_list[i], &tmp)) < 0)
+      if ((ret =
+           MHD_gnutls_x509_crt_get_raw_dn (res->x509_ca_list[i], &tmp)) < 0)
         {
           MHD_gnutls_assert ();
           return ret;
@@ -708,7 +715,8 @@ generate_rdn_seq (MHD_gtls_cert_credentials_t res)
 
   for (i = 0; i < res->x509_ncas; i++)
     {
-      if ((ret = MHD_gnutls_x509_crt_get_raw_dn (res->x509_ca_list[i], &tmp)) < 0)
+      if ((ret =
+           MHD_gnutls_x509_crt_get_raw_dn (res->x509_ca_list[i], &tmp)) < 0)
         {
           MHD__gnutls_free_datum (&res->x509_rdn_sequence);
           MHD_gnutls_assert ();
@@ -728,7 +736,7 @@ generate_rdn_seq (MHD_gtls_cert_credentials_t res)
  */
 int
 MHD__gnutls_check_key_usage (const MHD_gnutls_cert * cert,
-                         enum MHD_GNUTLS_KeyExchangeAlgorithm alg)
+                             enum MHD_GNUTLS_KeyExchangeAlgorithm alg)
 {
   unsigned int key_usage = 0;
   int encipher_type;
@@ -814,9 +822,9 @@ parse_pem_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
 
       *cert_list =
         (MHD_gnutls_x509_crt_t *) MHD_gtls_realloc_fast (*cert_list,
-                                                     i *
-                                                     sizeof
-                                                     (MHD_gnutls_x509_crt_t));
+                                                         i *
+                                                         sizeof
+                                                         (MHD_gnutls_x509_crt_t));
 
       if (*cert_list == NULL)
         {
@@ -836,7 +844,7 @@ parse_pem_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
 
       ret =
         MHD_gnutls_x509_crt_import (cert_list[0][i - 1],
-                                &tmp, GNUTLS_X509_FMT_PEM);
+                                    &tmp, GNUTLS_X509_FMT_PEM);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -892,8 +900,9 @@ parse_der_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
 
   *cert_list =
     (MHD_gnutls_x509_crt_t *) MHD_gtls_realloc_fast (*cert_list,
-                                                 i *
-                                                 sizeof (MHD_gnutls_x509_crt_t));
+                                                     i *
+                                                     sizeof
+                                                     (MHD_gnutls_x509_crt_t));
 
   if (*cert_list == NULL)
     {
@@ -912,7 +921,8 @@ parse_der_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
     }
 
   ret =
-    MHD_gnutls_x509_crt_import (cert_list[0][i - 1], &tmp, GNUTLS_X509_FMT_DER);
+    MHD_gnutls_x509_crt_import (cert_list[0][i - 1], &tmp,
+                                GNUTLS_X509_FMT_DER);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -945,8 +955,9 @@ parse_der_ca_mem (MHD_gnutls_x509_crt_t ** cert_list, unsigned *ncerts,
   **/
 int
 MHD__gnutls_certificate_set_x509_trust_mem (MHD_gtls_cert_credentials_t
-                                           res, const MHD_gnutls_datum_t * ca,
-                                           MHD_gnutls_x509_crt_fmt_t type)
+                                            res,
+                                            const MHD_gnutls_datum_t * ca,
+                                            MHD_gnutls_x509_crt_fmt_t type)
 {
   int ret, ret2;
 
@@ -994,9 +1005,9 @@ parse_pem_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
 
       *crl_list =
         (MHD_gnutls_x509_crl_t *) MHD_gtls_realloc_fast (*crl_list,
-                                                     i *
-                                                     sizeof
-                                                     (MHD_gnutls_x509_crl_t));
+                                                         i *
+                                                         sizeof
+                                                         (MHD_gnutls_x509_crl_t));
 
       if (*crl_list == NULL)
         {
@@ -1010,13 +1021,13 @@ parse_pem_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
           MHD_gnutls_assert ();
           return ret;
         }
-      
+
       tmp.data = (unsigned char *) ptr;
       tmp.size = size;
 
       ret =
         MHD_gnutls_x509_crl_import (crl_list[0][i - 1],
-                                &tmp, GNUTLS_X509_FMT_PEM);
+                                    &tmp, GNUTLS_X509_FMT_PEM);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -1062,8 +1073,9 @@ parse_der_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
 
   *crl_list =
     (MHD_gnutls_x509_crl_t *) MHD_gtls_realloc_fast (*crl_list,
-                                                 i *
-                                                 sizeof (MHD_gnutls_x509_crl_t));
+                                                     i *
+                                                     sizeof
+                                                     (MHD_gnutls_x509_crl_t));
 
   if (*crl_list == NULL)
     {
@@ -1082,7 +1094,8 @@ parse_der_crl_mem (MHD_gnutls_x509_crl_t ** crl_list, unsigned *ncrls,
     }
 
   ret =
-    MHD_gnutls_x509_crl_import (crl_list[0][i - 1], &tmp, GNUTLS_X509_FMT_DER);
+    MHD_gnutls_x509_crl_import (crl_list[0][i - 1], &tmp,
+                                GNUTLS_X509_FMT_DER);
   if (ret < 0)
     {
       MHD_gnutls_assert ();
@@ -1147,8 +1160,8 @@ read_crl_mem (MHD_gtls_cert_credentials_t res, const void *crl,
   **/
 int
 MHD__gnutls_certificate_set_x509_crl_mem (MHD_gtls_cert_credentials_t
-                                         res, const MHD_gnutls_datum_t * CRL,
-                                         MHD_gnutls_x509_crt_fmt_t type)
+                                          res, const MHD_gnutls_datum_t * CRL,
+                                          MHD_gnutls_x509_crt_fmt_t type)
 {
   int ret;
 

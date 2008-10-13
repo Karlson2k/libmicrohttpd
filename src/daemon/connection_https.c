@@ -58,26 +58,26 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     {
 #if HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.read_bulk_cipher_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.read_bulk_cipher_algorithm;
     case MHD_CONNECTION_INFO_KX_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.kx_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.kx_algorithm;
     case MHD_CONNECTION_INFO_CREDENTIALS_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->key->cred->algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        key->cred->algorithm;
     case MHD_CONNECTION_INFO_MAC_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.read_mac_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.read_mac_algorithm;
     case MHD_CONNECTION_INFO_COMPRESSION_METHOD:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.read_compression_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.read_compression_algorithm;
     case MHD_CONNECTION_INFO_PROTOCOL:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.version;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.version;
     case MHD_CONNECTION_INFO_CERT_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.cert_type;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session->
+        security_parameters.cert_type;
 #endif
     default:
       return NULL;
@@ -96,8 +96,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
  */
 static void
 MHD_tls_connection_close (struct MHD_Connection *connection,
-                              enum MHD_RequestTerminationCode
-                              termination_code)
+                          enum MHD_RequestTerminationCode termination_code)
 {
   MHD__gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
@@ -106,8 +105,9 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
   if (connection->daemon->notify_completed != NULL)
-    connection->daemon->notify_completed (connection->daemon->
-                                          notify_completed_cls, connection,
+    connection->daemon->notify_completed (connection->
+                                          daemon->notify_completed_cls,
+                                          connection,
                                           &connection->client_context,
                                           termination_code);
 }
@@ -136,7 +136,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       && (time (NULL) - timeout > connection->last_activity))
     {
       MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+                                MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       return MHD_NO;
     }
   switch (connection->state)
@@ -147,12 +147,12 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
       if (connection->socket_fd != -1)
-	MHD_tls_connection_close (connection,
-				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
+        MHD_tls_connection_close (connection,
+                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
       return MHD_NO;
     case MHD_TLS_HANDSHAKE_FAILED:
       MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
       /* some HTTP state */
     default:
@@ -237,14 +237,14 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
                     "Error: received handshake message out of context\n");
 #endif
           MHD_tls_connection_close (connection,
-                                        MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                    MHD_REQUEST_TERMINATED_WITH_ERROR);
           return MHD_NO;
         }
 
-    /* ignore any out of bound change chiper spec messages */
+      /* ignore any out of bound change chiper spec messages */
     case GNUTLS_CHANGE_CIPHER_SPEC:
       MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
 
     case GNUTLS_ALERT:
@@ -269,8 +269,9 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Received TLS alert: %s\n",
-                    MHD__gnutls_alert_get_name ((int) connection->tls_session->
-                                               internals.last_alert));
+                    MHD__gnutls_alert_get_name ((int) connection->
+                                                tls_session->internals.
+                                                last_alert));
 #endif
           return MHD_YES;
         }
@@ -279,7 +280,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
                GNUTLS_AL_FATAL)
         {
           MHD_tls_connection_close (connection,
-				    MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                    MHD_REQUEST_TERMINATED_WITH_ERROR);
           return MHD_NO;
         }
       /* this should never execute */
@@ -304,11 +305,12 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Error: unrecognized TLS message type: %d, connection state: %s. l: %d, f: %s\n",
-                msg_type, MHD_state_to_string(connection->state), __LINE__, __FUNCTION__);
+                msg_type, MHD_state_to_string (connection->state), __LINE__,
+                __FUNCTION__);
 #endif
       /* close connection upon reception of unrecognized message type */
       MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_NO;
     }
 

@@ -313,9 +313,8 @@ char *MHD_state_to_string (enum MHD_CONNECTION_STATE state);
  * @param max_bytes maximum number of bytes to receive
  * @return number of bytes written to write_to
  */
-typedef ssize_t (*ReceiveCallback)(struct MHD_Connection * conn,
-				   void * write_to,
-				   size_t max_bytes);
+typedef ssize_t (*ReceiveCallback) (struct MHD_Connection * conn,
+                                    void *write_to, size_t max_bytes);
 
 
 /**
@@ -326,9 +325,8 @@ typedef ssize_t (*ReceiveCallback)(struct MHD_Connection * conn,
  * @param max_bytes maximum number of bytes to transmit
  * @return number of bytes transmitted
  */
-typedef ssize_t (*TransmitCallback)(struct MHD_Connection * conn,
-				    const void * write_to,
-				    size_t max_bytes);
+typedef ssize_t (*TransmitCallback) (struct MHD_Connection * conn,
+                                     const void *write_to, size_t max_bytes);
 
 
 

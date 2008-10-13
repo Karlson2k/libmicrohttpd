@@ -83,14 +83,14 @@ __MHD_md5_init_ctx (struct MHD_md5_ctx *ctx)
    starting at BUFFER.
    It is necessary that LEN is a multiple of 64!!! */
      extern void __MHD_md5_process_block (const void *buffer, size_t len,
-                                      struct MHD_md5_ctx *ctx) __THROW;
+                                          struct MHD_md5_ctx *ctx) __THROW;
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is NOT required that LEN is a multiple of 64.  */
      extern void __MHD_md5_process_bytes (const void *buffer, size_t len,
-                                      struct MHD_md5_ctx *ctx) __THROW;
+                                          struct MHD_md5_ctx *ctx) __THROW;
 
 /* Process the remaining bytes in the buffer and put result from CTX
    in first 16 bytes following RESBUF.  The result is always in little
@@ -100,7 +100,7 @@ __MHD_md5_init_ctx (struct MHD_md5_ctx *ctx)
    IMPORTANT: On some systems, RESBUF must be aligned to a 32-bit
    boundary. */
      extern void *__MHD_md5_finish_ctx (struct MHD_md5_ctx *ctx,
-                                    void *resbuf) __THROW;
+                                        void *resbuf) __THROW;
 
 
 /* Put result from CTX in first 16 bytes following RESBUF.  The result is
@@ -110,7 +110,7 @@ __MHD_md5_init_ctx (struct MHD_md5_ctx *ctx)
    IMPORTANT: On some systems, RESBUF must be aligned to a 32-bit
    boundary. */
      extern void *__MHD_md5_read_ctx (const struct MHD_md5_ctx *ctx,
-                                  void *resbuf) __THROW;
+                                      void *resbuf) __THROW;
 
 
 /* Compute MD5 message digest for bytes read from STREAM.  The
@@ -123,6 +123,6 @@ __MHD_md5_init_ctx (struct MHD_md5_ctx *ctx)
    output yields to the wanted ASCII representation of the message
    digest.  */
      extern void *__MHD_md5_buffer (const char *buffer, size_t len,
-                                void *resblock) __THROW;
+                                    void *resblock) __THROW;
 
 #endif /* md5.h */

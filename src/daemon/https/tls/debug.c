@@ -37,13 +37,15 @@ MHD__gnutls_print_state (MHD_gtls_session_t session)
 
   MHD__gnutls_debug_log ("GNUTLS State:\n");
   MHD__gnutls_debug_log ("Connection End: %d\n",
-                     session->security_parameters.entity);
+                         session->security_parameters.entity);
   MHD__gnutls_debug_log ("Cipher Algorithm: %d\n",
-                     session->security_parameters.read_bulk_cipher_algorithm);
+                         session->security_parameters.
+                         read_bulk_cipher_algorithm);
   MHD__gnutls_debug_log ("MAC algorithm: %d\n",
-                     session->security_parameters.read_mac_algorithm);
+                         session->security_parameters.read_mac_algorithm);
   MHD__gnutls_debug_log ("Compression Algorithm: %d\n",
-                     session->security_parameters.read_compression_algorithm);
+                         session->security_parameters.
+                         read_compression_algorithm);
   MHD__gnutls_debug_log ("\n");
 
 }
@@ -123,6 +125,7 @@ MHD__gnutls_dump_mpi (const char *prefix, mpi_t a)
   size_t n = sizeof buf;
 
   if (gcry_mpi_print (GCRYMPI_FMT_HEX, buf, n, &n, a))
-    strcpy ((char*) buf, "[can't print value]");        /* Flawfinder: ignore */
-  MHD__gnutls_hard_log ("MPI: length: %d\n\t%s%s\n", (n - 1) / 2, prefix, buf);
+    strcpy ((char *) buf, "[can't print value]");       /* Flawfinder: ignore */
+  MHD__gnutls_hard_log ("MPI: length: %d\n\t%s%s\n", (n - 1) / 2, prefix,
+                        buf);
 }

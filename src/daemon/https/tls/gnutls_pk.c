@@ -41,13 +41,13 @@
 #include "mpi.h"
 
 static int MHD__gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
-                               mpi_t * pkey, int pkey_len);
+                                   mpi_t * pkey, int pkey_len);
 static int MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash,
-                            mpi_t * pkey, int);
+                                mpi_t * pkey, int);
 static int MHD__gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
-                              mpi_t * pkey, int);
+                                  mpi_t * pkey, int);
 static int MHD__gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data,
-                               mpi_t * pkey, int);
+                                   mpi_t * pkey, int);
 
 
 /* Do PKCS-1 RSA encryption.
@@ -104,7 +104,7 @@ MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
           return GNUTLS_E_INTERNAL_ERROR;
         }
 
-      if (MHD_gc_pseudo_random ((char*)ps, psize) != GC_OK)
+      if (MHD_gc_pseudo_random ((char *) ps, psize) != GC_OK)
         {
           MHD_gnutls_assert ();
           MHD_gnutls_afree (edata);
@@ -113,7 +113,7 @@ MHD_gtls_pkcs1_rsa_encrypt (MHD_gnutls_datum_t * ciphertext,
       for (i = 0; i < psize; i++)
         while (ps[i] == 0)
           {
-            if (MHD_gc_pseudo_random ((char*) &ps[i], 1) != GC_OK)
+            if (MHD_gc_pseudo_random ((char *) &ps[i], 1) != GC_OK)
               {
                 MHD_gnutls_assert ();
                 MHD_gnutls_afree (edata);
@@ -391,8 +391,8 @@ encode_ber_rs (MHD_gnutls_datum_t * sig_value, mpi_t r, mpi_t s)
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
-                            "GNUTLS.DSASignatureValue",
-                            &sig)) != ASN1_SUCCESS)
+                                 "GNUTLS.DSASignatureValue",
+                                 &sig)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
@@ -489,14 +489,15 @@ decode_ber_rs (const MHD_gnutls_datum_t * sig_value, mpi_t * r, mpi_t * s)
 
   if ((result =
        MHD__asn1_create_element (MHD__gnutls_getMHD__gnutls_asn (),
-                            "GNUTLS.DSASignatureValue",
-                            &sig)) != ASN1_SUCCESS)
+                                 "GNUTLS.DSASignatureValue",
+                                 &sig)) != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
       return MHD_gtls_asn2err (result);
     }
 
-  result = MHD__asn1_der_decoding (&sig, sig_value->data, sig_value->size, NULL);
+  result =
+    MHD__asn1_der_decoding (&sig, sig_value->data, sig_value->size, NULL);
   if (result != ASN1_SUCCESS)
     {
       MHD_gnutls_assert ();
@@ -585,7 +586,7 @@ MHD_gtls_dsa_verify (const MHD_gnutls_datum_t * vdata,
  */
 static int
 MHD__gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
-                    mpi_t * pkey, int pkey_len)
+                        mpi_t * pkey, int pkey_len)
 {
   gcry_sexp_t s_ciph, s_data, s_pkey;
   int rc = -1;
@@ -657,7 +658,7 @@ MHD__gnutls_pk_encrypt (int algo, mpi_t * resarr, mpi_t data,
 
 static int
 MHD__gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
-                    int pkey_len)
+                        int pkey_len)
 {
   gcry_sexp_t s_plain, s_data, s_pkey;
   int rc = -1;
@@ -724,7 +725,7 @@ MHD__gnutls_pk_decrypt (int algo, mpi_t * resarr, mpi_t data, mpi_t * pkey,
  */
 static int
 MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
-                 int pkey_len)
+                     int pkey_len)
 {
   gcry_sexp_t s_hash, s_key, s_sig;
   int rc = -1;
@@ -834,7 +835,7 @@ MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
 
 static int
 MHD__gnutls_pk_verify (int algo, mpi_t hash, mpi_t * data,
-                   mpi_t * pkey, int pkey_len)
+                       mpi_t * pkey, int pkey_len)
 {
   gcry_sexp_t s_sig, s_hash, s_pkey;
   int rc = -1;

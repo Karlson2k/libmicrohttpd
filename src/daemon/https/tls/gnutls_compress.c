@@ -35,8 +35,8 @@
  */
 int
 MHD__gnutls_m_plaintext2compressed (MHD_gtls_session_t session,
-                                MHD_gnutls_datum_t * compressed,
-                                const MHD_gnutls_datum_t * plaintext)
+                                    MHD_gnutls_datum_t * compressed,
+                                    const MHD_gnutls_datum_t * plaintext)
 {
   int size;
   opaque *data;
@@ -58,8 +58,8 @@ MHD__gnutls_m_plaintext2compressed (MHD_gtls_session_t session,
 
 int
 MHD__gnutls_m_compressed2plaintext (MHD_gtls_session_t session,
-                                MHD_gnutls_datum_t * plain,
-                                const MHD_gnutls_datum_t * compressed)
+                                    MHD_gnutls_datum_t * plain,
+                                    const MHD_gnutls_datum_t * compressed)
 {
   int size;
   opaque *data;

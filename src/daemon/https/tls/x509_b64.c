@@ -154,7 +154,7 @@ decode (uint8_t * result, const opaque * data)
  */
 int
 MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
-                        int data_size, uint8_t ** result)
+                            int data_size, uint8_t ** result)
 {
   int i, ret, tmp, j;
   char tmpres[4];
@@ -173,16 +173,16 @@ MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
   memset (bottom, 0, sizeof (bottom));
   memset (top, 0, sizeof (top));
 
-  strcat ((char*) top, "-----BEGIN ");  /* Flawfinder: ignore */
-  strcat ((char*)top, msg);            /* Flawfinder: ignore */
-  strcat ((char*)top, "-----");        /* Flawfinder: ignore */
+  strcat ((char *) top, "-----BEGIN "); /* Flawfinder: ignore */
+  strcat ((char *) top, msg);   /* Flawfinder: ignore */
+  strcat ((char *) top, "-----");       /* Flawfinder: ignore */
 
-  strcat ((char*)bottom, "\n-----END ");       /* Flawfinder: ignore */
-  strcat ((char*)bottom, msg);         /* Flawfinder: ignore */
-  strcat ((char*)bottom, "-----\n");   /* Flawfinder: ignore */
+  strcat ((char *) bottom, "\n-----END ");      /* Flawfinder: ignore */
+  strcat ((char *) bottom, msg);        /* Flawfinder: ignore */
+  strcat ((char *) bottom, "-----\n");  /* Flawfinder: ignore */
 
-  top_len = strlen ((char*)top);
-  bottom_len = strlen ((char*)bottom);
+  top_len = strlen ((char *) top);
+  bottom_len = strlen ((char *) bottom);
 
   ret = B64FSIZE (msglen, data_size);
 
@@ -197,7 +197,7 @@ MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
   INCR (bytes, top_len);
   pos = top_len;
 
-  strcpy ((char*)*result,(char*) top);        /* Flawfinder: ignore */
+  strcpy ((char *) *result, (char *) top);      /* Flawfinder: ignore */
 
   for (i = j = 0; i < data_size; i += 3, j += 4)
     {
@@ -260,7 +260,7 @@ MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
  */
 int
 MHD__gnutls_base64_decode (const uint8_t * data, size_t data_size,
-                       uint8_t ** result)
+                           uint8_t ** result)
 {
   unsigned int i, j;
   int ret, tmp, est;
@@ -318,7 +318,7 @@ cpydata (const uint8_t * data, int data_size, uint8_t ** result)
 #define ENDSTR2 "-----\r"
 int
 MHD__gnutls_fbase64_decode (const char *header, const opaque * data,
-                        size_t data_size, uint8_t ** result)
+                            size_t data_size, uint8_t ** result)
 {
   int ret;
   static const char top[] = "-----BEGIN ";
@@ -411,4 +411,3 @@ MHD__gnutls_fbase64_decode (const char *header, const opaque * data,
 
   return ret;
 }
-

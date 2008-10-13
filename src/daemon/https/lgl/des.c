@@ -543,7 +543,8 @@ MHD_gl_des_makekey (MHD_gl_des_ctx * ctx, const char *key, size_t keylen)
 }
 
 void
-MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *_from, char *_to, int mode)
+MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *_from, char *_to,
+                      int mode)
 {
   const unsigned char *from = (const unsigned char *) _from;
   unsigned char *to = (unsigned char *) _to;
@@ -565,7 +566,8 @@ READ_64BIT_DATA (from, left, right)
     FINAL_PERMUTATION (right, work, left) WRITE_64BIT_DATA (to, right, left)}
 
 void
-MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1, const char *key2)
+MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1,
+                      const char *key2)
 {
   int i;
 
@@ -590,7 +592,7 @@ MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1, const char *key2)
 
 void
 MHD_gl_3des_set3keys (MHD_gl_3des_ctx * ctx, const char *key1,
-                  const char *key2, const char *key3)
+                      const char *key2, const char *key3)
 {
   int i;
 
@@ -612,7 +614,8 @@ MHD_gl_3des_set3keys (MHD_gl_3des_ctx * ctx, const char *key1,
 }
 
 void
-MHD_gl_3des_ecb_crypt (MHD_gl_3des_ctx * ctx, const char *_from, char *_to, int mode)
+MHD_gl_3des_ecb_crypt (MHD_gl_3des_ctx * ctx, const char *_from, char *_to,
+                       int mode)
 {
   const unsigned char *from = (const unsigned char *) _from;
   unsigned char *to = (unsigned char *) _to;
@@ -658,5 +661,6 @@ MHD_gl_3des_makekey (MHD_gl_3des_ctx * ctx, const char *key, size_t keylen)
   MHD_gl_3des_set3keys (ctx, key, key + 8, key + 16);
 
   return !(MHD_gl_des_is_weak_key (key)
-           || MHD_gl_des_is_weak_key (key + 8) || MHD_gl_des_is_weak_key (key + 16));
+           || MHD_gl_des_is_weak_key (key + 8)
+           || MHD_gl_des_is_weak_key (key + 16));
 }

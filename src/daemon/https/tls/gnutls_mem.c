@@ -40,7 +40,8 @@ MHD__gnutls_is_secure_mem_null (const void *ign)
   return 0;
 }
 
-int (*MHD__gnutls_is_secure_memory) (const void *) = MHD__gnutls_is_secure_mem_null;
+int (*MHD__gnutls_is_secure_memory) (const void *) =
+  MHD__gnutls_is_secure_mem_null;
 
 
 void *

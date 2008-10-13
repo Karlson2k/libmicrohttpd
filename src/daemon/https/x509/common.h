@@ -59,13 +59,14 @@
 #define SIG_GOST_R3410_2001_OID "1.2.643.2.2.3"
 
 int MHD__gnutls_x509_decode_octet_string (const char *string_type,
-                                      const opaque * der, size_t der_size,
-                                      opaque * output, size_t * output_size);
+                                          const opaque * der, size_t der_size,
+                                          opaque * output,
+                                          size_t * output_size);
 int MHD__gnutls_x509_oid_data2string (const char *OID, void *value,
-                                  int value_size, char *res,
-                                  size_t * res_size);
+                                      int value_size, char *res,
+                                      size_t * res_size);
 int MHD__gnutls_x509_data2hex (const opaque * data, size_t data_size,
-                           opaque * out, size_t * sizeof_out);
+                               opaque * out, size_t * sizeof_out);
 
 const char *MHD__gnutls_x509_oid2ldap_string (const char *OID);
 
@@ -74,50 +75,51 @@ int MHD__gnutls_x509_oid_data_printable (const char *OID);
 
 time_t MHD__gnutls_x509_get_time (ASN1_TYPE c2, const char *when);
 
-MHD_gnutls_x509_subject_alt_name_t MHD__gnutls_x509_san_find_type (char *str_type);
+MHD_gnutls_x509_subject_alt_name_t MHD__gnutls_x509_san_find_type (char
+                                                                   *str_type);
 
 int MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src, const char *src_name,
-                                      ASN1_TYPE dest, const char *dest_name,
-                                      int str);
+                                          ASN1_TYPE dest,
+                                          const char *dest_name, int str);
 int MHD__gnutls_x509_der_encode (ASN1_TYPE src, const char *src_name,
-                             MHD_gnutls_datum_t * res, int str);
+                                 MHD_gnutls_datum_t * res, int str);
 
 int MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
-                             MHD_gnutls_x509_crt_fmt_t format, char *pem_header,
-                             unsigned char *output_data,
-                             size_t * output_data_size);
+                                 MHD_gnutls_x509_crt_fmt_t format,
+                                 char *pem_header, unsigned char *output_data,
+                                 size_t * output_data_size);
 
 int MHD__gnutls_x509_read_value (ASN1_TYPE c, const char *root,
-                             MHD_gnutls_datum_t * ret, int str);
+                                 MHD_gnutls_datum_t * ret, int str);
 int MHD__gnutls_x509_write_value (ASN1_TYPE c, const char *root,
-                              const MHD_gnutls_datum_t * data, int str);
+                                  const MHD_gnutls_datum_t * data, int str);
 
 int MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
-                                             ASN1_TYPE MHD__asn1_struct,
-                                             const char *where,
-                                             const void *data,
-                                             int sizeof_data, int multi);
+                                                 ASN1_TYPE MHD__asn1_struct,
+                                                 const char *where,
+                                                 const void *data,
+                                                 int sizeof_data, int multi);
 int MHD__gnutls_x509_decode_and_read_attribute (ASN1_TYPE MHD__asn1_struct,
-                                            const char *where, char *oid,
-                                            int oid_size,
-                                            MHD_gnutls_datum_t * value, int multi,
-                                            int octet);
+                                                const char *where, char *oid,
+                                                int oid_size,
+                                                MHD_gnutls_datum_t * value,
+                                                int multi, int octet);
 
 int MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src, const char *src_name,
-                                   unsigned int *bits);
+                                       unsigned int *bits);
 
 int MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
-                                             const char *dst_name,
-                                             enum
-                                             MHD_GNUTLS_PublicKeyAlgorithm
-                                             pk_algorithm, mpi_t * params,
-                                             int params_size);
+                                                 const char *dst_name,
+                                                 enum
+                                                 MHD_GNUTLS_PublicKeyAlgorithm
+                                                 pk_algorithm, mpi_t * params,
+                                                 int params_size);
 int MHD__gnutls_asn1_copy_node (ASN1_TYPE * dst, const char *dst_name,
-                            ASN1_TYPE src, const char *src_name);
+                                ASN1_TYPE src, const char *src_name);
 
 int MHD__gnutls_x509_get_signed_data (ASN1_TYPE src, const char *src_name,
-                                  MHD_gnutls_datum_t * signed_data);
+                                      MHD_gnutls_datum_t * signed_data);
 int MHD__gnutls_x509_get_signature (ASN1_TYPE src, const char *src_name,
-                                MHD_gnutls_datum_t * signature);
+                                    MHD_gnutls_datum_t * signature);
 
 #endif

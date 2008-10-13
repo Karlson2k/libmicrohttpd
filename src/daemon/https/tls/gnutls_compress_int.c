@@ -52,7 +52,7 @@ MHD_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
       {
         int window_bits, mem_level;
         int comp_level;
-	int err;
+        int err;
         z_stream *zhandle;
 
         window_bits = MHD_gtls_compression_get_wbits (method);
@@ -74,10 +74,10 @@ MHD_gtls_comp_init (enum MHD_GNUTLS_CompressionMethod method, int d)
 
         if (d)
           err = inflateInit2 (zhandle, window_bits);
-        else          
-	  err = deflateInit2 (zhandle,
-			      comp_level, Z_DEFLATED,
-			      window_bits, mem_level, Z_DEFAULT_STRATEGY);          
+        else
+          err = deflateInit2 (zhandle,
+                              comp_level, Z_DEFLATED,
+                              window_bits, mem_level, Z_DEFAULT_STRATEGY);
         if (err != Z_OK)
           {
             MHD_gnutls_assert ();
@@ -111,7 +111,7 @@ MHD_gtls_comp_deinit (comp_hd_t handle, int d)
       switch (handle->algo)
         {
 #ifdef HAVE_LIBZ
-	  int err;
+          int err;
         case MHD_GNUTLS_COMP_DEFLATE:
           if (d)
             err = inflateEnd (handle->handle);
@@ -154,7 +154,7 @@ MHD_gtls_compress (comp_hd_t handle, const opaque * plain,
       {
         uLongf size;
         z_stream *zhandle;
-	int err;
+        int err;
 
         size = (plain_size + plain_size) + 10;
         *compressed = MHD_gnutls_malloc (size);
@@ -192,7 +192,8 @@ MHD_gtls_compress (comp_hd_t handle, const opaque * plain,
 
 #ifdef COMPRESSION_DEBUG
   MHD__gnutls_debug_log ("Compression ratio: %f\n",
-                     (float) ((float) compressed_size / (float) plain_size));
+                         (float) ((float) compressed_size /
+                                  (float) plain_size));
 #endif
 
   if ((size_t) compressed_size > max_comp_size)
@@ -234,10 +235,10 @@ MHD_gtls_decompress (comp_hd_t handle, opaque * compressed,
 #ifdef HAVE_LIBZ
     case MHD_GNUTLS_COMP_DEFLATE:
       {
-	int err;
+        int err;
         uLongf out_size;
         z_stream *zhandle;
-	unsigned int cur_pos;
+        unsigned int cur_pos;
 
         *plain = NULL;
         out_size = compressed_size + compressed_size;

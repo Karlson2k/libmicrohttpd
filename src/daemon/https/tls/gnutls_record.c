@@ -109,7 +109,7 @@ MHD_gtls_record_disable_padding (MHD_gtls_session_t session)
  **/
 void
 MHD__gnutls_transport_set_ptr (MHD_gtls_session_t session,
-                              MHD_gnutls_transport_ptr_t ptr)
+                               MHD_gnutls_transport_ptr_t ptr)
 {
   session->internals.transport_recv_ptr = ptr;
   session->internals.transport_send_ptr = ptr;
@@ -128,8 +128,8 @@ MHD__gnutls_transport_set_ptr (MHD_gtls_session_t session,
  **/
 void
 MHD__gnutls_transport_set_ptr2 (MHD_gtls_session_t session,
-                               MHD_gnutls_transport_ptr_t recv_ptr,
-                               MHD_gnutls_transport_ptr_t send_ptr)
+                                MHD_gnutls_transport_ptr_t recv_ptr,
+                                MHD_gnutls_transport_ptr_t send_ptr)
 {
   session->internals.transport_send_ptr = send_ptr;
   session->internals.transport_recv_ptr = recv_ptr;
@@ -188,7 +188,7 @@ MHD__gnutls_bye (MHD_gtls_session_t session, MHD_gnutls_close_request_t how)
     case STATE61:
       ret =
         MHD__gnutls_alert_send (session, GNUTLS_AL_WARNING,
-                               GNUTLS_A_CLOSE_NOTIFY);
+                                GNUTLS_A_CLOSE_NOTIFY);
       STATE = STATE61;
       if (ret < 0)
         {
@@ -258,7 +258,8 @@ session_is_valid (MHD_gtls_session_t session)
  */
 inline static void
 copy_record_version (MHD_gtls_session_t session,
-                     MHD_gnutls_handshake_description_t htype, opaque version[2])
+                     MHD_gnutls_handshake_description_t htype,
+                     opaque version[2])
 {
   enum MHD_GNUTLS_Protocol lver;
 
@@ -331,8 +332,8 @@ MHD_gtls_send_int (MHD_gtls_session_t session,
 
   MHD__gnutls_record_log
     ("REC[%x]: Sending Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    write_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.write_sequence_number),
      MHD__gnutls_packet2str (type), type, sizeofdata);
 
   if (sizeofdata > MAX_RECORD_SEND_SIZE)
@@ -424,11 +425,11 @@ MHD_gtls_send_int (MHD_gtls_session_t session,
   session->internals.record_send_buffer_user_size = 0;
 
   MHD__gnutls_record_log ("REC[%x]: Sent Packet[%d] %s(%d) with length: %d\n",
-                      session,
-                      (int)
-                      MHD_gtls_uint64touint32
-                      (&session->connection_state.write_sequence_number),
-                      MHD__gnutls_packet2str (type), type, cipher_size);
+                          session,
+                          (int)
+                          MHD_gtls_uint64touint32
+                          (&session->connection_state.write_sequence_number),
+                          MHD__gnutls_packet2str (type), type, cipher_size);
 
   return retval;
 }
@@ -547,7 +548,7 @@ record_check_headers (MHD_gtls_session_t session,
       session->internals.v2_hello = *length;
 
       MHD__gnutls_record_log ("REC[%x]: V2 packet received. Length: %d\n",
-                          session, *length);
+                              session, *length);
 
     }
   else
@@ -570,7 +571,8 @@ record_check_headers (MHD_gtls_session_t session,
  */
 inline static int
 record_check_version (MHD_gtls_session_t session,
-                      MHD_gnutls_handshake_description_t htype, opaque version[2])
+                      MHD_gnutls_handshake_description_t htype,
+                      opaque version[2])
 {
   if (htype == GNUTLS_HANDSHAKE_CLIENT_HELLO)
     {
@@ -595,7 +597,7 @@ record_check_version (MHD_gtls_session_t session,
        */
       MHD_gnutls_assert ();
       MHD__gnutls_record_log ("REC[%x]: INVALID VERSION PACKET: (%d) %d.%d\n",
-                          session, htype, version[0], version[1]);
+                              session, htype, version[0], version[1]);
 
       return GNUTLS_E_UNSUPPORTED_VERSION_PACKET;
     }
@@ -769,7 +771,8 @@ get_temp_recv_buffer (MHD_gtls_session_t session, MHD_gnutls_datum_t * tmp)
        */
       session->internals.recv_buffer.data
         =
-        MHD_gnutls_realloc (session->internals.recv_buffer.data, max_record_size);
+        MHD_gnutls_realloc (session->internals.recv_buffer.data,
+                            max_record_size);
 
       if (session->internals.recv_buffer.data == NULL)
         {
@@ -895,15 +898,14 @@ begin:
 
   MHD__gnutls_record_log
     ("REC[%x]: Expected Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    read_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
      MHD__gnutls_packet2str (type), type, sizeofdata);
-  MHD__gnutls_record_log ("REC[%x]: Received Packet[%d] %s(%d) with length: %d\n",
-                      session,
-                      (int)
-                      MHD_gtls_uint64touint32 (&session->connection_state.
-                                               read_sequence_number),
-                      MHD__gnutls_packet2str (recv_type), recv_type, length);
+  MHD__gnutls_record_log
+    ("REC[%x]: Received Packet[%d] %s(%d) with length: %d\n", session,
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
+     MHD__gnutls_packet2str (recv_type), recv_type, length);
 
   if (length > MAX_RECV_SIZE)
     {
@@ -978,8 +980,8 @@ begin:
 
   MHD__gnutls_record_log
     ("REC[%x]: Decrypted Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    read_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
      MHD__gnutls_packet2str (recv_type), recv_type, decrypted_length);
 
   /* increase sequence number
@@ -1082,7 +1084,7 @@ begin:
  **/
 ssize_t
 MHD__gnutls_record_send (MHD_gtls_session_t session,
-                        const void *data, size_t sizeofdata)
+                         const void *data, size_t sizeofdata)
 {
   return MHD_gtls_send_int (session, GNUTLS_APPLICATION_DATA, -1, data,
                             sizeofdata);
@@ -1120,7 +1122,7 @@ MHD__gnutls_record_send (MHD_gtls_session_t session,
  **/
 ssize_t
 MHD__gnutls_record_recv (MHD_gtls_session_t session, void *data,
-                        size_t sizeofdata)
+                         size_t sizeofdata)
 {
   return MHD_gtls_recv_int (session, GNUTLS_APPLICATION_DATA, -1, data,
                             sizeofdata);

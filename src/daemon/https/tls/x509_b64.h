@@ -23,11 +23,11 @@
  */
 
 int MHD__gnutls_fbase64_encode (const char *msg, const uint8_t * data,
-                            int data_size, uint8_t ** result);
+                                int data_size, uint8_t ** result);
 int MHD__gnutls_base64_decode (const uint8_t * data, size_t data_size,
-                           uint8_t ** result);
+                               uint8_t ** result);
 int MHD__gnutls_fbase64_decode (const char *header, const uint8_t * data,
-                            size_t data_size, uint8_t ** result);
+                                size_t data_size, uint8_t ** result);
 
 #define B64SIZE( data_size) ((data_size%3==0)?((data_size*4)/3):(4+((data_size/3)*4)))
 

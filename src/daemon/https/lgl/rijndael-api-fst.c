@@ -73,7 +73,7 @@
 
 rijndael_rc
 MHD_rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
-                 size_t keyLen, const char *keyMaterial)
+                     size_t keyLen, const char *keyMaterial)
 {
   size_t i;
   char *keyMat;
@@ -149,8 +149,8 @@ MHD_rijndaelMakeKey (rijndaelKeyInstance * key, rijndael_direction direction,
 }
 
 rijndael_rc
-MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher, rijndael_mode mode,
-                    const char *IV)
+MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher,
+                            rijndael_mode mode, const char *IV)
 {
   if ((mode == RIJNDAEL_MODE_ECB) || (mode == RIJNDAEL_MODE_CBC)
       || (mode == RIJNDAEL_MODE_CFB1))
@@ -200,8 +200,8 @@ MHD_MHD_rijndaelCipherInit (rijndaelCipherInstance * cipher, rijndael_mode mode,
 
 int
 MHD_rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
-                      const rijndaelKeyInstance * key,
-                      const char *input, size_t inputLen, char *outBuffer)
+                          const rijndaelKeyInstance * key,
+                          const char *input, size_t inputLen, char *outBuffer)
 {
   size_t i, k, t, numBlocks;
   char block[16], *iv;
@@ -277,8 +277,9 @@ MHD_rijndaelBlockEncrypt (rijndaelCipherInstance * cipher,
 
 int
 MHD_rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
-                    const rijndaelKeyInstance * key,
-                    const char *input, size_t inputOctets, char *outBuffer)
+                        const rijndaelKeyInstance * key,
+                        const char *input, size_t inputOctets,
+                        char *outBuffer)
 {
   size_t i, numBlocks, padLen;
   char block[16], *iv;
@@ -350,8 +351,8 @@ MHD_rijndaelPadEncrypt (rijndaelCipherInstance * cipher,
 
 int
 MHD_rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
-                      const rijndaelKeyInstance * key,
-                      const char *input, size_t inputLen, char *outBuffer)
+                          const rijndaelKeyInstance * key,
+                          const char *input, size_t inputLen, char *outBuffer)
 {
   size_t i, k, t, numBlocks;
   char block[16], *iv;
@@ -426,8 +427,9 @@ MHD_rijndaelBlockDecrypt (rijndaelCipherInstance * cipher,
 
 int
 MHD_rijndaelPadDecrypt (rijndaelCipherInstance * cipher,
-                    const rijndaelKeyInstance * key,
-                    const char *input, size_t inputOctets, char *outBuffer)
+                        const rijndaelKeyInstance * key,
+                        const char *input, size_t inputOctets,
+                        char *outBuffer)
 {
   size_t i, numBlocks, padLen;
   char block[16];

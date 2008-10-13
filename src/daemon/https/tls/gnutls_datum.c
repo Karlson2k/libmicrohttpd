@@ -104,7 +104,8 @@ MHD_gtls_datum_append_m (MHD_gnutls_datum_t * dst, const void *data,
 }
 
 void
-MHD_gtls_free_datum_m (MHD_gnutls_datum_t * dat, MHD_gnutls_free_function gfree_func)
+MHD_gtls_free_datum_m (MHD_gnutls_datum_t * dat,
+                       MHD_gnutls_free_function gfree_func)
 {
   if (dat->data != NULL)
     gfree_func (dat->data);

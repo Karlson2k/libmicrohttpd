@@ -43,7 +43,8 @@ typedef struct
 } MHD_gtls_string;
 
 void MHD_gtls_string_init (MHD_gtls_string *, MHD_gnutls_alloc_function,
-                           MHD_gnutls_realloc_function, MHD_gnutls_free_function);
+                           MHD_gnutls_realloc_function,
+                           MHD_gnutls_free_function);
 void MHD_gtls_string_clear (MHD_gtls_string *);
 
 /* Beware, do not clear the string, after calling this

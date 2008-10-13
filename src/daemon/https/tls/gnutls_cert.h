@@ -110,7 +110,8 @@ typedef enum ConvFlags
 int MHD_gtls_x509_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
                                      const MHD_gnutls_datum_t * derCert,
                                      int flags);
-int MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert, MHD_gnutls_x509_crt_t cert,
+int MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert,
+                                MHD_gnutls_x509_crt_t cert,
                                 unsigned int flags);
 
 void MHD_gtls_gkey_deinit (MHD_gnutls_privkey * key);

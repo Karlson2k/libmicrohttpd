@@ -210,7 +210,7 @@ MHD__gnutls_certificate_free_credentials (MHD_gtls_cert_credentials_t sc)
   **/
 int
 MHD__gnutls_certificate_allocate_credentials (MHD_gtls_cert_credentials_t *
-                                             res)
+                                              res)
 {
   *res = MHD_gnutls_calloc (1, sizeof (MHD_gtls_cert_credentials_st));
 
@@ -271,7 +271,8 @@ MHD_gtls_selected_cert_supported_kx (MHD_gtls_session_t session,
       return GNUTLS_E_INVALID_REQUEST;
     }
 
-  *alg = MHD_gnutls_calloc (1, sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm) * i);
+  *alg =
+    MHD_gnutls_calloc (1, sizeof (enum MHD_GNUTLS_KeyExchangeAlgorithm) * i);
   if (*alg == NULL)
     return GNUTLS_E_MEMORY_ERROR;
 
@@ -550,8 +551,9 @@ MHD_gtls_certificate_expiration_time_peers (MHD_gtls_session_t session)
     {
     case MHD_GNUTLS_CRT_X509:
       return
-        MHD__gnutls_x509_get_raw_crt_expiration_time (&info->raw_certificate_list
-                                                  [0]);
+        MHD__gnutls_x509_get_raw_crt_expiration_time (&info->
+                                                      raw_certificate_list
+                                                      [0]);
     default:
       return (time_t) - 1;
     }
@@ -589,8 +591,9 @@ MHD_gtls_certificate_activation_time_peers (MHD_gtls_session_t session)
     {
     case MHD_GNUTLS_CRT_X509:
       return
-        MHD__gnutls_x509_get_raw_crt_activation_time (&info->raw_certificate_list
-                                                  [0]);
+        MHD__gnutls_x509_get_raw_crt_activation_time (&info->
+                                                      raw_certificate_list
+                                                      [0]);
     default:
       return (time_t) - 1;
     }
@@ -695,7 +698,8 @@ MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert,
         }
 
       ret =
-        MHD_gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der, &der_size);
+        MHD_gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der,
+                                    &der_size);
       if (ret < 0 && ret != GNUTLS_E_SHORT_MEMORY_BUFFER)
         {
           MHD_gnutls_assert ();
@@ -714,7 +718,7 @@ MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert,
 
           ret =
             MHD_gnutls_x509_crt_export (cert, GNUTLS_X509_FMT_DER, der,
-                                    &der_size);
+                                        &der_size);
           if (ret < 0)
             {
               MHD_gnutls_assert ();
@@ -736,13 +740,15 @@ MHD_gtls_x509_crt_to_gcert (MHD_gnutls_cert * gcert,
       MHD_gnutls_x509_crt_get_key_usage (cert, &gcert->key_usage, NULL);
       gcert->version = MHD_gnutls_x509_crt_get_version (cert);
     }
-  gcert->subject_pk_algorithm = MHD_gnutls_x509_crt_get_pk_algorithm (cert, NULL);
+  gcert->subject_pk_algorithm =
+    MHD_gnutls_x509_crt_get_pk_algorithm (cert, NULL);
 
   if (flags & CERT_ONLY_PUBKEY || flags == 0)
     {
       gcert->params_size = MAX_PUBLIC_PARAMS_SIZE;
       ret =
-        MHD__gnutls_x509_crt_get_mpis (cert, gcert->params, &gcert->params_size);
+        MHD__gnutls_x509_crt_get_mpis (cert, gcert->params,
+                                       &gcert->params_size);
       if (ret < 0)
         {
           MHD_gnutls_assert ();

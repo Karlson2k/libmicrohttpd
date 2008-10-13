@@ -198,7 +198,7 @@ MHD__gnutls_dh_params_deinit (MHD_gtls_dh_params_t dh_params)
  **/
 int
 MHD__gnutls_dh_params_generate2 (MHD_gtls_dh_params_t params,
-                                unsigned int bits)
+                                 unsigned int bits)
 {
   int ret;
 

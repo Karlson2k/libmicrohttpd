@@ -68,7 +68,8 @@ MHD_gnutls_supplemental_entry MHD__gnutls_supplemental[] = {
 };
 
 const char *
-MHD_gtls_supplemental_get_name (MHD_gnutls_supplemental_data_format_type_t type)
+MHD_gtls_supplemental_get_name (MHD_gnutls_supplemental_data_format_type_t
+                                type)
 {
   MHD_gnutls_supplemental_entry *p;
 
@@ -92,7 +93,8 @@ get_supp_func_recv (MHD_gnutls_supplemental_data_format_type_t type)
 }
 
 int
-MHD__gnutls_gen_supplemental (MHD_gtls_session_t session, MHD_gtls_buffer * buf)
+MHD__gnutls_gen_supplemental (MHD_gtls_session_t session,
+                              MHD_gtls_buffer * buf)
 {
   MHD_gnutls_supplemental_entry *p;
   int ret;
@@ -143,14 +145,14 @@ MHD__gnutls_gen_supplemental (MHD_gtls_session_t session, MHD_gtls_buffer * buf)
   buf->data[2] = (buf->length - 3) & 0xFF;
 
   MHD__gnutls_debug_log ("EXT[%x]: Sending %d bytes of supplemental data\n",
-                     session, buf->length);
+                         session, buf->length);
 
   return buf->length;
 }
 
 int
 MHD__gnutls_parse_supplemental (MHD_gtls_session_t session,
-                            const uint8_t * data, int datalen)
+                                const uint8_t * data, int datalen)
 {
   const opaque *p = data;
   ssize_t dsize = datalen;
@@ -180,8 +182,9 @@ MHD__gnutls_parse_supplemental (MHD_gtls_session_t session,
       supp_data_length = MHD_gtls_read_uint16 (p);
       p += 2;
 
-      MHD__gnutls_debug_log ("EXT[%x]: Got supplemental type=%02x length=%d\n",
-                         session, supp_data_type, supp_data_length);
+      MHD__gnutls_debug_log
+        ("EXT[%x]: Got supplemental type=%02x length=%d\n", session,
+         supp_data_type, supp_data_length);
 
       recv_func = get_supp_func_recv (supp_data_type);
       if (recv_func)
