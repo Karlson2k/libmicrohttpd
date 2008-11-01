@@ -9,15 +9,15 @@ The C program @code{hellobrowser.c}, which is to be found in the examples sectio
 If you are very eager, you can compile and start it right away but it is advisable to type the
 lines in by yourself as they will be discussed and explained in detail. 
 
-After the unexciting includes and the definition of the port which our server should listen on
+After the necessary includes and the definition of the port which our server should listen on
 @verbatim
+#include <platform.h>
 #include <microhttpd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+
+#define PORT 8888
 @end verbatim
 @noindent
-the desired behaviour of our server when HTTP request arrive have to be implemented. We already have
+the desired behaviour of our server when HTTP request arrive has to be implemented. We already have
 agreed that it should not care about the particular details of the request, such as who is requesting
 what. The server will respond merely with the same small HTML page to every request. 
 

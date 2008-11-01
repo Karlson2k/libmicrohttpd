@@ -4,7 +4,7 @@
 @settitle A tutorial for GNU libmicrohttpd
 @afourpaper
 
-@set VERSION 0.3.1 beta
+@set VERSION 0.4.0 prerelease0
 
 @titlepage
 @title A Tutorial for GNU libmicrohttpd

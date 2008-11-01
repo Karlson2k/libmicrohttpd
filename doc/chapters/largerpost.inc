@@ -1,6 +1,3 @@
---- NOTE: This does not work flawlessly with the beta release because there is
-a bug preventing early busy messages from being sent ---
-
 The previous chapter introduced a way to upload data to the server, but the developed example program 
 has some shortcomings, such as not being able to handle larger chunks of data. In this chapter, we
 are going to discuss a more advanced server program that allows clients to upload a file in order to 

@@ -12,7 +12,7 @@ GET /picture.png?mypassword
 @end verbatim
 @noindent
 
-In a situation, where the client is customized enough and the connection occurs
+In a situation where the client is customized enough and the connection occurs
 through secured lines (e.g., a embedded device directly attached to another via wire),
 this can be a reasonable choice.
 

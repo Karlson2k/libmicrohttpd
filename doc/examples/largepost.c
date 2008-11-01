@@ -1,8 +1,5 @@
 #include <platform.h>
 #include <microhttpd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #define PORT            8888
 #define POSTBUFFERSIZE  512
