@@ -1488,7 +1488,7 @@ applicable.
 
 @node GNU-FDL
 @unnumbered GNU-FDL
-@include fdl-1.2.texi
+@include fdl-1.3.texi
 
 @node Concept Index
 @unnumbered Concept Index
