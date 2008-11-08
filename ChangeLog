@@ -1,9 +1,14 @@
+Sat Nov  8 02:18:42 MST 2008
+	 Unset TCP_CORK at the end of transmitting a response
+	 to improve performance (on systems where this is
+	 supported). -MM
+
 Tue Sep 30 16:48:08 MDT 2008
 	 Make MHD useful to Cygwin users; detect IPv6 headers
 	 in configure.
 
 Sun Sep 28 14:57:46 MDT 2008
-	 Unescape URIs (convert "%ef%e4%45" to "中国").
+	 Unescape URIs (convert "%ef%e4%45" to "中国"). -CG
 
 Wed Sep 10 22:43:59 MDT 2008
 	 Releasing GNU libmicrohttpd 0.4.0pre0. -CG

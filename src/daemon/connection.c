@@ -1921,6 +1921,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
+
+#if HAVE_TCP_CORK
+          /* starting header send, set TCP cork */
+          {
+            const int val = 1;
+            setsockopt(connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val, sizeof(val));
+          }
+#endif
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
           /* no default action */
@@ -1976,6 +1984,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
+#if HAVE_TCP_CORK
+          /* done sending, uncork */
+          {
+            const int val = 0;
+            setsockopt(connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val, sizeof(val));
+          }
+#endif
           MHD_destroy_response (connection->response);
           if (connection->daemon->notify_completed != NULL)
             connection->daemon->notify_completed (connection->

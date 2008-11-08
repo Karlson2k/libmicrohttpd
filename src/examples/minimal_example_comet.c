@@ -31,9 +31,11 @@ data_generator(void * cls,
 	       char * buf,
 	       int max)
 {
+  if (max < 80)
+    return 0;
   memset(buf, 'A', max-1);
-  buf[max-1] = '\n';
-  return max;
+  buf[79] = '\n';
+  return 80;
 }
 
 static int
