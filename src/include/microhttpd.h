@@ -365,8 +365,8 @@ enum MHD_OPTION
   MHD_OPTION_HTTPS_MEM_CERT = 10,
 
   /**
-   * Daemon credentials type.  Either certificate or anonymous,
-   * this option should be followed by one of the values listed in
+   * Daemon credentials type. 
+   * This option should be followed by one of the values listed in
    * "enum MHD_GNUTLS_CredentialsType".
    */
   MHD_OPTION_CRED_TYPE = 11,
@@ -530,7 +530,6 @@ enum MHD_GNUTLS_KeyExchangeAlgorithm
   MHD_GNUTLS_KX_RSA = 1,
   MHD_GNUTLS_KX_DHE_DSS,
   MHD_GNUTLS_KX_DHE_RSA,
-  MHD_GNUTLS_KX_ANON_DH,
   MHD_GNUTLS_KX_SRP,
   MHD_GNUTLS_KX_RSA_EXPORT,
   MHD_GNUTLS_KX_SRP_RSA,
@@ -547,11 +546,6 @@ enum MHD_GNUTLS_CredentialsType
    * We have a x.509 certificate.
    */
   MHD_GNUTLS_CRD_CERTIFICATE = 1,
-
-  /**
-   * We have no certificate ("anonymous").
-   */
-  MHD_GNUTLS_CRD_ANON,
 
   /**
    * Use SRP (password-based authentication).

@@ -47,7 +47,6 @@
 #include "gnutls_record.h"
 #include "gnutls_state.h"
 #include "gnutls_rsa_export.h"  /* for MHD_gnutls_get_rsa_params() */
-#include "auth_anon.h"          /* for MHD_gtls_anon_server_credentials_t */
 #include "gc.h"
 
 #ifdef HANDSHAKE_DEBUG
@@ -2800,22 +2799,6 @@ check_server_params (MHD_gtls_session_t session,
       if (delete == 1)
         return 1;
 
-#ifdef ENABLE_ANON
-    }
-  else if (cred_type == MHD_GNUTLS_CRD_ANON)
-    {
-      MHD_gtls_anon_server_credentials_t anon_cred =
-        (MHD_gtls_anon_server_credentials_t) MHD_gtls_get_cred (session->key,
-                                                                cred_type,
-                                                                NULL);
-
-      if (anon_cred != NULL)
-        {
-          dh_params =
-            MHD_gtls_get_dh_params (anon_cred->dh_params,
-                                    anon_cred->params_func, session);
-        }
-#endif
 #ifdef ENABLE_PSK
     }
   else if (cred_type == MHD_GNUTLS_CRD_PSK)

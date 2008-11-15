@@ -38,7 +38,6 @@
 #include <gnutls_buffers.h>
 #include <gnutls_state.h>
 #include <auth_cert.h>
-#include <auth_anon.h>
 #include <gnutls_algorithms.h>
 #include <gnutls_rsa_export.h>
 
@@ -437,16 +436,6 @@ MHD_gtls_dh_set_peer_public (MHD_gtls_session_t session, mpi_t public)
 
   switch (MHD_gtls_auth_get_type (session))
     {
-    case MHD_GNUTLS_CRD_ANON:
-      {
-        mhd_anon_auth_info_t info;
-        info = MHD_gtls_get_auth_info (session);
-        if (info == NULL)
-          return GNUTLS_E_INTERNAL_ERROR;
-
-        dh = &info->dh;
-        break;
-      }
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
@@ -478,15 +467,6 @@ MHD_gtls_dh_set_secret_bits (MHD_gtls_session_t session, unsigned bits)
 {
   switch (MHD_gtls_auth_get_type (session))
     {
-    case MHD_GNUTLS_CRD_ANON:
-      {
-        mhd_anon_auth_info_t info;
-        info = MHD_gtls_get_auth_info (session);
-        if (info == NULL)
-          return GNUTLS_E_INTERNAL_ERROR;
-        info->dh.secret_bits = bits;
-        break;
-      }
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;
@@ -548,16 +528,6 @@ MHD_gtls_dh_set_group (MHD_gtls_session_t session, mpi_t gen, mpi_t prime)
 
   switch (MHD_gtls_auth_get_type (session))
     {
-    case MHD_GNUTLS_CRD_ANON:
-      {
-        mhd_anon_auth_info_t info;
-        info = MHD_gtls_get_auth_info (session);
-        if (info == NULL)
-          return GNUTLS_E_INTERNAL_ERROR;
-
-        dh = &info->dh;
-        break;
-      }
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         cert_auth_info_t info;

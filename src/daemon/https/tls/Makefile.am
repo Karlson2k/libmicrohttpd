@@ -16,7 +16,6 @@ libtls_la_LDFLAGS = \
  -L$(GCRYPT_LIB_PATH)
 
 libtls_la_SOURCES = \
-auth_anon.c \
 auth_cert.c \
 auth_dh_common.c \
 auth_dhe.c \
@@ -30,7 +29,6 @@ ext_oprfi.c \
 ext_server_name.c \
 gnutls_alert.c \
 gnutls_algorithms.c \
-gnutls_anon_cred.c \
 gnutls_asn1_tab.c \
 gnutls_auth.c \
 gnutls_buffers.c \
@@ -66,7 +64,6 @@ gnutls_ui.c \
 gnutls_x509.c \
 pkix_asn1_tab.c \
 x509_b64.c \
-auth_anon.h \
 auth_cert.h \
 auth_dh_common.h \
 debug.h \

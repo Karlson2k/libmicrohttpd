@@ -42,9 +42,6 @@ typedef struct
 } MHD_gnutls_cred_map;
 
 static const MHD_gnutls_cred_map MHD_gtls_cred_mappings[] = {
-  {MHD_GNUTLS_KX_ANON_DH,
-   MHD_GNUTLS_CRD_ANON,
-   MHD_GNUTLS_CRD_ANON},
   {MHD_GNUTLS_KX_RSA,
    MHD_GNUTLS_CRD_CERTIFICATE,
    MHD_GNUTLS_CRD_CERTIFICATE},
@@ -390,7 +387,6 @@ extern MHD_gtls_mod_auth_st MHD_gtls_rsa_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_rsa_export_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_gtls_dhe_rsa_auth_struct;
 extern MHD_gtls_mod_auth_st MHD_gtls_dhe_dss_auth_struct;
-extern MHD_gtls_mod_auth_st MHD_gtls_anon_auth_struct;
 extern MHD_gtls_mod_auth_st srp_auth_struct;
 extern MHD_gtls_mod_auth_st psk_auth_struct;
 extern MHD_gtls_mod_auth_st dhe_psk_auth_struct;
@@ -407,9 +403,6 @@ typedef struct MHD_gtls_kx_algo_entry
 } MHD_gtls_kx_algo_entry_t;
 
 static const MHD_gtls_kx_algo_entry_t MHD_gtls_kx_algorithms[] = {
-#ifdef ENABLE_ANON
-  {"ANON-DH", MHD_GNUTLS_KX_ANON_DH, &MHD_gtls_anon_auth_struct, 1, 0},
-#endif
   {"RSA",
    MHD_GNUTLS_KX_RSA,
    &MHD_gtls_rsa_auth_struct,
@@ -451,9 +444,6 @@ static const MHD_gtls_kx_algo_entry_t MHD_gtls_kx_algorithms[] = {
 /* Keep the contents of this struct the same as the previous one. */
 static const enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_supported_kxs[] =
 {
-#ifdef ENABLE_ANON
-  MHD_GNUTLS_KX_ANON_DH,
-#endif
   MHD_GNUTLS_KX_RSA,
   MHD_GNUTLS_KX_RSA_EXPORT,
   MHD_GNUTLS_KX_DHE_RSA,
@@ -497,20 +487,6 @@ typedef struct
  * for test purposes.
  */
 #define GNUTLS_RSA_NULL_MD5 { 0x00, 0x01 }
-
-/* ANONymous cipher suites.
- */
-
-#define GNUTLS_ANON_DH_3DES_EDE_CBC_SHA1 { 0x00, 0x1B }
-#define GNUTLS_ANON_DH_ARCFOUR_MD5 { 0x00, 0x18 }
-
-/* rfc3268: */
-#define GNUTLS_ANON_DH_AES_128_CBC_SHA1 { 0x00, 0x34 }
-#define GNUTLS_ANON_DH_AES_256_CBC_SHA1 { 0x00, 0x3A }
-
-/* rfc4132 */
-#define GNUTLS_ANON_DH_CAMELLIA_128_CBC_SHA1 { 0x00,0x46 }
-#define GNUTLS_ANON_DH_CAMELLIA_256_CBC_SHA1 { 0x00,0x89 }
 
 /* PSK (not in TLS 1.0)
  * draft-ietf-tls-psk:
@@ -590,34 +566,6 @@ typedef struct
 #define CIPHER_SUITES_COUNT sizeof(MHD_gtls_cs_algorithms)/sizeof(MHD_gtls_cipher_suite_entry)-1
 
 static const MHD_gtls_cipher_suite_entry MHD_gtls_cs_algorithms[] = {
-  /* ANON_DH */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_ARCFOUR_MD5,
-                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
-                             MHD_GNUTLS_KX_ANON_DH, MHD_GNUTLS_MAC_MD5,
-                             MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC,
-                             MHD_GNUTLS_KX_ANON_DH,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC,
-                             MHD_GNUTLS_KX_ANON_DH,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC,
-                             MHD_GNUTLS_KX_ANON_DH,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-#ifdef	ENABLE_CAMELLIA
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_CAMELLIA_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             MHD_GNUTLS_KX_ANON_DH,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_ANON_DH_CAMELLIA_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             MHD_GNUTLS_KX_ANON_DH,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-#endif
-
   /* SRP */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_3DES_EDE_CBC_SHA1,
                              MHD_GNUTLS_CIPHER_3DES_CBC, MHD_GNUTLS_KX_SRP,

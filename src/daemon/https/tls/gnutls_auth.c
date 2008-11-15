@@ -30,7 +30,6 @@
 #include "auth_cert.h"
 #include <gnutls_datum.h>
 
-#include "auth_anon.h"
 /* The functions here are used in order for authentication algorithms
  * to be able to retrieve the needed credentials eg public and private
  * key etc.
@@ -78,9 +77,6 @@ MHD__gnutls_credentials_clear (MHD_gtls_session_t session)
   * several threads gnutls keeps a pointer to cred, and not the whole cred
   * structure. Thus you will have to keep the structure allocated until
   * you call MHD__gnutls_deinit(). ]
-  *
-  * For GNUTLS_CRD_ANON cred should be MHD_gtls_anon_client_credentials_t in case of a client.
-  * In case of a server it should be MHD_gtls_anon_server_credentials_t.
   *
   * For GNUTLS_CRD_SRP cred should be MHD_gnutls_srp_client_credentials_t
   * in case of a client, and MHD_gnutls_srp_server_credentials_t, in case
@@ -267,7 +263,6 @@ out:
   * is data obtained by the handshake protocol, the key exchange algorithm,
   * and the TLS extensions messages.
   *
-  * In case of GNUTLS_CRD_ANON returns a type of &anon_(server/client)_auth_info_t;
   * In case of GNUTLS_CRD_CERTIFICATE returns a type of &cert_auth_info_t;
   * In case of GNUTLS_CRD_SRP returns a type of &srp_(server/client)_auth_info_t;
   -*/
@@ -300,17 +295,6 @@ MHD_gtls_free_auth_info (MHD_gtls_session_t session)
   switch (session->key->auth_info_type)
     {
     case MHD_GNUTLS_CRD_SRP:
-      break;
-    case MHD_GNUTLS_CRD_ANON:
-      {
-        mhd_anon_auth_info_t info = MHD_gtls_get_auth_info (session);
-
-        if (info == NULL)
-          break;
-
-        dh_info = &info->dh;
-        MHD_gtls_free_dh_info (dh_info);
-      }
       break;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {

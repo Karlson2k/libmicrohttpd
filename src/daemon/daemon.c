@@ -153,15 +153,6 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 {
   switch (daemon->cred_type)
     {
-    case MHD_GNUTLS_CRD_ANON:
-      if ((0 !=
-           MHD__gnutls_anon_allocate_server_credentials (&daemon->anon_cred))
-          || (0 != MHD__gnutls_dh_params_init (&daemon->dh_params)))
-        return GNUTLS_E_MEMORY_ERROR;
-      MHD__gnutls_dh_params_generate2 (daemon->dh_params, 1024);
-      MHD__gnutls_anon_set_server_dh_params (daemon->anon_cred,
-                                             daemon->dh_params);
-      return 0;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       if (0 !=
           MHD__gnutls_certificate_allocate_credentials (&daemon->x509_cred))
@@ -494,13 +485,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
           MHD__gnutls_credentials_set (connection->tls_session,
                                        MHD_GNUTLS_CRD_CERTIFICATE,
                                        connection->daemon->x509_cred);
-          break;
-        case MHD_GNUTLS_CRD_ANON:
-          /* set needed credentials for anonymous authentication. */
-          MHD__gnutls_credentials_set (connection->tls_session,
-                                       MHD_GNUTLS_CRD_ANON,
-                                       connection->daemon->anon_cred);
-          MHD__gnutls_dh_set_prime_bits (connection->tls_session, 1024);
           break;
         default:
 #if HAVE_MESSAGES
@@ -1101,8 +1085,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       MHD__gnutls_priority_deinit (daemon->priority_cache);
       if (daemon->x509_cred)
         MHD__gnutls_certificate_free_credentials (daemon->x509_cred);
-      if (daemon->anon_cred)
-        MHD__gnutls_anon_free_server_credentials (daemon->anon_cred);
       /* lock MHD_gnutls_global mutex since it uses reference counting */
       pthread_mutex_lock (&MHD_gnutls_init_mutex);
       MHD__gnutls_global_deinit ();

@@ -652,9 +652,6 @@ struct MHD_Daemon
   /* server x509 credintials */
   MHD_gtls_cert_credentials_t x509_cred;
 
-  /* credentials used for anonymous authentication */
-  MHD_gtls_anon_server_credentials_t anon_cred;
-
   /* cipher priority cache */
   MHD_gnutls_priority_t priority_cache;
 

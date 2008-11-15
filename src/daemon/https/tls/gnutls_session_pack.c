@@ -33,7 +33,6 @@
 #ifdef ENABLE_PSK
 # include <auth_psk.h>
 #endif
-#include <auth_anon.h>
 #include <auth_cert.h>
 #include <gnutls_errors.h>
 #include <gnutls_auth_int.h>
@@ -54,175 +53,6 @@ static int unpack_security_parameters (MHD_gtls_session_t session,
                                        packed_session);
 static int pack_security_parameters (MHD_gtls_session_t session,
                                      MHD_gnutls_datum_t * packed_session);
-
-/* Packs the ANON session authentication data. */
-#ifdef ENABLE_ANON
-
-/* Format:
- *      1 byte the credentials type
- *      4 bytes the size of the whole structure
- *      2 bytes the size of secret key in bits
- *      4 bytes the size of the prime
- *      x bytes the prime
- *      4 bytes the size of the generator
- *      x bytes the generator
- *      4 bytes the size of the public key
- *      x bytes the public key
- */
-static int
-pack_anon_auth_info (MHD_gtls_session_t session,
-                     MHD_gnutls_datum_t * packed_session)
-{
-  mhd_anon_auth_info_t info = MHD_gtls_get_auth_info (session);
-  int pos = 0;
-  size_t pack_size;
-
-  if (info)
-    pack_size = 2 + 4 * 3 + info->dh.prime.size +
-      info->dh.generator.size + info->dh.public_key.size;
-  else
-    pack_size = 0;
-
-  packed_session->size = PACK_HEADER_SIZE + pack_size + sizeof (uint32_t);
-
-  /* calculate the size and allocate the data.
-   */
-  packed_session->data =
-    MHD_gnutls_malloc (packed_session->size + MAX_SEC_PARAMS);
-
-  if (packed_session->data == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_MEMORY_ERROR;
-    }
-
-  packed_session->data[0] = MHD_GNUTLS_CRD_ANON;
-  MHD_gtls_write_uint32 (pack_size, &packed_session->data[PACK_HEADER_SIZE]);
-  pos += 4 + PACK_HEADER_SIZE;
-
-  if (pack_size > 0)
-    {
-      MHD_gtls_write_uint16 (info->dh.secret_bits,
-                             &packed_session->data[pos]);
-      pos += 2;
-
-      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.prime);
-      pos += 4 + info->dh.prime.size;
-      MHD_gtls_write_datum32 (&packed_session->data[pos], info->dh.generator);
-      pos += 4 + info->dh.generator.size;
-      MHD_gtls_write_datum32 (&packed_session->data[pos],
-                              info->dh.public_key);
-      pos += 4 + info->dh.public_key.size;
-
-    }
-
-  return 0;
-}
-
-/* Format:
- *      1 byte the credentials type
- *      4 bytes the size of the whole structure
- *      2 bytes the size of secret key in bits
- *      4 bytes the size of the prime
- *      x bytes the prime
- *      4 bytes the size of the generator
- *      x bytes the generator
- *      4 bytes the size of the public key
- *      x bytes the public key
- */
-static int
-unpack_anon_auth_info (MHD_gtls_session_t session,
-                       const MHD_gnutls_datum_t * packed_session)
-{
-  size_t pack_size;
-  int pos = 0, size, ret;
-  mhd_anon_auth_info_t info;
-
-  if (packed_session->data[0] != MHD_GNUTLS_CRD_ANON)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  pack_size = MHD_gtls_read_uint32 (&packed_session->data[PACK_HEADER_SIZE]);
-  pos += PACK_HEADER_SIZE + 4;
-
-
-  if (pack_size == 0)
-    return 0;                   /* nothing to be done */
-
-  /* a simple check for integrity */
-  if (pack_size + PACK_HEADER_SIZE + 4 > packed_session->size)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  /* client and serer have the same auth_info here
-   */
-  ret =
-    MHD_gtls_auth_info_set (session, MHD_GNUTLS_CRD_ANON,
-                            sizeof (anon_auth_info_st), 1);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      return ret;
-    }
-
-  info = MHD_gtls_get_auth_info (session);
-  if (info == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INTERNAL_ERROR;
-    }
-
-  info->dh.secret_bits = MHD_gtls_read_uint16 (&packed_session->data[pos]);
-  pos += 2;
-
-  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret =
-    MHD__gnutls_set_datum (&info->dh.prime, &packed_session->data[pos], size);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret =
-    MHD__gnutls_set_datum (&info->dh.generator, &packed_session->data[pos],
-                           size);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  size = MHD_gtls_read_uint32 (&packed_session->data[pos]);
-  pos += 4;
-  ret =
-    MHD__gnutls_set_datum (&info->dh.public_key, &packed_session->data[pos],
-                           size);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      goto error;
-    }
-  pos += size;
-
-  return 0;
-
-error:
-  MHD__gnutls_free_datum (&info->dh.prime);
-  MHD__gnutls_free_datum (&info->dh.generator);
-  MHD__gnutls_free_datum (&info->dh.public_key);
-  return ret;
-}
-#endif /* ANON */
 
 /* Since auth_info structures contain malloced data, this function
  * is required in order to pack these structures in a vector in
@@ -260,16 +90,6 @@ MHD_gtls_session_pack (MHD_gtls_session_t session,
 #ifdef ENABLE_PSK
     case MHD_GNUTLS_CRD_PSK:
       ret = pack_psk_auth_info (session, packed_session);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-      break;
-#endif
-#ifdef ENABLE_ANON
-    case MHD_GNUTLS_CRD_ANON:
-      ret = pack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
           MHD_gnutls_assert ();
@@ -339,16 +159,6 @@ MHD_gtls_session_unpack (MHD_gtls_session_t session,
 #ifdef ENABLE_PSK
     case MHD_GNUTLS_CRD_PSK:
       ret = unpack_psk_auth_info (session, packed_session);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-      break;
-#endif
-#ifdef ENABLE_ANON
-    case MHD_GNUTLS_CRD_ANON:
-      ret = unpack_anon_auth_info (session, packed_session);
       if (ret < 0)
         {
           MHD_gnutls_assert ();

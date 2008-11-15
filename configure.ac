@@ -330,7 +330,6 @@ AM_CONDITIONAL(HAVE_LIBZ, test x$zlib = x1)
 AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
 AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
 AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
-AC_DEFINE([ENABLE_ANON],[1],[Enable anonymous authentication])
 AC_DEFINE([ENABLE_PKI],[0],[Include PKI support])
 # gnutls debug support
 AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])

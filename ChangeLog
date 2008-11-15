@@ -1,3 +1,8 @@
+Sat Nov 15 00:31:33 MST 2008
+	 Removing (broken) support for HTTPS servers with
+	 anonymous (aka "no") certificates as well as
+	 various useless dead code. -CG
+
 Sat Nov  8 02:18:42 MST 2008
 	 Unset TCP_CORK at the end of transmitting a response
 	 to improve performance (on systems where this is

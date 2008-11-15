@@ -448,35 +448,6 @@ extern "C"
   typedef MHD_gtls_cert_credentials_t MHD_gtls_cert_server_credentials;
   typedef MHD_gtls_cert_credentials_t MHD_gtls_cert_client_credentials;
 
-  typedef struct MHD_gtls_anon_server_credentials_st
-    *MHD_gtls_anon_server_credentials_t;
-  typedef struct MHD_gtls_anon_client_credentials_st
-    *MHD_gtls_anon_client_credentials_t;
-
-  void
-    MHD__gnutls_anon_free_server_credentials
-    (MHD_gtls_anon_server_credentials_t sc);
-  int
-    MHD__gnutls_anon_allocate_server_credentials
-    (MHD_gtls_anon_server_credentials_t * sc);
-
-  void
-    MHD__gnutls_anon_set_server_dh_params (MHD_gtls_anon_server_credentials_t
-                                           res,
-                                           MHD_gtls_dh_params_t dh_params);
-
-  void
-    MHD__gnutls_anon_set_server_params_function
-    (MHD_gtls_anon_server_credentials_t res,
-     MHD_gnutls_params_function * func);
-
-  void
-    MHD__gnutls_anon_free_client_credentials
-    (MHD_gtls_anon_client_credentials_t sc);
-  int
-    MHD__gnutls_anon_allocate_client_credentials
-    (MHD_gtls_anon_client_credentials_t * sc);
-
   void MHD__gnutls_certificate_free_credentials (MHD_gtls_cert_credentials_t
                                                  sc);
   int
@@ -487,19 +458,6 @@ extern "C"
   void MHD__gnutls_certificate_free_cas (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_ca_names (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_crls (MHD_gtls_cert_credentials_t sc);
-
-  void MHD__gnutls_certificate_set_dh_params (MHD_gtls_cert_credentials_t res,
-                                              MHD_gtls_dh_params_t dh_params);
-  void
-    MHD__gnutls_certificate_set_rsa_export_params (MHD_gtls_cert_credentials_t
-                                                   res,
-                                                   MHD_gtls_rsa_params_t
-                                                   rsa_params);
-  void MHD__gnutls_certificate_set_verify_flags (MHD_gtls_cert_credentials_t
-                                                 res, unsigned int flags);
-  void MHD__gnutls_certificate_set_verify_limits (MHD_gtls_cert_credentials_t
-                                                  res, unsigned int max_bits,
-                                                  unsigned int max_depth);
 
   int MHD__gnutls_certificate_set_x509_trust_file (MHD_gtls_cert_credentials_t
                                                    res, const char *CAFILE,
@@ -647,13 +605,6 @@ extern "C"
   void MHD__gnutls_session_set_ptr (MHD_gtls_session_t session, void *ptr);
   void *MHD_gtls_session_get_ptr (MHD_gtls_session_t session);
 
-/*
- * this function returns the hash of the given data.
- */
-  int MHD__gnutls_fingerprint (enum MHD_GNUTLS_HashAlgorithm algo,
-                               const MHD_gnutls_datum_t * data, void *result,
-                               size_t * result_size);
-
   typedef enum MHD_gnutls_x509_subject_alt_name_t
   {
     GNUTLS_SAN_DNSNAME = 1,
@@ -714,23 +665,6 @@ extern "C"
    */
   void MHD__gnutls_dh_set_prime_bits (MHD_gtls_session_t session,
                                       unsigned int bits);
-  int MHD__gnutls_dh_get_secret_bits (MHD_gtls_session_t session);
-  int MHD__gnutls_dh_get_peers_public_bits (MHD_gtls_session_t session);
-  int MHD__gnutls_dh_get_prime_bits (MHD_gtls_session_t session);
-
-  int MHD__gnutls_dh_get_group (MHD_gtls_session_t session,
-                                MHD_gnutls_datum_t * raw_gen,
-                                MHD_gnutls_datum_t * raw_prime);
-  int MHD__gnutls_dh_get_pubkey (MHD_gtls_session_t session,
-                                 MHD_gnutls_datum_t * raw_key);
-
-  /*
-   * RSA
-   */
-  int MHD_gtls_rsa_export_get_pubkey (MHD_gtls_session_t session,
-                                      MHD_gnutls_datum_t * exponent,
-                                      MHD_gnutls_datum_t * modulus);
-  int MHD_gtls_rsa_export_get_modulus_bits (MHD_gtls_session_t session);
 
   /* External signing callback.  Experimental. */
   typedef int (*MHD_gnutls_sign_func) (MHD_gtls_session_t session,
@@ -761,20 +695,11 @@ extern "C"
                                                 req);
 
   /* get data from the session */
-  const MHD_gnutls_datum_t *MHD_gtls_certificate_get_peers (MHD_gtls_session_t
-                                                            session,
-                                                            unsigned int
-                                                            *list_size);
-  const MHD_gnutls_datum_t *MHD_gtls_certificate_get_ours (MHD_gtls_session_t
-                                                           session);
-
   time_t MHD_gtls_certificate_activation_time_peers (MHD_gtls_session_t
                                                      session);
   time_t MHD_gtls_certificate_expiration_time_peers (MHD_gtls_session_t
                                                      session);
 
-  int MHD_gtls_certificate_client_get_request_status (MHD_gtls_session_t
-                                                      session);
   int MHD_gtls_certificate_verify_peers2 (MHD_gtls_session_t session,
                                           unsigned int *status);
 
@@ -795,16 +720,6 @@ extern "C"
   int MHD_gtls_pem_base64_decode_alloc (const char *header,
                                         const MHD_gnutls_datum_t * b64_data,
                                         MHD_gnutls_datum_t * result);
-
-  //  void
-  //    MHD_gnutls_certificate_set_params_function (MHD_gtls_cert_credentials_t
-  //                                            res,
-  //                                            MHD_gnutls_params_function * func);
-  //  void MHD_gnutls_anon_set_params_function (MHD_gtls_anon_server_credentials_t res,
-  //                                        MHD_gnutls_params_function * func);
-  //  void MHD_gnutls_psk_set_params_function (MHD_gnutls_psk_server_credentials_t res,
-  //                                       MHD_gnutls_params_function * func);
-
 
   /* key_usage will be an OR of the following values: */
   /* when the key is to be used for signing: */
