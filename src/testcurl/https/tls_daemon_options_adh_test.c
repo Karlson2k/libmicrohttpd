@@ -222,7 +222,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
-FILE *
+static FILE *
 setupTestFile ()
 {
   FILE *test_fd;
