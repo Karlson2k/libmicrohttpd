@@ -186,10 +186,6 @@ extern "C"
   const char *MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
                                                  const char *oidValue);
 
-  const char *MHD__libtasn1_strerror (MHD__asn1_retCode error);
-
-  void MHD__libtasn1_perror (MHD__asn1_retCode error);
-
   /* DER utility functions. */
 
   int MHD__asn1_get_tag_der (const unsigned char *der, int der_len,

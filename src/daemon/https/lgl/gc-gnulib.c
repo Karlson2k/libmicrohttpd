@@ -150,24 +150,7 @@ MHD_gc_pseudo_random (char *data, size_t datalen)
   return randomize (1, data, datalen);
 }
 
-Gc_rc
-MHD_gc_random (char *data, size_t datalen)
-{
-  return randomize (2, data, datalen);
-}
-
 #endif
-
-/* Memory allocation. */
-void
-MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
-                       MHD_gc_malloc_t secure_malloc,
-                       MHD_gc_secure_check_t secure_check,
-                       MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
-{
-  return;
-}
-
 /* Ciphers. */
 
 typedef struct _MHD_gc_cipher_ctx

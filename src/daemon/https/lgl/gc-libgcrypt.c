@@ -77,26 +77,9 @@ MHD_gc_pseudo_random (char *data, size_t datalen)
   return GC_OK;
 }
 
-Gc_rc
-MHD_gc_random (char *data, size_t datalen)
-{
-  gcry_randomize ((unsigned char *) data, datalen, GCRY_VERY_STRONG_RANDOM);
-  return GC_OK;
-}
-
 #endif
 
 /* Memory allocation. */
-
-void
-MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
-                       MHD_gc_malloc_t secure_malloc,
-                       MHD_gc_secure_check_t secure_check,
-                       MHD_gc_realloc_t func_realloc, MHD_gc_free_t func_free)
-{
-  gcry_set_allocation_handler (func_malloc, secure_malloc, secure_check,
-                               func_realloc, func_free);
-}
 
 /* Ciphers. */
 

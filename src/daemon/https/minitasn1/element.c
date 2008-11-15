@@ -28,7 +28,6 @@
 
 
 #include <int.h>
-#include <errors.h>
 #include "parser_aux.h"
 #include <gstr.h>
 #include "structure.h"
@@ -114,16 +113,6 @@ MHD__asn1_convert_integer (const char *value, unsigned char *value_out,
 
   for (k2 = k; k2 < SIZEOF_UNSIGNED_LONG_INT; k2++)
     value_out[k2 - k] = val[k2];
-
-
-#ifdef LIBTASN1_DEBUG_INTEGER
-  MHD__libtasn1_log ("MHD__asn1_convert_integer: valueIn=%s, lenOut=%d",
-                     value, *len);
-  for (k = 0; k < SIZEOF_UNSIGNED_LONG_INT; k++)
-    MHD__libtasn1_log (", vOut[%d]=%d", k, value_out[k]);
-  MHD__libtasn1_log ("\n");
-#endif
-
 
   return ASN1_SUCCESS;
 }

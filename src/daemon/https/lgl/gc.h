@@ -104,16 +104,9 @@ typedef void *(*MHD_gc_malloc_t) (size_t n);
 typedef int (*MHD_gc_secure_check_t) (const void *);
 typedef void *(*MHD_gc_realloc_t) (void *p, size_t n);
 typedef void (*MHD_gc_free_t) (void *);
-void MHD_gc_set_allocators (MHD_gc_malloc_t func_malloc,
-                            MHD_gc_malloc_t secure_malloc,
-                            MHD_gc_secure_check_t secure_check,
-                            MHD_gc_realloc_t func_realloc,
-                            MHD_gc_free_t func_free);
-
 /* Randomness. */
 Gc_rc MHD_gc_nonce (char *data, size_t datalen);
 Gc_rc MHD_gc_pseudo_random (char *data, size_t datalen);
-Gc_rc MHD_gc_random (char *data, size_t datalen);
 
 /* Ciphers. */
 Gc_rc MHD_gc_cipher_open (Gc_cipher cipher,

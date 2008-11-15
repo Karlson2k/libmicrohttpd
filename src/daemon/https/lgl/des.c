@@ -79,13 +79,6 @@
  *     unsigned char recoverd[8];
  *     MHD_gl_3des_ctx context;
  *
- *     // If you would like to use two 64bit keys, fill 'key1' and'key2'
- *     // then setup the encryption context:
- *     MHD_gl_3des_set2keys(&context, key1, key2);
- *
- *     // To use three 64bit keys with Triple-DES use:
- *     MHD_gl_3des_set3keys(&context, key1, key2, key3);
- *
  *     // Encrypting plaintext with Triple-DES
  *     MHD_gl_3des_ecb_encrypt(&context, plaintext, ciphertext);
  *
@@ -319,35 +312,6 @@ static const unsigned char weak_keys[64][8] = {
   {0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe}      /*w */
 };
 
-bool
-MHD_gl_des_is_weak_key (const char *key)
-{
-  char work[8];
-  int i, left, right, middle, cmp_result;
-
-  /* clear parity bits */
-  for (i = 0; i < 8; ++i)
-    work[i] = ((unsigned char) key[i]) & 0xfe;
-
-  /* binary search in the weak key table */
-  left = 0;
-  right = 63;
-  while (left <= right)
-    {
-      middle = (left + right) / 2;
-
-      if (!(cmp_result = memcmp (work, weak_keys[middle], 8)))
-        return -1;
-
-      if (cmp_result > 0)
-        left = middle + 1;
-      else
-        right = middle - 1;
-    }
-
-  return 0;
-}
-
 /*
  * Macro to swap bits across two words.
  */
@@ -531,17 +495,6 @@ MHD_gl_des_setkey (MHD_gl_des_ctx * ctx, const char *key)
     }
 }
 
-bool
-MHD_gl_des_makekey (MHD_gl_des_ctx * ctx, const char *key, size_t keylen)
-{
-  if (keylen != 8)
-    return false;
-
-  MHD_gl_des_setkey (ctx, key);
-
-  return !MHD_gl_des_is_weak_key (key);
-}
-
 void
 MHD_gl_des_ecb_crypt (MHD_gl_des_ctx * ctx, const char *_from, char *_to,
                       int mode)
@@ -564,54 +517,6 @@ READ_64BIT_DATA (from, left, right)
     DES_ROUND (right, left, work, keys) DES_ROUND (left, right, work, keys)
     DES_ROUND (right, left, work, keys) DES_ROUND (left, right, work, keys)
     FINAL_PERMUTATION (right, work, left) WRITE_64BIT_DATA (to, right, left)}
-
-void
-MHD_gl_3des_set2keys (MHD_gl_3des_ctx * ctx, const char *key1,
-                      const char *key2)
-{
-  int i;
-
-  des_key_schedule (key1, ctx->encrypt_subkeys);
-  des_key_schedule (key2, &(ctx->decrypt_subkeys[32]));
-
-  for (i = 0; i < 32; i += 2)
-    {
-      ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[30 - i];
-      ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[31 - i];
-
-      ctx->encrypt_subkeys[i + 32] = ctx->decrypt_subkeys[62 - i];
-      ctx->encrypt_subkeys[i + 33] = ctx->decrypt_subkeys[63 - i];
-
-      ctx->encrypt_subkeys[i + 64] = ctx->encrypt_subkeys[i];
-      ctx->encrypt_subkeys[i + 65] = ctx->encrypt_subkeys[i + 1];
-
-      ctx->decrypt_subkeys[i + 64] = ctx->decrypt_subkeys[i];
-      ctx->decrypt_subkeys[i + 65] = ctx->decrypt_subkeys[i + 1];
-    }
-}
-
-void
-MHD_gl_3des_set3keys (MHD_gl_3des_ctx * ctx, const char *key1,
-                      const char *key2, const char *key3)
-{
-  int i;
-
-  des_key_schedule (key1, ctx->encrypt_subkeys);
-  des_key_schedule (key2, &(ctx->decrypt_subkeys[32]));
-  des_key_schedule (key3, &(ctx->encrypt_subkeys[64]));
-
-  for (i = 0; i < 32; i += 2)
-    {
-      ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[94 - i];
-      ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[95 - i];
-
-      ctx->encrypt_subkeys[i + 32] = ctx->decrypt_subkeys[62 - i];
-      ctx->encrypt_subkeys[i + 33] = ctx->decrypt_subkeys[63 - i];
-
-      ctx->decrypt_subkeys[i + 64] = ctx->encrypt_subkeys[30 - i];
-      ctx->decrypt_subkeys[i + 65] = ctx->encrypt_subkeys[31 - i];
-    }
-}
 
 void
 MHD_gl_3des_ecb_crypt (MHD_gl_3des_ctx * ctx, const char *_from, char *_to,
@@ -652,15 +557,3 @@ READ_64BIT_DATA (from, left, right)
     DES_ROUND (right, left, work, keys) DES_ROUND (left, right, work, keys)
     FINAL_PERMUTATION (right, work, left) WRITE_64BIT_DATA (to, right, left)}
 
-bool
-MHD_gl_3des_makekey (MHD_gl_3des_ctx * ctx, const char *key, size_t keylen)
-{
-  if (keylen != 24)
-    return false;
-
-  MHD_gl_3des_set3keys (ctx, key, key + 8, key + 16);
-
-  return !(MHD_gl_des_is_weak_key (key)
-           || MHD_gl_des_is_weak_key (key + 8)
-           || MHD_gl_des_is_weak_key (key + 16));
-}

@@ -29,7 +29,6 @@
 
 
 #include <int.h>
-#include <errors.h>
 #include <structure.h>
 #include "parser_aux.h"
 #include <gstr.h>
