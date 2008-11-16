@@ -97,10 +97,6 @@ extern "C"
                                   MHD_gnutls_x509_crt_fmt_t format,
                                   void *output_data,
                                   size_t * output_data_size);
-  int MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t
-                                                   cert);
-  int MHD_gnutls_x509_crt_get_signature (MHD_gnutls_x509_crt_t cert,
-                                         char *sig, size_t * sizeof_sig);
   int MHD_gnutls_x509_crt_get_version (MHD_gnutls_x509_crt_t cert);
 
 #define GNUTLS_CRL_REASON_UNUSED 128
@@ -115,16 +111,8 @@ extern "C"
 
   time_t MHD_gnutls_x509_crt_get_activation_time (MHD_gnutls_x509_crt_t cert);
   time_t MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert);
-  int MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
-                                      void *result, size_t * result_size);
-
   int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
                                             unsigned int *bits);
-  int MHD_gnutls_x509_crt_get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
-                                                unsigned int seq,
-                                                void *ret,
-                                                size_t * ret_size,
-                                                unsigned int *critical);
   int MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
                                          unsigned int *critical);
 /* The key_usage flags are defined in gnutls.h. They are the
@@ -213,8 +201,6 @@ extern "C"
                                  format, MHD_gnutls_datum_t * out);
 /* Access to internal Certificate fields.
  */
-  int MHD_gnutls_x509_crt_get_raw_issuer_dn (MHD_gnutls_x509_crt_t cert,
-                                             MHD_gnutls_datum_t * start);
   int MHD_gnutls_x509_crt_get_raw_dn (MHD_gnutls_x509_crt_t cert,
                                       MHD_gnutls_datum_t * start);
 
@@ -227,8 +213,6 @@ extern "C"
     unsigned long value_tag;
   } MHD_gnutls_x509_ava_st;
 
-  int MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert,
-                                       MHD_gnutls_x509_dn_t * dn);
   struct MHD_gnutls_pkcs7_int;
   typedef struct MHD_gnutls_pkcs7_int *MHD_gnutls_pkcs7_t;
 
@@ -325,38 +309,9 @@ extern "C"
 
   int MHD_gnutls_x509_privkey_init (MHD_gnutls_x509_privkey_t * key);
   void MHD_gnutls_x509_privkey_deinit (MHD_gnutls_x509_privkey_t key);
-  int MHD_gnutls_x509_privkey_cpy (MHD_gnutls_x509_privkey_t dst,
-                                   MHD_gnutls_x509_privkey_t src);
   int MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
                                       const MHD_gnutls_datum_t * data,
                                       MHD_gnutls_x509_crt_fmt_t format);
-  int MHD_gnutls_x509_privkey_import_pkcs8 (MHD_gnutls_x509_privkey_t key,
-                                            const MHD_gnutls_datum_t * data,
-                                            MHD_gnutls_x509_crt_fmt_t format,
-                                            const char *pass,
-                                            unsigned int flags);
-  int MHD_gnutls_x509_privkey_import_rsa_raw (MHD_gnutls_x509_privkey_t key,
-                                              const MHD_gnutls_datum_t * m,
-                                              const MHD_gnutls_datum_t * e,
-                                              const MHD_gnutls_datum_t * d,
-                                              const MHD_gnutls_datum_t * p,
-                                              const MHD_gnutls_datum_t * q,
-                                              const MHD_gnutls_datum_t * u);
-  int MHD_gnutls_x509_privkey_export_dsa_raw (MHD_gnutls_x509_privkey_t key,
-                                              MHD_gnutls_datum_t * p,
-                                              MHD_gnutls_datum_t * q,
-                                              MHD_gnutls_datum_t * g,
-                                              MHD_gnutls_datum_t * y,
-                                              MHD_gnutls_datum_t * x);
-  int MHD_gnutls_x509_privkey_import_dsa_raw (MHD_gnutls_x509_privkey_t key,
-                                              const MHD_gnutls_datum_t * p,
-                                              const MHD_gnutls_datum_t * q,
-                                              const MHD_gnutls_datum_t * g,
-                                              const MHD_gnutls_datum_t * y,
-                                              const MHD_gnutls_datum_t * x);
-
-  int MHD_gnutls_x509_privkey_get_pk_algorithm (MHD_gnutls_x509_privkey_t
-                                                key);
   int MHD_gnutls_x509_privkey_get_key_id (MHD_gnutls_x509_privkey_t key,
                                           unsigned int flags,
                                           unsigned char *output_data,
@@ -457,26 +412,11 @@ typedef struct MHD_gtls_x509_privkey_int
   ASN1_TYPE key;
 } MHD_gnutls_x509_privkey_int;
 
-int MHD_gnutls_x509_crt_get_subject_alt_name (MHD_gnutls_x509_crt_t cert,
-                                              unsigned int seq,
-                                              void *ret,
-                                              size_t * ret_size,
-                                              unsigned int *critical);
-int MHD_gnutls_x509_crt_get_dn_by_oid (MHD_gnutls_x509_crt_t cert,
-                                       const char *oid,
-                                       int indx,
-                                       unsigned int raw_flag,
-                                       void *buf, size_t * sizeof_buf);
-int MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
-                                       unsigned int *critical);
 int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
                                           unsigned int *bits);
 
 int MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
                                     void *result, size_t * result_size);
-
-int MHD__gnutls_x509_compare_raw_dn (const MHD_gnutls_datum_t * dn1,
-                                     const MHD_gnutls_datum_t * dn2);
 
 int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
                                           const MHD_gnutls_x509_crl_t *
@@ -494,7 +434,6 @@ int MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
 int MHD_gnutls_x509_crt_get_key_usage (MHD_gnutls_x509_crt_t cert,
                                        unsigned int *key_usage,
                                        unsigned int *critical);
-int MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t cert);
 int MHD_gnutls_x509_crt_get_version (MHD_gnutls_x509_crt_t cert);
 
 int MHD_gnutls_x509_privkey_init (MHD_gnutls_x509_privkey_t * key);
@@ -507,14 +446,6 @@ int MHD_gnutls_x509_privkey_generate (MHD_gnutls_x509_privkey_t key,
 int MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
                                     const MHD_gnutls_datum_t * data,
                                     MHD_gnutls_x509_crt_fmt_t format);
-int MHD_gnutls_x509_privkey_get_pk_algorithm (MHD_gnutls_x509_privkey_t key);
-int MHD_gnutls_x509_privkey_import_rsa_raw (MHD_gnutls_x509_privkey_t key,
-                                            const MHD_gnutls_datum_t * m,
-                                            const MHD_gnutls_datum_t * e,
-                                            const MHD_gnutls_datum_t * d,
-                                            const MHD_gnutls_datum_t * p,
-                                            const MHD_gnutls_datum_t * q,
-                                            const MHD_gnutls_datum_t * u);
 int MHD_gnutls_x509_privkey_export_rsa_raw (MHD_gnutls_x509_privkey_t key,
                                             MHD_gnutls_datum_t * m,
                                             MHD_gnutls_datum_t * e,

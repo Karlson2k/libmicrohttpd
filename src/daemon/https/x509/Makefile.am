@@ -18,7 +18,6 @@ libx509_la_LDFLAGS = -lgcrypt
 
 libx509_la_SOURCES = \
 common.c common.h \
-dn.c dn.h \
 extensions.c extensions.h \
 mpi.c mpi.h \
 pkcs12.h \
