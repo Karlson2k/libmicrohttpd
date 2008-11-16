@@ -1,3 +1,6 @@
+Sun Nov 16 02:48:14 MST 2008
+	 Removed tons of dead code. -CG
+
 Sat Nov 15 17:34:24 MST 2008
 	 Added build support for code coverage analysis. -CG
 
