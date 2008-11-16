@@ -25,4 +25,3 @@
 const char *MHD__gnutls_packet2str (content_type_t packet);
 const char *MHD__gnutls_handshake2str (MHD_gnutls_handshake_description_t
                                        handshake);
-void MHD__gnutls_dump_mpi (const char *prefix, mpi_t a);

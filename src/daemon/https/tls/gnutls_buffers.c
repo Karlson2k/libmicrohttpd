@@ -67,58 +67,6 @@
 # include <io_debug.h>
 #endif
 
-/**
- * MHD__gnutls_transport_set_errno:
- * @session: is a #MHD_gtls_session_t structure.
- * @err: error value to store in session-specific errno variable.
- *
- * Store @err in the session-specific errno variable.  Useful values
- * for @err is EAGAIN and EINTR, other values are treated will be
- * treated as real errors in the push/pull function.
- *
- * This function is useful in replacement push/pull functions set by
- * MHD__gnutls_transport_set_push_function and
- * MHD_gnutls_transport_set_pullpush_function under Windows, where the
- * replacement push/pull may not have access to the same @errno
- * variable that is used by GnuTLS (e.g., the application is linked to
- * msvcr71.dll and gnutls is linked to msvcrt.dll).
- *
- * If you don't have the @session variable easily accessible from the
- * push/pull function, and don't worry about thread conflicts, you can
- * also use MHD__gnutls_transport_set_global_errno().
- **/
-void
-MHD__gnutls_transport_set_errno (MHD_gtls_session_t session, int err)
-{
-  session->internals.errnum = err;
-}
-
-/**
- * MHD__gnutls_transport_set_global_errno:
- * @err: error value to store in global errno variable.
- *
- * Store @err in the global errno variable.  Useful values for @err is
- * EAGAIN and EINTR, other values are treated will be treated as real
- * errors in the push/pull function.
- *
- * This function is useful in replacement push/pull functions set by
- * MHD__gnutls_transport_set_push_function and
- * MHD_gnutls_transport_set_pullpush_function under Windows, where the
- * replacement push/pull may not have access to the same @errno
- * variable that is used by GnuTLS (e.g., the application is linked to
- * msvcr71.dll and gnutls is linked to msvcrt.dll).
- *
- * Whether this function is thread safe or not depends on whether the
- * global variable errno is thread safe, some system libraries make it
- * a thread-local variable.  When feasible, using the guaranteed
- * thread-safe MHD__gnutls_transport_set_errno() may be better.
- **/
-void
-MHD__gnutls_transport_set_global_errno (int err)
-{
-  errno = err;
-}
-
 /* Buffers received packets of type APPLICATION DATA and
  * HANDSHAKE DATA.
  */
@@ -184,23 +132,6 @@ MHD_gnutls_record_buffer_get_size (content_type_t type,
     default:
       return GNUTLS_E_INVALID_REQUEST;
     }
-}
-
-/**
- * MHD_gtls_record_check_pending - checks if there are any data to receive in gnutls buffers.
- * @session: is a #MHD_gtls_session_t structure.
- *
- * This function checks if there are any data to receive
- * in the gnutls buffers. Returns the size of that data or 0.
- * Notice that you may also use select() to check for data in
- * a TCP connection, instead of this function.
- * (gnutls leaves some data in the tcp buffer in order for select
- * to work).
- **/
-size_t
-MHD_gtls_record_check_pending (MHD_gtls_session_t session)
-{
-  return MHD_gnutls_record_buffer_get_size (GNUTLS_APPLICATION_DATA, session);
 }
 
 int
@@ -1191,31 +1122,6 @@ MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
     }
 
   return 0;
-}
-
-int
-MHD_gtls_handshake_buffer_get_size (MHD_gtls_session_t session)
-{
-
-  return session->internals.handshake_hash_buffer.length;
-}
-
-/* this function does not touch the buffer
- * and returns data from it (peek mode!)
- */
-int
-MHD_gtls_handshake_buffer_peek (MHD_gtls_session_t session, opaque * data,
-                                size_t length)
-{
-  if (length > session->internals.handshake_hash_buffer.length)
-    {
-      length = session->internals.handshake_hash_buffer.length;
-    }
-
-  MHD__gnutls_buffers_log ("BUF[HSK]: Peeked %d bytes of Data\n", length);
-
-  memcpy (data, session->internals.handshake_hash_buffer.data, length);
-  return length;
 }
 
 /* this function does not touch the buffer

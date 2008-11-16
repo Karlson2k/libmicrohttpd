@@ -1929,36 +1929,6 @@ MHD__gnutls_send_server_hello (MHD_gtls_session_t session, int again)
 
   datalen = 0;
 
-#ifdef ENABLE_SRP
-  if (IS_SRP_KX
-      (MHD_gtls_cipher_suite_get_kx_algo
-       (&session->security_parameters.current_cipher_suite)))
-    {
-      /* While resuming we cannot check the username extension since it is
-       * not available at this point. It will be copied on connection
-       * state activation.
-       */
-      if (session->internals.resumed == RESUME_FALSE &&
-          session->security_parameters.extensions.srp_username[0] == 0)
-        {
-          /* The peer didn't send a valid SRP extension with the
-           * SRP username. The draft requires that we send a fatal
-           * alert and abort.
-           */
-          MHD_gnutls_assert ();
-          ret = MHD__gnutls_alert_send (session, GNUTLS_AL_FATAL,
-                                        GNUTLS_A_UNKNOWN_PSK_IDENTITY);
-          if (ret < 0)
-            {
-              MHD_gnutls_assert ();
-              return ret;
-            }
-
-          return GNUTLS_E_ILLEGAL_SRP_USERNAME;
-        }
-    }
-#endif
-
   if (again == 0)
     {
       datalen = 2 + session_id_len + 1 + TLS_RANDOM_SIZE + 3;
@@ -2807,22 +2777,6 @@ check_server_params (MHD_gtls_session_t session,
       if (delete == 1)
         return 1;
 
-#ifdef ENABLE_PSK
-    }
-  else if (cred_type == MHD_GNUTLS_CRD_PSK)
-    {
-      MHD_gnutls_psk_server_credentials_t psk_cred =
-        (MHD_gnutls_psk_server_credentials_t) MHD_gtls_get_cred (session->key,
-                                                                 cred_type,
-                                                                 NULL);
-
-      if (psk_cred != NULL)
-        {
-          dh_params =
-            MHD_gtls_get_dh_params (psk_cred->dh_params,
-                                    psk_cred->params_func, session);
-        }
-#endif
     }
   else
     return 0;                   /* no need for params */
@@ -2955,7 +2909,6 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
          SRP credential too.  */
       if (kx == MHD_GNUTLS_KX_SRP_RSA || kx == MHD_GNUTLS_KX_SRP_DSS)
         {
-          if (!MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_SRP, NULL))
             delete = 1;
         }
 

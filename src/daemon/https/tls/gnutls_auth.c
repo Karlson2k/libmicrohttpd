@@ -171,43 +171,6 @@ MHD_gtls_auth_get_type (MHD_gtls_session_t session)
                               server);
 }
 
-/**
-  * MHD_gtls_auth_server_get_type - Returns the type of credentials for the server authentication schema.
-  * @session: is a #MHD_gtls_session_t structure.
-  *
-  * Returns the type of credentials that were used for server authentication.
-  * The returned information is to be used to distinguish the function used
-  * to access authentication data.
-  *
-  **/
-enum MHD_GNUTLS_CredentialsType
-MHD_gtls_auth_server_get_type (MHD_gtls_session_t session)
-{
-  return
-    MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->
-                               security_parameters.current_cipher_suite), 1);
-}
-
-/**
-  * MHD_gtls_auth_client_get_type - Returns the type of credentials for the client authentication schema.
-  * @session: is a #MHD_gtls_session_t structure.
-  *
-  * Returns the type of credentials that were used for client authentication.
-  * The returned information is to be used to distinguish the function used
-  * to access authentication data.
-  *
-  **/
-enum MHD_GNUTLS_CredentialsType
-MHD_gtls_auth_client_get_type (MHD_gtls_session_t session)
-{
-  return
-    MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->
-                               security_parameters.current_cipher_suite), 0);
-}
-
-
 /*
  * This returns a pointer to the linked list. Don't
  * free that!!!
@@ -294,8 +257,6 @@ MHD_gtls_free_auth_info (MHD_gtls_session_t session)
 
   switch (session->key->auth_info_type)
     {
-    case MHD_GNUTLS_CRD_SRP:
-      break;
     case MHD_GNUTLS_CRD_CERTIFICATE:
       {
         unsigned int i;

@@ -54,8 +54,6 @@ gnutls_pk.c \
 gnutls_priority.c \
 gnutls_record.c \
 gnutls_rsa_export.c \
-gnutls_session.c \
-gnutls_session_pack.c \
 gnutls_sig.c \
 gnutls_state.c \
 gnutls_str.c \
@@ -97,7 +95,6 @@ gnutls_num.h \
 gnutls_pk.h \
 gnutls_record.h \
 gnutls_rsa_export.h \
-gnutls_session_pack.h \
 gnutls_sig.h \
 gnutls_state.h \
 gnutls_str.h \

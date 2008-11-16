@@ -89,18 +89,6 @@ MHD_gnutls_kx_get (MHD_gtls_session_t session)
 }
 
 /**
- * MHD_gnutls_mac_get - Returns the currently used mac algorithm.
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Returns: the currently used mac algorithm.
- **/
-enum MHD_GNUTLS_HashAlgorithm
-MHD_gnutls_mac_get (MHD_gtls_session_t session)
-{
-  return session->security_parameters.read_mac_algorithm;
-}
-
-/**
  * MHD_gnutls_compression_get - Returns the currently used compression algorithm.
  * @session: is a #MHD_gtls_session_t structure.
  *
@@ -322,13 +310,6 @@ MHD__gnutls_init (MHD_gtls_session_t * session,
   return 0;
 }
 
-/* returns RESUME_FALSE or RESUME_TRUE.
- */
-int
-MHD_gtls_session_is_resumable (MHD_gtls_session_t session)
-{
-  return session->internals.resumable;
-}
 
 /**
  * MHD__gnutls_deinit - This function clears all buffers associated with a session
@@ -607,29 +588,6 @@ MHD__gnutls_record_set_default_version (MHD_gtls_session_t session,
   session->internals.default_record_version[1] = minor;
 }
 
-/**
- * MHD_gtls_handshake_set_private_extensions - Used to enable the private cipher suites
- * @session: is a #MHD_gtls_session_t structure.
- * @allow: is an integer (0 or 1)
- *
- * This function will enable or disable the use of private cipher
- * suites (the ones that start with 0xFF).  By default or if @allow
- * is 0 then these cipher suites will not be advertized nor used.
- *
- * Unless this function is called with the option to allow (1), then
- * no compression algorithms, like LZO.  That is because these
- * algorithms are not yet defined in any RFC or even internet draft.
- *
- * Enabling the private ciphersuites when talking to other than
- * gnutls servers and clients may cause interoperability problems.
- **/
-void
-MHD_gtls_handshake_set_private_extensions (MHD_gtls_session_t session,
-                                           int allow)
-{
-  session->internals.enable_private = allow;
-}
-
 inline static int
 MHD__gnutls_cal_PRF_A (enum MHD_GNUTLS_HashAlgorithm algorithm,
                        const void *secret,
@@ -834,208 +792,6 @@ MHD_gtls_PRF (MHD_gtls_session_t session,
 
 }
 
-/**
- * MHD__gnutls_prf_raw - access the TLS PRF directly
- * @session: is a #MHD_gtls_session_t structure.
- * @label_size: length of the @label variable.
- * @label: label used in PRF computation, typically a short string.
- * @seed_size: length of the @seed variable.
- * @seed: optional extra data to seed the PRF with.
- * @outsize: size of pre-allocated output buffer to hold the output.
- * @out: pre-allocate buffer to hold the generated data.
- *
- * Apply the TLS Pseudo-Random-Function (PRF) using the master secret
- * on some data.
- *
- * The @label variable usually contain a string denoting the purpose
- * for the generated data.  The @seed usually contain data such as the
- * client and server random, perhaps together with some additional
- * data that is added to guarantee uniqueness of the output for a
- * particular purpose.
- *
- * Because the output is not guaranteed to be unique for a particular
- * session unless @seed include the client random and server random
- * fields (the PRF would output the same data on another connection
- * resumed from the first one), it is not recommended to use this
- * function directly.  The MHD__gnutls_prf() function seed the PRF with the
- * client and server random fields directly, and is recommended if you
- * want to generate pseudo random data unique for each session.
- *
- * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
- **/
-int
-MHD__gnutls_prf_raw (MHD_gtls_session_t session,
-                     size_t label_size,
-                     const char *label,
-                     size_t seed_size, const char *seed, size_t outsize,
-                     char *out)
-{
-  int ret;
-
-  ret = MHD_gtls_PRF (session, session->security_parameters.master_secret,
-                      TLS_MASTER_SIZE, label, label_size, (opaque *) seed,
-                      seed_size, outsize, out);
-
-  return ret;
-}
-
-/**
- * MHD__gnutls_prf - derive pseudo-random data using the TLS PRF
- * @session: is a #MHD_gtls_session_t structure.
- * @label_size: length of the @label variable.
- * @label: label used in PRF computation, typically a short string.
- * @server_random_first: non-0 if server random field should be first in seed
- * @extra_size: length of the @extra variable.
- * @extra: optional extra data to seed the PRF with.
- * @outsize: size of pre-allocated output buffer to hold the output.
- * @out: pre-allocate buffer to hold the generated data.
- *
- * Apply the TLS Pseudo-Random-Function (PRF) using the master secret
- * on some data, seeded with the client and server random fields.
- *
- * The @label variable usually contain a string denoting the purpose
- * for the generated data.  The @server_random_first indicate whether
- * the client random field or the server random field should be first
- * in the seed.  Non-0 indicate that the server random field is first,
- * 0 that the client random field is first.
- *
- * The @extra variable can be used to add more data to the seed, after
- * the random variables.  It can be used to tie make sure the
- * generated output is strongly connected to some additional data
- * (e.g., a string used in user authentication).
- *
- * The output is placed in *@OUT, which must be pre-allocated.
- *
- * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
- **/
-int
-MHD__gnutls_prf (MHD_gtls_session_t session,
-                 size_t label_size,
-                 const char *label,
-                 int server_random_first,
-                 size_t extra_size, const char *extra, size_t outsize,
-                 char *out)
-{
-  int ret;
-  opaque *seed;
-  size_t seedsize = 2 * TLS_RANDOM_SIZE + extra_size;
-
-  seed = MHD_gnutls_malloc (seedsize);
-  if (!seed)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_MEMORY_ERROR;
-    }
-
-  memcpy (seed,
-          server_random_first ? session->security_parameters.server_random
-          : session->security_parameters.client_random, TLS_RANDOM_SIZE);
-  memcpy (seed + TLS_RANDOM_SIZE,
-          server_random_first ? session->security_parameters.client_random
-          : session->security_parameters.server_random, TLS_RANDOM_SIZE);
-
-  memcpy (seed + 2 * TLS_RANDOM_SIZE, extra, extra_size);
-
-  ret = MHD_gtls_PRF (session, session->security_parameters.master_secret,
-                      TLS_MASTER_SIZE, label, label_size, seed, seedsize,
-                      outsize, out);
-
-  MHD_gnutls_free (seed);
-
-  return ret;
-}
-
-/**
- * MHD_gtls_session_get_client_random - get the session's client random value
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Return a pointer to the 32-byte client random field used in the
- * session.  The pointer must not be modified or deallocated.
- *
- * If a client random value has not yet been established, the output
- * will be garbage; in particular, a %NULL return value should not be
- * expected.
- *
- * Returns: pointer to client random data.
- **/
-const void *
-MHD_gtls_session_get_client_random (MHD_gtls_session_t session)
-{
-  return (char *) session->security_parameters.client_random;
-}
-
-/**
- * MHD_gtls_session_get_server_random - get the session's server random value
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Return a pointer to the 32-byte server random field used in the
- * session.  The pointer must not be modified or deallocated.
- *
- * If a server random value has not yet been established, the output
- * will be garbage; in particular, a %NULL return value should not be
- * expected.
- *
- * Returns: pointer to server random data.
- **/
-const void *
-MHD_gtls_session_get_server_random (MHD_gtls_session_t session)
-{
-  return (char *) session->security_parameters.server_random;
-}
-
-/**
- * MHD_gtls_session_get_master_secret - get the session's master secret value
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Return a pointer to the 48-byte master secret in the session.  The
- * pointer must not be modified or deallocated.
- *
- * If a master secret value has not yet been established, the output
- * will be garbage; in particular, a %NULL return value should not be
- * expected.
- *
- * Consider using MHD__gnutls_prf() rather than extracting the master
- * secret and use it to derive further data.
- *
- * Returns: pointer to master secret data.
- **/
-const void *
-MHD_gtls_session_get_master_secret (MHD_gtls_session_t session)
-{
-  return (char *) session->security_parameters.master_secret;
-}
-
-/**
- * MHD_gtls_session_is_resumed - Used to check whether this session is a resumed one
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Returns: non zero if this session is resumed, or a zero if this is
- * a new session.
- **/
-int
-MHD_gtls_session_is_resumed (MHD_gtls_session_t session)
-{
-#if MHD_DEBUG_TLS
-  if (session->security_parameters.entity == GNUTLS_CLIENT)
-    {
-      if (session->security_parameters.session_id_size > 0
-          && session->security_parameters.session_id_size
-          == session->internals.resumed_security_parameters.session_id_size
-          && memcmp (session->security_parameters.session_id,
-                     session->internals.
-                     resumed_security_parameters.session_id,
-                     session->security_parameters.session_id_size) == 0)
-        return 1;
-    }
-  else
-#endif
-    {
-      if (session->internals.resumed == RESUME_TRUE)
-        return 1;
-    }
-
-  return 0;
-}
 
 /*-
  * MHD_gtls_session_is_export - Used to check whether this session is of export grade
@@ -1057,34 +813,6 @@ MHD_gtls_session_is_export (MHD_gtls_session_t session)
     return 1;
 
   return 0;
-}
-
-/**
- * MHD_gtls_session_get_ptr - Used to get the user pointer from the session structure
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Returns: the user given pointer from the session structure.  This
- * is the pointer set with MHD__gnutls_session_set_ptr().
- **/
-void *
-MHD_gtls_session_get_ptr (MHD_gtls_session_t session)
-{
-  return session->internals.user_ptr;
-}
-
-/**
- * MHD__gnutls_session_set_ptr - Used to set the user pointer to the session structure
- * @session: is a #MHD_gtls_session_t structure.
- * @ptr: is the user pointer
- *
- * This function will set (associate) the user given pointer to the
- * session structure.  This is pointer can be accessed with
- * MHD_gtls_session_get_ptr().
- **/
-void
-MHD__gnutls_session_set_ptr (MHD_gtls_session_t session, void *ptr)
-{
-  session->internals.user_ptr = ptr;
 }
 
 /**
@@ -1110,52 +838,3 @@ MHD__gnutls_record_get_direction (MHD_gtls_session_t session)
   return session->internals.direction;
 }
 
-/*-
- * MHD__gnutls_rsa_pms_set_version - Sets a version to be used at the RSA PMS
- * @session: is a #MHD_gtls_session_t structure.
- * @major: is the major version to use
- * @minor: is the minor version to use
- *
- * This function will set the given version number to be used at the
- * RSA PMS secret. This is only useful to clients, which want to
- * test server's capabilities.
- *
- -*/
-void
-MHD__gnutls_rsa_pms_set_version (MHD_gtls_session_t session,
-                                 unsigned char major, unsigned char minor)
-{
-  session->internals.rsa_pms_version[0] = major;
-  session->internals.rsa_pms_version[1] = minor;
-}
-
-/**
- * MHD__gnutls_handshake_set_post_client_hello_function - This function will a callback to be called after the client hello is received
- * @res: is a MHD_gtls_anon_server_credentials_t structure
- * @func: is the function to be called
- *
- * This function will set a callback to be called after the client
- * hello has been received (callback valid in server side only). This
- * allows the server to adjust settings based on received extensions.
- *
- * Those settings could be ciphersuites, requesting certificate, or
- * anything else except for version negotiation (this is done before
- * the hello message is parsed).
- *
- * This callback must return 0 on success or a gnutls error code to
- * terminate the handshake.
- *
- * NOTE: You should not use this function to terminate the handshake
- * based on client input unless you know what you are doing. Before
- * the handshake is finished there is no way to know if there is a
- * man-in-the-middle attack being performed.
- *
- **/
-void
-MHD__gnutls_handshake_set_post_client_hello_function (MHD_gtls_session_t
-                                                      session,
-                                                      MHD_gnutls_handshake_post_client_hello_func
-                                                      func)
-{
-  session->internals.user_hello_func = func;
-}

@@ -40,9 +40,6 @@ ssize_t MHD_gtls_io_write_buffered (MHD_gtls_session_t, const void *iptr,
 ssize_t MHD_gtls_io_write_buffered2 (MHD_gtls_session_t, const void *iptr,
                                      size_t n, const void *iptr2, size_t n2);
 
-int MHD_gtls_handshake_buffer_get_size (MHD_gtls_session_t session);
-int MHD_gtls_handshake_buffer_peek (MHD_gtls_session_t session, opaque * data,
-                                    size_t length);
 int MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
                                    size_t length);
 int MHD_gtls_handshake_buffer_clear (MHD_gtls_session_t session);

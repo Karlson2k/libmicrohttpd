@@ -279,87 +279,6 @@ MHD_gtls_selected_cert_supported_kx (MHD_gtls_session_t session,
 }
 
 
-/**
-  * MHD_gtls_certificate_server_set_request - Used to set whether to request a client certificate
-  * @session: is an #MHD_gtls_session_t structure.
-  * @req: is one of GNUTLS_CERT_REQUEST, GNUTLS_CERT_REQUIRE
-  *
-  * This function specifies if we (in case of a server) are going
-  * to send a certificate request message to the client. If @req
-  * is GNUTLS_CERT_REQUIRE then the server will return an error if
-  * the peer does not provide a certificate. If you do not
-  * call this function then the client will not be asked to
-  * send a certificate.
-  **/
-void
-MHD_gtls_certificate_server_set_request (MHD_gtls_session_t session,
-                                         MHD_gnutls_certificate_request_t req)
-{
-  session->internals.send_cert_req = req;
-}
-
-/**
-  * MHD_gtls_certificate_client_set_retrieve_function - Used to set a callback to retrieve the certificate
-  * @cred: is a #MHD_gtls_cert_credentials_t structure.
-  * @func: is the callback function
-  *
-  * This function sets a callback to be called in order to retrieve the certificate
-  * to be used in the handshake.
-  * The callback's function prototype is:
-  * int (*callback)(MHD_gtls_session_t, const MHD_gnutls_datum_t* req_ca_dn, int nreqs,
-  * const enum MHD_GNUTLS_PublicKeyAlgorithm* pk_algos, int pk_algos_length, MHD_gnutls_retr_st* st);
-  *
-  * @req_ca_cert is only used in X.509 certificates.
-  * Contains a list with the CA names that the server considers trusted.
-  * Normally we should send a certificate that is signed
-  * by one of these CAs. These names are DER encoded. To get a more
-  * meaningful value use the function MHD_gnutls_x509_rdn_get().
-  *
-  * @pk_algos contains a list with server's acceptable signature algorithms.
-  * The certificate returned should support the server's given algorithms.
-  *
-  * @st should contain the certificates and private keys.
-  *
-  * If the callback function is provided then gnutls will call it, in the
-  * handshake, after the certificate request message has been received.
-  *
-  * The callback function should set the certificate list to be sent, and
-  * return 0 on success. If no certificate was selected then the number of certificates
-  * should be set to zero. The value (-1) indicates error and the handshake
-  * will be terminated.
-  **/
-void MHD_gtls_certificate_client_set_retrieve_function
-  (MHD_gtls_cert_credentials_t cred,
-   MHD_gnutls_certificate_client_retrieve_function * func)
-{
-  cred->client_get_cert_callback = func;
-}
-
-/**
-  * MHD_gtls_certificate_server_set_retrieve_function - Used to set a callback to retrieve the certificate
-  * @cred: is a #MHD_gtls_cert_credentials_t structure.
-  * @func: is the callback function
-  *
-  * This function sets a callback to be called in order to retrieve the certificate
-  * to be used in the handshake.
-  * The callback's function prototype is:
-  * int (*callback)(MHD_gtls_session_t, MHD_gnutls_retr_st* st);
-  *
-  * @st should contain the certificates and private keys.
-  *
-  * If the callback function is provided then gnutls will call it, in the
-  * handshake, after the certificate request message has been received.
-  *
-  * The callback function should set the certificate list to be sent, and
-  * return 0 on success.  The value (-1) indicates error and the handshake
-  * will be terminated.
-  **/
-void MHD_gtls_certificate_server_set_retrieve_function
-  (MHD_gtls_cert_credentials_t cred,
-   MHD_gnutls_certificate_server_retrieve_function * func)
-{
-  cred->server_get_cert_callback = func;
-}
 
 int
 MHD_gtls_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
@@ -376,23 +295,6 @@ MHD_gtls_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
       return GNUTLS_E_INTERNAL_ERROR;
     }
 }
-
-int
-MHD_gtls_raw_privkey_to_gkey (MHD_gnutls_privkey * key,
-                              enum MHD_GNUTLS_CertificateType type,
-                              const MHD_gnutls_datum_t * raw_key,
-                              int key_enc /* DER or PEM */ )
-{
-  switch (type)
-    {
-    case MHD_GNUTLS_CRT_X509:
-      return MHD__gnutls_x509_raw_privkey_to_gkey (key, raw_key, key_enc);
-    default:
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INTERNAL_ERROR;
-    }
-}
-
 
 /* This function will convert a der certificate to a format
  * (structure) that gnutls can understand and use. Actually the
@@ -538,47 +440,3 @@ MHD_gtls_gcert_deinit (MHD_gnutls_cert * cert)
   MHD__gnutls_free_datum (&cert->raw);
 }
 
-/**
- * MHD_gtls_sign_callback_set:
- * @session: is a gnutls session
- * @sign_func: function pointer to application's sign callback.
- * @userdata: void pointer that will be passed to sign callback.
- *
- * Set the callback function.  The function must have this prototype:
- *
- * typedef int (*MHD_gnutls_sign_func) (MHD_gtls_session_t session,
- *                                  void *userdata,
- *                                  enum MHD_GNUTLS_CertificateType cert_type,
- *                                  const MHD_gnutls_datum_t * cert,
- *                                  const MHD_gnutls_datum_t * hash,
- *                                  MHD_gnutls_datum_t * signature);
- *
- * The @userdata parameter is passed to the @sign_func verbatim, and
- * can be used to store application-specific data needed in the
- * callback function.  See also MHD_gtls_sign_callback_get().
- **/
-void
-MHD_gtls_sign_callback_set (MHD_gtls_session_t session,
-                            MHD_gnutls_sign_func sign_func, void *userdata)
-{
-  session->internals.sign_func = sign_func;
-  session->internals.sign_func_userdata = userdata;
-}
-
-/**
- * MHD_gtls_sign_callback_get:
- * @session: is a gnutls session
- * @userdata: if non-%NULL, will be set to abstract callback pointer.
- *
- * Retrieve the callback function, and its userdata pointer.
- *
- * Returns: The function pointer set by MHD_gtls_sign_callback_set(), or
- *   if not set, %NULL.
- **/
-MHD_gnutls_sign_func
-MHD_gtls_sign_callback_get (MHD_gtls_session_t session, void **userdata)
-{
-  if (userdata)
-    *userdata = session->internals.sign_func_userdata;
-  return session->internals.sign_func;
-}

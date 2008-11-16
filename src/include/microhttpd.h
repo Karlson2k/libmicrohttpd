@@ -547,16 +547,6 @@ enum MHD_GNUTLS_CredentialsType
    */
   MHD_GNUTLS_CRD_CERTIFICATE = 1,
 
-  /**
-   * Use SRP (password-based authentication).
-   */
-  MHD_GNUTLS_CRD_SRP,
-
-  /**
-   * Use PSK (pre-shared keys).
-   */
-  MHD_GNUTLS_CRD_PSK,
-
 };
 
 /**

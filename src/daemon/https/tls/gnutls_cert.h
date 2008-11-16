@@ -124,9 +124,4 @@ int MHD_gtls_raw_cert_to_gcert (MHD_gnutls_cert * gcert,
                                 enum MHD_GNUTLS_CertificateType type,
                                 const MHD_gnutls_datum_t * raw_cert,
                                 int flags /* OR of ConvFlags */ );
-int MHD_gtls_raw_privkey_to_gkey (MHD_gnutls_privkey * key,
-                                  enum MHD_GNUTLS_CertificateType type,
-                                  const MHD_gnutls_datum_t * raw_key,
-                                  int key_enc /* DER or PEM */ );
-
 #endif

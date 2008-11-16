@@ -81,24 +81,6 @@ MHD__gnutls_transport_set_lowat (MHD_gtls_session_t session, int num)
 }
 
 /**
- * MHD_gtls_record_disable_padding - Used to disabled padding in TLS 1.0 and above
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Used to disabled padding in TLS 1.0 and above.  Normally you do
- * not need to use this function, but there are buggy clients that
- * complain if a server pads the encrypted data.  This of course will
- * disable protection against statistical attacks on the data.
- *
- * Normally only servers that require maximum compatibility with everything
- * out there, need to call this function.
- **/
-void
-MHD_gtls_record_disable_padding (MHD_gtls_session_t session)
-{
-  session->internals.priorities.no_padding = 1;
-}
-
-/**
  * MHD__gnutls_transport_set_ptr - Used to set first argument of the transport functions
  * @session: is a #MHD_gtls_session_t structure.
  * @ptr: is the value.
@@ -113,26 +95,6 @@ MHD__gnutls_transport_set_ptr (MHD_gtls_session_t session,
 {
   session->internals.transport_recv_ptr = ptr;
   session->internals.transport_send_ptr = ptr;
-}
-
-/**
- * MHD__gnutls_transport_set_ptr2 - Used to set first argument of the transport functions
- * @session: is a #MHD_gtls_session_t structure.
- * @recv_ptr: is the value for the pull function
- * @send_ptr: is the value for the push function
- *
- * Used to set the first argument of the transport function (like
- * PUSH and PULL). In berkeley style sockets this function will set
- * the connection handle.  With this function you can use two
- * different pointers for receiving and sending.
- **/
-void
-MHD__gnutls_transport_set_ptr2 (MHD_gtls_session_t session,
-                                MHD_gnutls_transport_ptr_t recv_ptr,
-                                MHD_gnutls_transport_ptr_t send_ptr)
-{
-  session->internals.transport_send_ptr = send_ptr;
-  session->internals.transport_recv_ptr = recv_ptr;
 }
 
 /**
@@ -1128,59 +1090,3 @@ MHD__gnutls_record_recv (MHD_gtls_session_t session, void *data,
                             sizeofdata);
 }
 
-/**
- * MHD__gnutls_record_get_max_size - returns the maximum record size
- * @session: is a #MHD_gtls_session_t structure.
- *
- * This function returns the maximum record packet size in this
- * connection.  The maximum record size is negotiated by the client
- * after the first handshake message.
- **/
-size_t
-MHD__gnutls_record_get_max_size (MHD_gtls_session_t session)
-{
-  /* Recv will hold the negotiated max record size
-   * always.
-   */
-  return session->security_parameters.max_record_recv_size;
-}
-
-/**
- * MHD__gnutls_record_set_max_size - sets the maximum record size
- * @session: is a #MHD_gtls_session_t structure.
- * @size: is the new size
- *
- * This function sets the maximum record packet size in this
- * connection.  This property can only be set to clients.  The server
- * may choose not to accept the requested size.
- *
- * Acceptable values are 512(=2^9), 1024(=2^10), 2048(=2^11) and
- * 4096(=2^12).  Returns 0 on success. The requested record size does
- * get in effect immediately only while sending data. The receive
- * part will take effect after a successful handshake.
- *
- * This function uses a TLS extension called 'max record size'.  Not
- * all TLS implementations use or even understand this extension.
- **/
-ssize_t
-MHD__gnutls_record_set_max_size (MHD_gtls_session_t session, size_t size)
-{
-  ssize_t new_size;
-
-  if (session->security_parameters.entity == GNUTLS_SERVER)
-    return GNUTLS_E_INVALID_REQUEST;
-
-  new_size = MHD_gtls_mre_record2num (size);
-
-  if (new_size < 0)
-    {
-      MHD_gnutls_assert ();
-      return new_size;
-    }
-
-  session->security_parameters.max_record_send_size = size;
-
-  session->internals.proposed_record_size = size;
-
-  return 0;
-}

@@ -639,7 +639,7 @@ MHD_gtls_gen_cert_server_certificate (MHD_gtls_session_t session,
  */
 
 #define CLEAR_CERTS for(x=0;x<peer_certificate_list_size;x++) MHD_gtls_gcert_deinit(&peer_certificate_list[x])
-int
+static int
 MHD_gtls_proc_x509_server_certificate (MHD_gtls_session_t session,
                                        opaque * data, size_t data_size)
 {

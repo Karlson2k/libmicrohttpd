@@ -67,18 +67,6 @@ MHD_gnutls_supplemental_entry MHD__gnutls_supplemental[] = {
   {0, 0, 0, 0}
 };
 
-const char *
-MHD_gtls_supplemental_get_name (MHD_gnutls_supplemental_data_format_type_t
-                                type)
-{
-  MHD_gnutls_supplemental_entry *p;
-
-  for (p = MHD__gnutls_supplemental; p->name != NULL; p++)
-    if (p->type == type)
-      return p->name;
-
-  return NULL;
-}
 
 static supp_recv_func
 get_supp_func_recv (MHD_gnutls_supplemental_data_format_type_t type)

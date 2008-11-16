@@ -239,48 +239,15 @@ extern "C"
 
   enum MHD_GNUTLS_CompressionMethod
     MHD_gtls_compression_get (MHD_gtls_session_t session);
-//  enum MHD_GNUTLS_CipherAlgorithm MHD_gnutls_cipher_get (MHD_gtls_session_t session);
-//  enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gnutls_kx_get (MHD_gtls_session_t session);
-//  enum MHD_GNUTLS_HashAlgorithm MHD_gnutls_mac_get (MHD_gtls_session_t session);
-//  enum MHD_GNUTLS_CertificateType MHD_gnutls_certificate_type_get (MHD_gtls_session_t
-//                                                         session);
-
   size_t MHD__gnutls_cipher_get_key_size (enum MHD_GNUTLS_CipherAlgorithm
                                           algorithm);
-  size_t MHD__gnutls_mac_get_key_size (enum MHD_GNUTLS_HashAlgorithm
-                                       algorithm);
 
 /* the name of the specified algorithms */
-  const char *MHD__gnutls_cipher_get_name (enum MHD_GNUTLS_CipherAlgorithm
-                                           algorithm);
-  const char *MHD__gnutls_mac_get_name (enum MHD_GNUTLS_HashAlgorithm
-                                        algorithm);
   const char *MHD_gtls_compression_get_name (enum
                                              MHD_GNUTLS_CompressionMethod
                                              algorithm);
-  const char *MHD__gnutls_kx_get_name (enum MHD_GNUTLS_KeyExchangeAlgorithm
-                                       algorithm);
-  const char *MHD__gnutls_certificate_type_get_name (enum
-                                                     MHD_GNUTLS_CertificateType
-                                                     type);
-
-  enum MHD_GNUTLS_HashAlgorithm MHD_gtls_mac_get_id (const char *name);
   enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id (const char
                                                                  *name);
-  enum MHD_GNUTLS_CipherAlgorithm MHD_gtls_cipher_get_id (const char *name);
-  enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_kx_get_id (const char *name);
-  enum MHD_GNUTLS_Protocol MHD_gtls_protocol_get_id (const char *name);
-  enum MHD_GNUTLS_CertificateType MHD_gtls_certificate_type_get_id (const char
-                                                                    *name);
-
-  /* list supported algorithms */
-  const enum MHD_GNUTLS_CipherAlgorithm *MHD_gtls_cipher_list (void);
-  const enum MHD_GNUTLS_HashAlgorithm *MHD_gtls_mac_list (void);
-  const enum MHD_GNUTLS_CompressionMethod *MHD_gtls_compression_list (void);
-  const enum MHD_GNUTLS_Protocol *MHD_gtls_protocol_list (void);
-  const enum MHD_GNUTLS_CertificateType
-    *MHD_gtls_certificate_type_list (void);
-  const enum MHD_GNUTLS_KeyExchangeAlgorithm *MHD_gtls_kx_list (void);
 
   /* error functions */
   int MHD_gtls_error_is_fatal (int error);
@@ -288,8 +255,6 @@ extern "C"
   void MHD_gtls_perror (int error);
   const char *MHD_gtls_strerror (int error);
 
-  void MHD_gtls_handshake_set_private_extensions (MHD_gtls_session_t session,
-                                                  int allow);
 /*
  * Record layer functions.
  */
@@ -299,25 +264,7 @@ extern "C"
                                    size_t sizeofdata);
 
   /* provides extra compatibility */
-  void MHD_gtls_record_disable_padding (MHD_gtls_session_t session);
-  size_t MHD_gtls_record_check_pending (MHD_gtls_session_t session);
-
   int MHD__gnutls_record_get_direction (MHD_gtls_session_t session);
-  size_t MHD__gnutls_record_get_max_size (MHD_gtls_session_t session);
-  ssize_t MHD__gnutls_record_set_max_size (MHD_gtls_session_t session,
-                                           size_t size);
-
-
-  int MHD__gnutls_prf (MHD_gtls_session_t session,
-                       size_t label_size, const char *label,
-                       int server_random_first,
-                       size_t extra_size, const char *extra,
-                       size_t outsize, char *out);
-
-  int MHD__gnutls_prf_raw (MHD_gtls_session_t session,
-                           size_t label_size, const char *label,
-                           size_t seed_size, const char *seed,
-                           size_t outsize, char *out);
 
 /*
  * TLS Extensions
@@ -327,21 +274,9 @@ extern "C"
     GNUTLS_NAME_DNS = 1
   } MHD_gnutls_server_name_type_t;
 
-  int MHD__gnutls_server_name_set (MHD_gtls_session_t session,
-                                   MHD_gnutls_server_name_type_t type,
-                                   const void *name, size_t name_length);
-
-  int MHD__gnutls_server_name_get (MHD_gtls_session_t session,
-                                   void *data, size_t * data_length,
-                                   unsigned int *type, unsigned int indx);
-
   /* Opaque PRF Input
    * http://tools.ietf.org/id/draft-rescorla-tls-opaque-prf-input-00.txt
    */
-
-  void
-    MHD_gtls_oprfi_enable_client (MHD_gtls_session_t session,
-                                  size_t len, unsigned char *data);
 
   typedef int (*MHD_gnutls_oprfi_callback_func) (MHD_gtls_session_t session,
                                                  void *userdata,
@@ -350,32 +285,12 @@ extern "C"
                                                  *in_oprfi,
                                                  unsigned char *out_oprfi);
 
-  void
-    MHD_gtls_oprfi_enable_server (MHD_gtls_session_t session,
-                                  MHD_gnutls_oprfi_callback_func cb,
-                                  void *userdata);
-
   /* Supplemental data, RFC 4680. */
   typedef enum
   {
     GNUTLS_SUPPLEMENTAL_USER_MAPPING_DATA = 0
   } MHD_gnutls_supplemental_data_format_type_t;
 
-  const char *MHD_gtls_supplemental_get_name
-    (MHD_gnutls_supplemental_data_format_type_t type);
-
-  int MHD__gnutls_cipher_set_priority (MHD_gtls_session_t session,
-                                       const int *list);
-  int MHD__gnutls_mac_set_priority (MHD_gtls_session_t session,
-                                    const int *list);
-  int MHD__gnutls_compression_set_priority (MHD_gtls_session_t session,
-                                            const int *list);
-  int MHD__gnutls_kx_set_priority (MHD_gtls_session_t session,
-                                   const int *list);
-  int MHD__gnutls_protocol_set_priority (MHD_gtls_session_t session,
-                                         const int *list);
-  int MHD__gnutls_certificate_type_set_priority (MHD_gtls_session_t session,
-                                                 const int *list);
 
   int MHD_tls_set_default_priority (MHD_gnutls_priority_t *,
                                     const char *priority,
@@ -392,38 +307,8 @@ extern "C"
   enum MHD_GNUTLS_Protocol
     MHD__gnutls_protocol_get_version (MHD_gtls_session_t session);
 
-  const char *MHD__gnutls_protocol_get_name (enum MHD_GNUTLS_Protocol
-                                             version);
-
-/*
- * get/set session
- */
-//  int MHD_gnutls_session_set_data (MHD_gtls_session_t session,
-//                               const void *session_data,
-//                               size_t session_data_size);
-//  int MHD_gnutls_session_get_data (MHD_gtls_session_t session, void *session_data,
-//                               size_t * session_data_size);
-//  int MHD_gnutls_session_get_data2 (MHD_gtls_session_t session,
-//                                MHD_gnutls_datum_t * data);
-
-  int MHD_gtls_session_get_id (MHD_gtls_session_t session, void *session_id,
-                               size_t * session_id_size);
-
-/* returns security values.
- * Do not use them unless you know what you're doing.
- */
-  const void *MHD_gtls_session_get_server_random (MHD_gtls_session_t session);
-  const void *MHD_gtls_session_get_client_random (MHD_gtls_session_t session);
-  const void *MHD_gtls_session_get_master_secret (MHD_gtls_session_t session);
-
-  int MHD_gtls_session_is_resumed (MHD_gtls_session_t session);
-
   typedef
     int (*MHD_gnutls_handshake_post_client_hello_func) (MHD_gtls_session_t);
-  void
-    MHD__gnutls_handshake_set_post_client_hello_function (MHD_gtls_session_t,
-                                                          MHD_gnutls_handshake_post_client_hello_func);
-
   void MHD__gnutls_handshake_set_max_packet_length (MHD_gtls_session_t
                                                     session, size_t max);
 
@@ -490,17 +375,6 @@ extern "C"
   struct MHD_gnutls_x509_crt_int;
   typedef struct MHD_gnutls_x509_crt_int *MHD_gnutls_x509_crt_t;
 
-//  int MHD_gnutls_certificate_set_x509_key (MHD_gtls_cert_credentials_t res,
-//                                       MHD_gnutls_x509_crt_t * cert_list,
-//                                       int cert_list_size,
-//                                       MHD_gnutls_x509_privkey_t key);
-//  int MHD_gnutls_certificate_set_x509_trust (MHD_gtls_cert_credentials_t res,
-//                                         MHD_gnutls_x509_crt_t * ca_list,
-//                                         int ca_list_size);
-//  int MHD_gnutls_certificate_set_x509_crl (MHD_gtls_cert_credentials_t res,
-//                                       MHD_gnutls_x509_crl_t * crl_list,
-//                                       int crl_list_size);
-
 /* global state functions
  */
 
@@ -517,8 +391,6 @@ extern "C"
   extern MHD_gnutls_realloc_function MHD_gnutls_realloc;
   extern MHD_gnutls_calloc_function MHD_gnutls_calloc;
   extern MHD_gnutls_free_function MHD_gnutls_free;
-
-  extern char *(*MHD_gnutls_strdup) (const char *);
 
   typedef void (*MHD_gnutls_log_func) (int, const char *);
   void MHD_gtls_global_set_log_function (MHD_gnutls_log_func log_func);
@@ -549,10 +421,6 @@ extern "C"
                                          const void *, size_t);
   void MHD__gnutls_transport_set_ptr (MHD_gtls_session_t session,
                                       MHD_gnutls_transport_ptr_t ptr);
-  void MHD__gnutls_transport_set_ptr2 (MHD_gtls_session_t session,
-                                       MHD_gnutls_transport_ptr_t recv_ptr,
-                                       MHD_gnutls_transport_ptr_t send_ptr);
-
   void MHD__gnutls_transport_set_lowat (MHD_gtls_session_t session, int num);
 
 
@@ -560,15 +428,6 @@ extern "C"
                                                 MHD_gtls_push_func push_func);
   void MHD__gnutls_transport_set_pull_function (MHD_gtls_session_t session,
                                                 MHD_gtls_pull_func pull_func);
-
-  void MHD__gnutls_transport_set_errno (MHD_gtls_session_t session, int err);
-  void MHD__gnutls_transport_set_global_errno (int err);
-
-/*
- * session specific
- */
-  void MHD__gnutls_session_set_ptr (MHD_gtls_session_t session, void *ptr);
-  void *MHD_gtls_session_get_ptr (MHD_gtls_session_t session);
 
   typedef enum MHD_gnutls_x509_subject_alt_name_t
   {
@@ -620,11 +479,6 @@ extern "C"
    */
   enum MHD_GNUTLS_CredentialsType MHD_gtls_auth_get_type (MHD_gtls_session_t
                                                           session);
-  enum MHD_GNUTLS_CredentialsType
-    MHD_gtls_auth_server_get_type (MHD_gtls_session_t session);
-  enum MHD_GNUTLS_CredentialsType
-    MHD_gtls_auth_client_get_type (MHD_gtls_session_t session);
-
   /*
    * DH
    */
@@ -639,25 +493,6 @@ extern "C"
                                        const MHD_gnutls_datum_t * cert,
                                        const MHD_gnutls_datum_t * hash,
                                        MHD_gnutls_datum_t * signature);
-
-  void MHD_gtls_sign_callback_set (MHD_gtls_session_t session,
-                                   MHD_gnutls_sign_func sign_func,
-                                   void *userdata);
-  MHD_gnutls_sign_func MHD_gtls_sign_callback_get (MHD_gtls_session_t session,
-                                                   void **userdata);
-
-  /* These are set on the credentials structure.
-   */
-  void MHD_gtls_certificate_client_set_retrieve_function
-    (MHD_gtls_cert_credentials_t cred,
-     MHD_gnutls_certificate_client_retrieve_function * func);
-  void MHD_gtls_certificate_server_set_retrieve_function
-    (MHD_gtls_cert_credentials_t cred,
-     MHD_gnutls_certificate_server_retrieve_function * func);
-
-  void MHD_gtls_certificate_server_set_request (MHD_gtls_session_t session,
-                                                MHD_gnutls_certificate_request_t
-                                                req);
 
   int MHD_gtls_pem_base64_encode (const char *msg,
                                   const MHD_gnutls_datum_t * data,

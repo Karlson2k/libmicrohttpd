@@ -32,7 +32,6 @@ MHD_gnutls_free_function MHD_gnutls_free = free;
 MHD_gnutls_realloc_function MHD_gnutls_realloc = realloc;
 
 void *(*MHD_gnutls_calloc) (size_t, size_t) = calloc;
-char *(*MHD_gnutls_strdup) (const char *) = MHD_gtls_strdup;
 
 int
 MHD__gnutls_is_secure_mem_null (const void *ign)
@@ -62,17 +61,5 @@ MHD_gtls_realloc_fast (void *ptr, size_t size)
       MHD_gnutls_free (ptr);
     }
 
-  return ret;
-}
-
-char *
-MHD_gtls_strdup (const char *str)
-{
-  size_t siz = strlen (str) + 1;
-  char *ret;
-
-  ret = MHD_gnutls_malloc (siz);
-  if (ret != NULL)
-    memcpy (ret, str, siz);
   return ret;
 }

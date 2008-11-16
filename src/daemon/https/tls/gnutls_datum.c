@@ -49,23 +49,6 @@ MHD_gtls_write_datum24 (opaque * dest, MHD_gnutls_datum_t dat)
     memcpy (&dest[3], dat.data, dat.size);
 }
 
-void
-MHD_gtls_write_datum32 (opaque * dest, MHD_gnutls_datum_t dat)
-{
-  MHD_gtls_write_uint32 (dat.size, dest);
-  if (dat.data != NULL)
-    memcpy (&dest[4], dat.data, dat.size);
-}
-
-void
-MHD_gtls_write_datum8 (opaque * dest, MHD_gnutls_datum_t dat)
-{
-  dest[0] = (uint8_t) dat.size;
-  if (dat.data != NULL)
-    memcpy (&dest[1], dat.data, dat.size);
-}
-
-
 int
 MHD_gtls_set_datum_m (MHD_gnutls_datum_t * dat, const void *data,
                       size_t data_size, MHD_gnutls_alloc_function galloc_func)
@@ -83,22 +66,6 @@ MHD_gtls_set_datum_m (MHD_gnutls_datum_t * dat, const void *data,
 
   dat->size = data_size;
   memcpy (dat->data, data, data_size);
-
-  return 0;
-}
-
-int
-MHD_gtls_datum_append_m (MHD_gnutls_datum_t * dst, const void *data,
-                         size_t data_size,
-                         MHD_gnutls_realloc_function grealloc_func)
-{
-
-  dst->data = grealloc_func (dst->data, data_size + dst->size);
-  if (dst->data == NULL)
-    return GNUTLS_E_MEMORY_ERROR;
-
-  memcpy (&dst->data[dst->size], data, data_size);
-  dst->size += data_size;
 
   return 0;
 }

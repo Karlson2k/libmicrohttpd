@@ -64,12 +64,6 @@ MHD_gtls_extension_entry MHD_gtls_extensions[MAX_EXT_SIZE] = {
                           MHD_gtls_oprfi_recv_params,
                           MHD_gtls_oprfi_send_params),
 #endif
-#ifdef ENABLE_SRP
-  GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_SRP,
-                          EXTENSION_TLS,
-                          MHD__gnutls_srp_recv_params,
-                          MHD__gnutls_srp_send_params),
-#endif
   {0, 0, 0, 0}
 };
 
