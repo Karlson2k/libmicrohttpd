@@ -84,7 +84,6 @@ gen_dhe_server_kx (MHD_gtls_session_t session, opaque ** data)
   mpi_t g, p;
   const mpi_t *mpis;
   int ret = 0, data_size;
-  int bits;
   MHD_gnutls_cert *apr_cert_list;
   MHD_gnutls_privkey *apr_pkey;
   int apr_cert_list_length;
@@ -99,8 +98,6 @@ gen_dhe_server_kx (MHD_gtls_session_t session, opaque ** data)
       MHD_gnutls_assert ();
       return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
     }
-
-  bits = MHD_gtls_dh_get_allowed_prime_bits (session);
 
   /* find the appropriate certificate */
   if ((ret =
