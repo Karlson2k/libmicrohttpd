@@ -67,7 +67,6 @@ debug.h \
 defines.h \
 ext_cert_type.h \
 ext_max_record.h \
-ext_oprfi.h \
 ext_server_name.h \
 gnutls_algorithms.h \
 gnutls_auth.h \
