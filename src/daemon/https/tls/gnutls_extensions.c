@@ -34,7 +34,6 @@
 #include "ext_max_record.h"
 #include <ext_cert_type.h>
 #include <ext_server_name.h>
-#include <ext_oprfi.h>
 #include <gnutls_num.h>
 
 /* Key Exchange Section */
