@@ -1,17 +1,17 @@
 SUBDIRS = .
 
 if USE_COVERAGE
-  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+  AM_CFLAGS = --coverage
 endif
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon/https \
--I$(top_srcdir)/src/daemon/https/tls \
--I$(top_srcdir)/src/daemon/https/lgl \
--I$(top_srcdir)/src/daemon/https/x509 \
--I$(top_srcdir)/src/daemon \
-$(LIBCURL_CPPFLAGS)
+  -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/daemon/https \
+  -I$(top_srcdir)/src/daemon/https/tls \
+  -I$(top_srcdir)/src/daemon/https/lgl \
+  -I$(top_srcdir)/src/daemon/https/x509 \
+  -I$(top_srcdir)/src/daemon \
+  $(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \
   tls_daemon_options_test \

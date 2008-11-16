@@ -5,7 +5,7 @@ if USE_COVERAGE
 endif
 
 if ENABLE_HTTPS
-SUBDIRS += https
+  SUBDIRS += https
 endif
 
 AM_CPPFLAGS = \
