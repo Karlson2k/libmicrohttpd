@@ -292,49 +292,13 @@ fi
 AM_CONDITIONAL(MHD_DEBUG_TLS, test "$enable_client_side" != "no")
 
 
-# optional: TLS support. Included by default
-AC_MSG_CHECKING(--enable-TLS argument)
-AC_ARG_ENABLE([TLS],
-   [AS_HELP_STRING([--enable-TLS],
-               [enable TLS support (default is yes)])],
-   [enable_TLS=$enableval],
-   [enable_TLS="yes"])
-AC_MSG_RESULT($enable_TLS)
-
-
-# optional: SSLv3 support. Exclude by default
-AC_MSG_CHECKING(--enable-SSL argument)
-AC_ARG_ENABLE([SSL],
-   [AS_HELP_STRING([--enable-SSL],
-               [enable SSLv3 support (default is no)])],
-   [enable_SSL=$enableval],
-   [enable_SSL="no"])
-AC_MSG_RESULT($enable_SSL)
-
-
-# optional: x509 certificate support. Include by default
-AC_MSG_CHECKING(--enable-x509 argument)
-AC_ARG_ENABLE([x509],
-   [AS_HELP_STRING([--enable-x509],
-               [enable x509 support (default is yes)])],
-   [enable_x509=$enableval],
-   [enable_x509="yes"])
-AC_MSG_RESULT($enable_x509)
-
 # test for libz (optional feature for HTTPS)
 zlib=1
 AC_CHECK_LIB(z, compress,,zlib=0)
 AM_CONDITIONAL(HAVE_LIBZ, test x$zlib = x1)
 
 # Symbols required by GNU_TLS 
-AC_DEFINE([ENABLE_MINITASN1],[1],[Include minitasn1 support])
-AC_DEFINE([GNULIB_GC_HMAC_SHA1],[1],[GNULIB_GC_HMAC_SHA1])
 AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
-AC_DEFINE([ENABLE_PKI],[0],[Include PKI support])
-# gnutls debug support
-AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
-AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
-
 
 
 # gcov compilation
@@ -403,9 +367,6 @@ AC_MSG_NOTICE([Configuration Summary:
 if test "$enable_HTTPS" = "yes"
 then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
-  TLS support:       ${enable_TLS}
-  SSLv3 support:     ${enable_SSL}
-  x509 support:      ${enable_x509}
   Client code dep.:  ${MSG_CLIENT_SIDE}    		
  ])
  if test "$zlib" != 1

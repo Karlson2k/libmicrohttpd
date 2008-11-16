@@ -235,14 +235,6 @@ static const MHD_gnutls_cipher_entry MHD_gtls_algorithms[] = {
    CIPHER_BLOCK,
    8,
    1},
-#ifdef	ENABLE_CAMELLIA
-  {"CAMELLIA-256-CBC", MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC, 16, 32,
-   CIPHER_BLOCK,
-   16, 0},
-  {"CAMELLIA-128-CBC", MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC, 16, 16,
-   CIPHER_BLOCK,
-   16, 0},
-#endif
   {"NULL",
    MHD_GNUTLS_CIPHER_NULL,
    1,
@@ -268,10 +260,6 @@ static const enum MHD_GNUTLS_CipherAlgorithm MHD_gtls_supported_ciphers[] =
   MHD_GNUTLS_CIPHER_ARCFOUR_128,
   MHD_GNUTLS_CIPHER_ARCFOUR_40,
   MHD_GNUTLS_CIPHER_RC2_40_CBC,
-#ifdef	ENABLE_CAMELLIA
-  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-#endif
   MHD_GNUTLS_CIPHER_NULL,
   0
 };
@@ -595,16 +583,6 @@ static const MHD_gtls_cipher_suite_entry MHD_gtls_cs_algorithms[] = {
                              MHD_GNUTLS_CIPHER_AES_256_CBC,
                              MHD_GNUTLS_KX_DHE_DSS,
                              MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-#ifdef	ENABLE_CAMELLIA
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_CAMELLIA_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_CAMELLIA_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-#endif
   /* DHE_RSA */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_3DES_EDE_CBC_SHA1,
                              MHD_GNUTLS_CIPHER_3DES_CBC,
@@ -618,16 +596,6 @@ static const MHD_gtls_cipher_suite_entry MHD_gtls_cs_algorithms[] = {
                              MHD_GNUTLS_CIPHER_AES_256_CBC,
                              MHD_GNUTLS_KX_DHE_RSA,
                              MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-#ifdef	ENABLE_CAMELLIA
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_CAMELLIA_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             MHD_GNUTLS_KX_DHE_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_CAMELLIA_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             MHD_GNUTLS_KX_DHE_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-#endif
   /* RSA */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_NULL_MD5,
                              MHD_GNUTLS_CIPHER_NULL,
@@ -657,16 +625,6 @@ static const MHD_gtls_cipher_suite_entry MHD_gtls_cs_algorithms[] = {
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_AES_256_CBC_SHA1,
                              MHD_GNUTLS_CIPHER_AES_256_CBC, MHD_GNUTLS_KX_RSA,
                              MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-#ifdef	ENABLE_CAMELLIA
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_CAMELLIA_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-                             MHD_GNUTLS_KX_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_CAMELLIA_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
-                             MHD_GNUTLS_KX_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-#endif
   {0,
    {
     {0,
@@ -1245,39 +1203,11 @@ MHD__gnutls_compare_algo (MHD_gtls_session_t session,
     }
 }
 
-#ifdef SORT_DEBUG
-static void
-MHD__gnutls_bsort (MHD_gtls_session_t session, void *_base, size_t nmemb,
-                   size_t size, int (*compar) (MHD_gtls_session_t,
-                                               const void *, const void *))
-{
-  unsigned int i, j;
-  int full = nmemb * size;
-  char *base = _base;
-  char tmp[MAX_ELEM_SIZE];
-
-  for (i = 0; i < full; i += size)
-    {
-      for (j = 0; j < full; j += size)
-        {
-          if (compar (session, &base[i], &base[j]) < 0)
-            {
-              SWAP (&base[j], &base[i]);
-            }
-        }
-    }
-
-}
-#endif
-
 int
 MHD_gtls_supported_ciphersuites_sorted (MHD_gtls_session_t session,
                                         cipher_suite_st ** ciphers)
 {
 
-#ifdef SORT_DEBUG
-  unsigned int i;
-#endif
   int count;
 
   count = MHD_gtls_supported_ciphersuites (session, ciphers);
@@ -1286,22 +1216,8 @@ MHD_gtls_supported_ciphersuites_sorted (MHD_gtls_session_t session,
       MHD_gnutls_assert ();
       return count;
     }
-#ifdef SORT_DEBUG
-  MHD__gnutls_debug_log ("Unsorted: \n");
-  for (i = 0; i < count; i++)
-    MHD__gnutls_debug_log ("\t%d: %s\n", i,
-                           MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
-#endif
-
   MHD__gnutls_qsort (session, *ciphers, count, sizeof (cipher_suite_st),
                      MHD__gnutls_compare_algo);
-
-#ifdef SORT_DEBUG
-  MHD__gnutls_debug_log ("Sorted: \n");
-  for (i = 0; i < count; i++)
-    MHD__gnutls_debug_log ("\t%d: %s\n", i,
-                           MHD_gtls_cipher_suite_get_name ((*ciphers)[i]));
-#endif
 
   return count;
 }

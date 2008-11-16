@@ -190,12 +190,6 @@ MHD_gtls_compress (comp_hd_t handle, const opaque * plain,
       return GNUTLS_E_INTERNAL_ERROR;
     }                           /* switch */
 
-#ifdef COMPRESSION_DEBUG
-  MHD__gnutls_debug_log ("Compression ratio: %f\n",
-                         (float) ((float) compressed_size /
-                                  (float) plain_size));
-#endif
-
   if ((size_t) compressed_size > max_comp_size)
     {
       MHD_gnutls_free (*compressed);

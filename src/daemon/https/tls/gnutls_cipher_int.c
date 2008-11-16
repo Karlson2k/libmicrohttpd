@@ -65,16 +65,6 @@ MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
       err = MHD_gc_cipher_open (GC_ARCTWO40, GC_CBC, &ret);
       break;
 
-#ifdef	ENABLE_CAMELLIA
-    case MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC:
-      err = MHD_gc_cipher_open (GC_CAMELLIA128, GC_CBC, &ret);
-      break;
-
-    case MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC:
-      err = MHD_gc_cipher_open (GC_CAMELLIA256, GC_CBC, &ret);
-      break;
-#endif
-
     default:
       return NULL;
     }

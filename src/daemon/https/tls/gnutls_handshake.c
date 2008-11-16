@@ -763,20 +763,6 @@ MHD_gtls_server_select_suite (MHD_gtls_session_t session, opaque * data,
       MHD_gnutls_assert ();
       return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
     }
-#ifdef HANDSHAKE_DEBUG
-
-  MHD__gnutls_handshake_log ("HSK[%x]: Requested cipher suites: \n", session);
-  for (j = 0; j < datalen; j += 2)
-    {
-      memcpy (&cs.suite, &data[j], 2);
-      MHD__gnutls_handshake_log ("\t%s\n",
-                                 MHD_gtls_cipher_suite_get_name (&cs));
-    }
-  MHD__gnutls_handshake_log ("HSK[%x]: Supported cipher suites: \n", session);
-  for (j = 0; j < x; j++)
-    MHD__gnutls_handshake_log ("\t%s\n",
-                               MHD_gtls_cipher_suite_get_name (&ciphers[j]));
-#endif
   memset (session->security_parameters.current_cipher_suite.suite, '\0', 2);
 
   retval = GNUTLS_E_UNKNOWN_CIPHER_SUITE;
@@ -2314,18 +2300,6 @@ static int
 MHD_gtls_handshake_client (MHD_gtls_session_t session)
 {
   int ret = 0;
-
-#ifdef HANDSHAKE_DEBUG
-  char buf[64];
-
-  if (session->internals.resumed_security_parameters.session_id_size > 0)
-    MHD__gnutls_handshake_log ("HSK[%x]: Ask to resume: %s\n", session,
-                               MHD_gtls_bin2hex (session->
-                                                 internals.resumed_security_parameters.session_id,
-                                                 session->
-                                                 internals.resumed_security_parameters.session_id_size,
-                                                 buf, sizeof (buf)));
-#endif
 
   switch (STATE)
     {

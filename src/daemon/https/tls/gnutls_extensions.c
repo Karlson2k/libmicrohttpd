@@ -58,12 +58,6 @@ MHD_gtls_extension_entry MHD_gtls_extensions[MAX_EXT_SIZE] = {
                           EXTENSION_APPLICATION,
                           MHD_gtls_server_name_recv_params,
                           MHD_gtls_server_name_send_params),
-#ifdef ENABLE_OPRFI
-  GNUTLS_EXTENSION_ENTRY (GNUTLS_EXTENSION_OPAQUE_PRF_INPUT,
-                          EXTENSION_TLS,
-                          MHD_gtls_oprfi_recv_params,
-                          MHD_gtls_oprfi_send_params),
-#endif
   {0, 0, 0, 0}
 };
 

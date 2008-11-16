@@ -25,7 +25,6 @@ debug.c \
 defines.h \
 ext_cert_type.c \
 ext_max_record.c \
-ext_oprfi.c \
 ext_server_name.c \
 gnutls_alert.c \
 gnutls_algorithms.c \
