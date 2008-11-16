@@ -135,7 +135,6 @@ test_tls_session_time_out (MHD_gtls_session_t session)
     }
 
   close (sd);
-  fprintf (stderr, "%s. f: %s, l: %d\n", "ok", __FUNCTION__, __LINE__);
   return 0;
 }
 

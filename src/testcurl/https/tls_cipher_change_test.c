@@ -150,52 +150,6 @@ test_out_of_context_cipher_change (MHD_gtls_session_t session)
     }
 
   close (sd);
-  fprintf (stderr, "%s. f: %s, l: %d\n", "ok", __FUNCTION__, __LINE__);
-  return 0;
-}
-
-/* */
-static int
-test_rehandshake (MHD_gtls_session_t session)
-{
-  int sd, ret;
-  struct sockaddr_in sa;
-
-  sd = socket (AF_INET, SOCK_STREAM, 0);
-  memset (&sa, '\0', sizeof (struct sockaddr_in));
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons (42433);
-  inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
-
-  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
-
-  ret = connect (sd, &sa, sizeof (struct sockaddr_in));
-
-  if (ret < 0)
-    {
-      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
-      return -1;
-    }
-
-  ret = MHD__gnutls_handshake (session);
-  if (ret < 0)
-    {
-      return 1;
-    }
-
-  ret = MHD__gnutls_record_send (session, http_get_req, strlen (http_get_req));
-
-  /* check server responds with a 'close-notify' */
-  MHD_gtls_recv_int (session, GNUTLS_ALERT, GNUTLS_HANDSHAKE_FINISHED, 0, 0);
-
-
-  /* CLOSE_NOTIFY */
-  if (session->internals.last_alert != GNUTLS_A_CLOSE_NOTIFY)
-    {
-      return 1;
-    }
-
-  close (sd);
   return 0;
 }
 
@@ -227,7 +181,6 @@ main (int argc, char *const *argv)
 
   setup (&session, &key, &cert, &xcred);
   errorCount += test_out_of_context_cipher_change (session);
-  errorCount += test_rehandshake (session);
   teardown (session, &key, &cert, xcred);
 
   if (errorCount != 0)
