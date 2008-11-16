@@ -64,12 +64,7 @@ int MHD_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer,
                           size_t * nbytes);
 int MHD_gtls_mpi_scan (mpi_t * ret_mpi, const opaque * buffer,
                        size_t * nbytes);
-int MHD_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
-                           size_t * nbytes);
-
 int MHD_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a);
-int MHD_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a);
-
 int MHD_gtls_mpi_dprint_lz (MHD_gnutls_datum_t * dest, const mpi_t a);
 int MHD_gtls_mpi_dprint (MHD_gnutls_datum_t * dest, const mpi_t a);
 

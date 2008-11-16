@@ -227,8 +227,6 @@ extern "C"
   int MHD__gnutls_handshake (MHD_gtls_session_t session);
   int MHD__gnutls_rehandshake (MHD_gtls_session_t session);
 
-  int MHD_gtls_handshake_client (MHD_gtls_session_t session);
-
   MHD_gnutls_alert_description_t MHD_gnutls_alert_get (MHD_gtls_session_t
                                                        session);
   int MHD__gnutls_alert_send (MHD_gtls_session_t session,
@@ -512,17 +510,6 @@ extern "C"
   typedef int (*MHD_gnutls_is_secure_function) (const void *);
   typedef void (*MHD_gnutls_free_function) (void *);
   typedef void *(*MHD_gnutls_realloc_function) (void *, size_t);
-
-  extern void
-    MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function
-                                       gt_alloc_func,
-                                       MHD_gnutls_alloc_function
-                                       gt_secure_alloc_func,
-                                       MHD_gnutls_is_secure_function
-                                       gt_is_secure_func,
-                                       MHD_gnutls_realloc_function
-                                       gt_realloc_func,
-                                       MHD_gnutls_free_function gt_free_func);
 
 /* For use in callbacks */
   extern MHD_gnutls_alloc_function MHD_gnutls_malloc;

@@ -17,6 +17,7 @@ libtls_la_LDFLAGS = -lgcrypt
 
 libtls_la_SOURCES = \
 auth_cert.c \
+auth_dhe.c \
 auth_dh_common.c \
 auth_rsa.c \
 auth_rsa_export.c \

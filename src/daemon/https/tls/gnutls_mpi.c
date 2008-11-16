@@ -80,26 +80,6 @@ MHD_gtls_mpi_scan_nz (mpi_t * ret_mpi, const opaque * buffer, size_t * nbytes)
 }
 
 int
-MHD_gtls_mpi_scan_pgp (mpi_t * ret_mpi, const opaque * buffer,
-                       size_t * nbytes)
-{
-  int ret;
-  ret = gcry_mpi_scan (ret_mpi, GCRYMPI_FMT_PGP, buffer, *nbytes, nbytes);
-  if (ret)
-    return GNUTLS_E_MPI_SCAN_FAILED;
-
-  /* MPIs with 0 bits are illegal
-   */
-  if (MHD__gnutls_mpi_get_nbits (*ret_mpi) == 0)
-    {
-      MHD_gtls_mpi_release (ret_mpi);
-      return GNUTLS_E_MPI_SCAN_FAILED;
-    }
-
-  return 0;
-}
-
-int
 MHD_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;
@@ -115,7 +95,7 @@ MHD_gtls_mpi_print (void *buffer, size_t * nbytes, const mpi_t a)
 }
 
 /* Always has the first bit zero */
-int
+static int
 MHD_gtls_mpi_print_lz (void *buffer, size_t * nbytes, const mpi_t a)
 {
   int ret;

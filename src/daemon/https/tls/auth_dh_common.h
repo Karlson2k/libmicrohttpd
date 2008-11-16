@@ -35,5 +35,14 @@ typedef struct
 } MHD_gtls_dh_info_st;
 
 void MHD_gtls_free_dh_info (MHD_gtls_dh_info_st * dh);
+int MHD_gtls_gen_dh_common_client_kx (MHD_gtls_session_t, opaque **);
+int MHD_gtls_proc_dh_common_client_kx (MHD_gtls_session_t session,
+                                       opaque * data, size_t _data_size,
+                                       mpi_t p, mpi_t g);
+int MHD_gtls_dh_common_print_server_kx (MHD_gtls_session_t, mpi_t g, mpi_t p,
+                                        opaque ** data, int psk);
+int MHD_gtls_proc_dh_common_server_kx (MHD_gtls_session_t session,
+                                       opaque * data, size_t _data_size,
+                                       int psk);
 
 #endif

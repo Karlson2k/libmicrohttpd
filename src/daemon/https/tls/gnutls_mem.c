@@ -44,27 +44,6 @@ int (*MHD__gnutls_is_secure_memory) (const void *) =
   MHD__gnutls_is_secure_mem_null;
 
 
-void *
-MHD_gtls_calloc (size_t nmemb, size_t size)
-{
-  void *ret;
-  size *= nmemb;
-  ret = MHD_gnutls_malloc (size);
-  if (ret != NULL)
-    memset (ret, 0, size);
-  return ret;
-}
-
-svoid *
-MHD_gtls_secure_calloc (size_t nmemb, size_t size)
-{
-  svoid *ret;
-  size *= nmemb;
-  ret = MHD_gnutls_secure_malloc (size);
-  if (ret != NULL)
-    memset (ret, 0, size);
-  return ret;
-}
 
 /* This realloc will free ptr in case realloc
  * fails.
@@ -97,39 +76,3 @@ MHD_gtls_strdup (const char *str)
     memcpy (ret, str, siz);
   return ret;
 }
-
-
-#if 0
-/* don't use them. They are included for documentation.
- */
-
-/**
-  * MHD_gnutls_malloc - Allocates and returns data
-  *
-  * This function will allocate 's' bytes data, and
-  * return a pointer to memory. This function is supposed
-  * to be used by callbacks.
-  *
-  * The allocation function used is the one set by MHD_gtls_global_set_mem_functions().
-  *
-  **/
-void *
-MHD_gnutls_malloc (size_t s)
-{
-}
-
-/**
-  * MHD_gnutls_free - Returns a free() like function
-  * @d: pointer to memory
-  *
-  * This function will free data pointed by ptr.
-  *
-  * The deallocation function used is the one set by MHD_gtls_global_set_mem_functions().
-  *
-  **/
-void
-MHD_gnutls_free (void *ptr)
-{
-}
-
-#endif

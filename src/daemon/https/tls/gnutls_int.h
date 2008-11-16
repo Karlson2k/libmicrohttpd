@@ -670,7 +670,6 @@ void MHD_gtls_free_auth_info (MHD_gtls_session_t session);
 	session->internals.adv_version_major = major; \
 	session->internals.adv_version_minor = minor
 
-void MHD_gtls_set_adv_version (MHD_gtls_session_t, enum MHD_GNUTLS_Protocol);
 enum MHD_GNUTLS_Protocol MHD_gtls_get_adv_version (MHD_gtls_session_t);
 
 #endif /* GNUTLS_INT_H */

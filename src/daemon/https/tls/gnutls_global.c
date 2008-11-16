@@ -94,57 +94,6 @@ MHD_gtls_global_set_log_level (int level)
 
 int MHD__gnutls_is_secure_mem_null (const void *);
 
-/**
- * MHD_gtls_global_set_mem_functions - This function sets the memory allocation functions
- * @alloc_func: it's the default memory allocation function. Like malloc().
- * @secure_alloc_func: This is the memory allocation function that will be used for sensitive data.
- * @is_secure_func: a function that returns 0 if the memory given is not secure. May be NULL.
- * @realloc_func: A realloc function
- * @free_func: The function that frees allocated data. Must accept a NULL pointer.
- *
- * This is the function were you set the memory allocation functions gnutls
- * is going to use. By default the libc's allocation functions (malloc(), free()),
- * are used by gnutls, to allocate both sensitive and not sensitive data.
- * This function is provided to set the memory allocation functions to
- * something other than the defaults (ie the gcrypt allocation functions).
- *
- * This function must be called before MHD__gnutls_global_init() is called.
- *
- **/
-void
-MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function alloc_func,
-                                   MHD_gnutls_alloc_function
-                                   secure_alloc_func,
-                                   MHD_gnutls_is_secure_function
-                                   is_secure_func,
-                                   MHD_gnutls_realloc_function realloc_func,
-                                   MHD_gnutls_free_function free_func)
-{
-  MHD_gnutls_secure_malloc = secure_alloc_func;
-  MHD_gnutls_malloc = alloc_func;
-  MHD_gnutls_realloc = realloc_func;
-  MHD_gnutls_free = free_func;
-
-  if (is_secure_func != NULL)
-    MHD__gnutls_is_secure_memory = is_secure_func;
-  else
-    MHD__gnutls_is_secure_memory = MHD__gnutls_is_secure_mem_null;
-
-  /* if using the libc's default malloc
-   * use libc's calloc as well.
-   */
-  if (MHD_gnutls_malloc == malloc)
-    {
-      MHD_gnutls_calloc = calloc;
-    }
-  else
-    {                           /* use the included ones */
-      MHD_gnutls_calloc = MHD_gtls_calloc;
-    }
-  MHD_gnutls_strdup = MHD_gtls_strdup;
-
-}
-
 static int MHD__gnutls_init_level = 0;
 
 /**

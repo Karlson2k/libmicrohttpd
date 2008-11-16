@@ -1717,6 +1717,14 @@ MHD__gnutls_copy_comp_methods (MHD_gtls_session_t session,
   return datalen;
 }
 
+static void
+MHD_gtls_set_adv_version (MHD_gtls_session_t session,
+                          enum MHD_GNUTLS_Protocol ver)
+{
+  set_adv_version (session, MHD_gtls_version_get_major (ver),
+                   MHD_gtls_version_get_minor (ver));
+}
+
 /* This function sends the client hello handshake message.
  */
 static int
