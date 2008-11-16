@@ -1,9 +1,3 @@
-SUBDIRS = .
-
-if USE_COVERAGE
-  AM_CFLAGS = -fprofile-arcs -ftest-coverage
-endif
-
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon/ \
@@ -11,18 +5,19 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon/https/tls \
 -I$(top_srcdir)/src/daemon/https/lgl \
 -I$(top_srcdir)/src/daemon/https/minitasn1 \
--I$(top_srcdir)/src/daemon/https/x509 \
--I$(GCRYPT_CPPFLAGS)
+-I$(top_srcdir)/src/daemon/https/x509 
+
+if USE_COVERAGE
+  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+endif
 
 noinst_LTLIBRARIES = libtls.la
 
-libtls_la_LDFLAGS = \
- -L$(GCRYPT_LIB_PATH)
+libtls_la_LDFLAGS = -lgcrypt
 
 libtls_la_SOURCES = \
 auth_cert.c \
 auth_dh_common.c \
-auth_dhe.c \
 auth_rsa.c \
 auth_rsa_export.c \
 debug.c \

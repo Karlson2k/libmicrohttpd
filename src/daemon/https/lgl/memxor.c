@@ -23,7 +23,7 @@
 #include "memxor.h"
 
 void *
-MHD_memxor (void *restrict dest, const void *restrict src, size_t n)
+MHD_memxor (void * dest, const void * src, size_t n)
 {
   char const *s = src;
   char *d = dest;

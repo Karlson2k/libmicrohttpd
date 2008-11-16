@@ -4,6 +4,10 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon/https
 
+if USE_COVERAGE
+  AM_CFLAGS = --coverage
+endif
+
 # example programs
 noinst_PROGRAMS = \
 authorization_example \

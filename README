@@ -79,6 +79,9 @@ Missing features:
      instead of linking against it
 - Make sure SSL works on non-GNU/Linux platforms
 
+- MHD_tls_connection_close is not called in any testcase!???
+  (is it used properly in the code!?)
+
 
 Untested features:
 ==================
@@ -92,6 +95,16 @@ Untested features:
 - extend testcase for chunked encoding to validate
   handling of footers
 - more testing for SSL support
+
+
+Functions not covered by "make check":
+======================================
+- MHD_get_connection_values is not called in any testcase
+- MHD_set_connection_value is not called in any testcase
+- parse_cookie_header is not tested by any testcase
+- parse_arguments is not tested by any testcase
+- MHD_del_response_header is not called by any testcase
+- MHD_get_response_headers is not called by any testcase
 
 
 Missing documentation:

@@ -1,19 +1,11 @@
-# including '.' mixes up build order when HTTPS is enabled.
-SUBDIRS = 
-
-if USE_COVERAGE
-  AM_CFLAGS = -fprofile-arcs -ftest-coverage
-endif
-
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon \
--I$(top_srcdir)/src/daemon/https/lgl \
--I$(top_srcdir)/src/daemon/https/x509 \
--I$(top_srcdir)/src/daemon/https/minitasn1 \
--I$(top_srcdir)/src/daemon/https/tls \
--I$(top_srcdir)/src/daemon/https \
--I$(GCRYPT_CPPFLAGS)
+  -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/daemon \
+  -I$(top_srcdir)/src/daemon/https/lgl \
+  -I$(top_srcdir)/src/daemon/https/x509 \
+  -I$(top_srcdir)/src/daemon/https/minitasn1 \
+  -I$(top_srcdir)/src/daemon/https/tls \
+  -I$(top_srcdir)/src/daemon/https 
 
 if HAVE_GNU_LD
 #  If you want to debug with gdb, comment out this line:
@@ -26,27 +18,32 @@ lib_LTLIBRARIES = \
   libmicrohttpd.la
 
 libmicrohttpd_la_SOURCES = \
-connection.c connection.h \
-reason_phrase.c reason_phrase.h \
-daemon.c  \
-internal.c internal.h \
-memorypool.c memorypool.h \
-postprocessor.c \
-response.c response.h
+  connection.c connection.h \
+  reason_phrase.c reason_phrase.h \
+  daemon.c  \
+  internal.c internal.h \
+  memorypool.c memorypool.h \
+  postprocessor.c \
+  response.c response.h
 libmicrohttpd_la_LDFLAGS = \
-  -export-dynamic -version-info 4:3:0 $(retaincommand)
+  -version-info 4:3:0 \
+  -export-dynamic $(retaincommand)
+
+if USE_COVERAGE
+  AM_CFLAGS = --coverage
+endif
 
 
 if ENABLE_HTTPS
-SUBDIRS += https .
-libmicrohttpd_la_SOURCES += connection_https.c connection_https.h
+SUBDIRS = https .
+libmicrohttpd_la_SOURCES += \
+  connection_https.c connection_https.h
 libmicrohttpd_la_LIBADD = \
   https/lgl/liblgl.la \
   https/x509/libx509.la \
   https/tls/libtls.la \
   https/minitasn1/libasn1.la 
 endif
-
 
 check_PROGRAMS = \
   postprocessor_test \
