@@ -267,49 +267,6 @@ MHD__asn1_delete_structure (ASN1_TYPE * structure)
   return ASN1_SUCCESS;
 }
 
-
-
-/**
-  * MHD__asn1_delete_element - Deletes the element of a structure.
-  * @structure: pointer to the structure that contains the element you
-  *   want to delete.
-  * @element_name: element's name you want to delete.
-  *
-  * Deletes the element named *@element_name inside *@structure.
-  *
-  * Returns:
-  *
-  * ASN1_SUCCESS: Everything OK.
-  *
-  * ASN1_ELEMENT_NOT_FOUND: The name element was not found.
-  *
-  **/
-MHD__asn1_retCode
-MHD__asn1_delete_element (ASN1_TYPE structure, const char *element_name)
-{
-  node_asn *p2, *p3, *source_node;
-
-  source_node = MHD__asn1_find_node (structure, element_name);
-
-  if (source_node == ASN1_TYPE_EMPTY)
-    return ASN1_ELEMENT_NOT_FOUND;
-
-  p2 = source_node->right;
-  p3 = MHD__asn1_find_left (source_node);
-  if (!p3)
-    {
-      p3 = MHD__asn1_find_up (source_node);
-      if (p3)
-        MHD__asn1_set_down (p3, p2);
-      else if (source_node->right)
-        source_node->right->left = NULL;
-    }
-  else
-    MHD__asn1_set_right (p3, p2);
-
-  return MHD__asn1_delete_structure (&source_node);
-}
-
 node_asn *
 MHD__asn1_copy_structure3 (node_asn * source_node)
 {
@@ -730,54 +687,3 @@ MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
   return NULL;                  /* ASN1_ELEMENT_NOT_FOUND; */
 }
 
-/**
- * MHD__asn1_copy_node:
- * @dst: Destination ASN1_TYPE node.
- * @dst_name: Field name in destination node.
- * @src: Source ASN1_TYPE node.
- * @src_name: Field name in source node.
- *
- * Create a deep copy of a ASN1_TYPE variable.
- *
- * Return value: Return ASN1_SUCCESS on success.
- **/
-MHD__asn1_retCode
-MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
-                     ASN1_TYPE src, const char *src_name)
-{
-/* FIXME: rewrite using copy_structure().
- * It seems quite hard to do.
- */
-  int result;
-  ASN1_TYPE dst_node;
-  void *data = NULL;
-  int size = 0;
-
-  result = MHD__asn1_der_coding (src, src_name, NULL, &size, NULL);
-  if (result != ASN1_MEM_ERROR)
-    return result;
-
-  data = MHD__asn1_malloc (size);
-  if (data == NULL)
-    return ASN1_MEM_ERROR;
-
-  result = MHD__asn1_der_coding (src, src_name, data, &size, NULL);
-  if (result != ASN1_SUCCESS)
-    {
-      MHD__asn1_free (data);
-      return result;
-    }
-
-  dst_node = MHD__asn1_find_node (dst, dst_name);
-  if (dst_node == NULL)
-    {
-      MHD__asn1_free (data);
-      return ASN1_ELEMENT_NOT_FOUND;
-    }
-
-  result = MHD__asn1_der_decoding (&dst_node, data, size, NULL);
-
-  MHD__asn1_free (data);
-
-  return result;
-}

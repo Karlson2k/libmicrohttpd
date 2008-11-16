@@ -145,15 +145,6 @@ MHD_gtls_global_set_mem_functions (MHD_gnutls_alloc_function alloc_func,
 
 }
 
-#ifdef DEBUG
-static void
-MHD__gnutls_gcry_log_handler (void *dummy, int level,
-                              const char *fmt, va_list list)
-{
-  MHD_gtls_log (level, fmt, list);
-}
-#endif
-
 static int MHD__gnutls_init_level = 0;
 
 /**
@@ -254,12 +245,6 @@ MHD__gnutls_global_init (void)
 
       gcry_control (GCRYCTL_INITIALIZATION_FINISHED, NULL, 0);
 
-#ifdef DEBUG
-      /* applications may want to override that, so we only use
-       * it in debugging mode.
-       */
-      gcry_set_log_handler (MHD__gnutls_gcry_log_handler, NULL);
-#endif
     }
 
   if (MHD_gc_init () != GC_OK)
@@ -268,10 +253,6 @@ MHD__gnutls_global_init (void)
       MHD__gnutls_debug_log ("Initializing crypto backend failed\n");
       return GNUTLS_E_INCOMPATIBLE_CRYPTO_LIBRARY;
     }
-
-#ifdef DEBUG
-  MHD_gtls_global_set_log_function (MHD_tls_log_func);
-#endif
 
   /* initialize parser
    * This should not deal with files in the final

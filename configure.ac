@@ -335,9 +335,16 @@ AC_DEFINE([ENABLE_PKI],[0],[Include PKI support])
 AC_DEFINE([DEBUG],[1],[Include gnutls debug message support])
 AC_DEFINE([C99_MACROS],[1],[Include gnutls debug message support])
 
-AC_DEFINE([ENABLE_OPENSSL],[0],[Include ENABLE_OPENSSL support])
-AC_DEFINE([HAVE_LD_OUTPUT_DEF],[0],[Include HAVE_LD_OUTPUT_DEF support])
-AC_DEFINE([HAVE_LD_VERSION_SCRIPT],[0],[Include HAVE_LD_VERSION_SCRIPT support])
+
+
+# gcov compilation
+use_gcov=no
+AC_ARG_ENABLE([coverage], AS_HELP_STRING([--enable-coverage],
+                                        [Compile the library with code coverage support (default is NO)]),
+                                        [use_gcov=yes], [use_gcov=no])
+AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
+
+
 
 
 AC_SUBST(CPPFLAGS)

@@ -1,5 +1,9 @@
 SUBDIRS = .
 
+if USE_COVERAGE
+  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+endif
+
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 -I$(top_srcdir)/src/daemon/ \

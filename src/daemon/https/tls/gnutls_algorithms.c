@@ -1549,15 +1549,6 @@ MHD__gnutls_qsort (MHD_gtls_session_t session,
   char *base = _base;
   size_t snmemb = nmemb;
 
-#ifdef DEBUG
-  if (size > MAX_ELEM_SIZE)
-    {
-      MHD_gnutls_assert ();
-      MHD__gnutls_debug_log ("QSORT BUG\n");
-      exit (1);
-    }
-#endif
-
   if (snmemb <= 1)
     return;
   pivot = MHD__gnutls_partition (session, _base, nmemb, size, compar);

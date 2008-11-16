@@ -1,3 +1,6 @@
+Sat Nov 15 17:34:24 MST 2008
+	 Added build support for code coverage analysis. -CG
+
 Sat Nov 15 00:31:33 MST 2008
 	 Removing (broken) support for HTTPS servers with
 	 anonymous (aka "no") certificates as well as

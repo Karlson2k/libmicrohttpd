@@ -1,3 +1,8 @@
+SUBDIRS = .
+
+if USE_COVERAGE
+  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
@@ -10,14 +15,11 @@ AM_CPPFLAGS = \
 noinst_LTLIBRARIES = libx509.la
 
 libx509_la_LDFLAGS = -lgcrypt 
-# -l $(top_srcdir)/src/daemon/https/lgl/liblgl.la
 
 libx509_la_SOURCES = \
 common.c common.h \
-crq.c crq.h \
 crl.c \
 dn.c dn.h \
-dsa.c dsa.h \
 extensions.c extensions.h \
 mpi.c mpi.h \
 pkcs12_encr.c pkcs12.h \

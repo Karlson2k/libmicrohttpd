@@ -6,6 +6,10 @@ AM_CPPFLAGS = -std=c99 \
 
 # gc-gnulib.c
 
+if USE_COVERAGE
+  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+endif
+
 noinst_LTLIBRARIES = liblgl.la
 
 liblgl_la_LDFLAGS = -lgcrypt

@@ -1,5 +1,9 @@
 SUBDIRS  = .
 
+if USE_COVERAGE
+  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+endif
+
 if ENABLE_HTTPS
 SUBDIRS += https
 endif
@@ -24,6 +28,7 @@ check_PROGRAMS = \
   daemontest_put11 \
   daemontest_large_put11 \
   daemontest_long_header \
+  daemontest_long_header11 \
   daemontest_get_chunked \
   daemontest_put_chunked
 noinst_PROGRAMS = \
@@ -128,6 +133,12 @@ daemontest_large_put11_LDADD = \
 daemontest_long_header_SOURCES = \
   daemontest_long_header.c
 daemontest_long_header_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_long_header11_SOURCES = \
+  daemontest_long_header.c
+daemontest_long_header11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

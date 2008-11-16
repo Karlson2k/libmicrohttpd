@@ -28,30 +28,6 @@
 #include <stdlib.h>
 #include <gcrypt.h>
 
-#ifdef DEBUG
-
-
-void
-MHD__gnutls_print_state (MHD_gtls_session_t session)
-{
-
-  MHD__gnutls_debug_log ("GNUTLS State:\n");
-  MHD__gnutls_debug_log ("Connection End: %d\n",
-                         session->security_parameters.entity);
-  MHD__gnutls_debug_log ("Cipher Algorithm: %d\n",
-                         session->security_parameters.
-                         read_bulk_cipher_algorithm);
-  MHD__gnutls_debug_log ("MAC algorithm: %d\n",
-                         session->security_parameters.read_mac_algorithm);
-  MHD__gnutls_debug_log ("Compression Algorithm: %d\n",
-                         session->security_parameters.
-                         read_compression_algorithm);
-  MHD__gnutls_debug_log ("\n");
-
-}
-
-#endif
-
 const char *
 MHD__gnutls_packet2str (content_type_t packet)
 {

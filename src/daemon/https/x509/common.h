@@ -94,11 +94,6 @@ int MHD__gnutls_x509_read_value (ASN1_TYPE c, const char *root,
 int MHD__gnutls_x509_write_value (ASN1_TYPE c, const char *root,
                                   const MHD_gnutls_datum_t * data, int str);
 
-int MHD__gnutls_x509_encode_and_write_attribute (const char *given_oid,
-                                                 ASN1_TYPE MHD__asn1_struct,
-                                                 const char *where,
-                                                 const void *data,
-                                                 int sizeof_data, int multi);
 int MHD__gnutls_x509_decode_and_read_attribute (ASN1_TYPE MHD__asn1_struct,
                                                 const char *where, char *oid,
                                                 int oid_size,

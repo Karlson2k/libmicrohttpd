@@ -398,17 +398,3 @@ MHD_gtls_log (int level, const char *fmt, ...)
   log_func (level, str);
 }
 
-#ifndef DEBUG
-# ifndef C99_MACROS
-
-/* Without C99 macros these functions have to
- * be called. This may affect performance.
- */
-void
-MHD__gnutls_null_log (void *x, ...)
-{
-  return;
-}
-
-# endif /* C99_MACROS */
-#endif /* DEBUG */

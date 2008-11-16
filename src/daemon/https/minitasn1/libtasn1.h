@@ -156,9 +156,6 @@ extern "C"
 
   MHD__asn1_retCode MHD__asn1_delete_structure (ASN1_TYPE * structure);
 
-  MHD__asn1_retCode MHD__asn1_delete_element (ASN1_TYPE structure,
-                                              const char *element_name);
-
   MHD__asn1_retCode MHD__asn1_write_value (ASN1_TYPE node_root,
                                            const char *name,
                                            const void *ivalue, int len);
@@ -217,9 +214,6 @@ extern "C"
   /* Other utility functions. */
 
   ASN1_TYPE MHD__asn1_find_node (ASN1_TYPE pointer, const char *name);
-
-  MHD__asn1_retCode MHD__asn1_copy_node (ASN1_TYPE dst, const char *dst_name,
-                                         ASN1_TYPE src, const char *src_name);
 
 #ifdef __cplusplus
 }
