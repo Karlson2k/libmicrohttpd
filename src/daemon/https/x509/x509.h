@@ -97,9 +97,6 @@ extern "C"
                                   MHD_gnutls_x509_crt_fmt_t format,
                                   void *output_data,
                                   size_t * output_data_size);
-  int MHD_gnutls_x509_crt_check_hostname (MHD_gnutls_x509_crt_t cert,
-                                          const char *hostname);
-
   int MHD_gnutls_x509_crt_get_signature_algorithm (MHD_gnutls_x509_crt_t
                                                    cert);
   int MHD_gnutls_x509_crt_get_signature (MHD_gnutls_x509_crt_t cert,
@@ -214,10 +211,6 @@ extern "C"
   int MHD_gnutls_x509_crt_print (MHD_gnutls_x509_crt_t cert,
                                  MHD_gnutls_certificate_print_formats_t
                                  format, MHD_gnutls_datum_t * out);
-  int MHD_gnutls_x509_crl_print (MHD_gnutls_x509_crl_t crl,
-                                 MHD_gnutls_certificate_print_formats_t
-                                 format, MHD_gnutls_datum_t * out);
-
 /* Access to internal Certificate fields.
  */
   int MHD_gnutls_x509_crt_get_raw_issuer_dn (MHD_gnutls_x509_crt_t cert,
@@ -236,51 +229,6 @@ extern "C"
 
   int MHD_gnutls_x509_crt_get_subject (MHD_gnutls_x509_crt_t cert,
                                        MHD_gnutls_x509_dn_t * dn);
-/* CRL handling functions.
- */
-  int MHD_gnutls_x509_crl_init (MHD_gnutls_x509_crl_t * crl);
-  void MHD_gnutls_x509_crl_deinit (MHD_gnutls_x509_crl_t crl);
-
-  int MHD_gnutls_x509_crl_get_signature_algorithm (MHD_gnutls_x509_crl_t crl);
-  int MHD_gnutls_x509_crl_get_signature (MHD_gnutls_x509_crl_t crl,
-                                         char *sig, size_t * sizeof_sig);
-  int MHD_gnutls_x509_crl_get_crt_count (MHD_gnutls_x509_crl_t crl);
-  int MHD_gnutls_x509_crl_get_crt_serial (MHD_gnutls_x509_crl_t crl,
-                                          int indx,
-                                          unsigned char *serial,
-                                          size_t * serial_size, time_t * t);
-#define MHD_gnutls_x509_crl_get_certificate_count MHD_gnutls_x509_crl_get_crt_count
-#define MHD_gnutls_x509_crl_get_certificate MHD_gnutls_x509_crl_get_crt_serial
-
-  int MHD_gnutls_x509_crl_check_issuer (MHD_gnutls_x509_crl_t crl,
-                                        MHD_gnutls_x509_crt_t issuer);
-
-/* CRL writing.
- */
-  int MHD_gnutls_x509_crl_set_version (MHD_gnutls_x509_crl_t crl,
-                                       unsigned int version);
-  int MHD_gnutls_x509_crl_sign (MHD_gnutls_x509_crl_t crl,
-                                MHD_gnutls_x509_crt_t issuer,
-                                MHD_gnutls_x509_privkey_t issuer_key);
-  int MHD_gnutls_x509_crl_sign2 (MHD_gnutls_x509_crl_t crl,
-                                 MHD_gnutls_x509_crt_t issuer,
-                                 MHD_gnutls_x509_privkey_t issuer_key,
-                                 enum MHD_GNUTLS_HashAlgorithm,
-                                 unsigned int flags);
-  int MHD_gnutls_x509_crl_set_this_update (MHD_gnutls_x509_crl_t crl,
-                                           time_t act_time);
-  int MHD_gnutls_x509_crl_set_next_update (MHD_gnutls_x509_crl_t crl,
-                                           time_t exp_time);
-  int MHD_gnutls_x509_crl_set_crt_serial (MHD_gnutls_x509_crl_t crl,
-                                          const void *serial,
-                                          size_t serial_size,
-                                          time_t revocation_time);
-  int MHD_gnutls_x509_crl_set_crt (MHD_gnutls_x509_crl_t crl,
-                                   MHD_gnutls_x509_crt_t crt,
-                                   time_t revocation_time);
-
-/* PKCS7 structures handling
- */
   struct MHD_gnutls_pkcs7_int;
   typedef struct MHD_gnutls_pkcs7_int *MHD_gnutls_pkcs7_t;
 
@@ -352,9 +300,6 @@ extern "C"
     GNUTLS_VERIFY_ALLOW_SIGN_RSA_MD5 = 32
   } MHD_gnutls_certificate_verify_flags;
 
-  int MHD_gnutls_x509_crt_check_issuer (MHD_gnutls_x509_crt_t cert,
-                                        MHD_gnutls_x509_crt_t issuer);
-
   int MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t *
                                        cert_list, int cert_list_length,
                                        const MHD_gnutls_x509_crt_t * CA_list,
@@ -363,15 +308,6 @@ extern "C"
                                        int CRL_list_length,
                                        unsigned int flags,
                                        unsigned int *verify);
-
-  int MHD_gnutls_x509_crt_verify (MHD_gnutls_x509_crt_t cert,
-                                  const MHD_gnutls_x509_crt_t * CA_list,
-                                  int CA_list_length,
-                                  unsigned int flags, unsigned int *verify);
-  int MHD_gnutls_x509_crl_verify (MHD_gnutls_x509_crl_t crl,
-                                  const MHD_gnutls_x509_crt_t * CA_list,
-                                  int CA_list_length,
-                                  unsigned int flags, unsigned int *verify);
 
   int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
                                             const MHD_gnutls_x509_crl_t *
@@ -554,20 +490,6 @@ int MHD__gnutls_x509_compare_raw_dn (const MHD_gnutls_datum_t * dn1,
 int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
                                           const MHD_gnutls_x509_crl_t *
                                           crl_list, int crl_list_length);
-
-int MHD__gnutls_x509_crl_get_raw_issuer_dn (MHD_gnutls_x509_crl_t crl,
-                                            MHD_gnutls_datum_t * dn);
-int MHD_gnutls_x509_crl_get_crt_count (MHD_gnutls_x509_crl_t crl);
-int MHD_gnutls_x509_crl_get_crt_serial (MHD_gnutls_x509_crl_t crl,
-                                        int indx,
-                                        unsigned char *serial,
-                                        size_t * serial_size, time_t * t);
-
-void MHD_gnutls_x509_crl_deinit (MHD_gnutls_x509_crl_t crl);
-int MHD_gnutls_x509_crl_init (MHD_gnutls_x509_crl_t * crl);
-int MHD_gnutls_x509_crl_import (MHD_gnutls_x509_crl_t crl,
-                                const MHD_gnutls_datum_t * data,
-                                MHD_gnutls_x509_crt_fmt_t format);
 
 int MHD_gnutls_x509_crt_init (MHD_gnutls_x509_crt_t * cert);
 void MHD_gnutls_x509_crt_deinit (MHD_gnutls_x509_crt_t cert);

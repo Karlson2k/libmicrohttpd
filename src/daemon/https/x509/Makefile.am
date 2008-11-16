@@ -23,7 +23,6 @@ extensions.c extensions.h \
 mpi.c mpi.h \
 pkcs12.h \
 x509_privkey.c privkey.h \
-rfc2818_hostname.c rfc2818.h \
 x509_verify.c verify.h \
 x509.c x509.h
 

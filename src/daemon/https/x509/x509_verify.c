@@ -46,7 +46,7 @@ static int MHD__gnutls_verify_certificate2 (MHD_gnutls_x509_crt_t cert,
                                             trusted_cas, int tcas_size,
                                             unsigned int flags,
                                             unsigned int *output);
-int MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * signed_data,
+static int MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * signed_data,
                                        const MHD_gnutls_datum_t * signature,
                                        MHD_gnutls_x509_crt_t issuer);
 
@@ -351,7 +351,7 @@ cleanup:MHD__gnutls_free_datum (&cert_signed_data);
  * A negative value is returned in case of an error.
  *
  **/
-int
+static int
 MHD_gnutls_x509_crt_check_issuer (MHD_gnutls_x509_crt_t cert,
                                   MHD_gnutls_x509_crt_t issuer)
 {
@@ -618,7 +618,7 @@ verify_sig (const MHD_gnutls_datum_t * tbs,
  * 'tbs' is the signed data
  * 'signature' is the signature!
  */
-int
+static int
 MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
                                    const MHD_gnutls_datum_t * signature,
                                    MHD_gnutls_x509_crt_t issuer)
@@ -652,30 +652,6 @@ MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
   for (i = 0; i < issuer_params_size; i++)
     {
       MHD_gtls_mpi_release (&issuer_params[i]);
-    }
-
-  return ret;
-}
-
-/* verifies if the certificate is properly signed.
- * returns 0 on failure and 1 on success.
- *
- * 'tbs' is the signed data
- * 'signature' is the signature!
- */
-int
-MHD__gnutls_x509_privkey_verify_signature (const MHD_gnutls_datum_t * tbs,
-                                           const MHD_gnutls_datum_t *
-                                           signature,
-                                           MHD_gnutls_x509_privkey_t issuer)
-{
-  int ret;
-
-  ret = verify_sig (tbs, signature, issuer->pk_algorithm, issuer->params,
-                    issuer->params_size);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
     }
 
   return ret;
@@ -733,40 +709,6 @@ MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t * cert_list,
                                                  CA_list, CA_list_length,
                                                  CRL_list, CRL_list_length,
                                                  flags);
-
-  return 0;
-}
-
-/**
- * MHD_gnutls_x509_crt_verify - This function verifies the given certificate against a given trusted one
- * @cert: is the certificate to be verified
- * @CA_list: is one certificate that is considered to be trusted one
- * @CA_list_length: holds the number of CA certificate in CA_list
- * @flags: Flags that may be used to change the verification algorithm. Use OR of the MHD_gnutls_certificate_verify_flags enumerations.
- * @verify: will hold the certificate verification output.
- *
- * This function will try to verify the given certificate and return its status.
- * The verification output in this functions cannot be GNUTLS_CERT_NOT_VALID.
- *
- * Returns 0 on success and a negative value in case of an error.
- *
- **/
-int
-MHD_gnutls_x509_crt_verify (MHD_gnutls_x509_crt_t cert,
-                            const MHD_gnutls_x509_crt_t * CA_list,
-                            int CA_list_length,
-                            unsigned int flags, unsigned int *verify)
-{
-  int ret;
-  /* Verify certificate
-   */
-  ret = MHD__gnutls_verify_certificate2 (cert, CA_list, CA_list_length, flags,
-                                         verify);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      return ret;
-    }
 
   return 0;
 }

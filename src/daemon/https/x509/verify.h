@@ -26,9 +26,6 @@
 
 int MHD_gnutls_x509_crt_is_issuer (MHD_gnutls_x509_crt_t cert,
                                    MHD_gnutls_x509_crt_t issuer);
-int MHD__gnutls_x509_verify_signature (const MHD_gnutls_datum_t * tbs,
-                                       const MHD_gnutls_datum_t * signature,
-                                       MHD_gnutls_x509_crt_t issuer);
 int MHD__gnutls_x509_privkey_verify_signature (const MHD_gnutls_datum_t * tbs,
                                                const MHD_gnutls_datum_t *
                                                signature,
