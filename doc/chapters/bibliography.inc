@@ -1,10 +1,10 @@
-@itemize @bullet
 @heading API reference
+@itemize @bullet
 @item
-The @emph{GNU libmicrohttpd} manual by Christian Grothoff 2008 
+The @emph{GNU libmicrohttpd} manual by Marco Maggi and Christian Grothoff 2008 
 @uref{http://gnunet.org/libmicrohttpd/microhttpd.html}
 
-@heading Requests for comments 
+@item
 All referenced RFCs can be found on the website of @emph{The Internet Engineering Task Force}
 @uref{http://www.ietf.org/}
 
@@ -17,7 +17,6 @@ All referenced RFCs can be found on the website of @emph{The Internet Engineerin
 Luotonen, A., and L. Stewart, "HTTP Authentication: Basic and Digest Access Authentication", RFC 2617, June 1999.
 
 
-@heading Recommended readings
 @item 
 A well--structured @emph{HTML} reference can be found on
 @uref{http://www.echoecho.com/html.htm}
