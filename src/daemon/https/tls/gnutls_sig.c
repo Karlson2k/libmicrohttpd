@@ -206,7 +206,7 @@ MHD_gtls_tls_sign_params (MHD_gtls_session_t session,
 /* This will create a PKCS1 or DSA signature, using the given parameters, and the
  * given data. The output will be allocated and be put in signature.
  */
-int
+static int
 MHD_gtls_sign (enum MHD_GNUTLS_PublicKeyAlgorithm algo,
                mpi_t * params,
                int params_size,

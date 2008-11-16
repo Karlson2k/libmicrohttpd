@@ -550,8 +550,7 @@ cleanup:
 
 /* Generate client certificate
  */
-
-int
+static int
 MHD_gtls_gen_x509_crt (MHD_gtls_session_t session, opaque ** data)
 {
   int ret, i;
