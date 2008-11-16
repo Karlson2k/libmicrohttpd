@@ -398,6 +398,6 @@ MHD_gtls_log (int level, const char *fmt, ...)
   log_func (level, str);
 }
 
-void MHD__gnutls_null_log (void *, ...)
+void MHD__gnutls_null_log (void * n, ...)
 {
 }
