@@ -58,21 +58,6 @@
 #define SIG_GOST_R3410_94_OID "1.2.643.2.2.4"
 #define SIG_GOST_R3410_2001_OID "1.2.643.2.2.3"
 
-int MHD__gnutls_x509_oid_data2string (const char *OID, void *value,
-                                      int value_size, char *res,
-                                      size_t * res_size);
-int MHD__gnutls_x509_data2hex (const opaque * data, size_t data_size,
-                               opaque * out, size_t * sizeof_out);
-
-const char *MHD__gnutls_x509_oid2ldap_string (const char *OID);
-
-int MHD__gnutls_x509_oid_data_printable (const char *OID);
-
-time_t MHD__gnutls_x509_get_time (ASN1_TYPE c2, const char *when);
-
-MHD_gnutls_x509_subject_alt_name_t MHD__gnutls_x509_san_find_type (char
-                                                                   *str_type);
-
 int MHD__gnutls_x509_der_encode (ASN1_TYPE src, const char *src_name,
                                  MHD_gnutls_datum_t * res, int str);
 

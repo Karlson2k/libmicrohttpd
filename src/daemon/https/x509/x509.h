@@ -109,8 +109,6 @@ extern "C"
 #define GNUTLS_CRL_REASON_PRIVILEGE_WITHDRAWN 1
 #define GNUTLS_CRL_REASON_AA_COMPROMISE 32768
 
-  time_t MHD_gnutls_x509_crt_get_activation_time (MHD_gnutls_x509_crt_t cert);
-  time_t MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert);
   int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
                                             unsigned int *bits);
   int MHD_gnutls_x509_crt_get_ca_status (MHD_gnutls_x509_crt_t cert,
@@ -123,8 +121,6 @@ extern "C"
                                          unsigned int *critical);
   int MHD_gnutls_x509_crt_set_key_usage (MHD_gnutls_x509_crt_t crt,
                                          unsigned int usage);
-
-  int MHD_gnutls_x509_dn_oid_known (const char *oid);
 
 /* Read extensions by sequence number. */
   int MHD_gnutls_x509_crt_set_extension_by_oid (MHD_gnutls_x509_crt_t crt,
@@ -168,10 +164,6 @@ extern "C"
                                  MHD_gnutls_x509_privkey_t issuer_key,
                                  enum MHD_GNUTLS_HashAlgorithm,
                                  unsigned int flags);
-  int MHD_gnutls_x509_crt_set_activation_time (MHD_gnutls_x509_crt_t cert,
-                                               time_t act_time);
-  int MHD_gnutls_x509_crt_set_expiration_time (MHD_gnutls_x509_crt_t cert,
-                                               time_t exp_time);
   int MHD_gnutls_x509_crt_set_serial (MHD_gnutls_x509_crt_t cert,
                                       const void *serial, size_t serial_size);
 

@@ -33,7 +33,3 @@ int MHD__gnutls_x509_crt_get_extension_oid (MHD_gnutls_x509_crt_t cert,
 int MHD__gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
                                            opaque * extnValue,
                                            int extnValueLen);
-int MHD__gnutls_x509_ext_extract_basicConstraints (int *CA,
-                                                   int *pathLenConstraint,
-                                                   opaque * extnValue,
-                                                   int extnValueLen);

@@ -694,12 +694,6 @@ extern "C"
                                                 MHD_gnutls_certificate_request_t
                                                 req);
 
-  /* get data from the session */
-  time_t MHD_gtls_certificate_activation_time_peers (MHD_gtls_session_t
-                                                     session);
-  time_t MHD_gtls_certificate_expiration_time_peers (MHD_gtls_session_t
-                                                     session);
-
   int MHD_gtls_pem_base64_encode (const char *msg,
                                   const MHD_gnutls_datum_t * data,
                                   char *result, size_t * result_size);

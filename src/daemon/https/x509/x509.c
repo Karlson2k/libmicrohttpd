@@ -213,50 +213,6 @@ MHD_gnutls_x509_crt_get_version (MHD_gnutls_x509_crt_t cert)
 }
 
 /**
- * MHD_gnutls_x509_crt_get_activation_time - This function returns the Certificate's activation time
- * @cert: should contain a MHD_gnutls_x509_crt_t structure
- *
- * This function will return the time this Certificate was or will be activated.
- *
- * Returns (time_t)-1 on error.
- *
- **/
-time_t
-MHD_gnutls_x509_crt_get_activation_time (MHD_gnutls_x509_crt_t cert)
-{
-  if (cert == NULL)
-    {
-      MHD_gnutls_assert ();
-      return (time_t) - 1;
-    }
-
-  return MHD__gnutls_x509_get_time (cert->cert,
-                                    "tbsCertificate.validity.notBefore");
-}
-
-/**
- * MHD_gnutls_x509_crt_get_expiration_time - This function returns the Certificate's expiration time
- * @cert: should contain a MHD_gnutls_x509_crt_t structure
- *
- * This function will return the time this Certificate was or will be expired.
- *
- * Returns (time_t)-1 on error.
- *
- **/
-time_t
-MHD_gnutls_x509_crt_get_expiration_time (MHD_gnutls_x509_crt_t cert)
-{
-  if (cert == NULL)
-    {
-      MHD_gnutls_assert ();
-      return (time_t) - 1;
-    }
-
-  return MHD__gnutls_x509_get_time (cert->cert,
-                                    "tbsCertificate.validity.notAfter");
-}
-
-/**
  * MHD_gnutls_x509_crt_get_pk_algorithm - This function returns the certificate's PublicKey algorithm
  * @cert: should contain a MHD_gnutls_x509_crt_t structure
  * @bits: if bits is non null it will hold the size of the parameters' in bits

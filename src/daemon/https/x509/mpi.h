@@ -31,9 +31,6 @@ int MHD__gnutls_x509_read_rsa_params (opaque * der, int dersize,
                                       mpi_t * params);
 int MHD__gnutls_x509_write_rsa_params (mpi_t * params, int params_size,
                                        MHD_gnutls_datum_t * der);
-int MHD__gnutls_x509_read_uint (ASN1_TYPE node, const char *value,
-                                unsigned int *ret);
-
 int MHD__gnutls_x509_read_int (ASN1_TYPE node, const char *value,
                                mpi_t * ret_mpi);
 int MHD__gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi,
