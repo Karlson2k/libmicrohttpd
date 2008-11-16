@@ -186,10 +186,6 @@ MHD__gnutls_certificate_free_credentials (MHD_gtls_cert_credentials_t sc)
   MHD__gnutls_certificate_free_keys (sc);
   MHD__gnutls_certificate_free_cas (sc);
   MHD__gnutls_certificate_free_ca_names (sc);
-#ifdef ENABLE_PKI
-  MHD__gnutls_certificate_free_crls (sc);
-#endif
-
 #ifdef KEYRING_HACK
   MHD__gnutls_free_datum (&sc->keyring);
 #endif
