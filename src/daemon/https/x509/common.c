@@ -218,7 +218,7 @@ MHD_gnutls_x509_dn_oid_known (const char *oid)
 /* Returns 1 if the data defined by the OID are of a choice
  * type.
  */
-int
+static int
 MHD__gnutls_x509_oid_data_choice (const char *oid)
 {
   int i = 0;
@@ -815,7 +815,7 @@ MHD__gnutls_x509_export_int (ASN1_TYPE MHD__asn1_data,
  * octet string. Otherwise put something like BMPString, PrintableString
  * etc.
  */
-int
+static int
 MHD__gnutls_x509_decode_octet_string (const char *string_type,
                                       const opaque * der,
                                       size_t der_size,
@@ -1027,200 +1027,6 @@ cleanup:MHD_gnutls_free (data);
   MHD__asn1_delete_structure (&c2);
   return result;
 
-}
-
-/* DER Encodes the src ASN1_TYPE and stores it to
- * dest in dest_name. Useful to encode something and store it
- * as OCTET. If str is non null then the data are encoded as
- * an OCTET STRING.
- */
-int
-MHD__gnutls_x509_der_encode_and_copy (ASN1_TYPE src,
-                                      const char *src_name,
-                                      ASN1_TYPE dest,
-                                      const char *dest_name, int str)
-{
-  int result;
-  MHD_gnutls_datum_t encoded;
-
-  result = MHD__gnutls_x509_der_encode (src, src_name, &encoded, str);
-
-  if (result < 0)
-    {
-      MHD_gnutls_assert ();
-      return result;
-    }
-
-  /* Write the data.
-   */
-  result =
-    MHD__asn1_write_value (dest, dest_name, encoded.data, encoded.size);
-
-  MHD__gnutls_free_datum (&encoded);
-
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  return 0;
-}
-
-/* Writes the value of the datum in the given ASN1_TYPE. If str is non
- * zero it encodes it as OCTET STRING.
- */
-int
-MHD__gnutls_x509_write_value (ASN1_TYPE c,
-                              const char *root,
-                              const MHD_gnutls_datum_t * data, int str)
-{
-  int result;
-  int asize;
-  ASN1_TYPE c2 = ASN1_TYPE_EMPTY;
-  MHD_gnutls_datum_t val;
-
-  asize = data->size + 16;
-
-  val.data = MHD_gnutls_malloc (asize);
-  if (val.data == NULL)
-    {
-      MHD_gnutls_assert ();
-      result = GNUTLS_E_MEMORY_ERROR;
-      goto cleanup;
-    }
-
-  if (str)
-    {
-      /* Convert it to OCTET STRING
-       */
-      if ((result =
-           MHD__asn1_create_element (MHD__gnutls_get_pkix (),
-                                     "PKIX1.pkcs-7-Data",
-                                     &c2)) != ASN1_SUCCESS)
-        {
-          MHD_gnutls_assert ();
-          result = MHD_gtls_asn2err (result);
-          goto cleanup;
-        }
-
-      result = MHD__asn1_write_value (c2, "", data->data, data->size);
-      if (result != ASN1_SUCCESS)
-        {
-          MHD_gnutls_assert ();
-          result = MHD_gtls_asn2err (result);
-          goto cleanup;
-        }
-
-      result = MHD__gnutls_x509_der_encode (c2, "", &val, 0);
-      if (result < 0)
-        {
-          MHD_gnutls_assert ();
-          goto cleanup;
-        }
-
-    }
-  else
-    {
-      val.data = data->data;
-      val.size = data->size;
-    }
-
-  /* Write the data.
-   */
-  result = MHD__asn1_write_value (c, root, val.data, val.size);
-
-  if (val.data != data->data)
-    MHD__gnutls_free_datum (&val);
-
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  return 0;
-
-cleanup:if (val.data != data->data)
-    MHD__gnutls_free_datum (&val);
-  return result;
-}
-
-/* Encodes and copies the private key parameters into a
- * subjectPublicKeyInfo structure.
- *
- */
-int
-MHD__gnutls_x509_encode_and_copy_PKI_params (ASN1_TYPE dst,
-                                             const char *dst_name,
-                                             enum
-                                             MHD_GNUTLS_PublicKeyAlgorithm
-                                             pk_algorithm, mpi_t * params,
-                                             int params_size)
-{
-  const char *pk;
-  MHD_gnutls_datum_t der = { NULL,
-    0
-  };
-  int result;
-  char name[128];
-
-  pk = MHD_gtls_x509_pk_to_oid (pk_algorithm);
-  if (pk == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
-    }
-
-  /* write the OID
-   */
-  MHD_gtls_str_cpy (name, sizeof (name), dst_name);
-  MHD_gtls_str_cat (name, sizeof (name), ".algorithm.algorithm");
-  result = MHD__asn1_write_value (dst, name, pk, 1);
-  if (result != ASN1_SUCCESS)
-    {
-      MHD_gnutls_assert ();
-      return MHD_gtls_asn2err (result);
-    }
-
-  if (pk_algorithm == MHD_GNUTLS_PK_RSA)
-    {
-      /* disable parameters, which are not used in RSA.
-       */
-      MHD_gtls_str_cpy (name, sizeof (name), dst_name);
-      MHD_gtls_str_cat (name, sizeof (name), ".algorithm.parameters");
-      result = MHD__asn1_write_value (dst, name, NULL, 0);
-      if (result != ASN1_SUCCESS)
-        {
-          MHD_gnutls_assert ();
-          return MHD_gtls_asn2err (result);
-        }
-
-      result = MHD__gnutls_x509_write_rsa_params (params, params_size, &der);
-      if (result < 0)
-        {
-          MHD_gnutls_assert ();
-          return result;
-        }
-
-      /* Write the DER parameters. (in bits)
-       */
-      MHD_gtls_str_cpy (name, sizeof (name), dst_name);
-      MHD_gtls_str_cat (name, sizeof (name), ".subjectPublicKey");
-      result = MHD__asn1_write_value (dst, name, der.data, der.size * 8);
-
-      MHD__gnutls_free_datum (&der);
-
-      if (result != ASN1_SUCCESS)
-        {
-          MHD_gnutls_assert ();
-          return MHD_gtls_asn2err (result);
-        }
-    }
-  else
-    return GNUTLS_E_UNIMPLEMENTED_FEATURE;
-
-  return 0;
 }
 
 /* Reads and returns the PK algorithm of the given certificate-like

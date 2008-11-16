@@ -48,7 +48,6 @@
 /* x509 */
 #include "common.h"
 #include "x509.h"
-#include "verify.h"
 #include "mpi.h"
 #include "privkey.h"
 
@@ -88,115 +87,6 @@ check_bits (MHD_gnutls_x509_crt_t crt, unsigned int max_bits)
 		MHD_gnutls_x509_crt_deinit(peer_certificate_list[x]); \
 	} \
 	MHD_gnutls_free( peer_certificate_list)
-
-/*-
-  * MHD__gnutls_x509_cert_verify_peers - This function returns the peer's certificate status
-  * @session: is a gnutls session
-  *
-  * This function will try to verify the peer's certificate and return its status (TRUSTED, REVOKED etc.).
-  * The return value (status) should be one of the MHD_gnutls_certificate_status_t enumerated elements.
-  * However you must also check the peer's name in order to check if the verified certificate belongs to the
-  * actual peer. Returns a negative error code in case of an error, or GNUTLS_E_NO_CERTIFICATE_FOUND if no certificate was sent.
-  *
-  -*/
-int
-MHD__gnutls_x509_cert_verify_peers (MHD_gtls_session_t session,
-                                    unsigned int *status)
-{
-  cert_auth_info_t info;
-  MHD_gtls_cert_credentials_t cred;
-  MHD_gnutls_x509_crt_t *peer_certificate_list;
-  int peer_certificate_list_size, i, x, ret;
-
-  CHECK_AUTH (MHD_GNUTLS_CRD_CERTIFICATE, GNUTLS_E_INVALID_REQUEST);
-
-  info = MHD_gtls_get_auth_info (session);
-  if (info == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INVALID_REQUEST;
-    }
-
-  cred = (MHD_gtls_cert_credentials_t)
-    MHD_gtls_get_cred (session->key, MHD_GNUTLS_CRD_CERTIFICATE, NULL);
-  if (cred == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
-    }
-
-  if (info->raw_certificate_list == NULL || info->ncerts == 0)
-    return GNUTLS_E_NO_CERTIFICATE_FOUND;
-
-  if (info->ncerts > cred->verify_depth && cred->verify_depth > 0)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_CONSTRAINT_ERROR;
-    }
-
-  /* generate a list of MHD_gnutls_certs based on the auth info
-   * raw certs.
-   */
-  peer_certificate_list_size = info->ncerts;
-  peer_certificate_list =
-    MHD_gnutls_calloc (peer_certificate_list_size,
-                       sizeof (MHD_gnutls_x509_crt_t));
-  if (peer_certificate_list == NULL)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_MEMORY_ERROR;
-    }
-
-  for (i = 0; i < peer_certificate_list_size; i++)
-    {
-      ret = MHD_gnutls_x509_crt_init (&peer_certificate_list[i]);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          CLEAR_CERTS;
-          return ret;
-        }
-
-      ret =
-        MHD_gnutls_x509_crt_import (peer_certificate_list[i],
-                                    &info->raw_certificate_list[i],
-                                    GNUTLS_X509_FMT_DER);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          CLEAR_CERTS;
-          return ret;
-        }
-
-      ret = check_bits (peer_certificate_list[i], cred->verify_bits);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          CLEAR_CERTS;
-          return ret;
-        }
-
-    }
-
-  /* Verify certificate
-   */
-  ret =
-    MHD_gnutls_x509_crt_list_verify (peer_certificate_list,
-                                     peer_certificate_list_size,
-                                     cred->x509_ca_list, cred->x509_ncas,
-                                     cred->x509_crl_list, cred->x509_ncrls,
-                                     cred->verify_flags, status);
-
-  CLEAR_CERTS;
-
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      return ret;
-    }
-
-  return 0;
-}
 
 /*
  * Read certificates and private keys, from memory etc.

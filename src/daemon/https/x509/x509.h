@@ -300,15 +300,6 @@ extern "C"
     GNUTLS_VERIFY_ALLOW_SIGN_RSA_MD5 = 32
   } MHD_gnutls_certificate_verify_flags;
 
-  int MHD_gnutls_x509_crt_list_verify (const MHD_gnutls_x509_crt_t *
-                                       cert_list, int cert_list_length,
-                                       const MHD_gnutls_x509_crt_t * CA_list,
-                                       int CA_list_length,
-                                       const MHD_gnutls_x509_crl_t * CRL_list,
-                                       int CRL_list_length,
-                                       unsigned int flags,
-                                       unsigned int *verify);
-
   int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
                                             const MHD_gnutls_x509_crl_t *
                                             crl_list, int crl_list_length);
