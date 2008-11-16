@@ -81,9 +81,4 @@ int MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src, const char *src_name,
 int MHD__gnutls_asn1_copy_node (ASN1_TYPE * dst, const char *dst_name,
                                 ASN1_TYPE src, const char *src_name);
 
-int MHD__gnutls_x509_get_signed_data (ASN1_TYPE src, const char *src_name,
-                                      MHD_gnutls_datum_t * signed_data);
-int MHD__gnutls_x509_get_signature (ASN1_TYPE src, const char *src_name,
-                                    MHD_gnutls_datum_t * signature);
-
 #endif

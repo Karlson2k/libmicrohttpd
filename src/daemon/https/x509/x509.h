@@ -193,8 +193,6 @@ extern "C"
                                  format, MHD_gnutls_datum_t * out);
 /* Access to internal Certificate fields.
  */
-  int MHD_gnutls_x509_crt_get_raw_dn (MHD_gnutls_x509_crt_t cert,
-                                      MHD_gnutls_datum_t * start);
 
   typedef void *MHD_gnutls_x509_dn_t;
 

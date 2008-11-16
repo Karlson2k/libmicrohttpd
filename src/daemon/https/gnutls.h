@@ -459,28 +459,6 @@ extern "C"
   void MHD__gnutls_certificate_free_ca_names (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_crls (MHD_gtls_cert_credentials_t sc);
 
-  int MHD__gnutls_certificate_set_x509_trust_file (MHD_gtls_cert_credentials_t
-                                                   res, const char *CAFILE,
-                                                   MHD_gnutls_x509_crt_fmt_t
-                                                   type);
-  int MHD__gnutls_certificate_set_x509_trust_mem (MHD_gtls_cert_credentials_t
-                                                  res,
-                                                  const MHD_gnutls_datum_t *
-                                                  CA,
-                                                  MHD_gnutls_x509_crt_fmt_t
-                                                  type);
-
-  int MHD__gnutls_certificate_set_x509_crl_file (MHD_gtls_cert_credentials_t
-                                                 res, const char *crlfile,
-                                                 MHD_gnutls_x509_crt_fmt_t
-                                                 type);
-  int MHD__gnutls_certificate_set_x509_crl_mem (MHD_gtls_cert_credentials_t
-                                                res,
-                                                const MHD_gnutls_datum_t *
-                                                CRL,
-                                                MHD_gnutls_x509_crt_fmt_t
-                                                type);
-
   /*
    * CERTFILE is an x509 certificate in PEM form.
    * KEYFILE is a pkcs-1 private key in PEM form (for RSA keys).

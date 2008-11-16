@@ -163,9 +163,6 @@ extern "C"
   MHD__asn1_retCode MHD__asn1_read_value (ASN1_TYPE root, const char *name,
                                           void *ivalue, int *len);
 
-  MHD__asn1_retCode MHD__asn1_number_of_elements (ASN1_TYPE element,
-                                                  const char *name, int *num);
-
   MHD__asn1_retCode MHD__asn1_der_coding (ASN1_TYPE element, const char *name,
                                           void *ider, int *len,
                                           char *ErrorDescription);
@@ -179,9 +176,6 @@ extern "C"
                                                      int len,
                                                      const char *name_element,
                                                      int *start, int *end);
-
-  const char *MHD__asn1_find_structure_from_oid (ASN1_TYPE definitions,
-                                                 const char *oidValue);
 
   /* DER utility functions. */
 
