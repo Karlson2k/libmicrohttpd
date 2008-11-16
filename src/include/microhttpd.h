@@ -341,12 +341,35 @@ enum MHD_OPTION
    */
   MHD_OPTION_PER_IP_CONNECTION_LIMIT = 5,
 
- /**
-  * Bind daemon to the supplied sockaddr. this option should be followed by a
-  * 'struct sockaddr *'.  If 'MHD_USE_IPv6' is specified, the 'struct sockaddr*'
-  * should point to a 'struct sockaddr_in6', otherwise to a 'struct sockaddr_in'.
-  */
+  /**
+   * Bind daemon to the supplied sockaddr. this option should be followed by a
+   * 'struct sockaddr *'.  If 'MHD_USE_IPv6' is specified, the 'struct sockaddr*'
+   * should point to a 'struct sockaddr_in6', otherwise to a 'struct sockaddr_in'.
+   */
   MHD_OPTION_SOCK_ADDR = 6,
+
+  /**
+   * Specify a function that should be called before parsing the URI from
+   * the client.  The specified callback function can be used for processing
+   * the URI (including the options) before it is parsed.  The URI after
+   * parsing will no longer contain the options, which maybe inconvenient for
+   * logging.  This option should be followed by two arguments, the first
+   * one must be of the form
+   * <pre>
+   *  void * my_logger(void * cls, const char * uri)
+   * </pre>
+   * where the return value will be passed as
+   * (*con_cls) in calls to the MHD_AccessHandlerCallback
+   * when this request is processed later; returning a
+   * value of NULL has no special significance (however,
+   * note that if you return non-NULL, you can no longer
+   * rely on the first call to the access handler having
+   * NULL == *con_cls on entry;)
+   * "cls" will be set to the second argument following
+   * MHD_OPTION_URI_LOG_CALLBACK.  Finally, uri will
+   * be the 0-terminated URI of the request.
+   */
+  MHD_OPTION_URI_LOG_CALLBACK = 7,
 
   /**
    * Memory pointer for the private key (key.pem) to be used by the
@@ -513,8 +536,6 @@ enum MHD_GNUTLS_CipherAlgorithm
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_AES_256_CBC,
   MHD_GNUTLS_CIPHER_ARCFOUR_40,
-  MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC,
-  MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC,
   MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
   MHD_GNUTLS_CIPHER_DES_CBC
 };

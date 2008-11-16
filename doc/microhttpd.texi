@@ -292,6 +292,27 @@ the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6},
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
 the daemon will listen to incomming connections from anywhere.
 
+@item MHD_OPTION_URI_LOG_CALLBACK
+Specify a function that should be called before parsing the URI from
+the client.  The specified callback function can be used for processing
+the URI (including the options) before it is parsed.  The URI after
+parsing will no longer contain the options, which maybe inconvenient for
+logging.  This option should be followed by two arguments, the first
+one must be of the form
+@example
+ void * my_logger(void * cls, const char * uri)
+@end example
+where the return value will be passed as
+@code{*con_cls} in calls to the @code{MHD_AccessHandlerCallback}
+when this request is processed later; returning a
+value of NULL has no special significance; (however,
+note that if you return non-NULL, you can no longer
+rely on the first call to the access handler having
+@code{NULL == *con_cls on entry} on entry)
+@code{cls} will be set to the second argument following
+MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
+be the 0-terminated URI of the request.
+
 @item MHD_OPTION_HTTPS_MEM_KEY
 Memory pointer to the private key to be used by the
 HTTPS daemon.  This option should be followed by an
@@ -418,10 +439,6 @@ all builds of MHD.
 @item MHD_GNUTLS_CIPHER_AES_256_CBC
 
 @item MHD_GNUTLS_CIPHER_ARCFOUR_40
-
-@item MHD_GNUTLS_CIPHER_CAMELLIA_128_CBC
-
-@item MHD_GNUTLS_CIPHER_CAMELLIA_256_CBC
 
 @item MHD_GNUTLS_CIPHER_RC2_40_CBC
 

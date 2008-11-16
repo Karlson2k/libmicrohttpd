@@ -275,12 +275,14 @@ need_100_continue (struct MHD_Connection *connection)
 }
 
 /**
- * A serious error occured, close the
- * connection (and notify the application).
+ * Close the given connection and give the
+ * specified termination code to the user.
  */
-static void
-connection_close_error (struct MHD_Connection *connection)
+void 
+MHD_connection_close (struct MHD_Connection *connection,
+		      enum MHD_RequestTerminationCode termination_code)
 {
+
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
@@ -290,7 +292,18 @@ connection_close_error (struct MHD_Connection *connection)
                                           daemon->notify_completed_cls,
                                           connection,
                                           &connection->client_context,
-                                          MHD_REQUEST_TERMINATED_WITH_ERROR);
+                                          termination_code);
+}
+
+/**
+ * A serious error occured, close the
+ * connection (and notify the application).
+ */
+static void
+connection_close_error (struct MHD_Connection *connection)
+{
+  MHD_connection_close(connection,
+		       MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
 /**
@@ -1024,6 +1037,10 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       httpVersion[0] = '\0';
       httpVersion++;
     }
+  if (connection->daemon->uri_log_callback != NULL)
+    connection->client_context 
+      = connection->daemon->uri_log_callback(connection->daemon->uri_log_callback_cls,
+					     uri);
   args = strstr (uri, "?");
   if (args != NULL)
     {

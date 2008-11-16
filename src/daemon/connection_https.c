@@ -100,16 +100,8 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
 {
   MHD__gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
-  SHUTDOWN (connection->socket_fd, SHUT_RDWR);
-  CLOSE (connection->socket_fd);
-  connection->socket_fd = -1;
-  connection->state = MHD_CONNECTION_CLOSED;
-  if (connection->daemon->notify_completed != NULL)
-    connection->daemon->notify_completed (connection->
-                                          daemon->notify_completed_cls,
-                                          connection,
-                                          &connection->client_context,
-                                          termination_code);
+  MHD_connection_close(connection,
+		       termination_code);
 }
 
 /**
