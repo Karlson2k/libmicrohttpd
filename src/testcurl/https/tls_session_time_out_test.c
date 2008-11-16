@@ -55,50 +55,50 @@ http_ahc (void *cls, struct MHD_Connection *connection,
 }
 
 static int
-setup (mhd_gtls_session_t * session,
-       gnutls_datum_t * key,
-       gnutls_datum_t * cert, mhd_gtls_cert_credentials_t * xcred)
+setup (MHD_gtls_session_t * session,
+       MHD_gnutls_datum_t * key,
+       MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
 {
   int ret;
   const char **err_pos;
 
-  MHD_gnutls_certificate_allocate_credentials (xcred);
-
-  mhd_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  mhd_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
+  MHD__gnutls_certificate_allocate_credentials (xcred);
+  
+  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
+  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
                         strlen (srv_self_signed_cert_pem), &malloc);
 
-  MHD_gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
+  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
                                            GNUTLS_X509_FMT_PEM);
 
-  MHD_gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD_gnutls_priority_set_direct (*session, "NORMAL", err_pos);
+  MHD__gnutls_init (session, GNUTLS_CLIENT);
+  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
   if (ret < 0)
     {
       return -1;
     }
 
-  MHD_gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
   return 0;
 }
 
 static int
-teardown (mhd_gtls_session_t session,
-          gnutls_datum_t * key,
-          gnutls_datum_t * cert, mhd_gtls_cert_credentials_t xcred)
+teardown (MHD_gtls_session_t session,
+          MHD_gnutls_datum_t * key,
+          MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
 {
 
-  mhd_gtls_free_datum_m (key, free);
-  mhd_gtls_free_datum_m (cert, free);
+  MHD_gtls_free_datum_m (key, free);
+  MHD_gtls_free_datum_m (cert, free);
 
-  MHD_gnutls_deinit (session);
+  MHD__gnutls_deinit (session);
 
-  MHD_gnutls_certificate_free_credentials (xcred);
+  MHD__gnutls_certificate_free_credentials (xcred);
   return 0;
 }
 
 static int
-test_tls_session_time_out (mhd_gtls_session_t session)
+test_tls_session_time_out (MHD_gtls_session_t session)
 {
   int sd, ret;
   struct sockaddr_in sa;
@@ -109,7 +109,7 @@ test_tls_session_time_out (mhd_gtls_session_t session)
   sa.sin_port = htons (42433);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
-  MHD_gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) sd);
+  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
@@ -119,7 +119,7 @@ test_tls_session_time_out (mhd_gtls_session_t session)
       return -1;
     }
 
-  ret = MHD_gnutls_handshake (session);
+  ret = MHD__gnutls_handshake (session);
   if (ret < 0)
     {
       return -1;
@@ -144,12 +144,12 @@ main (int argc, char *const *argv)
 {
   int errorCount = 0;;
   struct MHD_Daemon *d;
-  mhd_gtls_session_t session;
-  gnutls_datum_t key;
-  gnutls_datum_t cert;
-  mhd_gtls_cert_credentials_t xcred;
+  MHD_gtls_session_t session;
+  MHD_gnutls_datum_t key;
+  MHD_gnutls_datum_t cert;
+  MHD_gtls_cert_credentials_t xcred;
 
-  MHD_gnutls_global_init ();
+  MHD__gnutls_global_init ();
   MHD_gtls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
@@ -174,7 +174,7 @@ main (int argc, char *const *argv)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   MHD_stop_daemon (d);
-  MHD_gnutls_global_deinit ();
+  MHD__gnutls_global_deinit ();
 
   return errorCount != 0;
 }
