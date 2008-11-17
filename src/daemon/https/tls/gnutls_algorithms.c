@@ -1258,8 +1258,7 @@ MHD_gtls_supported_ciphersuites (MHD_gtls_session_t session,
     {
       /* remove private cipher suites, if requested.
        */
-      if (tmp_ciphers[i].suite[0] == 0xFF && session->internals.enable_private
-          == 0)
+      if (tmp_ciphers[i].suite[0] == 0xFF)
         continue;
 
       /* remove cipher suites which do not support the
@@ -1344,8 +1343,7 @@ MHD_gtls_supported_compression_methods (MHD_gtls_session_t session,
 
       /* remove private compression algorithms, if requested.
        */
-      if (tmp == -1 || (tmp >= MIN_PRIVATE_COMP_ALGO
-                        && session->internals.enable_private == 0))
+      if (tmp == -1 || (tmp >= MIN_PRIVATE_COMP_ALGO))
         {
           MHD_gnutls_assert ();
           continue;

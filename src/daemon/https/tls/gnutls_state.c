@@ -247,8 +247,6 @@ MHD__gnutls_init (MHD_gtls_session_t * session,
   (*session)->security_parameters.write_compression_algorithm
     = MHD_GNUTLS_COMP_NULL;
 
-  (*session)->internals.enable_private = 0;
-
   /* Initialize buffers */
   MHD_gtls_buffer_init (&(*session)->internals.application_data_buffer);
   MHD_gtls_buffer_init (&(*session)->internals.handshake_data_buffer);

@@ -537,10 +537,6 @@ typedef struct
   MHD_gnutls_transport_ptr_t transport_recv_ptr;
   MHD_gnutls_transport_ptr_t transport_send_ptr;
 
-  /* post client hello callback (server side only)
-   */
-  MHD_gnutls_handshake_post_client_hello_func user_hello_func;
-
   /* Holds the record size requested by the
    * user.
    */
@@ -565,14 +561,7 @@ typedef struct
    * record packet will have. */
   opaque default_record_version[2];
 
-  int cbc_protection_hack;
-
   void *user_ptr;
-
-  int enable_private;           /* non zero to
-                                 * enable cipher suites
-                                 * which have 0xFF status.
-                                 */
 
   /* Holds 0 if the last called function was interrupted while
    * receiving, and non zero otherwise.

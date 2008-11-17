@@ -101,51 +101,6 @@ MHD__gnutls_handshake_hash_buffers_clear (MHD_gtls_session_t session)
   MHD_gtls_handshake_buffer_clear (session);
 }
 
-/* this will copy the required values for resuming to
- * internals, and to security_parameters.
- * this will keep as less data to security_parameters.
- */
-static void
-resume_copy_required_values (MHD_gtls_session_t session)
-{
-  /* get the new random values */
-  memcpy (session->internals.resumed_security_parameters.server_random,
-          session->security_parameters.server_random, TLS_RANDOM_SIZE);
-  memcpy (session->internals.resumed_security_parameters.client_random,
-          session->security_parameters.client_random, TLS_RANDOM_SIZE);
-
-  /* keep the ciphersuite and compression
-   * That is because the client must see these in our
-   * hello message.
-   */
-  memcpy (session->security_parameters.current_cipher_suite.suite,
-          session->internals.resumed_security_parameters.current_cipher_suite.
-          suite, 2);
-
-  session->internals.compression_method =
-    session->internals.resumed_security_parameters.read_compression_algorithm;
-  /* or write_compression_algorithm
-   * they are the same
-   */
-
-  session->security_parameters.entity =
-    session->internals.resumed_security_parameters.entity;
-
-  MHD_gtls_set_current_version (session,
-                                session->
-                                internals.resumed_security_parameters.
-                                version);
-
-  session->security_parameters.cert_type =
-    session->internals.resumed_security_parameters.cert_type;
-
-  memcpy (session->security_parameters.session_id,
-          session->internals.resumed_security_parameters.session_id,
-          sizeof (session->security_parameters.session_id));
-  session->security_parameters.session_id_size =
-    session->internals.resumed_security_parameters.session_id_size;
-}
-
 /**
   * gnutls_handshake_set_max_packet_length - This function will set the maximum length of a handshake message
   * @session: is a #gnutls_session_t structure.
@@ -347,33 +302,6 @@ MHD_gtls_negotiate_version (MHD_gtls_session_t session,
   return ret;
 }
 
-static int
-MHD_gtls_user_hello_func (MHD_gtls_session_t session,
-                          enum MHD_GNUTLS_Protocol adv_version)
-{
-  int ret;
-
-  if (session->internals.user_hello_func != NULL)
-    {
-      ret = session->internals.user_hello_func (session);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-      /* Here we need to renegotiate the version since the callee might
-       * have disabled some TLS versions.
-       */
-      ret = MHD_gtls_negotiate_version (session, adv_version);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-    }
-  return 0;
-}
-
 /* Read a client hello packet.
  * A client hello must be a known version client hello
  * or version 2.0 client hello (only for compatibility
@@ -431,22 +359,11 @@ MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
 
   pos += session_id_len;
 
-  /* TODO rm if support for resumed sessions won't be supported */
-  if (0)
-    {                           /* resumed! */
-      resume_copy_required_values (session);
-      session->internals.resumed = RESUME_TRUE;
-      return MHD_gtls_user_hello_func (session, adv_version);
-    }
-  else
-    {
-      MHD_gtls_generate_session_id (session->security_parameters.session_id,
-                                    &session->
-                                    security_parameters.session_id_size);
-
-      session->internals.resumed = RESUME_FALSE;
-    }
-
+  MHD_gtls_generate_session_id (session->security_parameters.session_id,
+				&session->
+				security_parameters.session_id_size);
+  
+  session->internals.resumed = RESUME_FALSE;
   /* Remember ciphersuites for later
    */
   DECR_LEN (len, 2);
@@ -476,13 +393,6 @@ MHD__gnutls_read_client_hello (MHD_gtls_session_t session, opaque * data,
           MHD_gnutls_assert ();
           return ret;
         }
-    }
-
-  ret = MHD_gtls_user_hello_func (session, adv_version);
-  if (ret < 0)
-    {
-      MHD_gnutls_assert ();
-      return ret;
     }
 
   if (neg_version >= MHD_GNUTLS_PROTOCOL_TLS1_0)
