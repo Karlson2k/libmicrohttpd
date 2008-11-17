@@ -439,4 +439,3 @@ MHD_gtls_gcert_deinit (MHD_gnutls_cert * cert)
 
   MHD__gnutls_free_datum (&cert->raw);
 }
-

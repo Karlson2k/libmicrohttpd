@@ -56,4 +56,3 @@ MHD__gnutls_dh_set_prime_bits (MHD_gtls_session_t session, unsigned int bits)
 {
   session->internals.dh_prime_bits = bits;
 }
-

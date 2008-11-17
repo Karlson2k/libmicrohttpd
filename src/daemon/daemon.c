@@ -274,8 +274,7 @@ MHD_handle_connection (void *data)
                 "Processing thread terminating, closing connection\n");
 #endif
 #endif
-      MHD_connection_close(con,
-			   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+      MHD_connection_close (con, MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
     }
   return NULL;
 }
@@ -870,10 +869,11 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_SOCK_ADDR:
           servaddr = va_arg (ap, struct sockaddr *);
           break;
-	case MHD_OPTION_URI_LOG_CALLBACK:
-	  retVal->uri_log_callback = va_arg(ap, void* (*)(void * cls, const char* uri));
-	  retVal->uri_log_callback_cls = va_arg(ap, void*);
-	  break;
+        case MHD_OPTION_URI_LOG_CALLBACK:
+          retVal->uri_log_callback =
+            va_arg (ap, void *(*)(void *cls, const char *uri));
+          retVal->uri_log_callback_cls = va_arg (ap, void *);
+          break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
           _set_priority (&retVal->priority_cache->protocol,
@@ -1068,8 +1068,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           MHD_DLOG (daemon, "MHD shutdown, closing active connections\n");
 #endif
 #endif
-	  MHD_connection_close(daemon->connections,
-			       MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+          MHD_connection_close (daemon->connections,
+                                MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
         }
       MHD_cleanup_connections (daemon);
     }

@@ -53,6 +53,6 @@ int MHD_connection_handle_idle (struct MHD_Connection *connection);
  * specified termination code to the user.
  */
 void MHD_connection_close (struct MHD_Connection *connection,
-			   enum MHD_RequestTerminationCode termination_code);
+                           enum MHD_RequestTerminationCode termination_code);
 
 #endif

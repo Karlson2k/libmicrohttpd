@@ -73,7 +73,7 @@ setup (MHD_gtls_session_t * session,
                         strlen (srv_self_signed_cert_pem), &malloc);
 
   MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                           GNUTLS_X509_FMT_PEM);
+                                            GNUTLS_X509_FMT_PEM);
 
   MHD__gnutls_init (session, GNUTLS_CLIENT);
   ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
@@ -89,8 +89,7 @@ setup (MHD_gtls_session_t * session,
 static int
 teardown (MHD_gtls_session_t session,
           MHD_gnutls_datum_t * key,
-          MHD_gnutls_datum_t * cert, 
-	  MHD_gtls_cert_credentials_t xcred)
+          MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
 {
 
   MHD_gtls_free_datum_m (key, free);

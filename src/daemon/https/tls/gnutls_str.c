@@ -155,4 +155,3 @@ MHD_gtls_bin2hex (const void *_old,
 
   return buffer;
 }
-

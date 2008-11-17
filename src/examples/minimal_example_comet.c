@@ -26,14 +26,11 @@
 #include <microhttpd.h>
 
 static int
-data_generator(void * cls,
-	       size_t pos,
-	       char * buf,
-	       int max)
+data_generator (void *cls, size_t pos, char *buf, int max)
 {
   if (max < 80)
     return 0;
-  memset(buf, 'A', max-1);
+  memset (buf, 'A', max - 1);
   buf[79] = '\n';
   return 80;
 }
@@ -60,10 +57,8 @@ ahc_echo (void *cls,
     }
   *ptr = NULL;                  /* reset when done */
   response = MHD_create_response_from_callback (-1,
-						80,
-						&data_generator,
-						NULL,
-						NULL);
+                                                80,
+                                                &data_generator, NULL, NULL);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

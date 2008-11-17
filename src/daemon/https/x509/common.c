@@ -445,4 +445,3 @@ MHD__gnutls_x509_get_pk_algorithm (ASN1_TYPE src,
   MHD_gnutls_free (str);
   return algo;
 }
-

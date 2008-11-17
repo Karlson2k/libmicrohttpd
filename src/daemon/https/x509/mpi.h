@@ -35,4 +35,3 @@ int MHD__gnutls_x509_read_int (ASN1_TYPE node, const char *value,
                                mpi_t * ret_mpi);
 int MHD__gnutls_x509_write_int (ASN1_TYPE node, const char *value, mpi_t mpi,
                                 int lz);
-

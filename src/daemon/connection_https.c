@@ -58,26 +58,26 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     {
 #if HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.read_bulk_cipher_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.read_bulk_cipher_algorithm;
     case MHD_CONNECTION_INFO_KX_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.kx_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.kx_algorithm;
     case MHD_CONNECTION_INFO_CREDENTIALS_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        key->cred->algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->key->cred->algorithm;
     case MHD_CONNECTION_INFO_MAC_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.read_mac_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.read_mac_algorithm;
     case MHD_CONNECTION_INFO_COMPRESSION_METHOD:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.read_compression_algorithm;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.read_compression_algorithm;
     case MHD_CONNECTION_INFO_PROTOCOL:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.version;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.version;
     case MHD_CONNECTION_INFO_CERT_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.cert_type;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.cert_type;
 #endif
     default:
       return NULL;
@@ -100,8 +100,7 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
 {
   MHD__gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
   connection->tls_session->internals.read_eof = 1;
-  MHD_connection_close(connection,
-		       termination_code);
+  MHD_connection_close (connection, termination_code);
 }
 
 /**
@@ -261,9 +260,9 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,
                     "Received TLS alert: %s\n",
-                    MHD__gnutls_alert_get_name ((int) connection->
-                                                tls_session->internals.
-                                                last_alert));
+                    MHD__gnutls_alert_get_name ((int)
+                                                connection->tls_session->
+                                                internals.last_alert));
 #endif
           return MHD_YES;
         }

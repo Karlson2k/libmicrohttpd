@@ -330,17 +330,14 @@ const int MHD__gnutls_comp_algorithms_size = MAX_COMP_METHODS;
 
 MHD_gnutls_compression_entry
   MHD__gnutls_compression_algorithms[MAX_COMP_METHODS] =
-  { GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
+{
+  GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
 #ifdef HAVE_LIBZ
-  /* draft-ietf-tls-compression-02 */
-  GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_DEFLATE, 0x01, 15, 8, 3),
+    /* draft-ietf-tls-compression-02 */
+    GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_DEFLATE, 0x01, 15, 8, 3),
 #endif
-  {0,
-   0,
-   0,
-   0,
-   0,
-   0}
+  {
+  0, 0, 0, 0, 0, 0}
 };
 
 static const enum MHD_GNUTLS_CompressionMethod
@@ -1342,8 +1339,8 @@ MHD_gtls_supported_compression_methods (MHD_gtls_session_t session,
   for (i = j = 0; i < SUPPORTED_COMPRESSION_METHODS; i++)
     {
       int tmp =
-        MHD_gtls_compression_get_num (session->internals.
-                                      priorities.compression.priority[i]);
+        MHD_gtls_compression_get_num (session->internals.priorities.
+                                      compression.priority[i]);
 
       /* remove private compression algorithms, if requested.
        */
@@ -1493,4 +1490,3 @@ MHD_gtls_x509_oid2pk_algorithm (const char *oid)
 
   return ret;
 }
-

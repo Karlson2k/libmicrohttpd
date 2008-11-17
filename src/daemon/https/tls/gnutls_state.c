@@ -806,8 +806,8 @@ MHD_gtls_session_is_export (MHD_gtls_session_t session)
   enum MHD_GNUTLS_CipherAlgorithm cipher;
 
   cipher =
-    MHD_gtls_cipher_suite_get_cipher_algo (&session->
-                                           security_parameters.current_cipher_suite);
+    MHD_gtls_cipher_suite_get_cipher_algo (&session->security_parameters.
+                                           current_cipher_suite);
 
   if (MHD_gtls_cipher_get_export_flag (cipher) != 0)
     return 1;
@@ -837,4 +837,3 @@ MHD__gnutls_record_get_direction (MHD_gtls_session_t session)
 {
   return session->internals.direction;
 }
-

@@ -599,9 +599,9 @@ struct MHD_Daemon
 
   void *notify_completed_cls;
 
-  void * (*uri_log_callback)(void * cls, const char * uri);
+  void *(*uri_log_callback) (void *cls, const char *uri);
 
-  void * uri_log_callback_cls;
+  void *uri_log_callback_cls;
 
     /**
      * PID of the select thread (if we have internal select)

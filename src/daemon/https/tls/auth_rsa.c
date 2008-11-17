@@ -168,8 +168,8 @@ MHD__gnutls_get_private_rsa_params (MHD_gtls_session_t session,
     }
 
   bits =
-    MHD__gnutls_mpi_get_nbits (session->internals.
-                               selected_cert_list[0].params[0]);
+    MHD__gnutls_mpi_get_nbits (session->internals.selected_cert_list[0].
+                               params[0]);
 
   if (MHD_gtls_cipher_suite_get_kx_algo
       (&session->security_parameters.current_cipher_suite)

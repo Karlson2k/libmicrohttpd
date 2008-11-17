@@ -362,4 +362,3 @@ MHD_gnutls_x509_crt_export (MHD_gnutls_x509_crt_t cert,
   return MHD__gnutls_x509_export_int (cert->cert, format, "CERTIFICATE",
                                       output_data, output_data_size);
 }
-

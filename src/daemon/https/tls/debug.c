@@ -93,4 +93,3 @@ MHD__gnutls_handshake2str (MHD_gnutls_handshake_description_t handshake)
 
     }
 }
-

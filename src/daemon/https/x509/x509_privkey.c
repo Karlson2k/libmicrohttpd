@@ -287,4 +287,3 @@ MHD_gnutls_x509_privkey_import (MHD_gnutls_x509_privkey_t key,
 
   return 0;
 }
-

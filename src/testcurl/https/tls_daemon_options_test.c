@@ -381,8 +381,8 @@ main (int argc, char *const *argv)
   int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
 
   errorCount +=
-    test_wrap ("https_transfer", &test_https_transfer, 
-	       test_fd, "AES256-SHA",
+    test_wrap ("https_transfer", &test_https_transfer,
+               test_fd, "AES256-SHA",
                CURL_SSLVERSION_TLSv1,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -391,11 +391,10 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("protocol_version", &test_protocol_version, test_fd,
                "AES256-SHA", CURL_SSLVERSION_TLSv1,
-	       MHD_OPTION_HTTPS_MEM_KEY,
+               MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-               srv_self_signed_cert_pem, 
-	       MHD_OPTION_PROTOCOL_VERSION, p,
-               MHD_OPTION_END);
+               srv_self_signed_cert_pem,
+               MHD_OPTION_PROTOCOL_VERSION, p, MHD_OPTION_END);
   errorCount +=
     test_wrap ("cipher DES-CBC3-SHA", &test_https_transfer, test_fd,
                "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,

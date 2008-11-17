@@ -216,4 +216,3 @@ MHD__gnutls_x509_ext_extract_keyUsage (uint16_t * keyUsage,
 
   return 0;
 }
-

@@ -210,4 +210,3 @@ cleanup:MHD__asn1_delete_structure (&spk);
 
   return result;
 }
-

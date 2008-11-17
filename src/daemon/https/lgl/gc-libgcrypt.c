@@ -405,4 +405,3 @@ MHD_gc_hash_close (MHD_gc_hash_handle handle)
 
   free (ctx);
 }
-

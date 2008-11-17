@@ -388,7 +388,7 @@ enum MHD_OPTION
   MHD_OPTION_HTTPS_MEM_CERT = 10,
 
   /**
-   * Daemon credentials type. 
+   * Daemon credentials type.
    * This option should be followed by one of the values listed in
    * "enum MHD_GNUTLS_CredentialsType".
    */

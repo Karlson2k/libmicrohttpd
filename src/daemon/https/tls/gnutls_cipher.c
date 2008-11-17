@@ -302,15 +302,15 @@ MHD_gtls_compressed2ciphertext (MHD_gtls_session_t session,
   uint8_t type = _type;
   uint8_t major, minor;
   int hash_size =
-    MHD_gnutls_hash_get_algo_len (session->
-                                  security_parameters.write_mac_algorithm);
+    MHD_gnutls_hash_get_algo_len (session->security_parameters.
+                                  write_mac_algorithm);
   enum MHD_GNUTLS_Protocol ver;
   int blocksize =
-    MHD_gtls_cipher_get_block_size (session->
-                                    security_parameters.write_bulk_cipher_algorithm);
+    MHD_gtls_cipher_get_block_size (session->security_parameters.
+                                    write_bulk_cipher_algorithm);
   cipher_type_t block_algo =
-    MHD_gtls_cipher_is_block (session->
-                              security_parameters.write_bulk_cipher_algorithm);
+    MHD_gtls_cipher_is_block (session->security_parameters.
+                              write_bulk_cipher_algorithm);
   opaque *data_ptr;
 
 
@@ -337,9 +337,8 @@ MHD_gtls_compressed2ciphertext (MHD_gtls_session_t session,
   if (td != GNUTLS_MAC_FAILED)
     {                           /* actually when the algorithm in not the NULL one */
       MHD_gnutls_hash (td,
-                       UINT64DATA (session->
-                                   connection_state.write_sequence_number),
-                       8);
+                       UINT64DATA (session->connection_state.
+                                   write_sequence_number), 8);
 
       MHD_gnutls_hash (td, &type, 1);
       if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)
@@ -433,16 +432,16 @@ MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
   uint8_t major, minor;
   enum MHD_GNUTLS_Protocol ver;
   int hash_size =
-    MHD_gnutls_hash_get_algo_len (session->
-                                  security_parameters.read_mac_algorithm);
+    MHD_gnutls_hash_get_algo_len (session->security_parameters.
+                                  read_mac_algorithm);
 
   ver = MHD__gnutls_protocol_get_version (session);
   minor = MHD_gtls_version_get_minor (ver);
   major = MHD_gtls_version_get_major (ver);
 
   blocksize =
-    MHD_gtls_cipher_get_block_size (session->
-                                    security_parameters.read_bulk_cipher_algorithm);
+    MHD_gtls_cipher_get_block_size (session->security_parameters.
+                                    read_bulk_cipher_algorithm);
 
   /* initialize MAC
    */
@@ -466,9 +465,9 @@ MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
     {
     case CIPHER_STREAM:
       if ((ret =
-           MHD_gtls_cipher_decrypt (session->
-                                    connection_state.read_cipher_state,
-                                    ciphertext.data, ciphertext.size)) < 0)
+           MHD_gtls_cipher_decrypt (session->connection_state.
+                                    read_cipher_state, ciphertext.data,
+                                    ciphertext.size)) < 0)
         {
           MHD_gnutls_assert ();
           return ret;
@@ -485,9 +484,9 @@ MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
         }
 
       if ((ret =
-           MHD_gtls_cipher_decrypt (session->
-                                    connection_state.read_cipher_state,
-                                    ciphertext.data, ciphertext.size)) < 0)
+           MHD_gtls_cipher_decrypt (session->connection_state.
+                                    read_cipher_state, ciphertext.data,
+                                    ciphertext.size)) < 0)
         {
           MHD_gnutls_assert ();
           return ret;
@@ -545,8 +544,8 @@ MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
   if (td != GNUTLS_MAC_FAILED)
     {
       MHD_gnutls_hash (td,
-                       UINT64DATA (session->
-                                   connection_state.read_sequence_number), 8);
+                       UINT64DATA (session->connection_state.
+                                   read_sequence_number), 8);
 
       MHD_gnutls_hash (td, &type, 1);
       if (ver >= MHD_GNUTLS_PROTOCOL_TLS1_0)

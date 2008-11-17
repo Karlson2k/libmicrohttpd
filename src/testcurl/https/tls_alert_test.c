@@ -71,7 +71,7 @@ setup (MHD_gtls_session_t * session,
                         strlen (srv_self_signed_cert_pem), &malloc);
 
   MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                           GNUTLS_X509_FMT_PEM);
+                                            GNUTLS_X509_FMT_PEM);
 
   MHD__gnutls_init (session, GNUTLS_CLIENT);
   ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
@@ -167,7 +167,7 @@ test_alert_unexpected_message (MHD_gtls_session_t session)
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
   MHD__gnutls_transport_set_ptr (session,
-                                (MHD_gnutls_transport_ptr_t) ((void *) sd));
+                                 (MHD_gnutls_transport_ptr_t) ((void *) sd));
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
@@ -184,7 +184,7 @@ test_alert_unexpected_message (MHD_gtls_session_t session)
     }
 
   MHD__gnutls_alert_send (session, GNUTLS_AL_FATAL,
-                         GNUTLS_A_UNEXPECTED_MESSAGE);
+                          GNUTLS_A_UNEXPECTED_MESSAGE);
   usleep (100);
 
   /* TODO better RST trigger */
