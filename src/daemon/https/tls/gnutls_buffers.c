@@ -63,10 +63,6 @@
 # define EAGAIN EWOULDBLOCK
 #endif
 
-#ifdef IO_DEBUG
-# include <io_debug.h>
-#endif
-
 /* Buffers received packets of type APPLICATION DATA and
  * HANDSHAKE DATA.
  */
