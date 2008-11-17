@@ -19,7 +19,6 @@ libx509_la_SOURCES = \
   common.c common.h \
   extensions.c extensions.h \
   mpi.c mpi.h \
-  pkcs12.h \
   x509_privkey.c privkey.h \
   x509.c x509.h
 

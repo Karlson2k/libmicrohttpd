@@ -1,3 +1,7 @@
+Sun Nov 16 16:54:54 MST 2008
+	 Added option to get unparsed URI via callback. 
+	 Releasing GNU libmicrohttpd 0.4.0pre1. -CG
+
 Sun Nov 16 02:48:14 MST 2008
 	 Removed tons of dead code. -CG
 
