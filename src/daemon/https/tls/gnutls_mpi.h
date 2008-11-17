@@ -33,30 +33,14 @@ typedef gcry_mpi_t mpi_t;
 
 #define MHD__gnutls_mpi_cmp gcry_mpi_cmp
 #define MHD__gnutls_mpi_cmp_ui gcry_mpi_cmp_ui
-#define MHD__gnutls_mpi_mod gcry_mpi_mod
 #define MHD__gnutls_mpi_new gcry_mpi_new
 #define MHD__gnutls_mpi_snew gcry_mpi_snew
 #define MHD__gnutls_mpi_copy gcry_mpi_copy
-#define MHD__gnutls_mpi_set_ui gcry_mpi_set_ui
-#define MHD__gnutls_mpi_set gcry_mpi_set
 #define MHD__gnutls_mpi_randomize gcry_mpi_randomize
 #define MHD__gnutls_mpi_get_nbits gcry_mpi_get_nbits
 #define MHD__gnutls_mpi_powm gcry_mpi_powm
 #define MHD__gnutls_mpi_invm gcry_mpi_invm
-#define MHD__gnutls_mpi_addm gcry_mpi_addm
-#define MHD__gnutls_mpi_subm gcry_mpi_subm
-#define MHD__gnutls_mpi_sub_ui gcry_mpi_sub_ui
-#define MHD__gnutls_mpi_mulm gcry_mpi_mulm
-#define MHD__gnutls_mpi_mul gcry_mpi_mul
-#define MHD__gnutls_mpi_add gcry_mpi_add
-#define MHD__gnutls_mpi_add_ui gcry_mpi_add_ui
-#define MHD__gnutls_mpi_sub_ui gcry_mpi_sub_ui
-#define MHD__gnutls_mpi_mul_ui gcry_mpi_mul_ui
-#define MHD__gnutls_prime_check gcry_prime_check
-#define MHD__gnutls_mpi_div gcry_mpi_div
-
 #define MHD__gnutls_mpi_alloc_like(x) MHD__gnutls_mpi_new(MHD__gnutls_mpi_get_nbits(x))
-#define MHD__gnutls_mpi_salloc_like(x) MHD__gnutls_mpi_snew(MHD__gnutls_mpi_get_nbits(x))
 
 void MHD_gtls_mpi_release (mpi_t * x);
 

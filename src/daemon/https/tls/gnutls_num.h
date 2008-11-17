@@ -45,5 +45,5 @@ void MHD_gtls_write_uint16 (uint16_t num, opaque * data);
 uint32_t MHD_gtls_uint64touint32 (const uint64 *);
 
 int MHD_gtls_uint64pp (uint64 *);
-# define MHD__gnutls_uint64zero(x) x.i[0] = x.i[1] = x.i[2] = x.i[3] = x.i[4] = x.i[5] = x.i[6] = x.i[7] = 0
-# define UINT64DATA(x) x.i
+#define MHD__gnutls_uint64zero(x) x.i[0] = x.i[1] = x.i[2] = x.i[3] = x.i[4] = x.i[5] = x.i[6] = x.i[7] = 0
+#define UINT64DATA(x) x.i

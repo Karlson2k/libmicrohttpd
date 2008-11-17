@@ -31,15 +31,6 @@
 
 typedef void svoid;             /* for functions that allocate using MHD_gnutls_secure_malloc */
 
-/* Use MHD_gnutls_afree() when calling alloca, or
- * memory leaks may occur in systems which do not
- * support alloca.
- */
-#ifdef USE_EFENCE
-# define MHD_gnutls_alloca MHD_gnutls_malloc
-# define MHD_gnutls_afree MHD_gnutls_free
-#endif
-
 #ifdef HAVE_ALLOCA
 # ifdef HAVE_ALLOCA_H
 #  include <alloca.h>

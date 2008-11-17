@@ -71,8 +71,6 @@ static const int MHD_gtls_comp_priority[] = { MHD_GNUTLS_COMP_NULL,
   0
 };
 
-typedef void (rmadd_func) (MHD_gtls_priority_st * priority_list, int alg);
-
 /**
  * MHD__gnutls_priority_set - Sets priorities for the cipher suites supported by gnutls.
  * @session: is a #MHD_gtls_session_t structure.

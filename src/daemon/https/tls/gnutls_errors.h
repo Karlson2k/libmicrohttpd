@@ -50,7 +50,6 @@ extern int MHD__gnutls_log_level;
 
 # define MHD__gnutls_debug_log(...) LEVEL(2, __VA_ARGS__)
 # define MHD__gnutls_handshake_log(...) LEVEL(3, __VA_ARGS__)
-# define MHD__gnutls_io_log(...) LEVEL_EQ(5, __VA_ARGS__)
 # define MHD__gnutls_buffers_log(...) LEVEL_EQ(6, __VA_ARGS__)
 # define MHD__gnutls_hard_log(...) LEVEL(9, __VA_ARGS__)
 # define MHD__gnutls_record_log(...) LEVEL(4, __VA_ARGS__)
@@ -60,7 +59,6 @@ extern int MHD__gnutls_log_level;
 #else
 # define MHD__gnutls_debug_log MHD__gnutls_null_log
 # define MHD__gnutls_handshake_log MHD__gnutls_null_log
-# define MHD__gnutls_io_log MHD__gnutls_null_log
 # define MHD__gnutls_buffers_log MHD__gnutls_null_log
 # define MHD__gnutls_hard_log MHD__gnutls_null_log
 # define MHD__gnutls_record_log MHD__gnutls_null_log
