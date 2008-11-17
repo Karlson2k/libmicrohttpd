@@ -1286,22 +1286,6 @@ MHD_gtls_supported_ciphersuites (MHD_gtls_session_t session,
 
   ret_count = j;
 
-#if 0                           /* expensive */
-  if (ret_count > 0 && ret_count != count)
-    {
-      ciphers =
-        MHD_gtls_realloc_fast (ciphers, ret_count * sizeof (cipher_suite_st));
-    }
-  else
-    {
-      if (ret_count != count)
-        {
-          MHD_gnutls_free (ciphers);
-          ciphers = NULL;
-        }
-    }
-#endif
-
   MHD_gnutls_afree (tmp_ciphers);
 
   /* This function can no longer return 0 cipher suites.
