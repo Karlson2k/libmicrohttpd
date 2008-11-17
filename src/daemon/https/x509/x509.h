@@ -196,47 +196,6 @@ extern "C"
 
   typedef void *MHD_gnutls_x509_dn_t;
 
-  typedef struct MHD_gnutls_x509_ava_st
-  {
-    MHD_gnutls_datum_t oid;
-    MHD_gnutls_datum_t value;
-    unsigned long value_tag;
-  } MHD_gnutls_x509_ava_st;
-
-  struct MHD_gnutls_pkcs7_int;
-  typedef struct MHD_gnutls_pkcs7_int *MHD_gnutls_pkcs7_t;
-
-  int MHD_gnutls_pkcs7_init (MHD_gnutls_pkcs7_t * pkcs7);
-  void MHD_gnutls_pkcs7_deinit (MHD_gnutls_pkcs7_t pkcs7);
-  int MHD_gnutls_pkcs7_import (MHD_gnutls_pkcs7_t pkcs7,
-                               const MHD_gnutls_datum_t * data,
-                               MHD_gnutls_x509_crt_fmt_t format);
-  int MHD_gnutls_pkcs7_export (MHD_gnutls_pkcs7_t pkcs7,
-                               MHD_gnutls_x509_crt_fmt_t format,
-                               void *output_data, size_t * output_data_size);
-
-  int MHD_gnutls_pkcs7_get_crt_count (MHD_gnutls_pkcs7_t pkcs7);
-  int MHD_gnutls_pkcs7_get_crt_raw (MHD_gnutls_pkcs7_t pkcs7,
-                                    int indx,
-                                    void *certificate,
-                                    size_t * certificate_size);
-
-  int MHD_gnutls_pkcs7_set_crt_raw (MHD_gnutls_pkcs7_t pkcs7,
-                                    const MHD_gnutls_datum_t * crt);
-  int MHD_gnutls_pkcs7_set_crt (MHD_gnutls_pkcs7_t pkcs7,
-                                MHD_gnutls_x509_crt_t crt);
-  int MHD_gnutls_pkcs7_delete_crt (MHD_gnutls_pkcs7_t pkcs7, int indx);
-
-  int MHD_gnutls_pkcs7_get_crl_raw (MHD_gnutls_pkcs7_t pkcs7,
-                                    int indx, void *crl, size_t * crl_size);
-  int MHD_gnutls_pkcs7_get_crl_count (MHD_gnutls_pkcs7_t pkcs7);
-
-  int MHD_gnutls_pkcs7_set_crl_raw (MHD_gnutls_pkcs7_t pkcs7,
-                                    const MHD_gnutls_datum_t * crt);
-  int MHD_gnutls_pkcs7_set_crl (MHD_gnutls_pkcs7_t pkcs7,
-                                MHD_gnutls_x509_crl_t crl);
-  int MHD_gnutls_pkcs7_delete_crl (MHD_gnutls_pkcs7_t pkcs7, int indx);
-
 /* X.509 Certificate verification functions.
  */
   typedef enum MHD_gnutls_certificate_verify_flags
@@ -273,10 +232,6 @@ extern "C"
      */
     GNUTLS_VERIFY_ALLOW_SIGN_RSA_MD5 = 32
   } MHD_gnutls_certificate_verify_flags;
-
-  int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
-                                            const MHD_gnutls_x509_crl_t *
-                                            crl_list, int crl_list_length);
 
 
 /* Flags for the MHD_gnutls_x509_privkey_export_pkcs8() function.
@@ -343,11 +298,6 @@ extern "C"
 #define HASH_OID_SHA384 "2.16.840.1.101.3.4.2.2"
 #define HASH_OID_SHA512 "2.16.840.1.101.3.4.2.3"
 
-typedef struct MHD_gnutls_x509_crl_int
-{
-  ASN1_TYPE crl;
-} MHD_gnutls_x509_crl_int;
-
 typedef struct MHD_gnutls_x509_crt_int
 {
   ASN1_TYPE cert;
@@ -407,10 +357,6 @@ int MHD_gnutls_x509_crt_get_pk_algorithm (MHD_gnutls_x509_crt_t cert,
 
 int MHD_gnutls_x509_crt_get_serial (MHD_gnutls_x509_crt_t cert,
                                     void *result, size_t * result_size);
-
-int MHD_gnutls_x509_crt_check_revocation (MHD_gnutls_x509_crt_t cert,
-                                          const MHD_gnutls_x509_crl_t *
-                                          crl_list, int crl_list_length);
 
 int MHD_gnutls_x509_crt_init (MHD_gnutls_x509_crt_t * cert);
 void MHD_gnutls_x509_crt_deinit (MHD_gnutls_x509_crt_t cert);
