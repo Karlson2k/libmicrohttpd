@@ -56,7 +56,6 @@
 #define MAX_HASH_SIZE 64
 
 #define MAX_LOG_SIZE 1024       /* maximum size of log message */
-#define MAX_SRP_USERNAME 128
 #define MAX_SERVER_NAME_SIZE 128
 
 /* we can receive up to MAX_EXT_TYPES extensions.
@@ -146,9 +145,6 @@ typedef enum extensions_t
 { GNUTLS_EXTENSION_SERVER_NAME = 0,
   GNUTLS_EXTENSION_MAX_RECORD_SIZE = 1,
   GNUTLS_EXTENSION_CERT_TYPE = 9,
-#ifdef ENABLE_OPRFI
-  GNUTLS_EXTENSION_OPAQUE_PRF_INPUT = ENABLE_OPRFI,
-#endif
   GNUTLS_EXTENSION_SRP = 12,
   GNUTLS_EXTENSION_INNER_APPLICATION = 37703
 } extensions_t;
@@ -264,8 +260,6 @@ typedef struct
   /* limit server_name extensions */
   unsigned server_names_size;
 
-  opaque srp_username[MAX_SRP_USERNAME + 1];
-
   /* TLS/IA data. */
   int MHD_gnutls_ia_enable, MHD_gnutls_ia_peer_enable;
   int MHD_gnutls_ia_allowskip, MHD_gnutls_ia_peer_allowskip;
@@ -273,13 +267,6 @@ typedef struct
   /* Used by extensions that enable supplemental data. */
   int do_recv_supplemental, do_send_supplemental;
 
-  /* Opaque PRF input. */
-  MHD_gnutls_oprfi_callback_func oprfi_cb;
-  void *oprfi_userdata;
-  opaque *oprfi_client;
-  uint16_t oprfi_client_len;
-  opaque *oprfi_server;
-  uint16_t oprfi_server_len;
 } MHD_gtls_ext_st;
 
 /* This flag indicates for an extension whether
@@ -574,11 +561,6 @@ typedef struct
   uint16_t extensions_sent[MAX_EXT_TYPES];
   uint16_t extensions_sent_size;
 
-  /* is 0 if we are to send the whole PGP key, or non zero
-   * if the fingerprint is to be sent.
-   */
-  int pgp_fingerprint;
-
   /* This holds the default version that our first
    * record packet will have. */
   opaque default_record_version[2];
@@ -607,9 +589,6 @@ typedef struct
    * server checks that version. (** only used in gnutls-cli-debug)
    */
   opaque rsa_pms_version[2];
-
-  char *srp_username;
-  char *srp_password;
 
   /* Here we cache the DH or RSA parameters got from the
    * credentials structure, or from a callback. That is to

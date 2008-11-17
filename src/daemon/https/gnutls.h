@@ -275,17 +275,6 @@ typedef enum
   GNUTLS_NAME_DNS = 1
 } MHD_gnutls_server_name_type_t;
 
-  /* Opaque PRF Input
-   * http://tools.ietf.org/id/draft-rescorla-tls-opaque-prf-input-00.txt
-   */
-
-typedef int (*MHD_gnutls_oprfi_callback_func) (MHD_gtls_session_t session,
-                                               void *userdata,
-                                               size_t oprfi_len,
-                                               const unsigned char
-                                               *in_oprfi,
-                                               unsigned char *out_oprfi);
-
   /* Supplemental data, RFC 4680. */
 typedef enum
 {

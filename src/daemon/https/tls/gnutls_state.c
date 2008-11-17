@@ -388,15 +388,6 @@ MHD__gnutls_deinit (MHD_gtls_session_t session)
       session->key = NULL;
     }
 
-  MHD_gnutls_free (session->internals.srp_username);
-
-  if (session->internals.srp_password)
-    {
-      memset (session->internals.srp_password, 0,
-              strlen (session->internals.srp_password));
-      MHD_gnutls_free (session->internals.srp_password);
-    }
-
   memset (session, 0, sizeof (struct MHD_gtls_session_int));
   MHD_gnutls_free (session);
 }

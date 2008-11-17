@@ -90,64 +90,6 @@ generate_normal_master (MHD_gtls_session_t session, int keep_premaster)
                                          security_parameters.master_secret);
 
     }
-  else if (session->security_parameters.extensions.oprfi_client_len > 0 &&
-           session->security_parameters.extensions.oprfi_server_len > 0)
-    {
-      opaque *rnd;
-      size_t rndlen = 2 * TLS_RANDOM_SIZE;
-
-      rndlen += session->security_parameters.extensions.oprfi_client_len;
-      rndlen += session->security_parameters.extensions.oprfi_server_len;
-
-      rnd = MHD_gnutls_malloc (rndlen + 1);
-      if (!rnd)
-        {
-          MHD_gnutls_assert ();
-          return GNUTLS_E_MEMORY_ERROR;
-        }
-
-      MHD__gnutls_hard_log ("INT: CLIENT OPRFI[%d]: %s\n",
-                            session->security_parameters.extensions.
-                            oprfi_server_len,
-                            MHD_gtls_bin2hex (session->
-                                              security_parameters.extensions.
-                                              oprfi_client,
-                                              session->
-                                              security_parameters.extensions.
-                                              oprfi_client_len, buf,
-                                              sizeof (buf)));
-      MHD__gnutls_hard_log ("INT: SERVER OPRFI[%d]: %s\n",
-                            session->security_parameters.extensions.
-                            oprfi_server_len,
-                            MHD_gtls_bin2hex (session->
-                                              security_parameters.extensions.
-                                              oprfi_server,
-                                              session->
-                                              security_parameters.extensions.
-                                              oprfi_server_len, buf,
-                                              sizeof (buf)));
-
-      memcpy (rnd, session->security_parameters.client_random,
-              TLS_RANDOM_SIZE);
-      memcpy (rnd + TLS_RANDOM_SIZE,
-              session->security_parameters.extensions.oprfi_client,
-              session->security_parameters.extensions.oprfi_client_len);
-      memcpy (rnd + TLS_RANDOM_SIZE +
-              session->security_parameters.extensions.oprfi_client_len,
-              session->security_parameters.server_random, TLS_RANDOM_SIZE);
-      memcpy (rnd + TLS_RANDOM_SIZE +
-              session->security_parameters.extensions.oprfi_client_len +
-              TLS_RANDOM_SIZE,
-              session->security_parameters.extensions.oprfi_server,
-              session->security_parameters.extensions.oprfi_server_len);
-
-      ret = MHD_gtls_PRF (session, PREMASTER.data, PREMASTER.size,
-                          MASTER_SECRET, strlen (MASTER_SECRET),
-                          rnd, rndlen, TLS_MASTER_SIZE,
-                          session->security_parameters.master_secret);
-
-      MHD_gnutls_free (rnd);
-    }
   else
     {
       opaque rnd[2 * TLS_RANDOM_SIZE + 1];
