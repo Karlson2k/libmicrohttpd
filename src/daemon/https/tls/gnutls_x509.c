@@ -113,8 +113,8 @@ MHD__gnutls_check_key_cert_match (MHD_gtls_cert_credentials_t res)
                                                1].params_size, &kid);
 
 
-  MHD__gnutls_x509_write_rsa_params (res->
-                                     cert_list[res->ncerts - 1][0].params,
+  MHD__gnutls_x509_write_rsa_params (res->cert_list[res->ncerts - 1][0].
+                                     params,
                                      res->cert_list[res->ncerts -
                                                     1][0].params_size, &cid);
 

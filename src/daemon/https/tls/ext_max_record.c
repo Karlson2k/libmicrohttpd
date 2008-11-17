@@ -121,8 +121,8 @@ MHD_gtls_max_record_send_params (MHD_gtls_session_t session, opaque * data,
             }
 
           data[0] =
-            (uint8_t) MHD_gtls_mre_record2num (session->internals.
-                                               proposed_record_size);
+            (uint8_t) MHD_gtls_mre_record2num (session->
+                                               internals.proposed_record_size);
           return len;
         }
 

@@ -294,8 +294,8 @@ MHD_gtls_send_int (MHD_gtls_session_t session,
 
   MHD__gnutls_record_log
     ("REC[%x]: Sending Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    write_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.write_sequence_number),
      MHD__gnutls_packet2str (type), type, sizeofdata);
 
   if (sizeofdata > MAX_RECORD_SEND_SIZE)
@@ -860,13 +860,13 @@ begin:
 
   MHD__gnutls_record_log
     ("REC[%x]: Expected Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    read_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
      MHD__gnutls_packet2str (type), type, sizeofdata);
   MHD__gnutls_record_log
     ("REC[%x]: Received Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    read_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
      MHD__gnutls_packet2str (recv_type), recv_type, length);
 
   if (length > MAX_RECV_SIZE)
@@ -942,8 +942,8 @@ begin:
 
   MHD__gnutls_record_log
     ("REC[%x]: Decrypted Packet[%d] %s(%d) with length: %d\n", session,
-     (int) MHD_gtls_uint64touint32 (&session->connection_state.
-                                    read_sequence_number),
+     (int) MHD_gtls_uint64touint32 (&session->
+                                    connection_state.read_sequence_number),
      MHD__gnutls_packet2str (recv_type), recv_type, decrypted_length);
 
   /* increase sequence number

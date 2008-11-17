@@ -183,8 +183,8 @@ MHD_gtls_cert_type_send_params (MHD_gtls_session_t session, opaque * data,
           for (i = 0; i < len; i++)
             {
               data[i + 1] =
-                MHD__gnutls_cert_type2num (session->internals.
-                                           priorities.cert_type.priority[i]);
+                MHD__gnutls_cert_type2num (session->internals.priorities.
+                                           cert_type.priority[i]);
             }
           return len + 1;
         }
@@ -203,8 +203,8 @@ MHD_gtls_cert_type_send_params (MHD_gtls_session_t session, opaque * data,
             }
 
           data[0] =
-            MHD__gnutls_cert_type2num (session->
-                                       security_parameters.cert_type);
+            MHD__gnutls_cert_type2num (session->security_parameters.
+                                       cert_type);
           return len;
         }
 

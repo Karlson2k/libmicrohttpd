@@ -166,8 +166,9 @@ MHD_gtls_auth_get_type (MHD_gtls_session_t session)
 
   return
     MHD_gtls_map_kx_get_cred (MHD_gtls_cipher_suite_get_kx_algo
-                              (&session->security_parameters.
-                               current_cipher_suite), server);
+                              (&session->
+                               security_parameters.current_cipher_suite),
+                              server);
 }
 
 /*

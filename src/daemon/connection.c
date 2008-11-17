@@ -288,8 +288,9 @@ MHD_connection_close (struct MHD_Connection *connection,
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
   if (connection->daemon->notify_completed != NULL)
-    connection->daemon->notify_completed (connection->daemon->
-                                          notify_completed_cls, connection,
+    connection->daemon->notify_completed (connection->
+                                          daemon->notify_completed_cls,
+                                          connection,
                                           &connection->client_context,
                                           termination_code);
 }
@@ -1038,8 +1039,9 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   if (connection->daemon->uri_log_callback != NULL)
     connection->client_context
       =
-      connection->daemon->uri_log_callback (connection->daemon->
-                                            uri_log_callback_cls, uri);
+      connection->daemon->uri_log_callback (connection->
+                                            daemon->uri_log_callback_cls,
+                                            uri);
   args = strstr (uri, "?");
   if (args != NULL)
     {
@@ -1187,8 +1189,8 @@ call_connection_handler (struct MHD_Connection *connection)
         }
       used = processed;
       if (MHD_NO ==
-          connection->daemon->default_handler (connection->daemon->
-                                               default_handler_cls,
+          connection->daemon->default_handler (connection->
+                                               daemon->default_handler_cls,
                                                connection, connection->url,
                                                connection->method,
                                                connection->version,
@@ -1239,8 +1241,7 @@ do_read (struct MHD_Connection *connection)
     return MHD_NO;
 
   bytes_read = connection->recv_cls (connection,
-                                     &connection->
-                                     read_buffer
+                                     &connection->read_buffer
                                      [connection->read_buffer_offset],
                                      connection->read_buffer_size -
                                      connection->read_buffer_offset);
@@ -1590,9 +1591,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_CONTINUE_SENDING:
           ret = connection->send_cls (connection,
                                       &HTTP_100_CONTINUE
-                                      [connection->continue_message_write_offset],
+                                      [connection->
+                                       continue_message_write_offset],
                                       strlen (HTTP_100_CONTINUE) -
-                                      connection->continue_message_write_offset);
+                                      connection->
+                                      continue_message_write_offset);
           if (ret < 0)
             {
               if (errno == EINTR)
@@ -1642,12 +1645,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             {
               ret = MHD__gnutls_record_send (connection->tls_session,
                                              &connection->response->data
-                                             [connection->
-                                              response_write_position -
-                                              response->data_start],
+                                             [connection->response_write_position
+                                              - response->data_start],
                                              response->data_size -
-                                             (connection->response_write_position
-                                              - response->data_start));
+                                             (connection->
+                                              response_write_position -
+                                              response->data_start));
             }
           else
 #endif
@@ -2008,8 +2011,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
           MHD_destroy_response (connection->response);
           if (connection->daemon->notify_completed != NULL)
-            connection->daemon->notify_completed (connection->daemon->
-                                                  notify_completed_cls,
+            connection->daemon->notify_completed (connection->
+                                                  daemon->notify_completed_cls,
                                                   connection,
                                                   &connection->client_context,
                                                   MHD_REQUEST_TERMINATED_COMPLETED_OK);
