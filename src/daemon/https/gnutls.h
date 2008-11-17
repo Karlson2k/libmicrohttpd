@@ -340,17 +340,7 @@ extern "C"
   void MHD__gnutls_certificate_free_keys (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_cas (MHD_gtls_cert_credentials_t sc);
   void MHD__gnutls_certificate_free_ca_names (MHD_gtls_cert_credentials_t sc);
-  void MHD__gnutls_certificate_free_crls (MHD_gtls_cert_credentials_t sc);
 
-  /*
-   * CERTFILE is an x509 certificate in PEM form.
-   * KEYFILE is a pkcs-1 private key in PEM form (for RSA keys).
-   */
-  int MHD__gnutls_certificate_set_x509_key_file (MHD_gtls_cert_credentials_t
-                                                 res, const char *CERTFILE,
-                                                 const char *KEYFILE,
-                                                 MHD_gnutls_x509_crt_fmt_t
-                                                 type);
   int MHD__gnutls_certificate_set_x509_key_mem (MHD_gtls_cert_credentials_t
                                                 res,
                                                 const MHD_gnutls_datum_t *
@@ -380,8 +370,8 @@ extern "C"
 
 
   typedef void *(*MHD_gnutls_alloc_function) (size_t);
-  typedef void *(*MHD_gnutls_calloc_function) (size_t, size_t);
   typedef int (*MHD_gnutls_is_secure_function) (const void *);
+  typedef void *(*MHD_gnutls_calloc_function) (size_t, size_t);
   typedef void (*MHD_gnutls_free_function) (void *);
   typedef void *(*MHD_gnutls_realloc_function) (void *, size_t);
 
@@ -401,8 +391,6 @@ extern "C"
  */
   int MHD__gnutls_dh_params_init (MHD_gtls_dh_params_t * dh_params);
   void MHD__gnutls_dh_params_deinit (MHD_gtls_dh_params_t dh_params);
-  int MHD__gnutls_dh_params_generate2 (MHD_gtls_dh_params_t params,
-                                       unsigned int bits);
 
 
 /* RSA params */
@@ -493,21 +481,6 @@ extern "C"
                                        const MHD_gnutls_datum_t * cert,
                                        const MHD_gnutls_datum_t * hash,
                                        MHD_gnutls_datum_t * signature);
-
-  int MHD_gtls_pem_base64_encode (const char *msg,
-                                  const MHD_gnutls_datum_t * data,
-                                  char *result, size_t * result_size);
-  int MHD_gtls_pem_base64_decode (const char *header,
-                                  const MHD_gnutls_datum_t * b64_data,
-                                  unsigned char *result,
-                                  size_t * result_size);
-
-  int MHD_gtls_pem_base64_encode_alloc (const char *msg,
-                                        const MHD_gnutls_datum_t * data,
-                                        MHD_gnutls_datum_t * result);
-  int MHD_gtls_pem_base64_decode_alloc (const char *header,
-                                        const MHD_gnutls_datum_t * b64_data,
-                                        MHD_gnutls_datum_t * result);
 
   /* key_usage will be an OR of the following values: */
   /* when the key is to be used for signing: */
