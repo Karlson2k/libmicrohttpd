@@ -413,31 +413,6 @@ enum MHD_OPTION
   MHD_OPTION_CIPHER_ALGORITHM = 13,
 
   /**
-   * Memory pointer to a zero (MHD_GNUTLS_KX_UNKNOWN)
-   * terminated (const) array of 'MHD_GNUTLS_KeyExchangeAlgorithm' representing the
-   * key exchange algorithm priority order to which the HTTPS daemon should adhere.
-   */
-  MHD_OPTION_KX_PRIORITY = 14,
-
-  /**
-   * Indicate which type of certificate this server will use,
-   * followed by a value of type 'enum MHD_GNUTLS_CertificateType'.
-   */
-  MHD_OPTION_CERT_TYPE = 15,
-
-  /**
-   * Specify the mac algorithm used by server.
-   * The argument should be of type "enum MHD_GNUTLS_MacAlgorithm"
-   */
-  MHD_OPTION_MAC_ALGO = 16,
-
-  /**
-   * Compression algorithm used by server.  Should be followed by an
-   * option of type 'enum MHD_GNUTLS_CompressionMethod'.
-   */
-  MHD_OPTION_TLS_COMP_ALGO = 17,
-
-  /**
    * This value is used to indicate the end of the
    * list of vararg options.
    */
@@ -535,79 +510,6 @@ enum MHD_GNUTLS_CipherAlgorithm
   MHD_GNUTLS_CIPHER_3DES_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_AES_256_CBC,
-  MHD_GNUTLS_CIPHER_ARCFOUR_40,
-  MHD_GNUTLS_CIPHER_RC2_40_CBC = 90,
-  MHD_GNUTLS_CIPHER_DES_CBC
-};
-
-/**
- * List of key exchange algorithms.
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_KeyExchangeAlgorithm
-{
-  MHD_GNUTLS_KX_UNKNOWN = 0,
-  MHD_GNUTLS_KX_RSA = 1,
-  MHD_GNUTLS_KX_DHE_DSS,
-  MHD_GNUTLS_KX_DHE_RSA,
-  MHD_GNUTLS_KX_SRP,
-  MHD_GNUTLS_KX_RSA_EXPORT,
-  MHD_GNUTLS_KX_SRP_RSA,
-  MHD_GNUTLS_KX_SRP_DSS
-};
-
-/**
- * Server credentials type (note that not all types
- * maybe supported by all MHD builds).
- */
-enum MHD_GNUTLS_CredentialsType
-{
-  /**
-   * We have a x.509 certificate.
-   */
-  MHD_GNUTLS_CRD_CERTIFICATE = 1,
-
-};
-
-/**
- * Enumeration of possible cryptographic
- * hash functions (for MAC and Digest operations).
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_HashAlgorithm
-{
-  MHD_GNUTLS_MAC_UNKNOWN = 0,
-  MHD_GNUTLS_MAC_NULL = 1,
-  MHD_GNUTLS_MAC_MD5,
-  MHD_GNUTLS_MAC_SHA1,
-  MHD_GNUTLS_MAC_SHA256
-#if 0
-    /* unsupported */
-    MHD_GNUTLS_MAC_SHA384,
-  MHD_GNUTLS_MAC_SHA512
-#endif
-};
-
-/**
- * List of compression methods.
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_CompressionMethod
-{
-  MHD_GNUTLS_COMP_UNKNOWN = 0,
-
-  /**
-   * No compression.
-   */
-  MHD_GNUTLS_COMP_NULL = 1,
-
-  /**
-   * gzip compression.
-   */
-  MHD_GNUTLS_COMP_DEFLATE
 };
 
 /**
@@ -626,30 +528,6 @@ enum MHD_GNUTLS_Protocol
 };
 
 /**
- * Types of certificates.
- */
-enum MHD_GNUTLS_CertificateType
-{
-  MHD_GNUTLS_CRT_UNKNOWN = 0,
-  MHD_GNUTLS_CRT_X509 = 1
-};
-
-/**
- * List of public key algorithms.
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_PublicKeyAlgorithm
-{
-  MHD_GNUTLS_PK_UNKNOWN = 0,
-  MHD_GNUTLS_PK_RSA = 1
-#if 0
-    /* unsupported */
-    MHD_GNUTLS_PK_DSA
-#endif
-};
-
-/**
  * Values of this enum are used to specify what
  * information about a connection is desired.
  */
@@ -662,40 +540,10 @@ enum MHD_ConnectionInfoType
   MHD_CONNECTION_INFO_CIPHER_ALGO,
 
   /**
-   * What key exchange algorithm is being used.
-   * Takes no extra arguments.
-   */
-  MHD_CONNECTION_INFO_KX_ALGO,
-
-  /**
-   *
-   * Takes no extra arguments.
-   */
-  MHD_CONNECTION_INFO_CREDENTIALS_TYPE,
-
-  /**
-   *
-   * Takes no extra arguments.
-   */
-  MHD_CONNECTION_INFO_MAC_ALGO,
-
-  /**
-   * What compression method is being used.
-   * Takes no extra arguments.
-   */
-  MHD_CONNECTION_INFO_COMPRESSION_METHOD,
-
-  /**
    *
    * Takes no extra arguments.
    */
   MHD_CONNECTION_INFO_PROTOCOL,
-
-  /**
-   *
-   * Takes no extra arguments.
-   */
-  MHD_CONNECTION_INFO_CERT_TYPE
 };
 
 /**
@@ -1260,13 +1108,7 @@ int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 union MHD_ConnectionInfo
 {
   enum MHD_GNUTLS_CipherAlgorithm cipher_algorithm;
-  enum MHD_GNUTLS_KeyExchangeAlgorithm kx_algorithm;
-  enum MHD_GNUTLS_CredentialsType credentials_type;
-  enum MHD_GNUTLS_HashAlgorithm mac_algorithm;
-  enum MHD_GNUTLS_CompressionMethod compression_method;
   enum MHD_GNUTLS_Protocol protocol;
-  enum MHD_GNUTLS_CertificateType certificate_type;
-  enum MHD_GNUTLS_PublicKeyAlgorithm pk_algorithm;
 };
 
 /**

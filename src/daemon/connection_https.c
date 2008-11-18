@@ -60,24 +60,9 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
       return (const union MHD_ConnectionInfo *) &connection->tls_session->
         security_parameters.read_bulk_cipher_algorithm;
-    case MHD_CONNECTION_INFO_KX_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.kx_algorithm;
-    case MHD_CONNECTION_INFO_CREDENTIALS_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        key->cred->algorithm;
-    case MHD_CONNECTION_INFO_MAC_ALGO:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.read_mac_algorithm;
-    case MHD_CONNECTION_INFO_COMPRESSION_METHOD:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.read_compression_algorithm;
     case MHD_CONNECTION_INFO_PROTOCOL:
       return (const union MHD_ConnectionInfo *) &connection->tls_session->
         security_parameters.version;
-    case MHD_CONNECTION_INFO_CERT_TYPE:
-      return (const union MHD_ConnectionInfo *) &connection->tls_session->
-        security_parameters.cert_type;
 #endif
     default:
       return NULL;

@@ -40,31 +40,15 @@ MHD_gtls_cipher_init (enum MHD_GNUTLS_CipherAlgorithm cipher,
     case MHD_GNUTLS_CIPHER_AES_128_CBC:
       err = MHD_gc_cipher_open (GC_AES128, GC_CBC, &ret);
       break;
-
     case MHD_GNUTLS_CIPHER_AES_256_CBC:
       err = MHD_gc_cipher_open (GC_AES256, GC_CBC, &ret);
       break;
-
     case MHD_GNUTLS_CIPHER_3DES_CBC:
       err = MHD_gc_cipher_open (GC_3DES, GC_CBC, &ret);
       break;
-
-    case MHD_GNUTLS_CIPHER_DES_CBC:
-      err = MHD_gc_cipher_open (GC_DES, GC_CBC, &ret);
-      break;
-
     case MHD_GNUTLS_CIPHER_ARCFOUR_128:
       err = MHD_gc_cipher_open (GC_ARCFOUR128, GC_STREAM, &ret);
       break;
-
-    case MHD_GNUTLS_CIPHER_ARCFOUR_40:
-      err = MHD_gc_cipher_open (GC_ARCFOUR40, GC_STREAM, &ret);
-      break;
-
-    case MHD_GNUTLS_CIPHER_RC2_40_CBC:
-      err = MHD_gc_cipher_open (GC_ARCTWO40, GC_CBC, &ret);
-      break;
-
     default:
       return NULL;
     }

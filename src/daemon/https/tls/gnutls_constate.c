@@ -570,11 +570,6 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
   if (session->connection_state.read_cipher_state != NULL)
     MHD_gnutls_cipher_deinit (session->connection_state.read_cipher_state);
 
-  if (session->connection_state.read_compression_state != NULL)
-    MHD_gtls_comp_deinit (session->connection_state.read_compression_state,
-                          1);
-
-
   mac_size =
     MHD_gnutls_hash_get_algo_len (session->
                                   security_parameters.read_mac_algorithm);
@@ -654,16 +649,6 @@ MHD_gtls_read_connection_state_init (MHD_gtls_session_t session)
     default:                   /* this check is useless */
       MHD_gnutls_assert ();
       return GNUTLS_E_INTERNAL_ERROR;
-    }
-
-  session->connection_state.read_compression_state =
-    MHD_gtls_comp_init (session->
-                        security_parameters.read_compression_algorithm, 1);
-
-  if (session->connection_state.read_compression_state == GNUTLS_COMP_FAILED)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_UNKNOWN_COMPRESSION_ALGORITHM;
     }
 
   return 0;
@@ -753,10 +738,6 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
   if (session->connection_state.write_cipher_state != NULL)
     MHD_gnutls_cipher_deinit (session->connection_state.write_cipher_state);
 
-  if (session->connection_state.write_compression_state != NULL)
-    MHD_gtls_comp_deinit (session->connection_state.write_compression_state,
-                          0);
-
   mac_size =
     MHD_gnutls_hash_get_algo_len (session->
                                   security_parameters.write_mac_algorithm);
@@ -841,16 +822,6 @@ MHD_gtls_write_connection_state_init (MHD_gtls_session_t session)
       return GNUTLS_E_INTERNAL_ERROR;
     }
 
-
-  session->connection_state.write_compression_state =
-    MHD_gtls_comp_init (session->
-                        security_parameters.write_compression_algorithm, 0);
-
-  if (session->connection_state.write_compression_state == GNUTLS_COMP_FAILED)
-    {
-      MHD_gnutls_assert ();
-      return GNUTLS_E_UNKNOWN_COMPRESSION_ALGORITHM;
-    }
 
   return 0;
 }

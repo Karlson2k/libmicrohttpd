@@ -360,8 +360,6 @@ typedef struct
 {
   cipher_hd_t write_cipher_state;
   cipher_hd_t read_cipher_state;
-  comp_hd_t read_compression_state;
-  comp_hd_t write_compression_state;
   MHD_gnutls_datum_t read_mac_secret;
   MHD_gnutls_datum_t write_mac_secret;
   uint64 read_sequence_number;

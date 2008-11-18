@@ -715,10 +715,7 @@ get_temp_recv_buffer (MHD_gtls_session_t session, MHD_gnutls_datum_t * tmp)
 {
   size_t max_record_size;
 
-  if (MHD_gtls_compression_get (session) != MHD_GNUTLS_COMP_NULL)
-    max_record_size = MAX_RECORD_RECV_SIZE + EXTRA_COMP_SIZE;
-  else
-    max_record_size = MAX_RECORD_RECV_SIZE;
+  max_record_size = MAX_RECORD_RECV_SIZE;
 
   /* We allocate MAX_RECORD_RECV_SIZE length
    * because we cannot predict the output data by the record

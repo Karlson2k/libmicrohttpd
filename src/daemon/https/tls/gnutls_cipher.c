@@ -28,7 +28,6 @@
 
 #include "gnutls_int.h"
 #include "gnutls_errors.h"
-#include "gnutls_compress.h"
 #include "gnutls_cipher.h"
 #include "gnutls_algorithms.h"
 #include "gnutls_hash_int.h"
@@ -40,27 +39,6 @@
 #include "gnutls_record.h"
 #include "gnutls_constate.h"
 #include <gc.h>
-
-inline static int
-is_write_comp_null (MHD_gtls_session_t session)
-{
-  if (session->security_parameters.write_compression_algorithm ==
-      MHD_GNUTLS_COMP_NULL)
-    return 0;
-
-  return 1;
-}
-
-inline static int
-is_read_comp_null (MHD_gtls_session_t session)
-{
-  if (session->security_parameters.read_compression_algorithm ==
-      MHD_GNUTLS_COMP_NULL)
-    return 0;
-
-  return 1;
-}
-
 
 /* returns ciphertext which contains the headers too. This also
  * calculates the size in the header field.
@@ -81,24 +59,8 @@ MHD_gtls_encrypt (MHD_gtls_session_t session, const opaque * headers,
   plain.data = (opaque *) data;
   plain.size = data_size;
 
-  if (plain.size == 0 || is_write_comp_null (session) == 0)
-    {
-      comp = plain;
-      free_comp = 0;
-    }
-  else
-    {
-      /* Here comp is allocated and must be
-       * freed.
-       */
-      ret = MHD__gnutls_m_plaintext2compressed (session, &comp, &plain);
-      if (ret < 0)
-        {
-          MHD_gnutls_assert ();
-          return ret;
-        }
-    }
-
+  comp = plain;
+  free_comp = 0;
   ret = MHD_gtls_compressed2ciphertext (session, &ciphertext[headers_size],
                                         ciphertext_size - headers_size,
                                         comp, type, random_pad);
@@ -128,9 +90,7 @@ MHD_gtls_decrypt (MHD_gtls_session_t session, opaque * ciphertext,
                   size_t ciphertext_size, uint8_t * data,
                   size_t max_data_size, content_type_t type)
 {
-  MHD_gnutls_datum_t gtxt;
   MHD_gnutls_datum_t gcipher;
-  int ret;
 
   if (ciphertext_size == 0)
     return 0;
@@ -138,59 +98,9 @@ MHD_gtls_decrypt (MHD_gtls_session_t session, opaque * ciphertext,
   gcipher.size = ciphertext_size;
   gcipher.data = ciphertext;
 
-  ret =
+  return
     MHD_gtls_ciphertext2compressed (session, data, max_data_size,
                                     gcipher, type);
-  if (ret < 0)
-    {
-      return ret;
-    }
-
-  if (ret == 0 || is_read_comp_null (session) == 0)
-    {
-      /* ret == ret */
-
-    }
-  else
-    {
-      MHD_gnutls_datum_t gcomp;
-
-      /* compression has this malloc overhead.
-       */
-
-      gcomp.data = data;
-      gcomp.size = ret;
-      ret = MHD__gnutls_m_compressed2plaintext (session, &gtxt, &gcomp);
-      if (ret < 0)
-        {
-          return ret;
-        }
-
-      if (gtxt.size > MAX_RECORD_RECV_SIZE)
-        {
-          MHD_gnutls_assert ();
-          MHD__gnutls_free_datum (&gtxt);
-          /* This shouldn't have happen and
-           * is a TLS fatal error.
-           */
-          return GNUTLS_E_DECOMPRESSION_FAILED;
-        }
-
-      /* This check is not really needed */
-      if (max_data_size < MAX_RECORD_RECV_SIZE)
-        {
-          MHD_gnutls_assert ();
-          MHD__gnutls_free_datum (&gtxt);
-          return GNUTLS_E_INTERNAL_ERROR;
-        }
-
-      memcpy (data, gtxt.data, gtxt.size);
-      ret = gtxt.size;
-
-      MHD__gnutls_free_datum (&gtxt);
-    }
-
-  return ret;
 }
 
 inline static mac_hd_t

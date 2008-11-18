@@ -1,3 +1,7 @@
+Tue Nov 18 01:19:53 MST 2008
+	 Removed support for untested and/or broken SSL features
+	 and (largely useless) options. -CG
+
 Sun Nov 16 16:54:54 MST 2008
 	 Added option to get unparsed URI via callback. 
 	 Releasing GNU libmicrohttpd 0.4.0pre1. -CG

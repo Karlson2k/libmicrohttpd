@@ -48,12 +48,6 @@ static const MHD_gnutls_cred_map MHD_gtls_cred_mappings[] = {
   {MHD_GNUTLS_KX_RSA_EXPORT,
    MHD_GNUTLS_CRD_CERTIFICATE,
    MHD_GNUTLS_CRD_CERTIFICATE},
-  {MHD_GNUTLS_KX_DHE_DSS,
-   MHD_GNUTLS_CRD_CERTIFICATE,
-   MHD_GNUTLS_CRD_CERTIFICATE},
-  {MHD_GNUTLS_KX_DHE_RSA,
-   MHD_GNUTLS_CRD_CERTIFICATE,
-   MHD_GNUTLS_CRD_CERTIFICATE},
   {0,
    0,
    0}
@@ -93,12 +87,6 @@ static const MHD_gnutls_pk_map MHD_gtls_pk_mappings[] = {
    MHD_GNUTLS_PK_RSA,
    CIPHER_ENCRYPT},
   {MHD_GNUTLS_KX_RSA_EXPORT,
-   MHD_GNUTLS_PK_RSA,
-   CIPHER_SIGN},
-  {MHD_GNUTLS_KX_DHE_RSA,
-   MHD_GNUTLS_PK_RSA,
-   CIPHER_SIGN},
-  {MHD_GNUTLS_KX_SRP_RSA,
    MHD_GNUTLS_PK_RSA,
    CIPHER_SIGN},
   {0,
@@ -207,13 +195,6 @@ static const MHD_gnutls_cipher_entry MHD_gtls_algorithms[] = {
    CIPHER_BLOCK,
    8,
    0},
-  {"DES-CBC",
-   MHD_GNUTLS_CIPHER_DES_CBC,
-   8,
-   8,
-   CIPHER_BLOCK,
-   8,
-   0},
   {"ARCFOUR-128",
    MHD_GNUTLS_CIPHER_ARCFOUR_128,
    1,
@@ -221,20 +202,6 @@ static const MHD_gnutls_cipher_entry MHD_gtls_algorithms[] = {
    CIPHER_STREAM,
    0,
    0},
-  {"ARCFOUR-40",
-   MHD_GNUTLS_CIPHER_ARCFOUR_40,
-   1,
-   5,
-   CIPHER_STREAM,
-   0,
-   1},
-  {"RC2-40",
-   MHD_GNUTLS_CIPHER_RC2_40_CBC,
-   8,
-   5,
-   CIPHER_BLOCK,
-   8,
-   1},
   {"NULL",
    MHD_GNUTLS_CIPHER_NULL,
    1,
@@ -256,10 +223,7 @@ static const enum MHD_GNUTLS_CipherAlgorithm MHD_gtls_supported_ciphers[] =
 { MHD_GNUTLS_CIPHER_AES_256_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
   MHD_GNUTLS_CIPHER_3DES_CBC,
-  MHD_GNUTLS_CIPHER_DES_CBC,
   MHD_GNUTLS_CIPHER_ARCFOUR_128,
-  MHD_GNUTLS_CIPHER_ARCFOUR_40,
-  MHD_GNUTLS_CIPHER_RC2_40_CBC,
   MHD_GNUTLS_CIPHER_NULL,
   0
 };
@@ -332,10 +296,6 @@ MHD_gnutls_compression_entry
   MHD__gnutls_compression_algorithms[MAX_COMP_METHODS] =
 {
   GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_NULL, 0x00, 0, 0, 0),
-#ifdef HAVE_LIBZ
-    /* draft-ietf-tls-compression-02 */
-    GNUTLS_COMPRESSION_ENTRY (MHD_GNUTLS_COMP_DEFLATE, 0x01, 15, 8, 3),
-#endif
   {
   0, 0, 0, 0, 0, 0}
 };
@@ -343,9 +303,6 @@ MHD_gnutls_compression_entry
 static const enum MHD_GNUTLS_CompressionMethod
   MHD_gtls_supported_compressions[] =
 {
-#ifdef HAVE_LIBZ
-  MHD_GNUTLS_COMP_DEFLATE,
-#endif
   MHD_GNUTLS_COMP_NULL,
   0
 };
@@ -389,16 +346,6 @@ static const MHD_gtls_kx_algo_entry_t MHD_gtls_kx_algorithms[] = {
    &MHD_rsa_export_auth_struct,
    0,
    1 /* needs RSA params */ },
-  {"DHE-RSA",
-   MHD_GNUTLS_KX_DHE_RSA,
-   &MHD_gtls_dhe_rsa_auth_struct,
-   1,
-   0},
-  {"DHE-DSS",
-   MHD_GNUTLS_KX_DHE_DSS,
-   &MHD_gtls_dhe_dss_auth_struct,
-   1,
-   0},
   {0,
    0,
    0,
@@ -411,8 +358,6 @@ static const enum MHD_GNUTLS_KeyExchangeAlgorithm MHD_gtls_supported_kxs[] =
 {
   MHD_GNUTLS_KX_RSA,
   MHD_GNUTLS_KX_RSA_EXPORT,
-  MHD_GNUTLS_KX_DHE_RSA,
-  MHD_GNUTLS_KX_DHE_DSS,
   0
 };
 
@@ -477,8 +422,6 @@ typedef struct
 #define GNUTLS_RSA_ARCFOUR_MD5 { 0x00, 0x04 }
 #define GNUTLS_RSA_3DES_EDE_CBC_SHA1 { 0x00, 0x0A }
 
-#define GNUTLS_RSA_EXPORT_ARCFOUR_40_MD5 { 0x00, 0x03 }
-
 /* rfc3268:
  */
 #define GNUTLS_RSA_AES_128_CBC_SHA1 { 0x00, 0x2F }
@@ -522,88 +465,11 @@ typedef struct
 #define CIPHER_SUITES_COUNT sizeof(MHD_gtls_cs_algorithms)/sizeof(MHD_gtls_cipher_suite_entry)-1
 
 static const MHD_gtls_cipher_suite_entry MHD_gtls_cs_algorithms[] = {
-  /* SRP */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC, MHD_GNUTLS_KX_SRP,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC, MHD_GNUTLS_KX_SRP,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC, MHD_GNUTLS_KX_SRP,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC,
-                             MHD_GNUTLS_KX_SRP_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC,
-                             MHD_GNUTLS_KX_SRP_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC,
-                             MHD_GNUTLS_KX_SRP_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC,
-                             MHD_GNUTLS_KX_SRP_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_DSS_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC,
-                             MHD_GNUTLS_KX_SRP_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_SRP_SHA_RSA_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC,
-                             MHD_GNUTLS_KX_SRP_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-
-  /* DHE_DSS */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_ARCFOUR_SHA1,
-                             MHD_GNUTLS_CIPHER_ARCFOUR_128,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_TLS1_0),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_DSS_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC,
-                             MHD_GNUTLS_KX_DHE_DSS,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  /* DHE_RSA */
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_3DES_EDE_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_3DES_CBC,
-                             MHD_GNUTLS_KX_DHE_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_AES_128_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_128_CBC,
-                             MHD_GNUTLS_KX_DHE_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_DHE_RSA_AES_256_CBC_SHA1,
-                             MHD_GNUTLS_CIPHER_AES_256_CBC,
-                             MHD_GNUTLS_KX_DHE_RSA,
-                             MHD_GNUTLS_MAC_SHA1, MHD_GNUTLS_PROTOCOL_SSL3),
   /* RSA */
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_NULL_MD5,
                              MHD_GNUTLS_CIPHER_NULL,
                              MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_MD5,
                              MHD_GNUTLS_PROTOCOL_SSL3),
-
-  GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_EXPORT_ARCFOUR_40_MD5,
-                             MHD_GNUTLS_CIPHER_ARCFOUR_40,
-                             MHD_GNUTLS_KX_RSA_EXPORT, MHD_GNUTLS_MAC_MD5,
-                             MHD_GNUTLS_PROTOCOL_SSL3),
-
   GNUTLS_CIPHER_SUITE_ENTRY (GNUTLS_RSA_ARCFOUR_SHA1,
                              MHD_GNUTLS_CIPHER_ARCFOUR_128,
                              MHD_GNUTLS_KX_RSA, MHD_GNUTLS_MAC_SHA1,

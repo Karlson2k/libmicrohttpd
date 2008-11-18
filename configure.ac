@@ -292,11 +292,6 @@ fi
 AM_CONDITIONAL(MHD_DEBUG_TLS, test "$enable_client_side" != "no")
 
 
-# test for libz (optional feature for HTTPS)
-zlib=1
-AC_CHECK_LIB(z, compress,,zlib=0)
-AM_CONDITIONAL(HAVE_LIBZ, test x$zlib = x1)
-
 # Symbols required by GNU_TLS 
 AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 
@@ -369,10 +364,6 @@ then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
   Client code dep.:  ${MSG_CLIENT_SIDE}    		
  ])
- if test "$zlib" != 1
- then
-  AC_MSG_NOTICE([WARNING: deflate feature for HTTPS disabled (no zlib)])
- fi
 fi  
 
 

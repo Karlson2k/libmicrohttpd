@@ -34,8 +34,6 @@ gnutls_buffers.c \
 gnutls_cert.c \
 gnutls_cipher.c \
 gnutls_cipher_int.c \
-gnutls_compress.c \
-gnutls_compress_int.c \
 gnutls_constate.c \
 gnutls_datum.c \
 gnutls_dh.c \
@@ -75,8 +73,6 @@ gnutls_buffers.h \
 gnutls_cert.h \
 gnutls_cipher.h \
 gnutls_cipher_int.h \
-gnutls_compress.h \
-gnutls_compress_int.h \
 gnutls_constate.h \
 gnutls_datum.h \
 gnutls_dh.h \

@@ -419,6 +419,22 @@ We had to close the session since @mhd{} was being shut down.
 @end table
 @end deftp
 
+@deftp {Enumeration} MHD_GNUTLS_Protocol
+SSL/TLS Protocol types.  Note that not all listed algorithms are
+necessarily supported by all builds of MHD.
+
+@table @code
+@item MHD_GNUTLS_PROTOCOL_END
+@item MHD_GNUTLS_PROTOCOL_SSL3
+@item MHD_GNUTLS_PROTOCOL_TLS1_0
+@item MHD_GNUTLS_PROTOCOL_TLS1_1
+@item MHD_GNUTLS_PROTOCOL_TLS1_2
+@item MHD_GNUTLS_PROTOCOL_UNKNOWN
+
+@end table
+@end deftp
+
+
 
 @deftp {Enumeration} MHD_GNUTLS_CipherAlgorithm
 List of symmetric ciphers.
@@ -438,129 +454,6 @@ all builds of MHD.
 
 @item MHD_GNUTLS_CIPHER_AES_256_CBC
 
-@item MHD_GNUTLS_CIPHER_ARCFOUR_40
-
-@item MHD_GNUTLS_CIPHER_RC2_40_CBC
-
-@item MHD_GNUTLS_CIPHER_DES_CBC
-
-@end table
-@end deftp
-
-
-@deftp {Enumeration} MHD_GNUTLS_KeyExchangeAlgorithm
-List of key exchange algorithms.
-Note that not all listed algorithms are necessarily supported by
-all builds of MHD.
-
-@table @code
-
-@item MHD_GNUTLS_KX_UNKNOWN
-
-@item MHD_GNUTLS_KX_RSA
-
-@item MHD_GNUTLS_KX_DHE_DSS
-
-@item MHD_GNUTLS_KX_DHE_RSA
-
-@item MHD_GNUTLS_KX_ANON_DH
-
-@item MHD_GNUTLS_KX_SRP
-
-@item MHD_GNUTLS_KX_RSA_EXPORT
-
-@item MHD_GNUTLS_KX_SRP_RSA
-
-@item MHD_GNUTLS_KX_SRP_DSS
-@end table
-@end deftp
-
-
-@deftp {Enumeration} MHD_GNUTLS_CredentialsType
-Server credentials type (note that not all types
-maybe supported by all MHD builds).
-
-@table @code
-@item MHD_GNUTLS_CRD_CERTIFICATE
-We have a x.509 certificate.
-
-@item MHD_GNUTLS_CRD_ANON
-We have no certificate (anonymous).
-
-@item MHD_GNUTLS_CRD_SRP
-We are using password-based authentication.
-
-@item MHD_GNUTLS_CRD_PSK
-We are using pre-shared keys (PSK).
-
-@end table
-@end deftp
-
-
-@deftp {Enumeration} MHD_GNUTLS_HashAlgorithm
-Enumeration of possible cryptographic hash functions (for MAC and
-Digest operations).  Note that not all listed algorithms are
-necessarily supported by all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_MAC_UNKNOWN
-
-@item MHD_GNUTLS_MAC_NULL
-
-@item MHD_GNUTLS_MAC_MD5
-
-@item MHD_GNUTLS_MAC_SHA1
-
-@item MHD_GNUTLS_MAC_SHA256
-
-@end table
-@end deftp
-
-
-@deftp {Enumeration} MHD_GNUTLS_CompressionMethod
-List of compression methods.  Note that not all listed algorithms are
-necessarily supported by all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_COMP_UNKNOWN
-
-@item MHD_GNUTLS_COMP_NULL
-No compression.
-
-@item MHD_GNUTLS_COMP_DEFLATE
-gzip compression.
-
-@end table
-@end deftp
-
-
-
-@deftp {Enumeration} MHD_GNUTLS_Protocol
-SSL/TLS Protocol types.  Note that not all listed algorithms are
-necessarily supported by all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_PROTOCOL_END
-@item MHD_GNUTLS_PROTOCOL_SSL3
-@item MHD_GNUTLS_PROTOCOL_TLS1_0
-@item MHD_GNUTLS_PROTOCOL_TLS1_1
-@item MHD_GNUTLS_PROTOCOL_TLS1_2
-@item MHD_GNUTLS_PROTOCOL_UNKNOWN
-
-@end table
-@end deftp
-
-
-
-@deftp {Enumeration} MHD_GNUTLS_PublicKeyAlgorithm
-List of public key algorithms.  Note that not all listed algorithms
-are necessarily supported by all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_PK_UNKNOWN
-
-@item MHD_GNUTLS_PK_RSA
-
 @end table
 @end deftp
 
@@ -575,24 +468,7 @@ connection is desired.
 What cipher algorithm is being used.
 Takes no extra arguments.
 
-@item MHD_CONNECTION_INFO_KX_ALGO
-What key exchange algorithm is being used.
-Takes no extra arguments.
-
-@item MHD_CONNECTION_INFO_CREDENTIALS_TYPE
-Takes no extra arguments.
-
-@item MHD_CONNECTION_INFO_MAC_ALGO
-Takes no extra arguments.
-
-@item MHD_CONNECTION_INFO_COMPRESSION_METHOD,
-What compression method is being used.
-Takes no extra arguments.
-
 @item MHD_CONNECTION_INFO_PROTOCOL,
-Takes no extra arguments.
-
-@item MHD_CONNECTION_INFO_CERT_TYPE
 Takes no extra arguments.
 
 @end table

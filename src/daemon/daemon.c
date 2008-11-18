@@ -885,19 +885,8 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_HTTPS_MEM_CERT:
           retVal->https_mem_cert = va_arg (ap, const char *);
           break;
-        case MHD_OPTION_CRED_TYPE:
-          retVal->cred_type = va_arg (ap, const int);
-          break;
-        case MHD_OPTION_KX_PRIORITY:
-          _set_priority (&retVal->priority_cache->kx,
-                         va_arg (ap, const int *));
-          break;
         case MHD_OPTION_CIPHER_ALGORITHM:
           _set_priority (&retVal->priority_cache->cipher,
-                         va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_MAC_ALGO:
-          _set_priority (&retVal->priority_cache->mac,
                          va_arg (ap, const int *));
           break;
 #endif

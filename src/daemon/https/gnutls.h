@@ -43,6 +43,84 @@ extern "C"
 #endif
 #endif
 
+
+/**
+ * List of key exchange algorithms.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_KeyExchangeAlgorithm
+{
+  MHD_GNUTLS_KX_UNKNOWN = 0,
+  MHD_GNUTLS_KX_RSA = 1,
+};
+
+/**
+ * Server credentials type (note that not all types
+ * maybe supported by all MHD builds).
+ */
+enum MHD_GNUTLS_CredentialsType
+{
+  /**
+   * We have a x.509 certificate.
+   */
+  MHD_GNUTLS_CRD_CERTIFICATE = 1,
+
+};
+
+/**
+ * Enumeration of possible cryptographic
+ * hash functions (for MAC and Digest operations).
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_HashAlgorithm
+{
+  MHD_GNUTLS_MAC_UNKNOWN = 0,
+  MHD_GNUTLS_MAC_NULL = 1,
+  MHD_GNUTLS_MAC_MD5,
+  MHD_GNUTLS_MAC_SHA1,
+  MHD_GNUTLS_MAC_SHA256
+};
+
+/**
+ * List of compression methods.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_CompressionMethod
+{
+  MHD_GNUTLS_COMP_UNKNOWN = 0,
+
+  /**
+   * No compression.
+   */
+  MHD_GNUTLS_COMP_NULL = 1,
+
+};
+/**
+ * Types of certificates.
+ */
+enum MHD_GNUTLS_CertificateType
+{
+  MHD_GNUTLS_CRT_UNKNOWN = 0,
+  MHD_GNUTLS_CRT_X509 = 1
+};
+
+/**
+ * List of public key algorithms.
+ * Note that not all listed algorithms are necessarily
+ * supported by all builds of MHD.
+ */
+enum MHD_GNUTLS_PublicKeyAlgorithm
+{
+  MHD_GNUTLS_PK_UNKNOWN = 0,
+  MHD_GNUTLS_PK_RSA = 1,
+  MHD_GNUTLS_KX_RSA_EXPORT
+};
+
+
+
 #define LIBGNUTLS_VERSION "2.2.3"
 
 /* Get size_t. */
@@ -238,17 +316,8 @@ int MHD__gnutls_alert_send (MHD_gtls_session_t session,
 int MHD__gnutls_alert_send_appropriate (MHD_gtls_session_t session, int err);
 const char *MHD__gnutls_alert_get_name (MHD_gnutls_alert_description_t alert);
 
-enum MHD_GNUTLS_CompressionMethod
-MHD_gtls_compression_get (MHD_gtls_session_t session);
 size_t MHD__gnutls_cipher_get_key_size (enum MHD_GNUTLS_CipherAlgorithm
                                         algorithm);
-
-/* the name of the specified algorithms */
-const char *MHD_gtls_compression_get_name (enum
-                                           MHD_GNUTLS_CompressionMethod
-                                           algorithm);
-enum MHD_GNUTLS_CompressionMethod MHD_gtls_compression_get_id (const char
-                                                               *name);
 
   /* error functions */
 int MHD_gtls_error_is_fatal (int error);

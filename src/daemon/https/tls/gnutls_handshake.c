@@ -771,13 +771,6 @@ MHD__gnutls_server_select_comp_method (MHD_gtls_session_t session,
 
               session->internals.compression_method = method;
               MHD_gnutls_free (comps);
-
-              MHD__gnutls_handshake_log
-                ("HSK[%x]: Selected Compression Method: %s\n", session,
-                 MHD_gtls_compression_get_name (session->
-                                                internals.compression_method));
-
-
               return 0;
             }
         }
@@ -2786,16 +2779,6 @@ MHD_gtls_remove_unwanted_ciphersuites (MHD_gtls_session_t session,
           if (server)
             delete = check_server_params (session, kx, alg, alg_size);
         }
-
-      /* These two SRP kx's are marked to require a CRD_CERTIFICATE,
-         (see cred_mappings in MHD_gnutls_algorithms.c), but it also
-         requires a SRP credential.  Don't use SRP kx unless we have a
-         SRP credential too.  */
-      if (kx == MHD_GNUTLS_KX_SRP_RSA || kx == MHD_GNUTLS_KX_SRP_DSS)
-        {
-          delete = 1;
-        }
-
       memcpy (&cs.suite, &(*cipherSuites)[i].suite, 2);
 
       if (delete == 0)

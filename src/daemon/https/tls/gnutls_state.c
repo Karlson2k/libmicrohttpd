@@ -88,18 +88,6 @@ MHD_gnutls_kx_get (MHD_gtls_session_t session)
   return session->security_parameters.kx_algorithm;
 }
 
-/**
- * MHD_gnutls_compression_get - Returns the currently used compression algorithm.
- * @session: is a #MHD_gtls_session_t structure.
- *
- * Returns: the currently used compression method.
- **/
-enum MHD_GNUTLS_CompressionMethod
-MHD_gtls_compression_get (MHD_gtls_session_t session)
-{
-  return session->security_parameters.read_compression_algorithm;
-}
-
 /* Check if the given certificate type is supported.
  * This means that it is enabled by the priority functions,
  * and a matching certificate exists.
@@ -242,11 +230,6 @@ MHD__gnutls_init (MHD_gtls_session_t * session,
   (*session)->security_parameters.read_mac_algorithm =
     (*session)->security_parameters.write_mac_algorithm = MHD_GNUTLS_MAC_NULL;
 
-  (*session)->security_parameters.read_compression_algorithm
-    = MHD_GNUTLS_COMP_NULL;
-  (*session)->security_parameters.write_compression_algorithm
-    = MHD_GNUTLS_COMP_NULL;
-
   /* Initialize buffers */
   MHD_gtls_buffer_init (&(*session)->internals.application_data_buffer);
   MHD_gtls_buffer_init (&(*session)->internals.handshake_data_buffer);
@@ -347,13 +330,6 @@ MHD__gnutls_deinit (MHD_gtls_session_t session)
     MHD_gnutls_cipher_deinit (session->connection_state.read_cipher_state);
   if (session->connection_state.write_cipher_state != NULL)
     MHD_gnutls_cipher_deinit (session->connection_state.write_cipher_state);
-
-  if (session->connection_state.read_compression_state != NULL)
-    MHD_gtls_comp_deinit (session->connection_state.read_compression_state,
-                          1);
-  if (session->connection_state.write_compression_state != NULL)
-    MHD_gtls_comp_deinit (session->connection_state.write_compression_state,
-                          0);
 
   MHD__gnutls_free_datum (&session->cipher_specs.server_write_mac_secret);
   MHD__gnutls_free_datum (&session->cipher_specs.client_write_mac_secret);
