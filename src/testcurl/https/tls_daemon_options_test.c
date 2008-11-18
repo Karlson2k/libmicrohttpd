@@ -179,8 +179,8 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
@@ -322,8 +322,8 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
 #endif
   curl_easy_setopt (c, CURLOPT_URL, "https://localhost:42433/");
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L);
 
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, curl_proto_version);
@@ -350,12 +350,19 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
   return 0;
 }
 
+struct CipherDef {
+  int options[2];
+  char * curlname;
+};
+
 /* setup a temporary transfer test file */
 int
 main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
+  unsigned int cpos;
+  char name[64];
 
   MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
@@ -376,36 +383,51 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
-  int p[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
-  int cipher[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
+  int p_ssl3[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
+  int p_tls[] = { MHD_GNUTLS_PROTOCOL_TLS1_2, 
+		  MHD_GNUTLS_PROTOCOL_TLS1_1,
+		  MHD_GNUTLS_PROTOCOL_TLS1_0, 0 };
+  struct CipherDef ciphers[] =
+    { { { MHD_GNUTLS_CIPHER_ARCFOUR_128, 0 }, "RC4-SHA" },
+      { { MHD_GNUTLS_CIPHER_3DES_CBC, 0 }, "3DES-SHA" },
+      { { MHD_GNUTLS_CIPHER_AES_128_CBC, 0 }, "AES128-SHA" },
+      { { MHD_GNUTLS_CIPHER_AES_256_CBC, 0 }, "AES256-SHA" },
+      { { 0, 0}, NULL } };
 
-  errorCount +=
-    test_wrap ("https_transfer", &test_https_transfer,
-               test_fd, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1,
-               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_END);
-
-  errorCount +=
-    test_wrap ("protocol_version", &test_protocol_version, test_fd,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1,
-               MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-               srv_self_signed_cert_pem,
-               MHD_OPTION_PROTOCOL_VERSION, p, MHD_OPTION_END);
-  errorCount +=
-    test_wrap ("cipher DES-CBC3-SHA", &test_https_transfer, test_fd,
-               "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1,
-               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_CIPHER_ALGORITHM, cipher, MHD_OPTION_END);
-  errorCount +=
-    test_wrap ("mac SH1", &test_https_transfer, test_fd, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_MAC_ALGO, mac, MHD_OPTION_END);
+  fprintf(stderr, "SHA/TLS tests:\n");
+  cpos = 0;
+  while (ciphers[cpos].curlname != NULL)
+    {
+      sprintf(name, "%s-TLS", ciphers[cpos].curlname);
+      errorCount +=
+	test_wrap (name,
+		   &test_https_transfer, test_fd,
+		   ciphers[cpos].curlname,
+		   CURL_SSLVERSION_TLSv1,
+		   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+		   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+		   MHD_OPTION_PROTOCOL_VERSION, p_tls,
+		   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+		   MHD_OPTION_END);
+      cpos++;
+    }
+  fprintf(stderr, "SHA/SSL3 tests:\n");
+  cpos = 0;
+  while (ciphers[cpos].curlname != NULL)
+    {
+      sprintf(name, "%s-SSL3", ciphers[cpos].curlname);
+      errorCount +=
+	test_wrap (name,
+		   &test_https_transfer, test_fd,
+		   ciphers[cpos].curlname,
+		   CURL_SSLVERSION_SSLv3,
+		   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+		   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+		   MHD_OPTION_PROTOCOL_VERSION, p_ssl3,
+		   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+		   MHD_OPTION_END);
+      cpos++;
+    }
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
