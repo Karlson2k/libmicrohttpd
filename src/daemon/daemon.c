@@ -894,8 +894,8 @@ MHD_start_daemon_va (unsigned int options,
 #endif
         default:
 #if HAVE_MESSAGES
-          if ((opt >= MHD_OPTION_HTTPS_KEY_PATH) &&
-              (opt <= MHD_OPTION_TLS_COMP_ALGO))
+          if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
+              (opt <= MHD_OPTION_CIPHER_ALGORITHM))
             {
               FPRINTF (stderr,
                        "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",

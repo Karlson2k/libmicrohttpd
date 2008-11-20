@@ -115,7 +115,7 @@ test_tls_session_time_out (MHD_gtls_session_t session)
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
+      fprintf (stderr, "Error: %s\n", MHD_E_FAILED_TO_CONNECT);
       return -1;
     }
 

@@ -123,7 +123,7 @@ test_alert_close_notify (MHD_gtls_session_t session)
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
+      fprintf (stderr, "%s\n", MHD_E_FAILED_TO_CONNECT);
       return -1;
     }
 
@@ -173,7 +173,7 @@ test_alert_unexpected_message (MHD_gtls_session_t session)
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error: %s)\n", MHD_E_FAILED_TO_CONNECT);
+      fprintf (stderr, "%s\n", MHD_E_FAILED_TO_CONNECT);
       return -1;
     }
 
@@ -219,7 +219,7 @@ main (int argc, char *const *argv)
 
   if (d == NULL)
     {
-      fprintf (stderr, MHD_E_SERVER_INIT);
+      fprintf (stderr, "%s\n", MHD_E_SERVER_INIT);
       return -1;
     }
 

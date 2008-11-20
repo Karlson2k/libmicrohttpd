@@ -377,7 +377,7 @@ enum MHD_OPTION
    * "const char*" argument.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
    */
-  MHD_OPTION_HTTPS_MEM_KEY = 9,
+  MHD_OPTION_HTTPS_MEM_KEY = 8,
 
   /**
    * Memory pointer for the certificate (cert.pem) to be used by the
@@ -385,14 +385,14 @@ enum MHD_OPTION
    * "const char*" argument.
    * This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
    */
-  MHD_OPTION_HTTPS_MEM_CERT = 10,
+  MHD_OPTION_HTTPS_MEM_CERT = 9,
 
   /**
    * Daemon credentials type.
    * This option should be followed by one of the values listed in
    * "enum MHD_GNUTLS_CredentialsType".
    */
-  MHD_OPTION_CRED_TYPE = 11,
+  MHD_OPTION_CRED_TYPE = 10,
 
   /**
    * SSL/TLS protocol version.
@@ -402,7 +402,7 @@ enum MHD_OPTION
    * protocol versions to this server should support. Unsupported
    * requests will be droped by the server.
    */
-  MHD_OPTION_PROTOCOL_VERSION = 12,
+  MHD_OPTION_PROTOCOL_VERSION = 11,
 
   /**
    * Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN)
@@ -410,13 +410,7 @@ enum MHD_OPTION
    * representing the cipher priority order to which the HTTPS
    * daemon should adhere.
    */
-  MHD_OPTION_CIPHER_ALGORITHM = 13,
-
-  /**
-   * This value is used to indicate the end of the
-   * list of vararg options.
-   */
-  MHD_HTTPS_OPTION_END = -1
+  MHD_OPTION_CIPHER_ALGORITHM = 12,
 };
 
 /**

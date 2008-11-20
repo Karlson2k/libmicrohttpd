@@ -56,6 +56,19 @@ struct CBC
   size_t size;
 };
 
+struct https_test_data
+{
+  FILE *test_fd;
+  char *cipher_suite;
+  int proto_version;
+};
+
+struct CipherDef
+{
+  int options[2];
+  char *curlname;
+};
+
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 {
@@ -120,7 +133,9 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
-/*
+
+
+/**
  * test HTTPS transfer
  * @param test_fd: file to attempt transfering
  */
@@ -222,6 +237,23 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
+/**
+ * used when spawning multiple threads executing curl server requests
+ *
+ */
+static int
+https_transfer_thread_adapter (void *args)
+{
+  int ret;
+  struct https_test_data *cargs = args;
+
+  /* time spread incomming requests */
+  usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
+  ret = test_https_transfer (cargs->test_fd,
+                             cargs->cipher_suite, cargs->proto_version);
+  pthread_exit (&ret);
+}
+
 static FILE *
 setupTestFile ()
 {
@@ -251,10 +283,9 @@ setupTestFile ()
 }
 
 static int
-setup (struct MHD_Daemon **d, va_list arg_list)
+setup (struct MHD_Daemon **d, int daemon_flags, va_list arg_list)
 {
-  *d = MHD_start_daemon_va (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                            MHD_USE_DEBUG, 42433,
+  *d = MHD_start_daemon_va (daemon_flags, 42433,
                             NULL, NULL, &http_ahc, NULL, arg_list);
 
   if (*d == NULL)
@@ -275,22 +306,23 @@ teardown (struct MHD_Daemon *d)
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) & move to test_util.c */
 int
 test_wrap (char *test_name, int
-           (*test) (FILE * test_fd, char *cipher_suite, int proto_version),
-           FILE * test_fd, char *cipher_suite, int proto_version, ...)
+           (*test_function) (FILE * test_fd, char *cipher_suite, int proto_version),
+           FILE * test_fd, int daemon_flags, char *cipher_suite,
+           int proto_version, ...)
 {
   int ret;
   va_list arg_list;
   struct MHD_Daemon *d;
 
   va_start (arg_list, proto_version);
-  if (setup (&d, arg_list) != 0)
+  if (setup (&d, daemon_flags, arg_list) != 0)
     {
       va_end (arg_list);
       return -1;
     }
 
   fprintf (stdout, "running test: %s ", test_name);
-  ret = test (test_fd, cipher_suite, proto_version);
+  ret = test_function (test_fd, cipher_suite, proto_version);
 
   if (ret == 0)
     {
@@ -306,7 +338,7 @@ test_wrap (char *test_name, int
   return ret;
 }
 
-/*
+/**
  * test server refuses to negotiate connections with unsupported protocol versions
  */
 int
@@ -350,10 +382,93 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
   return 0;
 }
 
-struct CipherDef {
-  int options[2];
-  char * curlname;
-};
+
+static int
+tls_setup (MHD_gtls_session_t * session,
+           MHD_gnutls_datum_t * key,
+           MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
+{
+  int ret;
+  const char **err_pos;
+
+  MHD__gnutls_certificate_allocate_credentials (xcred);
+
+  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
+  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
+                        strlen (srv_self_signed_cert_pem), &malloc);
+
+  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
+                                            GNUTLS_X509_FMT_PEM);
+
+  MHD__gnutls_init (session, GNUTLS_CLIENT);
+  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
+  if (ret < 0)
+    {
+      return -1;
+    }
+
+  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+  return 0;
+}
+
+static int
+tls_teardown (MHD_gtls_session_t session,
+              MHD_gnutls_datum_t * key,
+              MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
+{
+
+  MHD_gtls_free_datum_m (key, free);
+  MHD_gtls_free_datum_m (cert, free);
+
+  MHD__gnutls_deinit (session);
+
+  MHD__gnutls_certificate_free_credentials (xcred);
+  return 0;
+}
+
+/**
+ * test single threaded server
+ *
+ * @return: 0 upon all client requests returning '0', -1 otherwise.
+ *
+ * TODO : make client_count a parameter - numver of curl client threads to spawn
+ */
+int
+test_single_threaded_daemon (FILE * test_fd, char *cipher_suite,
+                             int curl_proto_version)
+{
+  int i, client_count = 16;
+  void *client_thread_ret;
+  pthread_t client_arr[client_count];
+
+  struct https_test_data client_args = {test_fd, cipher_suite, curl_proto_version};
+
+  /* initialize random seed used by curl clients */
+  unsigned int iseed = (unsigned int) time (NULL);
+  srand (iseed);
+
+  for (i = 0; i < client_count; ++i)
+    {
+      if (pthread_create (&client_arr[i], NULL,
+                          (void * ) &https_transfer_thread_adapter, &client_args) != 0)
+        {
+          fprintf (stderr, "Error: failed to spawn test client threads.\n");
+          return -1;
+        }
+    }
+
+  /* check all client requests fulfilled correctly */
+  for (i = 0; i < client_count; ++i)
+    {
+      if (pthread_join (client_arr[i], &client_thread_ret) != 0 ||
+          *((int *) client_thread_ret) != 0)
+        {
+          return -1;
+        }
+    }
+
+  return 0;
+}
 
 /* setup a temporary transfer test file */
 int
@@ -362,7 +477,11 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
   unsigned int cpos;
-  char name[64];
+  char test_name[64];
+
+  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
+  int daemon_flags =
+    MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
 
   MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
@@ -384,50 +503,68 @@ main (int argc, char *const *argv)
     }
 
   int p_ssl3[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
-  int p_tls[] = { MHD_GNUTLS_PROTOCOL_TLS1_2, 
-		  MHD_GNUTLS_PROTOCOL_TLS1_1,
-		  MHD_GNUTLS_PROTOCOL_TLS1_0, 0 };
-  struct CipherDef ciphers[] =
-    { { { MHD_GNUTLS_CIPHER_ARCFOUR_128, 0 }, "RC4-SHA" },
-      { { MHD_GNUTLS_CIPHER_3DES_CBC, 0 }, "3DES-SHA" },
-      { { MHD_GNUTLS_CIPHER_AES_128_CBC, 0 }, "AES128-SHA" },
-      { { MHD_GNUTLS_CIPHER_AES_256_CBC, 0 }, "AES256-SHA" },
-      { { 0, 0}, NULL } };
+  int p_tls[] = { MHD_GNUTLS_PROTOCOL_TLS1_2,
+    MHD_GNUTLS_PROTOCOL_TLS1_1,
+    MHD_GNUTLS_PROTOCOL_TLS1_0, 0
+  };
 
-  fprintf(stderr, "SHA/TLS tests:\n");
+  struct CipherDef ciphers[] =
+    { {{MHD_GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
+  {{MHD_GNUTLS_CIPHER_3DES_CBC, 0}, "3DES-SHA"},
+  {{MHD_GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
+  {{MHD_GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
+  {{0, 0}, NULL}
+  };
+
+  fprintf (stderr, "SHA/TLS tests:\n");
   cpos = 0;
   while (ciphers[cpos].curlname != NULL)
     {
-      sprintf(name, "%s-TLS", ciphers[cpos].curlname);
+      sprintf (test_name, "%s-TLS", ciphers[cpos].curlname);
       errorCount +=
-	test_wrap (name,
-		   &test_https_transfer, test_fd,
-		   ciphers[cpos].curlname,
-		   CURL_SSLVERSION_TLSv1,
-		   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-		   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-		   MHD_OPTION_PROTOCOL_VERSION, p_tls,
-		   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
-		   MHD_OPTION_END);
+        test_wrap (test_name,
+                   &test_https_transfer, test_fd, daemon_flags,
+                   ciphers[cpos].curlname,
+                   CURL_SSLVERSION_TLSv1,
+                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                   MHD_OPTION_PROTOCOL_VERSION, p_tls,
+                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+                   MHD_OPTION_END);
       cpos++;
     }
-  fprintf(stderr, "SHA/SSL3 tests:\n");
+  fprintf (stderr, "SHA/SSL3 tests:\n");
   cpos = 0;
   while (ciphers[cpos].curlname != NULL)
     {
-      sprintf(name, "%s-SSL3", ciphers[cpos].curlname);
+      sprintf (test_name, "%s-SSL3", ciphers[cpos].curlname);
       errorCount +=
-	test_wrap (name,
-		   &test_https_transfer, test_fd,
-		   ciphers[cpos].curlname,
-		   CURL_SSLVERSION_SSLv3,
-		   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-		   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-		   MHD_OPTION_PROTOCOL_VERSION, p_ssl3,
-		   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
-		   MHD_OPTION_END);
+        test_wrap (test_name,
+                   &test_https_transfer, test_fd, daemon_flags,
+                   ciphers[cpos].curlname,
+                   CURL_SSLVERSION_SSLv3,
+                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                   MHD_OPTION_PROTOCOL_VERSION, p_ssl3,
+                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+                   MHD_OPTION_END);
       cpos++;
     }
+
+  errorCount +=
+    test_wrap ("protocol_version", &test_protocol_version, test_fd,
+               daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_PROTOCOL_VERSION, p_tls, MHD_OPTION_END);
+
+  errorCount +=
+    test_wrap ("single threaded daemon", &test_single_threaded_daemon, test_fd,
+               MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
+
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 

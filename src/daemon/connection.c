@@ -1718,7 +1718,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_TLS_CONNECTION_INIT:
         case MHD_TLS_HELLO_REQUEST:
         case MHD_TLS_HANDSHAKE_FAILED:
-        case MHD_TLS_HANDSHAKE_COMPLETE:
           EXTRA_CHECK (0);
           break;
         }
