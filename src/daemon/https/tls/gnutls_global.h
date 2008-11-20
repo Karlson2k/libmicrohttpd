@@ -35,6 +35,11 @@ int MHD_gnutls_is_secure_memory (const void *mem);
 extern ASN1_TYPE MHD__gnutls_pkix1_asn;
 extern ASN1_TYPE MHD__gnutlsMHD__gnutls_asn;
 
+#if !HAVE_MEMMEM
+extern void *memmem (void const *__haystack, size_t __haystack_len,
+                     void const *__needle, size_t __needle_len);
+#endif
+
 /* removed const from node_asn* to
  * prevent warnings, since libtasn1 doesn't
  * use the const keywork in its functions.

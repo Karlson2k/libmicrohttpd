@@ -93,6 +93,7 @@ gnutls_state.h \
 gnutls_str.h \
 gnutls_supplemental.h \
 gnutls_x509.h \
-x509_b64.h
+x509_b64.h \
+memmem.c
 libtls_la_LIBADD = @LIBGCRYPT_LIBS@
 

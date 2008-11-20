@@ -145,6 +145,8 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 # Check for optional headers
 AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h])
 
+AC_CHECK_FUNCS(memmem)
+
 # IPv6
 AC_MSG_CHECKING(for IPv6)
 AC_TRY_COMPILE([
