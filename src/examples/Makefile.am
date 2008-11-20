@@ -1,8 +1,9 @@
 SUBDIRS  = .
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/daemon/https
+  -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/daemon/https \
+  @LIBGCRYPT_CFLAGS@
 
 if USE_COVERAGE
   AM_CFLAGS = --coverage
