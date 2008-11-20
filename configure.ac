@@ -186,7 +186,7 @@ AC_FUNC_FSEEKO
 AC_MSG_CHECKING(--enable-messages argument)
 AC_ARG_ENABLE(messages,
    [AS_HELP_STRING([--enable-messages],
-               [Enable MHD error messages])],
+               [enable MHD error messages])],
    [enable_messages=$enableval],
    [enable_messages="no"])
 AC_MSG_RESULT($enable_messages)
@@ -204,7 +204,6 @@ AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 
 # libgcrypt linkage: required for HTTPS support 
-AC_MSG_CHECKING(for libgcrypt)
 AM_PATH_LIBGCRYPT(1.2.4, gcrypt=true)
 
 # define the minimal version of libgcrypt required   
@@ -213,33 +212,33 @@ AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib vers
 
 
 # optional: HTTPS support.  Enabled by default
-AC_MSG_CHECKING(--enable-HTTPS argument)
-AC_ARG_ENABLE([HTTPS],
-   [AS_HELP_STRING([--enable-HTTPS],
+AC_MSG_CHECKING(whether to enable HTTPS support)
+AC_ARG_ENABLE([https],
+   [AS_HELP_STRING([--enable-https],
                [enable HTTPS support (default is yes)])],
-   [enable_HTTPS=$enableval],
-   [enable_HTTPS="yes"])
-if test "$enable_HTTPS" = "yes"
+   [enable_https=$enableval],
+   [enable_https="yes"])
+if test "$enable_https" = "yes"
 then
  if test "$gcrypt" = "true"
  then
    AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
  else
    AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt])
-   enable_HTTPS="no (lacking libgcrypt)"
+   enable_https="no (lacking libgcrypt)"
  fi
 else
  AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
 fi
-AC_MSG_RESULT($enable_HTTPS)
+AC_MSG_RESULT($enable_https)
 
-AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_HTTPS" = "yes")
+AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 # optional: compile TLS client side code [only for test running] ?
-AC_MSG_CHECKING(--enable-client-side argument)
+AC_MSG_CHECKING(whether to compile TLS client side code)
 AC_ARG_ENABLE(client-side,
    [AS_HELP_STRING([--enable-client-side],
-               [Compile client side code])],
+               [compile client side code])],
    [enable_client_side=$enableval],
    [enable_client_side="no"])
 AC_MSG_RESULT($enable_client_side)
@@ -261,7 +260,7 @@ AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 # gcov compilation
 use_gcov=no
 AC_ARG_ENABLE([coverage], AS_HELP_STRING([--enable-coverage],
-                                        [Compile the library with code coverage support (default is NO)]),
+                                        [compile the library with code coverage support (default is NO)]),
                                         [use_gcov=yes], [use_gcov=no])
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
@@ -318,10 +317,10 @@ AC_MSG_NOTICE([Configuration Summary:
   Messages:          ${enable_messages}
   libgcrypt:         ${MSG_GCRYPT}
   libcurl (testing): ${MSG_CURL}
-  HTTPS support:     ${enable_HTTPS}
+  HTTPS support:     ${enable_https}
 ])
 
-if test "$enable_HTTPS" = "yes"
+if test "$enable_https" = "yes"
 then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
   Client code dep.:  ${MSG_CLIENT_SIDE}    		
