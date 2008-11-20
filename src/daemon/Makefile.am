@@ -5,7 +5,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/daemon/https/x509 \
   -I$(top_srcdir)/src/daemon/https/minitasn1 \
   -I$(top_srcdir)/src/daemon/https/tls \
-  -I$(top_srcdir)/src/daemon/https 
+  -I$(top_srcdir)/src/daemon/https \
+  @LIBGCRYPT_CFLAGS@ 
 
 if HAVE_GNU_LD
 #  If you want to debug with gdb, comment out this line:

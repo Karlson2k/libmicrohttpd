@@ -5,15 +5,14 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/daemon/https/tls \
 -I$(top_srcdir)/src/daemon/https/lgl \
 -I$(top_srcdir)/src/daemon/https/minitasn1 \
--I$(top_srcdir)/src/daemon/https/x509 
+-I$(top_srcdir)/src/daemon/https/x509 \
+ @LIBGCRYPT_CFLAGS@ 
 
 if USE_COVERAGE
   AM_CFLAGS = -fprofile-arcs -ftest-coverage
 endif
 
 noinst_LTLIBRARIES = libtls.la
-
-libtls_la_LDFLAGS = -lgcrypt
 
 libtls_la_SOURCES = \
 auth_cert.c \
@@ -94,4 +93,6 @@ gnutls_state.h \
 gnutls_str.h \
 gnutls_supplemental.h \
 gnutls_x509.h \
-x509_b64.h 
+x509_b64.h
+libtls_la_LIBADD = @LIBGCRYPT_LIBS@
+

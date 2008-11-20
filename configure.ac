@@ -204,50 +204,12 @@ AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 
 # libgcrypt linkage: required for HTTPS support 
-AC_MSG_CHECKING(--with-libgcrypt argument)
-AC_ARG_WITH(libgcrypt,
-  [AS_HELP_STRING([--with-libgcrypt=PFX],
-               [Base of libgcrypt installation])],
-  [AC_MSG_RESULT("$with_libgcrypt")
-   case $with_libgcrypt in
-   no)
-     gcrypt=false
-     ;;
-   yes)
-     AC_CHECK_HEADERS([gcrypt.h],
-       AC_CHECK_LIB(gcrypt,gcry_prime_generate,
-        gcrypt=true,
-        gcrypt=false))
-     ;;
-   *)
-    LDFLAGS="-L${with_libgcrypt}lib $LDFLAGS"
-    CPPFLAGS="-I${with_libgcrypt}/include $CPPFLAGS"
-    AC_CHECK_HEADERS(gcrypt.h,
-     # check for 'gcry_prime_generate' in gcrypt.la
-     AC_CHECK_LIB(gcrypt,gcry_prime_generate,
-       GCRYPT_LIB_PATH="${with_libgcrypt}/lib"
-       GCRYPT_LDFLAGS="-L${with_libgcrypt}/lib"
-       GCRYPT_CPPFLAGS="-I${with_libgcrypt}/include"
-       gcrypt=true,
-       gcrypt=false))
-    LDFLAGS=$SAVE_LDFLAGS
-    CPPFLAGS=$SAVE_CPPFLAGS
-    ;;
-   esac
-  ],
-  [AC_MSG_RESULT([not specified])
-   AC_CHECK_HEADERS([gcrypt.h],
-     AC_CHECK_LIB(gcrypt,gcry_prime_generate,
-      gcrypt=true,
-      gcrypt=false))
-  ])
+AC_MSG_CHECKING(for libgcrypt)
+AM_PATH_LIBGCRYPT(1.2.4, gcrypt=true)
 
 # define the minimal version of libgcrypt required   
 MHD_GCRYPT_VERSION=1:1.2.4
 AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
-AC_SUBST(GCRYPT_LIB_PATH)
-AC_SUBST(GCRYPT_LDFLAGS)
-AC_SUBST(GCRYPT_CPPFLAGS)
 
 
 # optional: HTTPS support.  Enabled by default
