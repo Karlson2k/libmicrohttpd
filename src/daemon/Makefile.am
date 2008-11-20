@@ -8,12 +8,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/daemon/https \
   @LIBGCRYPT_CFLAGS@ 
 
-if HAVE_GNU_LD
-#  If you want to debug with gdb, comment out this line:
-  retaincommand=-Wl,--retain-symbols-file -Wl,$(srcdir)/SYMBOLS
-endif
-
-EXTRA_DIST = SYMBOLS
+EXTRA_DIST = EXPORT.sym
 
 lib_LTLIBRARIES = \
   libmicrohttpd.la
@@ -27,8 +22,8 @@ libmicrohttpd_la_SOURCES = \
   postprocessor.c \
   response.c response.h
 libmicrohttpd_la_LDFLAGS = \
-  -version-info 4:3:0 \
-  -export-dynamic $(retaincommand)
+  $(MHD_LIB_LDFLAGS) \
+  -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 
 if USE_COVERAGE
   AM_CFLAGS = --coverage

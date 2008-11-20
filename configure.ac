@@ -27,6 +27,13 @@ AM_CONFIG_HEADER([MHD_config.h])
 
 AH_TOP([#define _GNU_SOURCE  1])
 
+LIB_VERSION_CURRENT=4
+LIB_VERSION_REVISION=3
+LIB_VERSION_AGE=0
+AC_SUBST(LIB_VERSION_CURRENT)
+AC_SUBST(LIB_VERSION_REVISION)
+AC_SUBST(LIB_VERSION_AGE)
+
 if test `uname -s` = "OS/390"
 then
 # configure binaries for z/OS
@@ -183,7 +190,7 @@ AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
 # optional: have error messages ?
-AC_MSG_CHECKING(--enable-messages argument)
+AC_MSG_CHECKING(whether to enable error messages)
 AC_ARG_ENABLE(messages,
    [AS_HELP_STRING([--enable-messages],
                [enable MHD error messages])],
@@ -265,6 +272,9 @@ AC_ARG_ENABLE([coverage], AS_HELP_STRING([--enable-coverage],
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 
+MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
+MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
+AC_SUBST(MHD_LIB_LDFLAGS)
 
 
 AC_SUBST(CPPFLAGS)
