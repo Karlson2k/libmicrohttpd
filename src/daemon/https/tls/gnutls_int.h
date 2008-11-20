@@ -234,7 +234,6 @@ typedef struct MHD_gtls_key *MHD_gtls_key_st;
 /* STATE (cont) */
 #include <gnutls_hash_int.h>
 #include <gnutls_cipher_int.h>
-#include <gnutls_compress_int.h>
 #include <gnutls_cert.h>
 
 typedef struct

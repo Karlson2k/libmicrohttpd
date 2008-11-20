@@ -28,7 +28,6 @@
 #include "gnutls_int.h"
 #include "gnutls_errors.h"
 #include "debug.h"
-#include "gnutls_compress.h"
 #include "gnutls_cipher.h"
 #include "gnutls_buffers.h"
 #include "gnutls_handshake.h"

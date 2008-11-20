@@ -31,7 +31,6 @@
 #include "gnutls_dh.h"
 #include "debug.h"
 #include "gnutls_algorithms.h"
-#include "gnutls_compress.h"
 #include "gnutls_cipher.h"
 #include "gnutls_buffers.h"
 #include "gnutls_kx.h"
