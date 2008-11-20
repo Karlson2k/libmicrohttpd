@@ -25,6 +25,7 @@
 #ifndef GNUTLS_GLOBAL_H
 #define GNUTLS_GLOBAL_H
 
+#include "MHD_config.h"
 #include <libtasn1.h>
 
 /* this mutex is used to synchronize threads attempting to call MHD__gnutls_global_init / MHD__gnutls_global_deinit */
