@@ -65,6 +65,8 @@
 #endif
 
 #if HTTPS_SUPPORT
+pthread_mutex_t MHD_gnutls_init_mutex;
+
 /**
  * Note: code duplication with code in MHD_gnutls_priority.c
  *
