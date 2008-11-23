@@ -60,7 +60,6 @@ setup (MHD_gtls_session_t * session,
        MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
 {
   int ret;
-  const char **err_pos;
 
   MHD__gnutls_certificate_allocate_credentials (xcred);
 
@@ -72,7 +71,7 @@ setup (MHD_gtls_session_t * session,
                                             GNUTLS_X509_FMT_PEM);
 
   MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
+  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", NULL);
   if (ret < 0)
     {
       return -1;

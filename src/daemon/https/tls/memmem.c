@@ -20,6 +20,7 @@
 
 /* Specification of memmem.  */
 #include "gnutls_global.h"
+#include <string.h>
 
 #if !HAVE_MEMMEM
 
