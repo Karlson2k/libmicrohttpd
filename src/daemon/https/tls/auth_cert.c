@@ -199,7 +199,8 @@ _find_x509_cert (const MHD_gtls_cert_credentials_t cred,
   int result, cert_pk;
 
   *indx = -1;
-
+  odn.size = 0;
+  odn.data = NULL;
   do
     {
 
