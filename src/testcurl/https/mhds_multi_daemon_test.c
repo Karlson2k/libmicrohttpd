@@ -27,12 +27,14 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include <curl/curl.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #define DEBUG_CURL_VERBOSE 0
 
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
+#define MHD_E_MEM "Error: memory error\n"
 #define MHD_E_SERVER_INIT "Error: failed to start server\n"
 #define MHD_E_TEST_FILE_CREAT "Error: failed to setup test file\n"
 
@@ -126,6 +128,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   struct CBC cbc;
   CURLcode errornum;
   char *doc_path;
+  size_t doc_path_len;
   char url[255];
   size_t len;
   struct stat file_stat;
@@ -137,7 +140,21 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   unsigned char *mem_test_file_local;
 
   /* setup test file path, url */
-  doc_path = get_current_dir_name ();
+  doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
+  if (NULL == (doc_path = malloc (doc_path_len)))
+    {
+      fclose (test_fd);
+      fprintf (stderr, MHD_E_MEM);
+      return -1;
+    }
+  if (getcwd (doc_path, doc_path_len) == NULL) 
+    {
+      fclose (test_fd);
+      free (doc_path);
+      fprintf (stderr, "Error: failed to get working directory. %s\n",
+               strerror (errno));
+      return -1;
+    }
 
   mem_test_file_local = malloc (len);
   fseek (test_fd, 0, SEEK_SET);

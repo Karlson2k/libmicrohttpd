@@ -28,6 +28,7 @@
 #include "microhttpd.h"
 
 #include <sys/stat.h>
+#include <limits.h>
 #include "gnutls.h"
 #include <curl/curl.h>
 
@@ -144,6 +145,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   CURLcode errornum;
   struct CBC cbc;
   char *doc_path;
+  size_t doc_path_len;
   char url[255];
   struct stat statb;
 
@@ -155,7 +157,21 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   unsigned char *mem_test_file_local;
 
   /* setup test file path, url */
-  doc_path = get_current_dir_name ();
+  doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
+  if (NULL == (doc_path = malloc (doc_path_len)))
+    {
+      fclose (test_fd);
+      fprintf (stderr, MHD_E_MEM);
+      return -1;
+    }
+  if (getcwd (doc_path, doc_path_len) == NULL) 
+    {
+      fclose (test_fd);
+      free (doc_path);
+      fprintf (stderr, "Error: failed to get working directory. %s\n",
+               strerror (errno));
+      return -1;
+    }
 
   if (NULL == (mem_test_file_local = malloc (len)))
     {
