@@ -1720,6 +1720,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_TLS_HANDSHAKE_FAILED:
           EXTRA_CHECK (0);
           break;
+	default:
+	  EXTRA_CHECK (0);
+	  connection_close_error (connection);
+	  return MHD_NO;
         }
       break;
     }
