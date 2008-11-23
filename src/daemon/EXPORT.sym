@@ -1,4 +1,5 @@
 MHD_start_daemon
+MHD_start_daemon_va
 MHD_stop_daemon
 MHD_get_fdset
 MHD_get_timeout
