@@ -42,7 +42,6 @@
 
 #include "tls_test_keys.h"
 
-const int DEBUG_GNUTLS_LOG_LEVEL = 0;
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
@@ -436,8 +435,6 @@ main (int argc, char *const *argv)
 
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
-
-  MHD_gtls_global_set_log_level (DEBUG_GNUTLS_LOG_LEVEL);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {

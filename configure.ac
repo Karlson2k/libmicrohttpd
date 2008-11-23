@@ -243,6 +243,8 @@ AC_MSG_RESULT($enable_https)
 
 AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
+MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
+
 # optional: compile TLS client side code [only for test running] ?
 AC_MSG_CHECKING(whether to compile TLS client side code)
 AC_ARG_ENABLE(client-side,
@@ -255,6 +257,7 @@ if test "$enable_client_side" = "no"
 then
  AC_DEFINE([MHD_DEBUG_TLS],[0],[Compile client side code. This will enable running some test cases.])
  MSG_CLIENT_SIDE="disabled. running some test cases won't be possible"
+ MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
 else
  AC_DEFINE([MHD_DEBUG_TLS],[1],[Compile client side code. This will enable running some test cases.])
  MSG_CLIENT_SIDE="enabled" 
@@ -274,8 +277,6 @@ AC_ARG_ENABLE([coverage], AS_HELP_STRING([--enable-coverage],
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 
-MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
-MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
 AC_SUBST(MHD_LIB_LDFLAGS)
 
 
