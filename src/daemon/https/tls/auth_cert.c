@@ -214,7 +214,7 @@ _find_x509_cert (const MHD_gtls_cert_credentials_t cred,
             {
               if ((result =
                    MHD__gnutls_cert_get_issuer_dn (&cred->cert_list[i][j],
-                                                   &odn)) < 0)
+                                                   &odn)) != 0)
                 {
                   MHD_gnutls_assert ();
                   return result;

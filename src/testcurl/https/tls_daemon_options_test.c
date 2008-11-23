@@ -28,7 +28,6 @@
 #include "microhttpd.h"
 
 #include <sys/stat.h>
-
 #include "gnutls.h"
 #include <curl/curl.h>
 
@@ -382,50 +381,6 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
   return 0;
 }
 
-
-static int
-tls_setup (MHD_gtls_session_t * session,
-           MHD_gnutls_datum_t * key,
-           MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
-{
-  int ret;
-  const char **err_pos;
-
-  MHD__gnutls_certificate_allocate_credentials (xcred);
-
-  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                        strlen (srv_self_signed_cert_pem), &malloc);
-
-  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                            GNUTLS_X509_FMT_PEM);
-
-  MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
-  if (ret < 0)
-    {
-      return -1;
-    }
-
-  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  return 0;
-}
-
-static int
-tls_teardown (MHD_gtls_session_t session,
-              MHD_gnutls_datum_t * key,
-              MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
-{
-
-  MHD_gtls_free_datum_m (key, free);
-  MHD_gtls_free_datum_m (cert, free);
-
-  MHD__gnutls_deinit (session);
-
-  MHD__gnutls_certificate_free_credentials (xcred);
-  return 0;
-}
-
 /**
  * test single threaded server
  *
@@ -479,7 +434,6 @@ main (int argc, char *const *argv)
   unsigned int cpos;
   char test_name[64];
 
-  int mac[] = { MHD_GNUTLS_MAC_SHA1, 0 };
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
 
