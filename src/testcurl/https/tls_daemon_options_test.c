@@ -164,7 +164,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
-  if (getcwd (doc_path, doc_path_len) == NULL) 
+  if (getcwd (doc_path, doc_path_len) == NULL)
     {
       fclose (test_fd);
       free (doc_path);
@@ -354,6 +354,7 @@ test_wrap (char *test_name, int
 
 /**
  * test server refuses to negotiate connections with unsupported protocol versions
+ *
  */
 int
 test_protocol_version (FILE * test_fd, char *cipher_suite,
@@ -368,8 +369,8 @@ test_protocol_version (FILE * test_fd, char *cipher_suite,
 #endif
   curl_easy_setopt (c, CURLOPT_URL, "https://localhost:42433/");
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 3L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 3L);
 
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, curl_proto_version);
@@ -407,7 +408,7 @@ int
 test_single_threaded_daemon (FILE * test_fd, char *cipher_suite,
                              int curl_proto_version)
 {
-  int i, client_count = 16;
+  int i, client_count = 3;
   void *client_thread_ret;
   pthread_t client_arr[client_count];
 
@@ -523,7 +524,7 @@ main (int argc, char *const *argv)
                daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_PROTOCOL_VERSION, p_tls, MHD_OPTION_END);
+               MHD_OPTION_PROTOCOL_VERSION, p_ssl3, MHD_OPTION_END);
 
   errorCount +=
     test_wrap ("single threaded daemon", &test_single_threaded_daemon, test_fd,
