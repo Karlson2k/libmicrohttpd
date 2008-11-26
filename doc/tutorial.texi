@@ -6,6 +6,11 @@
 
 @set VERSION 0.4.0 prerelease0
 
+@dircategory GNU Libraries
+@direntry
+* libmicrohttpdtutorial: (microhttpd).  A tutorial for GNU libmicrohttpd.
+@end direntry
+
 @titlepage
 @title A Tutorial for GNU libmicrohttpd
 @subtitle written for version @value{VERSION}
