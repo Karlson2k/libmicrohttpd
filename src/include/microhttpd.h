@@ -411,6 +411,21 @@ enum MHD_OPTION
    * daemon should adhere.
    */
   MHD_OPTION_CIPHER_ALGORITHM = 12,
+
+  /**
+   * Use the given function for logging error messages.
+   * This option must be followed by two arguments; the
+   * first must be a pointer to a function
+   * of type "void fun(void * arg, const char * fmt, va_list ap)"
+   * and the second a pointer "void*" which will
+   * be passed as the "arg" argument to "fun".
+   * <p>
+   * Note that MHD will not generate any log messages
+   * if it was compiled without the "--enable-messages"
+   * flag being set.
+   */
+  MHD_OPTION_EXTERNAL_LOGGER = 13,
+
 };
 
 /**
@@ -910,13 +925,14 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @param key the header to look for
  * @return NULL if no such item was found
  */
-const char *MHD_lookup_connection_value (struct MHD_Connection *connection,
-                                         enum MHD_ValueKind kind,
-                                         const char *key);
+const char *
+MHD_lookup_connection_value (struct MHD_Connection *connection,
+			     enum MHD_ValueKind kind,
+			     const char *key);
 
 /**
  * Queue a response to be transmitted to the client (as soon as
- * possible).
+ * possible but after MHD_AccessHandlerCallback returns).
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. 200 for OK)

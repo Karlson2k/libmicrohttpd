@@ -175,17 +175,26 @@ AC_CHECK_DECL([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
-LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
-AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
-LIBS=$SAVE_LIBS
 
+AC_MSG_CHECKING(whether to use libcurl for testing)
+AC_ARG_ENABLE(curl,
+  [AS_HELP_STRING([--enable-curl],[support cURL based testcases])],
+  [enable_curl=$enableval],
+  [enable_curl="yes"])
+
+if test "$enable_curl" = "yes"
+then
+  LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
+  AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 # Lib cURL & cURL - OpenSSL versions
-MHD_REQ_CURL_VERSION=7.16.4
-MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
-MHD_REQ_CURL_GNUTLS_VERSION=2.2.3
-AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
-AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
-AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
+  MHD_REQ_CURL_VERSION=7.16.4
+  MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
+  MHD_REQ_CURL_GNUTLS_VERSION=2.2.3
+  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
+  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
+  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
+fi
+LIBS=$SAVE_LIBS
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
@@ -271,9 +280,10 @@ AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 
 # gcov compilation
 use_gcov=no
-AC_ARG_ENABLE([coverage], AS_HELP_STRING([--enable-coverage],
-                                        [compile the library with code coverage support (default is NO)]),
-                                        [use_gcov=yes], [use_gcov=no])
+AC_ARG_ENABLE([coverage], 
+   AS_HELP_STRING([--enable-coverage],
+                  [compile the library with code coverage support (default is NO)]),
+                  [use_gcov=yes], [use_gcov=no])
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 

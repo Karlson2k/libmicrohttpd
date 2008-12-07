@@ -208,7 +208,7 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
 
 /**
  * Queue a response to be transmitted to the client (as soon as
- * possible).
+ * possible but after MHD_AccessHandlerCallback returns).
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. 200 for OK)

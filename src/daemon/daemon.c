@@ -834,6 +834,10 @@ MHD_start_daemon_va (unsigned int options,
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
+#if HAVE_MESSAGES
+  retVal->custom_error_log = (void(*)(void*,const char *,va_list)) &vfprintf;
+  retVal->custom_error_log_cls = stderr;
+#endif
 #if HTTPS_SUPPORT
   if (options & MHD_USE_SSL)
     {
@@ -891,6 +895,14 @@ MHD_start_daemon_va (unsigned int options,
           _set_priority (&retVal->priority_cache->cipher,
                          va_arg (ap, const int *));
           break;
+#endif
+	case MHD_OPTION_EXTERNAL_LOGGER:
+#if HAVE_MESSAGES
+	  retVal->custom_error_log = va_arg(ap, void (*)(void*cls, const char *, va_list));
+	  retVal->custom_error_log_cls = va_arg(ap, void *);
+#else
+	  va_arg(ap, void (*)(void*cls, const char *,...));
+	  va_arg(ap, void *);
 #endif
         default:
 #if HAVE_MESSAGES

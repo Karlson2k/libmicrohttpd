@@ -1,3 +1,7 @@
+Sat Dec  6 18:36:17 MST 2008
+	 Added configure option to disable checking for CURL support.
+	 Added MHD_OPTION to allow specification of custom logger. -CG
+
 Tue Nov 18 01:19:53 MST 2008
 	 Removed support for untested and/or broken SSL features
 	 and (largely useless) options. -CG

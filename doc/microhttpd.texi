@@ -343,24 +343,18 @@ terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm'
 representing the cipher priority order to which the HTTPS
 daemon should adhere.
   
-@item MHD_OPTION_KX_PRIORITY
-Memory pointer to a zero (MHD_GNUTLS_KX_UNKNOWN)
-terminated (const) array of 'MHD_GNUTLS_KeyExchangeAlgorithm'
-representing the key exchange algorithm priority order to which
-the HTTPS daemon should adhere.
-
-@item MHD_OPTION_CERT_TYPE
-Indicate which type of certificate this server will use,
-followed by a value of type 'enum MHD_GNUTLS_CertificateType'.
-
-@item MHD_OPTION_MAC_ALGO
-Specify the mac algorithm used by server.
-The argument should be of type "enum MHD_GNUTLS_MacAlgorithm"
-
-@item MHD_OPTION_TLS_COMP_ALGO
-Compression algorithm used by server.  Should be followed by an
-option of type 'enum MHD_GNUTLS_CompressionMethod'.
-
+@item MHD_OPTION_EXTERNAL_LOGGER
+Use the given function for logging error messages.
+This option must be followed by two arguments; the
+first must be a pointer to a function
+of type 'void fun(void * arg, const char * fmt, va_list ap)'
+and the second a pointer of type 'void*' which will
+be passed as the "arg" argument to "fun".
+ 
+Note that MHD will not generate any log messages
+if it was compiled without the "--enable-messages"
+flag being set and the MHD_USE_DEBUG flag being set, 
+even if this argument is used.
 @end table
 @end deftp
 
@@ -934,7 +928,11 @@ responce and we finally destroy it only when the daemon shuts down.
 
 @deftypefun int MHD_queue_response (struct MHD_Connection *connection, unsigned int status_code, struct MHD_Response *response)
 Queue a response to be transmitted to the client as soon as possible
-(increment the reference counter).
+but only after MHD_AccessHandlerCallback returns.  This function
+checks that it is legal to queue a response at this time for the
+given connection.  It also increments the internal reference
+counter for the response object (the counter will be decremented
+automatically once the response has been transmitted).
 
 @table @var
 @item connection
