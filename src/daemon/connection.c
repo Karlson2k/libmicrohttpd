@@ -288,9 +288,8 @@ MHD_connection_close (struct MHD_Connection *connection,
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
   if (connection->daemon->notify_completed != NULL)
-    connection->daemon->notify_completed (connection->
-                                          daemon->notify_completed_cls,
-                                          connection,
+    connection->daemon->notify_completed (connection->daemon->
+                                          notify_completed_cls, connection,
                                           &connection->client_context,
                                           termination_code);
 }
@@ -976,35 +975,29 @@ parse_cookie_header (struct MHD_Connection *connection)
   while (pos != NULL)
     {
       while (*pos == ' ')
-	pos++; /* skip spaces */
-      
+        pos++;                  /* skip spaces */
+
       sce = pos;
-      while ( ( (*sce) != '\0') &&
-	      ( (*sce) != ',') &&
-	      ( (*sce) != ';') &&
-	      ( (*sce) != '=') )
-	sce++;
+      while (((*sce) != '\0') &&
+             ((*sce) != ',') && ((*sce) != ';') && ((*sce) != '='))
+        sce++;
       /* remove tailing whitespace (if any) from key */
       ekill = sce - 1;
-      while ( (*ekill == ' ') &&
-	      (ekill >= pos) )
-	*(ekill--) = '\0';
+      while ((*ekill == ' ') && (ekill >= pos))
+        *(ekill--) = '\0';
       old = *sce;
       *sce = '\0';
       if (old != '=')
-	{
-	  /* value part omitted, use empty string... */
-	  if (MHD_NO ==
-	      connection_add_header (connection,
-				     pos,
-				     "",
-				     MHD_COOKIE_KIND))
-	    return MHD_NO;
-	  if (old == '\0')
-	    break;
-	  pos = sce + 1;
-	  continue;
-	}	
+        {
+          /* value part omitted, use empty string... */
+          if (MHD_NO ==
+              connection_add_header (connection, pos, "", MHD_COOKIE_KIND))
+            return MHD_NO;
+          if (old == '\0')
+            break;
+          pos = sce + 1;
+          continue;
+        }
       equals = sce + 1;
       quotes = 0;
       semicolon = equals;
@@ -1068,9 +1061,8 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   if (connection->daemon->uri_log_callback != NULL)
     connection->client_context
       =
-      connection->daemon->uri_log_callback (connection->
-                                            daemon->uri_log_callback_cls,
-                                            uri);
+      connection->daemon->uri_log_callback (connection->daemon->
+                                            uri_log_callback_cls, uri);
   args = strstr (uri, "?");
   if (args != NULL)
     {
@@ -1218,8 +1210,8 @@ call_connection_handler (struct MHD_Connection *connection)
         }
       used = processed;
       if (MHD_NO ==
-          connection->daemon->default_handler (connection->
-                                               daemon->default_handler_cls,
+          connection->daemon->default_handler (connection->daemon->
+                                               default_handler_cls,
                                                connection, connection->url,
                                                connection->method,
                                                connection->version,
@@ -1620,11 +1612,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_CONTINUE_SENDING:
           ret = connection->send_cls (connection,
                                       &HTTP_100_CONTINUE
-                                      [connection->
-                                       continue_message_write_offset],
+                                      [connection->continue_message_write_offset],
                                       strlen (HTTP_100_CONTINUE) -
-                                      connection->
-                                      continue_message_write_offset);
+                                      connection->continue_message_write_offset);
           if (ret < 0)
             {
               if (errno == EINTR)
@@ -1674,12 +1664,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             {
               ret = MHD__gnutls_record_send (connection->tls_session,
                                              &connection->response->data
-                                             [connection->response_write_position
-                                              - response->data_start],
-                                             response->data_size -
-                                             (connection->
+                                             [connection->
                                               response_write_position -
-                                              response->data_start));
+                                              response->data_start],
+                                             response->data_size -
+                                             (connection->response_write_position
+                                              - response->data_start));
             }
           else
 #endif
@@ -1749,10 +1739,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_TLS_HANDSHAKE_FAILED:
           EXTRA_CHECK (0);
           break;
-	default:
-	  EXTRA_CHECK (0);
-	  connection_close_error (connection);
-	  return MHD_NO;
+        default:
+          EXTRA_CHECK (0);
+          connection_close_error (connection);
+          return MHD_NO;
         }
       break;
     }
@@ -2043,8 +2033,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
           MHD_destroy_response (connection->response);
           if (connection->daemon->notify_completed != NULL)
-            connection->daemon->notify_completed (connection->
-                                                  daemon->notify_completed_cls,
+            connection->daemon->notify_completed (connection->daemon->
+                                                  notify_completed_cls,
                                                   connection,
                                                   &connection->client_context,
                                                   MHD_REQUEST_TERMINATED_COMPLETED_OK);

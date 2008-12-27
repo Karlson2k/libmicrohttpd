@@ -102,9 +102,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
   if ((daemon->options & MHD_USE_DEBUG) == 0)
     return;
   va_start (va, format);
-  daemon->custom_error_log(daemon->custom_error_log_cls,
-			   format,
-			   va);
+  daemon->custom_error_log (daemon->custom_error_log_cls, format, va);
   va_end (va);
 }
 #endif

@@ -82,30 +82,18 @@ ahc_echo (void *cls,
   *unused = NULL;
   ret = 0;
 
-  hdr = MHD_lookup_connection_value (connection,
-				     MHD_COOKIE_KIND,
-				     "name1");
-  if ( (hdr == NULL) ||
-       (0 != strcmp(hdr, "var1")) )
-    abort();
-  hdr = MHD_lookup_connection_value (connection,
-				     MHD_COOKIE_KIND,
-				     "name2");
-  if ( (hdr == NULL) ||
-       (0 != strcmp(hdr, "var2")) )
-    abort();
-  hdr = MHD_lookup_connection_value (connection,
-				     MHD_COOKIE_KIND,
-				     "name3");
-  if ( (hdr == NULL) ||
-       (0 != strcmp(hdr, "")) )
-    abort();
-  hdr = MHD_lookup_connection_value (connection,
-				     MHD_COOKIE_KIND,
-				     "name4");
-  if ( (hdr == NULL) ||
-       (0 != strcmp(hdr, "var4 with spaces")) )
-    abort();
+  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name1");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "var1")))
+    abort ();
+  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name2");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "var2")))
+    abort ();
+  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name3");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "")))
+    abort ();
+  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name4");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "var4 with spaces")))
+    abort ();
   response = MHD_create_response_from_data (strlen (url),
                                             (void *) url, MHD_NO, MHD_YES);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
@@ -145,12 +133,12 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_URL, "http://localhost:21080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1); 
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   /* note that the string below intentionally uses the
      various ways cookies can be specified to exercise the
      parser! Do not change! */
   curl_easy_setopt (c, CURLOPT_COOKIE,
-		    "name1=var1; name2=var2,name3 ;name4=\"var4 with spaces\";");
+                    "name1=var1; name2=var2,name3 ;name4=\"var4 with spaces\";");
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -158,8 +146,8 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   /* NOTE: use of CONNECTTIMEOUT without also
-      setting NOSIGNAL results in really weird
-      crashes on my system! */
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
 

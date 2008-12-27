@@ -835,7 +835,8 @@ MHD_start_daemon_va (unsigned int options,
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->connection_timeout = 0;       /* no timeout */
 #if HAVE_MESSAGES
-  retVal->custom_error_log = (void(*)(void*,const char *,va_list)) &vfprintf;
+  retVal->custom_error_log =
+    (void (*)(void *, const char *, va_list)) &vfprintf;
   retVal->custom_error_log_cls = stderr;
 #endif
 #if HTTPS_SUPPORT
@@ -896,13 +897,14 @@ MHD_start_daemon_va (unsigned int options,
                          va_arg (ap, const int *));
           break;
 #endif
-	case MHD_OPTION_EXTERNAL_LOGGER:
+        case MHD_OPTION_EXTERNAL_LOGGER:
 #if HAVE_MESSAGES
-	  retVal->custom_error_log = va_arg(ap, void (*)(void*cls, const char *, va_list));
-	  retVal->custom_error_log_cls = va_arg(ap, void *);
+          retVal->custom_error_log =
+            va_arg (ap, void (*)(void *cls, const char *, va_list));
+          retVal->custom_error_log_cls = va_arg (ap, void *);
 #else
-	  va_arg(ap, void (*)(void*cls, const char *,...));
-	  va_arg(ap, void *);
+          va_arg (ap, void (*)(void *cls, const char *, ...));
+          va_arg (ap, void *);
 #endif
         default:
 #if HAVE_MESSAGES

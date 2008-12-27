@@ -143,7 +143,7 @@ struct MHD_Response
    * Set to -1 if size is not known.
    */
   size_t total_size;
-  
+
   /**
    * Size of data.
    */
@@ -153,7 +153,7 @@ struct MHD_Response
    * Size of the data buffer.
    */
   size_t data_buffer_size;
-  
+
   /**
    * At what offset in the stream is the
    * beginning of data located?
@@ -224,7 +224,7 @@ enum MHD_CONNECTION_STATE
    * rest.
    */
   MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
-  
+
   /**
    * 9: We received the entire footer.  Wait for a response to be queued
    * and prepare the response headers.
@@ -353,7 +353,7 @@ struct MHD_Connection
    * This is a linked list.
    */
   struct MHD_Connection *next;
-  
+
   /**
    * Reference to the MHD_Daemon struct.
    */
@@ -466,7 +466,7 @@ struct MHD_Connection
    * Size of write_buffer (in bytes).
    */
   size_t write_buffer_size;
-  
+
   /**
    * Offset where we are with sending from write_buffer.
    */
@@ -571,19 +571,19 @@ struct MHD_Connection
    * with respect to the current chunk (at what offset / position)?
    */
   unsigned int current_chunk_offset;
-  
+
   /**
-   * Handler used for processing read connection operations 
+   * Handler used for processing read connection operations
    */
   int (*read_handler) (struct MHD_Connection * connection);
 
   /**
-   * Handler used for processing write connection operations 
+   * Handler used for processing write connection operations
    */
   int (*write_handler) (struct MHD_Connection * connection);
 
   /**
-   * Handler used for processing idle connection operations 
+   * Handler used for processing idle connection operations
    */
   int (*idle_handler) (struct MHD_Connection * connection);
 
@@ -615,7 +615,7 @@ struct MHD_Daemon
    * Callback function for all requests.
    */
   MHD_AccessHandlerCallback default_handler;
-  
+
   /**
    * Closure argument to default_handler.
    */
@@ -665,7 +665,7 @@ struct MHD_Daemon
 
 #if HAVE_MESSAGES
   /**
-   * Function for logging error messages (if we 
+   * Function for logging error messages (if we
    * support error reporting).
    */
   void (*custom_error_log) (void *cls, const char *fmt, va_list va);
@@ -685,7 +685,7 @@ struct MHD_Daemon
    * Listen socket.
    */
   int socket_fd;
-  
+
   /**
    * Are we shutting down?
    */
@@ -731,12 +731,12 @@ struct MHD_Daemon
   enum MHD_GNUTLS_CredentialsType cred_type;
 
   /**
-   * Server x509 credentials 
+   * Server x509 credentials
    */
   MHD_gtls_cert_credentials_t x509_cred;
 
   /**
-   * Cipher priority cache 
+   * Cipher priority cache
    */
   MHD_gnutls_priority_t priority_cache;
 

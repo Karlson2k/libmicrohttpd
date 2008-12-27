@@ -75,9 +75,8 @@ MHD_gtls_tls_sign_hdata (MHD_gtls_session_t session,
         }
 
       MHD_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                            session->
-                                            security_parameters.master_secret,
-                                            TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
     }
   else
     MHD_gnutls_hash_deinit (td_sha, &concat[16]);
@@ -95,9 +94,8 @@ MHD_gtls_tls_sign_hdata (MHD_gtls_session_t session,
 
       if (ver == MHD_GNUTLS_PROTOCOL_SSL3)
         MHD_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                              session->
-                                              security_parameters.master_secret,
-                                              TLS_MASTER_SIZE);
+                                              session->security_parameters.
+                                              master_secret, TLS_MASTER_SIZE);
       else
         MHD_gnutls_hash_deinit (td_md5, concat);
 
@@ -267,8 +265,8 @@ MHD__gnutls_tls_sign (MHD_gtls_session_t session,
         return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 
       return (*session->internals.sign_func) (session,
-                                              session->
-                                              internals.sign_func_userdata,
+                                              session->internals.
+                                              sign_func_userdata,
                                               cert->cert_type, &cert->raw,
                                               hash_concat, signature);
     }
@@ -367,13 +365,11 @@ MHD_gtls_verify_sig_hdata (MHD_gtls_session_t session,
         }
 
       MHD_gnutls_mac_deinit_ssl3_handshake (td_md5, concat,
-                                            session->
-                                            security_parameters.master_secret,
-                                            TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
       MHD_gnutls_mac_deinit_ssl3_handshake (td_sha, &concat[16],
-                                            session->
-                                            security_parameters.master_secret,
-                                            TLS_MASTER_SIZE);
+                                            session->security_parameters.
+                                            master_secret, TLS_MASTER_SIZE);
     }
   else
     {

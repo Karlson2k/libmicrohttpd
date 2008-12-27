@@ -634,5 +634,3 @@ MHD__gnutls_pk_sign (int algo, mpi_t * data, mpi_t hash, mpi_t * pkey,
   gcry_sexp_release (s_sig);
   return 0;
 }
-
-

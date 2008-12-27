@@ -57,17 +57,13 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-static int 
-kv_cb(void * cls,
-      enum MHD_ValueKind kind,
-      const char * key,
-      const char * value)
+static int
+kv_cb (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-  if ( (0 == strcmp(key, MHD_HTTP_HEADER_HOST)) &&
-       (0 == strcmp(value, "localhost:21080")) &&
-       (kind == MHD_HEADER_KIND) )
+  if ((0 == strcmp (key, MHD_HTTP_HEADER_HOST)) &&
+      (0 == strcmp (value, "localhost:21080")) && (kind == MHD_HEADER_KIND))
     {
-      *((int*) cls) = 1;
+      *((int *) cls) = 1;
       return MHD_NO;
     }
   return MHD_YES;
@@ -97,61 +93,41 @@ ahc_echo (void *cls,
     }
   *unused = NULL;
   ret = 0;
-  MHD_get_connection_values (connection,
-			     MHD_HEADER_KIND,
-			     &kv_cb,
-			     &ret);
+  MHD_get_connection_values (connection, MHD_HEADER_KIND, &kv_cb, &ret);
   if (ret != 1)
-    abort();
-  hdr = MHD_lookup_connection_value (connection,
-				     MHD_HEADER_KIND,
-				     "NotFound");
+    abort ();
+  hdr = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, "NotFound");
   if (hdr != NULL)
-    abort();
-   hdr = MHD_lookup_connection_value (connection,
-				     MHD_HEADER_KIND,
-				     MHD_HTTP_HEADER_ACCEPT);
-   if ( (hdr == NULL) ||
-	(0 != strcmp(hdr, "*/*")) )
-    abort();
-   hdr = MHD_lookup_connection_value (connection,
-				     MHD_HEADER_KIND,
-				     MHD_HTTP_HEADER_HOST);
-   if ( (hdr == NULL) ||
-	(0 != strcmp(hdr, "localhost:21080")) )
-    abort();
-   MHD_set_connection_value (connection,
-			     MHD_HEADER_KIND,
-			     "FakeHeader",
-			     "NowPresent");
-      hdr = MHD_lookup_connection_value (connection,
-				     MHD_HEADER_KIND,
-				     "FakeHeader");
-   if ( (hdr == NULL) ||
-	(0 != strcmp(hdr, "NowPresent")) )
-    abort();
+    abort ();
+  hdr = MHD_lookup_connection_value (connection,
+                                     MHD_HEADER_KIND, MHD_HTTP_HEADER_ACCEPT);
+  if ((hdr == NULL) || (0 != strcmp (hdr, "*/*")))
+    abort ();
+  hdr = MHD_lookup_connection_value (connection,
+                                     MHD_HEADER_KIND, MHD_HTTP_HEADER_HOST);
+  if ((hdr == NULL) || (0 != strcmp (hdr, "localhost:21080")))
+    abort ();
+  MHD_set_connection_value (connection,
+                            MHD_HEADER_KIND, "FakeHeader", "NowPresent");
+  hdr = MHD_lookup_connection_value (connection,
+                                     MHD_HEADER_KIND, "FakeHeader");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "NowPresent")))
+    abort ();
 
   response = MHD_create_response_from_data (strlen (url),
                                             (void *) url, MHD_NO, MHD_YES);
-  MHD_add_response_header (response,
-			   "MyHeader",
-			   "MyValue");
+  MHD_add_response_header (response, "MyHeader", "MyValue");
   hdr = MHD_get_response_header (response, "MyHeader");
   if (0 != strcmp ("MyValue", hdr))
-    abort();
-  MHD_add_response_header (response,
-			   "MyHeader",
-			   "MyValueToo");
-  if (MHD_YES != 
-      MHD_del_response_header (response,
-			       "MyHeader",
-			       "MyValue"))
-    abort();
+    abort ();
+  MHD_add_response_header (response, "MyHeader", "MyValueToo");
+  if (MHD_YES != MHD_del_response_header (response, "MyHeader", "MyValue"))
+    abort ();
   hdr = MHD_get_response_header (response, "MyHeader");
   if (0 != strcmp ("MyValueToo", hdr))
-    abort();
+    abort ();
   if (1 != MHD_get_response_headers (response, NULL, NULL))
-    abort();
+    abort ();
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -297,8 +273,8 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   /* NOTE: use of CONNECTTIMEOUT without also
-      setting NOSIGNAL results in really weird
-      crashes on my system! */
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
 

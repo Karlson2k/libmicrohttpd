@@ -151,7 +151,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
-  if (getcwd (doc_path, doc_path_len) == NULL) 
+  if (getcwd (doc_path, doc_path_len) == NULL)
     {
       fclose (test_fd);
       free (doc_path);

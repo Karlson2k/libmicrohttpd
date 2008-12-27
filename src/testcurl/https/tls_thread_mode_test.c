@@ -1,17 +1,17 @@
 /*
   This file is part of libmicrohttpd
   (C) 2007 Christian Grothoff
-  
+
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; either version 2, or (at your
   option) any later version.
-  
+
   libmicrohttpd is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with libmicrohttpd; see the file COPYING.  If not, write to the
   Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -23,8 +23,8 @@
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  * @author Christian Grothoff
- * 
- * TODO: add test for external select! 
+ *
+ * TODO: add test for external select!
  */
 
 #include "platform.h"
@@ -268,7 +268,7 @@ https_transfer_thread_adapter (void *args)
   /* time spread incomming requests */
   usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
   ret = test_https_transfer (cargs->test_fd,
-			     cargs->cipher_suite, cargs->proto_version);
+                             cargs->cipher_suite, cargs->proto_version);
   if (ret == 0)
     return NULL;
   return &nonnull;
@@ -326,9 +326,9 @@ teardown (struct MHD_Daemon *d)
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) & move to test_util.c */
 static int
 test_wrap (char *test_name, int
-           (*test_function) (FILE * test_fd, char *cipher_suite, int proto_version),
-           FILE * test_fd, int daemon_flags, char *cipher_suite,
-           int proto_version, ...)
+           (*test_function) (FILE * test_fd, char *cipher_suite,
+                             int proto_version), FILE * test_fd,
+           int daemon_flags, char *cipher_suite, int proto_version, ...)
 {
   int ret;
   va_list arg_list;
@@ -367,14 +367,15 @@ test_wrap (char *test_name, int
  */
 static int
 test_single_client (FILE * test_fd, char *cipher_suite,
-		    int curl_proto_version)
+                    int curl_proto_version)
 {
   void *client_thread_ret;
-  struct https_test_data client_args = {test_fd, cipher_suite, curl_proto_version};
+  struct https_test_data client_args =
+    { test_fd, cipher_suite, curl_proto_version };
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
-    return -1;    
+    return -1;
   return 0;
 }
 
@@ -388,18 +389,20 @@ test_single_client (FILE * test_fd, char *cipher_suite,
  */
 static int
 test_parallel_clients (FILE * test_fd, char *cipher_suite,
-		       int curl_proto_version)
+                       int curl_proto_version)
 {
   int i;
   int client_count = 3;
   void *client_thread_ret;
   pthread_t client_arr[client_count];
-  struct https_test_data client_args = {test_fd, cipher_suite, curl_proto_version};
+  struct https_test_data client_args =
+    { test_fd, cipher_suite, curl_proto_version };
 
   for (i = 0; i < client_count; ++i)
     {
       if (pthread_create (&client_arr[i], NULL,
-                          (void * ) &https_transfer_thread_adapter, &client_args) != 0)
+                          (void *) &https_transfer_thread_adapter,
+                          &client_args) != 0)
         {
           fprintf (stderr, "Error: failed to spawn test client threads.\n");
           return -1;
@@ -410,8 +413,8 @@ test_parallel_clients (FILE * test_fd, char *cipher_suite,
   for (i = 0; i < client_count; ++i)
     {
       if ((pthread_join (client_arr[i], &client_thread_ret) != 0) ||
-          (client_thread_ret != NULL) )        
-	return -1;    
+          (client_thread_ret != NULL))
+        return -1;
     }
 
   return 0;
@@ -429,7 +432,7 @@ main (int argc, char *const *argv)
   srand (iseed);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
-    return -1;    
+    return -1;
 
   if ((test_fd = setupTestFile ()) == NULL)
     {
@@ -444,34 +447,34 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_wrap ("multi threaded daemon, single client",  &test_single_client, test_fd,
-               MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+    test_wrap ("multi threaded daemon, single client", &test_single_client,
+               test_fd, MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
                CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_END);
 
   errorCount +=
-    test_wrap ("single threaded daemon, single client", &test_single_client, test_fd,
-               MHD_USE_SELECT_INTERNALLY |
-	       MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_END);
+    test_wrap ("single threaded daemon, single client", &test_single_client,
+               test_fd,
+               MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
 
   errorCount +=
-    test_wrap ("multi threaded daemon, parallel client",   &test_parallel_clients, test_fd,
-               MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_END);
+    test_wrap ("multi threaded daemon, parallel client",
+               &test_parallel_clients, test_fd, MHD_USE_SSL | MHD_USE_DEBUG,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
 
   errorCount +=
-    test_wrap ("single threaded daemon, parallel clients", &test_parallel_clients, test_fd,
-               MHD_USE_SELECT_INTERNALLY | 
-	       MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_END);
+    test_wrap ("single threaded daemon, parallel clients",
+               &test_parallel_clients, test_fd,
+               MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);

@@ -118,10 +118,10 @@ MHD_gtls_server_name_recv_params (MHD_gtls_session_t session,
         case 0:                /* NAME_DNS */
           if (len <= MAX_SERVER_NAME_SIZE)
             {
-              memcpy (session->security_parameters.extensions.server_names[i].
-                      name, p, len);
-              session->security_parameters.extensions.
-                server_names[i].name_length = len;
+              memcpy (session->security_parameters.extensions.
+                      server_names[i].name, p, len);
+              session->security_parameters.extensions.server_names[i].
+                name_length = len;
               session->security_parameters.extensions.server_names[i].type =
                 GNUTLS_NAME_DNS;
               break;
@@ -163,8 +163,8 @@ MHD_gtls_server_name_send_params (MHD_gtls_session_t session,
           /* count the total size
            */
           len =
-            session->security_parameters.extensions.
-            server_names[i].name_length;
+            session->security_parameters.extensions.server_names[i].
+            name_length;
 
           /* uint8_t + uint16_t + size
            */
@@ -183,14 +183,14 @@ MHD_gtls_server_name_send_params (MHD_gtls_session_t session,
            i < session->security_parameters.extensions.server_names_size; i++)
         {
 
-          switch (session->security_parameters.extensions.server_names[i].
-                  type)
+          switch (session->security_parameters.extensions.
+                  server_names[i].type)
             {
             case GNUTLS_NAME_DNS:
 
               len =
-                session->security_parameters.extensions.server_names[i].
-                name_length;
+                session->security_parameters.extensions.
+                server_names[i].name_length;
               if (len == 0)
                 break;
 
@@ -208,8 +208,8 @@ MHD_gtls_server_name_send_params (MHD_gtls_session_t session,
               p += 2;
 
               memcpy (p,
-                      session->security_parameters.extensions.server_names[0].
-                      name, len);
+                      session->security_parameters.extensions.
+                      server_names[0].name, len);
               p += len;
               break;
             default:

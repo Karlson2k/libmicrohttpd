@@ -734,9 +734,9 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
               session->internals.record_send_buffer_prev_size += n - left;
 
               retval =
-                MHD__gnutls_buffer_insert (&session->internals.
-                                           record_send_buffer, &ptr[n - left],
-                                           left);
+                MHD__gnutls_buffer_insert (&session->
+                                           internals.record_send_buffer,
+                                           &ptr[n - left], left);
               if (retval < 0)
                 {
                   MHD_gnutls_assert ();
@@ -944,8 +944,8 @@ MHD_gtls_handshake_io_send_int (MHD_gtls_session_t session,
               MHD_gnutls_assert ();
 
               retval =
-                MHD__gnutls_buffer_insert (&session->
-                                           internals.handshake_send_buffer,
+                MHD__gnutls_buffer_insert (&session->internals.
+                                           handshake_send_buffer,
                                            &ptr[n - left], left);
               if (retval < 0)
                 {
@@ -1047,9 +1047,8 @@ MHD_gtls_handshake_io_recv_int (MHD_gtls_session_t session,
 
               session->internals.handshake_recv_buffer.data
                 =
-                MHD_gtls_realloc_fast (session->
-                                       internals.handshake_recv_buffer.data,
-                                       dsize);
+                MHD_gtls_realloc_fast (session->internals.
+                                       handshake_recv_buffer.data, dsize);
               if (session->internals.handshake_recv_buffer.data == NULL)
                 {
                   MHD_gnutls_assert ();
@@ -1100,9 +1099,13 @@ MHD_gtls_handshake_buffer_put (MHD_gtls_session_t session, opaque * data,
 
   if ((session->internals.max_handshake_data_buffer_size > 0) && ((length
                                                                    +
-                                                                   session->internals.handshake_hash_buffer.length)
-                                                                  >
-                                                                  session->internals.max_handshake_data_buffer_size))
+                                                                   session->
+                                                                   internals.
+                                                                   handshake_hash_buffer.
+                                                                   length) >
+                                                                  session->
+                                                                  internals.
+                                                                  max_handshake_data_buffer_size))
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_MEMORY_ERROR;

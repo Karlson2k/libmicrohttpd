@@ -925,10 +925,9 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @param key the header to look for
  * @return NULL if no such item was found
  */
-const char *
-MHD_lookup_connection_value (struct MHD_Connection *connection,
-			     enum MHD_ValueKind kind,
-			     const char *key);
+const char *MHD_lookup_connection_value (struct MHD_Connection *connection,
+                                         enum MHD_ValueKind kind,
+                                         const char *key);
 
 /**
  * Queue a response to be transmitted to the client (as soon as

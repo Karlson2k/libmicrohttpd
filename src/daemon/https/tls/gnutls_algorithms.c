@@ -1188,8 +1188,8 @@ MHD_gtls_supported_compression_methods (MHD_gtls_session_t session,
   for (i = j = 0; i < SUPPORTED_COMPRESSION_METHODS; i++)
     {
       int tmp =
-        MHD_gtls_compression_get_num (session->internals.
-                                      priorities.compression.priority[i]);
+        MHD_gtls_compression_get_num (session->internals.priorities.
+                                      compression.priority[i]);
 
       /* remove private compression algorithms, if requested.
        */

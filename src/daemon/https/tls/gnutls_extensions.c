@@ -204,9 +204,8 @@ MHD__gnutls_extension_list_add (MHD_gtls_session_t session, uint16_t type)
     {
       if (session->internals.extensions_sent_size < MAX_EXT_TYPES)
         {
-          session->internals.extensions_sent[session->
-                                             internals.extensions_sent_size] =
-            type;
+          session->internals.extensions_sent[session->internals.
+                                             extensions_sent_size] = type;
           session->internals.extensions_sent_size++;
         }
       else

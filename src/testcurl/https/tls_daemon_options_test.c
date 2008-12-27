@@ -303,9 +303,9 @@ teardown (struct MHD_Daemon *d)
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) & move to test_util.c */
 static int
 test_wrap (char *test_name, int
-           (*test_function) (FILE * test_fd, char *cipher_suite, int proto_version),
-           FILE * test_fd, int daemon_flags, char *cipher_suite,
-           int proto_version, ...)
+           (*test_function) (FILE * test_fd, char *cipher_suite,
+                             int proto_version), FILE * test_fd,
+           int daemon_flags, char *cipher_suite, int proto_version, ...)
 {
   int ret;
   va_list arg_list;
