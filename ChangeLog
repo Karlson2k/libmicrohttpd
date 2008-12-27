@@ -1,5 +1,7 @@
 Fri Dec 26 23:08:04 MST 2008
 	 Fixed broken check for identical connection address. -CG
+	 Making cookie parser more RFC2109 compliant (handle
+	 spaces around key, allow value to be optional). -CG
 
 Sat Dec  6 18:36:17 MST 2008
 	 Added configure option to disable checking for CURL support.

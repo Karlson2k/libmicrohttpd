@@ -951,8 +951,11 @@ parse_cookie_header (struct MHD_Connection *connection)
   const char *hdr;
   char *cpy;
   char *pos;
+  char *sce;
   char *semicolon;
   char *equals;
+  char *ekill;
+  char old;
   int quotes;
 
   hdr = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, "Cookie");
@@ -972,11 +975,37 @@ parse_cookie_header (struct MHD_Connection *connection)
   pos = cpy;
   while (pos != NULL)
     {
-      equals = strstr (pos, "=");
-      if (equals == NULL)
-        break;
-      equals[0] = '\0';
-      equals++;
+      while (*pos == ' ')
+	pos++; /* skip spaces */
+      
+      sce = pos;
+      while ( ( (*sce) != '\0') &&
+	      ( (*sce) != ',') &&
+	      ( (*sce) != ';') &&
+	      ( (*sce) != '=') )
+	sce++;
+      /* remove tailing whitespace (if any) from key */
+      ekill = sce - 1;
+      while ( (*ekill == ' ') &&
+	      (ekill >= pos) )
+	*(ekill--) = '\0';
+      old = *sce;
+      *sce = '\0';
+      if (old != '=')
+	{
+	  /* value part omitted, use empty string... */
+	  if (MHD_NO ==
+	      connection_add_header (connection,
+				     pos,
+				     "",
+				     MHD_COOKIE_KIND))
+	    return MHD_NO;
+	  if (old == '\0')
+	    break;
+	  pos = sce + 1;
+	  continue;
+	}	
+      equals = sce + 1;
       quotes = 0;
       semicolon = equals;
       while ((semicolon[0] != '\0') &&
