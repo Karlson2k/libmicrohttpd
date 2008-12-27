@@ -1,27 +1,30 @@
 /*
- This file is part of libmicrohttpd
- (C) 2007 Christian Grothoff
-
- libmicrohttpd is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published
- by the Free Software Foundation; either version 2, or (at your
- option) any later version.
-
- libmicrohttpd is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with libmicrohttpd; see the file COPYING.  If not, write to the
- Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- Boston, MA 02111-1307, USA.
- */
+  This file is part of libmicrohttpd
+  (C) 2007 Christian Grothoff
+  
+  libmicrohttpd is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published
+  by the Free Software Foundation; either version 2, or (at your
+  option) any later version.
+  
+  libmicrohttpd is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with libmicrohttpd; see the file COPYING.  If not, write to the
+  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+  Boston, MA 02111-1307, USA.
+*/
 
 /**
- * @file tls_daemon_options_test.c
+ * @file tls_thread_mode_test.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
+ * @author Christian Grothoff
+ * 
+ * TODO: add test for external select! 
  */
 
 #include "platform.h"
@@ -251,6 +254,26 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
+/**
+ * used when spawning multiple threads executing curl server requests
+ *
+ */
+static void *
+https_transfer_thread_adapter (void *args)
+{
+  static int nonnull;
+  struct https_test_data *cargs = args;
+  int ret;
+
+  /* time spread incomming requests */
+  usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
+  ret = test_https_transfer (cargs->test_fd,
+			     cargs->cipher_suite, cargs->proto_version);
+  if (ret == 0)
+    return NULL;
+  return &nonnull;
+}
+
 static FILE *
 setupTestFile ()
 {
@@ -336,66 +359,77 @@ test_wrap (char *test_name, int
 }
 
 /**
- * test server refuses to negotiate connections with unsupported protocol versions
+ * Test non-parallel requests.
  *
+ * @return: 0 upon all client requests returning '0', -1 otherwise.
+ *
+ * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_protocol_version (FILE * test_fd, char *cipher_suite,
-                       int curl_proto_version)
+test_single_client (FILE * test_fd, char *cipher_suite,
+		    int curl_proto_version)
 {
-  CURL *c;
-  CURLcode errornum;
+  void *client_thread_ret;
+  struct https_test_data client_args = {test_fd, cipher_suite, curl_proto_version};
 
-  c = curl_easy_init ();
-#if DEBUG_CURL_VERBOSE
-  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
-#endif
-  curl_easy_setopt (c, CURLOPT_URL, "https://localhost:42433/");
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 3L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 3L);
+  client_thread_ret = https_transfer_thread_adapter (&client_args);
+  if (client_thread_ret != NULL)
+    return -1;    
+  return 0;
+}
 
-  /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, curl_proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
 
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+/**
+ * Test parallel request handling.
+ *
+ * @return: 0 upon all client requests returning '0', -1 otherwise.
+ *
+ * TODO : make client_count a parameter - numver of curl client threads to spawn
+ */
+static int
+test_parallel_clients (FILE * test_fd, char *cipher_suite,
+		       int curl_proto_version)
+{
+  int i;
+  int client_count = 3;
+  void *client_thread_ret;
+  pthread_t client_arr[client_count];
+  struct https_test_data client_args = {test_fd, cipher_suite, curl_proto_version};
 
-  /* NOTE: use of CONNECTTIMEOUT without also
-     setting NOSIGNAL results in really weird
-     crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-
-  /* assert daemon rejected request */
-  if (CURLE_OK == (errornum = curl_easy_perform (c)))
+  for (i = 0; i < client_count; ++i)
     {
-      fprintf (stderr, "curl_easy_perform failed: `%s'\n",
-               curl_easy_strerror (errornum));
-      curl_easy_cleanup (c);
-      return -1;
+      if (pthread_create (&client_arr[i], NULL,
+                          (void * ) &https_transfer_thread_adapter, &client_args) != 0)
+        {
+          fprintf (stderr, "Error: failed to spawn test client threads.\n");
+          return -1;
+        }
+    }
+
+  /* check all client requests fulfilled correctly */
+  for (i = 0; i < client_count; ++i)
+    {
+      if ((pthread_join (client_arr[i], &client_thread_ret) != 0) ||
+          (client_thread_ret != NULL) )        
+	return -1;    
     }
 
   return 0;
 }
 
-/* setup a temporary transfer test file */
+
 int
 main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
-  unsigned int cpos;
-  char test_name[64];
 
-  int daemon_flags =
-    MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
+  /* initialize random seed used by curl clients */
+  unsigned int iseed = (unsigned int) time (NULL);
+  srand (iseed);
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
-    {
-      return -1;
-    }
+    return -1;    
 
   if ((test_fd = setupTestFile ()) == NULL)
     {
@@ -409,61 +443,36 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  int p_ssl3[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
-  int p_tls[] = { MHD_GNUTLS_PROTOCOL_TLS1_2,
-    MHD_GNUTLS_PROTOCOL_TLS1_1,
-    MHD_GNUTLS_PROTOCOL_TLS1_0, 0
-  };
-
-  struct CipherDef ciphers[] =
-    { {{MHD_GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
-  {{MHD_GNUTLS_CIPHER_3DES_CBC, 0}, "3DES-SHA"},
-  {{MHD_GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
-  {{MHD_GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
-  {{0, 0}, NULL}
-  };
-
-  fprintf (stderr, "SHA/TLS tests:\n");
-  cpos = 0;
-  while (ciphers[cpos].curlname != NULL)
-    {
-      sprintf (test_name, "%s-TLS", ciphers[cpos].curlname);
-      errorCount +=
-        test_wrap (test_name,
-                   &test_https_transfer, test_fd, daemon_flags,
-                   ciphers[cpos].curlname,
-                   CURL_SSLVERSION_TLSv1,
-                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_PROTOCOL_VERSION, p_tls,
-                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
-                   MHD_OPTION_END);
-      cpos++;
-    }
-  fprintf (stderr, "SHA/SSL3 tests:\n");
-  cpos = 0;
-  while (ciphers[cpos].curlname != NULL)
-    {
-      sprintf (test_name, "%s-SSL3", ciphers[cpos].curlname);
-      errorCount +=
-        test_wrap (test_name,
-                   &test_https_transfer, test_fd, daemon_flags,
-                   ciphers[cpos].curlname,
-                   CURL_SSLVERSION_SSLv3,
-                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_PROTOCOL_VERSION, p_ssl3,
-                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
-                   MHD_OPTION_END);
-      cpos++;
-    }
+  errorCount +=
+    test_wrap ("multi threaded daemon, single client",  &test_single_client, test_fd,
+               MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
 
   errorCount +=
-    test_wrap ("protocol_version", &test_protocol_version, test_fd,
-               daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
-               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+    test_wrap ("single threaded daemon, single client", &test_single_client, test_fd,
+               MHD_USE_SELECT_INTERNALLY |
+	       MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_PROTOCOL_VERSION, p_ssl3, MHD_OPTION_END);
+               MHD_OPTION_END);
+
+  errorCount +=
+    test_wrap ("multi threaded daemon, parallel client",   &test_parallel_clients, test_fd,
+               MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
+
+  errorCount +=
+    test_wrap ("single threaded daemon, parallel clients", &test_parallel_clients, test_fd,
+               MHD_USE_SELECT_INTERNALLY | 
+	       MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
+
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
