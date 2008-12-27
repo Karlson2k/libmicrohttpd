@@ -20,8 +20,8 @@
 */
 
 /**
- * @file daemontest_process_headers.c
- * @brief  Testcase for HTTP header access
+ * @file daemontest_parse_cookies.c
+ * @brief  Testcase for HTTP cookie parsing
  * @author Christian Grothoff
  */
 

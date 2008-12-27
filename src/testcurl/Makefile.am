@@ -21,6 +21,7 @@ check_PROGRAMS = \
   daemontest_post_loop \
   daemontest_put \
   daemontest_process_headers \
+  daemontest_process_arguments \
   daemontest_parse_cookies \
   daemontest_large_put \
   daemontest_get11 \
@@ -75,6 +76,12 @@ daemontest_process_headers_LDADD = \
 daemontest_parse_cookies_SOURCES = \
   daemontest_parse_cookies.c
 daemontest_parse_cookies_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_process_arguments_SOURCES = \
+  daemontest_process_arguments.c
+daemontest_process_arguments_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
