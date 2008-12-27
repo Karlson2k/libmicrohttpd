@@ -20,6 +20,8 @@ check_PROGRAMS = \
   daemontest_postform \
   daemontest_post_loop \
   daemontest_put \
+  daemontest_process_headers \
+  daemontest_parse_cookies \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_post11 \
@@ -61,6 +63,18 @@ daemontest_get_chunked_LDADD = \
 daemontest_post_SOURCES = \
   daemontest_post.c
 daemontest_post_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_process_headers_SOURCES = \
+  daemontest_process_headers.c
+daemontest_process_headers_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_parse_cookies_SOURCES = \
+  daemontest_parse_cookies.c
+daemontest_parse_cookies_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
