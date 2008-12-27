@@ -375,7 +375,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
               if (addrlen == sizeof (struct sockaddr_in))
                 {
                   const struct sockaddr_in *a1 =
-                    (const struct sockaddr_in *) &addr;
+                    (const struct sockaddr_in *) addr;
                   const struct sockaddr_in *a2 =
                     (const struct sockaddr_in *) pos->addr;
                   if (0 == memcmp (&a1->sin_addr, &a2->sin_addr,
@@ -386,7 +386,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
               if (addrlen == sizeof (struct sockaddr_in6))
                 {
                   const struct sockaddr_in6 *a1 =
-                    (const struct sockaddr_in6 *) &addr;
+                    (const struct sockaddr_in6 *) addr;
                   const struct sockaddr_in6 *a2 =
                     (const struct sockaddr_in6 *) pos->addr;
                   if (0 == memcmp (&a1->sin6_addr, &a2->sin6_addr,
