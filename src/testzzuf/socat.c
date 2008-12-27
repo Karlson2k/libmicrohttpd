@@ -51,6 +51,7 @@ zzuf_socat_start ()
     "--ratio=0.0:0.75",
     "-n",
     "-A",
+    "--",
     "socat",
     "-lf",
     "/dev/null",
