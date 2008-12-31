@@ -1,6 +1,6 @@
 \input texinfo  @c -*-texinfo-*-
 @finalout
-@setfilename libmicrohttpdtutorial
+@setfilename microhttpd-tutorial.info
 @settitle A tutorial for GNU libmicrohttpd
 @afourpaper
 
