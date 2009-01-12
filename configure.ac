@@ -182,10 +182,10 @@ AC_ARG_ENABLE(curl,
   [enable_curl=$enableval],
   [enable_curl="yes"])
 
+curl=0
 if test "$enable_curl" = "yes"
 then
   LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
-  AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 # Lib cURL & cURL - OpenSSL versions
   MHD_REQ_CURL_VERSION=7.16.4
   MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
@@ -195,6 +195,7 @@ then
   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
 fi
 LIBS=$SAVE_LIBS
+AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
