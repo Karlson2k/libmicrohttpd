@@ -1,3 +1,7 @@
+Fri Jan 23 16:57:21 MST 2009
+	 Support charset specification (ignore) after content-type
+	 when post-processing HTTP POST requests (Mantis #1443). -CG/SN
+
 Fri Dec 26 23:08:04 MST 2008
 	 Fixed broken check for identical connection address. -CG
 	 Making cookie parser more RFC2109 compliant (handle

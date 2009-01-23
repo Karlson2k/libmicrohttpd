@@ -263,7 +263,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   if (encoding == NULL)
     return NULL;
   boundary = NULL;
-  if (0 != strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, encoding))
+  if (0 != strncasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, encoding,
+                        strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
     {
       if (0 !=
           strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
@@ -1005,7 +1006,8 @@ MHD_post_process (struct MHD_PostProcessor *pp,
     return MHD_YES;
   if (pp == NULL)
     return MHD_NO;
-  if (0 == strcasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, pp->encoding))
+  if (0 == strncasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, pp->encoding,
+                         strlen(MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
     return post_process_urlencoded (pp, post_data, post_data_len);
   if (0 ==
       strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, pp->encoding,
