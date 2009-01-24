@@ -54,6 +54,8 @@ ahc_echo (void *cls,
   *ptr = NULL;                  /* reset when done */
   val = MHD_lookup_connection_value (connection, MHD_GET_ARGUMENT_KIND, "q");
   me = malloc (snprintf (NULL, 0, fmt, "q", val) + 1);
+  if (me == NULL)
+    return MHD_NO;
   sprintf (me, fmt, "q", val);
   response = MHD_create_response_from_data (strlen (me), me, MHD_YES, MHD_NO);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
