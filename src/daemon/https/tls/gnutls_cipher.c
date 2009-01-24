@@ -479,7 +479,8 @@ MHD_gtls_ciphertext2compressed (MHD_gtls_session_t session,
 
   /* HMAC was not the same.
    */
-  if (memcmp (MAC, &ciphertext.data[length], hash_size) != 0)
+  if ( (td != GNUTLS_MAC_FAILED) &&
+       (memcmp (MAC, &ciphertext.data[length], hash_size) != 0) )
     {
       MHD_gnutls_assert ();
       return GNUTLS_E_DECRYPTION_FAILED;
