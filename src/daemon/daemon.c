@@ -906,6 +906,7 @@ MHD_start_daemon_va (unsigned int options,
           va_arg (ap, void (*)(void *cls, const char *, ...));
           va_arg (ap, void *);
 #endif
+	  break;
         default:
 #if HAVE_MESSAGES
           if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
