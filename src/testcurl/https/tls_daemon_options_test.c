@@ -183,6 +183,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (mem_test_file_local);
       free (doc_path);
       return -1;
     }
@@ -190,6 +191,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
     {
       fprintf (stderr, MHD_E_MEM);
+      free (mem_test_file_local);
       free (doc_path);
       return -1;
     }

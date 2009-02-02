@@ -160,6 +160,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (mem_test_file_local);
       free (doc_path);
       return -1;
     }

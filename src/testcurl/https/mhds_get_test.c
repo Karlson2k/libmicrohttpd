@@ -161,6 +161,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   if (NULL == (mem_test_file_local = malloc (len)))
     {
       fprintf (stderr, MHD_E_MEM);
+      free (doc_path);
       return -1;
     }
 
