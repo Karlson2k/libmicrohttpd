@@ -348,7 +348,6 @@ main (int argc, char *const *argv)
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  /* TODO resolve cipher setting issue when compiling against GNU TLS */
   errorCount +=
     test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
 
