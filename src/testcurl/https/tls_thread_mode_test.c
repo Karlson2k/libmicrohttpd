@@ -179,6 +179,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   if (NULL == (mem_test_file_local = malloc (len)))
     {
       fclose (test_fd);
+      free (doc_path);
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
@@ -187,14 +188,17 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
     {
       fclose (test_fd);
+      free (doc_path);
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
+  if (NULL == (cbc.buf = malloc (len)))
     {
       fclose (test_fd);
+      free (doc_path);
+      free (mem_test_file_local);
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
@@ -235,6 +239,9 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      free (cbc.buf);
+      free (mem_test_file_local);
+      free (doc_path);
       return errornum;
     }
 
@@ -245,6 +252,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "Error: local file & received file differ.\n");
       free (cbc.buf);
       free (mem_test_file_local);
+      free (doc_path);
       return -1;
     }
 
@@ -401,10 +409,11 @@ test_parallel_clients (FILE * test_fd, char *cipher_suite,
   for (i = 0; i < client_count; ++i)
     {
       if (pthread_create (&client_arr[i], NULL,
-                          (void *) &https_transfer_thread_adapter,
+                          &https_transfer_thread_adapter,
                           &client_args) != 0)
         {
           fprintf (stderr, "Error: failed to spawn test client threads.\n");
+	  
           return -1;
         }
     }
@@ -447,27 +456,12 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_wrap ("multi threaded daemon, single client", &test_single_client,
-               test_fd, MHD_USE_SSL | MHD_USE_DEBUG, "AES256-SHA",
-               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_END);
-
-  errorCount +=
     test_wrap ("single threaded daemon, single client", &test_single_client,
                test_fd,
                MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG,
                "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
-
-  errorCount +=
-    test_wrap ("multi threaded daemon, parallel client",
-               &test_parallel_clients, test_fd, MHD_USE_SSL | MHD_USE_DEBUG,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
-               srv_self_signed_cert_pem, MHD_OPTION_END);
-
   errorCount +=
     test_wrap ("single threaded daemon, parallel clients",
                &test_parallel_clients, test_fd,

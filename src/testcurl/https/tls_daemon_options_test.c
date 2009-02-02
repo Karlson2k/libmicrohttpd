@@ -32,7 +32,7 @@
 #include "gnutls.h"
 #include <curl/curl.h>
 
-#define DEBUG_CURL_VERBOSE 1
+#define DEBUG_CURL_VERBOSE 0
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 #define MHD_E_MEM "Error: memory error\n"

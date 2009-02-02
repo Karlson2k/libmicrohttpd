@@ -18,7 +18,8 @@ check_PROGRAMS = \
   tls_authentication_test \
   mhds_multi_daemon_test \
   mhds_session_info_test \
-  tls_thread_mode_test
+  tls_thread_mode_test \
+  tls_multi_thread_mode_test
 
 if MHD_DEBUG_TLS
   check_PROGRAMS += \
@@ -61,6 +62,13 @@ tls_daemon_options_test_LDADD = \
 tls_thread_mode_test_SOURCES = \
   tls_thread_mode_test.c
 tls_thread_mode_test_LDADD = \
+  $(top_builddir)/src/testcurl/libcurl_version_check.a \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
+
+tls_multi_thread_mode_test_SOURCES = \
+  tls_multi_thread_mode_test.c
+tls_multi_thread_mode_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@

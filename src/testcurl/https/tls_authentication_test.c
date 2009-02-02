@@ -238,7 +238,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
 }
 
 /* perform a HTTP GET request via SSL/TLS */
-int
+static int
 test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
 {
   int ret;
@@ -264,7 +264,7 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
 }
 
 /* setup a temporary transfer test file */
-FILE *
+static FILE *
 setupTestFile ()
 {
   FILE *test_fd;
@@ -292,7 +292,7 @@ setupTestFile ()
   return test_fd;
 }
 
-FILE *
+static FILE *
 setup_ca_cert ()
 {
   FILE *fd;

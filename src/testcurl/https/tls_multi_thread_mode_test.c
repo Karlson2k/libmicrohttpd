@@ -1,40 +1,41 @@
 /*
- This file is part of libmicrohttpd
- (C) 2007 Christian Grothoff
+  This file is part of libmicrohttpd
+  (C) 2007 Christian Grothoff
 
- libmicrohttpd is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published
- by the Free Software Foundation; either version 2, or (at your
- option) any later version.
+  libmicrohttpd is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published
+  by the Free Software Foundation; either version 2, or (at your
+  option) any later version.
 
- libmicrohttpd is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+  libmicrohttpd is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
 
- You should have received a copy of the GNU General Public License
- along with libmicrohttpd; see the file COPYING.  If not, write to the
- Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- Boston, MA 02111-1307, USA.
- */
+  You should have received a copy of the GNU General Public License
+  along with libmicrohttpd; see the file COPYING.  If not, write to the
+  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+  Boston, MA 02111-1307, USA.
+*/
 
 /**
- * @file mhds_get_test.c
+ * @file tls_thread_mode_test.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
+ * @author Christian Grothoff
+ *
+ * TODO: add test for external select!
  */
 
 #include "platform.h"
 #include "microhttpd.h"
 
-#include <limits.h>
 #include <sys/stat.h>
-
+#include <limits.h>
 #include "gnutls.h"
 #include <curl/curl.h>
 
-#define DEBUG 0
-
+#define DEBUG_CURL_VERBOSE 0
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 #define MHD_E_MEM "Error: memory error\n"
@@ -55,6 +56,19 @@ struct CBC
   char *buf;
   size_t pos;
   size_t size;
+};
+
+struct https_test_data
+{
+  FILE *test_fd;
+  char *cipher_suite;
+  int proto_version;
+};
+
+struct CipherDef
+{
+  int options[2];
+  char *curlname;
 };
 
 static size_t
@@ -121,16 +135,18 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
-/*
+
+
+/**
  * test HTTPS transfer
  * @param test_fd: file to attempt transfering
  */
 static int
-test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
+test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
 {
   CURL *c;
-  struct CBC cbc;
   CURLcode errornum;
+  struct CBC cbc;
   char *doc_path;
   size_t doc_path_len;
   char url[255];
@@ -163,6 +179,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   if (NULL == (mem_test_file_local = malloc (len)))
     {
       fclose (test_fd);
+      free (doc_path);
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
@@ -171,14 +188,17 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
     {
       fclose (test_fd);
+      free (doc_path);
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
       return -1;
     }
 
-  if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
+  if (NULL == (cbc.buf = malloc (len)))
     {
       fclose (test_fd);
+      free (doc_path);
+      free (mem_test_file_local);
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
@@ -190,13 +210,13 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
            doc_path, test_file_name);
 
   c = curl_easy_init ();
-#if DEBUG
+#if DEBUG_CURL_VERBOSE
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 2L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 2L);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
 
@@ -219,6 +239,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      free (cbc.buf);
+      free (mem_test_file_local);
+      free (doc_path);
       return errornum;
     }
 
@@ -229,6 +252,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "Error: local file & received file differ.\n");
       free (cbc.buf);
       free (mem_test_file_local);
+      free (doc_path);
       return -1;
     }
 
@@ -238,33 +262,26 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return 0;
 }
 
-static int
-test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
+/**
+ * used when spawning multiple threads executing curl server requests
+ *
+ */
+static void *
+https_transfer_thread_adapter (void *args)
 {
-
+  static int nonnull;
+  struct https_test_data *cargs = args;
   int ret;
-  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
-  struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
 
-  if (d == NULL)
-    {
-      fprintf (stderr, MHD_E_SERVER_INIT);
-      return -1;
-    }
-
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
-
-  MHD_stop_daemon (d);
-  return ret;
+  /* time spread incomming requests */
+  usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
+  ret = test_https_transfer (cargs->test_fd,
+                             cargs->cipher_suite, cargs->proto_version);
+  if (ret == 0)
+    return NULL;
+  return &nonnull;
 }
 
-/* setup a temporary transfer test file */
 static FILE *
 setupTestFile ()
 {
@@ -293,31 +310,125 @@ setupTestFile ()
   return test_fd;
 }
 
-/* perform a HTTP GET request via SSL/TLS */
-int
-test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
+static int
+setup (struct MHD_Daemon **d, int daemon_flags, va_list arg_list)
 {
-  int ret;
-  struct MHD_Daemon *d;
+  *d = MHD_start_daemon_va (daemon_flags, 42433,
+                            NULL, NULL, &http_ahc, NULL, arg_list);
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
-                        MHD_OPTION_END);
-
-  if (d == NULL)
+  if (*d == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version);
+  return 0;
+}
 
+static void
+teardown (struct MHD_Daemon *d)
+{
   MHD_stop_daemon (d);
+}
+
+/* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) & move to test_util.c */
+static int
+test_wrap (char *test_name, int
+           (*test_function) (FILE * test_fd, char *cipher_suite,
+                             int proto_version), FILE * test_fd,
+           int daemon_flags, char *cipher_suite, int proto_version, ...)
+{
+  int ret;
+  va_list arg_list;
+  struct MHD_Daemon *d;
+
+  va_start (arg_list, proto_version);
+  if (setup (&d, daemon_flags, arg_list) != 0)
+    {
+      va_end (arg_list);
+      return -1;
+    }
+
+  fprintf (stdout, "running test: %s ", test_name);
+  ret = test_function (test_fd, cipher_suite, proto_version);
+
+  if (ret == 0)
+    {
+      fprintf (stdout, "[pass]\n");
+    }
+  else
+    {
+      fprintf (stdout, "[fail]\n");
+    }
+
+  teardown (d);
+  va_end (arg_list);
   return ret;
 }
+
+/**
+ * Test non-parallel requests.
+ *
+ * @return: 0 upon all client requests returning '0', -1 otherwise.
+ *
+ * TODO : make client_count a parameter - numver of curl client threads to spawn
+ */
+static int
+test_single_client (FILE * test_fd, char *cipher_suite,
+                    int curl_proto_version)
+{
+  void *client_thread_ret;
+  struct https_test_data client_args =
+    { test_fd, cipher_suite, curl_proto_version };
+
+  client_thread_ret = https_transfer_thread_adapter (&client_args);
+  if (client_thread_ret != NULL)
+    return -1;
+  return 0;
+}
+
+
+/**
+ * Test parallel request handling.
+ *
+ * @return: 0 upon all client requests returning '0', -1 otherwise.
+ *
+ * TODO : make client_count a parameter - numver of curl client threads to spawn
+ */
+static int
+test_parallel_clients (FILE * test_fd, char *cipher_suite,
+                       int curl_proto_version)
+{
+  int i;
+  int client_count = 3;
+  void *client_thread_ret;
+  pthread_t client_arr[client_count];
+  struct https_test_data client_args =
+    { test_fd, cipher_suite, curl_proto_version };
+
+  for (i = 0; i < client_count; ++i)
+    {
+      if (pthread_create (&client_arr[i], NULL,
+                          &https_transfer_thread_adapter,
+                          &client_args) != 0)
+        {
+          fprintf (stderr, "Error: failed to spawn test client threads.\n");
+	  
+          return -1;
+        }
+    }
+
+  /* check all client requests fulfilled correctly */
+  for (i = 0; i < client_count; ++i)
+    {
+      if ((pthread_join (client_arr[i], &client_thread_ret) != 0) ||
+          (client_thread_ret != NULL))
+        return -1;
+    }
+
+  return 0;
+}
+
 
 int
 main (int argc, char *const *argv)
@@ -325,12 +436,12 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  /* gnutls_global_set_log_level(11); */
+  /* initialize random seed used by curl clients */
+  unsigned int iseed = (unsigned int) time (NULL);
+  srand (iseed);
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
-    {
-      return -1;
-    }
+  if (curl_check_version (MHD_REQ_CURL_VERSION))
+    return -1;
 
   if ((test_fd = setupTestFile ()) == NULL)
     {
@@ -345,13 +456,21 @@ main (int argc, char *const *argv)
     }
 
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
-  errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
-  /* TODO resolve cipher setting issue when compiling against GNU TLS */
-  errorCount +=
-    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+    test_wrap ("multi threaded daemon, single client", &test_single_client,
+               test_fd, MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION, "AES256-SHA",
+               CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_END);
 
+  errorCount +=
+    test_wrap ("multi threaded daemon, parallel client",
+               &test_parallel_clients, test_fd, MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
+               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
+
+  if (errorCount != 0)
+    fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
   fclose (test_fd);
