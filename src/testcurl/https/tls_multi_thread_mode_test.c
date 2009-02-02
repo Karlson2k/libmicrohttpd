@@ -163,44 +163,39 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
   if (NULL == (doc_path = malloc (doc_path_len)))
     {
-      fclose (test_fd);
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
   if (getcwd (doc_path, doc_path_len) == NULL)
     {
-      fclose (test_fd);
-      free (doc_path);
       fprintf (stderr, "Error: failed to get working directory. %s\n",
                strerror (errno));
+      free (doc_path);
       return -1;
     }
 
   if (NULL == (mem_test_file_local = malloc (len)))
     {
-      fclose (test_fd);
-      free (doc_path);
       fprintf (stderr, MHD_E_MEM);
+      free (doc_path);
       return -1;
     }
 
   fseek (test_fd, 0, SEEK_SET);
   if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
     {
-      fclose (test_fd);
-      free (doc_path);
-      free (mem_test_file_local);
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (doc_path);
+      free (mem_test_file_local);
       return -1;
     }
 
   if (NULL == (cbc.buf = malloc (len)))
     {
-      fclose (test_fd);
+      fprintf (stderr, MHD_E_MEM);
       free (doc_path);
       free (mem_test_file_local);
-      fprintf (stderr, MHD_E_MEM);
       return -1;
     }
   cbc.size = len;
@@ -299,12 +294,14 @@ setupTestFile ()
     {
       fprintf (stderr, "Error: failed to write `%s. %s'\n",
                test_file_name, strerror (errno));
+      fclose (test_fd);
       return NULL;
     }
   if (fflush (test_fd))
     {
       fprintf (stderr, "Error: failed to flush test file stream. %s\n",
                strerror (errno));
+      fclose (test_fd);
       return NULL;
     }
 
@@ -453,6 +450,7 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
+      fclose (test_fd);
       return -1;
     }
 

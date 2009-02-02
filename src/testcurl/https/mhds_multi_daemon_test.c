@@ -160,6 +160,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (doc_path);
       return -1;
     }
 
@@ -167,6 +168,8 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (mem_test_file_local);
+      free (doc_path);
       return -1;
     }
   cbc.size = len;
@@ -206,6 +209,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      free (mem_test_file_local);
+      free (doc_path);
+      free (cbc.buf);
       return errornum;
     }
 
@@ -261,6 +267,7 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
 
   if (d2 == NULL)
     {
+      MHD_stop_daemon(d1);
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }

@@ -230,6 +230,9 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      free (cbc.buf);
+      free (mem_test_file_local);
+      free (doc_path);
       return errornum;
     }
 
@@ -240,6 +243,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
       fprintf (stderr, "Error: local file & received file differ.\n");
       free (cbc.buf);
       free (mem_test_file_local);
+      free (doc_path);
       return -1;
     }
 

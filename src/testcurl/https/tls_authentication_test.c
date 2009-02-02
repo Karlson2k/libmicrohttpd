@@ -284,12 +284,14 @@ setupTestFile ()
     {
       fprintf (stderr, "Error: failed to write `%s. %s'\n",
                test_file_name, strerror (errno));
+      fclose (test_fd);
       return NULL;
     }
   if (fflush (test_fd))
     {
       fprintf (stderr, "Error: failed to flush test file stream. %s\n",
                strerror (errno));
+      fclose (test_fd);
       return NULL;
     }
 
@@ -312,14 +314,14 @@ setup_ca_cert ()
     {
       fprintf (stderr, "Error: failed to write `%s. %s'\n",
                ca_cert_file_name, strerror (errno));
-      fclose (test_fd);
+      fclose (fd);
       return NULL;
     }
   if (fflush (fd))
     {
       fprintf (stderr, "Error: failed to flush ca cert file stream. %s\n",
                strerror (errno));
-      fclose (test_fd);
+      fclose (fd);
       return NULL;
     }
 
