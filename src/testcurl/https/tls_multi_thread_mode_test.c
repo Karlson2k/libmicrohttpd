@@ -189,6 +189,7 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
     {
       fclose (test_fd);
       free (doc_path);
+      free (mem_test_file_local);
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
       return -1;

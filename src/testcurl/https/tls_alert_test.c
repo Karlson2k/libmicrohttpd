@@ -62,7 +62,7 @@ setup (MHD_gtls_session_t * session,
        MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
 {
   int ret;
-  const char **err_pos;
+  const char *err_pos;
 
   MHD__gnutls_certificate_allocate_credentials (xcred);
 
@@ -74,7 +74,7 @@ setup (MHD_gtls_session_t * session,
                                             GNUTLS_X509_FMT_PEM);
 
   MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
+  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", &err_pos);
   if (ret < 0)
     {
       return -1;
@@ -112,6 +112,13 @@ test_alert_close_notify (MHD_gtls_session_t session)
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
+  if (sd == -1)
+    {
+      fprintf(stderr,
+	      "Failed to create socket: %s\n",
+	      strerror(errno));
+      return -1;
+    }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (42433);
@@ -161,6 +168,13 @@ test_alert_unexpected_message (MHD_gtls_session_t session)
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
+  if (sd == -1)
+    {
+      fprintf(stderr,
+	      "Failed to create socket: %s\n",
+	      strerror(errno));
+      return -1;
+    }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (42433);

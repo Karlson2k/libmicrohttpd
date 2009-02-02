@@ -103,6 +103,13 @@ test_tls_session_time_out (MHD_gtls_session_t session)
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
+  if (sd == -1)
+    {
+      fprintf(stderr,
+	      "Failed to create socket: %s\n",
+	      strerror(errno));
+      return -1;
+    }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (42433);
