@@ -168,7 +168,6 @@ test_query_session ()
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
 
   if (curl_check_version (MHD_REQ_CURL_VERSION))
@@ -182,7 +181,7 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  errorCount += test_query_session (test_fd);
+  errorCount += test_query_session ();
 
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
