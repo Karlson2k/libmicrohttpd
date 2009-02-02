@@ -31,33 +31,20 @@
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
 #include "gnutls_record.h"
-#include "tls_test_keys.h"
 
-#define MHD_E_MEM "Error: memory error\n"
-#define MHD_E_SERVER_INIT "Error: failed to start server\n"
-#define MHD_E_FAILED_TO_CONNECT "Error: server connection could not be established\n"
-
-const char *ca_cert_file_name = "ca_cert_pem";
-const char *test_file_name = "https_test_file";
-const char test_file_data[] = "Hello World\n";
+#include "tls_test_common.h"
+extern const char srv_key_pem[];
+extern const char srv_self_signed_cert_pem[];
 
 static const int TIME_OUT = 3;
 
 char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 
-/* HTTP access handler call back */
 static int
-http_ahc (void *cls, struct MHD_Connection *connection,
-          const char *url, const char *method, const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
-{
-  return 0;
-}
-
-static int
-setup (MHD_gtls_session_t * session,
-       MHD_gnutls_datum_t * key,
-       MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
+setup_timeout_test (MHD_gtls_session_t * session,
+                    MHD_gnutls_datum_t * key,
+                    MHD_gnutls_datum_t * cert,
+                    MHD_gtls_cert_credentials_t * xcred)
 {
   int ret;
 
@@ -82,9 +69,10 @@ setup (MHD_gtls_session_t * session,
 }
 
 static int
-teardown (MHD_gtls_session_t session,
-          MHD_gnutls_datum_t * key,
-          MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
+teardown_timeout_test (MHD_gtls_session_t session,
+                       MHD_gnutls_datum_t * key,
+                       MHD_gnutls_datum_t * cert,
+                       MHD_gtls_cert_credentials_t xcred)
 {
 
   MHD_gtls_free_datum_m (key, free);
@@ -105,14 +93,13 @@ test_tls_session_time_out (MHD_gtls_session_t session)
   sd = socket (AF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
-      fprintf(stderr,
-	      "Failed to create socket: %s\n",
-	      strerror(errno));
+      fprintf (stderr, "Failed to create socket: %s\n", strerror (errno));
       return -1;
     }
+
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
-  sa.sin_port = htons (42433);
+  sa.sin_port = htons (DEAMON_TEST_PORT);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
   MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
@@ -158,8 +145,8 @@ main (int argc, char *const *argv)
   MHD_gtls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
+                        MHD_USE_DEBUG, DEAMON_TEST_PORT,
+                        NULL, NULL, &http_dummy_ahc, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -171,12 +158,11 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  setup (&session, &key, &cert, &xcred);
+  setup_timeout_test (&session, &key, &cert, &xcred);
   errorCount += test_tls_session_time_out (session);
-  teardown (session, &key, &cert, xcred);
+  teardown_timeout_test (session, &key, &cert, xcred);
 
-  if (errorCount != 0)
-    fprintf (stderr, "Failed test: %s.\n", argv[0]);
+  print_test_result (errorCount, argv[0]);
 
   MHD_stop_daemon (d);
   MHD__gnutls_global_deinit ();

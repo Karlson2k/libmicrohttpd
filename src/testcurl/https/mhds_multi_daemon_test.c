@@ -30,93 +30,14 @@
 #include <limits.h>
 #include <sys/stat.h>
 
-#define DEBUG_CURL_VERBOSE 0
-
-#define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
-
-#define MHD_E_MEM "Error: memory error\n"
-#define MHD_E_SERVER_INIT "Error: failed to start server\n"
-#define MHD_E_TEST_FILE_CREAT "Error: failed to setup test file\n"
-
-#include "tls_test_keys.h"
-
-const char *test_file_name = "https_test_file";
-const char test_file_data[] = "Hello World\n";
+#include "tls_test_common.h"
 
 extern int curl_check_version (const char *req_version, ...);
+extern const char srv_key_pem[];
+extern const char srv_self_signed_cert_pem[];
 
-struct CBC
-{
-  char *buf;
-  size_t pos;
-  size_t size;
-};
-
-static size_t
-copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
-{
-  struct CBC *cbc = ctx;
-
-  if (cbc->pos + size * nmemb > cbc->size)
-    return 0;                   /* overflow */
-  memcpy (&cbc->buf[cbc->pos], ptr, size * nmemb);
-  cbc->pos += size * nmemb;
-  return size * nmemb;
-}
-
-static int
-file_reader (void *cls, size_t pos, char *buf, int max)
-{
-  FILE *file = cls;
-  fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
-}
-
-/* HTTP access handler call back */
-static int
-http_ahc (void *cls, struct MHD_Connection *connection,
-          const char *url, const char *method, const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
-{
-  static int aptr;
-  struct MHD_Response *response;
-  int ret;
-  FILE *file;
-  struct stat buf;
-
-  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
-    return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
-    {
-      /* do never respond on first call */
-      *ptr = &aptr;
-      return MHD_YES;
-    }
-  *ptr = NULL;                  /* reset when done */
-
-  file = fopen (url, "r");
-  if (file == NULL)
-    {
-      response = MHD_create_response_from_data (strlen (PAGE_NOT_FOUND),
-                                                (void *) PAGE_NOT_FOUND,
-                                                MHD_NO, MHD_NO);
-      ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
-      MHD_destroy_response (response);
-    }
-  else
-    {
-      stat (url, &buf);
-      response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
-                                                    &file_reader, file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-      MHD_destroy_response (response);
-    }
-  return ret;
-}
-
-/*
+/* TODO mv to common */
+/**
  * perform cURL request for file
  * @param test_fd: file to attempt transferring
  */
@@ -127,32 +48,15 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  char *doc_path;
-  size_t doc_path_len;
   char url[255];
   size_t len;
   struct stat file_stat;
 
-  stat (test_file_name, &file_stat);
+  stat (TEST_FILE_NAME, &file_stat);
   len = file_stat.st_size;
 
   /* used to memcmp local copy & deamon supplied copy */
   unsigned char *mem_test_file_local;
-
-  /* setup test file path, url */
-  doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
-  if (NULL == (doc_path = malloc (doc_path_len)))
-    {
-      fprintf (stderr, MHD_E_MEM);
-      return -1;
-    }
-  if (getcwd (doc_path, doc_path_len) == NULL)
-    {
-      free (doc_path);
-      fprintf (stderr, "Error: failed to get working directory. %s\n",
-               strerror (errno));
-      return -1;
-    }
 
   mem_test_file_local = malloc (len);
   fseek (test_fd, 0, SEEK_SET);
@@ -161,7 +65,6 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
       free (mem_test_file_local);
-      free (doc_path);
       return -1;
     }
 
@@ -169,19 +72,18 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
-      free (mem_test_file_local);
-      free (doc_path);
       return -1;
     }
   cbc.size = len;
   cbc.pos = 0;
 
-  /* construct url */
-  sprintf (url, "%s:%d%s/%s", "https://localhost", port, doc_path,
-           test_file_name);
+  if (gen_test_file_url (url, port))
+    {
+      return -1;
+    }
 
   c = curl_easy_init ();
-#if DEBUG_CURL_VERBOSE
+#if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
@@ -210,9 +112,6 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      free (mem_test_file_local);
-      free (doc_path);
-      free (cbc.buf);
       return errornum;
     }
 
@@ -224,13 +123,11 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
       fprintf (stderr, "Error: local file & received file differ.\n");
       free (mem_test_file_local);
       free (cbc.buf);
-      free (doc_path);
       return -1;
     }
 
   free (mem_test_file_local);
   free (cbc.buf);
-  free (doc_path);
   return 0;
 }
 
@@ -247,7 +144,7 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
   d1 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                         MHD_USE_DEBUG, 42433,
+                         MHD_USE_DEBUG, DEAMON_TEST_PORT,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -260,7 +157,7 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
     }
 
   d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                         MHD_USE_DEBUG, 42434,
+                         MHD_USE_DEBUG, DEAMON_TEST_PORT + 1,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -268,48 +165,22 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
 
   if (d2 == NULL)
     {
-      MHD_stop_daemon(d1);
+      MHD_stop_daemon (d1);
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
 
-  ret = test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
-  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42434);
+  ret =
+    test_daemon_get (test_fd, cipher_suite, proto_version, DEAMON_TEST_PORT);
+  ret +=
+    test_daemon_get (test_fd, cipher_suite, proto_version,
+                     DEAMON_TEST_PORT + 1);
 
   MHD_stop_daemon (d2);
-  ret += test_daemon_get (test_fd, cipher_suite, proto_version, 42433);
+  ret +=
+    test_daemon_get (test_fd, cipher_suite, proto_version, DEAMON_TEST_PORT);
   MHD_stop_daemon (d1);
   return ret;
-}
-
-FILE *
-setupTestFile ()
-{
-  FILE *test_fd;
-
-  if (NULL == (test_fd = fopen (test_file_name, "w+")))
-    {
-      fprintf (stderr, "Error: failed to open `%s': %s\n",
-               test_file_name, strerror (errno));
-      return NULL;
-    }
-  if (fwrite (test_file_data, sizeof (char), strlen (test_file_data), test_fd)
-      != strlen (test_file_data))
-    {
-      fprintf (stderr, "Error: failed to write `%s. %s'\n",
-               test_file_name, strerror (errno));
-      fclose (test_fd);
-      return NULL;
-    }
-  if (fflush (test_fd))
-    {
-      fprintf (stderr, "Error: failed to flush test file stream. %s\n",
-               strerror (errno));
-      fclose (test_fd);
-      return NULL;
-    }
-
-  return test_fd;
 }
 
 int
@@ -323,7 +194,7 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  if ((test_fd = setupTestFile ()) == NULL)
+  if ((test_fd = setup_test_file ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
       return -1;
@@ -340,12 +211,11 @@ main (int argc, char *const *argv)
   errorCount +=
     test_concurent_daemon_pair (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 
-  if (errorCount != 0)
-    fprintf (stderr, "Failed test: %s.\n", __FILE__);
+  print_test_result (errorCount, "concurent_daemon_pair");
 
   curl_global_cleanup ();
   fclose (test_fd);
 
-  remove (test_file_name);
+  remove (TEST_FILE_NAME);
   return errorCount != 0;
 }

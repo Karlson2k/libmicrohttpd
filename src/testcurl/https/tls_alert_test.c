@@ -30,74 +30,10 @@
 #include "gnutls_int.h"
 #include "gnutls_datum.h"
 #include "gnutls_record.h"
-#include "tls_test_keys.h"
 
-#define MHD_E_MEM "Error: memory error\n"
-#define MHD_E_SERVER_INIT "Error: failed to start server\n"
-#define MHD_E_FAILED_TO_CONNECT "Error: server connection could not be established\n"
-
-const char *ca_cert_file_name = "ca_cert_pem";
-const char *test_file_name = "https_test_file";
-const char test_file_data[] = "Hello World\n";
-
-struct CBC
-{
-  char *buf;
-  size_t pos;
-  size_t size;
-};
-
-/* HTTP access handler call back */
-static int
-http_ahc (void *cls, struct MHD_Connection *connection,
-          const char *url, const char *method, const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
-{
-  return 0;
-}
-
-static int
-setup (MHD_gtls_session_t * session,
-       MHD_gnutls_datum_t * key,
-       MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
-{
-  int ret;
-  const char *err_pos;
-
-  MHD__gnutls_certificate_allocate_credentials (xcred);
-
-  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                        strlen (srv_self_signed_cert_pem), &malloc);
-
-  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                            GNUTLS_X509_FMT_PEM);
-
-  MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", &err_pos);
-  if (ret < 0)
-    {
-      return -1;
-    }
-
-  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  return 0;
-}
-
-static int
-teardown (MHD_gtls_session_t session,
-          MHD_gnutls_datum_t * key,
-          MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t xcred)
-{
-
-  MHD_gtls_free_datum_m (key, free);
-  MHD_gtls_free_datum_m (cert, free);
-
-  MHD__gnutls_deinit (session);
-
-  MHD__gnutls_certificate_free_credentials (xcred);
-  return 0;
-}
+#include "tls_test_common.h"
+extern const char srv_key_pem[];
+extern const char srv_self_signed_cert_pem[];
 
 /*
  * assert server closes connection upon receiving a
@@ -114,14 +50,13 @@ test_alert_close_notify (MHD_gtls_session_t session)
   sd = socket (AF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
-      fprintf(stderr,
-	      "Failed to create socket: %s\n",
-	      strerror(errno));
+      fprintf (stderr, "Failed to create socket: %s\n", strerror (errno));
       return -1;
     }
+
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
-  sa.sin_port = htons (42433);
+  sa.sin_port = htons (DEAMON_TEST_PORT);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
   MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
@@ -170,14 +105,12 @@ test_alert_unexpected_message (MHD_gtls_session_t session)
   sd = socket (AF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
-      fprintf(stderr,
-	      "Failed to create socket: %s\n",
-	      strerror(errno));
+      fprintf (stderr, "Failed to create socket: %s\n", strerror (errno));
       return -1;
     }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
-  sa.sin_port = htons (42433);
+  sa.sin_port = htons (DEAMON_TEST_PORT);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
   MHD__gnutls_transport_set_ptr (session,
@@ -225,8 +158,8 @@ main (int argc, char *const *argv)
   MHD_gtls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
-                        NULL, NULL, &http_ahc, NULL,
+                        MHD_USE_DEBUG, DEAMON_TEST_PORT,
+                        NULL, NULL, &http_dummy_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -237,16 +170,15 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  setup (&session, &key, &cert, &xcred);
+  setup_session (&session, &key, &cert, &xcred);
   errorCount += test_alert_close_notify (session);
-  teardown (session, &key, &cert, xcred);
+  teardown_session (session, &key, &cert, xcred);
 
-  setup (&session, &key, &cert, &xcred);
+  setup_session (&session, &key, &cert, &xcred);
   errorCount += test_alert_unexpected_message (session);
-  teardown (session, &key, &cert, xcred);
+  teardown_session (session, &key, &cert, xcred);
 
-  if (errorCount != 0)
-    fprintf (stderr, "Failed test: %s.\n", argv[0]);
+  print_test_result (errorCount, argv[0]);
 
   MHD_stop_daemon (d);
   MHD__gnutls_global_deinit ();

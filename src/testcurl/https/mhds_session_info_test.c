@@ -28,33 +28,13 @@
 #include "microhttpd.h"
 #include <curl/curl.h>
 
-#define DEBUG_CURL_VERBOSE 0
-#define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
-
-#include "tls_test_keys.h"
+#include "tls_test_common.h"
 
 extern int curl_check_version (const char *req_version, ...);
+extern const char srv_key_pem[];
+extern const char srv_self_signed_cert_pem[];
 
 struct MHD_Daemon *d;
-
-struct CBC
-{
-  char *buf;
-  size_t pos;
-  size_t size;
-};
-
-static size_t
-copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
-{
-  struct CBC *cbc = ctx;
-
-  if (cbc->pos + size * nmemb > cbc->size)
-    return 0;                   /* overflow */
-  memcpy (&cbc->buf[cbc->pos], ptr, size * nmemb);
-  cbc->pos += size * nmemb;
-  return size * nmemb;
-}
 
 /*
  * HTTP access handler call back
@@ -103,20 +83,21 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 static int
 test_query_session ()
 {
-
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  char url[] = "https://localhost:42433/";
+  char url[256];
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * 255)))
     return 16;
   cbc.size = 255;
   cbc.pos = 0;
 
+  gen_test_file_url (url, DEAMON_TEST_PORT);
+
   /* setup test */
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
+                        MHD_USE_DEBUG, DEAMON_TEST_PORT,
                         NULL, NULL, &query_session_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -126,7 +107,7 @@ test_query_session ()
     return 2;
 
   c = curl_easy_init ();
-#if DEBUG_CURL_VERBOSE
+#if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
@@ -183,8 +164,7 @@ main (int argc, char *const *argv)
 
   errorCount += test_query_session ();
 
-  if (errorCount != 0)
-    fprintf (stderr, "Failed test: %s.\n", argv[0]);
+  print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
 

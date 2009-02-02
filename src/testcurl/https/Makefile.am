@@ -33,70 +33,82 @@ EXTRA_DIST = cert.pem key.pem tls_test_keys.h
 
 TESTS = $(check_PROGRAMS)
 
-# cURL independent tests
+# cURL dependent tests 
 tls_session_time_out_test_SOURCES = \
-  tls_session_time_out_test.c
+  tls_session_time_out_test.c \
+  tls_test_common.c
 tls_session_time_out_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la
-
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
+  
 tls_cipher_change_test_SOURCES = \
-  tls_cipher_change_test.c
+  tls_cipher_change_test.c \
+  tls_test_common.c
 tls_cipher_change_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la
-
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
+  
 tls_alert_test_SOURCES = \
-  tls_alert_test.c
+  tls_alert_test.c \
+  tls_test_common.c
 tls_alert_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
 
-# cURL dependent tests
 tls_daemon_options_test_SOURCES = \
-  tls_daemon_options_test.c
+  tls_daemon_options_test.c \
+  tls_test_common.c
 tls_daemon_options_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 tls_thread_mode_test_SOURCES = \
-  tls_thread_mode_test.c
+  tls_thread_mode_test.c \
+  tls_test_common.c
 tls_thread_mode_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 tls_multi_thread_mode_test_SOURCES = \
-  tls_multi_thread_mode_test.c
+  tls_multi_thread_mode_test.c \
+  tls_test_common.c
 tls_multi_thread_mode_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 tls_authentication_test_SOURCES = \
-  tls_authentication_test.c
+  tls_authentication_test.c \
+  tls_test_common.c
 tls_authentication_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 mhds_session_info_test_SOURCES = \
-  mhds_session_info_test.c
+  mhds_session_info_test.c \
+  tls_test_common.c
 mhds_session_info_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
 mhds_multi_daemon_test_SOURCES = \
-  mhds_multi_daemon_test.c
+  mhds_multi_daemon_test.c \
+  tls_test_common.c
 mhds_multi_daemon_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@  
 
 mhds_get_test_SOURCES = \
-  mhds_get_test.c
+  mhds_get_test.c \
+  tls_test_common.c
 mhds_get_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
