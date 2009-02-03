@@ -1,3 +1,7 @@
+Mon Feb  2 22:21:48 MST 2009
+	 Fixed missing size adjustment for offsets for %-encoded
+	 arguments processed by the post processor (Mantis #1447). -CG/SN
+
 Fri Jan 23 16:57:21 MST 2009
 	 Support charset specification (ignore) after content-type
 	 when post-processing HTTP POST requests (Mantis #1443). -CG/SN
