@@ -49,7 +49,7 @@ test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
   struct CBC cbc;
   if (NULL == (cbc.buf = malloc (sizeof (char) * 256)))
     {
-      fprintf (stderr, "Error: failed to read test file. %s\n",
+      fprintf (stderr, "Error: failed to allocate: %s\n",
                strerror (errno));
       return -1;
     }
@@ -59,6 +59,7 @@ test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
   char url[255];
   if (gen_test_file_url (url, DEAMON_TEST_PORT))
     {
+      free (cbc.buf);
       return -1;
     }
 
@@ -66,9 +67,11 @@ test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
   if (CURLE_OK ==
       send_curl_req (url, &cbc, cipher_suite, curl_req_ssl_version))
     {
+      free (cbc.buf);
       return -1;
     }
 
+  free (cbc.buf);
   return 0;
 }
 

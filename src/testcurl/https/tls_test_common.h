@@ -29,8 +29,8 @@
 #include "gnutls.h"
 
 /* this enables verbos CURL version checking */
-#define DEBUG_HTTPS_TEST 1
-#define CURL_VERBOS_LEVEL 1
+#define DEBUG_HTTPS_TEST 0
+#define CURL_VERBOS_LEVEL 0
 
 #define DEAMON_TEST_PORT 42433
 

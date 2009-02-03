@@ -1493,7 +1493,7 @@ MHD__gnutls_read_server_hello (MHD_gtls_session_t session,
 /* This function copies the appropriate ciphersuites to a locally allocated buffer
  * Needed in client hello messages. Returns the new data length.
  */
-static int
+int
 MHD__gnutls_copy_ciphersuites (MHD_gtls_session_t session,
                                opaque * ret_data, size_t ret_data_size)
 {

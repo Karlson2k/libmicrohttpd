@@ -93,7 +93,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
     MHD_gtls_hash_init (MHD_GNUTLS_MAC_SHA1);
 
   /* version = 2 , random = [4 for unix time + 28 for random bytes] */
-  datalen = TLS_VERSION_SIZE + TLS_RANDOM_SIZE + (session_id_len + 1);
+  datalen = 2 /* version */ + TLS_RANDOM_SIZE + (session_id_len + 1);
 
   data = MHD_gnutls_malloc (datalen);
 

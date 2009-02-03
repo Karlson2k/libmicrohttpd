@@ -21,6 +21,7 @@
  * USA
  *
  */
+#include "gnutls_int.h"
 
 void MHD_gtls_write_datum16 (opaque * dest, MHD_gnutls_datum_t dat);
 void MHD_gtls_write_datum24 (opaque * dest, MHD_gnutls_datum_t dat);

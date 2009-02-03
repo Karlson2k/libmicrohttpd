@@ -26,6 +26,8 @@
 
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
+#include "gnutls.h"
+#include "gnutls_datum.h"
 
 const char test_file_data[] = "Hello World\n";
 
@@ -125,6 +127,7 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
  * @return
  */
 /* TODO have test wrap consider a NULL cbc */
+int
 send_curl_req (char *url, struct CBC * cbc, char *cipher_suite,
                int proto_version)
 {
