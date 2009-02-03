@@ -1139,10 +1139,18 @@ void __attribute__ ((constructor)) MHD_pthread_handlers_ltdl_init ()
   sig.sa_flags = SA_NODEFER;
   sig.sa_handler = &sigalrmHandler;
   sigaction (SIGALRM, &sig, &old);
+#if HTTPS_SUPPORT
+  if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
+    abort();
+#endif
 }
 
 void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini ()
 {
+#if HTTPS_SUPPORT
+  if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
+    abort ();
+#endif
   sigaction (SIGALRM, &old, &sig);
 }
 
