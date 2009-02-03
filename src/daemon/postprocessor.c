@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2009 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -403,8 +403,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
 
           /* unescape */
           xbuf[xoff] = '\0';    /* 0-terminate in preparation */
-          MHD_http_unescape (xbuf);
-
+          xoff = MHD_http_unescape (xbuf);
           /* finally: call application! */
           if (MHD_NO == pp->ikvi (pp->cls, MHD_POSTDATA_KIND, (const char *) &pp[1],    /* key */
                                   NULL, NULL, NULL, xbuf, pp->value_offset,

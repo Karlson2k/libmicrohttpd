@@ -118,24 +118,42 @@ MHD_tls_log_func (int level, const char *str)
 /**
  * Process escape sequences ('+'=space, %HH)
  */
-void
+unsigned int
 MHD_http_unescape (char *val)
 {
-  char *esc;
+  char *rpos = val;
+  char *wpos = val;
   unsigned int num;
 
-  while (NULL != (esc = strstr (val, "+")))
-    *esc = ' ';
-  while (NULL != (esc = strstr (val, "%")))
+  while ('\0' != *rpos)
     {
-      if ((1 == SSCANF (&esc[1],
-                        "%2x", &num)) || (1 == SSCANF (&esc[1], "%2X", &num)))
-        {
-          esc[0] = (unsigned char) num;
-          memmove (&esc[1], &esc[3], strlen (&esc[3]) + 1);
-        }
-      val = esc + 1;
+      switch (*rpos)
+	{
+	case '+':
+	  *wpos = ' ';
+	  wpos++;
+	  rpos++;
+	  break;
+	case '%':
+	  if ( (1 == SSCANF (&rpos[1],
+			     "%2x", &num)) ||
+	       (1 == SSCANF (&rpos[1],
+			     "%2X", &num)) )
+	    {
+	      *wpos = (unsigned char) num;
+	      wpos++;
+	      rpos += 3;
+	      break;
+	    }
+	  /* intentional fall through! */
+	default:
+	  *wpos = *rpos;
+	  wpos++;
+	  rpos++;
+	}
     }
+  *wpos = '\0'; /* add 0-terminator */
+  return wpos - val; /* = strlen(val) */
 }
 
 /* end of internal.c */

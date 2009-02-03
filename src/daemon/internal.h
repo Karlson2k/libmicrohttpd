@@ -58,8 +58,11 @@ void MHD_tls_log_func (int level, const char *str);
 /**
  * Process escape sequences ('+'=space, %HH).
  * Updates val in place.
+ *
+ * @return length of the resulting val (strlen(val) maybe
+ *  shorter afterwards due to elimination of escape sequences)
  */
-void MHD_http_unescape (char *val);
+unsigned int MHD_http_unescape (char *val);
 
 /**
  * Header or cookie in HTTP request or response.
