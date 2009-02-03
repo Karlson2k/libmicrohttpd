@@ -1127,18 +1127,23 @@ static void
 sigalrmHandler (int sig)
 {
 }
+#endif
 
 /**
  * Initialize the signal handler for SIGALRM.
  */
 void __attribute__ ((constructor)) MHD_pthread_handlers_ltdl_init ()
 {
+#ifndef WINDOWS
   /* make sure SIGALRM does not kill us */
   memset (&sig, 0, sizeof (struct sigaction));
   memset (&old, 0, sizeof (struct sigaction));
   sig.sa_flags = SA_NODEFER;
   sig.sa_handler = &sigalrmHandler;
   sigaction (SIGALRM, &sig, &old);
+#else
+  plibc_init ("CRISP", "libmicrohttpd");
+#endif
 #if HTTPS_SUPPORT
   if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
     abort();
@@ -1151,19 +1156,11 @@ void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini ()
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
     abort ();
 #endif
+#ifndef WINDOWS
   sigaction (SIGALRM, &old, &sig);
-}
-
 #else
-void __attribute__ ((constructor)) MHD_win_ltdl_init ()
-{
-  plibc_init ("CRISP", "libmicrohttpd");
-}
-
-void __attribute__ ((destructor)) MHD_win_ltdl_fini ()
-{
   plibc_shutdown ();
-}
 #endif
+}
 
 /* end of daemon.c */
