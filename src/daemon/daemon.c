@@ -1132,7 +1132,7 @@ sigalrmHandler (int sig)
 /**
  * Initialize the signal handler for SIGALRM.
  */
-void __attribute__ ((constructor)) MHD_pthread_handlers_ltdl_init ()
+void __attribute__ ((constructor)) MHD_init ()
 {
 #ifndef WINDOWS
   /* make sure SIGALRM does not kill us */
@@ -1150,7 +1150,7 @@ void __attribute__ ((constructor)) MHD_pthread_handlers_ltdl_init ()
 #endif
 }
 
-void __attribute__ ((destructor)) MHD_pthread_handlers_ltdl_fini ()
+void __attribute__ ((destructor)) MHD_fini ()
 {
 #if HTTPS_SUPPORT
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
