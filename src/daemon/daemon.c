@@ -1130,7 +1130,8 @@ sigalrmHandler (int sig)
 #endif
 
 /**
- * Initialize the signal handler for SIGALRM.
+ * Initialize the signal handler for SIGALRM
+ * and do other setup work.
  */
 void __attribute__ ((constructor)) MHD_init ()
 {
