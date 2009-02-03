@@ -424,7 +424,7 @@ enum MHD_OPTION
    * if it was compiled without the "--enable-messages"
    * flag being set.
    */
-  MHD_OPTION_EXTERNAL_LOGGER = 13,
+  MHD_OPTION_EXTERNAL_LOGGER = 13
 
 };
 
@@ -502,7 +502,7 @@ enum MHD_RequestTerminationCode
    * We had to close the session since MHD was being
    * shut down.
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3
 
 };
 
@@ -518,7 +518,7 @@ enum MHD_GNUTLS_CipherAlgorithm
   MHD_GNUTLS_CIPHER_ARCFOUR_128,
   MHD_GNUTLS_CIPHER_3DES_CBC,
   MHD_GNUTLS_CIPHER_AES_128_CBC,
-  MHD_GNUTLS_CIPHER_AES_256_CBC,
+  MHD_GNUTLS_CIPHER_AES_256_CBC
 };
 
 /**
@@ -552,7 +552,7 @@ enum MHD_ConnectionInfoType
    *
    * Takes no extra arguments.
    */
-  MHD_CONNECTION_INFO_PROTOCOL,
+  MHD_CONNECTION_INFO_PROTOCOL
 };
 
 /**

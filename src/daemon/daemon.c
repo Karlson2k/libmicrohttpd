@@ -882,7 +882,7 @@ MHD_start_daemon_va (unsigned int options,
           break;
         case MHD_OPTION_URI_LOG_CALLBACK:
           retVal->uri_log_callback =
-            va_arg (ap, void *(*)(void *cls, const char *uri));
+            va_arg (ap, LogCallback);
           retVal->uri_log_callback_cls = va_arg (ap, void *);
           break;
 #if HTTPS_SUPPORT

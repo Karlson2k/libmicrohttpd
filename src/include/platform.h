@@ -41,6 +41,7 @@
 #define _OPEN_THREADS
 #define _OPEN_SYS_SOCK_IPV6
 #define _OPEN_MSGQ_EXT
+#define _LP64
 #endif
 
 #include <stdio.h>

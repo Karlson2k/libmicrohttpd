@@ -605,6 +605,8 @@ struct MHD_Connection
 #endif
 };
 
+typedef void * (*LogCallback)(void * cls, const char * uri);
+
 /**
  * State kept for each MHD daemon.
  */
@@ -656,7 +658,7 @@ struct MHD_Daemon
    * Returns the initial pointer to internal state
    * kept by the client for the request.
    */
-  void *(*uri_log_callback) (void *cls, const char *uri);
+  LogCallback uri_log_callback;
 
   /**
    * Closure argument to uri_log_callback.

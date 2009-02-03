@@ -37,16 +37,16 @@ AC_SUBST(LIB_VERSION_AGE)
 if test `uname -s` = "OS/390"
 then
 # configure binaries for z/OS
-  if test -z $CC
+  if test -z "$CC"
   then
     CC=`pwd`"/contrib/xcc"
     chmod +x $CC || true
   fi
-  if test -z $CPP
+  if test -z "$CPP"
   then
     CPP="c89 -E"
   fi
-  if test -z $CXXCPP
+  if test -z "$CXXCPP"
   then
     CXXCPP="c++ -E -+"
   fi
@@ -143,7 +143,7 @@ AC_SUBST(PTHREAD_CPPFLAGS)
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/select.h sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h])
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h])
 
 AC_CHECK_FUNCS(memmem)
 
