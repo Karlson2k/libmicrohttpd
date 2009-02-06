@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2006, 2007, 2008 Christian Grothoff (and other contributing authors)
+     (C) 2006, 2007, 2008, 2009 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00040000
+#define MHD_VERSION 0x00040001
 
 /**
  * MHD-internal return codes.
@@ -552,7 +552,13 @@ enum MHD_ConnectionInfoType
    *
    * Takes no extra arguments.
    */
-  MHD_CONNECTION_INFO_PROTOCOL
+  MHD_CONNECTION_INFO_PROTOCOL,
+
+  /**
+   * Obtain IP address of the client.
+   * Takes no extra arguments.   
+   */
+  MHD_CONNECTION_INFO_CLIENT_ADDRESS
 };
 
 /**
@@ -1118,6 +1124,10 @@ union MHD_ConnectionInfo
 {
   enum MHD_GNUTLS_CipherAlgorithm cipher_algorithm;
   enum MHD_GNUTLS_Protocol protocol;
+  /**
+   * Address information for the client.
+   */
+  struct sockaddr_in * client_addr;
 };
 
 /**

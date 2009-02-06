@@ -64,6 +64,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return (const union MHD_ConnectionInfo *) &connection->
         tls_session->security_parameters.version;
 #endif
+    case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
+      return (const union MHD_ConnectionInfo *) &connection->addr;
     default:
       return NULL;
     };
