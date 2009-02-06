@@ -52,15 +52,17 @@ const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection *connection,
                          enum MHD_ConnectionInfoType infoType, ...)
 {
-  if (connection->tls_session == NULL)
-    return NULL;
   switch (infoType)
     {
 #if HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
+      if (connection->tls_session == NULL)
+	return NULL;
       return (const union MHD_ConnectionInfo *) &connection->
         tls_session->security_parameters.read_bulk_cipher_algorithm;
     case MHD_CONNECTION_INFO_PROTOCOL:
+      if (connection->tls_session == NULL)
+	return NULL;
       return (const union MHD_ConnectionInfo *) &connection->
         tls_session->security_parameters.version;
 #endif
