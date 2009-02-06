@@ -42,7 +42,7 @@ char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 static int
 rehandshake_ahc (void *cls, struct MHD_Connection *connection,
                  const char *url, const char *method, const char *upload_data,
-                 const char *version, unsigned int *upload_data_size,
+                 const char *version, size_t *upload_data_size,
                  void **ptr)
 {
   int ret;

@@ -26,7 +26,7 @@
 #include <microhttpd.h>
 
 static int
-data_generator (void *cls, size_t pos, char *buf, int max)
+data_generator (void *cls, uint64_t pos, char *buf, int max)
 {
   if (max < 80)
     return 0;
@@ -41,7 +41,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, unsigned int *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **ptr)
 {
   static int aptr;
   struct MHD_Response *response;

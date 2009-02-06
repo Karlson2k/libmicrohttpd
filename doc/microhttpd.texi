@@ -251,7 +251,7 @@ No more options / last option.  This is used to terminate the VARARGs
 list.
   
 @item MHD_OPTION_CONNECTION_MEMORY_LIMIT
-Maximum memory size per connection (followed by an @code{unsigned int}).
+Maximum memory size per connection (followed by a @code{size_t}).
 
 @item MHD_OPTION_CONNECTION_LIMIT
 Maximum number of concurrenct connections to accept (followed by an
@@ -551,7 +551,7 @@ length of the address information.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} int {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+@deftypefn {Function Pointer} int {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls)
 Invoked in the context of a connection to answer a request from the
 client.  This callback must call @mhd{} functions (example: the
 @code{MHD_Response} ones) to provide content to give back to the client
@@ -654,7 +654,7 @@ iteration.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} int {*MHD_ContentReaderCallback} (void *cls, size_t pos, char *buf, int max)
+@deftypefn {Function Pointer} int {*MHD_ContentReaderCallback} (void *cls, uint64_t pos, char *buf, int max)
 Callback used by @mhd{} in order to obtain content.  The callback has to
 copy at most @var{max} bytes of content into @var{buf}.  The total
 number of bytes that has been placed into @var{buf} should be returned.
@@ -691,7 +691,7 @@ It should be used to free resources associated with the content reader.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} int {*MHD_PostDataIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *filename, const char *content_type, const char *transfer_encoding, const char *data, size_t off, size_t size)
+@deftypefn {Function Pointer} int {*MHD_PostDataIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *filename, const char *content_type, const char *transfer_encoding, const char *data, uint64_t off, size_t size)
 Iterator over key-value pairs where the value maybe made available in
 increments and/or may not be zero-terminated.  Used for processing
 @code{POST} data.
@@ -1005,7 +1005,7 @@ the @code{MHD_Response} object is released.
 @section Creating response objects
 
 
-@deftypefun {struct MHD_Response *} MHD_create_response_from_callback (size_t size, unsigned int block_size, MHD_ContentReaderCallback crc, void *crc_cls, MHD_ContentReaderFreeCallback crfc)
+@deftypefun {struct MHD_Response *} MHD_create_response_from_callback (uint64_t size, size_t block_size, MHD_ContentReaderCallback crc, void *crc_cls, MHD_ContentReaderFreeCallback crfc)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.
 
@@ -1167,7 +1167,7 @@ access_handler (void *cls,
                 struct MHD_Connection * connection,
                 const char *url,
                 const char *method, const char *version,
-                const char *upload_data, unsigned int *upload_data_size,
+                const char *upload_data, size_t *upload_data_size,
                 void **con_cls)
 @{
   static int old_connection_marker;
@@ -1195,7 +1195,7 @@ access_handler (void *cls,
                 struct MHD_Connection * connection,
                 const char *url,
                 const char *method, const char *version,
-                const char *upload_data, unsigned int *upload_data_size,
+                const char *upload_data, size_t *upload_data_size,
                 void **con_cls)
 @{
   struct MHD_PostProcessor * pp = *con_cls;
@@ -1234,7 +1234,7 @@ always terminate normally.
 
 
 
-@deftypefun {struct MHD_PostProcessor *} MHD_create_post_processor (struct MHD_Connection *connection, unsigned int buffer_size, MHD_PostDataIterator iterator, void *iterator_cls)
+@deftypefun {struct MHD_PostProcessor *} MHD_create_post_processor (struct MHD_Connection *connection, size_t buffer_size, MHD_PostDataIterator iterator, void *iterator_cls)
 Create a PostProcessor.  A PostProcessor can be used to (incrementally)
 parse the data portion of a @code{POST} request.
 
@@ -1261,7 +1261,7 @@ a PP handle.
 @end deftypefun
 
 
-@deftypefun int MHD_post_process (struct MHD_PostProcessor *pp, const char *post_data, unsigned int post_data_len)
+@deftypefun int MHD_post_process (struct MHD_PostProcessor *pp, const char *post_data, size_t post_data_len)
 Parse and process @code{POST} data.  Call this function when @code{POST}
 data is available (usually during an @code{MHD_AccessHandlerCallback})
 with the @var{upload_data} and @var{upload_data_size}.  Whenever

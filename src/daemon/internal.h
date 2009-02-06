@@ -62,7 +62,7 @@ void MHD_tls_log_func (int level, const char *str);
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */
-unsigned int MHD_http_unescape (char *val);
+size_t MHD_http_unescape (char *val);
 
 /**
  * Header or cookie in HTTP request or response.
@@ -145,7 +145,7 @@ struct MHD_Response
   /**
    * Set to -1 if size is not known.
    */
-  size_t total_size;
+  uint64_t total_size;
 
   /**
    * Size of data.
@@ -161,7 +161,7 @@ struct MHD_Response
    * At what offset in the stream is the
    * beginning of data located?
    */
-  size_t data_start;
+  uint64_t data_start;
 
 };
 
@@ -485,14 +485,14 @@ struct MHD_Connection
    * How many more bytes of the body do we expect
    * to read? "-1" for unknown.
    */
-  size_t remaining_upload_size;
+  uint64_t remaining_upload_size;
 
   /**
    * Current write position in the actual response
    * (excluding headers, content only; should be 0
    * while sending headers).
    */
-  size_t response_write_position;
+  uint64_t response_write_position;
 
   /**
    * Position in the 100 CONTINUE message that
@@ -699,7 +699,7 @@ struct MHD_Daemon
   /**
    * Size of the per-connection memory pools.
    */
-  unsigned int pool_size;
+  size_t pool_size;
 
   /**
    * Limit on the number of parallel connections.

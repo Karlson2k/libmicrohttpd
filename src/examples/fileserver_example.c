@@ -30,7 +30,7 @@
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 static int
-file_reader (void *cls, size_t pos, char *buf, int max)
+file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
   FILE *file = cls;
 

@@ -44,7 +44,7 @@ static int
 query_session_ahc (void *cls, struct MHD_Connection *connection,
                    const char *url, const char *method,
                    const char *upload_data, const char *version,
-                   unsigned int *upload_data_size, void **ptr)
+                   size_t *upload_data_size, void **ptr)
 {
   struct MHD_Response *response;
   int ret;

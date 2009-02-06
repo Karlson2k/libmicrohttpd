@@ -366,7 +366,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   int ret;
   char *buf;
   struct MHD_Response *response;
-  unsigned int size;
+  size_t size;
   char cbuf[10];                /* 10: max strlen of "%x\r\n" */
   int cblen;
 
@@ -466,7 +466,8 @@ add_extra_headers (struct MHD_Connection *connection)
                                             MHD_HTTP_HEADER_CONTENT_LENGTH))
     {
       SPRINTF (buf,
-               "%llu", (unsigned long long) connection->response->total_size);
+               "%llu", 
+	       connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
     }
@@ -1087,11 +1088,11 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
 static void
 call_connection_handler (struct MHD_Connection *connection)
 {
-  unsigned int processed;
-  unsigned int available;
-  unsigned int used;
+  size_t processed;
+  size_t available;
+  size_t used;
+  size_t i;
   int instant_retry;
-  unsigned int i;
   int malformed;
   char *buffer_head;
 

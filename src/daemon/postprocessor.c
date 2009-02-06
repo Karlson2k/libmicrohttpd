@@ -172,22 +172,22 @@ struct MHD_PostProcessor
   /**
    * Size of our buffer for the key.
    */
-  unsigned int buffer_size;
+  size_t buffer_size;
 
   /**
    * Current position in the key buffer.
    */
-  unsigned int buffer_pos;
+  size_t buffer_pos;
 
   /**
    * Current position in xbuf.
    */
-  unsigned int xbuf_pos;
+  size_t xbuf_pos;
 
   /**
    * Current offset in the value being processed.
    */
-  unsigned int value_offset;
+  uint64_t value_offset;
 
   /**
    * strlen(boundary) -- if boundary != NULL.
@@ -247,7 +247,7 @@ struct MHD_PostProcessor
  */
 struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
-                           unsigned int buffer_size,
+                           size_t buffer_size,
                            MHD_PostDataIterator ikvi, void *cls)
 {
   struct MHD_PostProcessor *ret;
@@ -304,13 +304,14 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  */
 static int
 post_process_urlencoded (struct MHD_PostProcessor *pp,
-                         const char *post_data, unsigned int post_data_len)
+                         const char *post_data, 
+			 size_t post_data_len)
 {
-  unsigned int equals;
-  unsigned int amper;
-  unsigned int poff;
-  unsigned int xoff;
-  unsigned int delta;
+  size_t equals;
+  size_t amper;
+  size_t poff;
+  size_t xoff;
+  size_t delta;
   int end_of_value_found;
   char *buf;
   char xbuf[XBUF_SIZE + 1];
@@ -472,7 +473,7 @@ static int
 find_boundary (struct MHD_PostProcessor *pp,
                const char *boundary,
                size_t blen,
-               unsigned int *ioffptr,
+               size_t *ioffptr,
                enum PP_State next_state, enum PP_State next_dash_state)
 {
   char *buf = (char *) &pp[1];
@@ -554,10 +555,10 @@ try_get_value (const char *buf, const char *key, char **destination)
  */
 static int
 process_multipart_headers (struct MHD_PostProcessor *pp,
-                           unsigned int *ioffptr, enum PP_State next_state)
+                           size_t *ioffptr, enum PP_State next_state)
 {
   char *buf = (char *) &pp[1];
-  unsigned int newline;
+  size_t newline;
 
   newline = 0;
   while ((newline < pp->buffer_pos) &&
@@ -615,14 +616,14 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
  */
 static int
 process_value_to_boundary (struct MHD_PostProcessor *pp,
-                           unsigned int *ioffptr,
+                           size_t *ioffptr,
                            const char *boundary,
                            size_t blen,
                            enum PP_State next_state,
                            enum PP_State next_dash_state)
 {
   char *buf = (char *) &pp[1];
-  unsigned int newline;
+  size_t newline;
 
   /* all data in buf until the boundary
      (\r\n--+boundary) is part of the value */
@@ -716,12 +717,13 @@ free_unmarked (struct MHD_PostProcessor *pp)
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,
-                        const char *post_data, unsigned int post_data_len)
+                        const char *post_data,
+			size_t post_data_len)
 {
   char *buf;
-  unsigned int max;
-  unsigned int ioff;
-  unsigned int poff;
+  size_t max;
+  size_t ioff;
+  size_t poff;
   int state_changed;
 
   buf = (char *) &pp[1];
@@ -999,7 +1001,7 @@ END:
  */
 int
 MHD_post_process (struct MHD_PostProcessor *pp,
-                  const char *post_data, unsigned int post_data_len)
+                  const char *post_data, size_t post_data_len)
 {
   if (post_data_len == 0)
     return MHD_YES;

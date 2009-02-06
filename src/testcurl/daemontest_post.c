@@ -25,6 +25,7 @@
  */
 
 #include "MHD_config.h"
+#include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -70,7 +71,7 @@ post_iterator (void *cls,
                const char *filename,
                const char *content_type,
                const char *transfer_encoding,
-               const char *value, size_t off, size_t size)
+               const char *value, uint64_t off, size_t size)
 {
   int *eok = cls;
 
@@ -89,7 +90,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, unsigned int *upload_data_size,
+          const char *upload_data, size_t *upload_data_size,
           void **unused)
 {
   static int eok;

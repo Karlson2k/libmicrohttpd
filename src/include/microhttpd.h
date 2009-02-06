@@ -59,9 +59,9 @@
  * thread-safe (with the exception of 'MHD_set_connection_value',
  * which must only be used in a particular context).<p>
  *
- * NEW: Before including "microhttpd.h" you should add the
- * necessary includes to define the "size_t", "fd_set", "socklen_t" and
- * "struct sockaddr" data types (which headers are needed may
+ * NEW: Before including "microhttpd.h" you should add the necessary
+ * includes to define the "uint64_t", "size_t", "fd_set", "socklen_t"
+ * and "struct sockaddr" data types (which headers are needed may
  * depend on your platform; for possible suggestions consult
  * "platform.h" in the MHD distribution).
  *
@@ -297,8 +297,8 @@ enum MHD_OPTION
   MHD_OPTION_END = 0,
 
   /**
-   * Maximum memory size per connection (followed by an
-   * unsigned int).
+   * Maximum memory size per connection (followed by a
+   * size_t).
    */
   MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
 
@@ -663,7 +663,7 @@ typedef int
                                 const char *method,
                                 const char *version,
                                 const char *upload_data,
-                                unsigned int *upload_data_size,
+                                size_t *upload_data_size,
                                 void **con_cls);
 
 /**
@@ -731,7 +731,10 @@ typedef int
  *  requests using the same TCP connection).
  */
 typedef int
-  (*MHD_ContentReaderCallback) (void *cls, size_t pos, char *buf, int max);
+  (*MHD_ContentReaderCallback) (void *cls, 
+				uint64_t pos, 
+				char *buf,
+				int max);
 
 /**
  * This method is called by libmicrohttpd if we
@@ -767,7 +770,7 @@ typedef int
                            const char *filename,
                            const char *content_type,
                            const char *transfer_encoding,
-                           const char *data, size_t off, size_t size);
+                           const char *data, uint64_t off, size_t size);
 
 /* **************** Daemon handling functions ***************** */
 
@@ -967,9 +970,8 @@ MHD_queue_response (struct MHD_Connection *connection,
  * @param crfc callback to call to free crc_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
-struct MHD_Response *MHD_create_response_from_callback (size_t size,
-                                                        unsigned int
-                                                        block_size,
+struct MHD_Response *MHD_create_response_from_callback (uint64_t size,
+                                                        size_t block_size,
                                                         MHD_ContentReaderCallback
                                                         crc, void *crc_cls,
                                                         MHD_ContentReaderFreeCallback
@@ -1079,7 +1081,7 @@ const char *MHD_get_response_header (struct MHD_Response *response,
  */
 struct MHD_PostProcessor *MHD_create_post_processor (struct MHD_Connection
                                                      *connection,
-                                                     unsigned int buffer_size,
+                                                     size_t buffer_size,
                                                      MHD_PostDataIterator
                                                      iter, void *cls);
 
@@ -1099,7 +1101,7 @@ struct MHD_PostProcessor *MHD_create_post_processor (struct MHD_Connection
  */
 int
 MHD_post_process (struct MHD_PostProcessor *pp,
-                  const char *post_data, unsigned int post_data_len);
+                  const char *post_data, size_t post_data_len);
 
 /**
  * Release PostProcessor resources.

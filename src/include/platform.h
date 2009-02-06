@@ -46,6 +46,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -54,7 +55,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-/* different OSes have size_t, fd_set in
+/* different OSes have fd_set in
    a broad range of header files;
    we just include most of them (if they
    are available) */

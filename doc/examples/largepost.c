@@ -65,7 +65,7 @@ send_page (struct MHD_Connection *connection, const char *page,
 int
 iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               const char *filename, const char *content_type,
-              const char *transfer_encoding, const char *data, size_t off,
+              const char *transfer_encoding, const char *data, uint64_t off,
               size_t size)
 {
   FILE *fp;
@@ -136,7 +136,7 @@ int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      unsigned int *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
   if (NULL == *con_cls)
     {

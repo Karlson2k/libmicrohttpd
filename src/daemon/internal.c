@@ -118,7 +118,7 @@ MHD_tls_log_func (int level, const char *str)
 /**
  * Process escape sequences ('+'=space, %HH)
  */
-unsigned int
+size_t
 MHD_http_unescape (char *val)
 {
   char *rpos = val;

@@ -97,7 +97,7 @@ const char key_pem[] =
   "-----END RSA PRIVATE KEY-----\n";
 
 static int
-file_reader (void *cls, size_t pos, char *buf, int max)
+file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
   FILE *file = cls;
 
@@ -112,7 +112,7 @@ http_ahc (void *cls,
           const char *url,
           const char *method,
           const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
+          const char *version, size_t *upload_data_size, void **ptr)
 {
   static int aptr;
   struct MHD_Response *response;

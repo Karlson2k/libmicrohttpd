@@ -109,7 +109,7 @@ int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      unsigned int *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
   if (0 != strcmp (method, "GET"))
     return MHD_NO;

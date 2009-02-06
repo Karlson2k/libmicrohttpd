@@ -25,6 +25,7 @@
  */
 
 #include "MHD_config.h"
+#include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -61,7 +62,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
  * data in chunks.
  */
 static int
-crc (void *cls, size_t pos, char *buf, int max)
+crc (void *cls, uint64_t pos, char *buf, int max)
 {
   struct MHD_Response **responseptr = cls;
 
@@ -91,7 +92,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, unsigned int *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **ptr)
 {
   static int aptr;
   const char *me = cls;

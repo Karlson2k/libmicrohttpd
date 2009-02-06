@@ -79,7 +79,7 @@ value_checker (void *cls,
                const char *filename,
                const char *content_type,
                const char *transfer_encoding,
-               const char *data, size_t off, size_t size)
+               const char *data, uint64_t off, size_t size)
 {
   int *want_off = cls;
   int idx = *want_off;

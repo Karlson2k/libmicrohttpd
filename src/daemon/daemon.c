@@ -861,7 +861,7 @@ MHD_start_daemon_va (unsigned int options,
       switch (opt)
         {
         case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
-          retVal->pool_size = va_arg (ap, unsigned int);
+          retVal->pool_size = va_arg (ap, size_t);
           break;
         case MHD_OPTION_CONNECTION_LIMIT:
           retVal->max_connections = va_arg (ap, unsigned int);

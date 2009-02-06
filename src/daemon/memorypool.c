@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2009 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -44,17 +44,17 @@ struct MemoryPool
   /**
    * Size of the pool.
    */
-  unsigned int size;
+  size_t size;
 
   /**
    * Offset of the first unallocated byte.
    */
-  unsigned int pos;
+  size_t pos;
 
   /**
    * Offset of the last unallocated byte.
    */
-  unsigned int end;
+  size_t end;
 
   /**
    * MHD_NO if pool was malloc'ed, MHD_YES if mmapped.
@@ -68,7 +68,7 @@ struct MemoryPool
  * @param max maximum size of the pool
  */
 struct MemoryPool *
-MHD_pool_create (unsigned int max)
+MHD_pool_create (size_t max)
 {
   struct MemoryPool *pool;
 
@@ -122,7 +122,8 @@ MHD_pool_destroy (struct MemoryPool *pool)
  *         bytes
  */
 void *
-MHD_pool_allocate (struct MemoryPool *pool, unsigned int size, int from_end)
+MHD_pool_allocate (struct MemoryPool *pool, 
+		   size_t size, int from_end)
 {
   void *ret;
 
@@ -159,7 +160,9 @@ MHD_pool_allocate (struct MemoryPool *pool, unsigned int size, int from_end)
  */
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,
-                     void *old, unsigned int old_size, unsigned int new_size)
+                     void *old, 
+		     size_t old_size, 
+		     size_t new_size)
 {
   void *ret;
 
@@ -204,7 +207,9 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * @return addr new address of "keep" (if it had to change)
  */
 void *
-MHD_pool_reset (struct MemoryPool *pool, void *keep, unsigned int size)
+MHD_pool_reset (struct MemoryPool *pool, 
+		void *keep, 
+		size_t size)
 {
   if (keep != NULL)
     {

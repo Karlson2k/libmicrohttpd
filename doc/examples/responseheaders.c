@@ -33,7 +33,7 @@ int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      unsigned int *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
   unsigned char *buffer = NULL;
   struct MHD_Response *response;

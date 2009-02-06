@@ -25,6 +25,7 @@
  */
 
 #include "MHD_config.h"
+#include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -66,7 +67,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, unsigned int *upload_data_size,
+          const char *upload_data, size_t *upload_data_size,
           void **mptr)
 {
   static int marker;

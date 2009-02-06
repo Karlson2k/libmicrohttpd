@@ -39,12 +39,12 @@ value_checker (void *cls,
                const char *filename,
                const char *content_type,
                const char *transfer_encoding,
-               const char *data, size_t off, size_t size)
+               const char *data, uint64_t off, size_t size)
 {
   unsigned int *pos = cls;
 #if 0
   fprintf (stderr,
-           "VC: %u %u `%s' `%s' `%s' `%s' `%.*s'\n",
+           "VC: %llu %u `%s' `%s' `%s' `%s' `%.*s'\n",
            off, size,
            key, filename, content_type, transfer_encoding, size, data);
 #endif

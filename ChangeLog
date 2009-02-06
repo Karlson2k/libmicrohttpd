@@ -1,3 +1,17 @@
+Thu Feb  5 22:43:45 MST 2009
+	 Incompatible API change to allow 64-bit uploads and downloads.
+	 Clients must use "uint64_t" for the "pos"
+	 argument (MHD_ContentReaderCallback) and the "off"
+	 argument (MHD_PostDataIterator) and the "size" 
+	 argument (MHD_create_response_from_callback) now.
+	 Also, "unsigned int" was changed to "size_t" for
+	 the "upload_data_size" argument (MHD_AccessHandlerCallback),
+	 the argument to MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+	 the "block_size" argument (MHD_create_response_from_callback),
+	 the "buffer_size" argument (MHD_create_post_processor) and
+	 the "post_data_len" argument (MHD_post_process).  You may
+	 need to #include <stdint.h> before <microhttpd.h> from now on. -CG
+	
 Thu Feb  5 20:21:08 MST 2009
 	 Allow getting address information about the connecting
 	 client after the accept call. -CG
