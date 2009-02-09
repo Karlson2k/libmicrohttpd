@@ -1,3 +1,6 @@
+Sun Feb  8 21:15:30 MST 2009
+	 Releasing libmicrohttpd 0.4.0. -CG
+
 Thu Feb  5 22:43:45 MST 2009
 	 Incompatible API change to allow 64-bit uploads and downloads.
 	 Clients must use "uint64_t" for the "pos"
