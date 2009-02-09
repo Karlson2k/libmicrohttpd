@@ -281,19 +281,11 @@ MHD_gtls_negotiate_version (MHD_gtls_session_t session,
        * then we send him the highest we support.
        */
       ret = MHD_gtls_version_max (session);
-      if (ret == MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN)
-        {
-          /* this check is not really needed.
-           */
-          MHD_gnutls_assert ();
-          return GNUTLS_E_UNKNOWN_CIPHER_SUITE;
-        }
     }
   else
     {
       ret = adv_version;
     }
-
   MHD_gtls_set_current_version (session, ret);
 
   return ret;
