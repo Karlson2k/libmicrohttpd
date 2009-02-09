@@ -168,7 +168,6 @@ send_curl_req (char *url, struct CBC * cbc, char *cipher_suite,
       curl_easy_cleanup (c);
       return errornum;
     }
-
   curl_easy_cleanup (c);
 
   return CURLE_OK;

@@ -119,7 +119,6 @@ main (int argc, char *const *argv)
     {{MHD_GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
     {{0, 0}, NULL}
   };
-
   fprintf (stderr, "SHA/TLS tests:\n");
   cpos = 0;
   while (ciphers[cpos].curlname != NULL)
@@ -154,14 +153,27 @@ main (int argc, char *const *argv)
                    MHD_OPTION_END);
       cpos++;
     }
-
+#if 0
+  /* manual inspection of the handshake suggests that CURL will
+     request TLSv1, we send back "SSL3" and CURL takes it *despite*
+     being configured to speak SSL3-only.  Notably, the other way
+     round (have curl request SSL3, respond with TLSv1 only)
+     is properly refused by CURL.  Either way, this does NOT seem
+     to be a bug in MHD/gnuTLS but rather in CURL; hence this
+     test is commented out here... */
   errorCount +=
-    test_wrap ("unmatching SSL version", &test_unmatching_ssl_version,
+    test_wrap ("unmatching version: SSL3 vs. TLS", &test_unmatching_ssl_version,
                test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_PROTOCOL_VERSION, p_ssl3, MHD_OPTION_END);
-
+#endif
+  errorCount +=
+    test_wrap ("unmatching version: TLS vs. SSL3", &test_unmatching_ssl_version,
+               test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_SSLv3,
+               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+               MHD_OPTION_PROTOCOL_VERSION, p_tls, MHD_OPTION_END);
   curl_global_cleanup ();
   fclose (test_fd);
   remove (TEST_FILE_NAME);
