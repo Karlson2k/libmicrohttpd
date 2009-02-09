@@ -4,7 +4,7 @@
 @settitle A tutorial for GNU libmicrohttpd
 @afourpaper
 
-@set VERSION 0.4.0 prerelease0
+@set VERSION 0.4.0
 
 @dircategory GNU Libraries
 @direntry

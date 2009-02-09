@@ -11,7 +11,7 @@ header file @file{microhttpd.h}.
 
 @noindent
 
-Copyright @copyright{} 2007, 2008 Christian Grothoff
+Copyright @copyright{} 2007, 2008, 2009 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
