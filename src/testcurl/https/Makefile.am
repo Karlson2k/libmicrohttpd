@@ -30,7 +30,7 @@ if MHD_DEBUG_TLS
   tls_extension_test
 endif  
 
-EXTRA_DIST = cert.pem key.pem tls_test_keys.h
+EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
 
 TESTS = $(check_PROGRAMS)
 
