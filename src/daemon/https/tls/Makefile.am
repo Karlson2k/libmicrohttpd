@@ -94,6 +94,7 @@ gnutls_str.h \
 gnutls_supplemental.h \
 gnutls_x509.h \
 x509_b64.h \
-memmem.c
+memmem.c \
+str-two-way.h
 libtls_la_LIBADD = @LIBGCRYPT_LIBS@
 
