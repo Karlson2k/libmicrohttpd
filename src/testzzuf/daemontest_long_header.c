@@ -109,7 +109,8 @@ testLongUrlGet ()
                         &ahc_echo,
                         "GET",
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        VERY_LONG / 2, MHD_OPTION_END);
+                        (size_t) (VERY_LONG / 2), MHD_OPTION_END);
+
   if (d == NULL)
     return 1;
   zzuf_socat_start ();
@@ -170,7 +171,7 @@ testLongHeaderGet ()
                         &ahc_echo,
                         "GET",
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        VERY_LONG / 2, MHD_OPTION_END);
+                        (size_t) (VERY_LONG / 2), MHD_OPTION_END);
   if (d == NULL)
     return 16;
   zzuf_socat_start ();
