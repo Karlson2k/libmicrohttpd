@@ -298,6 +298,7 @@ AC_SUBST(EXT_LIB_PATH)
 AC_SUBST(EXT_LIBS)
 
 AC_CONFIG_FILES([ 
+libmicrohttpd.pc
 Makefile
 contrib/Makefile
 doc/Makefile
