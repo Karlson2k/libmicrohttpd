@@ -2112,4 +2112,44 @@ MHD_set_http_calbacks (struct MHD_Connection *connection)
   connection->idle_handler = &MHD_connection_handle_idle;
 }
 
+#if HTTPS_SUPPORT
+#include "gnutls_int.h"
+#include "gnutls_record.h"
+#endif
+
+/**
+ * Obtain information about the given connection.
+ *
+ * @param connection what connection to get information about
+ * @param infoType what information is desired?
+ * @param ... depends on infoType
+ * @return NULL if this information is not available
+ *         (or if the infoType is unknown)
+ */
+const union MHD_ConnectionInfo *
+MHD_get_connection_info (struct MHD_Connection *connection,
+                         enum MHD_ConnectionInfoType infoType, ...)
+{
+  switch (infoType)
+    {
+#if HTTPS_SUPPORT
+    case MHD_CONNECTION_INFO_CIPHER_ALGO:
+      if (connection->tls_session == NULL)
+	return NULL;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.read_bulk_cipher_algorithm;
+    case MHD_CONNECTION_INFO_PROTOCOL:
+      if (connection->tls_session == NULL)
+	return NULL;
+      return (const union MHD_ConnectionInfo *) &connection->
+        tls_session->security_parameters.version;
+#endif
+    case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
+      return (const union MHD_ConnectionInfo *) &connection->addr;
+    default:
+      return NULL;
+    };
+}
+
+
 /* end of connection.c */
