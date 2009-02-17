@@ -131,7 +131,8 @@ netbsd*)
 esac
 
 
-
+# for pkg-config
+MHD_LIBDEPS=""
 
 CHECK_PTHREAD
 LIBS="$PTHREAD_LIBS $LIBS"
@@ -242,6 +243,7 @@ then
  if test "$gcrypt" = "true"
  then
    AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
+   MHD_LIBDEPS="$LIBGCRYPT_LIBS"
  else
    AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt])
    enable_https="no (lacking libgcrypt)"
@@ -290,6 +292,8 @@ AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AC_SUBST(MHD_LIB_LDFLAGS)
 
+# for pkg-config
+AC_SUBST(MHD_LIBDEPS)
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)

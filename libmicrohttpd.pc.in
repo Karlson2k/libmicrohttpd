@@ -9,5 +9,5 @@ Version: @VERSION@
 Requires:
 Conflicts:
 Libs: -L${libdir} -lmicrohttpd
-Libs.private: @LIBGCRYPT_LIBS@
+Libs.private: @MHD_LIBDEPS@
 Cflags: -I${includedir}
