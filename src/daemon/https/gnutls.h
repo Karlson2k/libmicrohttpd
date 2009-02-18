@@ -135,6 +135,7 @@ enum MHD_GNUTLS_PublicKeyAlgorithm
 #define TLS_MASTER_SIZE 48
 #define TLS_RANDOM_SIZE 32
 
+#include "platform.h"
 #include "microhttpd.h"
 
 typedef enum
