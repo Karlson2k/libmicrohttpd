@@ -1,3 +1,6 @@
+Wed Feb 18 08:13:56 MST 2009
+	 Added missing #include for build on arm-linux-uclibc. -CG/CC
+
 Mon Feb 16 21:12:21 MST 2009
 	 Moved MHD_get_connection_info so that it is always defined,
 	 even if HTTPS support is not enabled. -CG
