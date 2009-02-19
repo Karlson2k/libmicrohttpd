@@ -258,6 +258,16 @@ AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
+dnl TODO insert a proper check here
+AC_CACHE_CHECK([whether -export-symbols-regex works],
+ gn_cv_export_symbols_regex_works, 
+ [
+  case "$host_os" in
+  mingw*) gn_cv_export_symbols_regex_works=no;;
+  *) gn_cv_export_symbols_regex_works=yes;;
+  esac
+ ])
+
 # optional: compile TLS client side code [only for test running] ?
 AC_MSG_CHECKING(whether to compile TLS client side code)
 AC_ARG_ENABLE(client-side,
@@ -270,7 +280,10 @@ if test "$enable_client_side" = "no"
 then
  AC_DEFINE([MHD_DEBUG_TLS],[0],[Compile client side code. This will enable running some test cases.])
  MSG_CLIENT_SIDE="disabled. running some test cases won't be possible"
- MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
+ if test "x$gn_cv_export_symbols_regex_works" = "xyes"
+ then
+  MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
+ fi
 else
  AC_DEFINE([MHD_DEBUG_TLS],[1],[Compile client side code. This will enable running some test cases.])
  MSG_CLIENT_SIDE="enabled" 
