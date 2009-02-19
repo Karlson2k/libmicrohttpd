@@ -1,4 +1,4 @@
 #!/bin/sh
-aclocal
+aclocal -I m4
 automake
 autoreconf -f -i
