@@ -53,7 +53,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#undef HAVE_CONFIG_H
 #include <pthread.h>
+#define HAVE_CONFIG_H
 
 /* different OSes have fd_set in
    a broad range of header files;
