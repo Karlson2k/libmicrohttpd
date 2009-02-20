@@ -25,7 +25,9 @@
 #ifndef X509_H
 #define X509_H
 
+#ifndef MIN
 #define MIN(X,Y) ((X) > (Y) ? (Y) : (X));
+#endif
 
 #ifdef __cplusplus
 extern "C"
