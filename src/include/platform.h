@@ -55,7 +55,7 @@
 #include <signal.h>
 #undef HAVE_CONFIG_H
 #include <pthread.h>
-#define HAVE_CONFIG_H
+#define HAVE_CONFIG_H 1
 
 /* different OSes have fd_set in
    a broad range of header files;
