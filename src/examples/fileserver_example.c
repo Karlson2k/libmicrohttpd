@@ -43,8 +43,9 @@ ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
           const char *method,
+          const char *version,
           const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr)
+	  size_t *upload_data_size, void **ptr)
 {
   static int aptr;
   struct MHD_Response *response;
