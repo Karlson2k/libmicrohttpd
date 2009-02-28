@@ -274,7 +274,7 @@ testExternalPut ()
                         1082,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        PUT_SIZE * 4, MHD_OPTION_END);
+                        (size_t) (PUT_SIZE * 4), MHD_OPTION_END);
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
