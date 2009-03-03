@@ -31,6 +31,11 @@
 #include "response.h"
 #include "reason_phrase.h"
 
+#if HAVE_NETINET_TCP_H
+/* for TCP_CORK */
+#include <netinet/tcp.h>
+#endif
+
 /**
  * Message to transmit when http 1.1 request is received
  */
@@ -1961,7 +1966,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
 
-#if HAVE_TCP_CORK
+#if HAVE_DECL_TCP_CORK
           /* starting header send, set TCP cork */
           {
             const int val = 1;
@@ -2024,7 +2029,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
-#if HAVE_TCP_CORK
+#if HAVE_DECL_TCP_CORK
           /* done sending, uncork */
           {
             const int val = 0;

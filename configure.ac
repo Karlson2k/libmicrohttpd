@@ -173,7 +173,7 @@ have_inet6=no
 AC_MSG_RESULT($have_inet6)
 
 # TCP_CORK
-AC_CHECK_DECL([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
+AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
