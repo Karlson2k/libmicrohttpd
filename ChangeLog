@@ -1,3 +1,8 @@
+Mon Mar  2 23:44:08 MST 2009
+	 Fixd problem with 64-bit upload and download sizes and
+	 "-1" being used to indicate "unknown" by introducing
+	 new 64-bit constant "MHD_SIZE_UNKNOWN". -CG/DC
+
 Wed Feb 18 08:13:56 MST 2009
 	 Added missing #include for build on arm-linux-uclibc. -CG/CC
 

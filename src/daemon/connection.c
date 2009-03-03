@@ -241,7 +241,7 @@ MHD_queue_response (struct MHD_Connection *connection,
          have already sent the full message body */
       connection->response_write_position = response->total_size;
     }
-  if ((response->total_size == -1) &&
+  if ((response->total_size == MHD_SIZE_UNKNOWN) &&
       (0 == strcasecmp (connection->version, MHD_HTTP_VERSION_1_1)))
     connection->have_chunked_response = MHD_YES;
   else
@@ -443,7 +443,7 @@ add_extra_headers (struct MHD_Connection *connection)
   char buf[128];
 
   connection->have_chunked_upload = MHD_NO;
-  if (connection->response->total_size == -1)
+  if (connection->response->total_size == MHD_SIZE_UNKNOWN)
     {
       have = MHD_get_response_header (connection->response,
                                       MHD_HTTP_HEADER_CONNECTION);
@@ -1110,7 +1110,7 @@ call_connection_handler (struct MHD_Connection *connection)
     {
       instant_retry = MHD_NO;
       if ((connection->have_chunked_upload == MHD_YES) &&
-          (connection->remaining_upload_size == -1))
+          (connection->remaining_upload_size == MHD_SIZE_UNKNOWN))
         {
           if ((connection->current_chunk_offset ==
                connection->current_chunk_size)
@@ -1242,7 +1242,7 @@ call_connection_handler (struct MHD_Connection *connection)
       /* dh left "processed" bytes in buffer for next time... */
       buffer_head += used;
       available -= used;
-      if (connection->remaining_upload_size != -1)
+      if (connection->remaining_upload_size != MHD_SIZE_UNKNOWN)
         connection->remaining_upload_size -= used;
     }
   while (instant_retry == MHD_YES);
@@ -1516,7 +1516,7 @@ parse_connection_headers (struct MHD_Connection *connection)
         }
       else
         {
-          connection->remaining_upload_size = -1;       /* unknown size */
+          connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
           if (0 ==
               strcasecmp (MHD_lookup_connection_value
                           (connection, MHD_HEADER_KIND,
@@ -1887,7 +1887,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 continue;
             }
           if ((connection->remaining_upload_size == 0) ||
-              ((connection->remaining_upload_size == -1) &&
+              ((connection->remaining_upload_size == MHD_SIZE_UNKNOWN) &&
                (connection->read_buffer_offset == 0) &&
                (MHD_YES == connection->read_closed)))
             {
