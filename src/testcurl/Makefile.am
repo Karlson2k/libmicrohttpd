@@ -35,7 +35,8 @@ check_PROGRAMS = \
   daemontest_long_header \
   daemontest_long_header11 \
   daemontest_get_chunked \
-  daemontest_put_chunked
+  daemontest_put_chunked \
+  daemontest_iplimit11
 noinst_PROGRAMS = \
   daemon_options_test
 
@@ -162,6 +163,12 @@ daemontest_long_header_LDADD = \
 daemontest_long_header11_SOURCES = \
   daemontest_long_header.c
 daemontest_long_header11_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_iplimit11_SOURCES = \
+  daemontest_iplimit.c
+daemontest_iplimit11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

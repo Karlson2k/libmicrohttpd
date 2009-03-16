@@ -53,6 +53,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <search.h>
+#include <stddef.h>
 #undef HAVE_CONFIG_H
 #include <pthread.h>
 #define HAVE_CONFIG_H 1

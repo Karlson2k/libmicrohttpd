@@ -64,6 +64,213 @@
 #endif
 #endif
 
+/**
+ * Maintain connection count for single address.
+ */
+struct MHD_IPCount
+{
+  int family;
+  union
+  {
+    struct in_addr ipv4;
+#if HAVE_IPV6
+    struct in6_addr ipv6;
+#endif
+  } addr;
+  unsigned int count;
+};
+
+/**
+ * Lock shared structure for IP connection counts
+ */
+static void
+MHD_ip_count_lock(struct MHD_Daemon *daemon)
+{
+  if (0 != pthread_mutex_lock(&daemon->per_ip_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to acquire IP connection limit mutex\n");
+#endif
+      abort();
+    }
+}
+
+/**
+ * Unlock shared structure for IP connection counts
+ */
+static void
+MHD_ip_count_unlock(struct MHD_Daemon *daemon)
+{
+  if (0 != pthread_mutex_unlock(&daemon->per_ip_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to release IP connection limit mutex\n");
+#endif
+      abort();
+    }
+}
+
+/**
+ * Tree comparison function for IP addresses (supplied to tsearch() family).
+ * We compare everything in the struct up through the beginning of the
+ * 'count' field.
+ */
+static int
+MHD_ip_addr_compare(const void *a1, const void *a2)
+{
+  return memcmp (a1, a2, offsetof(struct MHD_IPCount, count));
+}
+
+/**
+ * Parse address and initialize 'key' using the address. Returns MHD_YES
+ * on success and MHD_NO otherwise (e.g., invalid address type).
+ */
+static int
+MHD_ip_addr_to_key(struct sockaddr *addr, socklen_t addrlen,
+                   struct MHD_IPCount *key)
+{
+  memset(key, 0, sizeof(*key));
+
+  /* IPv4 addresses */
+  if (addrlen == sizeof(struct sockaddr_in))
+    {
+      const struct sockaddr_in *addr4 = (const struct sockaddr_in*)addr;
+      key->family = AF_INET;
+      memcpy (&key->addr.ipv4, &addr4->sin_addr, sizeof(addr4->sin_addr));
+      return MHD_YES;
+    }
+
+#if HAVE_IPV6
+  /* IPv6 addresses */
+  if (addrlen == sizeof (struct sockaddr_in6))
+    {
+      const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6*)addr;
+      key->family = AF_INET6;
+      memcpy (&key->addr.ipv6, &addr6->sin6_addr, sizeof(addr6->sin6_addr));
+      return MHD_YES;
+    }
+#endif
+
+  /* Some other address */
+  return MHD_NO;
+}
+
+/**
+ * Check if IP address is over its limit.
+ *
+ * @return Return MHD_YES if IP below limit, MHD_NO if IP has surpassed limit.
+ *   Also returns MHD_NO if fails to allocate memory.
+ */
+static int
+MHD_ip_limit_add(struct MHD_Daemon *daemon,
+                 struct sockaddr *addr, socklen_t addrlen)
+{
+  struct MHD_IPCount *key;
+  void *node;
+  int result;
+
+  /* Ignore if no connection limit assigned */
+  if (daemon->per_ip_connection_limit == 0)
+    return MHD_YES;
+
+  key = (struct MHD_IPCount*) malloc (sizeof(*key));
+  if (!key)
+    return MHD_NO;
+
+  /* Initialize key */
+  if (MHD_NO == MHD_ip_addr_to_key (addr, addrlen, key))
+    {
+      /* Allow unhandled address types through */
+      free (key);
+      return MHD_YES;
+    }
+
+  MHD_ip_count_lock (daemon);
+
+  /* Search for the IP address */
+  node = tsearch (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+  if (!node)
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG(daemon,
+               "Failed to add IP connection count node\n");
+#endif
+      MHD_ip_count_unlock (daemon);
+      return MHD_NO;
+    }
+  node = *(void**)node;
+
+  /* If we got an existing node back, free the one we created */
+  if (node != key)
+    free(key);
+
+  /* Test if there is room for another connection; if so,
+   * increment count */
+  result = (key->count < daemon->per_ip_connection_limit);
+  if (result == MHD_YES)
+    ++key->count;
+
+  MHD_ip_count_unlock (daemon);
+  return result;
+}
+
+/**
+ * Decrement connection count for IP address, removing from table
+ * count reaches 0
+ */
+static void
+MHD_ip_limit_del(struct MHD_Daemon *daemon,
+                 struct sockaddr *addr, socklen_t addrlen)
+{
+  struct MHD_IPCount search_key;
+  struct MHD_IPCount *found_key;
+  void *node;
+
+  /* Ignore if no connection limit assigned */
+  if (daemon->per_ip_connection_limit == 0)
+    return;
+
+  /* Initialize search key */
+  if (MHD_NO == MHD_ip_addr_to_key (addr, addrlen, &search_key))
+    return;
+
+  MHD_ip_count_lock (daemon);
+
+  /* Search for the IP address */
+  node = tfind (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+
+  /* Something's wrong if we couldn't find an IP address
+   * that was previously added */
+  if (!node)
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to find previously-added IP address\n");
+#endif
+      abort();
+    }
+  found_key = (struct MHD_IPCount*)*(void**)node;
+
+  /* Validate existing count for IP address */
+  if (found_key->count == 0)
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Previously-added IP address had 0 count\n");
+#endif
+      abort();
+    }
+
+  /* Remove the node entirely if count reduces to 0 */
+  if (--found_key->count == 0)
+    {
+      tdelete (found_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+      free (found_key);
+    }
+
+  MHD_ip_count_unlock (daemon);
+}
+
 #if HTTPS_SUPPORT
 pthread_mutex_t MHD_gnutls_init_mutex;
 
@@ -335,7 +542,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
-  unsigned int have;
   int s, res_thread_create;
 #if OSX
   static int on = 1;
@@ -368,45 +574,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
 #endif
 #endif
-  have = 0;
-  if ((daemon->per_ip_connection_limit != 0) && (daemon->max_connections > 0))
-    {
-      pos = daemon->connections;
-      while (pos != NULL)
-        {
-          if ((pos->addr != NULL) && (pos->addr_len == addrlen))
-            {
-              if (addrlen == sizeof (struct sockaddr_in))
-                {
-                  const struct sockaddr_in *a1 =
-                    (const struct sockaddr_in *) addr;
-                  const struct sockaddr_in *a2 =
-                    (const struct sockaddr_in *) pos->addr;
-                  if (0 == memcmp (&a1->sin_addr, &a2->sin_addr,
-                                   sizeof (struct in_addr)))
-                    have++;
-                }
-#if HAVE_INET6
-              if (addrlen == sizeof (struct sockaddr_in6))
-                {
-                  const struct sockaddr_in6 *a1 =
-                    (const struct sockaddr_in6 *) addr;
-                  const struct sockaddr_in6 *a2 =
-                    (const struct sockaddr_in6 *) pos->addr;
-                  if (0 == memcmp (&a1->sin6_addr, &a2->sin6_addr,
-                                   sizeof (struct in6_addr)))
-                    have++;
-                }
-#endif
-            }
-          pos = pos->next;
-        }
-    }
-
-  if ((daemon->max_connections == 0) || ((daemon->per_ip_connection_limit
-                                          != 0)
-                                         && (daemon->per_ip_connection_limit
-                                             <= have)))
+  if ((daemon->max_connections == 0)
+      || MHD_ip_limit_add (daemon, addr, addrlen) == MHD_NO))
     {
       /* above connection limit - reject */
 #if HAVE_MESSAGES
@@ -429,6 +598,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
+      MHD_ip_limit_del (daemon, addr, addrlen);
       return MHD_YES;
     }
 #if OSX
@@ -446,6 +616,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
+      MHD_ip_limit_del (daemon, addr, addrlen);
       return MHD_NO;
     }
   memset (connection, 0, sizeof (struct MHD_Connection));
@@ -458,6 +629,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       SHUTDOWN (s, SHUT_RDWR);
       CLOSE (s);
+      MHD_ip_limit_del (daemon, addr, addrlen);
       free (connection);
       return MHD_NO;
     }
@@ -521,6 +693,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
           SHUTDOWN (s, SHUT_RDWR);
           CLOSE (s);
+          MHD_ip_limit_del (daemon, addr, addrlen);
           free (connection->addr);
           free (connection);
           return MHD_NO;
@@ -567,6 +740,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           if (pos->tls_session != NULL)
             MHD__gnutls_deinit (pos->tls_session);
 #endif
+          MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
           free (pos->addr);
           free (pos);
           daemon->max_connections++;
@@ -1020,6 +1194,17 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 
+  if (0 != pthread_mutex_init (&retVal->per_ip_connection_mutex, NULL))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (retVal,
+               "MHD failed to initialize IP connection limit mutex\n");
+#endif
+      CLOSE (socket_fd);
+      free (retVal);
+      return NULL;
+    }
+
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
   if ((0 != (options & MHD_USE_SSL)) && (0 != MHD_TLS_init (retVal)))
@@ -1028,6 +1213,7 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal, "Failed to initialize TLS support\n");
 #endif
       CLOSE (socket_fd);
+      pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
       return NULL;
     }
@@ -1041,6 +1227,7 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
                 "Failed to create listen thread: %s\n", STRERROR (errno));
 #endif
+      pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
       CLOSE (socket_fd);
       return NULL;
@@ -1111,6 +1298,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       pthread_mutex_unlock (&MHD_gnutls_init_mutex);
     }
 #endif
+  pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
   free (daemon);
 }
 

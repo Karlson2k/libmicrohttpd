@@ -719,6 +719,16 @@ struct MHD_Daemon
   unsigned int per_ip_connection_limit;
 
   /**
+   * Table storing number of connections per IP
+   */
+  void *per_ip_connection_count;
+
+  /**
+   * Mutex for per-IP connection counts
+   */
+  pthread_mutex_t per_ip_connection_mutex;
+
+  /**
    * Daemon's options.
    */
   enum MHD_OPTION options;
