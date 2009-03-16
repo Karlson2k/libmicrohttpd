@@ -1,6 +1,7 @@
 Primary developers:
 Christian Grothoff <christian@grothoff.org>
 Sagie Amir (TLS/SSL support using GNUtls)
+Richard Alimi <rich@velvetsea.net> (performance)
 
 Code contributions also came from:
 Chris GauthierDickey <chrisg@cs.du.edu>

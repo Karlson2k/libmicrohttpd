@@ -658,6 +658,11 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
       /* single-threaded, go over everything */
       if (MHD_NO == MHD_get_fdset (daemon, &rs, &ws, &es, &max))
         return MHD_NO;
+
+      /* If we're at the connection limit, no need to
+         accept new connections. */
+      if ( (daemon->max_connections == 0) && (daemon->socket_fd != -1) )
+        FD_CLR(daemon->socket_fd, &rs);
     }
   else
     {
@@ -1044,7 +1049,29 @@ MHD_start_daemon_va (unsigned int options,
 }
 
 /**
- * Shutdown an http daemon.
+ * Close all connections for the daemon
+ */
+static void
+MHD_close_connections (struct MHD_Daemon *daemon)
+{
+  while (daemon->connections != NULL)
+    {
+      if (-1 != daemon->connections->socket_fd)
+        {
+#if DEBUG_CLOSE
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "MHD shutdown, closing active connections\n");
+#endif
+#endif
+          MHD_connection_close (daemon->connections,
+                                MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+        }
+      MHD_cleanup_connections (daemon);
+    }
+}
+
+/**
+ * Shutdown an http daemon
  */
 void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
@@ -1069,20 +1096,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       pthread_kill (daemon->pid, SIGALRM);
       pthread_join (daemon->pid, &unused);
     }
-  while (daemon->connections != NULL)
-    {
-      if (-1 != daemon->connections->socket_fd)
-        {
-#if DEBUG_CLOSE
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "MHD shutdown, closing active connections\n");
-#endif
-#endif
-          MHD_connection_close (daemon->connections,
-                                MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
-        }
-      MHD_cleanup_connections (daemon);
-    }
+  MHD_close_connections (daemon);
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
