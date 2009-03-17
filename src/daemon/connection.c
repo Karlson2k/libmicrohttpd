@@ -472,7 +472,7 @@ add_extra_headers (struct MHD_Connection *connection)
     {
       SPRINTF (buf,
                "%llu", 
-	       connection->response->total_size);
+	       (unsigned long long)connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
     }

@@ -237,7 +237,7 @@ testMultithreadedPut ()
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     {
-      fprintf (stderr, "Got invalid response `%.*s'\n", cbc.pos, cbc.buf);
+      fprintf (stderr, "Got invalid response `%.*s'\n", (int)cbc.pos, cbc.buf);
       return 64;
     }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
@@ -297,7 +297,7 @@ testMultithreadedPoolPut ()
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     {
-      fprintf (stderr, "Got invalid response `%.*s'\n", cbc.pos, cbc.buf);
+      fprintf (stderr, "Got invalid response `%.*s'\n", (int)cbc.pos, cbc.buf);
       return 64;
     }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
@@ -431,7 +431,7 @@ testExternalPut ()
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     {
-      fprintf (stderr, "Got invalid response `%.*s'\n", cbc.pos, cbc.buf);
+      fprintf (stderr, "Got invalid response `%.*s'\n", (int)cbc.pos, cbc.buf);
       return 8192;
     }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
