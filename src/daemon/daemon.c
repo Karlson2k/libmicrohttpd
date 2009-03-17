@@ -203,6 +203,7 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
   /* If we got an existing node back, free the one we created */
   if (node != key)
     free(key);
+  key = (struct MHD_IPCount*)node;
 
   /* Test if there is room for another connection; if so,
    * increment count */
