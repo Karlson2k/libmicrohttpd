@@ -189,7 +189,7 @@ gen_test_file_url (char *url, int port)
   if (NULL == (doc_path = malloc (doc_path_len)))
     {
       fprintf (stderr, MHD_E_MEM);
-      ret = -1;
+      return -1;
     }
   if (getcwd (doc_path, doc_path_len) == NULL)
     {
@@ -220,9 +220,14 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
   /* used to memcmp local copy & deamon supplied copy */
   unsigned char *mem_test_file_local;
 
-  stat (TEST_FILE_NAME, &statb);
+  if (0 != stat (TEST_FILE_NAME, &statb))
+    {
+      fprintf (stderr, "Failed to stat `%s': %s\n",
+	       TEST_FILE_NAME, strerror(errno));
+      return -1;
+    }
   len = statb.st_size;
-
+  cbc.buf = NULL;
   if (NULL == (mem_test_file_local = malloc (len)))
     {
       fprintf (stderr, MHD_E_MEM);
@@ -269,7 +274,8 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
 
 cleanup:
   free (mem_test_file_local);
-  free (cbc.buf);
+  if (cbc.buf != NULL)
+    free (cbc.buf);
   return ret;
 }
 
@@ -341,7 +347,7 @@ setup_session (MHD_gtls_session_t * session,
                MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
 {
   int ret;
-  const char **err_pos;
+  const char *err_pos;
 
   MHD__gnutls_certificate_allocate_credentials (xcred);
 
@@ -353,7 +359,7 @@ setup_session (MHD_gtls_session_t * session,
                                             GNUTLS_X509_FMT_PEM);
 
   MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", err_pos);
+  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", &err_pos);
   if (ret < 0)
     {
       return -1;

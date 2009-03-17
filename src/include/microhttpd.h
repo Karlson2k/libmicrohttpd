@@ -439,7 +439,7 @@ enum MHD_OPTION
    * (MHD_start_daemon returns NULL for an unsupported thread
    * model).
    */
-  MHD_OPTION_THREAD_POOL_SIZE = 14,
+  MHD_OPTION_THREAD_POOL_SIZE = 14
 };
 
 /**

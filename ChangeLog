@@ -1,5 +1,8 @@
+Tue Mar 17 01:19:50 MDT 2009
+	 Added support for thread-pools. -CG/RA
+
 Mon Mar  2 23:44:08 MST 2009
-	 Fixd problem with 64-bit upload and download sizes and
+	 Fixed problem with 64-bit upload and download sizes and
 	 "-1" being used to indicate "unknown" by introducing
 	 new 64-bit constant "MHD_SIZE_UNKNOWN". -CG/DC
 

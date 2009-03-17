@@ -137,8 +137,8 @@ testMultithreadedGet ()
           curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
           errornum = curl_easy_perform (c);
-          if (CURLE_OK != errornum && i < 2
-              || CURLE_OK == errornum && i == 2)
+          if ( ( (CURLE_OK != errornum) && (i <  2) ) ||
+	       ( (CURLE_OK == errornum) && (i == 2) ) )
             {
               int j;
 
@@ -235,8 +235,8 @@ testMultithreadedPoolGet ()
           curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
           errornum = curl_easy_perform (c);
-          if (CURLE_OK != errornum && i < 2
-              || CURLE_OK == errornum && i == 2)
+          if ( ( (CURLE_OK != errornum) && (i <  2) ) ||
+	       ( (CURLE_OK == errornum) && (i == 2) ) )
             {
               int j;
 

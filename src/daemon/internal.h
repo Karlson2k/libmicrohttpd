@@ -779,7 +779,7 @@ struct MHD_Daemon
   /**
    * Worker daemons (one per thread)
    */
-  struct MHD_Daemon **worker_pool;
+  struct MHD_Daemon *worker_pool;
 
   /**
    * Number of worker daemons

@@ -1138,6 +1138,7 @@ MHD_start_daemon_va (unsigned int options,
       FPRINTF (stderr,
                "MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n");
 #endif
+      free (retVal);
       return NULL;
     }
 
@@ -1252,7 +1253,7 @@ MHD_start_daemon_va (unsigned int options,
   if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
        ((0 != (options & MHD_USE_SELECT_INTERNALLY))
         && (0 == retVal->worker_pool_size)))
-      && (0 !=
+        && (0 !=
           pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
     {
 #if HAVE_MESSAGES
@@ -1274,28 +1275,23 @@ MHD_start_daemon_va (unsigned int options,
       unsigned int leftover_conns = retVal->max_connections
                                     % retVal->worker_pool_size;
 
+      i = 0; /* we need this in case malloc fails */
       /* Allocate memory for pooled objects */
-      retVal->worker_pool = malloc (sizeof (*retVal->worker_pool)
+      retVal->worker_pool = malloc (sizeof (struct MHD_Daemon)
                                     * retVal->worker_pool_size);
+      if (NULL == retVal->worker_pool)
+	goto thread_failed;
 
       /* Start the workers in the pool */
       for (i = 0; i < retVal->worker_pool_size; ++i)
         {
           /* Create copy of the Daemon object for each worker */
-          struct MHD_Daemon *d = (struct MHD_Daemon*) malloc (sizeof (*d));
-          if (!d)
-            {
-#if HAVE_MESSAGES
-              MHD_DLOG (retVal,
-                        "Failed to copy daemon object: %d\n", STRERROR (errno));
-#endif
-              goto thread_failed;
-            }
-          memcpy (d, retVal, sizeof (*d));
+          struct MHD_Daemon *d = &retVal->worker_pool[i];
+          memcpy (d, retVal, sizeof (struct MHD_Daemon));
 
           /* Adjust pooling params for worker daemons; note that memcpy()
-           * has already copied MHD_USE_SELECT_INTERNALLY thread model into
-           * the worker threads. */
+	     has already copied MHD_USE_SELECT_INTERNALLY thread model into
+	     the worker threads. */
           d->master = retVal;
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
@@ -1316,36 +1312,34 @@ MHD_start_daemon_va (unsigned int options,
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
-              free (d);
               goto thread_failed;
             }
-
-          retVal->worker_pool[i] = d;
-          continue;
-
-thread_failed:
-          /* If no worker threads created, then shut down normally. Calling
-           * MHD_stop_daemon (as we do below) doesn't work here since it
-           * assumes a 0-sized thread pool means we had been in the default
-           * MHD_USE_SELECT_INTERNALLY mode. */
-          if (i == 0)
-            {
-              CLOSE (socket_fd);
-              pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
-              free (retVal);
-              return NULL;
-            }
-
-          /* Shutdown worker threads we've already created. Pretend
-           * as though we had fully initialized our daemon, but
-           * with a smaller number of threads than had been
-           * requested. */
-          retVal->worker_pool_size = i - 1;
-          MHD_stop_daemon (retVal);
-          return NULL;
-        }
+	}
     }
   return retVal;
+
+thread_failed:
+  /* If no worker threads created, then shut down normally. Calling
+     MHD_stop_daemon (as we do below) doesn't work here since it
+     assumes a 0-sized thread pool means we had been in the default
+     MHD_USE_SELECT_INTERNALLY mode. */
+  if (i == 0)
+    {
+      CLOSE (socket_fd);
+      pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
+      if (NULL != retVal->worker_pool)
+	free (retVal->worker_pool);
+      free (retVal);
+      return NULL;
+    }
+  
+  /* Shutdown worker threads we've already created. Pretend
+     as though we had fully initialized our daemon, but
+     with a smaller number of threads than had been
+     requested. */
+  retVal->worker_pool_size = i - 1;
+  MHD_stop_daemon (retVal);
+  return NULL;
 }
 
 /**
@@ -1389,8 +1383,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   /* Prepare workers for shutdown */
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
-      daemon->worker_pool[i]->shutdown = MHD_YES;
-      daemon->worker_pool[i]->socket_fd = -1;
+      daemon->worker_pool[i].shutdown = MHD_YES;
+      daemon->worker_pool[i].socket_fd = -1;
     }
 
 #if DEBUG_CLOSE
@@ -1402,12 +1396,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   /* Signal workers to stop and clean them up */
   for (i = 0; i < daemon->worker_pool_size; ++i)
-    pthread_kill (daemon->worker_pool[i]->pid, SIGALRM);
+    pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
-      pthread_join (daemon->worker_pool[i]->pid, &unused);
-      MHD_close_connections (daemon->worker_pool[i]);
-      free (daemon->worker_pool[i]);
+      pthread_join (daemon->worker_pool[i].pid, &unused);
+      MHD_close_connections (&daemon->worker_pool[i]);
     }
   free (daemon->worker_pool);
 

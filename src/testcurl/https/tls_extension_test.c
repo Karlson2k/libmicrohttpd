@@ -69,6 +69,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
   unsigned char comp[] = { 0x01, 0x00 };
   struct CBC cbc;
 
+  sd = -1;
   memset (&cbc, 0, sizeof (struct CBC));
   if (NULL == (cbc.buf = malloc (sizeof (char) * 256)))
     {
@@ -79,6 +80,12 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
   cbc.size = 256;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
+  if (sd == -1)
+    {
+      fprintf(stderr, "Failed to create socket: %s\n", strerror(errno));
+      free (cbc.buf);
+      return -1;
+    }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (DEAMON_TEST_PORT);
@@ -186,7 +193,8 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
     }
 
 cleanup:
-  close (sd);
+  if (sd != -1)
+    close (sd);
   MHD_gnutls_free (cbc.buf);
   return ret;
 }

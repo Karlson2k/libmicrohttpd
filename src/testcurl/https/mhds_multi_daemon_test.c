@@ -72,6 +72,7 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
     {
       fprintf (stderr, "Error: failed to read test file. %s\n",
                strerror (errno));
+      free (mem_test_file_local);
       return -1;
     }
   cbc.size = len;
@@ -79,6 +80,8 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
 
   if (gen_test_file_url (url, port))
     {
+      free (mem_test_file_local);
+      free (cbc.buf);
       return -1;
     }
 
@@ -112,6 +115,8 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
       fprintf (stderr, "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      free (mem_test_file_local);
+      free (cbc.buf);
       return errornum;
     }
 
