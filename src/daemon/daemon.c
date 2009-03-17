@@ -575,7 +575,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if ((s < 0) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
+      /* This could be a common occurance with multiple worker threads */
+      if ((EAGAIN != errno) && (EWOULDBLOCK != errno))
+        MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
 #endif
       if (s != -1)
         {
@@ -1267,6 +1269,8 @@ MHD_start_daemon_va (unsigned int options,
     }
   else if (retVal->worker_pool_size > 0)
     {
+      int sk_flags;
+
       /* Coarse-grained count of connections per thread (note error
        * due to integer division). Also keep track of how many
        * connections are leftover after an equal split. */
@@ -1275,7 +1279,17 @@ MHD_start_daemon_va (unsigned int options,
       unsigned int leftover_conns = retVal->max_connections
                                     % retVal->worker_pool_size;
 
-      i = 0; /* we need this in case malloc fails */
+      i = 0; /* we need this in case fcntl or malloc fails */
+
+      /* Accept must be non-blocking. Multiple children may wake up
+       * to handle a new connection, but only one will win the race.
+       * The others must immediately return. */
+      sk_flags = fcntl (socket_fd, F_GETFL);
+      if (sk_flags < 0)
+        goto thread_failed;
+      if (fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK) < 0)
+        goto thread_failed;
+
       /* Allocate memory for pooled objects */
       retVal->worker_pool = malloc (sizeof (struct MHD_Daemon)
                                     * retVal->worker_pool_size);
