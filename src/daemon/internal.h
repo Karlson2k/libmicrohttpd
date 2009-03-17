@@ -775,6 +775,16 @@ struct MHD_Daemon
    * Pointer to master daemon (NULL if this is the master)
    */
   struct MHD_Daemon *master;
+
+  /**
+   * Worker daemons (one per thread)
+   */
+  struct MHD_Daemon **worker_pool;
+
+  /**
+   * Number of worker daemons
+   */
+  unsigned int worker_pool_size;
 };
 
 

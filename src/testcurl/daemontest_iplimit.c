@@ -90,7 +90,7 @@ ahc_echo (void *cls,
 }
 
 static int
-testMultithreadedPoolGet ()
+testMultithreadedGet ()
 {
   struct MHD_Daemon *d;
   char buf[2048];
@@ -186,6 +186,104 @@ testMultithreadedPoolGet ()
   return 0;
 }
 
+static int
+testMultithreadedPoolGet ()
+{
+  struct MHD_Daemon *d;
+  char buf[2048];
+  int k;
+
+  /* Test only valid for HTTP/1.1 (uses persistent connections) */
+  if (!oneone)
+    return 0;
+
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+                        1081, NULL, NULL, &ahc_echo, "GET",
+                        MHD_OPTION_PER_IP_CONNECTION_LIMIT, 2,
+                        MHD_OPTION_THREAD_POOL_SIZE, 4,
+                        MHD_OPTION_END);
+  if (d == NULL)
+    return 16;
+
+  for (k = 0; k < 3; ++k)
+    {
+      struct CBC cbc[3];
+      CURL *cenv[3];
+      int i;
+
+      for (i = 0; i < 3; ++i)
+        {
+          CURL *c;
+          CURLcode errornum;
+ 
+          cenv[i] = c = curl_easy_init ();
+          cbc[i].buf = buf;
+          cbc[i].size = 2048;
+          cbc[i].pos = 0;
+
+          curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+          curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+          curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc[i]);
+          curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+          curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+          curl_easy_setopt (c, CURLOPT_FORBID_REUSE, 0L);
+          curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+          curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+          // NOTE: use of CONNECTTIMEOUT without also
+          //   setting NOSIGNAL results in really weird
+          //   crashes on my system!
+          curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+
+          errornum = curl_easy_perform (c);
+          if (CURLE_OK != errornum && i < 2
+              || CURLE_OK == errornum && i == 2)
+            {
+              int j;
+
+              /* First 2 should succeed */
+              if (i < 2)
+                fprintf (stderr,
+                         "curl_easy_perform failed: `%s'\n",
+                         curl_easy_strerror (errornum));
+
+              /* Last request should have failed */
+              else
+                fprintf (stderr,
+                         "No error on IP address over limit\n");
+
+              for (j = 0; j < i; ++j)
+                curl_easy_cleanup (cenv[j]);
+              MHD_stop_daemon (d);
+              return 32;
+            }
+        }
+
+      /* Cleanup the environments */
+      for (i = 0; i < 3; ++i)
+        curl_easy_cleanup (cenv[i]);
+
+      sleep(2);
+
+      for (i = 0; i < 2; ++i)
+        {
+          if (cbc[i].pos != strlen ("/hello_world"))
+            {
+              MHD_stop_daemon (d);
+              return 64;
+            }
+          if (0 != strncmp ("/hello_world", cbc[i].buf, strlen ("/hello_world")))
+            {
+              MHD_stop_daemon (d);
+              return 128;
+            }
+        }
+
+
+    }
+  MHD_stop_daemon (d);
+  return 0;
+}
+
 int
 main (int argc, char *const *argv)
 {
@@ -194,6 +292,7 @@ main (int argc, char *const *argv)
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
+  errorCount += testMultithreadedGet ();
   errorCount += testMultithreadedPoolGet ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

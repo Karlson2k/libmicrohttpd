@@ -223,6 +223,64 @@ testMultithreadedPut ()
   return 0;
 }
 
+static int
+testMultithreadedPoolPut ()
+{
+  struct MHD_Daemon *d;
+  CURL *c;
+  char buf[2048];
+  struct CBC cbc;
+  unsigned int pos = 0;
+  int done_flag = 0;
+  CURLcode errornum;
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+                        1081,
+                        NULL, NULL, &ahc_echo, &done_flag,
+                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+  if (d == NULL)
+    return 16;
+  c = curl_easy_init ();
+  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
+  curl_easy_setopt (c, CURLOPT_READDATA, &pos);
+  curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
+  curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  if (oneone)
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+    {
+      fprintf (stderr,
+               "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      return 32;
+    }
+  curl_easy_cleanup (c);
+  MHD_stop_daemon (d);
+  if (cbc.pos != strlen ("/hello_world"))
+    return 64;
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
+    return 128;
+
+  return 0;
+}
+
 
 static int
 testExternalPut ()
@@ -365,6 +423,7 @@ main (int argc, char *const *argv)
     return 2;
   errorCount += testInternalPut ();
   errorCount += testMultithreadedPut ();
+  errorCount += testMultithreadedPoolPut ();
   errorCount += testExternalPut ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

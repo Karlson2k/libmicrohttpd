@@ -225,6 +225,70 @@ testMultithreadedPost ()
   return 0;
 }
 
+static int
+testMultithreadedPoolPost ()
+{
+  struct MHD_Daemon *d;
+  CURL *c;
+  char buf[2048];
+  struct CBC cbc;
+  CURLcode errornum;
+  int i;
+  char url[1024];
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+                        1081, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+  if (d == NULL)
+    return 16;
+  for (i = 0; i < LOOPCOUNT; i++)
+    {
+      if (99 == i % 100)
+        fprintf (stderr, ".");
+      c = curl_easy_init ();
+      cbc.pos = 0;
+      buf[0] = '\0';
+      sprintf (url, "http://localhost:1081/hw%d", i);
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
+      curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, strlen (POST_DATA));
+      curl_easy_setopt (c, CURLOPT_POST, 1L);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+      // NOTE: use of CONNECTTIMEOUT without also
+      //   setting NOSIGNAL results in really weird
+      //   crashes on my system!
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      if (CURLE_OK != (errornum = curl_easy_perform (c)))
+        {
+          fprintf (stderr,
+                   "curl_easy_perform failed: `%s'\n",
+                   curl_easy_strerror (errornum));
+          curl_easy_cleanup (c);
+          MHD_stop_daemon (d);
+          return 32;
+        }
+      curl_easy_cleanup (c);
+      if ((buf[0] != 'O') || (buf[1] != 'K'))
+        {
+          MHD_stop_daemon (d);
+          return 64;
+        }
+    }
+  MHD_stop_daemon (d);
+  if (LOOPCOUNT >= 99)
+    fprintf (stderr, "\n");
+  return 0;
+}
 
 static int
 testExternalPost ()
@@ -379,6 +443,7 @@ main (int argc, char *const *argv)
     return 2;
   errorCount += testInternalPost ();
   errorCount += testMultithreadedPost ();
+  errorCount += testMultithreadedPoolPost ();
   errorCount += testExternalPost ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
