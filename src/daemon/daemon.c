@@ -65,6 +65,18 @@
 #endif
 
 /**
+ * Trace up to and return master daemon. If the supplied daemon
+ * is a master, then return the daemon itself.
+ */
+static struct MHD_Daemon*
+MHD_get_master (struct MHD_Daemon *daemon)
+{
+  while (NULL != daemon->master)
+    daemon = daemon->master;
+  return daemon;
+}
+
+/**
  * Maintain connection count for single address.
  */
 struct MHD_IPCount
@@ -169,6 +181,8 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
   void *node;
   int result;
 
+  daemon = MHD_get_master (daemon);
+
   /* Ignore if no connection limit assigned */
   if (daemon->per_ip_connection_limit == 0)
     return MHD_YES;
@@ -226,6 +240,8 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
   struct MHD_IPCount search_key;
   struct MHD_IPCount *found_key;
   void *node;
+
+  daemon = MHD_get_master (daemon);
 
   /* Ignore if no connection limit assigned */
   if (daemon->per_ip_connection_limit == 0)

@@ -770,6 +770,11 @@ struct MHD_Daemon
    */
   const char *https_mem_cert;
 #endif
+
+  /**
+   * Pointer to master daemon (NULL if this is the master)
+   */
+  struct MHD_Daemon *master;
 };
 
 
