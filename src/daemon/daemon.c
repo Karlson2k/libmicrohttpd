@@ -533,7 +533,6 @@ send_param_adapter (struct MHD_Connection *connection,
 static int
 MHD_accept_connection (struct MHD_Daemon *daemon)
 {
-  struct MHD_Connection *pos;
   struct MHD_Connection *connection;
 #if HAVE_INET6
   struct sockaddr_in6 addrstorage;
@@ -575,7 +574,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
 #endif
   if ((daemon->max_connections == 0)
-      || MHD_ip_limit_add (daemon, addr, addrlen) == MHD_NO))
+      || (MHD_ip_limit_add (daemon, addr, addrlen) == MHD_NO))
     {
       /* above connection limit - reject */
 #if HAVE_MESSAGES
