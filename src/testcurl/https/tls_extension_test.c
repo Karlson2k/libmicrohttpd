@@ -243,6 +243,11 @@ main (int argc, char *const *argv)
     }
 
   i = 0;
+  setup_session (&session, &key, &cert, &xcred);
+  errorCount += test_hello_extension (session, ext_arr[i], 1, 16);
+  teardown_session (session, &key, &cert, xcred);
+#if 0
+  i = 0;
   while (ext_arr[i] != -1)
     {
       setup_session (&session, &key, &cert, &xcred);
@@ -259,6 +264,7 @@ main (int argc, char *const *argv)
       teardown_session (session, &key, &cert, xcred);
       i++;
     }
+#endif
 
   print_test_result (errorCount, argv[0]);
 

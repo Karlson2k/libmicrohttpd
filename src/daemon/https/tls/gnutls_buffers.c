@@ -222,7 +222,6 @@ MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
   size_t left;
   ssize_t i = 0;
   char *ptr = iptr;
-  unsigned j, x, sum = 0;
   MHD_gnutls_transport_ptr_t fd = session->internals.transport_recv_ptr;
 
   session->internals.direction = 0;
@@ -259,31 +258,18 @@ MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
 #endif
         }
       else
-        i = session->internals.MHD__gnutls_pull_func (fd,
-                                                      &ptr[sizeOfPtr - left],
-                                                      left);
-
+	i = session->internals.MHD__gnutls_pull_func (fd,
+						      &ptr[sizeOfPtr - left],
+						      left);
       if (i < 0)
         {
           int err = session->internals.errnum ? session->internals.errnum
             : errno;
-
-          MHD__gnutls_read_log
-            ("READ: %d returned from %d, errno=%d gerrno=%d\n", i, fd, errno,
-             session->internals.errnum);
-
-          if (err == EAGAIN || err == EINTR)
+          if ( (err == EAGAIN) || (err == EINTR) )
             {
               if (sizeOfPtr - left > 0)
-                {
-
-                  MHD__gnutls_read_log ("READ: returning %d bytes from %d\n",
-                                        sizeOfPtr - left, fd);
-
-                  goto finish;
-                }
-              MHD_gnutls_assert ();
-
+		goto finish;       
+              MHD_gnutls_assert ();         
               if (err == EAGAIN)
                 return GNUTLS_E_AGAIN;
               return GNUTLS_E_INTERRUPTED;
@@ -296,46 +282,13 @@ MHD__gnutls_read (MHD_gtls_session_t session, void *iptr,
         }
       else
         {
-
-          MHD__gnutls_read_log ("READ: Got %d bytes from %d\n", i, fd);
-
           if (i == 0)
             break;              /* EOF */
         }
-
       left -= i;
-
     }
 
 finish:
-
-  if (MHD__gnutls_log_level >= 7)
-    {
-      char line[128];
-      char tmp[16];
-
-      MHD__gnutls_read_log ("READ: read %d bytes from %d\n",
-                            (sizeOfPtr - left), fd);
-
-      for (x = 0; x < ((sizeOfPtr - left) / 16) + 1; x++)
-        {
-          line[0] = 0;
-
-          sprintf (tmp, "%.4x - ", x);
-          MHD_gtls_str_cat (line, sizeof (line), tmp);
-
-          for (j = 0; j < 16; j++)
-            {
-              if (sum < (sizeOfPtr - left))
-                {
-                  sprintf (tmp, "%.2x ", ((unsigned char *) ptr)[sum++]);
-                  MHD_gtls_str_cat (line, sizeof (line), tmp);
-                }
-            }
-          MHD__gnutls_read_log ("%s\n", line);
-        }
-    }
-
   return (sizeOfPtr - left);
 }
 
@@ -368,8 +321,9 @@ MHD_gtls_io_clear_peeked_data (MHD_gtls_session_t session)
       if (ret > 0)
         sum += ret;
     }
-  while (ret == GNUTLS_E_INTERRUPTED || ret == GNUTLS_E_AGAIN || sum
-         < RCVLOWAT);
+  while ( (ret == GNUTLS_E_INTERRUPTED) || 
+	  (ret == GNUTLS_E_AGAIN) || 
+	  (sum < RCVLOWAT) );
 
   MHD_gnutls_afree (peekdata);
 
@@ -721,15 +675,13 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
 #endif
         }
       else
-        i =
-          session->internals.MHD__gnutls_push_func (fd, &ptr[n - left], left);
-
+	i = session->internals.MHD__gnutls_push_func (fd, &ptr[n - left], left);
       if (i == -1)
         {
           int err = session->internals.errnum ? session->internals.errnum
             : errno;
 
-          if (err == EAGAIN || err == EINTR)
+          if ( (err == EAGAIN) || (err == EINTR) )
             {
               session->internals.record_send_buffer_prev_size += n - left;
 
@@ -742,11 +694,6 @@ MHD_gtls_io_write_buffered (MHD_gtls_session_t session,
                   MHD_gnutls_assert ();
                   return retval;
                 }
-
-              MHD__gnutls_write_log
-                ("WRITE: Interrupted. Stored %d bytes to buffer. Already sent %d bytes.\n",
-                 left, n - left);
-
               if (err == EAGAIN)
                 return GNUTLS_E_AGAIN;
               return GNUTLS_E_INTERRUPTED;

@@ -1,3 +1,9 @@
+Wed Mar 18 17:46:58 MDT 2009
+	 Always RECV/SEND with MSG_DONTWAIT to (possibly) address
+	 strange deadlock reported by Erik on the mailinglist ---
+	 and/or issues with blocking read after select on GNU/Linux
+	 (see select man page under bugs). -CG
+
 Tue Mar 17 01:19:50 MDT 2009
 	 Added support for thread-pools. -CG/RA
 

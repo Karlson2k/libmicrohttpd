@@ -522,7 +522,10 @@ recv_param_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
   if (connection->socket_fd == -1)
     return -1;
-  return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  if (0 != (connection->daemon->options & MHD_USE_SSL))
+    return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  else
+    return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
 /**
@@ -539,7 +542,10 @@ send_param_adapter (struct MHD_Connection *connection,
 {
   if (connection->socket_fd == -1)
     return -1;
-  return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  if (0 != (connection->daemon->options & MHD_USE_SSL))
+    return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  else
+    return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
 /**
@@ -990,6 +996,7 @@ MHD_start_daemon (unsigned int options,
   va_end (ap);
   return ret;
 }
+
 
 /**
  * Start a webserver on the given port.
