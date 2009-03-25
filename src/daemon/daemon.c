@@ -1276,7 +1276,11 @@ MHD_start_daemon_va (unsigned int options,
     }
   else if (retVal->worker_pool_size > 0)
     {
+#ifndef MINGW
       int sk_flags;
+#else
+      unsigned long sk_flags;
+#endif
 
       /* Coarse-grained count of connections per thread (note error
        * due to integer division). Also keep track of how many
@@ -1291,11 +1295,22 @@ MHD_start_daemon_va (unsigned int options,
       /* Accept must be non-blocking. Multiple children may wake up
        * to handle a new connection, but only one will win the race.
        * The others must immediately return. */
+#ifndef MINGW
       sk_flags = fcntl (socket_fd, F_GETFL);
       if (sk_flags < 0)
         goto thread_failed;
       if (fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK) < 0)
         goto thread_failed;
+#else
+      sk_flags = 1;
+#if HAVE_PLIBC_FD
+      if (ioctlsocket (plibc_fd_get_handle (socket_fd), FIONBIO, &sk_flags) ==
+          SOCKET_ERROR)
+#else
+      if (ioctlsocket (socket_fd, FIONBIO, &sk_flags) == SOCKET_ERROR)
+#endif // PLIBC_FD
+        goto thread_failed;
+#endif // MINGW
 
       /* Allocate memory for pooled objects */
       retVal->worker_pool = malloc (sizeof (struct MHD_Daemon)
