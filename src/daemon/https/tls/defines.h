@@ -25,7 +25,7 @@
 #ifndef DEFINES_H
 # define DEFINES_H
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 # include "MHD_config.h"
 #endif
 
@@ -45,7 +45,9 @@ typedef int ssize_t;
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifndef MINGW
 #include <sys/socket.h>
+#endif
 #include <time.h>
 
 /* TODO check if these should go into config.h */
