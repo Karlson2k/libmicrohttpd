@@ -27,6 +27,9 @@
 
 #include "MHD_config.h"
 #include <libtasn1.h>
+#undef HAVE_CONFIG_H
+#include <pthread.h>
+#define HAVE_CONFIG_H 1
 
 /* this mutex is used to synchronize threads attempting to call MHD__gnutls_global_init / MHD__gnutls_global_deinit */
 extern pthread_mutex_t MHD_gnutls_init_mutex;
