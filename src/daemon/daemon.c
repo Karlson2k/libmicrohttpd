@@ -1423,13 +1423,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       daemon->worker_pool[i].socket_fd = -1;
     }
 
-#if DEBUG_CLOSE
-#if HAVE_MESSAGES
-  MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
-#endif
-#endif
-  CLOSE (fd);
-
   /* Signal workers to stop and clean them up */
   for (i = 0; i < daemon->worker_pool_size; ++i)
     pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
@@ -1444,10 +1437,26 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
         && (0 == daemon->worker_pool_size)))
     {
+#if DEBUG_CLOSE
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
+#endif
+#endif
+      CLOSE (fd);
       pthread_kill (daemon->pid, SIGALRM);
       pthread_join (daemon->pid, &unused);
     }
   MHD_close_connections (daemon);
+
+  if (0 < daemon->worker_pool_size)
+    {
+#if DEBUG_CLOSE
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
+#endif
+#endif
+      CLOSE (fd);
+    }
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
