@@ -132,7 +132,7 @@ test_urlencoding ()
   size = strlen (URL_DATA);
   while (i < size)
     {
-      delta = 1 + random () % (size - i);
+      delta = 1 + RANDOM () % (size - i);
       MHD_post_process (pp, &URL_DATA[i], delta);
       i += delta;
     }
@@ -167,7 +167,7 @@ test_multipart ()
   size = strlen (FORM_DATA);
   while (i < size)
     {
-      delta = 1 + random () % (size - i);
+      delta = 1 + RANDOM () % (size - i);
       MHD_post_process (pp, &FORM_DATA[i], delta);
       i += delta;
     }
@@ -202,7 +202,7 @@ test_nested_multipart ()
   size = strlen (FORM_NESTED_DATA);
   while (i < size)
     {
-      delta = 1 + random () % (size - i);
+      delta = 1 + RANDOM () % (size - i);
       MHD_post_process (pp, &FORM_NESTED_DATA[i], delta);
       i += delta;
     }
