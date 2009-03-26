@@ -1,6 +1,6 @@
 /*
      This file is part of PlibC.
-     (C) 2005, 2006, 2007 Nils Durner (and other contributing authors)
+     (C) 2005, 2006, 2007, 2008, 2009 Nils Durner (and other contributing authors)
 
 	   This library is free software; you can redistribute it and/or
 	   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  * @brief PlibC header
  * @attention This file is usually not installed under Unix,
  *            so ship it with your application
- * @version $Revision: 1.39 $
+ * @version $Revision: 1.46 $
  */
 
 #ifndef _PLIBC_H_
@@ -40,6 +40,8 @@ extern "C"
 #ifdef Q_OS_WIN32
 #define WINDOWS 1
 #endif
+
+#define HAVE_PLIBC_FD 0
 
 #ifdef WINDOWS
 
@@ -69,9 +71,6 @@ extern "C"
 
 #define socklen_t int
 #define ssize_t int
-#ifndef HAVE_FTRUNCATE
-#define ftruncate chsize
-#endif
 #define off_t int
 #define int64_t long long
 #define int32_t long
@@ -97,6 +96,10 @@ extern "C"
 
 #ifndef WEXITSTATUS
 #define WEXITSTATUS(status) (((status) & 0xff00) >> 8)
+#endif
+
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
 #endif
 
 /* Thanks to the Cygwin project */
@@ -226,6 +229,9 @@ extern "C"
     long f_spare[6];            /* spare for later */
   };
 
+  extern const struct in6_addr in6addr_any;     /* :: */
+  extern const struct in6_addr in6addr_loopback;        /* ::1 */
+
 /* Taken from the Wine project <http://www.winehq.org>
     /wine/include/winternl.h */
   enum SYSTEM_INFORMATION_CLASS
@@ -306,12 +312,10 @@ extern "C"
 #define SHUT_RD SD_RECEIVE
 #define SHUT_RDWR SD_BOTH
 
-#define SetErrnoFromWinError(e) _SetErrnoFromWinError(e, __FILE__, __LINE__)
+#define SIGKILL 9
+#define SIGTERM 15
 
-/**
- * @brief index() - same as strchr()
- */
-#define index(s, c) strchr(s, c)
+#define SetErrnoFromWinError(e) _SetErrnoFromWinError(e, __FILE__, __LINE__)
 
   BOOL _plibc_CreateShortcut (const char *pszSrc, const char *pszDest);
   BOOL _plibc_DereferenceShortcut (char *pszShortcut);
@@ -325,6 +329,7 @@ extern "C"
   void __win_DiscardHandleBlockingMode (SOCKET s);
   int _win_isSocketValid (int s);
   int plibc_conv_to_win_path (const char *pszUnix, char *pszWindows);
+  unsigned plibc_get_handle_count ();
 
   typedef void (*TPanicProc) (int, char *);
   void plibc_set_panic_proc (TPanicProc proc);
@@ -339,12 +344,15 @@ extern "C"
   int truncate (const char *fname, int distance);
   int statfs (const char *path, struct statfs *buf);
   const char *hstrerror (int err);
+#undef gettimeofday
   void gettimeofday (struct timeval *tp, void *tzp);
   int mkstemp (char *tmplate);
   char *strptime (const char *buf, const char *format, struct tm *tm);
   char *ctime (const time_t * clock);
+#undef ctime_r
   char *ctime_r (const time_t * clock, char *buf);
   const char *inet_ntop (int af, const void *src, char *dst, size_t size);
+
   int plibc_init (char *pszOrg, char *pszApp);
   void plibc_shutdown ();
   int plibc_initialized ();
@@ -364,6 +372,8 @@ extern "C"
   int _win_close (int fd);
   int _win_creat (const char *path, mode_t mode);
   int _win_fstat (int handle, struct stat *buffer);
+  int _win_ftruncate (int fildes, off_t length);
+  int _win_kill (pid_t pid, int sig);
   int _win_pipe (int *phandles);
   int _win_rmdir (const char *path);
   int _win_access (const char *path, int mode);
@@ -425,8 +435,10 @@ extern "C"
   SOCKET _win_socket (int af, int type, int protocol);
   struct hostent *_win_gethostbyaddr (const char *addr, int len, int type);
   struct hostent *_win_gethostbyname (const char *name);
+  struct hostent *gethostbyname2 (const char *name, int af);
   char *_win_strerror (int errnum);
   int IsWinNT ();
+  char *index (const char *s, int c);
 
 #if !HAVE_STRNDUP
   char *strndup (const char *s, size_t n);
@@ -438,8 +450,138 @@ extern "C"
 #define strcasecmp(a, b) stricmp(a, b)
 #define strncasecmp(a, b, c) strnicmp(a, b, c)
 
+/* search.h */
+
+/* Prototype structure for a linked-list data structure.
+   This is the type used by the `insque' and `remque' functions.  */
+
+  struct qelem
+  {
+    struct qelem *q_forw;
+    struct qelem *q_back;
+    char q_data[1];
+  };
+
+
+/* Insert ELEM into a doubly-linked list, after PREV.  */
+  void insque (void *__elem, void *__prev);
+
+/* Unlink ELEM from the doubly-linked list that it is in.  */
+  void remque (void *__elem);
+
+
+/* For use with hsearch(3).  */
+#ifndef __COMPAR_FN_T
+# define __COMPAR_FN_T
+  typedef int (*__compar_fn_t) (__const void *, __const void *);
+
+  typedef __compar_fn_t comparison_fn_t;
 #endif
-/* WINDOWS */
+
+/* Action which shall be performed in the call the hsearch.  */
+  typedef enum
+  {
+    FIND,
+    ENTER
+  }
+  ACTION;
+
+  typedef struct entry
+  {
+    char *key;
+    void *data;
+  }
+  ENTRY;
+
+
+/* Family of hash table handling functions.  The functions also
+   have reentrant counterparts ending with _r.  The non-reentrant
+   functions all work on a signle internal hashing table.  */
+
+/* Search for entry matching ITEM.key in internal hash table.  If
+   ACTION is `FIND' return found entry or signal error by returning
+   NULL.  If ACTION is `ENTER' replace existing data (if any) with
+   ITEM.data.  */
+  ENTRY *hsearch (ENTRY __item, ACTION __action);
+
+/* Create a new hashing table which will at most contain NEL elements.  */
+  int hcreate (size_t __nel);
+
+/* Destroy current internal hashing table.  */
+  void hdestroy (void);
+
+/* Data type for reentrant functions.  */
+  struct hsearch_data
+  {
+    struct _ENTRY *table;
+    unsigned int size;
+    unsigned int filled;
+  };
+
+/* Reentrant versions which can handle multiple hashing tables at the
+   same time.  */
+  int hsearch_r (ENTRY __item, ACTION __action, ENTRY ** __retval,
+                 struct hsearch_data *__htab);
+  int hcreate_r (size_t __nel, struct hsearch_data *__htab);
+  void hdestroy_r (struct hsearch_data *__htab);
+
+
+/* The tsearch routines are very interesting. They make many
+   assumptions about the compiler.  It assumes that the first field
+   in node must be the "key" field, which points to the datum.
+   Everything depends on that.  */
+/* For tsearch */
+  typedef enum
+  {
+    preorder,
+    postorder,
+    endorder,
+    leaf
+  }
+  VISIT;
+
+/* Search for an entry matching the given KEY in the tree pointed to
+   by *ROOTP and insert a new element if not found.  */
+  void *tsearch (__const void *__key, void **__rootp, __compar_fn_t __compar);
+
+/* Search for an entry matching the given KEY in the tree pointed to
+   by *ROOTP.  If no matching entry is available return NULL.  */
+  void *tfind (__const void *__key, void *__const * __rootp,
+               __compar_fn_t __compar);
+
+/* Remove the element matching KEY from the tree pointed to by *ROOTP.  */
+  void *tdelete (__const void *__restrict __key,
+                 void **__restrict __rootp, __compar_fn_t __compar);
+
+#ifndef __ACTION_FN_T
+# define __ACTION_FN_T
+  typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
+                                 int __level);
+#endif
+
+/* Walk through the whole tree and call the ACTION callback for every node
+   or leaf.  */
+  void twalk (__const void *__root, __action_fn_t __action);
+
+/* Callback type for function to free a tree node.  If the keys are atomic
+   data this function should do nothing.  */
+  typedef void (*__free_fn_t) (void *__nodep);
+
+/* Destroy the whole tree, call FREEFCT for each node or leaf.  */
+  void tdestroy (void *__root, __free_fn_t __freefct);
+
+
+/* Perform linear search for KEY by comparing by COMPAR in an array
+   [BASE,BASE+NMEMB*SIZE).  */
+  void *lfind (__const void *__key, __const void *__base,
+               size_t * __nmemb, size_t __size, __compar_fn_t __compar);
+
+/* Perform linear search for KEY by comparing by COMPAR function in
+   array [BASE,BASE+NMEMB*SIZE) and insert entry if not found.  */
+  void *lsearch (__const void *__key, void *__base,
+                 size_t * __nmemb, size_t __size, __compar_fn_t __compar);
+
+#endif                          /* WINDOWS */
 
 #ifndef WINDOWS
 #define DIR_SEPARATOR '/'
@@ -454,14 +596,17 @@ extern "C"
 #define CREAT(p, m) creat(p, m)
 #undef FOPEN
 #define FOPEN(f, m) fopen(f, m)
+#define FTRUNCATE(f, l) ftruncate(f, l)
 #define OPENDIR(d) opendir(d)
-#define OPEN(f) open(f)
+#define OPEN open
 #define CHDIR(d) chdir(d)
 #define CLOSE(f) close(f)
+#define LSEEK(f, o, w) lseek(f, o, w)
 #define RMDIR(f) rmdir(f)
 #define ACCESS(p, m) access(p, m)
 #define CHMOD(f, p) chmod(f, p)
 #define FSTAT(h, b) fstat(h, b)
+#define PLIBC_KILL(p, s) kill(p, s)
 #define PIPE(h) pipe(h)
 #define REMOVE(p) remove(p)
 #define RENAME(o, n) rename(o, n)
@@ -524,10 +669,13 @@ extern "C"
 #endif
 #define CREAT(p, m) _win_creat(p, m)
 #define FOPEN(f, m) _win_fopen(f, m)
+#define FTRUNCATE(f, l) _win_ftruncate(f, l)
 #define OPENDIR(d) _win_opendir(d)
-#define OPEN(f) _win_open(f)
+#define OPEN _win_open
 #define CHDIR(d) _win_chdir(d)
 #define CLOSE(f) _win_close(f)
+#define PLIBC_KILL(p, s) _win_kill(p, s)
+#define LSEEK(f, o, w) _win_lseek(f, o, w)
 #define FSTAT(h, b) _win_fstat(h, b)
 #define RMDIR(f) _win_rmdir(f)
 #define ACCESS(p, m) _win_access(p, m)
@@ -590,7 +738,6 @@ extern "C"
 #endif
 
 
-#endif
-/* _PLIBC_H_ */
+#endif                          //_PLIBC_H_
 
 /* end of plibc.h */
