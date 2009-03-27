@@ -1423,6 +1423,20 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       daemon->worker_pool[i].socket_fd = -1;
     }
 
+#if OSX
+  /* without this, either (thread pool = 0) threads would get stuck or
+   * CLOSE would get stuck if attempted before (thread pool > 0) 
+   * threads have ended */
+  SHUTDOWN (fd, SHUT_RDWR);
+#else
+#if DEBUG_CLOSE
+#if HAVE_MESSAGES
+  MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
+#endif
+#endif
+  CLOSE (fd);
+#endif
+
   /* Signal workers to stop and clean them up */
   for (i = 0; i < daemon->worker_pool_size; ++i)
     pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
@@ -1437,26 +1451,19 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
         && (0 == daemon->worker_pool_size)))
     {
-#if DEBUG_CLOSE
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
-#endif
-#endif
-      CLOSE (fd);
       pthread_kill (daemon->pid, SIGALRM);
       pthread_join (daemon->pid, &unused);
     }
   MHD_close_connections (daemon);
 
-  if (0 < daemon->worker_pool_size)
-    {
+#if OSX
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
+  MHD_DLOG (daemon, "MHD shutdown, closing listen socket\n");
 #endif
 #endif
-      CLOSE (fd);
-    }
+  CLOSE (fd);
+#endif
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
