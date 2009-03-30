@@ -37,6 +37,8 @@ extern "C"
 {
 #endif
 
+#include <stddef.h>
+
 #ifdef Q_OS_WIN32
 #define WINDOWS 1
 #endif
@@ -344,13 +346,8 @@ extern "C"
   int truncate (const char *fname, int distance);
   int statfs (const char *path, struct statfs *buf);
   const char *hstrerror (int err);
-#undef gettimeofday
-  void gettimeofday (struct timeval *tp, void *tzp);
   int mkstemp (char *tmplate);
   char *strptime (const char *buf, const char *format, struct tm *tm);
-  char *ctime (const time_t * clock);
-#undef ctime_r
-  char *ctime_r (const time_t * clock, char *buf);
   const char *inet_ntop (int af, const void *src, char *dst, size_t size);
 
   int plibc_init (char *pszOrg, char *pszApp);
@@ -371,8 +368,11 @@ extern "C"
   int _win_chdir (const char *path);
   int _win_close (int fd);
   int _win_creat (const char *path, mode_t mode);
+  char *_win_ctime (const time_t * clock);
+  char *_win_ctime_r (const time_t * clock, char *buf);
   int _win_fstat (int handle, struct stat *buffer);
   int _win_ftruncate (int fildes, off_t length);
+  void _win_gettimeofday (struct timeval *tp, void *tzp);
   int _win_kill (pid_t pid, int sig);
   int _win_pipe (int *phandles);
   int _win_rmdir (const char *path);
@@ -450,137 +450,6 @@ extern "C"
 #define strcasecmp(a, b) stricmp(a, b)
 #define strncasecmp(a, b, c) strnicmp(a, b, c)
 
-/* search.h */
-
-/* Prototype structure for a linked-list data structure.
-   This is the type used by the `insque' and `remque' functions.  */
-
-  struct qelem
-  {
-    struct qelem *q_forw;
-    struct qelem *q_back;
-    char q_data[1];
-  };
-
-
-/* Insert ELEM into a doubly-linked list, after PREV.  */
-  void insque (void *__elem, void *__prev);
-
-/* Unlink ELEM from the doubly-linked list that it is in.  */
-  void remque (void *__elem);
-
-
-/* For use with hsearch(3).  */
-#ifndef __COMPAR_FN_T
-# define __COMPAR_FN_T
-  typedef int (*__compar_fn_t) (__const void *, __const void *);
-
-  typedef __compar_fn_t comparison_fn_t;
-#endif
-
-/* Action which shall be performed in the call the hsearch.  */
-  typedef enum
-  {
-    FIND,
-    ENTER
-  }
-  ACTION;
-
-  typedef struct entry
-  {
-    char *key;
-    void *data;
-  }
-  ENTRY;
-
-
-/* Family of hash table handling functions.  The functions also
-   have reentrant counterparts ending with _r.  The non-reentrant
-   functions all work on a signle internal hashing table.  */
-
-/* Search for entry matching ITEM.key in internal hash table.  If
-   ACTION is `FIND' return found entry or signal error by returning
-   NULL.  If ACTION is `ENTER' replace existing data (if any) with
-   ITEM.data.  */
-  ENTRY *hsearch (ENTRY __item, ACTION __action);
-
-/* Create a new hashing table which will at most contain NEL elements.  */
-  int hcreate (size_t __nel);
-
-/* Destroy current internal hashing table.  */
-  void hdestroy (void);
-
-/* Data type for reentrant functions.  */
-  struct hsearch_data
-  {
-    struct _ENTRY *table;
-    unsigned int size;
-    unsigned int filled;
-  };
-
-/* Reentrant versions which can handle multiple hashing tables at the
-   same time.  */
-  int hsearch_r (ENTRY __item, ACTION __action, ENTRY ** __retval,
-                 struct hsearch_data *__htab);
-  int hcreate_r (size_t __nel, struct hsearch_data *__htab);
-  void hdestroy_r (struct hsearch_data *__htab);
-
-
-/* The tsearch routines are very interesting. They make many
-   assumptions about the compiler.  It assumes that the first field
-   in node must be the "key" field, which points to the datum.
-   Everything depends on that.  */
-/* For tsearch */
-  typedef enum
-  {
-    preorder,
-    postorder,
-    endorder,
-    leaf
-  }
-  VISIT;
-
-/* Search for an entry matching the given KEY in the tree pointed to
-   by *ROOTP and insert a new element if not found.  */
-  void *tsearch (__const void *__key, void **__rootp, __compar_fn_t __compar);
-
-/* Search for an entry matching the given KEY in the tree pointed to
-   by *ROOTP.  If no matching entry is available return NULL.  */
-  void *tfind (__const void *__key, void *__const * __rootp,
-               __compar_fn_t __compar);
-
-/* Remove the element matching KEY from the tree pointed to by *ROOTP.  */
-  void *tdelete (__const void *__restrict __key,
-                 void **__restrict __rootp, __compar_fn_t __compar);
-
-#ifndef __ACTION_FN_T
-# define __ACTION_FN_T
-  typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
-                                 int __level);
-#endif
-
-/* Walk through the whole tree and call the ACTION callback for every node
-   or leaf.  */
-  void twalk (__const void *__root, __action_fn_t __action);
-
-/* Callback type for function to free a tree node.  If the keys are atomic
-   data this function should do nothing.  */
-  typedef void (*__free_fn_t) (void *__nodep);
-
-/* Destroy the whole tree, call FREEFCT for each node or leaf.  */
-  void tdestroy (void *__root, __free_fn_t __freefct);
-
-
-/* Perform linear search for KEY by comparing by COMPAR in an array
-   [BASE,BASE+NMEMB*SIZE).  */
-  void *lfind (__const void *__key, __const void *__base,
-               size_t * __nmemb, size_t __size, __compar_fn_t __compar);
-
-/* Perform linear search for KEY by comparing by COMPAR function in
-   array [BASE,BASE+NMEMB*SIZE) and insert entry if not found.  */
-  void *lsearch (__const void *__key, void *__base,
-                 size_t * __nmemb, size_t __size, __compar_fn_t __compar);
-
 #endif                          /* WINDOWS */
 
 #ifndef WINDOWS
@@ -594,6 +463,8 @@ extern "C"
 #define BINDTEXTDOMAIN(d, n) bindtextdomain(d, n)
 #endif
 #define CREAT(p, m) creat(p, m)
+#define CTIME(c) ctime(c)
+#define CTIME_R(c, b) ctime_r(c, b)
 #undef FOPEN
 #define FOPEN(f, m) fopen(f, m)
 #define FTRUNCATE(f, l) ftruncate(f, l)
@@ -657,6 +528,22 @@ extern "C"
 #define SOCKET(a, t, p) socket(a, t, p)
 #define GETHOSTBYADDR(a, l, t) gethostbyname(a, l, t)
 #define GETHOSTBYNAME(n) gethostbyname(n)
+#define GETTIMEOFDAY(t, n) gettimeofday(t, n)
+#define INSQUE(e, p) insque(e, p)
+#define REMQUE(e) remque(e)
+#define HSEARCH(i, a) hsearch(i, a)
+#define HCREATE(n) hcreate(n)
+#define HDESTROY() hdestroy()
+#define HSEARCH_R(i, a, r, h) hsearch_r(i, a, r, h)
+#define HCREATE_R(n, h) hcreate_r(n, h)
+#define HDESTROY_R(h) hdestroy_r(h)
+#define TSEARCH(k, r, c) tsearch(k, r, c)
+#define TFIND(k, r, c) tfind(k, r, c)
+#define TDELETE(k, r, c) tdelete(k, r, c)
+#define TWALK(r, a) twalk(r, a)
+#define TDESTROY(r, f) tdestroy(r, f)
+#define LFIND(k, b, n, s, c) lfind(k, b, n, s, c)
+#define LSEARCH(k, b, n, s, c) lsearch(k, b, n, s, c)
 #else
 #define DIR_SEPARATOR '\\'
 #define DIR_SEPARATOR_STR "\\"
@@ -668,6 +555,8 @@ extern "C"
 #define BINDTEXTDOMAIN(d, n) _win_bindtextdomain(d, n)
 #endif
 #define CREAT(p, m) _win_creat(p, m)
+#define CTIME(c) _win_ctime(c)
+#define CTIME_R(c, b) _win_ctime_r(c, b)
 #define FOPEN(f, m) _win_fopen(f, m)
 #define FTRUNCATE(f, l) _win_ftruncate(f, l)
 #define OPENDIR(d) _win_opendir(d)
@@ -730,7 +619,171 @@ extern "C"
 #define SOCKET(a, t, p) _win_socket(a, t, p)
 #define GETHOSTBYADDR(a, l, t) _win_gethostbyname(a, l, t)
 #define GETHOSTBYNAME(n) _win_gethostbyname(n)
+#define GETTIMEOFDAY(t, n) _win_gettimeofday(t, n)
+#define INSQUE(e, p) _win_insque(e, p)
+#define REMQUE(e) _win_remque(e)
+#define HSEARCH(i, a) _win_hsearch(i, a)
+#define HCREATE(n) _win_hcreate(n)
+#define HDESTROY() _win_hdestroy()
+#define HSEARCH_R(i, a, r, h) _win_hsearch_r(i, a, r, h)
+#define HCREATE_R(n, h) _win_hcreate_r(n, h)
+#define HDESTROY_R(h) _win_hdestroy_r(h)
+#define TSEARCH(k, r, c) _win_tsearch(k, r, c)
+#define TFIND(k, r, c) _win_tfind(k, r, c)
+#define TDELETE(k, r, c) _win_tdelete(k, r, c)
+#define TWALK(r, a) _win_twalk(r, a)
+#define TDESTROY(r, f) _win_tdestroy(r, f)
+#define LFIND(k, b, n, s, c) _win_lfind(k, b, n, s, c)
+#define LSEARCH(k, b, n, s, c) _win_lsearch(k, b, n, s, c)
 #endif
+
+/* search.h */
+
+/* Prototype structure for a linked-list data structure.
+   This is the type used by the `insque' and `remque' functions.  */
+
+  struct PLIBC_SEARCH_QELEM
+  {
+    struct qelem *q_forw;
+    struct qelem *q_back;
+    char q_data[1];
+  };
+
+
+/* Insert ELEM into a doubly-linked list, after PREV.  */
+  void _win_insque (void *__elem, void *__prev);
+
+/* Unlink ELEM from the doubly-linked list that it is in.  */
+  void _win_remque (void *__elem);
+
+
+/* For use with hsearch(3).  */
+#ifndef __COMPAR_FN_T
+# define __COMPAR_FN_T
+  typedef int (*PLIBC_SEARCH__compar_fn_t) (__const void *, __const void *);
+
+  typedef PLIBC_SEARCH__compar_fn_t _win_comparison_fn_t;
+#endif
+
+/* Action which shall be performed in the call the hsearch.  */
+  typedef enum
+  {
+    FIND,
+    ENTER
+  }
+  PLIBC_SEARCH_ACTION;
+
+  typedef struct PLIBC_SEARCH_entry
+  {
+    char *key;
+    void *data;
+  }
+  PLIBC_SEARCH_ENTRY;
+
+/* The reentrant version has no static variables to maintain the state.
+   Instead the interface of all functions is extended to take an argument
+   which describes the current status.  */
+  typedef struct _PLIBC_SEARCH_ENTRY
+  {
+    unsigned int used;
+    PLIBC_SEARCH_ENTRY entry;
+  }
+  _PLIBC_SEARCH_ENTRY;
+
+
+/* Family of hash table handling functions.  The functions also
+   have reentrant counterparts ending with _r.  The non-reentrant
+   functions all work on a signle internal hashing table.  */
+
+/* Search for entry matching ITEM.key in internal hash table.  If
+   ACTION is `FIND' return found entry or signal error by returning
+   NULL.  If ACTION is `ENTER' replace existing data (if any) with
+   ITEM.data.  */
+  PLIBC_SEARCH_ENTRY *_win_hsearch (PLIBC_SEARCH_ENTRY __item,
+                                    PLIBC_SEARCH_ACTION __action);
+
+/* Create a new hashing table which will at most contain NEL elements.  */
+  int _win_hcreate (size_t __nel);
+
+/* Destroy current internal hashing table.  */
+  void _win_hdestroy (void);
+
+/* Data type for reentrant functions.  */
+  struct PLIBC_SEARCH_hsearch_data
+  {
+    struct _PLIBC_SEARCH_ENTRY *table;
+    unsigned int size;
+    unsigned int filled;
+  };
+
+/* Reentrant versions which can handle multiple hashing tables at the
+   same time.  */
+  int _win_hsearch_r (PLIBC_SEARCH_ENTRY __item, PLIBC_SEARCH_ACTION __action,
+                      PLIBC_SEARCH_ENTRY ** __retval,
+                      struct PLIBC_SEARCH_hsearch_data *__htab);
+  int _win_hcreate_r (size_t __nel, struct PLIBC_SEARCH_hsearch_data *__htab);
+  void _win_hdestroy_r (struct PLIBC_SEARCH_hsearch_data *__htab);
+
+
+/* The tsearch routines are very interesting. They make many
+   assumptions about the compiler.  It assumes that the first field
+   in node must be the "key" field, which points to the datum.
+   Everything depends on that.  */
+/* For tsearch */
+  typedef enum
+  {
+    preorder,
+    postorder,
+    endorder,
+    leaf
+  }
+  PLIBC_SEARCH_VISIT;
+
+/* Search for an entry matching the given KEY in the tree pointed to
+   by *ROOTP and insert a new element if not found.  */
+  void *_win_tsearch (__const void *__key, void **__rootp,
+                      PLIBC_SEARCH__compar_fn_t __compar);
+
+/* Search for an entry matching the given KEY in the tree pointed to
+   by *ROOTP.  If no matching entry is available return NULL.  */
+  void *_win_tfind (__const void *__key, void *__const * __rootp,
+                    PLIBC_SEARCH__compar_fn_t __compar);
+
+/* Remove the element matching KEY from the tree pointed to by *ROOTP.  */
+  void *_win_tdelete (__const void *__restrict __key,
+                      void **__restrict __rootp,
+                      PLIBC_SEARCH__compar_fn_t __compar);
+
+#ifndef __ACTION_FN_T
+# define __ACTION_FN_T
+  typedef void (*PLIBC_SEARCH__action_fn_t) (__const void *__nodep,
+                                             PLIBC_SEARCH_VISIT __value,
+                                             int __level);
+#endif
+
+/* Walk through the whole tree and call the ACTION callback for every node
+   or leaf.  */
+  void _win_twalk (__const void *__root, PLIBC_SEARCH__action_fn_t __action);
+
+/* Callback type for function to free a tree node.  If the keys are atomic
+   data this function should do nothing.  */
+  typedef void (*PLIBC_SEARCH__free_fn_t) (void *__nodep);
+
+/* Destroy the whole tree, call FREEFCT for each node or leaf.  */
+  void _win_tdestroy (void *__root, PLIBC_SEARCH__free_fn_t __freefct);
+
+
+/* Perform linear search for KEY by comparing by COMPAR in an array
+   [BASE,BASE+NMEMB*SIZE).  */
+  void *_win_lfind (__const void *__key, __const void *__base,
+                    size_t * __nmemb, size_t __size,
+                    PLIBC_SEARCH__compar_fn_t __compar);
+
+/* Perform linear search for KEY by comparing by COMPAR function in
+   array [BASE,BASE+NMEMB*SIZE) and insert entry if not found.  */
+  void *_win_lsearch (__const void *__key, void *__base,
+                      size_t * __nmemb, size_t __size,
+                      PLIBC_SEARCH__compar_fn_t __compar);
 
 
 #ifdef __cplusplus

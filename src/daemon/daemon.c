@@ -202,7 +202,7 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  node = tsearch (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+  node = TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
   if (!node)
     {
 #if HAVE_MESSAGES
@@ -254,7 +254,7 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  node = tfind (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+  node = TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
 
   /* Something's wrong if we couldn't find an IP address
    * that was previously added */
@@ -281,7 +281,7 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
   /* Remove the node entirely if count reduces to 0 */
   if (--found_key->count == 0)
     {
-      tdelete (found_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+      TDELETE (found_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
       free (found_key);
     }
 
