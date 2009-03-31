@@ -53,7 +53,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#ifndef MINGW
 #include <search.h>
+#endif
 #include <stddef.h>
 #undef HAVE_CONFIG_H
 #include <pthread.h>
