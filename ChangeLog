@@ -1,3 +1,6 @@
+Wed Apr  1 21:33:05 CEST 2009
+   Added MHD_get_version(). -ND
+
 Wed Mar 18 22:59:07 MDT 2009
 	 Releasing libmicrohttpd 0.4.1. -CG
 

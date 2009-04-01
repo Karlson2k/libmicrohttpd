@@ -1192,6 +1192,13 @@ const union MHD_DaemonInfo *MHD_get_daemon_info (struct MHD_Daemon *daemon,
                                                  enum MHD_DaemonInfoType
                                                  infoType, ...);
 
+/**
+ * Obtain the version of this library
+ * 
+ * @return static version string, e.g. "0.4.1"
+ */
+const char* MHD_get_version(void);
+
 #if 0                           /* keep Emacsens' auto-indent happy */
 {
 #endif
