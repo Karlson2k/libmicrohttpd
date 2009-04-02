@@ -64,8 +64,6 @@
 #endif
 #endif
 
-const static char mhd_package_version[] = PACKAGE_VERSION;
-
 /**
  * Trace up to and return master daemon. If the supplied daemon
  * is a master, then return the daemon itself.
@@ -1509,7 +1507,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 const char *
 MHD_get_version (void)
 {
-  return mhd_package_version;
+  return PACKAGE_VERSION;
 }
 
 #ifndef WINDOWS
