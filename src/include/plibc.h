@@ -658,18 +658,15 @@ extern "C"
 
 
 /* For use with hsearch(3).  */
-#ifndef __COMPAR_FN_T
-# define __COMPAR_FN_T
   typedef int (*PLIBC_SEARCH__compar_fn_t) (__const void *, __const void *);
 
   typedef PLIBC_SEARCH__compar_fn_t _win_comparison_fn_t;
-#endif
 
 /* Action which shall be performed in the call the hsearch.  */
   typedef enum
   {
-    FIND,
-    ENTER
+    PLIBC_SEARCH_FIND,
+    PLIBC_SEARCH_ENTER
   }
   PLIBC_SEARCH_ACTION;
 
@@ -732,10 +729,10 @@ extern "C"
 /* For tsearch */
   typedef enum
   {
-    preorder,
-    postorder,
-    endorder,
-    leaf
+    PLIBC_SEARCH_preorder,
+    PLIBC_SEARCH_postorder,
+    PLIBC_SEARCH_endorder,
+    PLIBC_SEARCH_leaf
   }
   PLIBC_SEARCH_VISIT;
 
@@ -754,12 +751,9 @@ extern "C"
                       void **__restrict __rootp,
                       PLIBC_SEARCH__compar_fn_t __compar);
 
-#ifndef __ACTION_FN_T
-# define __ACTION_FN_T
   typedef void (*PLIBC_SEARCH__action_fn_t) (__const void *__nodep,
                                              PLIBC_SEARCH_VISIT __value,
                                              int __level);
-#endif
 
 /* Walk through the whole tree and call the ACTION callback for every node
    or leaf.  */
