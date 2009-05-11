@@ -1,5 +1,9 @@
+Mon May 11 13:01:16 MDT 2009
+         Fixed issue where error code on timeout was "TERMINATED_WITH_ERROR"
+         instead of "TERMINATED_TIMEOUT_REACHED". -CG
+
 Wed Apr  1 21:33:05 CEST 2009
-   Added MHD_get_version(). -ND
+         Added MHD_get_version(). -ND
 
 Wed Mar 18 22:59:07 MDT 2009
 	 Releasing libmicrohttpd 0.4.1. -CG
