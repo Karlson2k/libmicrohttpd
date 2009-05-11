@@ -2102,7 +2102,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   if ((connection->socket_fd != -1) &&
       (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
     {
-      connection_close_error (connection);
+      MHD_connection_close (connection, MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       return MHD_NO;
     }
   return MHD_YES;
