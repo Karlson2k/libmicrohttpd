@@ -1543,6 +1543,11 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   connection->last_activity = time (NULL);
   if (connection->state == MHD_CONNECTION_CLOSED)
     return MHD_NO;
+  /* make sure "read" has a reasonable number of bytes
+     in buffer to use per system call (if possible) */
+  if (connection->read_buffer_offset + MHD_BUF_INC_SIZE >
+      connection->read_buffer_size)
+    try_grow_read_buffer (connection);
   if (MHD_NO == do_read (connection))
     return MHD_YES;
   while (1)

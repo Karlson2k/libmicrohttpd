@@ -1,3 +1,7 @@
+Fri May 15 11:00:20 MDT 2009
+	 Grow reserved read buffer more aggressively so that we are not
+	 needlessly stuck reading only a handfull of bytes in each iteration. -CG
+
 Thu May 14 21:20:30 MDT 2009
 	 Fixed issue where the "NOTIFY_COMPLETED" handler could be called
 	 twice (if a socket error or timeout occured for a pipelined
