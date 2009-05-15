@@ -287,16 +287,17 @@ void
 MHD_connection_close (struct MHD_Connection *connection,
                       enum MHD_RequestTerminationCode termination_code)
 {
-
   SHUTDOWN (connection->socket_fd, SHUT_RDWR);
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
-  if (connection->daemon->notify_completed != NULL)
+  if ( (NULL != connection->daemon->notify_completed) &&
+       (MHD_YES == connection->client_aware) )
     connection->daemon->notify_completed (connection->daemon->
-                                          notify_completed_cls, connection,
-                                          &connection->client_context,
-                                          termination_code);
+					  notify_completed_cls, connection,
+					  &connection->client_context,
+					  termination_code);    
+  connection->client_aware = MHD_NO;
 }
 
 /**
@@ -1215,6 +1216,7 @@ call_connection_handler (struct MHD_Connection *connection)
           processed = available;
         }
       used = processed;
+      connection->client_aware = MHD_YES;
       if (MHD_NO ==
           connection->daemon->default_handler (connection->daemon->
                                                default_handler_cls,
@@ -2039,11 +2041,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
           MHD_destroy_response (connection->response);
           if (connection->daemon->notify_completed != NULL)
-            connection->daemon->notify_completed (connection->daemon->
-                                                  notify_completed_cls,
-                                                  connection,
-                                                  &connection->client_context,
-                                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
+	    {
+	      connection->daemon->notify_completed (connection->daemon->
+						    notify_completed_cls,
+						    connection,
+						    &connection->client_context,
+						    MHD_REQUEST_TERMINATED_COMPLETED_OK);
+	    }
+	  connection->client_aware = MHD_NO;
           end =
             MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_CONNECTION);

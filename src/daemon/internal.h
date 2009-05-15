@@ -512,6 +512,13 @@ struct MHD_Connection
   time_t last_activity;
 
   /**
+   * Did we ever call the "default_handler" on this connection?
+   * (this flag will determine if we call the 'notify_completed'
+   * handler when the connection closes down).
+   */
+  int client_aware;
+
+  /**
    * Socket for this connection.  Set to -1 if
    * this connection has died (daemon should clean
    * up in that case).

@@ -1,3 +1,11 @@
+Thu May 14 21:20:30 MDT 2009
+	 Fixed issue where the "NOTIFY_COMPLETED" handler could be called
+	 twice (if a socket error or timeout occured for a pipelined
+	 connection after successfully completing a request and before
+	 the next request was successfully transmitted).  This could
+	 confuse applications not expecting to see a connection "complete"
+	 that they were never aware of in the first place. -CG
+	
 Mon May 11 13:01:16 MDT 2009
          Fixed issue where error code on timeout was "TERMINATED_WITH_ERROR"
          instead of "TERMINATED_TIMEOUT_REACHED". -CG
