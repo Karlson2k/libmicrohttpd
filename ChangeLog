@@ -1,3 +1,6 @@
+Sun May 17 03:29:46 MDT 2009
+ 	 Releasing libmicrohttpd 0.4.2. -CG
+
 Fri May 15 11:00:20 MDT 2009
 	 Grow reserved read buffer more aggressively so that we are not
 	 needlessly stuck reading only a handfull of bytes in each iteration. -CG
