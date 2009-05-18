@@ -473,7 +473,7 @@ MHD_handle_connection (void *data)
           (con->state == MHD_CONNECTION_CHUNKED_BODY_UNREADY))
 	{
           /* do not block (we're waiting for our callback to succeed) */
-	  timeout = 1;  
+	  timeout = 1;
 	  tv.tv_sec = 0;
 	}
       num_ready = SELECT (max + 1,
@@ -1144,7 +1144,7 @@ MHD_start_daemon_va (unsigned int options,
       && (retVal->worker_pool_size > 0))
     {
 #if HAVE_MESSAGES
-      FPRINTF (stderr,
+      fprintf (stderr,
                "MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n");
 #endif
       free (retVal);
@@ -1157,7 +1157,7 @@ MHD_start_daemon_va (unsigned int options,
 #else
     {
 #if HAVE_MESSAGES
-      FPRINTF (stderr, "AF_INET6 not supported\n");
+      fprintf (stderr, "AF_INET6 not supported\n");
 #endif
       return NULL;
     }
@@ -1368,7 +1368,7 @@ thread_failed:
       free (retVal);
       return NULL;
     }
-  
+
   /* Shutdown worker threads we've already created. Pretend
      as though we had fully initialized our daemon, but
      with a smaller number of threads than had been
@@ -1425,7 +1425,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
 #if OSX
   /* without this, either (thread pool = 0) threads would get stuck or
-   * CLOSE would get stuck if attempted before (thread pool > 0) 
+   * CLOSE would get stuck if attempted before (thread pool > 0)
    * threads have ended */
   SHUTDOWN (fd, SHUT_RDWR);
 #else
@@ -1501,7 +1501,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 
 /**
  * Obtain the version of this library
- * 
+ *
  * @return static version string, e.g. "0.4.1"
  */
 const char *
