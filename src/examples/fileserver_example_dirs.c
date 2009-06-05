@@ -46,9 +46,12 @@ dir_reader (void *cls, uint64_t pos, char *buf, int max)
   struct dirent *e;
   if (max < 512)
     return 0;
-  e = readdir (cls);
-  if (e == NULL)
-    return -1;
+  do
+    {
+      e = readdir (cls);
+      if (e == NULL)
+        return -1;
+  } while (e->d_name[0] == '.');
   return snprintf (buf, max,
 		   "<a href=\"/%s\">%s</a><br>",
 		   e->d_name,
