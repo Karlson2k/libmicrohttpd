@@ -46,7 +46,7 @@ dir_reader (void *cls, uint64_t pos, char *buf, int max)
   struct dirent *e;
   if (max < 512)
     return 0;
-  e= readdir (cls);
+  e = readdir (cls);
   if (e == NULL)
     return -1;
   return snprintf (buf, max,
@@ -83,7 +83,7 @@ ahc_echo (void *cls,
   file = fopen (&url[1], "r");
   if (file == NULL)
     {      
-      response = MHD_create_response_from_callback (0,
+      response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
 						    32 * 1024,
 						    &dir_reader,
 						    opendir ("."),
