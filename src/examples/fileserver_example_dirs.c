@@ -19,11 +19,12 @@
 
 /**
  * @file fileserver_example.c
- * @brief minimal example for how to use libmicrohttpd to serve files
+ * @brief example for how to use libmicrohttpd to serve files (with directory support)
  * @author Christian Grothoff
  */
 
 #include "platform.h"
+#include <dirent.h>
 #include <microhttpd.h>
 #include <unistd.h>
 
@@ -37,6 +38,23 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
   fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
 }
+
+
+static int
+dir_reader (void *cls, uint64_t pos, char *buf, int max)
+{
+  struct dirent *e;
+  if (max < 512)
+    return 0;
+  e= readdir (cls);
+  if (e == NULL)
+    return -1;
+  return snprintf (buf, max,
+		   "<a href=\"/%s\">%s</a><br>",
+		   e->d_name,
+		   e->d_name);  
+}
+
 
 static int
 ahc_echo (void *cls,
@@ -64,11 +82,13 @@ ahc_echo (void *cls,
   *ptr = NULL;                  /* reset when done */
   file = fopen (&url[1], "r");
   if (file == NULL)
-    {
-      response = MHD_create_response_from_data (strlen (PAGE),
-                                                (void *) PAGE,
-                                                MHD_NO, MHD_NO);
-      ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
+    {      
+      response = MHD_create_response_from_callback (0,
+						    32 * 1024,
+						    &dir_reader,
+						    opendir ("."),
+						    (MHD_ContentReaderFreeCallback) &closedir);
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
     }
   else
@@ -90,9 +110,9 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
 
-  if (argc != 3)
+  if (argc != 2)
     {
-      printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
+      printf ("%s PORT\n", argv[0]);
       return 1;
     }
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
@@ -100,7 +120,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  sleep (atoi (argv[2]));
+  while (1) sleep (1);
   MHD_stop_daemon (d);
   return 0;
 }

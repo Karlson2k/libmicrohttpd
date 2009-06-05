@@ -16,6 +16,7 @@ minimal_example \
 minimal_example_comet \
 querystring_example \
 fileserver_example \
+fileserver_example_dirs \
 fileserver_example_external_select \
 refuse_post_example
 
@@ -51,6 +52,11 @@ querystring_example_LDADD = \
 fileserver_example_SOURCES = \
  fileserver_example.c 
 fileserver_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+fileserver_example_dirs_SOURCES = \
+ fileserver_example_dirs.c 
+fileserver_example_dirs_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 fileserver_example_external_select_SOURCES = \
