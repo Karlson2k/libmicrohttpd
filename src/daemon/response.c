@@ -190,7 +190,7 @@ MHD_create_response_from_callback (uint64_t size,
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
   retVal->data = (void *) &retVal[1];
-  retVal->data_buffer_size = MHD_BUF_INC_SIZE;
+  retVal->data_buffer_size = block_size;
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
     {
       free (retVal);
