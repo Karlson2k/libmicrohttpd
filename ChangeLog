@@ -1,3 +1,13 @@
+Tue Aug  4 00:14:04 CEST 2009
+	 Fixing double-call to read from content-reader callback for first
+	 data segment (as reported by Alex on the mailinglist). -CG
+
+Thu Jul 29 21:41:52 CEST 2009
+ 	 Fixed issue with the code not using the "block_size" argument
+         given to MHD_create_response_from_callback causing inefficiencies
+	 for values < 2048 and segmentation faults for values > 2048
+	 (as reported by Andre Colomb on the mailinglist). -CG	
+
 Sun May 17 03:29:46 MDT 2009
  	 Releasing libmicrohttpd 0.4.2. -CG
 

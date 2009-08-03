@@ -328,6 +328,11 @@ try_ready_normal_body (struct MHD_Connection *connection)
   response = connection->response;
   if (response->crc == NULL)
     return MHD_YES;
+  if ( (response->data_start <=
+	connection->response_write_position) &&
+       (response->data_size + response->data_start >
+	connection->response_write_position) )
+    return MHD_YES; /* response already ready */
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,
@@ -402,10 +407,27 @@ try_ready_chunked_body (struct MHD_Connection *connection)
       connection->write_buffer = buf;
     }
 
-  ret = response->crc (response->crc_cls,
-                       connection->response_write_position,
-                       &connection->write_buffer[sizeof (cbuf)],
-                       connection->write_buffer_size - sizeof (cbuf) - 2);
+  if ( (response->data_start <=
+	connection->response_write_position) &&
+       (response->data_size + response->data_start >
+	connection->response_write_position) )
+    {
+      /* buffer already ready, use what is there for the chunk */
+      ret = response->data_size + response->data_start - connection->response_write_position;
+      if (ret > connection->write_buffer_size - sizeof (cbuf) - 2)
+	ret = connection->write_buffer_size - sizeof (cbuf) - 2;
+      memcpy (&connection->write_buffer[sizeof (cbuf)],
+	      &response->data[connection->response_write_position - response->data_start],
+	      ret);
+    }
+  else
+    {
+      /* buffer not in range, try to fill it */
+      ret = response->crc (response->crc_cls,
+			   connection->response_write_position,
+			   &connection->write_buffer[sizeof (cbuf)],
+			   connection->write_buffer_size - sizeof (cbuf) - 2);
+    }
   if (ret == -1)
     {
       /* end of message, signal other side! */
