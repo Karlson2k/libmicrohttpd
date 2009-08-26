@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/socket.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -360,6 +361,79 @@ testExternalGet ()
   return 0;
 }
 
+static int
+testUnknownPortGet ()
+{
+  struct MHD_Daemon *d;
+  const union MHD_DaemonInfo *di;
+  CURL *c;
+  char buf[2048];
+  struct CBC cbc;
+  CURLcode errornum;
+
+  struct sockaddr_in addr;
+  socklen_t addr_len = sizeof(addr);
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = 0;
+  addr.sin_addr.s_addr = INADDR_ANY;
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+                        1, NULL, NULL, &ahc_echo, "GET",
+                        MHD_OPTION_SOCK_ADDR, &addr,
+                        MHD_OPTION_END);
+  if (d == NULL)
+    return 32768;
+
+  di = MHD_get_daemon_info (d, MHD_DAEMON_INFO_LISTEN_FD);
+  if (di == NULL)
+    return 65536;
+
+  if (0 != getsockname(di->listen_fd, &addr, &addr_len))
+    return 131072;
+
+  if (addr.sin_family != AF_INET)
+    return 26214;
+
+  snprintf(buf, sizeof(buf), "http://localhost:%hu/hello_world",
+           ntohs(addr.sin_port));
+
+  c = curl_easy_init ();
+  curl_easy_setopt (c, CURLOPT_URL, buf);
+  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  if (oneone)
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+    {
+      fprintf (stderr,
+               "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      return 524288;
+    }
+  curl_easy_cleanup (c);
+  MHD_stop_daemon (d);
+  if (cbc.pos != strlen ("/hello_world"))
+    return 1048576;
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
+    return 2097152;
+  return 0;
+}
+
 
 
 int
@@ -374,6 +448,7 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedGet ();
   errorCount += testMultithreadedPoolGet ();
   errorCount += testExternalGet ();
+  errorCount += testUnknownPortGet ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

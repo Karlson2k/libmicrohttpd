@@ -1496,7 +1496,13 @@ const union MHD_DaemonInfo *
 MHD_get_daemon_info (struct MHD_Daemon *daemon,
                      enum MHD_DaemonInfoType infoType, ...)
 {
-  return NULL;
+  switch (infoType)
+    {
+    case MHD_DAEMON_INFO_LISTEN_FD:
+      return (const union MHD_DaemonInfo *) &daemon->socket_fd;
+    default:
+      return NULL;
+    };
 }
 
 /**

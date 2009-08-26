@@ -1,3 +1,8 @@
+Sun Aug 23 16:21:35 UTC 2009
+	Allow MHD_get_daemon_info to return the daemon's listen socket.
+	Includes a test case that uses this functionality to bind a server to
+	an OS-assigned port, look the port up with getsockname, and curl it. -DR
+
 Tue Aug  4 00:14:04 CEST 2009
 	 Fixing double-call to read from content-reader callback for first
 	 data segment (as reported by Alex on the mailinglist). -CG

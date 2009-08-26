@@ -595,7 +595,13 @@ enum MHD_DaemonInfoType
    * algorithm should be passed as an extra
    * argument (of type 'enum MHD_GNUTLS_HashAlgorithm').
    */
-  MHD_DAEMON_INFO_MAC_KEY_SIZE
+  MHD_DAEMON_INFO_MAC_KEY_SIZE,
+
+  /**
+   * Request the file descriptor for the listening socket.
+   * No extra arguments should be passed.
+   */
+  MHD_DAEMON_INFO_LISTEN_FD
 };
 
 
@@ -1176,6 +1182,11 @@ union MHD_DaemonInfo
    * Size of the mac key (unit??)
    */
   size_t mac_key_size;
+
+  /**
+   * Listen socket file descriptor
+   */
+  int listen_fd;
 };
 
 /**

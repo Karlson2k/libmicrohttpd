@@ -217,7 +217,7 @@ compiled with the configure option @code{--enable-messages} for this
 run-time option to have any effect.
 
 @item MHD_USE_SSL
-Run in https mode (this is not yet supported).
+Run in https mode (this option may not work with all threading modes yet).
 
 @item MHD_USE_THREAD_PER_CONNECTION
 Run using one thread per connection.
@@ -484,6 +484,13 @@ algorithm.  The cipher algorithm should be passed as an extra argument
 Request information about the key size for a particular cipher
 algorithm.  The cipher algorithm should be passed as an extra argument
 (of type 'enum MHD_GNUTLS_HashAlgorithm').
+
+@item MHD_DAEMON_INFO_LISTEN_FD
+Request the file-descriptor number that MHD is using to listen to the
+server socket.  This can be useful if no port
+was specified and a client needs to learn what port
+is actually being used by MHD.
+No extra arguments should be passed.
 
 @end table
 @end deftp
