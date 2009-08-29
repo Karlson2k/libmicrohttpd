@@ -1,3 +1,6 @@
+Fri Aug 28 22:56:47 CEST 2009
+ 	Releasing libmicrohttpd 0.4.3. -CG
+
 Sun Aug 23 16:21:35 UTC 2009
 	Allow MHD_get_daemon_info to return the daemon's listen socket.
 	Includes a test case that uses this functionality to bind a server to
@@ -11,7 +14,7 @@ Thu Jul 29 21:41:52 CEST 2009
  	 Fixed issue with the code not using the "block_size" argument
          given to MHD_create_response_from_callback causing inefficiencies
 	 for values < 2048 and segmentation faults for values > 2048
-	 (as reported by Andre Colomb on the mailinglist). -CG	
+	 (as reported by Andre Colomb on the mailinglist). -CG
 
 Sun May 17 03:29:46 MDT 2009
  	 Releasing libmicrohttpd 0.4.2. -CG
