@@ -251,16 +251,21 @@ No more options / last option.  This is used to terminate the VARARGs
 list.
   
 @item MHD_OPTION_CONNECTION_MEMORY_LIMIT
-Maximum memory size per connection (followed by a @code{size_t}).
+Maximum memory size per connection (followed by a @code{size_t}).  The
+default is 1 MB (1024*1024 bytes) as defined by the internal constant
+@code{MHD_POOL_SIZE_DEFAULT}.
 
 @item MHD_OPTION_CONNECTION_LIMIT
 Maximum number of concurrenct connections to accept (followed by an
-@code{unsigned int}).
+@code{unsigned int}).  The default is @code{FD_SETSIZE - 4} (the
+maximum number of file descriptors supported by @code{select} minus
+four for @code{stdin}, @code{stdout}, @code{stderr} and the server
+socket).  In other words, the default is as large as possible.
 
 @item MHD_OPTION_CONNECTION_TIMEOUT
 After how many seconds of inactivity should a connection automatically
 be timed out? (followed by an @code{unsigned int}; use zero for no
-timeout).
+timeout).  The default is zero (no timeout).
 
 @item MHD_OPTION_NOTIFY_COMPLETED
 Register a function that should be called whenever a request has been
