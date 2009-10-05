@@ -986,7 +986,9 @@ parse_cookie_header (struct MHD_Connection *connection)
   char old;
   int quotes;
 
-  hdr = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, "Cookie");
+  hdr = MHD_lookup_connection_value (connection, 
+				     MHD_HEADER_KIND, 
+				     MHD_HTTP_HEADER_COOKIE);
   if (hdr == NULL)
     return MHD_YES;
   cpy = MHD_pool_allocate (connection->pool, strlen (hdr) + 1, MHD_YES);
