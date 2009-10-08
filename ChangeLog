@@ -1,3 +1,6 @@
+Thu Oct  8 10:43:02 CEST 2009
+	Added check for sockets being '< FD_SETSIZE' (just to be safe). -CG
+
 Mon Oct  5 21:17:26 CEST 2009
 	Adding "COOKIE" header string #defines. -CG
 
@@ -36,7 +39,7 @@ Thu May 14 21:20:30 MDT 2009
 	 the next request was successfully transmitted).  This could
 	 confuse applications not expecting to see a connection "complete"
 	 that they were never aware of in the first place. -CG
-	
+
 Mon May 11 13:01:16 MDT 2009
          Fixed issue where error code on timeout was "TERMINATED_WITH_ERROR"
          instead of "TERMINATED_TIMEOUT_REACHED". -CG

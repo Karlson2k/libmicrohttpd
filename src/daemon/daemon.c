@@ -577,7 +577,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   memset (addr, 0, sizeof (addrstorage));
 
   s = ACCEPT (daemon->socket_fd, addr, &addrlen);
-
   if ((s < 0) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
@@ -593,6 +592,20 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
+  if (s >= FD_SETSIZE)
+    {
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        FPRINTF (stderr,
+		 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+		 s,
+		 FD_SETSIZE);
+#endif     
+      CLOSE (s);
+      return MHD_NO;
+    }
+
+
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
@@ -1163,7 +1176,7 @@ MHD_start_daemon_va (unsigned int options,
     }
 #endif
   else
-    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
+    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);  
   if (socket_fd < 0)
     {
 #if HAVE_MESSAGES
@@ -1171,6 +1184,18 @@ MHD_start_daemon_va (unsigned int options,
         FPRINTF (stderr, "Call to socket failed: %s\n", STRERROR (errno));
 #endif
       free (retVal);
+      return NULL;
+    }
+  if (socket_fd >= FD_SETSIZE)
+    {
+#if HAVE_MESSAGES
+      if ((options & MHD_USE_DEBUG) != 0)
+        FPRINTF (stderr,
+		 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+		 socket_fd,
+		 FD_SETSIZE);
+#endif     
+      CLOSE (socket_fd);
       return NULL;
     }
   if ((SETSOCKOPT (socket_fd,
