@@ -768,8 +768,22 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
             prev->next = pos->next;
           if (0 != (pos->daemon->options & MHD_USE_THREAD_PER_CONNECTION))
             {
-              pthread_kill (pos->pid, SIGALRM);
-              pthread_join (pos->pid, &unused);
+              if (0 != pthread_kill (pos->pid, SIGALRM))
+		{
+#if HAVE_MESSAGES
+		  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
+			    STRERROR (errno));
+#endif
+		  abort();
+		}
+              if (0 != pthread_join (pos->pid, &unused))
+		{
+#if HAVE_MESSAGES
+		  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
+			    STRERROR (errno));
+#endif
+		  abort();		
+		}
             }
           MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
@@ -1065,9 +1079,21 @@ MHD_start_daemon_va (unsigned int options,
   if (options & MHD_USE_SSL)
     {
       /* lock MHD_gnutls_global mutex since it uses reference counting */
-      pthread_mutex_lock (&MHD_gnutls_init_mutex);
+      if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to aquire gnutls mutex\n");
+#endif
+	  abort();
+	}
       MHD__gnutls_global_init ();
-      pthread_mutex_unlock (&MHD_gnutls_init_mutex);
+      if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to release gnutls mutex\n");
+#endif
+	  abort();
+	}
       /* set default priorities */
       MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
       retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
@@ -1464,10 +1490,26 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   /* Signal workers to stop and clean them up */
   for (i = 0; i < daemon->worker_pool_size; ++i)
-    pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
+    {
+      if (0 != pthread_kill (daemon->worker_pool[i].pid, SIGALRM))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
+		    STRERROR (errno));
+#endif
+	  abort();		
+	}
+    }
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
-      pthread_join (daemon->worker_pool[i].pid, &unused);
+      if (0 != pthread_join (daemon->worker_pool[i].pid, &unused))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
+		    STRERROR (errno));
+#endif
+	  abort();		
+	}
       MHD_close_connections (&daemon->worker_pool[i]);
     }
   free (daemon->worker_pool);
@@ -1476,8 +1518,22 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
         && (0 == daemon->worker_pool_size)))
     {
-      pthread_kill (daemon->pid, SIGALRM);
-      pthread_join (daemon->pid, &unused);
+      if (0 != pthread_kill (daemon->pid, SIGALRM))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
+		    STRERROR (errno));
+#endif
+	  abort();
+	}
+      if (0 != pthread_join (daemon->pid, &unused))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
+		    STRERROR (errno));
+#endif
+	  abort();
+	}
     }
   MHD_close_connections (daemon);
 
@@ -1498,9 +1554,21 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       if (daemon->x509_cred)
         MHD__gnutls_certificate_free_credentials (daemon->x509_cred);
       /* lock MHD_gnutls_global mutex since it uses reference counting */
-      pthread_mutex_lock (&MHD_gnutls_init_mutex);
+      if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to aquire gnutls mutex\n");
+#endif
+	  abort();
+	}
       MHD__gnutls_global_deinit ();
-      pthread_mutex_unlock (&MHD_gnutls_init_mutex);
+      if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon, "Failed to release gnutls mutex\n");
+#endif
+	  abort();
+	}
     }
 #endif
   pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
