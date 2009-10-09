@@ -595,11 +595,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (s >= FD_SETSIZE)
     {
 #if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        FPRINTF (stderr,
-		 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-		 s,
-		 FD_SETSIZE);
+      MHD_DLOG (daemon,
+		"Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+		s,
+		FD_SETSIZE);
 #endif     
       CLOSE (s);
       return MHD_NO;
@@ -1082,7 +1081,7 @@ MHD_start_daemon_va (unsigned int options,
       if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
 	{
 #if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to aquire gnutls mutex\n");
+	  MHD_DLOG (retVal, "Failed to aquire gnutls mutex\n");
 #endif
 	  abort();
 	}
@@ -1090,7 +1089,7 @@ MHD_start_daemon_va (unsigned int options,
       if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
 	{
 #if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to release gnutls mutex\n");
+	  MHD_DLOG (retVal, "Failed to release gnutls mutex\n");
 #endif
 	  abort();
 	}
