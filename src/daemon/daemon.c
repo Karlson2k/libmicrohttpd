@@ -767,14 +767,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
             prev->next = pos->next;
           if (0 != (pos->daemon->options & MHD_USE_THREAD_PER_CONNECTION))
             {
-              if (0 != pthread_kill (pos->pid, SIGALRM))
-		{
-#if HAVE_MESSAGES
-		  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
-			    STRERROR (errno));
-#endif
-		  abort();
-		}
+	      pthread_kill (pos->pid, SIGALRM);
               if (0 != pthread_join (pos->pid, &unused))
 		{
 #if HAVE_MESSAGES
@@ -1489,16 +1482,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   /* Signal workers to stop and clean them up */
   for (i = 0; i < daemon->worker_pool_size; ++i)
-    {
-      if (0 != pthread_kill (daemon->worker_pool[i].pid, SIGALRM))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
-		    STRERROR (errno));
-#endif
-	  abort();		
-	}
-    }
+    pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
       if (0 != pthread_join (daemon->worker_pool[i].pid, &unused))
@@ -1517,14 +1501,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
         && (0 == daemon->worker_pool_size)))
     {
-      if (0 != pthread_kill (daemon->pid, SIGALRM))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to signal a thread: %s\n",
-		    STRERROR (errno));
-#endif
-	  abort();
-	}
+      pthread_kill (daemon->pid, SIGALRM);
       if (0 != pthread_join (daemon->pid, &unused))
 	{
 #if HAVE_MESSAGES
