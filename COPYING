@@ -1,3 +1,9 @@
+Some of this code is DUAL-LICENSED.  If you use MHD without HTTPS/SSL
+support, you are free to choose between the LGPL and the eCos License
+(http://ecos.sourceware.org/license-overview.html).  If you compile
+MHD with HTTPS support, you must obey the terms of the GNU LGPL.
+
+
 		  GNU LESSER GENERAL PUBLIC LICENSE
 		       Version 2.1, February 1999
 

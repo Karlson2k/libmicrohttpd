@@ -367,7 +367,12 @@ if test "$enable_https" = "yes"
 then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
   Client code dep.:  ${MSG_CLIENT_SIDE}    		
+  License         :  LGPL only
  ])
+else
+ AC_MSG_NOTICE([
+  License         :  LGPL or eCos
+])
 fi  
 
 
