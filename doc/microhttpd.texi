@@ -127,8 +127,10 @@ GNU libmicrohttpd is a GNU package.
 
 Appendices
 
-* Copying::                     The GNU Lesser General Public License says how you
-                                can copy and share some parts of `libmicrohttpd'.
+* GNU-LGPL::                     The GNU Lesser General Public License says how you
+                                 can copy and share almost all of `libmicrohttpd'.
+* GNU GPL with eCos Extension::  The GNU General Public License with eCos extension says how you
+                                 can copy and share some parts of `libmicrohttpd'.
 * GNU-FDL::                     The GNU Free Documentation License says how you
                                 can copy and share the documentation of `libmicrohttpd'.
 
@@ -214,6 +216,7 @@ Symbian.
 No options selected.
 
 @item MHD_USE_DEBUG
+@cindex debugging
 Run in debug mode.  If this flag is used, the library should print error
 messages and warnings to stderr.  Note that @mhd{} also needs to be
 compiled with the configure option @code{--enable-messages} for this
@@ -229,6 +232,7 @@ Run using one thread per connection.
 Run using an internal thread doing @code{SELECT}.
 
 @item MHD_USE_IPv6
+@cindex IPv6
 Run using the IPv6 protocol (otherwise, @mhd{} will just support IPv4).
 
 
@@ -254,11 +258,13 @@ No more options / last option.  This is used to terminate the VARARGs
 list.
   
 @item MHD_OPTION_CONNECTION_MEMORY_LIMIT
+@cindex memory, limiting memory utilization
 Maximum memory size per connection (followed by a @code{size_t}).  The
 default is 32 kB (32*1024 bytes) as defined by the internal constant
 @code{MHD_POOL_SIZE_DEFAULT}.
 
 @item MHD_OPTION_CONNECTION_LIMIT
+@cindex connection, limiting number of connections
 Maximum number of concurrenct connections to accept (followed by an
 @code{unsigned int}).  The default is @code{FD_SETSIZE - 4} (the
 maximum number of file descriptors supported by @code{select} minus
@@ -266,6 +272,7 @@ four for @code{stdin}, @code{stdout}, @code{stderr} and the server
 socket).  In other words, the default is as large as possible.
 
 @item MHD_OPTION_CONNECTION_TIMEOUT
+@cindex timeout
 After how many seconds of inactivity should a connection automatically
 be timed out? (followed by an @code{unsigned int}; use zero for no
 timeout).  The default is zero (no timeout).
@@ -294,6 +301,7 @@ zero, which means no limit on the number of connections
 from the same IP address.
 
 @item MHD_OPTION_SOCK_ADDR
+@cindex bind, restricting bind
 Bind daemon to the supplied socket address. This option should be followed by a
 @code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified, 
 the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6}, 
@@ -301,6 +309,9 @@ otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
 the daemon will listen to incomming connections from anywhere.
 
 @item MHD_OPTION_URI_LOG_CALLBACK
+@cindex debugging
+@cindex logging
+@cindex query string
 Specify a function that should be called before parsing the URI from
 the client.  The specified callback function can be used for processing
 the URI (including the options) before it is parsed.  The URI after
@@ -352,6 +363,7 @@ representing the cipher priority order to which the HTTPS
 daemon should adhere.
   
 @item MHD_OPTION_EXTERNAL_LOGGER
+@cindex logging
 Use the given function for logging error messages.
 This option must be followed by two arguments; the
 first must be a pointer to a function
@@ -379,10 +391,12 @@ Response header.
 @http{} header.
 
 @item MHD_COOKIE_KIND
+@cindex cookie
 Cookies.  Note that the original @http{} header containing the cookie(s)
 will still be available and intact.
 
 @item MHD_POSTDATA_KIND
+@cindex POST method
 @code{POST} data.  This is available only if a content encoding
 supported by @mhd{} is used (currently only @acronym{URL} encoding), and
 only if the posted content fits within the available memory pool.  Note
@@ -494,6 +508,7 @@ algorithm.  The cipher algorithm should be passed as an extra argument
 (of type 'enum MHD_GNUTLS_HashAlgorithm').
 
 @item MHD_DAEMON_INFO_LISTEN_FD
+@cindex listen
 Request the file-descriptor number that MHD is using to listen to the
 server socket.  This can be useful if no port
 was specified and a client needs to learn what port
@@ -529,6 +544,7 @@ Handle for a response.
 
 
 @deftp {C Struct} MHD_PostProcessor
+@cindex POST method
 Handle for @code{POST} processing.
 @end deftp
 
@@ -595,6 +611,8 @@ the @http{} version string (i.e. @code{HTTP/1.1});
 
 @item upload_data
 the data being uploaded (excluding headers):
+@cindex POST method
+@cindex PUT method
 
 @itemize
 @item
@@ -829,13 +847,14 @@ the right options for this call.
 
 
 @deftypefun int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
+@cindex timeout
 Obtain timeout value for select for this daemon (only needed if
 connection timeout is used).  The returned value is how long
 @cfunction{select} should at most block, not the timeout value set for
 connections.
 
 @table @var
-@item timeout
+@cindex timeout
 set to the timeout (in milliseconds).
 @end table
 
@@ -1150,7 +1169,7 @@ We should not modify the value, unless we know what we are doing.
 @c ------------------------------------------------------------
 @node microhttpd-post
 @chapter Adding a @code{POST} processor
-
+@cindex POST method
 
 @menu
 * microhttpd-post api::         Programming interface for the
@@ -1246,8 +1265,7 @@ always terminate normally.
 @c ------------------------------------------------------------
 @node microhttpd-post api
 @section Programming interface for the @code{POST} processor
-
-
+@cindex POST method
 
 @deftypefun {struct MHD_PostProcessor *} MHD_create_post_processor (struct MHD_Connection *connection, size_t buffer_size, MHD_PostDataIterator iterator, void *iterator_cls)
 Create a PostProcessor.  A PostProcessor can be used to (incrementally)
@@ -1388,12 +1406,19 @@ applicable.
 @c *******************  Appendices  *************************
 @c **********************************************************
 
-@node Copying
-@unnumbered Copying
+@node GNU-LGPL
+@unnumbered GNU-LGPL
+@cindex license
 @include lgpl.texi
+
+@node GNU GPL with eCos Extension
+@unnumbered GNU GPL with eCos Extension
+@cindex license
+@include ecos.texi
 
 @node GNU-FDL
 @unnumbered GNU-FDL
+@cindex license
 @include fdl-1.3.texi
 
 @node Concept Index
