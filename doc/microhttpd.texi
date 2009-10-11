@@ -204,7 +204,10 @@ the process and will call the appropriate microhttpd callbacks.
 
 Starting the daemon may also fail if a particular option is not
 implemented or not supported on the target platform (i.e. no support for
-@acronym{SSL}, threads or IPv6).
+@acronym{SSL}, threads or IPv6).  SSL support generally depends on
+options given during @mhd{} compilation.  Threaded operations
+(including @code{MHD_USE_SELECT_INTERNALLY}) are not supported on
+Symbian.
 
 @table @code
 @item MHD_NO_FLAG
@@ -252,7 +255,7 @@ list.
   
 @item MHD_OPTION_CONNECTION_MEMORY_LIMIT
 Maximum memory size per connection (followed by a @code{size_t}).  The
-default is 1 MB (1024*1024 bytes) as defined by the internal constant
+default is 32 kB (32*1024 bytes) as defined by the internal constant
 @code{MHD_POOL_SIZE_DEFAULT}.
 
 @item MHD_OPTION_CONNECTION_LIMIT

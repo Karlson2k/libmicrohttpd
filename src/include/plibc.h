@@ -532,6 +532,8 @@ extern "C"
 #define GETTIMEOFDAY(t, n) gettimeofday(t, n)
 #define INSQUE(e, p) insque(e, p)
 #define REMQUE(e) remque(e)
+
+#ifndef __SYMBIAN32__
 #define HSEARCH(i, a) hsearch(i, a)
 #define HCREATE(n) hcreate(n)
 #define HDESTROY() hdestroy()
@@ -545,6 +547,22 @@ extern "C"
 #define TDESTROY(r, f) tdestroy(r, f)
 #define LFIND(k, b, n, s, c) lfind(k, b, n, s, c)
 #define LSEARCH(k, b, n, s, c) lsearch(k, b, n, s, c)
+#else  // __SYMBIAN32__
+#define HSEARCH(i, a) _win_hsearch(i, a)
+#define HCREATE(n) _win_hcreate(n)
+#define HDESTROY() _win_hdestroy()
+#define HSEARCH_R(i, a, r, h) _win_hsearch_r(i, a, r, h)
+#define HCREATE_R(n, h) _win_hcreate_r(n, h)
+#define HDESTROY_R(h) _win_hdestroy_r(h)
+#define TSEARCH(k, r, c) _win_tsearch(k, r, c)
+#define TFIND(k, r, c) _win_tfind(k, r, c)
+#define TDELETE(k, r, c) _win_tdelete(k, r, c)
+#define TWALK(r, a) _win_twalk(r, a)
+#define TDESTROY(r, f) _win_tdestroy(r, f)
+#define LFIND(k, b, n, s, c) _win_lfind(k, b, n, s, c)
+#define LSEARCH(k, b, n, s, c) _win_lsearch(k, b, n, s, c)
+#endif  // !__SYMBIAN32__
+
 #else
 #define DIR_SEPARATOR '\\'
 #define DIR_SEPARATOR_STR "\\"

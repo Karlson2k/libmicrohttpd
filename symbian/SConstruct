@@ -1,0 +1,39 @@
+from scons_symbian import *
+
+def MicroHttpd():
+  target     = "microhttpd"
+  targettype = "lib"
+  libraries  = [ "euser", "libc", "libstdcpp" ]
+
+  uid3 = 0
+
+  sources = Glob("../src/daemon/*c", strings = True)
+  sources += Glob("../../plibc/src/*search.c", strings = True)
+  sources = [ s for s in sources if s.find("test") < 0 ]
+  sources = [ s for s in sources if s.find("https") < 0 ]
+
+  includes    = ['.',
+                 '../src/include',
+                 '../../libc/src/include',
+                 ]
+  sysincludes = [ EPOC32_INCLUDE,
+                  join(EPOC32_INCLUDE, 'stdapis'),
+                  join(EPOC32_INCLUDE, 'stdapis', 'stlport'),
+                  join(EPOC32_INCLUDE, 'libc'),
+                ]
+  defines     = [
+    "_STLP_NO_WCHAR_T",
+  ]
+
+  return SymbianProgram( target, targettype,
+      sources = sources,
+      includes    = includes,
+      sysincludes = sysincludes,
+      libraries   = libraries,
+      defines     = defines,
+      epocstacksize = 8192,
+      epocheapsize  = (0x1000,0x100000),
+      uid3 = uid3,
+  )
+
+microhttpd = MicroHttpd()

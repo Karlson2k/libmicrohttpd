@@ -53,7 +53,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#ifndef MINGW
+#if !defined(MINGW) && !defined(__SYMBIAN32__)
 #include <search.h>
 #endif
 #include <stddef.h>

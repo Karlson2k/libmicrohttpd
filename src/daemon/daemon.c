@@ -44,7 +44,7 @@
 /**
  * Default memory allowed per connection.
  */
-#define MHD_POOL_SIZE_DEFAULT (1024 * 1024)
+#define MHD_POOL_SIZE_DEFAULT (32 * 1024)
 
 /**
  * Print extra messages with reasons for closing
@@ -62,7 +62,18 @@
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
 #endif
+#endif
+
+#ifdef __SYMBIAN32__
+static void pthread_kill (int, int) {
+  // Symbian doesn't have signals. The user of the library is required to
+  // run it in an external select loop.
+  abort();
+}
+#endif  // __SYMBIAN32__
 
 /**
  * Trace up to and return master daemon. If the supplied daemon
@@ -202,7 +213,7 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  node = TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+  node = (void*)TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
   if (!node)
     {
 #if HAVE_MESSAGES
@@ -254,7 +265,7 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  node = TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
+  node = (void*)TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
 
   /* Something's wrong if we couldn't find an IP address
    * that was previously added */
@@ -471,11 +482,11 @@ MHD_handle_connection (void *data)
         tv.tv_sec = 0;
       if ((con->state == MHD_CONNECTION_NORMAL_BODY_UNREADY) ||
           (con->state == MHD_CONNECTION_CHUNKED_BODY_UNREADY))
-	{
+       {
           /* do not block (we're waiting for our callback to succeed) */
-	  timeout = 1;
-	  tv.tv_sec = 0;
-	}
+          timeout = 1;
+          tv.tv_sec = 0;
+      }
       num_ready = SELECT (max + 1,
                           &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
       if (num_ready < 0)
@@ -1017,6 +1028,8 @@ MHD_start_daemon (unsigned int options,
 }
 
 
+typedef void (*VfprintfFunctionPointerType)(void *, const char *, va_list);
+
 /**
  * Start a webserver on the given port.
  *
@@ -1053,7 +1066,7 @@ MHD_start_daemon_va (unsigned int options,
   if (retVal == NULL)
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Daemon));
-  retVal->options = options;
+  retVal->options = (enum MHD_OPTION)options;
   retVal->port = port;
   retVal->apc = apc;
   retVal->apc_cls = apc_cls;
@@ -1143,13 +1156,13 @@ MHD_start_daemon_va (unsigned int options,
         case MHD_OPTION_EXTERNAL_LOGGER:
 #if HAVE_MESSAGES
           retVal->custom_error_log =
-            va_arg (ap, void (*)(void *cls, const char *, va_list));
+            va_arg (ap, VfprintfFunctionPointerType);
           retVal->custom_error_log_cls = va_arg (ap, void *);
 #else
-          va_arg (ap, void (*)(void *cls, const char *, ...));
+          va_arg (ap, VfprintfFunctionPointerType);
           va_arg (ap, void *);
 #endif
-	  break;
+          break;
         default:
 #if HAVE_MESSAGES
           if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
@@ -1182,6 +1195,17 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 
+#ifdef __SYMBIAN32__
+  if (0 != (OPTIONS & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
+    {
+#if HAVE_MESSAGES
+      fprintf (stderr,
+               "Threaded operations are not supported on Symbian.\n");
+#endif
+      free (retVal);
+      return NULL;
+    }
+#endif
   if ((options & MHD_USE_IPv6) != 0)
 #if HAVE_INET6
     socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
@@ -1209,9 +1233,9 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
         FPRINTF (stderr,
-		 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-		 socket_fd,
-		 FD_SETSIZE);
+                 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+                 socket_fd,
+                 FD_SETSIZE);
 #endif     
       CLOSE (socket_fd);
       return NULL;
@@ -1264,7 +1288,6 @@ MHD_start_daemon_va (unsigned int options,
       free (retVal);
       return NULL;
     }
-
 
   if (LISTEN (socket_fd, 20) < 0)
     {
@@ -1359,7 +1382,7 @@ MHD_start_daemon_va (unsigned int options,
       retVal->worker_pool = malloc (sizeof (struct MHD_Daemon)
                                     * retVal->worker_pool_size);
       if (NULL == retVal->worker_pool)
-	goto thread_failed;
+        goto thread_failed;
 
       /* Start the workers in the pool */
       for (i = 0; i < retVal->worker_pool_size; ++i)
@@ -1369,8 +1392,8 @@ MHD_start_daemon_va (unsigned int options,
           memcpy (d, retVal, sizeof (struct MHD_Daemon));
 
           /* Adjust pooling params for worker daemons; note that memcpy()
-	     has already copied MHD_USE_SELECT_INTERNALLY thread model into
-	     the worker threads. */
+             has already copied MHD_USE_SELECT_INTERNALLY thread model into
+             the worker threads. */
           d->master = retVal;
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
@@ -1393,7 +1416,7 @@ MHD_start_daemon_va (unsigned int options,
                * all previously-created workers. */
               goto thread_failed;
             }
-	}
+        }
     }
   return retVal;
 
@@ -1407,7 +1430,7 @@ thread_failed:
       CLOSE (socket_fd);
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       if (NULL != retVal->worker_pool)
-	free (retVal->worker_pool);
+        free (retVal->worker_pool);
       free (retVal);
       return NULL;
     }
@@ -1597,11 +1620,19 @@ sigalrmHandler (int sig)
 }
 #endif
 
+#ifdef __GNUC__
+#define ATTRIBUTE_CONSTRUCTOR __attribute__ ((constructor))
+#define ATTRIBUTE_DESTRUCTOR __attribute__ ((destructor))
+#else  // !__GNUC__
+#define ATTRIBUTE_CONSTRUCTOR
+#define ATTRIBUTE_DESTRUCTOR
+#endif  // __GNUC__
+
 /**
  * Initialize the signal handler for SIGALRM
  * and do other setup work.
  */
-void __attribute__ ((constructor)) MHD_init ()
+void ATTRIBUTE_CONSTRUCTOR MHD_init ()
 {
 #ifndef WINDOWS
   /* make sure SIGALRM does not kill us */
@@ -1619,7 +1650,7 @@ void __attribute__ ((constructor)) MHD_init ()
 #endif
 }
 
-void __attribute__ ((destructor)) MHD_fini ()
+void ATTRIBUTE_DESTRUCTOR MHD_fini ()
 {
 #if HTTPS_SUPPORT
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))

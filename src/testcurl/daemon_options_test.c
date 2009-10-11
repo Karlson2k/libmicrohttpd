@@ -73,18 +73,24 @@ test_ip_addr_option ()
 {
   struct MHD_Daemon *d;
   struct sockaddr_in daemon_ip_addr;
+#if HAVE_INET6
   struct sockaddr_in6 daemon_ip_addr6;
+#endif
 
   memset (&daemon_ip_addr, 0, sizeof (struct sockaddr_in));
   daemon_ip_addr.sin_family = AF_INET;
   daemon_ip_addr.sin_port = htons (42433);
 
+#if HAVE_INET6
   memset (&daemon_ip_addr6, 0, sizeof (struct sockaddr_in6));
   daemon_ip_addr6.sin6_family = AF_INET6;
   daemon_ip_addr6.sin6_port = htons (42433);
+#endif
 
   inet_pton (AF_INET, "127.0.0.1", &daemon_ip_addr.sin_addr);
+#if HAVE_INET6
   inet_pton (AF_INET6, "::ffff:127.0.0.1", &daemon_ip_addr6.sin6_addr);
+#endif
 
   d = MHD_start_daemon (MHD_USE_DEBUG, 42433,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
@@ -95,6 +101,7 @@ test_ip_addr_option ()
 
   MHD_stop_daemon (d);
 
+#if HAVE_INET6
   d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_IPv6, 42433,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
                         &daemon_ip_addr6, MHD_OPTION_END);
@@ -103,6 +110,7 @@ test_ip_addr_option ()
     return -1;
 
   MHD_stop_daemon (d);
+#endif
 
   return 0;
 }

@@ -27,7 +27,7 @@
 
 #include "reason_phrase.h"
 
-static const char *invalid_hundred[] = { };
+static const char *invalid_hundred[] = { NULL };
 
 static const char *one_hundred[] = {
   "Continue",
