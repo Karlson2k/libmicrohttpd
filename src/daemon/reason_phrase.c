@@ -27,6 +27,10 @@
 
 #include "reason_phrase.h"
 
+#ifndef NULL
+#define NULL (void*)0
+#endif  // !NULL
+
 static const char *invalid_hundred[] = { NULL };
 
 static const char *one_hundred[] = {

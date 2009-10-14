@@ -1196,7 +1196,7 @@ MHD_start_daemon_va (unsigned int options,
     }
 
 #ifdef __SYMBIAN32__
-  if (0 != (OPTIONS & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
+  if (0 != (options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     {
 #if HAVE_MESSAGES
       fprintf (stderr,
