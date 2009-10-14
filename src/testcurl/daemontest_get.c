@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Christian Grothoff
+     (C) 2007, 2009 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -118,9 +118,9 @@ testInternalGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system!*/
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -167,9 +167,9 @@ testMultithreadedGet ()
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -217,9 +217,9 @@ testMultithreadedPoolGet ()
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system!*/
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -276,9 +276,9 @@ testExternalGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
 
@@ -412,9 +412,9 @@ testUnknownPortGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -435,6 +435,50 @@ testUnknownPortGet ()
 }
 
 
+static int
+testStopRace ()
+{
+    struct sockaddr_in sin;
+    int fd;
+    struct MHD_Daemon *d;
+    
+    d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+                         1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+    if (d == NULL)
+       return 16;
+    
+    fd = socket(PF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+    {
+       fprintf(stderr, "socket: %m\n");
+       return 256;
+    }
+    
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(1081);
+    sin.sin_addr.s_addr = htonl(0x7f000001);
+    
+    if (connect(fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
+    {
+       fprintf(stderr, "connect: %m\n");
+       return 512;
+    }
+    
+    /*  printf("Waiting\n"); */
+    /* Let the thread get going. */
+    usleep(500000);
+    
+    /* printf("Stopping daemon\n"); */
+    MHD_stop_daemon (d);
+ 
+    close(fd);
+    
+    /* printf("good\n"); */
+    return 0;
+}
+
+
 
 int
 main (int argc, char *const *argv)
@@ -449,6 +493,7 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedPoolGet ();
   errorCount += testExternalGet ();
   errorCount += testUnknownPortGet ();
+  errorCount += testStopRace ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

@@ -146,7 +146,9 @@ testInternalPut ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1080,
-                        NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, &done_flag, 
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+			MHD_OPTION_END);
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
@@ -202,7 +204,9 @@ testMultithreadedPut ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         1081,
-                        NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, &done_flag, 
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+			MHD_OPTION_END);
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
@@ -262,7 +266,9 @@ testMultithreadedPoolPut ()
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag,
-                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+                        MHD_OPTION_THREAD_POOL_SIZE, 4, 
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+			MHD_OPTION_END);
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
