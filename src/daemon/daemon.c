@@ -477,18 +477,22 @@ MHD_handle_connection (void *data)
       now = time (NULL);
       tv.tv_usec = 0;
       if (timeout > (now - con->last_activity))
-        tv.tv_sec = timeout - (now - con->last_activity);
+	{
+	  /* in case we are missing the SIGALRM, keep going after
+	     at most 1s; see http://lists.gnu.org/archive/html/libmicrohttpd/2009-10/msg00013.html */
+	  tv.tv_sec = 1;
+	  if ((con->state == MHD_CONNECTION_NORMAL_BODY_UNREADY) ||
+	      (con->state == MHD_CONNECTION_CHUNKED_BODY_UNREADY))
+	    {
+	      /* do not block (we're waiting for our callback to succeed) */
+	      tv.tv_sec = 0;
+	    }	
+	}
       else
-        tv.tv_sec = 0;
-      if ((con->state == MHD_CONNECTION_NORMAL_BODY_UNREADY) ||
-          (con->state == MHD_CONNECTION_CHUNKED_BODY_UNREADY))
-       {
-          /* do not block (we're waiting for our callback to succeed) */
-          timeout = 1;
-          tv.tv_sec = 0;
-      }
-      num_ready = SELECT (max + 1,
-                          &rs, &ws, &es, (timeout != 0) ? &tv : NULL);
+	{
+	  tv.tv_sec = 0;
+	}
+      num_ready = SELECT (max + 1, &rs, &ws, &es, &tv);
       if (num_ready < 0)
         {
           if (errno == EINTR)
@@ -901,7 +905,11 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
         return MHD_NO;
       FD_SET (max, &rs);
     }
-
+  
+  /* in case we are missing the SIGALRM, keep going after
+     at most 1s; see http://lists.gnu.org/archive/html/libmicrohttpd/2009-10/msg00013.html */
+  timeout.tv_usec = 0;
+  timeout.tv_sec = 1; 
   if (may_block == MHD_NO)
     {
       timeout.tv_usec = 0;
@@ -910,16 +918,14 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   else
     {
       /* ltimeout is in ms */
-      if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
-        {
-          timeout.tv_usec = (ltimeout % 1000) * 1000;
-          timeout.tv_sec = ltimeout / 1000;
-          may_block = MHD_NO;
+      if ( (MHD_YES == MHD_get_timeout (daemon, &ltimeout)) &&
+	   (ltimeout < 1000) )
+	{
+          timeout.tv_usec = ltimeout * 1000;
+          timeout.tv_sec = 0;
         }
     }
-
-  num_ready = select (max + 1, &rs, &ws, &es, may_block == MHD_NO ? &timeout
-                      : NULL);
+  num_ready = SELECT (max + 1, &rs, &ws, &es, &timeout);
 
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
