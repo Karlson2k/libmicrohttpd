@@ -763,6 +763,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   struct MHD_Connection *prev;
   void *unused;
+  int rc;
 
   pos = daemon->connections;
   prev = NULL;
@@ -779,11 +780,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           if (0 != (pos->daemon->options & MHD_USE_THREAD_PER_CONNECTION))
             {
 	      pthread_kill (pos->pid, SIGALRM);
-              if (0 != pthread_join (pos->pid, &unused))
+              if (0 != (rc = pthread_join (pos->pid, &unused)))
 		{
 #if HAVE_MESSAGES
 		  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-			    STRERROR (errno));
+			    STRERROR (rc));
 #endif
 		  abort();		
 		}
@@ -1475,6 +1476,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   void *unused;
   int fd;
   unsigned int i;
+  int rc;
 
   if (daemon == NULL)
     return;
@@ -1508,11 +1510,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     pthread_kill (daemon->worker_pool[i].pid, SIGALRM);
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
-      if (0 != pthread_join (daemon->worker_pool[i].pid, &unused))
+      if (0 != (rc = pthread_join (daemon->worker_pool[i].pid, &unused)))
 	{
 #if HAVE_MESSAGES
 	  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-		    STRERROR (errno));
+		    STRERROR (rc));
 #endif
 	  abort();		
 	}
@@ -1525,11 +1527,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         && (0 == daemon->worker_pool_size)))
     {
       pthread_kill (daemon->pid, SIGALRM);
-      if (0 != pthread_join (daemon->pid, &unused))
+      if (0 != (rc = pthread_join (daemon->pid, &unused)))
 	{
 #if HAVE_MESSAGES
 	  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-		    STRERROR (errno));
+		    STRERROR (rc));
 #endif
 	  abort();
 	}
