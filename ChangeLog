@@ -1,14 +1,17 @@
+Wed Oct 28 20:26:00 CET 2009
+ 	Releasing libmicrohttpd 0.4.4. -CG
+
 Wed Oct 14 14:37:37 CEST 2009
 	Fixing (rare) deadlock due to SELECT missing SIGALRM by
 	making all SELECT calls block for at most 1s.  While this
 	can in (rare) situations delay the shutdown by 1s, I think
-	this is prefereable (both performance and possibly portability-wise)
+	this is preferable (both performance and possibly portability-wise)
 	over using a pipe for the signal. -CG
 
 Sun Oct 11 14:57:29 CEST 2009
 	Adding eCos license as an additional license for the
 	non-HTTPS code of MHD. -CG
-	
+
 Sun Oct 11 11:24:27 CEST 2009
 	Adding support for Symbian. -MR
 

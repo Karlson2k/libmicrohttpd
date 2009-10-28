@@ -1,24 +1,26 @@
-.TH LIBMICROHTTPD "3" "14 Nov 2008" "libmicrohttpd"
+.TH LIBMICROHTTPD "3" "28 Oct 2009 "libmicrohttpd"
 .SH "NAME"
 GNU libmicrohttpd \- library for embedding HTTP servers
 .SH "SYNOPSIS"
 
+\fB#include <sys/types.h>
+\fB#include <sys/select.h>
+\fB#include <sys/socket.h>
 \fB#include <microhttpd.h>
 
 .SH "DESCRIPTION"
 .P
-GNU libmicrohttpd (short MHD) allows applications to easily integrate the functionality of a simple HTTP server.
+GNU libmicrohttpd (short MHD) allows applications to easily integrate the functionality of a simple HTTP server.  MHD is a GNU package.
 .P
-GNU libmicrohttpd is part of the GNU project.
-.P
-The details of the API are described in comments in the header file and on the webpage.
-
+The details of the API are described in comments in the header file, a detailed reference documentation and in brief on the MHD webpage.
 .P
 .SH "SEE ALSO"
 \fBcurl\fP(1), \fBlibcurl\fP(3)
 
 .SH "LEGAL NOTICE"
-libmicrohttpd is released under the LGPL Version 2 or higher.
+libmicrohttpd is released under both the LGPL Version 2 or higher and
+the GNU GPL with eCos extension.  For details on both licenses please
+read the respective appendix in the manual.
 
 .SH "FILES"
 .TP

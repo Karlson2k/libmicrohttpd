@@ -1600,7 +1600,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
     {
     case MHD_DAEMON_INFO_LISTEN_FD:
       return (const union MHD_DaemonInfo *) &daemon->socket_fd;
-    default:
+   default:
       return NULL;
     };
 }

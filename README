@@ -3,8 +3,9 @@ About
 
 libmicrohttpd is a GNU library (part of the GNU project) written in C
 that provides a compact API and implementation of an HTTP 1.1 web
-server.  libmicrohttpd only implements the HTTP 1.1 protocol.  The
-main application must still provide the content.
+server (HTTP 1.0 is also supported).  libmicrohttpd only implements
+the HTTP 1.1 protocol.  The main application must still provide the
+content.
 
 
 Installation
@@ -38,10 +39,10 @@ main application should install a signal handler to handle SIGPIPE.
 
 libmicrohttpd should work well on GNU/Linux, BSD, OS X, W32 and z/OS.
 Note that HTTPS is not supported on z/OS (yet).  We also have reports
-of users using it on vxWorks.  Note that on platforms where the
-compiler does not support the "constructor" attribute, you must call
-"MHD_init" before using any MHD functions and "MHD_fini" after you are
-done using MHD.
+of users using it on vxWorks and Symbian.  Note that on platforms
+where the compiler does not support the "constructor" attribute, you
+must call "MHD_init" before using any MHD functions and "MHD_fini"
+after you are done using MHD.
 
 
 Notes on compiling on z/OS:
@@ -73,7 +74,7 @@ reasonably complete.
 
 Missing features:
 =================
-- MHD_get_daemon_info is not implemented (always returns NULL)
+- MHD_get_daemon_info options for SSL are not implemented (always return NULL)
 - SSL support does not work with SELECT-based threading modes
   (issue is that the gnutls state machine does not like EAGAIN/EINTR
    return values from send/recv, despite having tons of

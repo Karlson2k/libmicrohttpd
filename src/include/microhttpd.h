@@ -81,17 +81,21 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00040200
+#define MHD_VERSION 0x00040400
 
 /**
- * MHD-internal return codes.
+ * MHD-internal return code for "YES".
  */
 #define MHD_YES 1
 
+/**
+ * MHD-internal return code for "NO".
+ */
 #define MHD_NO 0
 
 /**
- * Constant used to indicate unknown size.
+ * Constant used to indicate unknown size (use when
+ * creating a response).
  */
 #define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
 
