@@ -1221,6 +1221,7 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
       fprintf (stderr, "AF_INET6 not supported\n");
 #endif
+      free (retVal);
       return NULL;
     }
 #endif
@@ -1245,6 +1246,7 @@ MHD_start_daemon_va (unsigned int options,
                  FD_SETSIZE);
 #endif     
       CLOSE (socket_fd);
+      free (retVal);   
       return NULL;
     }
   if ((SETSOCKOPT (socket_fd,
