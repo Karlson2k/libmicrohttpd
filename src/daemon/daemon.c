@@ -607,6 +607,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
+#ifndef MINGW
   if (s >= FD_SETSIZE)
     {
 #if HAVE_MESSAGES
@@ -618,6 +619,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       CLOSE (s);
       return MHD_NO;
     }
+#endif
 
 
 #if HAVE_MESSAGES
