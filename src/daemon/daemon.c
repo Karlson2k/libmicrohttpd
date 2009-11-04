@@ -607,7 +607,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#ifndef MINGW
+#ifndef WINDOWS
   if (s >= FD_SETSIZE)
     {
 #if HAVE_MESSAGES
@@ -1238,6 +1238,7 @@ MHD_start_daemon_va (unsigned int options,
       free (retVal);
       return NULL;
     }
+#ifndef WINDOWS
   if (socket_fd >= FD_SETSIZE)
     {
 #if HAVE_MESSAGES
@@ -1251,6 +1252,7 @@ MHD_start_daemon_va (unsigned int options,
       free (retVal);   
       return NULL;
     }
+#endif
   if ((SETSOCKOPT (socket_fd,
                    SOL_SOCKET,
                    SO_REUSEADDR,
