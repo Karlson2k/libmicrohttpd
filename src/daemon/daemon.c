@@ -1684,7 +1684,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
   sig.sa_handler = &sigalrmHandler;
   sigaction (SIGALRM, &sig, &old);
 #else
-  plibc_init ("CRISP", "libmicrohttpd");
+  plibc_init ("GNU", "libmicrohttpd");
 #endif
 #if HTTPS_SUPPORT
   if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
