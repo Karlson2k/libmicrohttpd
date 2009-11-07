@@ -256,7 +256,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   size_t blen;
 
   if ((buffer_size < 256) || (connection == NULL) || (ikvi == NULL))
-    abort ();
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   encoding = MHD_lookup_connection_value (connection,
                                           MHD_HEADER_KIND,
                                           MHD_HTTP_HEADER_CONTENT_TYPE);
@@ -304,7 +304,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  */
 static int
 post_process_urlencoded (struct MHD_PostProcessor *pp,
-                         const char *post_data, 
+                         const char *post_data,
 			 size_t post_data_len)
 {
   size_t equals;
@@ -440,7 +440,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
             }
           return MHD_NO;
         default:
-          abort ();             /* should never happen! */
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);          /* should never happen! */
         }
     }
   return MHD_YES;
@@ -960,7 +960,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           state_changed = 1;
           break;
         default:
-          abort ();             /* should never happen! */
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);          /* should never happen! */
         }
     AGAIN:
       if (ioff > 0)

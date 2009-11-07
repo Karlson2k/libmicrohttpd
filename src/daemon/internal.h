@@ -45,6 +45,13 @@
  */
 #define MHD_BUF_INC_SIZE 2048
 
+/**
+ * Error handler
+ */
+extern MHD_PanicCallback mhd_panic;
+extern void *mhd_panic_cls;
+
+
 #if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug

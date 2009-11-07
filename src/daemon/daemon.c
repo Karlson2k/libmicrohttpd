@@ -76,6 +76,20 @@ static void pthread_kill (int, int) {
 #endif  // __SYMBIAN32__
 
 /**
+ * Default implementation of the panic function
+ */
+void mhd_panic_std(void *cls,
+                   const char *file,
+                   unsigned int line,
+                   const char *reason)
+{
+  abort ();
+}
+
+MHD_PanicCallback mhd_panic;
+void *mhd_panic_cls;
+
+/**
  * Trace up to and return master daemon. If the supplied daemon
  * is a master, then return the daemon itself.
  */
@@ -465,7 +479,7 @@ MHD_handle_connection (void *data)
   unsigned int now;
 
   if (con == NULL)
-    abort ();
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   timeout = con->daemon->connection_timeout;
   while ((!con->daemon->shutdown) && (con->socket_fd != -1))
     {
@@ -486,7 +500,7 @@ MHD_handle_connection (void *data)
 	    {
 	      /* do not block (we're waiting for our callback to succeed) */
 	      tv.tv_sec = 0;
-	    }	
+	    }
 	}
       else
 	{
@@ -586,7 +600,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 
 #if HAVE_INET6
   if (sizeof (struct sockaddr) > sizeof (struct sockaddr_in6))
-    abort ();                   /* fatal, serious error */
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);     /* fatal, serious error */
 #endif
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
@@ -615,7 +629,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 		"Socket descriptor larger than FD_SETSIZE: %d > %d\n",
 		s,
 		FD_SETSIZE);
-#endif     
+#endif
       CLOSE (s);
       return MHD_NO;
     }
@@ -720,7 +734,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                     "Failed to setup TLS credentials: unknown credential type %d\n",
                     connection->daemon->cred_type);
 #endif
-          abort ();
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "Unknown credential type");
         }
       MHD__gnutls_transport_set_ptr (connection->tls_session,
                                      (MHD_gnutls_transport_ptr_t) connection);
@@ -792,7 +806,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 		  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
 			    STRERROR (rc));
 #endif
-		  abort();		
+		  abort();
 		}
             }
           MHD_destroy_response (pos->response);
@@ -880,7 +894,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
   if (daemon == NULL)
-    abort ();
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
   FD_ZERO (&rs);
@@ -907,11 +921,11 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
         return MHD_NO;
       FD_SET (max, &rs);
     }
-  
+
   /* in case we are missing the SIGALRM, keep going after
      at most 1s; see http://lists.gnu.org/archive/html/libmicrohttpd/2009-10/msg00013.html */
   timeout.tv_usec = 0;
-  timeout.tv_sec = 1; 
+  timeout.tv_sec = 1;
   if (may_block == MHD_NO)
     {
       timeout.tv_usec = 0;
@@ -1188,7 +1202,7 @@ MHD_start_daemon_va (unsigned int options,
                        opt);
             }
 #endif
-          abort ();
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
         }
     }
 
@@ -1228,7 +1242,7 @@ MHD_start_daemon_va (unsigned int options,
     }
 #endif
   else
-    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);  
+    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0)
     {
 #if HAVE_MESSAGES
@@ -1247,9 +1261,9 @@ MHD_start_daemon_va (unsigned int options,
                  "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
                  socket_fd,
                  FD_SETSIZE);
-#endif     
+#endif
       CLOSE (socket_fd);
-      free (retVal);   
+      free (retVal);
       return NULL;
     }
 #endif
@@ -1528,7 +1542,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  MHD_DLOG (daemon, "Failed to join a thread: %s\n",
 		    STRERROR (rc));
 #endif
-	  abort();		
+	  abort();
 	}
       MHD_close_connections (&daemon->worker_pool[i]);
     }
@@ -1612,6 +1626,17 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 }
 
 /**
+ * Sets the global error handler to a different implementation
+ * @param cb new error handler
+ * @param cls passed to error handler
+ */
+void MHD_set_panic_func (MHD_PanicCallback cb, void *cls)
+{
+  mhd_panic = cb;
+  mhd_panic_cls = cls;
+}
+
+/**
  * Obtain the version of this library
  *
  * @return static version string, e.g. "0.4.1"
@@ -1648,6 +1673,9 @@ sigalrmHandler (int sig)
  */
 void ATTRIBUTE_CONSTRUCTOR MHD_init ()
 {
+  mhd_panic = mhd_panic_std;
+  mhd_panic_cls = NULL;
+
 #ifndef WINDOWS
   /* make sure SIGALRM does not kill us */
   memset (&sig, 0, sizeof (struct sigaction));
@@ -1668,7 +1696,7 @@ void ATTRIBUTE_DESTRUCTOR MHD_fini ()
 {
 #if HTTPS_SUPPORT
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
-    abort ();
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 #endif
 #ifndef WINDOWS
   sigaction (SIGALRM, &old, &sig);

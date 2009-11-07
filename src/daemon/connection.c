@@ -296,7 +296,7 @@ MHD_connection_close (struct MHD_Connection *connection,
     connection->daemon->notify_completed (connection->daemon->
 					  notify_completed_cls, connection,
 					  &connection->client_context,
-					  termination_code);    
+					  termination_code);
   connection->client_aware = MHD_NO;
 }
 
@@ -341,7 +341,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
                                 connection->response_write_position));
   if ((ret == 0) &&
       (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)))
-    abort ();                   /* serious client API violation */
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "API violation");
   if (ret == -1)
     {
       /* either error or http 1.0 transfer, close
@@ -494,7 +494,7 @@ add_extra_headers (struct MHD_Connection *connection)
                                             MHD_HTTP_HEADER_CONTENT_LENGTH))
     {
       SPRINTF (buf,
-               "%llu", 
+               "%llu",
 	       (unsigned long long)connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
@@ -630,7 +630,7 @@ build_header_response (struct MHD_Connection *connection)
   memcpy (&data[off], "\r\n", 2);
   off += 2;
   if (off != size)
-    abort ();
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   connection->write_buffer = data;
   connection->write_buffer_append_offset = size;
   connection->write_buffer_send_offset = 0;
@@ -986,8 +986,8 @@ parse_cookie_header (struct MHD_Connection *connection)
   char old;
   int quotes;
 
-  hdr = MHD_lookup_connection_value (connection, 
-				     MHD_HEADER_KIND, 
+  hdr = MHD_lookup_connection_value (connection,
+				     MHD_HEADER_KIND,
 				     MHD_HTTP_HEADER_COOKIE);
   if (hdr == NULL)
     return MHD_YES;
@@ -1259,7 +1259,7 @@ call_connection_handler (struct MHD_Connection *connection)
           return;
         }
       if (processed > used)
-        abort ();               /* fatal client API violation! */
+        mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "API violation");
       if (processed != 0)
         instant_retry = MHD_NO; /* client did not process everything */
       used -= processed;

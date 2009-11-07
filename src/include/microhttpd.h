@@ -577,7 +577,7 @@ enum MHD_ConnectionInfoType
 
   /**
    * Obtain IP address of the client.
-   * Takes no extra arguments.   
+   * Takes no extra arguments.
    */
   MHD_CONNECTION_INFO_CLIENT_ADDRESS
 };
@@ -635,6 +635,18 @@ struct MHD_Response;
  * Handle for POST processing.
  */
 struct MHD_PostProcessor;
+
+/**
+ * Callback for serious error condition. The default action is to abort().
+ * @param cls user specified value
+ * @param file where the error occured
+ * @param line where the error occured
+ * @param reason error detail, may be NULL
+ */
+typedef void (*MHD_PanicCallback) (void *cls,
+                                   const char *file,
+                                   unsigned int line,
+                                   const char *reason);
 
 /**
  * Allow or deny a client to connect.
@@ -758,8 +770,8 @@ typedef int
  *  requests using the same TCP connection).
  */
 typedef int
-  (*MHD_ContentReaderCallback) (void *cls, 
-				uint64_t pos, 
+  (*MHD_ContentReaderCallback) (void *cls,
+				uint64_t pos,
 				char *buf,
 				int max);
 
@@ -951,6 +963,13 @@ int
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key, const char *value);
+
+/**
+ * Sets the global error handler to a different implementation
+ * @param cb new error handler
+ * @param cls passed to error handler
+ */
+void MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
 
 /**
  * Get a particular header value.  If multiple
@@ -1212,7 +1231,7 @@ const union MHD_DaemonInfo *MHD_get_daemon_info (struct MHD_Daemon *daemon,
 
 /**
  * Obtain the version of this library
- * 
+ *
  * @return static version string, e.g. "0.4.1"
  */
 const char* MHD_get_version(void);
