@@ -264,7 +264,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
     return NULL;
   boundary = NULL;
   if (0 != strncasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, encoding,
-                        strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
+                        strlen (MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
     {
       if (0 !=
           strncasecmp (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA, encoding,
