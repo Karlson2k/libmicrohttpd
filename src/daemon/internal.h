@@ -49,7 +49,49 @@
  * Error handler
  */
 extern MHD_PanicCallback mhd_panic;
+
+/**
+ * Closure argument for "mhd_panic".
+ */
 extern void *mhd_panic_cls;
+
+/**
+ * Events we care about with respect to poll/select
+ * for file descriptors.
+ */
+enum MHD_PollActions
+  {
+    /**
+     * No event interests us.
+     */
+    MHD_POLL_ACTION_NOTHING = 0,
+
+    /**
+     * We would like to read.
+     */
+    MHD_POLL_ACTION_IN = 1,
+
+    /**
+     * We would like to write.
+     */ 
+    MHD_POLL_ACTION_OUT = 2
+  };
+
+
+/**
+ * Socket descriptor and events we care about.
+ */
+struct MHD_Pollfd {
+  /**
+   * Socket descriptor.
+   */
+  int fd;
+
+  /**
+   * Which events do we care about for this socket?
+   */
+  enum MHD_PollActions events;
+};
 
 
 #if HAVE_MESSAGES

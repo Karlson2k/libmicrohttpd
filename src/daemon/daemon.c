@@ -36,6 +36,8 @@
 #include "gnutls_global.h"
 #endif
 
+#include <poll.h>
+
 /**
  * Default connection limit.
  */
@@ -437,7 +439,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   if ((daemon == NULL) || (read_fd_set == NULL) || (write_fd_set == NULL)
       || (except_fd_set == NULL) || (max_fd == NULL)
       || (-1 == (fd = daemon->socket_fd)) || (daemon->shutdown == MHD_YES)
-      || ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0))
+      || ((daemon->options & MHD_USE_THREAD_PER_CONNECTION) != 0)
+      || ((daemon->options & MHD_USE_POLL) != 0))
     return MHD_NO;
 
   FD_SET (fd, read_fd_set);
@@ -463,7 +466,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 
 /**
  * Main function of the thread that handles an individual
- * connection.
+ * connection when MHD_USE_THREAD_PER_CONNECTION.
  */
 static void *
 MHD_handle_connection (void *data)
@@ -477,17 +480,13 @@ MHD_handle_connection (void *data)
   struct timeval tv;
   unsigned int timeout;
   unsigned int now;
+  struct MHD_Pollfd mp;
+  struct pollfd p;
 
   if (con == NULL)
     mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   timeout = con->daemon->connection_timeout;
-  while ((!con->daemon->shutdown) && (con->socket_fd != -1))
-    {
-      FD_ZERO (&rs);
-      FD_ZERO (&ws);
-      FD_ZERO (&es);
-      max = 0;
-      MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
+  while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
       now = time (NULL);
       tv.tv_usec = 0;
       if (timeout > (now - con->last_activity))
@@ -506,24 +505,63 @@ MHD_handle_connection (void *data)
 	{
 	  tv.tv_sec = 0;
 	}
-      num_ready = SELECT (max + 1, &rs, &ws, &es, &tv);
-      if (num_ready < 0)
-        {
+      if (0 == (con->daemon->options & MHD_USE_POLL)) {
+	/* use select */
+        FD_ZERO (&rs);
+        FD_ZERO (&ws);
+        FD_ZERO (&es);
+        max = 0;
+        MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
+        num_ready = SELECT (max + 1, &rs, &ws, &es, &tv);
+        if (num_ready < 0) {
+            if (errno == EINTR)
+              continue;
+#if HAVE_MESSAGES
+            MHD_DLOG (con->daemon, "Error during select (%d): `%s'\n", max,
+                      STRERROR (errno));
+#endif
+            break;
+        }
+        /* call appropriate connection handler if necessary */
+        if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &rs)))
+          con->read_handler (con);
+        if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &ws)))
+          con->write_handler (con);
+        if (con->socket_fd != -1)
+          con->idle_handler (con);
+      } else {
+        /* use poll */
+        memset(&mp, 0, sizeof (struct MHD_Pollfd));
+        MHD_connection_get_pollfd(con, &mp);
+	memset(&p, 0, sizeof (struct pollfd));
+        p.fd = mp.fd;
+        if (mp.events & MHD_POLL_ACTION_IN) 
+          p.events |= POLLIN;        
+        if (mp.events & MHD_POLL_ACTION_OUT) 
+          p.events |= POLLOUT;
+	/* in case we are missing the SIGALRM, keep going after
+	   at most 1s */
+	if (poll (&p, 1, 1000) < 0) {
           if (errno == EINTR)
             continue;
 #if HAVE_MESSAGES
-          MHD_DLOG (con->daemon, "Error during select (%d): `%s'\n", max,
+          MHD_DLOG (con->daemon, "Error during poll: `%s'\n", 
                     STRERROR (errno));
 #endif
           break;
         }
-      /* call appropriate connection handler if necessary */
-      if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &rs)))
-        con->read_handler (con);
-      if ((con->socket_fd != -1) && (FD_ISSET (con->socket_fd, &ws)))
-        con->write_handler (con);
-      if (con->socket_fd != -1)
-        con->idle_handler (con);
+        if ( (con->socket_fd != -1) && 
+	     (0 != (p.revents & POLLIN)) ) 
+          con->read_handler (con);        
+        if ( (con->socket_fd != -1) && 
+	     (0 != (p.revents & POLLOUT)) )
+          con->write_handler (con);        
+        if (con->socket_fd != -1)
+          con->idle_handler (con);
+	if ( (con->socket_fd != -1) &&
+	     (0 != (p.revents & (POLLERR | POLLHUP))) )
+          MHD_connection_close (con, MHD_REQUEST_TERMINATED_WITH_ERROR);      
+      }
     }
   if (con->socket_fd != -1)
     {
@@ -622,7 +660,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
 #ifndef WINDOWS
-  if (s >= FD_SETSIZE)
+  if ( (s >= FD_SETSIZE) &&
+       (0 == daemon->options & MHD_USE_POLL) )
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -986,6 +1025,38 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 }
 
 /**
+ * Poll for new connection. Used only with THREAD_PER_CONNECTION
+ */
+static int
+MHD_poll (struct MHD_Daemon *daemon)
+{
+  struct pollfd p;
+
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) 
+    return MHD_NO;
+  p.fd = daemon->socket_fd;
+  p.events = POLLIN;
+  p.revents = 0;
+
+  if (poll(&p, 1, 0) < 0) {
+    if (errno == EINTR)
+      return MHD_YES;
+#if HAVE_MESSAGES
+    MHD_DLOG (daemon, "poll failed: %s\n", STRERROR (errno));
+#endif
+    return MHD_NO;
+  }
+  /* handle shutdown cases */
+  if (daemon->shutdown == MHD_YES) 
+    return MHD_NO;  
+  if (daemon->socket_fd < 0) 
+    return MHD_YES; 
+  if (0 != (p.revents & POLLIN)) 
+    MHD_accept_connection (daemon);
+  return MHD_YES;
+}
+
+/**
  * Run webserver operations (without blocking unless
  * in client callbacks).  This method should be called
  * by clients in combination with MHD_get_fdset
@@ -1017,7 +1088,10 @@ MHD_select_thread (void *cls)
   struct MHD_Daemon *daemon = cls;
   while (daemon->shutdown == MHD_NO)
     {
-      MHD_select (daemon, MHD_YES);
+      if ((daemon->options & MHD_USE_POLL) == 0) 
+	MHD_select (daemon, MHD_YES);
+      else 
+	MHD_poll(daemon);      
       MHD_cleanup_connections (daemon);
     }
   return NULL;
@@ -1206,6 +1280,17 @@ MHD_start_daemon_va (unsigned int options,
         }
     }
 
+  /* poll support currently only works with MHD_USE_THREAD_PER_CONNECTION */
+  if ( (0 != (options & MHD_USE_POLL)) && 
+       (0 == (options & MHD_USE_THREAD_PER_CONNECTION)) ) {
+#if HAVE_MESSAGES
+      fprintf (stderr,
+               "MHD poll support only works with MHD_USE_THREAD_PER_CONNECTION\n");
+#endif
+      free (retVal);
+      return NULL;
+  }
+
   /* Thread pooling currently works only with internal select thread model */
   if ((0 == (options & MHD_USE_SELECT_INTERNALLY))
       && (retVal->worker_pool_size > 0))
@@ -1253,7 +1338,8 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #ifndef WINDOWS
-  if (socket_fd >= FD_SETSIZE)
+  if ( (socket_fd >= FD_SETSIZE) &&
+       (0 == (options & MHD_USE_POLL)) )
     {
 #if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)

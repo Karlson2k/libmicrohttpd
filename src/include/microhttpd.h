@@ -292,7 +292,14 @@ enum MHD_FLAG
    * recommended to turn this ON if you are testing clients against
    * MHD, and OFF in production.
    */
-  MHD_USE_PEDANTIC_CHECKS = 32
+  MHD_USE_PEDANTIC_CHECKS = 32,
+
+  /**
+   * Use poll instead of select. This allows sockets with fd >= FD_SETSIZE.
+   * This option only works in conjunction with MHD_USE_THREAD_PER_CONNECTION
+   * (at this point).
+   */
+  MHD_USE_POLL = 64
 };
 
 /**

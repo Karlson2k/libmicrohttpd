@@ -40,6 +40,14 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                           fd_set * write_fd_set,
                           fd_set * except_fd_set, int *max_fd);
 
+/**
+ * Obtain the pollfd for this connection. The poll interface allows large
+ * file descriptors. Select goes stupid when the fd overflows fdset (which
+ * is fixed).
+ */
+int MHD_connection_get_pollfd(struct MHD_Connection *connection,
+                              struct MHD_Pollfd *p);
+
 void MHD_set_http_calbacks (struct MHD_Connection *connection);
 
 int MHD_connection_handle_read (struct MHD_Connection *connection);

@@ -1,3 +1,7 @@
+Wed Nov 11 12:54:16 CET 2009
+	Adding support for poll (alternative to select allowing
+	for more than FD_SETSIZE parallel connections). -JM
+
 Wed Oct 28 20:26:00 CET 2009
  	Releasing libmicrohttpd 0.4.4. -CG
 

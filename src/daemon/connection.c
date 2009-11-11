@@ -702,6 +702,29 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
                           fd_set * write_fd_set,
                           fd_set * except_fd_set, int *max_fd)
 {
+  int ret;
+  struct MHD_Pollfd p;
+
+  memset(&p, 0, sizeof(struct MHD_Pollfd));
+  ret = MHD_connection_get_pollfd(connection, &p);
+  if ( (ret == MHD_YES) && (p.fd >= 0) ) {
+    if (0 != (p.events & MHD_POLL_ACTION_IN)) 
+      do_fd_set(p.fd, read_fd_set, max_fd);    
+    if (0 != (p.events & MHD_POLL_ACTION_OUT)) 
+      do_fd_set(p.fd, write_fd_set, max_fd);    
+  }
+  return ret;
+}
+
+/**
+ * Obtain the pollfd for this connection
+ *
+ * @return MHD_YES on success. If return MHD_YES and p->fd < 0, this 
+ *                 connection is not waiting for any read or write events
+ */
+int
+MHD_connection_get_pollfd(struct MHD_Connection *connection, struct MHD_Pollfd *p)
+{
   int fd;
 
   if (connection->pool == NULL)
@@ -715,6 +738,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
       return MHD_NO;
     }
   fd = connection->socket_fd;
+  p->fd = fd;
   if (fd == -1)
     return MHD_YES;
   while (1)
@@ -750,7 +774,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
               continue;
             }
           if (MHD_NO == connection->read_closed)
-            do_fd_set (fd, read_fd_set, max_fd);
+            p->events |= MHD_POLL_ACTION_IN;
           break;
         case MHD_CONNECTION_HEADERS_RECEIVED:
           /* we should never get here */
@@ -760,7 +784,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_CONTINUE_SENDING:
-          do_fd_set (fd, write_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_OUT;
           break;
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
@@ -789,7 +813,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
             }
           if ((connection->read_buffer_offset < connection->read_buffer_size)
               && (MHD_NO == connection->read_closed))
-            do_fd_set (fd, read_fd_set, max_fd);
+            p->events |= MHD_POLL_ACTION_IN;
           break;
         case MHD_CONNECTION_BODY_RECEIVED:
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
@@ -800,7 +824,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
               connection->state = MHD_CONNECTION_CLOSED;
               continue;
             }
-          do_fd_set (fd, read_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_IN;
           /* transition to FOOTERS_RECEIVED
              happens in read handler */
           break;
@@ -810,19 +834,19 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
           /* headers in buffer, keep writing */
-          do_fd_set (fd, write_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_OUT;
           break;
         case MHD_CONNECTION_HEADERS_SENT:
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_NORMAL_BODY_READY:
-          do_fd_set (fd, write_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_OUT;
           break;
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
           /* not ready, no socket action */
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
-          do_fd_set (fd, write_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_OUT;
           break;
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           /* not ready, no socket action */
@@ -831,7 +855,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_FOOTERS_SENDING:
-          do_fd_set (fd, write_fd_set, max_fd);
+          p->events |= MHD_POLL_ACTION_OUT;
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
           EXTRA_CHECK (0);
