@@ -46,7 +46,7 @@
 #define MHD_BUF_INC_SIZE 2048
 
 /**
- * Error handler
+ * Handler for fatal errors.
  */
 extern MHD_PanicCallback mhd_panic;
 

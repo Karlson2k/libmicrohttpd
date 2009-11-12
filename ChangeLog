@@ -1,3 +1,8 @@
+Thu Nov 12 16:19:14 CET 2009
+	Adding support for setting a custom error handler for
+	fatal errors (previously, the implementation always
+	called 'abort' in these cases). -CG/ND
+	
 Wed Nov 11 12:54:16 CET 2009
 	Adding support for poll (alternative to select allowing
 	for more than FD_SETSIZE parallel connections). -JM

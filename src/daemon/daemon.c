@@ -80,15 +80,24 @@ static void pthread_kill (int, int) {
 /**
  * Default implementation of the panic function
  */
-void mhd_panic_std(void *cls,
-                   const char *file,
-                   unsigned int line,
-                   const char *reason)
+static void 
+mhd_panic_std(void *cls,
+	      const char *file,
+	      unsigned int line,
+	      const char *reason)
 {
   abort ();
 }
 
+
+/**
+ * Handler for fatal errors.
+ */
 MHD_PanicCallback mhd_panic;
+
+/**
+ * Closure argument for "mhd_panic".
+ */
 void *mhd_panic_cls;
 
 /**
@@ -483,8 +492,6 @@ MHD_handle_connection (void *data)
   struct MHD_Pollfd mp;
   struct pollfd p;
 
-  if (con == NULL)
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   timeout = con->daemon->connection_timeout;
   while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
       now = time (NULL);
@@ -636,10 +643,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   static int on = 1;
 #endif
 
-#if HAVE_INET6
-  if (sizeof (struct sockaddr) > sizeof (struct sockaddr_in6))
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);     /* fatal, serious error */
-#endif
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
 
@@ -773,7 +776,19 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                     "Failed to setup TLS credentials: unknown credential type %d\n",
                     connection->daemon->cred_type);
 #endif
-          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "Unknown credential type");
+          SHUTDOWN (s, SHUT_RDWR);
+          CLOSE (s);
+          MHD_ip_limit_del (daemon, addr, addrlen);
+          free (connection->addr);
+          free (connection);
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
+#if HAVE_MESSAGES
+		     "Unknown credential type"
+#else
+		     NULL
+#endif
+		     );
+ 	  return MHD_NO;
         }
       MHD__gnutls_transport_set_ptr (connection->tls_session,
                                      (MHD_gnutls_transport_ptr_t) connection);
@@ -932,8 +947,6 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-  if (daemon == NULL)
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   if (daemon->shutdown == MHD_YES)
     return MHD_NO;
   FD_ZERO (&rs);
@@ -1186,7 +1199,7 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
 	  MHD_DLOG (retVal, "Failed to aquire gnutls mutex\n");
 #endif
-	  abort();
+          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 	}
       MHD__gnutls_global_init ();
       if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
@@ -1194,7 +1207,7 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
 	  MHD_DLOG (retVal, "Failed to release gnutls mutex\n");
 #endif
-	  abort();
+	  mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 	}
       /* set default priorities */
       MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
@@ -1276,7 +1289,8 @@ MHD_start_daemon_va (unsigned int options,
                        opt);
             }
 #endif
-          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
+	  free (retVal);
+	  return NULL;
         }
     }
 
@@ -1712,7 +1726,17 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 }
 
 /**
- * Sets the global error handler to a different implementation
+ * Sets the global error handler to a different implementation.  "cb"
+ * will only be called in the case of typically fatal, serious
+ * internal consistency issues.  These issues should only arise in the
+ * case of serious memory corruption or similar problems with the
+ * architecture.  While "cb" is allowed to return and MHD will then
+ * try to continue, this is never safe.
+ *
+ * The default implementation that is used if no panic function is set
+ * simply calls "abort".  Alternative implementations might call
+ * "exit" or other similar functions.
+ *
  * @param cb new error handler
  * @param cls passed to error handler
  */
@@ -1759,7 +1783,7 @@ sigalrmHandler (int sig)
  */
 void ATTRIBUTE_CONSTRUCTOR MHD_init ()
 {
-  mhd_panic = mhd_panic_std;
+  mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
 
 #ifndef WINDOWS

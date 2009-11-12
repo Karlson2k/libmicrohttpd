@@ -341,7 +341,13 @@ try_ready_normal_body (struct MHD_Connection *connection)
                                 connection->response_write_position));
   if ((ret == 0) &&
       (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)))
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "API violation");
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
+#if HAVE_MESSAGES
+	       "API violation"
+#else
+	       NULL
+#endif
+	       );
   if (ret == -1)
     {
       /* either error or http 1.0 transfer, close
@@ -1283,7 +1289,13 @@ call_connection_handler (struct MHD_Connection *connection)
           return;
         }
       if (processed > used)
-        mhd_panic (mhd_panic_cls, __FILE__, __LINE__, "API violation");
+        mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
+#if HAVE_MESSAGES
+		   "API violation"
+#else
+		   NULL
+#endif
+		   );
       if (processed != 0)
         instant_retry = MHD_NO; /* client did not process everything */
       used -= processed;
