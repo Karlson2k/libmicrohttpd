@@ -127,7 +127,7 @@ static int MHD__gnutls_init_level = 0;
  *
  **/
 int
-MHD__gnutls_global_init (void)
+MHD__gnutls_global_init ()
 {
   int result = 0;
   int res;
@@ -160,7 +160,7 @@ MHD__gnutls_global_init (void)
   }
 #endif
 
-  // bindtextdomain("mhd", "./");
+  /* bindtextdomain("mhd", "./"); */
 
   if (gcry_control (GCRYCTL_ANY_INITIALIZATION_P) == 0)
     {
@@ -242,7 +242,7 @@ MHD__gnutls_global_init (void)
  *
  **/
 void
-MHD__gnutls_global_deinit (void)
+MHD__gnutls_global_deinit ()
 {
   if (MHD__gnutls_init_level == 1)
     {

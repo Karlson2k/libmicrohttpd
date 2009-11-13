@@ -1201,7 +1201,6 @@ MHD_start_daemon_va (unsigned int options,
 #endif
           mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 	}
-      MHD__gnutls_global_init ();
       if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
 	{
 #if HAVE_MESSAGES
@@ -1688,7 +1687,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
 	  abort();
 	}
-      MHD__gnutls_global_deinit ();
       if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
 	{
 #if HAVE_MESSAGES
@@ -1797,6 +1795,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
   plibc_init ("GNU", "libmicrohttpd");
 #endif
 #if HTTPS_SUPPORT
+  MHD__gnutls_global_init ();
   if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
     abort();
 #endif
@@ -1805,6 +1804,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
 void ATTRIBUTE_DESTRUCTOR MHD_fini ()
 {
 #if HTTPS_SUPPORT
+  MHD__gnutls_global_deinit ();
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
     mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 #endif
