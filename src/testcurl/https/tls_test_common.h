@@ -74,12 +74,12 @@ size_t copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
 int
 http_ahc (void *cls, struct MHD_Connection *connection,
           const char *url, const char *method, const char *upload_data,
-          const char *version, unsigned int *upload_data_size, void **ptr);
+          const char *version, size_t *upload_data_size, void **ptr);
 
 int
 http_dummy_ahc (void *cls, struct MHD_Connection *connection,
                 const char *url, const char *method, const char *upload_data,
-                const char *version, unsigned int *upload_data_size,
+                const char *version, size_t *upload_data_size,
                 void **ptr);
 
 int gen_test_file_url (char *url, int port);
