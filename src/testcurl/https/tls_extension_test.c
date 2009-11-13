@@ -214,7 +214,6 @@ main (int argc, char *const *argv)
     -1
   };
 
-  MHD__gnutls_global_init ();
   MHD_gtls_global_set_log_level (11);
 
   if ((test_fd = setup_test_file ()) == NULL)
@@ -246,7 +245,7 @@ main (int argc, char *const *argv)
   setup_session (&session, &key, &cert, &xcred);
   errorCount += test_hello_extension (session, ext_arr[i], 1, 16);
   teardown_session (session, &key, &cert, xcred);
-#if 0
+#if 1
   i = 0;
   while (ext_arr[i] != -1)
     {
@@ -269,7 +268,6 @@ main (int argc, char *const *argv)
   print_test_result (errorCount, argv[0]);
 
   MHD_stop_daemon (d);
-  MHD__gnutls_global_deinit ();
 
   curl_global_cleanup ();
   fclose (test_fd);

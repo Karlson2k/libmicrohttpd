@@ -35,10 +35,12 @@ int curl_check_version (const char *req_version, ...);
 void
 print_test_result (int test_outcome, char *test_name)
 {
+#if 0
   if (test_outcome != 0)
     fprintf (stderr, "running test: %s [fail]\n", test_name);
   else
     fprintf (stdout, "running test: %s [pass]\n", test_name);
+#endif
 }
 
 size_t
@@ -402,10 +404,11 @@ test_wrap (char *test_name, int
       va_end (arg_list);
       return -1;
     }
-
+#if 0
   fprintf (stdout, "running test: %s ", test_name);
+#endif
   ret = test_function (test_fd, cipher_suite, proto_version);
-
+#if 0
   if (ret == 0)
     {
       fprintf (stdout, "[pass]\n");
@@ -414,7 +417,7 @@ test_wrap (char *test_name, int
     {
       fprintf (stdout, "[fail]\n");
     }
-
+#endif
   teardown_testcase (d);
   va_end (arg_list);
   return ret;
