@@ -580,7 +580,7 @@ MHD__asn1_ordering_set (unsigned char *der, int der_len, node_asn * node)
   struct vet
   {
     int end;
-    unsigned long value;
+    uint32_t value;
     struct vet *next, *prev;
   };
 
