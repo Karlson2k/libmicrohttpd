@@ -105,7 +105,11 @@ testExternalRun ()
     {
       maxfd = 0;
       FD_ZERO (&rs);
-      MHD_get_fdset (d, &rs, &rs, &rs, &maxfd);
+      if (MHD_YES != MHD_get_fdset (d, &rs, &rs, &rs, &maxfd))
+	{
+	  MHD_stop_daemon (d);
+	  return 256;
+	}
       if (MHD_run (d) == MHD_NO)
         {
           MHD_stop_daemon (d);
@@ -152,7 +156,7 @@ testMultithread ()
 int
 main (int argc, char *const *argv)
 {
-  unsigned int errorCount = 0;
+  int errorCount = 0;
   errorCount += testStartError ();
   errorCount += testStartStop ();
   errorCount += testExternalRun ();
