@@ -788,6 +788,7 @@ function to call if MHD encounteres a fatal internal error.  If no handler was s
 @item cls
 closure argument for cb; the other arguments are the name of the source file, line number and a string describing the nature of the fatal error (which can be NULL)
 @end table
+@end deftypefun
 
 @deftypefun {struct MHD_Daemon *} MHD_start_daemon (unsigned int flags, unsigned short port, MHD_AcceptPolicyCallback apc, void *apc_cls, MHD_AccessHandlerCallback dh, void *dh_cls, ...)
 Start a webserver on the given port.
