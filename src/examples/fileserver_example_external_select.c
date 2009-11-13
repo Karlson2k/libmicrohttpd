@@ -117,7 +117,8 @@ main (int argc, char *const *argv)
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
-      MHD_get_fdset (d, &rs, &ws, &es, &max);
+      if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
+	break; /* fatal internal error */
       if (MHD_get_timeout (d, &mhd_timeout) == MHD_YES)
 
         {
