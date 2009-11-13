@@ -664,7 +664,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
 #ifndef WINDOWS
   if ( (s >= FD_SETSIZE) &&
-       (0 == daemon->options & MHD_USE_POLL) )
+       (0 == (daemon->options & MHD_USE_POLL)) )
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
