@@ -102,7 +102,7 @@ test_tls_session_time_out (MHD_gtls_session_t session)
   sa.sin_port = htons (DEAMON_TEST_PORT);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
-  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
+  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 

@@ -165,7 +165,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
       goto cleanup;
     }
 
-  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) sd);
+  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
   if (gen_test_file_url (url, DEAMON_TEST_PORT))
     {
