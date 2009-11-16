@@ -488,7 +488,7 @@ MHD_handle_connection (void *data)
   int max;
   struct timeval tv;
   unsigned int timeout;
-  unsigned int now;
+  time_t now;
   struct MHD_Pollfd mp;
   struct pollfd p;
 
@@ -496,8 +496,7 @@ MHD_handle_connection (void *data)
   while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
       now = time (NULL);
       tv.tv_usec = 0;
-      if ( ( (timeout > (now - con->last_activity)) &&
-	     (now > con->last_activity) ) ||
+      if ( (timeout > (now - con->last_activity)) ||
 	   (timeout == 0) )
 	{
 	  /* in case we are missing the SIGALRM, keep going after
