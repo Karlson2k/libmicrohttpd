@@ -493,12 +493,12 @@ MHD_handle_connection (void *data)
   struct pollfd p;
 
   timeout = con->daemon->connection_timeout;
-  if (timeout == 0)
-    timeout = -1; /* 'forever' */
   while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
       now = time (NULL);
       tv.tv_usec = 0;
-      if (timeout > (now - con->last_activity))
+      if ( ( (timeout > (now - con->last_activity)) &&
+	     (now > con->last_activity) ) ||
+	   (timeout == 0) )
 	{
 	  /* in case we are missing the SIGALRM, keep going after
 	     at most 1s; see http://lists.gnu.org/archive/html/libmicrohttpd/2009-10/msg00013.html */
