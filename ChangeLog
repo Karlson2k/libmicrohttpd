@@ -1,3 +1,7 @@
+Mon Nov 16 14:41:26 CET 2009
+	Fixed busy-loop in internal select mode for inactive
+	clients with infinite connection timeout. -CG
+
 Thu Nov 12 16:19:14 CET 2009
 	Adding support for setting a custom error handler for
 	fatal errors (previously, the implementation always
