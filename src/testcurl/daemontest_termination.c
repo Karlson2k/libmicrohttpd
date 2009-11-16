@@ -34,7 +34,7 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <microhttpd.h>
-
+#include <unistd.h>
 #include <curl/curl.h>
 
 
