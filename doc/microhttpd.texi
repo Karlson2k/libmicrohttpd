@@ -384,7 +384,46 @@ Note that MHD will not generate any log messages
 if it was compiled without the "--enable-messages"
 flag being set and the MHD_USE_DEBUG flag being set, 
 even if this argument is used.
+
+@item MHD_OPTION_ARRAY
+@cindex options
+This option can be used for initializing MHD using options from an
+array.  A common use for this is writing an FFI for MHD.  The actual
+options given are in an array of 'struct MHD_OptionItem', so this
+option requires a single argument of type 'struct MHD_OptionItem'.
+The array must be terminated with an entry @code{MHD_OPTION_END}.
+
+An example for code using MHD_OPTION_ARRAY is:
+@example
+struct MHD_OptionItem ops[] = @{
+ @{ MHD_OPTION_CONNECTION_LIMIT, 100, NULL @},
+ @{ MHD_OPTION_CONNECTION_TIMEOUT, 10, NULL @},
+ @{ MHD_OPTION_END, 0, NULL @}
+@};
+d = MHD_start_daemon(0, 8080, NULL, NULL, dh, NULL,
+                     MHD_OPTION_ARRAY, ops,
+                     MHD_OPTION_END);
+@end example
+For options that expect a single pointer argument, the
+second member of the @code{struct MHD_OptionItem} is ignored.
+For options that expect two pointer arguments, the first
+argument must be cast to @code{intptr_t}.
 @end table
+@end deftp
+
+
+@deftp {C Struct} MHD_OptionItem
+Entry in an MHD_OPTION_ARRAY.  See the @code{MHD_OPTION_ARRAY} option
+argument for its use. 
+
+The @code{option} member is used to specify which option is specified
+in the array.  The other members specify the respective argument.
+
+Note that for options taking only a single pointer, the
+@code{ptr_value} member should be set.  For options taking two pointer
+arguments, the first pointer must be cast to @code{intptr_t} and both
+the @code{value} and the @code{ptr_value} members should be used to
+pass the two pointers.
 @end deftp
 
 

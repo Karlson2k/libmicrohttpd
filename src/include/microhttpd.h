@@ -453,8 +453,57 @@ enum MHD_OPTION
    * (MHD_start_daemon returns NULL for an unsupported thread
    * model).
    */
-  MHD_OPTION_THREAD_POOL_SIZE = 14
+  MHD_OPTION_THREAD_POOL_SIZE = 14,
+
+  /**
+   * Additional options given in an array of "struct MHD_OptionItem".
+   * The array must be terminated with an entry '{MHD_OPTION_END, 0, NULL}'.
+   * An example for code using MHD_OPTION_ARRAY is:
+   * <code>
+   * struct MHD_OptionItem ops[] = {
+   * { MHD_OPTION_CONNECTION_LIMIT, 100, NULL },
+   * { MHD_OPTION_CONNECTION_TIMEOUT, 10, NULL },
+   * { MHD_OPTION_END, 0, NULL }
+   * };
+   * d = MHD_start_daemon(0, 8080, NULL, NULL, dh, NULL,
+   *                      MHD_OPTION_ARRAY, ops,
+   *                      MHD_OPTION_END);
+   * </code>
+   * For options that expect a single pointer argument, the
+   * second member of the struct MHD_OptionItem is ignored.
+   * For options that expect two pointer arguments, the first
+   * argument must be cast to 'intptr_t'.
+   */
+  MHD_OPTION_ARRAY = 15
 };
+
+
+/**
+ * Entry in an MHD_OPTION_ARRAY.
+ */
+struct MHD_OptionItem
+{
+  /**
+   * Which option is being given.  Use MHD_OPTION_END
+   * to terminate the array.
+   */
+  enum MHD_OPTION option;
+
+  /**
+   * Option value (for integer arguments, and for options requiring
+   * two pointer arguments); should be 0 for options that take no
+   * arguments or only a single pointer argument.
+   */
+  intptr_t value;
+
+  /**
+   * Pointer option value (use NULL for options taking no arguments
+   * or only an integer option).
+   */
+  void *ptr_value;
+
+};
+
 
 /**
  * The MHD_ValueKind specifies the source of

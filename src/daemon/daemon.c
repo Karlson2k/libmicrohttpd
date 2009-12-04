@@ -1141,6 +1141,212 @@ MHD_start_daemon (unsigned int options,
 
 typedef void (*VfprintfFunctionPointerType)(void *, const char *, va_list);
 
+
+/**
+ * Parse a list of options given as varargs.
+ * 
+ * @param daemon the daemon to initialize
+ * @param ap the options
+ * @return MHD_YES on success, MHD_NO on error
+ */
+static int
+parse_options_va (struct MHD_Daemon *daemon,
+		  const struct sockaddr **servaddr,
+		  va_list ap);
+
+
+/**
+ * Parse a list of options given as varargs.
+ * 
+ * @param daemon the daemon to initialize
+ * @param ... the options
+ * @return MHD_YES on success, MHD_NO on error
+ */
+static int
+parse_options (struct MHD_Daemon *daemon,
+	       const struct sockaddr **servaddr,
+	       ...)
+{
+  va_list ap;
+  int ret;
+
+  va_start (ap, servaddr);
+  ret = parse_options_va (daemon, servaddr, ap);
+  va_end (ap);
+  return ret;
+}
+
+
+/**
+ * Parse a list of options given as varargs.
+ * 
+ * @param daemon the daemon to initialize
+ * @param ap the options
+ * @return MHD_YES on success, MHD_NO on error
+ */
+static int
+parse_options_va (struct MHD_Daemon *daemon,
+		  const struct sockaddr **servaddr,
+		  va_list ap)
+{
+  enum MHD_OPTION opt;
+  struct MHD_OptionItem *oa;
+  unsigned int i;
+  
+  while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
+    {
+      switch (opt)
+        {
+        case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+          daemon->pool_size = va_arg (ap, size_t);
+          break;
+        case MHD_OPTION_CONNECTION_LIMIT:
+          daemon->max_connections = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_CONNECTION_TIMEOUT:
+          daemon->connection_timeout = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_NOTIFY_COMPLETED:
+          daemon->notify_completed =
+            va_arg (ap, MHD_RequestCompletedCallback);
+          daemon->notify_completed_cls = va_arg (ap, void *);
+          break;
+        case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
+          daemon->per_ip_connection_limit = va_arg (ap, unsigned int);
+          break;
+        case MHD_OPTION_SOCK_ADDR:
+          *servaddr = va_arg (ap, const struct sockaddr *);
+          break;
+        case MHD_OPTION_URI_LOG_CALLBACK:
+          daemon->uri_log_callback =
+            va_arg (ap, LogCallback);
+          daemon->uri_log_callback_cls = va_arg (ap, void *);
+          break;
+        case MHD_OPTION_THREAD_POOL_SIZE:
+          daemon->worker_pool_size = va_arg (ap, unsigned int);
+          break;
+#if HTTPS_SUPPORT
+        case MHD_OPTION_PROTOCOL_VERSION:
+          _set_priority (&daemon->priority_cache->protocol,
+                         va_arg (ap, const int *));
+          break;
+        case MHD_OPTION_HTTPS_MEM_KEY:
+          daemon->https_mem_key = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_HTTPS_MEM_CERT:
+          daemon->https_mem_cert = va_arg (ap, const char *);
+          break;
+        case MHD_OPTION_CIPHER_ALGORITHM:
+          _set_priority (&daemon->priority_cache->cipher,
+                         va_arg (ap, const int *));
+          break;
+#endif
+        case MHD_OPTION_EXTERNAL_LOGGER:
+#if HAVE_MESSAGES
+          daemon->custom_error_log =
+            va_arg (ap, VfprintfFunctionPointerType);
+          daemon->custom_error_log_cls = va_arg (ap, void *);
+#else
+          va_arg (ap, VfprintfFunctionPointerType);
+          va_arg (ap, void *);
+#endif
+          break;
+	case MHD_OPTION_ARRAY:
+	  oa = va_arg (ap, struct MHD_OptionItem*);
+	  i = 0;
+	  while (MHD_OPTION_END != (opt = oa[i].option))
+	    {
+	      switch (opt)
+		{
+		case MHD_OPTION_END:
+		  abort ();
+		  break;
+		  /* all options taking 'size_t' */
+		case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						(size_t) oa[i].value,
+						MHD_OPTION_END))
+		    return MHD_NO;
+		  break;
+		  /* all options taking 'unsigned int' */
+		case MHD_OPTION_CONNECTION_LIMIT:
+		case MHD_OPTION_CONNECTION_TIMEOUT:
+		case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
+		case MHD_OPTION_THREAD_POOL_SIZE:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						(unsigned int) oa[i].value,
+						MHD_OPTION_END))
+		    return MHD_NO;
+		  break;
+		  /* all options taking 'int' or 'enum' */
+		case MHD_OPTION_CRED_TYPE:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						(int) oa[i].value,
+						MHD_OPTION_END))
+		    return MHD_NO;
+		  break;
+		  /* all options taking one pointer */
+		case MHD_OPTION_SOCK_ADDR:
+		case MHD_OPTION_HTTPS_MEM_KEY:
+		case MHD_OPTION_HTTPS_MEM_CERT:
+		case MHD_OPTION_PROTOCOL_VERSION:
+		case MHD_OPTION_CIPHER_ALGORITHM:
+		case MHD_OPTION_ARRAY:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						oa[i].ptr_value,
+						MHD_OPTION_END))
+		    return MHD_NO;
+		  break;
+		  /* all options taking two pointers */
+		case MHD_OPTION_NOTIFY_COMPLETED:
+		case MHD_OPTION_URI_LOG_CALLBACK:
+		case MHD_OPTION_EXTERNAL_LOGGER:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						(void *) oa[i].value,
+						oa[i].ptr_value,
+						MHD_OPTION_END))
+		    return MHD_NO;
+		  break;
+		  
+		default:
+		  return MHD_NO;
+		}
+	      i++;
+	    }
+	  break;
+        default:
+#if HAVE_MESSAGES
+          if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
+              (opt <= MHD_OPTION_CIPHER_ALGORITHM))
+            {
+              FPRINTF (stderr,
+                       "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
+                       opt);
+            }
+          else
+            {
+              FPRINTF (stderr,
+                       "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?)\n",
+                       opt);
+            }
+#endif
+	  return MHD_NO;
+        }
+    }  
+  return MHD_YES;
+}
+
+
 /**
  * Start a webserver on the given port.
  *
@@ -1168,7 +1374,6 @@ MHD_start_daemon_va (unsigned int options,
 #endif
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
-  enum MHD_OPTION opt;
   unsigned int i;
 
   if ((port == 0) || (dh == NULL))
@@ -1215,83 +1420,10 @@ MHD_start_daemon_va (unsigned int options,
     }
 #endif
 
-  while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
+  if (MHD_YES != parse_options_va (retVal, &servaddr, ap))
     {
-      switch (opt)
-        {
-        case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
-          retVal->pool_size = va_arg (ap, size_t);
-          break;
-        case MHD_OPTION_CONNECTION_LIMIT:
-          retVal->max_connections = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_CONNECTION_TIMEOUT:
-          retVal->connection_timeout = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_NOTIFY_COMPLETED:
-          retVal->notify_completed =
-            va_arg (ap, MHD_RequestCompletedCallback);
-          retVal->notify_completed_cls = va_arg (ap, void *);
-          break;
-        case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
-          retVal->per_ip_connection_limit = va_arg (ap, unsigned int);
-          break;
-        case MHD_OPTION_SOCK_ADDR:
-          servaddr = va_arg (ap, struct sockaddr *);
-          break;
-        case MHD_OPTION_URI_LOG_CALLBACK:
-          retVal->uri_log_callback =
-            va_arg (ap, LogCallback);
-          retVal->uri_log_callback_cls = va_arg (ap, void *);
-          break;
-        case MHD_OPTION_THREAD_POOL_SIZE:
-          retVal->worker_pool_size = va_arg (ap, unsigned int);
-          break;
-#if HTTPS_SUPPORT
-        case MHD_OPTION_PROTOCOL_VERSION:
-          _set_priority (&retVal->priority_cache->protocol,
-                         va_arg (ap, const int *));
-          break;
-        case MHD_OPTION_HTTPS_MEM_KEY:
-          retVal->https_mem_key = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_HTTPS_MEM_CERT:
-          retVal->https_mem_cert = va_arg (ap, const char *);
-          break;
-        case MHD_OPTION_CIPHER_ALGORITHM:
-          _set_priority (&retVal->priority_cache->cipher,
-                         va_arg (ap, const int *));
-          break;
-#endif
-        case MHD_OPTION_EXTERNAL_LOGGER:
-#if HAVE_MESSAGES
-          retVal->custom_error_log =
-            va_arg (ap, VfprintfFunctionPointerType);
-          retVal->custom_error_log_cls = va_arg (ap, void *);
-#else
-          va_arg (ap, VfprintfFunctionPointerType);
-          va_arg (ap, void *);
-#endif
-          break;
-        default:
-#if HAVE_MESSAGES
-          if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
-              (opt <= MHD_OPTION_CIPHER_ALGORITHM))
-            {
-              FPRINTF (stderr,
-                       "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
-                       opt);
-            }
-          else
-            {
-              FPRINTF (stderr,
-                       "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?)\n",
-                       opt);
-            }
-#endif
-	  free (retVal);
-	  return NULL;
-        }
+      free (retVal);
+      return NULL;
     }
 
   /* poll support currently only works with MHD_USE_THREAD_PER_CONNECTION */
