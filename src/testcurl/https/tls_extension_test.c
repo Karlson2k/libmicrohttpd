@@ -118,7 +118,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
   /* generate session client random */
   memset (session->security_parameters.client_random, 0, TLS_RANDOM_SIZE);
   MHD_gtls_write_uint32 (time (NULL), rnd);
-  MHD_gc_nonce ((char *) &rnd[4], TLS_RANDOM_SIZE - 4);
+  if (GC_OK != MHD_gc_nonce ((char *) &rnd[4], TLS_RANDOM_SIZE - 4)) abort ();
   memcpy (session->security_parameters.client_random, rnd, TLS_RANDOM_SIZE);
   memcpy (&data[pos], rnd, TLS_RANDOM_SIZE);
   pos += TLS_RANDOM_SIZE;
