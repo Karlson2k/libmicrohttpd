@@ -1258,9 +1258,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 	    {
 	      switch (opt)
 		{
-		case MHD_OPTION_END:
-		  abort ();
-		  break;
 		  /* all options taking 'size_t' */
 		case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
 		  if (MHD_YES != parse_options (daemon,
