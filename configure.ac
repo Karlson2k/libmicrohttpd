@@ -225,10 +225,10 @@ AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 
 # libgcrypt linkage: required for HTTPS support 
-AM_PATH_LIBGCRYPT(1.2.4, gcrypt=true)
+AM_PATH_LIBGCRYPT(1.2.2, gcrypt=true)
 
 # define the minimal version of libgcrypt required   
-MHD_GCRYPT_VERSION=1:1.2.4
+MHD_GCRYPT_VERSION=1:1.2.2
 AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
 
 
