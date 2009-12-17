@@ -36,7 +36,9 @@
 #include "gnutls_global.h"
 #endif
 
+#ifdef HAVE_POLL_H
 #include <poll.h>
+#endif
 
 /**
  * Default connection limit.
@@ -490,7 +492,9 @@ MHD_handle_connection (void *data)
   unsigned int timeout;
   time_t now;
   struct MHD_Pollfd mp;
+#ifdef HAVE_POLL_H
   struct pollfd p;
+#endif
 
   timeout = con->daemon->connection_timeout;
   while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
@@ -513,7 +517,11 @@ MHD_handle_connection (void *data)
 	{
 	  tv.tv_sec = 0;
 	}
+#ifdef HAVE_POLL_H
       if (0 == (con->daemon->options & MHD_USE_POLL)) {
+#else
+      {
+#endif
 	/* use select */
         FD_ZERO (&rs);
         FD_ZERO (&ws);
@@ -537,7 +545,10 @@ MHD_handle_connection (void *data)
           con->write_handler (con);
         if (con->socket_fd != -1)
           con->idle_handler (con);
-      } else {
+      }
+#ifdef HAVE_POLL_H
+      else
+      {
         /* use poll */
         memset(&mp, 0, sizeof (struct MHD_Pollfd));
         MHD_connection_get_pollfd(con, &mp);
@@ -570,6 +581,7 @@ MHD_handle_connection (void *data)
 	     (0 != (p.revents & (POLLERR | POLLHUP))) )
           MHD_connection_close (con, MHD_REQUEST_TERMINATED_WITH_ERROR);      
       }
+#endif
     }
   if (con->socket_fd != -1)
     {
@@ -1044,6 +1056,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 static int
 MHD_poll (struct MHD_Daemon *daemon)
 {
+#ifdef HAVE_POLL_H
   struct pollfd p;
 
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) 
@@ -1068,6 +1081,9 @@ MHD_poll (struct MHD_Daemon *daemon)
   if (0 != (p.revents & POLLIN)) 
     MHD_accept_connection (daemon);
   return MHD_YES;
+#else
+  return MHD_NO;
+#endif
 }
 
 /**
