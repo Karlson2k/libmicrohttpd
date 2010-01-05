@@ -40,7 +40,7 @@ extern const char ca_cert_pem[];
 extern const char srv_signed_cert_pem[];
 extern const char srv_signed_key_pem[];
 
-const char *ca_cert_file_name = "ca_cert_pem";
+const char *ca_cert_file_name = "tmp_ca_cert.pem";
 
 /*
  * test HTTPS transfer
@@ -108,8 +108,9 @@ test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version)
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 1);
   curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
-
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
+
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 

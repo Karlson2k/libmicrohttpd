@@ -39,7 +39,8 @@ TESTS = \
   tls_session_time_out_test \
   tls_cipher_change_test \
   tls_alert_test \
-  tls_extension_test
+  tls_extension_test \
+  tls_authentication_test
 
 # cURL dependent tests
 tls_extension_test_SOURCES = \
