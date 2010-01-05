@@ -10,7 +10,45 @@
 #define SERVERKEYFILE "server.key"
 #define SERVERCERTFILE "server.pem"
 
-char *string_to_base64 (const char *message);
+
+char *
+string_to_base64 (const char *message)
+{
+  const char *lookup =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  unsigned long l;
+  int i;
+  char *tmp;
+  size_t length = strlen (message);
+
+  tmp = malloc (length * 2);
+  if (NULL == tmp)
+    return tmp;
+
+  tmp[0] = 0;
+
+  for (i = 0; i < length; i += 3)
+    {
+      l = (((unsigned long) message[i]) << 16)
+        | (((i + 1) < length) ? (((unsigned long) message[i + 1]) << 8) : 0)
+        | (((i + 2) < length) ? ((unsigned long) message[i + 2]) : 0);
+
+
+      strncat (tmp, &lookup[(l >> 18) & 0x3F], 1);
+      strncat (tmp, &lookup[(l >> 12) & 0x3F], 1);
+
+      if (i + 1 < length)
+        strncat (tmp, &lookup[(l >> 6) & 0x3F], 1);
+      if (i + 2 < length)
+        strncat (tmp, &lookup[l & 0x3F], 1);
+    }
+
+  if (length % 3)
+    strncat (tmp, "===", 3 - length % 3);
+
+  return tmp;
+}
+
 
 long
 get_file_size (const char *filename)
@@ -217,43 +255,4 @@ main ()
   free (cert_pem);
 
   return 0;
-}
-
-
-char *
-string_to_base64 (const char *message)
-{
-  const char *lookup =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  unsigned long l;
-  int i;
-  char *tmp;
-  size_t length = strlen (message);
-
-  tmp = malloc (length * 2);
-  if (NULL == tmp)
-    return tmp;
-
-  tmp[0] = 0;
-
-  for (i = 0; i < length; i += 3)
-    {
-      l = (((unsigned long) message[i]) << 16)
-        | (((i + 1) < length) ? (((unsigned long) message[i + 1]) << 8) : 0)
-        | (((i + 2) < length) ? ((unsigned long) message[i + 2]) : 0);
-
-
-      strncat (tmp, &lookup[(l >> 18) & 0x3F], 1);
-      strncat (tmp, &lookup[(l >> 12) & 0x3F], 1);
-
-      if (i + 1 < length)
-        strncat (tmp, &lookup[(l >> 6) & 0x3F], 1);
-      if (i + 2 < length)
-        strncat (tmp, &lookup[l & 0x3F], 1);
-    }
-
-  if (length % 3)
-    strncat (tmp, "===", 3 - length % 3);
-
-  return tmp;
 }
