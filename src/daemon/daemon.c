@@ -1487,7 +1487,7 @@ MHD_start_daemon_va (unsigned int options,
 #endif
   else
     socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
-  if (socket_fd < 0)
+  if (socket_fd == -1)
     {
 #if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
@@ -1549,7 +1549,7 @@ MHD_start_daemon_va (unsigned int options,
         }
     }
   retVal->socket_fd = socket_fd;
-  if (BIND (socket_fd, servaddr, addrlen) < 0)
+  if (BIND (socket_fd, servaddr, addrlen) == -1)
     {
 #if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
