@@ -43,7 +43,11 @@
 /**
  * Default connection limit.
  */
+#ifndef WINDOWS
 #define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE -4
+#else
+#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE
+#endif
 
 /**
  * Default memory allowed per connection.
