@@ -225,9 +225,6 @@ MHD__gnutls_global_init ()
       return result;
     }
 
-  /* Initialize the gcrypt (if used random generator) */
-  MHD_gc_pseudo_random (&c, 1);
-
   return result;
 }
 
