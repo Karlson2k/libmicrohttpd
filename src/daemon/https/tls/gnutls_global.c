@@ -131,7 +131,6 @@ MHD__gnutls_global_init ()
 {
   int result = 0;
   int res;
-  char c;
 
   if (MHD__gnutls_init_level++)
     return 0;
