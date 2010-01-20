@@ -80,7 +80,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 
   if (!con_info->fp)
     {
-      if (NULL != (fp = fopen (filename, "r")))
+      if (NULL != (fp = fopen (filename, "rb")))
         {
           fclose (fp);
           con_info->answerstring = fileexistspage;

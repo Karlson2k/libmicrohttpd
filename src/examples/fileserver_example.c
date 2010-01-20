@@ -62,7 +62,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  file = fopen (&url[1], "r");
+  file = fopen (&url[1], "rb");
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (PAGE),

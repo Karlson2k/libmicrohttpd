@@ -225,7 +225,7 @@ take this as the name the file will be stored on the server and make sure no fil
 @verbatim
   if (!con_info->fp)
     {
-      if (NULL != (fp = fopen (filename, "r")) )
+      if (NULL != (fp = fopen (filename, "rb")) )
         {
           fclose (fp);
           con_info->answerstring = fileexistspage;

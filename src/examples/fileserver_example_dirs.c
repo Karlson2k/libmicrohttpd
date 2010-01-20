@@ -55,7 +55,7 @@ dir_reader (void *cls, uint64_t pos, char *buf, int max)
   return snprintf (buf, max,
 		   "<a href=\"/%s\">%s</a><br>",
 		   e->d_name,
-		   e->d_name);  
+		   e->d_name);
 }
 
 
@@ -83,9 +83,9 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  file = fopen (&url[1], "r");
+  file = fopen (&url[1], "rb");
   if (file == NULL)
-    {      
+    {
       response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
 						    32 * 1024,
 						    &dir_reader,

@@ -174,7 +174,7 @@ setup_ca_cert ()
 {
   FILE *cert_fd;
 
-  if (NULL == (cert_fd = fopen (ca_cert_file_name, "w+")))
+  if (NULL == (cert_fd = fopen (ca_cert_file_name, "wb+")))
     {
       fprintf (stderr, "Error: failed to open `%s': %s\n",
                ca_cert_file_name, strerror (errno));

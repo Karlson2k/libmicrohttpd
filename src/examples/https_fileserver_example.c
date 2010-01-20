@@ -131,7 +131,7 @@ http_ahc (void *cls,
     }
   *ptr = NULL;                  /* reset when done */
 
-  file = fopen (&url[1], "r");
+  file = fopen (url, "rb");
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (EMPTY_PAGE),
@@ -142,7 +142,7 @@ http_ahc (void *cls,
     }
   else
     {
-      stat (&url[1], &buf);
+      stat (url, &buf);
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
                                                     &file_reader, file,
                                                     (MHD_ContentReaderFreeCallback)

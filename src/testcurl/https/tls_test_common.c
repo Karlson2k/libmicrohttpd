@@ -87,7 +87,7 @@ http_ahc (void *cls, struct MHD_Connection *connection,
     }
   *ptr = NULL;                  /* reset when done */
 
-  file = fopen (url, "r");
+  file = fopen (url, "rb");
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (PAGE_NOT_FOUND),
@@ -290,7 +290,7 @@ setup_test_file ()
 {
   FILE *test_fd;
 
-  if (NULL == (test_fd = fopen (TEST_FILE_NAME, "w+")))
+  if (NULL == (test_fd = fopen (TEST_FILE_NAME, "wb+")))
     {
       fprintf (stderr, "Error: failed to open `%s': %s\n",
                TEST_FILE_NAME, strerror (errno));
