@@ -131,7 +131,7 @@ http_ahc (void *cls,
     }
   *ptr = NULL;                  /* reset when done */
 
-  file = fopen (url, "rb");
+  file = fopen (&url[1], "rb");
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (EMPTY_PAGE),
