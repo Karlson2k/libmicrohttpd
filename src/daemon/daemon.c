@@ -664,7 +664,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   memset (addr, 0, sizeof (addrstorage));
 
   s = ACCEPT (daemon->socket_fd, addr, &addrlen);
-  if ((s < 0) || (addrlen <= 0))
+  if ((s == -1) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
       /* This could be a common occurance with multiple worker threads */
