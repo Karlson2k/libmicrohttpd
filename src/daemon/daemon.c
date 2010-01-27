@@ -1686,7 +1686,7 @@ MHD_start_daemon_va (unsigned int options,
             {
 #if HAVE_MESSAGES
               MHD_DLOG (retVal,
-                        "Failed to create pool thread: %d\n", STRERROR (errno));
+                        "Failed to create pool thread: %s\n", STRERROR (errno));
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
