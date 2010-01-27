@@ -103,6 +103,7 @@ netbsd*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
