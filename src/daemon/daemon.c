@@ -1393,6 +1393,7 @@ MHD_start_daemon_va (unsigned int options,
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   unsigned int i;
+  int res_thread_create;
 
   if ((port == 0) || (dh == NULL))
     return NULL;
