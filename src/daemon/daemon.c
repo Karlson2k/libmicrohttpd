@@ -655,7 +655,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
-  int s, res_thread_create;
+  int s;
+  int res_thread_create;
 #if OSX
   static int on = 1;
 #endif
@@ -827,7 +828,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         {
 #if HAVE_MESSAGES
           MHD_DLOG (daemon, "Failed to create a thread: %s\n",
-                    STRERROR (errno));
+                    STRERROR (res_thread_create));
 #endif
           SHUTDOWN (s, SHUT_RDWR);
           CLOSE (s);
@@ -1601,15 +1602,15 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #endif
-  if (((0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
-       ((0 != (options & MHD_USE_SELECT_INTERNALLY))
-        && (0 == retVal->worker_pool_size)))
-        && (0 !=
-          pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal)))
+  if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
+	 ( (0 != (options & MHD_USE_SELECT_INTERNALLY)) &&
+	   (0 == retVal->worker_pool_size)) ) && 
+       (0 != (res_thread_create =
+	      pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal))))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal,
-                "Failed to create listen thread: %s\n", STRERROR (errno));
+                "Failed to create listen thread: %s\n", STRERROR (res_thread_create));
 #endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
@@ -1682,11 +1683,12 @@ MHD_start_daemon_va (unsigned int options,
             ++d->max_connections;
 
           /* Spawn the worker thread */
-          if (0 != pthread_create (&d->pid, NULL, &MHD_select_thread, d))
+          if (0 != (res_thread_create = pthread_create (&d->pid, NULL, &MHD_select_thread, d)))
             {
 #if HAVE_MESSAGES
               MHD_DLOG (retVal,
-                        "Failed to create pool thread: %s\n", STRERROR (errno));
+                        "Failed to create pool thread: %s\n", 
+			STRERROR (res_thread_create));
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
