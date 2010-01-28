@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2009 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2009, 2010 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -32,6 +32,15 @@
 #define MAP_FAILED ((void*)-1)
 #endif
 
+/**
+ * Align to 2x word size (as GNU libc does).
+ */
+#define ALIGN_SIZE (2 * sizeof(void*))
+
+/**
+ * Round up 'n' to a multiple of ALIGN_SIZE.
+ */
+#define ROUND_TO_ALIGN(n) ((n+(ALIGN_SIZE-1)) & (~(ALIGN_SIZE-1)))
 
 struct MemoryPool
 {
@@ -127,6 +136,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
 {
   void *ret;
 
+  size = ROUND_TO_ALIGN (size);
   if ((pool->pos + size > pool->end) || (pool->pos + size < pool->pos))
     return NULL;
   if (from_end == MHD_YES)
@@ -166,6 +176,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 {
   void *ret;
 
+  new_size = ROUND_TO_ALIGN (new_size);
   if ((pool->end < old_size) || (pool->end < new_size))
     return NULL;                /* unsatisfiable or bogus request */
 
@@ -211,6 +222,7 @@ MHD_pool_reset (struct MemoryPool *pool,
 		void *keep, 
 		size_t size)
 {
+  size = ROUND_TO_ALIGN (size);
   if (keep != NULL)
     {
       if (keep != pool->memory)

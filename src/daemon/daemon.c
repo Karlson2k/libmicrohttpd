@@ -495,8 +495,8 @@ MHD_handle_connection (void *data)
   struct timeval tv;
   unsigned int timeout;
   time_t now;
-  struct MHD_Pollfd mp;
 #ifdef HAVE_POLL_H
+  struct MHD_Pollfd mp;
   struct pollfd p;
 #endif
 
