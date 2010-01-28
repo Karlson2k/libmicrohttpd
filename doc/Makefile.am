@@ -1,5 +1,5 @@
 man_MANS = libmicrohttpd.3
-EXTRA_DIST = $(man_MANS) Doxyfile
+EXTRA_DIST = $(man_MANS) Doxyfile 
 
 DISTCLEANFILES = \
   microhttpd.cps \
@@ -27,5 +27,6 @@ microhttpd_TEXINFOS = \
   examples/simplepost.c \
   examples/tlsauthentication.c \
   fdl-1.3.texi \
-  lgpl.texi 
+  lgpl.texi \
+  ecos.texi
 

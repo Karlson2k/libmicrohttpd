@@ -1,3 +1,6 @@
+Thu Jan 28 21:28:56 CET 2010
+	Releasing libmicrohttpd 0.4.5. -CG
+
 Thu Jan 28 20:35:48 CET 2010
 	Make sure addresses returned by memory pool are
 	aligned (fixes bus errors on Sparc). -CG
