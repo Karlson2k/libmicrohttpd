@@ -1070,7 +1070,7 @@ MHD_poll (struct MHD_Daemon *daemon)
   p.events = POLLIN;
   p.revents = 0;
 
-  if (poll(&p, 1, 0) < 0) {
+  if (poll(&p, 1, 1000) < 0) {
     if (errno == EINTR)
       return MHD_YES;
 #if HAVE_MESSAGES
