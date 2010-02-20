@@ -1248,18 +1248,46 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
-          _set_priority (&daemon->priority_cache->protocol,
-                         va_arg (ap, const int *));
+	  if (daemon->options & MHD_USE_SSL)
+	    _set_priority (&daemon->priority_cache->protocol,
+			   va_arg (ap, const int *));
+#if HAVE_MESSAGES
+	  else
+	    FPRINTF (stderr,
+		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		     opt);	  
+#endif
           break;
         case MHD_OPTION_HTTPS_MEM_KEY:
-          daemon->https_mem_key = va_arg (ap, const char *);
+	  if (daemon->options & MHD_USE_SSL)
+	    daemon->https_mem_key = va_arg (ap, const char *);
+#if HAVE_MESSAGES
+	  else
+	    FPRINTF (stderr,
+		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		     opt);	  
+#endif
           break;
         case MHD_OPTION_HTTPS_MEM_CERT:
-          daemon->https_mem_cert = va_arg (ap, const char *);
+	  if (daemon->options & MHD_USE_SSL)
+	    daemon->https_mem_cert = va_arg (ap, const char *);
+#if HAVE_MESSAGES
+	  else
+	    FPRINTF (stderr,
+		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		     opt);	  
+#endif
           break;
         case MHD_OPTION_CIPHER_ALGORITHM:
-          _set_priority (&daemon->priority_cache->cipher,
-                         va_arg (ap, const int *));
+	  if (daemon->options & MHD_USE_SSL)
+	    _set_priority (&daemon->priority_cache->cipher,
+			   va_arg (ap, const int *));
+#if HAVE_MESSAGES
+	  else
+	    FPRINTF (stderr,
+		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		     opt);	  
+#endif	  
           break;
 #endif
         case MHD_OPTION_EXTERNAL_LOGGER:
