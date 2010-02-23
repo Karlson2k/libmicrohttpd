@@ -1,3 +1,7 @@
+Tue Feb 23 09:16:15 CET 2010
+	Added configure check for endianness to define WORDS_BIGENDIAN
+	which fixes SSL support on big endian architectures. -JA/CG
+
 Sat Feb 20 10:01:09 CET 2010
 	Added check for inconsistent options (MHD_OPTION_PROTOCOL_VERSION
 	without MHD_USE_SSL) causing instant segfault. -JA/CG

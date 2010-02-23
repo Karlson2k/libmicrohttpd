@@ -63,6 +63,7 @@ AC_CANONICAL_HOST
 AM_PROG_CC_C_O
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
+AC_C_BIGENDIAN
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
