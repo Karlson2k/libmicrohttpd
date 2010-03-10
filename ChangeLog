@@ -1,3 +1,7 @@
+Wed Mar 10 13:18:26 CET 2010
+	Fixing bug in 100 CONTINUE replacement when handling POSTs
+	(see report on mailinglist), with testcase. -CG/MC
+
 Tue Feb 23 09:16:15 CET 2010
 	Added configure check for endianness to define WORDS_BIGENDIAN
 	which fixes SSL support on big endian architectures. -JA/CG
@@ -15,7 +19,7 @@ Thu Jan 28 21:28:56 CET 2010
 Thu Jan 28 20:35:48 CET 2010
 	Make sure addresses returned by memory pool are
 	aligned (fixes bus errors on Sparc). -CG
-	
+
 Thu Dec 17 20:26:52 CET 2009
 	poll.h is not stricly required anymore. -ND
 

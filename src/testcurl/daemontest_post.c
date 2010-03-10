@@ -409,7 +409,181 @@ testExternalPost ()
   return 0;
 }
 
+static int
+ahc_cancel (void *cls,
+	    struct MHD_Connection *connection,
+	    const char *url,
+	    const char *method,
+	    const char *version,
+	    const char *upload_data, size_t *upload_data_size,
+	    void **unused)
+{
+  struct MHD_Response *response;
+  int ret;
 
+  if (0 != strcmp ("POST", method))
+    {
+      fprintf (stderr,
+	       "Unexpected method `%s'\n", method);
+      return MHD_NO; 
+    }
+
+  if (*unused == NULL)
+    {
+      *unused = "wibble";
+      /* We don't want the body. Send a 500. */
+      response = MHD_create_response_from_data(0, NULL, 0, 0);
+      ret = MHD_queue_response(connection, 500, response);
+      if (ret != MHD_YES)
+	fprintf(stderr, "Failed to queue response\n");
+      MHD_destroy_response(response);
+      return ret;
+    }
+  else
+    {
+      fprintf(stderr, 
+	      "In ahc_cancel again. This should not happen.\n");
+      return MHD_NO;
+    }
+}
+
+struct CRBC
+{
+  const char *buffer;
+  size_t size;
+  size_t pos;
+};
+
+static size_t 
+readBuffer(void *p, size_t size, size_t nmemb, void *opaque)
+{
+  struct CRBC *data = opaque;
+  size_t required = size * nmemb;
+  size_t left = data->size - data->pos;
+  
+  if (required > left)
+    required = left;
+  
+  memcpy(p, data->buffer + data->pos, required);
+  data->pos += required;
+  
+  return required/size;
+}
+
+static size_t 
+slowReadBuffer(void *p, size_t size, size_t nmemb, void *opaque)
+{
+  sleep(1);
+  return readBuffer(p, size, nmemb, opaque);
+}
+
+#define FLAG_EXPECT_CONTINUE 1
+#define FLAG_CHUNKED 2
+#define FLAG_FORM_DATA 4
+#define FLAG_SLOW_READ 8
+#define FLAG_COUNT 16
+
+static int
+testMultithreadedPostCancelPart(int flags)
+{
+  struct MHD_Daemon *d;
+  CURL *c;
+  char buf[2048];
+  struct CBC cbc;
+  CURLcode errornum;
+  struct curl_slist *headers = NULL;
+  long response_code;
+  CURLcode cc;
+  int result = 0;
+  struct CRBC crbc;
+
+  /* Don't test features that aren't available with HTTP/1.0 in
+   * HTTP/1.0 mode. */
+  if (!oneone && (flags & (FLAG_EXPECT_CONTINUE | FLAG_CHUNKED)))
+    return 0;
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+                        1081, NULL, NULL, &ahc_cancel, NULL, MHD_OPTION_END);
+  if (d == NULL)
+    return 32768;
+
+  crbc.buffer = "Test content";
+  crbc.size = strlen(crbc.buffer);
+  crbc.pos = 0;
+  
+  c = curl_easy_init ();
+  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  curl_easy_setopt (c, CURLOPT_READFUNCTION, (flags & FLAG_SLOW_READ) ? &slowReadBuffer : &readBuffer);
+  curl_easy_setopt (c, CURLOPT_READDATA, &crbc);
+  curl_easy_setopt (c, CURLOPT_POSTFIELDS, NULL);
+  curl_easy_setopt (c, CURLOPT_POSTFIELDSIZE, crbc.size);
+  curl_easy_setopt (c, CURLOPT_POST, 1L);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  if (oneone)
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  // NOTE: use of CONNECTTIMEOUT without also
+  //   setting NOSIGNAL results in really weird
+  //   crashes on my system!
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+
+  if (flags & FLAG_CHUNKED)
+      headers = curl_slist_append(headers, "Transfer-Encoding: chunked");
+  if (!(flags & FLAG_FORM_DATA))
+  headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+  if (flags & FLAG_EXPECT_CONTINUE)
+      headers = curl_slist_append(headers, "Expect: 100-Continue");
+  curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
+  
+  if (CURLE_HTTP_RETURNED_ERROR != (errornum = curl_easy_perform (c)))
+    {
+      fprintf (stderr,
+               "flibbet curl_easy_perform didn't fail as expected: `%s' %d\n",
+               curl_easy_strerror (errornum), errornum);
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      curl_slist_free_all(headers);
+      return 65536;
+    }
+  
+  if (CURLE_OK != (cc = curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code)))
+    {
+      fprintf(stderr, "curl_easy_getinfo failed: '%s'\n", curl_easy_strerror(errornum));
+      result = 65536;
+    }
+  
+  if (!result && (response_code != 500))
+    {
+      fprintf(stderr, "Unexpected response code: %ld\n", response_code);
+      result = 131072;
+    }
+  
+  if (!result && (cbc.pos != 0))
+    result = 262144;
+
+  curl_easy_cleanup (c);
+  MHD_stop_daemon (d);
+  curl_slist_free_all(headers);
+  return result;
+}
+
+static int
+testMultithreadedPostCancel()
+{
+  int result = 0;
+  int flags;
+  for(flags = 0; flags < FLAG_COUNT; ++flags)
+    result |= testMultithreadedPostCancelPart(flags);  
+  return result;
+}
 
 int
 main (int argc, char *const *argv)
@@ -419,6 +593,7 @@ main (int argc, char *const *argv)
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
+  errorCount += testMultithreadedPostCancel ();
   errorCount += testInternalPost ();
   errorCount += testMultithreadedPost ();
   errorCount += testMultithreadedPoolPost ();

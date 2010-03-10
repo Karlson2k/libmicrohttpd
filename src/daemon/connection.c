@@ -1140,6 +1140,7 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   return MHD_YES;
 }
 
+
 /**
  * Call the handler of the application for this
  * connection.  Handles chunking of the upload
@@ -1147,6 +1148,41 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
  */
 static void
 call_connection_handler (struct MHD_Connection *connection)
+{
+  size_t processed;
+
+  if (connection->response != NULL)
+    return;                     /* already queued a response */  
+  processed = 0;
+  connection->client_aware = MHD_YES;
+  if (MHD_NO ==
+      connection->daemon->default_handler (connection->daemon->
+					   default_handler_cls,
+					   connection, connection->url,
+					   connection->method,
+					   connection->version,
+					   NULL, &processed,
+					   &connection->client_context))
+    {
+      /* serious internal error, close connection */
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+		"Internal application error, closing connection.\n");
+#endif
+      connection_close_error (connection);
+      return;
+    }
+}
+
+
+
+/**
+ * Call the handler of the application for this
+ * connection.  Handles chunking of the upload
+ * as well as normal uploads.
+ */
+static void
+process_request_body (struct MHD_Connection *connection)
 {
   size_t processed;
   size_t available;
@@ -1949,7 +1985,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset != 0)
             {
-              call_connection_handler (connection);     /* loop call */
+              process_request_body (connection);     /* loop call */
               if (connection->state == MHD_CONNECTION_CLOSED)
                 continue;
             }
