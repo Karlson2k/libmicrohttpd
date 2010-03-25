@@ -336,7 +336,7 @@ when this request is processed later; returning a
 value of NULL has no special significance; (however,
 note that if you return non-NULL, you can no longer
 rely on the first call to the access handler having
-@code{NULL == *con_cls on entry} on entry)
+@code{NULL == *con_cls} on entry)
 @code{cls} will be set to the second argument following
 MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
 be the 0-terminated URI of the request.
@@ -384,6 +384,14 @@ Note that MHD will not generate any log messages
 if it was compiled without the "--enable-messages"
 flag being set and the MHD_USE_DEBUG flag being set, 
 even if this argument is used.
+
+@item MHD_OPTION_THREAD_POOL_SIZE
+Number (unsigned int) of threads in thread pool. Enable
+thread pooling by setting this value to to something
+greater than 1. Currently, thread model must be
+MHD_USE_SELECT_INTERNALLY if thread pooling is enabled
+(MHD_start_daemon returns NULL for an unsupported thread
+model).
 
 @item MHD_OPTION_ARRAY
 @cindex options
@@ -455,7 +463,7 @@ already been processed).
 @item MHD_GET_ARGUMENT_KIND
 @code{GET} (@uri{}) arguments.
 
-@item MHD_HEADER_KIND
+@item MHD_FOOTER_KIND
 @http{} footer (only for http 1.1 chunked encodings).
 
 @end table
