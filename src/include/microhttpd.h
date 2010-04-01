@@ -81,7 +81,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00040500
+#define MHD_VERSION 0x00040600
 
 /**
  * MHD-internal return code for "YES".
@@ -930,7 +930,7 @@ void MHD_stop_daemon (struct MHD_Daemon *daemon);
  * @param write_fd_set write set
  * @param except_fd_set except set
  * @param max_fd increased to largest FD added (if larger
- *               than existing value)
+ *               than existing value); can be NULL
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.

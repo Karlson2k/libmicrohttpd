@@ -693,7 +693,8 @@ static void
 do_fd_set (int fd, fd_set * set, int *max_fd)
 {
   FD_SET (fd, set);
-  if (fd > *max_fd)
+  if ( (NULL != max_fd) &&
+       (fd > *max_fd) )
     *max_fd = fd;
 }
 

@@ -439,6 +439,12 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 /**
  * Obtain the select sets for this daemon.
  *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.
@@ -460,7 +466,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 
   FD_SET (fd, read_fd_set);
   /* update max file descriptor */
-  if ((*max_fd) < fd)
+  if ( (NULL != max_fd) &&
+       ((*max_fd) < fd) )
     *max_fd = fd;
 
   con_itr = daemon->connections;
@@ -908,6 +915,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * returned value is how long select should at most
  * block, not the timeout value set for connections.
  *
+ * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return MHD_YES on success, MHD_NO if timeouts are
  *        not used (or no connections exist that would
