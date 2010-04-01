@@ -1071,7 +1071,7 @@ MHD_queue_response (struct MHD_Connection *connection,
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *
- * @param size size of the data portion of the response, MHD_SIZE_UNKNOW for unknown
+ * @param size size of the data portion of the response, MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
  *                   MHD may still call crc using smaller chunks); this
  *                   is essentially the buffer size used for IO, clients
