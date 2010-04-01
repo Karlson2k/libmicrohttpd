@@ -192,7 +192,7 @@ struct MHD_Response
   unsigned int reference_count;
 
   /**
-   * Set to -1 if size is not known.
+   * Set to MHD_SIZE_UNKNOWN if size is not known.
    */
   uint64_t total_size;
 
