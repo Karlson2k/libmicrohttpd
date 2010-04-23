@@ -1,3 +1,9 @@
+Fri Apr 23 09:56:37 CEST 2010
+	Do not return HTTP headers for requests without version
+	numbers.  Do return HTTP version 1.0 if client requested
+	HTTP version 1.1 (previously, we returned HTTP/1.1 even
+	if the client specified HTTP/1.0).  -GM/CG
+
 Sat Mar 13 09:41:01 CET 2010
 	Releasing libmicrohttpd 0.4.6. -CG
 
@@ -37,7 +43,7 @@ Thu Nov 12 16:19:14 CET 2009
 	Adding support for setting a custom error handler for
 	fatal errors (previously, the implementation always
 	called 'abort' in these cases). -CG/ND
-	
+
 Wed Nov 11 12:54:16 CET 2009
 	Adding support for poll (alternative to select allowing
 	for more than FD_SETSIZE parallel connections). -JM
@@ -143,7 +149,7 @@ Thu Feb  5 22:43:45 MST 2009
 	 Incompatible API change to allow 64-bit uploads and downloads.
 	 Clients must use "uint64_t" for the "pos"
 	 argument (MHD_ContentReaderCallback) and the "off"
-	 argument (MHD_PostDataIterator) and the "size" 
+	 argument (MHD_PostDataIterator) and the "size"
 	 argument (MHD_create_response_from_callback) now.
 	 Also, "unsigned int" was changed to "size_t" for
 	 the "upload_data_size" argument (MHD_AccessHandlerCallback),
@@ -152,7 +158,7 @@ Thu Feb  5 22:43:45 MST 2009
 	 the "buffer_size" argument (MHD_create_post_processor) and
 	 the "post_data_len" argument (MHD_post_process).  You may
 	 need to #include <stdint.h> before <microhttpd.h> from now on. -CG
-	
+
 Thu Feb  5 20:21:08 MST 2009
 	 Allow getting address information about the connecting
 	 client after the accept call. -CG
@@ -179,7 +185,7 @@ Tue Nov 18 01:19:53 MST 2008
 	 and (largely useless) options. -CG
 
 Sun Nov 16 16:54:54 MST 2008
-	 Added option to get unparsed URI via callback. 
+	 Added option to get unparsed URI via callback.
 	 Releasing GNU libmicrohttpd 0.4.0pre1. -CG
 
 Sun Nov 16 02:48:14 MST 2008
@@ -209,19 +215,19 @@ Wed Sep 10 22:43:59 MDT 2008
 	 Releasing GNU libmicrohttpd 0.4.0pre0. -CG
 
 Wed Sep 10 21:36:06 MDT 2008
-	 Fixed data race on closing sockets during 
+	 Fixed data race on closing sockets during
 	 shutdown (in one-thread-per-connection mode). -CG
 
 Thu Sep  4 23:37:18 MDT 2008
 	 Fixed some boundary issues with processing
-	 chunked requests; removed memmove from a 
-	 number of spots, in favor of using an index into 
+	 chunked requests; removed memmove from a
+	 number of spots, in favor of using an index into
 	 the current buffer instead. -GS
 
 Sun Aug 24 13:05:41 MDT 2008
 	 Now handling clients returning 0 from response callback
 	 as specified in the documentation (abort if internal
-	 select is used, retry immediately if a thread per 
+	 select is used, retry immediately if a thread per
 	 connection is used). -CG
 
 Sun Aug 24 12:44:43 MDT 2008
@@ -243,7 +249,7 @@ Mon May 26 13:28:57 MDT 2008
 Fri May 23 16:54:41 MDT 2008
 	 Fixed issue with postprocessor not handling URI-encoded
 	 values of more than 1024 bytes correctly. -CG
-	
+
 Mon May  5 09:18:29 MDT 2008
 	 Fixed date header (was off by 1900 years). -JP
 
@@ -260,14 +266,14 @@ Sat Apr 12 15:14:05 MDT 2008
 	 Restructured the code (curl-testcases and zzuf testcases
 	 are now in different directories; code examples are in
 	 src/examples/).
-	 Fixed a problem (introduced in 0.2.3) with handling very 
+	 Fixed a problem (introduced in 0.2.3) with handling very
 	 large requests (the code did not return proper error code).
 	 If "--enable-messages" is specified, the code now includes
 	 reasonable default HTML webpages for various build-in
 	 errors (such as request too large and malformed requests).
 	 Without that flag, the webpages returned will still be
 	 empty.
-	 Started to add zzuf-based fuzzing-testcases (these require 
+	 Started to add zzuf-based fuzzing-testcases (these require
 	 the zzuf and socat binaries to be installed). -CG
 
 Fri Apr 11 20:20:34 MDT 2008
@@ -281,22 +287,22 @@ Sat Mar 29 22:36:09 MDT 2008
 	 Updated and integrated TexInfo documentation. -CG
 
 Tue Mar 25 13:40:53 MDT 2008
-	 Prevent multi-part post-processor from going to error 
-	 state when the input buffer is full and current token 
+	 Prevent multi-part post-processor from going to error
+	 state when the input buffer is full and current token
 	 just changes processor state without consuming any data.
-	 Also, the original implementation would not consume any 
-	 input in process_value_to_boundary if there is no new 
+	 Also, the original implementation would not consume any
+	 input in process_value_to_boundary if there is no new
 	 line character in sight. -AS
 
 	 Remove checks for request method after it finished writing
-	 response footers as it's only _pipelined_ requests that 
-	 should not be allowed after POST or PUT requests.  Reusing 
-	 the existing connection is perfectly ok though.  And there 
+	 response footers as it's only _pipelined_ requests that
+	 should not be allowed after POST or PUT requests.  Reusing
+	 the existing connection is perfectly ok though.  And there
 	 is no reliable way to detect pipelining on server side
-	 anyway so it is the client's responsibility to not send new 
+	 anyway so it is the client's responsibility to not send new
 	 data before it gets a response after a POST operation. -AS
 
-	 Clarified license in man page. Releasing 
+	 Clarified license in man page. Releasing
          libmicrohttpd 0.2.3 -CG
 
 Sat Mar 22 01:12:38 MDT 2008
@@ -307,13 +313,13 @@ Mon Feb 25 19:13:53 MST 2008
 	 in the read set under certain circumstances. -CG
 
 Wed Jan 30 23:15:44 MST 2008
-	 Added support for nested multiparts to post processor. 
+	 Added support for nested multiparts to post processor.
 	 Made sure that MHD does not allow pipelining for methods
-	 other than HEAD and GET (and of course still also only 
+	 other than HEAD and GET (and of course still also only
 	 allows it for http 1.1).  Releasing libmicrohttpd 0.2.1.  -CG
 
 Mon Jan 21 11:59:46 MST 2008
-	 Added option to limit number of concurrent connections 
+	 Added option to limit number of concurrent connections
 	 accepted from the same IP address. -CG
 
 Fri Jan  4 16:02:08 MST 2008
@@ -330,14 +336,14 @@ Wed Dec 19 21:12:04 MST 2007
 	 "100 CONTINUE" response.  Removed the mostly useless
 	 "(un)register handler" methods from the API.  Changed
 	 the internal implementation to use a finite state
-	 machine (cleaner code, slightly less memory consumption). 
+	 machine (cleaner code, slightly less memory consumption).
 	 Releasing libmicrohttpd 0.2.0. - CG
-	
+
 Sun Dec 16 03:24:13 MST 2007
 	 Implemented handling of chunked (HTTP 1.1) uploads.
-	 Note that the upload callback must be able to 
+	 Note that the upload callback must be able to
 	 process chunks in the size uploaded by the client,
-	 MHD will not "join" small chunks into a big 
+	 MHD will not "join" small chunks into a big
 	 contiguous block of memory (even if buffer space
 	 would be available).  - CG
 
@@ -357,20 +363,20 @@ Thu Oct 11 11:02:06 MDT 2007
 	 Releasing libmicrohttpd 0.1.1. - CG
 
 Thu Oct 11 10:09:12 MDT 2007
-	 Fixing response to include HTTP status message. - EG 
+	 Fixing response to include HTTP status message. - EG
 
 Thu Sep 27 10:19:46 MDT 2007
 	 Fixing parsing of "%xx" in URLs with GET arguments. - eglaysher
 
 Sun Sep  9 14:32:23 MDT 2007
 	 Added option to compile debug/warning messages;
-	 error messages are now disabled by default.  
+	 error messages are now disabled by default.
 	 Modified linker option for GNU LD to not export
 	 non-public symbols (further reduces binary size).
 	 Releasing libmicrohttpd 0.1.0. - CG
 
 Sat Sep  8 21:54:04 MDT 2007
-	 Extended API to allow for incremental POST 
+	 Extended API to allow for incremental POST
 	 processing.  The new API is binary-compatible
 	 as long as the app does not handle POSTs, but
 	 since that maybe the case, we're strictly speaking
@@ -378,7 +384,7 @@ Sat Sep  8 21:54:04 MDT 2007
 	 POST data is no longer obtained the same way). - CG
 
 Thu Aug 30 00:59:24 MDT 2007
-	 Improving API to allow clients to associate state 
+	 Improving API to allow clients to associate state
          with a connection and to be notified about request
          termination (this is a binary-compatible change). - CG
 	 Fixed compile errors under OS X. - HL
@@ -405,8 +411,8 @@ Sat Aug 18 03:06:09 MDT 2007
 Wed Aug 15 01:46:44 MDT 2007
 	 Extending API to allow timeout of connections.
 	 Changed API (MHD_create_response_from_callback) to
-	 allow user to specify IO buffer size.	 
-	 Improved error handling.  
+	 allow user to specify IO buffer size.
+	 Improved error handling.
          Released libmicrohttpd 0.0.3. - CG
 
 Tue Aug 14 19:45:49 MDT 2007

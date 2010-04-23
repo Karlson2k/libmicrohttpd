@@ -577,13 +577,27 @@ build_header_response (struct MHD_Connection *connection)
   enum MHD_ValueKind kind;
   const char *reason_phrase;
 
+  if (0 == strlen(connection->version))
+    {
+      data = MHD_pool_allocate (connection->pool, 0, MHD_YES);
+      connection->write_buffer = data;
+      connection->write_buffer_append_offset = 0;
+      connection->write_buffer_send_offset = 0;
+      connection->write_buffer_size = 0;
+      return MHD_YES;
+    }
   if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
     {
       add_extra_headers (connection);
       reason_phrase = MHD_get_reason_phrase_for (connection->responseCode);
       SPRINTF (code,
                "%s %u %s\r\n",
-               MHD_HTTP_VERSION_1_1, connection->responseCode, reason_phrase);
+               (0 == strcasecmp (MHD_HTTP_VERSION_1_0,
+				 connection->version)) 
+	       ? MHD_HTTP_VERSION_1_0 
+	       : MHD_HTTP_VERSION_1_1,
+	       connection->responseCode, 
+	       reason_phrase);
       off = strlen (code);
       /* estimate size */
       size = off + 2;           /* extra \r\n at the end */
