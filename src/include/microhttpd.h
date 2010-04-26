@@ -41,10 +41,10 @@
  * continue" are understood and handled automatically).<p>
  *
  * MHD understands POST data and is able to decode certain formats
- * (at the moment only "application/x-www-form-urlencoded") if the
- * entire data fits into the allowed amount of memory for the
- * connection.  Unsupported encodings and large POST submissions are
- * provided as a stream to the main application (and thus can be
+ * (at the moment only "application/x-www-form-urlencoded" and
+ * "mulitpart/formdata"). Unsupported encodings and large POST 
+ * submissions may require the application to manually process
+ * the stream, which is provided to the main application (and thus can be
  * processed, just not conveniently by MHD).<p>
  *
  * The header file defines various constants used by the HTTP protocol.
