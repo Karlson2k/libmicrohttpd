@@ -1576,6 +1576,7 @@ parse_connection_headers (struct MHD_Connection *connection)
   const char *clen;
   unsigned long long cval;
   struct MHD_Response *response;
+  const char *enc;
 
   parse_cookie_header (connection);
   if ((0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options))
@@ -1620,21 +1621,19 @@ parse_connection_headers (struct MHD_Connection *connection)
     }
   else
     {
-      if (NULL == MHD_lookup_connection_value (connection,
-                                               MHD_HEADER_KIND,
-                                               MHD_HTTP_HEADER_TRANSFER_ENCODING))
+      enc = MHD_lookup_connection_value (connection,
+					 MHD_HEADER_KIND,
+					 MHD_HTTP_HEADER_TRANSFER_ENCODING);
+      if (NULL == enc)
         {
-          /* this request does not have a body */
+          /* this request (better) not have a body */
           connection->remaining_upload_size = 0;
         }
       else
         {
           connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
-          if (0 ==
-              strcasecmp (MHD_lookup_connection_value
-                          (connection, MHD_HEADER_KIND,
-                           MHD_HTTP_HEADER_TRANSFER_ENCODING), "chunked"))
-            connection->have_chunked_upload = MHD_YES;
+          if (0 == strcasecmp (enc), "chunked")
+	    connection->have_chunked_upload = MHD_YES;
         }
     }
 }
