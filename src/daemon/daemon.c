@@ -466,8 +466,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 
   FD_SET (fd, read_fd_set);
   /* update max file descriptor */
-  if ( (NULL != max_fd) &&
-       ((*max_fd) < fd) )
+  if ((*max_fd) < fd) 
     *max_fd = fd;
 
   con_itr = daemon->connections;

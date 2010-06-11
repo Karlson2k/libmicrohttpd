@@ -273,10 +273,10 @@ MHD_create_post_processor (struct MHD_Connection *connection,
       boundary =
         &encoding[strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
       /* Q: should this be "strcasestr"? */
-      if (NULL != strstr (boundary, "boundary="))
-        boundary = strstr (boundary, "boundary=") + strlen ("boundary=");
-      else
-        return NULL;            /* failed to determine boundary */
+      boundary = strstr (boundary, "boundary=");
+      if (NULL == boundary)
+	return NULL; /* failed to determine boundary */
+      boundary += strlen ("boundary=");
       blen = strlen (boundary);
       if ((blen == 0) || (blen * 2 + 2 > buffer_size))
         return NULL;            /* (will be) out of memory or invalid boundary */
