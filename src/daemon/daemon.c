@@ -1557,7 +1557,7 @@ MHD_start_daemon_va (unsigned int options,
   if ((SETSOCKOPT (socket_fd,
                    SOL_SOCKET,
                    SO_REUSEADDR,
-                   &on, sizeof (on)) < 0) && (options & MHD_USE_DEBUG) != 0)
+                   &on, sizeof (on)) < 0) && ((options & MHD_USE_DEBUG) != 0))
     {
 #if HAVE_MESSAGES
       FPRINTF (stderr, "setsockopt failed: %s\n", STRERROR (errno));
