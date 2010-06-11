@@ -270,7 +270,7 @@ MHD_destroy_response (struct MHD_Response *response)
   if (response == NULL)
     return;
   pthread_mutex_lock (&response->mutex);
-  if (0 != --response->reference_count)
+  if (0 != --(response->reference_count))
     {
       pthread_mutex_unlock (&response->mutex);
       return;
@@ -295,7 +295,7 @@ void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
   pthread_mutex_lock (&response->mutex);
-  response->reference_count++;
+  (response->reference_count)++;
   pthread_mutex_unlock (&response->mutex);
 }
 
