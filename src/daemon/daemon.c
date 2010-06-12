@@ -343,6 +343,8 @@ _set_priority (MHD_gtls_priority_st * st, const int *list)
 {
   int num = 0;
 
+  if (list == NULL)
+    return 0;
   while ((list[num] != 0) && (num < MAX_ALGOS))
     num++;
   st->num_algorithms = num;
