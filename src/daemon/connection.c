@@ -1632,7 +1632,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       else
         {
           connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
-          if (0 == strcasecmp (enc), "chunked")
+          if (0 == strcasecmp (enc, "chunked"))
 	    connection->have_chunked_upload = MHD_YES;
         }
     }
