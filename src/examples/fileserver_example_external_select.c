@@ -69,7 +69,11 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  file = fopen (&url[1], "rb");
+  if ( (0 == stat (&url[1], &buf)) &&
+       (S_ISREG (buf.st_mode)) )
+    file = fopen (&url[1], "rb");
+  else
+    file = NULL;
   if (file == NULL)
     {
       response = MHD_create_response_from_data (strlen (PAGE),
@@ -80,7 +84,6 @@ ahc_echo (void *cls,
     }
   else
     {
-      stat (&url[1], &buf);
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k page size */
                                                     &file_reader,
                                                     file,
