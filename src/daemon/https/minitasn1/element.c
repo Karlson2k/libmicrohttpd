@@ -337,7 +337,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
     case TYPE_ENUMERATED:
       if (len == 0)
         {
-          if ((isdigit (value[0])) || (value[0] == '-'))
+          if ((isdigit ((unsigned char) value[0])) || (value[0] == '-'))
             {
               value_temp =
                 (unsigned char *) MHD__asn1_alloca (SIZEOF_UNSIGNED_LONG_INT);
@@ -426,7 +426,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
           p = node->down;
           while (type_field (p->type) != TYPE_DEFAULT)
             p = p->right;
-          if ((isdigit (p->value[0])) || (p->value[0] == '-'))
+          if ((isdigit ((unsigned char) p->value[0])) || (p->value[0] == '-'))
             {
               default_temp =
                 (unsigned char *) MHD__asn1_alloca (SIZEOF_UNSIGNED_LONG_INT);
@@ -497,7 +497,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
       break;
     case TYPE_OBJECT_ID:
       for (k = 0; k < strlen (value); k++)
-        if ((!isdigit (value[k])) && (value[k] != '.') && (value[k] != '+'))
+        if ((!isdigit ((unsigned char) value[k])) && (value[k] != '.') && (value[k] != '+'))
           return ASN1_VALUE_NOT_VALID;
       if (node->type & CONST_DEFAULT)
         {
@@ -518,7 +518,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
           if (strlen (value) < 11)
             return ASN1_VALUE_NOT_VALID;
           for (k = 0; k < 10; k++)
-            if (!isdigit (value[k]))
+            if (!isdigit ( (unsigned char) value[k]))
               return ASN1_VALUE_NOT_VALID;
           switch (strlen (value))
             {
@@ -527,7 +527,7 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
                 return ASN1_VALUE_NOT_VALID;
               break;
             case 13:
-              if ((!isdigit (value[10])) || (!isdigit (value[11])) ||
+              if ((!isdigit ( (unsigned char) value[10])) || (!isdigit ( (unsigned char) value[11])) ||
                   (value[12] != 'Z'))
                 return ASN1_VALUE_NOT_VALID;
               break;
@@ -535,16 +535,16 @@ MHD__asn1_write_value (ASN1_TYPE node_root, const char *name,
               if ((value[10] != '+') && (value[10] != '-'))
                 return ASN1_VALUE_NOT_VALID;
               for (k = 11; k < 15; k++)
-                if (!isdigit (value[k]))
+                if (!isdigit ( (unsigned char) value[k]))
                   return ASN1_VALUE_NOT_VALID;
               break;
             case 17:
-              if ((!isdigit (value[10])) || (!isdigit (value[11])))
+              if ((!isdigit ( (unsigned char) value[10])) || (!isdigit ( (unsigned char) value[11])))
                 return ASN1_VALUE_NOT_VALID;
               if ((value[12] != '+') && (value[12] != '-'))
                 return ASN1_VALUE_NOT_VALID;
               for (k = 13; k < 17; k++)
-                if (!isdigit (value[k]))
+                if (!isdigit ( (unsigned char) value[k]))
                   return ASN1_VALUE_NOT_VALID;
               break;
             default:
@@ -790,7 +790,7 @@ MHD__asn1_read_value (ASN1_TYPE root, const char *name, void *ivalue,
           p = node->down;
           while (type_field (p->type) != TYPE_DEFAULT)
             p = p->right;
-          if ((isdigit (p->value[0])) || (p->value[0] == '-')
+          if ((isdigit ( (unsigned char) p->value[0])) || (p->value[0] == '-')
               || (p->value[0] == '+'))
             {
               if (MHD__asn1_convert_integer
