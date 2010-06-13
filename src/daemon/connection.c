@@ -579,6 +579,7 @@ build_header_response (struct MHD_Connection *connection)
   enum MHD_ValueKind kind;
   const char *reason_phrase;
 
+  EXTRA_CHECK (NULL != connection->version);
   if (0 == strlen(connection->version))
     {
       data = MHD_pool_allocate (connection->pool, 0, MHD_YES);
@@ -673,7 +674,12 @@ transmit_error_response (struct MHD_Connection *connection,
 {
   struct MHD_Response *response;
 
-  /* die, header far too long to be reasonable */
+  if (connection->version == NULL)
+    {
+      /* we were unable to process the full header line, so we don't
+	 really know what version the client speaks; assume 1.0 */
+      connection->version = MHD_HTTP_VERSION_1_0;
+    }
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   connection->read_closed = MHD_YES;
 #if HAVE_MESSAGES
