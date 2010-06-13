@@ -1254,6 +1254,14 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
         case MHD_OPTION_THREAD_POOL_SIZE:
           daemon->worker_pool_size = va_arg (ap, unsigned int);
+	  if (daemon->worker_pool_size >= SIZE_MAX / sizeof (struct MHD_Daemon))
+	    {
+#if HAVE_MESSAGES
+	      FPRINTF (stderr,
+		       "Specified thread pool size too big\n");
+#endif
+	      return MHD_NO;
+	    }
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:

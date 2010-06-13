@@ -34,8 +34,15 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
   FILE *file = cls;
 
-  fseek (file, pos, SEEK_SET);
+  (void) fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
+}
+
+static void
+free_callback (void *cls)
+{
+  FILE *file = cls;
+  fclose (file);
 }
 
 static int
@@ -77,8 +84,12 @@ ahc_echo (void *cls,
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k page size */
                                                     &file_reader,
                                                     file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
+                                                    &free_callback);
+      if (response == NULL)
+	{
+	  fclose (file);
+	  return MHD_NO;
+	}
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
     }

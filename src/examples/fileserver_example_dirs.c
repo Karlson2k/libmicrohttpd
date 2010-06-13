@@ -39,16 +39,32 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
   return fread (buf, 1, max, file);
 }
 
+static void
+file_free_callback (void *cls)
+{
+  FILE *file = cls;
+  fclose (file);
+}
+
+static void
+dir_free_callback (void *cls)
+{
+  DIR *dir = cls;
+  if (dir != NULL)
+    closedir (dir);
+}
 
 static int
 dir_reader (void *cls, uint64_t pos, char *buf, int max)
 {
+  DIR *dir = cls;
   struct dirent *e;
+
   if (max < 512)
     return 0;
   do
     {
-      e = readdir (cls);
+      e = readdir (dir);
       if (e == NULL)
         return -1;
   } while (e->d_name[0] == '.');
@@ -72,7 +88,9 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   FILE *file;
+  DIR *dir;
   struct stat buf;
+  char emsg[1024];
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
@@ -86,13 +104,39 @@ ahc_echo (void *cls,
   file = fopen (&url[1], "rb");
   if (file == NULL)
     {
-      response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
-						    32 * 1024,
-						    &dir_reader,
-						    opendir ("."),
-						    (MHD_ContentReaderFreeCallback) &closedir);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-      MHD_destroy_response (response);
+      dir = opendir (".");
+      if (dir == NULL)
+	{
+	  /* most likely cause: more concurrent requests than  
+	     available file descriptors / 2 */
+	  snprintf (emsg,
+		    sizeof (emsg),
+		    "Failed to open directory `.': %s\n",
+		    strerror (errno));
+	  response = MHD_create_response_from_data (strlen (emsg),
+						    emsg,
+						    MHD_NO,
+						    MHD_YES);
+	  if (response == NULL)
+	    return MHD_NO;	    
+	  ret = MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE, response);
+	  MHD_destroy_response (response);
+	}
+      else
+	{
+	  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
+							32 * 1024,
+							&dir_reader,
+							dir,
+							&dir_free_callback);
+	  if (response == NULL)
+	    {
+	      closedir (dir);
+	      return MHD_NO;
+	    }
+	  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	  MHD_destroy_response (response);
+	}
     }
   else
     {
@@ -100,8 +144,7 @@ ahc_echo (void *cls,
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k page size */
                                                     &file_reader,
                                                     file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
+                                                    &file_free_callback);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
     }
@@ -123,7 +166,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  while (1) sleep (1);
+  getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }

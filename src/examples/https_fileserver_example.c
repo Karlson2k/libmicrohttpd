@@ -158,7 +158,7 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *TLS_daemon;
 
-  if (argc == 3)
+  if (argc == 2)
     {
       /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
       /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
@@ -172,7 +172,7 @@ main (int argc, char *const *argv)
     }
   else
     {
-      printf ("Usage: %s HTTP-PORT SECONDS-TO-RUN\n", argv[0]);
+      printf ("Usage: %s HTTP-PORT\n", argv[0]);
       return 1;
     }
 
@@ -186,7 +186,7 @@ main (int argc, char *const *argv)
       printf ("MHD daemon listening on port %d\n", atoi (argv[1]));
     }
 
-  sleep (atoi (argv[2]));
+  getc (stdin);
 
   MHD_stop_daemon (TLS_daemon);
 

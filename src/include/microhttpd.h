@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2006, 2007, 2008, 2009 Christian Grothoff (and other contributing authors)
+     (C) 2006, 2007, 2008, 2009, 2010 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -97,7 +97,11 @@ extern "C"
  * Constant used to indicate unknown size (use when
  * creating a response).
  */
+#ifdef UINT64_MAX
+#define MHD_SIZE_UNKNOWN UINT64_MAX
+#else
 #define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
+#endif
 
 /**
  * HTTP response codes.

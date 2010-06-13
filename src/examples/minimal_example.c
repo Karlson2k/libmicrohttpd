@@ -61,9 +61,9 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
 
-  if (argc != 3)
+  if (argc != 2)
     {
-      printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
+      printf ("%s PORT\n", argv[0]);
       return 1;
     }
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
@@ -71,7 +71,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  sleep (atoi (argv[2]));
+  getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }
