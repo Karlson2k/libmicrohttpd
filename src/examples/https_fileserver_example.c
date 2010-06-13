@@ -186,7 +186,7 @@ main (int argc, char *const *argv)
       printf ("MHD daemon listening on port %d\n", atoi (argv[1]));
     }
 
-  getc (stdin);
+  (void) getc (stdin);
 
   MHD_stop_daemon (TLS_daemon);
 

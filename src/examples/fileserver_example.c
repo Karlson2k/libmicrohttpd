@@ -34,7 +34,7 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
   FILE *file = cls;
 
-  fseek (file, pos, SEEK_SET);
+  (void)  fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
 }
 
@@ -113,7 +113,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  getc (stdin);
+  (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }

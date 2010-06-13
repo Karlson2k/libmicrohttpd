@@ -166,7 +166,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  getc (stdin);
+  (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }
