@@ -450,7 +450,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     }
   if (ret > 0xFFFFFF)
     ret = 0xFFFFFF;
-  SPRINTF (cbuf, "%X\r\n", ret);
+  snprintf (cbuf, 
+	    sizeof (cbuf),
+	    "%X\r\n", ret);
   cblen = strlen (cbuf);
   EXTRA_CHECK (cblen <= sizeof (cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen], cbuf, cblen);
