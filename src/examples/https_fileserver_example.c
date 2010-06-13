@@ -101,7 +101,7 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
   FILE *file = cls;
 
-  fseek (file, pos, SEEK_SET);
+  (void) fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
 }
 
