@@ -105,6 +105,13 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
   return fread (buf, 1, max, file);
 }
 
+static void
+file_free_callback (void *cls)
+{
+  FILE *file = cls;
+  fclose (file);
+}
+
 /* HTTP access handler call back */
 static int
 http_ahc (void *cls,
@@ -148,8 +155,7 @@ http_ahc (void *cls,
     {
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
                                                     &file_reader, file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
+                                                    &file_free_callback);
       if (response == NULL)
 	{
 	  fclose (file);
