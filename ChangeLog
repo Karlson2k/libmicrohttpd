@@ -1,3 +1,6 @@
+Sun Jun 13 10:52:34 CEST 2010
+	Cleaned up example code. -CG
+
 Fri Apr 23 09:56:37 CEST 2010
 	Do not return HTTP headers for requests without version
 	numbers.  Do return HTTP version 1.0 if client requested

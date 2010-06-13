@@ -101,7 +101,11 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  file = fopen (&url[1], "rb");
+  if ( (0 == stat (&url[1], &buf)) &&
+       (S_ISREG (buf.st_mode)) )
+    file = fopen (&url[1], "rb");
+  else
+    file = NULL;
   if (file == NULL)
     {
       dir = opendir (".");
@@ -140,11 +144,15 @@ ahc_echo (void *cls,
     }
   else
     {
-      stat (&url[1], &buf);
       response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k page size */
                                                     &file_reader,
                                                     file,
                                                     &file_free_callback);
+      if (response == NULL)
+	{
+	  fclose (file);
+	  return MHD_NO;
+	}
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
     }
