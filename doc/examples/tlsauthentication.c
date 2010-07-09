@@ -163,10 +163,10 @@ is_authenticated (struct MHD_Connection *connection,
   strcat (expected, password);
 
   expected_b64 = string_to_base64 (expected);
+  free (expected);
   if (NULL == expected_b64)
     return 0;
 
-  strcpy (expected, strbase);
   authenticated =
     (strcmp (headervalue + strlen (strbase), expected_b64) == 0);
 
