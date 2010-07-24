@@ -1793,7 +1793,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if HTTPS_SUPPORT
           if (connection->daemon->options & MHD_USE_SSL)
             {
-              ret = MHD__gnutls_record_send (connection->tls_session,
+              ret = gnutls_record_send (connection->tls_session,
                                              &connection->response->data
                                              [connection->
                                               response_write_position -
@@ -2245,10 +2245,6 @@ MHD_set_http_calbacks (struct MHD_Connection *connection)
   connection->idle_handler = &MHD_connection_handle_idle;
 }
 
-#if HTTPS_SUPPORT
-#include "gnutls_int.h"
-#include "gnutls_record.h"
-#endif
 
 /**
  * Obtain information about the given connection.
@@ -2269,13 +2265,13 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
       if (connection->tls_session == NULL)
 	return NULL;
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.read_bulk_cipher_algorithm;
+      connection->cipher = gnutls_cipher_get (connection->tls_session);
+      return (const union MHD_ConnectionInfo *) &connection->cipher;
     case MHD_CONNECTION_INFO_PROTOCOL:
       if (connection->tls_session == NULL)
 	return NULL;
-      return (const union MHD_ConnectionInfo *) &connection->
-        tls_session->security_parameters.version;
+      connection->protocol = gnutls_protocol_get_version (connection->tls_session);
+      return (const union MHD_ConnectionInfo *) &connection->protocol;
 #endif
     case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
       return (const union MHD_ConnectionInfo *) &connection->addr;

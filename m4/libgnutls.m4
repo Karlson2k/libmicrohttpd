@@ -48,7 +48,7 @@ dnl
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gnutls.h>
+#include <gnutls/gnutls.h>
 
 int
 main ()

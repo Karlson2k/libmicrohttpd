@@ -26,7 +26,7 @@
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include <limits.h>
-#include "gnutls.h"
+#include <gnutls/gnutls.h>
 
 /* this enables verbos CURL version checking */
 #define DEBUG_HTTPS_TEST 0
@@ -99,16 +99,16 @@ setup_testcase (struct MHD_Daemon **d, int daemon_flags, va_list arg_list);
 void teardown_testcase (struct MHD_Daemon *d);
 
 int
-setup_session (MHD_gtls_session_t * session,
-               MHD_gnutls_datum_t * key,
-               MHD_gnutls_datum_t * cert,
-               MHD_gtls_cert_credentials_t * xcred);
+setup_session (gnutls_session_t * session,
+               gnutls_datum_t * key,
+               gnutls_datum_t * cert,
+               gnutls_certificate_credentials_t * xcred);
 
 int
-teardown_session (MHD_gtls_session_t session,
-                  MHD_gnutls_datum_t * key,
-                  MHD_gnutls_datum_t * cert,
-                  MHD_gtls_cert_credentials_t xcred);
+teardown_session (gnutls_session_t session,
+                  gnutls_datum_t * key,
+                  gnutls_datum_t * cert,
+                  gnutls_certificate_credentials_t xcred);
 
 int
 test_wrap (char *test_name, int

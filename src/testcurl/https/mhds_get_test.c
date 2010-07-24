@@ -26,13 +26,9 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-
 #include <limits.h>
 #include <sys/stat.h>
-
-#include "gnutls.h"
 #include <curl/curl.h>
-
 #include "tls_test_common.h"
 
 int curl_check_version (const char *req_version, ...);
@@ -46,7 +42,7 @@ test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
 {
 
   int ret;
-  int ciper[] = { MHD_GNUTLS_CIPHER_3DES_CBC, 0 };
+  int ciper[] = { GNUTLS_CIPHER_3DES_CBC, 0 };
   struct MHD_Daemon *d;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,

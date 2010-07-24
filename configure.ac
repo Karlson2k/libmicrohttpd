@@ -233,6 +233,7 @@ AM_PATH_LIBGCRYPT(1.2.2, gcrypt=true)
 MHD_GCRYPT_VERSION=1:1.2.2
 AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
 
+AM_PATH_LIBGNUTLS(2.8.6, gnutls=true)
 
 # optional: HTTPS support.  Enabled by default
 AC_MSG_CHECKING(whether to enable HTTPS support)
@@ -243,13 +244,13 @@ AC_ARG_ENABLE([https],
    [enable_https="yes"])
 if test "$enable_https" = "yes"
 then
- if test "$gcrypt" = "true"
+ if test "$gcrypt" = "true" -a "$gnutls" = "true"
  then
    AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
    MHD_LIBDEPS="$LIBGCRYPT_LIBS"
  else
-   AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt])
-   enable_https="no (lacking libgcrypt)"
+   AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
+   enable_https="no (lacking libgcrypt or libgnutls)"
  fi
 else
  AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
@@ -269,28 +270,6 @@ AC_CACHE_CHECK([whether -export-symbols-regex works],
   *) gn_cv_export_symbols_regex_works=yes;;
   esac
  ])
-
-# optional: compile TLS client side code [only for test running] ?
-AC_MSG_CHECKING(whether to compile TLS client side code)
-AC_ARG_ENABLE(client-side,
-   [AS_HELP_STRING([--enable-client-side],
-               [compile client side code])],
-   [enable_client_side=$enableval],
-   [enable_client_side="no"])
-AC_MSG_RESULT($enable_client_side)
-if test "$enable_client_side" = "no"
-then
- AC_DEFINE([MHD_DEBUG_TLS],[0],[Compile client side code. This will enable running some test cases.])
- MSG_CLIENT_SIDE="disabled. running some test cases won't be possible"
- if test "x$gn_cv_export_symbols_regex_works" = "xyes"
- then
-  MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-symbols \$(srcdir)/EXPORT.sym"
- fi
-else
- AC_DEFINE([MHD_DEBUG_TLS],[1],[Compile client side code. This will enable running some test cases.])
- MSG_CLIENT_SIDE="enabled" 
-fi
-AM_CONDITIONAL(MHD_DEBUG_TLS, test "$enable_client_side" != "no")
 
 
 # Symbols required by GNU_TLS 
@@ -326,11 +305,6 @@ m4/Makefile
 src/Makefile
 src/include/Makefile
 src/daemon/Makefile
-src/daemon/https/Makefile
-src/daemon/https/tls/Makefile
-src/daemon/https/x509/Makefile
-src/daemon/https/lgl/Makefile
-src/daemon/https/minitasn1/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
@@ -368,7 +342,6 @@ AC_MSG_NOTICE([Configuration Summary:
 if test "$enable_https" = "yes"
 then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
-  Client code dep.:  ${MSG_CLIENT_SIDE}    		
   License         :  LGPL only
  ])
 else

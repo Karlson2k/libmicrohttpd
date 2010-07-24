@@ -27,18 +27,8 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-#include "gnutls_int.h"
-#include "gnutls_handshake.h"   // MHD_gtls_send_handshake
-#include "gnutls_num.h"         // MHD_gtls_write_x
-#include "common.h"             // MHD_gtls_version_x
-
-
 #include "tls_test_common.h"
 #define MAX_EXT_DATA_LENGTH 256
-
-extern int
-MHD__gnutls_copy_ciphersuites (MHD_gtls_session_t session,
-                               opaque * ret_data, size_t ret_data_size);
 
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
@@ -53,7 +43,7 @@ extern const char srv_self_signed_cert_pem[];
  * @return 0 on successful test completion, -1 otherwise
  */
 static int
-test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
+test_hello_extension (gnutls_session_t session, extensions_t exten_t,
                       int ext_count, int ext_length)
 {
   int i, sd, ret = 0, pos = 0;
@@ -117,7 +107,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
 
   /* generate session client random */
   memset (session->security_parameters.client_random, 0, TLS_RANDOM_SIZE);
-  MHD_gtls_write_uint32 (time (NULL), rnd);
+  gnutls_write_uint32 (time (NULL), rnd);
   if (GC_OK != MHD_gc_nonce ((char *) &rnd[4], TLS_RANDOM_SIZE - 4)) abort ();
   memcpy (session->security_parameters.client_random, rnd, TLS_RANDOM_SIZE);
   memcpy (&data[pos], rnd, TLS_RANDOM_SIZE);
@@ -144,14 +134,14 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
   pos += 2;
 
   /* set extensions length = 2 type bytes + 2 length bytes + extension length */
-  MHD_gtls_write_uint16 (exten_data_len, &data[pos]);
+  gnutls_write_uint16 (exten_data_len, &data[pos]);
   pos += 2;
   for (i = 0; i < ext_count; ++i)
     {
       /* write extension type */
-      MHD_gtls_write_uint16 (exten_t, &data[pos]);
+      gnutls_write_uint16 (exten_t, &data[pos]);
       pos += 2;
-      MHD_gtls_write_uint16 (ext_length, &data[pos]);
+      gnutls_write_uint16 (ext_length, &data[pos]);
       pos += 2;
       /* we might want to generate random data here */
       memset (&data[pos], 0, ext_length);
@@ -165,7 +155,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
       goto cleanup;
     }
 
-  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
+  gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
   if (gen_test_file_url (url, DEAMON_TEST_PORT))
     {
@@ -174,15 +164,15 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
     }
 
   /* this should crash the server */
-  ret = MHD_gtls_send_handshake (session, data, datalen,
-                                 GNUTLS_HANDSHAKE_CLIENT_HELLO);
+  ret = gnutls_send_handshake (session, data, datalen,
+			       GNUTLS_HANDSHAKE_CLIENT_HELLO);
 
   /* advance to STATE2 */
   session->internals.handshake_state = STATE2;
-  ret = MHD__gnutls_handshake (session);
-  ret = MHD__gnutls_bye (session, GNUTLS_SHUT_WR);
+  ret = gnutls_handshake (session);
+  ret = gnutls_bye (session, GNUTLS_SHUT_WR);
 
-  MHD_gnutls_free (data);
+  gnutls_free (data);
 
   /* make sure daemon is still functioning */
   if (CURLE_OK != send_curl_req (url, &cbc, "AES128-SHA",
@@ -195,7 +185,7 @@ test_hello_extension (MHD_gtls_session_t session, extensions_t exten_t,
 cleanup:
   if (sd != -1)
     close (sd);
-  MHD_gnutls_free (cbc.buf);
+  gnutls_free (cbc.buf);
   return ret;
 }
 
@@ -205,10 +195,10 @@ main (int argc, char *const *argv)
   int i, errorCount = 0;
   FILE *test_fd;
   struct MHD_Daemon *d;
-  MHD_gtls_session_t session;
-  MHD_gnutls_datum_t key;
-  MHD_gnutls_datum_t cert;
-  MHD_gtls_cert_credentials_t xcred;
+  gnutls_session_t session;
+  gnutls_datum_t key;
+  gnutls_datum_t cert;
+  gnutls_certificate_credentials_t xcred;
 
   int ext_arr[] = { GNUTLS_EXTENSION_SERVER_NAME,
     -1

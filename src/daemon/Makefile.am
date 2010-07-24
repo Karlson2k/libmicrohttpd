@@ -1,12 +1,8 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/daemon \
-  -I$(top_srcdir)/src/daemon/https/lgl \
-  -I$(top_srcdir)/src/daemon/https/x509 \
-  -I$(top_srcdir)/src/daemon/https/minitasn1 \
-  -I$(top_srcdir)/src/daemon/https/tls \
-  -I$(top_srcdir)/src/daemon/https \
-  @LIBGCRYPT_CFLAGS@ 
+  @LIBGCRYPT_CFLAGS@ \
+  @LIBGNUTLS_CFLAGS@ 
 
 EXTRA_DIST = EXPORT.sym
 
@@ -31,14 +27,10 @@ endif
 
 
 if ENABLE_HTTPS
-SUBDIRS = https .
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
 libmicrohttpd_la_LIBADD = \
-  https/lgl/liblgl.la \
-  https/x509/libx509.la \
-  https/tls/libtls.la \
-  https/minitasn1/libasn1.la 
+  $(LIBGNUTLS_LIBS) 
 endif
 
 check_PROGRAMS = \

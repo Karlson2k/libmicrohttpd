@@ -5,9 +5,7 @@ if USE_COVERAGE
 endif
 
 if ENABLE_HTTPS
-if MHD_DEBUG_TLS
   SUBDIRS += https
-endif
 endif
 
 AM_CPPFLAGS = \

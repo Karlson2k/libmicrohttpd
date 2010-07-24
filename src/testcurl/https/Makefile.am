@@ -6,10 +6,6 @@ endif
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/daemon/https \
-  -I$(top_srcdir)/src/daemon/https/tls \
-  -I$(top_srcdir)/src/daemon/https/lgl \
-  -I$(top_srcdir)/src/daemon/https/x509 \
   -I$(top_srcdir)/src/daemon \
   $(LIBCURL_CPPFLAGS)
 
@@ -23,8 +19,7 @@ check_PROGRAMS = \
   tls_multi_thread_mode_test \
   tls_session_time_out_test \
   tls_cipher_change_test \
-  tls_alert_test \
-  tls_extension_test
+  tls_alert_test 
 
 EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
 
@@ -39,18 +34,9 @@ TESTS = \
   tls_session_time_out_test \
   tls_cipher_change_test \
   tls_alert_test \
-  tls_extension_test \
   tls_authentication_test
 
 # cURL dependent tests
-tls_extension_test_SOURCES = \
-  tls_extension_test.c \
-  tls_test_common.c
-tls_extension_test_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
-
 tls_session_time_out_test_SOURCES = \
   tls_session_time_out_test.c \
   tls_test_common.c

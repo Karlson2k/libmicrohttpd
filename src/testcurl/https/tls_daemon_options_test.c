@@ -28,8 +28,6 @@
 #include "microhttpd.h"
 #include <sys/stat.h>
 #include <limits.h>
-#include "gnutls.h"
-
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];
@@ -106,17 +104,17 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  int p_ssl3[] = { MHD_GNUTLS_PROTOCOL_SSL3, 0 };
-  int p_tls[] = { MHD_GNUTLS_PROTOCOL_TLS1_2,
-    MHD_GNUTLS_PROTOCOL_TLS1_1,
-    MHD_GNUTLS_PROTOCOL_TLS1_0, 0
+  int p_ssl3[] = { GNUTLS_SSL3, 0 };
+  int p_tls[] = { GNUTLS_TLS1_2,
+    GNUTLS_TLS1_1,
+    GNUTLS_TLS1_0, 0
   };
 
   struct CipherDef ciphers[] = {
-    {{MHD_GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
-    {{MHD_GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
-    {{MHD_GNUTLS_CIPHER_3DES_CBC, 0}, "3DES-SHA"},
-    {{MHD_GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
+    {{GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
+    {{GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
+    {{GNUTLS_CIPHER_3DES_CBC, 0}, "3DES-SHA"},
+    {{GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
     {{0, 0}, NULL}
   };
   fprintf (stderr, "SHA/TLS tests:\n");

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2008 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2008, 2010 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 */
 
 /**
- * @file connection.c
+ * @file connection_https.c
  * @brief  Methods for managing SSL/TLS connections. This file is only
  *         compiled if ENABLE_HTTPS is set.
  * @author Sagie Amir
@@ -31,13 +31,7 @@
 #include "memorypool.h"
 #include "response.h"
 #include "reason_phrase.h"
-
-/* get opaque type */
-#include "gnutls_int.h"
-#include "gnutls_record.h"
-
-/* TODO #include rm "gnutls_errors.h" */
-#include "gnutls_errors.h"
+#include <gnutls/gnutls.h>
 
 /**
  * This function is called once a secure connection has been marked
@@ -53,8 +47,8 @@ static void
 MHD_tls_connection_close (struct MHD_Connection *connection,
                           enum MHD_RequestTerminationCode termination_code)
 {
-  MHD__gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
-  connection->tls_session->internals.read_eof = 1;
+  gnutls_bye (connection->tls_session, GNUTLS_SHUT_WR);
+  /* connection->tls_session->internals.read_eof = 1; // FIXME_GHM: needed? */
   MHD_connection_close (connection, termination_code);
 }
 
@@ -107,6 +101,16 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+/* FIXME_GHM: this is digging into gnutls/SSL internals
+   that is likely wrong... */
+/* Record Protocol */
+typedef enum content_type_t
+{
+  GNUTLS_CHANGE_CIPHER_SPEC = 20, GNUTLS_ALERT,
+  GNUTLS_HANDSHAKE, GNUTLS_APPLICATION_DATA,
+  GNUTLS_INNER_APPLICATION = 24
+} content_type_t;
+
 /**
  * This function handles a particular SSL/TLS connection when
  * it has been determined that there is data to be read off a
@@ -157,7 +161,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       if (connection->state == MHD_TLS_CONNECTION_INIT ||
           connection->state == MHD_TLS_HELLO_REQUEST)
         {
-          ret = MHD__gnutls_handshake (connection->tls_session);
+          ret = gnutls_handshake (connection->tls_session);
           if (ret == 0)
             {
               /* set connection state to enable HTTP processing */
@@ -194,13 +198,13 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       return MHD_NO;
 
     case GNUTLS_ALERT:
+#if FIXME_GHM      
       /*
        * this call of MHD_gtls_recv_int expects 0 bytes read.
        * done to decrypt alert message
        */
-      MHD_gtls_recv_int (connection->tls_session, GNUTLS_ALERT,
-                         GNUTLS_HANDSHAKE_FINISHED, 0, 0);
-
+      gnutls_recv_int (connection->tls_session, GNUTLS_ALERT,
+		       GNUTLS_HANDSHAKE_FINISHED, 0, 0);
       /* CLOSE_NOTIFY */
       if (connection->tls_session->internals.last_alert ==
           GNUTLS_A_CLOSE_NOTIFY)
@@ -209,7 +213,8 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
           return MHD_YES;
         }
       /* non FATAL or WARNING */
-      else if (connection->tls_session->internals.last_alert_level !=
+      else
+	if (connection->tls_session->internals.last_alert_level !=
                GNUTLS_AL_FATAL)
         {
 #if HAVE_MESSAGES
@@ -239,12 +244,12 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 #endif
           return MHD_NO;
         }
+#endif
 
 
       /* forward application level content to MHD */
     case GNUTLS_APPLICATION_DATA:
       return MHD_connection_handle_read (connection);
-
     case GNUTLS_INNER_APPLICATION:
       break;
     default:

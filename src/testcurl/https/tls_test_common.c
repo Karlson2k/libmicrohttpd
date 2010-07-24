@@ -19,14 +19,12 @@
  */
 
 /**
- * @file tls_daemon_options_test.c
+ * @file tls_test_common.c
  * @brief  Common tls test functions
  * @author Sagie Amir
  */
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
-#include "gnutls.h"
-#include "gnutls_datum.h"
 
 const char test_file_data[] = "Hello World\n";
 
@@ -344,46 +342,48 @@ teardown_testcase (struct MHD_Daemon *d)
 }
 
 int
-setup_session (MHD_gtls_session_t * session,
-               MHD_gnutls_datum_t * key,
-               MHD_gnutls_datum_t * cert, MHD_gtls_cert_credentials_t * xcred)
+setup_session (gnutls_session_t * session,
+               gnutls_datum_t * key,
+               gnutls_datum_t * cert, 
+	       gnutls_certificate_credentials_t * xcred)
 {
   int ret;
   const char *err_pos;
 
-  MHD__gnutls_certificate_allocate_credentials (xcred);
-
-  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                        strlen (srv_self_signed_cert_pem), &malloc);
-
-  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                            GNUTLS_X509_FMT_PEM);
-
-  MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", &err_pos);
+  gnutls_certificate_allocate_credentials (xcred);
+  key->size = strlen (srv_key_pem);
+  key->data = malloc (key->size);
+  memcpy (key->data, srv_key_pem, key->size);
+  cert->size = strlen (srv_self_signed_cert_pem);
+  cert->data = malloc (cert->size);
+  memcpy (cert->data, srv_self_signed_cert_pem, cert->size);
+  gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
+				       GNUTLS_X509_FMT_PEM);
+  gnutls_init (session, GNUTLS_CLIENT);
+  ret = gnutls_priority_set_direct (*session,
+				    "NORMAL", &err_pos);
   if (ret < 0)
-    {
-      return -1;
-    }
-
-  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
+    return -1;
+  gnutls_credentials_set (*session, 
+			  GNUTLS_CRD_CERTIFICATE, 
+			  xcred);
   return 0;
 }
 
 int
-teardown_session (MHD_gtls_session_t session,
-                  MHD_gnutls_datum_t * key,
-                  MHD_gnutls_datum_t * cert,
-                  MHD_gtls_cert_credentials_t xcred)
+teardown_session (gnutls_session_t session,
+                  gnutls_datum_t * key,
+                  gnutls_datum_t * cert,
+                  gnutls_certificate_credentials_t xcred)
 {
-
-  MHD_gtls_free_datum_m (key, free);
-  MHD_gtls_free_datum_m (cert, free);
-
-  MHD__gnutls_deinit (session);
-
-  MHD__gnutls_certificate_free_credentials (xcred);
+  free (key->data);
+  key->data = NULL;
+  key->size = 0;
+  free (cert->data);
+  cert->data = NULL;
+  cert->size = 0;
+  gnutls_deinit (session);
+  gnutls_certificate_free_credentials (xcred);
   return 0;
 }
 

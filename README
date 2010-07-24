@@ -74,21 +74,11 @@ reasonably complete.
 
 Missing features:
 =================
-- MHD_get_daemon_info options for SSL are not implemented (always return NULL)
 - SSL support does not work with SELECT-based threading modes
   (issue is that the gnutls state machine does not like EAGAIN/EINTR
    return values from send/recv, despite having tons of
    branches on those values).
-- SSL code is still too large:
-  * libgcrypt is used, and is also bloated
-  => integrate required portions of libgcrypt into our tree
-     instead of linking against it
-  * still some bloat in the SSL code;
-    consider removing "client" functionality
-  * most likely some headers declare functions, constants 
-    and types that are no longer present or used
-  * possibly other dead code
-- Make sure SSL works on non-GNU/Linux platforms
+- SSL code is not working (GNUtls integration broken)
 
 
 Untested features:

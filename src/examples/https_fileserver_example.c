@@ -35,8 +35,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <sys/stat.h>
-
-#include "gnutls.h"
+#include <gnutls/gnutls.h>
 #include <gcrypt.h>
 
 #define BUF_SIZE 1024

@@ -412,8 +412,8 @@ enum MHD_OPTION
 
   /**
    * Daemon credentials type.
-   * This option should be followed by one of the values listed in
-   * "enum MHD_GNUTLS_CredentialsType".
+   * Followed by an argument of type
+   * "gnutls_credentials_type_t".
    */
   MHD_OPTION_CRED_TYPE = 10,
 
@@ -587,35 +587,6 @@ enum MHD_RequestTerminationCode
 
 };
 
-/**
- * List of symmetric ciphers.
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_CipherAlgorithm
-{
-  MHD_GNUTLS_CIPHER_UNKNOWN = 0,
-  MHD_GNUTLS_CIPHER_NULL = 1,
-  MHD_GNUTLS_CIPHER_ARCFOUR_128,
-  MHD_GNUTLS_CIPHER_3DES_CBC,
-  MHD_GNUTLS_CIPHER_AES_128_CBC,
-  MHD_GNUTLS_CIPHER_AES_256_CBC
-};
-
-/**
- * SSL/TLS Protocol types.
- * Note that not all listed algorithms are necessarily
- * supported by all builds of MHD.
- */
-enum MHD_GNUTLS_Protocol
-{
-  MHD_GNUTLS_PROTOCOL_END = 0,
-  MHD_GNUTLS_PROTOCOL_SSL3 = 1,
-  MHD_GNUTLS_PROTOCOL_TLS1_0,
-  MHD_GNUTLS_PROTOCOL_TLS1_1,
-  MHD_GNUTLS_PROTOCOL_TLS1_2,
-  MHD_GNUTLS_PROTOCOL_VERSION_UNKNOWN = 0xff
-};
 
 /**
  * Values of this enum are used to specify what
@@ -1234,14 +1205,16 @@ int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 /* ********************** generic query functions ********************** */
 
-
 /**
  * Information about a connection.
  */
 union MHD_ConnectionInfo
 {
-  enum MHD_GNUTLS_CipherAlgorithm cipher_algorithm;
-  enum MHD_GNUTLS_Protocol protocol;
+
+  int /* enum gnutls_cipher_algorithm */ cipher_algorithm;
+
+  int /* enum gnutls_protocol */ protocol;
+
   /**
    * Address information for the client.
    */

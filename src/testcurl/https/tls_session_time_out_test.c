@@ -28,11 +28,8 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include "internal.h"
-#include "gnutls_int.h"
-#include "gnutls_datum.h"
-#include "gnutls_record.h"
-
 #include "tls_test_common.h"
+
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
@@ -41,51 +38,7 @@ static const int TIME_OUT = 3;
 char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 
 static int
-setup_timeout_test (MHD_gtls_session_t * session,
-                    MHD_gnutls_datum_t * key,
-                    MHD_gnutls_datum_t * cert,
-                    MHD_gtls_cert_credentials_t * xcred)
-{
-  int ret;
-
-  MHD__gnutls_certificate_allocate_credentials (xcred);
-
-  MHD_gtls_set_datum_m (key, srv_key_pem, strlen (srv_key_pem), &malloc);
-  MHD_gtls_set_datum_m (cert, srv_self_signed_cert_pem,
-                        strlen (srv_self_signed_cert_pem), &malloc);
-
-  MHD__gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                            GNUTLS_X509_FMT_PEM);
-
-  MHD__gnutls_init (session, GNUTLS_CLIENT);
-  ret = MHD__gnutls_priority_set_direct (*session, "NORMAL", NULL);
-  if (ret < 0)
-    {
-      return -1;
-    }
-
-  MHD__gnutls_credentials_set (*session, MHD_GNUTLS_CRD_CERTIFICATE, xcred);
-  return 0;
-}
-
-static int
-teardown_timeout_test (MHD_gtls_session_t session,
-                       MHD_gnutls_datum_t * key,
-                       MHD_gnutls_datum_t * cert,
-                       MHD_gtls_cert_credentials_t xcred)
-{
-
-  MHD_gtls_free_datum_m (key, free);
-  MHD_gtls_free_datum_m (cert, free);
-
-  MHD__gnutls_deinit (session);
-
-  MHD__gnutls_certificate_free_credentials (xcred);
-  return 0;
-}
-
-static int
-test_tls_session_time_out (MHD_gtls_session_t session)
+test_tls_session_time_out (gnutls_session_t session)
 {
   int sd, ret;
   struct sockaddr_in sa;
@@ -102,7 +55,7 @@ test_tls_session_time_out (MHD_gtls_session_t session)
   sa.sin_port = htons (DEAMON_TEST_PORT);
   inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
 
-  MHD__gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
+  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) (long) sd);
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
@@ -112,7 +65,7 @@ test_tls_session_time_out (MHD_gtls_session_t session)
       return -1;
     }
 
-  ret = MHD__gnutls_handshake (session);
+  ret = gnutls_handshake (session);
   if (ret < 0)
     {
       return -1;
@@ -136,13 +89,13 @@ main (int argc, char *const *argv)
 {
   int errorCount = 0;;
   struct MHD_Daemon *d;
-  MHD_gtls_session_t session;
-  MHD_gnutls_datum_t key;
-  MHD_gnutls_datum_t cert;
-  MHD_gtls_cert_credentials_t xcred;
+  gnutls_session_t session;
+  gnutls_datum_t key;
+  gnutls_datum_t cert;
+  gnutls_certificate_credentials_t xcred;
 
-  MHD__gnutls_global_init ();
-  MHD_gtls_global_set_log_level (11);
+  gnutls_global_init ();
+  gnutls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, DEAMON_TEST_PORT,
@@ -158,14 +111,14 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  setup_timeout_test (&session, &key, &cert, &xcred);
+  setup_session (&session, &key, &cert, &xcred);
   errorCount += test_tls_session_time_out (session);
-  teardown_timeout_test (session, &key, &cert, xcred);
+  teardown_session (session, &key, &cert, xcred);
 
   print_test_result (errorCount, argv[0]);
 
   MHD_stop_daemon (d);
-  MHD__gnutls_global_deinit ();
+  gnutls_global_deinit ();
 
   return errorCount != 0;
 }

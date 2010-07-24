@@ -29,13 +29,11 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-
 #include <sys/stat.h>
 #include <limits.h>
-#include "gnutls.h"
 #include <curl/curl.h>
-
 #include "tls_test_common.h"
+
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 

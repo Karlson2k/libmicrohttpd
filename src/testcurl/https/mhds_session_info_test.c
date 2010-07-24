@@ -53,7 +53,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   if (MHD_get_connection_info
       (connection,
        MHD_CONNECTION_INFO_CIPHER_ALGO)->cipher_algorithm !=
-      MHD_GNUTLS_CIPHER_AES_256_CBC)
+      GNUTLS_CIPHER_AES_256_CBC)
     {
       fprintf (stderr, "Error: requested cipher mismatch. %s\n",
                strerror (errno));
@@ -62,7 +62,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 
   if (MHD_get_connection_info
       (connection,
-       MHD_CONNECTION_INFO_PROTOCOL)->protocol != MHD_GNUTLS_PROTOCOL_SSL3)
+       MHD_CONNECTION_INFO_PROTOCOL)->protocol != GNUTLS_SSL3)
     {
       fprintf (stderr, "Error: requested compression mismatch. %s\n",
                strerror (errno));

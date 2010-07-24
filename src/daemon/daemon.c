@@ -32,8 +32,7 @@
 
 #if HTTPS_SUPPORT
 #include "connection_https.h"
-#include "gnutls_int.h"
-#include "gnutls_global.h"
+#include <gnutls/gnutls.h>
 #endif
 
 #ifdef HAVE_POLL_H
@@ -331,27 +330,7 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
 }
 
 #if HTTPS_SUPPORT
-pthread_mutex_t MHD_gnutls_init_mutex;
-
-/**
- * Note: code duplication with code in MHD_gnutls_priority.c
- *
- * @return 0
- */
-static int
-_set_priority (MHD_gtls_priority_st * st, const int *list)
-{
-  int num = 0;
-
-  if (list == NULL)
-    return 0;
-  while ((list[num] != 0) && (num < MAX_ALGOS))
-    num++;
-  st->num_algorithms = num;
-  memcpy (st->priority, list, num * sizeof (int));
-  return 0;
-}
-
+static pthread_mutex_t MHD_gnutls_init_mutex;
 
 /**
  * Callback for receiving data from the socket.
@@ -364,7 +343,7 @@ _set_priority (MHD_gtls_priority_st * st, const int *list)
 static ssize_t
 recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
-  return MHD__gnutls_record_recv (connection->tls_session, other, i);
+  return gnutls_record_recv (connection->tls_session, other, i);
 }
 
 /**
@@ -379,7 +358,7 @@ static ssize_t
 send_tls_adapter (struct MHD_Connection *connection,
                   const void *other, size_t i)
 {
-  return MHD__gnutls_record_send (connection->tls_session, other, i);
+  return gnutls_record_send (connection->tls_session, other, i);
 }
 
 
@@ -391,8 +370,8 @@ send_tls_adapter (struct MHD_Connection *connection,
 static int
 MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 {
-  MHD_gnutls_datum_t key;
-  MHD_gnutls_datum_t cert;
+  gnutls_datum_t key;
+  gnutls_datum_t cert;
 
   /* certificate & key loaded from memory */
   if (daemon->https_mem_cert && daemon->https_mem_key)
@@ -402,7 +381,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      return MHD__gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
+      return gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
                                                        &cert, &key,
                                                        GNUTLS_X509_FMT_PEM);
     }
@@ -422,9 +401,9 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 {
   switch (daemon->cred_type)
     {
-    case MHD_GNUTLS_CRD_CERTIFICATE:
+    case GNUTLS_CRD_CERTIFICATE:
       if (0 !=
-          MHD__gnutls_certificate_allocate_credentials (&daemon->x509_cred))
+          gnutls_certificate_allocate_credentials (&daemon->x509_cred))
         return GNUTLS_E_MEMORY_ERROR;
       return MHD_init_daemon_certificate (daemon);
     default:
@@ -785,15 +764,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       connection->send_cls = &send_tls_adapter;
       connection->state = MHD_TLS_CONNECTION_INIT;
       MHD_set_https_calbacks (connection);
-      MHD__gnutls_init (&connection->tls_session, GNUTLS_SERVER);
-      MHD__gnutls_priority_set (connection->tls_session,
-                                connection->daemon->priority_cache);
+      gnutls_init (&connection->tls_session, GNUTLS_SERVER);
       switch (connection->daemon->cred_type)
         {
           /* set needed credentials for certificate authentication. */
-        case MHD_GNUTLS_CRD_CERTIFICATE:
-          MHD__gnutls_credentials_set (connection->tls_session,
-                                       MHD_GNUTLS_CRD_CERTIFICATE,
+        case GNUTLS_CRD_CERTIFICATE:
+          gnutls_credentials_set (connection->tls_session,
+				  GNUTLS_CRD_CERTIFICATE,
                                        connection->daemon->x509_cred);
           break;
         default:
@@ -816,13 +793,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 		     );
  	  return MHD_NO;
         }
-      MHD__gnutls_transport_set_ptr (connection->tls_session,
-                                     (MHD_gnutls_transport_ptr_t) connection);
-      MHD__gnutls_transport_set_pull_function (connection->tls_session,
-                                               (MHD_gtls_pull_func) &
+      gnutls_transport_set_ptr (connection->tls_session,
+				(gnutls_transport_ptr_t) connection);
+      gnutls_transport_set_pull_function (connection->tls_session,
+					  (gnutls_pull_func) &
                                                recv_param_adapter);
-      MHD__gnutls_transport_set_push_function (connection->tls_session,
-                                               (MHD_gtls_push_func) &
+      gnutls_transport_set_push_function (connection->tls_session,
+					  (gnutls_push_func) &
                                                send_param_adapter);
     }
 #endif
@@ -893,7 +870,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
           MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
           if (pos->tls_session != NULL)
-            MHD__gnutls_deinit (pos->tls_session);
+            gnutls_deinit (pos->tls_session);
 #endif
           MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
           free (pos->addr);
@@ -1265,9 +1242,8 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_PROTOCOL_VERSION:
-	  if (daemon->options & MHD_USE_SSL)
-	    _set_priority (&daemon->priority_cache->protocol,
-			   va_arg (ap, const int *));
+	  FPRINTF (stderr,
+		   "Protocol version setting currently not supported.\n");
 #if HAVE_MESSAGES
 	  else
 	    FPRINTF (stderr,
@@ -1296,9 +1272,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_CIPHER_ALGORITHM:
-	  if (daemon->options & MHD_USE_SSL)
-	    _set_priority (&daemon->priority_cache->cipher,
-			   va_arg (ap, const int *));
+	  FPRINTF (stderr,
+		   "CIPHER setting currently not supported\n");
 #if HAVE_MESSAGES
 	  else
 	    FPRINTF (stderr,
@@ -1478,9 +1453,7 @@ MHD_start_daemon_va (unsigned int options,
 #endif
 	  mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 	}
-      /* set default priorities */
-      MHD_tls_set_default_priority (&retVal->priority_cache, "", NULL);
-      retVal->cred_type = MHD_GNUTLS_CRD_CERTIFICATE;
+      retVal->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
 #endif
 
@@ -1874,9 +1847,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
   if (daemon->options & MHD_USE_SSL)
     {
-      MHD__gnutls_priority_deinit (daemon->priority_cache);
       if (daemon->x509_cred)
-        MHD__gnutls_certificate_free_credentials (daemon->x509_cred);
+        gnutls_certificate_free_credentials (daemon->x509_cred);
       /* lock MHD_gnutls_global mutex since it uses reference counting */
       if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
 	{
@@ -1993,7 +1965,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
   plibc_init ("GNU", "libmicrohttpd");
 #endif
 #if HTTPS_SUPPORT
-  MHD__gnutls_global_init ();
+  gnutls_global_init ();
   if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
     abort();
 #endif
@@ -2002,7 +1974,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
 void ATTRIBUTE_DESTRUCTOR MHD_fini ()
 {
 #if HTTPS_SUPPORT
-  MHD__gnutls_global_deinit ();
+  gnutls_global_deinit ();
   if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
     mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 #endif

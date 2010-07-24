@@ -1,1 +1,1 @@
-EXTRA_DIST = libcurl.m4
+EXTRA_DIST = libcurl.m4 libgnutls.m4

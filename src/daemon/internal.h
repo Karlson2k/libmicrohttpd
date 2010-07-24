@@ -30,7 +30,7 @@
 #include "platform.h"
 #include "microhttpd.h"
 #if HTTPS_SUPPORT
-#include "gnutls.h"
+#include <gnutls/gnutls.h>
 #endif
 
 #define EXTRA_CHECKS MHD_YES
@@ -660,7 +660,17 @@ struct MHD_Connection
   /**
    * State required for HTTPS/SSL/TLS support.
    */
-  MHD_gtls_session_t tls_session;
+  gnutls_session_t tls_session;
+
+  /**
+   * Memory location to return for protocol session info.
+   */
+  int protocol;
+
+  /**
+   * Memory location to return for protocol session info.
+   */
+  int cipher;
 #endif
 };
 
@@ -799,22 +809,17 @@ struct MHD_Daemon
    * What kind of credentials are we offering
    * for SSL/TLS?
    */
-  enum MHD_GNUTLS_CredentialsType cred_type;
+  gnutls_credentials_type_t cred_type;
 
   /**
    * Server x509 credentials
    */
-  MHD_gtls_cert_credentials_t x509_cred;
-
-  /**
-   * Cipher priority cache
-   */
-  MHD_gnutls_priority_t priority_cache;
+  gnutls_certificate_credentials_t x509_cred;
 
   /**
    * Diffie-Hellman parameters
    */
-  MHD_gtls_dh_params_t dh_params;
+  gnutls_dh_params_t dh_params;
 
   /**
    * Pointer to our SSL/TLS key (in ASCII) in memory.
@@ -825,6 +830,7 @@ struct MHD_Daemon
    * Pointer to our SSL/TLS certificate (in ASCII) in memory.
    */
   const char *https_mem_cert;
+
 #endif
 
   /**
