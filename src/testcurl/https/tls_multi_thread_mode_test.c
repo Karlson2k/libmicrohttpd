@@ -131,10 +131,6 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-    return -1;
-
   if ((test_fd = setup_test_file ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);

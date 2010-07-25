@@ -72,15 +72,6 @@ implemented (in order of importance) before we can claim to be
 reasonably complete.
 
 
-Missing features:
-=================
-- SSL support does not work with SELECT-based threading modes
-  (issue is that the gnutls state machine does not like EAGAIN/EINTR
-   return values from send/recv, despite having tons of
-   branches on those values).
-- SSL code is not working (GNUtls integration broken)
-
-
 Untested features:
 ==================
 - add testcases for http/1.1 pipelining (need
@@ -111,7 +102,6 @@ Missing documentation:
 
 - manual:
   * document configuration options
-  * document SSL/TLS support
   * document details on porting MHD (plibc, z/OS)
 - tutorial:
   * clean up English

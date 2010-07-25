@@ -205,11 +205,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-    {
-      return -1;
-    }
-
   if ((test_fd = setup_test_file ()) == NULL || setup_ca_cert () == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);

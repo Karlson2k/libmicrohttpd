@@ -18,9 +18,7 @@ check_PROGRAMS = \
   mhds_session_info_test \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
-  tls_session_time_out_test \
-  tls_cipher_change_test \
-  tls_alert_test 
+  tls_session_time_out_test
 
 EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
 
@@ -34,8 +32,6 @@ TESTS = \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
   tls_session_time_out_test \
-  tls_cipher_change_test \
-  tls_alert_test \
   tls_authentication_test
 
 # cURL dependent tests
@@ -43,22 +39,6 @@ tls_session_time_out_test_SOURCES = \
   tls_session_time_out_test.c \
   tls_test_common.c
 tls_session_time_out_test_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
-
-tls_cipher_change_test_SOURCES = \
-  tls_cipher_change_test.c \
-  tls_test_common.c
-tls_cipher_change_test_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
-
-tls_alert_test_SOURCES = \
-  tls_alert_test.c \
-  tls_test_common.c
-tls_alert_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@

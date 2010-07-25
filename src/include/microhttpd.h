@@ -598,7 +598,12 @@ enum MHD_ConnectionInfoType
    * Obtain IP address of the client.
    * Takes no extra arguments.
    */
-  MHD_CONNECTION_INFO_CLIENT_ADDRESS
+  MHD_CONNECTION_INFO_CLIENT_ADDRESS,
+
+  /**
+   * Get the GNUTLS session handle.
+   */
+  MHD_CONNECTION_INFO_GNUTLS_SESSION
 };
 
 /**
@@ -1199,9 +1204,20 @@ int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 union MHD_ConnectionInfo
 {
 
+  /**
+   * Cipher algorithm used, of type "enum gnutls_cipher_algorithm".
+   */
   int /* enum gnutls_cipher_algorithm */ cipher_algorithm;
 
+  /**
+   * Protocol used, of type "enum gnutls_protocol".
+   */
   int /* enum gnutls_protocol */ protocol;
+
+  /**
+   * GNUtls session handle, of type "gnutls_session_t".
+   */
+  void * /* gnutls_session_t */ tls_session;
 
   /**
    * Address information for the client.

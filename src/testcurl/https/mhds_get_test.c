@@ -95,9 +95,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  gnutls_global_set_log_level(11); 
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_GNUTLS_VERSION))
-    return -1;
   if (!gcry_check_version (GCRYPT_VERSION))
     abort ();
   if ((test_fd = setup_test_file ()) == NULL)

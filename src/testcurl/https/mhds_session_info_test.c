@@ -161,21 +161,13 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-    {
-      return -1;
-    }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
       return -1;
     }
-
   errorCount += test_query_session ();
-
   print_test_result (errorCount, argv[0]);
-
   curl_global_cleanup ();
   if (errorCount > 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

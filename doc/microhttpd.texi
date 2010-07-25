@@ -536,7 +536,12 @@ What cipher algorithm is being used.
 Takes no extra arguments.
 
 @item MHD_CONNECTION_INFO_PROTOCOL,
-Takes no extra arguments.
+Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
+(HTTPS connections only).
+
+@item MHD_CONNECTION_INFO_GNUTLS_SESSION,
+Takes no extra arguments.  Allows access to the underlying GNUtls session 
+(HTTPS connections only).
 
 @end table
 @end deftp

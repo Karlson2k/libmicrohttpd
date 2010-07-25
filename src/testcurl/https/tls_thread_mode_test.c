@@ -132,9 +132,6 @@ main (int argc, char *const *argv)
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-    return -1;
-
   if ((test_fd = setup_test_file ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);

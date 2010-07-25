@@ -194,17 +194,11 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-    {
-      return -1;
-    }
-
   if ((test_fd = setup_test_file ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
       return -1;
     }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u). l:%d f:%s\n", errorCount, __LINE__,
@@ -212,7 +206,6 @@ main (int argc, char *const *argv)
       fclose (test_fd);
       return -1;
     }
-
   errorCount +=
     test_concurent_daemon_pair (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 

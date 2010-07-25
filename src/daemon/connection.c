@@ -1,5 +1,5 @@
 /*
-     This file is part of libmicrohttpd
+    This file is part of libmicrohttpd
      (C) 2007, 2008 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
@@ -2275,6 +2275,10 @@ MHD_get_connection_info (struct MHD_Connection *connection,
 	return NULL;
       connection->protocol = gnutls_protocol_get_version (connection->tls_session);
       return (const union MHD_ConnectionInfo *) &connection->protocol;
+    case MHD_CONNECTION_INFO_GNUTLS_SESSION:
+      if (connection->tls_session == NULL)
+	return NULL;
+      return (const union MHD_ConnectionInfo *) &connection->tls_session;
 #endif
     case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
       return (const union MHD_ConnectionInfo *) &connection->addr;
