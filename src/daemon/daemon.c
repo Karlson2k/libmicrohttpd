@@ -40,6 +40,10 @@
 #include <poll.h>
 #endif
 
+#ifdef LINUX
+#include <sys/sendfile.h>
+#endif
+
 /**
  * Default connection limit.
  */
@@ -603,8 +607,7 @@ recv_param_adapter (struct MHD_Connection *connection, void *other, size_t i)
     return -1;
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
-  else
-    return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
+  return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
 /**
@@ -619,12 +622,27 @@ static ssize_t
 send_param_adapter (struct MHD_Connection *connection,
                     const void *other, size_t i)
 {
+#if LINUX
+  int fd;
+  off_t offset;
+#endif
   if (connection->socket_fd == -1)
     return -1;
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
-  else
-    return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
+#if LINUX
+  if ( (NULL != connection->response) &&
+       (-1 != (fd = connection->response->fd)) )
+    {
+      /* can use sendfile */
+      offset = (off_t) connection->response_write_position;
+      return sendfile (connection->socket_fd, 
+		       fd,
+		       &offset,
+		       i);
+    }
+#endif
+  return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
 
@@ -1310,7 +1328,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		     opt);	  
 #endif
           break;
-	case MHD_OPTION_CRED_TYPE:
+	case MHD_OPTION_HTTPS_CRED_TYPE:
 	  daemon->cred_type = va_arg (ap, gnutls_credentials_type_t);
 	  break;
         case MHD_OPTION_HTTPS_PRIORITIES:
@@ -1328,6 +1346,9 @@ parse_options_va (struct MHD_Daemon *daemon,
 	    return MHD_NO;
           break;
 #endif
+	case MHD_OPTION_LISTEN_SOCKET:
+	  daemon->socket_fd = va_arg (ap, int);	  
+	  break;
         case MHD_OPTION_EXTERNAL_LOGGER:
 #if HAVE_MESSAGES
           daemon->custom_error_log =
@@ -1367,7 +1388,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 		    return MHD_NO;
 		  break;
 		  /* all options taking 'int' or 'enum' */
-		case MHD_OPTION_CRED_TYPE:
+		case MHD_OPTION_HTTPS_CRED_TYPE:
+		case MHD_OPTION_LISTEN_SOCKET:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -1471,6 +1493,7 @@ MHD_start_daemon_va (unsigned int options,
 			"NORMAL",
 			NULL);
 #endif
+  retVal->socket_fd = -1;
   retVal->options = (enum MHD_OPTION)options;
   retVal->port = port;
   retVal->apc = apc;
@@ -1547,29 +1570,101 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #endif
-  if ((options & MHD_USE_IPv6) != 0)
+  if (retVal->socket_fd == -1)
+    {
+      if ((options & MHD_USE_IPv6) != 0)
 #if HAVE_INET6
-    socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
+	socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
 #else
-    {
+      {
 #if HAVE_MESSAGES
-      fprintf (stderr, "AF_INET6 not supported\n");
+	fprintf (stderr, "AF_INET6 not supported\n");
 #endif
-      free (retVal);
-      return NULL;
-    }
+	free (retVal);
+	return NULL;
+      }
 #endif
-  else
-    socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
-  if (socket_fd == -1)
-    {
+      else
+	socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
+      if (socket_fd == -1)
+	{
 #if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        FPRINTF (stderr, "Call to socket failed: %s\n", STRERROR (errno));
+	  if ((options & MHD_USE_DEBUG) != 0)
+	    FPRINTF (stderr, "Call to socket failed: %s\n", STRERROR (errno));
 #endif
-      free (retVal);
-      return NULL;
+	  free (retVal);
+	  return NULL;
+	}
+      if ((SETSOCKOPT (socket_fd,
+		       SOL_SOCKET,
+		       SO_REUSEADDR,
+		       &on, sizeof (on)) < 0) && ((options & MHD_USE_DEBUG) != 0))
+	{
+#if HAVE_MESSAGES
+	  FPRINTF (stderr, "setsockopt failed: %s\n", STRERROR (errno));
+#endif
+	}
+      
+      /* check for user supplied sockaddr */
+#if HAVE_INET6
+      if ((options & MHD_USE_IPv6) != 0)
+	addrlen = sizeof (struct sockaddr_in6);
+      else
+#endif
+	addrlen = sizeof (struct sockaddr_in);
+      if (NULL == servaddr)
+	{
+#if HAVE_INET6
+	  if ((options & MHD_USE_IPv6) != 0)
+	    {
+	      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+	      servaddr6.sin6_family = AF_INET6;
+	      servaddr6.sin6_port = htons (port);
+	      servaddr = (struct sockaddr *) &servaddr6;
+	    }
+	  else
+#endif
+	    {
+	      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+	      servaddr4.sin_family = AF_INET;
+	      servaddr4.sin_port = htons (port);
+	      servaddr = (struct sockaddr *) &servaddr4;
+	    }
+	}
+      retVal->socket_fd = socket_fd;
+
+      if ((options & MHD_USE_IPv6) != 0)
+	{
+	  const int on = 1;
+	  setsockopt (socket_fd, 
+		      IPPROTO_IPV6, IPV6_V6ONLY, 
+		      &on, sizeof (on));      
+	}
+      if (BIND (socket_fd, servaddr, addrlen) == -1)
+	{
+#if HAVE_MESSAGES
+	  if ((options & MHD_USE_DEBUG) != 0)
+	    FPRINTF (stderr,
+		     "Failed to bind to port %u: %s\n", port, STRERROR (errno));
+#endif
+	  CLOSE (socket_fd);
+	  free (retVal);
+	  return NULL;
+	}
+      
+      if (LISTEN (socket_fd, 20) < 0)
+	{
+#if HAVE_MESSAGES
+	  if ((options & MHD_USE_DEBUG) != 0)
+	    FPRINTF (stderr,
+		     "Failed to listen for connections: %s\n", STRERROR (errno));
+#endif
+	  CLOSE (socket_fd);
+	  free (retVal);
+	  return NULL;
+	}      
     }
+
 #ifndef WINDOWS
   if ( (socket_fd >= FD_SETSIZE) &&
        (0 == (options & MHD_USE_POLL)) )
@@ -1586,66 +1681,6 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #endif
-  if ((SETSOCKOPT (socket_fd,
-                   SOL_SOCKET,
-                   SO_REUSEADDR,
-                   &on, sizeof (on)) < 0) && ((options & MHD_USE_DEBUG) != 0))
-    {
-#if HAVE_MESSAGES
-      FPRINTF (stderr, "setsockopt failed: %s\n", STRERROR (errno));
-#endif
-    }
-
-  /* check for user supplied sockaddr */
-#if HAVE_INET6
-  if ((options & MHD_USE_IPv6) != 0)
-    addrlen = sizeof (struct sockaddr_in6);
-  else
-#endif
-    addrlen = sizeof (struct sockaddr_in);
-  if (NULL == servaddr)
-    {
-#if HAVE_INET6
-      if ((options & MHD_USE_IPv6) != 0)
-        {
-          memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
-          servaddr6.sin6_family = AF_INET6;
-          servaddr6.sin6_port = htons (port);
-          servaddr = (struct sockaddr *) &servaddr6;
-        }
-      else
-#endif
-        {
-          memset (&servaddr4, 0, sizeof (struct sockaddr_in));
-          servaddr4.sin_family = AF_INET;
-          servaddr4.sin_port = htons (port);
-          servaddr = (struct sockaddr *) &servaddr4;
-        }
-    }
-  retVal->socket_fd = socket_fd;
-  if (BIND (socket_fd, servaddr, addrlen) == -1)
-    {
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        FPRINTF (stderr,
-                 "Failed to bind to port %u: %s\n", port, STRERROR (errno));
-#endif
-      CLOSE (socket_fd);
-      free (retVal);
-      return NULL;
-    }
-
-  if (LISTEN (socket_fd, 20) < 0)
-    {
-#if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
-        FPRINTF (stderr,
-                 "Failed to listen for connections: %s\n", STRERROR (errno));
-#endif
-      CLOSE (socket_fd);
-      free (retVal);
-      return NULL;
-    }
 
   if (0 != pthread_mutex_init (&retVal->per_ip_connection_mutex, NULL))
     {

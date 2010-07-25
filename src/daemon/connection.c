@@ -333,6 +333,11 @@ try_ready_normal_body (struct MHD_Connection *connection)
        (response->data_size + response->data_start >
 	connection->response_write_position) )
     return MHD_YES; /* response already ready */
+#if LINUX
+  if ( (response->fd != -1) &&
+       (0 == (connection->daemon->options & MHD_USE_SSL)) )
+    return MHD_YES; /* will use sendfile */
+#endif
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,
@@ -1795,29 +1800,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
-#if HTTPS_SUPPORT
-          if (connection->daemon->options & MHD_USE_SSL)
-            {
-              ret = gnutls_record_send (connection->tls_session,
-                                             &connection->response->data
-                                             [connection->
-                                              response_write_position -
-                                              response->data_start],
-                                             response->data_size -
-                                             (connection->response_write_position
-                                              - response->data_start));
-            }
-          else
-#endif
-            {
-              ret = connection->send_cls (connection,
-                                          &response->data
-                                          [connection->response_write_position
-                                           - response->data_start],
-                                          response->data_size -
-                                          (connection->response_write_position
-                                           - response->data_start));
-            }
+	  ret = connection->send_cls (connection,
+				      &response->data
+				      [connection->response_write_position
+				       - response->data_start],
+				      response->data_size -
+				      (connection->response_write_position
+				       - response->data_start));
 #if DEBUG_SEND_DATA
           if (ret > 0)
             FPRINTF (stderr,

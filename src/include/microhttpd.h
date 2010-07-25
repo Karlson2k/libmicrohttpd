@@ -415,13 +415,21 @@ enum MHD_OPTION
    * Followed by an argument of type
    * "gnutls_credentials_type_t".
    */
-  MHD_OPTION_CRED_TYPE = 10,
+  MHD_OPTION_HTTPS_CRED_TYPE = 10,
 
   /**
    * Memory pointer to a "const char*" specifying the
    * cipher algorithm (default: "NORMAL").
    */
-  MHD_OPTION_HTTPS_PRIORITIES = 12,
+  MHD_OPTION_HTTPS_PRIORITIES = 11,
+
+  /**
+   * Pass a listen socket for MHD to use (systemd-style).  If this
+   * option is used, MHD will not open its own listen socket(s). The
+   * argument passed must be of type "int" and refer to an
+   * existing socket that has been bound to a port and is listening.
+   */
+  MHD_OPTION_LISTEN_SOCKET = 12,
 
   /**
    * Use the given function for logging error messages.
@@ -1073,6 +1081,18 @@ struct MHD_Response *MHD_create_response_from_data (size_t size,
                                                     void *data,
                                                     int must_free,
                                                     int must_copy);
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param fd file descriptor referring to a file on disk with the data; will be closed when response is destroyed
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *MHD_create_response_from_fd (size_t size,
+						  int fd);
 
 /**
  * Destroy a response object and associated resources.  Note that

@@ -342,29 +342,45 @@ MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
 be the 0-terminated URI of the request.
 
 @item MHD_OPTION_HTTPS_MEM_KEY
+@cindex SSL
+@cindex TLS
 Memory pointer to the private key to be used by the
 HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
    
 @item MHD_OPTION_HTTPS_MEM_CERT
+@cindex SSL
+@cindex TLS
 Memory pointer to the certificate to be used by the
 HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
    
 @item MHD_OPTION_CRED_TYPE
+@cindex SSL
+@cindex TLS
 Daemon credentials type.  Either certificate or anonymous,
 this option should be followed by one of the values listed in
 "enum MHD_GNUTLS_CredentialsType".
    
 @item MHD_OPTION_HTTPS_PRIORITIES
+@cindex SSL
+@cindex TLS
+@cindex cipher
 SSL/TLS protocol version and ciphers.
 This option must be followwed by an "const char *" argument
 specifying the SSL/TLS protocol versions and ciphers that
 are acceptable for the application.  The string is passed
 unchanged to gnutls_priority_init.  If this option is not
 specified, ``NORMAL'' is used.
+  
+@item MHD_OPTION_LISTEN_SOCKET
+@cindex systemd
+Listen socket to use.  Pass a listen socket for MHD to use
+(systemd-style).  If this option is used, MHD will not open its own
+listen socket(s). The argument passed must be of type "int" and refer
+to an existing socket that has been bound to a port and is listening.
   
 @item MHD_OPTION_EXTERNAL_LOGGER
 @cindex logging
@@ -381,6 +397,7 @@ flag being set and the MHD_USE_DEBUG flag being set,
 even if this argument is used.
 
 @item MHD_OPTION_THREAD_POOL_SIZE
+@cindex performance
 Number (unsigned int) of threads in thread pool. Enable
 thread pooling by setting this value to to something
 greater than 1. Currently, thread model must be
@@ -1128,6 +1145,24 @@ extra argument to @var{crc};
 
 @item crfc
 callback to call to free @var{crc_cls} resources.
+@end table
+
+Return @mynull{} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
+
+
+@deftypefun {struct MHD_Response *} MHD_create_response_from_fd (uint64_t size, int fd)
+Create a response object.  The response object can be extended with
+header information and then it can be used any number of times.
+
+@table @var
+@item size
+size of the data portion of the response, @code{-1} for unknown;
+
+@item fd
+file descriptor referring to a file on disk with the data; will be
+closed when response is destroyed
 @end table
 
 Return @mynull{} on error (i.e. invalid arguments, out of memory).

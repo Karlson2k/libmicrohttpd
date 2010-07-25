@@ -186,15 +186,15 @@ struct MHD_Response
   pthread_mutex_t mutex;
 
   /**
-   * Reference count for this response.  Free
-   * once the counter hits zero.
-   */
-  unsigned int reference_count;
-
-  /**
    * Set to MHD_SIZE_UNKNOWN if size is not known.
    */
   uint64_t total_size;
+
+  /**
+   * At what offset in the stream is the
+   * beginning of data located?
+   */
+  uint64_t data_start;
 
   /**
    * Size of data.
@@ -207,10 +207,15 @@ struct MHD_Response
   size_t data_buffer_size;
 
   /**
-   * At what offset in the stream is the
-   * beginning of data located?
+   * Reference count for this response.  Free
+   * once the counter hits zero.
    */
-  uint64_t data_start;
+  unsigned int reference_count;
+
+  /**
+   * File-descriptor if this response is FD-backed.
+   */
+  int fd;
 
 };
 

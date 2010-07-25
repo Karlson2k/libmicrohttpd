@@ -189,6 +189,7 @@ MHD_create_response_from_callback (uint64_t size,
   if (retVal == NULL)
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
+  retVal->fd = -1;
   retVal->data = (void *) &retVal[1];
   retVal->data_buffer_size = block_size;
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
@@ -203,6 +204,68 @@ MHD_create_response_from_callback (uint64_t size,
   retVal->total_size = size;
   return retVal;
 }
+
+
+/**
+ * Given a file descriptor, read data from the file
+ * to generate the response.
+ * 
+ * @param cls pointer to the file descriptor
+ * @param pos offset in the file to access
+ * @param buf where to write the data
+ * @param max number of bytes to write at most
+ * @return number of bytes written
+ */
+static int
+file_reader (void *cls, uint64_t pos, char *buf, int max)
+{
+  int *fd = cls;
+
+  (void) lseek (*fd, pos, SEEK_SET);
+  return read (*fd, buf, max);
+}
+
+
+/**
+ * Destroy file reader context.  Closes the file
+ * descriptor.
+ *
+ * @param cls pointer to file descriptor
+ */
+static void
+free_callback (void *cls)
+{
+  int *fd = cls;
+  close (*fd);
+  *fd = -1;
+}
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param fd file descriptor referring to a file on disk with the data
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *MHD_create_response_from_fd (size_t size,
+						  int fd)
+{
+  struct MHD_Response *ret;
+
+  ret = MHD_create_response_from_callback (size,
+					   4 * 1024,
+					   &file_reader,
+					   NULL,
+					   &free_callback);
+  if (ret == NULL)
+    return NULL;
+  ret->fd = fd;
+  ret->crc_cls = &ret->fd;
+  return ret;
+}
+
 
 /**
  * Create a response object.  The response object can be extended with
@@ -229,6 +292,7 @@ MHD_create_response_from_data (size_t size,
   if (retVal == NULL)
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Response));
+  retVal->fd = -1;
   if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
     {
       free (retVal);
