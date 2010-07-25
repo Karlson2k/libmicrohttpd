@@ -43,14 +43,13 @@ test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
 {
 
   int ret;
-  int ciper[] = { GNUTLS_CIPHER_3DES_CBC, 0 };
   struct MHD_Daemon *d;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, 42433,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                        MHD_OPTION_CIPHER_ALGORITHM, ciper, MHD_OPTION_END);
+                        MHD_OPTION_END);
 
   if (d == NULL)
     {
@@ -90,37 +89,28 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-
 int
 main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
 
-  /* gnutls_global_set_log_level(11); */
-  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
-    {
-      return -1;
-    }
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-
+  gnutls_global_set_log_level(11); 
+  if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_GNUTLS_VERSION))
+    return -1;
   if (!gcry_check_version (GCRYPT_VERSION))
     abort ();
-
   if ((test_fd = setup_test_file ()) == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
       return -1;
     }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
       fclose (test_fd);
       return -1;
     }
-
   errorCount +=
     test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
   errorCount +=

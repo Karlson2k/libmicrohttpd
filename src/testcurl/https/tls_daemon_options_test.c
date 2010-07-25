@@ -28,6 +28,7 @@
 #include "microhttpd.h"
 #include <sys/stat.h>
 #include <limits.h>
+#include <gcrypt.h>
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];
@@ -40,7 +41,7 @@ int curl_check_version (const char *req_version, ...);
  *
  */
 /* TODO rm test_fd */
-static int
+int
 test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
                              int curl_req_ssl_version)
 {
@@ -79,12 +80,11 @@ main (int argc, char *const *argv)
 {
   FILE *test_fd;
   unsigned int errorCount = 0;
-  unsigned int cpos;
-  char test_name[64];
 
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
-
+  gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return -1;
@@ -103,46 +103,39 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
+#if 0
+  errorCount +=
+    test_wrap ("TLS1.0-AES-SHA1",
+	       &test_https_transfer, test_fd, daemon_flags,
+	       "AES128-SHA1",
+	       CURL_SSLVERSION_TLSv1,
+	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
+	       MHD_OPTION_END);
+#endif
+#if 0
+  errorCount +=
+    test_wrap ("TLS1.0-AES-SHA1",
+	       &test_https_transfer, test_fd, daemon_flags,
+	       "AES128-SHA1",
+	       CURL_SSLVERSION_SSLv3,
+	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-SSL3.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
+	       MHD_OPTION_END);
 
-  struct CipherDef ciphers[] = {
-    {{GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
-    {{GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
-    {{GNUTLS_CIPHER_3DES_CBC, 0}, "3DES-SHA"},
-    {{GNUTLS_CIPHER_AES_256_CBC, 0}, "AES256-SHA"},
-    {{0, 0}, NULL}
-  };
-  fprintf (stderr, "SHA/TLS tests:\n");
-  cpos = 0;
-  while (ciphers[cpos].curlname != NULL)
-    {
-      sprintf (test_name, "%s-TLS", ciphers[cpos].curlname);
-      errorCount +=
-        test_wrap (test_name,
-                   &test_https_transfer, test_fd, daemon_flags,
-                   ciphers[cpos].curlname,
-                   CURL_SSLVERSION_TLSv1,
-                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_CIPHER_ALGORITHM, "NORMAL",
-                   MHD_OPTION_END);
-      cpos++;
-    }
-  fprintf (stderr, "SHA/SSL3 tests:\n");
-  cpos = 0;
-  while (ciphers[cpos].curlname != NULL)
-    {
-      sprintf (test_name, "%s-SSL3", ciphers[cpos].curlname);
-      errorCount +=
-        test_wrap (test_name,
-                   &test_https_transfer, test_fd, daemon_flags,
-                   ciphers[cpos].curlname,
-                   CURL_SSLVERSION_SSLv3,
-                   MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                   MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_CIPHER_ALGORITHM, "NORMAL",
-                   MHD_OPTION_END);
-      cpos++;
-    }
+  errorCount +=
+    test_wrap ("SSL3.0-AES-SHA1",
+	       &test_https_transfer, test_fd, daemon_flags,
+	       "AES128-SHA1",
+	       CURL_SSLVERSION_SSLv3,
+	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-SSL3.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
+	       MHD_OPTION_END);
+#endif
+
 #if 0
   /* manual inspection of the handshake suggests that CURL will
      request TLSv1, we send back "SSL3" and CURL takes it *despite*
@@ -158,12 +151,19 @@ main (int argc, char *const *argv)
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
 #endif
+
+#if 1
   errorCount +=
-    test_wrap ("unmatching version: TLS vs. SSL3", &test_unmatching_ssl_version,
-               test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_SSLv3,
-               MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-               MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
+    test_wrap ("TLS1.0 vs SSL3",
+	       &test_unmatching_ssl_version, test_fd, daemon_flags,
+	       "AES256-SHA",
+	       CURL_SSLVERSION_SSLv3,
+	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-256-CBC:+SHA1:+RSA:+COMP-NULL",
+	       MHD_OPTION_END);
+#endif
+
   curl_global_cleanup ();
   fclose (test_fd);
   remove (TEST_FILE_NAME);

@@ -11,7 +11,7 @@ header file @file{microhttpd.h}.
 
 @noindent
 
-Copyright @copyright{} 2007, 2008, 2009 Christian Grothoff
+Copyright @copyright{} 2007, 2008, 2009, 2010 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -358,18 +358,13 @@ Daemon credentials type.  Either certificate or anonymous,
 this option should be followed by one of the values listed in
 "enum MHD_GNUTLS_CredentialsType".
    
-@item MHD_OPTION_PROTOCOL_VERSION
-SSL/TLS protocol version.
-Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated
-(const) array of 'enum MHD_GNUTLS_Protocol' values representing the
-protocol versions to this server should support. Unsupported
-requests will be dropped by the server.
-
-@item MHD_OPTION_CIPHER_ALGORITHM
-Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN)
-terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm'
-representing the cipher priority order to which the HTTPS
-daemon should adhere.
+@item MHD_OPTION_HTTPS_PRIORITIES
+SSL/TLS protocol version and ciphers.
+This option must be followwed by an "const char *" argument
+specifying the SSL/TLS protocol versions and ciphers that
+are acceptable for the application.  The string is passed
+unchanged to gnutls_priority_init.  If this option is not
+specified, ``NORMAL'' is used.
   
 @item MHD_OPTION_EXTERNAL_LOGGER
 @cindex logging

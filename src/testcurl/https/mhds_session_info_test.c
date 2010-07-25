@@ -48,24 +48,33 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 {
   struct MHD_Response *response;
   int ret;
+  
+  if (NULL == *ptr)
+    {
+      *ptr = &query_session_ahc;
+      return MHD_YES;
+    }
 
   /* assert actual connection cipher is the one negotiated */
-  if (MHD_get_connection_info
-      (connection,
-       MHD_CONNECTION_INFO_CIPHER_ALGO)->cipher_algorithm !=
-      GNUTLS_CIPHER_AES_256_CBC)
+  if (GNUTLS_CIPHER_AES_256_CBC != 
+      (ret = MHD_get_connection_info
+       (connection,
+	MHD_CONNECTION_INFO_CIPHER_ALGO)->cipher_algorithm))
     {
-      fprintf (stderr, "Error: requested cipher mismatch. %s\n",
-               strerror (errno));
+      fprintf (stderr, "Error: requested cipher mismatch (wanted %d, got %d)\n",
+               GNUTLS_CIPHER_AES_256_CBC,
+	       ret);
       return -1;
     }
 
-  if (MHD_get_connection_info
-      (connection,
-       MHD_CONNECTION_INFO_PROTOCOL)->protocol != GNUTLS_SSL3)
+  if (GNUTLS_SSL3 != 
+      (ret = MHD_get_connection_info
+       (connection,
+	MHD_CONNECTION_INFO_PROTOCOL)->protocol))
     {
-      fprintf (stderr, "Error: requested compression mismatch. %s\n",
-               strerror (errno));
+      fprintf (stderr, "Error: requested protocol mismatch (wanted %d, got %d)\n",
+               GNUTLS_SSL3,
+	       ret);
       return -1;
     }
 
@@ -99,6 +108,7 @@ test_query_session ()
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, DEAMON_TEST_PORT,
                         NULL, NULL, &query_session_ahc, NULL,
+			MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:-AES-128-CBC",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -167,6 +177,7 @@ main (int argc, char *const *argv)
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
-
-  return errorCount != 0;
+  if (errorCount > 0)
+    fprintf (stderr, "Error (code: %u)\n", errorCount);
+  return errorCount;
 }

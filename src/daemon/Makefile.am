@@ -1,8 +1,7 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/daemon \
-  @LIBGCRYPT_CFLAGS@ \
-  @LIBGNUTLS_CFLAGS@ 
+  @LIBGCRYPT_CFLAGS@ 
 
 EXTRA_DIST = EXPORT.sym
 
@@ -29,8 +28,7 @@ endif
 if ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
-libmicrohttpd_la_LIBADD = \
-  $(LIBGNUTLS_LIBS) 
+libmicrohttpd_la_LIBADD = -lgnutls 
 endif
 
 check_PROGRAMS = \

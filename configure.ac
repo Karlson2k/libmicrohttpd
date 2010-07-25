@@ -233,7 +233,39 @@ AM_PATH_LIBGCRYPT(1.2.2, gcrypt=true)
 MHD_GCRYPT_VERSION=1:1.2.2
 AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
 
-AM_PATH_LIBGNUTLS(2.8.6, gnutls=true)
+
+# gnutls
+gnutls=0
+AC_MSG_CHECKING([for gnutls])
+AC_ARG_WITH(gnutls,
+   [  --with-gnutls=PFX   base of gnutls installation],
+   [AC_MSG_RESULT([$with_gnutls])
+    case $with_gnutls in
+      no)
+        ;;
+      yes)
+        AC_CHECK_HEADERS([gnutls/gnutls.h],
+            AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+	     gnutls=true))
+        ;;
+      *)
+        LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
+        CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
+        AC_CHECK_HEADERS([gnutls/gnutls.h],
+            AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+              EXT_LIB_PATH="-L$with_gnutls/lib $EXT_LIB_PATH"
+              gnutls=true))
+        ;;
+    esac
+   ],
+   [AC_MSG_RESULT([--with-gnutls not specified])
+    AC_CHECK_HEADERS([gnutls/gnutls.h],
+        AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+          gnutls=true))])
+AM_CONDITIONAL(HAVE_GNUTLS, test x$gnutls = xtrue)
+AC_DEFINE_UNQUOTED([HAVE_GNUTLS], $gnutls, [We have gnutls])
+
+
 
 # optional: HTTPS support.  Enabled by default
 AC_MSG_CHECKING(whether to enable HTTPS support)
@@ -261,7 +293,7 @@ AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
-dnl TODO insert a proper check here
+# TODO insert a proper check here
 AC_CACHE_CHECK([whether -export-symbols-regex works],
  gn_cv_export_symbols_regex_works, 
  [
@@ -270,10 +302,6 @@ AC_CACHE_CHECK([whether -export-symbols-regex works],
   *) gn_cv_export_symbols_regex_works=yes;;
   esac
  ])
-
-
-# Symbols required by GNU_TLS 
-AC_DEFINE([GNULIB_GC_RANDOM],[1],[GNULIB_GC_RANDOM])
 
 
 # gcov compilation

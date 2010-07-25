@@ -33,6 +33,7 @@
 #if HTTPS_SUPPORT
 #include "connection_https.h"
 #include <gnutls/gnutls.h>
+#include <gcrypt.h>
 #endif
 
 #ifdef HAVE_POLL_H
@@ -1245,6 +1246,7 @@ parse_options_va (struct MHD_Daemon *daemon,
   unsigned int i;
 #if HTTPS_SUPPORT
   int ret;
+  const char *pstr;
 #endif
   
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
@@ -1308,14 +1310,18 @@ parse_options_va (struct MHD_Daemon *daemon,
 		     opt);	  
 #endif
           break;
-        case MHD_OPTION_CIPHER_ALGORITHM:
+	case MHD_OPTION_CRED_TYPE:
+	  daemon->cred_type = va_arg (ap, gnutls_credentials_type_t);
+	  break;
+        case MHD_OPTION_HTTPS_PRIORITIES:
 	  ret = gnutls_priority_init (&daemon->priority_cache,
-				      va_arg (ap, const char*),
+				      pstr = va_arg (ap, const char*),
 				      NULL);
 #if HAVE_MESSAGES
 	  if (ret != GNUTLS_E_SUCCESS)
 	    FPRINTF (stderr,
-		     "gnutls unhappy: %s\n",
+		     "Setting priorities to `%s' failed: %s\n",
+		     pstr,
 		     gnutls_strerror (ret));
 #endif	  
 	  if (ret != GNUTLS_E_SUCCESS)
@@ -1373,7 +1379,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_SOCK_ADDR:
 		case MHD_OPTION_HTTPS_MEM_KEY:
 		case MHD_OPTION_HTTPS_MEM_CERT:
-		case MHD_OPTION_CIPHER_ALGORITHM:
+		case MHD_OPTION_HTTPS_PRIORITIES:
 		case MHD_OPTION_ARRAY:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
@@ -1404,7 +1410,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         default:
 #if HAVE_MESSAGES
           if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
-              (opt <= MHD_OPTION_CIPHER_ALGORITHM))
+              (opt <= MHD_OPTION_HTTPS_PRIORITIES))
             {
               FPRINTF (stderr,
                        "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",
@@ -1989,6 +1995,10 @@ sigalrmHandler (int sig)
 #define ATTRIBUTE_DESTRUCTOR
 #endif  // __GNUC__
 
+#if HTTPS_SUPPORT
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
+
 /**
  * Initialize the signal handler for SIGALRM
  * and do other setup work.
@@ -2009,6 +2019,7 @@ void ATTRIBUTE_CONSTRUCTOR MHD_init ()
   plibc_init ("GNU", "libmicrohttpd");
 #endif
 #if HTTPS_SUPPORT
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
   gnutls_global_init ();
   if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
     abort();

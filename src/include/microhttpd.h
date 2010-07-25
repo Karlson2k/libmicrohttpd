@@ -421,7 +421,7 @@ enum MHD_OPTION
    * Memory pointer to a "const char*" specifying the
    * cipher algorithm (default: "NORMAL").
    */
-  MHD_OPTION_CIPHER_ALGORITHM = 12,
+  MHD_OPTION_HTTPS_PRIORITIES = 12,
 
   /**
    * Use the given function for logging error messages.
