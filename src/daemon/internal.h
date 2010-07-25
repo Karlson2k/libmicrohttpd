@@ -345,20 +345,7 @@ enum MHD_CONNECTION_STATE
    * Handshake messages will be processed in this state & while
    * in the 'MHD_TLS_HELLO_REQUEST' state
    */
-  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_CLOSED + 1,
-
-  /**
-   * This state indicates the server has send a 'Hello Request' to
-   * the client & a renegotiation of the handshake is in progress.
-   *
-   * Handshake messages will processed in this state & while
-   * in the 'MHD_TLS_CONNECTION_INIT' state
-   */
-  MHD_TLS_HELLO_REQUEST,
-
-  MHD_TLS_HANDSHAKE_FAILED,
-
-  MHD_TLS_HANDSHAKE_COMPLETE
+  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_CLOSED + 1
 
 };
 
@@ -805,6 +792,11 @@ struct MHD_Daemon
   unsigned short port;
 
 #if HTTPS_SUPPORT
+  /**
+   * Desired cipher algorithms.
+   */
+  gnutls_priority_t priority_cache;
+
   /**
    * What kind of credentials are we offering
    * for SSL/TLS?

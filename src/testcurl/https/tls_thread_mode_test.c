@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <curl/curl.h>
+#include <gcrypt.h>
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];
@@ -119,6 +120,8 @@ test_parallel_clients (FILE * test_fd, char *cipher_suite,
   return 0;
 }
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 int
 main (int argc, char *const *argv)
 {
@@ -128,7 +131,7 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     return -1;
 

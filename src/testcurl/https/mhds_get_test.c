@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
+#include <gcrypt.h>
 #include "tls_test_common.h"
 
 int curl_check_version (const char *req_version, ...);
@@ -89,6 +90,8 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 int
 main (int argc, char *const *argv)
 {
@@ -96,11 +99,14 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
 
   /* gnutls_global_set_log_level(11); */
-
   if (curl_check_version (MHD_REQ_CURL_VERSION, MHD_REQ_CURL_OPENSSL_VERSION))
     {
       return -1;
     }
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+
+  if (!gcry_check_version (GCRYPT_VERSION))
+    abort ();
 
   if ((test_fd = setup_test_file ()) == NULL)
     {

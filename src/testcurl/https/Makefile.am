@@ -14,6 +14,7 @@ check_PROGRAMS = \
   tls_authentication_test \
   mhds_multi_daemon_test \
   mhds_get_test \
+  mhds_get_test_select \
   mhds_session_info_test \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
@@ -28,6 +29,7 @@ TESTS = \
   tls_daemon_options_test \
   mhds_multi_daemon_test \
   mhds_get_test \
+  mhds_get_test_select \
   mhds_session_info_test \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
@@ -113,6 +115,15 @@ mhds_get_test_SOURCES = \
   mhds_get_test.c \
   tls_test_common.c
 mhds_get_test_LDADD  = \
+  $(top_builddir)/src/testcurl/libcurl_version_check.a \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@  
+
+
+mhds_get_test_select_SOURCES = \
+  mhds_get_test_select.c \
+  tls_test_common.c
+mhds_get_test_select_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@  

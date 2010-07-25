@@ -626,6 +626,43 @@ send_param_adapter (struct MHD_Connection *connection,
     return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
+
+#if HTTPS_SUPPORT
+/**
+ * Set if a socket should use non-blocking IO.
+ * @param fd socket
+ */
+static void
+socket_set_nonblocking (int fd)
+{
+#if MINGW
+  u_long mode;
+  mode = 1;
+  if (ioctlsocket (fd, FIONBIO, &mode) == SOCKET_ERROR)
+    {
+      SetErrnoFromWinsockError (WSAGetLastError ());
+#if HAVE_MESSAGES
+      FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
+	      STRERROR (errno));
+#endif
+    }
+#else
+
+  /* not MINGW */
+  int flags = fcntl (fd, F_GETFL);
+  if ( (flags == -1) ||
+       (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
+    {
+#if HAVE_MESSAGES
+      FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
+	      STRERROR (errno));
+#endif
+    }
+#endif
+}
+#endif
+
+
 /**
  * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
@@ -765,13 +802,20 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       connection->state = MHD_TLS_CONNECTION_INIT;
       MHD_set_https_calbacks (connection);
       gnutls_init (&connection->tls_session, GNUTLS_SERVER);
+      gnutls_priority_set (connection->tls_session,
+			   daemon->priority_cache);
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+	{
+	  /* use non-blocking IO for gnutls */
+	  socket_set_nonblocking (connection->socket_fd);
+	}
       switch (connection->daemon->cred_type)
         {
           /* set needed credentials for certificate authentication. */
         case GNUTLS_CRD_CERTIFICATE:
           gnutls_credentials_set (connection->tls_session,
 				  GNUTLS_CRD_CERTIFICATE,
-                                       connection->daemon->x509_cred);
+				  connection->daemon->x509_cred);
           break;
         default:
 #if HAVE_MESSAGES
@@ -1199,6 +1243,9 @@ parse_options_va (struct MHD_Daemon *daemon,
   enum MHD_OPTION opt;
   struct MHD_OptionItem *oa;
   unsigned int i;
+#if HTTPS_SUPPORT
+  int ret;
+#endif
   
   while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
     {
@@ -1241,16 +1288,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 	    }
           break;
 #if HTTPS_SUPPORT
-        case MHD_OPTION_PROTOCOL_VERSION:
-	  FPRINTF (stderr,
-		   "Protocol version setting currently not supported.\n");
-#if HAVE_MESSAGES
-	  else
-	    FPRINTF (stderr,
-		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
-		     opt);	  
-#endif
-          break;
         case MHD_OPTION_HTTPS_MEM_KEY:
 	  if (daemon->options & MHD_USE_SSL)
 	    daemon->https_mem_key = va_arg (ap, const char *);
@@ -1272,14 +1309,17 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_CIPHER_ALGORITHM:
-	  FPRINTF (stderr,
-		   "CIPHER setting currently not supported\n");
+	  ret = gnutls_priority_init (&daemon->priority_cache,
+				      va_arg (ap, const char*),
+				      NULL);
 #if HAVE_MESSAGES
-	  else
+	  if (ret != GNUTLS_E_SUCCESS)
 	    FPRINTF (stderr,
-		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
-		     opt);	  
+		     "gnutls unhappy: %s\n",
+		     gnutls_strerror (ret));
 #endif	  
+	  if (ret != GNUTLS_E_SUCCESS)
+	    return MHD_NO;
           break;
 #endif
         case MHD_OPTION_EXTERNAL_LOGGER:
@@ -1333,7 +1373,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_SOCK_ADDR:
 		case MHD_OPTION_HTTPS_MEM_KEY:
 		case MHD_OPTION_HTTPS_MEM_CERT:
-		case MHD_OPTION_PROTOCOL_VERSION:
 		case MHD_OPTION_CIPHER_ALGORITHM:
 		case MHD_OPTION_ARRAY:
 		  if (MHD_YES != parse_options (daemon,
@@ -1421,6 +1460,11 @@ MHD_start_daemon_va (unsigned int options,
   if (retVal == NULL)
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Daemon));
+#if HTTPS_SUPPORT
+  gnutls_priority_init (&retVal->priority_cache,
+			"NORMAL",
+			NULL);
+#endif
   retVal->options = (enum MHD_OPTION)options;
   retVal->port = port;
   retVal->apc = apc;

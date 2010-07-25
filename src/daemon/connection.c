@@ -778,12 +778,17 @@ MHD_connection_get_pollfd(struct MHD_Connection *connection, struct MHD_Pollfd *
 #endif
       switch (connection->state)
         {
+#if HTTPS_SUPPORT     
+	case MHD_TLS_CONNECTION_INIT:
+	  if (0 == gnutls_record_get_direction (connection->tls_session))
+            p->events |= MHD_POLL_ACTION_IN;
+	  else
+	    p->events |= MHD_POLL_ACTION_OUT;
+	  break;
+#endif
         case MHD_CONNECTION_INIT:
         case MHD_CONNECTION_URL_RECEIVED:
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
-#if HTTPS_SUPPORT
-        case MHD_TLS_CONNECTION_INIT:
-#endif
           /* while reading headers, we always grow the
              read buffer if needed, no size-check required */
           if ((connection->read_closed) &&
@@ -1866,8 +1871,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             connection_close_error (connection);
           return MHD_NO;
         case MHD_TLS_CONNECTION_INIT:
-        case MHD_TLS_HELLO_REQUEST:
-        case MHD_TLS_HANDSHAKE_FAILED:
           EXTRA_CHECK (0);
           break;
         default:

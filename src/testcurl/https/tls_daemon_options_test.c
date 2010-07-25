@@ -104,12 +104,6 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  int p_ssl3[] = { GNUTLS_SSL3, 0 };
-  int p_tls[] = { GNUTLS_TLS1_2,
-    GNUTLS_TLS1_1,
-    GNUTLS_TLS1_0, 0
-  };
-
   struct CipherDef ciphers[] = {
     {{GNUTLS_CIPHER_AES_128_CBC, 0}, "AES128-SHA"},
     {{GNUTLS_CIPHER_ARCFOUR_128, 0}, "RC4-SHA"},
@@ -129,8 +123,7 @@ main (int argc, char *const *argv)
                    CURL_SSLVERSION_TLSv1,
                    MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                    MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_PROTOCOL_VERSION, p_tls,
-                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+                   MHD_OPTION_CIPHER_ALGORITHM, "NORMAL",
                    MHD_OPTION_END);
       cpos++;
     }
@@ -146,8 +139,7 @@ main (int argc, char *const *argv)
                    CURL_SSLVERSION_SSLv3,
                    MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                    MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-                   MHD_OPTION_PROTOCOL_VERSION, p_ssl3,
-                   MHD_OPTION_CIPHER_ALGORITHM, ciphers[cpos].options,
+                   MHD_OPTION_CIPHER_ALGORITHM, "NORMAL",
                    MHD_OPTION_END);
       cpos++;
     }
@@ -164,14 +156,14 @@ main (int argc, char *const *argv)
                test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_PROTOCOL_VERSION, p_ssl3, MHD_OPTION_END);
+               MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
 #endif
   errorCount +=
     test_wrap ("unmatching version: TLS vs. SSL3", &test_unmatching_ssl_version,
                test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_SSLv3,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-               MHD_OPTION_PROTOCOL_VERSION, p_tls, MHD_OPTION_END);
+               MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
   curl_global_cleanup ();
   fclose (test_fd);
   remove (TEST_FILE_NAME);

@@ -418,20 +418,8 @@ enum MHD_OPTION
   MHD_OPTION_CRED_TYPE = 10,
 
   /**
-   * SSL/TLS protocol version.
-   *
-   * Memory pointer to a zero (MHD_GNUTLS_PROTOCOL_END) terminated
-   * (const) array of 'enum MHD_GNUTLS_Protocol' values representing the
-   * protocol versions to this server should support. Unsupported
-   * requests will be droped by the server.
-   */
-  MHD_OPTION_PROTOCOL_VERSION = 11,
-
-  /**
-   * Memory pointer to a zero (MHD_GNUTLS_CIPHER_UNKNOWN)
-   * terminated (const) array of 'enum MHD_GNUTLS_CipherAlgorithm'
-   * representing the cipher priority order to which the HTTPS
-   * daemon should adhere.
+   * Memory pointer to a "const char*" specifying the
+   * cipher algorithm (default: "NORMAL").
    */
   MHD_OPTION_CIPHER_ALGORITHM = 12,
 

@@ -77,12 +77,6 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
       return "closed";
     case MHD_TLS_CONNECTION_INIT:
       return "secure connection init";
-    case MHD_TLS_HELLO_REQUEST:
-      return "secure hello request";
-    case MHD_TLS_HANDSHAKE_FAILED:
-      return "secure handshake failed";
-    case MHD_TLS_HANDSHAKE_COMPLETE:
-      return "secure handshake _complete";
     default:
       return "unrecognized connection state";
     }
