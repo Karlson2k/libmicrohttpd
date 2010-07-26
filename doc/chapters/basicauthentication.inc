@@ -12,9 +12,10 @@ GET /picture.png?mypassword
 @end verbatim
 @noindent
 
-In a situation where the client is customized enough and the connection occurs
-through secured lines (e.g., a embedded device directly attached to another via wire),
-this can be a reasonable choice.
+In the rare situation where the client is customized enough and the connection occurs
+through secured lines (e.g., a embedded device directly attached to another via wire)
+and where the ability to embedd a password in the URI or to pass on a URI with a
+password are desired, this can be a reasonable choice. 
 
 But when it is assumed that the user connecting does so with an ordinary Internet browser,
 this implementation brings some problems about. For example, the URI including the password
@@ -37,15 +38,16 @@ also be "remembered" on the next call (for the same connection).
 Thus, we will generate no response until the parameter is non-null---implying the callback was
 called before at least once. We do not need to share information between different calls of the callback,
 so we can set the parameter to any adress that is assured to be not null. The pointer to the 
-@code{connection} structure will be pointing to a legal adress, so we take this.
+@code{connection} structure will be pointing to a legal address, so we take this.
 
-Not even the headers will be looked at on the first iteration.
+The first time @code{answer_to_connection} is called, we will not even look at the headers.
 
 @verbatim
-int answer_to_connection (void *cls, struct MHD_Connection *connection,
-                          const char *url, const char *method, const char *version, 
-                          const char *upload_data, size_t *upload_data_size,
-                          void **con_cls)
+static int 
+answer_to_connection (void *cls, struct MHD_Connection *connection,
+                      const char *url, const char *method, const char *version, 
+                      const char *upload_data, size_t *upload_data_size,
+                      void **con_cls)
 {
   if (0 != strcmp(method, "GET")) return MHD_NO;
   if (NULL == *con_cls) {*con_cls = connection; return MHD_YES;}
@@ -57,9 +59,9 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 @end verbatim
 @noindent
 
-Note how we lop off the connection on the first condition, but return asking for more on 
+Note how we lop off the connection on the first condition (no "GET" request), but return asking for more on 
 the other one with @code{MHD_YES}.
-With the framework improved, we can proceed to implement the actual authentication process.
+With this minor change, we can proceed to implement the actual authentication process.
 
 @heading Request for authentication 
 
@@ -70,7 +72,8 @@ so every "GET" request will be challenged.
 
 We let an extra function function do this.
 @verbatim
-int ask_for_authentication (struct MHD_Connection *connection, const char *realm)
+static int 
+ask_for_authentication (struct MHD_Connection *connection, const char *realm)
 {
   int ret;
   struct MHD_Response *response;
@@ -91,9 +94,7 @@ int ask_for_authentication (struct MHD_Connection *connection, const char *realm
   if (!ret) {MHD_destroy_response (response); return MHD_NO;}
 
   ret = MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
-  
   MHD_destroy_response (response);
-
   return ret;
 }
 @end verbatim
@@ -102,7 +103,7 @@ int ask_for_authentication (struct MHD_Connection *connection, const char *realm
 @code{#define} the realm name according to your own taste, e.g. "Maintenance" or "Area51" but
 it will need to have extra quotes.
 
-But the client may send the authentication right away, so it would be wrong to ask for
+Since the client may send the authentication right away, it would be wrong to ask for
 it without checking the request's header--where the authentication is expected to be found.
 
 @heading Authentication in detail
@@ -116,8 +117,9 @@ and the resulting line is the value of a request header of the type "Authorizati
 
 This header line thus is of interest to the function checking a connection for a given username/password:
 @verbatim
-int is_authenticated (struct MHD_Connection *connection,
-                      const char *username, const char *password)
+static int 
+is_authenticated (struct MHD_Connection *connection,
+                  const char *username, const char *password)
 {
   const char *headervalue;
   ...
@@ -185,21 +187,21 @@ authentication methods as @emph{400 bad request}.
 @heading Exercises
 @itemize @bullet
 @item
-Make the server respond to wrong credentials (but else correct requests) with the recommended
+Make the server respond to wrong credentials (but otherwise well-formed requests) with the recommended
 @emph{401 unauthorized} status code. If the client still does not authenticate correctly within the
 same connection, close it and store the client's IP address for a certain time. (It is OK to check for
 expiration not until the main thread wakes up again on the next connection.) If the client fails
-authenticating three times during this period, add it to another list whose entries the 
+authenticating three times during this period, add it to another list for which the 
 @code{AcceptPolicyCallback} function denies connection (temporally).
 
 @item
-With the network utility @emph{netcat} connect and log the response of a "GET" request as you
+With the network utility @code{netcat} connect and log the response of a "GET" request as you
 did in the exercise of the first example, this time to a file. Now stop the server and let @emph{netcat}
 listen on the same port the server used to listen on and have it fake being the proper server by giving
 the file's content as the response (e.g. @code{cat log | nc -l -p 8888}). Pretending to think your were
 connecting to the actual server, browse to the eavesdropper and give the correct credentials.
 
-Copy and paste the encoded string you see in netcat's output to some of the Base64 decode tools available online
+Copy and paste the encoded string you see in @code{netcat}'s output to some of the Base64 decode tools available online
 and see how both the user's name and password could be completely restored.
 
 @end itemize

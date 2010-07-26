@@ -4,8 +4,8 @@ the server operates. To induce changes on the server, the @emph{POST} method is 
 and is much more powerful than @emph{GET} and will be introduced in this chapter.
 
 We are going to write an application that asks for the visitor's name and, after the user has posted it,
-composes an individual response text. Even though it was not mandatory to use the @emph{post} method here,
-as there is no permanent change caused by the post, it is an illustrative example on how to share data
+composes an individual response text. Even though it was not mandatory to use the @emph{POST} method here,
+as there is no permanent change caused by the POST, it is an illustrative example on how to share data
 between different functions for the same connection. Furthermore, the reader should be able to extend
 it easily.
 
@@ -37,8 +37,9 @@ const char* errorpage="<html><body>This doesn't seem to be right.</body></html>"
 @noindent
 
 Whenever we need to send a page, we use an extra function
-@code{int SendPage(struct MHD_Connection *connection, const char* page)}
-for this, which does not contain anything new and whose implementation is therefore left out here. 
+@code{int send_page(struct MHD_Connection *connection, const char* page)}
+for this, which does not contain anything new and whose implementation is therefore 
+not discussed further in the tutorial.
 
 
 @heading POST request
@@ -73,12 +74,13 @@ chunks, we had to expand the namestring dynamically as additional parts of it wi
 came in. But in this example, the name is assumed to fit entirely inside one single packet.
 
 @verbatim
-int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
-                  const char *filename, const char *content_type,
-                  const char *transfer_encoding, const char *data, uint64_t off, size_t size)
+static int 
+iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
+              const char *filename, const char *content_type,
+              const char *transfer_encoding, const char *data, 
+	      uint64_t off, size_t size)
 {
-  struct connection_info_struct *con_info = (struct connection_info_struct*) coninfo_cls;
-  
+  struct connection_info_struct *con_info = coninfo_cls;
 
   if (0 == strcmp (key, "name"))
     {
@@ -108,14 +110,13 @@ string. This cleanup function must take into account that it will also be called
 requests other than @emph{POST} requests.
 
 @verbatim
-void request_completed (void *cls, struct MHD_Connection *connection, void **con_cls,
+void request_completed (void *cls, struct MHD_Connection *connection, 
+     		        void **con_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = (struct connection_info_struct*) *con_cls;
-
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info) return;
-
   if (con_info->connectiontype == POST)
     {
       MHD_destroy_post_processor (con_info->postprocessor);        
@@ -134,8 +135,9 @@ in the main function.
 @verbatim
 ...
 daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
-                           &answer_to_connection, NULL, MHD_OPTION_NOTIFY_COMPLETED,
-                           request_completed, NULL, MHD_OPTION_END);
+                           &answer_to_connection, NULL, 
+			   MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
+			   MHD_OPTION_END);
 ...
 @end verbatim
 @noindent
@@ -144,13 +146,16 @@ daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
 With all other functions prepared, we can now discuss the actual request handling.
 
 On the first iteration for a new request, we start by allocating a new instance of a 
-@code{ConnectionInfoStruct} structure, which will store all necessary information for later
+@code{struct connection_info_struct} structure, which will store all necessary information for later
 iterations and other functions.
 
 @verbatim
-int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
-                          const char *method, const char *version, const char *upload_data, 
-                          size_t *upload_data_size, void **con_cls)
+static int 
+answer_to_connection (void *cls, struct MHD_Connection *connection, 
+		      const char *url, 
+                      const char *method, const char *version, 
+		      const char *upload_data, 
+                      size_t *upload_data_size, void **con_cls)
 {
   if(NULL == *con_cls) 
     {
@@ -167,15 +172,15 @@ of the request is stored for convenience.
 @verbatim
       if (0 == strcmp (method, "POST")) 
         {      
-          con_info->postprocessor = MHD_create_post_processor (connection, POSTBUFFERSIZE, 
-                                                               iterate_post, (void*) con_info);   
+          con_info->postprocessor 
+	    = MHD_create_post_processor (connection, POSTBUFFERSIZE, 
+                                         iterate_post, (void*) con_info);   
 
           if (NULL == con_info->postprocessor) 
             {
               free (con_info); 
               return MHD_NO;
             }
-
           con_info->connectiontype = POST;
         } 
       else con_info->connectiontype = GET;
@@ -211,17 +216,19 @@ considered---all of it.
 
       if (*upload_data_size != 0) 
         {
-          MHD_post_process(con_info->postprocessor, upload_data, *upload_data_size);
+          MHD_post_process (con_info->postprocessor, upload_data,	
+	                    *upload_data_size);
           *upload_data_size = 0;
           
           return MHD_YES;
         } 
-      else if (NULL != con_info->answerstring) return send_page (connection, con_info->answerstring);
+      else if (NULL != con_info->answerstring) 
+        return send_page (connection, con_info->answerstring);
     } 
 @end verbatim
 @noindent
 
-If they are neither @emph{GET} nor @emph{POST} requests, the error page is returned finally.
+Finally, if they are neither @emph{GET} nor @emph{POST} requests, the error page is returned.
 @verbatim
   return send_page(connection, errorpage); 
 }

@@ -10,6 +10,7 @@ MHD_lookup_connection_value
 MHD_queue_response
 MHD_create_response_from_callback
 MHD_create_response_from_data
+MHD_create_response_from_fd
 MHD_destroy_response
 MHD_add_response_header
 MHD_del_response_header

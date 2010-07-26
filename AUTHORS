@@ -1,5 +1,6 @@
 Primary developers:
-Christian Grothoff <christian@grothoff.org>
+Christian Grothoff <christian@grothoff.org> (maintainer)
+Nils Durner <durner@gnunet.org> (W32 port)
 Sagie Amir (TLS/SSL support using GNUtls)
 Richard Alimi <rich@velvetsea.net> (performance)
 
@@ -8,7 +9,6 @@ Chris GauthierDickey <chrisg@cs.du.edu>
 Elliot Glaysher
 Daniel Pittman <depittman@gmail.com>
 John Popplewell <john@johnnypops.demon.co.uk>
-Nils Durner <durner@gnunet.org>
 Heikki Lindholm <holin@iki.fi>
 Alex Sadovsky <alexeysad@gmail.com>
 Greg Schohn <greg.schohn@gmail.com>
@@ -27,3 +27,4 @@ Geoffrey McRae <geoff@spacevs.com>
 Documentation contributions also came from:
 Marco Maggi <marco.maggi-ipsu@poste.it>
 Sebastian Gerhardt <sebgerhardt@gmx.net>
+

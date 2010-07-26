@@ -2,8 +2,6 @@
 @setfilename microhttpd.info
 @include version.texi
 @settitle The GNU libmicrohttpd Reference Manual
-@c Unify some of the indices.
-@c %**end of header
 @copying
 This manual documents GNU libmicrohttpd version @value{VERSION}, last
 updated @value{UPDATED}. It is built upon the documentation in the
@@ -21,6 +19,7 @@ with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License".
 @end quotation
+GNU libmicrohttpd is a GNU package.
 @end copying
 
 @dircategory GNU Libraries
@@ -31,7 +30,6 @@ Free Documentation License".
 @c
 @c Titlepage
 @c
-@setchapternewpage odd
 @titlepage
 @title The GNU libmicrohttpd Reference Manual
 @subtitle Version @value{VERSION}
@@ -46,7 +44,6 @@ Free Documentation License".
 
 @summarycontents
 @contents
-@page
 
 
 @macro gnu{}
@@ -110,8 +107,6 @@ Free Documentation License".
 @top The GNU libmicrohttpd Library
 @insertcopying
 @end ifnottex
-
-GNU libmicrohttpd is a GNU package.
 
 @menu
 * microhttpd-intro::            Introduction.
@@ -188,6 +183,44 @@ Additionally, clients can specify resource limits on the overall
 number of connections, number of connections per IP address and memory
 used per connection to avoid resource exhaustion.
 
+@section SIGPIPE
+@cindex signals
+@mhd{} does not install a signal handler for SIGPIPE.  On platforms
+where this is possible (such as GNU/Linux), it disables SIGPIPE for
+its I/O operations (by passing MSG_NOSIGNAL).  On other platforms,
+SIGPIPE signals may be generated from network operations by 
+@mhd{} and will cause the process to die unless the developer
+explicitly installs a signal handler for SIGPIPE.
+
+Hence portable code using MHD must install a SIGPIPE handler or
+explicitly block the SIGPIPE signal.  MHD does not do so in order 
+to avoid messing with other parts of the application that may
+need to handle SIGPIPE in a particular way.  You can make your application handle SIGPIPE by calling the following function in @code{main}:
+
+@verbatim
+static void
+catcher (int sig)
+{
+}
+
+static void
+ignore_sigpipe ()
+{
+  struct sigaction oldsig;
+  struct sigaction sig;
+
+  sig.sa_handler = &catcher;
+  sigemptyset (&sig.sa_mask);
+#ifdef SA_INTERRUPT
+  sig.sa_flags = SA_INTERRUPT;  /* SunOS */
+#else
+  sig.sa_flags = SA_RESTART;
+#endif
+  if (0 != sigaction (SIGPIPE, &sig, &oldsig))
+    fprintf (stderr,
+             "Failed to install SIGPIPE handler: %s\n", strerror (errno));
+}
+@end verbatim
 
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -357,12 +390,12 @@ HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
    
-@item MHD_OPTION_CRED_TYPE
+@item MHD_OPTION_HTTPS_CRED_TYPE
 @cindex SSL
 @cindex TLS
 Daemon credentials type.  Either certificate or anonymous,
 this option should be followed by one of the values listed in
-"enum MHD_GNUTLS_CredentialsType".
+"enum gnutls_credentials_type_t".
    
 @item MHD_OPTION_HTTPS_PRIORITIES
 @cindex SSL
@@ -503,43 +536,6 @@ We had to close the session since @mhd{} was being shut down.
 @end table
 @end deftp
 
-@deftp {Enumeration} MHD_GNUTLS_Protocol
-SSL/TLS Protocol types.  Note that not all listed algorithms are
-necessarily supported by all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_PROTOCOL_END
-@item MHD_GNUTLS_PROTOCOL_SSL3
-@item MHD_GNUTLS_PROTOCOL_TLS1_0
-@item MHD_GNUTLS_PROTOCOL_TLS1_1
-@item MHD_GNUTLS_PROTOCOL_TLS1_2
-@item MHD_GNUTLS_PROTOCOL_UNKNOWN
-
-@end table
-@end deftp
-
-
-
-@deftp {Enumeration} MHD_GNUTLS_CipherAlgorithm
-List of symmetric ciphers.
-Note that not all listed algorithms are necessarily supported by
-all builds of MHD.
-
-@table @code
-@item MHD_GNUTLS_CIPHER_UNKNOWN
-
-@item MHD_GNUTLS_CIPHER_NULL
-
-@item MHD_GNUTLS_CIPHER_ARCFOUR_128
-
-@item MHD_GNUTLS_CIPHER_3DES_CBC
-
-@item MHD_GNUTLS_CIPHER_AES_128_CBC
-
-@item MHD_GNUTLS_CIPHER_AES_256_CBC
-
-@end table
-@end deftp
 
 
 @deftp {Enumeration} MHD_ConnectionInfoType

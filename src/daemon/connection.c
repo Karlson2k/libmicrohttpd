@@ -1,6 +1,6 @@
 /*
     This file is part of libmicrohttpd
-     (C) 2007, 2008 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2008, 2009, 2010 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -336,7 +336,10 @@ try_ready_normal_body (struct MHD_Connection *connection)
 #if LINUX
   if ( (response->fd != -1) &&
        (0 == (connection->daemon->options & MHD_USE_SSL)) )
-    return MHD_YES; /* will use sendfile */
+    {
+      /* will use sendfile, no need to bother response crc */
+      return MHD_YES; 
+    }
 #endif
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,

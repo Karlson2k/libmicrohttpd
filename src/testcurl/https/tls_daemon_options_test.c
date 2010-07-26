@@ -1,22 +1,22 @@
 /*
- This file is part of libmicrohttpd
- (C) 2007 Christian Grothoff
-
- libmicrohttpd is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published
- by the Free Software Foundation; either version 2, or (at your
- option) any later version.
-
- libmicrohttpd is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with libmicrohttpd; see the file COPYING.  If not, write to the
- Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- Boston, MA 02111-1307, USA.
- */
+  This file is part of libmicrohttpd
+  (C) 2007, 2010 Christian Grothoff
+  
+  libmicrohttpd is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published
+  by the Free Software Foundation; either version 2, or (at your
+  option) any later version.
+  
+  libmicrohttpd is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with libmicrohttpd; see the file COPYING.  If not, write to the
+  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+  Boston, MA 02111-1307, USA.
+*/
 
 /**
  * @file tls_daemon_options_test.c
@@ -103,7 +103,6 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
-#if 0
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
 	       &test_https_transfer, test_fd, daemon_flags,
@@ -113,8 +112,6 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
-#endif
-#if 0
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
 	       &test_https_transfer, test_fd, daemon_flags,
@@ -134,8 +131,6 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-SSL3.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
-#endif
-
 #if 0
   /* manual inspection of the handshake suggests that CURL will
      request TLSv1, we send back "SSL3" and CURL takes it *despite*
@@ -152,7 +147,6 @@ main (int argc, char *const *argv)
                MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
 #endif
 
-#if 1
   errorCount +=
     test_wrap ("TLS1.0 vs SSL3",
 	       &test_unmatching_ssl_version, test_fd, daemon_flags,
@@ -162,8 +156,6 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-256-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
-#endif
-
   curl_global_cleanup ();
   fclose (test_fd);
   remove (TEST_FILE_NAME);

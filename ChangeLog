@@ -1,7 +1,11 @@
+Mon Jul 26 10:46:57 CEST 2010
+	Releasing libmicrohttpd 0.9.0. -CG
+
 Sun Jul 25 14:57:47 CEST 2010
 	Adding support for sendfile on Linux.  Adding support
 	for systemd-style passing of an existing listen socket
-	as an option. -CG
+	as an option.  IPv6 sockets now only bind to IPv6
+	(if platform supports this). -CG
 
 Sun Jul 25 11:10:45 CEST 2010
 	Changed code to use external libgnutls code instead of

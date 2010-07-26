@@ -1,4 +1,6 @@
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <microhttpd.h>
 
 #define PORT            8888
@@ -8,7 +10,7 @@
 #define GET             0
 #define POST            1
 
-static unsigned char nr_of_uploading_clients = 0;
+static unsigned int nr_of_uploading_clients = 0;
 
 struct connection_info_struct
 {
@@ -21,7 +23,7 @@ struct connection_info_struct
 
 const char *askpage = "<html><body>\n\
                        Upload a file, please!<br>\n\
-                       There are %d clients uploading at the moment.<br>\n\
+                       There are %u clients uploading at the moment.<br>\n\
                        <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
                        <input name=\"file\" type=\"file\">\n\
                        <input type=\"submit\" value=\" Send \"></form>\n\
@@ -41,13 +43,12 @@ const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
 
 
-int
+static int
 send_page (struct MHD_Connection *connection, const char *page,
            int status_code)
 {
   int ret;
   struct MHD_Response *response;
-
 
   response =
     MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
@@ -62,15 +63,14 @@ send_page (struct MHD_Connection *connection, const char *page,
 }
 
 
-int
+static int
 iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               const char *filename, const char *content_type,
               const char *transfer_encoding, const char *data, uint64_t off,
               size_t size)
 {
+  struct connection_info_struct *con_info = coninfo_cls;
   FILE *fp;
-  struct connection_info_struct *con_info =
-    (struct connection_info_struct *) coninfo_cls;
 
   con_info->answerstring = servererrorpage;
   con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
@@ -105,12 +105,11 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
   return MHD_YES;
 }
 
-void
+static void
 request_completed (void *cls, struct MHD_Connection *connection,
                    void **con_cls, enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info =
-    (struct connection_info_struct *) *con_cls;
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info)
     return;
@@ -132,7 +131,7 @@ request_completed (void *cls, struct MHD_Connection *connection,
 }
 
 
-int
+static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
@@ -180,7 +179,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (0 == strcmp (method, "GET"))
     {
       int ret;
-      char buffer[1024] = { 0 };
+      char buffer[1024];
 
       sprintf (buffer, askpage, nr_of_uploading_clients);
       return send_page (connection, buffer, MHD_HTTP_OK);

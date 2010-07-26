@@ -68,7 +68,8 @@ main ()
 and then we point the @emph{MHD} daemon to it upon initalization. 
 @verbatim
 
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY |  MHD_USE_SSL, PORT, NULL, NULL,
+  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL, 
+  	   		     PORT, NULL, NULL,
                              &answer_to_connection, NULL, 
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                              MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
@@ -125,6 +126,5 @@ hardcode certificates in embedded devices.
 The cryptographic facilities consume memory space and computing time. For this reason, websites usually consists
 both of uncritically @emph{HTTP} parts and secured @emph{HTTPS}.
 
+
 @end itemize
-
-

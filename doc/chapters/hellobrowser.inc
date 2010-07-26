@@ -1,7 +1,7 @@
 The most basic task for a HTTP server is to deliver a static text message to any client connecting to it.
 Given that this is also easy to implement, it is an excellent problem to start with.
 
-For now, the particular filename the client asks for shall have no effect on the message that will 
+For now, the particular URI the client asks for shall have no effect on the message that will 
 be returned. In addition, the server shall end the connection after the message has been sent so that
 the client will know there is nothing more to expect.
 
@@ -11,7 +11,9 @@ lines in by yourself as they will be discussed and explained in detail.
 
 After the necessary includes and the definition of the port which our server should listen on
 @verbatim
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <microhttpd.h>
 
 #define PORT 8888
@@ -35,16 +37,17 @@ daemon to sent the reply.
 
 Talking about the reply, it is defined as a string right after the function header
 @verbatim
-int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
-                          const char *method, const char *version, const char *upload_data, 
+int answer_to_connection (void *cls, struct MHD_Connection *connection, 
+                          const char *url, 
+                          const char *method, const char *version, 
+                          const char *upload_data, 
                           size_t *upload_data_size, void **con_cls)
 {
   const char *page  = "<html><body>Hello, browser!</body></html>";
 @end verbatim
 @noindent
 HTTP is a rather strict protocol and the client would certainly consider it "inappropriate" if we
-just sent the answer string "as is". Instead, it has to be wrapped in certain layers, called headers,
-of additional information. Luckily, most of the work in this area is done by the library for us---we
+just sent the answer string "as is". Instead, it has to be wrapped with additional information stored in so-called headers and footers.  Most of the work in this area is done by the library for us---we
 just have to ask. Our reply string packed in the necessary layers will be called a "response".
 To obtain such a response we hand our data (the reply--string) and its size over to the 
 @code{MHD_create_response_from_data} function. The last two parameters basically tell @emph{MHD}
@@ -92,13 +95,13 @@ int main ()
 The first parameter is one of three possible modes of operation. Here we want the daemon to run in
 a separate thread and to manage all incoming connections in the same thread. This means that while
 producing the response for one connection, the other connections will be put on hold. In this
-chapter, where the reply is already known and therefore the request is served quickly, this poses no problem.
+example, where the reply is already known and therefore the request is served quickly, this poses no problem.
 
 We will allow all clients to connect regardless of their name or location, therefore we do not check
 them on connection and set the forth and fifth parameter to NULL.
 
 Parameter six is the address of the function we want to be called whenever a new connection has been
-established. Our @code{AnswerToConnection} knows best what the client wants and needs no additional
+established. Our @code{answer_to_connection} knows best what the client wants and needs no additional
 information (which could be passed via the next parameter) so the next parameter is NULL. Likewise,
 we do not need to pass extra options to the daemon so we just write the MHD_OPTION_END as the last parameter.
 
@@ -121,11 +124,11 @@ The first example is now complete.
 Compile it with 
 @verbatim
 cc hellobrowser.c -o hellobrowser -I$PATH_TO_LIBMHD_INCLUDES 
-  -L$PATH_TO_LIBMHD_INCLUDES -static -lmicrohttpd -pthread
+  -L$PATH_TO_LIBMHD_INCLUDES -lmicrohttpd
 @end verbatim
 with the two paths set accordingly and run it.
 
-Now open your favorite Internet browser and go to the address @code{localhost:8888}, provided that
+Now open your favorite Internet browser and go to the address @code{http://localhost:8888/}, provided that 8888
 is the port you chose. If everything works as expected, the browser will present the message of the
 static HTML page it got from our minimal server.
 
@@ -146,7 +149,7 @@ received if a response is queued in the first iteration. Furthermore, the connec
 right after the response has been transferred then.
 
 Both of these issues you will find addressed in the official @code{minimal_example.c} residing in
-the @code{src/examples} directory of the @emph{GNU libmicrohttpd} package. The source code of this
+the @code{src/examples} directory of the @emph{MHD} package. The source code of this
 program should look very familiar to you by now and easy to understand.
 
 For our example, the @code{must_copy} and @code{must_free} parameter at the response construction
@@ -163,10 +166,10 @@ its own copy of it.
 @heading Exercises
 @itemize @bullet
 @item
-While the server is running, use a program like telnet or netcat to connect to it. Try to form a
-valid HTTP1.1 request yourself like
+While the server is running, use a program like @code{telnet} or @code{netcat} to connect to it. Try to form a
+valid HTTP 1.1 request yourself like
 @verbatim
-GET /dontcare HTTP1.1
+GET /dontcare HTTP/1.1
 Host: itsme
 <enter>
 @end verbatim
@@ -197,7 +200,7 @@ former static string.
 @item
 @emph{Demanding:} Write a separate function returning a string containing some useful information, 
 for example, the time. Pass the function's address as the sixth parameter and evaluate this function
-on every request anew in @code{AnswerToConnection}. Remember to free the memory of the string
+on every request anew in @code{answer_to_connection}. Remember to free the memory of the string
 every time after satisfying the request.
 
 @end itemize

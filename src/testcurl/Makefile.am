@@ -16,6 +16,7 @@ $(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \
   daemontest_get \
+  daemontest_get_sendfile \
   daemontest_post \
   daemontest_postform \
   daemontest_post_loop \
@@ -25,6 +26,7 @@ check_PROGRAMS = \
   daemontest_parse_cookies \
   daemontest_large_put \
   daemontest_get11 \
+  daemontest_get_sendfile11 \
   daemontest_post11 \
   daemontest_postform11 \
   daemontest_post_loop11 \
@@ -54,6 +56,12 @@ daemon_options_test_LDADD = \
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_get_sendfile_SOURCES = \
+  daemontest_get_sendfile.c
+daemontest_get_sendfile_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
@@ -114,6 +122,12 @@ daemontest_put_chunked_LDADD = \
 daemontest_get11_SOURCES = \
   daemontest_get.c
 daemontest_get11_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_get_sendfile11_SOURCES = \
+  daemontest_get_sendfile.c
+daemontest_get_sendfile11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

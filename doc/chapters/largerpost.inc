@@ -13,14 +13,15 @@ total number of clients that are uploading.
 
 @verbatim
 #define MAXCLIENTS      2
-static unsigned char    nr_of_uploading_clients = 0;
+static unsigned int    nr_of_uploading_clients = 0;
 @end verbatim
 @noindent
 
 If there are too many clients uploading, we want the server to respond to all requests with a busy
 message.
 @verbatim
-const char* busypage = "<html><body>This server is busy, please try again later.</body></html>";
+const char* busypage = 
+  "<html><body>This server is busy, please try again later.</body></html>";
 @end verbatim
 @noindent
 
@@ -29,8 +30,9 @@ and ask her to pick a file on her local filesystem which is to be uploaded.
 @verbatim
 const char* askpage = "<html><body>\n\
                        Upload a file, please!<br>\n\
-                       There are %d clients uploading at the moment.<br>\n\
-                       <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
+                       There are %u clients uploading at the moment.<br>\n\
+                       <form action=\"/filepost\" method=\"post\" \
+                         enctype=\"multipart/form-data\">\n\
                        <input name=\"file\" type=\"file\">\n\
                        <input type=\"submit\" value=\" Send \"></form>\n\
                        </body></html>";
@@ -46,8 +48,10 @@ const char* completepage = "<html><body>The upload has been completed.</body></h
 We want the server to report internal errors, such as memory shortage or file access problems,
 adequately. 
 @verbatim
-const char* servererrorpage = "<html><body>An internal server error has occured.</body></html>";
-const char* fileexistspage = "<html><body>This file already exists.</body></html>";
+const char* servererrorpage 
+  = "<html><body>An internal server error has occured.</body></html>";
+const char* fileexistspage
+  = "<html><body>This file already exists.</body></html>";
 @end verbatim
 @noindent
 
@@ -56,13 +60,15 @@ status code but in order to improve the @code{HTTP} conformance of our server a 
 @code{send_page} function so that it accepts individual status codes. 
 
 @verbatim
-int send_page (struct MHD_Connection *connection, const char* page, int status_code)
+static int 
+send_page (struct MHD_Connection *connection, 
+	   const char* page, int status_code)
 {
   int ret;
   struct MHD_Response *response;
   
-
-  response = MHD_create_response_from_data (strlen (page), (void*) page, MHD_NO, MHD_YES);
+  response = MHD_create_response_from_data (strlen (page), (void*) page, 
+  	     				    MHD_NO, MHD_YES);
   if (!response) return MHD_NO;
  
   ret = MHD_queue_response (connection, status_code, response);
@@ -84,9 +90,12 @@ queued at this point, and @code{MHD_YES} returned, @emph{MHD} will not sent any 
 a postprocessor has been created and the post iterator is called at least once.
 
 @verbatim
-int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, 
-                          const char *method, const char *version, const char *upload_data, 
-                          size_t *upload_data_size, void **con_cls)
+static int 
+answer_to_connection (void *cls, struct MHD_Connection *connection, 
+		      const char *url, 
+                      const char *method, const char *version, 
+		      const char *upload_data, 
+                      size_t *upload_data_size, void **con_cls)
 {
   if (NULL == *con_cls) 
     {
@@ -127,8 +136,9 @@ the structure is initialized to "no error".
 @verbatim
       if (0 == strcmp (method, "POST")) 
         {  
-          con_info->postprocessor = MHD_create_post_processor (connection, POSTBUFFERSIZE, 
-                                                               iterate_post, (void*) con_info);   
+          con_info->postprocessor 
+	    = MHD_create_post_processor (connection, POSTBUFFERSIZE, 
+                                         iterate_post, (void*) con_info);   
 
           if (NULL == con_info->postprocessor) 
             {
@@ -153,7 +163,7 @@ own copy of it for as long as it is needed.
   if (0 == strcmp (method, "GET")) 
     {
       int ret;
-      char buffer[1024] = {0};
+      char buffer[1024];
         
       sprintf (buffer, askpage, nr_of_uploading_clients);
       return send_page (connection, buffer, MHD_HTTP_OK);     
@@ -173,12 +183,15 @@ constituted no expected request method.
        
       if (0 != *upload_data_size) 
         { 
-          MHD_post_process(con_info->postprocessor, upload_data, *upload_data_size);
+          MHD_post_process (con_info->postprocessor,
+	                    upload_data, *upload_data_size);
           *upload_data_size = 0;
           
           return MHD_YES;
         } 
-      else return send_page (connection, con_info->answerstring, con_info->answercode);
+      else 
+        return send_page (connection, con_info->answerstring, 
+	       		  con_info->answercode);
     } 
 
   return send_page(connection, errorpage, MHD_HTTP_BAD_REQUEST);
@@ -193,11 +206,14 @@ several times now. This means that for any given connection (there might be seve
 the posted data has to be written to the correct file. That is why we store a file handle in every
 @code{connection_info}, so that the it is preserved between successive iterations.
 @verbatim
-int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
-                  const char *filename, const char *content_type,
-                  const char *transfer_encoding, const char *data, uint64_t off, size_t size)
+static int 
+iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, 
+	      const char *key,
+	      const char *filename, const char *content_type,
+              const char *transfer_encoding, const char *data, 
+	      uint64_t off, size_t size)
 {
-  struct connection_info_struct *con_info = (struct connection_info_struct*) coninfo_cls;
+  struct connection_info_struct *con_info = coninfo_cls;
 @end verbatim
 @noindent
 
@@ -221,7 +237,8 @@ would be an error.
 If the iterator is called for the first time, no file will have been opened yet. The @code{filename}
 string contains the name of the file (without any paths) the user selected on his system. We want to
 take this as the name the file will be stored on the server and make sure no file of that name exists
-(or is being uploaded) before we create one.
+(or is being uploaded) before we create one (note that the code below technically contains a
+race between the two "fopen" calls, but we will overlook this for portability sake).
 @verbatim
   if (!con_info->fp)
     {
@@ -245,7 +262,8 @@ server only needs to write data to the file if there is some.
 @verbatim
 if (size > 0) 
     {  
-      if (!fwrite (data, size, sizeof(char), con_info->fp)) return MHD_NO;
+      if (!fwrite (data, size, sizeof(char), con_info->fp))
+        return MHD_NO;
     }
 @end verbatim
 @noindent
@@ -265,10 +283,11 @@ be set to success again. If the upload has finished, this iterator function will
 The new client was registered when the postprocessor was created. Likewise, we unregister the client
 on destroying the postprocessor when the request is completed.
 @verbatim
-void request_completed (void *cls, struct MHD_Connection *connection, void **con_cls,
+void request_completed (void *cls, struct MHD_Connection *connection, 
+     		        void **con_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = (struct connection_info_struct*) *con_cls;
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info) return;
 
@@ -296,4 +315,5 @@ This is essentially the whole example @code{largepost.c}.
 @heading Remarks
 Now that the clients are able to create files on the server, security aspects are becoming even more
 important than before. Aside from proper client authentication, the server should always make sure
-explicitly that no files will be created outside of a dedicated upload directory.
+explicitly that no files will be created outside of a dedicated upload directory.  In particular,
+filenames must be checked to not contain strings like "../".

@@ -95,7 +95,6 @@ Functions not covered by "make check":
 - MHD_del_response_header 
 - MHD_get_response_headers
 - MHD_tls_connection_close
-- MHD_create_response_from_fd & sendfile support (!)
 
 
 Missing documentation:
@@ -104,7 +103,4 @@ Missing documentation:
 - manual:
   * document configuration options
   * document details on porting MHD (plibc, z/OS)
-- tutorial:
-  * clean up English
-  * make sure everything is accurate
 

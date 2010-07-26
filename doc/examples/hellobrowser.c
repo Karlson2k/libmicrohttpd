@@ -1,9 +1,11 @@
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <microhttpd.h>
 
 #define PORT 8888
 
-int
+static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,

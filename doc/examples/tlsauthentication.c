@@ -1,4 +1,6 @@
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <microhttpd.h>
 
 #define PORT 8888
@@ -50,7 +52,7 @@ string_to_base64 (const char *message)
 }
 
 
-long
+static long
 get_file_size (const char *filename)
 {
   FILE *fp;
@@ -71,7 +73,7 @@ get_file_size (const char *filename)
     return 0;
 }
 
-char *
+static char *
 load_file (const char *filename)
 {
   FILE *fp;
@@ -103,7 +105,7 @@ load_file (const char *filename)
   return buffer;
 }
 
-int
+static int
 ask_for_authentication (struct MHD_Connection *connection, const char *realm)
 {
   int ret;
@@ -137,7 +139,7 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
   return ret;
 }
 
-int
+static int
 is_authenticated (struct MHD_Connection *connection,
                   const char *username, const char *password)
 {
@@ -176,7 +178,7 @@ is_authenticated (struct MHD_Connection *connection,
 }
 
 
-int
+static int
 secret_page (struct MHD_Connection *connection)
 {
   int ret;
@@ -196,7 +198,7 @@ secret_page (struct MHD_Connection *connection)
 }
 
 
-int
+static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,

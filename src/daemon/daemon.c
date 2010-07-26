@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  (C) 2007, 2008, 2009 Daniel Pittman and Christian Grothoff
+  (C) 2007, 2008, 2009, 2010 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -387,8 +387,8 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.size = strlen (daemon->https_mem_cert);
 
       return gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
-                                                       &cert, &key,
-                                                       GNUTLS_X509_FMT_PEM);
+						  &cert, &key,
+						  GNUTLS_X509_FMT_PEM);
     }
 #if HAVE_MESSAGES
   MHD_DLOG (daemon, "You need to specify a certificate and key location\n");
@@ -625,21 +625,28 @@ send_param_adapter (struct MHD_Connection *connection,
 #if LINUX
   int fd;
   off_t offset;
+  int ret;
 #endif
   if (connection->socket_fd == -1)
     return -1;
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if LINUX
-  if ( (NULL != connection->response) &&
+  if ( (connection->write_buffer_append_offset ==
+	connection->write_buffer_send_offset) &&
+       (NULL != connection->response) &&
        (-1 != (fd = connection->response->fd)) )
     {
       /* can use sendfile */
       offset = (off_t) connection->response_write_position;
-      return sendfile (connection->socket_fd, 
-		       fd,
-		       &offset,
-		       i);
+      ret = sendfile (connection->socket_fd, 
+		      fd,
+		      &offset,
+		      connection->response->total_size - offset);
+      if ( (ret == -1) &&
+	   (errno == EINTR) )
+	return 0;
+      return ret;
     }
 #endif
   return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
@@ -819,7 +826,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       connection->recv_cls = &recv_tls_adapter;
       connection->send_cls = &send_tls_adapter;
       connection->state = MHD_TLS_CONNECTION_INIT;
-      MHD_set_https_calbacks (connection);
+      MHD_set_https_callbacks (connection);
       gnutls_init (&connection->tls_session, GNUTLS_SERVER);
       gnutls_priority_set (connection->tls_session,
 			   daemon->priority_cache);
@@ -1664,7 +1671,10 @@ MHD_start_daemon_va (unsigned int options,
 	  return NULL;
 	}      
     }
-
+  else
+    {
+      socket_fd = retVal->socket_fd;
+    }
 #ifndef WINDOWS
   if ( (socket_fd >= FD_SETSIZE) &&
        (0 == (options & MHD_USE_POLL)) )

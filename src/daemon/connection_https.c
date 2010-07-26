@@ -198,7 +198,7 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
  * the processing of this secure connection.
  */
 void
-MHD_set_https_calbacks (struct MHD_Connection *connection)
+MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_tls_connection_handle_read;
   connection->write_handler = &MHD_tls_connection_handle_write;

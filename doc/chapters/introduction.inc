@@ -15,3 +15,9 @@ is written for version @value{VERSION}.  At the time being,
 this tutorial has only been tested on @emph{GNU/Linux} machines even though
 efforts were made not to rely on anything that would prevent the samples from being
 built on similar systems.
+
+@section History
+
+This tutorial was originally written by Sebastian Gerhardt for MHD
+0.4.0.  It was slighly polished and updated to MHD 0.9.0 by Christian
+Grothoff.

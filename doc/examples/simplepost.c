@@ -1,4 +1,6 @@
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <microhttpd.h>
 
 #define PORT            8888
@@ -30,7 +32,7 @@ const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
 
 
-int
+static int
 send_page (struct MHD_Connection *connection, const char *page)
 {
   int ret;
@@ -50,15 +52,13 @@ send_page (struct MHD_Connection *connection, const char *page)
 }
 
 
-int
+static int
 iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
               const char *filename, const char *content_type,
               const char *transfer_encoding, const char *data, uint64_t off,
               size_t size)
 {
-  struct connection_info_struct *con_info =
-    (struct connection_info_struct *) coninfo_cls;
-
+  struct connection_info_struct *con_info = coninfo_cls;
 
   if (0 == strcmp (key, "name"))
     {
@@ -81,13 +81,11 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
   return MHD_YES;
 }
 
-void
+static void
 request_completed (void *cls, struct MHD_Connection *connection,
                    void **con_cls, enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info =
-    (struct connection_info_struct *) *con_cls;
-
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info)
     return;
@@ -104,7 +102,7 @@ request_completed (void *cls, struct MHD_Connection *connection,
 }
 
 
-int
+static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
@@ -169,7 +167,6 @@ int
 main ()
 {
   struct MHD_Daemon *daemon;
-
 
   daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
                              &answer_to_connection, NULL,

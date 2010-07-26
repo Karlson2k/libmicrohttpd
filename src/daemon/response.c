@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2009 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2009, 2010 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -210,7 +210,7 @@ MHD_create_response_from_callback (uint64_t size,
  * Given a file descriptor, read data from the file
  * to generate the response.
  * 
- * @param cls pointer to the file descriptor
+ * @param cls pointer to the response
  * @param pos offset in the file to access
  * @param buf where to write the data
  * @param max number of bytes to write at most
@@ -219,10 +219,14 @@ MHD_create_response_from_callback (uint64_t size,
 static int
 file_reader (void *cls, uint64_t pos, char *buf, int max)
 {
-  int *fd = cls;
+  struct MHD_Response *response = cls;
+  int ret;
 
-  (void) lseek (*fd, pos, SEEK_SET);
-  return read (*fd, buf, max);
+  pthread_mutex_lock (&response->mutex);
+  (void) lseek (response->fd, pos, SEEK_SET);
+  ret = read (response->fd, buf, max);
+  pthread_mutex_unlock (&response->mutex);
+  return ret;
 }
 
 
@@ -235,9 +239,9 @@ file_reader (void *cls, uint64_t pos, char *buf, int max)
 static void
 free_callback (void *cls)
 {
-  int *fd = cls;
-  close (*fd);
-  *fd = -1;
+  struct MHD_Response *response = cls;
+  (void) close (response->fd);
+  response->fd = -1;
 }
 
 
@@ -262,7 +266,7 @@ struct MHD_Response *MHD_create_response_from_fd (size_t size,
   if (ret == NULL)
     return NULL;
   ret->fd = fd;
-  ret->crc_cls = &ret->fd;
+  ret->crc_cls = ret;
   return ret;
 }
 
