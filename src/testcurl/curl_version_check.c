@@ -138,8 +138,9 @@ curl_check_version (const char *req_version)
       return -1;
     }
 
-  parse_version_string (req_ssl_ver, &rq_major, &rq_minor, &rq_micro);
-  parse_version_string (ssl_ver, &loc_major, &loc_minor, &loc_micro);
+  if ( (NULL == parse_version_string (req_ssl_ver, &rq_major, &rq_minor, &rq_micro)) ||
+       (NULL == parse_version_string (ssl_ver, &loc_major, &loc_minor, &loc_micro)) )
+    return -1;
 
   if ((loc_major > rq_major
        || (loc_major == rq_major && loc_minor > rq_minor)
