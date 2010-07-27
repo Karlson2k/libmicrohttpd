@@ -28,7 +28,7 @@ endif
 if ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
-libmicrohttpd_la_LIBADD = -lgnutls 
+libmicrohttpd_la_LIBADD = -lgnutls @LIBGCRYPT_LIBS@
 endif
 
 check_PROGRAMS = \
