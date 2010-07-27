@@ -56,7 +56,7 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
   if (!s)
     return NULL;
   *major = parse_version_number (&s);
-  if (!s || *s != '.')
+  if (*s != '.')
     return NULL;
   s++;
   *minor = parse_version_number (&s);
@@ -96,8 +96,9 @@ curl_check_version (const char *req_version)
   curl_ver = strchr (ver, '/') + 1;
 
   /* Parse version numbers */
-  parse_version_string (req_version, &rq_major, &rq_minor, &rq_micro);
-  parse_version_string (curl_ver, &loc_major, &loc_minor, &loc_micro);
+  if ( (NULL == parse_version_string (req_version, &rq_major, &rq_minor, &rq_micro)) ||
+       (NULL == parse_version_string (curl_ver, &loc_major, &loc_minor, &loc_micro)) )
+    return -1;
 
   /* Compare version numbers.  */
   if ((loc_major > rq_major
@@ -119,7 +120,8 @@ curl_check_version (const char *req_version)
    */
 #if HTTPS_SUPPORT
   ssl_ver = strchr (curl_ver, ' ') + 1;
-
+  if (ssl_ver == NULL)
+    return -1;
   if (strncmp ("GnuTLS", ssl_ver, strlen ("GNUtls")) == 0)
     {
       ssl_ver = strchr (ssl_ver, '/') + 1;
