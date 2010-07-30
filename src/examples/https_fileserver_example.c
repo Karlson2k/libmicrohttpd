@@ -137,7 +137,7 @@ http_ahc (void *cls,
     }
   *ptr = NULL;                  /* reset when done */
 
-  if ( (0 == stat (url, &buf)) &&
+  if ( (0 == stat (&url[1], &buf)) &&
        (S_ISREG (buf.st_mode)) )
     file = fopen (&url[1], "rb");
   else
