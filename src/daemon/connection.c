@@ -2223,13 +2223,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   timeout = connection->daemon->connection_timeout;
   if ((connection->socket_fd != -1) &&
-      (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
+      (timeout != 0) &&
+      (timeout > (time (NULL) - con->last_activity)) )
     {
       MHD_connection_close (connection, MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       return MHD_NO;
     }
   return MHD_YES;
-
 }
 
 void

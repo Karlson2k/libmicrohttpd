@@ -486,7 +486,6 @@ MHD_handle_connection (void *data)
   int max;
   struct timeval tv;
   unsigned int timeout;
-  time_t now;
 #ifdef HAVE_POLL_H
   struct MHD_Pollfd mp;
   struct pollfd p;
@@ -494,9 +493,8 @@ MHD_handle_connection (void *data)
 
   timeout = con->daemon->connection_timeout;
   while ((!con->daemon->shutdown) && (con->socket_fd != -1)) {
-      now = time (NULL);
       tv.tv_usec = 0;
-      if ( (timeout > (now - con->last_activity)) ||
+      if ( (timeout > (time (NULL) - con->last_activity)) ||
 	   (timeout == 0) )
 	{
 	  /* in case we are missing the SIGALRM, keep going after
@@ -1017,7 +1015,6 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   struct timeval timeout;
   unsigned long long ltimeout;
   int ds;
-  time_t now;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -1090,7 +1087,6 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* do not have a thread per connection, process all connections now */
-      now = time (NULL);
       pos = daemon->connections;
       while (pos != NULL)
         {
