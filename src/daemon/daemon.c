@@ -1492,9 +1492,12 @@ MHD_start_daemon_va (unsigned int options,
     return NULL;
   memset (retVal, 0, sizeof (struct MHD_Daemon));
 #if HTTPS_SUPPORT
-  gnutls_priority_init (&retVal->priority_cache,
-			"NORMAL",
-			NULL);
+  if (options & MHD_USE_SSL)
+    {
+      gnutls_priority_init (&retVal->priority_cache,
+			    "NORMAL",
+			    NULL);
+    }
 #endif
   retVal->socket_fd = -1;
   retVal->options = (enum MHD_OPTION)options;
