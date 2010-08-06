@@ -1938,6 +1938,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
   if (daemon->options & MHD_USE_SSL)
     {
+      gnutls_priority_deinit (daemon->priority_cache);
       if (daemon->x509_cred)
         gnutls_certificate_free_credentials (daemon->x509_cred);
       /* lock MHD_gnutls_global mutex since it uses reference counting */

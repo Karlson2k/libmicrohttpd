@@ -68,7 +68,9 @@ main (int argc, char *const *argv)
     }
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, PAGE,
+			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 5,
+			MHD_OPTION_END);
   if (d == NULL)
     return 1;
   (void) getc (stdin);

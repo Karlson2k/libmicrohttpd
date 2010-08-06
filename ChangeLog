@@ -1,3 +1,7 @@
+Fri Aug  6 12:51:59 CEST 2010
+	Fixing (small) memory leak on daemon-shutdown with
+	SSL enabled. -CG/PG
+
 Thu Aug  5 22:24:37 CEST 2010
 	Fixing timeout bug on systems that think it's still
 	1970 (can happen if system time not initialized). -CG
