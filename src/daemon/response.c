@@ -307,6 +307,7 @@ MHD_create_response_from_data (size_t size,
       tmp = malloc (size);
       if (tmp == NULL)
         {
+	  pthread_mutex_destroy (&retVal->mutex);
           free (retVal);
           return NULL;
         }

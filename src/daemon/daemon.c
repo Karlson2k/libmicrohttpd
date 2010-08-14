@@ -1731,7 +1731,7 @@ MHD_start_daemon_va (unsigned int options,
       CLOSE (socket_fd);
       return NULL;
     }
-  else if (retVal->worker_pool_size > 0)
+  if (retVal->worker_pool_size > 0)
     {
 #ifndef MINGW
       int sk_flags;
