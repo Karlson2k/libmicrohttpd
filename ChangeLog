@@ -1,3 +1,7 @@
+Sat Aug 14 15:43:30 CEST 2010
+	Fixed small, largely hypothetical leaks. 
+	Reduced calls to strlen for header processing. -CG
+
 Fri Aug  6 12:51:59 CEST 2010
 	Fixing (small) memory leak on daemon-shutdown with
 	SSL enabled. -CG/PG
