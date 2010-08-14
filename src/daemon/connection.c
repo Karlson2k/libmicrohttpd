@@ -1541,16 +1541,24 @@ process_broken_line (struct MHD_Connection *connection,
 {
   char *last;
   char *tmp;
+  size_t last_len;
+  size_t tmp_len;
 
   last = connection->last;
   if ((line[0] == ' ') || (line[0] == '\t'))
     {
       /* value was continued on the next line, see
          http://www.jmarshall.com/easy/http/ */
+      last_len = strlen (last);
+      /* skip whitespace at start of 2nd line */
+      tmp = line;
+      while ((tmp[0] == ' ') || (tmp[0] == '\t'))
+        tmp++;                  
+      tmp_len = strlen (tmp);
       last = MHD_pool_reallocate (connection->pool,
                                   last,
-                                  strlen (last) + 1,
-                                  strlen (line) + strlen (last) + 1);
+                                  last_len + 1,
+                                  last_len + tmp_len + 1);
       if (last == NULL)
         {
           transmit_error_response (connection,
@@ -1558,10 +1566,7 @@ process_broken_line (struct MHD_Connection *connection,
                                    REQUEST_TOO_BIG);
           return MHD_NO;
         }
-      tmp = line;
-      while ((tmp[0] == ' ') || (tmp[0] == '\t'))
-        tmp++;                  /* skip whitespace at start of 2nd line */
-      strcat (last, tmp);
+      memcpy (&last[last_len], tmp, tmp_len + 1);
       connection->last = last;
       return MHD_YES;           /* possibly more than 2 lines... */
     }
