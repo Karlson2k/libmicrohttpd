@@ -254,8 +254,9 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG(daemon,
                "Failed to add IP connection count node\n");
-#endif
+#endif      
       MHD_ip_count_unlock (daemon);
+      free (key);
       return MHD_NO;
     }
   node = *(void**)node;
