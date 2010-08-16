@@ -311,7 +311,28 @@ Maximum number of concurrenct connections to accept (followed by an
 @code{unsigned int}).  The default is @code{FD_SETSIZE - 4} (the
 maximum number of file descriptors supported by @code{select} minus
 four for @code{stdin}, @code{stdout}, @code{stderr} and the server
-socket).  In other words, the default is as large as possible.
+socket).  In other words, the default is as large as possible.  
+
+Note that if you set a low connection limit, you can easily get into
+trouble with browsers doing request pipelining.  For example, if your
+connection limit is ``1'', a browser may open a first connection to
+access your ``index.html'' file, keep it open but use a second 
+connection to retrieve CSS files, images and the like.  In fact, modern
+browsers are typically by default configured for up to 15 parallel
+connections to a single server.  If this happens, MHD will refuse to
+even accept the second connection until the first connection is
+closed --- which does not happen until timeout.  As a result, the
+browser will fail to render the page and seem to hang.  If you expect
+your server to operate close to the connection limit, you should 
+first consider using a lower timeout value and also possibly add
+a ``Connection: close'' header to your response to ensure that
+request pipelining is not used and connections are closed immediately
+after the request has completed:
+@example
+MHD_add_response_header (response,
+                         MHD_HTTP_HEADER_CONNECTION,
+                         "close");
+@end example
 
 @item MHD_OPTION_CONNECTION_TIMEOUT
 @cindex timeout
