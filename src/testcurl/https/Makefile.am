@@ -4,7 +4,12 @@ if USE_COVERAGE
   AM_CFLAGS = --coverage
 endif
 
+if USE_PRIVATE_PLIBC_H
+ PLIBC_INCLUDE = -I$(top_srcdir)/src/include/plibc
+endif
+
 AM_CPPFLAGS = \
+  $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/daemon \
   $(LIBCURL_CPPFLAGS)

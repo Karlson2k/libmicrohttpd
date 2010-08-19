@@ -4,7 +4,11 @@ if USE_COVERAGE
   AM_CFLAGS = -fprofile-arcs -ftest-coverage
 endif
 
-INCLUDES = -I$(top_srcdir)/src/include
+if USE_PRIVATE_PLIBC_H
+ PLIBC_INCLUDE = -I$(top_srcdir)/src/include/plibc
+endif
+
+INCLUDES = $(PLIBC_INCLUDE) -I$(top_srcdir)/src/include
 
 EXTRA_DIST = README socat.c
 

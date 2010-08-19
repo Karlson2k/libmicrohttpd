@@ -159,6 +159,10 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 # Check for optional headers
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h])
 
+# Check for plibc.h from system, if not found, use our own
+AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
+AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    
+
 AC_CHECK_FUNCS(memmem)
 
 # IPv6
@@ -342,6 +346,7 @@ doc/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
+src/include/plibc/Makefile
 src/daemon/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
@@ -387,5 +392,3 @@ else
   License         :  LGPL or eCos
 ])
 fi  
-
-
