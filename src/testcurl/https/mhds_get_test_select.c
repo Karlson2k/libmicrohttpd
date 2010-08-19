@@ -203,27 +203,18 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
 
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
   if (!gcry_check_version (GCRYPT_VERSION))
     abort ();
-  if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      fclose (test_fd);
       return -1;
     }
   if (0 != (errorCount = testExternalGet ()))
     fprintf (stderr, "Fail: %d\n", errorCount);
   curl_global_cleanup ();
-  fclose (test_fd);
-  remove (TEST_FILE_NAME);
   return errorCount != 0;
 }

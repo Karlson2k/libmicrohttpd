@@ -52,7 +52,7 @@ https_transfer_thread_adapter (void *args)
 
   /* time spread incomming requests */
   usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
-  ret = test_https_transfer (cargs->test_fd,
+  ret = test_https_transfer (cargs->cls,
                              cargs->cipher_suite, cargs->proto_version);
   if (ret == 0)
     return NULL;
@@ -67,12 +67,12 @@ https_transfer_thread_adapter (void *args)
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_single_client (FILE * test_fd, char *cipher_suite,
+test_single_client (void *cls, char *cipher_suite,
                     int curl_proto_version)
 {
   void *client_thread_ret;
   struct https_test_data client_args =
-    { test_fd, cipher_suite, curl_proto_version };
+    { NULL, cipher_suite, curl_proto_version };
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
@@ -89,7 +89,7 @@ test_single_client (FILE * test_fd, char *cipher_suite,
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_parallel_clients (FILE * test_fd, char *cipher_suite,
+test_parallel_clients (void *cls, char *cipher_suite,
                        int curl_proto_version)
 {
   int i;
@@ -97,7 +97,7 @@ test_parallel_clients (FILE * test_fd, char *cipher_suite,
   void *client_thread_ret;
   pthread_t client_arr[client_count];
   struct https_test_data client_args =
-    { test_fd, cipher_suite, curl_proto_version };
+    { NULL, cipher_suite, curl_proto_version };
 
   for (i = 0; i < client_count; ++i)
     {
@@ -125,28 +125,20 @@ test_parallel_clients (FILE * test_fd, char *cipher_suite,
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
 
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-  if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      fclose (test_fd);
       return -1;
     }
 
   errorCount +=
     test_wrap ("multi threaded daemon, single client", &test_single_client,
-               test_fd,
+               NULL,
                MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
                "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
@@ -154,7 +146,7 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_wrap ("multi threaded daemon, parallel client",
-               &test_parallel_clients, test_fd,
+               &test_parallel_clients, NULL,
                MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
                "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
@@ -164,9 +156,5 @@ main (int argc, char *const *argv)
     fprintf (stderr, "Failed test: %s.\n", argv[0]);
 
   curl_global_cleanup ();
-  fclose (test_fd);
-
-  remove (TEST_FILE_NAME);
-
   return errorCount != 0;
 }

@@ -92,34 +92,25 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
 
   if (!gcry_check_version (GCRYPT_VERSION))
     abort ();
-  if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      fclose (test_fd);
       return -1;
     }
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, "AES256-SHA", CURL_SSLVERSION_TLSv1);
   errorCount +=
-    test_secure_get (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_secure_get (NULL, "AES256-SHA", CURL_SSLVERSION_SSLv3);
   errorCount +=
-    test_cipher_option (test_fd, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+    test_cipher_option (NULL, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
 
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
-  fclose (test_fd);
-  remove (TEST_FILE_NAME);
 
   return errorCount != 0;
 }

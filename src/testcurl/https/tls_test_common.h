@@ -34,7 +34,8 @@
 
 #define DEAMON_TEST_PORT 42433
 
-#define TEST_FILE_NAME "https_test_file"
+#define test_data "Hello World\n"
+#define ca_cert_file_name "tmp_ca_cert.pem"
 
 #define EMPTY_PAGE "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
 #define PAGE_NOT_FOUND "<html><head><title>File not found</title></head><body>File not found</body></html>"
@@ -49,7 +50,7 @@
 /* TODO rm if unused */
 struct https_test_data
 {
-  FILE *test_fd;
+  void *cls;
   char *cipher_suite;
   int proto_version;
 };
@@ -66,6 +67,17 @@ struct CipherDef
   int options[2];
   char *curlname;
 };
+
+
+FILE *
+setup_ca_cert ();
+
+/**
+ * perform cURL request for file
+ */
+int
+test_daemon_get (void * cls, char *cipher_suite, int proto_version,
+                 int port, int ver_peer);
 
 void print_test_result (int test_outcome, char *test_name);
 
@@ -89,9 +101,7 @@ send_curl_req (char *url, struct CBC *cbc, char *cipher_suite,
                int proto_version);
 
 int
-test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version);
-
-FILE *setup_test_file ();
+test_https_transfer (void *cls, char *cipher_suite, int proto_version);
 
 int
 setup_testcase (struct MHD_Daemon **d, int daemon_flags, va_list arg_list);
@@ -112,7 +122,7 @@ teardown_session (gnutls_session_t session,
 
 int
 test_wrap (char *test_name, int
-           (*test_function) (FILE * test_fd, char *cipher_suite,
-                             int proto_version), FILE * test_fd,
+           (*test_function) (void * cls, char *cipher_suite,
+                             int proto_version), void *test_function_cls,
            int daemon_flags, char *cipher_suite, int proto_version, ...);
 #endif /* TLS_TEST_COMMON_H_ */

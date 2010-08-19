@@ -36,112 +36,12 @@ extern int curl_check_version (const char *req_version, ...);
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
-/* TODO mv to common */
-/**
- * perform cURL request for file
- * @param test_fd: file to attempt transferring
- */
-static int
-test_daemon_get (FILE * test_fd, char *cipher_suite, int proto_version,
-                 int port)
-{
-  CURL *c;
-  struct CBC cbc;
-  CURLcode errornum;
-  char url[255];
-  size_t len;
-  struct stat file_stat;
-
-  stat (TEST_FILE_NAME, &file_stat);
-  len = file_stat.st_size;
-
-  /* used to memcmp local copy & deamon supplied copy */
-  unsigned char *mem_test_file_local;
-
-  mem_test_file_local = malloc (len);
-  fseek (test_fd, 0, SEEK_SET);
-  if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
-    {
-      fprintf (stderr, "Error: failed to read test file. %s\n",
-               strerror (errno));
-      free (mem_test_file_local);
-      return -1;
-    }
-
-  if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
-    {
-      fprintf (stderr, "Error: failed to read test file. %s\n",
-               strerror (errno));
-      free (mem_test_file_local);
-      return -1;
-    }
-  cbc.size = len;
-  cbc.pos = 0;
-
-  if (gen_test_file_url (url, port))
-    {
-      free (mem_test_file_local);
-      free (cbc.buf);
-      return -1;
-    }
-
-  c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
-  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
-#endif
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_FILE, &cbc);
-
-  /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
-
-  /* currently skip any peer authentication */
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
-
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-  if (CURLE_OK != (errornum = curl_easy_perform (c)))
-    {
-      fprintf (stderr, "curl_easy_perform failed: `%s'\n",
-               curl_easy_strerror (errornum));
-      curl_easy_cleanup (c);
-      free (mem_test_file_local);
-      free (cbc.buf);
-      return errornum;
-    }
-
-  curl_easy_cleanup (c);
-
-  /* compare received file and local reference */
-  if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
-    {
-      fprintf (stderr, "Error: local file & received file differ.\n");
-      free (mem_test_file_local);
-      free (cbc.buf);
-      return -1;
-    }
-
-  free (mem_test_file_local);
-  free (cbc.buf);
-  return 0;
-}
-
 /*
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
  */
 int
-test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
+test_concurent_daemon_pair (void * cls, char *cipher_suite,
                             int proto_version)
 {
 
@@ -176,14 +76,14 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
     }
 
   ret =
-    test_daemon_get (test_fd, cipher_suite, proto_version, DEAMON_TEST_PORT);
+    test_daemon_get (NULL, cipher_suite, proto_version, DEAMON_TEST_PORT, 0);
   ret +=
-    test_daemon_get (test_fd, cipher_suite, proto_version,
-                     DEAMON_TEST_PORT + 1);
+    test_daemon_get (NULL, cipher_suite, proto_version,
+                     DEAMON_TEST_PORT + 1, 0);
 
   MHD_stop_daemon (d2);
   ret +=
-    test_daemon_get (test_fd, cipher_suite, proto_version, DEAMON_TEST_PORT);
+    test_daemon_get (NULL, cipher_suite, proto_version, DEAMON_TEST_PORT, 0);
   MHD_stop_daemon (d1);
   return ret;
 }
@@ -191,29 +91,29 @@ test_concurent_daemon_pair (FILE * test_fd, char *cipher_suite,
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
+  FILE *cert;
 
-  if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u). l:%d f:%s\n", errorCount, __LINE__,
                __FUNCTION__);
-      fclose (test_fd);
       return -1;
     }
+  if ((cert = setup_ca_cert ()) == NULL)
+    {
+      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
+      return -1;
+    }
+
+  
   errorCount +=
-    test_concurent_daemon_pair (test_fd, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_concurent_daemon_pair (NULL, "AES256-SHA", CURL_SSLVERSION_SSLv3);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 
   curl_global_cleanup ();
-  fclose (test_fd);
-
-  remove (TEST_FILE_NAME);
+  fclose (cert);
+  remove (ca_cert_file_name);
   return errorCount != 0;
 }

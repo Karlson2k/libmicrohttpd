@@ -42,7 +42,7 @@ int curl_check_version (const char *req_version, ...);
  */
 /* TODO rm test_fd */
 int
-test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
+test_unmatching_ssl_version (void * cls, char *cipher_suite,
                              int curl_req_ssl_version)
 {
   struct CBC cbc;
@@ -78,7 +78,6 @@ test_unmatching_ssl_version (FILE * test_fd, char *cipher_suite,
 int
 main (int argc, char *const *argv)
 {
-  FILE *test_fd;
   unsigned int errorCount = 0;
 
   int daemon_flags =
@@ -90,22 +89,14 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
-      fclose (test_fd);
-      remove (TEST_FILE_NAME);
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
-	       &test_https_transfer, test_fd, daemon_flags,
+	       &test_https_transfer, NULL, daemon_flags,
 	       "AES128-SHA1",
 	       CURL_SSLVERSION_TLSv1,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -114,7 +105,7 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_END);
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
-	       &test_https_transfer, test_fd, daemon_flags,
+	       &test_https_transfer, NULL, daemon_flags,
 	       "AES128-SHA1",
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -124,7 +115,7 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_wrap ("SSL3.0-AES-SHA1",
-	       &test_https_transfer, test_fd, daemon_flags,
+	       &test_https_transfer, NULL, daemon_flags,
 	       "AES128-SHA1",
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -141,7 +132,7 @@ main (int argc, char *const *argv)
      test is commented out here... */
   errorCount +=
     test_wrap ("unmatching version: SSL3 vs. TLS", &test_unmatching_ssl_version,
-               test_fd, daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
+               NULL, daemon_flags, "AES256-SHA", CURL_SSLVERSION_TLSv1,
                MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                MHD_OPTION_CIPHER_ALGORITHM, "SSL3", MHD_OPTION_END);
@@ -149,7 +140,7 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_wrap ("TLS1.0 vs SSL3",
-	       &test_unmatching_ssl_version, test_fd, daemon_flags,
+	       &test_unmatching_ssl_version, NULL, daemon_flags,
 	       "AES256-SHA",
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -157,8 +148,6 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-256-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
   curl_global_cleanup ();
-  fclose (test_fd);
-  remove (TEST_FILE_NAME);
 
   return errorCount != 0;
 }

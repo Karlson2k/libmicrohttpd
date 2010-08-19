@@ -26,9 +26,113 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
-const char test_file_data[] = "Hello World\n";
 
 int curl_check_version (const char *req_version, ...);
+
+FILE *
+setup_ca_cert ()
+{
+  FILE *cert_fd;
+
+  if (NULL == (cert_fd = fopen (ca_cert_file_name, "wb+")))
+    {
+      fprintf (stderr, "Error: failed to open `%s': %s\n",
+               ca_cert_file_name, strerror (errno));
+      return NULL;
+    }
+  if (fwrite (ca_cert_pem, sizeof (char), strlen (ca_cert_pem), cert_fd)
+      != strlen (ca_cert_pem))
+    {
+      fprintf (stderr, "Error: failed to write `%s. %s'\n",
+               ca_cert_file_name, strerror (errno));
+      fclose (cert_fd);
+      return NULL;
+    }
+  if (fflush (cert_fd))
+    {
+      fprintf (stderr, "Error: failed to flush ca cert file stream. %s\n",
+               strerror (errno));
+      fclose (cert_fd);
+      return NULL;
+    }
+  return cert_fd;
+}
+
+
+/*
+ * test HTTPS transfer
+ */
+int
+test_daemon_get (void *cls, char *cipher_suite, int proto_version,
+		 int port,
+		 int ver_peer)
+{
+  CURL *c;
+  struct CBC cbc;
+  CURLcode errornum;
+  char url[255];
+  size_t len;
+
+  len = strlen (test_data);
+  if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
+    {
+      fprintf (stderr, MHD_E_MEM);
+      return -1;
+    }
+  cbc.size = len;
+  cbc.pos = 0;
+
+  /* construct url - this might use doc_path */
+  gen_test_file_url (url, port);
+
+  c = curl_easy_init ();
+#if DEBUG_HTTPS_TEST
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+#endif
+  curl_easy_setopt (c, CURLOPT_URL, url);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
+  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+  curl_easy_setopt (c, CURLOPT_FILE, &cbc);
+
+  /* TLS options */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+
+  /* perform peer authentication */
+  /* TODO merge into send_curl_req */
+  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, ver_peer);
+  curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
+  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system! */
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+    {
+      fprintf (stderr, "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
+      curl_easy_cleanup (c);
+      free (cbc.buf);
+      return errornum;
+    }
+
+  curl_easy_cleanup (c);
+
+  if (memcmp (cbc.buf, test_data, len) != 0)
+    {
+      fprintf (stderr, "Error: local file & received file differ.\n");
+      free (cbc.buf);
+      return -1;
+    }
+
+  free (cbc.buf);
+  return 0;
+}
+
 
 void
 print_test_result (int test_outcome, char *test_name)
@@ -53,14 +157,6 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-static int
-file_reader (void *cls, uint64_t pos, char *buf, int max)
-{
-  FILE *file = cls;
-  fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
-}
-
 /**
  *  HTTP access handler call back
  */
@@ -72,8 +168,6 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   static int aptr;
   struct MHD_Response *response;
   int ret;
-  FILE *file;
-  struct stat buf;
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
@@ -84,26 +178,11 @@ http_ahc (void *cls, struct MHD_Connection *connection,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-
-  file = fopen (url, "rb");
-  if (file == NULL)
-    {
-      response = MHD_create_response_from_data (strlen (PAGE_NOT_FOUND),
-                                                (void *) PAGE_NOT_FOUND,
-                                                MHD_NO, MHD_NO);
-      ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
-      MHD_destroy_response (response);
-    }
-  else
-    {
-      stat (url, &buf);
-      response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,     /* 32k PAGE_NOT_FOUND size */
-                                                    &file_reader, file,
-                                                    (MHD_ContentReaderFreeCallback)
-                                                    & fclose);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-      MHD_destroy_response (response);
-    }
+  response = MHD_create_response_from_data (strlen (test_data),
+					    (void *) test_data,
+					    MHD_NO, MHD_NO);
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  MHD_destroy_response (response);
   return ret;
 }
 
@@ -199,7 +278,7 @@ gen_test_file_url (char *url, int port)
     }
   /* construct url - this might use doc_path */
   if (sprintf (url, "%s:%d%s/%s", "https://localhost", port,
-               doc_path, TEST_FILE_NAME) < 0)
+               doc_path, "urlpath") < 0)
     ret = -1;
 
   free (doc_path);
@@ -208,47 +287,20 @@ gen_test_file_url (char *url, int port)
 
 /**
  * test HTTPS file transfer
- * @param test_fd: file to attempt transferring
  */
 int
-test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
+test_https_transfer (void *cls, char *cipher_suite, int proto_version)
 {
-  int len, ret = 0;
+  int len;
+  int ret = 0;
   struct CBC cbc;
   char url[255];
-  struct stat statb;
-  /* used to memcmp local copy & deamon supplied copy */
-  unsigned char *mem_test_file_local;
 
-  if (0 != stat (TEST_FILE_NAME, &statb))
-    {
-      fprintf (stderr, "Failed to stat `%s': %s\n",
-	       TEST_FILE_NAME, strerror(errno));
-      return -1;
-    }
-  len = statb.st_size;
-  cbc.buf = NULL;
-  if (NULL == (mem_test_file_local = malloc (len)))
-    {
-      fprintf (stderr, MHD_E_MEM);
-      ret = -1;
-      goto cleanup;
-    }
-
-  fseek (test_fd, 0, SEEK_SET);
-  if (fread (mem_test_file_local, sizeof (char), len, test_fd) != len)
-    {
-      fprintf (stderr, "Error: failed to read test file. %s\n",
-               strerror (errno));
-      ret = -1;
-      goto cleanup;
-    }
-
+  len = strlen (test_data);
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
     {
       fprintf (stderr, MHD_E_MEM);
-      ret = -1;
-      goto cleanup;
+      return -1;
     }
   cbc.size = len;
   cbc.pos = 0;
@@ -266,50 +318,17 @@ test_https_transfer (FILE * test_fd, char *cipher_suite, int proto_version)
     }
 
   /* compare test file & daemon responce */
-  if (memcmp (cbc.buf, mem_test_file_local, len) != 0)
+  if ( (len != strlen (test_data)) ||
+       (memcmp (cbc.buf, 
+		test_data, 
+		len) != 0) )
     {
       fprintf (stderr, "Error: local file & received file differ.\n");
       ret = -1;
     }
-
 cleanup:
-  free (mem_test_file_local);
-  if (cbc.buf != NULL)
-    free (cbc.buf);
+  free (cbc.buf);
   return ret;
-}
-
-/**
- * setup a mock test file which is requested from the running daemon
- * @return open file descriptor to the test file
- */
-FILE *
-setup_test_file ()
-{
-  FILE *test_fd;
-
-  if (NULL == (test_fd = fopen (TEST_FILE_NAME, "wb+")))
-    {
-      fprintf (stderr, "Error: failed to open `%s': %s\n",
-               TEST_FILE_NAME, strerror (errno));
-      return NULL;
-    }
-  if (fwrite (test_file_data, sizeof (char), strlen (test_file_data), test_fd)
-      != strlen (test_file_data))
-    {
-      fprintf (stderr, "Error: failed to write `%s. %s'\n",
-               TEST_FILE_NAME, strerror (errno));
-      fclose (test_fd);
-      return NULL;
-    }
-  if (fflush (test_fd))
-    {
-      fprintf (stderr, "Error: failed to flush test file stream. %s\n",
-               strerror (errno));
-      fclose (test_fd);
-      return NULL;
-    }
-  return test_fd;
 }
 
 /**
@@ -390,8 +409,8 @@ teardown_session (gnutls_session_t session,
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) */
 int
 test_wrap (char *test_name, int
-           (*test_function) (FILE * test_fd, char *cipher_suite,
-                             int proto_version), FILE * test_fd,
+           (*test_function) (void * cls, char *cipher_suite,
+                             int proto_version), void * cls,
            int daemon_flags, char *cipher_suite, int proto_version, ...)
 {
   int ret;
@@ -407,7 +426,7 @@ test_wrap (char *test_name, int
 #if 0
   fprintf (stdout, "running test: %s ", test_name);
 #endif
-  ret = test_function (test_fd, cipher_suite, proto_version);
+  ret = test_function (NULL, cipher_suite, proto_version);
 #if 0
   if (ret == 0)
     {
