@@ -13,13 +13,17 @@ EXTRA_DIST = EXPORT.sym
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
+if HAVE_POSTPROCESSOR
+  SUPPORT_POSTPROCESSOR = postprocessor.c
+endif
+
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
   reason_phrase.c reason_phrase.h \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
-  postprocessor.c \
+  $(SUPPORT_POSTPROCESSOR) \
   response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \

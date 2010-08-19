@@ -222,15 +222,30 @@ AC_FUNC_FSEEKO
 # optional: have error messages ?
 AC_MSG_CHECKING(whether to enable error messages)
 AC_ARG_ENABLE(messages,
-   [AS_HELP_STRING([--enable-messages],
-               [enable MHD error messages])],
-   [enable_messages=$enableval],
-   [enable_messages="no"])
-AC_MSG_RESULT($enable_messages)
-if test "$enable_messages" = "yes"
+   [AS_HELP_STRING([--disable-messages],
+               [disable MHD error messages])],
+   [disable_messages=$enableval],
+   [disable_messages="no"])
+AC_MSG_RESULT($disable_messages)
+if test "$disable_messages" = "no"
 then
  AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
 fi
+
+
+# optional: have postprocessor?
+AC_MSG_CHECKING(whether to enable postprocessor)
+AC_ARG_ENABLE(postprocessor,
+   [AS_HELP_STRING([--disable-postprocessor],
+               [disable MHD PostProcessor functionality])],
+   [disable_postprocessor=$enableval],
+   [disable_postprocessor="no"])
+AC_MSG_RESULT($disable_postprocessor)
+if test "$disable_postprocessor" = "no"
+then
+ AC_DEFINE([HAVE_POSTPROCESSOR],[1],[Include postprocessor])
+fi
+AM_CONDITIONAL([HAVE_POSTPROCESSOR],test x$disable_postprocessor = xno)
 
 
 # optional: have zzuf, socat?
@@ -284,11 +299,11 @@ AC_DEFINE_UNQUOTED([HAVE_GNUTLS], $gnutls, [We have gnutls])
 # optional: HTTPS support.  Enabled by default
 AC_MSG_CHECKING(whether to enable HTTPS support)
 AC_ARG_ENABLE([https],
-   [AS_HELP_STRING([--enable-https],
-               [enable HTTPS support (default is yes)])],
-   [enable_https=$enableval],
-   [enable_https="yes"])
-if test "$enable_https" = "yes"
+   [AS_HELP_STRING([--disable-https],
+               [disable HTTPS support (default is enabled)])],
+   [disable_https=$enableval],
+   [disable_https="no"])
+if test "$disable_https" = "no"
 then
  if test "$gcrypt" = "true" -a "$gnutls" = "true"
  then
@@ -301,9 +316,9 @@ then
 else
  AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
 fi
-AC_MSG_RESULT($enable_https)
+AC_MSG_RESULT($disable_https)
 
-AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
+AM_CONDITIONAL(ENABLE_HTTPS, test "$disable_https" = "no")
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
@@ -375,14 +390,15 @@ fi
 
 AC_MSG_NOTICE([Configuration Summary:  
   Operating System:  ${host_os}
-  Target directory:  ${prefix}
-  Messages:          ${enable_messages}
   libgcrypt:         ${MSG_GCRYPT}
   libcurl (testing): ${MSG_CURL}
-  HTTPS support:     ${enable_https}
+  Target directory:  ${prefix}
+  Messages disabled: ${disable_messages}
+  Postproc disabled: ${disable_postprocessor}
+  HTTPS disabled:    ${disable_https}
 ])
 
-if test "$enable_https" = "yes"
+if test "$disable_https" = "no"
 then
  AC_MSG_NOTICE([HTTPS subsystem configuration:
   License         :  LGPL only

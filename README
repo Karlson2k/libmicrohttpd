@@ -16,17 +16,24 @@ If you are using Subversion, run "autoreconf -fi" to create configure.
 In order to run the testcases, you need a recent version of libcurl.
 libcurl is not required if you just want to install the library.
 
+Especially for development, do use the MHD_USE_DEBUG option to get
+error messages.
+
 
 Configure options
 =================
 
-Especially for development, use "--enable-messages" to enable error
-reporting (and use MHD_USE_DEBUG).  Error reporting is not enabled by
-default to reduce the size of the library (error messages take
-space!).  If you are concerned about space, you should set "CFLAGS" to
-"-Os -fomit-frame-pointer" to have gcc generate tight code.  The
-resulting binary should be about 30k (without SSL support) depending 
-on the platform.
+
+If you are concerned about space, you should set "CFLAGS" to "-Os
+-fomit-frame-pointer" to have gcc generate tight code.
+
+You can use the following options to disable certain MHD features:
+
+--disable-https: no HTTPS / TLS / SSL support (significant reduction)
+--disable-messages: no error messages (they take space!)
+--disable-postprocessor: no MHD_PostProcessor API
+
+The resulting binary should be about 32k depending on the platform.
 
 
 Portability

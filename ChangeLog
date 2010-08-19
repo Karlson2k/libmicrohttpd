@@ -1,8 +1,14 @@
+Thu Aug 19 14:15:01 CEST 2010
+	Changed code to enable error messages and HTTPS by default;
+	added option to disable post processor API (use
+	breaks binary compatibility, should only be done
+	for embedded systems that require minimal footprint). -CG
+
 Thu Aug 19 13:26:00 CEST 2010
 	Patches for Windows to ease compilation trouble. -GT/CG
 
 Sat Aug 14 15:43:30 CEST 2010
-	Fixed small, largely hypothetical leaks. 
+	Fixed small, largely hypothetical leaks.
 	Reduced calls to strlen for header processing. -CG
 
 Fri Aug  6 12:51:59 CEST 2010
