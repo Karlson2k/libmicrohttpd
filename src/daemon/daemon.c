@@ -1642,10 +1642,25 @@ MHD_start_daemon_va (unsigned int options,
 
       if ((options & MHD_USE_IPv6) != 0)
 	{
+#ifdef IPPROTO_IPV6
+#ifdef IPV6_V6ONLY
+	  /* Note: "IPV6_V6ONLY" is declared by Windows Vista ff., see "IPPROTO_IPV6 Socket Options" 
+	     (http://msdn.microsoft.com/en-us/library/ms738574%28v=VS.85%29.aspx); 
+	     and may also be missing on older POSIX systems; good luck if you have any of those,
+	     your IPv6 socket may then also bind against IPv4... */
+#ifndef WINDOWS
 	  const int on = 1;
 	  setsockopt (socket_fd, 
 		      IPPROTO_IPV6, IPV6_V6ONLY, 
-		      &on, sizeof (on));      
+		      &on, sizeof (on));
+#else
+	  const char on = 1;
+	  setsockopt (socket_fd, 
+		      IPPROTO_IPV6, IPV6_V6ONLY, 
+		      &on, sizeof (on));
+#endif
+#endif
+#endif
 	}
       if (BIND (socket_fd, servaddr, addrlen) == -1)
 	{

@@ -1,3 +1,6 @@
+Thu Aug 19 13:26:00 CEST 2010
+	Patches for Windows to ease compilation trouble. -GT/CG
+
 Sat Aug 14 15:43:30 CEST 2010
 	Fixed small, largely hypothetical leaks. 
 	Reduced calls to strlen for header processing. -CG

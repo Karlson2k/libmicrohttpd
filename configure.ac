@@ -72,6 +72,8 @@ then
  CFLAGS="-fno-strict-aliasing $CFLAGS"
 fi
 
+# for pkg-config
+MHD_LIBDEPS=""
 
 # Check system type
 case "$host_os" in
@@ -115,12 +117,24 @@ netbsd*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      LDFLAGS="$LDFLAGS -no-undefined"
+     # check if PlibC is available
+     CHECK_PLIBC
+     LIBS="$PLIBC_LIBS $LIBS"
+     AC_SUBST(PLIBC_LIBS)
+     AC_SUBST(PLIBC_LDFLAGS)
+     AC_SUBST(PLIBC_CPPFLAGS)
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
-     LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32 -lplibc"
+     LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     # check if PlibC is available
+     CHECK_PLIBC
+     LIBS="$PLIBC_LIBS $LIBS"
+     AC_SUBST(PLIBC_LIBS)
+     AC_SUBST(PLIBC_LDFLAGS)
+     AC_SUBST(PLIBC_CPPFLAGS)
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
@@ -132,10 +146,6 @@ netbsd*)
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
 ;;
 esac
-
-
-# for pkg-config
-MHD_LIBDEPS=""
 
 CHECK_PTHREAD
 LIBS="$PTHREAD_LIBS $LIBS"
