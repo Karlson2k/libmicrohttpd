@@ -42,7 +42,8 @@ check_PROGRAMS = \
   daemontest_get_chunked \
   daemontest_put_chunked \
   daemontest_iplimit11 \
-  daemontest_termination
+  daemontest_termination \
+  daemontest_timeout
 noinst_PROGRAMS = \
   daemon_options_test
 
@@ -193,6 +194,12 @@ daemontest_iplimit11_LDADD = \
 daemontest_termination_SOURCES = \
   daemontest_termination.c
 daemontest_termination_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_timeout_SOURCES = \
+  daemontest_timeout.c
+daemontest_timeout_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
