@@ -287,7 +287,6 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 {
   int auth;
   size_t len;
-  char *buffer;
   const char *header;
   const char *ret;
   const char *nonce;
@@ -298,12 +297,12 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   const char *response;
   unsigned char tmpnonce[SHA1_DIGEST_SIZE];
   char *hentity = NULL; /* "auth-int" is not supported */
-  char timestamp[5];
+  char timestamp[4];
   char ha1[HASH_MD5_HEX_LEN + 1];
   char respexp[HASH_MD5_HEX_LEN + 1];
   char noncehashexp[HASH_SHA1_HEX_LEN + 9];
   unsigned int nonce_time;
-  time_t t;
+  uint32_t t;
   struct SHA1Context sha1;
   
   header = MHD_lookup_connection_value(connection,
@@ -314,147 +313,94 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   if (strncmp(header, _BASE, strlen(_BASE)) != 0) 
     return MHD_NO;  
   len = strlen(header) - strlen(_BASE) + 1;  
-  buffer = malloc(len);
-  
-  if (buffer == NULL) 
-    return MHD_NO;
-  strncpy(buffer, 
-	  header + strlen(_BASE), 
-	  len);
-  
-  ret = lookup_sub_value(buffer, len, "username");
-  
-  if ( (ret == NULL) || (strcmp(username, ret) != 0) ) 
-    {
-      free(buffer);
+  {
+    char buffer[len];
+
+    memcpy (buffer, 
+	    header + strlen(_BASE), 
+	    len);
+    ret = lookup_sub_value(buffer, len, "username");  
+    if ( (ret == NULL) ||
+	 (strcmp(username, ret) != 0) ) 
       return MHD_NO;
-    }  
-  ret = lookup_sub_value(buffer, len, "realm");
-  
-  if (ret == NULL || strcmp(realm, ret) != 0) 
-    {
-      free(buffer);
+    ret = lookup_sub_value(buffer, len, "realm");  
+    if ( (ret == NULL) || 
+	 (strcmp(realm, ret) != 0) )
       return MHD_NO;
-    }  
-  if ((uri = lookup_sub_value(buffer, len, "uri")) == NULL) 
-    {
-      free(buffer);
+    if ( (NULL == (uri = lookup_sub_value(buffer, len, "uri"))) ||
+	 (NULL == (nonce = lookup_sub_value(buffer, len, "nonce"))) )
       return MHD_NO;
-    }
-  if ((nonce = lookup_sub_value(buffer, len, "nonce")) == NULL) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
   
-  /*
-   * 8 = 4 hexadecimal numbers for the timestamp
-   */
+    /* 8 = 4 hexadecimal numbers for the timestamp */  
+    nonce_time = strtoul(nonce + strlen(nonce) - 8, 0, 16);  
+    t = (uint32_t) time(NULL);    
+    /*
+     * First level vetting for the nonce validity
+     * if the timestamp attached to the nonce
+     * exceeds `nonce_timeout' then the nonce is
+     * invalid.
+     */
+    if (t > nonce_time + nonce_timeout) 
+      return MHD_INVALID_NONCE;    
+    SHA1Init (&sha1);
+    snprintf (timestamp,
+	      sizeof (timestamp),
+	      "%X",
+	      (unsigned int) nonce_time);
+    timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
+    timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
+    timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
+    timestamp[3] = (nonce_time & 0x000000ff);    
+    SHA1Update(&sha1, timestamp, 4);
+    SHA1Update(&sha1, ":", 1);
+    SHA1Update(&sha1, connection->method, strlen(connection->method));
+    SHA1Update(&sha1, ":", 1);
+    SHA1Update(&sha1, password, strlen(password));
+    SHA1Update(&sha1, ":", 1);
+    SHA1Update(&sha1, uri, strlen(uri));
+    SHA1Update(&sha1, ":", 1);
+    SHA1Update(&sha1, realm, strlen(realm));
+    SHA1Final (tmpnonce, &sha1);  
+    cvthex(tmpnonce, sizeof (tmpnonce), noncehashexp);  
+    strncat(noncehashexp, nonce + strlen(nonce) - 8, 8);
   
-  nonce_time = strtoul(nonce + strlen(nonce) - 8, 0, 16);  
-  time(&t);
-  
-  /*
-   * First level vetting for the nonce validity
-   * if the timestamp attached to the nonce
-   * exceeds `nonce_timeout' then the nonce is
-   * invalid.
-   */
-  
-  if (t - nonce_time > nonce_timeout) 
-    {
-      free(buffer);
+    /*
+     * Second level vetting for the nonce validity
+     * if the timestamp attached to the nonce is valid
+     * and possibility fabricated (in case of an attack)
+     * the attacker must also know the password to be
+     * able to generate a "sane" nonce, which if he does
+     * not, the nonce fabrication process going to be
+     * very hard to achieve.
+     */
+    
+    if (0 != strncmp(nonce, noncehashexp, strlen(nonce))) 
       return MHD_INVALID_NONCE;
-    }
-  SHA1Init (&sha1);
-  timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
-  timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
-  timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
-  timestamp[3] = nonce_time & 0x000000ff;
-  timestamp[4] = '\0';
-  
-  SHA1Update(&sha1, timestamp, 4);
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, connection->method, strlen(connection->method));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, password, strlen(password));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, uri, strlen(uri));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, realm, strlen(realm));
-  SHA1Final (tmpnonce, &sha1);
-  
-  cvthex(tmpnonce, sizeof (tmpnonce), noncehashexp);
-  
-  strncat(noncehashexp, nonce + strlen(nonce) - 8, 8);
-  
-  /*
-   * Second level vetting for the nonce validity
-   * if the timestamp attached to the nonce is valid
-   * and possibility fabricated (in case of an attack)
-   * the attacker must also know the password to be
-   * able to generate a "sane" nonce, which if he does
-   * not, the nonce fabrication process going to be
-   * very hard to achieve.
-   */
-  
-  if (strncmp(nonce, noncehashexp, strlen(nonce)) != 0) 
-    {
-      free(buffer);
-      return MHD_INVALID_NONCE;
-    }
-  
-  if ((cnonce = lookup_sub_value(buffer, len, "cnonce")) == NULL) 
-    {
-      free(buffer);
+    if ( (NULL == (cnonce = lookup_sub_value(buffer, len, "cnonce"))) ||
+	 (NULL == (qop = lookup_sub_value(buffer, len, "qop"))) ||
+	 (NULL == (nc = lookup_sub_value(buffer, len, "nc")))  ||
+	 (NULL == (response = lookup_sub_value(buffer, len, "response"))) )
       return MHD_NO;
-    }
-  
-  if ((qop = lookup_sub_value(buffer, len, "qop")) == NULL) 
-    {
-      free(buffer);
+    digest_calc_ha1("md5",
+		    username,
+		    realm,
+		    password,
+		    nonce,
+		    cnonce,
+		    ha1);
+    auth = digest_calc_response(ha1,
+				nonce,
+				nc,
+				cnonce,
+				qop,
+				connection->method,
+				uri,
+				hentity,
+				respexp);  
+    if (0 != auth) 
       return MHD_NO;
-    }
-  
-  if ((nc = lookup_sub_value(buffer, len, "nc")) == NULL) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
-  
-  if ((response = lookup_sub_value(buffer, len, "response")) == NULL) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
-  
-  digest_calc_ha1("md5",
-		  username,
-		  realm,
-		  password,
-		  nonce,
-		  cnonce,
-		  ha1);
-  auth = digest_calc_response(ha1,
-			      nonce,
-			      nc,
-			      cnonce,
-			      qop,
-			      connection->method,
-			      uri,
-			      hentity,
-			      respexp);
-  
-  if (0 != auth) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
-  
-  auth = strcmp(response, respexp) == 0 ? MHD_YES : MHD_NO;
-  
-  free(buffer);
-  
+    auth = strcmp(response, respexp) == 0 ? MHD_YES : MHD_NO;
+  }
   return auth;
 }
 
@@ -479,10 +425,10 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   int ret;
   size_t hlen;
   unsigned char tmpnonce[SHA1_DIGEST_SIZE];
-  unsigned char timestamp[4];
+  unsigned char timestamp[5];
   char timestamphex[sizeof(timestamp)*2+1];
   char nonce[HASH_SHA1_HEX_LEN + sizeof (timestamphex)];
-  time_t t;
+  uint32_t t;
   struct MHD_Response *response;
   struct SHA1Context sha1;
 
@@ -492,7 +438,7 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   
   /* Generating the server nonce */  
   SHA1Init (&sha1);
-  t = time(NULL);
+  t = (uint32_t) time(NULL);
   timestamp[0] = (t & 0xff000000) >> 0x18;
   timestamp[1] = (t & 0x00ff0000) >> 0x10;
   timestamp[2] = (t & 0x0000ff00) >> 0x08;
