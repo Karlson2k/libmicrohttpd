@@ -23,13 +23,9 @@
  * @author Amr Ali
  */
 
-#include <stdlib.h>
-#include <gcrypt.h>
-#include <string.h>
-#include <time.h>
 #include "internal.h"
-#include "connection.h"
-#include "microhttpd.h"
+#include "md5.h"
+#include "sha1.h"
 
 #define HASH_MD5_LEN 16
 #define HASH_SHA1_LEN 20
@@ -38,7 +34,13 @@
 
 #define _BASE		"Digest "
 
-/* convert bin to hex */
+/**
+ * convert bin to hex 
+ *
+ * @param bin binary data
+ * @param len number of bytes in bin
+ * @param hex pointer to len*2+1 bytes
+ */
 static void
 cvthex(const unsigned char *bin,
        size_t len,
@@ -60,8 +62,13 @@ cvthex(const unsigned char *bin,
 }
 
 
-/* calculate H(A1) as per RFC2617 spec */
-static int
+/**
+ * calculate H(A1) as per RFC2617 spec and store the
+ * result in 'sessionkey'.
+ *
+ * @param sessionkey pointer to buffer of 2*MD5_DIGEST_SIZE+1 bytes
+ */
+static void
 digest_calc_ha1(const char *alg,
 		const char *username,
 		const char *realm,
@@ -70,35 +77,29 @@ digest_calc_ha1(const char *alg,
 		const char *cnonce,
 		char *sessionkey)
 {
-  gcry_md_hd_t md5;
-  gcry_error_t gerror;
-  unsigned char *ha1;
+  struct MD5Context md5;
+  unsigned char ha1[MD5_DIGEST_SIZE];
   
-  gerror = gcry_md_open(&md5, GCRY_MD_MD5, GCRY_MD_FLAG_SECURE);  
-  if (gerror) 
-    return gerror;
-  gcry_md_write(md5, username, strlen(username));
-  gcry_md_write(md5, ":", 1);
-  gcry_md_write(md5, realm, strlen(realm));
-  gcry_md_write(md5, ":", 1);
-  gcry_md_write(md5, password, strlen(password));
-  gcry_md_final(md5); 
-  ha1 = gcry_md_read(md5, GCRY_MD_MD5);
-  if (strcasecmp(alg, "md5-sess") == 0) 
+  MD5Init (&md5);
+  MD5Update (&md5, username, strlen (username));
+  MD5Update (&md5, ":", 1);
+  MD5Update (&md5, realm, strlen (realm));
+  MD5Update (&md5, ":", 1);
+  MD5Update (&md5, password, strlen (password));
+  MD5Final (ha1, &md5);
+  if (0 == strcasecmp(alg, "md5-sess")) 
     {
-      gcry_md_reset(md5);
-      gcry_md_write(md5, ha1, HASH_MD5_LEN);
-      gcry_md_write(md5, ":", 1);
-      gcry_md_write(md5, nonce, strlen(nonce));
-      gcry_md_write(md5, ":", 1);
-      gcry_md_write(md5, cnonce, strlen(cnonce));
-      gcry_md_final(md5);      
-      ha1 = gcry_md_read(md5, GCRY_MD_MD5);
+      MD5Init (&md5);
+      MD5Update (&md5, ha1, sizeof (ha1));
+      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, nonce, strlen (nonce));
+      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, cnonce, strlen (cnonce));
+      MD5Final (ha1, &md5);
     }
-  cvthex(ha1, HASH_MD5_LEN, sessionkey);
-  gcry_md_close(md5);  
-  return 0;
+  cvthex(ha1, sizeof (ha1), sessionkey);
 }
+
 
 /**
  * calculate request-digest/response-digest as per RFC2617 spec 
@@ -125,63 +126,46 @@ digest_calc_response(const char *ha1,
 		     const char *hentity,
 		     char *response)
 {
-  gcry_md_hd_t md5;
-  gcry_error_t gerror;
-  unsigned char *ha2;
-  unsigned char *resphash;
-  char ha2hex[HASH_MD5_HEX_LEN + 1];
+  struct MD5Context md5;
+  unsigned char ha2[MD5_DIGEST_SIZE];
+  unsigned char resphash[MD5_DIGEST_SIZE];
+  char ha2hex[MD5_DIGEST_SIZE * 2 + 1];
   
-  gerror = gcry_md_open(&md5, GCRY_MD_MD5, GCRY_MD_FLAG_SECURE);  
-  if (gerror)
-    return gerror;
-  /*
-   * calculate H(A2)
-   */
-  
-  gcry_md_write(md5, method, strlen(method));
-  gcry_md_write(md5, ":", 1);
-  gcry_md_write(md5, uri, strlen(uri));
+  MD5Init (&md5);
+  MD5Update (&md5, method, strlen(method));
+  MD5Update (&md5, ":", 1);
+  MD5Update (&md5, uri, strlen(uri));
   
   if (strcasecmp(qop, "auth-int") == 0) 
     {
-      gcry_md_write(md5, ":", 1);
-      gcry_md_write(md5, hentity, strlen(hentity));
+      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, hentity, strlen(hentity));
     }
   
-  gcry_md_final(md5);
-  
-  ha2 = gcry_md_read(md5, GCRY_MD_MD5);
-  
+  MD5Final (ha2, &md5);
   cvthex(ha2, HASH_MD5_LEN, ha2hex);
-  gcry_md_reset(md5);
+  MD5Init (&md5);
   
-  /*
-   * calculate response
-   */
+  /* calculate response */
   
-  gcry_md_write(md5, ha1, HASH_MD5_HEX_LEN);
-  gcry_md_write(md5, ":", 1);
-  gcry_md_write(md5, nonce, strlen(nonce));
-  gcry_md_write(md5, ":", 1);
+  MD5Update (&md5, ha1, HASH_MD5_HEX_LEN);
+  MD5Update (&md5, ":", 1);
+  MD5Update (&md5, nonce, strlen(nonce));
+  MD5Update (&md5, ":", 1);
   
   if (*qop) 
     {
-      gcry_md_write(md5, noncecount, strlen(noncecount));
-      gcry_md_write(md5, ":", 1);
-      gcry_md_write(md5, cnonce, strlen(cnonce));
-      gcry_md_write(md5, ":", 1);
-      gcry_md_write(md5, qop, strlen(qop));
-      gcry_md_write(md5, ":", 1);
+      MD5Update (&md5, noncecount, strlen(noncecount));
+      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, cnonce, strlen(cnonce));
+      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, qop, strlen(qop));
+      MD5Update (&md5, ":", 1);
     }
   
-  gcry_md_write(md5, ha2hex, HASH_MD5_HEX_LEN);
-  gcry_md_final(md5);
-  
-  resphash = gcry_md_read(md5, GCRY_MD_MD5);
-  
-  cvthex(resphash, HASH_MD5_LEN, response);
-  gcry_md_close(md5);
-  
+  MD5Update (&md5, ha2hex, HASH_MD5_HEX_LEN);
+  MD5Final (resphash, &md5);
+  cvthex(resphash, sizeof (resphash), response);
   return 0;
 }
 
@@ -258,17 +242,15 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND, 
-				       MHD_HTTP_HEADER_AUTHORIZATION);
-  
+				       MHD_HTTP_HEADER_AUTHORIZATION); 
   if (header == NULL)
     return NULL;
   if (strncmp(header, _BASE, strlen(_BASE)) != 0)
-    return NULL;
-  
+    return NULL;  
   len = strlen(header) - strlen(_BASE) + 1;
-  buffer = malloc(len);
-  
-  if (buffer == NULL) return NULL;
+  buffer = malloc(len);  
+  if (buffer == NULL)
+    return NULL;
   
   strncpy(buffer, header + strlen(_BASE), len);
   
@@ -321,7 +303,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   const char *qop;
   const char *nc;
   const char *response;
-  unsigned char *tmpnonce;
+  unsigned char tmpnonce[SHA1_DIGEST_SIZE];
   char *hentity = NULL; /* "auth-int" is not supported */
   char timestamp[5];
   char ha1[HASH_MD5_HEX_LEN + 1];
@@ -329,8 +311,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   char noncehashexp[HASH_SHA1_HEX_LEN + 9];
   unsigned int nonce_time;
   time_t t;
-  gcry_error_t gerror;
-  gcry_md_hd_t sha1;
+  struct SHA1Context sha1;
   
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND,
@@ -392,34 +373,25 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
       free(buffer);
       return MHD_INVALID_NONCE;
     }
-  gerror = gcry_md_open(&sha1, GCRY_MD_SHA1, GCRY_MD_FLAG_SECURE);
-  if (gerror) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
-  
+  SHA1Init (&sha1);
   timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
   timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
   timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
   timestamp[3] = nonce_time & 0x000000ff;
   timestamp[4] = '\0';
   
-  gcry_md_write(sha1, timestamp, 4);
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, connection->method, strlen(connection->method));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, password, strlen(password));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, uri, strlen(uri));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, realm, strlen(realm));
-  gcry_md_final(sha1);
+  SHA1Update(&sha1, timestamp, 4);
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, connection->method, strlen(connection->method));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, password, strlen(password));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, uri, strlen(uri));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, realm, strlen(realm));
+  SHA1Final (tmpnonce, &sha1);
   
-  tmpnonce = gcry_md_read(sha1, GCRY_MD_SHA1);
-  
-  cvthex(tmpnonce, HASH_SHA1_LEN, noncehashexp);
-  gcry_md_close(sha1);
+  cvthex(tmpnonce, sizeof (tmpnonce), noncehashexp);
   
   strncat(noncehashexp, nonce + strlen(nonce) - 8, 8);
   
@@ -463,20 +435,13 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
       return MHD_NO;
     }
   
-  auth = digest_calc_ha1("md5",
-			 username,
-			 realm,
-			 password,
-			 nonce,
-			 cnonce,
-			 ha1);
-
-  if (auth) 
-    {
-      free(buffer);
-      return MHD_NO;
-    }
-  
+  digest_calc_ha1("md5",
+		  username,
+		  realm,
+		  password,
+		  nonce,
+		  cnonce,
+		  ha1);
   auth = digest_calc_response(ha1,
 			      nonce,
 			      nc,
@@ -520,15 +485,13 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 {
   int ret;
   size_t hlen;
-  unsigned char *tmpnonce;
-  char *header;
+  unsigned char tmpnonce[SHA1_DIGEST_SIZE];
   unsigned char timestamp[5];
   char timestamphex[9];
   char nonce[HASH_SHA1_HEX_LEN + 9];
   time_t t;
   struct MHD_Response *response;
-  gcry_error_t gerror;
-  gcry_md_hd_t sha1;
+  struct SHA1Context sha1;
   
   response = MHD_create_response_from_data(0, NULL, MHD_NO, MHD_NO);  
   if (!response) 
@@ -538,11 +501,7 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
    * Generating the server nonce
    */
   
-  gerror = gcry_md_open(&sha1, GCRY_MD_SHA1, GCRY_MD_FLAG_SECURE);
-  
-  if (gerror) 
-    return MHD_NO;
-  
+  SHA1Init (&sha1);
   time(&t);
   
   timestamp[0] = (t & 0xff000000) >> 0x18;
@@ -551,23 +510,20 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   timestamp[3] = t & 0x000000ff;
   timestamp[4] = '\0';
   
-  gcry_md_write(sha1, timestamp, 4);
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, connection->method, strlen(connection->method));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, password, strlen(password));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, connection->url, strlen(connection->url));
-  gcry_md_write(sha1, ":", 1);
-  gcry_md_write(sha1, realm, strlen(realm));
-  gcry_md_final(sha1);
-  
-  tmpnonce = gcry_md_read(sha1, GCRY_MD_SHA1);
+  SHA1Update(&sha1, timestamp, 4);
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, connection->method, strlen(connection->method));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, password, strlen(password));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, connection->url, strlen(connection->url));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, realm, strlen(realm));
+  SHA1Final (tmpnonce, &sha1);
   
   cvthex(timestamp, 4, timestamphex);
-  cvthex(tmpnonce, HASH_SHA1_LEN, nonce);
+  cvthex(tmpnonce, sizeof (tmpnonce), nonce);
   strncat(nonce, timestamphex, 8);
-  gcry_md_close(sha1);
   
   /*
    * Building the authentication header
