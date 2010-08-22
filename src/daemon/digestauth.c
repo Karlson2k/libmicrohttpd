@@ -266,6 +266,44 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   return NULL;
 }
 
+
+/**
+ * FIXME: password should probably not be here!
+ */
+static void
+calculate_nonce (uint32_t nonce_time,
+		 const char *method,
+		 const char *password,
+		 const char *uri,
+		 const char *realm,
+		 char *nonce)
+{
+  struct SHA1Context sha1;
+  unsigned char timestamp[4];
+  unsigned char tmpnonce[SHA1_DIGEST_SIZE];
+  char timestamphex[sizeof(timestamp)*2+1];
+
+  SHA1Init (&sha1);
+  timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
+  timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
+  timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
+  timestamp[3] = (nonce_time & 0x000000ff);    
+  SHA1Update(&sha1, timestamp, 4);
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, method, strlen(method));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, password, strlen(password));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, uri, strlen(uri));
+  SHA1Update(&sha1, ":", 1);
+  SHA1Update(&sha1, realm, strlen(realm));
+  SHA1Final (tmpnonce, &sha1);  
+  cvthex(tmpnonce, sizeof (tmpnonce), nonce);  
+  cvthex(timestamp, 4, timestamphex);
+  strncat(nonce, timestamphex, 8);
+}
+
+
 /**
  * Authenticates the authorization header sent by the client
  *
@@ -295,15 +333,13 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   const char *qop;
   const char *nc;
   const char *response;
-  unsigned char tmpnonce[SHA1_DIGEST_SIZE];
   char *hentity = NULL; /* "auth-int" is not supported */
-  char timestamp[4];
   char ha1[HASH_MD5_HEX_LEN + 1];
   char respexp[HASH_MD5_HEX_LEN + 1];
   char noncehashexp[HASH_SHA1_HEX_LEN + 9];
-  unsigned int nonce_time;
+  uint32_t nonce_time;
   uint32_t t;
-  struct SHA1Context sha1;
+
   
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND,
@@ -342,28 +378,12 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
      */
     if (t > nonce_time + nonce_timeout) 
       return MHD_INVALID_NONCE;    
-    SHA1Init (&sha1);
-    snprintf (timestamp,
-	      sizeof (timestamp),
-	      "%X",
-	      (unsigned int) nonce_time);
-    timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
-    timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
-    timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
-    timestamp[3] = (nonce_time & 0x000000ff);    
-    SHA1Update(&sha1, timestamp, 4);
-    SHA1Update(&sha1, ":", 1);
-    SHA1Update(&sha1, connection->method, strlen(connection->method));
-    SHA1Update(&sha1, ":", 1);
-    SHA1Update(&sha1, password, strlen(password));
-    SHA1Update(&sha1, ":", 1);
-    SHA1Update(&sha1, uri, strlen(uri));
-    SHA1Update(&sha1, ":", 1);
-    SHA1Update(&sha1, realm, strlen(realm));
-    SHA1Final (tmpnonce, &sha1);  
-    cvthex(tmpnonce, sizeof (tmpnonce), noncehashexp);  
-    strncat(noncehashexp, nonce + strlen(nonce) - 8, 8);
-  
+    calculate_nonce (nonce_time,
+		     connection->method,
+		     password,
+		     uri,
+		     realm,
+		     noncehashexp);
     /*
      * Second level vetting for the nonce validity
      * if the timestamp attached to the nonce is valid
@@ -374,7 +394,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
      * very hard to achieve.
      */
     
-    if (0 != strncmp(nonce, noncehashexp, strlen(nonce))) 
+    if (0 != strcmp(nonce, noncehashexp))
       return MHD_INVALID_NONCE;
     if ( (NULL == (cnonce = lookup_sub_value(buffer, len, "cnonce"))) ||
 	 (NULL == (qop = lookup_sub_value(buffer, len, "qop"))) ||
@@ -409,8 +429,8 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
  * Queues a response to request authentication from the client
  *
  * @param connection The MHD connection structure
- * @param realm The realm presented to the client
- * @param password The password used in authentication
+ * @param realm the realm presented to the client
+ * @param password the password used in authentication FIXME!
  * @param signal_stale MHD_YES if the nonce is invalid to add
  * 			'stale=true' to the authentication header
  * @return MHD_YES on success, MHD_NO otherwise
@@ -424,38 +444,20 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 {
   int ret;
   size_t hlen;
-  unsigned char tmpnonce[SHA1_DIGEST_SIZE];
-  unsigned char timestamp[5];
-  char timestamphex[sizeof(timestamp)*2+1];
-  char nonce[HASH_SHA1_HEX_LEN + sizeof (timestamphex)];
-  uint32_t t;
+  char nonce[HASH_SHA1_HEX_LEN + 9];
   struct MHD_Response *response;
-  struct SHA1Context sha1;
 
   response = MHD_create_response_from_data(0, NULL, MHD_NO, MHD_NO);  
   if (NULL == response) 
     return MHD_NO;
   
   /* Generating the server nonce */  
-  SHA1Init (&sha1);
-  t = (uint32_t) time(NULL);
-  timestamp[0] = (t & 0xff000000) >> 0x18;
-  timestamp[1] = (t & 0x00ff0000) >> 0x10;
-  timestamp[2] = (t & 0x0000ff00) >> 0x08;
-  timestamp[3] = (t & 0x000000ff) >> 0x00;
-  SHA1Update(&sha1, timestamp, sizeof(timestamp));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, connection->method, strlen(connection->method));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, password, strlen(password));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, connection->url, strlen(connection->url));
-  SHA1Update(&sha1, ":", 1);
-  SHA1Update(&sha1, realm, strlen(realm));
-  SHA1Final (tmpnonce, &sha1);  
-  cvthex(timestamp, 4, timestamphex);
-  cvthex(tmpnonce, sizeof (tmpnonce), nonce);
-  strncat(nonce, timestamphex, 8);
+  calculate_nonce ((uint32_t) time(NULL),
+		   connection->method,
+		   password,
+		   connection->url,
+		   realm,
+		   nonce);
   
   /* Building the authentication header */
   hlen = snprintf(NULL,

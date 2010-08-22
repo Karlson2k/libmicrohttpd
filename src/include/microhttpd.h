@@ -1266,7 +1266,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
- * @param password The password used in authentication
+ * @param password the password used in authentication FIXME!
  * @param opaque string to user for opaque value
  * @param signal_stale MHD_YES if the nonce is invalid to add
  * 			'stale=true' to the authentication header
