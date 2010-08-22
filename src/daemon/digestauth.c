@@ -36,12 +36,7 @@
 #define HASH_MD5_HEX_LEN 32
 #define HASH_SHA1_HEX_LEN 40
 
-#define _OPAQUE	"opaque=\"11733b200778ce33060f31c9af70a870ba96ddd4\""
-#define _QOP		"qop=\"auth\""
-#define _STALE		"stale=true"
 #define _BASE		"Digest "
-#define _REALM		"realm="
-#define _NONCE		"nonce="
 
 /* convert bin to hex */
 static void
@@ -552,44 +547,31 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 	/*
 	 * Building the authentication header
 	 */
-
-	/* 4(single quotes) + 3(commas) + NULL = 8 */
-	hlen = strlen(_BASE) + strlen(_REALM) + strlen(realm) +
-		strlen(_QOP) + strlen(_NONCE) + strlen(nonce) +
-		strlen(_OPAQUE) + 8;
-
-	/* 1(comma for stale=true) */
-	if (signal_stale)
-		hlen += strlen(_STALE) + 1;
-
-	header = malloc(hlen);
-
-	if (header == NULL) return MHD_NO;
-
-	snprintf(header, hlen,
-			"%s%s\"%s\",%s,%s\"%s\",%s",
-			_BASE, _REALM, realm, _QOP,
-			_NONCE, nonce, _OPAQUE);
-
-	/* Add "stale=true" to the authentication header if nonce is invalid */
-	if (signal_stale) {
-		strncat(header, ",", 1);
-		strncat(header, _STALE, strlen(_STALE));
+	hlen = snprintf(NULL,
+			0,
+			"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
+			realm, 
+			nonce,
+			opaque,
+			signal_stale ? ",stale=true" : "");
+	{
+	  char header[hlen + 1];
+	  snprintf(header,
+		   sizeof(header),
+		   "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
+		   realm, 
+		   nonce,
+		   opaque,
+		   signal_stale ? ",stale=true" : "");
+	  ret = MHD_add_response_header(response,
+					MHD_HTTP_HEADER_WWW_AUTHENTICATE, 
+					header);
 	}
-
-	/*
-	 * Sending response with authentication header
-	 */
-
-	ret = MHD_add_response_header(response,
-			MHD_HTTP_HEADER_WWW_AUTHENTICATE, header);
-
-	free(header);
-
-	if(!ret) {
-		MHD_destroy_response(response);
-		return MHD_NO;
-	}
+	if(!ret) 
+	  {
+	    MHD_destroy_response(response);
+	    return MHD_NO;
+	  }
 
 	ret = MHD_queue_response(connection, MHD_HTTP_UNAUTHORIZED, response);
 
