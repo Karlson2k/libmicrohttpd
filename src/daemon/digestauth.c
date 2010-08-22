@@ -27,10 +27,8 @@
 #include "md5.h"
 #include "sha1.h"
 
-#define HASH_MD5_LEN 16
-#define HASH_SHA1_LEN 20
-#define HASH_MD5_HEX_LEN 32
-#define HASH_SHA1_HEX_LEN 40
+#define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
+#define HASH_SHA1_HEX_LEN (2 * SHA1_DIGEST_SIZE)
 
 #define _BASE		"Digest "
 
@@ -49,15 +47,13 @@ cvthex(const unsigned char *bin,
   size_t i;
   unsigned int j;
   
-  for (i = 0; i < len; ++i) {
-    j = (bin[i] >> 4) & 0x0f;
-    
-    hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);
-    
-    j = bin[i] & 0x0f;
-    
-    hex[i * 2 + 1] = j <= 9 ? (j + '0') : (j + 'a' - 10);
-  }  
+  for (i = 0; i < len; ++i) 
+    {
+      j = (bin[i] >> 4) & 0x0f;      
+      hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);    
+      j = bin[i] & 0x0f;    
+      hex[i * 2 + 1] = j <= 9 ? (j + '0') : (j + 'a' - 10);
+    }
   hex[len * 2] = '\0';
 }
 
@@ -66,7 +62,7 @@ cvthex(const unsigned char *bin,
  * calculate H(A1) as per RFC2617 spec and store the
  * result in 'sessionkey'.
  *
- * @param sessionkey pointer to buffer of 2*MD5_DIGEST_SIZE+1 bytes
+ * @param sessionkey pointer to buffer of HASH_MD5_HEX_LEN+1 bytes
  */
 static void
 digest_calc_ha1(const char *alg,
@@ -113,7 +109,7 @@ digest_calc_ha1(const char *alg,
  * @param uri requested URL
  * @param hentity H(entity body) if qop="auth-int"
  * @param response request-digest or response-digest
- * @return ???
+ * @return 0 on success, 1 on error
  */
 static int
 digest_calc_response(const char *ha1,
@@ -129,31 +125,28 @@ digest_calc_response(const char *ha1,
   struct MD5Context md5;
   unsigned char ha2[MD5_DIGEST_SIZE];
   unsigned char resphash[MD5_DIGEST_SIZE];
-  char ha2hex[MD5_DIGEST_SIZE * 2 + 1];
+  char ha2hex[HASH_MD5_HEX_LEN + 1];
   
   MD5Init (&md5);
   MD5Update (&md5, method, strlen(method));
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen(uri));
-  
+  MD5Update (&md5, uri, strlen(uri));  
   if (strcasecmp(qop, "auth-int") == 0) 
     {
+      if (hentity == NULL)
+	return 1;
       MD5Update (&md5, ":", 1);
       MD5Update (&md5, hentity, strlen(hentity));
-    }
-  
+    }  
   MD5Final (ha2, &md5);
-  cvthex(ha2, HASH_MD5_LEN, ha2hex);
-  MD5Init (&md5);
-  
-  /* calculate response */
-  
+  cvthex(ha2, MD5_DIGEST_SIZE, ha2hex);
+  MD5Init (&md5);  
+  /* calculate response */  
   MD5Update (&md5, ha1, HASH_MD5_HEX_LEN);
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, nonce, strlen(nonce));
-  MD5Update (&md5, ":", 1);
-  
-  if (*qop) 
+  MD5Update (&md5, ":", 1);  
+  if ('\0' != *qop)
     {
       MD5Update (&md5, noncecount, strlen(noncecount));
       MD5Update (&md5, ":", 1);
@@ -161,13 +154,13 @@ digest_calc_response(const char *ha1,
       MD5Update (&md5, ":", 1);
       MD5Update (&md5, qop, strlen(qop));
       MD5Update (&md5, ":", 1);
-    }
-  
+    }  
   MD5Update (&md5, ha2hex, HASH_MD5_HEX_LEN);
   MD5Final (resphash, &md5);
   cvthex(resphash, sizeof (resphash), response);
   return 0;
 }
+
 
 static const char *
 lookup_sub_value(char *data, 
@@ -452,7 +445,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 			      hentity,
 			      respexp);
   
-  if (auth) 
+  if (0 != auth) 
     {
       free(buffer);
       return MHD_NO;
@@ -486,31 +479,25 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   int ret;
   size_t hlen;
   unsigned char tmpnonce[SHA1_DIGEST_SIZE];
-  unsigned char timestamp[5];
-  char timestamphex[9];
-  char nonce[HASH_SHA1_HEX_LEN + 9];
+  unsigned char timestamp[4];
+  char timestamphex[sizeof(timestamp)*2+1];
+  char nonce[HASH_SHA1_HEX_LEN + sizeof (timestamphex)];
   time_t t;
   struct MHD_Response *response;
   struct SHA1Context sha1;
-  
+
   response = MHD_create_response_from_data(0, NULL, MHD_NO, MHD_NO);  
-  if (!response) 
+  if (NULL == response) 
     return MHD_NO;
   
-  /*
-   * Generating the server nonce
-   */
-  
+  /* Generating the server nonce */  
   SHA1Init (&sha1);
-  time(&t);
-  
+  t = time(NULL);
   timestamp[0] = (t & 0xff000000) >> 0x18;
   timestamp[1] = (t & 0x00ff0000) >> 0x10;
   timestamp[2] = (t & 0x0000ff00) >> 0x08;
-  timestamp[3] = t & 0x000000ff;
-  timestamp[4] = '\0';
-  
-  SHA1Update(&sha1, timestamp, 4);
+  timestamp[3] = (t & 0x000000ff) >> 0x00;
+  SHA1Update(&sha1, timestamp, sizeof(timestamp));
   SHA1Update(&sha1, ":", 1);
   SHA1Update(&sha1, connection->method, strlen(connection->method));
   SHA1Update(&sha1, ":", 1);
@@ -519,15 +506,12 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   SHA1Update(&sha1, connection->url, strlen(connection->url));
   SHA1Update(&sha1, ":", 1);
   SHA1Update(&sha1, realm, strlen(realm));
-  SHA1Final (tmpnonce, &sha1);
-  
+  SHA1Final (tmpnonce, &sha1);  
   cvthex(timestamp, 4, timestamphex);
   cvthex(tmpnonce, sizeof (tmpnonce), nonce);
   strncat(nonce, timestamphex, 8);
   
-  /*
-   * Building the authentication header
-   */
+  /* Building the authentication header */
   hlen = snprintf(NULL,
 		  0,
 		  "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
@@ -548,16 +532,11 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 				  MHD_HTTP_HEADER_WWW_AUTHENTICATE, 
 				  header);
   }
-  if(!ret) 
-    {
-      MHD_destroy_response(response);
-      return MHD_NO;
-    }
-  
-  ret = MHD_queue_response(connection, MHD_HTTP_UNAUTHORIZED, response);
-  
-  MHD_destroy_response(response);
-  
+  if (MHD_YES == ret) 
+    ret = MHD_queue_response(connection, 
+			     MHD_HTTP_UNAUTHORIZED, 
+			     response);  
+  MHD_destroy_response(response);  
   return ret;
 }
 
