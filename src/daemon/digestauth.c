@@ -227,9 +227,6 @@ char *
 MHD_digest_auth_get_username(struct MHD_Connection *connection)
 {
   size_t len;
-  size_t userlen;
-  char *buffer;
-  char *username;
   const char *user;
   const char *header;
   
@@ -241,29 +238,17 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   if (strncmp(header, _BASE, strlen(_BASE)) != 0)
     return NULL;  
   len = strlen(header) - strlen(_BASE) + 1;
-  buffer = malloc(len);  
-  if (buffer == NULL)
-    return NULL;
+  {
+    char buffer[len];
   
-  strncpy(buffer, header + strlen(_BASE), len);
-  
-  user = lookup_sub_value(buffer, len, "username");
-  
-  if (user) 
-    {
-      userlen = strlen(user) + 1;
-      username = malloc(userlen);
-      
-      if (username != NULL) 
-	{
-	  strncpy(username, user, userlen);
-	  free(buffer);
-	  return username;
-	}
-    }
-  
-  free(buffer);
-  return NULL;
+    memcpy (buffer,
+	    header + strlen(_BASE), 
+	    len);  
+    user = lookup_sub_value(buffer, len, "username");  
+    if (NULL == user) 
+      return NULL;
+    return strdup (user);
+  }
 }
 
 
