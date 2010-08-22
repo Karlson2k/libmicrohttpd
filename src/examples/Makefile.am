@@ -28,6 +28,10 @@ if ENABLE_HTTPS
 noinst_PROGRAMS += https_fileserver_example 
 endif
 
+if ENABLE_DAUTH
+noinst_PROGRAMS += digest_auth_example 
+endif
+
 minimal_example_SOURCES = \
  minimal_example.c 
 minimal_example_LDADD = \
@@ -41,6 +45,11 @@ minimal_example_comet_LDADD = \
 authorization_example_SOURCES = \
  authorization_example.c 
 authorization_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+digest_auth_example_SOURCES = \
+ digest_auth_example.c 
+digest_auth_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 refuse_post_example_SOURCES = \

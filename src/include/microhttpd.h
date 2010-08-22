@@ -94,6 +94,11 @@ extern "C"
 #define MHD_NO 0
 
 /**
+ * MHD digest auth internal code for an invalid nonce.
+ */
+#define MHD_INVALID_NONCE -1
+
+/**
  * Constant used to indicate unknown size (use when
  * creating a response).
  */
@@ -1214,6 +1219,65 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  */
 int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
+
+/* ********************* Digest Authentication functions *************** */
+
+
+/**
+ * Constant to indicate that the nonce of the provided
+ * authentication code was wrong.
+ */
+#define MHD_INVALID_NONCE -1
+
+
+/**
+ * Get the username from the authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no username could be found, a pointer
+ * 			to the username if found
+ */
+char *
+MHD_digest_auth_get_username(struct MHD_Connection *connection);
+
+
+/**
+ * Authenticates the authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param password The password used in the authentication
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @return MHD_YES if authenticated, MHD_NO if not,
+ * 			MHD_INVALID_NONCE if nonce is invalid
+ */
+int
+MHD_digest_auth_check(struct MHD_Connection *connection,
+		      const char *realm,
+		      const char *username,
+		      const char *password,
+		      unsigned int nonce_timeout);
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param password The password used in authentication
+ * @param opaque string to user for opaque value
+ * @param signal_stale MHD_YES if the nonce is invalid to add
+ * 			'stale=true' to the authentication header
+ * @return MHD_YES on success, MHD_NO otherwise
+ */
+int
+MHD_queue_auth_fail_response(struct MHD_Connection *connection,
+			     const char *realm,
+			     const char *password,
+			     const char *opaque,
+			     int signal_stale);
 
 
 /* ********************** generic query functions ********************** */

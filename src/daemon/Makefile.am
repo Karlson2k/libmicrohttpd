@@ -13,9 +13,6 @@ EXTRA_DIST = EXPORT.sym
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
-if HAVE_POSTPROCESSOR
-  SUPPORT_POSTPROCESSOR = postprocessor.c
-endif
 
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
@@ -23,7 +20,6 @@ libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
-  $(SUPPORT_POSTPROCESSOR) \
   response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
@@ -33,6 +29,15 @@ if USE_COVERAGE
   AM_CFLAGS = --coverage
 endif
 
+if HAVE_POSTPROCESSOR
+libmicrohttpd_la_SOURCES += \
+  postprocessor.c
+endif
+
+if ENABLE_DAUTH
+libmicrohttpd_la_SOURCES += \
+  digestauth.c
+endif
 
 if ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
