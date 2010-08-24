@@ -251,9 +251,10 @@ No options selected.
 @item MHD_USE_DEBUG
 @cindex debugging
 Run in debug mode.  If this flag is used, the library should print error
-messages and warnings to stderr.  Note that @mhd{} also needs to be
-compiled with the configure option @code{--enable-messages} for this
-run-time option to have any effect.
+messages and warnings to stderr.  Note that for this
+run-time option to have any effect, @mhd{} needs to be
+compiled with messages enabled. This is done by default except you ran 
+configure with the @code{--disable-messages} flag set. 
 
 @item MHD_USE_SSL
 Run in https mode (this option may not work with all threading modes yet).
@@ -445,10 +446,9 @@ of type 'void fun(void * arg, const char * fmt, va_list ap)'
 and the second a pointer of type 'void*' which will
 be passed as the "arg" argument to "fun".
  
-Note that MHD will not generate any log messages
-if it was compiled without the "--enable-messages"
-flag being set and the MHD_USE_DEBUG flag being set, 
-even if this argument is used.
+Note that MHD will not generate any log messages without  
+the MHD_USE_DEBUG flag set and if MHD was compiled 
+with the "--disable-messages" flag. 
 
 @item MHD_OPTION_THREAD_POOL_SIZE
 @cindex performance
