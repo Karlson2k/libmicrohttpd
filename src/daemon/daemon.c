@@ -349,7 +349,18 @@ static pthread_mutex_t MHD_gnutls_init_mutex;
 static ssize_t
 recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
-  return gnutls_record_recv (connection->tls_session, other, i);
+  int res;
+  res = gnutls_record_recv (connection->tls_session, other, i);
+  if (res != GNUTLS_E_AGAIN)
+	  return res;
+  else
+  {
+	  while (res == GNUTLS_E_AGAIN)
+	  {
+		  res = gnutls_record_recv (connection->tls_session, other, i);
+	  }
+	  return res;
+  }
 }
 
 /**
