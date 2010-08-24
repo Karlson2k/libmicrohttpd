@@ -375,7 +375,18 @@ static ssize_t
 send_tls_adapter (struct MHD_Connection *connection,
                   const void *other, size_t i)
 {
-  return gnutls_record_send (connection->tls_session, other, i);
+  int res;
+  res = gnutls_record_send (connection->tls_session, other, i);
+  if (res != GNUTLS_E_AGAIN)
+	  return res;
+  else
+  {
+	  while (res == GNUTLS_E_AGAIN)
+	  {
+		  res = gnutls_record_send (connection->tls_session, other, i);
+	  }
+	  return res;
+  }
 }
 
 
