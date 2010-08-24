@@ -220,7 +220,7 @@ AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
 # optional: have error messages ?
-AC_MSG_CHECKING(whether to enable error messages)
+AC_MSG_CHECKING(whether to disable error messages)
 AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
                [disable MHD error messages (default is NO)])],
