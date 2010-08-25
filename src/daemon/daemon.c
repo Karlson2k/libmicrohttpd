@@ -351,17 +351,15 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
   int res;
   res = gnutls_record_recv (connection->tls_session, other, i);
-  if (res != GNUTLS_E_AGAIN)
-	  return res;
-  else
-  {
-	  while (res == GNUTLS_E_AGAIN)
-	  {
-		  res = gnutls_record_recv (connection->tls_session, other, i);
-	  }
-	  return res;
-  }
+  if ( (res == GNUTLS_E_AGAIN) ||
+       (res == GNUTLS_E_INTERRUPTED) )
+    {
+      errno = EINTR;
+      return -1;
+    }
+  return res;
 }
+
 
 /**
  * Callback for writing data to the socket.
@@ -377,16 +375,13 @@ send_tls_adapter (struct MHD_Connection *connection,
 {
   int res;
   res = gnutls_record_send (connection->tls_session, other, i);
-  if (res != GNUTLS_E_AGAIN)
-	  return res;
-  else
-  {
-	  while (res == GNUTLS_E_AGAIN)
-	  {
-		  res = gnutls_record_send (connection->tls_session, other, i);
-	  }
-	  return res;
-  }
+  if ( (res == GNUTLS_E_AGAIN) ||
+       (res == GNUTLS_E_INTERRUPTED) )
+    {
+      errno = EINTR;
+      return -1;
+    }
+  return res;
 }
 
 
