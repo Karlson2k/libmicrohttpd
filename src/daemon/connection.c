@@ -1411,8 +1411,15 @@ do_read (struct MHD_Connection *connection)
       if (errno == EINTR)
         return MHD_NO;
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                "Failed to receive data: %s\n", STRERROR (errno));
+#if HTTPS_SUPPORT
+      if (0 != (connection->daemon->options & MHD_USE_SSL))
+	MHD_DLOG (connection->daemon,
+		  "Failed to receive data: %s\n",
+		  gnutls_strerror (bytes_read));
+      else
+#endif      
+	MHD_DLOG (connection->daemon,
+		  "Failed to receive data: %s\n", STRERROR (errno));
 #endif
       connection_close_error (connection);
       return MHD_YES;
@@ -1451,8 +1458,15 @@ do_write (struct MHD_Connection *connection)
       if (errno == EINTR)
         return MHD_NO;
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                "Failed to send data: %s\n", STRERROR (errno));
+#if HTTPS_SUPPORT
+      if (0 != (connection->daemon->options & MHD_USE_SSL))
+	MHD_DLOG (connection->daemon,
+		  "Failed to send data: %s\n",
+		  gnutls_strerror (ret));
+      else
+#endif      
+	MHD_DLOG (connection->daemon,
+		  "Failed to send data: %s\n", STRERROR (errno));
 #endif
       connection_close_error (connection);
       return MHD_YES;
