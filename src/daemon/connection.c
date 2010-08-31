@@ -291,6 +291,11 @@ MHD_connection_close (struct MHD_Connection *connection,
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
+  if (connection->response != NULL)
+    {
+      MHD_destroy_response (connection->response);
+      connection->response = NULL;
+    }
   if ( (NULL != connection->daemon->notify_completed) &&
        (MHD_YES == connection->client_aware) )
     connection->daemon->notify_completed (connection->daemon->
@@ -2177,14 +2182,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           }
 #endif
           MHD_destroy_response (connection->response);
+          connection->response = NULL;
           if (connection->daemon->notify_completed != NULL)
-	    {
-	      connection->daemon->notify_completed (connection->daemon->
-						    notify_completed_cls,
-						    connection,
-						    &connection->client_context,
-						    MHD_REQUEST_TERMINATED_COMPLETED_OK);
-	    }
+	    connection->daemon->notify_completed (connection->daemon->
+						  notify_completed_cls,
+						  connection,
+						  &connection->client_context,
+						  MHD_REQUEST_TERMINATED_COMPLETED_OK);	    
 	  connection->client_aware = MHD_NO;
           end =
             MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
@@ -2192,7 +2196,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->client_context = NULL;
           connection->continue_message_write_offset = 0;
           connection->responseCode = 0;
-          connection->response = NULL;
           connection->headers_received = NULL;
           connection->response_write_position = 0;
           connection->have_chunked_upload = MHD_NO;

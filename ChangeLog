@@ -1,3 +1,11 @@
+Tue Aug 31 15:39:25 CEST 2010
+	Fixed bug with missing call to response cleanup in case of
+	connection handling error (for example, after getting a SIGPIPE). -CG
+
+Tue Aug 24 11:39:25 CEST 2010
+	Fixed bug in handling EAGAIN from GnuTLS (caused
+	needlessly dropped SSL connections). -CG
+
 Sun Aug 22 16:49:13 CEST 2010
 	Initial draft for digest authentication. -AA
 
