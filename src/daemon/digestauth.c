@@ -154,6 +154,7 @@ digest_calc_response(const char *ha1,
   cvthex(resphash, sizeof (resphash), response);
 }
 
+
 /**
  * Lookup subvalue off of the HTTP Authorization header
  *
@@ -169,33 +170,36 @@ lookup_sub_value(char *dest,
 		const char *data,
 		const char *key)
 {
-	size_t keylen = strlen(key);
-	const char *ptr = data;
-	char field[size];
-	char fmt[24 + keylen + 1];
-	int items_read;
-
-	ptr += strstr(ptr, key) - ptr;
-
-	if (*(ptr + keylen) != ' ' && *(ptr + keylen) != '=') {
-		++ptr;
-		ptr += strstr(ptr, key) - ptr;
-	}
-
-	if (!ptr)
-		return 0;
-
-	snprintf(fmt, 24 + keylen + 1,
-			"%s%%*[ =\"]%%%u[^, \"]", key, (unsigned int) size - 1);
-
-	items_read = sscanf(ptr, fmt, field);
-
-	if (items_read == 1) {
-		strcpy(dest, field);
-		return strlen(dest);
-	}
-
-	return 0;
+  size_t keylen = strlen(key);
+  const char *ptr = data;
+  char field[size];
+  char fmt[24 + keylen + 1];
+  int items_read;
+  
+  ptr += strstr(ptr, key) - ptr;
+  
+  if (*(ptr + keylen) != ' ' && *(ptr + keylen) != '=') 
+    {
+      ++ptr;
+      ptr += strstr(ptr, key) - ptr;
+    }  
+  if (!ptr)
+    return 0;
+  
+  snprintf(fmt, 
+	   sizeof (fmt),
+	   "%s%%*[ =\"]%%%u[^, \"]",
+	   key, 
+	   (unsigned int) size - 1);
+  
+  items_read = sscanf(ptr, fmt, field);
+  
+  if (items_read == 1) 
+    {
+      strcpy(dest, field);
+      return strlen(dest);
+    }  
+  return 0;
 }
 
 
@@ -221,11 +225,12 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   if (strncmp(header, _BASE, strlen(_BASE)) != 0)
     return NULL;
 
-  len = lookup_sub_value(user, 50, header, "username");
-
+  len = lookup_sub_value(user,
+			 sizeof (user),
+			 header, 
+			 "username");
   if (!len)
-	  return NULL;
-
+    return NULL;
   return strdup(user);
 }
 
@@ -301,7 +306,6 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   uint32_t nonce_time;
   uint32_t t;
 
-  
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND,
 				       MHD_HTTP_HEADER_AUTHORIZATION);  
@@ -311,73 +315,83 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
     return MHD_NO;
 
   rnd = connection->daemon->digest_auth_random;
-
-	len = lookup_sub_value(ret, 60, header, "username");
-    if ( (!len) ||
-	 (strcmp(username, ret) != 0) ) 
-      return MHD_NO;
-    len = lookup_sub_value(ret, 60, header, "realm");  
-    if ( (!len) || 
-	 (strcmp(realm, ret) != 0) )
-      return MHD_NO;
-    if ( (0 == lookup_sub_value(uri, 100, header, "uri")) ||
-	 (0 == (len = lookup_sub_value(nonce, 50, header, "nonce"))) )
-      return MHD_NO;
   
-    /* 8 = 4 hexadecimal numbers for the timestamp */  
-    nonce_time = strtoul(nonce + len - 8, 0, 16);  
-    t = (uint32_t) time(NULL);    
-    /*
-     * First level vetting for the nonce validity
-     * if the timestamp attached to the nonce
-     * exceeds `nonce_timeout' then the nonce is
-     * invalid.
-     */
-    if (t > nonce_time + nonce_timeout) 
-      return MHD_INVALID_NONCE;    
-    calculate_nonce (nonce_time,
-		     connection->method,
-		     rnd,
-		     uri,
-		     realm,
-		     noncehashexp);
-    /*
-     * Second level vetting for the nonce validity
-     * if the timestamp attached to the nonce is valid
-     * and possibility fabricated (in case of an attack)
-     * the attacker must also know the password to be
-     * able to generate a "sane" nonce, which if he does
-     * not, the nonce fabrication process going to be
-     * very hard to achieve.
-     */
-    
-    if (0 != strcmp(nonce, noncehashexp))
-      return MHD_INVALID_NONCE;
-    if ( (0 == lookup_sub_value(cnonce, 50, header, "cnonce")) ||
-/*	 (0 == lookup_sub_value(qop, 15, header, "qop")) || // Uncomment when supporting "auth-int" */
-	 (0 == lookup_sub_value(nc, 10, header, "nc"))  ||
-	 (0 == lookup_sub_value(response, 35, header, "response")) )
-      return MHD_NO;
+  len = lookup_sub_value(ret,
+			 sizeof (ret),
+			 header, "username");
+  if ( (!len) ||
+       (strcmp(username, ret) != 0) ) 
+    return MHD_NO;
+  len = lookup_sub_value(ret, 
+			 sizeof (ret),
+			 header, "realm");  
+  if ( (!len) || 
+       (strcmp(realm, ret) != 0) )
+    return MHD_NO;
+  if ( (0 == lookup_sub_value(uri,
+			      sizeof (uri),
+			      header, "uri")) ||
+       (0 == (len = lookup_sub_value(nonce, 
+				     sizeof (nonce),
+				     header, "nonce"))) )
+    return MHD_NO;
+  
+  /* 8 = 4 hexadecimal numbers for the timestamp */  
+  nonce_time = strtoul(nonce + len - 8, 0, 16);  
+  t = (uint32_t) time(NULL);    
+  /*
+   * First level vetting for the nonce validity
+   * if the timestamp attached to the nonce
+   * exceeds `nonce_timeout' then the nonce is
+   * invalid.
+   */
+  if (t > nonce_time + nonce_timeout) 
+    return MHD_INVALID_NONCE;    
+  calculate_nonce (nonce_time,
+		   connection->method,
+		   rnd,
+		   uri,
+		   realm,
+		   noncehashexp);
+  /*
+   * Second level vetting for the nonce validity
+   * if the timestamp attached to the nonce is valid
+   * and possibility fabricated (in case of an attack)
+   * the attacker must also know the password to be
+   * able to generate a "sane" nonce, which if he does
+   * not, the nonce fabrication process going to be
+   * very hard to achieve.
+   */
+  
+  if (0 != strcmp(nonce, noncehashexp))
+    return MHD_INVALID_NONCE;
+  if ( (0 == lookup_sub_value(cnonce,
+			      sizeof (cnonce), 
+			      header, "cnonce")) ||
+       /*	 (0 == lookup_sub_value(qop, sizeof (qop), header, "qop")) || // Uncomment when supporting "auth-int" */
+       (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
+       (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
+    return MHD_NO;
 
-	digest_calc_ha1("md5",
-		    username,
-		    realm,
-		    password,
-		    nonce,
-		    cnonce,
-		    ha1);
-    digest_calc_response(ha1,
-				nonce,
-				nc,
-				cnonce,
-				qop,
-				connection->method,
-				uri,
-				hentity,
-				respexp);  
-
-	auth = strcmp(response, respexp) == 0 ? MHD_YES : MHD_NO;
-
+  digest_calc_ha1("md5",
+		  username,
+		  realm,
+		  password,
+		  nonce,
+		  cnonce,
+		  ha1);
+  digest_calc_response(ha1,
+		       nonce,
+		       nc,
+		       cnonce,
+		       qop,
+		       connection->method,
+		       uri,
+		       hentity,
+		       respexp);  
+  
+  auth = strcmp(response, respexp) == 0 ? MHD_YES : MHD_NO;
+  
   return auth;
 }
 
