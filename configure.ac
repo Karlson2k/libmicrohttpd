@@ -338,20 +338,15 @@ AC_ARG_ENABLE([dauth],
 
 if test "x$disable_dauth" != "xyes"
 then
- if test "$gcrypt" = "true"
- then
-   enable_dauth="yes"
-   MHD_LIBDEPS="$LIBGCRYPT_LIBS"
- else
-   disable_dauth="yes (lacking libgcrypt)"
-   enable_dauth="no (lacking libgcrypt)"
- fi
+ AC_DEFINE([DAUTH_SUPPORT],[1],[include Digest Auth support])
+ enable_dauth="yes"
 else
+ AC_DEFINE([DAUTH_SUPPORT],[0],[disable Digest Auth support])
  enable_dauth="no"
 fi
 AC_MSG_RESULT($disable_dauth)
 
-AM_CONDITIONAL(ENABLE_DAUTH, [test "x$disable_dauth" != "xyes" -a "$gcrypt" = "true"])
+AM_CONDITIONAL(ENABLE_DAUTH, [test "x$disable_dauth" != "xyes"])
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 

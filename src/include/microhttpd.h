@@ -520,7 +520,15 @@ enum MHD_OPTION
    * "cls" will be set to the second argument following
    * MHD_OPTION_UNESCAPE_CALLBACK.
    */
-  MHD_OPTION_UNESCAPE_CALLBACK = 16
+  MHD_OPTION_UNESCAPE_CALLBACK = 16,
+
+  /**
+   * Memory pointer for the random values to be used by the Digest
+   * Auth module. This option should be followed by an "const char *"
+   * argument.
+   */
+  MHD_OPTION_DIGEST_AUTH_RANDOM = 17
+
 };
 
 
@@ -1307,7 +1315,6 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
- * @param password the password used in authentication FIXME!
  * @param opaque string to user for opaque value
  * @param signal_stale MHD_YES if the nonce is invalid to add
  * 			'stale=true' to the authentication header
@@ -1316,7 +1323,6 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 int
 MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 			     const char *realm,
-			     const char *password,
 			     const char *opaque,
 			     int signal_stale);
 

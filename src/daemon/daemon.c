@@ -1367,6 +1367,11 @@ parse_options_va (struct MHD_Daemon *daemon,
 	    return MHD_NO;
           break;
 #endif
+#ifdef DAUTH_SUPPORT
+	case MHD_OPTION_DIGEST_AUTH_RANDOM:
+	  daemon->digest_auth_random = va_arg (ap, const char *);
+	  break;
+#endif
 	case MHD_OPTION_LISTEN_SOCKET:
 	  daemon->socket_fd = va_arg (ap, int);	  
 	  break;
@@ -1423,6 +1428,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_HTTPS_MEM_KEY:
 		case MHD_OPTION_HTTPS_MEM_CERT:
 		case MHD_OPTION_HTTPS_PRIORITIES:
+		case MHD_OPTION_DIGEST_AUTH_RANDOM:
 		case MHD_OPTION_ARRAY:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,

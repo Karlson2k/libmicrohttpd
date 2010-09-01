@@ -48,7 +48,6 @@ ahc_echo (void *cls,
 
   if (username == NULL) {
 	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     password, 
 					     OPAQUE,
 					     MHD_NO);
 
@@ -62,7 +61,6 @@ ahc_echo (void *cls,
 
   if (ret == MHD_INVALID_NONCE) {
 	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     password,
 					     OPAQUE, MHD_YES);
 
 	  return ret;
@@ -70,7 +68,7 @@ ahc_echo (void *cls,
 
   if (ret == MHD_NO) {
 	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     password, OPAQUE, MHD_NO);
+					     OPAQUE, MHD_NO);
 	  
 	  return ret;
   }
@@ -87,6 +85,9 @@ ahc_echo (void *cls,
 int
 main (int argc, char *const *argv)
 {
+  int fd;
+  char rnd[9];
+  size_t len;
   struct MHD_Daemon *d;
 
   if (argc != 2)
@@ -94,9 +95,18 @@ main (int argc, char *const *argv)
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
+
+  fd = open("/dev/urandom", O_RDONLY);
+  len = read(fd, rnd, 8);
+  close(fd);
+
+  rnd[8] = '\0';
+
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, PAGE,
+						MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
+						MHD_OPTION_END);
   if (d == NULL)
     return 1;
   (void) getc (stdin);

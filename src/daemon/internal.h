@@ -865,6 +865,13 @@ struct MHD_Daemon
 
 #endif
 
+#ifdef DAUTH_SUPPORT
+  /**
+   * Character array of random values.
+   */
+  const char *digest_auth_random;
+
+#endif
   /**
    * Pointer to master daemon (NULL if this is the master)
    */
