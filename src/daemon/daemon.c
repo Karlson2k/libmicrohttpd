@@ -1435,6 +1435,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_NOTIFY_COMPLETED:
 		case MHD_OPTION_URI_LOG_CALLBACK:
 		case MHD_OPTION_EXTERNAL_LOGGER:
+		case MHD_OPTION_UNESCAPE_CALLBACK:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -1450,6 +1451,11 @@ parse_options_va (struct MHD_Daemon *daemon,
 	      i++;
 	    }
 	  break;
+        case MHD_OPTION_UNESCAPE_CALLBACK:
+          daemon->unescape_callback =
+            va_arg (ap, UnescapeCallback);
+          daemon->unescape_callback_cls = va_arg (ap, void *);
+          break;
         default:
 #if HAVE_MESSAGES
           if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
@@ -1526,6 +1532,7 @@ MHD_start_daemon_va (unsigned int options,
   retVal->default_handler_cls = dh_cls;
   retVal->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
+  retVal->unescape_callback = &MHD_http_unescape;
   retVal->connection_timeout = 0;       /* no timeout */
 #if HAVE_MESSAGES
   retVal->custom_error_log =

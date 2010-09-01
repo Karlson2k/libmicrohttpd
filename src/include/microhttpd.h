@@ -63,8 +63,10 @@
  * includes to define the "uint64_t", "size_t", "fd_set", "socklen_t"
  * and "struct sockaddr" data types (which headers are needed may
  * depend on your platform; for possible suggestions consult
- * "platform.h" in the MHD distribution).
- *
+ * "platform.h" in the MHD distribution).  If you have done so, you
+ * should also have a line with "#define MHD_PLATFORM_H" which will
+ * prevent this header from trying (and, depending on your platform,
+ * failing) to #include the right headers.
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -76,6 +78,25 @@ extern "C"
 #if 0                           /* keep Emacsens' auto-indent happy */
 }
 #endif
+#endif
+
+/* While we generally would like users to use a configure-driven
+   build process which detects which headers are present and
+   hence works on any platform, we use "standard" includes here
+   to build out-of-the-box for beginning users on common systems.
+
+   Once you have a proper build system and go for more exotic 
+   platforms, you should define MHD_PLATFORM_H in some header that
+   you always include *before* "microhttpd.h".  Then the following
+   "standard" includes won't be used (which might be a good
+   idea, especially on platforms where they do not exist). */
+#ifndef MHD_PLATFORM_H
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #endif
 
 /**
@@ -479,7 +500,27 @@ enum MHD_OPTION
    * For options that expect two pointer arguments, the first
    * argument must be cast to 'intptr_t'.
    */
-  MHD_OPTION_ARRAY = 15
+  MHD_OPTION_ARRAY = 15,
+
+  /**
+   * Specify a function that should be called for unescaping escape
+   * sequences in URIs and URI arguments.  Note that this function
+   * will NOT be used by the MHD_PostProcessor.  If this option is
+   * not specified, the default method will be used which decodes
+   * escape sequences of the form "%HH".
+   * This option should be followed by two arguments, the first
+   * one must be of the form
+   * <pre>
+   *  size_t my_unescaper(void * cls, struct MHD_Connection *c, char *s)
+   * </pre>
+   * where the return value must be "strlen(s)" and
+   * "s" should be updated.  Note that the unescape function
+   * must not lengthen "s" (the result must be shorter than
+   * the input and still be 0-terminated).
+   * "cls" will be set to the second argument following
+   * MHD_OPTION_UNESCAPE_CALLBACK.
+   */
+  MHD_OPTION_UNESCAPE_CALLBACK = 16
 };
 
 

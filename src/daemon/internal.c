@@ -110,10 +110,19 @@ MHD_tls_log_func (int level, const char *str)
 }
 
 /**
- * Process escape sequences ('+'=space, %HH)
+ * Process escape sequences ('+'=space, %HH) Updates val in place; the
+ * result should be UTF-8 encoded and cannot be larger than the input.
+ * The result must also still be 0-terminated.
+ *
+ * @param cls closure (use NULL)
+ * @param connection handle to connection, not used
+ * @return length of the resulting val (strlen(val) maybe
+ *  shorter afterwards due to elimination of escape sequences)
  */
 size_t
-MHD_http_unescape (char *val)
+MHD_http_unescape (void *cls,
+		   struct MHD_Connection *connection,
+		   char *val)
 {
   char *rpos = val;
   char *wpos = val;

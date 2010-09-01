@@ -1030,8 +1030,12 @@ parse_arguments (enum MHD_ValueKind kind,
           amper[0] = '\0';
           amper++;
         }
-      MHD_http_unescape (args);
-      MHD_http_unescape (equals);
+      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+					     connection,
+					     args);
+      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+					     connection,
+					     equals);
       if (MHD_NO == connection_add_header (connection, args, equals, kind))
         return MHD_NO;
       args = amper;
@@ -1172,7 +1176,9 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       args++;
       parse_arguments (MHD_GET_ARGUMENT_KIND, connection, args);
     }
-  MHD_http_unescape (uri);
+  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+					 connection,
+					 uri);
   connection->url = uri;
   if (httpVersion == NULL)
     connection->version = "";

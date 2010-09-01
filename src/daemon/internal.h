@@ -105,13 +105,18 @@ void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
 void MHD_tls_log_func (int level, const char *str);
 
 /**
- * Process escape sequences ('+'=space, %HH).
- * Updates val in place.
+ * Process escape sequences ('+'=space, %HH) Updates val in place; the
+ * result should be UTF-8 encoded and cannot be larger than the input.
+ * The result must also still be 0-terminated.
  *
+ * @param cls closure (use NULL)
+ * @param connection handle to connection, not used
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */
-size_t MHD_http_unescape (char *val);
+size_t MHD_http_unescape (void *cls,
+			  struct MHD_Connection *connection,
+			  char *val);
 
 /**
  * Header or cookie in HTTP request or response.
@@ -666,7 +671,27 @@ struct MHD_Connection
 #endif
 };
 
+/**
+ * Signature of function called to log URI accesses.
+ *
+ * @param cls closure
+ * @param uri uri being accessed
+ * @return new closure
+ */
 typedef void * (*LogCallback)(void * cls, const char * uri);
+
+/**
+ * Signature of function called to unescape URIs.  See also
+ * MHD_http_unescape.
+ *
+ * @param cls closure
+ * @param conn connection handle
+ * @param uri 0-terminated string to unescape (should be updated)
+ * @return length of the resulting string
+ */
+typedef size_t (*UnescapeCallback)(void *cls,
+				   struct MHD_Connection *conn,
+				   char *uri);
 
 /**
  * State kept for each MHD daemon.
@@ -725,6 +750,16 @@ struct MHD_Daemon
    * Closure argument to uri_log_callback.
    */
   void *uri_log_callback_cls;
+
+  /**
+   * Function to call when we unescape escape sequences.
+   */
+  UnescapeCallback unescape_callback;
+
+  /**
+   * Closure for unescape callback.
+   */
+  void *unescape_callback_cls;
 
 #if HAVE_MESSAGES
   /**

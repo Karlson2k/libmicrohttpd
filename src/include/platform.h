@@ -31,8 +31,8 @@
  * Hence you cannot include it directly in applications
  * that use libmicrohttpd.
  */
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#ifndef MHD_PLATFORM_H
+#define MHD_PLATFORM_H
 
 #include "MHD_config.h"
 

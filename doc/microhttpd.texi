@@ -183,6 +183,28 @@ Additionally, clients can specify resource limits on the overall
 number of connections, number of connections per IP address and memory
 used per connection to avoid resource exhaustion.
 
+@section Including the microhttpd.h header
+@cindex portability
+@cindex microhttpd.h
+
+Ideally, before including "microhttpd.h" you should add the necessary
+includes to define the @code{uint64_t}, @code{size_t}, @code{fd_set},
+@code{socklen_t} and @code{struct sockaddr} data types.  Which
+specific headers are needed may depend on your platform and your build
+system might include some tests to provide you with the necessary
+conditional operations.  For possible suggestions consult
+@code{platform.h} and @code{configure.ac} in the MHD distribution.
+
+Once you have ensured that you manually (!) included the right headers
+for your platform before "microhttpd.h", you should also add a line
+with @code{#define MHD_PLATFORM_H} which will prevent the
+"microhttpd.h" header from trying (and, depending on your platform, 
+failing) to include the right headers.
+
+If you do not define MHD_PLATFORM_H, the "microhttpd.h" header will
+automatically include headers needed on GNU/Linux systems (possibly
+causing problems when porting to other platforms).
+
 @section SIGPIPE
 @cindex signals
 @mhd{} does not install a signal handler for SIGPIPE.  On platforms
@@ -461,6 +483,7 @@ model).
 
 @item MHD_OPTION_ARRAY
 @cindex options
+@cindex foreign-function interface
 This option can be used for initializing MHD using options from an
 array.  A common use for this is writing an FFI for MHD.  The actual
 options given are in an array of 'struct MHD_OptionItem', so this
@@ -482,6 +505,27 @@ For options that expect a single pointer argument, the
 second member of the @code{struct MHD_OptionItem} is ignored.
 For options that expect two pointer arguments, the first
 argument must be cast to @code{intptr_t}.
+
+@item MHD_OPTION_UNESCAPE_CALLBACK
+@cindex internationalization
+@cindex escaping
+
+Specify a function that should be called for unescaping escape
+sequences in URIs and URI arguments.  Note that this function will NOT
+be used by the MHD_PostProcessor.  If this option is not specified,
+the default method will be used which decodes escape sequences of the
+form "%HH".  This option should be followed by two arguments, the
+first one must be of the form
+
+@example
+  size_t my_unescaper(void * cls, struct MHD_Connection *c, char *s)
+@end example
+
+where the return value must be @code{strlen(s)} and @code{s} should be
+updated.  Note that the unescape function must not lengthen @code{s}
+(the result must be shorter than the input and still be 0-terminated).
+@code{cls} will be set to the second argument following
+MHD_OPTION_UNESCAPE_CALLBACK.
 @end table
 @end deftp
 

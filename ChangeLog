@@ -1,3 +1,10 @@
+Wed Sep  1 13:59:16 CEST 2010
+	Added ability to specify external unescape function.
+	"microhttpd.h" now includes the right headers for GNU/Linux
+	systems unless MHD_PLATFORM_H is defined (in which case it
+	is assumed that the right headers were already determined by
+	some configure-like process). -CG
+
 Tue Aug 31 15:39:25 CEST 2010
 	Fixed bug with missing call to response cleanup in case of
 	connection handling error (for example, after getting a SIGPIPE). -CG
