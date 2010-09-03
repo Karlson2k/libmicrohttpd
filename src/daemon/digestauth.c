@@ -205,10 +205,12 @@ lookup_sub_value(char *dest,
 		 const char *key)
 {
   size_t keylen = strlen(key);
+  size_t len;
   const char *ptr = data;
   const char *eq;
   const char *q1;
   const char *q2;
+  const char *qn;
 
   if (0 == size)
     return 0;
@@ -216,17 +218,21 @@ lookup_sub_value(char *dest,
     {
       if (NULL == (eq = strstr (ptr, "=")))
 	return 0;
-      q1 = strstr (eq, "\"");
-      if (q1 == NULL)
+      q1 = eq + 1;
+      while (' ' == *q1)
+	q1++;      
+      if ('\"' != *q1)
 	{
-	  q1 = eq + 1;
 	  q2 = strstr (q1, ",");
+	  qn = q2;
 	}
       else
 	{
-	  q2 = strstr (q1 + 1, "\"");
+	  q1++;
+	  q2 = strstr (q1, "\"");
 	  if (NULL == q2)
 	    return 0; /* end quote not found */
+	  qn = q2 + 1;
 	}      
       if (0 == strncasecmp (ptr,
 			    key,
@@ -234,26 +240,31 @@ lookup_sub_value(char *dest,
 	{
 	  if (q2 == NULL)
 	    {
+	      len = strlen (q1) + 1;
+	      if (size > len)
+		size = len;
+	      size--;
 	      strncpy (dest,
-		       q1 + 1,
-		       size - 1);
-	      dest[size-1] = '\0';
-	      return strlen (dest);
+		       q1,
+		       size);
+	      dest[size] = '\0';
+	      return size;
 	    }
 	  else
 	    {
-	      if (size >= q2 - q1)
-		size = (q2 - q1) - 1;
+	      if (size > (q2 - q1) + 1)
+		size = (q2 - q1) + 1;
+	      size--;
 	      memcpy (dest, 
-		      q1 + 1,
+		      q1,
 		      size);
 	      dest[size] = '\0';
 	      return size;
 	    }
 	}
-      if (NULL == q2)
+      if (NULL == qn)
 	return 0;
-      ptr = strstr (q2, ",");
+      ptr = strstr (qn, ",");
       if (NULL == ptr)
 	return 0;
       ptr++;
