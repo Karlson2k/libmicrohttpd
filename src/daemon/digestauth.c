@@ -234,9 +234,10 @@ lookup_sub_value(char *dest,
 	    return 0; /* end quote not found */
 	  qn = q2 + 1;
 	}      
-      if (0 == strncasecmp (ptr,
-			    key,
-			    keylen))
+      if ( (0 == strncasecmp (ptr,
+			      key,
+			      keylen)) &&
+	   (eq == &ptr[keylen]) )
 	{
 	  if (q2 == NULL)
 	    {
