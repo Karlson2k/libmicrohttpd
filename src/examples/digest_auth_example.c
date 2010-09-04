@@ -102,7 +102,7 @@ main (int argc, char *const *argv)
 	}
       off += len;
     }
-  close(fd);
+  (void) close(fd);
   rnd[8] = '\0';
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
