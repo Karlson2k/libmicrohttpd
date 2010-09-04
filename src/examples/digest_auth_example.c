@@ -98,6 +98,7 @@ main (int argc, char *const *argv)
 	  fprintf (stderr, "Failed to read `%s': %s\n",
 		   "/dev/urandom",
 		   strerror (errno));
+	  (void) close (fd);
 	  return 1;
 	}
       off += len;
