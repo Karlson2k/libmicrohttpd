@@ -26,7 +26,9 @@
 #include <microhttpd.h>
 #include <stdlib.h>
 
-#define PAGE "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
+#define PAGE "<html><head><title>libmicrohttpd demo</title></head><body>Access granted</body></html>"
+
+#define DENIED "<html><head><title>libmicrohttpd demo</title></head><body>Access denied</body></html>"
 
 #define OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"
 
@@ -46,20 +48,37 @@ ahc_echo (void *cls,
 
   username = MHD_digest_auth_get_username(connection);
   if (username == NULL) 
-    return MHD_queue_auth_fail_response(connection, realm,
-					OPAQUE,
-					MHD_NO);    
+    {
+      response = MHD_create_response_from_data(strlen (DENIED), 
+					       DENIED,
+					       MHD_NO, MHD_NO);  
+      ret = MHD_queue_auth_fail_response(connection, realm,
+					 OPAQUE,
+					 response,
+					 MHD_NO);    
+      MHD_destroy_response(response);  
+      return ret;
+    }
   ret = MHD_digest_auth_check(connection, realm,
 			      username, 
 			      password, 
 			      300);
   free(username);
-  if (ret == MHD_INVALID_NONCE) 
-    return MHD_queue_auth_fail_response(connection, realm,
-					OPAQUE, MHD_YES);  
-  if (ret == MHD_NO) 
-    return MHD_queue_auth_fail_response(connection, realm,
-					OPAQUE, MHD_NO);
+  if ( (ret == MHD_INVALID_NONCE) ||
+       (ret == MHD_NO) )
+    {
+      response = MHD_create_response_from_data(strlen (DENIED), 
+					       DENIED,
+					       MHD_NO, MHD_NO);  
+      if (NULL == response) 
+	return MHD_NO;
+      ret = MHD_queue_auth_fail_response(connection, realm,
+					 OPAQUE,
+					 response,
+					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
+      MHD_destroy_response(response);  
+      return ret;
+    }
   response = MHD_create_response_from_data(strlen(PAGE), PAGE,
 					   MHD_NO, MHD_NO);
   ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  

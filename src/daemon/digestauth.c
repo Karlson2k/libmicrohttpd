@@ -505,16 +505,13 @@ int
 MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 			     const char *realm,
 			     const char *opaque,
+			     struct MHD_Response *response,
 			     int signal_stale)
 {
   int ret;
   size_t hlen;
   char nonce[HASH_MD5_HEX_LEN + 9];
-  struct MHD_Response *response;
 
-  response = MHD_create_response_from_data(0, NULL, MHD_NO, MHD_NO);  
-  if (NULL == response) 
-    return MHD_NO;
   
   /* Generating the server nonce */  
   calculate_nonce ((uint32_t) time(NULL),
@@ -549,7 +546,6 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
     ret = MHD_queue_response(connection, 
 			     MHD_HTTP_UNAUTHORIZED, 
 			     response);  
-  MHD_destroy_response(response);  
   return ret;
 }
 
