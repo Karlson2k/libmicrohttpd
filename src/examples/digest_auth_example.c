@@ -45,39 +45,24 @@ ahc_echo (void *cls,
   int ret;
 
   username = MHD_digest_auth_get_username(connection);
-
-  if (username == NULL) {
-	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     OPAQUE,
-					     MHD_NO);
-
-	  return ret;
-  }
-
+  if (username == NULL) 
+    return MHD_queue_auth_fail_response(connection, realm,
+					OPAQUE,
+					MHD_NO);    
   ret = MHD_digest_auth_check(connection, realm,
-		  username, password, 300);
-
+			      username, 
+			      password, 
+			      300);
   free(username);
-
-  if (ret == MHD_INVALID_NONCE) {
-	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     OPAQUE, MHD_YES);
-
-	  return ret;
-  }
-
-  if (ret == MHD_NO) {
-	  ret = MHD_queue_auth_fail_response(connection, realm,
-					     OPAQUE, MHD_NO);
-	  
-	  return ret;
-  }
-  
+  if (ret == MHD_INVALID_NONCE) 
+    return MHD_queue_auth_fail_response(connection, realm,
+					OPAQUE, MHD_YES);  
+  if (ret == MHD_NO) 
+    return MHD_queue_auth_fail_response(connection, realm,
+					OPAQUE, MHD_NO);
   response = MHD_create_response_from_data(strlen(PAGE), PAGE,
-		  MHD_NO, MHD_NO);
-
-  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-
+					   MHD_NO, MHD_NO);
+  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
   MHD_destroy_response(response);
   return ret;
 }
@@ -88,6 +73,7 @@ main (int argc, char *const *argv)
   int fd;
   char rnd[9];
   size_t len;
+  size_t off;
   struct MHD_Daemon *d;
 
   if (argc != 2)
@@ -95,21 +81,39 @@ main (int argc, char *const *argv)
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-
   fd = open("/dev/urandom", O_RDONLY);
-  len = read(fd, rnd, 8);
+  if (-1 == fd)
+    {
+      fprintf (stderr, "Failed to open `%s': %s\n",
+	       "/dev/urandom",
+	       strerror (errno));
+      return 1;
+    }
+  off = 0;
+  while (off < 8)
+    {
+      len = read(fd, rnd, 8);
+      if (len == -1)
+	{
+	  fprintf (stderr, "Failed to read `%s': %s\n",
+		   "/dev/urandom",
+		   strerror (errno));
+	  return 1;
+	}
+      off += len;
+    }
   close(fd);
-
   rnd[8] = '\0';
-
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE,
-						MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
-						MHD_OPTION_END);
+			MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
+			MHD_OPTION_END);
   if (d == NULL)
     return 1;
   (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }
+
+/* end of digest_auth_example.c */
