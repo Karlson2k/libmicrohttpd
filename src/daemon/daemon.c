@@ -959,6 +959,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
             gnutls_deinit (pos->tls_session);
 #endif
           MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
+	  if (pos->response != NULL)
+	    {
+	      MHD_destroy_response (pos->response);
+	      pos->response = NULL;
+	    }
           free (pos->addr);
           free (pos);
           daemon->max_connections++;

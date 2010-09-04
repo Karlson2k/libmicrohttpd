@@ -291,11 +291,6 @@ MHD_connection_close (struct MHD_Connection *connection,
   CLOSE (connection->socket_fd);
   connection->socket_fd = -1;
   connection->state = MHD_CONNECTION_CLOSED;
-  if (connection->response != NULL)
-    {
-      MHD_destroy_response (connection->response);
-      connection->response = NULL;
-    }
   if ( (NULL != connection->daemon->notify_completed) &&
        (MHD_YES == connection->client_aware) )
     connection->daemon->notify_completed (connection->daemon->
@@ -346,6 +341,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
       return MHD_YES; 
     }
 #endif
+
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,
@@ -367,7 +363,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
          socket! */
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "Closing connection (end of response)\n");
+      MHD_DLOG (connection->daemon, 
+		"Closing connection (end of response)\n");
 #endif
 #endif
       response->total_size = connection->response_write_position;
@@ -700,6 +697,7 @@ transmit_error_response (struct MHD_Connection *connection,
             "Error %u (`%s') processing request, closing connection.\n",
             status_code, message);
 #endif
+  EXTRA_CHECK (connection->response == NULL);
   response = MHD_create_response_from_data (strlen (message),
                                             (void *) message, MHD_NO, MHD_NO);
   MHD_queue_response (connection, status_code, response);
