@@ -1,3 +1,6 @@
+Sat Sep  4 21:55:52 CEST 2010
+	Digest authentication now seems to be working. -CG/AA
+
 Wed Sep  1 13:59:16 CEST 2010
 	Added ability to specify external unescape function.
 	"microhttpd.h" now includes the right headers for GNU/Linux
