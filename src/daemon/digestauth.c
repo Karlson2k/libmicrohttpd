@@ -309,14 +309,16 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
 
 
 /**
- * FIXME: document
+ * Calculate the server nonce so that it mitigates replay attacks
+ * The current format of the nonce is ...
+ * H(timestamp ":" method ":" random ":" uri ":" realm) + Hex(timestamp)
  *
- * @param nonce_time  FIXME: document
- * @param method  FIXME: document
- * @param rnd  FIXME: document
- * @param uri  FIXME: document
- * @param realm  FIXME: document
- * @param nonce  FIXME: document
+ * @param nonce_time The amount of time in seconds for a nonce to be invalid
+ * @param method HTTP method
+ * @param rnd A pointer to a character array for the random seed
+ * @param uri HTTP URI
+ * @param realm A string of characters that describes the realm of auth.
+ * @param nonce A pointer to a character array for the nonce to put in
  */
 static void
 calculate_nonce (uint32_t nonce_time,
