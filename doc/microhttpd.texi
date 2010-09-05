@@ -1345,13 +1345,13 @@ We should not modify the value, unless we know what we are doing.
 @node microhttpd-dauth
 @chapter Utilizing Digest Authentication
 
-@deftypefun {char *} MHD_digest_auth_get_username(struct MHD_Connection *connection)
+@deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @mynull{} if the value is not found or header does not exist.
 If returned value is not @mynull{}, the value must be free()'ed.
 @end deftypefun
 
-@deftypefun int MHD_digest_auth_check(struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
+@deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
 Checks if the provided values in the WWW-Authenticate header are valid
 and sound according to RFC2716. If valid return MHD_YES, otherwise return MHD_NO.
 
@@ -1367,7 +1367,7 @@ most probably it will be the result of a lookup of the username against a local 
 Most of the time it is sound to specify 300 seconds as its values.
 @end deftypefun
 
-@deftypefun int MHD_queue_auth_fail_response(struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale)
+@deftypefun int MHD_queue_auth_fail_response (struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale)
 Queues a response to request authentication from the client,
 return MHD_YES if successful, otherwise MHD_NO.
 
@@ -1398,16 +1398,16 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size, void **ptr)
-{
+@{
   struct MHD_Response *response;
   char *username;
   const char *password = "testpass";
-  const char *realm = "test@example.com";
+  const char *realm = "test@@example.com";
   int ret;
 
   username = MHD_digest_auth_get_username(connection);
   if (username == NULL) 
-    {
+    @{
       response = MHD_create_response_from_data(strlen (DENIED), 
 					       DENIED,
 					       MHD_NO, MHD_NO);  
@@ -1417,7 +1417,7 @@ ahc_echo (void *cls,
 					 MHD_NO);    
       MHD_destroy_response(response);  
       return ret;
-    }
+    @}
   ret = MHD_digest_auth_check(connection, realm,
 			      username, 
 			      password, 
@@ -1425,7 +1425,7 @@ ahc_echo (void *cls,
   free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
-    {
+    @{
       response = MHD_create_response_from_data(strlen (DENIED), 
 					       DENIED,
 					       MHD_NO, MHD_NO);  
@@ -1437,13 +1437,13 @@ ahc_echo (void *cls,
 					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
       MHD_destroy_response(response);  
       return ret;
-    }
+    @}
   response = MHD_create_response_from_data(strlen(PAGE), PAGE,
 					   MHD_NO, MHD_NO);
   ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
   MHD_destroy_response(response);
   return ret;
-}
+@}
 @end example
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
