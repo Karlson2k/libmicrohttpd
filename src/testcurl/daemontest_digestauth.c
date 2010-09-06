@@ -78,7 +78,8 @@ ahc_echo (void *cls,
   int ret;
 
   username = MHD_digest_auth_get_username(connection);
-  if (username == NULL) 
+  if ( (username == NULL) ||
+       (0 != strcmp (username, "testuser")) )
     {
       response = MHD_create_response_from_data(strlen (DENIED), 
 					       DENIED,
