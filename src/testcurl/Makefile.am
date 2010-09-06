@@ -47,6 +47,11 @@ check_PROGRAMS = \
 noinst_PROGRAMS = \
   daemon_options_test
 
+if ENABLE_DAUTH
+  check_PROGRAMS += \
+	daemontest_digestauth
+endif
+
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libcurl_version_check.a
@@ -64,6 +69,12 @@ daemontest_get_SOURCES = \
 daemontest_get_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
+
+daemontest_digestauth_SOURCES = \
+  daemontest_digestauth.c
+daemontest_digestauth_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
 
 daemontest_get_sendfile_SOURCES = \
   daemontest_get_sendfile.c
