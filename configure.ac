@@ -191,6 +191,9 @@ AC_MSG_RESULT($have_inet6)
 # TCP_CORK
 AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
 
+# TCP_NOPUSH
+AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]]) 
+
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
 
@@ -303,7 +306,7 @@ AC_DEFINE_UNQUOTED([HAVE_GNUTLS], $gnutls, [We have gnutls])
 
 
 # optional: HTTPS support.  Enabled by default
-AC_MSG_CHECKING(whether to enable HTTPS support)
+AC_MSG_CHECKING(whether to disable HTTPS support)
 AC_ARG_ENABLE([https],
    [AS_HELP_STRING([--disable-https],
                [disable HTTPS support (default is NO)])],
