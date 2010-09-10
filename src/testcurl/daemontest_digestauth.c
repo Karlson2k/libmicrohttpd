@@ -118,6 +118,7 @@ ahc_echo (void *cls,
   return ret;
 }
 
+
 static int
 testDigestAuth ()
 {
@@ -158,10 +159,9 @@ testDigestAuth ()
   (void) close(fd);
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1337, NULL, NULL, &ahc_echo, PAGE,
-						MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
-						MHD_OPTION_DIGEST_AUTH_RAND_SIZE, sizeof(rnd),
-						MHD_OPTION_NONCE_NC_SIZE, 300,
-						MHD_OPTION_END);
+			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
+			MHD_OPTION_NONCE_NC_SIZE, 300,
+			MHD_OPTION_END);
   if (d == NULL)
     return 1;
   c = curl_easy_init ();

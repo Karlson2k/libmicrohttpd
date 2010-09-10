@@ -120,7 +120,7 @@ digest_calc_ha1(const char *alg,
 
 
 /**
- * calculate request-digest/response-digest as per RFC2617 spec 
+ * Calculate request-digest/response-digest as per RFC2617 spec 
  * 
  * @param ha1 H(A1)
  * @param nonce nonce from server
@@ -151,12 +151,17 @@ digest_calc_response(const char *ha1,
   MD5Init (&md5);
   MD5Update (&md5, method, strlen(method));
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen(uri));  
+  MD5Update (&md5, uri, strlen(uri)); 
+#if 0
   if (strcasecmp(qop, "auth-int") == 0) 
     {
+      /* This is dead code since the rest of this module does
+	 not support auth-int. */
       MD5Update (&md5, ":", 1);
-      MD5Update (&md5, hentity, strlen(hentity));
-    }  
+      if (hentity != NULL)
+	MD5Update (&md5, hentity, strlen(hentity));
+    }
+#endif  
   MD5Final (ha2, &md5);
   cvthex(ha2, MD5_DIGEST_SIZE, ha2hex);
   MD5Init (&md5);  
@@ -317,10 +322,14 @@ check_nonce_nc (struct MHD_Connection *connection,
       pthread_mutex_unlock(&connection->daemon->nnc_lock);
       return MHD_YES;
     }
-  if ( (nc >= connection->daemon->nnc[off].nc) ||
+  if ( (nc <= connection->daemon->nnc[off].nc) ||
        (0 != strcmp(connection->daemon->nnc[off].nonce, nonce)) )
     {
       pthread_mutex_unlock(&connection->daemon->nnc_lock);
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Stale nonce received.  If this happens a lot, you should probably increase the size of the nonce array.\n");
+#endif
       return MHD_NO;
     }
   connection->daemon->nnc[off].nc = nc;
@@ -433,8 +442,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   const char *header;
   char nonce[MAX_NONCE_LENGTH];
   char cnonce[MAX_NONCE_LENGTH];
-  /* char qop[15]; // Uncomment when supporting "auth-int" */  
-  const char * qop = "auth"; /* "auth-int" is not supported */
+  char qop[15]; /* auth,auth-int */
   char nc[20];
   char response[MAX_AUTH_RESPONSE_LENGTH];
   const char *hentity = NULL; /* "auth-int" is not supported */
@@ -525,8 +533,9 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
     if ( (0 == lookup_sub_value(cnonce,
 				sizeof (cnonce), 
 				header, "cnonce")) ||
-	 /*	 (0 == lookup_sub_value(qop, sizeof (qop), header, "qop")) || // Uncomment when supporting "auth-int" */
-	 (0 != strcmp (qop, "auth")) ||
+	 (0 == lookup_sub_value(qop, sizeof (qop), header, "qop")) ||
+	 ( (0 != strcmp (qop, "auth")) && 
+	   (0 != strcmp (qop, "")) ) ||
 	 (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
 	 (1 != sscanf (nc, "%u", &nci)) ||
 	 (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
@@ -626,5 +635,6 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
 			     response);  
   return ret;
 }
+
 
 /* end of digestauth.c */
