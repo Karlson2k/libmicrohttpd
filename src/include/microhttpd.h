@@ -1297,7 +1297,7 @@ int MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * 			to the username if found
  */
 char *
-MHD_digest_auth_get_username(struct MHD_Connection *connection);
+MHD_digest_auth_get_username (struct MHD_Connection *connection);
 
 
 /**
@@ -1313,11 +1313,11 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection);
  * 			MHD_INVALID_NONCE if nonce is invalid
  */
 int
-MHD_digest_auth_check(struct MHD_Connection *connection,
-		      const char *realm,
-		      const char *username,
-		      const char *password,
-		      unsigned int nonce_timeout);
+MHD_digest_auth_check (struct MHD_Connection *connection,
+		       const char *realm,
+		       const char *username,
+		       const char *password,
+		       unsigned int nonce_timeout);
 
 
 /**
@@ -1334,11 +1334,11 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
  * @return MHD_YES on success, MHD_NO otherwise
  */
 int
-MHD_queue_auth_fail_response(struct MHD_Connection *connection,
-			     const char *realm,
-			     const char *opaque,
-			     struct MHD_Response *response,
-			     int signal_stale);
+MHD_queue_auth_fail_response (struct MHD_Connection *connection,
+			      const char *realm,
+			      const char *opaque,
+			      struct MHD_Response *response,
+			      int signal_stale);
 
 
 /* ********************** generic query functions ********************** */
