@@ -32,8 +32,9 @@ You can use the following options to disable certain MHD features:
 --disable-https: no HTTPS / TLS / SSL support (significant reduction)
 --disable-messages: no error messages (they take space!)
 --disable-postprocessor: no MHD_PostProcessor API
+--disable-dauth: no digest authentication API
 
-The resulting binary should be about 32k depending on the platform.
+The resulting binary should be about 30-40k depending on the platform.
 
 
 Portability

@@ -1,3 +1,6 @@
+Fri Sep 10 14:47:11 CEST 2010
+	Releasing libmicrohttpd 0.9.1. -CG
+
 Fri Sep 10 14:29:37 CEST 2010
 	Adding proper nonce counter checking for digest authentication. -CG/AA
 
