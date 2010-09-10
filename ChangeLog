@@ -1,3 +1,6 @@
+Fri Sep 10 14:29:37 CEST 2010
+	Adding proper nonce counter checking for digest authentication. -CG/AA
+
 Sat Sep  4 21:55:52 CEST 2010
 	Digest authentication now seems to be working. -CG/AA
 

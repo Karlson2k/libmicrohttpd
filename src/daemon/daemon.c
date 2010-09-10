@@ -1374,7 +1374,11 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
 #ifdef DAUTH_SUPPORT
 	case MHD_OPTION_DIGEST_AUTH_RANDOM:
+	  daemon->digest_auth_rand_size = va_arg (ap, size_t);
 	  daemon->digest_auth_random = va_arg (ap, const char *);
+	  break;
+	case MHD_OPTION_NONCE_NC_SIZE:
+	  daemon->nonce_nc_size = va_arg (ap, unsigned int);
 	  break;
 #endif
 	case MHD_OPTION_LISTEN_SOCKET:
@@ -1407,6 +1411,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		    return MHD_NO;
 		  break;
 		  /* all options taking 'unsigned int' */
+		case MHD_OPTION_NONCE_NC_SIZE:
 		case MHD_OPTION_CONNECTION_LIMIT:
 		case MHD_OPTION_CONNECTION_TIMEOUT:
 		case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
@@ -1433,7 +1438,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_HTTPS_MEM_KEY:
 		case MHD_OPTION_HTTPS_MEM_CERT:
 		case MHD_OPTION_HTTPS_PRIORITIES:
-		case MHD_OPTION_DIGEST_AUTH_RANDOM:
 		case MHD_OPTION_ARRAY:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
@@ -1455,7 +1459,15 @@ parse_options_va (struct MHD_Daemon *daemon,
 						MHD_OPTION_END))
 		    return MHD_NO;
 		  break;
-		  
+		  /* options taking size_t-number followed by pointer */
+		case MHD_OPTION_DIGEST_AUTH_RANDOM:
+		  if (MHD_YES != parse_options (daemon,
+						servaddr,
+						opt,
+						(size_t) oa[i].value,
+						oa[i].ptr_value,
+						MHD_OPTION_END))
+		    return MHD_NO;		  
 		default:
 		  return MHD_NO;
 		}
@@ -1545,6 +1557,11 @@ MHD_start_daemon_va (unsigned int options,
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->unescape_callback = &MHD_http_unescape;
   retVal->connection_timeout = 0;       /* no timeout */
+#ifdef DAUTH_SUPPORT
+  retVal->digest_auth_rand_size = 0;
+  retVal->digest_auth_random = NULL;
+  retVal->nonce_nc_size = 4; /* tiny */
+#endif
 #if HAVE_MESSAGES
   retVal->custom_error_log =
     (void (*)(void *, const char *, va_list)) &vfprintf;
@@ -1578,24 +1595,61 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 
-  /* poll support currently only works with MHD_USE_THREAD_PER_CONNECTION */
-  if ( (0 != (options & MHD_USE_POLL)) && 
-       (0 == (options & MHD_USE_THREAD_PER_CONNECTION)) ) {
+#ifdef DAUTH_SUPPORT
+  if (retVal->nonce_nc_size > 0) 
+    {
+      if ( ( (size_t) (retVal->nonce_nc_size * sizeof(struct MHD_NonceNc))) / 
+	   sizeof(struct MHD_NonceNc) != retVal->nonce_nc_size)
+	{
 #if HAVE_MESSAGES
-      fprintf (stderr,
-               "MHD poll support only works with MHD_USE_THREAD_PER_CONNECTION\n");
+	  MHD_DLOG (retVal,
+		    "Specified value for NC_SIZE too large\n");
+#endif
+	  free (retVal);
+	  return NULL;	  
+	}
+      retVal->nnc = malloc (retVal->nonce_nc_size * sizeof(struct MHD_NonceNc));
+      if (NULL == retVal->nnc)
+	    {
+#if HAVE_MESSAGES
+	      MHD_DLOG (retVal,
+			"Failed to allocate memory for nonce-nc map: %s\n",
+			STRERROR (errno));
+#endif
+	      free (retVal);
+	      return NULL;
+	    }
+    }
+  if (0 != pthread_mutex_init (&retVal->nnc_lock, NULL))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (retVal,
+		"MHD failed to initialize nonce-nc mutex\n");
 #endif
       free (retVal);
       return NULL;
-  }
+    }
+#endif
 
-  /* Thread pooling currently works only with internal select thread model */
-  if ((0 == (options & MHD_USE_SELECT_INTERNALLY))
-      && (retVal->worker_pool_size > 0))
+  /* poll support currently only works with MHD_USE_THREAD_PER_CONNECTION */
+  if ( (0 != (options & MHD_USE_POLL)) && 
+       (0 == (options & MHD_USE_THREAD_PER_CONNECTION)) ) 
     {
 #if HAVE_MESSAGES
-      fprintf (stderr,
-               "MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n");
+      MHD_DLOG (retVal,
+		"MHD poll support only works with MHD_USE_THREAD_PER_CONNECTION\n");
+#endif
+      free (retVal);
+      return NULL;
+    }
+
+  /* Thread pooling currently works only with internal select thread model */
+  if ( (0 == (options & MHD_USE_SELECT_INTERNALLY)) && 
+       (retVal->worker_pool_size > 0) )
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (retVal,
+		"MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n");
 #endif
       free (retVal);
       return NULL;
@@ -1605,8 +1659,8 @@ MHD_start_daemon_va (unsigned int options,
   if (0 != (options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     {
 #if HAVE_MESSAGES
-      fprintf (stderr,
-               "Threaded operations are not supported on Symbian.\n");
+      MHD_DLOG (retVal,
+		"Threaded operations are not supported on Symbian.\n");
 #endif
       free (retVal);
       return NULL;
@@ -1620,7 +1674,8 @@ MHD_start_daemon_va (unsigned int options,
 #else
       {
 #if HAVE_MESSAGES
-	fprintf (stderr, "AF_INET6 not supported\n");
+	MHD_DLOG (retVal, 
+		  "AF_INET6 not supported\n");
 #endif
 	free (retVal);
 	return NULL;
@@ -1632,7 +1687,9 @@ MHD_start_daemon_va (unsigned int options,
 	{
 #if HAVE_MESSAGES
 	  if ((options & MHD_USE_DEBUG) != 0)
-	    FPRINTF (stderr, "Call to socket failed: %s\n", STRERROR (errno));
+	    MHD_DLOG (retVal, 
+		      "Call to socket failed: %s\n", 
+		      STRERROR (errno));
 #endif
 	  free (retVal);
 	  return NULL;
@@ -1643,7 +1700,9 @@ MHD_start_daemon_va (unsigned int options,
 		       &on, sizeof (on)) < 0) && ((options & MHD_USE_DEBUG) != 0))
 	{
 #if HAVE_MESSAGES
-	  FPRINTF (stderr, "setsockopt failed: %s\n", STRERROR (errno));
+	  MHD_DLOG (retVal, 
+		    "setsockopt failed: %s\n", 
+		    STRERROR (errno));
 #endif
 	}
       
@@ -1701,8 +1760,10 @@ MHD_start_daemon_va (unsigned int options,
 	{
 #if HAVE_MESSAGES
 	  if ((options & MHD_USE_DEBUG) != 0)
-	    FPRINTF (stderr,
-		     "Failed to bind to port %u: %s\n", port, STRERROR (errno));
+	    MHD_DLOG (retVal,
+		      "Failed to bind to port %u: %s\n", 
+		      port, 
+		      STRERROR (errno));
 #endif
 	  CLOSE (socket_fd);
 	  free (retVal);
@@ -1713,8 +1774,9 @@ MHD_start_daemon_va (unsigned int options,
 	{
 #if HAVE_MESSAGES
 	  if ((options & MHD_USE_DEBUG) != 0)
-	    FPRINTF (stderr,
-		     "Failed to listen for connections: %s\n", STRERROR (errno));
+	    MHD_DLOG (retVal,
+		      "Failed to listen for connections: %s\n", 
+		      STRERROR (errno));
 #endif
 	  CLOSE (socket_fd);
 	  free (retVal);
@@ -1731,10 +1793,10 @@ MHD_start_daemon_va (unsigned int options,
     {
 #if HAVE_MESSAGES
       if ((options & MHD_USE_DEBUG) != 0)
-        FPRINTF (stderr,
-                 "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-                 socket_fd,
-                 FD_SETSIZE);
+        MHD_DLOG (retVal,
+		  "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+		  socket_fd,
+		  FD_SETSIZE);
 #endif
       CLOSE (socket_fd);
       free (retVal);
@@ -1758,7 +1820,8 @@ MHD_start_daemon_va (unsigned int options,
   if ((0 != (options & MHD_USE_SSL)) && (0 != MHD_TLS_init (retVal)))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (retVal, "Failed to initialize TLS support\n");
+      MHD_DLOG (retVal, 
+		"Failed to initialize TLS support\n");
 #endif
       CLOSE (socket_fd);
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
@@ -1774,7 +1837,8 @@ MHD_start_daemon_va (unsigned int options,
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal,
-                "Failed to create listen thread: %s\n", STRERROR (res_thread_create));
+                "Failed to create listen thread: %s\n", 
+		STRERROR (res_thread_create));
 #endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
@@ -2011,6 +2075,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  abort();
 	}
     }
+#endif
+
+#ifdef DAUTH_SUPPORT
+  free (daemon->nnc);
+  pthread_mutex_destroy (&daemon->nnc_lock);
 #endif
   pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
   free (daemon);

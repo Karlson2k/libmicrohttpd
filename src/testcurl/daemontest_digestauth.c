@@ -129,7 +129,7 @@ testDigestAuth ()
   size_t len;
   size_t off = 0;
   char buf[2048];
-  char rnd[9];
+  char rnd[8];
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -156,10 +156,11 @@ testDigestAuth ()
 	  off += len;
 	}
   (void) close(fd);
-  rnd[8] = '\0';
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1337, NULL, NULL, &ahc_echo, PAGE,
 						MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
+						MHD_OPTION_DIGEST_AUTH_RAND_SIZE, sizeof(rnd),
+						MHD_OPTION_NONCE_NC_SIZE, 300,
 						MHD_OPTION_END);
   if (d == NULL)
     return 1;

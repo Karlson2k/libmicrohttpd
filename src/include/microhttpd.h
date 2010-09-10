@@ -524,11 +524,21 @@ enum MHD_OPTION
 
   /**
    * Memory pointer for the random values to be used by the Digest
-   * Auth module. This option should be followed by an "const char *"
+   * Auth module. This option should be followed by two arguments.
+   * First an integer of type  "size_t" which specifies the size
+   * of the buffer pointed to by the second argument in bytes.  
+   * Note that the application must ensure that the buffer of the
+   * second argument remains allocated and unmodified while the
+   * deamon is running.
+   */
+  MHD_OPTION_DIGEST_AUTH_RANDOM = 17,
+
+  /**
+   * Size of the internal array holding the map of the nonce and
+   * the nonce counter. This option should be followed by a "unsigend int"
    * argument.
    */
-  MHD_OPTION_DIGEST_AUTH_RANDOM = 17
-
+  MHD_OPTION_NONCE_NC_SIZE = 18
 };
 
 

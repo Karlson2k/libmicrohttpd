@@ -457,13 +457,37 @@ specified, ``NORMAL'' is used.
 @cindex digest auth
 @cindex random
 Digest Authentication nonce's seed.
-This option must be followed by an "const char *" argument
-specifying a NULL terminated array of randomly generated values
-to be used in generating the server nonce when using digest authentication.
-It is a MUST to supply these values before utilizing any of MHD
-digest authentication functions, as otherwise, it will read from
-an arbitrary address in memory which results in an undefined behavior.
-  
+
+This option should be followed by two arguments.  First an integer of
+type "size_t" which specifies the size of the buffer pointed to by the
+second argument in bytes.  Note that the application must ensure that
+the buffer of the second argument remains allocated and unmodified
+while the deamon is running.  For security, you SHOULD provide a fresh
+random nonce when using MHD with Digest Authentication.  
+
+@item MHD_OPTION_NONCE_NC_SIZE
+@cindex digest auth
+@cindex replay attack
+
+Size of an array of nonce and nonce counter map.  This option must be
+followed by an "unsigned int" argument that have the size (number of
+elements) of a map of a nonce and a nonce-counter.  If this option
+is not specified, a default value of 4 will be used (which might be
+too small for servers handling many requests).  If you do not use
+digest authentication at all, you can specify a value of zero to
+save some memory.
+
+You should calculate the value of NC_SIZE based on the number of
+connections per second multiplied by your expected session duration
+plus a factor of about two for hash table collisions.  For example, if
+you expect 100 digest-authenticated connections per second and the
+average user to stay on your site for 5 minutes, then you likely need
+a value of about 60000.  On the other hand, if you can only expect
+only 10 digest-authenticated connections per second, tolerate browsers
+getting a fresh nonce for each request and expect a HTTP request
+latency of 250 ms, then a value of about 5 should be fine.
+
+
 @item MHD_OPTION_LISTEN_SOCKET
 @cindex systemd
 Listen socket to use.  Pass a listen socket for MHD to use

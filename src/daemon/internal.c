@@ -101,13 +101,6 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 }
 #endif
 
-void
-MHD_tls_log_func (int level, const char *str)
-{
-#ifdef HAVE_MESSAGES
-  FPRINTF (stderr, "|<%d>| %s", level, str);
-#endif
-}
 
 /**
  * Process escape sequences ('+'=space, %HH) Updates val in place; the

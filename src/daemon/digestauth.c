@@ -23,6 +23,7 @@
  * @author Amr Ali
  */
 
+#include "platform.h"
 #include "internal.h"
 #include "md5.h"
 
@@ -42,11 +43,6 @@
  * Maximum length of a realm for digest authentication.
  */
 #define MAX_REALM_LENGTH 256
-
-/**
- * Maximum length of a nonce in digest authentication.
- */
-#define MAX_NONCE_LENGTH 128
 
 /**
  * Maximum length of the response in digest authentication.
@@ -82,12 +78,12 @@ cvthex(const unsigned char *bin,
  * calculate H(A1) as per RFC2617 spec and store the
  * result in 'sessionkey'.
  *
- * @param alg FIXME: document
- * @param username FIXME: document
- * @param realm FIXME: document
- * @param password FIXME: document
- * @param nonce FIXME: document
- * @param cnonce FIXME: document
+ * @param alg The hash algorithm used, can be "md5" or "md5-sess"
+ * @param username A `char *' pointer to the username value
+ * @param realm A `char *' pointer to the realm value
+ * @param password A `char *' pointer to the password value
+ * @param nonce A `char *' pointer to the nonce value
+ * @param cnonce A `char *' pointer to the cnonce value
  * @param sessionkey pointer to buffer of HASH_MD5_HEX_LEN+1 bytes
  */
 static void
@@ -277,6 +273,63 @@ lookup_sub_value(char *dest,
 
 
 /**
+ * Check nonce-nc map array with either new nonce counter
+ * or a whole new nonce.
+ *
+ * @param connection The MHD connection structure
+ * @param nonce A pointer that referenced a zero-terminated array of nonce
+ * @param nc The nonce counter, zero to add the nonce to the array
+ * @return MHD_YES if successful, MHD_NO if invalid (or we have no NC array)
+ */
+static int
+check_nonce_nc (struct MHD_Connection *connection,
+		const char *nonce,
+		unsigned int nc)
+{
+  uint32_t off;
+  uint32_t mod;
+  const char *np;
+
+  mod = connection->daemon->nonce_nc_size;
+  if (0 == mod)
+    return MHD_NO; /* no array! */
+  /* super-fast xor-based "hash" function for HT lookup in nonce array */
+  off = 0;
+  np = nonce;
+  while (*np != '\0')
+    {
+      off = (off << 8) | (*np & (off >> 24));
+      np++;
+    }
+  off = off % mod;
+  /*
+   * Look for the nonce, if it does exist and its corresponding
+   * nonce counter is less than the current nonce counter by 1,
+   * then only increase the nonce counter by one.
+   */
+  
+  pthread_mutex_lock(&connection->daemon->nnc_lock);
+  if (nc == 0)
+    {
+      strcpy(connection->daemon->nnc[off].nonce, 
+	     nonce);
+      connection->daemon->nnc[off].nc = 0;  
+      pthread_mutex_unlock(&connection->daemon->nnc_lock);
+      return MHD_YES;
+    }
+  if ( (nc >= connection->daemon->nnc[off].nc) ||
+       (0 != strcmp(connection->daemon->nnc[off].nonce, nonce)) )
+    {
+      pthread_mutex_unlock(&connection->daemon->nnc_lock);
+      return MHD_NO;
+    }
+  connection->daemon->nnc[off].nc = nc;
+  pthread_mutex_unlock(&connection->daemon->nnc_lock);
+  return MHD_YES;
+}
+
+
+/**
  * Get the username from the authorization header sent by the client
  *
  * @param connection The MHD connection structure
@@ -316,6 +369,7 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
  * @param nonce_time The amount of time in seconds for a nonce to be invalid
  * @param method HTTP method
  * @param rnd A pointer to a character array for the random seed
+ * @param rnd_size The size of the random seed array
  * @param uri HTTP URI
  * @param realm A string of characters that describes the realm of auth.
  * @param nonce A pointer to a character array for the nonce to put in
@@ -324,6 +378,7 @@ static void
 calculate_nonce (uint32_t nonce_time,
 		 const char *method,
 		 const char *rnd,
+		 unsigned int rnd_size,
 		 const char *uri,
 		 const char *realm,
 		 char *nonce)
@@ -342,7 +397,8 @@ calculate_nonce (uint32_t nonce_time,
   MD5Update(&md5, ":", 1);
   MD5Update(&md5, method, strlen(method));
   MD5Update(&md5, ":", 1);
-  MD5Update(&md5, rnd, strlen(rnd));
+  if (rnd_size > 0)
+    MD5Update(&md5, rnd, rnd_size);
   MD5Update(&md5, ":", 1);
   MD5Update(&md5, uri, strlen(uri));
   MD5Update(&md5, ":", 1);
@@ -388,6 +444,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   uint32_t nonce_time;
   uint32_t t;
   size_t left; /* number of characters left in 'header' for 'uri' */
+  unsigned int nci;
 
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND,
@@ -436,7 +493,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
       return MHD_NO;
       
     /* 8 = 4 hexadecimal numbers for the timestamp */  
-    nonce_time = strtoul(nonce + len - 8, 0, 16);  
+    nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);  
     t = (uint32_t) time(NULL);    
     /*
      * First level vetting for the nonce validity
@@ -449,14 +506,15 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
     calculate_nonce (nonce_time,
 		     connection->method,
 		     connection->daemon->digest_auth_random,
+		     connection->daemon->digest_auth_rand_size,
 		     uri,
 		     realm,
 		     noncehashexp);
     /*
      * Second level vetting for the nonce validity
      * if the timestamp attached to the nonce is valid
-     * and possibility fabricated (in case of an attack)
-     * the attacker must also know the password to be
+     * and possibly fabricated (in case of an attack)
+     * the attacker must also know the random seed to be
      * able to generate a "sane" nonce, which if he does
      * not, the nonce fabrication process going to be
      * very hard to achieve.
@@ -468,8 +526,19 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 				sizeof (cnonce), 
 				header, "cnonce")) ||
 	 /*	 (0 == lookup_sub_value(qop, sizeof (qop), header, "qop")) || // Uncomment when supporting "auth-int" */
+	 (0 != strcmp (qop, "auth")) ||
 	 (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
+	 (1 != sscanf (nc, "%u", &nci)) ||
 	 (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
+      return MHD_NO;
+    
+    /*
+     * Checking if that combination of nonce and nc is sound
+     * and not a replay attack attempt. Also adds the nonce
+     * to the nonce-nc map if it does not exist there.
+     */
+    
+    if (MHD_YES != check_nonce_nc (connection, nonce, nci))
       return MHD_NO;
     
     digest_calc_ha1("md5",
@@ -514,15 +583,22 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   size_t hlen;
   char nonce[HASH_MD5_HEX_LEN + 9];
 
-  
   /* Generating the server nonce */  
   calculate_nonce ((uint32_t) time(NULL),
 		   connection->method,
 		   connection->daemon->digest_auth_random,
+		   connection->daemon->digest_auth_rand_size,
 		   connection->url,
 		   realm,
 		   nonce);
-  
+  if (MHD_YES != check_nonce_nc (connection, nonce, 0))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Could not register nonce (is the nonce array size zero?).\n");
+#endif
+      return MHD_NO;  
+    }
   /* Building the authentication header */
   hlen = snprintf(NULL,
 		  0,

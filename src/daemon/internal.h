@@ -81,7 +81,8 @@ enum MHD_PollActions
 /**
  * Socket descriptor and events we care about.
  */
-struct MHD_Pollfd {
+struct MHD_Pollfd 
+{
   /**
    * Socket descriptor.
    */
@@ -94,6 +95,33 @@ struct MHD_Pollfd {
 };
 
 
+/**
+ * Maximum length of a nonce in digest authentication.
+ * 32(MD5 Hex) + 8(Timestamp Hex) + 1(NULL)
+ */
+#define MAX_NONCE_LENGTH 41
+
+
+/**
+ * A structure representing the internal holder of the
+ * nonce-nc map.
+ */
+struct MHD_NonceNc 
+{
+  
+  /**
+   * Nonce counter, a value that increases for each subsequent
+   * request for the same nonce.
+   */
+  unsigned int nc;
+
+  /**
+   * Nonce value: 
+   */
+  char nonce[MAX_NONCE_LENGTH];
+
+};
+
 #if HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug
@@ -102,7 +130,6 @@ struct MHD_Pollfd {
 void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
 
 #endif
-void MHD_tls_log_func (int level, const char *str);
 
 /**
  * Process escape sequences ('+'=space, %HH) Updates val in place; the
@@ -775,9 +802,39 @@ struct MHD_Daemon
 #endif
 
   /**
+   * Pointer to master daemon (NULL if this is the master)
+   */
+  struct MHD_Daemon *master;
+
+  /**
+   * Worker daemons (one per thread)
+   */
+  struct MHD_Daemon *worker_pool;
+
+  /**
+   * Table storing number of connections per IP
+   */
+  void *per_ip_connection_count;
+
+  /**
+   * Size of the per-connection memory pools.
+   */
+  size_t pool_size;
+
+  /**
+   * Number of worker daemons
+   */
+  unsigned int worker_pool_size;
+
+  /**
    * PID of the select thread (if we have internal select)
    */
   pthread_t pid;
+
+  /**
+   * Mutex for per-IP connection counts
+   */
+  pthread_mutex_t per_ip_connection_mutex;
 
   /**
    * Listen socket.
@@ -788,11 +845,6 @@ struct MHD_Daemon
    * Are we shutting down?
    */
   int shutdown;
-
-  /**
-   * Size of the per-connection memory pools.
-   */
-  size_t pool_size;
 
   /**
    * Limit on the number of parallel connections.
@@ -810,16 +862,6 @@ struct MHD_Daemon
    * unlimited.
    */
   unsigned int per_ip_connection_limit;
-
-  /**
-   * Table storing number of connections per IP
-   */
-  void *per_ip_connection_count;
-
-  /**
-   * Mutex for per-IP connection counts
-   */
-  pthread_mutex_t per_ip_connection_mutex;
 
   /**
    * Daemon's options.
@@ -866,26 +908,34 @@ struct MHD_Daemon
 #endif
 
 #ifdef DAUTH_SUPPORT
+
   /**
    * Character array of random values.
    */
   const char *digest_auth_random;
 
+  /**
+   * An array that contains the map nonce-nc.
+   */
+  struct MHD_NonceNc *nnc;
+
+  /**
+   * A rw-lock for synchronizing access to `nnc'.
+   */
+  pthread_mutex_t nnc_lock;
+
+  /**
+   * Size of `digest_auth_random.
+   */
+  unsigned int digest_auth_rand_size;
+
+  /**
+   * Size of the nonce-nc array.
+   */
+  unsigned int nonce_nc_size;
+
 #endif
-  /**
-   * Pointer to master daemon (NULL if this is the master)
-   */
-  struct MHD_Daemon *master;
 
-  /**
-   * Worker daemons (one per thread)
-   */
-  struct MHD_Daemon *worker_pool;
-
-  /**
-   * Number of worker daemons
-   */
-  unsigned int worker_pool_size;
 };
 
 

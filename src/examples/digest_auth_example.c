@@ -90,7 +90,7 @@ int
 main (int argc, char *const *argv)
 {
   int fd;
-  char rnd[9];
+  char rnd[8];
   size_t len;
   size_t off;
   struct MHD_Daemon *d;
@@ -123,11 +123,11 @@ main (int argc, char *const *argv)
       off += len;
     }
   (void) close(fd);
-  rnd[8] = '\0';
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE,
-			MHD_OPTION_DIGEST_AUTH_RANDOM, rnd,
+			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof(rnd), rnd,
+			MHD_OPTION_NONCE_NC_SIZE, 300,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
