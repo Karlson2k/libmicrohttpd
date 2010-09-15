@@ -1643,6 +1643,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                 "Received `%s' request without `%s' header.\n",
                 MHD_HTTP_VERSION_1_1, MHD_HTTP_HEADER_HOST);
 #endif
+      EXTRA_CHECK (connection->response == NULL);
       response =
         MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
                                        REQUEST_LACKS_HOST, MHD_NO, MHD_NO);

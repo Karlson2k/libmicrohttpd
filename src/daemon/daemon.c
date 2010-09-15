@@ -952,7 +952,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 		  abort();
 		}
             }
-          MHD_destroy_response (pos->response);
           MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
           if (pos->tls_session != NULL)
