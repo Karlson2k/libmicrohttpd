@@ -190,6 +190,13 @@ extern "C"
 #define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED 509
 #define MHD_HTTP_NOT_EXTENDED 510
 
+/**
+ * Flag to be "OR"ed with MHD_HTTP status code for
+ * SHOUTcast.  This will cause the response to begin
+ * with the SHOUTcast "ICY" line instad of "HTTP".
+ */ 
+#define MHD_ICY_FLAG ((uint32_t)(1 << 31))
+
 /* See also: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html */
 #define MHD_HTTP_HEADER_ACCEPT "Accept"
 #define MHD_HTTP_HEADER_ACCEPT_CHARSET "Accept-Charset"

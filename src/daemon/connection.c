@@ -588,6 +588,7 @@ build_header_response (struct MHD_Connection *connection)
   char *data;
   enum MHD_ValueKind kind;
   const char *reason_phrase;
+  uint32_t rc;
 
   EXTRA_CHECK (NULL != connection->version);
   if (0 == strlen(connection->version))
@@ -602,14 +603,17 @@ build_header_response (struct MHD_Connection *connection)
   if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
     {
       add_extra_headers (connection);
-      reason_phrase = MHD_get_reason_phrase_for (connection->responseCode);
+      rc = connection->responseCode & (~MHD_ICY_FLAG);
+      reason_phrase = MHD_get_reason_phrase_for (rc);
       SPRINTF (code,
                "%s %u %s\r\n",
-               (0 == strcasecmp (MHD_HTTP_VERSION_1_0,
-				 connection->version)) 
-	       ? MHD_HTTP_VERSION_1_0 
-	       : MHD_HTTP_VERSION_1_1,
-	       connection->responseCode, 
+	       (0 != (connection->responseCode & MHD_ICY_FLAG))
+	       ? "ICY" 
+	       : ( (0 == strcasecmp (MHD_HTTP_VERSION_1_0,
+				     connection->version)) 
+		   ? MHD_HTTP_VERSION_1_0 
+		   : MHD_HTTP_VERSION_1_1_),
+	       rc, 
 	       reason_phrase);
       off = strlen (code);
       /* estimate size */
