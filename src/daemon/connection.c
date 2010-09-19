@@ -612,7 +612,7 @@ build_header_response (struct MHD_Connection *connection)
 	       : ( (0 == strcasecmp (MHD_HTTP_VERSION_1_0,
 				     connection->version)) 
 		   ? MHD_HTTP_VERSION_1_0 
-		   : MHD_HTTP_VERSION_1_1_),
+		   : MHD_HTTP_VERSION_1_1),
 	       rc, 
 	       reason_phrase);
       off = strlen (code);
