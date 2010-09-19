@@ -94,9 +94,13 @@ extern "C"
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
+#ifdef __MINGW32__
+#include <ws2tcpip.h>
+#else
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
 #endif
 
 /**
