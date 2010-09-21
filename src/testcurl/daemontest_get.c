@@ -32,10 +32,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/socket.h>
+
+#ifdef __MINGW32__
+#define usleep(usec) (Sleep ((usec) / 1000),0)
+#endif
 
 #ifndef WINDOWS
 #include <unistd.h>
+#include <sys/socket.h>
 #endif
 
 static int oneone;

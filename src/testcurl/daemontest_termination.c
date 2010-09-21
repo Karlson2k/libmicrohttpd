@@ -25,18 +25,21 @@
  */
 #define PORT	12345
 
+#include "platform.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/select.h>
-#include <sys/socket.h>
 #include <microhttpd.h>
 #include <unistd.h>
 #include <curl/curl.h>
 
+#ifndef __MINGW32__
+#include <sys/select.h>
+#include <sys/socket.h>
+#endif
 
 static int
 connection_handler (void *cls,
