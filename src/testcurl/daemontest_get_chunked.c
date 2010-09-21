@@ -111,6 +111,8 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   responseptr = malloc (sizeof (struct MHD_Response *));
+  if (responseptr == NULL)
+    return MHD_NO;
   response = MHD_create_response_from_callback (-1,
                                                 1024,
                                                 &crc, responseptr, &crcf);

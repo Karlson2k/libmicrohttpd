@@ -93,7 +93,11 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
   datalen = 2 /* version */ + TLS_RANDOM_SIZE + (session_id_len + 1);
 
   data = MHD_gnutls_malloc (datalen);
-
+  if (data == NULL)
+      {
+	 free (cbc.buf);
+	 return -1;
+      }
   hver = MHD_gtls_version_max (session);
   data[pos++] = MHD_gtls_version_get_major (hver);
   data[pos++] = MHD_gtls_version_get_minor (hver);

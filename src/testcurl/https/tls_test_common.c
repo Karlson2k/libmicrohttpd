@@ -372,9 +372,18 @@ setup_session (gnutls_session_t * session,
   gnutls_certificate_allocate_credentials (xcred);
   key->size = strlen (srv_key_pem);
   key->data = malloc (key->size);
+  if (key->data == NULL) 
+     {
+	return -1;
+     }
   memcpy (key->data, srv_key_pem, key->size);
   cert->size = strlen (srv_self_signed_cert_pem);
   cert->data = malloc (cert->size);
+  if (cert->data == NULL)
+    {
+	free (key->data); 
+	return -1;
+    }
   memcpy (cert->data, srv_self_signed_cert_pem, cert->size);
   gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
 				       GNUTLS_X509_FMT_PEM);
@@ -382,7 +391,10 @@ setup_session (gnutls_session_t * session,
   ret = gnutls_priority_set_direct (*session,
 				    "NORMAL", &err_pos);
   if (ret < 0)
-    return -1;
+    {
+       free (key->data);
+       return -1;
+    }
   gnutls_credentials_set (*session, 
 			  GNUTLS_CRD_CERTIFICATE, 
 			  xcred);

@@ -456,6 +456,7 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   put_buffer = malloc (PUT_SIZE);
+  if (NULL == put_buffer) return 1;
   memset (put_buffer, 1, PUT_SIZE);
   errorCount += testInternalPut ();
   errorCount += testMultithreadedPut ();

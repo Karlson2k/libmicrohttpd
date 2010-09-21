@@ -112,6 +112,11 @@ testLongUrlGet ()
     return 1;
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
+  if (url == NULL)
+    {
+	MHD_stop_daemon (d);
+ 	return 1;
+    }
   memset (url, 'a', VERY_LONG);
   url[VERY_LONG - 1] = '\0';
   memcpy (url, "http://localhost:1080/", strlen ("http://localhost:1080/"));
@@ -178,6 +183,11 @@ testLongHeaderGet ()
     return 16;
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
+  if (url == NULL)
+     {
+	MHD_stop_daemon (d);
+	return 16;
+     }
   memset (url, 'a', VERY_LONG);
   url[VERY_LONG - 1] = '\0';
   url[VERY_LONG / 2] = ':';
