@@ -25,8 +25,8 @@
 #include "platform.h"
 #include <microhttpd.h>
 
-static int
-data_generator (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+data_generator (void *cls, uint64_t pos, char *buf, size_t max)
 {
   if (max < 80)
     return 0;

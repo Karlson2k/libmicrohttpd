@@ -30,8 +30,8 @@
 
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
-static int
-file_reader (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   FILE *file = cls;
 
@@ -54,8 +54,8 @@ dir_free_callback (void *cls)
     closedir (dir);
 }
 
-static int
-dir_reader (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+dir_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   DIR *dir = cls;
   struct dirent *e;

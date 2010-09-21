@@ -866,6 +866,8 @@ typedef int
  *        libmicrohttpd guarantees that "pos" will be
  *        the sum of all non-negative return values
  *        obtained from the content reader so far.
+ * @param buf where to copy the data
+ * @param max maximum number of bytes to copy to buf (size of buf)
  * @return -1 for the end of transmission (or on error);
  *  if a content transfer size was pre-set and the callback
  *  has provided fewer than that amount of data,
@@ -876,11 +878,11 @@ typedef int
  *  (possibly allowing the client to perform additional
  *  requests using the same TCP connection).
  */
-typedef int
+typedef ssize_t
   (*MHD_ContentReaderCallback) (void *cls,
 				uint64_t pos,
 				char *buf,
-				int max);
+				size_t max);
 
 /**
  * This method is called by libmicrohttpd if we

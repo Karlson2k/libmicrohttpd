@@ -61,8 +61,8 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
  * MHD content reader callback that returns
  * data in chunks.
  */
-static int
-crc (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+crc (void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct MHD_Response **responseptr = cls;
 

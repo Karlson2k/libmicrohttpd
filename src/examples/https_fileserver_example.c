@@ -95,8 +95,8 @@ const char key_pem[] =
   "eRJ6DxULPxABytJrYCRrNqmXi5TCiqR2mtfalEMOPxz8rUU8dYyx\n"
   "-----END RSA PRIVATE KEY-----\n";
 
-static int
-file_reader (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   FILE *file = cls;
 

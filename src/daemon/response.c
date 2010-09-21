@@ -216,8 +216,8 @@ MHD_create_response_from_callback (uint64_t size,
  * @param max number of bytes to write at most
  * @return number of bytes written
  */
-static int
-file_reader (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t
+file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct MHD_Response *response = cls;
   int ret;
