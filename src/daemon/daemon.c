@@ -110,9 +110,13 @@ MHD_PanicCallback mhd_panic;
  */
 void *mhd_panic_cls;
 
+
 /**
  * Trace up to and return master daemon. If the supplied daemon
  * is a master, then return the daemon itself.
+ *
+ * @param daemon handle to a daemon 
+ * @return master daemon handle
  */
 static struct MHD_Daemon*
 MHD_get_master (struct MHD_Daemon *daemon)
@@ -127,19 +131,38 @@ MHD_get_master (struct MHD_Daemon *daemon)
  */
 struct MHD_IPCount
 {
+  /**
+   * Address family. AF_INET or AF_INET6 for now.
+   */
   int family;
+
+  /**
+   * Actual address.
+   */
   union
   {
+    /**
+     * IPv4 address.
+     */ 
     struct in_addr ipv4;
 #if HAVE_IPV6
+    /**
+     * IPv6 address.
+     */ 
     struct in6_addr ipv6;
 #endif
   } addr;
+
+  /**
+   * Counter.
+   */
   unsigned int count;
 };
 
 /**
  * Lock shared structure for IP connection counts
+ *
+ * @param daemon handle to daemon where lock is
  */
 static void
 MHD_ip_count_lock(struct MHD_Daemon *daemon)
@@ -155,6 +178,8 @@ MHD_ip_count_lock(struct MHD_Daemon *daemon)
 
 /**
  * Unlock shared structure for IP connection counts
+ *
+ * @param daemon handle to daemon where lock is
  */
 static void
 MHD_ip_count_unlock(struct MHD_Daemon *daemon)
@@ -172,6 +197,10 @@ MHD_ip_count_unlock(struct MHD_Daemon *daemon)
  * Tree comparison function for IP addresses (supplied to tsearch() family).
  * We compare everything in the struct up through the beginning of the
  * 'count' field.
+ * 
+ * @param a1 first address to compare
+ * @param a2 second address to compare
+ * @return -1, 0 or 1 depending on result of compare
  */
 static int
 MHD_ip_addr_compare(const void *a1, const void *a2)
@@ -180,11 +209,15 @@ MHD_ip_addr_compare(const void *a1, const void *a2)
 }
 
 /**
- * Parse address and initialize 'key' using the address. Returns MHD_YES
- * on success and MHD_NO otherwise (e.g., invalid address type).
+ * Parse address and initialize 'key' using the address.
+ *
+ * @param addr address to parse
+ * @param addrlen number of bytes in addr
+ * @param key where to store the parsed address
+ * @return MHD_YES on success and MHD_NO otherwise (e.g., invalid address type)
  */
 static int
-MHD_ip_addr_to_key(struct sockaddr *addr, socklen_t addrlen,
+MHD_ip_addr_to_key(const struct sockaddr *addr, socklen_t addrlen,
                    struct MHD_IPCount *key)
 {
   memset(key, 0, sizeof(*key));
@@ -216,12 +249,16 @@ MHD_ip_addr_to_key(struct sockaddr *addr, socklen_t addrlen,
 /**
  * Check if IP address is over its limit.
  *
+ * @param daemon handle to daemon where connection counts are tracked
+ * @param addr address to add (or increment counter)
+ * @param addrlen number of bytes in addr
  * @return Return MHD_YES if IP below limit, MHD_NO if IP has surpassed limit.
  *   Also returns MHD_NO if fails to allocate memory.
  */
 static int
 MHD_ip_limit_add(struct MHD_Daemon *daemon,
-                 struct sockaddr *addr, socklen_t addrlen)
+                 const struct sockaddr *addr,
+		 socklen_t addrlen)
 {
   struct MHD_IPCount *key;
   void *node;
@@ -279,10 +316,15 @@ MHD_ip_limit_add(struct MHD_Daemon *daemon,
 /**
  * Decrement connection count for IP address, removing from table
  * count reaches 0
+ *
+ * @param daemon handle to daemon where connection counts are tracked
+ * @param addr address to remove (or decrement counter)
+ * @param addrlen number of bytes in addr
  */
 static void
 MHD_ip_limit_del(struct MHD_Daemon *daemon,
-                 struct sockaddr *addr, socklen_t addrlen)
+                 const struct sockaddr *addr,
+		 socklen_t addrlen)
 {
   struct MHD_IPCount search_key;
   struct MHD_IPCount *found_key;
@@ -341,7 +383,7 @@ static pthread_mutex_t MHD_gnutls_init_mutex;
 /**
  * Callback for receiving data from the socket.
  *
- * @param conn the MHD connection structure
+ * @param connection the MHD connection structure
  * @param other where to write received data to
  * @param i maximum size of other (in bytes)
  * @return number of bytes actually received
@@ -364,7 +406,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 /**
  * Callback for writing data to the socket.
  *
- * @param conn the MHD connection structure
+ * @param connection the MHD connection structure
  * @param other data to write
  * @param i number of bytes to write
  * @return actual number of bytes written
@@ -388,6 +430,7 @@ send_tls_adapter (struct MHD_Connection *connection,
 /**
  * Read and setup our certificate and key.
  *
+ * @param daemon handle to daemon to initialize
  * @return 0 on success
  */
 static int
@@ -417,6 +460,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 /**
  * Initialize security aspects of the HTTPS daemon
  *
+ * @param daemon handle to daemon to initialize
  * @return 0 on success
  */
 static int
@@ -491,7 +535,10 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 
 /**
  * Main function of the thread that handles an individual
- * connection when MHD_USE_THREAD_PER_CONNECTION.
+ * connection when MHD_USE_THREAD_PER_CONNECTION is set.
+ * 
+ * @param data the 'struct MHD_Connection' this thread will handle
+ * @return always NULL
  */
 static void *
 MHD_handle_connection (void *data)
@@ -709,6 +756,9 @@ socket_set_nonblocking (int fd)
  * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
  * accept policy callback.
+ * 
+ * @param daemon handle with the listen socket
+ * @return MHD_YES on success
  */
 static int
 MHD_accept_connection (struct MHD_Daemon *daemon)
@@ -919,6 +969,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
  * Free resources associated with all closed connections.
  * (destroy responses, free buffers, etc.).  A connection
  * is known to be closed if the socket_fd is -1.
+ *
+ * @param daemon daemon to clean up
  */
 static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon)
@@ -1022,6 +1074,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
 /**
  * Main select call.
  *
+ * @param daemon daemon to run select loop for
  * @param may_block YES if blocking, NO if non-blocking
  * @return MHD_NO on serious errors, MHD_YES on success
  */
@@ -1131,6 +1184,8 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
 
 /**
  * Poll for new connection. Used only with THREAD_PER_CONNECTION
+ *
+ * @param daemon daemon to run poll loop for
  */
 static int
 MHD_poll (struct MHD_Daemon *daemon)
@@ -1190,6 +1245,9 @@ MHD_run (struct MHD_Daemon *daemon)
 /**
  * Thread that runs the select loop until the daemon
  * is explicitly shut down.
+ *
+ * @param cls 'struct MHD_Deamon' to run select loop in a thread for
+ * @return always NULL (on shutdown)
  */
 static void *
 MHD_select_thread (void *cls)
@@ -1219,7 +1277,7 @@ MHD_select_thread (void *cls)
  */
 struct MHD_Daemon *
 MHD_start_daemon (unsigned int options,
-                  unsigned short port,
+                  uint16_t port,
                   MHD_AcceptPolicyCallback apc,
                   void *apc_cls,
                   MHD_AccessHandlerCallback dh, void *dh_cls, ...)
@@ -1241,6 +1299,7 @@ typedef void (*VfprintfFunctionPointerType)(void *, const char *, va_list);
  * Parse a list of options given as varargs.
  * 
  * @param daemon the daemon to initialize
+ * @param servaddr where to store the server's listen address
  * @param ap the options
  * @return MHD_YES on success, MHD_NO on error
  */
@@ -1254,6 +1313,7 @@ parse_options_va (struct MHD_Daemon *daemon,
  * Parse a list of options given as varargs.
  * 
  * @param daemon the daemon to initialize
+ * @param servaddr where to store the server's listen address
  * @param ... the options
  * @return MHD_YES on success, MHD_NO on error
  */
@@ -1276,6 +1336,7 @@ parse_options (struct MHD_Daemon *daemon,
  * Parse a list of options given as varargs.
  * 
  * @param daemon the daemon to initialize
+ * @param servaddr where to store the server's listen address
  * @param ap the options
  * @return MHD_YES on success, MHD_NO on error
  */
@@ -1514,10 +1575,11 @@ parse_options_va (struct MHD_Daemon *daemon,
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int options,
-                     unsigned short port,
+                     uint16_t port,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
-                     MHD_AccessHandlerCallback dh, void *dh_cls, va_list ap)
+                     MHD_AccessHandlerCallback dh, void *dh_cls,
+		     va_list ap)
 {
   const int on = 1;
   struct MHD_Daemon *retVal;
@@ -1761,7 +1823,7 @@ MHD_start_daemon_va (unsigned int options,
 	  if ((options & MHD_USE_DEBUG) != 0)
 	    MHD_DLOG (retVal,
 		      "Failed to bind to port %u: %s\n", 
-		      port, 
+		      (unsigned int) port, 
 		      STRERROR (errno));
 #endif
 	  CLOSE (socket_fd);

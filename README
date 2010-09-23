@@ -96,13 +96,12 @@ Untested features:
 
 Functions not covered by "make check":
 ======================================
-- MHD_get_connection_values
-- MHD_set_connection_value
-- parse_cookie_header
-- parse_arguments
-- MHD_del_response_header 
-- MHD_get_response_headers
-- MHD_tls_connection_close
+- file_reader (response.c); special case (sendfile)
+- mhd_panic_std (daemon.c); special case (abort)
+- MHD_poll (daemon.c)
+- parse_options (daemon.c)
+- MHD_set_panic_func (daemon.c)
+- MHD_get_version (daemon.c)
 
 
 Missing documentation:
@@ -111,4 +110,3 @@ Missing documentation:
 - manual:
   * document configuration options
   * document details on porting MHD (plibc, z/OS)
-

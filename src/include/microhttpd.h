@@ -939,7 +939,7 @@ typedef int
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *MHD_start_daemon_va (unsigned int options,
-                                        unsigned short port,
+                                        uint16_t port,
                                         MHD_AcceptPolicyCallback apc,
                                         void *apc_cls,
                                         MHD_AccessHandlerCallback dh,
@@ -961,7 +961,7 @@ struct MHD_Daemon *MHD_start_daemon_va (unsigned int options,
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *MHD_start_daemon (unsigned int flags,
-                                     unsigned short port,
+                                     uint16_t port,
                                      MHD_AcceptPolicyCallback apc,
                                      void *apc_cls,
                                      MHD_AccessHandlerCallback dh,

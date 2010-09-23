@@ -392,7 +392,10 @@ enum MHD_CONNECTION_STATE
 #define DEBUG_STATES MHD_NO
 
 #if HAVE_MESSAGES
-char *MHD_state_to_string (enum MHD_CONNECTION_STATE state);
+#if DEBUG_STATES
+const char *
+MHD_state_to_string (enum MHD_CONNECTION_STATE state);
+#endif
 #endif
 
 /**
@@ -871,7 +874,7 @@ struct MHD_Daemon
   /**
    * Listen port.
    */
-  unsigned short port;
+  uint16_t port;
 
 #if HTTPS_SUPPORT
   /**

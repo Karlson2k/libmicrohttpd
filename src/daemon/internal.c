@@ -27,10 +27,11 @@
 #include "internal.h"
 
 #if HAVE_MESSAGES
+#if DEBUG_STATES
 /**
  * State to string dictionary.
  */
-char *
+const char *
 MHD_state_to_string (enum MHD_CONNECTION_STATE state)
 {
   switch (state)
@@ -81,6 +82,7 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
       return "unrecognized connection state";
     }
 }
+#endif
 #endif
 
 #if HAVE_MESSAGES
