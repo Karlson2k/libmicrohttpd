@@ -17,7 +17,9 @@ After the necessary includes and the definition of the port which our server sho
 #include <microhttpd.h>
 
 #define PORT 8888
+
 @end verbatim
+
 @noindent
 the desired behaviour of our server when HTTP request arrive has to be implemented. We already have
 agreed that it should not care about the particular details of the request, such as who is requesting
@@ -44,7 +46,9 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
                           size_t *upload_data_size, void **con_cls)
 {
   const char *page  = "<html><body>Hello, browser!</body></html>";
+
 @end verbatim
+
 @noindent
 HTTP is a rather strict protocol and the client would certainly consider it "inappropriate" if we
 just sent the answer string "as is". Instead, it has to be wrapped with additional information stored in so-called headers and footers.  Most of the work in this area is done by the library for us---we
@@ -60,7 +64,9 @@ no internal copy to be done because the @emph{constant} string won't change anyw
 
   response = MHD_create_response_from_data (strlen (page),
                                             (void*) page, MHD_NO, MHD_NO);
+
 @end verbatim
+
 @noindent
 Now that the the response has been laced up, it is ready for delivery and can be queued for sending. 
 This is done by passing it to another @emph{GNU libmicrohttpd} function. As all our work was done in
@@ -78,7 +84,9 @@ already being set at this point to either MHD_YES or MHD_NO in case of success o
 
   return ret;
 }
+
 @end verbatim
+
 @noindent
 With the primary task of our server implemented, we can start the actual server daemon which will listen 
 on @code{PORT} for connections. This is done in the main function.
@@ -90,7 +98,9 @@ int main ()
   daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL, 
                              &answer_to_connection, NULL, MHD_OPTION_END);
   if (NULL == daemon) return 1;
+
 @end verbatim
+
 @noindent
 The first parameter is one of three possible modes of operation. Here we want the daemon to run in
 a separate thread and to manage all incoming connections in the same thread. This means that while
@@ -118,6 +128,7 @@ do its cleanup tasks.
 }
 
 @end verbatim
+
 @noindent
 The first example is now complete.
 
