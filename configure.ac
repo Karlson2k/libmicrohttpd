@@ -324,12 +324,12 @@ then
    enable_https="no (lacking libgcrypt or libgnutls)"
  fi
 else
- AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
+  AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
   enable_https="no (disabled)"
 fi
 AC_MSG_RESULT($disable_https)
 
-AM_CONDITIONAL(ENABLE_HTTPS, test "$disable_https" = "no")
+AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 # optional: HTTP Digest Auth support. Enabled by default
 AC_MSG_CHECKING(whether to disable HTTP Digest Auth support)
