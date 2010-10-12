@@ -767,7 +767,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
  *                 connection is not waiting for any read or write events
  */
 int
-MHD_connection_get_pollfd(struct MHD_Connection *connection, struct MHD_Pollfd *p)
+MHD_connection_get_pollfd (struct MHD_Connection *connection, struct MHD_Pollfd *p)
 {
   int fd;
 
@@ -2264,7 +2264,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 }
 
 void
-MHD_set_http_calbacks (struct MHD_Connection *connection)
+MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_connection_handle_read;
   connection->write_handler = &MHD_connection_handle_write;

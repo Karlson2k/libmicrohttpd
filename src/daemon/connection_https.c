@@ -51,50 +51,6 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
   MHD_connection_close (connection, termination_code);
 }
 
-/**
- * This function was created to handle per-connection processing that
- * has to happen even if the socket cannot be read or written to.  All
- * implementations (multithreaded, external select, internal select)
- * call this function.
- *
- * @param connection being handled
- * @return MHD_YES if we should continue to process the
- *         connection (not dead yet), MHD_NO if it died
- */
-static int
-MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
-{
-  unsigned int timeout;
-
-#if DEBUG_STATES
-  MHD_DLOG (connection->daemon, "%s: state: %s\n",
-            __FUNCTION__, MHD_state_to_string (connection->state));
-#endif
-  timeout = connection->daemon->connection_timeout;
-  if ((connection->socket_fd != -1) && (timeout != 0)
-      && (time (NULL) - timeout > connection->last_activity))
-    {
-      MHD_tls_connection_close (connection,
-                                MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-      return MHD_NO;
-    }
-  switch (connection->state)
-    {
-      /* on newly created connections we might reach here before any reply has been received */
-    case MHD_TLS_CONNECTION_INIT:
-      return MHD_YES;
-      /* close connection if necessary */
-    case MHD_CONNECTION_CLOSED:
-      if (connection->socket_fd != -1)
-        MHD_tls_connection_close (connection,
-                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
-      return MHD_NO;
-    default:
-      return MHD_connection_handle_idle (connection);
-    }
-  return MHD_YES;
-}
-
 
 /**
  * This function handles a particular SSL/TLS connection when
@@ -192,6 +148,55 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
     }
   return MHD_connection_handle_write (connection);
 }
+
+
+/**
+ * This function was created to handle per-connection processing that
+ * has to happen even if the socket cannot be read or written to.  All
+ * implementations (multithreaded, external select, internal select)
+ * call this function.
+ *
+ * @param connection being handled
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */
+static int
+MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
+{
+  unsigned int timeout;
+
+#if DEBUG_STATES
+  MHD_DLOG (connection->daemon, "%s: state: %s\n",
+            __FUNCTION__, MHD_state_to_string (connection->state));
+#endif
+  timeout = connection->daemon->connection_timeout;
+  if ((connection->socket_fd != -1) && (timeout != 0)
+      && (time (NULL) - timeout > connection->last_activity))
+    {
+      MHD_tls_connection_close (connection,
+                                MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+      return MHD_NO;
+    }
+  switch (connection->state)
+    {
+      /* on newly created connections we might reach here before any reply has been received */
+    case MHD_TLS_CONNECTION_INIT:
+      return MHD_YES;
+      /* close connection if necessary */
+    case MHD_CONNECTION_CLOSED:
+      if (connection->socket_fd != -1)
+        MHD_tls_connection_close (connection,
+                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
+      return MHD_NO;
+    default:
+      if ( (0 != gnutls_record_check_pending (connection->tls_session)) &&
+	   (MHD_YES != MHD_tls_connection_handle_read (connection)) )
+	return MHD_NO;
+      return MHD_connection_handle_idle (connection);
+    }
+  return MHD_YES;
+}
+
 
 /**
  * Set connection callback function to be used through out

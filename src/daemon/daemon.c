@@ -883,7 +883,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->last_activity = time (NULL);
 
   /* set default connection handlers  */
-  MHD_set_http_calbacks (connection);
+  MHD_set_http_callbacks_ (connection);
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
 #if HTTPS_SUPPORT
@@ -1062,6 +1062,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
     {
       if (earliest_deadline > pos->last_activity + dto)
         earliest_deadline = pos->last_activity + dto;
+#if HTTPS_SUPPORT
+      if (  (0 != (daemon->options & MHD_USE_SSL)) &&
+	    (0 != gnutls_record_check_pending (pos->tls_session)) )
+	earliest_deadline = now;
+#endif
       pos = pos->next;
     }
   if (earliest_deadline < now)
@@ -1070,6 +1075,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
     *timeout = (earliest_deadline - now);
   return MHD_YES;
 }
+
 
 /**
  * Main select call.
@@ -1220,6 +1226,7 @@ MHD_poll (struct MHD_Daemon *daemon)
 #endif
 }
 
+
 /**
  * Run webserver operations (without blocking unless
  * in client callbacks).  This method should be called
@@ -1242,6 +1249,7 @@ MHD_run (struct MHD_Daemon *daemon)
   return MHD_YES;
 }
 
+
 /**
  * Thread that runs the select loop until the daemon
  * is explicitly shut down.
@@ -1263,6 +1271,7 @@ MHD_select_thread (void *cls)
     }
   return NULL;
 }
+
 
 /**
  * Start a webserver on the given port.
@@ -1395,7 +1404,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_MEM_KEY:
-	  if (daemon->options & MHD_USE_SSL)
+	  if (0 != (daemon->options & MHD_USE_SSL))
 	    daemon->https_mem_key = va_arg (ap, const char *);
 #if HAVE_MESSAGES
 	  else
@@ -1405,7 +1414,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_HTTPS_MEM_CERT:
-	  if (daemon->options & MHD_USE_SSL)
+	  if (0 != (daemon->options & MHD_USE_SSL))
 	    daemon->https_mem_cert = va_arg (ap, const char *);
 #if HAVE_MESSAGES
 	  else

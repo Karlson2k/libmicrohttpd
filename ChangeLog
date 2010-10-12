@@ -1,3 +1,10 @@
+Tue Oct 12 15:41:51 CEST 2010
+	Fixed issue with data received via SSL being delayed in the
+	GNUtls buffer if sender stopped transmitting (but did not close
+	the connection) and MHD buffer size was smaller than last fragment,
+	resulting in possibly significantly delayed processing of
+	incoming data.  -CG
+
 Wed Sep 22 09:48:59 CEST 2010
 	Changed port argument from 'unsigned short' to 'uint16_t'.
 	Removed dead code when compiling with messages enabled.
