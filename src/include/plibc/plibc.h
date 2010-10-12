@@ -22,7 +22,7 @@
  * @brief PlibC header
  * @attention This file is usually not installed under Unix,
  *            so ship it with your application
- * @version $Revision: 65 $
+ * @version $Revision: 69 $
  */
 
 #ifndef _PLIBC_H_
@@ -94,7 +94,7 @@ struct sockaddr_un {
 };
 
 #ifndef pid_t
-	#define pid_t int
+  #define pid_t DWORD
 #endif
 
 #ifndef error_t
@@ -470,7 +470,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
 #ifndef WINDOWS
  #define DIR_SEPARATOR '/'
  #define DIR_SEPARATOR_STR "/"
- #define PATH_SEPARATOR ';'
+ #define PATH_SEPARATOR ':'
  #define PATH_SEPARATOR_STR ":"
  #define NEWLINE "\n"
 
@@ -564,7 +564,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
 #else
  #define DIR_SEPARATOR '\\'
  #define DIR_SEPARATOR_STR "\\"
- #define PATH_SEPARATOR ':'
+ #define PATH_SEPARATOR ';'
  #define PATH_SEPARATOR_STR ";"
  #define NEWLINE "\r\n"
 
