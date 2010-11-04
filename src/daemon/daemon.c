@@ -1397,7 +1397,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 	    {
 #if HAVE_MESSAGES
 	      FPRINTF (stderr,
-		       "Specified thread pool size too big\n");
+		       "Specified thread pool size (%u) too big\n",
+		       daemon->worker_pool_size);
 #endif
 	      return MHD_NO;
 	    }
