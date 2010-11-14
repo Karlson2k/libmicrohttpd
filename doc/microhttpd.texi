@@ -1327,8 +1327,26 @@ memory allocation error).
 @end deftypefun
 
 
+@deftypefun int MHD_add_response_footer (struct MHD_Response *response, const char *footer, const char *content)
+Add a footer line to the response. The strings referenced by
+@var{footer} and @var{content} must be zero-terminated and they are
+duplicated into memory blocks embedded in @var{response}.  
+
+Notice that the strings must not hold newlines, carriage returns or tab
+chars.  You can add response footers at any time before signalling the
+end of the response to MHD (not just before calling 'MHD_queue_response').
+Footers are useful for adding cryptographic checksums to the reply or to
+signal errors encountered during data generation.  This call was introduced
+in MHD 0.9.3.
+
+Return @code{MHD_NO} on error (i.e. invalid header or content format or
+memory allocation error).
+@end deftypefun
+
+
+
 @deftypefun int MHD_del_response_header (struct MHD_Response *response, const char *header, const char *content)
-Delete a header line from the response.  Return @code{MHD_NO} on error
+Delete a header (or footer) line from the response.  Return @code{MHD_NO} on error
 (arguments are invalid or no such header known).
 @end deftypefun
 

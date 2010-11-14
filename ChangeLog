@@ -1,3 +1,6 @@
+Sun Nov 14 20:45:45 CET 2010
+	Adding API call to generate HTTP footers in response. -CG
+
 Sat Oct 16 12:38:43 CEST 2010
 	Releasing libmicrohttpd 0.9.2. -CG
 

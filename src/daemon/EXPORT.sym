@@ -13,6 +13,7 @@ MHD_create_response_from_data
 MHD_create_response_from_fd
 MHD_destroy_response
 MHD_add_response_header
+MHD_add_response_footer
 MHD_del_response_header
 MHD_get_response_headers
 MHD_get_response_header

@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00090200
+#define MHD_VERSION 0x00090201
 
 /**
  * MHD-internal return code for "YES".
@@ -1194,8 +1194,22 @@ int
 MHD_add_response_header (struct MHD_Response *response,
                          const char *header, const char *content);
 
+
 /**
- * Delete a header line from the response.
+ * Add a footer line to the response.
+ *
+ * @param response response to remove a header from
+ * @param footer the footer to delete
+ * @param content value to delete
+ * @return MHD_NO on error (i.e. invalid footer or content format).
+ */
+int
+MHD_add_response_footer (struct MHD_Response *response,
+                         const char *footer, const char *content);
+
+
+/**
+ * Delete a header (or footer) line from the response.
  *
  * @param response response to remove a header from
  * @param header the header to delete
@@ -1207,7 +1221,7 @@ MHD_del_response_header (struct MHD_Response *response,
                          const char *header, const char *content);
 
 /**
- * Get all of the headers added to a response.
+ * Get all of the headers (and footers) added to a response.
  *
  * @param response response to query
  * @param iterator callback to call on each header;
@@ -1221,7 +1235,7 @@ MHD_get_response_headers (struct MHD_Response *response,
 
 
 /**
- * Get a particular header from the response.
+ * Get a particular header (or footer) from the response.
  *
  * @param response response to query
  * @param key which header to get

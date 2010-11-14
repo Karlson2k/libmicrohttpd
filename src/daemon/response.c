@@ -27,14 +27,21 @@
 #include "internal.h"
 #include "response.h"
 
+
 /**
- * Add a header line to the response.
+ * Add a header or footer line to the response.
  *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header to add
+ * @param content value to add
  * @return MHD_NO on error (i.e. invalid header or content format).
  */
-int
-MHD_add_response_header (struct MHD_Response *response,
-                         const char *header, const char *content)
+static int
+add_response_entry (struct MHD_Response *response,
+		    enum MHD_ValueKind kind,
+		    const char *header, 
+		    const char *content)
 {
   struct MHD_HTTP_Header *hdr;
 
@@ -65,15 +72,57 @@ MHD_add_response_header (struct MHD_Response *response,
       free (hdr);
       return MHD_NO;
     }
-  hdr->kind = MHD_HEADER_KIND;
+  hdr->kind = kind;
   hdr->next = response->first_header;
   response->first_header = hdr;
   return MHD_YES;
 }
 
+
+/**
+ * Add a header line to the response.
+ *
+ * @param response response to add a header to
+ * @param header the header to add
+ * @param content value to add
+ * @return MHD_NO on error (i.e. invalid header or content format).
+ */
+int
+MHD_add_response_header (struct MHD_Response *response,
+                         const char *header, const char *content)
+{
+  return add_response_entry (response,
+			     MHD_HEADER_KIND,
+			     header,
+			     content);
+}
+
+
+/**
+ * Add a footer line to the response.
+ *
+ * @param response response to remove a header from
+ * @param footer the footer to delete
+ * @param content value to delete
+ * @return MHD_NO on error (i.e. invalid footer or content format).
+ */
+int
+MHD_add_response_footer (struct MHD_Response *response,
+                         const char *footer, const char *content)
+{
+  return add_response_entry (response,
+			     MHD_FOOTER_KIND,
+			     header,
+			     content);
+}
+
+
 /**
  * Delete a header line from the response.
  *
+ * @param response response to remove a header from
+ * @param header the header to delete
+ * @param content value to delete
  * @return MHD_NO on error (no such header known)
  */
 int
@@ -106,6 +155,7 @@ MHD_del_response_header (struct MHD_Response *response,
     }
   return MHD_NO;
 }
+
 
 /**
  * Get all of the headers added to a response.
