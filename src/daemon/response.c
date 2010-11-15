@@ -112,7 +112,7 @@ MHD_add_response_footer (struct MHD_Response *response,
 {
   return add_response_entry (response,
 			     MHD_FOOTER_KIND,
-			     header,
+			     footer,
 			     content);
 }
 
