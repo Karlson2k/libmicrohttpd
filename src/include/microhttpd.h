@@ -133,6 +133,15 @@ extern "C"
 #define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
 #endif
 
+#ifdef SIZE_MAX
+#define MHD_CONTENT_READER_END_OF_STREAM SIZE_MAX
+#define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
+#else
+#define MHD_CONTENT_READER_END ((size_t) -1LL)
+#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -LL) - 1)
+#endif
+
+
 /**
  * HTTP response codes.
  */
@@ -868,15 +877,28 @@ typedef int
  *        obtained from the content reader so far.
  * @param buf where to copy the data
  * @param max maximum number of bytes to copy to buf (size of buf)
- * @return -1 for the end of transmission (or on error);
- *  if a content transfer size was pre-set and the callback
- *  has provided fewer than that amount of data,
- *  MHD will close the connection with the client;
- *  if no content size was specified and this is an
- *  http 1.1 connection using chunked encoding, MHD will
- *  interpret "-1" as the normal end of the transfer
- *  (possibly allowing the client to perform additional
- *  requests using the same TCP connection).
+ * @return number of bytes written to 'buf'; 
+ *  0 is legal unless we are running in internal select mode (since
+ *    this would cause busy-waiting); 0 in external select mode
+ *    will cause this function to be called again once the external
+ *    select calls MHD again;
+ *  MHD_CONTENT_READER_END_OF_STREAM (-1) for the regular
+ *    end of transmission (with chunked encoding, MHD will then
+ *    terminate the chunk and send any HTTP footers that might be
+ *    present; without chunked encoding and given an unknown 
+ *    response size, MHD will simply close the connection; note
+ *    that while returning END_OF_STREAM is not technically
+ *    legal if a response size was specified, MHD accepts this
+ *    and treats it just as MHD_CONTENT_READER_END_WITH_ERROR;
+ *  MHD_CONTENT_READER_END_WITH_ERROR (-2) to indicate a server
+ *    error generating the response; this will cause MHD to simply
+ *    close the connection immediately.  If a response size was
+ *    given or if chunked encoding is in use, this will indicate
+ *    an error to the client.  Note, however, that if the client
+ *    does not know a response size and chunked encoding is not in
+ *    use, then clients will not be able to tell the difference between
+ *    MHD_CONTENT_READER_END_WITH_ERROR and MHD_CONTENT_READER_END_OF_STREAM.
+ *    This is not a limitation of MHD but rather of the HTTP protocol.
  */
 typedef ssize_t
   (*MHD_ContentReaderCallback) (void *cls,

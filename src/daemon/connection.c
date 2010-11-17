@@ -357,14 +357,15 @@ try_ready_normal_body (struct MHD_Connection *connection)
 	       NULL
 #endif
 	       );
-  if (ret == -1)
+  if ( (ret == MHD_CONTENT_READER_END_OF_STREAM) ||
+       (ret == MHD_CONTENT_READER_END_WITH_ERROR) )
     {
       /* either error or http 1.0 transfer, close
          socket! */
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, 
-		"Closing connection (end of response)\n");
+		"Closing connection (end of response or error)\n");
 #endif
 #endif
       response->total_size = connection->response_write_position;
@@ -444,7 +445,20 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 			   &connection->write_buffer[sizeof (cbuf)],
 			   connection->write_buffer_size - sizeof (cbuf) - 2);
     }
-  if (ret == -1)
+  if (ret == MHD_CONTENT_READER_END_WITH_ERROR) 
+    {
+      /* error, close socket! */
+#if DEBUG_CLOSE
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Closing connection (error generating response)\n");
+#endif
+#endif
+      response->total_size = connection->response_write_position;
+      connection_close_error (connection);
+      return MHD_NO;
+    }
+  if (ret == MHD_CONTENT_READER_END_OF_STREAM) 
     {
       /* end of message, signal other side! */
       strcpy (connection->write_buffer, "0\r\n");

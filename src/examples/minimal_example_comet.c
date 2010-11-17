@@ -56,7 +56,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  response = MHD_create_response_from_callback (-1,
+  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 80,
                                                 &data_generator, NULL, NULL);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);

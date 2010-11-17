@@ -69,7 +69,7 @@ crc (void *cls, uint64_t pos, char *buf, size_t max)
   if (pos == 128 * 10)
     {
       MHD_add_response_header (*responseptr, "Footer", "working");
-      return -1;                /* end of stream */
+      return MHD_CONTENT_READER_END_OF_STREAM;
     }
   if (max < 128)
     abort ();                   /* should not happen in this testcase... */
@@ -109,7 +109,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   responseptr = malloc (sizeof (struct MHD_Response *));
-  response = MHD_create_response_from_callback (-1,
+  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
                                                 &crc, responseptr, &crcf);
   *responseptr = response;

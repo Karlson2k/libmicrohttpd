@@ -66,7 +66,7 @@ dir_reader (void *cls, uint64_t pos, char *buf, size_t max)
     {
       e = readdir (dir);
       if (e == NULL)
-        return -1;
+        return MHD_CONTENT_READER_END_OF_STREAM;
   } while (e->d_name[0] == '.');
   return snprintf (buf, max,
 		   "<a href=\"/%s\">%s</a><br>",
