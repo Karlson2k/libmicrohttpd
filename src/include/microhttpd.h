@@ -137,8 +137,8 @@ extern "C"
 #define MHD_CONTENT_READER_END_OF_STREAM SIZE_MAX
 #define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
 #else
-#define MHD_CONTENT_READER_END ((size_t) -1LL)
-#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -LL) - 1)
+#define MHD_CONTENT_READER_END_OF_STREAM ((size_t) -1LL)
+#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
 #endif
 
 
