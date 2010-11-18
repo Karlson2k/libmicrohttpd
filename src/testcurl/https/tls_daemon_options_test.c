@@ -86,13 +86,13 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
   if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
-      return -1;
+      return 0;
     }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return -1;
+      return 0; 
     }
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
