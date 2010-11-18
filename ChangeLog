@@ -1,3 +1,6 @@
+Thu Nov 18 22:55:58 CET 2010
+	Fixing #1621 (socket not closed under certain circumstances). -CG/jaredc
+
 Wed Nov 17 12:16:53 CET 2010
 	Allowing signalling of errors in generating chunked responses to
 	clients (by closing connectins) using the new

@@ -1456,7 +1456,7 @@ do_read (struct MHD_Connection *connection)
       /* other side closed connection */
       connection->read_closed = MHD_YES;
       SHUTDOWN (connection->socket_fd, SHUT_RD);
-      return MHD_NO;
+      return MHD_YES;
     }
   connection->read_buffer_offset += bytes_read;
   return MHD_YES;
