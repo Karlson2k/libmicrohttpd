@@ -62,7 +62,7 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
       return -1;
     }
 
-  ret = test_daemon_get (NULL, cipher_suite, proto_version, DEAMON_TEST_PORT, 1);
+  ret = test_daemon_get (NULL, cipher_suite, proto_version, DEAMON_TEST_PORT, 0);
 
   MHD_stop_daemon (d);
   return ret;
@@ -86,8 +86,14 @@ main (int argc, char *const *argv)
       return -1;
     }
 
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha = "rsa_aes_256_sha";
+    }
+
   errorCount +=
-    test_secure_get (NULL, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
 
   print_test_result (errorCount, argv[0]);
 

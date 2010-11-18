@@ -46,7 +46,7 @@ tls_session_time_out_test_SOURCES = \
 tls_session_time_out_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 tls_daemon_options_test_SOURCES = \
   tls_daemon_options_test.c \
@@ -54,7 +54,7 @@ tls_daemon_options_test_SOURCES = \
 tls_daemon_options_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 tls_thread_mode_test_SOURCES = \
   tls_thread_mode_test.c \
@@ -62,7 +62,7 @@ tls_thread_mode_test_SOURCES = \
 tls_thread_mode_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 tls_multi_thread_mode_test_SOURCES = \
   tls_multi_thread_mode_test.c \
@@ -70,7 +70,7 @@ tls_multi_thread_mode_test_SOURCES = \
 tls_multi_thread_mode_test_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 tls_authentication_test_SOURCES = \
   tls_authentication_test.c \
@@ -78,7 +78,7 @@ tls_authentication_test_SOURCES = \
 tls_authentication_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 mhds_session_info_test_SOURCES = \
   mhds_session_info_test.c \
@@ -86,7 +86,7 @@ mhds_session_info_test_SOURCES = \
 mhds_session_info_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 mhds_multi_daemon_test_SOURCES = \
   mhds_multi_daemon_test.c \
@@ -94,7 +94,7 @@ mhds_multi_daemon_test_SOURCES = \
 mhds_multi_daemon_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@  
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 mhds_get_test_SOURCES = \
   mhds_get_test.c \
@@ -102,7 +102,7 @@ mhds_get_test_SOURCES = \
 mhds_get_test_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@  
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 
 mhds_get_test_select_SOURCES = \
@@ -111,4 +111,5 @@ mhds_get_test_select_SOURCES = \
 mhds_get_test_select_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
-  @LIBCURL@  
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
+

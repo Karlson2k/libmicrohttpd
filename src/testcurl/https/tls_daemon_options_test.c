@@ -94,10 +94,20 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return 0; 
     }
+
+  char *aes128_sha = "AES128-SHA";
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes128_sha = "rsa_aes_128_sha";
+      aes256_sha = "rsa_aes_256_sha";
+    }
+
+
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,
-	       "AES128-SHA1",
+	       aes128_sha,
 	       CURL_SSLVERSION_TLSv1,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -106,7 +116,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,
-	       "AES128-SHA1",
+	       aes128_sha,
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -116,7 +126,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("SSL3.0-AES-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,
-	       "AES128-SHA1",
+	       aes128_sha,
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -141,7 +151,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("TLS1.0 vs SSL3",
 	       &test_unmatching_ssl_version, NULL, daemon_flags,
-	       "AES256-SHA",
+	       aes256_sha,
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,

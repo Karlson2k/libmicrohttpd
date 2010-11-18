@@ -33,6 +33,7 @@
 #include "tls_test_common.h"
 
 int curl_check_version (const char *req_version, ...);
+int curl_uses_nss_ssl ();
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 extern const char srv_signed_cert_pem[];
@@ -100,10 +101,20 @@ testExternalGet ()
 			MHD_OPTION_END);
   if (d == NULL)
     return 256;
+
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha = "rsa_aes_256_sha";
+    }
+
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "https://localhost:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  /* TLS options */
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);

@@ -137,11 +137,17 @@ main (int argc, char *const *argv)
       return -1;
     }
 
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha = "rsa_aes_256_sha";
+    }
+
   errorCount +=
     test_wrap ("single threaded daemon, single client", &test_single_client,
                NULL,
                MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
@@ -149,7 +155,7 @@ main (int argc, char *const *argv)
     test_wrap ("single threaded daemon, parallel clients",
                &test_parallel_clients, NULL,
                MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG,
-               "AES256-SHA", CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 

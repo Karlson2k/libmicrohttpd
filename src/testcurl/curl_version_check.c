@@ -67,6 +67,13 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
   return s;
 }
 
+#if HTTPS_SUPPORT
+int
+curl_uses_nss_ssl()
+{
+  return (strstr(curl_version(), " NSS/") != NULL) ? 0 : -1;
+}
+#endif
 
 /*
  * check local libcurl version matches required version
@@ -134,6 +141,11 @@ curl_check_version (const char *req_version)
     {
       ssl_ver = strchr (ssl_ver, '/');
       req_ssl_ver = MHD_REQ_CURL_OPENSSL_VERSION;
+    }
+  else if (strncmp ("NSS", ssl_ver, strlen ("NSS")) == 0)
+    {
+      ssl_ver = strchr (ssl_ver, '/');
+      req_ssl_ver = MHD_REQ_CURL_NSS_VERSION;
     }
   else
     {

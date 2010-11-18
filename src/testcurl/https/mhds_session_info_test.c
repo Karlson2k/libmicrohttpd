@@ -116,6 +116,12 @@ test_query_session ()
   if (d == NULL)
     return 2;
 
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha = "rsa_aes_256_sha";
+    }
+
   c = curl_easy_init ();
 #if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
@@ -128,7 +134,7 @@ test_query_session ()
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, "AES256-SHA");
+  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);

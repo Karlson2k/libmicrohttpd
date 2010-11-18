@@ -106,9 +106,14 @@ main (int argc, char *const *argv)
       return -1;
     }
 
+  char *aes256_sha = "AES256-SHA";
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha = "rsa_aes_256_sha";
+    }
   
   errorCount +=
-    test_concurent_daemon_pair (NULL, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_concurent_daemon_pair (NULL, aes256_sha, CURL_SSLVERSION_SSLv3);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 

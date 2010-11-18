@@ -33,6 +33,7 @@
 #include "tls_test_common.h"
 
 int curl_check_version (const char *req_version, ...);
+int curl_uses_nss_ssl ();
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 extern const char srv_signed_cert_pem[];
@@ -101,12 +102,24 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
+
+  char *aes256_sha_tlsv1   = "AES256-SHA";
+  char *aes256_sha_sslv3   = "AES256-SHA";
+  char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
+
+  if (curl_uses_nss_ssl() == 0)
+    {
+      aes256_sha_tlsv1 = "rsa_aes_256_sha";
+      aes256_sha_sslv3 = "rsa_aes_256_sha";
+      des_cbc3_sha_tlsv1 = "rsa_aes_128_sha";
+    }
+
   errorCount +=
-    test_secure_get (NULL, "AES256-SHA", CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, aes256_sha_tlsv1, CURL_SSLVERSION_TLSv1);
   errorCount +=
-    test_secure_get (NULL, "AES256-SHA", CURL_SSLVERSION_SSLv3);
+    test_secure_get (NULL, aes256_sha_sslv3, CURL_SSLVERSION_SSLv3);
   errorCount +=
-    test_cipher_option (NULL, "DES-CBC3-SHA", CURL_SSLVERSION_TLSv1);
+    test_cipher_option (NULL, des_cbc3_sha_tlsv1, CURL_SSLVERSION_TLSv1);
 
   print_test_result (errorCount, argv[0]);
 
