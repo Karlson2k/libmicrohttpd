@@ -32,8 +32,6 @@
 #include <gcrypt.h>
 #include "tls_test_common.h"
 
-int curl_check_version (const char *req_version, ...);
-int curl_uses_nss_ssl ();
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 extern const char srv_signed_cert_pem[];

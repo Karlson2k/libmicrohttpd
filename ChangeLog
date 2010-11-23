@@ -1,3 +1,6 @@
+Tue Nov 23 09:41:00 CET 2010
+	Releasing libmicrohttpd 0.9.3. -CG
+
 Thu Nov 18 23:10:36 CET 2010
 	Fixing #1619 (testcases not working with NSS on Fedora). -CG/timn
 

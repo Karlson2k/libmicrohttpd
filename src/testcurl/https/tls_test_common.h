@@ -69,6 +69,10 @@ struct CipherDef
 };
 
 
+int curl_check_version (const char *req_version, ...);
+int curl_uses_nss_ssl ();
+
+
 FILE *
 setup_ca_cert ();
 
