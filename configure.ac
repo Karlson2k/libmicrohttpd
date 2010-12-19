@@ -198,11 +198,11 @@ AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
 SAVE_LIBS=$LIBS
 
 AC_MSG_CHECKING(whether to use libcurl for testing)
-AC_ARG_ENABLE(curl,
-  [AS_HELP_STRING([--enable-curl],[support cURL based testcases])],
-  [enable_curl=$enableval],
-  [enable_curl="yes"])
-
+AC_ARG_ENABLE([curl],
+  [AS_HELP_STRING([--disable-curl],[disable cURL based testcases])],
+  [enable_curl=${enableval}],
+  [enable_curl=no])
+AC_MSG_RESULT($enable_curl)
 curl=0
 if test "$enable_curl" = "yes"
 then
@@ -225,20 +225,18 @@ AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
 # optional: have error messages ?
-AC_MSG_CHECKING(whether to disable error messages)
+AC_MSG_CHECKING(whether to generate error messages)
 AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
-               [disable MHD error messages (default is NO)])],
-   [disable_messages="yes"],
-   [disable_messages="no"])
-AC_MSG_RESULT($disable_messages)
-if test "$disable_messages" = "no"
+               [disable MHD error messages])],
+   [enable_messages=${enableval}],
+   [enable_messages=no])
+AC_MSG_RESULT($enable_messages)
+if test "$enable_messages" = "yes"
 then
  AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
- enable_messages="yes"
 else
  AC_DEFINE([HAVE_MESSAGES],[0],[Disable error messages])
- enable_messages="no"
 fi
 
 
@@ -246,17 +244,11 @@ fi
 AC_MSG_CHECKING(whether to enable postprocessor)
 AC_ARG_ENABLE([postprocessor],
    [AS_HELP_STRING([--disable-postprocessor],
-               [disable MHD PostProcessor functionality (default is NO)])],
-   [disable_postprocessor="yes"],
-   [disable_postprocessor="no"])
+               [disable MHD PostProcessor functionality])],
+   [enable_postprocessor=${enableval}],
+   [enable_postprocessor=no])
 AC_MSG_RESULT($disable_postprocessor)
-if test "$disable_postprocessor" = "no"
-then
- enable_postprocessor="yes"
-else
- enable_postprocessor="no"
-fi
-AM_CONDITIONAL([HAVE_POSTPROCESSOR],test x$disable_postprocessor != xyes)
+AM_CONDITIONAL([HAVE_POSTPROCESSOR],test x$enable_postprocessor != xno)
 
 
 # optional: have zzuf, socat?
@@ -308,19 +300,18 @@ AC_DEFINE_UNQUOTED([HAVE_GNUTLS], $gnutls, [We have gnutls])
 
 
 # optional: HTTPS support.  Enabled by default
-AC_MSG_CHECKING(whether to disable HTTPS support)
+AC_MSG_CHECKING(whether to support HTTPS)
 AC_ARG_ENABLE([https],
    [AS_HELP_STRING([--disable-https],
-               [disable HTTPS support (default is NO)])],
-   [disable_https="yes"],
-   [disable_https="no"])
-if test "$disable_https" = "no"
+               [disable HTTPS support])],
+   [enable_https=${enableval}],
+   [enable_https=no])
+if test "$enable_https" = "yes"
 then
  if test "$gcrypt" = "true" -a "$gnutls" = "true"
  then
    AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
    MHD_LIBDEPS="$LIBGCRYPT_LIBS"
-   enable_https="yes"
  else
    AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
    enable_https="no (lacking libgcrypt or libgnutls)"
@@ -329,29 +320,27 @@ else
   AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
   enable_https="no (disabled)"
 fi
-AC_MSG_RESULT($disable_https)
+AC_MSG_RESULT($enable_https)
 
 AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING(whether to disable HTTP Digest Auth support)
+AC_MSG_CHECKING(whether to support HTTP Digest authentication)
 AC_ARG_ENABLE([dauth],
 		AS_HELP_STRING([--disable-dauth],
-			[disable HTTP Digest Auth support (default is NO)]),
-		[disable_dauth="yes"],
-		[disable_dauth="no"])
+			[disable HTTP Digest Auth support]),
+		[enable_dauth=${enableval}],
+		[enable_dauth=no])
 
-if test "x$disable_dauth" != "xyes"
+if test "$enable_dauth" = "yes"
 then
  AC_DEFINE([DAUTH_SUPPORT],[1],[include Digest Auth support])
- enable_dauth="yes"
 else
  AC_DEFINE([DAUTH_SUPPORT],[0],[disable Digest Auth support])
- enable_dauth="no"
 fi
-AC_MSG_RESULT($disable_dauth)
+AC_MSG_RESULT($enable_dauth)
 
-AM_CONDITIONAL(ENABLE_DAUTH, [test "x$disable_dauth" != "xyes"])
+AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
@@ -367,11 +356,11 @@ AC_CACHE_CHECK([whether -export-symbols-regex works],
 
 
 # gcov compilation
-use_gcov=no
 AC_ARG_ENABLE([coverage], 
-   AS_HELP_STRING([--enable-coverage],
-                  [compile the library with code coverage support (default is NO)]),
-                  [use_gcov=yes], [use_gcov=no])
+              AS_HELP_STRING([--enable-coverage],
+                             [compile the library with code coverage support]),
+              [use_gcov=${enableval}], 
+              [use_gcov=yes])
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 

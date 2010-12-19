@@ -1,3 +1,6 @@
+Sun Dec 19 15:16:16 CET 2010
+	Fixing --enable and --disable configure options to behave properly. -CG
+
 Sun Dec 19 13:46:52 CET 2010
 	Added option to specify size of stacks for threads created by MHD. -CG
 
