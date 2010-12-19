@@ -753,6 +753,52 @@ socket_set_nonblocking (int fd)
 
 
 /**
+ * Create a thread and set the attributes according to our options.
+ * 
+ * @param thread handle to initialize
+ * @param daemon daemon with options
+ * @param start_routine main function of thread
+ * @param arg argument for start_routine
+ * @return 0 on success
+ */
+static int
+create_thread (pthread_t * thread,
+	       const struct MHD_Daemon *daemon,
+	       void *(*start_routine)(void*),
+	       void *arg)
+{
+  pthread_attr_t attr;
+  pthread_attr_t *pattr;
+  int ret;
+  
+  if (daemon->thread_stack_size != 0) 
+    {
+      if ( (0 != (ret = pthread_attr_init (&attr))) ||
+	   (0 != (ret = pthread_attr_setstacksize (&attr, daemon->thread_stack_size))) )
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    "Failed to set thread stack size\n");
+#endif
+	  errno = EINVAL;
+	  return ret;
+	}
+      pattr = &attr;
+    }
+  else
+    {
+      pattr = NULL;
+    }
+  ret = pthread_create (thread, pattr,
+			start_routine, arg);
+  if (pattr != NULL)
+    pthread_attr_destroy (&attr);
+  return ret;
+}
+
+
+
+/**
  * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
  * accept policy callback.
@@ -943,8 +989,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      res_thread_create = pthread_create (&connection->pid, NULL,
-                                          &MHD_handle_connection, connection);
+      res_thread_create = create_thread (&connection->pid, daemon,
+					 &MHD_handle_connection, connection);
       if (res_thread_create != 0)
         {
 #if HAVE_MESSAGES
@@ -1464,6 +1510,9 @@ parse_options_va (struct MHD_Daemon *daemon,
           va_arg (ap, void *);
 #endif
           break;
+        case MHD_OPTION_THREAD_STACK_SIZE:
+          daemon->thread_stack_size = va_arg (ap, size_t);
+          break;
 	case MHD_OPTION_ARRAY:
 	  oa = va_arg (ap, struct MHD_OptionItem*);
 	  i = 0;
@@ -1473,6 +1522,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		{
 		  /* all options taking 'size_t' */
 		case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+		case MHD_OPTION_THREAD_STACK_SIZE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -1904,7 +1954,7 @@ MHD_start_daemon_va (unsigned int options,
 	 ( (0 != (options & MHD_USE_SELECT_INTERNALLY)) &&
 	   (0 == retVal->worker_pool_size)) ) && 
        (0 != (res_thread_create =
-	      pthread_create (&retVal->pid, NULL, &MHD_select_thread, retVal))))
+	      create_thread (&retVal->pid, retVal, &MHD_select_thread, retVal))))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal,
@@ -1982,7 +2032,7 @@ MHD_start_daemon_va (unsigned int options,
             ++d->max_connections;
 
           /* Spawn the worker thread */
-          if (0 != (res_thread_create = pthread_create (&d->pid, NULL, &MHD_select_thread, d)))
+          if (0 != (res_thread_create = create_thread (&d->pid, retVal, &MHD_select_thread, d)))
             {
 #if HAVE_MESSAGES
               MHD_DLOG (retVal,

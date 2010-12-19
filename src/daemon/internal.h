@@ -825,6 +825,11 @@ struct MHD_Daemon
   size_t pool_size;
 
   /**
+   * Size of threads created by MHD.
+   */
+  size_t thread_stack_size;
+
+  /**
    * Number of worker daemons
    */
   unsigned int worker_pool_size;

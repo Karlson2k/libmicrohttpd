@@ -562,6 +562,15 @@ updated.  Note that the unescape function must not lengthen @code{s}
 (the result must be shorter than the input and still be 0-terminated).
 @code{cls} will be set to the second argument following
 MHD_OPTION_UNESCAPE_CALLBACK.
+
+  
+@item MHD_OPTION_THREAD_STACK_SIZE
+@cindex stack, thread, pthread
+Maximum stack size for threads created by MHD.  This option must be
+followed by a @code{size_t}).  Not specifying this option or using
+a value of zero means using the system default (which is likely to 
+differ based on your platform).
+
 @end table
 @end deftp
 

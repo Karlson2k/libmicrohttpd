@@ -558,7 +558,15 @@ enum MHD_OPTION
    * the nonce counter. This option should be followed by a "unsigend int"
    * argument.
    */
-  MHD_OPTION_NONCE_NC_SIZE = 18
+  MHD_OPTION_NONCE_NC_SIZE = 18,
+
+  /**
+   * Desired size of the stack for threads created by MHD. Followed
+   * by an argument of type 'size_t'.  Use 0 for system 'default'.
+   */
+  MHD_OPTION_THREAD_STACK_SIZE = 19
+
+
 };
 
 
