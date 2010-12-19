@@ -701,7 +701,7 @@ send_param_adapter (struct MHD_Connection *connection,
        (-1 != (fd = connection->response->fd)) )
     {
       /* can use sendfile */
-      offset = (off_t) connection->response_write_position;
+      offset = (off_t) connection->response_write_position + connection->response->fd_off;
       ret = sendfile (connection->socket_fd, 
 		      fd,
 		      &offset,

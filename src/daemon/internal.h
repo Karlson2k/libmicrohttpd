@@ -229,6 +229,11 @@ struct MHD_Response
   uint64_t data_start;
 
   /**
+   * Offset to start reading from when using 'fd'.
+   */
+  off_t fd_off;
+
+  /**
    * Size of data.
    */
   size_t data_size;

@@ -273,7 +273,7 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
   int ret;
 
   pthread_mutex_lock (&response->mutex);
-  (void) lseek (response->fd, pos, SEEK_SET);
+  (void) lseek (response->fd, pos + response->fd_off, SEEK_SET);
   ret = read (response->fd, buf, max);
   pthread_mutex_unlock (&response->mutex);
   return ret;
@@ -301,10 +301,12 @@ free_callback (void *cls)
  *
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the data
+ * @param off offset to start reading from in the file
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
-struct MHD_Response *MHD_create_response_from_fd (size_t size,
-						  int fd)
+struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,
+							    int fd,
+							    off_t offset)
 {
   struct MHD_Response *ret;
 
@@ -316,8 +318,26 @@ struct MHD_Response *MHD_create_response_from_fd (size_t size,
   if (ret == NULL)
     return NULL;
   ret->fd = fd;
+  ret->fd_off = offset;
   ret->crc_cls = ret;
   return ret;
+}
+
+
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param fd file descriptor referring to a file on disk with the data
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *MHD_create_response_from_fd (size_t size,
+						  int fd)
+{
+  return MHD_create_response_from_fd_at_offset (size, fd, 0);
 }
 
 

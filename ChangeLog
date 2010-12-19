@@ -1,3 +1,6 @@
+Sun Dec 19 19:54:15 CET 2010
+	Added 'MHD_create_response_from_fd_at_offset'. -CG
+
 Sun Dec 19 15:16:16 CET 2010
 	Fixing --enable and --disable configure options to behave properly. -CG
 

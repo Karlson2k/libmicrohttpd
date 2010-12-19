@@ -1201,6 +1201,21 @@ struct MHD_Response *MHD_create_response_from_data (size_t size,
 struct MHD_Response *MHD_create_response_from_fd (size_t size,
 						  int fd);
 
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param fd file descriptor referring to a file on disk with the data; will be closed when response is destroyed
+ * @param off offset to start reading from in the file
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,
+							    int fd,
+							    off_t offset);
+
+
 /**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response

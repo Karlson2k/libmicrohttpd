@@ -1287,11 +1287,37 @@ header information and then it can be used any number of times.
 
 @table @var
 @item size
-size of the data portion of the response, @code{-1} for unknown;
+size of the data portion of the response (should be smaller or equal to the
+size of the file)
 
 @item fd
 file descriptor referring to a file on disk with the data; will be
-closed when response is destroyed
+closed when response is destroyed; note that 'fd' must be an actual 
+file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
+or 'seek' on it
+@end table
+
+Return @mynull{} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
+
+@deftypefun {struct MHD_Response *} MHD_create_response_from_fd_at_offset (uint64_t size, int fd, off_t offset)
+Create a response object.  The response object can be extended with
+header information and then it can be used any number of times.
+
+@table @var
+@item size
+size of the data portion of the response (number of bytes to transmit from the
+file starting at offset).
+
+@item fd
+file descriptor referring to a file on disk with the data; will be
+closed when response is destroyed; note that 'fd' must be an actual 
+file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
+or 'seek' on it
+
+@item offset
+offset to start reading from in the file
 @end table
 
 Return @mynull{} on error (i.e. invalid arguments, out of memory).
