@@ -526,8 +526,8 @@ add_extra_headers (struct MHD_Connection *connection)
                                             MHD_HTTP_HEADER_CONTENT_LENGTH))
     {
       SPRINTF (buf,
-               "%llu",
-	       (unsigned long long)connection->response->total_size);
+               "%" MHD_LONG_LONG_PRINTF "u",
+	       (unsigned MHD_LONG_LONG)connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
     }
@@ -1641,7 +1641,7 @@ static void
 parse_connection_headers (struct MHD_Connection *connection)
 {
   const char *clen;
-  unsigned long long cval;
+  unsigned MHD_LONG_LONG cval;
   struct MHD_Response *response;
   const char *enc;
 
@@ -1675,7 +1675,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                                       MHD_HTTP_HEADER_CONTENT_LENGTH);
   if (clen != NULL)
     {
-      if (1 != SSCANF (clen, "%llu", &cval))
+      if (1 != SSCANF (clen, "%" MHD_LONG_LONG_PRINTF "u", &cval))
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,

@@ -245,6 +245,20 @@ ignore_sigpipe ()
 }
 @end verbatim
 
+@section MHD_LONG_LONG
+@cindex long long
+@cindex IAR
+@cindex ARM
+@cindex cortex m3
+
+Some platforms do not support @code{long long}.  Hence MHD defines
+a macro @code{MHD_LONG_LONG} which will default to @code{long long}.
+If your platform does not support @code{long long}, you should
+change "platform.h" to define @code{MHD_LONG_LONG} to an appropriate
+alternative type and also define @code{MHD_LONG_LONG_PRINTF} to the
+corresponding format string for printing such a data type (without
+the percent sign).
+
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

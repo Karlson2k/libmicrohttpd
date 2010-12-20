@@ -110,7 +110,7 @@ main (int argc, char *const *argv)
   fd_set ws;
   fd_set es;
   int max;
-  unsigned long long mhd_timeout;
+  unsigned MHD_LONG_LONG mhd_timeout;
 
   if (argc != 3)
     {

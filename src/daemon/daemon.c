@@ -1088,7 +1088,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  *        necessiate the use of a timeout right now).
  */
 int
-MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
+MHD_get_timeout (struct MHD_Daemon *daemon, unsigned MHD_LONG_LONG *timeout)
 {
   time_t earliest_deadline;
   time_t now;
@@ -1140,7 +1140,7 @@ MHD_select (struct MHD_Daemon *daemon, int may_block)
   fd_set es;
   int max;
   struct timeval timeout;
-  unsigned long long ltimeout;
+  unsigned MHD_LONG_LONG ltimeout;
   int ds;
 
   timeout.tv_sec = 0;

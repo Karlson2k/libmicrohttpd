@@ -141,6 +141,22 @@ extern "C"
 #define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
 #endif
 
+/**
+ * Not all architectures and printf's support the long long type.
+ * This gives the ability to replace long long with just a long,
+ * standard int or a short.
+ */
+#ifndef MHD_LONG_LONG
+#define MHD_LONG_LONG long long
+#endif
+#ifndef MHD_LONG_LONG_PRINTF
+/**
+ * Format string for printing a variable of type 'MHD_LONG_LONG'.
+ * You should only redefine this if you also define MHD_LONG_LONG.
+ */
+#define MHD_LONG_LONG_PRINTF "ll"
+#endif
+
 
 /**
  * HTTP response codes.
@@ -1035,7 +1051,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  *        not used (or no connections exist that would
  *        necessiate the use of a timeout right now).
  */
-int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout);
+int MHD_get_timeout (struct MHD_Daemon *daemon, 
+		     unsigned MHD_LONG_LONG *timeout);
 
 
 /**
