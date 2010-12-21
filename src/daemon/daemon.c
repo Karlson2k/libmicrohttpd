@@ -773,15 +773,12 @@ create_thread (pthread_t * thread,
   
   if (daemon->thread_stack_size != 0) 
     {
-      if ( (0 != (ret = pthread_attr_init (&attr))) ||
-	   (0 != (ret = pthread_attr_setstacksize (&attr, daemon->thread_stack_size))) )
+      if (0 != (ret = pthread_attr_init (&attr))) 
+	goto ERR;
+      if (0 != (ret = pthread_attr_setstacksize (&attr, daemon->thread_stack_size)))
 	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    "Failed to set thread stack size\n");
-#endif
-	  errno = EINVAL;
-	  return ret;
+	  pthread_attr_destroy (&attr);
+	  goto ERR;
 	}
       pattr = &attr;
     }
@@ -791,8 +788,15 @@ create_thread (pthread_t * thread,
     }
   ret = pthread_create (thread, pattr,
 			start_routine, arg);
-  if (pattr != NULL)
+  if (daemon->thread_stack_size != 0) 
     pthread_attr_destroy (&attr);
+  return ret;
+ ERR:
+#if HAVE_MESSAGES
+  MHD_DLOG (daemon,
+	    "Failed to set thread stack size\n");
+#endif
+  errno = EINVAL;
   return ret;
 }
 
@@ -1760,6 +1764,8 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
 		"MHD poll support only works with MHD_USE_THREAD_PER_CONNECTION\n");
 #endif
+      free (retVal->nnc);
+      pthread_mutex_destroy (&retVal->nnc_lock);
       free (retVal);
       return NULL;
     }
@@ -1945,6 +1951,10 @@ MHD_start_daemon_va (unsigned int options,
 		"Failed to initialize TLS support\n");
 #endif
       CLOSE (socket_fd);
+#ifdef DAUTH_SUPPORT
+      pthread_mutex_destroy (&retVal->nnc_lock);
+      free (retVal->nnc);
+#endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
       return NULL;
@@ -1960,6 +1970,10 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
                 "Failed to create listen thread: %s\n", 
 		STRERROR (res_thread_create));
+#endif
+#ifdef DAUTH_SUPPORT
+      pthread_mutex_destroy (&retVal->nnc_lock);
+      free (retVal->nnc);
 #endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       free (retVal);
