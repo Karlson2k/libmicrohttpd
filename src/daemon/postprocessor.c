@@ -760,6 +760,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
               pp->skip_rn = RN_Inactive;
               goto AGAIN;
             }
+          /* fall-through! */
         case RN_Dash:
           if (buf[0] == '-')
             {
