@@ -1591,7 +1591,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 						(size_t) oa[i].value,
 						oa[i].ptr_value,
 						MHD_OPTION_END))
-		    return MHD_NO;		  
+		    return MHD_NO;
+		  break;
 		default:
 		  return MHD_NO;
 		}
