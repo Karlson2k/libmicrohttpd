@@ -96,10 +96,12 @@ struct MHD_Pollfd
 
 
 /**
- * Maximum length of a nonce in digest authentication.
- * 32(MD5 Hex) + 8(Timestamp Hex) + 1(NULL)
+ * Maximum length of a nonce in digest authentication.  32(MD5 Hex) +
+ * 8(Timestamp Hex) + 1(NULL); hence 41 should suffice, but Opera
+ * (already) takes more (see Mantis #1633), so we've increased the
+ * value to support something longer...
  */
-#define MAX_NONCE_LENGTH 41
+#define MAX_NONCE_LENGTH 129
 
 
 /**
