@@ -92,6 +92,7 @@ Untested features:
 - extend testcase for chunked encoding to validate
   handling of footers
 - more testing for SSL support
+- MHD basic and digest authentication
 
 
 Functions not covered by "make check":

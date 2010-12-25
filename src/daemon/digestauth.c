@@ -643,6 +643,7 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   return ret;
 }
 
+
 /**
  * Get the username and password from the basic authorization header sent by the client
  *
@@ -653,44 +654,60 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
  */
 char *
 MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
-		char** password) {
-	size_t len;
-	const char *header;
-	char *decode;
-	const char *separator;
-	char *user;
-
-	header = MHD_lookup_connection_value(connection, MHD_HEADER_KIND,
-			MHD_HTTP_HEADER_AUTHORIZATION);
-	if (header == NULL)
-		return NULL;
-	if (strncmp(header, _BASIC_BASE, strlen(_BASIC_BASE)) != 0)
-		return NULL;
-	header += strlen(_BASIC_BASE);
-	decode = BASE64Decode(header);
-	if (decode == NULL) {
+				     char** password) 
+{
+  const char *header;
+  char *decode;
+  const char *separator;
+  char *user;
+  
+  header = MHD_lookup_connection_value(connection, 
+				       MHD_HEADER_KIND,
+				       MHD_HTTP_HEADER_AUTHORIZATION);
+  if (header == NULL)
+    return NULL;
+  if (strncmp(header, _BASIC_BASE, strlen(_BASIC_BASE)) != 0)
+    return NULL;
+  header += strlen(_BASIC_BASE);
+  decode = BASE64Decode(header);
+  if (decode == NULL) 
+    {
 #if HAVE_MESSAGES
-		MHD_DLOG(connection->daemon, "Error decoding basic authentication\n");
+      MHD_DLOG(connection->daemon,
+	       "Error decoding basic authentication\n");
 #endif
-		return NULL;
-	}
-	/* Find user:password pattern */
-	separator = strstr(decode, ":");
-	if (separator == NULL) {
+      return NULL;
+    }
+  /* Find user:password pattern */
+  separator = strstr(decode, ":");
+  if (separator == NULL) 
+    {
 #if HAVE_MESSAGES
-		MHD_DLOG(connection->daemon,
-				"Basic authentication doesn't contain ':' separator\n");
+      MHD_DLOG(connection->daemon,
+	       "Basic authentication doesn't contain ':' separator\n");
 #endif
-		free(decode);
-		return NULL;
+      free(decode);
+      return NULL;
+    }
+  user = strndup(decode, separator - decode);
+  if (password != NULL) 
+    {
+      *password = strdup(separator + 1);  
+      if (NULL == *password)
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG(connection->daemon,
+		   "Failed to allocate memory for password\n");
+#endif
+	  free (decode);
+	  free (user);
+	  return NULL;
 	}
-	user = strndup(decode, separator - decode);
-	if (password != NULL) {
-		*password = strdup(separator + 1);
-	}
-	free(decode);
-	return user;
+    }
+  free(decode);
+  return user;
 }
+
 
 /**
  * Queues a response to request basic authentication from the client
@@ -699,162 +716,32 @@ MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
  * @param realm the realm presented to the client
  * @return MHD_YES on success, MHD_NO otherwise
  */
-int MHD_queue_basic_auth_fail_response(struct MHD_Connection *connection,
-		const char *realm, struct MHD_Response *response) {
-	int ret;
-	size_t hlen = strlen(realm) + sizeof("Basic realm=\"\"");
-	char header[hlen];
-	snprintf(header, sizeof(header), "Basic realm=\"%s\"", realm);
-	ret = MHD_add_response_header(response, MHD_HTTP_HEADER_WWW_AUTHENTICATE,
-			header);
-	if (MHD_YES == ret)
-		ret = MHD_queue_response(connection, MHD_HTTP_UNAUTHORIZED, response);
-	return ret;
+int 
+MHD_queue_basic_auth_fail_response(struct MHD_Connection *connection,
+				   const char *realm, 
+				   struct MHD_Response *response) 
+{
+  int ret;
+  size_t hlen = strlen(realm) + strlen("Basic realm=\"\"") + 1;
+  char header[hlen];
+
+  if (hlen !=
+      snprintf(header, 
+	       sizeof(header), 
+	       "Basic realm=\"%s\"", 
+	       realm))
+    {
+      EXTRA_CHECK (0);
+      return MHD_NO;
+    }
+  ret = MHD_add_response_header(response,
+				MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+				header);
+  if (MHD_YES == ret)
+    ret = MHD_queue_response(connection, 
+			     MHD_HTTP_UNAUTHORIZED, 
+			     response);
+  return ret;
 }
-
-#if HTTPS_SUPPORT
-
-/**
- * Get the client's certificate
- *
- * @param connection The MHD connection structure
- * @return NULL if no valid client certificate could be found, a pointer
- * 			to the certificate if found
- */
-void*
-MHD_cert_auth_get_certificate(struct MHD_Connection *connection) {
-
-	if (connection->client_cert == NULL && connection->client_cert_status == 0) {
-		if (connection->tls_session == NULL) {
-			connection->client_cert_status = GNUTLS_CERT_INVALID;
-			return NULL;
-		}
-
-		if (gnutls_certificate_verify_peers2(connection->tls_session,
-				&connection->client_cert_status)) {
-			connection->client_cert_status = GNUTLS_CERT_INVALID;
-			return NULL;
-		}
-
-		unsigned int listsize;
-		const gnutls_datum_t * pcert = gnutls_certificate_get_peers(
-				connection->tls_session, &listsize);
-		if (pcert == NULL || listsize == 0) {
-#if HAVE_MESSAGES
-			MHD_DLOG(connection->daemon,
-					"Failed to retrieve client certificate chain\n");
-#endif
-			connection->client_cert_status = GNUTLS_CERT_INVALID;
-			return NULL;
-		}
-
-		if (gnutls_x509_crt_init(&connection->client_cert)) {
-#if HAVE_MESSAGES
-			MHD_DLOG(connection->daemon,
-					"Failed to initialize client certificate\n");
-#endif
-			connection->client_cert = NULL;
-			connection->client_cert_status = GNUTLS_CERT_INVALID;
-			return NULL;
-		}
-		if (gnutls_x509_crt_import(connection->client_cert, &pcert[0],
-				GNUTLS_X509_FMT_DER)) {
-#if HAVE_MESSAGES
-			MHD_DLOG(connection->daemon,
-					"Failed to import client certificate\n");
-#endif
-			gnutls_x509_crt_deinit(connection->client_cert);
-			connection->client_cert = NULL;
-			connection->client_cert_status = GNUTLS_CERT_INVALID;
-			return NULL;
-		}
-	}
-
-	return connection->client_cert;
-}
-
-/**
- * Get the distinguished name from the client's certificate
- *
- * @param connection The MHD connection structure
- * @return NULL if no dn or certificate could be found, a pointer
- * 			to the dn if found
- */
-char *
-MHD_cert_auth_get_dn(struct MHD_Connection *connection) {
-
-	char* buf;
-	size_t lbuf = 0;
-
-	gnutls_x509_crt_t cert = MHD_cert_auth_get_certificate(connection);
-	if (cert == NULL)
-		return NULL;
-
-	gnutls_x509_crt_get_dn(cert, NULL, &lbuf);
-	buf = malloc(lbuf);
-	if (buf == NULL) {
-#if HAVE_MESSAGES
-		MHD_DLOG(connection->daemon,
-				"Failed to allocate memory for certificate dn\n");
-#endif
-		return NULL;
-	}
-	gnutls_x509_crt_get_dn(cert, buf, &lbuf);
-	return buf;
-
-}
-
-/**
- * Get the alternative name of specified type from the client's certificate
- *
- * @param connection The MHD connection structure
- * @param nametype The requested name type
- * @param index The position of the alternative name if multiple names are
- * 			matching the requested type, 0 for the first matching name
- * @return NULL if no matching alternative name could be found, a pointer
- * 			to the alternative name if found
- */
-char *
-MHD_cert_auth_get_alt_name(struct MHD_Connection *connection, int nametype, unsigned int index) {
-
-	char* buf;
-	size_t lbuf;
-	unsigned int seq = 0;
-	unsigned int subseq = 0;
-	int result;
-	unsigned int type;
-
-	gnutls_x509_crt_t cert = MHD_cert_auth_get_certificate(connection);
-	if (cert == NULL)
-		return NULL;
-
-	for (;; seq++) {
-		lbuf = 0;
-		result = gnutls_x509_crt_get_subject_alt_name2(cert, seq, NULL, &lbuf,
-				&type, NULL);
-		if (result == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE)
-			return NULL;
-		if (type != nametype)
-			continue;
-		if (subseq != index) {
-			subseq++;
-			continue;
-		}
-		buf = malloc(lbuf);
-		if (buf == NULL) {
-#if HAVE_MESSAGES
-			MHD_DLOG(connection->daemon,
-					"Failed to allocate memory for certificate alt name\n");
-#endif
-			return NULL;
-		}
-		gnutls_x509_crt_get_subject_alt_name2(cert, seq, buf, &lbuf, NULL, NULL);
-		return buf;
-
-	}
-
-}
-
-#endif	/* HTTPS */
 
 /* end of digestauth.c */

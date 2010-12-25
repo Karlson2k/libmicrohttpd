@@ -1450,7 +1450,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
  */
 char *
 MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
-			     char** password);
+				     char** password);
 
 /**
  * Queues a response to request basic authentication from the client
@@ -1461,43 +1461,8 @@ MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
  */
 int
 MHD_queue_basic_auth_fail_response(struct MHD_Connection *connection,
-			     const char *realm,
-			     struct MHD_Response *response);
-
-/**
- * Get the client's certificate
- *
- * @param connection The MHD connection structure
- * @return NULL if no valid client certificate could be found, a pointer
- * 			to the certificate if found
- */
-void*
-MHD_cert_auth_get_certificate(struct MHD_Connection *connection);
-
-/**
- * Get the distinguished name from the client's certificate
- *
- * @param connection The MHD connection structure
- * @return NULL if no dn or certificate could be found, a pointer
- * 			to the dn if found
- */
-char *
-MHD_cert_auth_get_dn(struct MHD_Connection *connection);
-
-/**
- * Get the alternative name of specified type from the client's certificate
- *
- * @param connection The MHD connection structure
- * @param nametype The requested name type
- * @param index The position of the alternative name if multiple names are
- * 			matching the requested type, 0 for the first matching name
- * @return NULL if no matching alternative name could be found, a pointer
- * 			to the alternative name if found
- */
-char *
-MHD_cert_auth_get_alt_name(struct MHD_Connection *connection,
-			     int nametype,
-			     unsigned int index);
+				   const char *realm,
+				   struct MHD_Response *response);
 
 /* ********************** generic query functions ********************** */
 

@@ -706,16 +706,6 @@ struct MHD_Connection
    */
   int cipher;
 
-  /**
-   * Validation status of client's certificate.
-   */
-  gnutls_certificate_status_t client_cert_status;
-
-  /**
-   * Client's certificate.
-   */
-  gnutls_x509_crt_t client_cert;
-
 #endif
 };
 

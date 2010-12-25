@@ -690,14 +690,9 @@ Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
 (HTTPS connections only).
 
 @item MHD_CONNECTION_INFO_GNUTLS_SESSION,
-Takes no extra arguments.  Allows access to the underlying GNUtls session 
-(HTTPS connections only).
-
-@item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT
-Allows access to the underlying GNUtls client certificate.
-Equivalent to calling directly MHD_cert_auth_get_certificate.
-Takes no extra arguments.
-(HTTPS connections only).
+Takes no extra arguments.  Allows access to the underlying GNUtls session,
+including access to the underlying GNUtls client certificate
+(HTTPS connections only).  Takes no extra arguments.
 
 @end table
 @end deftp
@@ -1497,15 +1492,15 @@ when https is not used to encrypt the session.
 
 Client certificate authentication uses a X.509 certificate from
 the client. This is the strongest authentication mechanism but it
-requires the use of https. Client certificate authentication can
+requires the use of HTTPS. Client certificate authentication can
 be used simultaneously with Basic or Digest Authentication in order
 to provide a two levels authentication (like for instance separate
-machine and user authentication).
+machine and user authentication).  A code example for using
+client certificates is presented in the @mhd{} tutorial.
 
 @menu
 * microhttpd-dauth basic:: Using Basic Authentication.
 * microhttpd-dauth digest:: Using Digest Authentication.
-* microhttpd-dauth cert:: Using Client Certificate Authentication.
 @end menu
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1517,10 +1512,10 @@ machine and user authentication).
 @deftypefun {char *} MHD_basic_auth_get_username_password (struct MHD_Connection *connection, char** password)
 Get the username and password from the basic authorization header sent by the client.
 Return @mynull{} if no username could be found, a pointer to the username if found.
-If returned value is not @mynull{}, the value must be free()'ed.
+If returned value is not @mynull{}, the value must be @code{free()}'ed.
 
 @var{password} reference a buffer to store the password. It can be @mynull{}.
-If returned value is not @mynull{}, the value must be free()'ed.
+If returned value is not @mynull{}, the value must be @code{free()}'ed.
 @end deftypefun
 
 @deftypefun {int} MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection, const char *realm, struct MHD_Response *response)
@@ -1542,7 +1537,7 @@ client with a 401 HTTP status.
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @mynull{} if the value is not found or header does not exist.
-If returned value is not @mynull{}, the value must be free()'ed.
+If returned value is not @mynull{}, the value must be @code{free()}'ed.
 @end deftypefun
 
 @deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
@@ -1641,39 +1636,6 @@ ahc_echo (void *cls,
   return ret;
 @}
 @end example
-
-@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-@c ------------------------------------------------------------
-@node microhttpd-dauth cert
-@section Using Client Certificate Authentication
-
-@deftypefun {void *} MHD_cert_auth_get_certificate (struct MHD_Connection *connection)
-Get the client's X.509 certificate.
-Return @mynull{} if no valid client certificate was found, a pointer to the certificate
-(which can be casted to gnutls_x509_crt_t) if found.
-The certificate is cached between calls for a same https session and must not but
-manually modified or free()'ed.
-@end deftypefun
-
-@deftypefun {char *} MHD_cert_auth_get_dn (struct MHD_Connection *connection)
-Get the distinguished name from the client's certificate.
-Return @mynull{} if the certificate doesn't contain a dn or if no valid certificate was
-found, a pointer to the dn if found. If returned value is not @mynull{}, the value must
-be free()'ed.
-@end deftypefun
-
-@deftypefun {char *} MHD_cert_auth_get_alt_name (struct MHD_Connection *connection, int nametype, unsigned int index)
-Get the alternative name of specified type from the client's certificate.
-Return @mynull{} if the certificate doesn't contain a matching alternative name or if no
-valid certificate was found, a pointer to the alternative name if found. If returned
-value is not @mynull{}, the value must be free()'ed.
-
-@var{nametype} The requested name type (of type 'enum gnutls_x509_subject_alt_name_t')
-
-@var{index} The position of the alternative name if multiple names are matching the
-requested type, 0 for the first matching name
-@end deftypefun
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

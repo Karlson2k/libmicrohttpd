@@ -1075,8 +1075,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
           if (pos->tls_session != NULL)
             gnutls_deinit (pos->tls_session);
-          if (pos->client_cert != NULL)
-            gnutls_x509_crt_deinit (pos->client_cert);
 #endif
           MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
 	  if (pos->response != NULL)

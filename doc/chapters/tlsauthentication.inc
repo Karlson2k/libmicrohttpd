@@ -105,6 +105,7 @@ The rest consists of little new besides some additional memory cleanups.
 
 The rather unexciting file loader can be found in the complete example @code{tlsauthentication.c}.
 
+
 @heading Remarks
 @itemize @bullet
 @item
@@ -126,5 +127,174 @@ hardcode certificates in embedded devices.
 The cryptographic facilities consume memory space and computing time. For this reason, websites usually consists
 both of uncritically @emph{HTTP} parts and secured @emph{HTTPS}.
 
-
 @end itemize
+
+
+@heading Client authentication
+
+You can also use MHD to authenticate the client via SSL/TLS certificates
+(as an alternative to using the password-based Basic or Digest authentication).
+To do this, you will need to link your application against @emph{gnutls}.
+For this, you first need to obtain the raw GnuTLS session handle from 
+@emph{MHD} using @code{MHD_get_connection_info}.  
+
+@verbatim
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+
+gnutls_session_t tls_session;
+tls_session = MHD_get_connection_info (connection, 
+                                       MHD_CONNECTION_INFO_GNUTLS_SESSION);
+@end verbatim
+
+You can then extract the client certificate:
+
+@verbatim
+/**
+ * Get the client's certificate
+ *
+ * @param tls_session the TLS session
+ * @return NULL if no valid client certificate could be found, a pointer
+ *  	to the certificate if found 
+ */
+static gnutls_x509_crt_t
+get_client_certificate (gnutls_session_t tls_session) 
+{
+  unsigned int listsize;
+  const gnutls_datum_t * pcert;
+  gnutls_certificate_status_t client_cert_status;
+  gnutls_x509_crt_t client_cert;
+
+  if (tls_session == NULL) 
+    return NULL;
+  if (gnutls_certificate_verify_peers2(tls_session,
+				       &client_cert_status)) 
+    return NULL;
+  pcert = gnutls_certificate_get_peers(tls_session, 
+				       &listsize);
+  if ( (pcert == NULL) || 
+       (listsize == 0)) 
+    {
+      fprintf (stderr,
+	       "Failed to retrieve client certificate chain\n");
+      return NULL;
+    }    
+  if (gnutls_x509_crt_init(&client_cert)) 
+    {
+      fprintf (stderr,
+	       "Failed to initialize client certificate\n");
+      return NULL;
+    }
+  /* Note that by passing values between 0 and listsize here, you
+     can get access to the CA's certs */
+  if (gnutls_x509_crt_import(client_cert, 
+			     &pcert[0],
+			     GNUTLS_X509_FMT_DER)) 
+    {
+      fprintf (stderr,
+	       "Failed to import client certificate\n");
+      gnutls_x509_crt_deinit(client_cert);
+      return NULL;
+    }  
+  return client_cert;
+}
+@end verbatim
+
+Using the client certificate, you can then get the client's distinguished name
+and alternative names:
+
+@verbatim
+/**
+ * Get the distinguished name from the client's certificate
+ *
+ * @param client_cert the client certificate
+ * @return NULL if no dn or certificate could be found, a pointer
+ * 			to the dn if found
+ */
+char *
+cert_auth_get_dn(gnutls_x509_crt_c client_cert) 
+{
+  char* buf;
+  size_t lbuf;  
+
+  lbuf = 0;
+  gnutls_x509_crt_get_dn(client_cert, NULL, &lbuf);
+  buf = malloc(lbuf);
+  if (buf == NULL) 
+    {
+      fprintf (stderr,
+	       "Failed to allocate memory for certificate dn\n");
+      return NULL;
+    }
+  gnutls_x509_crt_get_dn(client_cert, buf, &lbuf);
+  return buf;
+}
+
+
+/**
+ * Get the alternative name of specified type from the client's certificate
+ *
+ * @param client_cert the client certificate
+ * @param nametype The requested name type
+ * @param index The position of the alternative name if multiple names are
+ * 			matching the requested type, 0 for the first matching name
+ * @return NULL if no matching alternative name could be found, a pointer
+ * 			to the alternative name if found
+ */
+char *
+MHD_cert_auth_get_alt_name(gnutls_x509_crt_t client_cert,
+			   int nametype, 
+			   unsigned int index) 
+{
+  char* buf;
+  size_t lbuf;
+  unsigned int seq;
+  unsigned int subseq;
+  unsigned int type;
+  int result;
+
+  subseq = 0;
+  for (seq=0;;seq++) 
+    {
+      lbuf = 0;
+      result = gnutls_x509_crt_get_subject_alt_name2(client_cert, seq, NULL, &lbuf,
+						     &type, NULL);
+      if (result == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE)
+	return NULL;
+      if (nametype != (int) type)
+	continue;
+      if (subseq == index) 
+	break;
+      subseq++;
+    }
+  buf = malloc(lbuf);
+  if (buf == NULL) 
+    {
+      fprintf (stderr,
+	       "Failed to allocate memory for certificate alt name\n");
+      return NULL;
+    }
+  result = gnutls_x509_crt_get_subject_alt_name2(client_cert, 
+						 seq,
+						 buf,
+						 &lbuf, 
+						 NULL, NULL);
+  if (result != nametype)
+    {
+      fprintf (stderr,
+	       "Unexpected return value from gnutls: %d\n",
+	       result);
+      free (buf);
+      return NULL;
+    }
+  return buf;
+}
+@end verbatim
+
+Finally, you should release the memory associated with the client
+certificate:
+
+@verbatim
+gnutls_x509_crt_deinit (client_cert);
+@end verbatim
+
