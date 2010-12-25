@@ -3,8 +3,8 @@
 @setfilename microhttpd-tutorial.info
 @set UPDATED 26 Dec 2010
 @set UPDATED-MONTH Dec 2010
-@set EDITION 0.9.3
-@set VERSION 0.9.3
+@set EDITION 0.9.4
+@set VERSION 0.9.4
 @settitle A tutorial for GNU libmicrohttpd
 
 @dircategory GNU Libraries
