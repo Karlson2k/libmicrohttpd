@@ -35,6 +35,7 @@ Free Documentation License".
 @subtitle @value{UPDATED}
 @author Sebastian Gerhardt (@email{sebgerhardt@@gmx.net})
 @author Christian Grothoff (@email{christian@@grothoff.org})
+@author Matthieu Speder (@email{mspeder@@users.sourceforge.net})
 
 @page
 @vskip 0pt plus 1filll
