@@ -37,7 +37,8 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c \
-  md5.c md5.h 
+  md5.c md5.h \
+  base64.c base64.h
 endif
 
 if ENABLE_HTTPS

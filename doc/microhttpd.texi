@@ -117,7 +117,7 @@ GNU libmicrohttpd is a GNU package.
 * microhttpd-inspect::          Implementing external @code{select}.
 * microhttpd-requests::         Handling requests.
 * microhttpd-responses::        Building responses to requests.
-* microhttpd-dauth::			Utilizing Digest Authentication.
+* microhttpd-dauth::            Utilizing Authentication.
 * microhttpd-post::             Adding a @code{POST} processor.
 * microhttpd-info::             Obtaining status information.
 
@@ -258,7 +258,6 @@ change "platform.h" to define @code{MHD_LONG_LONG} to an appropriate
 alternative type and also define @code{MHD_LONG_LONG_PRINTF} to the
 corresponding format string for printing such a data type (without
 the percent sign).
-
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -448,6 +447,20 @@ Memory pointer to the certificate to be used by the
 HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
+   
+@item MHD_OPTION_HTTPS_MEM_TRUST
+@cindex SSL
+@cindex TLS
+Memory pointer to the CA certificate to be used by the
+HTTPS daemon to authenticate and trust clients certificates.
+This option should be followed by an "const char*" argument.
+The presence of this option activates the request of certificate
+to the client. The request to the client is marked optional, and
+it is the responsability of the server to check the presence
+of the certificate if needed.
+Note that most browsers will only present a client certificate
+only if they have one matching the specified CA, not sending
+any certificate otherwise.
    
 @item MHD_OPTION_HTTPS_CRED_TYPE
 @cindex SSL
@@ -678,6 +691,12 @@ Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
 
 @item MHD_CONNECTION_INFO_GNUTLS_SESSION,
 Takes no extra arguments.  Allows access to the underlying GNUtls session 
+(HTTPS connections only).
+
+@item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT
+Allows access to the underlying GNUtls client certificate.
+Equivalent to calling directly MHD_cert_auth_get_certificate.
+Takes no extra arguments.
 (HTTPS connections only).
 
 @end table
@@ -1263,7 +1282,7 @@ the @code{MHD_Response} object is released.
 
 @c ------------------------------------------------------------
 @node microhttpd-response create
-@section Creating response objects
+@section Creating a response object
 
 
 @deftypefun {struct MHD_Response *} MHD_create_response_from_callback (uint64_t size, size_t block_size, MHD_ContentReaderCallback crc, void *crc_cls, MHD_ContentReaderFreeCallback crfc)
@@ -1457,7 +1476,68 @@ We should not modify the value, unless we know what we are doing.
 
 @c ------------------------------------------------------------
 @node microhttpd-dauth
-@chapter Utilizing Digest Authentication
+@chapter Utilizing Authentication
+
+@noindent
+@mhd{} support three types of client authentication.
+
+Basic authentication uses a simple authentication method based
+on BASE64 algorithm. Username and password are exchanged in clear
+between the client and the server, so this method must only be used
+for non-sensitive content or when the session is protected with https.
+When using basic authentication @mhd{} will have access to the clear
+password, possibily allowing to create a chained authentication
+toward an external authentication server.
+
+Digest authentication uses a one-way authentication method based
+on MD5 hash algorithm. Only the hash will transit over the network,
+hence protecting the user password. The nonce will prevent replay
+attacks. This method is appropriate for general use, especially
+when https is not used to encrypt the session.
+
+Client certificate authentication uses a X.509 certificate from
+the client. This is the strongest authentication mechanism but it
+requires the use of https. Client certificate authentication can
+be used simultaneously with Basic or Digest Authentication in order
+to provide a two levels authentication (like for instance separate
+machine and user authentication).
+
+@menu
+* microhttpd-dauth basic:: Using Basic Authentication.
+* microhttpd-dauth digest:: Using Digest Authentication.
+* microhttpd-dauth cert:: Using Client Certificate Authentication.
+@end menu
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd-dauth basic
+@section Using Basic Authentication
+
+@deftypefun {char *} MHD_basic_auth_get_username_password (struct MHD_Connection *connection, char** password)
+Get the username and password from the basic authorization header sent by the client.
+Return @mynull{} if no username could be found, a pointer to the username if found.
+If returned value is not @mynull{}, the value must be free()'ed.
+
+@var{password} reference a buffer to store the password. It can be @mynull{}.
+If returned value is not @mynull{}, the value must be free()'ed.
+@end deftypefun
+
+@deftypefun {int} MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection, const char *realm, struct MHD_Response *response)
+Queues a response to request basic authentication from the client.
+Return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{response} a response structure to specify what shall be presented to the
+client with a 401 HTTP status.
+@end deftypefun
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd-dauth digest
+@section Using Digest Authentication
 
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
@@ -1467,7 +1547,7 @@ If returned value is not @mynull{}, the value must be free()'ed.
 
 @deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
 Checks if the provided values in the WWW-Authenticate header are valid
-and sound according to RFC2716. If valid return MHD_YES, otherwise return MHD_NO.
+and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
 
 @var{realm} must reference to a zero-terminated string representing the realm.
 
@@ -1483,7 +1563,9 @@ Most of the time it is sound to specify 300 seconds as its values.
 
 @deftypefun int MHD_queue_auth_fail_response (struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale)
 Queues a response to request authentication from the client,
-return MHD_YES if successful, otherwise MHD_NO.
+return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
 
 @var{opaque} must reference to a zero-terminated string representing a value
 that gets passed to the client and expected to be passed again to the server
@@ -1494,8 +1576,8 @@ client with a 401 HTTP status.
 
 @var{signal_stale} a value that signals "stale=true" in the response header to
 indicate the invalidity of the nonce and no need to ask for authentication
-parameters and only a new nonce gets generated. MHD_YES to generate a new
-nonce, MHD_NO to ask for authentication parameters.
+parameters and only a new nonce gets generated. @code{MHD_YES} to generate a new
+nonce, @code{MHD_NO} to ask for authentication parameters.
 @end deftypefun
 
 Example: handling digest authentication requests and responses.
@@ -1559,6 +1641,39 @@ ahc_echo (void *cls,
   return ret;
 @}
 @end example
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd-dauth cert
+@section Using Client Certificate Authentication
+
+@deftypefun {void *} MHD_cert_auth_get_certificate (struct MHD_Connection *connection)
+Get the client's X.509 certificate.
+Return @mynull{} if no valid client certificate was found, a pointer to the certificate
+(which can be casted to gnutls_x509_crt_t) if found.
+The certificate is cached between calls for a same https session and must not but
+manually modified or free()'ed.
+@end deftypefun
+
+@deftypefun {char *} MHD_cert_auth_get_dn (struct MHD_Connection *connection)
+Get the distinguished name from the client's certificate.
+Return @mynull{} if the certificate doesn't contain a dn or if no valid certificate was
+found, a pointer to the dn if found. If returned value is not @mynull{}, the value must
+be free()'ed.
+@end deftypefun
+
+@deftypefun {char *} MHD_cert_auth_get_alt_name (struct MHD_Connection *connection, int nametype, unsigned int index)
+Get the alternative name of specified type from the client's certificate.
+Return @mynull{} if the certificate doesn't contain a matching alternative name or if no
+valid certificate was found, a pointer to the alternative name if found. If returned
+value is not @mynull{}, the value must be free()'ed.
+
+@var{nametype} The requested name type (of type 'enum gnutls_x509_subject_alt_name_t')
+
+@var{index} The position of the alternative name if multiple names are matching the
+requested type, 0 for the first matching name
+@end deftypefun
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

@@ -705,6 +705,17 @@ struct MHD_Connection
    * Memory location to return for protocol session info.
    */
   int cipher;
+
+  /**
+   * Validation status of client's certificate.
+   */
+  gnutls_certificate_status_t client_cert_status;
+
+  /**
+   * Client's certificate.
+   */
+  gnutls_x509_crt_t client_cert;
+
 #endif
 };
 
@@ -919,6 +930,11 @@ struct MHD_Daemon
    * Pointer to our SSL/TLS certificate (in ASCII) in memory.
    */
   const char *https_mem_cert;
+
+  /**
+   * Pointer to our SSL/TLS certificate authority (in ASCII) in memory.
+   */
+  const char *https_mem_trust;
 
 #endif
 

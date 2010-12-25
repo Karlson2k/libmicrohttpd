@@ -580,9 +580,14 @@ enum MHD_OPTION
    * Desired size of the stack for threads created by MHD. Followed
    * by an argument of type 'size_t'.  Use 0 for system 'default'.
    */
-  MHD_OPTION_THREAD_STACK_SIZE = 19
+  MHD_OPTION_THREAD_STACK_SIZE = 19,
 
-
+  /**
+   * Memory pointer for the certificate (ca.pem) to be used by the
+   * HTTPS daemon for client authentification.
+   * This option should be followed by a "const char*" argument.
+   */
+  MHD_OPTION_HTTPS_MEM_TRUST =20
 };
 
 
@@ -719,7 +724,12 @@ enum MHD_ConnectionInfoType
   /**
    * Get the GNUTLS session handle.
    */
-  MHD_CONNECTION_INFO_GNUTLS_SESSION
+  MHD_CONNECTION_INFO_GNUTLS_SESSION,
+
+  /**
+   * Get the GNUTLS client certificate handle.
+   */
+  MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT
 };
 
 /**
@@ -1430,6 +1440,65 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 			      int signal_stale);
 
 
+/**
+ * Get the username and password from the basic authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param password a pointer for the password
+ * @return NULL if no username could be found, a pointer
+ * 			to the username if found
+ */
+char *
+MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
+			     char** password);
+
+/**
+ * Queues a response to request basic authentication from the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @return MHD_YES on success, MHD_NO otherwise
+ */
+int
+MHD_queue_basic_auth_fail_response(struct MHD_Connection *connection,
+			     const char *realm,
+			     struct MHD_Response *response);
+
+/**
+ * Get the client's certificate
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid client certificate could be found, a pointer
+ * 			to the certificate if found
+ */
+void*
+MHD_cert_auth_get_certificate(struct MHD_Connection *connection);
+
+/**
+ * Get the distinguished name from the client's certificate
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no dn or certificate could be found, a pointer
+ * 			to the dn if found
+ */
+char *
+MHD_cert_auth_get_dn(struct MHD_Connection *connection);
+
+/**
+ * Get the alternative name of specified type from the client's certificate
+ *
+ * @param connection The MHD connection structure
+ * @param nametype The requested name type
+ * @param index The position of the alternative name if multiple names are
+ * 			matching the requested type, 0 for the first matching name
+ * @return NULL if no matching alternative name could be found, a pointer
+ * 			to the alternative name if found
+ */
+char *
+MHD_cert_auth_get_alt_name(struct MHD_Connection *connection,
+			     int nametype,
+			     unsigned int index);
+
 /* ********************** generic query functions ********************** */
 
 /**
@@ -1452,6 +1521,11 @@ union MHD_ConnectionInfo
    * GNUtls session handle, of type "gnutls_session_t".
    */
   void * /* gnutls_session_t */ tls_session;
+
+  /**
+   * GNUtls client certificate handle, of type "gnutls_x509_crt_t".
+   */
+  void * /* gnutls_x509_crt_t */ client_cert;
 
   /**
    * Address information for the client.

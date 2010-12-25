@@ -2316,6 +2316,10 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       if (connection->tls_session == NULL)
 	return NULL;
       return (const union MHD_ConnectionInfo *) &connection->tls_session;
+#if DAUTH_SUPPORT
+    case MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT:
+      return (const union MHD_ConnectionInfo *) MHD_cert_auth_get_certificate(connection);
+#endif
 #endif
     case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
       return (const union MHD_ConnectionInfo *) &connection->addr;

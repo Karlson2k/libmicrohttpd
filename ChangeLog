@@ -1,3 +1,6 @@
+Sat Dec 25 21:57:14 CET 2010
+	Adding support for basic authentication and client SSL certificates. -MS
+	
 Thu Dec 23 15:40:36 CET 2010
 	Increasing nonce length to 128 to support digest authentication
 	with Opera (see #1633).

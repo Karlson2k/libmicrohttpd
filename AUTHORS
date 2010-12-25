@@ -4,6 +4,7 @@ Nils Durner <durner@gnunet.org> (W32 port)
 Sagie Amir (TLS/SSL support using GNUtls)
 Richard Alimi <rich@velvetsea.net> (performance)
 Amr Ali <amr.ali.cc@gmail.com> (digest authentication)
+Matthieu Speder <mspeder@users.sourceforge.net> (basic authentication, client certificates)
 
 Code contributions also came from:
 Chris GauthierDickey <chrisg@cs.du.edu>

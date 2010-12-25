@@ -439,6 +439,19 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   gnutls_datum_t key;
   gnutls_datum_t cert;
 
+  if (daemon->https_mem_trust) {
+		cert.data = (unsigned char *) daemon->https_mem_trust;
+		cert.size = strlen(daemon->https_mem_trust);
+		if (gnutls_certificate_set_x509_trust_mem(daemon->x509_cred, &cert,
+				GNUTLS_X509_FMT_PEM) < 0) {
+#if HAVE_MESSAGES
+			MHD_DLOG(daemon,
+					"Bad trust certificate format\n");
+#endif
+			return -1;
+		}
+	}
+
   /* certificate & key loaded from memory */
   if (daemon->https_mem_cert && daemon->https_mem_key)
     {
@@ -987,6 +1000,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       gnutls_transport_set_push_function (connection->tls_session,
 					  (gnutls_push_func) &
                                                send_param_adapter);
+
+      if (daemon->https_mem_trust){
+      gnutls_certificate_server_set_request(connection->tls_session, GNUTLS_CERT_REQUEST);
+      }
     }
 #endif
 
@@ -1058,6 +1075,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #if HTTPS_SUPPORT
           if (pos->tls_session != NULL)
             gnutls_deinit (pos->tls_session);
+          if (pos->client_cert != NULL)
+            gnutls_x509_crt_deinit (pos->client_cert);
 #endif
           MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
 	  if (pos->response != NULL)
@@ -1474,6 +1493,16 @@ parse_options_va (struct MHD_Daemon *daemon,
 		     opt);	  
 #endif
           break;
+        case MHD_OPTION_HTTPS_MEM_TRUST:
+	  if (0 != (daemon->options & MHD_USE_SSL))
+	    daemon->https_mem_trust = va_arg (ap, const char *);
+#if HAVE_MESSAGES
+	  else
+	    FPRINTF (stderr,
+		     "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		     opt);
+#endif
+          break;
 	case MHD_OPTION_HTTPS_CRED_TYPE:
 	  daemon->cred_type = va_arg (ap, gnutls_credentials_type_t);
 	  break;
@@ -1561,6 +1590,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_SOCK_ADDR:
 		case MHD_OPTION_HTTPS_MEM_KEY:
 		case MHD_OPTION_HTTPS_MEM_CERT:
+		case MHD_OPTION_HTTPS_MEM_TRUST:
 		case MHD_OPTION_HTTPS_PRIORITIES:
 		case MHD_OPTION_ARRAY:
 		  if (MHD_YES != parse_options (daemon,
@@ -1606,8 +1636,8 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
         default:
 #if HAVE_MESSAGES
-          if ((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
-              (opt <= MHD_OPTION_HTTPS_PRIORITIES))
+          if (((opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
+              (opt <= MHD_OPTION_HTTPS_PRIORITIES)) || (opt == MHD_OPTION_HTTPS_MEM_TRUST))
             {
               FPRINTF (stderr,
                        "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n",

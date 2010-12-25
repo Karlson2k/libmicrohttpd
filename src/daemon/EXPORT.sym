@@ -27,3 +27,8 @@ MHD_get_version
 MHD_digest_auth_get_username
 MHD_digest_auth_check
 MHD_queue_auth_fail_response
+MHD_basic_auth_get_username_password
+MHD_queue_basic_auth_fail_response
+MHD_cert_auth_get_certificate
+MHD_cert_auth_get_dn
+MHD_cert_auth_get_alt_name

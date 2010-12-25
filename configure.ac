@@ -325,18 +325,18 @@ AC_MSG_RESULT($enable_https)
 AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING(whether to support HTTP Digest authentication)
+AC_MSG_CHECKING(whether to support HTTP basic and digest authentication)
 AC_ARG_ENABLE([dauth],
 		AS_HELP_STRING([--disable-dauth],
-			[disable HTTP Digest Auth support]),
+			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
 		[enable_dauth=no])
 
 if test "$enable_dauth" = "yes"
 then
- AC_DEFINE([DAUTH_SUPPORT],[1],[include Digest Auth support])
+ AC_DEFINE([DAUTH_SUPPORT],[1],[include basic and digest Auth support])
 else
- AC_DEFINE([DAUTH_SUPPORT],[0],[disable Digest Auth support])
+ AC_DEFINE([DAUTH_SUPPORT],[0],[disable basic and digest Auth support])
 fi
 AC_MSG_RESULT($enable_dauth)
 
@@ -416,7 +416,7 @@ AC_MSG_NOTICE([Configuration Summary:
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}
-  HTTP Digest Auth:  ${enable_dauth}
+  HTTP Authentic.:   ${enable_dauth}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${enable_https}
 ])
