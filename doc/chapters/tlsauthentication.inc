@@ -135,8 +135,22 @@ both of uncritically @emph{HTTP} parts and secured @emph{HTTPS}.
 You can also use MHD to authenticate the client via SSL/TLS certificates
 (as an alternative to using the password-based Basic or Digest authentication).
 To do this, you will need to link your application against @emph{gnutls}.
-For this, you first need to obtain the raw GnuTLS session handle from 
-@emph{MHD} using @code{MHD_get_connection_info}.  
+Next, when you start the MHD daemon, you must specify the root CA that you're 
+willing to trust:
+@verbatim
+  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL, 
+  	   		     PORT, NULL, NULL,
+                             &answer_to_connection, NULL, 
+                             MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                             MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
+			     MHD_OPTION_HTTPS_MEM_TRUST, root_ca_pem,
+                             MHD_OPTION_END);
+@end verbatim
+
+With this, you can then obtain client certificates for each session.
+In order to obtain the identity of the client, you first need to
+obtain the raw GnuTLS session handle from @emph{MHD} using
+@code{MHD_get_connection_info}.
 
 @verbatim
 #include <gnutls/gnutls.h>

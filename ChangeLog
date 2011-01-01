@@ -1,3 +1,6 @@
+Sun Dec 26 00:02:15 CET 2010
+	Releasing libmicrohttpd 0.9.4. -CG
+	
 Sat Dec 25 21:57:14 CET 2010
 	Adding support for basic authentication.
 	Documented how to obtain client SSL certificates in tutorial. -MS

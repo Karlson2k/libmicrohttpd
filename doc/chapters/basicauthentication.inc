@@ -69,112 +69,62 @@ Let us assume we had only files not intended to be handed out without the correc
 so every "GET" request will be challenged.
 @emph{RFC 2617} describes how the server shall ask for authentication by adding a
 @emph{WWW-Authenticate} response header with the name of the @emph{realm} protected.
+MHD can generate and queue such a failure response for you using
+the @code{MHD_queue_basic_auth_fail_response} API.  The only thing you need to do
+is construct a response with the error page to be shown to the user
+if he aborts basic authentication.  But first, you should check if the
+proper credentials were already supplied using the
+@code{MHD_basic_auth_get_username_password} call.
 
-We let an extra function function do this.
+Your code would then look like this:
 @verbatim
-static int 
-ask_for_authentication (struct MHD_Connection *connection, const char *realm)
+static int
+answer_to_connection (void *cls, struct MHD_Connection *connection,
+                      const char *url, const char *method,
+                      const char *version, const char *upload_data,
+                      size_t *upload_data_size, void **con_cls)
 {
-  int ret;
+  char *user;
+  char *pass;
+  int fail;
   struct MHD_Response *response;
-  char *headervalue;
-  const char *strbase = "Basic realm=";
-  
-  response = MHD_create_response_from_data (0, NULL, MHD_NO, MHD_NO);
-  if (!response) return MHD_NO;
-  
-  headervalue = malloc (strlen (strbase) + strlen (realm) + 1);
-  if (!headervalue) return MHD_NO;  
 
-  strcpy (headervalue, strbase);
-  strcat (headervalue, realm);
-  
-  ret = MHD_add_response_header (response, "WWW-Authenticate", headervalue);
-  free (headervalue);  
-  if (!ret) {MHD_destroy_response (response); return MHD_NO;}
-
-  ret = MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
+  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
+    return MHD_NO;
+  if (NULL == *con_cls)
+    {
+      *con_cls = connection;
+      return MHD_YES;
+    }
+  pass = NULL;
+  user = MHD_basic_auth_get_username_password (connection, &pass);
+  fail = ( (user == NULL) ||
+	   (0 != strcmp (user, "root")) ||
+	   (0 != strcmp (pass, "pa$$w0rd") ) );  
+  if (user != NULL) free (user);
+  if (pass != NULL) free (pass);
+  if (fail)
+    {
+      const char *page = "<html><body>Go away.</body></html>";
+      response =
+	MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
+				       MHD_NO);
+      ret = MHD_queue_basic_auth_fail_response (connection,
+						"my realm",
+						response);
+    }
+  else
+    {
+      const char *page = "<html><body>A secret.</body></html>";
+      response =
+	MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
+				       MHD_NO);
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    }
   MHD_destroy_response (response);
   return ret;
 }
 @end verbatim
-@noindent
-
-@code{#define} the realm name according to your own taste, e.g. "Maintenance" or "Area51" but
-it will need to have extra quotes.
-
-Since the client may send the authentication right away, it would be wrong to ask for
-it without checking the request's header--where the authentication is expected to be found.
-
-@heading Authentication in detail
-Checking @emph{RFC 2617} again, we find that the client will pack the username and password, by
-whatever means he might have obtained them, in a line separated by a colon---and then encodes
-them to @emph{Base64}. The actual implementation of this encoding are not within the scope of
-this tutorial although a working function is included in the complete source file of the example.
-
-An unencoded word describing the authentication method (here "Basic") will precede the code
-and the resulting line is the value of a request header of the type "Authorization".  
-
-This header line thus is of interest to the function checking a connection for a given username/password:
-@verbatim
-static int 
-is_authenticated (struct MHD_Connection *connection,
-                  const char *username, const char *password)
-{
-  const char *headervalue;
-  ...
-
-  headervalue = MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
-                                             "Authorization");
-  if (NULL == headervalue) return 0;
-@end verbatim
-@noindent
-
-where, firstly, the authentication method will be checked.
-@verbatim
-const char *strbase = "Basic ";
-...
-if (0 != strncmp (headervalue, strbase, strlen (strbase))) return 0;
-@end verbatim
-@noindent
-
-Of course, we could decode the passed credentials in the next step and compare them directly to
-the given strings. But as this would involve string parsing, which is more complicated then string
-composing, it is done the other way around---the clear text credentials will be encoded to @emph{Base64}
-and then compared against the headerline. The authentication method string will be left out here as
-it has been checked already at this point.
-@verbatim
-  char *expected_b64, *expected;
-  int authenticated;
-
-  ...
-  strcpy (expected, username);
-  strcat (expected, ":");
-  strcat (expected, password);  
-
-  expected_b64 = string_to_base64 (expected);
-  if (NULL == expected_b64) return 0;
- 
-  strcpy (expected, strbase);
-  authenticated = (strcmp (headervalue + strlen (strbase), expected_b64) == 0);
-
-  free (expected_b64);
-
-  return authenticated;
-}
-@end verbatim
-@noindent
-
-These two functions---together with a response function in case of positive authentication doing little 
-new---allow the rest of the callback function to be rather short. 
-@verbatim
-  if (!is_authenticated (connection, USER, PASSWORD)) 
-    return ask_for_authentication (connection, REALM); 
-  
-  return secret_page (connection);
-}
-@end verbatim
-@noindent
 
 See the @code{examples} directory for the complete example file.
 

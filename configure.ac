@@ -21,15 +21,15 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.3],[libmicrohttpd@gnu.org])
-AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.3])
+AC_INIT([libmicrohttpd], [0.9.4],[libmicrohttpd@gnu.org])
+AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.4])
 AM_CONFIG_HEADER([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=11
+LIB_VERSION_CURRENT=12
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=1
+LIB_VERSION_AGE=2
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -201,7 +201,7 @@ AC_MSG_CHECKING(whether to use libcurl for testing)
 AC_ARG_ENABLE([curl],
   [AS_HELP_STRING([--disable-curl],[disable cURL based testcases])],
   [enable_curl=${enableval}],
-  [enable_curl=no])
+  [enable_curl=yes])
 AC_MSG_RESULT($enable_curl)
 curl=0
 if test "$enable_curl" = "yes"
@@ -230,7 +230,7 @@ AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
                [disable MHD error messages])],
    [enable_messages=${enableval}],
-   [enable_messages=no])
+   [enable_messages=yes])
 AC_MSG_RESULT($enable_messages)
 if test "$enable_messages" = "yes"
 then
@@ -246,7 +246,7 @@ AC_ARG_ENABLE([postprocessor],
    [AS_HELP_STRING([--disable-postprocessor],
                [disable MHD PostProcessor functionality])],
    [enable_postprocessor=${enableval}],
-   [enable_postprocessor=no])
+   [enable_postprocessor=yes])
 AC_MSG_RESULT($disable_postprocessor)
 AM_CONDITIONAL([HAVE_POSTPROCESSOR],test x$enable_postprocessor != xno)
 
@@ -305,7 +305,7 @@ AC_ARG_ENABLE([https],
    [AS_HELP_STRING([--disable-https],
                [disable HTTPS support])],
    [enable_https=${enableval}],
-   [enable_https=no])
+   [enable_https=yes])
 if test "$enable_https" = "yes"
 then
  if test "$gcrypt" = "true" -a "$gnutls" = "true"
@@ -330,7 +330,7 @@ AC_ARG_ENABLE([dauth],
 		AS_HELP_STRING([--disable-dauth],
 			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
-		[enable_dauth=no])
+		[enable_dauth=yes])
 
 if test "$enable_dauth" = "yes"
 then
@@ -360,7 +360,7 @@ AC_ARG_ENABLE([coverage],
               AS_HELP_STRING([--enable-coverage],
                              [compile the library with code coverage support]),
               [use_gcov=${enableval}], 
-              [use_gcov=yes])
+              [use_gcov=no])
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 
