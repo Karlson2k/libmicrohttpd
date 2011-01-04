@@ -75,9 +75,9 @@ ahc_echo (void *cls,
     file = NULL;
   if (file == NULL)
     {
-      response = MHD_create_response_from_data (strlen (PAGE),
-                                                (void *) PAGE,
-                                                MHD_NO, MHD_NO);
+      response = MHD_create_response_from_buffer (strlen (PAGE),
+						  (void *) PAGE,
+						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
       MHD_destroy_response (response);
     }

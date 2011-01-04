@@ -1,3 +1,8 @@
+Tue Jan  4 13:07:21 CET 2011
+	Added MHD_create_response_from_buffer, deprecating
+	MHD_create_response_from_data.  Deprecating
+	MHD_create_response_from_fd as well. -CG
+
 Sun Dec 26 00:02:15 CET 2010
 	Releasing libmicrohttpd 0.9.4. -CG
 	

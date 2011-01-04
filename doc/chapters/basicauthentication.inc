@@ -107,8 +107,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     {
       const char *page = "<html><body>Go away.</body></html>";
       response =
-	MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
-				       MHD_NO);
+	MHD_create_response_from_buffer (strlen (page), (void *) page, 
+				       MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_basic_auth_fail_response (connection,
 						"my realm",
 						response);
@@ -117,8 +117,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     {
       const char *page = "<html><body>A secret.</body></html>";
       response =
-	MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
-				       MHD_NO);
+	MHD_create_response_from_buffer (strlen (page), (void *) page, 
+				       MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     }
   MHD_destroy_response (response);

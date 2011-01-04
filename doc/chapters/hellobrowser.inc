@@ -54,7 +54,7 @@ HTTP is a rather strict protocol and the client would certainly consider it "ina
 just sent the answer string "as is". Instead, it has to be wrapped with additional information stored in so-called headers and footers.  Most of the work in this area is done by the library for us---we
 just have to ask. Our reply string packed in the necessary layers will be called a "response".
 To obtain such a response we hand our data (the reply--string) and its size over to the 
-@code{MHD_create_response_from_data} function. The last two parameters basically tell @emph{MHD}
+@code{MHD_create_response_from_buffer} function. The last two parameters basically tell @emph{MHD}
 that we do not want it to dispose the message data for us when it has been sent and there also needs
 no internal copy to be done because the @emph{constant} string won't change anyway.
 
@@ -62,8 +62,8 @@ no internal copy to be done because the @emph{constant} string won't change anyw
   struct MHD_Response *response;
   int ret;
 
-  response = MHD_create_response_from_data (strlen (page),
-                                            (void*) page, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (page),
+                                            (void*) page, MHD_RESPMEM_PERSISTENT);
 
 @end verbatim
 

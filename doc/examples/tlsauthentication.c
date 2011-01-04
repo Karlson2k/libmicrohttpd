@@ -113,7 +113,8 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
   char *headervalue;
   const char *strbase = "Basic realm=";
 
-  response = MHD_create_response_from_data (0, NULL, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (0, NULL, 
+					      MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
 
@@ -186,8 +187,8 @@ secret_page (struct MHD_Connection *connection)
   const char *page = "<html><body>A secret.</body></html>";
 
   response =
-    MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
-                                   MHD_NO);
+    MHD_create_response_from_buffer (strlen (page), (void *) page, 
+				     MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
 

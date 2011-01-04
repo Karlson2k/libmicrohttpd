@@ -95,8 +95,9 @@ ahc_echo (void *cls,
   hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name4");
   if ((hdr == NULL) || (0 != strcmp (hdr, "var4 with spaces")))
     abort ();
-  response = MHD_create_response_from_data (strlen (url),
-                                            (void *) url, MHD_NO, MHD_YES);
+  response = MHD_create_response_from_buffer (strlen (url),
+					      (void *) url,
+					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)

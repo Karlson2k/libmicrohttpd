@@ -78,9 +78,9 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return -1;
     }
 
-  response = MHD_create_response_from_data (strlen (EMPTY_PAGE),
-                                            (void *) EMPTY_PAGE,
-                                            MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (EMPTY_PAGE),
+					      (void *) EMPTY_PAGE,
+					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

@@ -67,8 +67,8 @@ send_page (struct MHD_Connection *connection,
   int ret;
   struct MHD_Response *response;
   
-  response = MHD_create_response_from_data (strlen (page), (void*) page, 
-  	     				    MHD_NO, MHD_YES);
+  response = MHD_create_response_from_buffer (strlen (page), (void*) page, 
+  	     				      MHD_RESPMEM_MUST_COPY);
   if (!response) return MHD_NO;
  
   ret = MHD_queue_response (connection, status_code, response);

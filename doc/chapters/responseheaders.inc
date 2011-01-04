@@ -63,9 +63,9 @@ server side and if so, the client should be informed with @code{MHD_HTTP_INTERNA
         "<html><body>An internal server error has occured!\
                               </body></html>";
       response =
-	MHD_create_response_from_data (strlen (errorstr), 
-				       (void *) errorstr, 
-				       MHD_NO, MHD_NO);
+	MHD_create_response_from_buffer (strlen (errorstr), 
+				         (void *) errorstr, 
+				         MHD_RESPMEM_PERSISTENT);
       if (response)
         {
           ret =
@@ -84,8 +84,8 @@ server side and if so, the client should be informed with @code{MHD_HTTP_INTERNA
 
       if (buffer) free(buffer);
     
-      response = MHD_create_response_from_data(strlen(errorstr), (void*)errorstr,
-                                               MHD_NO, MHD_NO);
+      response = MHD_create_response_from_buffer (strlen(errorstr), (void*) errorstr,
+                                                  MHD_RESPMEM_PERSISTENT);
 
       if (response)
         {     
@@ -113,7 +113,7 @@ But in the case of success a response will be constructed directly from the file
     }
 
   response =
-    MHD_create_response_from_fd (fd, sbuf.st_size);
+    MHD_create_response_from_fd_at_offset (fd, sbuf.st_size, 0);
   MHD_add_response_header (response, "Content-Type", MIMETYPE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);

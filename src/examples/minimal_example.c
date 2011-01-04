@@ -49,8 +49,9 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  response = MHD_create_response_from_data (strlen (me),
-                                            (void *) me, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (me),
+					      (void *) me,
+					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

@@ -117,10 +117,9 @@ ahc_echo (void *cls,
 		    sizeof (emsg),
 		    "Failed to open directory `.': %s\n",
 		    strerror (errno));
-	  response = MHD_create_response_from_data (strlen (emsg),
-						    emsg,
-						    MHD_NO,
-						    MHD_YES);
+	  response = MHD_create_response_from_buffer (strlen (emsg),
+						      emsg,
+						      MHD_RESPMEM_MUST_COPY);
 	  if (response == NULL)
 	    return MHD_NO;	    
 	  ret = MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE, response);

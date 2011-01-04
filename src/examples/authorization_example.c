@@ -63,17 +63,18 @@ ahc_echo (void *cls,
       (0 != strcmp (auth, "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")))
     {
       /* require: "Aladdin" with password "open sesame" */
-      response = MHD_create_response_from_data (strlen (DENIED),
-                                                (void *) DENIED, MHD_NO,
-                                                MHD_NO);
+      response = MHD_create_response_from_buffer (strlen (DENIED),
+						  (void *) DENIED, 
+						  MHD_RESPMEM_PERSISTENT);
       MHD_add_response_header (response, MHD_HTTP_HEADER_WWW_AUTHENTICATE,
                                "Basic realm=\"TestRealm\"");
       code = MHD_HTTP_UNAUTHORIZED;
     }
   else
     {
-      response = MHD_create_response_from_data (strlen (me),
-                                                (void *) me, MHD_NO, MHD_NO);
+      response = MHD_create_response_from_buffer (strlen (me),
+						  (void *) me, 
+						  MHD_RESPMEM_PERSISTENT);
       code = MHD_HTTP_OK;
     }
   ret = MHD_queue_response (connection, code, response);

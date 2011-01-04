@@ -352,6 +352,7 @@ struct MHD_Response *MHD_create_response_from_fd (size_t size,
  *        right away, the data maybe released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @deprecated use MHD_create_response_from_buffer instead
  */
 struct MHD_Response *
 MHD_create_response_from_data (size_t size,
@@ -382,7 +383,7 @@ MHD_create_response_from_data (size_t size,
           return NULL;
         }
       memcpy (tmp, data, size);
-      must_free = 1;
+      must_free = MHD_YES;
       data = tmp;
     }
   retVal->crc = NULL;
@@ -394,6 +395,28 @@ MHD_create_response_from_data (size_t size,
   retVal->data_size = size;
   return retVal;
 }
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param buffer size bytes containing the response's data portion
+ * @param mode flags for buffer management
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *
+MHD_create_response_from_buffer (size_t size,
+				 void *buffer,
+				 enum MHD_ResponseMemoryMode mode)
+{
+  return MHD_create_response_from_data (size,
+					buffer,
+					mode == MHD_RESPMEM_MUST_FREE,
+					mode == MHD_RESPMEM_MUST_COPY);
+}
+
 
 /**
  * Destroy a response object and associated resources.  Note that

@@ -674,6 +674,31 @@ We had to close the session since @mhd{} was being shut down.
 @end deftp
 
 
+@deftp {Enumeration} MHD_ResponseMemoryMode
+The @code{MHD_ResponeMemoryMode} specifies how MHD should treat
+the memory buffer given for the response in 
+@code{MHD_create_response_from_buffer}.
+
+@table @code
+@item MHD_RESPMEM_PERSISTENT
+Buffer is a persistent (static/global) buffer that won't change
+for at least the lifetime of the response, MHD should just use
+it, not free it, not copy it, just keep an alias to it.
+ 
+@item MHD_RESPMEM_MUST_FREE
+Buffer is heap-allocated with @code{malloc} (or equivalent) and
+should be freed by MHD after processing the response has
+concluded (response reference counter reaches zero).
+  
+@item MHD_RESPMEM_MUST_COPY
+Buffer is in transient memory, but not on the heap (for example,
+on the stack or non-malloc allocated) and only valid during the
+call to @code{MHD_create_response_from_buffer}.  MHD must make its
+own private copy of the data for processing.
+
+@end table
+@end deftp
+
 
 @deftp {Enumeration} MHD_ConnectionInfoType
 Values of this enum are used to specify what information about a
@@ -1245,7 +1270,7 @@ structures through @cfunction{Tcl_IncrRefCount} and
 a @code{MHD_Response} object is allocated:
 
 @example
-struct MHD_Response * response = MHD_create_response_from_data(...);
+struct MHD_Response * response = MHD_create_response_from_buffer(...);
 /* here: reference counter = 1 */
 @end example
 
@@ -1312,6 +1337,8 @@ Return @mynull{} on error (i.e. invalid arguments, out of memory).
 @deftypefun {struct MHD_Response *} MHD_create_response_from_fd (uint64_t size, int fd)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.
+Function is deprecated, use @code{MHD_create_response_from_fd_at_offset}
+instead (with an offset of zero).
 
 @table @var
 @item size
@@ -1352,9 +1379,34 @@ Return @mynull{} on error (i.e. invalid arguments, out of memory).
 @end deftypefun
 
 
+@deftypefun {struct MHD_Response *} MHD_create_response_from_buffer (size_t size, void *data, enum MHD_ResponseMemoryMode mode)
+Create a response object.  The response object can be extended with
+header information and then it can be used any number of times.
+
+@table @var
+@item size
+size of the data portion of the response;
+
+@item buffer
+the data itself;
+
+@item mode 
+memory management options for buffer; use 
+MHD_RESPMEM_PERSISTENT if the buffer is static/global memory,
+use MHD_RESPMEM_MUST_FREE if the buffer is heap-allocated and
+should be freed by @mhd{} and MHD_RESPMEM_MUST_COPY if the
+buffer is in transient memory (i.e. on the stack) and must
+be copied by @mhd{};
+@end table
+
+Return @mynull{} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
+
 @deftypefun {struct MHD_Response *} MHD_create_response_from_data (size_t size, void *data, int must_free, int must_copy)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.
+This function is deprecated, use @code{MHD_create_response_from_buffer} instead.
 
 @table @var
 @item size
@@ -1385,8 +1437,8 @@ const char * data = "<html><body><p>Error!</p></body></html>";
 struct MHD_Connection * connection = ...;
 struct MHD_Response *   response;
 
-response = MHD_create_response_from_data(strlen(data), data,
-                                         MHD_NO, MHD_NO);
+response = MHD_create_response_from_buffer (strlen(data), data,
+                                            MHD_RESPMEM_PERSISTENT);
 MHD_queue_response(connection, 404, response);
 MHD_destroy_response(response);
 @end example
@@ -1599,9 +1651,9 @@ ahc_echo (void *cls,
   username = MHD_digest_auth_get_username(connection);
   if (username == NULL) 
     @{
-      response = MHD_create_response_from_data(strlen (DENIED), 
-					       DENIED,
-					       MHD_NO, MHD_NO);  
+      response = MHD_create_response_from_buffer(strlen (DENIED), 
+					         DENIED,
+					         MHD_RESPMEM_PERSISTENT);  
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 OPAQUE,
 					 response,
@@ -1617,9 +1669,9 @@ ahc_echo (void *cls,
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     @{
-      response = MHD_create_response_from_data(strlen (DENIED), 
-					       DENIED,
-					       MHD_NO, MHD_NO);  
+      response = MHD_create_response_from_buffer(strlen (DENIED), 
+					         DENIED,
+					         MHD_RESPMEM_PERSISTENT);  
       if (NULL == response) 
 	return MHD_NO;
       ret = MHD_queue_auth_fail_response(connection, realm,
@@ -1629,8 +1681,8 @@ ahc_echo (void *cls,
       MHD_destroy_response(response);  
       return ret;
     @}
-  response = MHD_create_response_from_data(strlen(PAGE), PAGE,
-					   MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen(PAGE), PAGE,
+ 					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
   MHD_destroy_response(response);
   return ret;

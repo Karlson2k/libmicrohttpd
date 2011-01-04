@@ -65,7 +65,8 @@ connection_handler (void *cls,
     }
 
   struct MHD_Response *response =
-    MHD_create_response_from_data (strlen ("Response"), "Response", 0, 0);
+    MHD_create_response_from_buffer (strlen ("Response"), "Response",
+				     MHD_RESPMEM_PERSISTENT);
   int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
 

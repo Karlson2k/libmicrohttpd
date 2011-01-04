@@ -56,9 +56,9 @@ ahc_echo (void *cls,
       /* always to busy for POST requests */
       if (0 == strcmp (method, "POST"))
         {
-          response = MHD_create_response_from_data (strlen (BUSYPAGE),
-                                                    (void *) BUSYPAGE, MHD_NO,
-                                                    MHD_NO);
+          response = MHD_create_response_from_buffer (strlen (BUSYPAGE),
+						      (void *) BUSYPAGE, 
+						      MHD_RESPMEM_PERSISTENT);
           ret =
             MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE,
                                 response);
@@ -68,8 +68,9 @@ ahc_echo (void *cls,
     }
 
   *ptr = NULL;                  /* reset when done */
-  response = MHD_create_response_from_data (strlen (me),
-                                            (void *) me, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (me),
+					      (void *) me,
+					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

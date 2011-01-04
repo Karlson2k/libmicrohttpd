@@ -1199,6 +1199,8 @@ struct MHD_Response *MHD_create_response_from_callback (uint64_t size,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc);
 
+
+
 /**
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
@@ -1210,11 +1212,58 @@ struct MHD_Response *MHD_create_response_from_callback (uint64_t size,
  *        right away, the data maybe released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @deprecated use MHD_create_response_from_buffer instead
  */
 struct MHD_Response *MHD_create_response_from_data (size_t size,
                                                     void *data,
                                                     int must_free,
                                                     int must_copy);
+
+
+/**
+ * Specification for how MHD should treat the memory buffer
+ * given for the response.
+ */
+enum MHD_ResponseMemoryMode {
+
+  /**
+   * Buffer is a persistent (static/global) buffer that won't change
+   * for at least the lifetime of the response, MHD should just use
+   * it, not free it, not copy it, just keep an alias to it.
+   */
+  MHD_RESPMEM_PERSISTENT,
+
+  /**
+   * Buffer is heap-allocated with 'malloc' (or equivalent) and
+   * should be freed by MHD after processing the response has
+   * concluded (response reference counter reaches zero).
+   */
+  MHD_RESPMEM_MUST_FREE,
+
+  /**
+   * Buffer is in transient memory, but not on the heap (for example,
+   * on the stack or non-malloc allocated) and only valid during the
+   * call to 'MHD_create_response_from_buffer'.  MHD must make its
+   * own private copy of the data for processing.
+   */
+  MHD_RESPMEM_MUST_COPY
+
+};
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param buffer size bytes containing the response's data portion
+ * @param mode flags for buffer management
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *
+MHD_create_response_from_buffer (size_t size,
+				 void *buffer,
+				 enum MHD_ResponseMemoryMode mode);
 
 
 /**
@@ -1224,6 +1273,7 @@ struct MHD_Response *MHD_create_response_from_data (size_t size,
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the data; will be closed when response is destroyed
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @deprecated use MHD_create_response_from_fd_at_offset instead
  */
 struct MHD_Response *MHD_create_response_from_fd (size_t size,
 						  int fd);

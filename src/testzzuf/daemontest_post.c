@@ -115,9 +115,9 @@ ahc_echo (void *cls,
   MHD_post_process (pp, upload_data, *upload_data_size);
   if ((eok == 3) && (0 == *upload_data_size))
     {
-      response = MHD_create_response_from_data (strlen (url),
-                                                (void *) url,
-                                                MHD_NO, MHD_YES);
+      response = MHD_create_response_from_buffer (strlen (url),
+						  (void *) url,
+						  MHD_RESPMEM_MUST_COPY);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
       MHD_destroy_post_processor (pp);

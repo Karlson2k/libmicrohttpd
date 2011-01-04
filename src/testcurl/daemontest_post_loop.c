@@ -83,7 +83,8 @@ ahc_echo (void *cls,
     {
       if (*mptr != &marker)
         abort ();
-      response = MHD_create_response_from_data (2, "OK", MHD_NO, MHD_NO);
+      response = MHD_create_response_from_buffer (2, "OK", 
+						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
       *mptr = NULL;

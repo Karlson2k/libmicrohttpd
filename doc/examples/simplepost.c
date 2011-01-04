@@ -40,8 +40,8 @@ send_page (struct MHD_Connection *connection, const char *page)
 
 
   response =
-    MHD_create_response_from_data (strlen (page), (void *) page, MHD_NO,
-                                   MHD_NO);
+    MHD_create_response_from_buffer (strlen (page), (void *) page,
+				     MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
 

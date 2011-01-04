@@ -57,7 +57,8 @@ ahc_echo (void *cls,
   if (me == NULL)
     return MHD_NO;
   sprintf (me, fmt, "q", val);
-  response = MHD_create_response_from_data (strlen (me), me, MHD_YES, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (me), me,
+					      MHD_RESPMEM_MUST_FREE);
   if (response == NULL)
     {
       free (me);

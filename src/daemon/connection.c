@@ -716,8 +716,9 @@ transmit_error_response (struct MHD_Connection *connection,
             status_code, message);
 #endif
   EXTRA_CHECK (connection->response == NULL);
-  response = MHD_create_response_from_data (strlen (message),
-                                            (void *) message, MHD_NO, MHD_NO);
+  response = MHD_create_response_from_buffer (strlen (message),
+					      (void *) message, 
+					      MHD_RESPMEM_PERSISTENT);
   MHD_queue_response (connection, status_code, response);
   EXTRA_CHECK (connection->response != NULL);
   MHD_destroy_response (response);
@@ -1663,8 +1664,9 @@ parse_connection_headers (struct MHD_Connection *connection)
 #endif
       EXTRA_CHECK (connection->response == NULL);
       response =
-        MHD_create_response_from_data (strlen (REQUEST_LACKS_HOST),
-                                       REQUEST_LACKS_HOST, MHD_NO, MHD_NO);
+        MHD_create_response_from_buffer (strlen (REQUEST_LACKS_HOST),
+					 REQUEST_LACKS_HOST,
+					 MHD_RESPMEM_PERSISTENT);
       MHD_queue_response (connection, MHD_HTTP_BAD_REQUEST, response);
       MHD_destroy_response (response);
       return;
