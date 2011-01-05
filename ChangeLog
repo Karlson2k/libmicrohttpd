@@ -1,6 +1,7 @@
 Wed Jan  5 15:20:11 CET 2011
 	Fixing double-locking on non-Linux platforms when using
 	MHD_create_response_from_fd (#1639). -CG
+	Avoid use of strndup for better portability (#1636). -CG
 
 Tue Jan  4 13:07:21 CET 2011
 	Added MHD_create_response_from_buffer, deprecating

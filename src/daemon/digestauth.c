@@ -689,7 +689,8 @@ MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
       free(decode);
       return NULL;
     }
-  user = strndup(decode, separator - decode);
+  user = strdup(decode);
+  user[separator - decode] = '\0'; /* cut off at ':' */
   if (password != NULL) 
     {
       *password = strdup(separator + 1);  
