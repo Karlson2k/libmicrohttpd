@@ -270,13 +270,9 @@ static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct MHD_Response *response = cls;
-  int ret;
 
-  pthread_mutex_lock (&response->mutex);
   (void) lseek (response->fd, pos + response->fd_off, SEEK_SET);
-  ret = read (response->fd, buf, max);
-  pthread_mutex_unlock (&response->mutex);
-  return ret;
+  return read (response->fd, buf, max);
 }
 
 

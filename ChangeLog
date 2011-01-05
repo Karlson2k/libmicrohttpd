@@ -1,3 +1,7 @@
+Wed Jan  5 15:20:11 CET 2011
+	Fixing double-locking on non-Linux platforms when using
+	MHD_create_response_from_fd (#1639). -CG
+
 Tue Jan  4 13:07:21 CET 2011
 	Added MHD_create_response_from_buffer, deprecating
 	MHD_create_response_from_data.  Deprecating
@@ -5,11 +9,11 @@ Tue Jan  4 13:07:21 CET 2011
 
 Sun Dec 26 00:02:15 CET 2010
 	Releasing libmicrohttpd 0.9.4. -CG
-	
+
 Sat Dec 25 21:57:14 CET 2010
 	Adding support for basic authentication.
 	Documented how to obtain client SSL certificates in tutorial. -MS
-	
+
 Thu Dec 23 15:40:36 CET 2010
 	Increasing nonce length to 128 to support digest authentication
 	with Opera (see #1633).

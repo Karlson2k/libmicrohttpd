@@ -310,6 +310,7 @@ connection_close_error (struct MHD_Connection *connection)
   MHD_connection_close (connection, MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
+
 /**
  * Prepare the response buffer of this connection for
  * sending.  Assumes that the response mutex is
