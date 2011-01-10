@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "GNU libmicrohttpd"
-PROJECT_NUMBER         = 0.4.2
+PROJECT_NUMBER         = 0.9.5
 OUTPUT_DIRECTORY       = doc/doxygen/
 CREATE_SUBDIRS         = YES
 OUTPUT_LANGUAGE        = English
