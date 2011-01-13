@@ -306,7 +306,7 @@ extern "C"
 
 /**
  * Options for the MHD daemon.  Note that if neither
- * MHD_USER_THREAD_PER_CONNECTION nor MHD_USE_SELECT_INTERNALLY are
+ * MHD_USER_THREAD_PER_CONNECTION nor MHD_USE_SELECT_INTERNALLY is
  * used, the client wants control over the process and will call the
  * appropriate microhttpd callbacks.<p>
  *

@@ -270,7 +270,7 @@ the percent sign).
 Options for the @mhd{} daemon.
 
 Note that if neither @code{MHD_USER_THREAD_PER_CONNECTION} nor
-@code{MHD_USE_SELECT_INTERNALLY} are used, the client wants control over
+@code{MHD_USE_SELECT_INTERNALLY} is used, the client wants control over
 the process and will call the appropriate microhttpd callbacks.
 
 Starting the daemon may also fail if a particular option is not
