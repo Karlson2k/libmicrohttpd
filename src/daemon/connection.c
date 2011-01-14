@@ -380,12 +380,12 @@ try_ready_normal_body (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+
 /**
- * Prepare the response buffer of this connection for
- * sending.  Assumes that the response mutex is
- * already held.  If the transmission is complete,
- * this function may close the socket (and return
- * MHD_NO).
+ * Prepare the response buffer of this connection for sending.
+ * Assumes that the response mutex is already held.  If the
+ * transmission is complete, this function may close the socket (and
+ * return MHD_NO).
  *
  * @return MHD_NO if readying the response failed
  */
