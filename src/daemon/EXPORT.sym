@@ -11,6 +11,8 @@ MHD_queue_response
 MHD_create_response_from_callback
 MHD_create_response_from_data
 MHD_create_response_from_fd
+MHD_create_response_from_fd_at_offset
+MHD_create_response_from_buffer
 MHD_destroy_response
 MHD_add_response_header
 MHD_add_response_footer

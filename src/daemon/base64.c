@@ -27,11 +27,14 @@ static const char base64_digits[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+#if 0
 char* BASE64Encode(const char* src) {
 	unsigned int in_len = strlen(src);
-	char* dest = (char*)malloc((in_len + 2 - ((in_len + 2) % 3)) / 3 * 4 + 1);
+	char* dest = malloc((in_len + 2 - ((in_len + 2) % 3)) / 3 * 4 + 1);
 	char* result = dest;
 
+	if (dest == NULL)
+	   return NULL;
 	while (*src) {
 		dest[0] = base64_chars[(src[0] & 0xfc) >> 2];
 		dest[1] = base64_chars[((src[0] & 0x03) << 4) + ((src[1] & 0xf0) >> 4)];
@@ -54,6 +57,7 @@ char* BASE64Encode(const char* src) {
 	return result;
 
 }
+#endif
 
 char* BASE64Decode(const char* src) {
 	unsigned int in_len = strlen(src);
