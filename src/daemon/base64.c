@@ -68,8 +68,9 @@ char* BASE64Decode(const char* src) {
 		/* Wrong base64 string length */
 		return NULL;
 	}
-	result = dest = (char*) malloc(in_len / 4 * 3 + 1);
-
+	result = dest = malloc(in_len / 4 * 3 + 1);
+	if (result == NULL)
+	   return NULL; /* out of memory */
 	while (*src) {
 		char a = base64_digits[(unsigned char)*(src++)];
 		char b = base64_digits[(unsigned char)*(src++)];
