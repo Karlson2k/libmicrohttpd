@@ -310,7 +310,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   np = nonce;
   while (*np != '\0')
     {
-      off = (off << 8) | (*np & (off >> 24));
+      off = (off << 8) | (*np ^ (off >> 24));
       np++;
     }
   off = off % mod;

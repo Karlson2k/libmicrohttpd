@@ -1,3 +1,8 @@
+Tue Jan 18 23:58:09 CET 2011
+	Fixing hash calculation in digest auth; old function had
+	collisions causing the browser to challenge users for
+	authentication too often. -CG/AW
+
 Fri Jan 14 19:19:45 CET 2011
 	Removing dead code, adding missing new symbols to export list.
 	Fixed two missing NULL checks after malloc operations. -CG
