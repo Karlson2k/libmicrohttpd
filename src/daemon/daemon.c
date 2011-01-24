@@ -1793,8 +1793,10 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
 		"MHD poll support only works with MHD_USE_THREAD_PER_CONNECTION\n");
 #endif
+#if DAUTH_SUPPORT
       free (retVal->nnc);
       pthread_mutex_destroy (&retVal->nnc_lock);
+#endif
       free (retVal);
       return NULL;
     }
