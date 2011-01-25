@@ -342,7 +342,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
       return MHD_YES; 
     }
 #endif
-
+  
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
                        response->data,

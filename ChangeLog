@@ -1,3 +1,6 @@
+Tue Jan 25 14:10:45 CET 2011
+	Releasing libmicrohttpd 0.9.6. -CG
+
 Mon Jan 24 16:36:35 CET 2011
 	Fixing compilation error if DAUTH_SUPPORT was 0 (#1646). -CG/bplant
 
