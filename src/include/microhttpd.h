@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00090600
+#define MHD_VERSION 0x00090601
 
 /**
  * MHD-internal return code for "YES".
@@ -1548,7 +1548,7 @@ union MHD_ConnectionInfo
   /**
    * Address information for the client.
    */
-  struct sockaddr_in *client_addr;
+  struct sockaddr *client_addr;
 };
 
 /**

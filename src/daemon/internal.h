@@ -526,7 +526,7 @@ struct MHD_Connection
    * Foreign address (of length addr_len).  MALLOCED (not
    * in pool!).
    */
-  struct sockaddr_in *addr;
+  struct sockaddr *addr;
 
   /**
    * Thread for this connection (if we are using
