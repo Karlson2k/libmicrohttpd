@@ -1,3 +1,7 @@
+Thu Jan 27 10:51:39 CET 2011
+	Disable 'EXTRA_CHECKS's by default as suggested in #1652
+ 	(I guess it is time). -CG/timn
+
 Thu Jan 27 10:48:55 CET 2011
 	Removing bogus assertion in basic authentication code (#1651). -CG/timn
 

@@ -33,7 +33,11 @@
 #include <gnutls/gnutls.h>
 #endif
 
-#define EXTRA_CHECKS MHD_YES
+/**
+ * Should we perform additional sanity checks at runtime (on our internal
+ * invariants)?  This may lead to aborts, but can be useful for debugging.
+ */
+#define EXTRA_CHECKS MHD_NO
 
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
