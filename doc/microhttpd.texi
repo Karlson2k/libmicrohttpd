@@ -707,15 +707,29 @@ connection is desired.
 @table @code
 
 @item MHD_CONNECTION_INFO_CIPHER_ALGO
-What cipher algorithm is being used.
+What cipher algorithm is being used (HTTPS connections only).  
 Takes no extra arguments.
+NULL is returned for non-HTTPS connections.
 
 @item MHD_CONNECTION_INFO_PROTOCOL,
 Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
 (HTTPS connections only).
+NULL is returned for non-HTTPS connections.
+
+@item MHD_CONNECTION_INFO_CLIENT_ADDRESS
+Returns information about the address of the client.  Returns 
+essentially a @code{struct sockaddr **} (since the API returns
+a @code{union MHD_ConnectionInfo *} and that union contains
+a @code{struct sockaddr *}).
 
 @item MHD_CONNECTION_INFO_GNUTLS_SESSION,
 Takes no extra arguments.  Allows access to the underlying GNUtls session,
+including access to the underlying GNUtls client certificate
+(HTTPS connections only).  Takes no extra arguments.  
+NULL is returned for non-HTTPS connections.
+
+@item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
+Takes no extra arguments.  Allows access to the client certificate
 including access to the underlying GNUtls client certificate
 (HTTPS connections only).  Takes no extra arguments.
 
@@ -1923,6 +1937,8 @@ infoType) set to the desired information), or NULL
 in case the desired information is not available or
 applicable.
 @end deftypefun
+
+
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
