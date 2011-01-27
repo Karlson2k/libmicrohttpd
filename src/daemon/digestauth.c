@@ -731,15 +731,10 @@ MHD_queue_basic_auth_fail_response(struct MHD_Connection *connection,
   size_t hlen = strlen(realm) + strlen("Basic realm=\"\"") + 1;
   char header[hlen];
 
-  if (hlen !=
-      snprintf(header, 
-	       sizeof(header), 
-	       "Basic realm=\"%s\"", 
-	       realm))
-    {
-      EXTRA_CHECK (0);
-      return MHD_NO;
-    }
+  snprintf(header, 
+           sizeof (header), 
+	   "Basic realm=\"%s\"", 
+	   realm);
   ret = MHD_add_response_header(response,
 				MHD_HTTP_HEADER_WWW_AUTHENTICATE,
 				header);
