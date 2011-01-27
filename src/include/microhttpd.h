@@ -717,7 +717,9 @@ enum MHD_ConnectionInfoType
 
   /**
    * Obtain IP address of the client.
-   * Takes no extra arguments.
+   * Takes no extra arguments.  Returns a
+   * 'struct sockaddr_in **' by accident; obsolete,
+   * use MHD_CONNECTION_INFO_CLIENT_SOCK_ADDR.
    */
   MHD_CONNECTION_INFO_CLIENT_ADDRESS,
 
@@ -730,6 +732,7 @@ enum MHD_ConnectionInfoType
    * Get the GNUTLS client certificate handle.
    */
   MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT
+
 };
 
 /**
@@ -1545,7 +1548,7 @@ union MHD_ConnectionInfo
   /**
    * Address information for the client.
    */
-  struct sockaddr_in * client_addr;
+  struct sockaddr_in *client_addr;
 };
 
 /**
