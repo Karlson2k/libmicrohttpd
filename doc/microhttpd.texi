@@ -344,7 +344,7 @@ default is 32 kB (32*1024 bytes) as defined by the internal constant
 
 @item MHD_OPTION_CONNECTION_LIMIT
 @cindex connection, limiting number of connections
-Maximum number of concurrenct connections to accept (followed by an
+Maximum number of concurrent connections to accept (followed by an
 @code{unsigned int}).  The default is @code{FD_SETSIZE - 4} (the
 maximum number of file descriptors supported by @code{select} minus
 four for @code{stdin}, @code{stdout}, @code{stderr} and the server
@@ -406,7 +406,7 @@ Bind daemon to the supplied socket address. This option should be followed by a
 @code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified, 
 the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6}, 
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
-the daemon will listen to incomming connections from anywhere.
+the daemon will listen to incoming connections from anywhere.
 
 @item MHD_OPTION_URI_LOG_CALLBACK
 @cindex debugging
@@ -456,7 +456,7 @@ HTTPS daemon to authenticate and trust clients certificates.
 This option should be followed by an "const char*" argument.
 The presence of this option activates the request of certificate
 to the client. The request to the client is marked optional, and
-it is the responsability of the server to check the presence
+it is the responsibility of the server to check the presence
 of the certificate if needed.
 Note that most browsers will only present a client certificate
 only if they have one matching the specified CA, not sending
@@ -474,7 +474,7 @@ this option should be followed by one of the values listed in
 @cindex TLS
 @cindex cipher
 SSL/TLS protocol version and ciphers.
-This option must be followwed by an "const char *" argument
+This option must be followed by an "const char *" argument
 specifying the SSL/TLS protocol versions and ciphers that
 are acceptable for the application.  The string is passed
 unchanged to gnutls_priority_init.  If this option is not
@@ -489,7 +489,7 @@ This option should be followed by two arguments.  First an integer of
 type "size_t" which specifies the size of the buffer pointed to by the
 second argument in bytes.  Note that the application must ensure that
 the buffer of the second argument remains allocated and unmodified
-while the deamon is running.  For security, you SHOULD provide a fresh
+while the daemon is running.  For security, you SHOULD provide a fresh
 random nonce when using MHD with Digest Authentication.  
 
 @item MHD_OPTION_NONCE_NC_SIZE
@@ -741,7 +741,7 @@ including access to the underlying GNUtls client certificate
 
 @deftp {Enumeration} MHD_DaemonInfoType
 Values of this enum are used to specify what
-information about a deamon is desired.
+information about a daemon is desired.
 @table @code
 @item MHD_DAEMON_INFO_KEY_SIZE
 Request information about the key size for a particular cipher
@@ -1043,7 +1043,7 @@ Set a handler for fatal errors.
 
 @table @var
 @item cb 
-function to call if MHD encounteres a fatal internal error.  If no handler was set explicitly, MHD will call @code{abort}.
+function to call if MHD encounters a fatal internal error.  If no handler was set explicitly, MHD will call @code{abort}.
 
 @item cls
 closure argument for cb; the other arguments are the name of the source file, line number and a string describing the nature of the fatal error (which can be NULL)
@@ -1224,7 +1224,7 @@ for each response, we use it once and finally we destroy it.
 
 Example: we allocate a new @code{MHD_Response} structure for each
 response @strong{kind}, we use it every time we have to give that
-responce and we finally destroy it only when the daemon shuts down.
+response and we finally destroy it only when the daemon shuts down.
 
 @menu
 * microhttpd-response enqueue:: Enqueuing a response.
@@ -1269,7 +1269,7 @@ error (i.e. reply already sent).
 Destroy a response object and associated resources (decrement the
 reference counter).  Note that @mhd{} may keep some of the resources
 around if the response is still in the queue for some clients, so the
-memory may not necessarily be freed immediatley.
+memory may not necessarily be freed immediately.
 @end deftypefun
 
 
@@ -1547,7 +1547,7 @@ on BASE64 algorithm. Username and password are exchanged in clear
 between the client and the server, so this method must only be used
 for non-sensitive content or when the session is protected with https.
 When using basic authentication @mhd{} will have access to the clear
-password, possibily allowing to create a chained authentication
+password, possibly allowing to create a chained authentication
 toward an external authentication server.
 
 Digest authentication uses a one-way authentication method based
@@ -1717,7 +1717,7 @@ ahc_echo (void *cls,
 
 
 @noindent
-@mhd{} provides the post procesor API to make it easier for applications to
+@mhd{} provides the post processor API to make it easier for applications to
 parse the data of a client's @code{POST} request: the
 @code{MHD_AccessHandlerCallback} will be invoked multiple times to
 process data as it arrives; at each invocation a new chunk of data must
@@ -1732,7 +1732,7 @@ that the pointer was initially @mynull{} can be used to detect that
 this is a new request.  
 
 One method to detect that a new connection was established is
-to set @code{*con_cls} to anunused integer:
+to set @code{*con_cls} to an unused integer:
 
 @example
 int
