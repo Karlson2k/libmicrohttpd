@@ -1,3 +1,6 @@
+Fri Feb 11 10:15:38 CET 2011
+	Fixing parameter ordering in documentation (#1659). -wellska
+
 Thu Jan 27 10:51:39 CET 2011
 	Disable 'EXTRA_CHECKS's by default as suggested in #1652
  	(I guess it is time). -CG/timn
