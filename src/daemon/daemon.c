@@ -399,6 +399,14 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       errno = EINTR;
       return -1;
     }
+  if (res < 0)
+    {
+      /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
+	 disrupted); set errno to something caller will interpret
+	 correctly as a hard error*/
+      errno = EPIPE;
+      return res;
+    }
   return res;
 }
 

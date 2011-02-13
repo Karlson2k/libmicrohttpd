@@ -1,3 +1,7 @@
+Sun Feb 13 10:52:29 CET 2011
+	Handle gnutls receive error(s) for interrupted SSL
+	connections better. -MS
+
 Fri Feb 11 10:15:38 CET 2011
 	Fixing parameter ordering in documentation (#1659). -wellska
 
