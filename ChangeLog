@@ -1,3 +1,8 @@
+Fri Feb 18 11:03:59 CET 2011
+	Handle large (>2 GB) file transfers with sendfile on 32-bit
+	systems better; handle odd sendfile failures by libc/kernel
+	by falling back to standard 'SEND'. -CG
+
 Sun Feb 13 10:52:29 CET 2011
 	Handle gnutls receive error(s) for interrupted SSL
 	connections better. -MS

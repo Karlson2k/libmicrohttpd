@@ -709,7 +709,8 @@ send_param_adapter (struct MHD_Connection *connection,
 #if LINUX
   int fd;
   off_t offset;
-  int ret;
+  off_t left;
+  ssize_t ret;
 #endif
   if (connection->socket_fd == -1)
     return -1;
@@ -723,14 +724,28 @@ send_param_adapter (struct MHD_Connection *connection,
     {
       /* can use sendfile */
       offset = (off_t) connection->response_write_position + connection->response->fd_off;
+      left = connection->response->total_size - offset;
+      if (left > SSIZE_MAX)
+	left = SSIZE_MAX; /* cap at return value limit */
       ret = sendfile (connection->socket_fd, 
 		      fd,
 		      &offset,
-		      connection->response->total_size - offset);
-      if ( (ret == -1) &&
-	   (errno == EINTR) )
-	return 0;
-      return ret;
+		      left);
+      if (ret != -1)
+	return ret;
+      if (ret == -1) 
+	{
+	  if (EINTR == errno) 
+	    return 0;
+	  if ( (EINVAL == errno) ||
+	       (EBADF == errno) ||
+	       (EAGAIN == errno) )
+	    return -1; 
+	  /* None of the 'usual' sendfile errors occurred, so we should try
+	     to fall back to 'SEND'; see also this thread for info on
+	     odd libc/Linux behavior with sendfile:
+	     http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+	}
     }
 #endif
   return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
