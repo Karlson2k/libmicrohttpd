@@ -29,6 +29,7 @@
 #include "response.h"
 #include "connection.h"
 #include "memorypool.h"
+#include <limits.h>
 
 #if HTTPS_SUPPORT
 #include "connection_https.h"
