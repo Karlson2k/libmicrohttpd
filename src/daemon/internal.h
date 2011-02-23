@@ -642,11 +642,6 @@ struct MHD_Connection
   int response_unready;
 
   /**
-   * Are we sending with chunked encoding?
-   */
-  int have_chunked_response;
-
-  /**
    * Are we receiving with chunked encoding?  This will be set to
    * MHD_YES after we parse the headers and are processing the body
    * with chunks.  After we are done with the body and we are

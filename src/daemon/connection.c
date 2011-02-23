@@ -241,11 +241,6 @@ MHD_queue_response (struct MHD_Connection *connection,
          have already sent the full message body */
       connection->response_write_position = response->total_size;
     }
-  if ((response->total_size == MHD_SIZE_UNKNOWN) &&
-      (0 == strcasecmp (connection->version, MHD_HTTP_VERSION_1_1)))
-    connection->have_chunked_response = MHD_YES;
-  else
-    connection->have_chunked_response = MHD_NO;
   if (connection->state == MHD_CONNECTION_HEADERS_PROCESSED)
     {
       /* response was queued "early",
