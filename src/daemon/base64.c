@@ -46,10 +46,10 @@ char* BASE64Decode(const char* src) {
 		char c = base64_digits[(unsigned char)*(src++)];
 		char d = base64_digits[(unsigned char)*(src++)];
 		*(dest++) = (a << 2) | ((b & 0x30) >> 4);
-		if (c == -1)
+		if (c == (char)-1)
 			break;
 		*(dest++) = ((b & 0x0f) << 4) | ((c & 0x3c) >> 2);
-		if (d == -1)
+		if (d == (char)-1)
 			break;
 		*(dest++) = ((c & 0x03) << 6) | d;
 	}
