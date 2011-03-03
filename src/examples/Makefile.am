@@ -18,6 +18,7 @@ noinst_PROGRAMS = \
 authorization_example \
 minimal_example \
 minimal_example_comet \
+post_example \
 querystring_example \
 fileserver_example \
 fileserver_example_dirs \
@@ -35,6 +36,11 @@ endif
 minimal_example_SOURCES = \
  minimal_example.c 
 minimal_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+post_example_SOURCES = \
+ post_example.c 
+post_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 minimal_example_comet_SOURCES = \
