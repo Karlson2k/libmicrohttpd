@@ -67,13 +67,13 @@ main (int argc, char *const *argv)
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_POLL,
-			// MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (// MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_POLL,
+			MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG | MHD_USE_POLL,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE,
-			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 5,
+			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;

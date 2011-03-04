@@ -1,3 +1,7 @@
+Fri Mar  4 10:07:18 CET 2011
+	Avoid using a pipe for signalling as well, just use server
+	socket shutdown (also for thread-per-connection). -CG
+
 Thu Mar  3 21:42:47 CET 2011
 	Fixing issue where Base64 decode fails when char is defined 
         as unsigned char  (Mantis 1666). -CG/tmayer

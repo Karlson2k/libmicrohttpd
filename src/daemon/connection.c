@@ -771,6 +771,7 @@ MHD_connection_get_fdset (struct MHD_Connection *connection,
   return ret;
 }
 
+
 /**
  * Obtain the pollfd for this connection
  *
