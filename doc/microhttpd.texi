@@ -9,7 +9,7 @@ header file @file{microhttpd.h}.
 
 @noindent
 
-Copyright @copyright{} 2007, 2008, 2009, 2010 Christian Grothoff
+Copyright @copyright{} 2007, 2008, 2009, 2010, 2011 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -1097,6 +1097,36 @@ method is used.
 
 Return @code{MHD_YES} on success, @code{MHD_NO} if this daemon was not
 started with the right options for this call.
+@end deftypefun
+
+
+@deftypefun void MHD_add_connection (struct MHD_Daemon *daemon, int client_socket, const struct sockaddr *addr, socklen_t addrlen)
+Add another client connection to the set of connections 
+managed by MHD.  This API is usually not needed (since
+MHD will accept inbound connections on the server socket).
+Use this API in special cases, for example if your HTTP
+server is behind NAT and needs to connect out to the 
+HTTP client.
+
+The given client socket will be managed (and closed!) by MHD after
+this call and must no longer be used directly by the application
+afterwards.
+
+@table @var
+@item daemon 
+daemon that manages the connection
+@item client_socket 
+socket to manage (MHD will expect to receive an HTTP request from this socket next).
+@item addr 
+IP address of the client
+@item addrlen 
+number of bytes in addr
+@end table
+
+This function will return @code{MHD_YES} on success, 
+@code{MHD_NO} if this daemon could
+not handle the connection (i.e. malloc failed, etc).
+The socket will be closed in any case.
 @end deftypefun
 
 

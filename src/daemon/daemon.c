@@ -860,60 +860,52 @@ create_thread (pthread_t * thread,
 
 
 /**
- * Accept an incoming connection and create the MHD_Connection object for
- * it.  This function also enforces policy by way of checking with the
- * accept policy callback.
- * 
- * @param daemon handle with the listen socket
- * @return MHD_YES on success
+ * Add another client connection to the set of connections 
+ * managed by MHD.  This API is usually not needed (since
+ * MHD will accept inbound connections on the server socket).
+ * Use this API in special cases, for example if your HTTP
+ * server is behind NAT and needs to connect out to the 
+ * HTTP client.
+ *
+ * The given client socket will be managed (and closed!) by MHD after
+ * this call and must no longer be used directly by the application
+ * afterwards.
+ *
+ * Per-IP connection limits are ignored when using this API.
+ *
+ * @param daemon daemon that manages the connection
+ * @param client_socket socket to manage (MHD will expect
+ *        to receive an HTTP request from this socket next).
+ * @param addr IP address of the client
+ * @param addrlen number of bytes in addr
+ * @return MHD_YES on success, MHD_NO if this daemon could
+ *        not handle the connection (i.e. malloc failed, etc).
+ *        The socket will be closed in any case.
  */
-static int
-MHD_accept_connection (struct MHD_Daemon *daemon)
+int 
+MHD_add_connection (struct MHD_Daemon *daemon, 
+		    int client_socket,
+		    const struct sockaddr *addr,
+		    socklen_t addrlen)
 {
   struct MHD_Connection *connection;
-#if HAVE_INET6
-  struct sockaddr_in6 addrstorage;
-#else
-  struct sockaddr_in addrstorage;
-#endif
-  struct sockaddr *addr = (struct sockaddr *) &addrstorage;
-  socklen_t addrlen;
-  int s;
   int res_thread_create;
 #if OSX
   static int on = 1;
 #endif
 
-  addrlen = sizeof (addrstorage);
-  memset (addr, 0, sizeof (addrstorage));
-
-  s = ACCEPT (daemon->socket_fd, addr, &addrlen);
-  if ((s == -1) || (addrlen <= 0))
-    {
-#if HAVE_MESSAGES
-      /* This could be a common occurance with multiple worker threads */
-      if ((EAGAIN != errno) && (EWOULDBLOCK != errno))
-        MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
-#endif
-      if (s != -1)
-        {
-          SHUTDOWN (s, SHUT_RDWR);
-          CLOSE (s);
-          /* just in case */
-        }
-      return MHD_NO;
-    }
 #ifndef WINDOWS
-  if ( (s >= FD_SETSIZE) &&
+  if ( (client_socket >= FD_SETSIZE) &&
        (0 == (daemon->options & MHD_USE_POLL)) )
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-		s,
+		client_socket,
 		FD_SETSIZE);
 #endif
-      CLOSE (s);
+      SHUTDOWN (client_socket, SHUT_RDWR);
+      CLOSE (client_socket);
       return MHD_NO;
     }
 #endif
@@ -932,8 +924,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       MHD_DLOG (daemon,
                 "Server reached connection limit (closing inbound connection)\n");
 #endif
-      SHUTDOWN (s, SHUT_RDWR);
-      CLOSE (s);
+      SHUTDOWN (client_socket, SHUT_RDWR);
+      CLOSE (client_socket);
       return MHD_NO;
     }
 
@@ -946,11 +938,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       MHD_DLOG (daemon, "Connection rejected, closing connection\n");
 #endif
 #endif
-      SHUTDOWN (s, SHUT_RDWR);
-      CLOSE (s);
+      SHUTDOWN (client_socket, SHUT_RDWR);
+      CLOSE (client_socket);
       MHD_ip_limit_del (daemon, addr, addrlen);
       return MHD_YES;
     }
+
 #if OSX
 #ifdef SOL_SOCKET
 #ifdef SO_NOSIGPIPE
@@ -958,14 +951,15 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
 #endif
 #endif
+
   connection = malloc (sizeof (struct MHD_Connection));
   if (NULL == connection)
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
 #endif
-      SHUTDOWN (s, SHUT_RDWR);
-      CLOSE (s);
+      SHUTDOWN (client_socket, SHUT_RDWR);
+      CLOSE (client_socket);
       MHD_ip_limit_del (daemon, addr, addrlen);
       return MHD_NO;
     }
@@ -977,15 +971,15 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, "Error allocating memory: %s\n", STRERROR (errno));
 #endif
-      SHUTDOWN (s, SHUT_RDWR);
-      CLOSE (s);
+      SHUTDOWN (client_socket, SHUT_RDWR);
+      CLOSE (client_socket);
       MHD_ip_limit_del (daemon, addr, addrlen);
       free (connection);
       return MHD_NO;
     }
   memcpy (connection->addr, addr, addrlen);
   connection->addr_len = addrlen;
-  connection->socket_fd = s;
+  connection->socket_fd = client_socket;
   connection->daemon = daemon;
   connection->last_activity = time (NULL);
 
@@ -1022,8 +1016,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                     "Failed to setup TLS credentials: unknown credential type %d\n",
                     connection->daemon->cred_type);
 #endif
-          SHUTDOWN (s, SHUT_RDWR);
-          CLOSE (s);
+          SHUTDOWN (client_socket, SHUT_RDWR);
+          CLOSE (client_socket);
           MHD_ip_limit_del (daemon, addr, addrlen);
           free (connection->addr);
           free (connection);
@@ -1062,8 +1056,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
           MHD_DLOG (daemon, "Failed to create a thread: %s\n",
                     STRERROR (res_thread_create));
 #endif
-          SHUTDOWN (s, SHUT_RDWR);
-          CLOSE (s);
+          SHUTDOWN (client_socket, SHUT_RDWR);
+          CLOSE (client_socket);
           MHD_ip_limit_del (daemon, addr, addrlen);
           free (connection->addr);
           free (connection);
@@ -1073,7 +1067,55 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   connection->next = daemon->connections;
   daemon->connections = connection;
   daemon->max_connections--;
-  return MHD_YES;
+  return MHD_YES;  
+}
+
+
+/**
+ * Accept an incoming connection and create the MHD_Connection object for
+ * it.  This function also enforces policy by way of checking with the
+ * accept policy callback.
+ * 
+ * @param daemon handle with the listen socket
+ * @return MHD_YES on success
+ */
+static int
+MHD_accept_connection (struct MHD_Daemon *daemon)
+{
+#if HAVE_INET6
+  struct sockaddr_in6 addrstorage;
+#else
+  struct sockaddr_in addrstorage;
+#endif
+  struct sockaddr *addr = (struct sockaddr *) &addrstorage;
+  socklen_t addrlen;
+  int s;
+
+  addrlen = sizeof (addrstorage);
+  memset (addr, 0, sizeof (addrstorage));
+  s = ACCEPT (daemon->socket_fd, addr, &addrlen);
+  if ((s == -1) || (addrlen <= 0))
+    {
+#if HAVE_MESSAGES
+      /* This could be a common occurance with multiple worker threads */
+      if ((EAGAIN != errno) && (EWOULDBLOCK != errno))
+        MHD_DLOG (daemon, "Error accepting connection: %s\n", STRERROR (errno));
+#endif
+      if (s != -1)
+        {
+          SHUTDOWN (s, SHUT_RDWR);
+          CLOSE (s);
+          /* just in case */
+        }
+      return MHD_NO;
+    }
+#if HAVE_MESSAGES
+#if DEBUG_CONNECT
+  MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
+#endif
+#endif
+  return MHD_add_connection (daemon, s,
+			     addr, addrlen);
 }
 
 /**
