@@ -1,3 +1,7 @@
+Sat Mar  5 22:00:36 CET 2011
+	Do not use POLLRDHUP, which causes build errors on OS X / OpenSolaris
+	(#1667). -CG
+
 Fri Mar  4 10:24:04 CET 2011
 	Added new API to allow MHD server to initiate connection to
 	client (special use-case for servers behind NAT), thereby

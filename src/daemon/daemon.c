@@ -650,7 +650,7 @@ MHD_handle_connection (void *data)
 
 	  fd = con->daemon->socket_fd;
 	  p[1].fd = fd;
-	  p[1].events |= POLLIN | POLLRDHUP;
+	  p[1].events |= POLLIN;
 	  
 	  if (poll (p, 
 		    (fd != -1) ? 2 : 1, 
