@@ -1424,12 +1424,7 @@ do_read (struct MHD_Connection *connection)
   int bytes_read;
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
-  {
-        MHD_DLOG (connection->daemon,
-                  "connection->read_buffer_size == connection->read_buffer_offset\n");
-                                            
     return MHD_NO;
-  }
 
   bytes_read = connection->recv_cls (connection,
                                      &connection->read_buffer
@@ -1437,15 +1432,15 @@ do_read (struct MHD_Connection *connection)
                                      connection->read_buffer_size -
                                      connection->read_buffer_offset);
   if (bytes_read < 0)
-    {     
+    {
       if (errno == EINTR)
         return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
       if (0 != (connection->daemon->options & MHD_USE_SSL))
 	MHD_DLOG (connection->daemon,
-		  "Failed to receive data: %s (%i)\n",
-		  gnutls_strerror (bytes_read), bytes_read);
+		  "Failed to receive data: %s\n",
+		  gnutls_strerror (bytes_read));
       else
 #endif      
 	MHD_DLOG (connection->daemon,
