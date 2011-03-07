@@ -1370,7 +1370,7 @@ MHD_poll (struct MHD_Daemon *daemon,
     
     memset (p, 0, sizeof (p));
     p[0].fd = daemon->socket_fd;
-    p[0].events = POLLIN | POLLRDHUP;
+    p[0].events = POLLIN;
     p[0].revents = 0;
     if (may_block == MHD_NO)
       timeout = 0;
