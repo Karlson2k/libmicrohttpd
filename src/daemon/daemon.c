@@ -746,7 +746,7 @@ send_param_adapter (struct MHD_Connection *connection,
     {
       /* can use sendfile */
       offset = (off_t) connection->response_write_position + connection->response->fd_off;
-      left = connection->response->total_size - offset;
+      left = connection->response->total_size - connection->response_write_position;
       if (left > SSIZE_MAX)
 	left = SSIZE_MAX; /* cap at return value limit */
       ret = sendfile (connection->socket_fd, 

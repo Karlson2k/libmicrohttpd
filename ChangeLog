@@ -1,3 +1,6 @@
+Fri Mar 11 22:25:29 CET 2011
+	Fixing bug in MHD_create_response_from_fd_at_offset with non-zero offsets. -ES
+
 Sat Mar  5 22:00:36 CET 2011
 	Do not use POLLRDHUP, which causes build errors on OS X / OpenSolaris
 	(#1667). -CG
