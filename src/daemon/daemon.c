@@ -755,19 +755,16 @@ send_param_adapter (struct MHD_Connection *connection,
 		      left);
       if (ret != -1)
 	return ret;
-      if (ret == -1) 
-	{
-	  if (EINTR == errno) 
-	    return 0;
-	  if ( (EINVAL == errno) ||
-	       (EBADF == errno) ||
-	       (EAGAIN == errno) )
-	    return -1; 
-	  /* None of the 'usual' sendfile errors occurred, so we should try
-	     to fall back to 'SEND'; see also this thread for info on
-	     odd libc/Linux behavior with sendfile:
-	     http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-	}
+      if (EINTR == errno) 
+	return 0;
+      if ( (EINVAL == errno) ||
+	   (EBADF == errno) ||
+	   (EAGAIN == errno) )
+	return -1; 
+      /* None of the 'usual' sendfile errors occurred, so we should try
+	 to fall back to 'SEND'; see also this thread for info on
+	 odd libc/Linux behavior with sendfile:
+	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
   return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
