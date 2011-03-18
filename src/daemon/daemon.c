@@ -75,9 +75,6 @@
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
-#ifndef MSG_DONTWAIT
-#define MSG_DONTWAIT 0
-#endif
 #endif
 
 /**
@@ -712,7 +709,7 @@ recv_param_adapter (struct MHD_Connection *connection,
     return -1;
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
-  return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
+  return RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
 }
 
 /**
@@ -767,7 +764,7 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL | MSG_DONTWAIT);
+  return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
 }
 
 
