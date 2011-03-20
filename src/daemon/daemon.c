@@ -1333,18 +1333,19 @@ MHD_select (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef HAVE_POLL_H
 /**
- * Poll for new connection.
+ * Process all of our connections and possibly the server
+ * socket using 'poll'.
  *
  * @param daemon daemon to run poll loop for
  * @param may_block YES if blocking, NO if non-blocking
  * @return MHD_NO on serious errors, MHD_YES on success
  */
 static int
-MHD_poll (struct MHD_Daemon *daemon,
-	  int may_block)
+MHD_poll_all (struct MHD_Daemon *daemon,
+	      int may_block)
 {
-#ifdef HAVE_POLL_H
   unsigned int num_connections;
   struct MHD_Connection *pos;
 
@@ -1361,11 +1362,20 @@ MHD_poll (struct MHD_Daemon *daemon,
     unsigned MHD_LONG_LONG ltimeout;
     unsigned int i;
     int timeout;
+    unsigned int poll_server;
     
     memset (p, 0, sizeof (p));
-    p[0].fd = daemon->socket_fd;
-    p[0].events = POLLIN;
-    p[0].revents = 0;
+    if ( (daemon->max_connections == 0) && (daemon->socket_fd != -1) )
+      {
+	poll_server = 1;
+	p[0].fd = daemon->socket_fd;
+	p[0].events = POLLIN;
+	p[0].revents = 0;
+      }
+    else
+      {
+	poll_server = 0;
+      }
     if (may_block == MHD_NO)
       timeout = 0;
     else if (MHD_YES != MHD_get_timeout (daemon, &ltimeout))
@@ -1379,22 +1389,23 @@ MHD_poll (struct MHD_Daemon *daemon,
       {
 	memset(&mp, 0, sizeof (struct MHD_Pollfd));
 	MHD_connection_get_pollfd (pos, &mp);
-	p[1+i].fd = mp.fd;
+	p[poll_server+i].fd = mp.fd;
 	if (mp.events & MHD_POLL_ACTION_IN) 
-	  p[1+i].events |= POLLIN;        
+	  p[poll_server+i].events |= POLLIN;        
 	if (mp.events & MHD_POLL_ACTION_OUT) 
-	  p[1+i].events |= POLLOUT;
+	  p[poll_server+i].events |= POLLOUT;
 	i++;
 	pos = pos->next;
       }
-    if (poll (p, 1 + num_connections, timeout) < 0) {
-      if (errno == EINTR)
-	return MHD_YES;
+    if (poll (p, poll_server + num_connections, timeout) < 0) 
+      {
+	if (errno == EINTR)
+	  return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "poll failed: %s\n", STRERROR (errno));
+	MHD_DLOG (daemon, "poll failed: %s\n", STRERROR (errno));
 #endif
-      return MHD_NO;
-    }
+	return MHD_NO;
+      }
     /* handle shutdown cases */
     if (daemon->shutdown == MHD_YES) 
       return MHD_NO;  
@@ -1408,23 +1419,91 @@ MHD_poll (struct MHD_Daemon *daemon,
 	if (i >= num_connections)
 	  break; /* connection list changed somehow, retry later ... */
 	MHD_connection_get_pollfd (pos, &mp);
-	if (p[1+i].fd != mp.fd)
+	if (p[poll_server+i].fd != mp.fd)
 	  break; /* fd mismatch, something else happened, retry later ... */
 
 	/* normal handling */
-	if (0 != (p[1+i].revents & POLLIN)) 
+	if (0 != (p[poll_server+i].revents & POLLIN)) 
 	  pos->read_handler (pos);
-	if (0 != (p[1+i].revents & POLLOUT)) 
+	if (0 != (p[poll_server+i].revents & POLLOUT)) 
 	  pos->write_handler (pos);
 	if (pos->socket_fd != -1)
 	  pos->idle_handler (pos);
 	i++;
 	pos = pos->next;
       }
-    if (0 != (p[0].revents & POLLIN)) 
+    if ( (1 == poll_server) &&
+	 (0 != (p[0].revents & POLLIN)) )
       MHD_accept_connection (daemon);
   }
   return MHD_YES;
+}
+
+
+/**
+ * Process only the listen socket using 'poll'.
+ *
+ * @param daemon daemon to run poll loop for
+ * @param may_block YES if blocking, NO if non-blocking
+ * @return MHD_NO on serious errors, MHD_YES on success
+ */
+static int
+MHD_poll_listen_socket (struct MHD_Daemon *daemon,
+			int may_block)
+{
+  struct pollfd p;
+  unsigned MHD_LONG_LONG ltimeout;
+  int timeout;
+  
+  memset (&p, 0, sizeof (p));
+  p.fd = daemon->socket_fd;
+  p.events = POLLIN;
+  p.revents = 0;
+  if (may_block == MHD_NO)
+    timeout = 0;
+  else if (MHD_YES != MHD_get_timeout (daemon, &ltimeout))
+    timeout = -1;
+  else
+    timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
+  if (poll (&p, 1, timeout) < 0)
+    {
+      if (errno == EINTR)
+	return MHD_YES;
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "poll failed: %s\n", STRERROR (errno));
+#endif
+      return MHD_NO;
+    }
+  /* handle shutdown cases */
+  if (daemon->shutdown == MHD_YES) 
+    return MHD_NO;  
+  if (daemon->socket_fd < 0) 
+    return MHD_YES; 
+  if (0 != (p.revents & POLLIN))
+    MHD_accept_connection (daemon);  
+  return MHD_YES;
+}
+#endif
+
+
+/**
+ * Do 'poll'-based processing.
+ *
+ * @param daemon daemon to run poll loop for
+ * @param may_block YES if blocking, NO if non-blocking
+ * @return MHD_NO on serious errors, MHD_YES on success
+ */
+static int
+MHD_poll (struct MHD_Daemon *daemon,
+	  int may_block)
+{
+#ifdef HAVE_POLL_H
+  if (daemon->shutdown == MHD_YES)
+    return MHD_NO;
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    return MHD_poll_all (daemon, may_block);
+  else
+    return MHD_poll_listen_socket (daemon, may_block);
 #else
   return MHD_NO;
 #endif
