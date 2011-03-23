@@ -1,3 +1,8 @@
+Wed Mar 23 23:24:25 CET 2011
+	Do not use POLLIN when we only care about POLLHUP (significantly
+	improves performance when using MHD_USE_THREAD_PER_CONNECTION
+	in combination with MHD_USE_POLL). -ES
+
 Sun Mar 20 09:16:53 CET 2011
 	Fixing race when using MHD_USE_THREAD_PER_CONNECTION in combination
 	with MHD_USE_POLL. -CG
