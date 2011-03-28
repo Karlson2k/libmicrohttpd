@@ -1993,12 +1993,14 @@ MHD_start_daemon_va (unsigned int options,
 	      return NULL;
 	    }
     }
+
   if (0 != pthread_mutex_init (&retVal->nnc_lock, NULL))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (retVal,
 		"MHD failed to initialize nonce-nc mutex\n");
 #endif
+      free (retVal->nnc);
       free (retVal);
       return NULL;
     }
@@ -2012,8 +2014,7 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
 		"MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n");
 #endif
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 
 #ifdef __SYMBIAN32__
@@ -2023,8 +2024,7 @@ MHD_start_daemon_va (unsigned int options,
       MHD_DLOG (retVal,
 		"Threaded operations are not supported on Symbian.\n");
 #endif
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 #endif
   if (retVal->socket_fd == -1)
@@ -2038,8 +2038,7 @@ MHD_start_daemon_va (unsigned int options,
 	MHD_DLOG (retVal, 
 		  "AF_INET6 not supported\n");
 #endif
-	free (retVal);
-	return NULL;
+	goto free_and_fail;
       }
 #endif
       else
@@ -2052,8 +2051,7 @@ MHD_start_daemon_va (unsigned int options,
 		      "Call to socket failed: %s\n", 
 		      STRERROR (errno));
 #endif
-	  free (retVal);
-	  return NULL;
+	  goto free_and_fail;
 	}
       if ((SETSOCKOPT (socket_fd,
 		       SOL_SOCKET,
@@ -2127,8 +2125,7 @@ MHD_start_daemon_va (unsigned int options,
 		      STRERROR (errno));
 #endif
 	  CLOSE (socket_fd);
-	  free (retVal);
-	  return NULL;
+	  goto free_and_fail;
 	}
       
       if (LISTEN (socket_fd, 20) < 0)
@@ -2140,8 +2137,7 @@ MHD_start_daemon_va (unsigned int options,
 		      STRERROR (errno));
 #endif
 	  CLOSE (socket_fd);
-	  free (retVal);
-	  return NULL;
+	  goto free_and_fail;
 	}      
     }
   else
@@ -2160,8 +2156,7 @@ MHD_start_daemon_va (unsigned int options,
 		  FD_SETSIZE);
 #endif
       CLOSE (socket_fd);
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 #endif
 
@@ -2172,8 +2167,7 @@ MHD_start_daemon_va (unsigned int options,
                "MHD failed to initialize IP connection limit mutex\n");
 #endif
       CLOSE (socket_fd);
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 
 #if HTTPS_SUPPORT
@@ -2185,13 +2179,8 @@ MHD_start_daemon_va (unsigned int options,
 		"Failed to initialize TLS support\n");
 #endif
       CLOSE (socket_fd);
-#ifdef DAUTH_SUPPORT
-      pthread_mutex_destroy (&retVal->nnc_lock);
-      free (retVal->nnc);
-#endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 #endif
   if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
@@ -2205,14 +2194,9 @@ MHD_start_daemon_va (unsigned int options,
                 "Failed to create listen thread: %s\n", 
 		STRERROR (res_thread_create));
 #endif
-#ifdef DAUTH_SUPPORT
-      pthread_mutex_destroy (&retVal->nnc_lock);
-      free (retVal->nnc);
-#endif
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
-      free (retVal);
       CLOSE (socket_fd);
-      return NULL;
+      goto free_and_fail;
     }
   if (retVal->worker_pool_size > 0)
     {
@@ -2306,8 +2290,7 @@ thread_failed:
       pthread_mutex_destroy (&retVal->per_ip_connection_mutex);
       if (NULL != retVal->worker_pool)
         free (retVal->worker_pool);
-      free (retVal);
-      return NULL;
+      goto free_and_fail;
     }
 
   /* Shutdown worker threads we've already created. Pretend
@@ -2317,11 +2300,23 @@ thread_failed:
   retVal->worker_pool_size = i - 1;
   MHD_stop_daemon (retVal);
   return NULL;
+
+ free_and_fail:
+  /* clean up basic memory state in 'retVal' and return NULL to 
+     indicate failure */
+#ifdef DAUTH_SUPPORT
+  free (retVal->nnc);
+  pthread_mutex_destroy (&retVal->nnc_lock);
+#endif
+  free (retVal);
+  return NULL;
 }
 
 
 /**
  * Close all connections for the daemon
+ *
+ * @param daemon daemon to close down
  */
 static void
 MHD_close_connections (struct MHD_Daemon *daemon)
@@ -2345,6 +2340,8 @@ MHD_close_connections (struct MHD_Daemon *daemon)
 
 /**
  * Shutdown an http daemon
+ *
+ * @param daemon daemon to stop
  */
 void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
