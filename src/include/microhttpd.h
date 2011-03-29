@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00090800
+#define MHD_VERSION 0x00090900
 
 /**
  * MHD-internal return code for "YES".
@@ -1629,7 +1629,7 @@ const union MHD_DaemonInfo *MHD_get_daemon_info (struct MHD_Daemon *daemon,
 /**
  * Obtain the version of this library
  *
- * @return static version string, e.g. "0.4.1"
+ * @return static version string, e.g. "0.9.9"
  */
 const char* MHD_get_version(void);
 

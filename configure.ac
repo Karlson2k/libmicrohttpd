@@ -1,5 +1,5 @@
 # This file is part of libmicrohttpd.
-# (C) 2006, 2007, 2008, 2009, 2010 Christian Grothoff (and other contributing authors)
+# (C) 2006, 2007, 2008, 2009, 2010, 2011 Christian Grothoff (and other contributing authors)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -21,15 +21,15 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.8],[libmicrohttpd@gnu.org])
-AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.8])
+AC_INIT([libmicrohttpd], [0.9.9],[libmicrohttpd@gnu.org])
+AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.9])
 AM_CONFIG_HEADER([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=16
+LIB_VERSION_CURRENT=17
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=6
+LIB_VERSION_AGE=7
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)

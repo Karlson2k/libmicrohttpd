@@ -1,3 +1,6 @@
+Tue Mar 29 14:15:13 CEST 2011
+	Releasing libmicrohttpd 0.9.9. -CG
+
 Tue Mar 29 14:11:19 CEST 2011
 	Fixed call to mmap for memory pool, extended testcase to cover
 	POLL. -CG
@@ -33,12 +36,12 @@ Fri Mar  4 10:07:18 CET 2011
 	socket shutdown (also for thread-per-connection). -CG
 
 Thu Mar  3 21:42:47 CET 2011
-	Fixing issue where Base64 decode fails when char is defined 
+	Fixing issue where Base64 decode fails when char is defined
         as unsigned char  (Mantis 1666). -CG/tmayer
 
 Tue Mar  1 13:58:04 CET 2011
 	Allow use of 'poll' in combination with the external select mode.
-	Avoid using pthread signals (SIGALRM), use pipe instead. 
+	Avoid using pthread signals (SIGALRM), use pipe instead.
 	Corrected timeout calculation (s vs. ms). -CG
 
 Wed Feb 23 14:21:44 CET 2011
