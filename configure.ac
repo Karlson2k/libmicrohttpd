@@ -117,12 +117,6 @@ netbsd*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      LDFLAGS="$LDFLAGS -no-undefined"
-     # check if PlibC is available
-     CHECK_PLIBC
-     LIBS="$PLIBC_LIBS $LIBS"
-     AC_SUBST(PLIBC_LIBS)
-     AC_SUBST(PLIBC_LDFLAGS)
-     AC_SUBST(PLIBC_CPPFLAGS)
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
