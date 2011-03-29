@@ -362,8 +362,6 @@ enum MHD_FLAG
 
   /**
    * Use poll instead of select. This allows sockets with fd >= FD_SETSIZE.
-   * This option only works in conjunction with MHD_USE_THREAD_PER_CONNECTION
-   * (at this point).
    */
   MHD_USE_POLL = 64
 };
@@ -1228,7 +1226,6 @@ struct MHD_Response *MHD_create_response_from_callback (uint64_t size,
                                                         crc, void *crc_cls,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc);
-
 
 
 /**

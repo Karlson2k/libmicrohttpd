@@ -1365,7 +1365,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     unsigned int poll_server;
     
     memset (p, 0, sizeof (p));
-    if ( (daemon->max_connections == 0) && (daemon->socket_fd != -1) )
+    if ( (daemon->max_connections > 0) && (daemon->socket_fd != -1) )
       {
 	poll_server = 1;
 	p[0].fd = daemon->socket_fd;

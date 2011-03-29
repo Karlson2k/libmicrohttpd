@@ -86,7 +86,7 @@ MHD_pool_create (size_t max)
     return NULL;
 #ifdef MAP_ANONYMOUS
   pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
-                       MAP_ANONYMOUS, -1, 0);
+                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
   pool->memory = MAP_FAILED;
 #endif

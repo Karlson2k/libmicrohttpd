@@ -1,3 +1,7 @@
+Tue Mar 29 14:11:19 CEST 2011
+	Fixed call to mmap for memory pool, extended testcase to cover
+	POLL. -CG
+
 Wed Mar 23 23:24:25 CET 2011
 	Do not use POLLIN when we only care about POLLHUP (significantly
 	improves performance when using MHD_USE_THREAD_PER_CONNECTION

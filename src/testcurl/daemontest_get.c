@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2009 Christian Grothoff
+     (C) 2007, 2009, 2011 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -97,7 +97,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalGet ()
+testInternalGet (int poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -108,7 +108,7 @@ testInternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
                         11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -146,7 +146,7 @@ testInternalGet ()
 }
 
 static int
-testMultithreadedGet ()
+testMultithreadedGet (int poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -157,7 +157,7 @@ testMultithreadedGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG  | poll_flag,
                         1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -195,7 +195,7 @@ testMultithreadedGet ()
 }
 
 static int
-testMultithreadedPoolGet ()
+testMultithreadedPoolGet (int poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -206,7 +206,7 @@ testMultithreadedPoolGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         1081, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
   if (d == NULL)
@@ -367,7 +367,7 @@ testExternalGet ()
 }
 
 static int
-testUnknownPortGet ()
+testUnknownPortGet (int poll_flag)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *di;
@@ -386,7 +386,7 @@ testUnknownPortGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
                         1, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_END);
@@ -441,13 +441,13 @@ testUnknownPortGet ()
 
 
 static int
-testStopRace ()
+testStopRace (int poll_flag)
 {
     struct sockaddr_in sin;
     int fd;
     struct MHD_Daemon *d;
     
-    d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+    d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG | poll_flag,
                          1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
     if (d == NULL)
        return 16;
@@ -493,12 +493,17 @@ main (int argc, char *const *argv)
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  errorCount += testInternalGet ();
-  errorCount += testMultithreadedGet ();
-  errorCount += testMultithreadedPoolGet ();
+  errorCount += testInternalGet (0);
+  errorCount += testMultithreadedGet (0);
+  errorCount += testMultithreadedPoolGet (0);
+  errorCount += testUnknownPortGet (0);
+  errorCount += testStopRace (0);
   errorCount += testExternalGet ();
-  errorCount += testUnknownPortGet ();
-  errorCount += testStopRace ();
+  errorCount += testInternalGet (MHD_USE_POLL);
+  errorCount += testMultithreadedGet (MHD_USE_POLL);
+  errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
+  errorCount += testUnknownPortGet (MHD_USE_POLL);
+  errorCount += testStopRace (MHD_USE_POLL);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
