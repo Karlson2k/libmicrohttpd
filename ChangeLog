@@ -1,3 +1,7 @@
+Wed Mar 30 12:56:09 CEST 2011
+	Initialize tv_usec in MHD_USE_THREAD_PER_CONNECTION with select
+	and per-connection timeout. -CG
+
 Tue Mar 29 14:15:13 CEST 2011
 	Releasing libmicrohttpd 0.9.9. -CG
 

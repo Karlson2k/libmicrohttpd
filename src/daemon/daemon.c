@@ -581,6 +581,7 @@ MHD_handle_connection (void *data)
 	    tv.tv_sec = 0;
 	  else
 	    tv.tv_sec = timeout - (now - con->last_activity);
+	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
       if ((con->state == MHD_CONNECTION_NORMAL_BODY_UNREADY) ||

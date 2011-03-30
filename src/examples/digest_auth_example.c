@@ -128,6 +128,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof(rnd), rnd,
 			MHD_OPTION_NONCE_NC_SIZE, 300,
+			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
