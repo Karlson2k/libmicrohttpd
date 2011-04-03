@@ -942,7 +942,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #if OSX
 #ifdef SOL_SOCKET
 #ifdef SO_NOSIGPIPE
-  setsockopt (s, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof (on));
+  setsockopt (client_socket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof (on));
 #endif
 #endif
 #endif
