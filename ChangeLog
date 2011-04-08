@@ -1,3 +1,6 @@
+Fri Apr  8 11:40:35 CEST 2011
+	Workaround for cygwin poll brokenness. -TS
+
 Sun Apr  3 13:56:52 CEST 2011
 	Fixing compile error on OS X. -CG
 
