@@ -1468,7 +1468,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
 #ifdef __CYGWIN__
   /* See https://gnunet.org/bugs/view.php?id=1674 */
-  timeout = (timeout > 2000) ? 2000 : timeout;
+  timeout = ( (timeout > 2000) || (timeout < 0) ) ? 2000 : timeout;
 #endif
   if (poll (&p, 1, timeout) < 0)
     {
