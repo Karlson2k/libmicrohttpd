@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00090900
+#define MHD_VERSION 0x00090A00
 
 /**
  * MHD-internal return code for "YES".
@@ -1298,7 +1298,9 @@ MHD_create_response_from_buffer (size_t size,
  * header information and then be used any number of times.
  *
  * @param size size of the data portion of the response
- * @param fd file descriptor referring to a file on disk with the data; will be closed when response is destroyed
+ * @param fd file descriptor referring to a file on disk with the 
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @deprecated use MHD_create_response_from_fd_at_offset instead
  */
@@ -1311,7 +1313,9 @@ struct MHD_Response *MHD_create_response_from_fd (size_t size,
  * header information and then be used any number of times.
  *
  * @param size size of the data portion of the response
- * @param fd file descriptor referring to a file on disk with the data; will be closed when response is destroyed
+ * @param fd file descriptor referring to a file on disk with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
  * @param off offset to start reading from in the file
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */

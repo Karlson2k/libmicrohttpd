@@ -1,3 +1,10 @@
+Sun May  8 21:52:47 CEST 2011
+	Allow MHD_SIZE_UNKNOWN to be used in conjunction with
+	MHD_create_response_from_fd (fixing #1679). -TG
+
+Wed Apr 27 16:11:18 CEST 2011
+	Releasing libmicrohttpd 0.9.10. -CG
+
 Fri Apr  8 11:40:35 CEST 2011
 	Workaround for cygwin poll brokenness. -TS
 

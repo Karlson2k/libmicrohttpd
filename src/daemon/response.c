@@ -270,9 +270,15 @@ static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct MHD_Response *response = cls;
+  ssize_t n;
 
   (void) lseek (response->fd, pos + response->fd_off, SEEK_SET);
-  return read (response->fd, buf, max);
+  n = read (response->fd, buf, max);
+  if (n == 0) 
+    return MHD_CONTENT_READER_END_OF_STREAM;
+  if (n < 0) 
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  return n;
 }
 
 
