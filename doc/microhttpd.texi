@@ -1393,7 +1393,7 @@ size of the file)
 file descriptor referring to a file on disk with the data; will be
 closed when response is destroyed; note that 'fd' must be an actual 
 file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
-or 'seek' on it
+or 'seek' on it.  The descriptor should be in blocking-IO mode.
 @end table
 
 Return @mynull{} on error (i.e. invalid arguments, out of memory).
@@ -1413,7 +1413,7 @@ file starting at offset).
 file descriptor referring to a file on disk with the data; will be
 closed when response is destroyed; note that 'fd' must be an actual 
 file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
-or 'seek' on it
+or 'seek' on it.    The descriptor should be in blocking-IO mode.
 
 @item offset
 offset to start reading from in the file
