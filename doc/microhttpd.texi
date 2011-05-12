@@ -1403,6 +1403,28 @@ Return @mynull{} on error (i.e. invalid arguments, out of memory).
 @deftypefun {struct MHD_Response *} MHD_create_response_from_fd_at_offset (uint64_t size, int fd, off_t offset)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.
+Note that you need to be a bit careful about @code{off_t} when
+writing this code.  Depending on your platform, @mhd{} is likely
+to have been compiled with support for 64-bit files.  When you
+compile your own application, you must make sure that @code{off_t}
+is also a 64-bit value.  If not, your compiler may pass a 32-bit
+value as @code{off_t}, which will result in 32-bits of garbage.
+
+If you use the autotools, use the @code{AC_SYS_LARGEFILE} autoconf
+macro and make sure to include the generated @file{config.h} file
+before @file{microhttpd.h} to avoid problems.  If you do not have a
+build system and only want to run on a GNU/Linux system, you could
+also use
+@verbatim
+#define _FILE_OFFSET_BITS 64
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <microhttpd.h>
+@end verbatim
+to ensure 64-bit @code{off_t}.  Note that if your operating system
+does not support 64-bit files, @mhd{} will be compiled with a 32-bit
+@code{off_t} (in which case the above would be wrong...).
 
 @table @var
 @item size
