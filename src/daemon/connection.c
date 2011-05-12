@@ -1364,7 +1364,15 @@ process_request_body (struct MHD_Connection *connection)
       else
         {
           /* no chunked encoding, give all to the client */
-          processed = available;
+          if ( (0 != connection->remaining_upload_size) && 
+	       (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) )
+	    {
+              processed = connection->remaining_upload_size;
+	    }
+          else
+	    {
+              processed = available;
+	    }
         }
       used = processed;
       connection->client_aware = MHD_YES;

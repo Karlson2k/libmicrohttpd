@@ -1,3 +1,11 @@
+Thu May 12 14:40:46 CEST 2011
+	Fixed bug where if multiple HTTP request messages are piped in at once,
+	microhttpd would call the handler with the wrong upload_data_size. -HZM
+
+Thu May 12 14:40:08 CEST 2011
+	Documented possible issue with off_t being sometimes
+	32-bit and sometimes 64-bit depending on #includes. -CG
+
 Sun May  8 21:52:47 CEST 2011
 	Allow MHD_SIZE_UNKNOWN to be used in conjunction with
 	MHD_create_response_from_fd (fixing #1679). -TG
