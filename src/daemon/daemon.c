@@ -750,7 +750,7 @@ send_param_adapter (struct MHD_Connection *connection,
       ret = sendfile (connection->socket_fd, 
 		      fd,
 		      &offset,
-		      left);
+		      (size_t) left);
       if (ret != -1)
 	return ret;
       if (EINTR == errno) 
