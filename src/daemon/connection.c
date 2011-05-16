@@ -1365,12 +1365,17 @@ process_request_body (struct MHD_Connection *connection)
         {
           /* no chunked encoding, give all to the client */
           if ( (0 != connection->remaining_upload_size) && 
-	       (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) )
+	       (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) &&
+	       (connection->remaining_upload_size < available) )
 	    {
               processed = connection->remaining_upload_size;
 	    }
           else
 	    {
+              /**
+               * 1. no chunked encoding, give all to the client
+               * 2. client may send large chunked data, but only a smaller part is available at one time.
+               */
               processed = available;
 	    }
         }
