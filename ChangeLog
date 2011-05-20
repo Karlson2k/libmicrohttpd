@@ -1,3 +1,7 @@
+Fri May 20 22:11:55 CEST 2011
+	Fixed bug in testcase setup code causing crashes in
+	tls_session_timeout_test on some systems. -CG
+
 Fri May 20 19:34:59 CEST 2011
 	Fixed bug in parsing multipart/form-data with post processor where
 	the code failed to add a 0-terminator in the correct position. -PP
