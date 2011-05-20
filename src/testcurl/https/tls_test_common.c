@@ -374,6 +374,7 @@ setup_session (gnutls_session_t * session,
   key->data = malloc (key->size);
   if (key->data == NULL) 
      {
+       gnutls_certificate_free_credentials (*xcred);
 	return -1;
      }
   memcpy (key->data, srv_key_pem, key->size);
@@ -381,6 +382,7 @@ setup_session (gnutls_session_t * session,
   cert->data = malloc (cert->size);
   if (cert->data == NULL)
     {
+        gnutls_certificate_free_credentials (*xcred);
 	free (key->data); 
 	return -1;
     }
@@ -392,12 +394,14 @@ setup_session (gnutls_session_t * session,
 				    "NORMAL", &err_pos);
   if (ret < 0)
     {
+       gnutls_deinit (*session);
+       gnutls_certificate_free_credentials (*xcred);
        free (key->data);
        return -1;
     }
   gnutls_credentials_set (*session, 
 			  GNUTLS_CRD_CERTIFICATE, 
-			  xcred);
+			  *xcred);
   return 0;
 }
 

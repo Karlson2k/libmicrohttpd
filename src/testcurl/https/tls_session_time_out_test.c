@@ -68,6 +68,7 @@ test_tls_session_time_out (gnutls_session_t session)
   ret = gnutls_handshake (session);
   if (ret < 0)
     {
+      fprintf (stderr, "Handshake failed\n");
       return -1;
     }
 
@@ -77,6 +78,7 @@ test_tls_session_time_out (gnutls_session_t session)
   /* TODO better RST trigger */
   if (send (sd, "", 1, 0) == 0)
     {
+      fprintf (stderr, "Connection failed to time-out\n");
       return -1;
     }
 
@@ -111,7 +113,11 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  setup_session (&session, &key, &cert, &xcred);
+  if (0 != setup_session (&session, &key, &cert, &xcred))
+    {
+      fprintf (stderr, "failed to setup session\n");
+      return 1;
+    }
   errorCount += test_tls_session_time_out (session);
   teardown_session (session, &key, &cert, xcred);
 
