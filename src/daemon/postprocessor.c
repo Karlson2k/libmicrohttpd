@@ -650,6 +650,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
               pp->state = next_state;
               pp->dash_state = next_dash_state;
               (*ioffptr) += pp->blen + 4;       /* skip boundary as well */
+              buf[newline] = '\0';
               break;
             }
         }

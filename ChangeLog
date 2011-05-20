@@ -1,3 +1,7 @@
+Fri May 20 19:34:59 CEST 2011
+	Fixed bug in parsing multipart/form-data with post processor where
+	the code failed to add a 0-terminator in the correct position. -PP
+
 Thu May 12 14:40:46 CEST 2011
 	Fixed bug where if multiple HTTP request messages are piped in at once,
 	microhttpd would call the handler with the wrong upload_data_size. -HZM
