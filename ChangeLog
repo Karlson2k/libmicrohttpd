@@ -1,3 +1,7 @@
+Wed May 25 14:23:20 CEST 2011
+	Trying to fix stutter problem on timeout described by
+	David Myers on the mailinglist (5/10/2011). -CG
+
 Fri May 20 22:11:55 CEST 2011
 	Fixed bug in testcase setup code causing crashes in
 	tls_session_timeout_test on some systems.
