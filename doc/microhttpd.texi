@@ -733,6 +733,10 @@ Takes no extra arguments.  Allows access to the client certificate
 including access to the underlying GNUtls client certificate
 (HTTPS connections only).  Takes no extra arguments.
 
+@item MHD_CONNECTION_INFO_DAEMON
+Returns information about @code{struct MHD_Daemon} which manages
+this connection.
+
 @end table
 @end deftp
 

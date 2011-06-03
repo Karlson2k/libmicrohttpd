@@ -714,10 +714,10 @@ enum MHD_ConnectionInfoType
   MHD_CONNECTION_INFO_PROTOCOL,
 
   /**
-   * Obtain IP address of the client.
-   * Takes no extra arguments.  Returns a
-   * 'struct sockaddr_in **' by accident; obsolete,
-   * use MHD_CONNECTION_INFO_CLIENT_SOCK_ADDR.
+   * Obtain IP address of the client.  Takes no extra arguments.
+   * Returns essentially a "struct sockaddr **" (since the API returns
+   * a "union MHD_ConnectionInfo *" and that union contains a "struct
+   * sockaddr *").
    */
   MHD_CONNECTION_INFO_CLIENT_ADDRESS,
 
@@ -729,7 +729,12 @@ enum MHD_ConnectionInfoType
   /**
    * Get the GNUTLS client certificate handle.
    */
-  MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT
+  MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
+
+  /**
+   * Get the 'struct MHD_Daemon' responsible for managing this connection.
+   */
+  MHD_CONNECTION_INFO_DAEMON
 
 };
 
@@ -1577,6 +1582,12 @@ union MHD_ConnectionInfo
    * Address information for the client.
    */
   struct sockaddr *client_addr;
+
+  /**
+   * Which daemon manages this connection (useful in case there are many
+   * daemons running).
+   */
+  struct MHD_Daemon *daemon;
 };
 
 /**

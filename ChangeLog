@@ -1,3 +1,7 @@
+Fri Jun  3 15:26:42 CEST 2011
+	Adding MHD_CONNECTION_INFO_DAEMON to obtain MHD_Daemon
+	responsible for a given connection. -CG
+
 Wed May 25 14:23:20 CEST 2011
 	Trying to fix stutter problem on timeout described by
 	David Myers on the mailinglist (5/10/2011). -CG

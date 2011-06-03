@@ -2332,6 +2332,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
 #endif
     case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
       return (const union MHD_ConnectionInfo *) &connection->addr;
+    case MHD_CONNECTION_INFO_DAEMON:
+      return (const union MHD_ConnectionInfo *) &connection->daemon;
     default:
       return NULL;
     };
