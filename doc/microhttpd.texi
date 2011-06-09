@@ -269,7 +269,7 @@ the percent sign).
 @deftp {Enumeration} MHD_FLAG
 Options for the @mhd{} daemon.
 
-Note that if neither @code{MHD_USER_THREAD_PER_CONNECTION} nor
+Note that if neither @code{MHD_USE_THREAD_PER_CONNECTION} nor
 @code{MHD_USE_SELECT_INTERNALLY} is used, the client wants control over
 the process and will call the appropriate microhttpd callbacks.
 
