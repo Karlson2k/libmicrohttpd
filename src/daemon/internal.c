@@ -121,7 +121,9 @@ MHD_http_unescape (void *cls,
 {
   char *rpos = val;
   char *wpos = val;
+  char *end;
   unsigned int num;
+  char buf3[3];
 
   while ('\0' != *rpos)
     {
@@ -133,10 +135,11 @@ MHD_http_unescape (void *cls,
 	  rpos++;
 	  break;
 	case '%':
-	  if ( (1 == SSCANF (&rpos[1],
-			     "%2x", &num)) ||
-	       (1 == SSCANF (&rpos[1],
-			     "%2X", &num)) )
+	  buf3[0] = rpos[1];
+	  buf3[1] = rpos[2];
+	  buf3[2] = '\0';
+	  num = strtoul (buf3, &end, 16);
+	  if ('\0' == *end)
 	    {
 	      *wpos = (unsigned char) num;
 	      wpos++;

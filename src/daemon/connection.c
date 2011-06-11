@@ -26,6 +26,7 @@
  */
 
 #include "internal.h"
+#include <limits.h>
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
@@ -1252,6 +1253,7 @@ process_request_body (struct MHD_Connection *connection)
   int instant_retry;
   int malformed;
   char *buffer_head;
+  char *end;
 
   if (connection->response != NULL)
     return;                     /* already queued a response */
@@ -1326,11 +1328,8 @@ process_request_body (struct MHD_Connection *connection)
               if (!malformed)
                 {
                   buffer_head[i] = '\0';
-                  malformed =
-                    (1 != SSCANF (buffer_head, "%X",
-                                  &connection->current_chunk_size)) &&
-                    (1 != SSCANF (buffer_head, "%x",
-                                  &connection->current_chunk_size));
+		  connection->current_chunk_size = strtoul (buffer_head, &end, 16);
+                  malformed = ('\0' != *end);
                 }
               if (malformed)
                 {
@@ -1655,6 +1654,7 @@ parse_connection_headers (struct MHD_Connection *connection)
   unsigned MHD_LONG_LONG cval;
   struct MHD_Response *response;
   const char *enc;
+  char *end;
 
   parse_cookie_header (connection);
   if ((0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options))
@@ -1687,7 +1687,9 @@ parse_connection_headers (struct MHD_Connection *connection)
                                       MHD_HTTP_HEADER_CONTENT_LENGTH);
   if (clen != NULL)
     {
-      if (1 != SSCANF (clen, "%" MHD_LONG_LONG_PRINTF "u", &cval))
+      cval = strtoul (clen, &end, 10);
+      if ( ('\0' != *end) ||
+	 ( (LONG_MAX == cval) && (errno == ERANGE) ) )
         {
 #if HAVE_MESSAGES
           MHD_DLOG (connection->daemon,

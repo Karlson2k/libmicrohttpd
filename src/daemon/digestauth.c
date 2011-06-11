@@ -25,6 +25,7 @@
  */
 
 #include "platform.h"
+#include <limits.h>
 #include "internal.h"
 #include "md5.h"
 #include "base64.h"
@@ -447,6 +448,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 {
   size_t len;
   const char *header;
+  char *end;
   char nonce[MAX_NONCE_LENGTH];
   char cnonce[MAX_NONCE_LENGTH];
   char qop[15]; /* auth,auth-int */
@@ -544,9 +546,12 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 	 ( (0 != strcmp (qop, "auth")) && 
 	   (0 != strcmp (qop, "")) ) ||
 	 (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
-	 (1 != sscanf (nc, "%u", &nci)) ||
 	 (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
       return MHD_NO;
+    nci = strtoul (nc, &end, 10);
+    if ( ('\0' != *end) ||
+	 ( (LONG_MAX == nci) && (errno == ERANGE) ) )
+      return MHD_NO; /* invalid nonce */
     
     /*
      * Checking if that combination of nonce and nc is sound
