@@ -262,7 +262,7 @@ AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib vers
 
 # gnutls
 gnutls=0
-AC_MSG_CHECKING([for gnutls])
+AC_MSG_CHECKING(for gnutls)
 AC_ARG_WITH(gnutls,
    [  --with-gnutls=PFX   base of gnutls installation],
    [AC_MSG_RESULT([$with_gnutls])
@@ -350,11 +350,13 @@ AC_CACHE_CHECK([whether -export-symbols-regex works],
 
 
 # gcov compilation
+AC_MSG_CHECKING(whether to compile with support for code coverage analysis)
 AC_ARG_ENABLE([coverage], 
               AS_HELP_STRING([--enable-coverage],
                              [compile the library with code coverage support]),
               [use_gcov=${enableval}], 
               [use_gcov=no])
+AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 
