@@ -1073,10 +1073,23 @@ MHD_add_connection (struct MHD_Daemon *daemon,
           return MHD_NO;
         }
     }
-  /* FIXME: race with removal operation! */
+  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
+#endif
+      abort();
+    }
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
+  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
+#endif
+      abort();
+    }
   daemon->max_connections--;
   return MHD_YES;  
 }

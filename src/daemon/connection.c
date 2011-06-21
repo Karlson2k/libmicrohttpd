@@ -2259,9 +2259,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_CLOSED:
 	  daemon = connection->daemon;
-	  DLL_remove (daemon->connections_head,
-		      daemon->connections_tail,
-		      connection);
 	  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
 	    {
 #if HAVE_MESSAGES
@@ -2269,6 +2266,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
 	      abort();
 	    }
+	  DLL_remove (daemon->connections_head,
+		      daemon->connections_tail,
+		      connection);
 	  DLL_insert (daemon->cleanup_head,
 		      daemon->cleanup_tail,
 		      connection);
