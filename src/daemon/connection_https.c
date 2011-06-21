@@ -33,23 +33,6 @@
 #include "reason_phrase.h"
 #include <gnutls/gnutls.h>
 
-/**
- * This function is called once a secure connection has been marked
- * for closure.
- *
- * NOTE: Some code duplication with connection_close_error
- * in connection.c
- *
- * @param connection: the connection to close
- * @param termination_code: the termination code with which the notify completed callback function is called.
- */
-static void
-MHD_tls_connection_close (struct MHD_Connection *connection,
-                          enum MHD_RequestTerminationCode termination_code)
-{
-  gnutls_bye (connection->tls_session, GNUTLS_SHUT_RDWR);
-  MHD_connection_close (connection, termination_code);
-}
 
 
 /**
@@ -65,9 +48,8 @@ MHD_tls_connection_close (struct MHD_Connection *connection,
  * Application data is forwarded to the underlying daemon for
  * processing.
  *
- * @param connection : the source connection
- * @return MHD_YES if we should continue to process the
- *         connection (not dead yet), MHD_NO if it died
+ * @param connection the source connection
+ * @return always MHD_YES (we should continue to process the connection)
  */
 static int
 MHD_tls_connection_handle_read (struct MHD_Connection *connection)
@@ -95,9 +77,9 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
 		"Error: received handshake message out of context\n");
 #endif
-      MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return MHD_NO;
+      MHD_connection_close (connection,
+			    MHD_REQUEST_TERMINATED_WITH_ERROR);
+      return MHD_YES;
     }
   return MHD_connection_handle_read (connection);
 }
@@ -109,8 +91,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
  * will forward all write requests to the underlying daemon unless
  * the connection has been marked for closing.
  *
- * @return MHD_connection_handle_write() if we should continue to
- *         process the connection (not dead yet), MHD_NO if it died
+ * @return always MHD_YES (we should continue to process the connection)
  */
 static int
 MHD_tls_connection_handle_write (struct MHD_Connection *connection)
@@ -142,9 +123,9 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
 		"Error: received handshake message out of context\n");
 #endif
-      MHD_tls_connection_close (connection,
-				MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return MHD_NO;
+      MHD_connection_close (connection,
+			    MHD_REQUEST_TERMINATED_WITH_ERROR);
+      return MHD_YES;
     }
   return MHD_connection_handle_write (connection);
 }
@@ -170,13 +151,9 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
             __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
   timeout = connection->daemon->connection_timeout;
-  if ((connection->socket_fd != -1) && (timeout != 0)
-      && (time (NULL) - timeout > connection->last_activity))
-    {
-      MHD_tls_connection_close (connection,
-                                MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-      return MHD_NO;
-    }
+  if ( (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
+    MHD_connection_close (connection,
+			  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
   switch (connection->state)
     {
       /* on newly created connections we might reach here before any reply has been received */
@@ -184,14 +161,12 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_YES;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
-      if (connection->socket_fd != -1)
-        MHD_tls_connection_close (connection,
-                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
-      return MHD_NO;
+      gnutls_bye (connection->tls_session, GNUTLS_SHUT_RDWR);
+      return MHD_connection_handle_idle (connection);
     default:
       if ( (0 != gnutls_record_check_pending (connection->tls_session)) &&
 	   (MHD_YES != MHD_tls_connection_handle_read (connection)) )
-	return MHD_NO;
+	return MHD_YES;
       return MHD_connection_handle_idle (connection);
     }
   return MHD_YES;

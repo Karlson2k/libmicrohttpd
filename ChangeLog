@@ -1,3 +1,10 @@
+Tue Jun 21 13:54:59 CEST 2011
+	Fixing tiny memory leak in SSL code from 'gnutls_priority_init'.
+	Fixing data race between code doing connection shutdown and
+	connection cleanup.
+	Changing code to reduce connection cleanup cost from O(n) to O(1). 
+	Cleaning up logging code around 'connection_close_error'. -CG
+
 Sat Jun 11 13:05:12 CEST 2011
 	Replacing use of sscanf by strtoul (#1688). -CG/bplant
 

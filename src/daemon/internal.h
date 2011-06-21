@@ -379,10 +379,14 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_FOOTERS_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
 
   /**
-   * 19: This connection is closed (no more activity
-   * allowed).
+   * 19: This connection is to be closed.
    */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
+
+  /**
+   * 20: This connection is finished (only to be freed)
+   */
+  MHD_CONNECTION_IN_CLEANUP = MHD_CONNECTION_CLOSED + 1,
 
   /*
    *  SSL/TLS connection states
@@ -440,9 +444,14 @@ struct MHD_Connection
 {
 
   /**
-   * This is a linked list.
+   * This is a doubly-linked list.
    */
   struct MHD_Connection *next;
+
+  /**
+   * This is a doubly-linked list.
+   */
+  struct MHD_Connection *prev;
 
   /**
    * Reference to the MHD_Daemon struct.
@@ -622,6 +631,11 @@ struct MHD_Connection
   int read_closed;
 
   /**
+   * Set to MHD_YES if the thread has been joined.
+   */
+  int thread_joined;
+
+  /**
    * State in the FSM for this connection.
    */
   enum MHD_CONNECTION_STATE state;
@@ -747,9 +761,24 @@ struct MHD_Daemon
   void *default_handler_cls;
 
   /**
-   * Linked list of our current connections.
+   * Tail of doubly-linked list of our current, active connections.
    */
-  struct MHD_Connection *connections;
+  struct MHD_Connection *connections_head;
+
+  /**
+   * Tail of doubly-linked list of our current, active connections.
+   */
+  struct MHD_Connection *connections_tail;
+
+  /**
+   * Tail of doubly-linked list of connections to clean up.
+   */
+  struct MHD_Connection *cleanup_head;
+
+  /**
+   * Tail of doubly-linked list of connections to clean up.
+   */
+  struct MHD_Connection *cleanup_tail;
 
   /**
    * Function to call to check if we should
@@ -847,9 +876,14 @@ struct MHD_Daemon
   pthread_t pid;
 
   /**
-   * Mutex for per-IP connection counts
+   * Mutex for per-IP connection counts.
    */
   pthread_mutex_t per_ip_connection_mutex;
+
+  /**
+   * Mutex for (modifying) access to the "cleanup" connection DLL.
+   */
+  pthread_mutex_t cleanup_connection_mutex;
 
   /**
    * Listen socket.
@@ -965,6 +999,45 @@ struct MHD_Daemon
 #define EXTRA_CHECK(a)
 #endif
 
+
+/**
+ * Insert an element at the head of a DLL. Assumes that head, tail and
+ * element are structs with prev and next fields.
+ *
+ * @param head pointer to the head of the DLL
+ * @param tail pointer to the tail of the DLL
+ * @param element element to insert
+ */
+#define DLL_insert(head,tail,element) do { \
+  (element)->next = (head); \
+  (element)->prev = NULL; \
+  if ((tail) == NULL) \
+    (tail) = element; \
+  else \
+    (head)->prev = element; \
+  (head) = (element); } while (0)
+
+
+/**
+ * Remove an element from a DLL. Assumes
+ * that head, tail and element are structs
+ * with prev and next fields.
+ *
+ * @param head pointer to the head of the DLL
+ * @param tail pointer to the tail of the DLL
+ * @param element element to remove
+ */
+#define DLL_remove(head,tail,element) do { \
+  if ((element)->prev == NULL) \
+    (head) = (element)->next;  \
+  else \
+    (element)->prev->next = (element)->next; \
+  if ((element)->next == NULL) \
+    (tail) = (element)->prev;  \
+  else \
+    (element)->next->prev = (element)->prev; \
+  (element)->next = NULL; \
+  (element)->prev = NULL; } while (0)
 
 
 #endif
