@@ -1,3 +1,8 @@
+Wed Jun 22 10:37:35 CEST 2011
+	Removing listen socket from poll/select sets in
+	MHD_USE_THREAD_PER_CONNECTION mode; using 'shutdown'
+	on connection sockets to signal termination instead. -CG
+
 Wed Jun 22 10:25:13 CEST 2011
 	Eliminate unnecessary (and badly synchronized) calls to
 	MHD_get_timeout in MHD_USE_THREAD_PER_CONNECTION mode.
@@ -7,7 +12,7 @@ Tue Jun 21 13:54:59 CEST 2011
 	Fixing tiny memory leak in SSL code from 'gnutls_priority_init'.
 	Fixing data race between code doing connection shutdown and
 	connection cleanup.
-	Changing code to reduce connection cleanup cost from O(n) to O(1). 
+	Changing code to reduce connection cleanup cost from O(n) to O(1).
 	Cleaning up logging code around 'connection_close_error'. -CG
 
 Sat Jun 11 13:05:12 CEST 2011

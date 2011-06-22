@@ -563,14 +563,13 @@ MHD_handle_connection (void *data)
   fd_set ws;
   fd_set es;
   int max;
-  int fd;
   struct timeval tv;
   struct timeval *tvp;
   unsigned int timeout;
   time_t now;
 #ifdef HAVE_POLL_H
   struct MHD_Pollfd mp;
-  struct pollfd p[2];
+  struct pollfd p[1];
 #endif
 
   timeout = con->daemon->connection_timeout;
@@ -605,15 +604,7 @@ MHD_handle_connection (void *data)
 	  FD_ZERO (&rs);
 	  FD_ZERO (&ws);
 	  FD_ZERO (&es);
-	  if (-1 != (fd = con->daemon->socket_fd))
-	    {
-	      /* we add the listen socket to our read set so
-		 that if the server is shutdown, we notice it */
-	      max = fd;
-	      FD_SET (fd, &rs);
-	    }
-	  else
-	    max = 0;
+	  max = 0;
 	  MHD_connection_get_fdset (con, &rs, &ws, &es, &max);
 	  num_ready = SELECT (max + 1, &rs, &ws, &es, tvp);
 	  if (num_ready < 0) 
@@ -648,20 +639,11 @@ MHD_handle_connection (void *data)
 	    p[0].events |= POLLIN;        
 	  if (mp.events & MHD_POLL_ACTION_OUT) 
 	    p[0].events |= POLLOUT;
-	  /* we add the listen socket to our read set so
-	     that if the server is shutdown, we notice it */
-
-	  fd = con->daemon->socket_fd;
-	  p[1].fd = fd;
-	  p[1].events = 0; /* only care about POLLHUP */
-	  
 	  if (poll (p, 
-		    (fd != -1) ? 2 : 1, 
+		    1, 
 		    (tvp == NULL) 
 		    ? -1 
-		    : ((fd != -1) 
-		       ? (tv.tv_sec * 1000) 
-		       : 0)) < 0) 
+		    : tv.tv_sec * 1000) < 0)
 	    {
 	      if (errno == EINTR)
 		continue;
@@ -2407,7 +2389,27 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   void *unused;
   int rc;
+  
+  /* first, make sure all threads are aware of shutdown; need to
+     traverse DLLs in peace... */
+  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
+#endif
+      abort();
+    }
+  for (pos = daemon->connections_head; pos != NULL; pos = pos->next)    
+    SHUTDOWN (pos->socket_fd, SHUT_RDWR);    
+  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
+#endif
+      abort();
+    }
 
+  /* now, collect threads */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       while (NULL != (pos = daemon->connections_head))
@@ -2423,6 +2425,8 @@ close_all_connections (struct MHD_Daemon *daemon)
 	  pos->thread_joined = MHD_YES;
 	}
     }
+
+  /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_head))
     {
       pos->state = MHD_CONNECTION_CLOSED;
@@ -2485,6 +2489,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   free (daemon->worker_pool);
 
+  /* clean up master threads */
   if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
       ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
         && (0 == daemon->worker_pool_size)))
