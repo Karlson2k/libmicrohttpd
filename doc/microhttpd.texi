@@ -184,6 +184,18 @@ Additionally, clients can specify resource limits on the overall
 number of connections, number of connections per IP address and memory
 used per connection to avoid resource exhaustion.
 
+@section Scope
+
+@mhd{} is currently used in a wide range of implementations. 
+Examples based on reports we've received from developers include:
+@itemize
+@item Embedded HTTP server on a cortex M3 (128 KB code space)
+@item Large-scale multimedia server (reportedly serving at the
+      simulator limit of 7.5 GB/s)
+@item Administrative console (via HTTP/HTTPS) for network appliances
+@c If you have other interesting examples, please let us know
+@end itemize
+
 @section Including the microhttpd.h header
 @cindex portability
 @cindex microhttpd.h
