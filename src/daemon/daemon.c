@@ -1248,6 +1248,13 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   unsigned int dto;
 
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, "Illegal call to MHD_get_timeout\n");
+#endif  
+      return MHD_NO;
+    }
   dto = daemon->connection_timeout;
   if (0 == dto)
     return MHD_NO;
@@ -1334,7 +1341,8 @@ MHD_select (struct MHD_Daemon *daemon,
       timeout.tv_sec = 0;
       tv = &timeout;
     }
-  else if (MHD_YES == MHD_get_timeout (daemon, &ltimeout))
+  else if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+	    (MHD_YES == MHD_get_timeout (daemon, &ltimeout)) )
     {
       /* ltimeout is in ms */
       timeout.tv_usec = (ltimeout % 1000) * 1000;
@@ -1429,7 +1437,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       }
     if (may_block == MHD_NO)
       timeout = 0;
-    else if (MHD_YES != MHD_get_timeout (daemon, &ltimeout))
+    else if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
+	      (MHD_YES != MHD_get_timeout (daemon, &ltimeout)) )
       timeout = -1;
     else
       timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
@@ -1502,7 +1511,6 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 			int may_block)
 {
   struct pollfd p;
-  unsigned MHD_LONG_LONG ltimeout;
   int timeout;
   
   memset (&p, 0, sizeof (p));
@@ -1511,10 +1519,8 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   p.revents = 0;
   if (may_block == MHD_NO)
     timeout = 0;
-  else if (MHD_YES != MHD_get_timeout (daemon, &ltimeout))
-    timeout = -1;
   else
-    timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
+    timeout = -1;
 #ifdef __CYGWIN__
   /* See https://gnunet.org/bugs/view.php?id=1674 */
   timeout = ( (timeout > 2000) || (timeout < 0) ) ? 2000 : timeout;
@@ -1582,9 +1588,13 @@ MHD_run (struct MHD_Daemon *daemon)
       || (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)))
     return MHD_NO;
   if ((daemon->options & MHD_USE_POLL) == 0) 
-    MHD_select (daemon, MHD_NO);
+    {
+      MHD_select (daemon, MHD_NO);
+    }
   else
-    MHD_poll (daemon, MHD_NO);
+    {
+      MHD_poll (daemon, MHD_NO);
+    }
   MHD_cleanup_connections (daemon);
   return MHD_YES;
 }

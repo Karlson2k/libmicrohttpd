@@ -888,7 +888,7 @@ MHD_connection_get_pollfd (struct MHD_Connection *connection, struct MHD_Pollfd 
           if (MHD_YES == connection->read_closed)
             {
 	      CONNECTION_CLOSE_ERROR (connection, 
-				      "Connection closed while reading request\n");
+				      NULL);
               continue;
             }
           p->events |= MHD_POLL_ACTION_IN;
@@ -1954,7 +1954,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection, 
-					  "Connection closed while reading request\n");
+					  NULL);
                   continue;
                 }
               break;
@@ -1973,7 +1973,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection, 
-					  "Connection closed while reading request\n");
+					  NULL);
                   continue;
                 }
               break;
@@ -2001,7 +2001,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection, 
-					  "Connection closed while reading request\n");
+					  NULL);
                   continue;
                 }
               break;
@@ -2077,7 +2077,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection, 
-					  "Connection closed while reading request\n");
+					  NULL);
                   continue;
                 }
               break;
@@ -2105,7 +2105,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection, 
-					  "Connection closed while reading request\n");
+					  NULL);
                   continue;
                 }
               break;
