@@ -1,3 +1,8 @@
+Wed Jun 22 10:25:13 CEST 2011
+	Eliminate unnecessary (and badly synchronized) calls to
+	MHD_get_timeout in MHD_USE_THREAD_PER_CONNECTION mode.
+	Document that this is not acceptable. -CG
+
 Tue Jun 21 13:54:59 CEST 2011
 	Fixing tiny memory leak in SSL code from 'gnutls_priority_init'.
 	Fixing data race between code doing connection shutdown and

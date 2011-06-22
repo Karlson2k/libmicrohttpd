@@ -1165,7 +1165,12 @@ the right options for this call.
 Obtain timeout value for select for this daemon (only needed if
 connection timeout is used).  The returned value is how long
 @cfunction{select} should at most block, not the timeout value set for
-connections.
+connections.  This function must not be called if the
+@code{MHD_USE_THREAD_PER_CONNECTION} mode is in use (since then it
+is not meaningful to ask for a timeout, after all, there is 
+concurrenct activity).  The function must also not be called by
+user-code if @code{MHD_USE_INTERNAL_SELECT} is in use.  In the latter
+case, the behavior is undefined.
 
 @table @var
 @cindex timeout
