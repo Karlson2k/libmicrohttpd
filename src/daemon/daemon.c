@@ -1054,25 +1054,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
     }
 #endif
 
-  /* attempt to create handler thread */
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      res_thread_create = create_thread (&connection->pid, daemon,
-					 &MHD_handle_connection, connection);
-      if (res_thread_create != 0)
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Failed to create a thread: %s\n",
-                    STRERROR (res_thread_create));
-#endif
-          SHUTDOWN (client_socket, SHUT_RDWR);
-          CLOSE (client_socket);
-          MHD_ip_limit_del (daemon, addr, addrlen);
-          free (connection->addr);
-          free (connection);
-          return MHD_NO;
-        }
-    }
   if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
     {
 #if HAVE_MESSAGES
@@ -1089,6 +1070,43 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
 #endif
       abort();
+    }
+
+  /* attempt to create handler thread */
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+      res_thread_create = create_thread (&connection->pid, daemon,
+					 &MHD_handle_connection, connection);
+      if (res_thread_create != 0)
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "Failed to create a thread: %s\n",
+                    STRERROR (res_thread_create));
+#endif
+          SHUTDOWN (client_socket, SHUT_RDWR);
+          CLOSE (client_socket);
+          MHD_ip_limit_del (daemon, addr, addrlen);
+	  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
+	    {
+#if HAVE_MESSAGES
+	      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
+#endif
+	      abort();
+	    }
+	  DLL_remove (daemon->connections_head,
+		      daemon->connections_tail,
+		      connection);
+	  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
+	    {
+#if HAVE_MESSAGES
+	      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
+#endif
+	      abort();
+	    }
+          free (connection->addr);
+          free (connection);
+          return MHD_NO;
+        }
     }
   daemon->max_connections--;
   return MHD_YES;  
