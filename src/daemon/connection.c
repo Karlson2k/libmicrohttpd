@@ -1935,6 +1935,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon;
   unsigned int timeout;
   const char *end;
+  int rend;
   char *line;
 
   while (1)
@@ -2205,6 +2206,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                         sizeof (val));
           }
 #endif
+          end =
+            MHD_get_response_header (connection->response, 
+				     MHD_HTTP_HEADER_CONNECTION);
+	  rend = ( (end != NULL) && (0 == strcasecmp (end, "close")) );
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if (connection->daemon->notify_completed != NULL)
@@ -2229,7 +2234,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->write_buffer_size = 0;
           connection->write_buffer_send_offset = 0;
           connection->write_buffer_append_offset = 0;
-          if ((end != NULL) && (0 == strcasecmp (end, "close")))
+          if ( (rend) || ((end != NULL) && (0 == strcasecmp (end, "close"))) )
             {
               connection->read_closed = MHD_YES;
               connection->read_buffer_offset = 0;

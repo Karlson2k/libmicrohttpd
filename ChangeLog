@@ -1,3 +1,8 @@
+Wed Jun 22 14:32:23 CEST 2011
+	Force closing connection if either the client asked it or
+	if the response contains 'Connection: close' (so far,
+	only the client's request was considered). -CG/RV
+
 Wed Jun 22 10:37:35 CEST 2011
 	Removing listen socket from poll/select sets in
 	MHD_USE_THREAD_PER_CONNECTION mode; using 'shutdown'
