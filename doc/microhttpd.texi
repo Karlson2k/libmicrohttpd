@@ -1259,7 +1259,7 @@ item was found.
 
 @c ------------------------------------------------------------
 @node microhttpd-responses
-@chapter Building answers to responses
+@chapter Building responses to requests
 
 
 @noindent
