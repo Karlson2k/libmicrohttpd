@@ -1,3 +1,9 @@
+Thu Jul  7 10:24:20 CEST 2011
+	Adding performance measurements. -CG
+
+Thu Jun 23 14:21:13 CEST 2011
+	Releasing libmicrohttpd 0.9.12. -CG
+
 Wed Jun 22 14:32:23 CEST 2011
 	Force closing connection if either the client asked it or
 	if the response contains 'Connection: close' (so far,

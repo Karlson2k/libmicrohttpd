@@ -81,46 +81,55 @@ case "$host_os" in
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      ;;
 linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      CFLAGS="-D_THREAD_SAFE $CFLAGS"
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     AM_CONDITIONAL(HAVE_GNU_LD, false)
+     AM_CONDITIONAL(HAVE_W32, false)        
      LDFLAGS="$LDFLAGS -no-undefined"
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
+     AM_CONDITIONAL(HAVE_W32, true)    
      LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
      # check if PlibC is available
@@ -133,11 +142,13 @@ netbsd*)
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     AM_CONDITIONAL(HAVE_W32, false)        
     ;;
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
+     AM_CONDITIONAL(HAVE_W32, false)        
 ;;
 esac
 

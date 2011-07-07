@@ -19,6 +19,10 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 $(LIBCURL_CPPFLAGS)
 
+if !HAVE_W32
+PERF_GET_CONCURRENT=perf_get_concurrent
+endif
+
 check_PROGRAMS = \
   daemontest_get \
   daemontest_get_sendfile \
@@ -43,7 +47,10 @@ check_PROGRAMS = \
   daemontest_put_chunked \
   daemontest_iplimit11 \
   daemontest_termination \
-  daemontest_timeout
+  daemontest_timeout \
+  perf_get $(PERF_GET_CONCURRENT)
+
+
 noinst_PROGRAMS = \
   daemon_options_test
 
@@ -67,6 +74,20 @@ daemon_options_test_LDADD = \
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+perf_get_SOURCES = \
+  perf_get.c \
+  gauger.h
+perf_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+perf_get_concurrent_SOURCES = \
+  perf_get_concurrent.c \
+  gauger.h
+perf_get_concurrent_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
