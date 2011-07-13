@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Lymba
+     (C) 2007, 2011 Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@
 
 #ifndef NULL
 #define NULL (void*)0
-#endif  // !NULL
+#endif
 
 static const char *invalid_hundred[] = { NULL };
 
@@ -82,7 +82,7 @@ static const char *four_hundred[] = {
   "Expectation Failed",
   "Unknown",
   "Unknown",
-  "Unknown",
+  "Unknown", /* 420 */
   "Unknown",
   "Unprocessable Entity",
   "Locked",
@@ -92,27 +92,27 @@ static const char *four_hundred[] = {
   "Unknown",
   "Unknown",
   "Unknown",
+  "Unknown", /* 430 */
   "Unknown",
   "Unknown",
   "Unknown",
   "Unknown",
+  "Unknown", /* 435 */
   "Unknown",
   "Unknown",
   "Unknown",
   "Unknown",
-  "Unknown",
-  "Unknown",
-  "Unknown",
+  "Unknown", /* 440 */
   "Unknown",
   "Unknown",
   "Unknown",
   "No Response",
-  "Unknown",
+  "Unknown", /* 445 */
   "Unknown",
   "Unknown",
   "Unknown",
   "Retry With",
-  "Blocked by Windows Parental Controls"
+  "Blocked by Windows Parental Controls" /* 450 */
 };
 
 static const char *five_hundred[] = {
