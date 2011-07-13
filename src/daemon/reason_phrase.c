@@ -80,12 +80,39 @@ static const char *four_hundred[] = {
   "Unsupported Media Type",
   "Requested Range Not Satisfiable",
   "Expectation Failed",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
   "Unprocessable Entity",
   "Locked",
   "Failed Dependency",
   "Unordered Collection",
   "Upgrade Required",
-  "Retry With"
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "No Response",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Retry With",
+  "Blocked by Windows Parental Controls"
 };
 
 static const char *five_hundred[] = {
@@ -97,6 +124,7 @@ static const char *five_hundred[] = {
   "HTTP Version not supported",
   "Variant Also Negotiates",
   "Insufficient Storage",
+  "Unknown",
   "Bandwidth Limit Exceeded",
   "Not Extended"
 };

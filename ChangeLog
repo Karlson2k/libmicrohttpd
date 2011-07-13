@@ -1,3 +1,8 @@
+Wed Jul 13 09:26:17 CEST 2011
+	Fixing HTTP error status strings for certain high-numbered status codes.
+	Added support for some more (non-standard) status codes.
+	Releasing libmicrohttpd 0.9.13. -CG
+
 Thu Jul  7 10:24:20 CEST 2011
 	Adding performance measurements. -CG
 
