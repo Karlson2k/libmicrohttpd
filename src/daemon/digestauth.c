@@ -297,7 +297,7 @@ lookup_sub_value(char *dest,
 static int
 check_nonce_nc (struct MHD_Connection *connection,
 		const char *nonce,
-		unsigned int nc)
+		unsigned long int nc)
 {
   uint32_t off;
   uint32_t mod;
@@ -461,7 +461,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
   uint32_t nonce_time;
   uint32_t t;
   size_t left; /* number of characters left in 'header' for 'uri' */
-  unsigned int nci;
+  unsigned long int nci;
 
   header = MHD_lookup_connection_value(connection,
 				       MHD_HEADER_KIND,
