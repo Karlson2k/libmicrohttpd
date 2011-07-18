@@ -22,10 +22,6 @@
  * @author Christian Grothoff
  */
 
-/* needed for asprintf */
-#define _GNU_SOURCE
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -319,13 +315,11 @@ fill_v1_form (const void *cls,
   char *reply;
   struct MHD_Response *response;
 
-  if (-1 == asprintf (&reply,
-		      form,
-		      session->value_1))
-    {
-      /* oops */
-      return MHD_NO;
-    }
+  reply = malloc (strlen (form) + strlen (session->value_1) + 1);
+  snprintf (reply,
+	    strlen (form) + strlen (session->value_1) + 1,
+	    form,
+	    session->value_1);
   /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
 					      (void *) reply,
@@ -361,14 +355,11 @@ fill_v1_v2_form (const void *cls,
   char *reply;
   struct MHD_Response *response;
 
-  if (-1 == asprintf (&reply,
-		      form,
-		      session->value_1,
-		      session->value_2))
-    {
-      /* oops */
-      return MHD_NO;
-    }
+  reply = malloc (strlen (form) + strlen (session->value_1) + strlen (session->value_2) + 1);
+  snprintf (reply,
+	    strlen (form) + strlen (session->value_1) + strlen (session->value_2) + 1,
+	    form,
+	    session->value_1);
   /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
 					      (void *) reply,
