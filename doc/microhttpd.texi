@@ -92,12 +92,6 @@ GNU libmicrohttpd is a GNU package.
 @acronym{MHD}
 @end macro
 
-@c ............................................................
-
-@macro glibcref{NODE, NODE}
-@pxref{\NODE\, \NODE\, \NODE\, libc}
-@end macro
-
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -1158,8 +1152,6 @@ Obtain the @cfunction{select} sets for this daemon. The daemon's socket
 is added to @var{read_fd_set}. The list of currently existent
 connections is scanned and their file descriptors added to the correct
 set.
-
-@glibcref{Waiting for I/O}, for details on file descriptor sets.
 
 After the call completed successfully: the variable referenced by
 @var{max_fd} references the file descriptor with highest integer
