@@ -1,3 +1,7 @@
+Thu Aug 11 11:40:03 CEST 2011
+	Changing sockets to be non-blocking as suggested by Eivind Sarto
+	on the mailinglist. -CG
+
 Mon Jul 25 16:13:15 CEST 2011
 	Added a logo. -CG
 

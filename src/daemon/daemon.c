@@ -765,7 +765,6 @@ send_param_adapter (struct MHD_Connection *connection,
 }
 
 
-#if HTTPS_SUPPORT
 /**
  * Set if a socket should use non-blocking IO.
  * @param fd socket
@@ -798,7 +797,6 @@ socket_set_nonblocking (int fd)
     }
 #endif
 }
-#endif
 
 
 /**
@@ -978,6 +976,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   MHD_set_http_callbacks_ (connection);
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
+  socket_set_nonblocking (connection->socket_fd);
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL))
     {
@@ -988,11 +987,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       gnutls_init (&connection->tls_session, GNUTLS_SERVER);
       gnutls_priority_set (connection->tls_session,
 			   daemon->priority_cache);
-      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-	{
-	  /* use non-blocking IO for gnutls */
-	  socket_set_nonblocking (connection->socket_fd);
-	}
       switch (daemon->cred_type)
         {
           /* set needed credentials for certificate authentication. */
