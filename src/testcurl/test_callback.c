@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   struct timeval tv;
   int extra;
 
-  d = MHD_start_daemon(MHD_USE_DEBUG,
+  d = MHD_start_daemon(0, 
 		       8000,
 		       NULL,
 		       NULL,
@@ -135,15 +135,18 @@ int main(int argc, char **argv)
       FD_ZERO(&rs);
       FD_ZERO(&es);
       curl_multi_perform (multi, &running);
-      mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
-      if (mret != CURLM_OK)
-        {
-          curl_multi_remove_handle (multi, c);
-          curl_multi_cleanup (multi);
-          curl_easy_cleanup (c);
-          MHD_stop_daemon (d);
-          return 3;
-        }   
+      if (NULL != multi)
+	{
+	  mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
+	  if (mret != CURLM_OK)
+	    {
+	      curl_multi_remove_handle (multi, c);
+	      curl_multi_cleanup (multi);
+	      curl_easy_cleanup (c);
+	      MHD_stop_daemon (d);
+	      return 3;
+	    }   
+	}
       if (MHD_YES !=
 	  MHD_get_fdset(d, &rs, &ws, &es, &max))
 	{
@@ -156,26 +159,29 @@ int main(int argc, char **argv)
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
       select(max + 1, &rs, &ws, &es, &tv);
-      curl_multi_perform (multi, &running);
-      if (running == 0)
-        {
-          msg = curl_multi_info_read (multi, &running);
-          if (msg == NULL)
-            break;
-          if (msg->msg == CURLMSG_DONE)
-            {
-              if (msg->data.result != CURLE_OK)
-                printf ("%s failed at %s:%d: `%s'\n",
-                        "curl_multi_perform",
-                        __FILE__,
-                        __LINE__, curl_easy_strerror (msg->data.result));
-              curl_multi_remove_handle (multi, c);
-              curl_multi_cleanup (multi);
-              curl_easy_cleanup (c);
-              c = NULL;
-              multi = NULL;
-            }
-        }
+      if (NULL != multi)
+	{
+	  curl_multi_perform (multi, &running);
+	  if (running == 0)
+	    {
+	      msg = curl_multi_info_read (multi, &running);
+	      if (msg == NULL)
+		break;
+	      if (msg->msg == CURLMSG_DONE)
+		{
+		  if (msg->data.result != CURLE_OK)
+		    printf ("%s failed at %s:%d: `%s'\n",
+			    "curl_multi_perform",
+			    __FILE__,
+			    __LINE__, curl_easy_strerror (msg->data.result));
+		  curl_multi_remove_handle (multi, c);
+		  curl_multi_cleanup (multi);
+		  curl_easy_cleanup (c);
+		  c = NULL;
+		  multi = NULL;
+		}
+	    }
+	}
       MHD_run(d);
     }
   MHD_stop_daemon(d);

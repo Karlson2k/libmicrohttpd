@@ -1,3 +1,8 @@
+Thu Aug 18 11:05:16 CEST 2011
+	Fixed bug with wrong state transition if callback returned
+	MHD_CONTENT_READER_END_OF_STREAM causing spurious extra callbacks
+	to the handler (thanks to Jan Seeger for pointing it out). -CG/JS
+
 Thu Aug 11 11:40:03 CEST 2011
 	Changing sockets to be non-blocking as suggested by Eivind Sarto
 	on the mailinglist. -CG

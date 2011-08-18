@@ -390,7 +390,10 @@ try_ready_normal_body (struct MHD_Connection *connection)
   response->data_start = connection->response_write_position;
   response->data_size = ret;
   if (ret == 0)
-    return MHD_NO;
+    {
+      connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+      return MHD_NO;
+    }
   return MHD_YES;
 }
 
@@ -1847,7 +1850,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             {
               if (response->crc != NULL)
                 pthread_mutex_unlock (&response->mutex);
-              connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
               break;
             }
 	  ret = connection->send_cls (connection,
