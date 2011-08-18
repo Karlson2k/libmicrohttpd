@@ -48,6 +48,7 @@ check_PROGRAMS = \
   daemontest_iplimit11 \
   daemontest_termination \
   daemontest_timeout \
+  test_callback \
   perf_get $(PERF_GET_CONCURRENT)
 
 
@@ -74,6 +75,12 @@ daemon_options_test_LDADD = \
 daemontest_get_SOURCES = \
   daemontest_get.c
 daemontest_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+test_callback_SOURCES = \
+  test_callback.c
+test_callback_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
