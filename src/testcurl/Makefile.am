@@ -21,6 +21,7 @@ $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
+CURL_FORK_TEST=daemontest_get_response_cleanup
 endif
 
 check_PROGRAMS = \
@@ -49,6 +50,7 @@ check_PROGRAMS = \
   daemontest_termination \
   daemontest_timeout \
   test_callback \
+  $(CURL_FORK_TEST) \
   perf_get $(PERF_GET_CONCURRENT)
 
 
@@ -109,6 +111,11 @@ daemontest_get_sendfile_SOURCES = \
 daemontest_get_sendfile_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
+
+daemontest_get_response_cleanup_SOURCES = \
+  daemontest_get_response_cleanup.c
+daemontest_get_response_cleanup_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 daemontest_get_chunked_SOURCES = \
   daemontest_get_chunked.c

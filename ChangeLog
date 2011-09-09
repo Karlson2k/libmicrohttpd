@@ -1,3 +1,7 @@
+Fri Sep  9 13:42:20 CEST 2011
+	Added testcase to demonstrate that response cleanup calling is
+	working. No bug was found. CG
+
 Thu Aug 18 11:05:16 CEST 2011
 	Fixed bug with wrong state transition if callback returned
 	MHD_CONTENT_READER_END_OF_STREAM causing spurious extra callbacks
