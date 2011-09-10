@@ -1,6 +1,10 @@
+Sat Sep 10 07:30:12 CEST 2011
+	Documenting that MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT is not
+	implemented and will not be implemented, and what to use instead. -CG
+
 Fri Sep  9 13:42:20 CEST 2011
 	Added testcase to demonstrate that response cleanup calling is
-	working. No bug was found. CG
+	working. No bug was found. -CG
 
 Thu Aug 18 11:05:16 CEST 2011
 	Fixed bug with wrong state transition if callback returned
