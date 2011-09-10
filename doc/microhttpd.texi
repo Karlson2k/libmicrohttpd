@@ -735,9 +735,9 @@ including access to the underlying GNUtls client certificate
 NULL is returned for non-HTTPS connections.
 
 @item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
-Takes no extra arguments.  Allows access to the client certificate
-including access to the underlying GNUtls client certificate
-(HTTPS connections only).  Takes no extra arguments.
+Dysfunctional (never implemented, deprecated).  Use
+MHD_CONNECTION_INFO_GNUTLS_SESSION to get the @code{gnutls_session_t}
+and then call @code{gnutls_certificate_get_peers()}.
 
 @item MHD_CONNECTION_INFO_DAEMON
 Returns information about @code{struct MHD_Daemon} which manages

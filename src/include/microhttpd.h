@@ -729,7 +729,10 @@ enum MHD_ConnectionInfoType
   MHD_CONNECTION_INFO_GNUTLS_SESSION,
 
   /**
-   * Get the GNUTLS client certificate handle.
+   * Get the GNUTLS client certificate handle.  Dysfunctional (never
+   * implemented, deprecated).  Use MHD_CONNECTION_INFO_GNUTLS_SESSION
+   * to get the gnutls_session_t and then call
+   * gnutls_certificate_get_peers().
    */
   MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
 
