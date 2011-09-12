@@ -2293,7 +2293,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         }
       break;
     }
-  timeout = connection->daemon->connection_timeout;
+  timeout = connection->connection_timeout;
   if ( (timeout != 0) &&
        (timeout <= (time (NULL) - connection->last_activity)) )
     {
@@ -2351,6 +2351,34 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     default:
       return NULL;
     };
+}
+
+
+/**
+ * Set a custom option for the given connection, overriding defaults.
+ *
+ * @param connection connection to modify
+ * @param option option to set
+ * @param ... arguments to the option, depending on the option type
+ * @return MHD_YES on success, MHD_NO if setting the option failed
+ */
+int 
+MHD_set_connection_option (struct MHD_Connection *connection,
+			   enum MHD_CONNECTION_OPTION option,
+			   ...)
+{
+  va_list ap;
+
+  switch (option)
+    {
+    case MHD_CONNECTION_OPTION_TIMEOUT:
+      va_start (ap, option);
+      connection->connection_timeout = va_arg (ap, unsigned int);
+      va_end (ap);
+      return MHD_YES;
+    default:
+      return MHD_NO;
+    }
 }
 
 

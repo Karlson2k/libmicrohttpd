@@ -608,6 +608,12 @@ struct MHD_Connection
   time_t last_activity;
 
   /**
+   * After how many seconds of inactivity should
+   * this connection time out?  Zero for no timeout.
+   */
+  unsigned int connection_timeout;
+
+  /**
    * Did we ever call the "default_handler" on this connection?
    * (this flag will determine if we call the 'notify_completed'
    * handler when the connection closes down).

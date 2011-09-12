@@ -953,6 +953,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
   memset (connection, 0, sizeof (struct MHD_Connection));
+  connection->connection_timeout = daemon->connection_timeout;
   connection->pool = NULL;
   connection->addr = malloc (addrlen);
   if (connection->addr == NULL)
@@ -1222,7 +1223,6 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   time_t earliest_deadline;
   time_t now;
   struct MHD_Connection *pos;
-  unsigned int dto;
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -1231,26 +1231,23 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 #endif  
       return MHD_NO;
     }
-  dto = daemon->connection_timeout;
-  if (0 == dto)
-    return MHD_NO;
   pos = daemon->connections_head;
   if (pos == NULL)
     return MHD_NO;              /* no connections */
-  now = time (NULL);
-  /* start with conservative estimate */
-  earliest_deadline = now + dto + 1;
+  earliest_deadline = pos->last_activity + pos->connection_timeout;
+  pos = pos->next;
   while (pos != NULL)
     {
-      if (earliest_deadline > pos->last_activity + dto)
-        earliest_deadline = pos->last_activity + dto;
+      if (earliest_deadline > pos->last_activity + pos->connection_timeout)
+        earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
       if (  (0 != (daemon->options & MHD_USE_SSL)) &&
 	    (0 != gnutls_record_check_pending (pos->tls_session)) )
-	earliest_deadline = now;
+	earliest_deadline = 0;
 #endif
       pos = pos->next;
     }
+  now = time (NULL);
   if (earliest_deadline < now)
     *timeout = 0;
   else

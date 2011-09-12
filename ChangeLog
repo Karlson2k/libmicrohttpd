@@ -1,3 +1,8 @@
+Mon Sep 12 10:05:36 CEST 2011
+	Added new function to allow setting of a custom timeout value
+	for an individual connection (the MHD_set_connection_option is
+	more generic, but this is currently the only use). -CG
+
 Sat Sep 10 07:30:12 CEST 2011
 	Documenting that MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT is not
 	implemented and will not be implemented, and what to use instead. -CG
