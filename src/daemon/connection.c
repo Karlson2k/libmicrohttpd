@@ -311,15 +311,10 @@ MHD_connection_close (struct MHD_Connection *connection,
 			      &connection->client_context,
 			      termination_code);
   connection->client_aware = MHD_NO;
-  if (pos->response != NULL)
+  if (connection->response != NULL)
     {
-      MHD_destroy_response (pos->response);
-      pos->response = NULL;
-    }
-  if (pos->response != NULL)
-    {
-      MHD_destroy_response (pos->response);
-      pos->response = NULL;
+      MHD_destroy_response (connection->response);
+      connection->response = NULL;
     }
 }
 
