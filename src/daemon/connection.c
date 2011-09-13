@@ -316,6 +316,11 @@ MHD_connection_close (struct MHD_Connection *connection,
       MHD_destroy_response (pos->response);
       pos->response = NULL;
     }
+  if (pos->response != NULL)
+    {
+      MHD_destroy_response (pos->response);
+      pos->response = NULL;
+    }
 }
 
 
