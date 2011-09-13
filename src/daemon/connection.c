@@ -104,9 +104,12 @@
  */
 #define DEBUG_SEND_DATA MHD_NO
 
+
 /**
  * Get all of the headers from the request.
  *
+ * @param connection connection to get values from
+ * @param kind types of values to iterate over
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
@@ -138,6 +141,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
     }
   return ret;
 }
+
 
 /**
  * This function can be used to add an entry to
@@ -187,10 +191,13 @@ MHD_set_connection_value (struct MHD_Connection *connection,
   return MHD_YES;
 }
 
+
 /**
  * Get a particular header value.  If multiple
  * values match the kind, return any one of them.
  *
+ * @param connection connection to get values from
+ * @param kind what kind of value are we looking for
  * @param key the header to look for
  * @return NULL if no such item was found
  */
@@ -211,6 +218,7 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
     }
   return NULL;
 }
+
 
 /**
  * Queue a response to be transmitted to the client (as soon as
@@ -254,9 +262,13 @@ MHD_queue_response (struct MHD_Connection *connection,
   return MHD_YES;
 }
 
+
 /**
  * Do we (still) need to send a 100 continue
  * message for this connection?
+ *
+ * @param connection connection to test
+ * @return 0 if we don't need 100 CONTINUE, 1 if we do
  */
 static int
 need_100_continue (struct MHD_Connection *connection)
@@ -279,6 +291,9 @@ need_100_continue (struct MHD_Connection *connection)
 /**
  * Close the given connection and give the
  * specified termination code to the user.
+ *
+ * @param connection connection to close
+ * @param termination_code termination reason to give
  */
 void
 MHD_connection_close (struct MHD_Connection *connection,
@@ -296,6 +311,11 @@ MHD_connection_close (struct MHD_Connection *connection,
 			      &connection->client_context,
 			      termination_code);
   connection->client_aware = MHD_NO;
+  if (pos->response != NULL)
+    {
+      MHD_destroy_response (pos->response);
+      pos->response = NULL;
+    }
 }
 
 
