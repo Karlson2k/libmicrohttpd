@@ -2005,6 +2005,10 @@ MHD_start_daemon_va (unsigned int options,
 
   if (MHD_YES != parse_options_va (retVal, &servaddr, ap))
     {
+#if HTTPS_SUPPORT
+      if (options & MHD_USE_SSL)
+	gnutls_priority_deinit (retVal->priority_cache);
+#endif
       free (retVal);
       return NULL;
     }
@@ -2019,6 +2023,10 @@ MHD_start_daemon_va (unsigned int options,
 	  MHD_DLOG (retVal,
 		    "Specified value for NC_SIZE too large\n");
 #endif
+#if HTTPS_SUPPORT
+	  if (options & MHD_USE_SSL)
+	    gnutls_priority_deinit (retVal->priority_cache);
+#endif
 	  free (retVal);
 	  return NULL;	  
 	}
@@ -2030,6 +2038,10 @@ MHD_start_daemon_va (unsigned int options,
 			"Failed to allocate memory for nonce-nc map: %s\n",
 			STRERROR (errno));
 #endif
+#if HTTPS_SUPPORT
+	      if (options & MHD_USE_SSL)
+		gnutls_priority_deinit (retVal->priority_cache);
+#endif
 	      free (retVal);
 	      return NULL;
 	    }
@@ -2040,6 +2052,10 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_MESSAGES
       MHD_DLOG (retVal,
 		"MHD failed to initialize nonce-nc mutex\n");
+#endif
+#if HTTPS_SUPPORT
+      if (options & MHD_USE_SSL)
+	gnutls_priority_deinit (retVal->priority_cache);
 #endif
       free (retVal->nnc);
       free (retVal);
@@ -2361,6 +2377,10 @@ thread_failed:
 #ifdef DAUTH_SUPPORT
   free (retVal->nnc);
   pthread_mutex_destroy (&retVal->nnc_lock);
+#endif
+#if HTTPS_SUPPORT
+  if (options & MHD_USE_SSL)
+    gnutls_priority_deinit (retVal->priority_cache);
 #endif
   free (retVal);
   return NULL;
