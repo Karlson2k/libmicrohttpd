@@ -1857,6 +1857,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
           do_write (connection);
+	  if (connection->state != MHD_CONNECTION_HEADERS_SENDING)
+ 	     break;
           check_write_done (connection, MHD_CONNECTION_HEADERS_SENT);
           break;
         case MHD_CONNECTION_HEADERS_SENT:
@@ -1910,6 +1912,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
           do_write (connection);
+	  if (connection->state !=  MHD_CONNECTION_CHUNKED_BODY_READY)
+	     break;
           check_write_done (connection,
                             (connection->response->total_size ==
                              connection->response_write_position) ?
@@ -1922,6 +1926,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_FOOTERS_SENDING:
           do_write (connection);
+	  if (connection->state != MHD_CONNECTION_FOOTERS_SENDING)
+	    break;
           check_write_done (connection, MHD_CONNECTION_FOOTERS_SENT);
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
