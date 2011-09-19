@@ -311,11 +311,6 @@ MHD_connection_close (struct MHD_Connection *connection,
 			      &connection->client_context,
 			      termination_code);
   connection->client_aware = MHD_NO;
-  if (connection->response != NULL)
-    {
-      MHD_destroy_response (connection->response);
-      connection->response = NULL;
-    }
 }
 
 
@@ -2291,6 +2286,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           continue;
         case MHD_CONNECTION_CLOSED:
+	  if (connection->response != NULL)
+	    {
+	      MHD_destroy_response (connection->response);
+	      connection->response = NULL;
+	    }
 	  daemon = connection->daemon;
 	  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
 	    {

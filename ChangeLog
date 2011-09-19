@@ -1,3 +1,6 @@
+Mon Sep 19 14:06:30 CEST 2011
+	Fixing problem introduced with prompt response cleanup code. -CG
+
 Wed Sep 14 13:43:26 CEST 2011
 	Fixing minor memory leak if daemon with HTTPS support failed to
 	initialize (#1766). -CG
