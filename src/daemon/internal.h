@@ -896,6 +896,13 @@ struct MHD_Daemon
    */
   int socket_fd;
 
+#ifndef HAVE_LISTEN_SHUTDOWN
+  /**
+   * Pipe we use to signal shutdown.
+   */
+  int wpipe[2];
+#endif
+
   /**
    * Are we shutting down?
    */

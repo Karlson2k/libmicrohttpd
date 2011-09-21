@@ -1307,6 +1307,15 @@ MHD_select (struct MHD_Daemon *daemon,
       FD_SET (max, &rs);
     }
 
+#ifndef HAVE_LISTEN_SHUTDOWN
+  if (-1 == daemon->wpipe[0])
+    return MHD_NO;
+  FD_SET (daemon->wpipe[0], &rs);
+  /* update max file descriptor */
+  if (max < daemon->wpipe[0])
+    max = daemon->wpipe[0];
+#endif
+
   tv = NULL;
   if (may_block == MHD_NO)
     {
@@ -1389,7 +1398,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       pos = pos->next;
     }
   {
+ #ifdef HAVE_LISTEN_SHUTDOWN
     struct pollfd p[1 + num_connections];
+ #else
+    struct pollfd p[2 + num_connections];
+ #endif
     struct MHD_Pollfd mp;
     unsigned MHD_LONG_LONG ltimeout;
     unsigned int i;
@@ -1399,10 +1412,17 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     memset (p, 0, sizeof (p));
     if ( (daemon->max_connections > 0) && (daemon->socket_fd != -1) )
       {
-	poll_server = 1;
 	p[0].fd = daemon->socket_fd;
 	p[0].events = POLLIN;
 	p[0].revents = 0;
+#ifdef HAVE_LISTEN_SHUTDOWN
+	poll_server = 1;
+#else
+	p[1].fd = daemon->wpipe[0];
+	p[1].events = POLLIN;
+	p[1].revents = 0;
+	poll_server = 2;
+#endif
       }
     else
       {
@@ -1464,7 +1484,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	pos->idle_handler (pos);
 	i++;
       }
-    if ( (1 == poll_server) &&
+    if ( (0 != poll_server) &&
 	 (0 != (p[0].revents & POLLIN)) )
       MHD_accept_connection (daemon);
   }
@@ -1483,22 +1503,27 @@ static int
 MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 			int may_block)
 {
-  struct pollfd p;
+#ifdef HAVE_LISTEN_SHUTDOWN
+  struct pollfd p[1];
+#else
+  struct pollfd p[2];
+#endif
   int timeout;
   
   memset (&p, 0, sizeof (p));
-  p.fd = daemon->socket_fd;
-  p.events = POLLIN;
-  p.revents = 0;
+  p[0].fd = daemon->socket_fd;
+  p[0].events = POLLIN;
+  p[0].revents = 0;
+#ifndef HAVE_LISTEN_SHUTDOWN
+  p[1].fd = daemon->wpipe[0];
+  p[1].events = POLLIN;
+  p[1].revents = 0;
+#endif
   if (may_block == MHD_NO)
     timeout = 0;
   else
     timeout = -1;
-#ifdef __CYGWIN__
-  /* See https://gnunet.org/bugs/view.php?id=1674 */
-  timeout = ( (timeout > 2000) || (timeout < 0) ) ? 2000 : timeout;
-#endif
-  if (poll (&p, 1, timeout) < 0)
+  if (poll (p, (sizeof(p)/sizeof(struct pollfd)), timeout) < 0)
     {
       if (errno == EINTR)
 	return MHD_YES;
@@ -1512,7 +1537,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     return MHD_NO;  
   if (daemon->socket_fd < 0) 
     return MHD_YES; 
-  if (0 != (p.revents & POLLIN))
+  if (0 != (p[0].revents & POLLIN))
     MHD_accept_connection (daemon);  
   return MHD_YES;
 }
@@ -1971,6 +1996,34 @@ MHD_start_daemon_va (unsigned int options,
   retVal->pool_size = MHD_POOL_SIZE_DEFAULT;
   retVal->unescape_callback = &MHD_http_unescape;
   retVal->connection_timeout = 0;       /* no timeout */
+#ifndef HAVE_LISTEN_SHUTDOWN
+  retVal->wpipe[0] = -1;
+  retVal->wpipe[1] = -1;
+  if (0 != pipe (retVal->wpipe))
+    {
+#if HAVE_MESSAGES
+      FPRINTF(stderr, 
+	      "Failed to create control pipe: %s\n",
+	      STRERROR (errno));
+#endif
+      free (retVal);
+      return NULL;
+    }
+#ifndef WINDOWS
+  if ( (0 == (options & MHD_USE_POLL)) &&
+       (retVal->wpipe[0] >= FD_SETSIZE) )
+    {
+#if HAVE_MESSAGES
+      FPRINTF(stderr, 
+	      "file descriptor for control pipe exceeds maximum value\n");
+#endif
+      close (retVal->wpipe[0]);
+      close (retVal->wpipe[1]);
+      free (retVal);
+      return NULL;
+    }
+#endif
+#endif
 #ifdef DAUTH_SUPPORT
   retVal->digest_auth_rand_size = 0;
   retVal->digest_auth_random = NULL;
@@ -2464,12 +2517,15 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   int fd;
   unsigned int i;
   int rc;
+  char c;
 
   if (daemon == NULL)
     return;
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
   daemon->socket_fd = -1;
+  if (daemon->wpipe[1] != -1)
+    write (daemon->wpipe[1], "e", 1);
 
   /* Prepare workers for shutdown */
   for (i = 0; i < daemon->worker_pool_size; ++i)
@@ -2548,6 +2604,18 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
   pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
   pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
+
+#ifndef HAVE_LISTEN_SHUTDOWN
+  if (daemon->wpipe[1] != -1)
+    {
+      /* just to be sure, remove the one char we 
+	 wrote into the pipe */
+      (void) read (daemon->wpipe[0], &c, 1);
+      close (daemon->wpipe[0]);
+      close (daemon->wpipe[1]);
+    }
+#endif
+
   free (daemon);
 }
 
