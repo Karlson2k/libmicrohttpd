@@ -85,6 +85,7 @@ case "$host_os" in
      ;;
 linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
      AM_CONDITIONAL(HAVE_W32, false)        
      ;;
@@ -116,6 +117,7 @@ netbsd*)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
      AM_CONDITIONAL(HAVE_W32, false)        
@@ -147,6 +149,10 @@ netbsd*)
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
+#    You might want to find out if your OS supports shutdown on listen sockets,
+#    and extend the switch statement; if we do not have 'HAVE_LISTEN_SHUTDOWN',
+#    pipes are used instead to signal 'select'.
+#    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      AM_CONDITIONAL(HAVE_W32, false)        
 ;;

@@ -2517,23 +2517,24 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   int fd;
   unsigned int i;
   int rc;
-  char c;
 
   if (daemon == NULL)
     return;
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
   daemon->socket_fd = -1;
-  if (daemon->wpipe[1] != -1)
-    write (daemon->wpipe[1], "e", 1);
-
   /* Prepare workers for shutdown */
   for (i = 0; i < daemon->worker_pool_size; ++i)
     {
       daemon->worker_pool[i].shutdown = MHD_YES;
       daemon->worker_pool[i].socket_fd = -1;
     }
+#ifdef HAVE_LISTEN_SHUTDOWN
   SHUTDOWN (fd, SHUT_RDWR);
+#else
+  if (daemon->wpipe[1] != -1)
+    write (daemon->wpipe[1], "e", 1);
+#endif
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
   MHD_DLOG (daemon, "MHD listen socket shutdown\n");
@@ -2608,6 +2609,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifndef HAVE_LISTEN_SHUTDOWN
   if (daemon->wpipe[1] != -1)
     {
+      char c;
+
       /* just to be sure, remove the one char we 
 	 wrote into the pipe */
       (void) read (daemon->wpipe[0], &c, 1);

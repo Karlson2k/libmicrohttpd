@@ -1,3 +1,7 @@
+Wed Sep 21 09:53:18 CEST 2011
+	Reverting to using pipes for signalling select on non-Linux
+	platforms where shutdown-on-listen-sockets does not work. -WB/CG
+
 Mon Sep 19 14:06:30 CEST 2011
 	Fixing problem introduced with prompt response cleanup code. -CG
 
