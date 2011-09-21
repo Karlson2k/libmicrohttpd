@@ -153,7 +153,7 @@ ahc_echo (void *cls,
 
 
 static pid_t
-do_gets ()
+do_gets (int port)
 {
   pid_t ret;
   CURL *c;
@@ -161,6 +161,9 @@ do_gets ()
   unsigned int i;
   unsigned int j;
   pid_t par[PAR];
+  char url[64];
+
+  sprintf(url, "http://localhost:%d/hello_world", port);
   
   ret = fork ();
   if (ret == -1) abort ();
@@ -174,7 +177,7 @@ do_gets ()
 	  for (i=0;i<ROUNDS;i++)
 	    {
 	      c = curl_easy_init ();
-	      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+	      curl_easy_setopt (c, CURLOPT_URL, url);
 	      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
 	      curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
 	      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -220,16 +223,16 @@ join_gets (pid_t pid)
 
 
 static int
-testInternalGet (int poll_flag)
+testInternalGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
-                        1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
   start_timer ();
-  join_gets (do_gets ());
+  join_gets (do_gets (port));
   stop (poll_flag ? "internal poll" : "internal select");
   MHD_stop_daemon (d);
   return 0;
@@ -237,40 +240,40 @@ testInternalGet (int poll_flag)
 
 
 static int
-testMultithreadedGet (int poll_flag)
+testMultithreadedGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG  | poll_flag,
-                        1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
   start_timer ();
-  join_gets (do_gets ());
+  join_gets (do_gets (port));
   stop (poll_flag ? "thread with poll" : "thread with select");
   MHD_stop_daemon (d);
   return 0;
 }
 
 static int
-testMultithreadedPoolGet (int poll_flag)
+testMultithreadedPoolGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
-                        1081, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   start_timer ();
-  join_gets (do_gets ());
+  join_gets (do_gets (port));
   stop (poll_flag ? "thread pool with poll" : "thread pool with select");
   MHD_stop_daemon (d);
   return 0;
 }
 
 static int
-testExternalGet ()
+testExternalGet (int port)
 {
   struct MHD_Daemon *d;
   pid_t pid;
@@ -283,11 +286,11 @@ testExternalGet ()
   int tret;
 
   d = MHD_start_daemon (MHD_USE_DEBUG,
-                        1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
   start_timer ();
-  pid = do_gets ();
+  pid = do_gets (port);
   while (0 == waitpid (pid, NULL, WNOHANG))
     {
       max = 0;
@@ -316,6 +319,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  int port = 1081;
 
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
@@ -323,13 +327,13 @@ main (int argc, char *const *argv)
   response = MHD_create_response_from_buffer (strlen ("/hello_world"),
 					      "/hello_world",
 					      MHD_RESPMEM_MUST_COPY);
-  errorCount += testInternalGet (0);
-  errorCount += testMultithreadedGet (0);
-  errorCount += testMultithreadedPoolGet (0);
-  errorCount += testExternalGet ();
-  errorCount += testInternalGet (MHD_USE_POLL);
-  errorCount += testMultithreadedGet (MHD_USE_POLL);
-  errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
+  errorCount += testInternalGet (port++, 0);
+  errorCount += testMultithreadedGet (port++, 0);
+  errorCount += testMultithreadedPoolGet (port++, 0);
+  errorCount += testExternalGet (port++);
+  errorCount += testInternalGet (port++, MHD_USE_POLL);
+  errorCount += testMultithreadedGet (port++, MHD_USE_POLL);
+  errorCount += testMultithreadedPoolGet (port++, MHD_USE_POLL);
   MHD_destroy_response (response);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
