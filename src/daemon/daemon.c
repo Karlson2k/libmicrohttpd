@@ -623,9 +623,7 @@ MHD_handle_connection (void *data)
 	  if (FD_ISSET (con->socket_fd, &ws))
 	    con->write_handler (con);
 	  if (MHD_NO == con->idle_handler (con))
-	    {
-	      return NULL;
-	    }
+	    goto exit;
 	}
 #ifdef HAVE_POLL_H
       else
@@ -660,9 +658,7 @@ MHD_handle_connection (void *data)
 	  if (0 != (p[0].revents & (POLLERR | POLLHUP))) 
 	    MHD_connection_close (con, MHD_REQUEST_TERMINATED_WITH_ERROR);      
 	  if (MHD_NO == con->idle_handler (con))
-	    {
-	      return NULL; /* "instant" termination, 'con' no longer valid! */
-	    }
+	    goto exit;
 	}
 #endif
     }
@@ -677,6 +673,12 @@ MHD_handle_connection (void *data)
       if (con->state != MHD_CONNECTION_CLOSED)
 	MHD_connection_close (con, MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
       con->idle_handler (con);
+    }
+exit:
+  if (con->response != NULL)
+    {
+      MHD_destroy_response (con->response);
+      con->response = NULL;
     }
   return NULL;
 }
