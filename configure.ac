@@ -64,6 +64,9 @@ AM_PROG_CC_C_O
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
+AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
+AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
+
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
