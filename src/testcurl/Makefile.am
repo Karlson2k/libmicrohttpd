@@ -21,7 +21,9 @@ $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
+if HAVE_CURL_BINARY
 CURL_FORK_TEST=daemontest_get_response_cleanup
+endif
 endif
 
 check_PROGRAMS = \

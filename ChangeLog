@@ -1,3 +1,7 @@
+Mon Sep 26 21:24:00 CEST 2011
+	Only run response cleanup testcase if curl binary was found by
+	configure. -CG
+
 Wed Sep 21 09:53:18 CEST 2011
 	Reverting to using pipes for signalling select on non-Linux
 	platforms where shutdown-on-listen-sockets does not work. -WB/CG
