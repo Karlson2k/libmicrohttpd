@@ -2001,7 +2001,7 @@ MHD_start_daemon_va (unsigned int options,
 #ifndef HAVE_LISTEN_SHUTDOWN
   retVal->wpipe[0] = -1;
   retVal->wpipe[1] = -1;
-  if (0 != pipe (retVal->wpipe))
+  if (0 != PIPE (retVal->wpipe))
     {
 #if HAVE_MESSAGES
       FPRINTF(stderr, 
@@ -2019,8 +2019,8 @@ MHD_start_daemon_va (unsigned int options,
       FPRINTF(stderr, 
 	      "file descriptor for control pipe exceeds maximum value\n");
 #endif
-      close (retVal->wpipe[0]);
-      close (retVal->wpipe[1]);
+      CLOSE (retVal->wpipe[0]);
+      CLOSE (retVal->wpipe[1]);
       free (retVal);
       return NULL;
     }
@@ -2535,7 +2535,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   SHUTDOWN (fd, SHUT_RDWR);
 #else
   if (daemon->wpipe[1] != -1)
-    write (daemon->wpipe[1], "e", 1);
+    WRITE (daemon->wpipe[1], "e", 1);
 #endif
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
@@ -2615,9 +2615,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
       /* just to be sure, remove the one char we 
 	 wrote into the pipe */
-      (void) read (daemon->wpipe[0], &c, 1);
-      close (daemon->wpipe[0]);
-      close (daemon->wpipe[1]);
+      (void) READ (daemon->wpipe[0], &c, 1);
+      CLOSE (daemon->wpipe[0]);
+      CLOSE (daemon->wpipe[1]);
     }
 #endif
 
