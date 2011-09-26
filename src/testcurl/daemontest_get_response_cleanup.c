@@ -57,6 +57,9 @@ fork_curl (const char *url)
   if (ret != 0)
     return ret;
   execlp ("curl", "curl", "-s", "-N", "-o", "/dev/null", "-GET", url, NULL);
+  fprintf (stderr, 
+	   "Failed to exec curl: %s\n",
+	   strerror (errno));
   _exit (-1);  
 }
 
@@ -65,7 +68,7 @@ kill_curl (pid_t pid)
 {
   int status;
 
-  // fprintf (stderr, "Killing curl\n");
+  //fprintf (stderr, "Killing curl\n");
   kill (pid, SIGTERM);
   waitpid (pid, &status, 0);
 }
@@ -85,7 +88,7 @@ push_free_callback (void *cls)
 {
   int *ok = cls;
 
-  // fprintf (stderr, "Cleanup callback called!\n");
+  //fprintf (stderr, "Cleanup callback called!\n");
   *ok = 0;
 }
 
@@ -104,6 +107,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
 
+  //fprintf (stderr, "In CB: %s!\n", method);
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *unused)
@@ -160,6 +164,7 @@ testMultithreadedGet ()
   if (d == NULL)
     return 16;
   ok = 1;
+  //fprintf (stderr, "Forking cURL!\n");
   curl = fork_curl ("http://localhost:1081/");
   sleep (1);
   kill_curl (curl);
@@ -174,7 +179,7 @@ testMultithreadedGet ()
     }
   kill_curl (curl);
   sleep (1);
-  // fprintf (stderr, "Stopping daemon!\n");
+  //fprintf (stderr, "Stopping daemon!\n");
   MHD_stop_daemon (d);
   if (ok != 0)
     return 32;
@@ -198,7 +203,7 @@ testMultithreadedPoolGet ()
   sleep (1);
   kill_curl (curl);
   sleep (1);
-  // fprintf (stderr, "Stopping daemon!\n");
+  //fprintf (stderr, "Stopping daemon!\n");
   MHD_stop_daemon (d);
   if (ok != 0)
     return 128;
