@@ -1,3 +1,7 @@
+Tue Sep 27 13:07:36 CEST 2011
+	Added ability to access URL arguments of the form 'url?foo' (without
+	'=').  Added testcase and updated documentation accordingly. -CG
+
 Mon Sep 26 21:24:00 CEST 2011
 	Only run response cleanup testcase if curl binary was found by
 	configure. -CG

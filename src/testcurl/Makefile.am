@@ -29,6 +29,7 @@ endif
 check_PROGRAMS = \
   daemontest_get \
   daemontest_get_sendfile \
+  daemontest_urlparse \
   daemontest_post \
   daemontest_postform \
   daemontest_post_loop \
@@ -111,6 +112,12 @@ daemontest_digestauth_LDADD = \
 daemontest_get_sendfile_SOURCES = \
   daemontest_get_sendfile.c
 daemontest_get_sendfile_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+daemontest_urlparse_SOURCES = \
+  daemontest_urlparse.c
+daemontest_urlparse_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 

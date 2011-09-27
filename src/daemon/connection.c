@@ -1056,7 +1056,17 @@ parse_arguments (enum MHD_ValueKind kind,
     {
       equals = strstr (args, "=");
       if (equals == NULL)
-        return MHD_NO;          /* invalid, ignore */
+	{
+	  /* add with 'value' NULL */
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 args);
+	  
+	  return connection_add_header (connection,
+					args,
+					NULL,
+					kind);
+	}
       equals[0] = '\0';
       equals++;
       amper = strstr (equals, "&");
