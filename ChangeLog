@@ -1,3 +1,6 @@
+Wed Sep 28 08:37:55 CEST 2011
+	Releasing libmicrohttpd 0.9.15. -CG
+
 Tue Sep 27 13:07:36 CEST 2011
 	Added ability to access URL arguments of the form 'url?foo' (without
 	'=').  Added testcase and updated documentation accordingly. -CG
