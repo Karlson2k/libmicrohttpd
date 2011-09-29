@@ -144,7 +144,7 @@ testInternalPost ()
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -196,7 +196,7 @@ testMultithreadedPost ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -249,7 +249,7 @@ testMultithreadedPoolPost ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -311,7 +311,7 @@ testExternalPost ()
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_POSTFIELDS, POST_DATA);
@@ -516,7 +516,7 @@ testMultithreadedPostCancelPart(int flags)
   crbc.pos = 0;
   
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_READFUNCTION, (flags & FLAG_SLOW_READ) ? &slowReadBuffer : &readBuffer);

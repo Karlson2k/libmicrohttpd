@@ -108,7 +108,7 @@ testExternalGet ()
     }
 
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "https://localhost:1082/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */

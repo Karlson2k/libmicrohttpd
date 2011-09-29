@@ -161,7 +161,7 @@ testInternalPost ()
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
@@ -215,7 +215,7 @@ testMultithreadedPost ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
@@ -270,7 +270,7 @@ testMultithreadedPoolPost ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
@@ -334,7 +334,7 @@ testExternalPost ()
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();

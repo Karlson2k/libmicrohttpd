@@ -124,7 +124,7 @@ testMultithreadedGet ()
           cbc[i].size = 2048;
           cbc[i].pos = 0;
 
-          curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+          curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
           curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
           curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc[i]);
           curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -222,7 +222,7 @@ testMultithreadedPoolGet ()
           cbc[i].size = 2048;
           cbc[i].pos = 0;
 
-          curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+          curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
           curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
           curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc[i]);
           curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);

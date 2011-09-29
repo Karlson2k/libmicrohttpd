@@ -140,7 +140,7 @@ testInternalGet ()
                         11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  curl = fork_curl ("http://localhost:11080/");
+  curl = fork_curl ("http://127.0.0.1:11080/");
   sleep (1);
   kill_curl (curl);
   sleep (1);
@@ -165,11 +165,11 @@ testMultithreadedGet ()
     return 16;
   ok = 1;
   //fprintf (stderr, "Forking cURL!\n");
-  curl = fork_curl ("http://localhost:1081/");
+  curl = fork_curl ("http://127.0.0.1:1081/");
   sleep (1);
   kill_curl (curl);
   sleep (1);
-  curl = fork_curl ("http://localhost:1081/");
+  curl = fork_curl ("http://127.0.0.1:1081/");
   sleep (1);
   if (ok != 0)
     {
@@ -199,7 +199,7 @@ testMultithreadedPoolGet ()
   if (d == NULL)
     return 64;
   ok = 1;
-  curl = fork_curl ("http://localhost:1081/");
+  curl = fork_curl ("http://127.0.0.1:1081/");
   sleep (1);
   kill_curl (curl);
   sleep (1);
@@ -226,7 +226,7 @@ testExternalGet ()
                         1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
-  curl = fork_curl ("http://localhost:1082/");
+  curl = fork_curl ("http://127.0.0.1:1082/");
   
   start = time (NULL);
   while ((time (NULL) - start < 2))

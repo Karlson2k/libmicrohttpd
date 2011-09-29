@@ -181,7 +181,7 @@ testInternalGet (int port, int poll_flag)
   unsigned int i;
   char url[64];
 
-  sprintf(url, "http://localhost:%d/hello_world", port);
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -240,7 +240,7 @@ testMultithreadedGet (int port, int poll_flag)
   unsigned int i;
   char url[64];
 
-  sprintf(url, "http://localhost:%d/hello_world", port);
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -298,7 +298,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
   unsigned int i;
   char url[64];
 
-  sprintf(url, "http://localhost:%d/hello_world", port);
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -366,7 +366,7 @@ testExternalGet (int port)
   unsigned int i;
   char url[64];
 
-  sprintf(url, "http://localhost:%d/hello_world", port);
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
 
   multi = NULL;
   cbc.buf = buf;

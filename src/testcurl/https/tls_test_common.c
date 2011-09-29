@@ -277,7 +277,7 @@ gen_test_file_url (char *url, int port)
       ret = -1;
     }
   /* construct url - this might use doc_path */
-  if (sprintf (url, "%s:%d%s/%s", "https://localhost", port,
+  if (sprintf (url, "%s:%d%s/%s", "https://127.0.0.1", port,
                doc_path, "urlpath") < 0)
     ret = -1;
 

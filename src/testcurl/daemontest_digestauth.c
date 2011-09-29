@@ -165,7 +165,7 @@ testDigestAuth ()
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1337/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1337/");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);

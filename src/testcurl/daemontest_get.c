@@ -113,7 +113,7 @@ testInternalGet (int poll_flag)
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -162,7 +162,7 @@ testMultithreadedGet (int poll_flag)
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -212,7 +212,7 @@ testMultithreadedPoolGet (int poll_flag)
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1081/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -271,7 +271,7 @@ testExternalGet ()
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -403,7 +403,7 @@ testUnknownPortGet (int poll_flag)
   if (addr.sin_family != AF_INET)
     return 26214;
 
-  snprintf(buf, sizeof(buf), "http://localhost:%hu/hello_world",
+  snprintf(buf, sizeof(buf), "http://127.0.0.1:%hu/hello_world",
            ntohs(addr.sin_port));
 
   c = curl_easy_init ();

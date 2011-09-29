@@ -163,7 +163,7 @@ do_gets (int port)
   pid_t par[PAR];
   char url[64];
 
-  sprintf(url, "http://localhost:%d/hello_world", port);
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
   
   ret = fork ();
   if (ret == -1) abort ();

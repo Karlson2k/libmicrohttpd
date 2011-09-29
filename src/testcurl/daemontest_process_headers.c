@@ -62,7 +62,7 @@ static int
 kv_cb (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
   if ((0 == strcmp (key, MHD_HTTP_HEADER_HOST)) &&
-      (0 == strcmp (value, "localhost:21080")) && (kind == MHD_HEADER_KIND))
+      (0 == strcmp (value, "127.0.0.1:21080")) && (kind == MHD_HEADER_KIND))
     {
       *((int *) cls) = 1;
       return MHD_NO;
@@ -106,7 +106,7 @@ ahc_echo (void *cls,
     abort ();
   hdr = MHD_lookup_connection_value (connection,
                                      MHD_HEADER_KIND, MHD_HTTP_HEADER_HOST);
-  if ((hdr == NULL) || (0 != strcmp (hdr, "localhost:21080")))
+  if ((hdr == NULL) || (0 != strcmp (hdr, "127.0.0.1:21080")))
     abort ();
   MHD_set_connection_value (connection,
                             MHD_HEADER_KIND, "FakeHeader", "NowPresent");
@@ -155,7 +155,7 @@ testInternalGet ()
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:21080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:21080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -204,7 +204,7 @@ testMultithreadedGet ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:21080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:21080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -254,7 +254,7 @@ testMultithreadedPoolGet ()
   if (d == NULL)
     return 16;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:21080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:21080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -313,7 +313,7 @@ testExternalGet ()
   if (d == NULL)
     return 256;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:21080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:21080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);

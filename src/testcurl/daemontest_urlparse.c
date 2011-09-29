@@ -136,7 +136,7 @@ testInternalGet (int poll_flag)
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11080/hello_world?a=b&c=&d");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/hello_world?a=b&c=&d");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);

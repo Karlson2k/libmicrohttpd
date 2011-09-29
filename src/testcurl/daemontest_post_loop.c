@@ -122,7 +122,7 @@ testInternalPost ()
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
-      sprintf (url, "http://localhost:1080/hw%d", i);
+      sprintf (url, "http://127.0.0.1:1080/hw%d", i);
       curl_easy_setopt (c, CURLOPT_URL, url);
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
@@ -186,7 +186,7 @@ testMultithreadedPost ()
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
-      sprintf (url, "http://localhost:1081/hw%d", i);
+      sprintf (url, "http://127.0.0.1:1081/hw%d", i);
       curl_easy_setopt (c, CURLOPT_URL, url);
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
@@ -251,7 +251,7 @@ testMultithreadedPoolPost ()
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
-      sprintf (url, "http://localhost:1081/hw%d", i);
+      sprintf (url, "http://127.0.0.1:1081/hw%d", i);
       curl_easy_setopt (c, CURLOPT_URL, url);
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
@@ -333,7 +333,7 @@ testExternalPost ()
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
-      sprintf (url, "http://localhost:1082/hw%d", i);
+      sprintf (url, "http://127.0.0.1:1082/hw%d", i);
       curl_easy_setopt (c, CURLOPT_URL, url);
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);

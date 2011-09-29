@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		       NULL,
 		       MHD_OPTION_END);
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:8000/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:8000/");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &discard_buffer);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);

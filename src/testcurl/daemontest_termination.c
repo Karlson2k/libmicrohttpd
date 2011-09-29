@@ -98,7 +98,7 @@ main ()
   CURL *curl = curl_easy_init ();
   //curl_easy_setopt(curl, CURLOPT_POST, 1L);
   char url[255];
-  sprintf (url, "http://localhost:%d", PORT);
+  sprintf (url, "http://127.0.0.1:%d", PORT);
   curl_easy_setopt (curl, CURLOPT_URL, url);
   curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_data);
 

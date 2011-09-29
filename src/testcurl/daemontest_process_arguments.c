@@ -126,7 +126,7 @@ testExternalGet ()
     return 256;
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL,
-                    "http://localhost:21080/hello_world?k=v+x&hash=%23");
+                    "http://127.0.0.1:21080/hello_world?k=v+x&hash=%23");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);

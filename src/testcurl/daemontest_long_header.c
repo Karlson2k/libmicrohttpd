@@ -120,7 +120,7 @@ testLongUrlGet ()
     }
   memset (url, 'a', VERY_LONG);
   url[VERY_LONG - 1] = '\0';
-  memcpy (url, "http://localhost:1080/", strlen ("http://localhost:1080/"));
+  memcpy (url, "http://127.0.0.1:1080/", strlen ("http://127.0.0.1:1080/"));
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
@@ -196,7 +196,7 @@ testLongHeaderGet ()
   header = curl_slist_append (header, url);
 
   curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
-  curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
