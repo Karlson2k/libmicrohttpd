@@ -150,7 +150,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
   MHD_DLOG (connection->daemon, "%s: state: %s\n",
             __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
-  timeout = connection->daemon->connection_timeout;
+  timeout = connection->connection_timeout;
   if ( (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
     MHD_connection_close (connection,
 			  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
