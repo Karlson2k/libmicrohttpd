@@ -452,7 +452,7 @@ testStopRace (int poll_flag)
     if (d == NULL)
        return 16;
     
-    fd = socket(PF_INET, SOCK_STREAM, 0);
+    fd = SOCKET (PF_INET, SOCK_STREAM, 0);
     if (fd < 0)
     {
        fprintf(stderr, "socket: %m\n");
@@ -464,7 +464,7 @@ testStopRace (int poll_flag)
     sin.sin_port = htons(1081);
     sin.sin_addr.s_addr = htonl(0x7f000001);
     
-    if (connect(fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
+    if (CONNECT (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
        fprintf(stderr, "connect: %m\n");
        return 512;
@@ -477,7 +477,7 @@ testStopRace (int poll_flag)
     /* printf("Stopping daemon\n"); */
     MHD_stop_daemon (d);
  
-    close(fd);
+    CLOSE (fd);
     
     /* printf("good\n"); */
     return 0;

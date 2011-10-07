@@ -41,7 +41,8 @@ minimal_example_LDADD = \
 post_example_SOURCES = \
  post_example.c 
 post_example_LDADD = \
- $(top_builddir)/src/daemon/libmicrohttpd.la 
+ $(top_builddir)/src/daemon/libmicrohttpd.la \
+ -liberty
 
 minimal_example_comet_SOURCES = \
  minimal_example_comet.c 

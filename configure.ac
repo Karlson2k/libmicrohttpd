@@ -171,7 +171,7 @@ AC_SUBST(PTHREAD_CPPFLAGS)
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h])
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h winsock2.h ws2tcpip.h])
 
 # Check for plibc.h from system, if not found, use our own
 AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
@@ -188,6 +188,12 @@ AC_TRY_COMPILE([
 #endif
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#if HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#if HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
 #endif
 ],[
 int af=AF_INET6;

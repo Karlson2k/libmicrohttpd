@@ -1,3 +1,6 @@
+Fri Oct  7 19:50:07 CEST 2011
+ 	Fixed problems with testcases on W32. -LRN
+
 Fri Sep 30 17:56:36 CEST 2011
 	Fixed MHD_CONNECTION_OPTION_TIMEOUT for HTTPS (#1811). -CG
 
