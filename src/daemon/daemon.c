@@ -768,40 +768,6 @@ send_param_adapter (struct MHD_Connection *connection,
 
 
 /**
- * Set if a socket should use non-blocking IO.
- * @param fd socket
- */
-static void
-socket_set_nonblocking (int fd)
-{
-#if MINGW
-  u_long mode;
-  mode = 1;
-  if (ioctlsocket (fd, FIONBIO, &mode) == SOCKET_ERROR)
-    {
-      SetErrnoFromWinsockError (WSAGetLastError ());
-#if HAVE_MESSAGES
-      FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
-	      STRERROR (errno));
-#endif
-    }
-#else
-
-  /* not MINGW */
-  int flags = fcntl (fd, F_GETFL);
-  if ( (flags == -1) ||
-       (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
-    {
-#if HAVE_MESSAGES
-      FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
-	      STRERROR (errno));
-#endif
-    }
-#endif
-}
-
-
-/**
  * Create a thread and set the attributes according to our options.
  * 
  * @param thread handle to initialize
@@ -979,7 +945,22 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   MHD_set_http_callbacks_ (connection);
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
-  socket_set_nonblocking (connection->socket_fd);
+#if LINUX
+  {
+    /* non-blocking sockets perform better on Linux */
+    int flags = fcntl (fd, F_GETFL);
+    if ( (flags == -1) ||
+	 (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
+      {
+#if HAVE_MESSAGES
+	FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
+		STRERROR (errno));
+#endif
+      }
+#endif    
+  }
+#endif
+
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL))
     {

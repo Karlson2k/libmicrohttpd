@@ -1,3 +1,8 @@
+Wed Oct 12 10:40:12 CEST 2011
+	Made sockets blocking again for non-Linux platforms as non-blocking
+	sockets cause problems (#1824) on Cygwin but offer better performance
+	on Linux (see change on August 11 2011). -CG/pross
+
 Fri Oct  7 19:50:07 CEST 2011
  	Fixed problems with testcases on W32. -LRN
 
