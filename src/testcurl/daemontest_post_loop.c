@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <gauger.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -38,7 +39,7 @@
 
 #define POST_DATA "<?xml version='1.0' ?>\n<xml>\n<data-id>1</data-id>\n</xml>\n"
 
-#define LOOPCOUNT 10
+#define LOOPCOUNT 1000
 
 static int oneone;
 
@@ -329,7 +330,8 @@ testExternalPost ()
     }
   for (i = 0; i < LOOPCOUNT; i++)
     {
-      fprintf (stderr, ".");
+      if (99 == i % 100)
+	fprintf (stderr, ".");
       c = curl_easy_init ();
       cbc.pos = 0;
       buf[0] = '\0';
@@ -390,6 +392,8 @@ testExternalPost ()
           if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
               (ctimeout < timeout) && (ctimeout >= 0))
             timeout = ctimeout;
+	  if (c == NULL)
+	    timeout = 0; /* terminate quickly... */
           tv.tv_sec = timeout / 1000;
           tv.tv_usec = (timeout % 1000) * 1000;
           select (max + 1, &rs, &ws, &es, &tv);
@@ -433,6 +437,27 @@ testExternalPost ()
 }
 
 
+/**
+ * Time this round was started.
+ */
+static unsigned long long start_time;
+
+
+/**
+ * Get the current timestamp 
+ *
+ * @return current time in ms
+ */
+static unsigned long long 
+now ()
+{
+  struct timeval tv;
+
+  GETTIMEOFDAY (&tv, NULL);
+  return (((unsigned long long) tv.tv_sec * 1000LL) +
+	  ((unsigned long long) tv.tv_usec / 1000LL));
+}
+
 
 int
 main (int argc, char *const *argv)
@@ -442,10 +467,46 @@ main (int argc, char *const *argv)
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
+  start_time = now();
   errorCount += testInternalPost ();
+  fprintf (stderr,
+	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s" : "%s: Sequential POSTs (http/1.0) %f/s",
+	   "internal select",
+	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+  GAUGER ("internal select",
+	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	  "requests/s");
+  start_time = now();
   errorCount += testMultithreadedPost ();
+  fprintf (stderr,
+	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s" : "%s: Sequential POSTs (http/1.0) %f/s",
+	   "multithreaded post",
+	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+  GAUGER ("Multithreaded select",
+	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	  "requests/s");
+  start_time = now();
   errorCount += testMultithreadedPoolPost ();
+  fprintf (stderr,
+	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s" : "%s: Sequential POSTs (http/1.0) %f/s",
+	   "thread with pool",
+	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+  GAUGER ("thread with pool",
+	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	  "requests/s");
+  start_time = now();
   errorCount += testExternalPost ();
+  fprintf (stderr,
+	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s" : "%s: Sequential POSTs (http/1.0) %f/s",
+	   "external select",
+	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+  GAUGER ("external select",
+	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	  "requests/s");
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
