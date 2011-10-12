@@ -948,16 +948,15 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #if LINUX
   {
     /* non-blocking sockets perform better on Linux */
-    int flags = fcntl (fd, F_GETFL);
+    int flags = fcntl (connection->socket_fd, F_GETFL);
     if ( (flags == -1) ||
-	 (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
+	 (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
       {
 #if HAVE_MESSAGES
 	FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
 		STRERROR (errno));
 #endif
       }
-#endif    
   }
 #endif
 
