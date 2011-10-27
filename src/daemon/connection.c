@@ -277,7 +277,7 @@ need_100_continue (struct MHD_Connection *connection)
 
   return ((connection->response == NULL) &&
           (connection->version != NULL) &&
-          (0 == strcasecmp (connection->version,
+	 (0 == strcasecmp (connection->version,
                             MHD_HTTP_VERSION_1_1)) &&
           (NULL != (expect = MHD_lookup_connection_value (connection,
                                                           MHD_HEADER_KIND,
@@ -1463,7 +1463,7 @@ do_read (struct MHD_Connection *connection)
                                      connection->read_buffer_offset);
   if (bytes_read < 0)
     {
-      if (errno == EINTR)
+      if ((errno == EINTR) || (errno == EAGAIN))
         return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
@@ -1510,7 +1510,7 @@ do_write (struct MHD_Connection *connection)
 
   if (ret < 0)
     {
-      if (errno == EINTR)
+      if ((errno == EINTR) || (errno == EAGAIN))
         return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
@@ -1836,7 +1836,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       connection->continue_message_write_offset);
           if (ret < 0)
             {
-              if (errno == EINTR)
+              if ((errno == EINTR) || (errno == EAGAIN))
                 break;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
@@ -1898,7 +1898,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             pthread_mutex_unlock (&response->mutex);
           if (ret < 0)
             {
-              if (errno == EINTR)
+              if ((errno == EINTR) || (errno == EAGAIN))
                 return MHD_YES;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,

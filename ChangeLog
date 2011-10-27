@@ -1,3 +1,6 @@
+Thu Oct 27 14:16:34 CEST 2011
+	Treat EAGAIN the same way as EINTR (helps on W32). -LRN
+
 Wed Oct 12 10:40:12 CEST 2011
 	Made sockets blocking again for non-Linux platforms as non-blocking
 	sockets cause problems (#1824) on Cygwin but offer better performance

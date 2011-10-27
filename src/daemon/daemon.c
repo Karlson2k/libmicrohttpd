@@ -751,11 +751,10 @@ send_param_adapter (struct MHD_Connection *connection,
 		      (size_t) left);
       if (ret != -1)
 	return ret;
-      if (EINTR == errno) 
+      if ((EINTR == errno) || (EAGAIN == errno))
 	return 0;
       if ( (EINVAL == errno) ||
-	   (EBADF == errno) ||
-	   (EAGAIN == errno) )
+	   (EBADF == errno) )
 	return -1; 
       /* None of the 'usual' sendfile errors occurred, so we should try
 	 to fall back to 'SEND'; see also this thread for info on
