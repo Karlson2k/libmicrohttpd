@@ -608,10 +608,10 @@ try_grow_read_buffer (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+
 /**
- * Allocate the connection's write buffer and
- * fill it with all of the headers (or footers,
- * if we have already sent the body) from the
+ * Allocate the connection's write buffer and fill it with all of the
+ * headers (or footers, if we have already sent the body) from the
  * HTTPd's response.
  */
 static int
@@ -626,6 +626,7 @@ build_header_response (struct MHD_Connection *connection)
   enum MHD_ValueKind kind;
   const char *reason_phrase;
   uint32_t rc;
+  int must_add_close;
 
   EXTRA_CHECK (NULL != connection->version);
   if (0 == strlen(connection->version))
@@ -669,6 +670,13 @@ build_header_response (struct MHD_Connection *connection)
       kind = MHD_FOOTER_KIND;
       off = 0;
     }
+  must_add_close = ( (connection->read_closed == MHD_YES) &&
+		     (0 == strcasecmp (connection->version,
+				       MHD_HTTP_VERSION_1_1)) &&
+		     (NULL == MHD_get_response_header (connection->response,
+						       MHD_HTTP_HEADER_CONNECTION)) );
+  if (must_add_close)
+    size += strlen ("Connection: close\r\n");
   pos = connection->response->first_header;
   while (pos != NULL)
     {
@@ -689,6 +697,16 @@ build_header_response (struct MHD_Connection *connection)
     {
       memcpy (data, code, off);
     }
+  if (must_add_close)
+    {
+      /* we must add the 'close' header because circumstances forced us to
+	 stop reading from the socket; however, we are not adding the header
+	 to the response as the response may be used in a different context
+	 as well */
+      memcpy (&data[off], "Connection: close\r\n",
+	      strlen ("Connection: close\r\n"));
+      off += strlen ("Connection: close\r\n");
+    }
   pos = connection->response->first_header;
   while (pos != NULL)
     {
@@ -703,6 +721,7 @@ build_header_response (struct MHD_Connection *connection)
     }
   memcpy (&data[off], "\r\n", 2);
   off += 2;
+
   if (off != size)
     mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   connection->write_buffer = data;
@@ -711,6 +730,7 @@ build_header_response (struct MHD_Connection *connection)
   connection->write_buffer_size = size + 1;
   return MHD_YES;
 }
+
 
 /**
  * We encountered an error processing the request.

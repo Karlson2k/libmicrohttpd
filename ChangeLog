@@ -1,3 +1,8 @@
+Tue Nov  1 18:51:50 CET 2011
+	Force adding of 'Connection: close' to the header if we (for whatever
+	reason) are shutting down the socket for reading (see also
+	#1760). -CG
+
 Thu Oct 27 14:16:34 CEST 2011
 	Treat EAGAIN the same way as EINTR (helps on W32). -LRN
 
