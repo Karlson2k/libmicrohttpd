@@ -392,7 +392,7 @@ testExternalPost ()
           if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
               (ctimeout < timeout) && (ctimeout >= 0))
             timeout = ctimeout;
-	  if (c == NULL)
+	  if ( (c == NULL) || (running == 0) )
 	    timeout = 0; /* terminate quickly... */
           tv.tv_sec = timeout / 1000;
           tv.tv_usec = (timeout % 1000) * 1000;
