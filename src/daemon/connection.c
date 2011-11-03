@@ -302,7 +302,8 @@ MHD_connection_close (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon;
 
   daemon = connection->daemon;
-  SHUTDOWN (connection->socket_fd, SHUT_RDWR);
+  SHUTDOWN (connection->socket_fd, 
+	    (connection->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
   connection->state = MHD_CONNECTION_CLOSED;
   if ( (NULL != daemon->notify_completed) &&
        (MHD_YES == connection->client_aware) )

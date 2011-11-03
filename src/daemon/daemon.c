@@ -2445,7 +2445,8 @@ close_all_connections (struct MHD_Daemon *daemon)
       abort();
     }
   for (pos = daemon->connections_head; pos != NULL; pos = pos->next)    
-    SHUTDOWN (pos->socket_fd, SHUT_RDWR);    
+    SHUTDOWN (pos->socket_fd, 
+	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);    
   if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
     {
 #if HAVE_MESSAGES

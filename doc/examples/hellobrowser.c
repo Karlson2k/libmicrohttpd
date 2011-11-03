@@ -14,7 +14,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   const char *page = "<html><body>Hello, browser!</body></html>";
   struct MHD_Response *response;
   int ret;
-
+  
   response =
     MHD_create_response_from_buffer (strlen (page), (void *) page, 
 				     MHD_RESPMEM_PERSISTENT);

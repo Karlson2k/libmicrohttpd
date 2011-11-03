@@ -1,3 +1,8 @@
+Thu Nov  3 10:14:59 CET 2011
+	shutdown(RDWR) fails on OS X after shutdown(RD), so only use
+	shutdown(WR) if we already closed the socket for reading (otherwise
+	OS X might not do shutdown (WR) at all). -CG
+
 Tue Nov  1 18:51:50 CET 2011
 	Force adding of 'Connection: close' to the header if we (for whatever
 	reason) are shutting down the socket for reading (see also
