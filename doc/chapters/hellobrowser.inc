@@ -135,7 +135,7 @@ The first example is now complete.
 Compile it with 
 @verbatim
 cc hellobrowser.c -o hellobrowser -I$PATH_TO_LIBMHD_INCLUDES 
-  -L$PATH_TO_LIBMHD_INCLUDES -lmicrohttpd
+  -L$PATH_TO_LIBMHD_LIBS -lmicrohttpd
 @end verbatim
 with the two paths set accordingly and run it.
 
