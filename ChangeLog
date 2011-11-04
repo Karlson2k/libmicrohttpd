@@ -1,3 +1,6 @@
+Fri Nov  4 10:03:00 CET 2011
+	Small updates to the tutorial. -CG
+
 Thu Nov  3 10:14:59 CET 2011
 	shutdown(RDWR) fails on OS X after shutdown(RD), so only use
 	shutdown(WR) if we already closed the socket for reading (otherwise

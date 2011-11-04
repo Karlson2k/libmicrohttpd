@@ -155,12 +155,17 @@ implemented by checking if the parameter @code{method} equals the string "GET" a
 @code{MHD_NO} if not so.
 
 Secondly, the above practice of queuing a response upon the first call of the callback function
-brings with it some limitations. This is because the content of the message body will not be
-received if a response is queued in the first iteration. Furthermore, the connection will be closed
-right after the response has been transferred then.
+brings with it some limitations.  This is because the content of the message body will not be
+received if a response is queued in the first iteration.  Furthermore, the connection will be closed
+right after the response has been transferred then.  This is typically not what you want as it
+disables HTTP pipelining.  The correct approach is to simply not queue a message on the first
+callback unless there is an error.  The @code{void**} argument to the callback provides a location
+for storing information about the history of the connection; for the first call, the pointer
+will point to NULL.  A simplistic way to differenciate the first call from others is to check
+if the pointer is NULL and set it to a non-NULL value during the first call.
 
 Both of these issues you will find addressed in the official @code{minimal_example.c} residing in
-the @code{src/examples} directory of the @emph{MHD} package. The source code of this
+the @code{src/examples} directory of the @emph{MHD} package.  The source code of this
 program should look very familiar to you by now and easy to understand.
 
 For our example, the @code{must_copy} and @code{must_free} parameter at the response construction

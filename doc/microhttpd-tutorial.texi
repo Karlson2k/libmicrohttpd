@@ -1,10 +1,10 @@
 \input texinfo  @c -*-texinfo-*-
 @finalout
 @setfilename microhttpd-tutorial.info
-@set UPDATED 28 Feb 2010
-@set UPDATED-MONTH Feb 2010
-@set EDITION 0.9.8
-@set VERSION 0.9.8
+@set UPDATED 2 Nov 2011
+@set UPDATED-MONTH Nov 2011
+@set EDITION 0.9.16
+@set VERSION 0.9.16
 @settitle A tutorial for GNU libmicrohttpd
 
 @dircategory GNU Libraries
