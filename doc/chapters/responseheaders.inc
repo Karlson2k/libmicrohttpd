@@ -128,7 +128,7 @@ meta data about the content. Aware of the field's name we want to add, it is as 
 MHD_add_response_header(response, "Content-Type", MIMETYPE);
 @end verbatim
 @noindent
-We do not have to append a colon expected by the protocol hehind the first 
+We do not have to append a colon expected by the protocol behind the first 
 field---@emph{GNU libhttpdmicro} will take care of this. 
 
 The function finishes with the well-known lines
