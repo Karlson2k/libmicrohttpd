@@ -1,5 +1,10 @@
+Sun Nov 13 13:34:29 CET 2011
+	Trying to fix accidental addition of a "Connection: close" footer
+	under certain (rare) circumstances. -CG
+
 Fri Nov  4 10:03:00 CET 2011
-	Small updates to the tutorial. -CG
+	Small updates to the tutorial. 
+	Releasing 0.9.16. -CG
 
 Thu Nov  3 10:14:59 CET 2011
 	shutdown(RDWR) fails on OS X after shutdown(RD), so only use

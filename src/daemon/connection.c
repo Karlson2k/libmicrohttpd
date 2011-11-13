@@ -671,7 +671,8 @@ build_header_response (struct MHD_Connection *connection)
       kind = MHD_FOOTER_KIND;
       off = 0;
     }
-  must_add_close = ( (connection->read_closed == MHD_YES) &&
+  must_add_close = ( (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED) &&
+		     (connection->read_closed == MHD_YES) &&
 		     (0 == strcasecmp (connection->version,
 				       MHD_HTTP_VERSION_1_1)) &&
 		     (NULL == MHD_get_response_header (connection->response,
