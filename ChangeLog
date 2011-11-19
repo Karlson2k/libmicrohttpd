@@ -1,3 +1,6 @@
+Sat Nov 19 20:08:40 CET 2011
+	Releasing 0.9.17. -CG
+
 Fri Nov 18 20:17:22 CET 2011
 	Fixing return value of MHD_get_timeout if timeouts are not in use.
         (#1914). -rboulton
