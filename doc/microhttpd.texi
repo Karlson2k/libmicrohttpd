@@ -190,6 +190,65 @@ Examples based on reports we've received from developers include:
 @c If you have other interesting examples, please let us know
 @end itemize
 
+
+@section Compiling GNU libmicrohttpd
+@cindex compilation
+@cindex embedded systems
+@cindex portability
+
+@mhd{} uses the standard GNU system where the usual build process
+involves running
+@verbatim
+$ ./configure
+$ make
+$ make install
+@end verbatim
+
+@mhd{} supports various options to be given to configure to tailor the
+binary to a specific situation.  Note that some of these options will
+remove portions of the @mhd{} code that are required for
+binary-compatibility.  They should only be used on embedded systems
+with tight resource constraints and no concerns about library
+versioning.  Standard distributions including @mhd{} are expected to
+always ship with all features enabled, otherwise unexpected
+incompatibilities can arise!
+
+Here is a list of @mhd{}-specific options that can be given to configure
+(canonical configure options such as ``--prefix'' are also supported, for a
+full list of options run ``./configure --help''):
+
+@table 
+@item ``--disable-curl''
+disable running testcases using libcurl
+
+@item ``--disable-largefile'' 
+disable support for 64-bit files
+
+@item ``--disable-messages''
+disable logging of error messages (smaller binary size, not so much fun for debugging)
+
+@item ``--disable-https''
+disable HTTPS support, even if GNUtls is found; this option must be used if eCOS license is desired as an option (in all cases the resulting binary falls under a GNU LGPL-only license)
+
+@item ``--disable-postprocessor''
+do not include the post processor API (results in binary incompatibility)
+
+@item ``--disable-dauth''
+do not include the authentication APIs (results in binary incompatibility)
+
+@item ``--enable-coverage''
+set flags for analysis of code-coverage with gcc/gcov (results in slow, large binaries)
+
+@item ``--with-gcrypt=PATH''
+specifies path to libgcrypt installation
+
+@item ``--with-gnutls=PATH''
+specifies path to libgnutls installation
+
+
+ 
+@end table
+
 @section Including the microhttpd.h header
 @cindex portability
 @cindex microhttpd.h
@@ -256,6 +315,7 @@ ignore_sigpipe ()
 @cindex IAR
 @cindex ARM
 @cindex cortex m3
+@cindex embedded systems
 
 Some platforms do not support @code{long long}.  Hence MHD defines
 a macro @code{MHD_LONG_LONG} which will default to @code{long long}.
@@ -328,6 +388,15 @@ production.
 Use poll instead of select. This allows sockets with descriptors
 @code{>= FD_SETSIZE}.  This option only works in conjunction with
 @code{MHD_USE_THREAD_PER_CONNECTION} (at this point).
+
+@item MHD_SUPPRESS_DATE_NO_CLOCK
+@cindex date
+@cindex clock
+@cindex embedded systems
+Suppress (automatically) adding the 'Date:' header to HTTP responses.
+This option should ONLY be used on systems that do not have a clock
+and that DO provide other mechanisms for cache control.  See also
+RFC 2616, section 14.18 (exception 3).
 
 @end table
 @end deftp
@@ -598,7 +667,10 @@ MHD_OPTION_UNESCAPE_CALLBACK.
 
   
 @item MHD_OPTION_THREAD_STACK_SIZE
-@cindex stack, thread, pthread
+@cindex stack
+@cindex thread
+@cindex pthread
+@cindex embedded systems
 Maximum stack size for threads created by MHD.  This option must be
 followed by a @code{size_t}).  Not specifying this option or using
 a value of zero means using the system default (which is likely to 

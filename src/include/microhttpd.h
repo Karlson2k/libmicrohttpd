@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00091100
+#define MHD_VERSION 0x00091101
 
 /**
  * MHD-internal return code for "YES".
@@ -366,6 +366,15 @@ enum MHD_FLAG
    * Use poll instead of select. This allows sockets with fd >= FD_SETSIZE.
    */
   MHD_USE_POLL = 64
+
+  /**
+   * Suppress (automatically) adding the 'Date:' header to HTTP responses.
+   * This option should ONLY be used on systems that do not have a clock
+   * and that DO provide other mechanisms for cache control.  See also
+   * RFC 2616, section 14.18 (exception 3).
+   */
+  MHD_SUPPRESS_DATE_NO_CLOCK = 128
+
 };
 
 

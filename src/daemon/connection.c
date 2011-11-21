@@ -658,8 +658,9 @@ build_header_response (struct MHD_Connection *connection)
       /* estimate size */
       size = off + 2;           /* extra \r\n at the end */
       kind = MHD_HEADER_KIND;
-      if (NULL == MHD_get_response_header (connection->response,
-                                           MHD_HTTP_HEADER_DATE))
+      if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) && 
+	   (NULL == MHD_get_response_header (connection->response,
+					     MHD_HTTP_HEADER_DATE)) 
         get_date_string (date);
       else
         date[0] = '\0';
