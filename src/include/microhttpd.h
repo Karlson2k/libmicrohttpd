@@ -365,7 +365,7 @@ enum MHD_FLAG
   /**
    * Use poll instead of select. This allows sockets with fd >= FD_SETSIZE.
    */
-  MHD_USE_POLL = 64
+  MHD_USE_POLL = 64,
 
   /**
    * Suppress (automatically) adding the 'Date:' header to HTTP responses.

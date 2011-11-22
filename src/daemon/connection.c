@@ -660,7 +660,7 @@ build_header_response (struct MHD_Connection *connection)
       kind = MHD_HEADER_KIND;
       if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) && 
 	   (NULL == MHD_get_response_header (connection->response,
-					     MHD_HTTP_HEADER_DATE)) 
+					     MHD_HTTP_HEADER_DATE)) )
         get_date_string (date);
       else
         date[0] = '\0';
