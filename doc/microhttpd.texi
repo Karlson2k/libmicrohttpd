@@ -217,7 +217,7 @@ Here is a list of @mhd{}-specific options that can be given to configure
 (canonical configure options such as ``--prefix'' are also supported, for a
 full list of options run ``./configure --help''):
 
-@table 
+@table @code
 @item ``--disable-curl''
 disable running testcases using libcurl
 
