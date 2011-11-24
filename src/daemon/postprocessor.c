@@ -1028,6 +1028,8 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
 {
   int ret;
 
+  if (NULL == pp)
+    return MHD_YES;
   /* These internal strings need cleaning up since
      the post-processing may have been interrupted
      at any stage */
