@@ -135,7 +135,7 @@ netbsd*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      AM_CONDITIONAL(HAVE_W32, true)    
-     LDFLAGS="$LDFLAGS -no-undefined -Wl,--export-all-symbols -lws2_32"
+     LDFLAGS="$LDFLAGS -Wl,-no-undefined -Wl,--export-all-symbols -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
      # check if PlibC is available
      CHECK_PLIBC
