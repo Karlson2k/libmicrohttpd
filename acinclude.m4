@@ -22,7 +22,7 @@ AC_DEFUN([CHECK_PLIBC],
         ],[
             AC_MSG_CHECKING(if PlibC is installed)
             save_CPPFLAGS="$CPPFLAGS"
-            CPPFLAGS="$CPPFLAGS -plibc"
+            CPPFLAGS="$CPPFLAGS -lplibc"
             AC_TRY_LINK(
             [
                 #include <plibc.h>
@@ -30,8 +30,8 @@ AC_DEFUN([CHECK_PLIBC],
                 plibc_init("", "");
             ],[
                 AC_MSG_RESULT(yes)
-                PLIBC_CPPFLAGS=-plibc
-                PLIBC_LDFLAGS=-plibc
+                PLIBC_CPPFLAGS=-lplibc
+                PLIBC_LDFLAGS=-lplibc
                 PLIBC_LIBS=
             ],[
                 AC_MSG_ERROR([PlibC is not available on your windows machine!])
