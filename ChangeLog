@@ -1,3 +1,7 @@
+Thu Dec  1 15:22:57 CET 2011
+	Updated authorization_example.c to actually demonstrate the current
+	MHD API. -SG
+
 Mon Nov 21 18:51:30 CET 2011
 	Added option to suppress generation of the 'Date:' header to be
 	used on embedded systems without RTC.  Documented the new option
