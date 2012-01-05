@@ -518,13 +518,16 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
      * exceeds `nonce_timeout' then the nonce is
      * invalid.
      */
-    if (t > nonce_time + nonce_timeout) 
+    if ( (t > nonce_time + nonce_timeout) ||
+	 (0 != strncmp (uri,
+			connection->url,
+			strlen (connection->url))) )
       return MHD_INVALID_NONCE;    
     calculate_nonce (nonce_time,
 		     connection->method,
 		     connection->daemon->digest_auth_random,
 		     connection->daemon->digest_auth_rand_size,
-		     uri,
+		     connection->url,
 		     realm,
 		     noncehashexp);
     /*
