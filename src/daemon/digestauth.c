@@ -551,7 +551,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 	 (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
 	 (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
       return MHD_NO;
-    nci = strtoul (nc, &end, 10);
+    nci = strtoul (nc, &end, 16);
     if ( ('\0' != *end) ||
 	 ( (LONG_MAX == nci) && (errno == ERANGE) ) )
       return MHD_NO; /* invalid nonce */
