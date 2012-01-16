@@ -17,6 +17,7 @@ endif
 noinst_PROGRAMS = \
 authorization_example \
 minimal_example \
+dual_stack_example \
 minimal_example_comet \
 post_example \
 querystring_example \
@@ -40,6 +41,11 @@ endif
 minimal_example_SOURCES = \
  minimal_example.c 
 minimal_example_LDADD = \
+ $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+dual_stack_example_SOURCES = \
+ dual_stack_example.c 
+dual_stack_example_LDADD = \
  $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 post_example_SOURCES = \
