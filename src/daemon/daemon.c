@@ -944,9 +944,18 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   MHD_set_http_callbacks_ (connection);
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
-#if LINUX
+  /* non-blocking sockets are required on most systems and for GNUtls;
+     however, they somehow cause serious problems on CYGWIN (#1824) */
+#ifdef CYGWIN
+  if
+#if HTTPS_SUPPORT
+    (0 != (daemon->options & MHD_USE_SSL))
+#else
+    (0)
+#endif
+#endif
   {
-    /* non-blocking sockets perform better on Linux */
+    /* make socket non-blocking */
     int flags = fcntl (connection->socket_fd, F_GETFL);
     if ( (flags == -1) ||
 	 (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
@@ -957,7 +966,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
       }
   }
-#endif
 
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL))

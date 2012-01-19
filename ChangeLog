@@ -1,5 +1,13 @@
-Thu Jan 19 17:46:05 CET 2012                                                                                                                                                                  
-	Fixing use of uninitialized 'earliest_deadline' variable in 
+Thu Jan 19 22:11:12 CET 2012
+	Switch to non-blocking sockets for all systems but Cygwin
+	(we already used non-blocking sockets for GNU/Linux); also
+	use non-blocking sockets on Cygwin for HTTPS as this is
+	required to avoid DoS-by-partial-record via gnutls.  On
+	Cygwin, #1824 implies that we need to use blocking sockets
+	for HTTP on Cygwin for now. -CG
+
+Thu Jan 19 17:46:05 CET 2012
+	Fixing use of uninitialized 'earliest_deadline' variable in
 	MHD_get_timeout which can lead to returning an incorrect
 	(too early) timeout (#2085). -tclaveirole
 
