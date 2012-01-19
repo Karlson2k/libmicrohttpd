@@ -1066,6 +1066,12 @@ connection_add_header (struct MHD_Connection *connection,
 }
 
 /**
+ * Parse and unescape the arguments given by the client as part
+ * of the HTTP request URI.
+ *
+ * @param kind header kind to use for adding to the connection
+ * @param connection connection to add headers to
+ * @param args argument URI string (after "?" in URI)
  * @return MHD_NO on failure (out of memory), MHD_YES for success
  */
 static int
@@ -1110,6 +1116,7 @@ parse_arguments (enum MHD_ValueKind kind,
     }
   return MHD_YES;
 }
+
 
 /**
  * Parse the cookie header (see RFC 2109).
@@ -1238,7 +1245,7 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       connection->daemon->uri_log_callback (connection->daemon->
                                             uri_log_callback_cls, uri);
   args = strstr (uri, "?");
-  if (args != NULL)
+  if (NULL != args)
     {
       args[0] = '\0';
       args++;
@@ -1248,7 +1255,7 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
 					 connection,
 					 uri);
   connection->url = uri;
-  if (httpVersion == NULL)
+  if (NULL == httpVersion)
     connection->version = "";
   else
     connection->version = httpVersion;

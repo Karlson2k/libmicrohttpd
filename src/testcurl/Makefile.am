@@ -63,7 +63,7 @@ noinst_PROGRAMS = \
 
 if ENABLE_DAUTH
   check_PROGRAMS += \
-	daemontest_digestauth
+	daemontest_digestauth daemontest_digestauth_with_arguments
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -112,6 +112,12 @@ perf_get_concurrent_LDADD = \
 daemontest_digestauth_SOURCES = \
   daemontest_digestauth.c
 daemontest_digestauth_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@
+
+daemontest_digestauth_with_arguments_SOURCES = \
+  daemontest_digestauth_with_arguments.c
+daemontest_digestauth_with_arguments_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 

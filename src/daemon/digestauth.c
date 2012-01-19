@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2010 Daniel Pittman and Christian Grothoff
+     (C) 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -387,7 +387,7 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
  * @param method HTTP method
  * @param rnd A pointer to a character array for the random seed
  * @param rnd_size The size of the random seed array
- * @param uri HTTP URI
+ * @param uri HTTP URI (in MHD, without the arguments ("?k=v")
  * @param realm A string of characters that describes the realm of auth.
  * @param nonce A pointer to a character array for the nonce to put in
  */
@@ -424,6 +424,114 @@ calculate_nonce (uint32_t nonce_time,
   cvthex(tmpnonce, sizeof (tmpnonce), nonce);  
   cvthex(timestamp, 4, timestamphex);
   strncat(nonce, timestamphex, 8);
+}
+
+
+/**
+ * Test if the given key-value pair is in the headers for the
+ * given connection.
+ *
+ * @param connection the connection
+ * @param key the key
+ * @param value the value, can be NULL
+ * @return MHD_YES if the key-value pair is in the headers, 
+ *         MHD_NO if not
+ */
+static int
+test_header (struct MHD_Connection *connection,
+	     const char *key,
+	     const char *value)
+{
+  struct MHD_HTTP_Header *pos;
+
+  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    {
+      if (MHD_GET_ARGUMENT_KIND != pos->kind)
+	continue;
+      if (0 != strcmp (key, pos->header))
+	continue;
+      if ( (NULL == value) && (NULL == pos->value))
+	return MHD_YES;
+      if ( (NULL == value) || (NULL == pos->value))
+	continue;
+      if (0 != strcmp (value, pos->value))
+	continue;
+      return MHD_YES;      
+    }
+  return MHD_NO;
+}
+
+
+/**
+ * Check that the arguments given by the client as part
+ * of the authentication header match the arguments we
+ * got as part of the HTTP request URI.
+ *
+ * @param connection connections with headers to compare against
+ * @param args argument URI string (after "?" in URI)
+ * @return MHD_YES if the arguments match,
+ *         MHD_NO if not
+ */
+static int
+check_argument_match (struct MHD_Connection *connection,
+		      const char *args)
+{
+  struct MHD_HTTP_Header *pos;
+  size_t slen = strlen (args) + 1;
+  char argb[slen];
+  char *argp;
+  char *equals;
+  char *amper;
+  unsigned int num_headers;
+
+  num_headers = 0;
+  memcpy (argb, args, slen);
+  argp = argb;
+  while ( (argp != NULL) &&
+	  (argp[0] != '\0') )
+    {
+      equals = strstr (argp, "=");
+      if (equals == NULL) 
+	{	  
+	  /* add with 'value' NULL */
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 argp);
+	  if (MHD_YES != test_header (connection, argp, NULL))
+	    return MHD_NO;
+	  num_headers++;
+	  break;
+	}
+      equals[0] = '\0';
+      equals++;
+      amper = strstr (equals, "&");
+      if (amper != NULL)
+	{
+	  amper[0] = '\0';
+	  amper++;
+	}
+      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+					     connection,
+					     argp);
+      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+					     connection,
+					     equals);
+      if (! test_header (connection, argp, equals))
+	return MHD_NO;
+      num_headers++;
+      argp = amper;
+    }
+  
+  /* also check that the number of headers matches */
+  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    {
+      if (MHD_GET_ARGUMENT_KIND != pos->kind)
+	continue;
+      num_headers--;
+    }
+  if (0 != num_headers)  
+    return MHD_NO;
+  return MHD_YES;
 }
 
 
@@ -513,16 +621,40 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
     nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);  
     t = (uint32_t) time(NULL);    
     /*
-     * First level vetting for the nonce validity
-     * if the timestamp attached to the nonce
-     * exceeds `nonce_timeout' then the nonce is
+     * First level vetting for the nonce validity if the timestamp
+     * attached to the nonce exceeds `nonce_timeout' then the nonce is
      * invalid.
      */
     if ( (t > nonce_time + nonce_timeout) ||
-	 (0 != strncmp (uri,
-			connection->url,
-			strlen (connection->url))) )
-      return MHD_INVALID_NONCE;    
+	 (nonce_time + nonce_timeout < nonce_time) )
+      return MHD_INVALID_NONCE;
+    if (0 != strncmp (uri,
+		      connection->url,
+		      strlen (connection->url)))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Authentication failed, URI does not match.\n");
+#endif
+      return MHD_NO;
+    }
+    {
+      const char *args = strstr (uri, "?");
+      if (args == NULL)
+	args = "";
+      else
+	args++;
+      if (MHD_YES !=
+	  check_argument_match (connection,
+				args) ) 
+      {
+#if HAVE_MESSAGES
+	MHD_DLOG (connection->daemon, 
+		  "Authentication failed, arguments do not match.\n");
+#endif
+	return MHD_NO;
+      }
+    }
     calculate_nonce (nonce_time,
 		     connection->method,
 		     connection->daemon->digest_auth_random,
@@ -550,12 +682,23 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
 	   (0 != strcmp (qop, "")) ) ||
 	 (0 == lookup_sub_value(nc, sizeof (nc), header, "nc"))  ||
 	 (0 == lookup_sub_value(response, sizeof (response), header, "response")) )
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Authentication failed, invalid format.\n");
+#endif
       return MHD_NO;
+    }
     nci = strtoul (nc, &end, 16);
     if ( ('\0' != *end) ||
 	 ( (LONG_MAX == nci) && (errno == ERANGE) ) )
-      return MHD_NO; /* invalid nonce */
-    
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon, 
+		"Authentication failed, invalid format.\n");
+#endif
+      return MHD_NO; /* invalid nonce format */
+    }
     /*
      * Checking if that combination of nonce and nc is sound
      * and not a replay attack attempt. Also adds the nonce
