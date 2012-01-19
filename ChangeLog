@@ -1,3 +1,8 @@
+Thu Jan 19 17:46:05 CET 2012                                                                                                                                                                  
+	Fixing use of uninitialized 'earliest_deadline' variable in 
+	MHD_get_timeout which can lead to returning an incorrect
+	(too early) timeout (#2085). -tclaveirole
+
 Thu Jan 19 13:31:27 CET 2012
 	Fixing digest authentication for GET requests with URI arguments
 	(#2059). -CG

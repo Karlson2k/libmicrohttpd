@@ -1219,14 +1219,15 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   while (pos != NULL)
     {
       if (0 != pos->connection_timeout) {
-        have_timeout = MHD_YES;
-        if (earliest_deadline > pos->last_activity + pos->connection_timeout)
+        if (!have_timeout ||
+	    earliest_deadline > pos->last_activity + pos->connection_timeout)
           earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
         if (  (0 != (daemon->options & MHD_USE_SSL)) &&
 	      (0 != gnutls_record_check_pending (pos->tls_session)) )
 	  earliest_deadline = 0;
 #endif
+        have_timeout = MHD_YES;
       }
       pos = pos->next;
     }
