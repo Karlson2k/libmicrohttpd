@@ -1786,15 +1786,17 @@ parse_options_va (struct MHD_Daemon *daemon,
 	      ret = gnutls_priority_init (&daemon->priority_cache,
 					  pstr = va_arg (ap, const char*),
 					  NULL);
-#if HAVE_MESSAGES
 	      if (ret != GNUTLS_E_SUCCESS)
+	      {
+#if HAVE_MESSAGES
 		FPRINTF (stderr,
 			 "Setting priorities to `%s' failed: %s\n",
 			 pstr,
 			 gnutls_strerror (ret));
 #endif	  
-	      if (ret != GNUTLS_E_SUCCESS)
+		daemon->priority_cache = NULL;
 		return MHD_NO;
+	      }
 	    }
           break;
 #endif
@@ -2053,7 +2055,8 @@ MHD_start_daemon_va (unsigned int options,
   if (MHD_YES != parse_options_va (retVal, &servaddr, ap))
     {
 #if HTTPS_SUPPORT
-      if (options & MHD_USE_SSL)
+      if ( (0 != (options & MHD_USE_SSL)) &&
+	   (NULL != retVal->priority_cache) )
 	gnutls_priority_deinit (retVal->priority_cache);
 #endif
       free (retVal);
