@@ -1,3 +1,7 @@
+Mon Jan 23 14:02:26 CET 2012
+	Fixed double-free if specified cipher was not valid (during
+	MHD_daemon_start).  Releasing 0.9.18. -CG
+
 Thu Jan 19 22:11:12 CET 2012
 	Switch to non-blocking sockets for all systems but Cygwin
 	(we already used non-blocking sockets for GNU/Linux); also

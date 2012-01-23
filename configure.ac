@@ -21,8 +21,8 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.17],[libmicrohttpd@gnu.org])
-AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.17])
+AC_INIT([libmicrohttpd], [0.9.18],[libmicrohttpd@gnu.org])
+AM_INIT_AUTOMAKE([libmicrohttpd], [0.9.18])
 AM_CONFIG_HEADER([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
