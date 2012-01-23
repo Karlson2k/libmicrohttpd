@@ -101,11 +101,11 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
 int gen_test_file_url (char *url, int port);
 
 int
-send_curl_req (char *url, struct CBC *cbc, char *cipher_suite,
+send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
                int proto_version);
 
 int
-test_https_transfer (void *cls, char *cipher_suite, int proto_version);
+test_https_transfer (void *cls, const char *cipher_suite, int proto_version);
 
 int
 setup_testcase (struct MHD_Daemon **d, int daemon_flags, va_list arg_list);
@@ -125,8 +125,8 @@ teardown_session (gnutls_session_t session,
                   gnutls_certificate_credentials_t xcred);
 
 int
-test_wrap (char *test_name, int
-           (*test_function) (void * cls, char *cipher_suite,
+test_wrap (const char *test_name, int
+           (*test_function) (void * cls, const char *cipher_suite,
                              int proto_version), void *test_function_cls,
-           int daemon_flags, char *cipher_suite, int proto_version, ...);
+           int daemon_flags, const char *cipher_suite, int proto_version, ...);
 #endif /* TLS_TEST_COMMON_H_ */

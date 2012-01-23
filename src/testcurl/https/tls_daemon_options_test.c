@@ -40,9 +40,8 @@ int curl_check_version (const char *req_version, ...);
  * test server refuses to negotiate connections with unsupported protocol versions
  *
  */
-/* TODO rm test_fd */
-int
-test_unmatching_ssl_version (void * cls, char *cipher_suite,
+static int
+test_unmatching_ssl_version (void * cls, const char *cipher_suite,
                              int curl_req_ssl_version)
 {
   struct CBC cbc;
@@ -67,6 +66,7 @@ test_unmatching_ssl_version (void * cls, char *cipher_suite,
       send_curl_req (url, &cbc, cipher_suite, curl_req_ssl_version))
     {
       free (cbc.buf);
+      fprintf (stderr, "cURL failed to reject request despite SSL version missmatch!\n");
       return -1;
     }
 
@@ -95,14 +95,14 @@ main (int argc, char *const *argv)
       return 0; 
     }
 
-  char *aes128_sha = "AES128-SHA";
-  char *aes256_sha = "AES256-SHA";
+  const char *aes128_sha = "AES128-SHA";
+  const char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
     {
       aes128_sha = "rsa_aes_128_sha";
       aes256_sha = "rsa_aes_256_sha";
     }
-
+  
 
   errorCount +=
     test_wrap ("TLS1.0-AES-SHA1",
@@ -113,16 +113,16 @@ main (int argc, char *const *argv)
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-TLS1.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
+
   errorCount +=
-    test_wrap ("TLS1.0-AES-SHA1",
+    test_wrap ("SSL3.0-AES256-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,
-	       aes128_sha,
+	       aes256_sha,
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
 	       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
-	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-SSL3.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
+	       MHD_OPTION_HTTPS_PRIORITIES, "NONE:+VERS-SSL3.0:+AES-256-CBC:+SHA1:+RSA:+COMP-NULL",
 	       MHD_OPTION_END);
-
   errorCount +=
     test_wrap ("SSL3.0-AES-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,

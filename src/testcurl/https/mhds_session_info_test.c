@@ -138,7 +138,6 @@ test_query_session ()
   /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
-
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 
   // NOTE: use of CONNECTTIMEOUT without also

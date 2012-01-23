@@ -206,7 +206,7 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
  */
 /* TODO have test wrap consider a NULL cbc */
 int
-send_curl_req (char *url, struct CBC * cbc, char *cipher_suite,
+send_curl_req (char *url, struct CBC * cbc, const char *cipher_suite,
                int proto_version)
 {
   CURL *c;
@@ -289,7 +289,7 @@ gen_test_file_url (char *url, int port)
  * test HTTPS file transfer
  */
 int
-test_https_transfer (void *cls, char *cipher_suite, int proto_version)
+test_https_transfer (void *cls, const char *cipher_suite, int proto_version)
 {
   int len;
   int ret = 0;
@@ -424,10 +424,10 @@ teardown_session (gnutls_session_t session,
 
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) */
 int
-test_wrap (char *test_name, int
-           (*test_function) (void * cls, char *cipher_suite,
+test_wrap (const char *test_name, int
+           (*test_function) (void * cls, const char *cipher_suite,
                              int proto_version), void * cls,
-           int daemon_flags, char *cipher_suite, int proto_version, ...)
+           int daemon_flags, const char *cipher_suite, int proto_version, ...)
 {
   int ret;
   va_list arg_list;
@@ -437,6 +437,7 @@ test_wrap (char *test_name, int
   if (setup_testcase (&d, daemon_flags, arg_list) != 0)
     {
       va_end (arg_list);
+      fprintf (stderr, "Failed to setup testcase %s\n", test_name);
       return -1;
     }
 #if 0
