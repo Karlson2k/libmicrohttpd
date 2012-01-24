@@ -64,6 +64,18 @@ AM_PROG_CC_C_O
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
+
+
+AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
+   [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
+   ],
+   [],
+   [
+      #include <sys/types.h>
+      #include <sys/socket.h>
+      #include <netinet/in.h>
+   ])
+
 AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 

@@ -1378,6 +1378,69 @@ MHD_create_response_from_fd_at_offset (size_t size,
 
 
 /**
+ * Function called after a protocol upgrade response was sent
+ * successfully and the socket should now be controlled by some
+ * protocol other than HTTP.  Note that from this point on, MHD will
+ * consider this connection to be "complete", so it will no longer be
+ * counted as an active connection for the
+ * MHD_OPTION_PER_IP_CONNECTION_LIMIT or the
+ * MHD_OPTION_CONNECTION_LIMIT.  After this function returns, the
+ * MHD_RequestCompletedCallback will be called and all resources of
+ * the connection (except for the socket itself) will be released.
+ *
+ * @param cls closure
+ * @param connection original HTTP connection handle,
+ *                   giving the function a last chance
+ *                   to inspect the original HTTP request
+ * @param con_cls value as set by the last call to the
+ *                MHD_AccessHandlerCallback; will afterwards
+ *                be also given to the MHD_RequestCompletedCallback
+ * @param upgrade_socket TCP socket that was upgraded from HTTP
+ *                to some other protocol.  This function must
+ *                take over the communication and is ultimately
+ *                responsible for closing the socket.
+ */
+typedef void (*MHD_UpgradeHandler)(void *cls,
+				   struct MHD_Connection *connection,
+				   void **con_cls,
+				   int upgrade_socket);
+
+
+/**
+ * Create a response object that can be used for 101 UPGRADE
+ * responses, for example to implement websockets.  After sending the
+ * response, control over the socket is given to the callback (which
+ * can then, for example, start some bi-directional communication).
+ * If the response is queued for multiple connections, the callback
+ * will be called with a socket for each connection.  The callback
+ * will ONLY be called if the response header was successfully passed
+ * to the OS; if there are communication errors before, the usual MHD
+ * connection error handling code will be performed.
+ *
+ * Setting the correct HTTP code (i.e. MHD_HTTP_SWITCHING_PROTOCOLS)
+ * and setting correct HTTP headers for the upgrade must be done
+ * manually (this way, it is possible to implement most existing
+ * WebSocket version using this API; in fact, this API might be useful
+ * for any protocol switch, not just web sockets).  Note that
+ * draft-ietf-hybi-thewebsocketprotocol-00 cannot be implemented this
+ * way as the header "HTTP/1.1 101 WebSocket Protocol Handshake"
+ * cannot be generated; instead, MHD will always produce "HTTP/1.1 101
+ * Switching Protocols" (if the response 101 is used).
+ *
+ * As usual, the response object can be extended with header
+ * information and then be used any number of times (as long as the
+ * header information is not connection-specific).
+ *
+ * @param upgrade_handler function to call with the 'upgraded' socket
+ * @param upgrade_handler_cls closure for 'upgrade_handler'
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+struct MHD_Response *
+MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
+				 void *upgrade_handler_cls);
+
+
+/**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
  * is still in the queue for some clients, so the memory may not

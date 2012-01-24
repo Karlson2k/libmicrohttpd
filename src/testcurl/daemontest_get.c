@@ -257,7 +257,7 @@ testExternalGet ()
   fd_set ws;
   fd_set es;
   int max;
-  int running;
+  int running; 
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;

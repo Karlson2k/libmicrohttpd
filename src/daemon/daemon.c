@@ -2187,6 +2187,9 @@ MHD_start_daemon_va (unsigned int options,
 	      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
 	      servaddr6.sin6_family = AF_INET6;
 	      servaddr6.sin6_port = htons (port);
+#if HAVE_SOCKADDR_IN_SIN_LEN
+	      servaddr6.sin6_len = sizeof (struct sockaddr_in6);
+#endif
 	      servaddr = (struct sockaddr *) &servaddr6;
 	    }
 	  else
@@ -2195,6 +2198,9 @@ MHD_start_daemon_va (unsigned int options,
 	      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
 	      servaddr4.sin_family = AF_INET;
 	      servaddr4.sin_port = htons (port);
+#if HAVE_SOCKADDR_IN_SIN_LEN
+	      servaddr4.sin_len = sizeof (struct sockaddr_in);
+#endif
 	      servaddr = (struct sockaddr *) &servaddr4;
 	    }
 	}
