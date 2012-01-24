@@ -51,7 +51,7 @@
 struct https_test_data
 {
   void *cls;
-  char *cipher_suite;
+  const char *cipher_suite;
   int proto_version;
 };
 

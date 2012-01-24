@@ -67,7 +67,7 @@ https_transfer_thread_adapter (void *args)
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_single_client (void *cls, char *cipher_suite,
+test_single_client (void *cls, const char *cipher_suite,
                     int curl_proto_version)
 {
   void *client_thread_ret;
@@ -89,7 +89,7 @@ test_single_client (void *cls, char *cipher_suite,
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_parallel_clients (void *cls, char *cipher_suite,
+test_parallel_clients (void *cls, const char *cipher_suite,
                        int curl_proto_version)
 {
   int i;
