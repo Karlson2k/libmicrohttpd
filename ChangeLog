@@ -1,3 +1,7 @@
+Fri Jan 27 11:00:43 CET 2012
+	Fixed postprocessor failure for applications that enclosed boundary
+	in quotes (#2120). -woof
+
 Tue Jan 24 16:07:53 CET 2012
 	Added configure check for sin_len in 'struct sockaddr' and adding
 	code to initialize this field if it exists now. -CG

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2009 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2009, 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -280,6 +280,12 @@ MHD_create_post_processor (struct MHD_Connection *connection,
       blen = strlen (boundary);
       if ((blen == 0) || (blen * 2 + 2 > buffer_size))
         return NULL;            /* (will be) out of memory or invalid boundary */
+      if ( (boundary[0] == '"') && (boundary[blen - 1] == '"') )
+	{
+	  /* remove enclosing quotes */
+	  ++boundary;
+	  blen -= 2;
+	} 
     }
   else
     blen = 0;
