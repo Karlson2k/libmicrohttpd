@@ -1,3 +1,6 @@
+Tue Jan 31 17:50:24 CET 2012
+	Releasing 0.9.19. -CG
+
 Mon Jan 30 20:02:34 CET 2012
 	Fixed handling of garbage prior to first multipart boundary
 	(#2126). -woof
