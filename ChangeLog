@@ -1,3 +1,6 @@
+Wed Feb  1 09:39:12 CET 2012
+	Fixed compilation problem on MinGW. -BS
+
 Tue Jan 31 17:50:24 CET 2012
 	Releasing 0.9.19. -CG
 
