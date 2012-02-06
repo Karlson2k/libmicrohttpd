@@ -969,13 +969,13 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #else
     unsigned long flags = 1;
     if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
-#endif
       {
 #if HAVE_MESSAGES
 	FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
 		STRERROR (errno));
 #endif
       }
+#endif
   }
 
 #if HTTPS_SUPPORT
