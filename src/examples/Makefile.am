@@ -15,7 +15,6 @@ endif
 
 # example programs
 noinst_PROGRAMS = \
-authorization_example \
 minimal_example \
 dual_stack_example \
 minimal_example_comet \
@@ -31,7 +30,9 @@ noinst_PROGRAMS += https_fileserver_example
 endif
 
 if ENABLE_DAUTH
-noinst_PROGRAMS += digest_auth_example 
+noinst_PROGRAMS += \
+ authorization_example \
+ digest_auth_example 
 endif
 
 if HAVE_W32
