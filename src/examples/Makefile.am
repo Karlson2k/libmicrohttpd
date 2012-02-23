@@ -18,7 +18,6 @@ noinst_PROGRAMS = \
 minimal_example \
 dual_stack_example \
 minimal_example_comet \
-post_example \
 querystring_example \
 fileserver_example \
 fileserver_example_dirs \
@@ -27,6 +26,9 @@ refuse_post_example
 
 if ENABLE_HTTPS
 noinst_PROGRAMS += https_fileserver_example 
+endif
+if HAVE_POSTPROCESSOR
+noinst_PROGRAMS += post_example 
 endif
 
 if ENABLE_DAUTH
