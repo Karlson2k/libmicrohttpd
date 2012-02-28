@@ -481,7 +481,9 @@ Bind daemon to the supplied socket address. This option should be followed by a
 @code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified, 
 the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6}, 
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
-the daemon will listen to incoming connections from anywhere.
+the daemon will listen to incoming connections from anywhere.  If you use this
+option, the 'port' argument from @code{MHD_start_daemon} is ignored and the port
+from the given @code{struct sockaddr *} will be used instead.
 
 @item MHD_OPTION_URI_LOG_CALLBACK
 @cindex debugging
