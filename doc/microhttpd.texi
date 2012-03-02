@@ -1205,7 +1205,12 @@ right now).
 Get all the headers matching @var{kind} from the request.  
 
 The @var{iterator} callback is invoked once for each header, with
-@var{iterator_cls} as first argument. Return the number of entries
+@var{iterator_cls} as first argument.  After version 0.9.19, the
+headers are iterated in the same order as they were received from
+the network; previous versions iterated over the headers in reverse
+order.
+
+@code{MHD_get_connection_values} returns the number of entries
 iterated over; this can be less than the number of headers if, while
 iterating, @var{iterator} returns @code{MHD_NO}.
 
@@ -1224,8 +1229,8 @@ would contain the string ``key''.
 
 
 @deftypefun int MHD_set_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char * key, const char * value)
-This function can be used to add an entry to
-the HTTP headers of a connection (so that the 
+This function can be used to append an entry to
+the list of HTTP headers of a connection (so that the 
 @code{MHD_get_connection_values function} will return
 them -- and the MHD PostProcessor will also 
 see them).  This maybe required in certain

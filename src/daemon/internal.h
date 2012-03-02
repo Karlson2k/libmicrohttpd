@@ -464,6 +464,11 @@ struct MHD_Connection
   struct MHD_HTTP_Header *headers_received;
 
   /**
+   * Tail of linked list of parsed headers.
+   */
+  struct MHD_HTTP_Header *headers_received_tail;
+
+  /**
    * Response to transmit (initially NULL).
    */
   struct MHD_Response *response;

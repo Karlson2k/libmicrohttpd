@@ -144,8 +144,8 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 
 /**
- * This function can be used to add an entry to
- * the HTTP headers of a connection (so that the
+ * This function can be used to append an entry to
+ * the list of HTTP headers of a connection (so that the
  * MHD_get_connection_values function will return
  * them -- and the MHD PostProcessor will also
  * see them).  This maybe required in certain
@@ -186,8 +186,18 @@ MHD_set_connection_value (struct MHD_Connection *connection,
   pos->header = (char *) key;
   pos->value = (char *) value;
   pos->kind = kind;
-  pos->next = connection->headers_received;
-  connection->headers_received = pos;
+  pos->next = NULL;
+  /* append 'pos' to the linked list of headers */
+  if (NULL == connection->headers_received_tail)
+  {
+    connection->headers_received = pos;
+    connection->headers_received_tail = pos;
+  }
+  else
+  {
+    connection->headers_received_tail->next = pos;
+    connection->headers_received_tail = pos;
+  }
   return MHD_YES;
 }
 
@@ -207,15 +217,11 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
 {
   struct MHD_HTTP_Header *pos;
 
-  if (connection == NULL)
+  if (NULL == connection)
     return NULL;
-  pos = connection->headers_received;
-  while (pos != NULL)
-    {
-      if ((0 != (pos->kind & kind)) && (0 == strcasecmp (key, pos->header)))
-        return pos->value;
-      pos = pos->next;
-    }
+  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    if ((0 != (pos->kind & kind)) && (0 == strcasecmp (key, pos->header)))
+      return pos->value;    
   return NULL;
 }
 
@@ -1036,18 +1042,25 @@ get_next_header_line (struct MHD_Connection *connection)
   return rbuf;
 }
 
+
 /**
+ * Add an entry to the HTTP headers of a connection.  If this fails,
+ * transmit an error response (request too big).
+ *
+ * @param connection the connection for which a
+ *  value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself
  * @return MHD_NO on failure (out of memory), MHD_YES for success
  */
 static int
 connection_add_header (struct MHD_Connection *connection,
                        char *key, char *value, enum MHD_ValueKind kind)
 {
-  struct MHD_HTTP_Header *hdr;
-
-  hdr = MHD_pool_allocate (connection->pool,
-                           sizeof (struct MHD_HTTP_Header), MHD_YES);
-  if (hdr == NULL)
+  if (MHD_NO == MHD_set_connection_value (connection,
+					  kind,
+					  key, value))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
@@ -1057,13 +1070,9 @@ connection_add_header (struct MHD_Connection *connection,
                                REQUEST_TOO_BIG);
       return MHD_NO;
     }
-  hdr->next = connection->headers_received;
-  hdr->header = key;
-  hdr->value = value;
-  hdr->kind = kind;
-  connection->headers_received = hdr;
   return MHD_YES;
 }
+
 
 /**
  * Parse and unescape the arguments given by the client as part
@@ -2289,6 +2298,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->continue_message_write_offset = 0;
           connection->responseCode = 0;
           connection->headers_received = NULL;
+	  connection->headers_received_tail = NULL;
           connection->response_write_position = 0;
           connection->have_chunked_upload = MHD_NO;
           connection->method = NULL;

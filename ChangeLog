@@ -1,3 +1,7 @@
+Fri Mar  2 23:44:56 CET 2012
+	Making sure that MHD_get_connection_values iterates over the
+	headers in the order in which they were received. -CG
+
 Wed Feb  1 09:39:12 CET 2012
 	Fixed compilation problem on MinGW. -BS
 
