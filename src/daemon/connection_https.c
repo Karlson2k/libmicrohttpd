@@ -34,25 +34,16 @@
 #include <gnutls/gnutls.h>
 
 
-
 /**
- * This function handles a particular SSL/TLS connection when
- * it has been determined that there is data to be read off a
- * socket. Message processing is done by message type which is
- * determined by peeking into the first message type byte of the
- * stream.
+ * Give gnuTLS chance to work on the TLS handshake.  
  *
- * Error message handling: all fatal level messages cause the
- * connection to be terminated.
- *
- * Application data is forwarded to the underlying daemon for
- * processing.
- *
- * @param connection the source connection
- * @return always MHD_YES (we should continue to process the connection)
+ * @param connection connection to handshake on
+ * @return MHD_YES on error or if the handshake is progressing
+ *         MHD_NO if the handshake has completed successfully
+ *         and we should start to read/write data
  */
 static int
-MHD_tls_connection_handle_read (struct MHD_Connection *connection)
+run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
 
@@ -81,6 +72,31 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 			    MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_YES;
     }
+  return MHD_NO;
+}
+
+
+/**
+ * This function handles a particular SSL/TLS connection when
+ * it has been determined that there is data to be read off a
+ * socket. Message processing is done by message type which is
+ * determined by peeking into the first message type byte of the
+ * stream.
+ *
+ * Error message handling: all fatal level messages cause the
+ * connection to be terminated.
+ *
+ * Application data is forwarded to the underlying daemon for
+ * processing.
+ *
+ * @param connection the source connection
+ * @return always MHD_YES (we should continue to process the connection)
+ */
+static int
+MHD_tls_connection_handle_read (struct MHD_Connection *connection)
+{
+  if (MHD_YES == run_tls_handshake (connection))
+    return MHD_YES;
   return MHD_connection_handle_read (connection);
 }
 
@@ -96,37 +112,8 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 static int
 MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
-  int ret;
-
-  connection->last_activity = time (NULL);
-#if DEBUG_STATES
-  MHD_DLOG (connection->daemon, "%s: state: %s\n",
-            __FUNCTION__, MHD_state_to_string (connection->state));
-#endif
-  if (connection->state == MHD_TLS_CONNECTION_INIT)
-    {
-      ret = gnutls_handshake (connection->tls_session);
-      if (ret == GNUTLS_E_SUCCESS)
-	{
-	  /* set connection state to enable HTTP processing */
-	  connection->state = MHD_CONNECTION_INIT;
-	  return MHD_YES;	  
-	}
-      if ( (ret == GNUTLS_E_AGAIN) || 
-	   (ret == GNUTLS_E_INTERRUPTED) )
-	{
-	  /* handshake not done */
-	  return MHD_YES;
-	}
-      /* handshake failed */
-#if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-		"Error: received handshake message out of context\n");
-#endif
-      MHD_connection_close (connection,
-			    MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return MHD_YES;
-    }
+  if (MHD_YES == run_tls_handshake (connection))
+    return MHD_YES;
   return MHD_connection_handle_write (connection);
 }
 
