@@ -1816,7 +1816,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
           /* nothing to do but default action */
           if (MHD_YES == connection->read_closed)
             {
-              connection->state = MHD_CONNECTION_CLOSED;
+	      MHD_connection_close (connection,
+				    MHD_REQUEST_TERMINATED_READ_ERROR);
               continue;
             }
           break;

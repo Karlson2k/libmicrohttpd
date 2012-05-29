@@ -2508,7 +2508,8 @@ close_all_connections (struct MHD_Daemon *daemon)
   /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_head))
     {
-      pos->state = MHD_CONNECTION_CLOSED;
+      MHD_connection_close (pos,
+			    MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
       DLL_remove (daemon->connections_head,
 		  daemon->connections_tail,
 		  pos);

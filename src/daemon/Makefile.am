@@ -47,10 +47,16 @@ libmicrohttpd_la_SOURCES += \
 libmicrohttpd_la_LIBADD = -lgnutls @LIBGCRYPT_LIBS@
 endif
 
+
+
 check_PROGRAMS = \
-  postprocessor_test \
-  postprocessor_large_test \
   daemon_test 
+
+if HAVE_POSTPROCESSOR
+check_PROGRAMS += \
+  postprocessor_test \
+  postprocessor_large_test 
+endif
 
 TESTS = $(check_PROGRAMS)
 

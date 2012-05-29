@@ -1,3 +1,13 @@
+Tue May 29 13:55:03 CEST 2012
+	Fixed some testcase build issues with disabled post processor. -CG
+
+Tue May 29 13:45:15 CEST 2012
+	Fixing bug where MHD failed to call connection termination callback
+	if a connection either was closed due to read errors or if MHD
+	was terminated with certain threading models.  Added new
+	termination code MHD_REQUEST_TERMINATED_READ_ERROR for the
+	read-termination cause. -CG
+
 Thu Mar 15 23:47:53 CET 2012
 	Eliminating code clone in tls connection read/write handlers. -CG
 

@@ -702,7 +702,16 @@ enum MHD_RequestTerminationCode
    * We had to close the session since MHD was being
    * shut down.
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
+
+  /**
+   * We tried to read additional data, but the other side closed the
+   * connection.  This error is similar to
+   * MHD_REQUEST_TERMINATED_WITH_ERROR, but specific to the case where
+   * the connection died because the other side did not send expected
+   * data.
+   */
+  MHD_REQUEST_TERMINATED_READ_ERROR = 4
 
 };
 

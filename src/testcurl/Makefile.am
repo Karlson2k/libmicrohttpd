@@ -31,9 +31,6 @@ check_PROGRAMS = \
   daemontest_get \
   daemontest_get_sendfile \
   daemontest_urlparse \
-  daemontest_post \
-  daemontest_postform \
-  daemontest_post_loop \
   daemontest_put \
   daemontest_process_headers \
   daemontest_process_arguments \
@@ -41,9 +38,6 @@ check_PROGRAMS = \
   daemontest_large_put \
   daemontest_get11 \
   daemontest_get_sendfile11 \
-  daemontest_post11 \
-  daemontest_postform11 \
-  daemontest_post_loop11 \
   daemontest_put11 \
   daemontest_large_put11 \
   daemontest_long_header \
@@ -57,6 +51,15 @@ check_PROGRAMS = \
   $(CURL_FORK_TEST) \
   perf_get $(PERF_GET_CONCURRENT)
 
+if HAVE_POSTPROCESSOR
+check_PROGRAMS +=
+  daemontest_post \
+  daemontest_postform \
+  daemontest_post_loop \
+  daemontest_post11 \
+  daemontest_postform11 \
+  daemontest_post_loop11 
+endif
 
 noinst_PROGRAMS = \
   daemon_options_test
