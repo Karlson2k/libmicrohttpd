@@ -52,7 +52,7 @@ check_PROGRAMS = \
   perf_get $(PERF_GET_CONCURRENT)
 
 if HAVE_POSTPROCESSOR
-check_PROGRAMS +=
+ check_PROGRAMS += \
   daemontest_post \
   daemontest_postform \
   daemontest_post_loop \
