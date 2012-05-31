@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00091302
+#define MHD_VERSION 0x00091400
 
 /**
  * MHD-internal return code for "YES".
@@ -1414,7 +1414,7 @@ typedef void (*MHD_UpgradeHandler)(void *cls,
 				   void **con_cls,
 				   int upgrade_socket);
 
-
+#if 0
 /**
  * Create a response object that can be used for 101 UPGRADE
  * responses, for example to implement websockets.  After sending the
@@ -1447,7 +1447,7 @@ typedef void (*MHD_UpgradeHandler)(void *cls,
 struct MHD_Response *
 MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 				 void *upgrade_handler_cls);
-
+#endif
 
 /**
  * Destroy a response object and associated resources.  Note that
