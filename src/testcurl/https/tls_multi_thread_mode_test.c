@@ -130,6 +130,11 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
+  if (NULL != strcasestr (curl_version_info (CURL_VERSION_SSL)->libssh_version, "openssl"))
+  {
+    fprintf (stderr, "Refusing to run test with OpenSSL.  Please install libcurl-gnutls\n");
+    return 0;
+  }
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
