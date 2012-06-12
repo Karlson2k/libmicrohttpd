@@ -112,7 +112,8 @@ static const char *four_hundred[] = {
   "Unknown",
   "Unknown",
   "Retry With",
-  "Blocked by Windows Parental Controls" /* 450 */
+  "Blocked by Windows Parental Controls", /* 450 */
+  "Unavailable For Legal Reasons"
 };
 
 static const char *five_hundred[] = {
