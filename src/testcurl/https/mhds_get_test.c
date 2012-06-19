@@ -44,7 +44,7 @@ test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
   int ret;
   struct MHD_Daemon *d;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
+                        MHD_USE_DEBUG, 4233,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -70,7 +70,7 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
-                        MHD_USE_DEBUG, 42433,
+                        MHD_USE_DEBUG, 4233,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,

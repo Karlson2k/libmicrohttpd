@@ -32,7 +32,7 @@
 #define DEBUG_HTTPS_TEST 0
 #define CURL_VERBOS_LEVEL 0
 
-#define DEAMON_TEST_PORT 42433
+#define DEAMON_TEST_PORT 4233
 
 #define test_data "Hello World\n"
 #define ca_cert_file_name "tmp_ca_cert.pem"
