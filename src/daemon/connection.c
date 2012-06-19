@@ -1786,7 +1786,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
-  connection->last_activity = time (NULL);
+  connection->last_activity = MHD_monotonic_time();
   if (connection->state == MHD_CONNECTION_CLOSED)
     return MHD_YES;
   /* make sure "read" has a reasonable number of bytes
@@ -1851,7 +1851,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
   int ret;
-  connection->last_activity = time (NULL);
+  connection->last_activity = MHD_monotonic_time();
   while (1)
     {
 #if DEBUG_STATES
@@ -2372,7 +2372,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   timeout = connection->connection_timeout;
   if ( (timeout != 0) &&
-       (timeout <= (time (NULL) - connection->last_activity)) )
+       (timeout <= (MHD_monotonic_time() - connection->last_activity)) )
     {
       MHD_connection_close (connection, MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       return MHD_YES;

@@ -47,7 +47,7 @@ run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
 
-  connection->last_activity = time (NULL);
+  connection->last_activity = MHD_monotonic_time();
   if (connection->state == MHD_TLS_CONNECTION_INIT)
     {
       ret = gnutls_handshake (connection->tls_session);
@@ -138,7 +138,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
             __FUNCTION__, MHD_state_to_string (connection->state));
 #endif
   timeout = connection->connection_timeout;
-  if ( (timeout != 0) && (time (NULL) - timeout > connection->last_activity))
+  if ( (timeout != 0) && (MHD_monotonic_time() - timeout > connection->last_activity))
     MHD_connection_close (connection,
 			  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
   switch (connection->state)

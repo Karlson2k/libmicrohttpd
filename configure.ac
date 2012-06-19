@@ -190,6 +190,9 @@ AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
 AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    
 
 AC_CHECK_FUNCS(memmem)
+AC_SEARCH_LIBS([clock_gettime], [rt], [
+				AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
+])
 
 # IPv6
 AC_MSG_CHECKING(for IPv6)

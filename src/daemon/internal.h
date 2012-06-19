@@ -1057,5 +1057,11 @@ struct MHD_Daemon
   (element)->next = NULL; \
   (element)->prev = NULL; } while (0)
 
+/**
+ * Equivalent to time(NULL) but tries to use some sort of monotonic
+ * clock that isn't affected by someone setting the system real time
+ * clock.
+ */
+time_t MHD_monotonic_time(void);
 
 #endif

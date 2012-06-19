@@ -546,7 +546,6 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   return MHD_YES;
 }
 
-
 /**
  * Main function of the thread that handles an individual
  * connection when MHD_USE_THREAD_PER_CONNECTION is set.
@@ -578,7 +577,7 @@ MHD_handle_connection (void *data)
       tvp = NULL;
       if (timeout > 0)
 	{
-	  now = time (NULL);
+	  now = MHD_monotonic_time();
 	  if (now - con->last_activity > timeout)
 	    tv.tv_sec = 0;
 	  else
@@ -938,7 +937,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
   connection->daemon = daemon;
-  connection->last_activity = time (NULL);
+  connection->last_activity = MHD_monotonic_time();
 
   /* set default connection handlers  */
   MHD_set_http_callbacks_ (connection);
@@ -1252,7 +1251,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
     }
   if (!have_timeout)
     return MHD_NO;
-  now = time (NULL);
+  now = MHD_monotonic_time();
   if (earliest_deadline < now)
     *timeout = 0;
   else

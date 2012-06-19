@@ -619,7 +619,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
       
     /* 8 = 4 hexadecimal numbers for the timestamp */  
     nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);  
-    t = (uint32_t) time(NULL);    
+    t = (uint32_t) MHD_monotonic_time();    
     /*
      * First level vetting for the nonce validity if the timestamp
      * attached to the nonce exceeds `nonce_timeout' then the nonce is
@@ -751,7 +751,7 @@ MHD_queue_auth_fail_response(struct MHD_Connection *connection,
   char nonce[HASH_MD5_HEX_LEN + 9];
 
   /* Generating the server nonce */  
-  calculate_nonce ((uint32_t) time(NULL),
+  calculate_nonce ((uint32_t) MHD_monotonic_time(),
 		   connection->method,
 		   connection->daemon->digest_auth_random,
 		   connection->daemon->digest_auth_rand_size,

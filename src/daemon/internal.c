@@ -157,4 +157,14 @@ MHD_http_unescape (void *cls,
   return wpos - val; /* = strlen(val) */
 }
 
+time_t MHD_monotonic_time(void)
+{
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+	return ts.tv_sec;
+#endif
+    return time(NULL);
+}
+
 /* end of internal.c */
