@@ -126,11 +126,18 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  const char *ssl_version;
 
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-  if (NULL != strcasestr (curl_version_info (CURL_VERSION_SSL)->libssh_version, "openssl"))
+  ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == ssl_version)
+  {
+    fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+    return 0;
+  }
+  if (NULL != strcasestr (ssl_version, "openssl"))
   {
     fprintf (stderr, "Refusing to run test with OpenSSL.  Please install libcurl-gnutls\n");
     return 0;
