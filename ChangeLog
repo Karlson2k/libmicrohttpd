@@ -1,3 +1,6 @@
+Fri Jun 22 11:31:25 CEST 2012
+	Make sure sockets opened by MHD are non-inheritable by default (#2414). -CG
+
 Tue Jun 19 19:44:53 CEST 2012
 	Change various uses of time(NULL) to new MHD_monotonic_time() function to
 	make timeouts immune to the system real time clock changing. -MC

@@ -77,6 +77,11 @@
 #endif
 #endif
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 0
+#endif
+
+
 /**
  * Default implementation of the panic function
  */
@@ -961,7 +966,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 	 (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
       {
 #if HAVE_MESSAGES
-	FPRINTF(stderr, "Failed to make socket non-blocking: %s\n", 
+	FPRINTF(stderr, "Failed to make socket %d non-blocking: %s\n", 
+		connection->socket_fd,
 		STRERROR (errno));
 #endif
       }
@@ -1108,10 +1114,23 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
   int s;
+  int flags;
+  int need_fcntl;
 
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
-  s = ACCEPT (daemon->socket_fd, addr, &addrlen);
+#if HAVE_ACCEPT4
+  s = accept4 (daemon->socket_fd, addr, &addrlen, SOCK_CLOEXEC);
+  need_fcntl = MHD_NO;
+#else
+  s = -1;
+  need_fcntl = MHD_YES;
+#endif
+  if (-1 == s)
+  {
+    s = ACCEPT (daemon->socket_fd, addr, &addrlen);
+    need_fcntl = MHD_YES;
+  }
   if ((s == -1) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
@@ -1127,6 +1146,20 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
+  if (MHD_YES == need_fcntl)
+  {
+    /* make socket non-inheritable */
+    flags = fcntl (s, F_GETFD);
+    if ( ( (-1 == flags) ||
+	   ( (flags != (flags | FD_CLOEXEC)) &&
+	     (0 != fcntl (s, F_SETFD, flags | FD_CLOEXEC)) ) ) )
+      {
+#if HAVE_MESSAGES
+	FPRINTF(stderr, "Failed to make socket non-inheritable: %s\n", 
+		STRERROR (errno));
+#endif
+      }
+  }
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
@@ -1947,6 +1980,58 @@ parse_options_va (struct MHD_Daemon *daemon,
 
 
 /**
+ * Create a listen socket, if possible with CLOEXEC flag set.
+ *
+ * @param domain socket domain (i.e. PF_INET)
+ * @param type socket type (usually SOCK_STREAM)
+ * @param protocol desired protocol, 0 for default
+ */
+static int
+create_socket (int domain, int type, int protocol)
+{
+  static int sock_cloexec = SOCK_CLOEXEC;
+  int ctype = SOCK_STREAM | sock_cloexec;
+  int fd;
+  int flags;
+ 
+  /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
+   * implementations do not set ai_socktype, e.g. RHL6.2. */
+  fd = socket(domain, ctype, protocol);
+  if ( (-1 == fd) && (EINVAL == errno) && (0 != sock_cloexec) )
+  {
+    sock_cloexec = 0;
+    fd = socket(domain, type, protocol);
+  }
+  if (-1 == fd)
+    return -1;
+  if (0 != sock_cloexec)
+    return fd; /* this is it */  
+  /* flag was not set during 'socket' call, let's try setting it manually */
+  flags = fcntl (fd, F_GETFD);
+  if (flags < 0)
+  {
+#if HAVE_MESSAGES
+    FPRINTF(stderr, "Failed to get socket options to make socket non-inheritable: %s\n", 
+	    STRERROR (errno));
+#endif
+    return fd; /* good luck */
+  }
+  if (flags == (flags | FD_CLOEXEC))
+    return fd; /* already set */
+  flags |= FD_CLOEXEC;
+  if (0 != fcntl (fd, F_SETFD, flags))
+  {
+#if HAVE_MESSAGES
+    FPRINTF(stderr, "Failed to make socket non-inheritable: %s\n", 
+	    STRERROR (errno));
+#endif
+    return fd; /* good luck */
+  }
+  return fd;
+}
+
+
+/**
  * Start a webserver on the given port.
  *
  * @param port port to bind to
@@ -2148,7 +2233,7 @@ MHD_start_daemon_va (unsigned int options,
     {
       if ((options & MHD_USE_IPv6) != 0)
 #if HAVE_INET6
-	socket_fd = SOCKET (PF_INET6, SOCK_STREAM, 0);
+	socket_fd = create_socket (PF_INET6, SOCK_STREAM, 0);
 #else
       {
 #if HAVE_MESSAGES
@@ -2159,7 +2244,7 @@ MHD_start_daemon_va (unsigned int options,
       }
 #endif
       else
-	socket_fd = SOCKET (PF_INET, SOCK_STREAM, 0);
+	socket_fd = create_socket (PF_INET, SOCK_STREAM, 0);
       if (socket_fd == -1)
 	{
 #if HAVE_MESSAGES
@@ -2358,7 +2443,7 @@ MHD_start_daemon_va (unsigned int options,
       sk_flags = fcntl (socket_fd, F_GETFL);
       if (sk_flags < 0)
         goto thread_failed;
-      if (fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK) < 0)
+      if (0 != fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK))
         goto thread_failed;
 #else
       sk_flags = 1;

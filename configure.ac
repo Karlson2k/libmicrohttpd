@@ -65,7 +65,6 @@ AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
 
-
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
    ],
@@ -189,7 +188,9 @@ AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/
 AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
 AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    
 
-AC_CHECK_FUNCS(memmem)
+AC_CHECK_FUNCS_ONCE(memmem)
+AC_CHECK_FUNCS_ONCE(accept4)
+
 AC_SEARCH_LIBS([clock_gettime], [rt], [
 				AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
 ])

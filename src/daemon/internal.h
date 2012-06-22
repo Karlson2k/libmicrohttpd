@@ -42,6 +42,7 @@
 #define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
 
+
 /**
  * Size by which MHD usually tries to increment read/write buffers.
  * TODO: we should probably get rid of this magic constant and
