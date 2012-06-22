@@ -48,7 +48,10 @@ struct CBC
   size_t size;
 };
 
-void termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe);
+
+static void
+termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe);
+
 
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
@@ -63,6 +66,7 @@ putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
   (*pos) += wrt;
   return wrt;
 }
+
 
 static size_t
 putBuffer_fail (void *stream, size_t size, size_t nmemb, void *ptr)
@@ -233,7 +237,9 @@ testWithTimeout ()
   return 64;
 }
 
-void termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe)
+
+static void 
+termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe)
 {
 	int * test = cls;
 	switch (toe)
@@ -245,6 +251,7 @@ void termination_cb (void *cls, struct MHD_Connection *connection, void **con_cl
 			}
 			break;
 		case MHD_REQUEST_TERMINATED_WITH_ERROR :
+		case MHD_REQUEST_TERMINATED_READ_ERROR :
 			break;
 		case MHD_REQUEST_TERMINATED_TIMEOUT_REACHED :
 			if (test==&withTimeout)
