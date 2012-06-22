@@ -13,7 +13,7 @@
 #define SERVERCERTFILE "server.pem"
 
 
-char *
+static char *
 string_to_base64 (const char *message)
 {
   const char *lookup =

@@ -157,8 +157,11 @@ obtain the raw GnuTLS session handle from @emph{MHD} using
 #include <gnutls/x509.h>
 
 gnutls_session_t tls_session;
-tls_session = MHD_get_connection_info (connection, 
-                                       MHD_CONNECTION_INFO_GNUTLS_SESSION);
+union MHD_ConnectionInfo *ci;
+
+ci = MHD_get_connection_info (connection, 
+                              MHD_CONNECTION_INFO_GNUTLS_SESSION);
+tls_session = ci->tls_session;
 @end verbatim
 
 You can then extract the client certificate:
