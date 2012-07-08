@@ -1149,12 +1149,22 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (MHD_YES == need_fcntl)
   {
     /* make socket non-inheritable */
+#if !WINDOWS
     flags = fcntl (s, F_GETFD);
     if ( ( (-1 == flags) ||
 	   ( (flags != (flags | FD_CLOEXEC)) &&
 	     (0 != fcntl (s, F_SETFD, flags | FD_CLOEXEC)) ) ) )
+#else
+    DWORD dwFlags;
+    if (!GetHandleInformation ((HANDLE) s, &dwFlags) ||
+        ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
+        !SetHandleInformation ((HANDLE) s, HANDLE_FLAG_INHERIT, 0)))
+#endif
       {
 #if HAVE_MESSAGES
+#if WINDOWS
+        SetErrnoFromWinError (GetLastError ());
+#endif
 	FPRINTF(stderr, "Failed to make socket non-inheritable: %s\n", 
 		STRERROR (errno));
 #endif
@@ -1993,35 +2003,54 @@ create_socket (int domain, int type, int protocol)
   int ctype = SOCK_STREAM | sock_cloexec;
   int fd;
   int flags;
+#if WINDOWS
+  DWORD dwFlags;
+#endif
  
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
-  fd = socket(domain, ctype, protocol);
+  fd = SOCKET(domain, ctype, protocol);
   if ( (-1 == fd) && (EINVAL == errno) && (0 != sock_cloexec) )
   {
     sock_cloexec = 0;
-    fd = socket(domain, type, protocol);
+    fd = SOCKET(domain, type, protocol);
   }
   if (-1 == fd)
     return -1;
   if (0 != sock_cloexec)
     return fd; /* this is it */  
   /* flag was not set during 'socket' call, let's try setting it manually */
+#if !WINDOWS
   flags = fcntl (fd, F_GETFD);
   if (flags < 0)
+#else
+  if (!GetHandleInformation ((HANDLE) fd, &dwFlags))
+#endif
   {
 #if HAVE_MESSAGES
+#if WINDOWS
+    SetErrnoFromWinError (GetLastError ());
+#endif
     FPRINTF(stderr, "Failed to get socket options to make socket non-inheritable: %s\n", 
 	    STRERROR (errno));
 #endif
     return fd; /* good luck */
   }
+#if !WINDOWS
   if (flags == (flags | FD_CLOEXEC))
     return fd; /* already set */
   flags |= FD_CLOEXEC;
   if (0 != fcntl (fd, F_SETFD, flags))
+#else
+  if (dwFlags != dwFlags | HANDLE_FLAG_INHERIT)
+    return fd; /* already unset */
+  if (!SetHandleInformation ((HANDLE) fd, HANDLE_FLAG_INHERIT, 0))
+#endif
   {
 #if HAVE_MESSAGES
+#if WINDOWS
+    SetErrnoFromWinError (GetLastError ());
+#endif
     FPRINTF(stderr, "Failed to make socket non-inheritable: %s\n", 
 	    STRERROR (errno));
 #endif
@@ -2804,7 +2833,7 @@ MHD_init ()
   mhd_panic_cls = NULL;
 
 #ifdef WINDOWS
-  plibc_init ("GNU", "libmicrohttpd");
+  plibc_init_utf8 ("GNU", "libmicrohttpd", 1);
 #endif
 #if HTTPS_SUPPORT
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);

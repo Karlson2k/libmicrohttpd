@@ -37,14 +37,14 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	MHD_create_response_from_buffer (strlen (errorstr), 
 					 (void *) errorstr, 
 					 MHD_RESPMEM_PERSISTENT);
-      if (response)
+      if (NULL != response)
         {
           ret =
             MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR,
                                 response);
           MHD_destroy_response (response);
 
-          return MHD_YES;
+          return ret;
         }
       else
         return MHD_NO;

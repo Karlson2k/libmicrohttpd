@@ -1,3 +1,6 @@
+Sun Jul  8 15:05:31 CEST 2012
+	Misc changes to fix build on W32. -LRN
+
 Fri Jun 22 11:31:25 CEST 2012
 	Make sure sockets opened by MHD are non-inheritable by default (#2414). -CG
 
