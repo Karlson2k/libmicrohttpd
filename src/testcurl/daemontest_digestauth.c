@@ -35,6 +35,8 @@
 #ifndef WINDOWS
 #include <sys/socket.h>
 #include <unistd.h>
+#else
+#include <wincrypt.h>
 #endif
 
 #define PAGE "<html><head><title>libmicrohttpd demo</title></head><body>Access granted</body></html>"
@@ -135,6 +137,7 @@ testDigestAuth ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
+#if !WINDOWS
   fd = open("/dev/urandom", O_RDONLY);
   if (-1 == fd)
     {
@@ -157,6 +160,28 @@ testDigestAuth ()
 	  off += len;
 	}
   (void) close(fd);
+#else
+  {
+    HCRYPTPROV cc;
+    BOOL b;
+    b = CryptAcquireContext (&cc, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+    if (b == 0)
+    {
+      fprintf (stderr, "Failed to acquire crypto provider context: %lu\n",
+          GetLastError ());
+      return 1;
+    }
+    b = CryptGenRandom (cc, 8, rnd);
+    if (b == 0)
+    {
+      fprintf (stderr, "Failed to generate 8 random bytes: %lu\n",
+          GetLastError ());
+    }
+    CryptReleaseContext (cc, 0);
+    if (b == 0)
+      return 1;
+  }
+#endif
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1337, NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
