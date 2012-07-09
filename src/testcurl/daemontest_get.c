@@ -499,11 +499,13 @@ main (int argc, char *const *argv)
   errorCount += testUnknownPortGet (0);
   errorCount += testStopRace (0);
   errorCount += testExternalGet ();
+#if !WINDOWS
   errorCount += testInternalGet (MHD_USE_POLL);
   errorCount += testMultithreadedGet (MHD_USE_POLL);
   errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
   errorCount += testUnknownPortGet (MHD_USE_POLL);
   errorCount += testStopRace (MHD_USE_POLL);
+#endif
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
