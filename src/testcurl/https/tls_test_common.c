@@ -276,6 +276,26 @@ gen_test_file_url (char *url, int port)
                strerror (errno));
       ret = -1;
     }
+#if WINDOWS
+  {
+    int i;
+    for (i = 0; i < doc_path_len; i++)
+    {
+      if (doc_path[i] == 0)
+        break;
+      if (doc_path[i] == '\\')
+      {
+        doc_path[i] = '/';
+      }
+      if (doc_path[i] != ':')
+        continue;
+      if (i == 0)
+        break;
+      doc_path[i] = doc_path[i - 1];
+      doc_path[i - 1] = '/';
+    }
+  }
+#endif
   /* construct url - this might use doc_path */
   if (sprintf (url, "%s:%d%s/%s", "https://127.0.0.1", port,
                doc_path, "urlpath") < 0)
