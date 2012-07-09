@@ -1,3 +1,6 @@
+Mon Jul  9 13:43:35 CEST 2012
+	Misc changes to allow testcases to pass on W32. -LRN
+
 Sun Jul  8 15:05:31 CEST 2012
 	Misc changes to fix build on W32. -LRN
 
