@@ -374,7 +374,16 @@ enum MHD_FLAG
    * and that DO provide other mechanisms for cache control.  See also
    * RFC 2616, section 14.18 (exception 3).
    */
-  MHD_SUPPRESS_DATE_NO_CLOCK = 128
+  MHD_SUPPRESS_DATE_NO_CLOCK = 128,
+
+  /**
+   * Run without a listen socket.  This option only makes sense if
+   * 'MHD_add_connection' is to be used exclusively to connect HTTP
+   * clients to the HTTP server.  This option is incompatible with
+   * using a thread pool; if it is used, 'MHD_OPTION_THREAD_POOL_SIZE'
+   * is ignored.
+   */
+  MHD_USE_NO_LISTEN_SOCKET = 256
 
 };
 

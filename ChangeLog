@@ -1,3 +1,6 @@
+Tue Jul 17 22:37:05 CEST 2012
+	Adding experimental (!) code for MHD operation without listen socket. -CG
+
 Tue Jul 17 22:15:57 CEST 2012
 	Making sendfile test pass again on non-W32 systems. -CG
 

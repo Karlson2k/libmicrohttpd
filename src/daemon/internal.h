@@ -902,12 +902,12 @@ struct MHD_Daemon
    */
   int socket_fd;
 
-#ifndef HAVE_LISTEN_SHUTDOWN
   /**
-   * Pipe we use to signal shutdown.
+   * Pipe we use to signal shutdown, unless
+   * 'HAVE_LISTEN_SHUTDOWN' is defined AND we have a listen
+   * socket (which we can then 'shutdown' to stop listening).
    */
   int wpipe[2];
-#endif
 
   /**
    * Are we shutting down?

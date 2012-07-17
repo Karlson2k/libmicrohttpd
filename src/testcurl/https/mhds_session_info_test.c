@@ -162,6 +162,7 @@ test_query_session ()
   return 0;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
