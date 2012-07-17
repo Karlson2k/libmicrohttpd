@@ -1,3 +1,6 @@
+Tue Jul 17 22:15:57 CEST 2012
+	Making sendfile test pass again on non-W32 systems. -CG
+
 Mon Jul  9 13:43:35 CEST 2012
 	Misc changes to allow testcases to pass on W32. -LRN
 
