@@ -56,13 +56,13 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
     }
 
   /* assert actual connection cipher is the one negotiated */
-  if (GNUTLS_CIPHER_AES_256_CBC != 
+  if (GNUTLS_CIPHER_ARCFOUR_128 != 
       (ret = MHD_get_connection_info
        (connection,
 	MHD_CONNECTION_INFO_CIPHER_ALGO)->cipher_algorithm))
     {
       fprintf (stderr, "Error: requested cipher mismatch (wanted %d, got %d)\n",
-               GNUTLS_CIPHER_AES_256_CBC,
+               GNUTLS_CIPHER_ARCFOUR_128,
 	       ret);
       return -1;
     }
@@ -86,7 +86,8 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
-/*
+
+/**
  * negotiate a secure connection with server & query negotiated security parameters
  */
 static int
@@ -108,7 +109,7 @@ test_query_session ()
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                         MHD_USE_DEBUG, DEAMON_TEST_PORT,
                         NULL, NULL, &query_session_ahc, NULL,
-			MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:-AES-128-CBC",
+			MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:+ARCFOUR-128",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -116,7 +117,7 @@ test_query_session ()
   if (d == NULL)
     return 2;
 
-  char *aes256_sha = "AES256-SHA";
+  const char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
     {
       aes256_sha = "rsa_aes_256_sha";
@@ -155,8 +156,8 @@ test_query_session ()
       return -1;
     }
 
-  MHD_stop_daemon (d);
   curl_easy_cleanup (c);
+  MHD_stop_daemon (d);
   free (cbc.buf);
   return 0;
 }
