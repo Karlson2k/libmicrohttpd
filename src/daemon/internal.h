@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  (C) 2007, 2008, 2009, 2010 Daniel Pittman and Christian Grothoff
+  (C) 2007, 2008, 2009, 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
   
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -181,6 +181,7 @@ struct MHD_HTTP_Header
 
 };
 
+
 /**
  * Representation of a response.
  */
@@ -262,6 +263,7 @@ struct MHD_Response
   int fd;
 
 };
+
 
 /**
  * States in a state machine for a connection.
@@ -406,6 +408,7 @@ enum MHD_CONNECTION_STATE
  * Should all state transitions be printed to stderr?
  */
 #define DEBUG_STATES MHD_NO
+
 
 #if HAVE_MESSAGES
 #if DEBUG_STATES
@@ -756,6 +759,7 @@ typedef size_t (*UnescapeCallback)(void *cls,
 				   struct MHD_Connection *conn,
 				   char *uri);
 
+
 /**
  * State kept for each MHD daemon.
  */
@@ -1057,6 +1061,7 @@ struct MHD_Daemon
     (element)->next->prev = (element)->prev; \
   (element)->next = NULL; \
   (element)->prev = NULL; } while (0)
+
 
 /**
  * Equivalent to time(NULL) but tries to use some sort of monotonic

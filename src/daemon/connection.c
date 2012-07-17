@@ -1,6 +1,6 @@
 /*
     This file is part of libmicrohttpd
-     (C) 2007, 2008, 2009, 2010 Daniel Pittman and Christian Grothoff
+     (C) 2007, 2008, 2009, 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -1661,6 +1661,7 @@ process_header_line (struct MHD_Connection *connection, char *line)
   return MHD_YES;
 }
 
+
 /**
  * Process a header value that spans multiple lines.
  * The previous line(s) are in connection->last.
@@ -1725,6 +1726,7 @@ process_broken_line (struct MHD_Connection *connection,
     }
   return MHD_YES;
 }
+
 
 /**
  * Parse the various headers; figure out the size

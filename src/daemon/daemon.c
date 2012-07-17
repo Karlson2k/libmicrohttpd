@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  (C) 2007, 2008, 2009, 2010 Daniel Pittman and Christian Grothoff
+  (C) 2007, 2008, 2009, 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,7 @@
  * Default connection limit.
  */
 #ifndef WINDOWS
-#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE -4
+#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE - 4
 #else
 #define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE
 #endif
