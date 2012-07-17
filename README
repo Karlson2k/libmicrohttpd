@@ -97,7 +97,6 @@ Untested features:
 
 Functions not covered by "make check":
 ======================================
-- file_reader (response.c); special case (sendfile)
 - mhd_panic_std (daemon.c); special case (abort)
 - parse_options (daemon.c)
 - MHD_set_panic_func (daemon.c)
