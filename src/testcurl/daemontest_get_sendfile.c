@@ -1,4 +1,3 @@
-/* DO NOT CHANGE THIS LINE */
 /*
      This file is part of libmicrohttpd
      (C) 2007, 2009 Christian Grothoff
@@ -40,7 +39,9 @@
 #include <unistd.h>
 #endif
 
-#define TESTSTR "/* DO NOT CHANGE THIS LINE */"
+#define TESTSTR "This is the content of the test file we are sending using sendfile (if available)"
+
+char *sourcefile;
 
 static int oneone;
 
@@ -87,11 +88,11 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *unused = NULL;
-  fd = open ("daemontest_get_sendfile.c", O_RDONLY);
+  fd = open (sourcefile, O_RDONLY);
   if (fd == -1)
     {
       fprintf (stderr, "Failed to open `%s': %s\n",
-	       "daemontest_get_sendfile.c",
+	       sourcefile,
 	       STRERROR (errno));
       exit (1);
     }
@@ -452,7 +453,27 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-
+  const char *tmp;
+  FILE *f;
+  
+  if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
+       (NULL == (tmp = getenv ("TMP"))) )
+    tmp = "/tmp";  
+  sourcefile = malloc (strlen (tmp) + 32);
+  sprintf (sourcefile,
+	   "%s%s%s",
+	   tmp,
+	   DIR_SEPARATOR_STR,
+	   "test-mhd-sendfile");
+  f = fopen (sourcefile, "w");
+  if (NULL == f)
+    {
+      fprintf (stderr, "failed to write test file\n");
+      free (sourcefile);
+      return 1;
+    }
+  fwrite (TESTSTR, strlen (TESTSTR), 1, f);
+  fclose (f);
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
@@ -464,5 +485,7 @@ main (int argc, char *const *argv)
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
+  UNLINK (sourcefile);
+  free (sourcefile);
   return errorCount != 0;       /* 0 == pass */
 }

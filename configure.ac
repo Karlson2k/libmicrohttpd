@@ -89,9 +89,6 @@ fi
 # for pkg-config
 MHD_LIBDEPS=""
 
-# for sendfile test
-SENDFILE_SOURCE_DIR=$srcdir
-
 # Check system type
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
@@ -154,7 +151,6 @@ netbsd*)
      # check if PlibC is available
      CHECK_PLIBC
      LIBS="$PLIBC_LIBS $LIBS"
-     SENDFILE_SOURCE_DIR=$(cd $srcdir ; pwd -W)
      AC_SUBST(PLIBC_LIBS)
      AC_SUBST(PLIBC_LDFLAGS)
      AC_SUBST(PLIBC_CPPFLAGS)
@@ -175,8 +171,6 @@ netbsd*)
      AM_CONDITIONAL(HAVE_W32, false)        
 ;;
 esac
-
-AC_SUBST(SENDFILE_SOURCE_DIR)
 
 CHECK_PTHREAD
 LIBS="$PTHREAD_LIBS $LIBS"
@@ -431,7 +425,6 @@ src/include/plibc/Makefile
 src/daemon/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
-src/testcurl/daemontest_get_sendfile.c
 src/testcurl/https/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
