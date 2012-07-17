@@ -1,3 +1,8 @@
+Tue Jul 17 23:50:43 CEST 2012
+	Stylistic code clean up.  Allowing lookup up of trailing values
+	without keys using "MHD_lookup_connection_value" with a key of NULL
+	(thus achieving consistency with the existing iterator API). -CG
+
 Tue Jul 17 22:37:05 CEST 2012
 	Adding experimental (!) code for MHD operation without listen socket. -CG
 

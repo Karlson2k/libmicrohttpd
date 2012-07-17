@@ -1245,7 +1245,7 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
  *
  * @param connection connection to get values from
  * @param kind what kind of value are we looking for
- * @param key the header to look for
+ * @param key the header to look for, NULL to lookup 'trailing' value without a key
  * @return NULL if no such item was found
  */
 const char *

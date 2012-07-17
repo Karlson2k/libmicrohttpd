@@ -45,28 +45,26 @@ add_response_entry (struct MHD_Response *response,
 {
   struct MHD_HTTP_Header *hdr;
 
-  if ((response == NULL) ||
-      (header == NULL) ||
-      (content == NULL) ||
-      (strlen (header) == 0) ||
-      (strlen (content) == 0) ||
-      (NULL != strstr (header, "\t")) ||
-      (NULL != strstr (header, "\r")) ||
-      (NULL != strstr (header, "\n")) ||
-      (NULL != strstr (content, "\t")) ||
-      (NULL != strstr (content, "\r")) || (NULL != strstr (content, "\n")))
+  if ( (NULL == response) ||
+       (NULL == header) ||
+       (NULL == content) ||
+       (0 == strlen (header)) ||
+       (0 == strlen (content)) ||
+       (NULL != strstr (header, "\t")) ||
+       (NULL != strstr (header, "\r")) ||
+       (NULL != strstr (header, "\n")) ||
+       (NULL != strstr (content, "\t")) ||
+       (NULL != strstr (content, "\r")) || 
+       (NULL != strstr (content, "\n")) )
     return MHD_NO;
-  hdr = malloc (sizeof (struct MHD_HTTP_Header));
-  if (hdr == NULL)
+  if (NULL == (hdr = malloc (sizeof (struct MHD_HTTP_Header))))
     return MHD_NO;
-  hdr->header = strdup (header);
-  if (hdr->header == NULL)
+  if (NULL == (hdr->header = strdup (header)))
     {
       free (hdr);
       return MHD_NO;
     }
-  hdr->value = strdup (content);
-  if (hdr->value == NULL)
+  if (NULL == (hdr->value = strdup (content)))
     {
       free (hdr->header);
       free (hdr);
@@ -132,7 +130,7 @@ MHD_del_response_header (struct MHD_Response *response,
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
 
-  if ((header == NULL) || (content == NULL))
+  if ( (NULL == header) || (NULL == content) )
     return MHD_NO;
   prev = NULL;
   pos = response->first_header;
@@ -143,7 +141,7 @@ MHD_del_response_header (struct MHD_Response *response,
         {
           free (pos->header);
           free (pos->value);
-          if (prev == NULL)
+          if (NULL == prev)
             response->first_header = pos->next;
           else
             prev->next = pos->next;
@@ -171,15 +169,14 @@ MHD_get_response_headers (struct MHD_Response *response,
 {
   struct MHD_HTTP_Header *pos;
   int numHeaders = 0;
-  pos = response->first_header;
-  while (pos != NULL)
+
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
     {
       numHeaders++;
-      if ((iterator != NULL) &&
+      if ((NULL != iterator) &&
           (MHD_YES != iterator (iterator_cls,
                                 pos->kind, pos->header, pos->value)))
         break;
-      pos = pos->next;
     }
   return numHeaders;
 }
@@ -196,15 +193,11 @@ MHD_get_response_header (struct MHD_Response *response, const char *key)
 {
   struct MHD_HTTP_Header *pos;
 
-  if (key == NULL)
+  if (NULL == key)
     return NULL;
-  pos = response->first_header;
-  while (pos != NULL)
-    {
-      if (0 == strcmp (key, pos->header))
-        return pos->value;
-      pos = pos->next;
-    }
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
+    if (0 == strcmp (key, pos->header))
+      return pos->value;
   return NULL;
 }
 
@@ -231,28 +224,27 @@ MHD_create_response_from_callback (uint64_t size,
                                    void *crc_cls,
                                    MHD_ContentReaderFreeCallback crfc)
 {
-  struct MHD_Response *retVal;
+  struct MHD_Response *response;
 
-  if ((crc == NULL) || (block_size == 0))
+  if ((NULL == crc) || (0 == block_size))
     return NULL;
-  retVal = malloc (sizeof (struct MHD_Response) + block_size);
-  if (retVal == NULL)
+  if (NULL == (response = malloc (sizeof (struct MHD_Response) + block_size)))
     return NULL;
-  memset (retVal, 0, sizeof (struct MHD_Response));
-  retVal->fd = -1;
-  retVal->data = (void *) &retVal[1];
-  retVal->data_buffer_size = block_size;
-  if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
+  memset (response, 0, sizeof (struct MHD_Response));
+  response->fd = -1;
+  response->data = (void *) &response[1];
+  response->data_buffer_size = block_size;
+  if (0 != pthread_mutex_init (&response->mutex, NULL))
     {
-      free (retVal);
+      free (response);
       return NULL;
     }
-  retVal->crc = crc;
-  retVal->crfc = crfc;
-  retVal->crc_cls = crc_cls;
-  retVal->reference_count = 1;
-  retVal->total_size = size;
-  return retVal;
+  response->crc = crc;
+  response->crfc = crfc;
+  response->crc_cls = crc_cls;
+  response->reference_count = 1;
+  response->total_size = size;
+  return response;
 }
 
 
@@ -274,7 +266,7 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 
   (void) lseek (response->fd, pos + response->fd_off, SEEK_SET);
   n = read (response->fd, buf, max);
-  if (n == 0) 
+  if (0 == n) 
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0) 
     return MHD_CONTENT_READER_END_WITH_ERROR;
@@ -292,6 +284,7 @@ static void
 free_callback (void *cls)
 {
   struct MHD_Response *response = cls;
+
   (void) close (response->fd);
   response->fd = -1;
 }
@@ -310,22 +303,20 @@ struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,
 							    int fd,
 							    off_t offset)
 {
-  struct MHD_Response *ret;
+  struct MHD_Response *response;
 
-  ret = MHD_create_response_from_callback (size,
-					   4 * 1024,
-					   &file_reader,
-					   NULL,
-					   &free_callback);
-  if (ret == NULL)
+  response = MHD_create_response_from_callback (size,
+						4 * 1024,
+						&file_reader,
+						NULL,
+						&free_callback);
+  if (NULL == response)
     return NULL;
-  ret->fd = fd;
-  ret->fd_off = offset;
-  ret->crc_cls = ret;
-  return ret;
+  response->fd = fd;
+  response->fd_off = offset;
+  response->crc_cls = response;
+  return response;
 }
-
-
 
 
 /**
@@ -360,42 +351,40 @@ struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data, int must_free, int must_copy)
 {
-  struct MHD_Response *retVal;
+  struct MHD_Response *response;
   void *tmp;
 
-  if ((data == NULL) && (size > 0))
+  if ((NULL == data) && (size > 0))
     return NULL;
-  retVal = malloc (sizeof (struct MHD_Response));
-  if (retVal == NULL)
+  if (NULL == (response = malloc (sizeof (struct MHD_Response))))
     return NULL;
-  memset (retVal, 0, sizeof (struct MHD_Response));
-  retVal->fd = -1;
-  if (pthread_mutex_init (&retVal->mutex, NULL) != 0)
+  memset (response, 0, sizeof (struct MHD_Response));
+  response->fd = -1;
+  if (0 != pthread_mutex_init (&response->mutex, NULL))
     {
-      free (retVal);
+      free (response);
       return NULL;
     }
   if ((must_copy) && (size > 0))
     {
-      tmp = malloc (size);
-      if (tmp == NULL)
+      if (NULL == (tmp = malloc (size)))
         {
-	  pthread_mutex_destroy (&retVal->mutex);
-          free (retVal);
+	  pthread_mutex_destroy (&response->mutex);
+          free (response);
           return NULL;
         }
       memcpy (tmp, data, size);
       must_free = MHD_YES;
       data = tmp;
     }
-  retVal->crc = NULL;
-  retVal->crfc = must_free ? &free : NULL;
-  retVal->crc_cls = must_free ? data : NULL;
-  retVal->reference_count = 1;
-  retVal->total_size = size;
-  retVal->data = data;
-  retVal->data_size = size;
-  return retVal;
+  response->crc = NULL;
+  response->crfc = must_free ? &free : NULL;
+  response->crc_cls = must_free ? data : NULL;
+  response->reference_count = 1;
+  response->total_size = size;
+  response->data = data;
+  response->data_size = size;
+  return response;
 }
 
 
@@ -431,7 +420,7 @@ MHD_destroy_response (struct MHD_Response *response)
 {
   struct MHD_HTTP_Header *pos;
 
-  if (response == NULL)
+  if (NULL == response)
     return;
   pthread_mutex_lock (&response->mutex);
   if (0 != --(response->reference_count))
@@ -443,7 +432,7 @@ MHD_destroy_response (struct MHD_Response *response)
   pthread_mutex_destroy (&response->mutex);
   if (response->crfc != NULL)
     response->crfc (response->crc_cls);
-  while (response->first_header != NULL)
+  while (NULL != response->first_header)
     {
       pos = response->first_header;
       response->first_header = pos->next;

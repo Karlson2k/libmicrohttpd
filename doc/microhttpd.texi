@@ -1270,12 +1270,16 @@ and @code{MHD_YES} on success.
 
 
 @deftypefun {const char *} MHD_lookup_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char *key)
-Get a particular header value.  If multiple values match the @var{kind},
-return one of them (the ``first'', whatever that means).  @var{key} must
-reference a zero-terminated @ascii{}-coded string representing the
-header to look for: it is compared against the headers using
-@cfunction{strcasecmp}, so case is ignored.  Return @mynull{} if no such
-item was found.
+Get a particular header value.  If multiple values match the
+@var{kind}, return one of them (the ``first'', whatever that means).
+@var{key} must reference a zero-terminated @ascii{}-coded string
+representing the header to look for: it is compared against the
+headers using @cfunction{strcasecmp}, so case is ignored.  A value of
+NULL for @var{key} can be used to lookup 'trailing' values without a
+key, for example if a URI is of the form
+``http://example.com/?trailer'', a @var{key} of NULL can be used to
+access ``tailer" The function returns @mynull{} if no matching item
+was found.
 @end deftypefun
 
 
