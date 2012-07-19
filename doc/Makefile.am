@@ -19,6 +19,7 @@ microhttpd_TEXINFOS = \
   chapters/processingpost.inc \
   chapters/responseheaders.inc \
   chapters/tlsauthentication.inc \
+  chapters/sessions.inc \
   examples/basicauthentication.c \
   examples/hellobrowser.c \
   examples/largepost.c \
@@ -26,6 +27,7 @@ microhttpd_TEXINFOS = \
   examples/responseheaders.c \
   examples/simplepost.c \
   examples/tlsauthentication.c \
+  examples/sessions.c \
   fdl-1.3.texi \
   lgpl.texi \
   ecos.texi
