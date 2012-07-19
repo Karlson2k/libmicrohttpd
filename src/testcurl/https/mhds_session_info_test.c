@@ -55,18 +55,6 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return MHD_YES;
     }
 
-  /* assert actual connection cipher is the one negotiated */
-  if (GNUTLS_CIPHER_ARCFOUR_128 != 
-      (ret = MHD_get_connection_info
-       (connection,
-	MHD_CONNECTION_INFO_CIPHER_ALGO)->cipher_algorithm))
-    {
-      fprintf (stderr, "Error: requested cipher mismatch (wanted %d, got %d)\n",
-               GNUTLS_CIPHER_ARCFOUR_128,
-	       ret);
-      return -1;
-    }
-
   if (GNUTLS_SSL3 != 
       (ret = MHD_get_connection_info
        (connection,

@@ -1,3 +1,9 @@
+Thu Jul 19 11:34:50 CEST 2012
+	Consistently use 'panic' function instead of ever directly
+	calling 'abort ()'.  Eliminating unused mutex in SSL mode.
+	Removing check in testcases that fails depending on which
+	version of gnuTLS is involved. -CG
+
 Tue Jul 17 23:50:43 CEST 2012
 	Stylistic code clean up.  Allowing lookup up of trailing values
 	without keys using "MHD_lookup_connection_value" with a key of NULL

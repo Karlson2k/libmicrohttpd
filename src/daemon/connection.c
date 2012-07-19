@@ -2382,10 +2382,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  daemon = connection->daemon;
 	  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to acquire cleanup mutex\n");
 	    }
 	  DLL_remove (daemon->connections_head,
 		      daemon->connections_tail,
@@ -2395,10 +2392,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 		      connection);
 	  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to release cleanup mutex\n");
 	    }
 	  return MHD_NO;
         default:

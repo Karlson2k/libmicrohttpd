@@ -828,7 +828,9 @@ struct MHD_PostProcessor;
 
 
 /**
- * Callback for serious error condition. The default action is to abort().
+ * Callback for serious error condition. The default action is to print
+ * an error message and abort().
+ *
  * @param cls user specified value
  * @param file where the error occured
  * @param line where the error occured
@@ -1229,8 +1231,8 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * try to continue, this is never safe.
  *
  * The default implementation that is used if no panic function is set
- * simply calls "abort".  Alternative implementations might call
- * "exit" or other similar functions.
+ * simply prints an error message and calls "abort".  Alternative
+ * implementations might call "exit" or other similar functions.
  *
  * @param cb new error handler
  * @param cls passed to error handler

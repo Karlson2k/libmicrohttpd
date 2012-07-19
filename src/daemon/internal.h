@@ -60,6 +60,22 @@ extern MHD_PanicCallback mhd_panic;
  */
 extern void *mhd_panic_cls;
 
+#if HAVE_MESSAGES
+/**
+ * Trigger 'panic' action based on fatal errors.
+ * 
+ * @param error message (const char *)
+ */
+#define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg)
+#else
+/**
+ * Trigger 'panic' action based on fatal errors.
+ * 
+ * @param error message (const char *)
+ */
+#define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL)
+#endif
+
 /**
  * Events we care about with respect to poll/select
  * for file descriptors.

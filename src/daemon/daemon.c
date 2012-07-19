@@ -83,14 +83,24 @@
 
 
 /**
- * Default implementation of the panic function
+ * Default implementation of the panic function,
+ * prints an error message and aborts.
+ *
+ * @param cls unused
+ * @param file name of the file with the problem
+ * @param line line number with the problem
+ * @param msg error message with details
  */
 static void 
-mhd_panic_std(void *cls,
-	      const char *file,
-	      unsigned int line,
-	      const char *reason)
+mhd_panic_std (void *cls,
+	       const char *file,
+	       unsigned int line,
+	       const char *reason)
 {
+#if HAVE_MESSAGES
+  fprintf (stderr, "Fatal error in GNU libmicrohttpd %s:%u: %s\n",
+	   file, line, reason);
+#endif
   abort ();
 }
 
@@ -166,10 +176,7 @@ MHD_ip_count_lock(struct MHD_Daemon *daemon)
 {
   if (0 != pthread_mutex_lock(&daemon->per_ip_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to acquire IP connection limit mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to acquire IP connection limit mutex\n");
     }
 }
 
@@ -184,10 +191,7 @@ MHD_ip_count_unlock(struct MHD_Daemon *daemon)
 {
   if (0 != pthread_mutex_unlock(&daemon->per_ip_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to release IP connection limit mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to release IP connection limit mutex\n");
     }
 }
 
@@ -347,21 +351,13 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
     {      
       /* Something's wrong if we couldn't find an IP address
        * that was previously added */
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to find previously-added IP address\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to find previously-added IP address\n");
     }
   found_key = (struct MHD_IPCount *) *nodep;
   /* Validate existing count for IP address */
   if (0 == found_key->count)
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Previously-added IP address had 0 count\n");
-#endif
-      abort();
+      MHD_PANIC ("Previously-added IP address had 0 count\n");
     }
   /* Remove the node entirely if count reduces to 0 */
   if (0 == --found_key->count)
@@ -377,9 +373,6 @@ MHD_ip_limit_del(struct MHD_Daemon *daemon,
 
 
 #if HTTPS_SUPPORT
-static pthread_mutex_t MHD_gnutls_init_mutex;
-
-
 /**
  * Callback for receiving data from the socket.
  *
@@ -1035,13 +1028,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
           MHD_ip_limit_del (daemon, addr, addrlen);
           free (connection->addr);
           free (connection);
-          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
-#if HAVE_MESSAGES
-		     "Unknown credential type"
-#else
-		     NULL
-#endif
-		     );
+          MHD_PANIC ("Unknown credential type");
  	  return MHD_NO;
         }
       gnutls_transport_set_ptr (connection->tls_session,
@@ -1061,20 +1048,14 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 
   if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to acquire cleanup mutex\n");
     }
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
   if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to release cleanup mutex\n");
     }
 
   /* attempt to create handler thread */
@@ -1093,20 +1074,14 @@ MHD_add_connection (struct MHD_Daemon *daemon,
           MHD_ip_limit_del (daemon, addr, addrlen);
 	  if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to acquire cleanup mutex\n");
 	    }
 	  DLL_remove (daemon->connections_head,
 		      daemon->connections_tail,
 		      connection);
 	  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to release cleanup mutex\n");
 	    }
           free (connection->addr);
           free (connection);
@@ -1222,10 +1197,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 
   if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to acquire cleanup mutex\n");
     }
   while (NULL != (pos = daemon->cleanup_head))
     {
@@ -1237,11 +1209,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	{ 
 	  if (0 != (rc = pthread_join (pos->pid, &unused)))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-			STRERROR (rc));
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to join a thread\n");
 	    }
 	}
       MHD_pool_destroy (pos->pool);
@@ -1264,10 +1232,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
     }
   if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to release cleanup mutex\n");
     }
 }
 
@@ -2179,21 +2144,6 @@ MHD_start_daemon_va (unsigned int options,
 #if HTTPS_SUPPORT
   if (0 != (options & MHD_USE_SSL))
     {
-      /* lock MHD_gnutls_global mutex since it uses reference counting */
-      if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to acquire gnutls mutex\n");
-#endif
-          mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
-	}
-      if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to release gnutls mutex\n");
-#endif
-	  mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
-	}
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
 #endif
@@ -2220,7 +2170,7 @@ MHD_start_daemon_va (unsigned int options,
 		    "Specified value for NC_SIZE too large\n");
 #endif
 #if HTTPS_SUPPORT
-	  if (options & MHD_USE_SSL)
+	  if (0 != (options & MHD_USE_SSL))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
 	  free (daemon);
@@ -2228,21 +2178,21 @@ MHD_start_daemon_va (unsigned int options,
 	}
       daemon->nnc = malloc (daemon->nonce_nc_size * sizeof(struct MHD_NonceNc));
       if (NULL == daemon->nnc)
-	    {
+	{
 #if HAVE_MESSAGES
-	      MHD_DLOG (daemon,
-			"Failed to allocate memory for nonce-nc map: %s\n",
-			STRERROR (errno));
+	  MHD_DLOG (daemon,
+		    "Failed to allocate memory for nonce-nc map: %s\n",
+		    STRERROR (errno));
 #endif
 #if HTTPS_SUPPORT
-	      if (options & MHD_USE_SSL)
-		gnutls_priority_deinit (daemon->priority_cache);
+	  if (0 != (options & MHD_USE_SSL))
+	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
-	      free (daemon);
-	      return NULL;
-	    }
+	  free (daemon);
+	  return NULL;
+	}
     }
-
+  
   if (0 != pthread_mutex_init (&daemon->nnc_lock, NULL))
     {
 #if HAVE_MESSAGES
@@ -2250,7 +2200,7 @@ MHD_start_daemon_va (unsigned int options,
 		"MHD failed to initialize nonce-nc mutex\n");
 #endif
 #if HTTPS_SUPPORT
-      if (options & MHD_USE_SSL)
+      if (0 != (options & MHD_USE_SSL))
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif
       free (daemon->nnc);
@@ -2616,20 +2566,14 @@ close_all_connections (struct MHD_Daemon *daemon)
      traverse DLLs in peace... */
   if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to acquire cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to acquire cleanup mutex\n");
     }
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)    
     SHUTDOWN (pos->socket_fd, 
 	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);    
   if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
     {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Failed to release cleanup mutex\n");
-#endif
-      abort();
+      MHD_PANIC ("Failed to release cleanup mutex\n");
     }
 
   /* now, collect threads */
@@ -2639,11 +2583,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 	{
 	  if (0 != (rc = pthread_join (pos->pid, &unused)))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-			STRERROR (rc));
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to join a thread\n");
 	    }
 	  pos->thread_joined = MHD_YES;
 	}
@@ -2695,7 +2635,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   if (-1 != daemon->wpipe[1])
     {
-      WRITE (daemon->wpipe[1], "e", 1);
+      if (1 != WRITE (daemon->wpipe[1], "e", 1))
+	MHD_PANIC ("failed to signal shutdownn via pipe");
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
   else
@@ -2719,11 +2660,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	{
 	  if (0 != (rc = pthread_join (daemon->worker_pool[i].pid, &unused)))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-			STRERROR (rc));
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to join a thread\n");
 	    }
 	  close_all_connections (&daemon->worker_pool[i]);
 	}
@@ -2738,11 +2675,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	{
 	  if (0 != (rc = pthread_join (daemon->pid, &unused)))
 	    {
-#if HAVE_MESSAGES
-	      MHD_DLOG (daemon, "Failed to join a thread: %s\n",
-			STRERROR (rc));
-#endif
-	      abort();
+	      MHD_PANIC ("Failed to join a thread\n");
 	    }
 	}
     }
@@ -2757,21 +2690,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       gnutls_priority_deinit (daemon->priority_cache);
       if (daemon->x509_cred)
         gnutls_certificate_free_credentials (daemon->x509_cred);
-      /* lock MHD_gnutls_global mutex since it uses reference counting */
-      if (0 != pthread_mutex_lock (&MHD_gnutls_init_mutex))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to acquire gnutls mutex\n");
-#endif
-	  abort();
-	}
-      if (0 != pthread_mutex_unlock (&MHD_gnutls_init_mutex))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon, "Failed to release gnutls mutex\n");
-#endif
-	  abort();
-	}
     }
 #endif
 
@@ -2784,11 +2702,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   if (-1 != daemon->wpipe[1])
     {
-      char c;
-
-      /* just to be sure, remove the one char we 
-	 wrote into the pipe */
-      (void) READ (daemon->wpipe[0], &c, 1);
       CLOSE (daemon->wpipe[0]);
       CLOSE (daemon->wpipe[1]);
     }
@@ -2830,8 +2743,8 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  * try to continue, this is never safe.
  *
  * The default implementation that is used if no panic function is set
- * simply calls "abort".  Alternative implementations might call
- * "exit" or other similar functions.
+ * simply prints an error message and calls "abort".  Alternative
+ * implementations might call "exit" or other similar functions.
  *
  * @param cb new error handler
  * @param cls passed to error handler
@@ -2884,8 +2797,6 @@ MHD_init ()
 #if HTTPS_SUPPORT
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
   gnutls_global_init ();
-  if (0 != pthread_mutex_init(&MHD_gnutls_init_mutex, NULL))
-    abort();
 #endif
 }
 
@@ -2895,8 +2806,6 @@ MHD_fini ()
 {
 #if HTTPS_SUPPORT
   gnutls_global_deinit ();
-  if (0 != pthread_mutex_destroy(&MHD_gnutls_init_mutex))
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
 #endif
 #ifdef WINDOWS
   plibc_shutdown ();
