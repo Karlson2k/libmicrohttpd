@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 
 #define PORT 8888
 #define FILENAME "picture.png"

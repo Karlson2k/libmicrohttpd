@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <microhttpd.h>
 
 #define PORT            8888
@@ -178,7 +181,6 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 == strcmp (method, "GET"))
     {
-      int ret;
       char buffer[1024];
 
       sprintf (buffer, askpage, nr_of_uploading_clients);

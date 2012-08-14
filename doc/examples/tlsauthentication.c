@@ -2,6 +2,9 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <microhttpd.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define PORT 8888
 
