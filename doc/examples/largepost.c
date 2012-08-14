@@ -58,7 +58,7 @@ send_page (struct MHD_Connection *connection, const char *page,
 				     MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
-
+  MHD_add_response_header (response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html");
   ret = MHD_queue_response (connection, status_code, response);
   MHD_destroy_response (response);
 
