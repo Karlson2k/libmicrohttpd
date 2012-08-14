@@ -55,7 +55,7 @@ send_page (struct MHD_Connection *connection, const char *page,
 
   response =
     MHD_create_response_from_buffer (strlen (page), (void *) page,
-				     MHD_RESPMEM_PERSISTENT);
+				     MHD_RESPMEM_MUST_COPY);
   if (!response)
     return MHD_NO;
   MHD_add_response_header (response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html");
@@ -183,7 +183,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     {
       char buffer[1024];
 
-      sprintf (buffer, askpage, nr_of_uploading_clients);
+      snprintf (buffer, sizeof (buffer), askpage, nr_of_uploading_clients);
       return send_page (connection, buffer, MHD_HTTP_OK);
     }
 
