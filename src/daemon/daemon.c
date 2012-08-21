@@ -1748,7 +1748,7 @@ parse_options_va (struct MHD_Daemon *daemon,
   const char *pstr;
 #endif
   
-  while (MHD_OPTION_END != (opt = va_arg (ap, enum MHD_OPTION)))
+  while (MHD_OPTION_END != (opt = (enum MHD_OPTION) va_arg (ap, int)))
     {
       switch (opt)
         {
@@ -1821,7 +1821,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
 	case MHD_OPTION_HTTPS_CRED_TYPE:
-	  daemon->cred_type = va_arg (ap, gnutls_credentials_type_t);
+	  daemon->cred_type = (gnutls_credentials_type_t) va_arg (ap, int);
 	  break;
         case MHD_OPTION_HTTPS_PRIORITIES:
 	  if (0 != (daemon->options & MHD_USE_SSL))

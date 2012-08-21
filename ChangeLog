@@ -1,3 +1,8 @@
+Tue Aug 21 14:36:17 CEST 2012
+	Use "int" instead of "enum X" in 'va_arg' calls to be nice to
+	compilers that use 'short' (i.e. 8 or 16 bit) enums but pass
+	enums still as "int" in varargs. (See discussion on mailinglist). -CG/MV
+
 Tue Aug 21 14:31:54 CEST 2012
 	Reduce default size in post processor buffer (for small systems;
 	performance impact on large systems should be minimal). -CG/MV
