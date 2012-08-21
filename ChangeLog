@@ -1,3 +1,7 @@
+Tue Aug 21 14:31:54 CEST 2012
+	Reduce default size in post processor buffer (for small systems;
+	performance impact on large systems should be minimal). -CG/MV
+
 Thu Jul 19 21:48:42 CEST 2012
 	Releasing libmicrohttpd 0.9.21. -CG
 

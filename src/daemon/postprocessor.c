@@ -27,8 +27,10 @@
 
 /**
  * Size of on-stack buffer that we use for un-escaping of the value.
+ * We use a pretty small value to be nice to the stack on embedded
+ * systems.
  */
-#define XBUF_SIZE 1024
+#define XBUF_SIZE 512
 
 /**
  * States in the PP parser's state machine.
