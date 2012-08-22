@@ -74,6 +74,9 @@
 #include <sys/mman.h>
 #define RESTRICT __restrict__
 #endif
+#if HAVE_MEMORY_H
+#include <memory.h>
+#endif
 
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>

@@ -19,9 +19,8 @@
    prototypes) to maintain the tradition that Netfone will compile
    with Sun's original "cc". */
 
-#include <memory.h>
-#include <stdint.h>
 #include "md5.h"
+
 
 #ifndef HIGHFIRST
 #define byteReverse(buf, len)	/* Nothing */
@@ -151,7 +150,8 @@ MD5Transform(uint32_t buf[4],
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void MD5Init(struct MD5Context *ctx)
+void
+MD5Init(struct MD5Context *ctx)
 {
     ctx->buf[0] = 0x67452301;
     ctx->buf[1] = 0xefcdab89;
@@ -218,46 +218,50 @@ MD5Update(struct MD5Context *ctx,
  * Final wrapup - pad to 64-byte boundary with the bit pattern 
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void MD5Final(unsigned char digest[16],
-	      struct MD5Context *ctx)
+void 
+MD5Final(unsigned char digest[16],
+	 struct MD5Context *ctx)
 {
-    unsigned count;
-    unsigned char *p;
+  unsigned count;
+  unsigned char *p;
 
-    /* Compute number of bytes mod 64 */
-    count = (ctx->bits[0] >> 3) & 0x3F;
-
-    /* Set the first char of padding to 0x80.  This is safe since there is
-       always at least one byte free */
-    p = ctx->in + count;
-    *p++ = 0x80;
-
-    /* Bytes of padding needed to make 64 bytes */
-    count = 64 - 1 - count;
-
-    /* Pad out to 56 mod 64 */
-    if (count < 8) {
-	/* Two lots of padding:  Pad the first block to 64 bytes */
-	memset(p, 0, count);
-	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
-
-	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
-    } else {
-	/* Pad block to 56 bytes */
-	memset(p, 0, count - 8);
+  /* Compute number of bytes mod 64 */
+  count = (ctx->bits[0] >> 3) & 0x3F;
+  
+  /* Set the first char of padding to 0x80.  This is safe since there is
+     always at least one byte free */
+  p = ctx->in + count;
+  *p++ = 0x80;
+  
+  /* Bytes of padding needed to make 64 bytes */
+  count = 64 - 1 - count;
+  
+  /* Pad out to 56 mod 64 */
+  if (count < 8) 
+    {
+      /* Two lots of padding:  Pad the first block to 64 bytes */
+      memset(p, 0, count);
+      byteReverse(ctx->in, 16);
+      MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+      
+      /* Now fill the next block with 56 bytes */
+      memset(ctx->in, 0, 56);
+    } 
+  else 
+    {
+      /* Pad block to 56 bytes */
+      memset(p, 0, count - 8);
     }
-    byteReverse(ctx->in, 14);
-
-    /* Append length in bits and transform */
-    ((uint32_t *) ctx->in)[14] = ctx->bits[0];
-    ((uint32_t *) ctx->in)[15] = ctx->bits[1];
-
-    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
-    byteReverse((unsigned char *) ctx->buf, 4);
-    memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(struct MD5Context));        /* In case it's sensitive */
+  byteReverse(ctx->in, 14);
+  
+  /* Append length in bits and transform */
+  ((uint32_t *) ctx->in)[14] = ctx->bits[0];
+  ((uint32_t *) ctx->in)[15] = ctx->bits[1];
+  
+  MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+  byteReverse((unsigned char *) ctx->buf, 4);
+  memcpy(digest, ctx->buf, 16);
+  memset(ctx, 0, sizeof(struct MD5Context));        /* In case it's sensitive */
 }
 
 /* end of md5.c */
