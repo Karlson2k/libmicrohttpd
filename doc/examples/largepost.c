@@ -1,3 +1,6 @@
+/* Feel free to use this example code in any way
+   you see fit (Public Domain) */
+
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -108,6 +111,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
   return MHD_YES;
 }
 
+
 static void
 request_completed (void *cls, struct MHD_Connection *connection,
                    void **con_cls, enum MHD_RequestTerminationCode toe)
@@ -200,18 +204,24 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
           return MHD_YES;
         }
       else
-        return send_page (connection, con_info->answerstring,
-                          con_info->answercode);
+	{
+	  if (NULL != con_info->fp)
+	    fclose (con_info->fp);
+	  /* Now it is safe to open and inspect the file before calling send_page with a response */
+	  return send_page (connection, con_info->answerstring,
+			    con_info->answercode);
+	}
+
     }
 
   return send_page (connection, errorpage, MHD_HTTP_BAD_REQUEST);
 }
 
+
 int
 main ()
 {
   struct MHD_Daemon *daemon;
-
 
   daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
                              &answer_to_connection, NULL,
@@ -219,10 +229,7 @@ main ()
                              NULL, MHD_OPTION_END);
   if (NULL == daemon)
     return 1;
-
   getchar ();
-
   MHD_stop_daemon (daemon);
-
   return 0;
 }

@@ -1,3 +1,6 @@
+/* Feel free to use this example code in any way
+   you see fit (Public Domain) */
+
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
