@@ -50,12 +50,12 @@ add_response_entry (struct MHD_Response *response,
        (NULL == content) ||
        (0 == strlen (header)) ||
        (0 == strlen (content)) ||
-       (NULL != strstr (header, "\t")) ||
-       (NULL != strstr (header, "\r")) ||
-       (NULL != strstr (header, "\n")) ||
-       (NULL != strstr (content, "\t")) ||
-       (NULL != strstr (content, "\r")) || 
-       (NULL != strstr (content, "\n")) )
+       (NULL != strchr (header, '\t')) ||
+       (NULL != strchr (header, '\r')) ||
+       (NULL != strchr (header, '\n')) ||
+       (NULL != strchr (content, '\t')) ||
+       (NULL != strchr (content, '\r')) || 
+       (NULL != strchr (content, '\n')) )
     return MHD_NO;
   if (NULL == (hdr = malloc (sizeof (struct MHD_HTTP_Header))))
     return MHD_NO;

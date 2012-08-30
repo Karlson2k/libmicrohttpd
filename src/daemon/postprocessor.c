@@ -539,7 +539,7 @@ try_get_value (const char *buf, const char *key, char **destination)
         }
       if (spos[klen + 1] != '"')
         return;                 /* not quoted */
-      if (NULL == (endv = strstr (&spos[klen + 2], "\"")))
+      if (NULL == (endv = strchr (&spos[klen + 2], '\"')))
         return;                 /* no end-quote */
       vlen = endv - spos - klen - 1;
       *destination = malloc (vlen);

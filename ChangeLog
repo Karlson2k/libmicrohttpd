@@ -1,3 +1,9 @@
+Thu Aug 30 21:12:56 CEST 2012
+	Fixing URI argument parsing when string contained keys without
+	equals sign (i.e. '&bar&') in the middle of the argument (#2531).
+	Also replacing 'strstr' with more efficient 'strchr' when
+	possible. -CG
+
 Tue Aug 21 14:36:17 CEST 2012
 	Use "int" instead of "enum X" in 'va_arg' calls to be nice to
 	compilers that use 'short' (i.e. 8 or 16 bit) enums but pass

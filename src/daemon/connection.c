@@ -1123,26 +1123,58 @@ parse_arguments (enum MHD_ValueKind kind,
 
   while (NULL != args)
     {
-      if (NULL == (equals = strstr (args, "=")))
+      equals = strchr (args, '=');
+      amper = strchr (args, '&');
+      if (NULL == amper)
 	{
-	  /* add with 'value' NULL */
+	  /* last argument */
+	  if (NULL == equals)
+	    {
+	      /* got 'foo', add key 'foo' with NULL for value */
+	      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						     connection,
+						     args);
+	      return connection_add_header (connection,
+					    args,
+					    NULL,
+					    kind);	      
+	    }
+	  /* got 'foo=bar' */
+	  equals[0] = '\0';
+	  equals++;
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
 						 args);
-	  
-	  return connection_add_header (connection,
-					args,
-					NULL,
-					kind);
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 equals);
+	  return connection_add_header (connection, args, equals, kind);
 	}
+      /* amper is non-NULL here */
+      amper[0] = '\0';
+      amper++;
+      if ( (NULL == equals) ||
+	   (equals >= amper) )
+	{
+	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 args);
+	  if (MHD_NO ==
+	      connection_add_header (connection,
+				     args,
+				     NULL,
+				     kind))
+	    return MHD_NO;
+	  /* continue with 'bar' */
+	  args = amper;
+	  continue;
+
+	}
+      /* equals and amper are non-NULL here, and equals < amper,
+	 so we got regular 'foo=value&bar...'-kind of argument */
       equals[0] = '\0';
       equals++;
-      amper = strstr (equals, "&");
-      if (amper != NULL)
-        {
-          amper[0] = '\0';
-          amper++;
-        }
       connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					     connection,
 					     args);
@@ -1265,14 +1297,14 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   char *httpVersion;
   char *args;
 
-  if (NULL == (uri = strstr (line, " ")))
+  if (NULL == (uri = strchr (line, ' ')))
     return MHD_NO;              /* serious error */
   uri[0] = '\0';
   connection->method = line;
   uri++;
   while (uri[0] == ' ')
     uri++;
-  httpVersion = strstr (uri, " ");
+  httpVersion = strchr (uri, ' ');
   if (httpVersion != NULL)
     {
       httpVersion[0] = '\0';
@@ -1283,7 +1315,7 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       =
       connection->daemon->uri_log_callback (connection->daemon->
                                             uri_log_callback_cls, uri);
-  args = strstr (uri, "?");
+  args = strchr (uri, '?');
   if (NULL != args)
     {
       args[0] = '\0';
@@ -1638,7 +1670,7 @@ process_header_line (struct MHD_Connection *connection, char *line)
   char *colon;
 
   /* line should be normal header line, find colon */
-  colon = strstr (line, ":");
+  colon = strchr (line, ':');
   if (colon == NULL)
     {
       /* error in header line, die hard */

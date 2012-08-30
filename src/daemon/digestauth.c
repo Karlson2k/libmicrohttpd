@@ -225,20 +225,20 @@ lookup_sub_value(char *dest,
     return 0;
   while ('\0' != *ptr)
     {
-      if (NULL == (eq = strstr (ptr, "=")))
+      if (NULL == (eq = strchr (ptr, '=')))
 	return 0;
       q1 = eq + 1;
       while (' ' == *q1)
 	q1++;      
       if ('\"' != *q1)
 	{
-	  q2 = strstr (q1, ",");
+	  q2 = strchr (q1, ',');
 	  qn = q2;
 	}
       else
 	{
 	  q1++;
-	  q2 = strstr (q1, "\"");
+	  q2 = strchr (q1, '\"');
 	  if (NULL == q2)
 	    return 0; /* end quote not found */
 	  qn = q2 + 1;
@@ -274,7 +274,7 @@ lookup_sub_value(char *dest,
 	}
       if (NULL == qn)
 	return 0;
-      ptr = strstr (qn, ",");
+      ptr = strchr (qn, ',');
       if (NULL == ptr)
 	return 0;
       ptr++;
@@ -490,7 +490,7 @@ check_argument_match (struct MHD_Connection *connection,
   while ( (argp != NULL) &&
 	  (argp[0] != '\0') )
     {
-      equals = strstr (argp, "=");
+      equals = strchr (argp, '=');
       if (equals == NULL) 
 	{	  
 	  /* add with 'value' NULL */
@@ -504,7 +504,7 @@ check_argument_match (struct MHD_Connection *connection,
 	}
       equals[0] = '\0';
       equals++;
-      amper = strstr (equals, "&");
+      amper = strchr (equals, '&');
       if (amper != NULL)
 	{
 	  amper[0] = '\0';
@@ -639,7 +639,7 @@ MHD_digest_auth_check(struct MHD_Connection *connection,
       return MHD_NO;
     }
     {
-      const char *args = strstr (uri, "?");
+      const char *args = strchr (uri, '?');
       if (args == NULL)
 	args = "";
       else
@@ -830,7 +830,7 @@ MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
       return NULL;
     }
   /* Find user:password pattern */
-  separator = strstr(decode, ":");
+  separator = strchr (decode, ':');
   if (separator == NULL) 
     {
 #if HAVE_MESSAGES
