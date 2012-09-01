@@ -1,3 +1,7 @@
+Sat Sep  1 20:38:35 CEST 2012
+	Adding configure option to allow selecting support for basic
+	and digest authentication separately (#2525). -CG
+
 Thu Aug 30 21:12:56 CEST 2012
 	Fixing URI argument parsing when string contained keys without
 	equals sign (i.e. '&bar&') in the middle of the argument (#2531).

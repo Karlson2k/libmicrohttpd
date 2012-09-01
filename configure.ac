@@ -360,23 +360,39 @@ AC_MSG_RESULT($enable_https)
 
 AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
 
+# optional: HTTP Basic Auth support. Enabled by default
+AC_MSG_CHECKING(whether to support HTTP basic authentication)
+AC_ARG_ENABLE([bauth],
+		AS_HELP_STRING([--disable-bauth],
+			[disable HTTP basic Auth support]),
+		[enable_bauth=${enableval}],
+		[enable_bauth=yes])
+if test "$enable_bauth" = "yes"
+then
+ AC_DEFINE([BAUTH_SUPPORT],[1],[include basic Auth support])
+else
+ AC_DEFINE([BAUTH_SUPPORT],[0],[disable basic Auth support])
+fi
+AC_MSG_RESULT($enable_bauth)
+AM_CONDITIONAL(ENABLE_BAUTH, [test "x$enable_bauth" != "xno"])
+
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING(whether to support HTTP basic and digest authentication)
+AC_MSG_CHECKING(whether to support HTTP digest authentication)
 AC_ARG_ENABLE([dauth],
 		AS_HELP_STRING([--disable-dauth],
 			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
-
 if test "$enable_dauth" = "yes"
 then
- AC_DEFINE([DAUTH_SUPPORT],[1],[include basic and digest Auth support])
+ AC_DEFINE([DAUTH_SUPPORT],[1],[include digest Auth support])
 else
- AC_DEFINE([DAUTH_SUPPORT],[0],[disable basic and digest Auth support])
+ AC_DEFINE([DAUTH_SUPPORT],[0],[disable digest Auth support])
 fi
 AC_MSG_RESULT($enable_dauth)
-
 AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
+
+
 
 MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
@@ -454,7 +470,8 @@ AC_MSG_NOTICE([Configuration Summary:
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}
-  HTTP Authentic.:   ${enable_dauth}
+  Basic auth.:       ${enable_bauth}
+  Digest auth.:      ${enable_dauth}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${enable_https}
 ])

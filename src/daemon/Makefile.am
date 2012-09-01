@@ -37,7 +37,12 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c \
-  md5.c md5.h \
+  md5.c md5.h
+endif
+
+if ENABLE_BAUTH
+libmicrohttpd_la_SOURCES += \
+  basicauth.c \
   base64.c base64.h
 endif
 

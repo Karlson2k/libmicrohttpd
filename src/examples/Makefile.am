@@ -33,8 +33,12 @@ endif
 
 if ENABLE_DAUTH
 noinst_PROGRAMS += \
- authorization_example \
  digest_auth_example 
+endif
+
+if ENABLE_BAUTH
+noinst_PROGRAMS += \
+ authorization_example 
 endif
 
 if HAVE_W32
