@@ -97,12 +97,6 @@ case "$host_os" in
      AM_CONDITIONAL(HAVE_GNU_LD, false)    
      AM_CONDITIONAL(HAVE_W32, false)        
      ;;
-linux*)
-     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
-     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     AM_CONDITIONAL(HAVE_W32, false)        
-     ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
@@ -130,9 +124,15 @@ netbsd*)
      LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
-     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux system])
+     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
+     AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_W32, false)        
+     ;;
+*linux*)
+     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
      AM_CONDITIONAL(HAVE_W32, false)        
      ;;
