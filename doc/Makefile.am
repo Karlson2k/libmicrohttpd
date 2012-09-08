@@ -2,13 +2,13 @@ man_MANS = libmicrohttpd.3
 EXTRA_DIST = $(man_MANS) Doxyfile 
 
 DISTCLEANFILES = \
-  microhttpd.cps \
-  microhttpd.dvi \
-  microhttpd-tutorial.cps \
-  microhttpd-tutorial.dvi
+  libmicrohttpd.cps \
+  libmicrohttpd.dvi \
+  libmicrohttpd-tutorial.cps \
+  libmicrohttpd-tutorial.dvi
 info_TEXINFOS = \
-  microhttpd.texi \
-  microhttpd-tutorial.texi
+  libmicrohttpd.texi \
+  libmicrohttpd-tutorial.texi
 microhttpd_TEXINFOS = \
   chapters/basicauthentication.inc \
   chapters/bibliography.inc \
