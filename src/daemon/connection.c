@@ -1637,6 +1637,7 @@ do_write (struct MHD_Connection *connection)
   return MHD_YES;
 }
 
+
 /**
  * Check if we are done sending the write-buffer.
  * If so, transition into "next_state".
@@ -1658,6 +1659,7 @@ check_write_done (struct MHD_Connection *connection,
   connection->write_buffer_size = 0;
   return MHD_YES;
 }
+
 
 /**
  * We have received (possibly the beginning of) a line in the

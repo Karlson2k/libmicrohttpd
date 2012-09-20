@@ -266,6 +266,7 @@ extern "C"
 #define MHD_HTTP_HEADER_PROXY_AUTHENTICATE "Proxy-Authenticate"
 #define MHD_HTTP_HEADER_PROXY_AUTHORIZATION "Proxy-Authorization"
 #define MHD_HTTP_HEADER_RANGE "Range"
+/* This is not a typo, see HTTP spec */
 #define MHD_HTTP_HEADER_REFERER "Referer"
 #define MHD_HTTP_HEADER_RETRY_AFTER "Retry-After"
 #define MHD_HTTP_HEADER_SERVER "Server"
