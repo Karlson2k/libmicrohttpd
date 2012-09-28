@@ -561,8 +561,8 @@ add_extra_headers (struct MHD_Connection *connection)
                                             MHD_HTTP_HEADER_CONTENT_LENGTH))
     {
       SPRINTF (buf,
-               "%" MHD_LONG_LONG_PRINTF "u",
-	       (unsigned MHD_LONG_LONG) connection->response->total_size);
+               MHD_UNSIGNED_LONG_LONG_PRINTF,
+	       (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
       MHD_add_response_header (connection->response,
                                MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
     }
@@ -1517,11 +1517,11 @@ process_request_body (struct MHD_Connection *connection)
           return;
         }
       if (processed > used)
-        mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
+        mhd_panic (mhd_panic_cls, __FILE__, __LINE__
 #if HAVE_MESSAGES
-		   "API violation"
+		   , "API violation"
 #else
-		   NULL
+		   , NULL
 #endif
 		   );
       if (processed != 0)
@@ -1771,7 +1771,7 @@ static void
 parse_connection_headers (struct MHD_Connection *connection)
 {
   const char *clen;
-  unsigned MHD_LONG_LONG cval;
+  MHD_UNSIGNED_LONG_LONG cval;
   struct MHD_Response *response;
   const char *enc;
   char *end;

@@ -262,20 +262,32 @@ ignore_sigpipe ()
 }
 @end verbatim
 
-@section MHD_LONG_LONG
+@section MHD_UNSIGNED_LONG_LONG
 @cindex long long
+@cindex MHD_LONG_LONG
 @cindex IAR
 @cindex ARM
 @cindex cortex m3
 @cindex embedded systems
 
-Some platforms do not support @code{long long}.  Hence MHD defines
-a macro @code{MHD_LONG_LONG} which will default to @code{long long}.
-If your platform does not support @code{long long}, you should
-change "platform.h" to define @code{MHD_LONG_LONG} to an appropriate
-alternative type and also define @code{MHD_LONG_LONG_PRINTF} to the
-corresponding format string for printing such a data type (without
-the percent sign).
+Some platforms do not support @code{long long}.  Hence MHD defines a
+macro @code{MHD_UNSIGNED LONG_LONG} which will default to
+@code{unsigned long long}.  For standard desktop operating systems,
+this is all you need to know.
+
+However, if your platform does not support @code{unsigned long long},
+you should change "platform.h" to define @code{MHD_LONG_LONG} and
+@code{MHD_UNSIGNED_LONG_LONG} to an appropriate alternative type and
+also define @code{MHD_LONG_LONG_PRINTF} and
+@code{MHD_UNSIGNED_LONG_LONG_PRINTF} to the corresponding format
+string for printing such a data type.  Note that the ``signed''
+versions are deprecated.  Also, for historical reasons,
+@code{MHD_LONG_LONG_PRINTF} is without the percent sign, whereas
+@code{MHD_UNSIGNED_LONG_LONG_PRINTF} is with the percent sign.  Newly
+written code should only use the unsigned versions.  However, you need
+to define both in "platform.h" if you need to change the definition
+for the specific platform.
+
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -311,7 +323,11 @@ compiled with messages enabled. This is done by default except you ran
 configure with the @code{--disable-messages} flag set. 
 
 @item MHD_USE_SSL
-Run in https mode (this option may not work with all threading modes yet).
+@cindex TLS
+@cindex SSL
+Run in HTTPS-mode.  If you specify @code{MHD_USE_SSL} and MHD was
+compiled without SSL support, @code{MHD_start_daemon} will return
+NULL.
 
 @item MHD_USE_THREAD_PER_CONNECTION
 Run using one thread per connection.
@@ -322,7 +338,8 @@ Run using an internal thread doing @code{SELECT}.
 @item MHD_USE_IPv6
 @cindex IPv6
 Run using the IPv6 protocol (otherwise, MHD will just support IPv4).
-
+If you specify @code{MHD_USE_IPV6} and the local platform does not
+support it, @code{MHD_start_daemon} will return NULL.
 
 @item MHD_USE_PEDANTIC_CHECKS
 Be pedantic about the protocol (as opposed to as tolerant as possible).
@@ -339,7 +356,9 @@ production.
 @cindex select
 Use poll instead of select. This allows sockets with descriptors
 @code{>= FD_SETSIZE}.  This option only works in conjunction with
-@code{MHD_USE_THREAD_PER_CONNECTION} (at this point).
+@code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you
+specify @code{MHD_USE_POLL} and the local platform does not support
+it, @code{MHD_start_daemon} will return NULL.
 
 @item MHD_SUPPRESS_DATE_NO_CLOCK
 @cindex date
@@ -581,7 +600,7 @@ Number (unsigned int) of threads in thread pool. Enable
 thread pooling by setting this value to to something
 greater than 1. Currently, thread model must be
 MHD_USE_SELECT_INTERNALLY if thread pooling is enabled
-(MHD_start_daemon returns @code{NULL} for an unsupported thread
+(@code{MHD_start_daemon} returns @code{NULL} for an unsupported thread
 model).
 
 @item MHD_OPTION_ARRAY

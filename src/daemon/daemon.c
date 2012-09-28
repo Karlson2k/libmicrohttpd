@@ -1147,27 +1147,32 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (MHD_YES == need_fcntl)
   {
     /* make socket non-inheritable */
-#if !WINDOWS
-    flags = fcntl (s, F_GETFD);
-    if ( ( (-1 == flags) ||
-	   ( (flags != (flags | FD_CLOEXEC)) &&
-	     (0 != fcntl (s, F_SETFD, flags | FD_CLOEXEC)) ) ) )
-#else
+#if WINDOWS
     DWORD dwFlags;
     if (!GetHandleInformation ((HANDLE) s, &dwFlags) ||
         ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
         !SetHandleInformation ((HANDLE) s, HANDLE_FLAG_INHERIT, 0)))
-#endif
       {
 #if HAVE_MESSAGES
-#if WINDOWS
         SetErrnoFromWinError (GetLastError ());
-#endif
 	MHD_DLOG (daemon,
 		  "Failed to make socket non-inheritable: %s\n", 
 		  STRERROR (errno));
 #endif
       }
+#else
+    flags = fcntl (s, F_GETFD);
+    if ( ( (-1 == flags) ||
+	   ( (flags != (flags | FD_CLOEXEC)) &&
+	     (0 != fcntl (s, F_SETFD, flags | FD_CLOEXEC)) ) ) )
+      {
+#if HAVE_MESSAGES
+	MHD_DLOG (daemon,
+		  "Failed to make socket non-inheritable: %s\n", 
+		  STRERROR (errno));
+#endif
+      }
+#endif
   }
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
@@ -1249,7 +1254,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  */
 int
 MHD_get_timeout (struct MHD_Daemon *daemon,
-		 unsigned MHD_LONG_LONG *timeout)
+		 MHD_UNSIGNED_LONG_LONG *timeout)
 {
   time_t earliest_deadline;
   time_t now;
@@ -1266,17 +1271,18 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   have_timeout = MHD_NO;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
-      if (0 != pos->connection_timeout) {
-        if (!have_timeout ||
-	    earliest_deadline > pos->last_activity + pos->connection_timeout)
-          earliest_deadline = pos->last_activity + pos->connection_timeout;
+      if (0 != pos->connection_timeout) 
+	{
+	  if (!have_timeout ||
+	      earliest_deadline > pos->last_activity + pos->connection_timeout)
+	    earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
-        if (  (0 != (daemon->options & MHD_USE_SSL)) &&
-	      (0 != gnutls_record_check_pending (pos->tls_session)) )
-	  earliest_deadline = 0;
+	  if (  (0 != (daemon->options & MHD_USE_SSL)) &&
+		(0 != gnutls_record_check_pending (pos->tls_session)) )
+	    earliest_deadline = 0;
 #endif
-        have_timeout = MHD_YES;
-      }
+	  have_timeout = MHD_YES;
+	}
     }
   if (MHD_NO == have_timeout)
     return MHD_NO;
@@ -1309,7 +1315,7 @@ MHD_select (struct MHD_Daemon *daemon,
   int max;
   struct timeval timeout;
   struct timeval *tv;
-  unsigned MHD_LONG_LONG ltimeout;
+  MHD_UNSIGNED_LONG_LONG ltimeout;
   int ds;
 
   timeout.tv_sec = 0;
@@ -1428,7 +1434,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   {
     struct pollfd p[2 + num_connections];
     struct MHD_Pollfd mp;
-    unsigned MHD_LONG_LONG ltimeout;
+    MHD_UNSIGNED_LONG_LONG ltimeout;
     unsigned int i;
     int timeout;
     unsigned int poll_server;
@@ -2073,38 +2079,30 @@ MHD_start_daemon_va (unsigned int options,
   int res_thread_create;
   int use_pipe;
 
+#ifndef HAVE_INET6
+  if (0 != (options & MHD_USE_IPv6))
+    return NULL;    
+#endif
+#ifndef HAVE_POLL_H
+  if (0 != (options & MHD_USE_POLL))
+    return NULL;    
+#endif
+#if ! HTTPS_SUPPORT
+  if (0 != (options & MHD_USE_SSL))
+    return NULL;    
+#endif
   if (NULL == dh)
     return NULL;
   if (NULL == (daemon = malloc (sizeof (struct MHD_Daemon))))
     return NULL;
   memset (daemon, 0, sizeof (struct MHD_Daemon));
+  /* try to open listen socket */
 #if HTTPS_SUPPORT
   if (0 != (options & MHD_USE_SSL))
     {
       gnutls_priority_init (&daemon->priority_cache,
 			    "NORMAL",
 			    NULL);
-    }
-#else
-  if (0 != (options & MHD_USE_SSL))
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, 
-		"HTTPS not supported\n");
-#endif
-      free (daemon);
-      return NULL;
-    }
-#endif
-#ifndef HAVE_POLL_H
-  if (0 != (options & MHD_USE_POLL))
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon, 
-		"poll not supported\n");
-#endif
-      free (daemon);
-      return NULL;
     }
 #endif
   daemon->socket_fd = -1;
@@ -2121,8 +2119,7 @@ MHD_start_daemon_va (unsigned int options,
   daemon->wpipe[0] = -1;
   daemon->wpipe[1] = -1;
 #if HAVE_MESSAGES
-  daemon->custom_error_log =
-    (void (*)(void *, const char *, va_list)) &vfprintf;
+  daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
   daemon->custom_error_log_cls = stderr;
 #endif
 #ifdef HAVE_LISTEN_SHUTDOWN
@@ -2178,7 +2175,6 @@ MHD_start_daemon_va (unsigned int options,
       free (daemon);
       return NULL;
     }
-
 #ifdef DAUTH_SUPPORT
   if (daemon->nonce_nc_size > 0) 
     {
@@ -2255,17 +2251,7 @@ MHD_start_daemon_va (unsigned int options,
     {
       /* try to open listen socket */
       if ((options & MHD_USE_IPv6) != 0)
-#if HAVE_INET6
 	socket_fd = create_socket (PF_INET6, SOCK_STREAM, 0);
-#else
-      {
-#if HAVE_MESSAGES
-	MHD_DLOG (daemon, 
-		  "AF_INET6 not supported\n");
-#endif
-	goto free_and_fail;
-      }
-#endif
       else
 	socket_fd = create_socket (PF_INET, SOCK_STREAM, 0);
       if (-1 == socket_fd)
@@ -2479,10 +2465,11 @@ MHD_start_daemon_va (unsigned int options,
 #if HAVE_PLIBC_FD
       if (SOCKET_ERROR ==
 	  ioctlsocket (plibc_fd_get_handle (socket_fd), FIONBIO, &sk_flags))
+        goto thread_failed;
 #else
       if (ioctlsocket (socket_fd, FIONBIO, &sk_flags) == SOCKET_ERROR)
-#endif // PLIBC_FD
         goto thread_failed;
+#endif // PLIBC_FD
 #endif // MINGW
 
       /* Allocate memory for pooled objects */

@@ -58,9 +58,10 @@ enum PP_State
   PP_Nested_PerformMarking,
   PP_Nested_ProcessEntryHeaders,
   PP_Nested_ProcessValueToBoundary,
-  PP_Nested_PerformCleanup,
+  PP_Nested_PerformCleanup
 
 };
+
 
 enum RN_State
 {
@@ -90,8 +91,9 @@ enum RN_State
   /**
    * Got a single dash, expect second dash.
    */
-  RN_Dash2 = 4,
+  RN_Dash2 = 4
 };
+
 
 /**
  * Bits for the globally known fields that
@@ -104,8 +106,9 @@ enum NE_State
   NE_content_name = 1,
   NE_content_type = 2,
   NE_content_filename = 4,
-  NE_content_transfer_encoding = 8,
+  NE_content_transfer_encoding = 8
 };
+
 
 /**
  * Internal state of the post-processor.  Note that the fields

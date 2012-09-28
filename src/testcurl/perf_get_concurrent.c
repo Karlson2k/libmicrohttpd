@@ -282,7 +282,7 @@ testExternalGet (int port)
   fd_set es;
   int max;
   struct timeval tv;
-  unsigned MHD_LONG_LONG tt;
+  MHD_UNSIGNED_LONG_LONG tt;
   int tret;
 
   d = MHD_start_daemon (MHD_USE_DEBUG,

@@ -147,14 +147,22 @@ extern "C"
  * standard int or a short.
  */
 #ifndef MHD_LONG_LONG
+/**
+ * @deprecated use MHD_UNSIGNED_LONG_LONG instead!
+ */
 #define MHD_LONG_LONG long long
+#define MHD_UNSIGNED_LONG_LONG unsigned long long
 #endif
-#ifndef MHD_LONG_LONG_PRINTF
 /**
  * Format string for printing a variable of type 'MHD_LONG_LONG'.
  * You should only redefine this if you also define MHD_LONG_LONG.
  */
+#ifndef MHD_LONG_LONG_PRINTF
+/**
+ * @deprecated use MHD_UNSIGNED_LONG_LONG_PRINTF instead!
+ */
 #define MHD_LONG_LONG_PRINTF "ll"
+#define MHD_UNSIGNED_LONG_LONG_PRINTF "%llu"
 #endif
 
 
@@ -390,6 +398,16 @@ enum MHD_FLAG
 
 
 /**
+ * Type of a callback function used for logging by MHD.
+ *
+ * @param cls closure
+ * @param fm format string (printf-style)
+ * @param ap arguments to 'fm'
+ */
+typedef void (*MHD_LogCallback)(void *cls, const char *fm, va_list ap);
+
+
+/**
  * MHD options.  Passed in the varargs portion of MHD_start_daemon.
  */
 enum MHD_OPTION
@@ -518,6 +536,7 @@ enum MHD_OPTION
    * This option must be followed by two arguments; the
    * first must be a pointer to a function
    * of type "void fun(void * arg, const char * fmt, va_list ap)"
+   * (also known as MHD_LogCallback)
    * and the second a pointer "void*" which will
    * be passed as the "arg" argument to "fun".
    * <p>
@@ -1151,7 +1170,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  *        necessiate the use of a timeout right now).
  */
 int MHD_get_timeout (struct MHD_Daemon *daemon, 
-		     unsigned MHD_LONG_LONG *timeout);
+		     MHD_UNSIGNED_LONG_LONG *timeout);
 
 
 /**

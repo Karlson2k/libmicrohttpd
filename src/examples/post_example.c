@@ -695,7 +695,7 @@ main (int argc, char *const *argv)
   fd_set ws;
   fd_set es;
   int max;
-  unsigned MHD_LONG_LONG mhd_timeout;
+  MHD_UNSIGNED_LONG_LONG mhd_timeout;
 
   if (argc != 2)
     {
