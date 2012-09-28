@@ -392,11 +392,11 @@ try_ready_normal_body (struct MHD_Connection *connection)
                                 connection->response_write_position));
   if ((0 == ret) &&
       (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)))
-    mhd_panic (mhd_panic_cls, __FILE__, __LINE__, 
+    mhd_panic (mhd_panic_cls, __FILE__, __LINE__
 #if HAVE_MESSAGES
-	       "API violation"
+	       , "API violation"
 #else
-	       NULL
+	       , NULL
 #endif
 	       );
   if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
