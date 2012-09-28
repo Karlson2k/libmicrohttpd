@@ -606,12 +606,9 @@ MHD_handle_connection (void *data)
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
-#ifdef HAVE_POLL_H
-      if (0 == (con->daemon->options & MHD_USE_POLL)) 
+
+      if (0 == (con->daemon->options & MHD_USE_POLL))
 	{
-#else
-	{
-#endif
 	  /* use select */
 	  FD_ZERO (&rs);
 	  FD_ZERO (&ws);
@@ -780,6 +777,12 @@ send_param_adapter (struct MHD_Connection *connection,
 
 
 /**
+ * Signature of main function for a thread.
+ */
+typedef void *(*ThreadStartRoutine)(void *cls);
+
+
+/**
  * Create a thread and set the attributes according to our options.
  * 
  * @param thread handle to initialize
@@ -791,7 +794,7 @@ send_param_adapter (struct MHD_Connection *connection,
 static int
 create_thread (pthread_t * thread,
 	       const struct MHD_Daemon *daemon,
-	       void *(*start_routine)(void*),
+	       ThreadStartRoutine start_routine,
 	       void *arg)
 {
   pthread_attr_t attr;
@@ -965,12 +968,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   /* non-blocking sockets are required on most systems and for GNUtls;
      however, they somehow cause serious problems on CYGWIN (#1824) */
 #ifdef CYGWIN
-  if
-#if HTTPS_SUPPORT
-    (0 != (daemon->options & MHD_USE_SSL))
-#else
-    (0)
-#endif
+  if (0 != (daemon->options & MHD_USE_SSL))
 #endif
   {
     /* make socket non-blocking */
@@ -2087,6 +2085,27 @@ MHD_start_daemon_va (unsigned int options,
 			    "NORMAL",
 			    NULL);
     }
+#else
+  if (0 != (options & MHD_USE_SSL))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, 
+		"HTTPS not supported\n");
+#endif
+      free (daemon);
+      return NULL;
+    }
+#endif
+#ifndef HAVE_POLL_H
+  if (0 != (options & MHD_USE_POLL))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, 
+		"poll not supported\n");
+#endif
+      free (daemon);
+      return NULL;
+    }
 #endif
   daemon->socket_fd = -1;
   daemon->options = (enum MHD_OPTION) options;
@@ -2147,6 +2166,7 @@ MHD_start_daemon_va (unsigned int options,
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
 #endif
+
 
   if (MHD_YES != parse_options_va (daemon, &servaddr, ap))
     {
