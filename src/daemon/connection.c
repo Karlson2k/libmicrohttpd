@@ -364,7 +364,7 @@ connection_close_error (struct MHD_Connection *connection,
 static int
 try_ready_normal_body (struct MHD_Connection *connection)
 {
-  int ret;
+  ssize_t ret;
   struct MHD_Response *response;
 
   response = connection->response;
@@ -433,7 +433,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
 static int
 try_ready_chunked_body (struct MHD_Connection *connection)
 {
-  int ret;
+  ssize_t ret;
   char *buf;
   struct MHD_Response *response;
   size_t size;
@@ -508,7 +508,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     ret = 0xFFFFFF;
   snprintf (cbuf, 
 	    sizeof (cbuf),
-	    "%X\r\n", ret);
+	    "%X\r\n", (unsigned int) ret);
   cblen = strlen (cbuf);
   EXTRA_CHECK (cblen <= sizeof (cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen], cbuf, cblen);
