@@ -592,9 +592,12 @@ get_date_string (char *date)
   SPRINTF (date,
            "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
            days[now.tm_wday % 7],
-           now.tm_mday,
+           (unsigned int) now.tm_mday,
            mons[now.tm_mon % 12],
-           1900 + now.tm_year, now.tm_hour, now.tm_min, now.tm_sec);
+           (unsigned int) (1900 + now.tm_year),
+	   (unsigned int) now.tm_hour, 
+	   (unsigned int) now.tm_min, 
+	   (unsigned int) now.tm_sec);
 }
 
 

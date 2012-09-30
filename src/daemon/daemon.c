@@ -1273,8 +1273,8 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
     {
       if (0 != pos->connection_timeout) 
 	{
-	  if (!have_timeout ||
-	      earliest_deadline > pos->last_activity + pos->connection_timeout)
+	  if ( (! have_timeout) ||
+	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
 	  if (  (0 != (daemon->options & MHD_USE_SSL)) &&
