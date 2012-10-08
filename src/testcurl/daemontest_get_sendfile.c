@@ -127,7 +127,7 @@ testInternalGet ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -180,7 +180,7 @@ testMultithreadedGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   /* NOTE: use of CONNECTTIMEOUT without also
      setting NOSIGNAL results in really weird
      crashes on my system! */
@@ -230,7 +230,7 @@ testMultithreadedPoolGet ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   /* NOTE: use of CONNECTTIMEOUT without also
      setting NOSIGNAL results in really weird
      crashes on my system!*/
@@ -289,7 +289,7 @@ testExternalGet ()
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   /* NOTE: use of CONNECTTIMEOUT without also
      setting NOSIGNAL results in really weird
      crashes on my system! */
@@ -421,7 +421,7 @@ testUnknownPortGet ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else

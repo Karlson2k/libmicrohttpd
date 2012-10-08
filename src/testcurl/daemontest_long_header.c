@@ -126,7 +126,7 @@ testLongUrlGet ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -201,7 +201,7 @@ testLongHeaderGet ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else

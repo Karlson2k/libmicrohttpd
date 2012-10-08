@@ -197,7 +197,7 @@ testDigestAuth ()
   curl_easy_setopt (c, CURLOPT_USERPWD, "testuser:testpass");
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   /* NOTE: use of CONNECTTIMEOUT without also
      setting NOSIGNAL results in really weird

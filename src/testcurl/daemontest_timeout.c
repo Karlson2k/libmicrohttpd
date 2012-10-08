@@ -161,7 +161,7 @@ testWithoutTimeout ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
@@ -216,7 +216,7 @@ testWithTimeout ()
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 15L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   // NOTE: use of CONNECTTIMEOUT without also
   //   setting NOSIGNAL results in really weird
   //   crashes on my system!
