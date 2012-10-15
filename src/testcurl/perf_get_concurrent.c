@@ -331,7 +331,7 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);
   errorCount += testExternalGet (port++);
-#if !WINDOWS
+#ifndef WINDOWS
   errorCount += testInternalGet (port++, MHD_USE_POLL);
   errorCount += testMultithreadedGet (port++, MHD_USE_POLL);
   errorCount += testMultithreadedPoolGet (port++, MHD_USE_POLL);

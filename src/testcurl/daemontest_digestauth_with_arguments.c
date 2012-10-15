@@ -137,7 +137,7 @@ testDigestAuth ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-#if !WINDOWS
+#ifndef WINDOWS
   fd = open("/dev/urandom", O_RDONLY);
   if (-1 == fd)
     {

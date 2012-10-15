@@ -1147,7 +1147,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (MHD_YES == need_fcntl)
   {
     /* make socket non-inheritable */
-#if WINDOWS
+#ifdef WINDOWS
     DWORD dwFlags;
     if (!GetHandleInformation ((HANDLE) s, &dwFlags) ||
         ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
@@ -1998,7 +1998,7 @@ create_socket (int domain, int type, int protocol)
   int ctype = SOCK_STREAM | sock_cloexec;
   int fd;
   int flags;
-#if WINDOWS
+#ifdef WINDOWS
   DWORD dwFlags;
 #endif
  
@@ -2015,19 +2015,19 @@ create_socket (int domain, int type, int protocol)
   if (0 != sock_cloexec)
     return fd; /* this is it */  
   /* flag was not set during 'socket' call, let's try setting it manually */
-#if !WINDOWS
+#ifndef WINDOWS
   flags = fcntl (fd, F_GETFD);
   if (flags < 0)
 #else
   if (!GetHandleInformation ((HANDLE) fd, &dwFlags))
 #endif
   {
-#if WINDOWS
+#ifdef WINDOWS
     SetErrnoFromWinError (GetLastError ());
 #endif
     return fd; /* good luck */
   }
-#if !WINDOWS
+#ifndef WINDOWS
   if (flags == (flags | FD_CLOEXEC))
     return fd; /* already set */
   flags |= FD_CLOEXEC;
@@ -2038,7 +2038,7 @@ create_socket (int domain, int type, int protocol)
   if (!SetHandleInformation ((HANDLE) fd, HANDLE_FLAG_INHERIT, 0))
 #endif
   {
-#if WINDOWS
+#ifdef WINDOWS
     SetErrnoFromWinError (GetLastError ());
 #endif
     return fd; /* good luck */

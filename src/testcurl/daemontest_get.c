@@ -499,7 +499,7 @@ main (int argc, char *const *argv)
   errorCount += testUnknownPortGet (0);
   errorCount += testStopRace (0);
   errorCount += testExternalGet ();
-#if !WINDOWS
+#ifndef WINDOWS
   errorCount += testInternalGet (MHD_USE_POLL);
   errorCount += testMultithreadedGet (MHD_USE_POLL);
   errorCount += testMultithreadedPoolGet (MHD_USE_POLL);

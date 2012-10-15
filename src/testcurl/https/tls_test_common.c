@@ -276,7 +276,7 @@ gen_test_file_url (char *url, int port)
                strerror (errno));
       ret = -1;
     }
-#if WINDOWS
+#ifdef WINDOWS
   {
     int i;
     for (i = 0; i < doc_path_len; i++)

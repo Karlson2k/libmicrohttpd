@@ -1,3 +1,7 @@
+Tue Oct 16 01:33:55 CEST 2012
+	Consistently use "#ifdef" and "#ifndef" WINDOWS, and not
+	sometimes "#if". -CG
+
 Sat Sep  1 20:51:21 CEST 2012
 	Releasing libmicrohttpd 0.9.22. -CG
 
