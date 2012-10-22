@@ -1,3 +1,8 @@
+Mon Oct 22 13:05:01 CEST 2012
+	Immediately do a second read if we get a full buffer from
+	TLS as there might be more data in the TLS buffers even if
+	there is no activity on the socket. -CG
+
 Tue Oct 16 01:33:55 CEST 2012
 	Consistently use "#ifdef" and "#ifndef" WINDOWS, and not
 	sometimes "#if". -CG

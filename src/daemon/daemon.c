@@ -386,6 +386,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
   int res;
 
+  connection->tls_read_ready = MHD_NO;
   res = gnutls_record_recv (connection->tls_session, other, i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
@@ -401,6 +402,8 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       errno = EPIPE;
       return res;
     }
+  if (res == i)
+    connection->tls_read_ready = MHD_YES;
   return res;
 }
 
@@ -606,7 +609,15 @@ MHD_handle_connection (void *data)
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
-
+#if HTTPS_SUPPORT
+      if (MHD_YES == con->tls_read_ready)
+	{
+	  /* do not block (more data may be inside of TLS buffers waiting for us) */
+	  tv.tv_sec = 0;
+	  tv.tv_usec = 0;
+	  tvp = &tv;
+	}
+#endif
       if (0 == (con->daemon->options & MHD_USE_POLL))
 	{
 	  /* use select */
@@ -629,7 +640,11 @@ MHD_handle_connection (void *data)
 	      break;
 	    }
 	  /* call appropriate connection handler if necessary */
-	  if (FD_ISSET (con->socket_fd, &rs))
+	  if ( (FD_ISSET (con->socket_fd, &rs))
+#if HTTPS_SUPPORT
+		   || (MHD_YES == con->tls_read_ready) 
+#endif
+	       )
 	    con->read_handler (con);
 	  if (FD_ISSET (con->socket_fd, &ws))
 	    con->write_handler (con);
@@ -660,7 +675,11 @@ MHD_handle_connection (void *data)
 #endif
 	      break;
 	    }
-	  if (0 != (p[0].revents & POLLIN)) 
+	  if ( (0 != (p[0].revents & POLLIN)) 
+#if HTTPS_SUPPORT
+	       || (MHD_YES == con->tls_read_ready) 
+#endif
+	       )
 	    con->read_handler (con);        
 	  if (0 != (p[0].revents & POLLOUT)) 
 	    con->write_handler (con);        
@@ -1271,6 +1290,14 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   have_timeout = MHD_NO;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
+#if HTTPS_SUPPORT
+      if (MHD_YES == pos->tls_read_ready)
+	{
+	  earliest_deadline = 0;
+	  have_timeout = MHD_YES;
+	  break;
+	}
+#endif
       if (0 != pos->connection_timeout) 
 	{
 	  if ( (! have_timeout) ||
@@ -1397,7 +1424,11 @@ MHD_select (struct MHD_Daemon *daemon,
           ds = pos->socket_fd;
           if (ds != -1)
             {
-              if (FD_ISSET (ds, &rs))
+              if ( (FD_ISSET (ds, &rs))
+#if HTTPS_SUPPORT
+		   || (MHD_YES == pos->tls_read_ready) 
+#endif
+		   )
                 pos->read_handler (pos);
               if (FD_ISSET (ds, &ws))
                 pos->write_handler (pos);

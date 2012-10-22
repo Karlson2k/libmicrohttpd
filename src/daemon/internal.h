@@ -750,6 +750,12 @@ struct MHD_Connection
    */
   int cipher;
 
+  /**
+   * Could it be that we are ready to read due to TLS buffers
+   * even though the socket is not?
+   */
+  int tls_read_ready;
+
 #endif
 };
 
