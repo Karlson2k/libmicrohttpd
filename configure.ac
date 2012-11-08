@@ -184,6 +184,8 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 # Check for optional headers
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h winsock2.h ws2tcpip.h])
 
+AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
+
 # Check for plibc.h from system, if not found, use our own
 AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
 AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    

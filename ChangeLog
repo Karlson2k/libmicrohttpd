@@ -1,3 +1,7 @@
+Thu Nov  8 22:32:59 CET 2012
+	Ship our own version of tsearch and friends if not provided by platform,
+	so that MHD works nicely on Android. -JJ
+
 Mon Oct 22 13:05:01 CEST 2012
 	Immediately do a second read if we get a full buffer from
 	TLS as there might be more data in the TLS buffers even if
