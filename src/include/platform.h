@@ -53,9 +53,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#if !defined(MINGW) && !defined(__SYMBIAN32__)
-#include <search.h>
-#endif
 #include <stddef.h>
 #undef HAVE_CONFIG_H
 #include <pthread.h>
