@@ -31,6 +31,12 @@
 #include "memorypool.h"
 #include <limits.h>
 
+#if HAVE_SEARCH_H
+#include <search.h>
+#else
+#include "tsearch.h"
+#endif
+
 #if HTTPS_SUPPORT
 #include "connection_https.h"
 #include <gnutls/gnutls.h>

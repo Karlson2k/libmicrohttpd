@@ -29,6 +29,11 @@ if USE_COVERAGE
   AM_CFLAGS = --coverage
 endif
 
+if !HAVE_TSEARCH
+libmicrohttpd_la_SOURCES += \
+  tsearch.c tsearch.h
+endif
+
 if HAVE_POSTPROCESSOR
 libmicrohttpd_la_SOURCES += \
   postprocessor.c
