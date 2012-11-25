@@ -1418,16 +1418,82 @@ MHD_create_response_from_fd_at_offset (size_t size,
 				       off_t offset);
 
 
+#if 0
 /**
- * Function called after a protocol upgrade response was sent
+ * Bits in an event mask that specifies which actions
+ * MHD should perform and under which conditions it
+ * should call the 'upgrade' callback again.
+ */ 
+enum MHD_UpgradeEventMask
+{
+
+  /**
+   * Never call the handler again; finish sending bytes
+   * in the 'write' buffer and then close the socket.
+   */
+  MHD_UPGRADE_EVENT_TERMINATE = 0,
+
+  /**
+   * Call the handler again once there is data ready
+   * for reading.
+   */
+  MHD_UPGRADE_EVENT_READ = 1,
+
+  /**
+   * Call the handler again once there is buffer space
+   * available for writing.
+   */
+  MHD_UPGRADE_EVENT_WRITE = 2,
+
+  /**
+   * Do not wait on any socket actions, we're waiting on
+   * an 'external' event.  Run the function again once
+   * the 'select' call returns _without_ this socket even
+   * being involved in the select sets (useful in 
+   * conjunction with the external select loop).
+   */
+  MHD_UPGRADE_EVENT_EXTERNAL = 4,
+
+  /**
+   * Uncork the TCP write buffer (that is, tell the OS to transmit all
+   * bytes in the buffer now, and to not use TCP-CORKing).  This is
+   * not really an event flag, but an additional request (which MHD
+   * may ignore if the platform does not support it).  Note that
+   * only returning 'CORK' will *also* cause the socket to be closed!
+   */
+  MHD_UPGRADE_EVENT_CORK = 8  
+    
+};
+
+
+/**
+ * Function called after a protocol "upgrade" response was sent
  * successfully and the socket should now be controlled by some
- * protocol other than HTTP.  Note that from this point on, MHD will
- * consider this connection to be "complete", so it will no longer be
- * counted as an active connection for the
- * MHD_OPTION_PER_IP_CONNECTION_LIMIT or the
- * MHD_OPTION_CONNECTION_LIMIT.  After this function returns, the
+ * protocol other than HTTP. 
+ *
+ * Any data received on the socket will be made available in
+ * 'data_in'.  The function should update 'data_in_size' to
+ * reflect the number of bytes consumed from 'data_in' (the remaining
+ * bytes will be made available in the next call to the handler).
+ *
+ * Any data that should be transmitted on the socket should be
+ * stored in 'data_out'.  '*data_out_size' is initially set to
+ * the available buffer space in 'data_out'.  It should be set to
+ * the number of bytes stored in 'data_out' (which can be zero).
+ *
+ * The return value is a BITMASK that indicates how the function
+ * intends to interact with the event loop.  It can request to be
+ * notified for reading, writing, request to UNCORK the send buffer
+ * (which MHD is allowed to ignore, if it is not possible to uncork on
+ * the local platform), to wait for the 'external' select loop to
+ * trigger another round.  It is also possible to specify "no events"
+ * to terminate the connection; in this case, the
  * MHD_RequestCompletedCallback will be called and all resources of
- * the connection (except for the socket itself) will be released.
+ * the connection will be released.
+ *
+ * Except when in 'thread-per-connection' mode, implementations
+ * of this function should never block (as it will still be called
+ * from within the main event loop).
  *
  * @param cls closure
  * @param connection original HTTP connection handle,
@@ -1436,24 +1502,29 @@ MHD_create_response_from_fd_at_offset (size_t size,
  * @param con_cls value as set by the last call to the
  *                MHD_AccessHandlerCallback; will afterwards
  *                be also given to the MHD_RequestCompletedCallback
- * @param upgrade_socket TCP socket that was upgraded from HTTP
- *                to some other protocol.  This function must
- *                take over the communication and is ultimately
- *                responsible for closing the socket.
+ * @param data_in_size available data for reading, set to data read
+ * @param data_in data read from the socket
+ * @param data_out_size available buffer for writing, set to bytes 
+ *                written to 'data_out'
+ * @param data_out buffer for sending data via the connection
+ * @return desired actions for event handling loop
  */
-typedef void (*MHD_UpgradeHandler)(void *cls,
-				   struct MHD_Connection *connection,
-				   void **con_cls,
-				   int upgrade_socket);
+typedef enum MHD_UpgradeEventMask (*MHD_UpgradeHandler)(void *cls,
+							struct MHD_Connection *connection,
+							void **con_cls,
+							size_t *data_in_size,
+							const char *data_in,
+							size_t *data_out_size,
+							char *data_out);
 
-#if 0
+
 /**
  * Create a response object that can be used for 101 UPGRADE
  * responses, for example to implement websockets.  After sending the
- * response, control over the socket is given to the callback (which
+ * response, control over the data stream is given to the callback (which
  * can then, for example, start some bi-directional communication).
  * If the response is queued for multiple connections, the callback
- * will be called with a socket for each connection.  The callback
+ * will be called for each connection.  The callback
  * will ONLY be called if the response header was successfully passed
  * to the OS; if there are communication errors before, the usual MHD
  * connection error handling code will be performed.
@@ -1461,12 +1532,12 @@ typedef void (*MHD_UpgradeHandler)(void *cls,
  * Setting the correct HTTP code (i.e. MHD_HTTP_SWITCHING_PROTOCOLS)
  * and setting correct HTTP headers for the upgrade must be done
  * manually (this way, it is possible to implement most existing
- * WebSocket version using this API; in fact, this API might be useful
- * for any protocol switch, not just web sockets).  Note that
+ * WebSocket versions using this API; in fact, this API might be useful
+ * for any protocol switch, not just websockets).  Note that
  * draft-ietf-hybi-thewebsocketprotocol-00 cannot be implemented this
  * way as the header "HTTP/1.1 101 WebSocket Protocol Handshake"
  * cannot be generated; instead, MHD will always produce "HTTP/1.1 101
- * Switching Protocols" (if the response 101 is used).
+ * Switching Protocols" (if the response code 101 is used).
  *
  * As usual, the response object can be extended with header
  * information and then be used any number of times (as long as the
