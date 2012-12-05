@@ -1,3 +1,11 @@
+Wed Dec  5 19:22:26 CET 2012
+	Fixing parameter loss of POST parameters with IE8 and Chrome
+	in the PostProcessor as the code failed to properly handle
+	partial data. -MM
+
+Fri Nov  9 21:36:46 CET 2012
+	Releasing libmicrohttpd 0.9.23. -CG
+
 Thu Nov  8 22:32:59 CET 2012
 	Ship our own version of tsearch and friends if not provided by platform,
 	so that MHD works nicely on Android. -JJ

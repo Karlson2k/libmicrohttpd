@@ -21,14 +21,14 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.22],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd], [0.9.23],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules])
 AM_CONFIG_HEADER([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
 LIB_VERSION_CURRENT=26
-LIB_VERSION_REVISION=1
+LIB_VERSION_REVISION=2
 LIB_VERSION_AGE=16
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)

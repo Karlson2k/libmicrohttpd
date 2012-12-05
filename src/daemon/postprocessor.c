@@ -494,6 +494,7 @@ find_boundary (struct MHD_PostProcessor *pp,
     {
       if (pp->buffer_pos == pp->buffer_size)
         pp->state = PP_Error;   /* out of memory */
+      ++(*ioffptr);
       return MHD_NO;            /* not enough data */
     }
   if ((0 != memcmp ("--", buf, 2)) || (0 != memcmp (&buf[2], boundary, blen)))
@@ -841,12 +842,11 @@ post_process_multipart (struct MHD_PostProcessor *pp,
            * > anything that appears before the first boundary delimiter
            * > line or after the last one.
            */
-          if (MHD_NO == find_boundary (pp,
-                                       pp->boundary,
-                                       pp->blen,
-                                       &ioff,
-                                       PP_ProcessEntryHeaders, PP_Done))
-            ++ioff;
+          (void) find_boundary (pp,
+				pp->boundary,
+				pp->blen,
+				&ioff,
+				PP_ProcessEntryHeaders, PP_Done);
           break;
         case PP_NextBoundary:
           if (MHD_NO == find_boundary (pp,
