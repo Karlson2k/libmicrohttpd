@@ -1,3 +1,13 @@
+Thu Dec  6 10:14:44 CET 2012
+	Force adding "Connection: close" header to response if
+	client asked for connection to be closed (so far, we
+	did close the connection, but did not send the
+	"Connection: close" header explicitly, which some clients
+	seem to dislike. (See discussion on mailinglist).
+	Also, if there is already a transfer-encoding other
+	than 'chunked' set by the application, we also now close
+	the connection if the response is of unknown size. -CG
+
 Wed Dec  5 19:22:26 CET 2012
 	Fixing parameter loss of POST parameters with IE8 and Chrome
 	in the PostProcessor as the code failed to properly handle

@@ -529,43 +529,74 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 static void
 add_extra_headers (struct MHD_Connection *connection)
 {
-  const char *have;
+  const char *have_close;
+  const char *client_close;
+  const char *have_encoding;
   char buf[128];
+  int add_close;
 
+  client_close = MHD_lookup_connection_value (connection,
+					      MHD_HEADER_KIND,
+					      MHD_HTTP_HEADER_CONNECTION);
+  /* we only care about 'close', everything else is ignored */
+  if ( (NULL != client_close) && (0 != strcasecmp (client_close, "close")) )
+    client_close = NULL;
+  have_close = MHD_get_response_header (connection->response,
+					MHD_HTTP_HEADER_CONNECTION);
+  if ( (NULL != have_close) && (0 != strcasecmp (have_close, "close")) )
+    have_close = NULL;
   connection->have_chunked_upload = MHD_NO;
+  add_close = MHD_NO;
   if (MHD_SIZE_UNKNOWN == connection->response->total_size)
     {
-      have = MHD_get_response_header (connection->response,
-                                      MHD_HTTP_HEADER_CONNECTION);
-      if ((NULL == have) || (0 != strcasecmp (have, "close")))
+      /* size is unknown, need to either to HTTP 1.1 chunked encoding or
+	 close the connection */
+      if (NULL == have_close)
         {
-          if ((NULL != connection->version) &&
-              (0 == strcasecmp (connection->version, MHD_HTTP_VERSION_1_1)))
+	  /* 'close' header doesn't exist yet, see if we need to add one;
+	     if the client asked for a close, no need to start chunk'ing */
+          if ((NULL == client_close) &&
+	      (NULL != connection->version) &&
+              (0 == strcasecmp (connection->version, MHD_HTTP_VERSION_1_1))) 
             {
               connection->have_chunked_upload = MHD_YES;
-              have = MHD_get_response_header (connection->response,
-                                              MHD_HTTP_HEADER_TRANSFER_ENCODING);
-              if (NULL == have)
+              have_encoding = MHD_get_response_header (connection->response,
+						       MHD_HTTP_HEADER_TRANSFER_ENCODING);
+              if (NULL == have_encoding)
                 MHD_add_response_header (connection->response,
                                          MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                          "chunked");
+	      else if (0 != strcasecmp (have_encoding, "chunked"))
+		add_close = MHD_YES; /* application already set some strange encoding, can't do 'chunked' */
             }
           else
             {
-              MHD_add_response_header (connection->response,
-                                       MHD_HTTP_HEADER_CONNECTION, "close");
+	      /* HTTP not 1.1 or client asked for close => set close header */
+	      add_close = MHD_YES;
             }
         }
     }
-  else if (NULL == MHD_get_response_header (connection->response,
-                                            MHD_HTTP_HEADER_CONTENT_LENGTH))
+  else
     {
-      SPRINTF (buf,
-               MHD_UNSIGNED_LONG_LONG_PRINTF,
-	       (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
-      MHD_add_response_header (connection->response,
-                               MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
+      /* check if we should add a 'close' anyway */
+      if ( (NULL != client_close) &&
+	   (NULL == have_close) )
+	add_close = MHD_YES; /* client asked for it, so add it */
+
+      /* if not present, add content length */
+      if (NULL == MHD_get_response_header (connection->response,
+					   MHD_HTTP_HEADER_CONTENT_LENGTH))
+	{
+	  SPRINTF (buf,
+		   MHD_UNSIGNED_LONG_LONG_PRINTF,
+		   (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
+	  MHD_add_response_header (connection->response,
+				   MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
+	}
     }
+  if (MHD_YES == add_close)
+    MHD_add_response_header (connection->response,
+			     MHD_HTTP_HEADER_CONNECTION, "close");
 }
 
 
