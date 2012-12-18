@@ -1836,40 +1836,36 @@ parse_connection_headers (struct MHD_Connection *connection)
       return;
     }
 
-  clen = MHD_lookup_connection_value (connection,
-                                      MHD_HEADER_KIND,
-                                      MHD_HTTP_HEADER_CONTENT_LENGTH);
-  if (clen != NULL)
+  connection->remaining_upload_size = 0;
+  enc = MHD_lookup_connection_value (connection,
+				     MHD_HEADER_KIND,
+				     MHD_HTTP_HEADER_TRANSFER_ENCODING);
+  if (enc != NULL)
     {
-      cval = strtoul (clen, &end, 10);
-      if ( ('\0' != *end) ||
-	 ( (LONG_MAX == cval) && (errno == ERANGE) ) )
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (connection->daemon,
-                    "Failed to parse `%s' header `%s', closing connection.\n",
-                    MHD_HTTP_HEADER_CONTENT_LENGTH, clen);
-#endif
-	  CONNECTION_CLOSE_ERROR (connection, NULL);
-          return;
-        }
-      connection->remaining_upload_size = cval;
+      connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
+      if (0 == strcasecmp (enc, "chunked"))
+        connection->have_chunked_upload = MHD_YES;
     }
   else
     {
-      enc = MHD_lookup_connection_value (connection,
-					 MHD_HEADER_KIND,
-					 MHD_HTTP_HEADER_TRANSFER_ENCODING);
-      if (NULL == enc)
+      clen = MHD_lookup_connection_value (connection,
+					  MHD_HEADER_KIND,
+					  MHD_HTTP_HEADER_CONTENT_LENGTH);
+      if (clen != NULL)
         {
-          /* this request (better) not have a body */
-          connection->remaining_upload_size = 0;
-        }
-      else
-        {
-          connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
-          if (0 == strcasecmp (enc, "chunked"))
-	    connection->have_chunked_upload = MHD_YES;
+          cval = strtoul (clen, &end, 10);
+          if ( ('\0' != *end) ||
+	     ( (LONG_MAX == cval) && (errno == ERANGE) ) )
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (connection->daemon,
+                    "Failed to parse `%s' header `%s', closing connection.\n",
+                    MHD_HTTP_HEADER_CONTENT_LENGTH, clen);
+#endif
+	      CONNECTION_CLOSE_ERROR (connection, NULL);
+              return;
+            }
+          connection->remaining_upload_size = cval;
         }
     }
 }
