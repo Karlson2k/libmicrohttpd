@@ -1,3 +1,7 @@
+Sun Jan  6 21:10:13 CET 2013
+	Enable use of "MHD_create_response_from_callback" with
+	body size of zeor. -CG
+
 Tue Dec 25 16:16:30 CET 2012
 	Releasing libmicrohttpd 0.9.24. -CG
 

@@ -370,6 +370,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
   response = connection->response;
   if (NULL == response->crc)
     return MHD_YES;
+  if (0 == response->data_size)
+    return MHD_YES; /* 0-byte response is always ready */
   if ( (response->data_start <=
 	connection->response_write_position) &&
        (response->data_size + response->data_start >
@@ -477,10 +479,13 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   else
     {
       /* buffer not in range, try to fill it */
-      ret = response->crc (response->crc_cls,
-			   connection->response_write_position,
-			   &connection->write_buffer[sizeof (cbuf)],
-			   connection->write_buffer_size - sizeof (cbuf) - 2);
+      if (0 == response->data_size)
+	ret = 0; /* response must be empty, don't bother calling crc */
+      else
+	ret = response->crc (response->crc_cls,
+			     connection->response_write_position,
+			     &connection->write_buffer[sizeof (cbuf)],
+			     connection->write_buffer_size - sizeof (cbuf) - 2);
     }
   if (MHD_CONTENT_READER_END_WITH_ERROR == ret)
     {
@@ -490,7 +495,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 			      "Closing connection (error generating response)\n");
       return MHD_NO;
     }
-  if (MHD_CONTENT_READER_END_OF_STREAM == ret) 
+  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
+       (0 == response->data_size) )
     {
       /* end of message, signal other side! */
       strcpy (connection->write_buffer, "0\r\n");
@@ -499,7 +505,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
       response->total_size = connection->response_write_position;
       return MHD_YES;
     }
-  if (0 == ret)
+  if (0 == ret) 
     {
       connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
       return MHD_NO;
