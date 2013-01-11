@@ -1065,7 +1065,9 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
   /* These internal strings need cleaning up since
      the post-processing may have been interrupted
      at any stage */
-  if ((pp->xbuf_pos > 0) || (pp->state != PP_Done))
+  if ((pp->xbuf_pos > 0) || 
+      ( (pp->state != PP_Done) &&
+	(pp->state != PP_ExpectNewLine)))
     ret = MHD_NO;
   else
     ret = MHD_YES;

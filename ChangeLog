@@ -1,3 +1,7 @@
+Fri Jan 11 23:21:55 CET 2013
+	Also return MHD_YES from MHD_destroy_post_processor if
+	we did not get '\r\n' in the upload. -CG
+
 Sun Jan  6 21:10:13 CET 2013
 	Enable use of "MHD_create_response_from_callback" with
 	body size of zeor. -CG
