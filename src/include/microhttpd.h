@@ -1026,7 +1026,7 @@ typedef void
  * POST data.
  *
  * @param cls user-specified closure
- * @param kind type of the value
+ * @param kind type of the value, always MHD_POSTDATA_KIND when called from MHD
  * @param key 0-terminated key for the value
  * @param filename name of the uploaded file, NULL if not known
  * @param content_type mime-type of the data, NULL if not known

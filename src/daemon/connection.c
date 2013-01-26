@@ -370,7 +370,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
   response = connection->response;
   if (NULL == response->crc)
     return MHD_YES;
-  if (0 == response->data_size)
+  if (0 == response->total_size)
     return MHD_YES; /* 0-byte response is always ready */
   if ( (response->data_start <=
 	connection->response_write_position) &&
@@ -479,7 +479,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   else
     {
       /* buffer not in range, try to fill it */
-      if (0 == response->data_size)
+      if (0 == response->total_size)
 	ret = 0; /* response must be empty, don't bother calling crc */
       else
 	ret = response->crc (response->crc_cls,
@@ -496,7 +496,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
       return MHD_NO;
     }
   if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
-       (0 == response->data_size) )
+       (0 == response->total_size) )
     {
       /* end of message, signal other side! */
       strcpy (connection->write_buffer, "0\r\n");
