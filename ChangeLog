@@ -1,3 +1,7 @@
+Tue Jan 29 21:27:56 CET 2013
+	Make code work with PlibC 0.1.7 (which removed plibc_init_utf8).
+	Only relevant for W32. Fixes #2734. -CG
+
 Sat Jan 26 21:26:48 CET 2013
 	Fixing regression introduced Jan 6 (test on data_size instead
 	of total_size. -CG

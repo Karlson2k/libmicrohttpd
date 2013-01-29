@@ -2836,7 +2836,7 @@ MHD_init ()
   mhd_panic_cls = NULL;
 
 #ifdef WINDOWS
-  plibc_init_utf8 ("GNU", "libmicrohttpd", 1);
+  plibc_init ("GNU", "libmicrohttpd");
 #endif
 #if HTTPS_SUPPORT
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
