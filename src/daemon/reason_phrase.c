@@ -33,13 +33,13 @@
 
 static const char *invalid_hundred[] = { NULL };
 
-static const char *one_hundred[] = {
+static const char *const one_hundred[] = {
   "Continue",
   "Switching Protocols",
   "Processing"
 };
 
-static const char *two_hundred[] = {
+static const char *const two_hundred[] = {
   "OK",
   "Created",
   "Accepted",
@@ -50,7 +50,7 @@ static const char *two_hundred[] = {
   "Multi Status"
 };
 
-static const char *three_hundred[] = {
+static const char *const three_hundred[] = {
   "Multiple Choices",
   "Moved Permanently",
   "Moved Temporarily",
@@ -61,7 +61,7 @@ static const char *three_hundred[] = {
   "Temporary Redirect"
 };
 
-static const char *four_hundred[] = {
+static const char *const four_hundred[] = {
   "Bad Request",
   "Unauthorized",
   "Payment Required",
@@ -116,7 +116,7 @@ static const char *four_hundred[] = {
   "Unavailable For Legal Reasons"
 };
 
-static const char *five_hundred[] = {
+static const char *const five_hundred[] = {
   "Internal Server Error",
   "Not Implemented",
   "Bad Gateway",
@@ -134,7 +134,7 @@ static const char *five_hundred[] = {
 struct MHD_Reason_Block
 {
   unsigned int max;
-  const char **data;
+  const char *const*data;
 };
 
 #define BLOCK(m) { (sizeof(m) / sizeof(char*)), m }

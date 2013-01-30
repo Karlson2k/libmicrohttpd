@@ -1,3 +1,7 @@
+Wed Jan 30 13:09:30 CET 2013
+	Adding more 'const' to allow keeping of reason phrases in ROM.
+	(see mailinglist). -CG/MV
+
 Tue Jan 29 21:27:56 CET 2013
 	Make code work with PlibC 0.1.7 (which removed plibc_init_utf8).
 	Only relevant for W32. Fixes #2734. -CG
