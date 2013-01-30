@@ -615,9 +615,9 @@ add_extra_headers (struct MHD_Connection *connection)
 static void
 get_date_string (char *date)
 {
-  static const char *days[] =
+  static const char *const days[] =
     { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-  static const char *mons[] =
+  static const char *const mons[] =
     { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
     "Nov", "Dec"
   };
