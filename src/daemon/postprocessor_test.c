@@ -60,6 +60,12 @@ const char *want[] = {
   "pics", "file2.gif", "image/gif", "binary", "filedata2",
 #define FORM_NESTED_END (FORM_NESTED_START + 15)
   NULL, NULL, NULL, NULL, NULL,
+#define URL_EMPTY_VALUE_DATA "key1=value1&key2="
+#define URL_EMPTY_VALUE_START (FORM_NESTED_END + 5)
+  "key1", NULL, NULL, NULL, "value1",
+  "key2", NULL, NULL, NULL, NULL,
+#define URL_EMPTY_VALUE_END (URL_EMPTY_VALUE_START + 10)
+  NULL, NULL, NULL, NULL, NULL
 };
 
 static int
@@ -212,6 +218,43 @@ test_nested_multipart ()
   return 0;
 }
 
+
+static int
+test_empty_value ()
+{
+  struct MHD_Connection connection;
+  struct MHD_HTTP_Header header;
+  struct MHD_PostProcessor *pp;
+  unsigned int want_off = URL_EMPTY_VALUE_START;
+  int i;
+  int delta;
+  size_t size;
+
+  memset (&connection, 0, sizeof (struct MHD_Connection));
+  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+  connection.headers_received = &header;
+  header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
+  header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
+  header.kind = MHD_HEADER_KIND;
+  pp = MHD_create_post_processor (&connection,
+                                  1024, &value_checker, &want_off);
+  i = 0;
+  size = strlen (URL_EMPTY_VALUE_DATA);
+  while (i < size)
+    {
+      delta = 1 + RANDOM () % (size - i);
+      MHD_post_process (pp, &URL_EMPTY_VALUE_DATA[i], delta);
+      i += delta;
+    }
+  MHD_destroy_post_processor (pp);
+  if (want_off != URL_EMPTY_VALUE_END)
+    return 8;
+  return 0;
+}
+
+
+
+
 int
 main (int argc, char *const *argv)
 {
@@ -220,6 +263,7 @@ main (int argc, char *const *argv)
   errorCount += test_urlencoding ();
   errorCount += test_multipart ();
   errorCount += test_nested_multipart ();
+  errorCount += test_empty_value ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   return errorCount != 0;       /* 0 == pass */
