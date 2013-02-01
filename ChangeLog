@@ -1,3 +1,8 @@
+Fri Feb  1 10:19:44 CET 2013
+	Handle case where POST data contains "key=" without value
+	at the end and is not new-line terminated by invoking the
+	callback with the "key" during MHD_destroy_post_processor (#2733). -CG
+
 Wed Jan 30 13:09:30 CET 2013
 	Adding more 'const' to allow keeping of reason phrases in ROM.
 	(see mailinglist). -CG/MV

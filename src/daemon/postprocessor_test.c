@@ -60,11 +60,12 @@ const char *want[] = {
   "pics", "file2.gif", "image/gif", "binary", "filedata2",
 #define FORM_NESTED_END (FORM_NESTED_START + 15)
   NULL, NULL, NULL, NULL, NULL,
-#define URL_EMPTY_VALUE_DATA "key1=value1&key2="
+#define URL_EMPTY_VALUE_DATA "key1=value1&key2=&key3="
 #define URL_EMPTY_VALUE_START (FORM_NESTED_END + 5)
   "key1", NULL, NULL, NULL, "value1",
-  "key2", NULL, NULL, NULL, NULL,
-#define URL_EMPTY_VALUE_END (URL_EMPTY_VALUE_START + 10)
+  "key2", NULL, NULL, NULL, "",
+  "key3", NULL, NULL, NULL, "",
+#define URL_EMPTY_VALUE_END (URL_EMPTY_VALUE_START + 15)
   NULL, NULL, NULL, NULL, NULL
 };
 
@@ -95,8 +96,8 @@ value_checker (void *cls,
            "VC: `%s' `%s' `%s' `%s' `%.*s'\n",
            key, filename, content_type, transfer_encoding, size, data);
 #endif
-  if (size == 0)
-    return MHD_YES;
+  if ( (0 != off) && (0 == size) )
+    return MHD_YES; 
   if ((idx < 0) ||
       (want[idx] == NULL) ||
       (0 != strcmp (key, want[idx])) ||
