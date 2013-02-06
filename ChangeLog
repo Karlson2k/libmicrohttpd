@@ -1,3 +1,6 @@
+Wed Feb  6 01:51:52 CET 2013
+	Releasing libmicrohttpd 0.9.25. -CG
+
 Fri Feb  1 10:19:44 CET 2013
 	Handle case where POST data contains "key=" without value
 	at the end and is not new-line terminated by invoking the
