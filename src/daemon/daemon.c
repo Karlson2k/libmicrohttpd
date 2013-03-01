@@ -2536,6 +2536,16 @@ MHD_start_daemon_va (unsigned int options,
           if (i < leftover_conns)
             ++d->max_connections;
 
+          /* Must init cleanup connection mutex for each worker */
+          if (0 != pthread_mutex_init (&d->cleanup_connection_mutex, NULL))
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                       "MHD failed to initialize cleanup connection mutex for thread worker %d\n", i);
+#endif
+              goto thread_failed;
+            }
+
           /* Spawn the worker thread */
           if (0 != (res_thread_create = create_thread (&d->pid, daemon, &MHD_select_thread, d)))
             {
@@ -2546,6 +2556,7 @@ MHD_start_daemon_va (unsigned int options,
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
+              pthread_mutex_destroy (&d->cleanup_connection_mutex);
               goto thread_failed;
             }
         }
@@ -2707,6 +2718,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
 	  close_all_connections (&daemon->worker_pool[i]);
+	  pthread_mutex_destroy (&daemon->worker_pool[i].cleanup_connection_mutex);
 	}
       free (daemon->worker_pool);
     }
