@@ -1,11 +1,10 @@
-
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Christian Grothoff
+     (C) 2007, 2013 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
-     by the Free Software Foundation; either version 2, or (at your
+     by the Free Software Foundation; either version 3, or (at your
      option) any later version.
 
      libmicrohttpd is distributed in the hope that it will be useful, but
@@ -46,6 +45,7 @@ struct CBC
   size_t size;
 };
 
+
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 {
@@ -57,6 +57,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -86,7 +87,15 @@ ahc_echo (void *cls,
     abort ();
   hdr = MHD_lookup_connection_value (connection,
                                      MHD_GET_ARGUMENT_KIND, "hash");
-  if ((hdr == NULL) || (0 != strcmp (hdr, "#")))
+  if ((hdr == NULL) || (0 != strcmp (hdr, "#foo")))
+    abort ();
+  hdr = MHD_lookup_connection_value (connection,
+                                     MHD_GET_ARGUMENT_KIND, "space");
+  if ((hdr == NULL) || (0 != strcmp (hdr, "\240bar")))
+    abort ();
+  if (3 != MHD_get_connection_values (connection, 
+				      MHD_GET_ARGUMENT_KIND,
+				      NULL, NULL))
     abort ();
   response = MHD_create_response_from_buffer (strlen (url),
 					      (void *) url, 
@@ -97,6 +106,7 @@ ahc_echo (void *cls,
     abort ();
   return ret;
 }
+
 
 static int
 testExternalGet ()
@@ -126,7 +136,7 @@ testExternalGet ()
     return 256;
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL,
-                    "http://127.0.0.1:21080/hello_world?k=v+x&hash=%23");
+                    "http://127.0.0.1:21080/hello_world?k=v+x&hash=%23foo&space=%A0bar");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
