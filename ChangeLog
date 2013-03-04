@@ -1,5 +1,9 @@
+Mon Mar  4 13:45:35 CET 2013
+	Fix dropping of SSL connections if uptime is less than
+        MHD_OPTION_CONNECTION_TIMEOUT due to integer underflow (#2802). -greed
+
 Fri Mar  1 01:11:57 CET 2013
-	Fully initialize cleanup mutex struct for each thread. -Ulion
+	Fully initialize cleanup mutex struct for each thread (#2803). -Ulion
 
 Wed Feb  6 01:51:52 CET 2013
 	Releasing libmicrohttpd 0.9.25. -CG
