@@ -23,7 +23,8 @@ check_PROGRAMS = \
   mhds_session_info_test \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
-  tls_session_time_out_test
+  tls_session_time_out_test \
+  test_empty_response
 
 EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
 
@@ -37,7 +38,8 @@ TESTS = \
   tls_thread_mode_test \
   tls_multi_thread_mode_test \
   tls_session_time_out_test \
-  tls_authentication_test
+  tls_authentication_test \
+  test_empty_response
 
 # cURL dependent tests
 tls_session_time_out_test_SOURCES = \
@@ -60,6 +62,14 @@ tls_thread_mode_test_SOURCES = \
   tls_thread_mode_test.c \
   tls_test_common.c
 tls_thread_mode_test_LDADD = \
+  $(top_builddir)/src/testcurl/libcurl_version_check.a \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
+
+test_empty_response_SOURCES = \
+  test_empty_response.c \
+  tls_test_common.c
+test_empty_response_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
