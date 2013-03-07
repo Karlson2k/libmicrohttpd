@@ -1,3 +1,6 @@
+Thu Mar  7 10:13:08 CET 2013
+	Fix bug in postprocessor URL parser (#2818). -jgresula
+
 Mon Mar  4 13:45:35 CET 2013
 	Fix dropping of SSL connections if uptime is less than
         MHD_OPTION_CONNECTION_TIMEOUT due to integer underflow (#2802). -greed

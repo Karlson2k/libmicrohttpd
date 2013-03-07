@@ -435,7 +435,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
                 {
                   pp->state = PP_ExpectNewLine;
                 }
-              else
+              else if (post_data[poff] == '&')
                 {
                   poff++;       /* skip '&' */
                   pp->state = PP_Init;

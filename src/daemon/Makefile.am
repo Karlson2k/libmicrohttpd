@@ -65,7 +65,8 @@ check_PROGRAMS = \
 if HAVE_POSTPROCESSOR
 check_PROGRAMS += \
   postprocessor_test \
-  postprocessor_large_test 
+  postprocessor_large_test \
+  test_postprocessor_amp
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -78,6 +79,11 @@ daemon_test_LDADD = \
 postprocessor_test_SOURCES = \
   postprocessor_test.c
 postprocessor_test_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la 
+
+test_postprocessor_amp_SOURCES = \
+  test_postprocessor_amp.c
+test_postprocessor_amp_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
 
 postprocessor_large_test_SOURCES = \
