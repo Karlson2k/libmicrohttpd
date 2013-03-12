@@ -206,7 +206,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       else
 	{
 	  if (NULL != con_info->fp)
+	  {
 	    fclose (con_info->fp);
+	    con_info->fp = NULL;
+	  }
 	  /* Now it is safe to open and inspect the file before calling send_page with a response */
 	  return send_page (connection, con_info->answerstring,
 			    con_info->answercode);
