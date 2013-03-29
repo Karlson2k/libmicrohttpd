@@ -1,3 +1,8 @@
+Fri Mar 29 16:44:29 CET 2013
+	Renaming testcases to consistenly begin with test_;
+	Changing build system to build examples in doc/.
+	Releasing libmicrohttpd 0.9.26. -CG
+
 Thu Mar  7 10:13:08 CET 2013
 	Fix bug in postprocessor URL parser (#2818). -jgresula
 
