@@ -22,51 +22,51 @@ $(LIBCURL_CPPFLAGS)
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
 if HAVE_CURL_BINARY
-CURL_FORK_TEST=daemontest_get_response_cleanup
+CURL_FORK_TEST = test_get_response_cleanup
 endif
 endif
 
 check_PROGRAMS = \
   test_start_stop \
-  daemontest_get \
-  daemontest_get_sendfile \
-  daemontest_urlparse \
-  daemontest_put \
-  daemontest_process_headers \
-  daemontest_process_arguments \
-  daemontest_parse_cookies \
-  daemontest_large_put \
-  daemontest_get11 \
-  daemontest_get_sendfile11 \
-  daemontest_put11 \
-  daemontest_large_put11 \
-  daemontest_long_header \
-  daemontest_long_header11 \
-  daemontest_get_chunked \
-  daemontest_put_chunked \
-  daemontest_iplimit11 \
-  daemontest_termination \
-  daemontest_timeout \
+  test_get \
+  test_get_sendfile \
+  test_urlparse \
+  test_put \
+  test_process_headers \
+  test_process_arguments \
+  test_parse_cookies \
+  test_large_put \
+  test_get11 \
+  test_get_sendfile11 \
+  test_put11 \
+  test_large_put11 \
+  test_long_header \
+  test_long_header11 \
+  test_get_chunked \
+  test_put_chunked \
+  test_iplimit11 \
+  test_termination \
+  test_timeout \
   test_callback \
   $(CURL_FORK_TEST) \
   perf_get $(PERF_GET_CONCURRENT)
 
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \
-  daemontest_post \
-  daemontest_postform \
-  daemontest_post_loop \
-  daemontest_post11 \
-  daemontest_postform11 \
-  daemontest_post_loop11 
+  test_post \
+  test_postform \
+  test_post_loop \
+  test_post11 \
+  test_postform11 \
+  test_post_loop11 
 endif
 
 noinst_PROGRAMS = \
-  daemon_options_test
+  test_options
 
 if ENABLE_DAUTH
   check_PROGRAMS += \
-	daemontest_digestauth daemontest_digestauth_with_arguments
+	test_digestauth test_digestauth_with_arguments
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -81,14 +81,14 @@ test_start_stop_SOURCES = \
 test_start_stop_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la
 
-daemon_options_test_SOURCES = \
-  daemon_options_test.c
-daemon_options_test_LDADD = \
+test_options_SOURCES = \
+  test_options.c
+test_options_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la
 
-daemontest_get_SOURCES = \
-  daemontest_get.c
-daemontest_get_LDADD = \
+test_get_SOURCES = \
+  test_get.c
+test_get_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
@@ -112,164 +112,164 @@ perf_get_concurrent_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_digestauth_SOURCES = \
-  daemontest_digestauth.c
-daemontest_digestauth_LDADD = \
+test_digestauth_SOURCES = \
+  test_digestauth.c
+test_digestauth_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
-daemontest_digestauth_with_arguments_SOURCES = \
-  daemontest_digestauth_with_arguments.c
-daemontest_digestauth_with_arguments_LDADD = \
+test_digestauth_with_arguments_SOURCES = \
+  test_digestauth_with_arguments.c
+test_digestauth_with_arguments_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@
 
-daemontest_get_sendfile_SOURCES = \
-  daemontest_get_sendfile.c
-daemontest_get_sendfile_LDADD = \
+test_get_sendfile_SOURCES = \
+  test_get_sendfile.c
+test_get_sendfile_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_urlparse_SOURCES = \
-  daemontest_urlparse.c
-daemontest_urlparse_LDADD = \
+test_urlparse_SOURCES = \
+  test_urlparse.c
+test_urlparse_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_get_response_cleanup_SOURCES = \
-  daemontest_get_response_cleanup.c
-daemontest_get_response_cleanup_LDADD = \
+test_get_response_cleanup_SOURCES = \
+  test_get_response_cleanup.c
+test_get_response_cleanup_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la 
 
-daemontest_get_chunked_SOURCES = \
-  daemontest_get_chunked.c
-daemontest_get_chunked_LDADD = \
+test_get_chunked_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_post_SOURCES = \
-  daemontest_post.c
-daemontest_post_LDADD = \
+test_post_SOURCES = \
+  test_post.c
+test_post_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_process_headers_SOURCES = \
-  daemontest_process_headers.c
-daemontest_process_headers_LDADD = \
+test_process_headers_SOURCES = \
+  test_process_headers.c
+test_process_headers_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_parse_cookies_SOURCES = \
-  daemontest_parse_cookies.c
-daemontest_parse_cookies_LDADD = \
+test_parse_cookies_SOURCES = \
+  test_parse_cookies.c
+test_parse_cookies_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_process_arguments_SOURCES = \
-  daemontest_process_arguments.c
-daemontest_process_arguments_LDADD = \
+test_process_arguments_SOURCES = \
+  test_process_arguments.c
+test_process_arguments_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_postform_SOURCES = \
-  daemontest_postform.c
-daemontest_postform_LDADD = \
+test_postform_SOURCES = \
+  test_postform.c
+test_postform_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_post_loop_SOURCES = \
-  daemontest_post_loop.c
-daemontest_post_loop_LDADD = \
+test_post_loop_SOURCES = \
+  test_post_loop.c
+test_post_loop_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_put_SOURCES = \
-  daemontest_put.c
-daemontest_put_LDADD = \
+test_put_SOURCES = \
+  test_put.c
+test_put_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_put_chunked_SOURCES = \
-  daemontest_put_chunked.c
-daemontest_put_chunked_LDADD = \
+test_put_chunked_SOURCES = \
+  test_put_chunked.c
+test_put_chunked_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_get11_SOURCES = \
-  daemontest_get.c
-daemontest_get11_LDADD = \
+test_get11_SOURCES = \
+  test_get.c
+test_get11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_get_sendfile11_SOURCES = \
-  daemontest_get_sendfile.c
-daemontest_get_sendfile11_LDADD = \
+test_get_sendfile11_SOURCES = \
+  test_get_sendfile.c
+test_get_sendfile11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_post11_SOURCES = \
-  daemontest_post.c
-daemontest_post11_LDADD = \
+test_post11_SOURCES = \
+  test_post.c
+test_post11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_postform11_SOURCES = \
-  daemontest_postform.c
-daemontest_postform11_LDADD = \
+test_postform11_SOURCES = \
+  test_postform.c
+test_postform11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_post_loop11_SOURCES = \
-  daemontest_post_loop.c
-daemontest_post_loop11_LDADD = \
+test_post_loop11_SOURCES = \
+  test_post_loop.c
+test_post_loop11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_put11_SOURCES = \
-  daemontest_put.c
-daemontest_put11_LDADD = \
+test_put11_SOURCES = \
+  test_put.c
+test_put11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_large_put_SOURCES = \
-  daemontest_large_put.c
-daemontest_large_put_LDADD = \
+test_large_put_SOURCES = \
+  test_large_put.c
+test_large_put_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_large_put11_SOURCES = \
-  daemontest_large_put.c
-daemontest_large_put11_LDADD = \
+test_large_put11_SOURCES = \
+  test_large_put.c
+test_large_put11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_long_header_SOURCES = \
-  daemontest_long_header.c
-daemontest_long_header_LDADD = \
+test_long_header_SOURCES = \
+  test_long_header.c
+test_long_header_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_long_header11_SOURCES = \
-  daemontest_long_header.c
-daemontest_long_header11_LDADD = \
+test_long_header11_SOURCES = \
+  test_long_header.c
+test_long_header11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_iplimit11_SOURCES = \
-  daemontest_iplimit.c
-daemontest_iplimit11_LDADD = \
+test_iplimit11_SOURCES = \
+  test_iplimit.c
+test_iplimit11_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_termination_SOURCES = \
-  daemontest_termination.c
-daemontest_termination_LDADD = \
+test_termination_SOURCES = \
+  test_termination.c
+test_termination_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
-daemontest_timeout_SOURCES = \
-  daemontest_timeout.c
-daemontest_timeout_LDADD = \
+test_timeout_SOURCES = \
+  test_timeout.c
+test_timeout_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
