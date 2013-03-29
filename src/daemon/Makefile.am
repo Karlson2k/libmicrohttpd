@@ -60,12 +60,12 @@ endif
 
 
 check_PROGRAMS = \
-  daemon_test 
+  test_daemon 
 
 if HAVE_POSTPROCESSOR
 check_PROGRAMS += \
-  postprocessor_test \
-  postprocessor_large_test \
+  test_postprocessor \
+  test_postprocessor_large \
   test_postprocessor_amp
 endif
 
