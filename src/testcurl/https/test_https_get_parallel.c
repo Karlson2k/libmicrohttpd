@@ -23,8 +23,6 @@
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  * @author Christian Grothoff
- *
- * TODO: add test for external select!
  */
 
 #include "platform.h"
@@ -65,7 +63,7 @@ https_transfer_thread_adapter (void *args)
  *
  * @return: 0 upon all client requests returning '0', -1 otherwise.
  *
- * TODO : make client_count a parameter - numver of curl client threads to spawn
+ * TODO : make client_count a parameter - number of curl client threads to spawn
  */
 static int
 test_single_client (void *cls, const char *cipher_suite,

@@ -15,53 +15,52 @@ AM_CPPFLAGS = \
   $(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \
-  tls_daemon_options_test \
-  tls_authentication_test \
-  mhds_multi_daemon_test \
-  mhds_get_test \
-  mhds_get_test_select \
-  mhds_session_info_test \
-  tls_thread_mode_test \
-  tls_multi_thread_mode_test \
-  tls_session_time_out_test \
+  test_tls_options \
+  test_tls_authentication \
+  test_https_multi_daemon \
+  test_https_get \
+  test_https_get_select \
+  test_https_get_parallel \
+  test_https_get_parallel_threads \
+  test_https_session_info \
+  test_https_time_out \
   test_empty_response
 
 EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
 
-# tls_authentication_test currently fails for unknown reasons
 TESTS = \
-  tls_daemon_options_test \
-  mhds_multi_daemon_test \
-  mhds_get_test \
-  mhds_get_test_select \
-  mhds_session_info_test \
-  tls_thread_mode_test \
-  tls_multi_thread_mode_test \
-  tls_session_time_out_test \
-  tls_authentication_test \
+  test_tls_options \
+  test_https_multi_daemon \
+  test_https_get \
+  test_https_get_select \
+  test_https_get_parallel \
+  test_https_get_parallel_threads \
+  test_https_session_info \
+  test_https_time_out \
+  test_tls_authentication \
   test_empty_response
 
-# cURL dependent tests
-tls_session_time_out_test_SOURCES = \
-  tls_session_time_out_test.c \
+
+test_https_time_out_SOURCES = \
+  test_https_time_out.c \
   tls_test_common.c
-tls_session_time_out_test_LDADD  = \
+test_https_time_out_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-tls_daemon_options_test_SOURCES = \
-  tls_daemon_options_test.c \
+test_tls_options_SOURCES = \
+  test_tls_options.c \
   tls_test_common.c
-tls_daemon_options_test_LDADD = \
+test_tls_options_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-tls_thread_mode_test_SOURCES = \
-  tls_thread_mode_test.c \
+test_https_get_parallel_SOURCES = \
+  test_https_get_parallel.c \
   tls_test_common.c
-tls_thread_mode_test_LDADD = \
+test_https_get_parallel_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
@@ -74,51 +73,50 @@ test_empty_response_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-tls_multi_thread_mode_test_SOURCES = \
-  tls_multi_thread_mode_test.c \
+test_https_get_parallel_threads_SOURCES = \
+  test_https_get_parallel_threads.c \
   tls_test_common.c
-tls_multi_thread_mode_test_LDADD = \
+test_https_get_parallel_threads_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-tls_authentication_test_SOURCES = \
-  tls_authentication_test.c \
+test_tls_authentication_SOURCES = \
+  test_tls_authentication.c \
   tls_test_common.c
-tls_authentication_test_LDADD  = \
+test_tls_authentication_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-mhds_session_info_test_SOURCES = \
-  mhds_session_info_test.c \
+test_https_session_info_SOURCES = \
+  test_https_session_info.c \
   tls_test_common.c
-mhds_session_info_test_LDADD  = \
+test_https_session_info_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-mhds_multi_daemon_test_SOURCES = \
-  mhds_multi_daemon_test.c \
+test_https_multi_daemon_SOURCES = \
+  test_https_multi_daemon.c \
   tls_test_common.c
-mhds_multi_daemon_test_LDADD  = \
+test_https_multi_daemon_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-mhds_get_test_SOURCES = \
-  mhds_get_test.c \
+test_https_get_SOURCES = \
+  test_https_get.c \
   tls_test_common.c
-mhds_get_test_LDADD  = \
+test_https_get_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
-
-mhds_get_test_select_SOURCES = \
-  mhds_get_test_select.c \
+test_https_get_select_SOURCES = \
+  test_https_get_select.c \
   tls_test_common.c
-mhds_get_test_select_LDADD  = \
+test_https_get_select_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
