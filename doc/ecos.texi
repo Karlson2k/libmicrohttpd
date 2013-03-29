@@ -288,12 +288,7 @@ make exceptions for this.  Our decision will be guided by the two goals
 of preserving the free status of all derivatives of our free software and
 of promoting the sharing and reuse of software generally.
 
-@iftex
-@heading NO WARRANTY
-@end iftex
-@ifinfo
-@center NO WARRANTY
-@end ifinfo
+@center @b{NO WARRANTY}
 
 @item
 BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
@@ -340,12 +335,7 @@ on this file might be covered by the GNU General Public License.
 @end enumerate
 
 
-@iftex
-@heading END OF TERMS AND CONDITIONS
-@end iftex
-@ifinfo
-@center END OF TERMS AND CONDITIONS
-@end ifinfo
+@subheading END OF TERMS AND CONDITIONS
 
 @page
 @unnumberedsec How to Apply These Terms to Your New Programs
