@@ -21,6 +21,11 @@
  * @file demo.c
  * @brief complex demonstration site: upload, index, download
  * @author Christian Grothoff
+ *
+ * TODO:
+ * - even with LARGE memory pool & buffers, uploads proceed at 5000 bytes/call (ugh)
+ * - should have a slightly more ambitious upload form & file listing (structure!)
+ * - may want to add MIME-types to replies
  */
 #include "platform.h"
 #include <microhttpd.h>
@@ -457,6 +462,7 @@ main (int argc, char *const *argv)
                         port,
                         NULL, NULL, 
 			&generate_page, NULL, 
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024 * 1024),
 			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) 8,
 			MHD_OPTION_NOTIFY_COMPLETED, &response_completed_callback, NULL,
 			MHD_OPTION_END);
