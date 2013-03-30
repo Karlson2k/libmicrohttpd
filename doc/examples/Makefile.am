@@ -18,15 +18,14 @@ noinst_PROGRAMS = \
   basicauthentication \
   hellobrowser \
   logging \
-  responseheaders \
-  sessions 
+  responseheaders 
 
 if ENABLE_HTTPS
 noinst_PROGRAMS += \
   tlsauthentication
 endif
 if HAVE_POSTPROCESSOR
-noinst_PROGRAMS += simplepost largepost
+noinst_PROGRAMS += simplepost largepost sessions 
 endif
 
 if HAVE_W32

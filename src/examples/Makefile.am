@@ -28,7 +28,8 @@ if ENABLE_HTTPS
 noinst_PROGRAMS += https_fileserver_example 
 endif
 if HAVE_POSTPROCESSOR
-noinst_PROGRAMS += post_example 
+noinst_PROGRAMS += \
+  post_example 
 endif
 
 if ENABLE_DAUTH
