@@ -454,7 +454,16 @@ testExternalGet (int port)
 		  c = NULL;
 		}
 	    }
-	  MHD_run (d);
+	  /* two possibilities here; as select sets are
+	     tiny, this makes virtually no difference
+	     in actual runtime right now, even though the
+	     number of select calls is virtually cut in half
+	     (and 'select' is the most expensive of our system
+	     calls according to 'strace') */
+	  if (0)
+	    MHD_run (d);
+	  else
+	    MHD_run_from_select (d, &rs, &ws, &es);
 	}
       if (NULL != c)
 	{
@@ -489,10 +498,10 @@ main (int argc, char *const *argv)
   response = MHD_create_response_from_buffer (strlen ("/hello_world"),
 					      "/hello_world",
 					      MHD_RESPMEM_MUST_COPY);
+  errorCount += testExternalGet (port++);
   errorCount += testInternalGet (port++, 0);
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);
-  errorCount += testExternalGet (port++);
 #ifndef WINDOWS
   errorCount += testInternalGet (port++, MHD_USE_POLL);
   errorCount += testMultithreadedGet (port++, MHD_USE_POLL);
