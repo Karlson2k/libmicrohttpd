@@ -420,8 +420,11 @@ enum MHD_OPTION
   MHD_OPTION_END = 0,
 
   /**
-   * Maximum memory size per connection (followed by a
-   * size_t).
+   * Maximum memory size per connection (followed by a size_t).
+   * Default is 32 kb (MHD_POOL_SIZE_DEFAULT).
+   * Values above 128k are unlikely to result in much benefit, as half
+   * of the memory will be typically used for IO, and TCP buffers are
+   * unlikely to support window sizes above 64k on most systems.
    */
   MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
 
@@ -1645,7 +1648,8 @@ const char *MHD_get_response_header (struct MHD_Response *response,
  *        internal buffering (used only for the parsing,
  *        specifically the parsing of the keys).  A
  *        tiny value (256-1024) should be sufficient.
- *        Do NOT use a value smaller than 256.
+ *        Do NOT use a value smaller than 256.  For good
+ *        performance, use 32 or 64k (i.e. 65536).
  * @param iter iterator to be called with the parsed data,
  *        Must NOT be NULL.
  * @param cls first argument to ikvi
