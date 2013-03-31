@@ -397,7 +397,10 @@ list.
 @cindex memory, limiting memory utilization
 Maximum memory size per connection (followed by a @code{size_t}).  The
 default is 32 kB (32*1024 bytes) as defined by the internal constant
-@code{MHD_POOL_SIZE_DEFAULT}.
+@code{MHD_POOL_SIZE_DEFAULT}.  Values above 128k are unlikely to
+result in much benefit, as half of the memory will be typically used
+for IO, and TCP buffers are unlikely to support window sizes above 64k
+on most systems.
 
 @item MHD_OPTION_CONNECTION_LIMIT
 @cindex connection, limiting number of connections
@@ -1888,6 +1891,7 @@ the @code{POST} format);
 maximum number of bytes to use for internal buffering (used only for the
 parsing, specifically the parsing of the keys).  A tiny value (256-1024)
 should be sufficient; do @strong{NOT} use a value smaller than 256;
+for good performance, use 32k or 64k (i.e. 65536).
 
 @item iterator
 iterator to be called with the parsed data; must @strong{NOT} be
