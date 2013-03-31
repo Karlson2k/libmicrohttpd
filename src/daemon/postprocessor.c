@@ -206,6 +206,16 @@ struct MHD_PostProcessor
   size_t nlen;
 
   /**
+   * Do we have to call the 'ikvi' callback when processing the
+   * multipart post body even if the size of the payload is zero?
+   * Set to MHD_YES whenever we parse a new multiparty entry header,
+   * and to MHD_NO the first time we call the 'ikvi' callback.
+   * Used to ensure that we do always call 'ikvi' even if the
+   * payload is empty (but not more than once).
+   */
+  int must_ikvi;
+
+  /**
    * State of the parser.
    */
   enum PP_State state;
@@ -295,8 +305,10 @@ MHD_create_post_processor (struct MHD_Connection *connection,
     }
   else
     blen = 0;
-  ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1);
-  if (ret == NULL)
+  buffer_size += 4; /* round up to get nice block sizes despite boundary search */
+
+  /* add +1 to ensure we ALWAYS have a zero-termination at the end */
+  if (NULL == (ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1)))
     return NULL;
   memset (ret, 0, sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   ret->connection = connection;
@@ -311,8 +323,14 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   return ret;
 }
 
+
 /**
  * Process url-encoded POST data.
+ *
+ * @param pp post processor context
+ * @param post_data upload data
+ * @param post_data_len number of bytes in upload_data
+ * @return MHD_YES on success, MHD_NO if there was an error processing the data
  */
 static int
 post_process_urlencoded (struct MHD_PostProcessor *pp,
@@ -418,6 +436,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           xbuf[xoff] = '\0';    /* 0-terminate in preparation */
           xoff = MHD_http_unescape (NULL, NULL, xbuf);
           /* finally: call application! */
+	  pp->must_ikvi = MHD_NO;
           if (MHD_NO == pp->ikvi (pp->cls, MHD_POSTDATA_KIND, (const char *) &pp[1],    /* key */
                                   NULL, NULL, NULL, xbuf, pp->value_offset,
                                   xoff))
@@ -458,10 +477,14 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   return MHD_YES;
 }
 
+
 /**
  * If the given line matches the prefix, strdup the
  * rest of the line into the suffix ptr.
  *
+ * @param prefix prefix to match
+ * @param line line to match prefix in
+ * @param suffix set to a copy of the rest of the line, starting at the end of the match
  * @return MHD_YES if there was a match, MHD_NO if not
  */
 static int
@@ -481,6 +504,11 @@ try_match_header (const char *prefix, char *line, char **suffix)
   return MHD_NO;
 }
 
+
+/**
+ *
+ * @param pp post processor context
+ */
 static int
 find_boundary (struct MHD_PostProcessor *pp,
                const char *boundary,
@@ -512,16 +540,18 @@ find_boundary (struct MHD_PostProcessor *pp,
   return MHD_YES;
 }
 
+
 /**
- * In buf, there maybe an expression
- * '$key="$value"'.  If that is the case,
- * copy a copy of $value to destination.
+ * In buf, there maybe an expression '$key="$value"'.  If that is the
+ * case, copy a copy of $value to destination.
  *
  * If destination is already non-NULL,
  * do nothing.
  */
 static void
-try_get_value (const char *buf, const char *key, char **destination)
+try_get_value (const char *buf, 
+	       const char *key, 
+	       char **destination)
 {
   const char *spos;
   const char *bpos;
@@ -555,12 +585,14 @@ try_get_value (const char *buf, const char *key, char **destination)
     }
 }
 
+
 /**
  * Go over the headers of the part and update
  * the fields in "pp" according to what we find.
  * If we are at the end of the headers (as indicated
  * by an empty line), transition into next_state.
  *
+ * @param pp post processor context
  * @param ioffptr set to how many bytes have been
  *                processed
  * @return MHD_YES if we can continue processing,
@@ -614,10 +646,12 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
   return MHD_YES;
 }
 
+
 /**
  * We have the value until we hit the given boundary;
  * process accordingly.
  *
+ * @param pp post processor context
  * @param boundary the boundary to look for
  * @param blen strlen(boundary)
  * @param next_state what state to go into after the
@@ -684,22 +718,30 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
   /* newline is either at beginning of boundary or
      at least at the last character that we are sure
      is not part of the boundary */
-  if (MHD_NO == pp->ikvi (pp->cls,
-                          MHD_POSTDATA_KIND,
-                          pp->content_name,
-                          pp->content_filename,
-                          pp->content_type,
-                          pp->content_transfer_encoding,
-                          buf, pp->value_offset, newline))
+  if ( ( (MHD_YES == pp->must_ikvi) ||
+	 (0 != newline) ) &&
+       (MHD_NO == pp->ikvi (pp->cls,
+			    MHD_POSTDATA_KIND,
+			    pp->content_name,
+			    pp->content_filename,
+			    pp->content_type,
+			    pp->content_transfer_encoding,
+			    buf, pp->value_offset, newline)) )
     {
       pp->state = PP_Error;
       return MHD_NO;
     }
+  pp->must_ikvi = MHD_NO;
   pp->value_offset += newline;
   (*ioffptr) += newline;
   return MHD_YES;
 }
 
+
+/**
+ *
+ * @param pp post processor context
+ */
 static void
 free_unmarked (struct MHD_PostProcessor *pp)
 {
@@ -727,8 +769,11 @@ free_unmarked (struct MHD_PostProcessor *pp)
     }
 }
 
+
 /**
  * Decode multipart POST data.
+ *
+ * @param pp post processor context
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,
@@ -861,6 +906,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
             }
           break;
         case PP_ProcessEntryHeaders:
+	  pp->must_ikvi = MHD_YES;
           if (MHD_NO ==
               process_multipart_headers (pp, &ioff, PP_PerformCheckMultipart))
             {
@@ -1019,6 +1065,7 @@ END:
   return MHD_YES;
 }
 
+
 /**
  * Parse and process POST data.
  * Call this function when POST data is available
@@ -1052,8 +1099,15 @@ MHD_post_process (struct MHD_PostProcessor *pp,
   return MHD_NO;
 }
 
+
 /**
  * Release PostProcessor resources.
+ *
+ * @param pp post processor context to destroy
+ * @return MHD_YES if processing completed nicely,
+ *         MHD_NO if there were spurious characters / formatting
+ *                problems; it is common to ignore the return
+ *                value of this function
  */
 int
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
