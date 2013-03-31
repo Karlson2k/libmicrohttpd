@@ -38,6 +38,15 @@
 #endif
 
 /**
+ * Minimum size by which MHD tries to increment read/write buffers.
+ * We usually begin with half the available pool space for the
+ * IO-buffer, but if absolutely needed we additively grow by the
+ * number of bytes given here (up to -- theoretically -- the full pool
+ * space).
+ */
+#define MHD_BUF_INC_SIZE 1024
+
+/**
  * Message to transmit when http 1.1 request is received
  */
 #define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
@@ -639,7 +648,12 @@ get_date_string (char *date)
 
 
 /**
- * Try growing the read buffer
+ * Try growing the read buffer.  We initially claim half the
+ * available buffer space for the read buffer (the other half
+ * being left for management data structures; the write
+ * buffer can in the end take virtually everything as the 
+ * read buffer can be reduced to the minimum necessary at that
+ * point.
  *
  * @param connection the connection
  * @return MHD_YES on success, MHD_NO on failure
@@ -648,18 +662,21 @@ static int
 try_grow_read_buffer (struct MHD_Connection *connection)
 {
   void *buf;
+  size_t new_size;
 
+  if (0 == connection->read_buffer_size)
+    new_size = connection->daemon->pool_size / 2;
+  else
+    new_size = connection->read_buffer_size + MHD_BUF_INC_SIZE;
   buf = MHD_pool_reallocate (connection->pool,
                              connection->read_buffer,
                              connection->read_buffer_size,
-                             connection->read_buffer_size * 2 +
-                             MHD_BUF_INC_SIZE + 1);
+                             new_size);
   if (NULL == buf)
     return MHD_NO;
   /* we can actually grow the buffer, do it! */
   connection->read_buffer = buf;
-  connection->read_buffer_size =
-    connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE;
+  connection->read_buffer_size = new_size;
   return MHD_YES;
 }
 
@@ -1078,28 +1095,16 @@ get_next_header_line (struct MHD_Connection *connection)
   if (pos == connection->read_buffer_offset - 1)
     {
       /* not found, consider growing... */
-      if (connection->read_buffer_offset == connection->read_buffer_size)
-        {
-          rbuf = MHD_pool_reallocate (connection->pool,
-                                      connection->read_buffer,
-                                      connection->read_buffer_size,
-                                      connection->read_buffer_size * 2 +
-                                      MHD_BUF_INC_SIZE);
-          if (NULL == rbuf)
-            {
-              transmit_error_response (connection,
-                                       (NULL != connection->url)
-                                       ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
-                                       : MHD_HTTP_REQUEST_URI_TOO_LONG,
-                                       REQUEST_TOO_BIG);
-            }
-          else
-            {
-              connection->read_buffer_size =
-                connection->read_buffer_size * 2 + MHD_BUF_INC_SIZE;
-              connection->read_buffer = rbuf;
-            }
-        }
+      if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
+	   (MHD_NO == 
+	    try_grow_read_buffer (connection)) )
+	{
+	  transmit_error_response (connection,
+				   (NULL != connection->url)
+				   ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
+				   : MHD_HTTP_REQUEST_URI_TOO_LONG,
+				   REQUEST_TOO_BIG);
+	}        
       return NULL;
     }
   /* found, check if we have proper CRLF */
@@ -1581,6 +1586,7 @@ process_request_body (struct MHD_Connection *connection)
   connection->read_buffer_offset = available;
 }
 
+
 /**
  * Try reading data from the socket into the
  * read buffer of the connection.
@@ -1681,6 +1687,9 @@ do_write (struct MHD_Connection *connection)
 /**
  * Check if we are done sending the write-buffer.
  * If so, transition into "next_state".
+ *
+ * @param connection connection to check write status for
+ * @param next_state the next state to transition to
  * @return MHY_NO if we are not done, MHD_YES if we are
  */
 static int
@@ -1740,6 +1749,7 @@ process_header_line (struct MHD_Connection *connection, char *line)
  * Process a header value that spans multiple lines.
  * The previous line(s) are in connection->last.
  *
+ * @param connection connection we're processing
  * @param line the current input line
  * @param kind if the line is complete, add a header
  *        of the given kind
