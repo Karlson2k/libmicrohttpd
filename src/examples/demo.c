@@ -226,8 +226,6 @@ process_upload_data (void *cls,
       fprintf (stderr, "No filename, aborting upload\n");
       return MHD_NO; /* no filename, error */
     }
-  fprintf (stderr, "Got %u bytes of upload data for %s\n",
-	   (unsigned int) size, filename);
   if (-1 == uc->fd)
     {
       uc->fd = open (filename, 
@@ -247,6 +245,10 @@ process_upload_data (void *cls,
 	  return MHD_NO;
 	}      
     }
+  else if (0 == size)
+    sleep (1);
+
+
   if ( (0 != size) &&
        (size != write (uc->fd, data, size)) )    
     {

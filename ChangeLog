@@ -1,3 +1,13 @@
+Sun Mar 31 20:03:48 CEST 2013
+	Performance improvements, updated documentation.
+	Make better use of available memory pool memory for
+	reading (especially important for large POST uploads);
+	improve post processor speed by internally adjusting the
+	buffer size by 4 bytes to ensure "round" IO sizes given
+	a "round" post processor buffer size argument.  Note
+	that applications that previously added 4 bytes to the
+	post processor buffer size might now perform worse. -CG
+
 Fri Mar 29 16:44:29 CET 2013
 	Renaming testcases to consistenly begin with test_;
 	Changing build system to build examples in doc/.
