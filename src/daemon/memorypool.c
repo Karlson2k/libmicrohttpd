@@ -42,6 +42,11 @@
  */
 #define ROUND_TO_ALIGN(n) ((n+(ALIGN_SIZE-1)) & (~(ALIGN_SIZE-1)))
 
+
+/**
+ * Handle for a memory pool.  Pools are not reentrant and must not be
+ * used by multiple threads.
+ */
 struct MemoryPool
 {
 
@@ -70,6 +75,7 @@ struct MemoryPool
    */
   int is_mmap;
 };
+
 
 /**
  * Create a memory pool.
@@ -110,6 +116,7 @@ MHD_pool_create (size_t max)
   return pool;
 }
 
+
 /**
  * Destroy a memory pool.
  */
@@ -124,6 +131,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
     MUNMAP (pool->memory, pool->size);
   free (pool);
 }
+
 
 /**
  * Allocate size bytes from the pool.
@@ -151,6 +159,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
     }
   return ret;
 }
+
 
 /**
  * Reallocate a block of memory obtained from the pool.
@@ -209,6 +218,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   return NULL;
 }
 
+
 /**
  * Clear all entries from the memory pool except
  * for "keep" of the given "size".
@@ -235,7 +245,6 @@ MHD_pool_reset (struct MemoryPool *pool,
   pool->end = pool->size;
   return keep;
 }
-
 
 
 /* end of memorypool.c */
