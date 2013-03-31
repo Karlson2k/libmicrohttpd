@@ -1095,9 +1095,51 @@ Shutdown an HTTP daemon.
 Run webserver operations (without blocking unless in client callbacks).
 This method should be called by clients in combination with
 @code{MHD_get_fdset()} if the client-controlled @code{select}-method is used.
+@cindex select
+@cindex poll
+
+This function will work for external @code{poll} and @code{select} mode.
+However, if using external @code{select} mode, you may want to
+instead use @code{MHD_run_from_select}, as it is more efficient.
+
+@table @var
+@item daemon 
+daemon to process connections of
+@end table
 
 Return @code{MHD_YES} on success, @code{MHD_NO} if this daemon was not
 started with the right options for this call.
+@end deftypefun
+
+@deftypefun int MHD_run_from_select (struct MHD_Daemon *daemon, const fd_set *read_fd_set, const fd_set *write_fd_set, const fd_set *except_fd_set)
+Run webserver operations given sets of ready socket handles.
+@cindex select
+
+This method should be called by clients in combination with 
+@code{MHD_get_fdset} if the client-controlled (external)
+select method is used.
+
+You can use this function instead of @code{MHD_run} if you called
+@code{select} on the result from @code{MHD_get_fdset}.  File descriptors in
+the sets that are not controlled by MHD will be ignored.  Calling
+this function instead of @code{MHD_run} is more efficient as MHD will
+not have to call @code{select} again to determine which operations are
+ready.
+
+@table @var
+@item daemon 
+daemon to process connections of
+@item read_fd_set
+set of descriptors that must be ready for reading without blocking
+@item write_fd_set
+set of descriptors that must be ready for writing without blocking
+@item except_fd_set
+ignored, can be NULL
+@end table
+
+Return @code{MHD_YES} on success, @code{MHD_NO} on serious internal
+errors.
+
 @end deftypefun
 
 

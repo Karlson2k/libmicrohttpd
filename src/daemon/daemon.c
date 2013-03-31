@@ -1329,7 +1329,66 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 
 /**
- * Main select call.
+ * Run webserver operations. This method should be called by clients
+ * in combination with MHD_get_fdset if the client-controlled select
+ * method is used.
+ *
+ * You can use this function instead of "MHD_run" if you called
+ * 'select' on the result from "MHD_get_fdset".  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of "MHD_run" is more efficient as MHD will
+ * not have to call 'select' again to determine which operations are
+ * ready.
+ *
+ * @param daemon daemon to run select loop for
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set (not used, can be NULL)
+ * @return MHD_NO on serious errors, MHD_YES on success
+ */
+int
+MHD_run_from_select (struct MHD_Daemon *daemon, 
+		     const fd_set *read_fd_set,
+		     const fd_set *write_fd_set,
+		     const fd_set *except_fd_set)
+{
+  int ds;
+  struct MHD_Connection *pos;
+  struct MHD_Connection *next;
+
+  /* select connection thread handling type */
+  if ( (-1 != (ds = daemon->socket_fd)) &&
+       (FD_ISSET (ds, read_fd_set)) )
+    MHD_accept_connection (daemon);
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+      /* do not have a thread per connection, process all connections now */
+      next = daemon->connections_head;
+      while (NULL != (pos = next))
+        {
+	  next = pos->next;
+          ds = pos->socket_fd;
+          if (ds != -1)
+            {
+              if ( (FD_ISSET (ds, read_fd_set))
+#if HTTPS_SUPPORT
+		   || (MHD_YES == pos->tls_read_ready) 
+#endif
+		   )
+                pos->read_handler (pos);
+              if (FD_ISSET (ds, write_fd_set))
+                pos->write_handler (pos);
+	      pos->idle_handler (pos);
+            }
+        }
+    }
+  return MHD_YES;
+}
+
+
+/**
+ * Main internal select call.  Will compute select sets, call 'select'
+ * and then MHD_run_from_select with the result.
  *
  * @param daemon daemon to run select loop for
  * @param may_block YES if blocking, NO if non-blocking
@@ -1339,8 +1398,6 @@ static int
 MHD_select (struct MHD_Daemon *daemon, 
 	    int may_block)
 {
-  struct MHD_Connection *pos;
-  struct MHD_Connection *next;
   int num_ready;
   fd_set rs;
   fd_set ws;
@@ -1349,7 +1406,6 @@ MHD_select (struct MHD_Daemon *daemon,
   struct timeval timeout;
   struct timeval *tv;
   MHD_UNSIGNED_LONG_LONG ltimeout;
-  int ds;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -1404,7 +1460,6 @@ MHD_select (struct MHD_Daemon *daemon,
       tv = &timeout;
     }
   num_ready = SELECT (max + 1, &rs, &ws, &es, tv);
-
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
   if (num_ready < 0)
@@ -1416,33 +1471,7 @@ MHD_select (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-  /* select connection thread handling type */
-  if ( (-1 != (ds = daemon->socket_fd)) &&
-       (FD_ISSET (ds, &rs)) )
-    MHD_accept_connection (daemon);
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* do not have a thread per connection, process all connections now */
-      next = daemon->connections_head;
-      while (NULL != (pos = next))
-        {
-	  next = pos->next;
-          ds = pos->socket_fd;
-          if (ds != -1)
-            {
-              if ( (FD_ISSET (ds, &rs))
-#if HTTPS_SUPPORT
-		   || (MHD_YES == pos->tls_read_ready) 
-#endif
-		   )
-                pos->read_handler (pos);
-              if (FD_ISSET (ds, &ws))
-                pos->write_handler (pos);
-	      pos->idle_handler (pos);
-            }
-        }
-    }
-  return MHD_YES;
+  return MHD_run_from_select (daemon, &rs, &ws, &es);
 }
 
 
@@ -1646,6 +1675,10 @@ MHD_poll (struct MHD_Daemon *daemon,
  * in client callbacks).  This method should be called
  * by clients in combination with MHD_get_fdset
  * if the client-controlled select method is used.
+ *
+ * This function will work for external 'poll' and 'select' mode.
+ * However, if using external 'select' mode, you may want to
+ * instead use 'MHD_run_from_select', as it is more efficient.
  *
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right

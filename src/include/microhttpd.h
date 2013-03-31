@@ -1182,6 +1182,14 @@ int MHD_get_timeout (struct MHD_Daemon *daemon,
  * by clients in combination with MHD_get_fdset
  * if the client-controlled select method is used.
  *
+ * This function is a convenience method, which is useful if the
+ * fd_sets from "MHD_get_fdset" were not directly passed to 'select';
+ * with this function, MHD will internally do the appropriate 'select'
+ * call itself again.  While it is always safe to call 'MHD_run' (in
+ * external select mode), you should call 'MHD_run_from_select' if
+ * performance is important (as it saves an expensive call to
+ * 'select').
+ *
  * @param daemon daemon to run
  * @return MHD_YES on success, MHD_NO if this
  *         daemon was not started with the right
@@ -1189,6 +1197,31 @@ int MHD_get_timeout (struct MHD_Daemon *daemon,
  */
 int 
 MHD_run (struct MHD_Daemon *daemon);
+
+
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with MHD_get_fdset if the client-controlled select
+ * method is used.
+ *
+ * You can use this function instead of "MHD_run" if you called
+ * 'select' on the result from "MHD_get_fdset".  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of "MHD_run" is more efficient as MHD will
+ * not have to call 'select' again to determine which operations are
+ * ready.
+ *
+ * @param daemon daemon to run select loop for
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set (not used, can be NULL)
+ * @return MHD_NO on serious errors, MHD_YES on success
+ */
+int
+MHD_run_from_select (struct MHD_Daemon *daemon, 
+		     const fd_set *read_fd_set,
+		     const fd_set *write_fd_set,
+		     const fd_set *except_fd_set);
 
 
 /* **************** Connection handling functions ***************** */

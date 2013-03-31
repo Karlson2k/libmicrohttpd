@@ -4,6 +4,7 @@ MHD_stop_daemon
 MHD_get_fdset
 MHD_get_timeout
 MHD_run
+MHD_run_from_select
 MHD_get_connection_values
 MHD_set_connection_value
 MHD_lookup_connection_value
