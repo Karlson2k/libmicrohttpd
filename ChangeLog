@@ -1,3 +1,6 @@
+Sun Mar 31 23:17:13 CEST 2013
+	Added MHD demonstration code 'src/examples/demo.c'. -CG
+
 Sun Mar 31 20:27:48 CEST 2013
 	Adding new API call 'MHD_run_from_select' to allow programs
 	running in 'external select mode' to reduce the number of

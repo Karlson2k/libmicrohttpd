@@ -19,11 +19,14 @@
 
 /**
  * @file demo.c
- * @brief complex demonstration site: upload, index, download
+ * @brief complex demonstration site: create directory index, offer
+ *        upload via form and HTTP POST, download with mime type detection
+ *        and error reporting (403, etc.) --- and all of this with 
+ *        high-performance settings (large buffers, thread pool).
+ *        If you want to benchmark MHD, this code should be used to
+ *        run tests against.  Note that the number of threads may need
+ *        to be adjusted depending on the number of available cores.
  * @author Christian Grothoff
- *
- * TODO:
- * - should have a slightly more ambitious upload form & file listing (structure!)
  */
 #include "platform.h"
 #include <microhttpd.h>
@@ -34,12 +37,20 @@
 #include <dirent.h>
 #include <magic.h>
 
+
+/**
+ * Number of threads to run in the thread pool.  Should (roughly) match
+ * the number of cores on your system.
+ */
+#define NUMBER_OF_THREADS 8
+
 /**
  * How many bytes of a file do we give to libmagic to determine the mime type?
  * 16k might be a bit excessive, but ought not hurt performance much anyway,
  * and should definitively be on the safe side.
  */
 #define MAGIC_HEADER_SIZE (16 * 1024)
+
 
 /**
  * Page returned for file-not-found.
@@ -63,10 +74,26 @@
  * Head of index page.
  */
 #define INDEX_PAGE_HEADER "<html>\n<head><title>Welcome</title></head>\n<body>\n"\
-   "<form method=\"POST\" enctype=\"multipart/form-data\" action=\"/\">"\
-   "Upload: <input type=\"file\" name=\"upload\"/>"\
-   "<input type=\"submit\" value=\"Send\"/>"\
+   "<h1>Upload</h1>\n"\
+   "<form method=\"POST\" enctype=\"multipart/form-data\" action=\"/\">\n"\
+   "<dl><dt>Content type:</dt><dd>"\
+   "<input type=\"radio\" name=\"category\" value=\"books\">Book</input>"\
+   "<input type=\"radio\" name=\"category\" value=\"images\">Image</input>"\
+   "<input type=\"radio\" name=\"category\" value=\"music\">Music</input>"\
+   "<input type=\"radio\" name=\"category\" value=\"software\">Software</input>"\
+   "<input type=\"radio\" name=\"category\" value=\"videos\">Videos</input>\n"\
+   "<input type=\"radio\" name=\"category\" value=\"other\" checked>Other</input></dd>"\
+   "<dt>Language:</dt><dd>"\
+   "<input type=\"radio\" name=\"language\" value=\"no-lang\" checked>none</input>"\
+   "<input type=\"radio\" name=\"language\" value=\"en\">English</input>"\
+   "<input type=\"radio\" name=\"language\" value=\"de\">German</input>"\
+   "<input type=\"radio\" name=\"language\" value=\"fr\">French</input>"\
+   "<input type=\"radio\" name=\"language\" value=\"es\">Spanish</input></dd>\n"\
+   "<dt>File:</dt><dd>"\
+   "<input type=\"file\" name=\"upload\"/></dd></dl>"\
+   "<input type=\"submit\" value=\"Send!\"/>\n"\
    "</form>\n"\
+   "<h1>Download</h1>\n"\
    "<ol>\n"
 
 /**
@@ -74,6 +101,53 @@
  */
 #define INDEX_PAGE_FOOTER "</ol>\n</body>\n</html>"
 
+
+/**
+ * NULL-terminated array of supported upload categories.  Should match HTML
+ * in the form.
+ */
+static const char * const categories[] =
+  {
+    "books",
+    "images",
+    "music",
+    "software",
+    "videos",
+    "other",
+    NULL,
+  };
+
+
+/**
+ * Specification of a supported language.
+ */
+struct Language
+{
+  /**
+   * Directory name for the language.
+   */
+  const char *dirname;
+
+  /**
+   * Long name for humans.
+   */
+  const char *longname;
+
+};
+
+/**
+ * NULL-terminated array of supported upload categories.  Should match HTML
+ * in the form.
+ */
+static const struct Language languages[] =
+  {
+    { "no-lang", "No language specified" },
+    { "en", "English" },
+    { "de", "German" },
+    { "fr", "French" },
+    { "es", "Spanish" },
+    { NULL, NULL },
+  };
 
 
 /**
@@ -223,6 +297,12 @@ update_directory ()
   static size_t initial_allocation = 32 * 1024; /* initial size for response buffer */
   struct MHD_Response *response;
   struct ResponseDataContext rdc;
+  unsigned int language_idx;
+  unsigned int category_idx;
+  const struct Language *language;
+  const char *category;
+  char dir_name[128];
+  struct stat sbuf;
 
   rdc.buf_len = initial_allocation; 
   if (NULL == (rdc.buf = malloc (rdc.buf_len)))
@@ -233,12 +313,42 @@ update_directory ()
   rdc.off = snprintf (rdc.buf, rdc.buf_len,
 		      "%s",
 		      INDEX_PAGE_HEADER);
-
-  if (MHD_NO == list_directory (&rdc, "."))
+  for (language_idx = 0; NULL != languages[language_idx].dirname; language_idx++)
     {
-      free (rdc.buf);
-      update_cached_response (NULL);
-      return;
+      language = &languages[language_idx];
+
+      if (0 != stat (language->dirname, &sbuf))
+	continue; /* empty */
+      /* we ensured always +1k room, filenames are ~256 bytes,
+	 so there is always still enough space for the header
+	 without need for an additional reallocation check. */
+      rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+			   "<h2>%s</h2>\n",
+			   language->longname);
+      for (category_idx = 0; NULL != categories[category_idx]; category_idx++)
+	{
+	  category = categories[category_idx];
+	  snprintf (dir_name, sizeof (dir_name),
+		    "%s/%s",
+		    language->dirname,
+		    category);
+	  if (0 != stat (dir_name, &sbuf))
+	    continue; /* empty */
+
+	  /* we ensured always +1k room, filenames are ~256 bytes,
+	     so there is always still enough space for the header
+	     without need for an additional reallocation check. */
+	  rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+			       "<h3>%s</h3>\n",
+			       category);
+	  	  
+	  if (MHD_NO == list_directory (&rdc, dir_name))
+	    {
+	      free (rdc.buf);
+	      update_cached_response (NULL);
+	      return;
+	    }
+	}
     }
   /* we ensured always +1k room, filenames are ~256 bytes,
      so there is always still enough space for the footer 
@@ -271,6 +381,16 @@ struct UploadContext
   char *filename;
 
   /**
+   * Language for the upload.
+   */
+  char *language;
+
+  /**
+   * Category for the upload.
+   */
+  char *category;
+
+  /**
    * Post processor we're using to process the upload.
    */
   struct MHD_PostProcessor *pp;
@@ -285,6 +405,40 @@ struct UploadContext
    */
   struct MHD_Response *response;
 };
+
+
+/**
+ * Append the 'size' bytes from 'data' to '*ret', adding
+ * 0-termination.  If '*ret' is NULL, allocate an empty string first.
+ *
+ * @param ret string to update, NULL or 0-terminated
+ * @param data data to append
+ * @param size number of bytes in 'data'
+ * @return MHD_NO on allocation failure, MHD_YES on success
+ */
+static int
+do_append (char **ret,
+	   const char *data,
+	   size_t size)
+{
+  char *buf;
+  size_t old_len;
+  
+  if (NULL == *ret)
+    old_len = 0;
+  else
+    old_len = strlen (*ret);
+  buf = malloc (old_len + size + 1);
+  if (NULL == buf)
+    return MHD_NO;
+  memcpy (buf, *ret, old_len);
+  if (NULL != *ret)
+    free (*ret);
+  memcpy (&buf[old_len], data, size);
+  buf[old_len + size] = '\0';
+  *ret = buf;
+  return MHD_YES;
+}
 
 
 /**
@@ -319,13 +473,35 @@ process_upload_data (void *cls,
 {
   struct UploadContext *uc = cls;
 
+  if (0 == strcmp (key, "category"))
+    return do_append (&uc->category, data, size);
+  if (0 == strcmp (key, "language"))
+    return do_append (&uc->language, data, size);
+  if (0 != strcmp (key, "upload"))
+    {
+      fprintf (stderr, 
+	       "Ignoring unexpected form value `%s'\n",
+	       key);
+      return MHD_YES; /* ignore */  
+    }
   if (NULL == filename)
     {
       fprintf (stderr, "No filename, aborting upload\n");
       return MHD_NO; /* no filename, error */
     }
+  if ( (NULL == uc->category) ||
+       (NULL == uc->language) )
+    {
+      fprintf (stderr, 
+	       "Missing form data for upload `%s'\n",
+	       filename);
+      uc->response = request_refused_response;
+      return MHD_NO;
+    }
   if (-1 == uc->fd)
     {
+      char fn[PATH_MAX];
+
       if ( (NULL != strstr (filename, "..")) ||
 	   (NULL != strchr (filename, '/')) ||
 	   (NULL != strchr (filename, '\\')) )
@@ -333,7 +509,21 @@ process_upload_data (void *cls,
 	  uc->response = request_refused_response;
 	  return MHD_NO;
 	}
-      uc->fd = open (filename, 
+      /* create directories -- if they don't exist already */
+      (void) mkdir (uc->language, S_IRWXU);
+      snprintf (fn, sizeof (fn),
+		"%s/%s",
+		uc->language,
+		uc->category);      
+      (void) mkdir (fn, S_IRWXU);
+
+      /* open file */
+      snprintf (fn, sizeof (fn),
+		"%s/%s/%s",
+		uc->language,
+		uc->category,
+		filename);      
+      uc->fd = open (fn, 
 		     O_CREAT | O_EXCL 
 #if O_LARGEFILE
 		     | O_LARGEFILE
@@ -344,20 +534,20 @@ process_upload_data (void *cls,
 	{
 	  fprintf (stderr, 
 		   "Error opening file `%s' for upload: %s\n",
-		   filename,
+		   fn,
 		   strerror (errno));
 	  uc->response = request_refused_response;
 	  return MHD_NO;
 	}      
+      uc->filename = strdup (fn);
     }
-  uc->filename = strdup (filename);
   if ( (0 != size) &&
        (size != write (uc->fd, data, size)) )    
     {
       /* write failed; likely: disk full */
       fprintf (stderr, 
 	       "Error writing to file `%s': %s\n",
-	       filename,
+	       uc->filename,
 	       strerror (errno));
       uc->response = internal_error_response;
       close (uc->fd);
@@ -525,12 +715,11 @@ generate_page (void *cls,
 	{
 	  if (NULL == (uc = malloc (sizeof (struct UploadContext))))
 	    return MHD_NO; /* out of memory, close connection */
-	  uc->response = NULL;
-	  uc->filename = NULL;
+	  memset (uc, 0, sizeof (struct UploadContext));
           uc->fd = -1;
 	  uc->connection = connection;
 	  uc->pp = MHD_create_post_processor (connection,
-					      32 * 1024 /* buffer size */,
+					      64 * 1024 /* buffer size */,
 					      &process_upload_data, uc);
 	  if (NULL == uc->pp)
 	    {
@@ -543,7 +732,7 @@ generate_page (void *cls,
 	}     
       if (0 != *upload_data_size)
 	{
-	  if (NULL != uc->response)
+	  if (NULL == uc->response)
 	    (void) MHD_post_process (uc->pp, 
 				     upload_data,
 				     *upload_data_size);
@@ -620,12 +809,14 @@ main (int argc, char *const *argv)
 							     MHD_RESPMEM_PERSISTENT);
   mark_as_html (internal_error_response);
   update_directory ();
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY,
                         port,
                         NULL, NULL, 
 			&generate_page, NULL, 
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024 * 1024),
-			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) 8,
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256 * 1024),
+			MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
+			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) (120 /* seconds */),
+			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) NUMBER_OF_THREADS,
 			MHD_OPTION_NOTIFY_COMPLETED, &response_completed_callback, NULL,
 			MHD_OPTION_END);
   if (NULL == d)
