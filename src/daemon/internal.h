@@ -44,13 +44,6 @@
 
 
 /**
- * Size by which MHD usually tries to increment read/write buffers.
- * TODO: we should probably get rid of this magic constant and
- * put in code to automatically determine a good value.
- */
-#define MHD_BUF_INC_SIZE 2048
-
-/**
  * Handler for fatal errors.
  */
 extern MHD_PanicCallback mhd_panic;
@@ -150,7 +143,9 @@ struct MHD_NonceNc
  * fprintf-like helper function for logging debug
  * messages.
  */
-void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
+void 
+MHD_DLOG (const struct MHD_Daemon *daemon, 
+	  const char *format, ...);
 
 #endif
 
@@ -164,9 +159,11 @@ void MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...);
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */
-size_t MHD_http_unescape (void *cls,
-			  struct MHD_Connection *connection,
-			  char *val);
+size_t 
+MHD_http_unescape (void *cls,
+		   struct MHD_Connection *connection,
+		   char *val);
+
 
 /**
  * Header or cookie in HTTP request or response.
