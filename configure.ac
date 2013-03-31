@@ -255,6 +255,14 @@ then
   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_NSS_VERSION], "$MHD_REQ_CURL_NSS_VERSION", [NSS lib version - used in conjunction with cURL])
 fi
+
+AC_MSG_CHECKING(for magic_open -lmagic)
+AC_CHECK_LIB(magic, magic_open,
+  [AC_CHECK_HEADERS([magic.h],
+   AM_CONDITIONAL(HAVE_MAGIC, true),
+   AM_CONDITIONAL(HAVE_MAGIC, false))],
+  AM_CONDITIONAL(HAVE_MAGIC, false))
+
 LIBS=$SAVE_LIBS
 AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 

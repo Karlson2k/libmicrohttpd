@@ -29,8 +29,11 @@ noinst_PROGRAMS += https_fileserver_example
 endif
 if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
-  demo \
   post_example 
+if HAVE_MAGIC
+noinst_PROGRAMS += \
+  demo 
+endif
 endif
 
 if ENABLE_DAUTH
@@ -55,7 +58,8 @@ minimal_example_LDADD = \
 demo_SOURCES = \
  demo.c 
 demo_LDADD = \
- $(top_builddir)/src/daemon/libmicrohttpd.la 
+ $(top_builddir)/src/daemon/libmicrohttpd.la  \
+ -lmagic
 
 dual_stack_example_SOURCES = \
  dual_stack_example.c 

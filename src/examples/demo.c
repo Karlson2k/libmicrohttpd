@@ -23,17 +23,23 @@
  * @author Christian Grothoff
  *
  * TODO:
- * - even with LARGE memory pool & buffers, uploads proceed at 5000 bytes/call (ugh)
  * - should have a slightly more ambitious upload form & file listing (structure!)
- * - may want to add MIME-types to replies
  */
 #include "platform.h"
 #include <microhttpd.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
+#include <magic.h>
 
+/**
+ * How many bytes of a file do we give to libmagic to determine the mime type?
+ * 16k might be a bit excessive, but ought not hurt performance much anyway,
+ * and should definitively be on the safe side.
+ */
+#define MAGIC_HEADER_SIZE (16 * 1024)
 
 /**
  * Page returned for file-not-found.
@@ -45,6 +51,12 @@
  * Page returned for internal errors.
  */
 #define INTERNAL_ERROR_PAGE "<html><head><title>Internal error</title></head><body>Internal error</body></html>"
+
+
+/**
+ * Page returned for refused requests.
+ */
+#define REQUEST_REFUSED_PAGE "<html><head><title>Request refused</title></head><body>Request refused (file exists?)</body></html>"
 
 
 /**
@@ -63,6 +75,7 @@
 #define INDEX_PAGE_FOOTER "</ol>\n</body>\n</html>"
 
 
+
 /**
  * Response returned if the requested file does not exist (or is not accessible).
  */
@@ -79,9 +92,33 @@ static struct MHD_Response *internal_error_response;
 static struct MHD_Response *cached_directory_response;
 
 /**
+ * Response returned for refused uploads.
+ */
+static struct MHD_Response *request_refused_response;
+
+/**
  * Mutex used when we update the cached directory response object.
  */
 static pthread_mutex_t mutex;
+
+/**
+ * Global handle to MAGIC data.
+ */
+static magic_t magic;
+
+
+/**
+ * Mark the given response as HTML for the brower.
+ *
+ * @param response response to mark
+ */
+static void
+mark_as_html (struct MHD_Response *response)
+{
+  (void) MHD_add_response_header (response,
+				  MHD_HTTP_HEADER_CONTENT_TYPE,
+				  "text/html");
+}
 
 
 /**
@@ -102,68 +139,119 @@ update_cached_response (struct MHD_Response *response)
 
 
 /**
+ * Context keeping the data for the response we're building.
+ */
+struct ResponseDataContext
+{
+  /**
+   * Response data string.
+   */
+  char *buf;
+  
+  /**
+   * Number of bytes allocated for 'buf'.
+   */
+  size_t buf_len;
+
+  /**
+   * Current position where we append to 'buf'. Must be smaller or equal to 'buf_len'.
+   */
+  size_t off;
+
+};
+
+
+/**
+ * Create a listing of the files in 'dirname' in HTML.
+ *
+ * @param rdc where to store the list of files
+ * @param dirname name of the directory to list
+ * @return MHD_YES on success, MHD_NO on error
+ */
+static int
+list_directory (struct ResponseDataContext *rdc,
+		const char *dirname)
+{
+  char fullname[PATH_MAX];
+  struct stat sbuf;
+  DIR *dir;
+  struct dirent *de;
+
+  if (NULL == (dir = opendir (dirname)))
+    return MHD_NO;      
+  while (NULL != (de = readdir (dir)))
+    {
+      if ('.' == de->d_name[0])
+	continue;
+      if (sizeof (fullname) <= 
+	  snprintf (fullname, sizeof (fullname),
+		    "%s/%s",
+		    dirname, de->d_name))
+	continue; /* ugh, file too long? how can this be!? */
+      if (0 != stat (fullname, &sbuf))
+	continue; /* ugh, failed to 'stat' */
+      if (! S_ISREG (sbuf.st_mode))
+	continue; /* not a regular file, skip */
+      if (rdc->off + 1024 > rdc->buf_len)
+	{
+	  void *r;
+
+	  if ( (2 * rdc->buf_len + 1024) < rdc->buf_len)
+	    break; /* more than SIZE_T _index_ size? Too big for us */
+	  rdc->buf_len = 2 * rdc->buf_len + 1024;
+	  if (NULL == (r = realloc (rdc->buf, rdc->buf_len)))
+	    break; /* out of memory */
+	  rdc->buf = r;
+	}
+      rdc->off += snprintf (&rdc->buf[rdc->off], 
+			    rdc->buf_len - rdc->off,
+			    "<li><a href=\"/%s\">%s</a></li>\n",
+			    de->d_name,
+			    de->d_name);
+    }
+  (void) closedir (dir);
+  return MHD_YES;
+}
+
+
+/**
  * Re-scan our local directory and re-build the index.
  */
 static void
 update_directory ()
 {
   static size_t initial_allocation = 32 * 1024; /* initial size for response buffer */
-  DIR *dir;
-  struct dirent *de;
   struct MHD_Response *response;
-  char *buf;
-  size_t buf_len;
-  size_t off;
+  struct ResponseDataContext rdc;
 
-  dir = opendir (".");
-  if (NULL == dir)
-    goto err;
-  buf_len = initial_allocation; 
-  buf = malloc (buf_len);
-  if (NULL == buf)
+  rdc.buf_len = initial_allocation; 
+  if (NULL == (rdc.buf = malloc (rdc.buf_len)))
     {
-      closedir (dir);
-      goto err;
+      update_cached_response (NULL);
+      return; 
     }
-  off = snprintf (buf, buf_len,
-		  "%s",
-		  INDEX_PAGE_HEADER);
-  while (NULL != (de = readdir (dir)))
-    {
-      if ('.' == de->d_name[0])
-	continue;
-      if (off + 1024 > buf_len)
-	{
-	  void *r;
+  rdc.off = snprintf (rdc.buf, rdc.buf_len,
+		      "%s",
+		      INDEX_PAGE_HEADER);
 
-	  if ( (2 * buf_len + 1024) < buf_len)
-	    break; /* more than SIZE_T _index_ size? Too big for us */
-	  buf_len = 2 * buf_len + 1024;
-	  if (NULL == (r = realloc (buf, buf_len)))
-	    break; /* out of memory */
-	  buf = r;
-	}
-      off += snprintf (&buf[off], buf_len - off,
-		       "<li><a href=\"/%s\">%s</a></li>\n",
-		       de->d_name,
-		       de->d_name);
+  if (MHD_NO == list_directory (&rdc, "."))
+    {
+      free (rdc.buf);
+      update_cached_response (NULL);
+      return;
     }
   /* we ensured always +1k room, filenames are ~256 bytes,
      so there is always still enough space for the footer 
      without need for a final reallocation check. */
-  off += snprintf (&buf[off], buf_len - off,
-		   "%s",
-		   INDEX_PAGE_FOOTER);
-  closedir (dir);
-  initial_allocation = buf_len; /* remember for next time */
-  response = MHD_create_response_from_buffer (off,
-					      buf,
+  rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+		       "%s",
+		       INDEX_PAGE_FOOTER);
+  initial_allocation = rdc.buf_len; /* remember for next time */
+  response = MHD_create_response_from_buffer (rdc.off,
+					      rdc.buf,
 					      MHD_RESPMEM_MUST_FREE);
+  mark_as_html (response);
   update_cached_response (response);
-  return;
- err:
-  /* failed to list directory, use error page */
-  update_cached_response (NULL);
 }
 
 
@@ -178,6 +266,11 @@ struct UploadContext
   int fd;
 
   /**
+   * Name of the file on disk (used to remove on errors).
+   */
+  char *filename;
+
+  /**
    * Post processor we're using to process the upload.
    */
   struct MHD_PostProcessor *pp;
@@ -186,6 +279,11 @@ struct UploadContext
    * Handle to connection that we're processing the upload for.
    */
   struct MHD_Connection *connection;
+
+  /**
+   * Response to generate, NULL to use directory.
+   */
+  struct MHD_Response *response;
 };
 
 
@@ -228,32 +326,48 @@ process_upload_data (void *cls,
     }
   if (-1 == uc->fd)
     {
+      if ( (NULL != strstr (filename, "..")) ||
+	   (NULL != strchr (filename, '/')) ||
+	   (NULL != strchr (filename, '\\')) )
+	{
+	  uc->response = request_refused_response;
+	  return MHD_NO;
+	}
       uc->fd = open (filename, 
 		     O_CREAT | O_EXCL 
 #if O_LARGEFILE
 		     | O_LARGEFILE
 #endif
-#if O_NONBLOCK
-		     | O_NONBLOCK
-#endif
 		     | O_WRONLY,
 		     S_IRUSR | S_IWUSR);
       if (-1 == uc->fd)
 	{
-	  // FIXME: generate error page NICELY
-	  fprintf (stderr, "Error opening file to write!\n");
+	  fprintf (stderr, 
+		   "Error opening file `%s' for upload: %s\n",
+		   filename,
+		   strerror (errno));
+	  uc->response = request_refused_response;
 	  return MHD_NO;
 	}      
     }
-  else if (0 == size)
-    sleep (1);
-
-
+  uc->filename = strdup (filename);
   if ( (0 != size) &&
        (size != write (uc->fd, data, size)) )    
     {
-      // FIXME: generate error page NICELY
-      fprintf (stderr, "Error writing to disk!\n");
+      /* write failed; likely: disk full */
+      fprintf (stderr, 
+	       "Error writing to file `%s': %s\n",
+	       filename,
+	       strerror (errno));
+      uc->response = internal_error_response;
+      close (uc->fd);
+      uc->fd = -1;
+      if (NULL != uc->filename)
+	{
+	  unlink (uc->filename);
+	  free (uc->filename);
+	  uc->filename = NULL;
+	}
       return MHD_NO; 
     }
   return MHD_YES;
@@ -288,10 +402,17 @@ response_completed_callback (void *cls,
     }
   if (-1 != uc->fd)
   {
-    close (uc->fd);
-    fprintf (stderr, "Possible upload failure, need to remove file?!\n");
-    /* FIXME: unlink here on error!? */
+    (void) close (uc->fd);
+    if (NULL != uc->filename)
+      {
+	fprintf (stderr, 
+		 "Upload of file `%s' failed (incomplete or aborted), removing file.\n",
+		 uc->filename);
+	(void) unlink (uc->filename);
+      }
   }
+  if (NULL != uc->filename)    
+    free (uc->filename);
   free (uc);
 }
 
@@ -303,7 +424,7 @@ response_completed_callback (void *cls,
  * @return MHD_YES on success, MHD_NO on error
  */
 static int
-list_directory (struct MHD_Connection *connection)
+return_directory_response (struct MHD_Connection *connection)
 {
   int ret;
 
@@ -319,7 +440,6 @@ list_directory (struct MHD_Connection *connection)
   (void) pthread_mutex_unlock (&mutex);
   return ret;
 }
-
 
 
 /**
@@ -352,6 +472,10 @@ generate_page (void *cls,
   if (0 != strcmp (url, "/"))
     {
       /* should be file download */
+      char file_data[MAGIC_HEADER_SIZE];
+      ssize_t got;
+      const char *mime;
+
       if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
 	return MHD_NO;  /* unexpected method (we're not polite...) */
       if ( (0 == stat (&url[1], &buf)) &&
@@ -364,6 +488,14 @@ generate_page (void *cls,
 	return MHD_queue_response (connection, 
 				   MHD_HTTP_NOT_FOUND, 
 				   file_not_found_response);
+      /* read beginning of the file to determine mime type  */
+      got = read (fd, file_data, sizeof (file_data));
+      if (-1 != got)
+	mime = magic_buffer (magic, file_data, got);
+      else
+	mime = NULL;
+      (void) lseek (fd, 0, SEEK_SET);
+
       if (NULL == (response = MHD_create_response_from_fd (buf.st_size, 
 							   fd)))
 	{
@@ -371,6 +503,12 @@ generate_page (void *cls,
 	  (void) close (fd);
 	  return MHD_NO; 
 	}
+
+      /* add mime type if we had one */
+      if (NULL != mime)
+	(void) MHD_add_response_header (response,
+					MHD_HTTP_HEADER_CONTENT_TYPE,
+					mime);
       ret = MHD_queue_response (connection, 
 				MHD_HTTP_OK, 
 				response);
@@ -387,6 +525,8 @@ generate_page (void *cls,
 	{
 	  if (NULL == (uc = malloc (sizeof (struct UploadContext))))
 	    return MHD_NO; /* out of memory, close connection */
+	  uc->response = NULL;
+	  uc->filename = NULL;
           uc->fd = -1;
 	  uc->connection = connection;
 	  uc->pp = MHD_create_post_processor (connection,
@@ -400,14 +540,15 @@ generate_page (void *cls,
 	    }
 	  *ptr = uc;
 	  return MHD_YES;
-	}
+	}     
       if (0 != *upload_data_size)
 	{
-	  ret = MHD_post_process (uc->pp, 
-				  upload_data,
-				  *upload_data_size);
+	  if (NULL != uc->response)
+	    (void) MHD_post_process (uc->pp, 
+				     upload_data,
+				     *upload_data_size);
 	  *upload_data_size = 0;
-	  return ret;
+	  return MHD_YES;
 	}
       /* end of upload, finish it! */
       MHD_destroy_post_processor (uc->pp);
@@ -417,22 +558,32 @@ generate_page (void *cls,
 	  close (uc->fd);
 	  uc->fd = -1;
 	}
-      update_directory ();
-      return list_directory (connection);
+      if (NULL != uc->response)
+	{
+	  return MHD_queue_response (connection, 
+				     MHD_HTTP_FORBIDDEN, 
+				     uc->response);
+	}
+      else
+	{
+	  update_directory ();
+	  return return_directory_response (connection);
+	}
     }
   if (0 == strcmp (method, MHD_HTTP_METHOD_GET))
-    return list_directory (connection);
+    return return_directory_response (connection);
 
   /* unexpected request, refuse */
-  fprintf (stderr, "Unexpected request, refusing\n");
-  return MHD_NO;
+  return MHD_queue_response (connection, 
+			     MHD_HTTP_FORBIDDEN, 
+			     request_refused_response);
 }
 
 
 /**
  * Entry point to demo.  Note: this HTTP server will make all
  * files in the current directory and its subdirectories available
- * to anyone.
+ * to anyone.  Press ENTER to stop the server once it has started.
  *
  * @param argc number of arguments in argv
  * @param argv first and only argument should be the port number
@@ -452,13 +603,22 @@ main (int argc, char *const *argv)
 	       "%s PORT\n", argv[0]);
       return 1;
     }
+  magic = magic_open (MAGIC_MIME_TYPE);
+  (void) magic_load (magic, NULL);
+
   (void) pthread_mutex_init (&mutex, NULL);
   file_not_found_response = MHD_create_response_from_buffer (strlen (FILE_NOT_FOUND_PAGE),
 							     (void *) FILE_NOT_FOUND_PAGE,
 							     MHD_RESPMEM_PERSISTENT);
+  mark_as_html (file_not_found_response);
+  request_refused_response = MHD_create_response_from_buffer (strlen (REQUEST_REFUSED_PAGE),
+							     (void *) REQUEST_REFUSED_PAGE,
+							     MHD_RESPMEM_PERSISTENT);
+  mark_as_html (request_refused_response);
   internal_error_response = MHD_create_response_from_buffer (strlen (INTERNAL_ERROR_PAGE),
 							     (void *) INTERNAL_ERROR_PAGE,
 							     MHD_RESPMEM_PERSISTENT);
+  mark_as_html (internal_error_response);
   update_directory ();
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         port,
@@ -470,12 +630,15 @@ main (int argc, char *const *argv)
 			MHD_OPTION_END);
   if (NULL == d)
     return 1;
+  fprintf (stderr, "HTTP server running. Press ENTER to stop the server\n");
   (void) getc (stdin);
   MHD_stop_daemon (d);
   MHD_destroy_response (file_not_found_response);
+  MHD_destroy_response (request_refused_response);
   MHD_destroy_response (internal_error_response);
   update_cached_response (NULL);
   (void) pthread_mutex_destroy (&mutex);
+  magic_close (magic);
   return 0;
 }
 
