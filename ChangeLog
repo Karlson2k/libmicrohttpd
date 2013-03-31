@@ -13,7 +13,10 @@ Sun Mar 31 20:03:48 CEST 2013
 	that applications that previously added 4 bytes to the
 	post processor buffer size might now perform worse.
 	Using the new 'demo' example, POST upload speed
-	increased from ~90 MB/s to ~120 MB/s for a large file. -CG
+	increased from ~90 MB/s to ~120 MB/s for a large file
+	(note that the improvement comes from better aligned
+	disk IO; without disk IO, the speed was (and remains)
+	at ~1500 MB/s on this system). -CG
 
 Fri Mar 29 16:44:29 CET 2013
 	Renaming testcases to consistenly begin with test_;
