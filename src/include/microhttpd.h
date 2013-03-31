@@ -934,7 +934,7 @@ typedef int
  */
 typedef void
   (*MHD_RequestCompletedCallback) (void *cls,
-                                   struct MHD_Connection * connection,
+                                   struct MHD_Connection *connection,
                                    void **con_cls,
                                    enum MHD_RequestTerminationCode toe);
 
