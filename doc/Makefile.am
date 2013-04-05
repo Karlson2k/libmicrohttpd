@@ -1,5 +1,4 @@
 man_MANS = libmicrohttpd.3
-EXTRA_DIST = $(man_MANS) Doxyfile 
 
 SUBDIRS = . examples
 
@@ -26,3 +25,4 @@ microhttpd_TEXINFOS = \
   lgpl.texi \
   ecos.texi
 
+EXTRA_DIST = $(man_MANS) Doxyfile $(microhttpd_TEXINFOS)
