@@ -36,7 +36,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <magic.h>
-
+#include <limits.h>
 
 /**
  * Number of threads to run in the thread pool.  Should (roughly) match
