@@ -510,13 +510,20 @@ process_upload_data (void *cls,
 	  return MHD_NO;
 	}
       /* create directories -- if they don't exist already */
+#ifdef WINDOWS
+      (void) mkdir (uc->language);
+#else
       (void) mkdir (uc->language, S_IRWXU);
+#endif
       snprintf (fn, sizeof (fn),
 		"%s/%s",
 		uc->language,
-		uc->category);      
+		uc->category);  
+#ifdef WINDOWS    
+      (void) mkdir (fn);
+#else
       (void) mkdir (fn, S_IRWXU);
-
+#endif
       /* open file */
       snprintf (fn, sizeof (fn),
 		"%s/%s/%s",
