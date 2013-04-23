@@ -2,8 +2,12 @@
    you see fit (Public Domain) */
 
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/select.h>
 #include <sys/socket.h>
+#else
+#include <winsock2.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

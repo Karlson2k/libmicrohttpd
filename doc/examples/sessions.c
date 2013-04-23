@@ -4,13 +4,52 @@
 /* needed for asprintf */
 #define _GNU_SOURCE
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <microhttpd.h>
+
+#ifdef _WIN32
+int
+asprintf (char **resultp, const char *format, ...)
+{
+  va_list argptr;
+  char *result = NULL;
+  int len = 0;
+
+  if (format == NULL)
+    return -1;
+
+  va_start (argptr, format);
+
+  len = _vscprintf ((char *) format, argptr);
+  if (len >= 0)
+  {
+    len += 1;
+    result = (char *) malloc (sizeof (char *) * len);
+    if (result != NULL)
+    {
+      int len2 = _vscprintf ((char *) format, argptr);
+      if (len2 != len - 1 || len2 <= 0)
+      {
+        free (result);
+        result = NULL;
+        len = -1;
+      }
+      else
+      {
+        len = len2;
+        if (resultp)
+          *resultp = result;
+      }
+    }
+  }
+  va_end (argptr);
+  return len;
+}
+#endif
 
 /**
  * Invalid method page.
@@ -163,10 +202,10 @@ get_session (struct MHD_Connection *connection)
   snprintf (ret->sid,
 	    sizeof (ret->sid),
 	    "%X%X%X%X",
-	    (unsigned int) random (),
-	    (unsigned int) random (),
-	    (unsigned int) random (),
-	    (unsigned int) random ());
+	    (unsigned int) rand (),
+	    (unsigned int) rand (),
+	    (unsigned int) rand (),
+	    (unsigned int) rand ());
   ret->rc++;  
   ret->start = time (NULL);
   ret->next = sessions;
@@ -691,7 +730,7 @@ main (int argc, char *const *argv)
       return 1;
     }
   /* initialize PRNG */
-  srandom ((unsigned int) time (NULL));
+  srand ((unsigned int) time (NULL));
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, 
