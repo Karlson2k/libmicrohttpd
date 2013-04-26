@@ -22,6 +22,7 @@ MHD_get_response_headers
 MHD_get_response_header
 MHD_create_post_processor
 MHD_post_process
+MHD_quiesce_daemon
 MHD_destroy_post_processor
 MHD_get_daemon_info
 MHD_get_connection_info

@@ -660,7 +660,7 @@ MHD_handle_connection (void *data)
 #ifdef HAVE_POLL_H
       else
 	{
-	    /* use poll */
+	  /* use poll */
 	  memset(&mp, 0, sizeof (struct MHD_Pollfd));
 	  MHD_connection_get_pollfd(con, &mp);
 	  memset(&p, 0, sizeof (p));
@@ -1137,11 +1137,14 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   int s;
   int flags;
   int need_fcntl;
+  int fd;
 
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
+  if (-1 == (fd = daemon->socket_fd))
+    return MHD_NO;
 #if HAVE_ACCEPT4
-  s = accept4 (daemon->socket_fd, addr, &addrlen, SOCK_CLOEXEC);
+  s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC);
   need_fcntl = MHD_NO;
 #else
   s = -1;
@@ -1149,7 +1152,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   if (-1 == s)
   {
-    s = ACCEPT (daemon->socket_fd, addr, &addrlen);
+    s = ACCEPT (fd, addr, &addrlen);
     need_fcntl = MHD_YES;
   }
   if ((-1 == s) || (addrlen <= 0))
@@ -1353,6 +1356,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *except_fd_set)
 {
   int ds;
+  int tmp;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
 
@@ -1360,6 +1364,11 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if ( (-1 != (ds = daemon->socket_fd)) &&
        (FD_ISSET (ds, read_fd_set)) )
     MHD_accept_connection (daemon);
+  /* drain signaling pipe to avoid spinning select */
+  if ( (-1 != daemon->wpipe[0]) &&
+       (FD_ISSET (daemon->wpipe[0], read_fd_set)) )
+    (void) read (daemon->wpipe[0], &tmp, sizeof (tmp));
+
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* do not have a thread per connection, process all connections now */
@@ -1749,6 +1758,34 @@ MHD_start_daemon (unsigned int options,
   daemon = MHD_start_daemon_va (options, port, apc, apc_cls, dh, dh_cls, ap);
   va_end (ap);
   return daemon;
+}
+
+
+/**
+ * Stop accepting connections from the listening socket.  Allows
+ * clients to continue processing, but stops accepting new
+ * connections.  Note that the caller is responsible for closing the
+ * returned socket; however, if MHD is run using threads (anything but
+ * external select mode), it must not be closed until AFTER
+ * "MHD_stop_daemon" has been called (as it is theoretically possible
+ * that an existing thread is still using it).
+ *
+ * @param daemon daemon to stop accepting new connections for
+ * @return old listen socket on success, -1 if the daemon was 
+ *         already not listening anymore
+ */
+int
+MHD_quiesce_daemon (struct MHD_Daemon *daemon)
+{
+  unsigned int i;
+  int ret;
+
+  ret = daemon->socket_fd;
+  if (NULL != daemon->worker_pool)
+    for (i = 0; i < daemon->worker_pool_size; i++)        
+      daemon->worker_pool[i].socket_fd = -1;    
+  daemon->socket_fd = -1;
+  return ret;
 }
 
 
@@ -2659,7 +2696,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)    
     SHUTDOWN (pos->socket_fd, 
 	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);    
-  if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
+  if (0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex))
     {
       MHD_PANIC ("Failed to release cleanup mutex\n");
     }
@@ -2729,8 +2766,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifdef HAVE_LISTEN_SHUTDOWN
   else
     {
-      /* fd must not be -1 here, otherwise we'd have used the wpipe */
-      SHUTDOWN (fd, SHUT_RDWR);
+      /* fd might be -1 here due to 'MHD_quiesce_daemon' */
+      if (-1 != fd)
+	(void) SHUTDOWN (fd, SHUT_RDWR);
     }
 #endif
 #if DEBUG_CLOSE
@@ -2770,7 +2808,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   close_all_connections (daemon);
   if (-1 != fd)
-    CLOSE (fd);
+    (void) CLOSE (fd);
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
@@ -2791,10 +2829,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   if (-1 != daemon->wpipe[1])
     {
-      CLOSE (daemon->wpipe[0]);
-      CLOSE (daemon->wpipe[1]);
+      (void) CLOSE (daemon->wpipe[0]);
+      (void) CLOSE (daemon->wpipe[1]);
     }
-
   free (daemon);
 }
 

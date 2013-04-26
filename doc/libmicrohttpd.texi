@@ -1086,6 +1086,25 @@ Return @code{NULL} on error, handle to daemon on success.
 @end deftypefun
 
 
+@deftypefun int MHD_quiesce_daemon (struct MHD_Daemon *daemon)
+Stop accepting connections from the listening socket.  Allows clients
+to continue processing, but stops accepting new connections.  Note
+that the caller is responsible for closing the returned socket;
+however, if MHD is run using threads (anything but external select
+mode), it must not be closed until AFTER @code{MHD_stop_daemon} has
+been called (as it is theoretically possible that an existing thread
+is still using it).
+
+This function is useful in the special case that a listen socket
+is to be migrated to another process (i.e. a newer version of the
+HTTP server) while existing connections should continue to be 
+processed until they are finished.
+
+Return @code{-1} on error (daemon not listening), the handle to the
+listen socket otherwise.
+@end deftypefun
+
+
 @deftypefun void MHD_stop_daemon (struct MHD_Daemon *daemon)
 Shutdown an HTTP daemon.
 @end deftypefun

@@ -1102,6 +1102,23 @@ MHD_start_daemon (unsigned int flags,
 
 
 /**
+ * Stop accepting connections from the listening socket.  Allows
+ * clients to continue processing, but stops accepting new
+ * connections.  Note that the caller is responsible for closing the
+ * returned socket; however, if MHD is run using threads (anything but
+ * external select mode), it must not be closed until AFTER
+ * "MHD_stop_daemon" has been called (as it is theoretically possible
+ * that an existing thread is still using it).
+ *
+ * @param daemon daemon to stop accepting new connections for
+ * @return old listen socket on success, -1 if the daemon was 
+ *         already not listening anymore
+ */
+int
+MHD_quiesce_daemon (struct MHD_Daemon *daemon);
+
+
+/**
  * Shutdown an http daemon.
  *
  * @param daemon daemon to stop
