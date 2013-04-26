@@ -29,6 +29,7 @@ endif
 check_PROGRAMS = \
   test_start_stop \
   test_get \
+  test_quiesce \
   test_get_sendfile \
   test_urlparse \
   test_put \
@@ -89,6 +90,12 @@ test_options_LDADD = \
 test_get_SOURCES = \
   test_get.c
 test_get_LDADD = \
+  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  @LIBCURL@ 
+
+test_quiesce_SOURCES = \
+  test_quiesce.c
+test_quiesce_LDADD = \
   $(top_builddir)/src/daemon/libmicrohttpd.la \
   @LIBCURL@ 
 
