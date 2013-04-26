@@ -1468,6 +1468,8 @@ MHD_select (struct MHD_Daemon *daemon,
       timeout.tv_sec = ltimeout / 1000;
       tv = &timeout;
     }
+  if (-1 == max)
+    return MHD_YES;
   num_ready = SELECT (max + 1, &rs, &ws, &es, tv);
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
@@ -1555,6 +1557,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	  p[poll_server+i].events |= POLLOUT;
 	i++;
       }
+    if (0 == poll_server + num_connections)
+      return MHD_YES;
     if (poll (p, poll_server + num_connections, timeout) < 0) 
       {
 	if (EINTR == errno)
@@ -1635,6 +1639,8 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     timeout = 0;
   else
     timeout = -1;
+  if (0 == poll_count)
+    return MHD_YES;
   if (poll (p, poll_count, timeout) < 0)
     {
       if (EINTR == errno)
