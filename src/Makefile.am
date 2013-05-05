@@ -6,4 +6,4 @@ zzuftests = testzzuf
 endif
 endif
 endif
-SUBDIRS = include daemon examples $(curltests) $(zzuftests) . 
+SUBDIRS = include microhttpd examples $(curltests) $(zzuftests) . 

@@ -449,7 +449,7 @@ m4/Makefile
 src/Makefile
 src/include/Makefile
 src/include/plibc/Makefile
-src/daemon/Makefile
+src/microhttpd/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
