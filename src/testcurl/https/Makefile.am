@@ -46,7 +46,7 @@ test_https_time_out_SOURCES = \
   tls_test_common.c
 test_https_time_out_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_tls_options_SOURCES = \
@@ -54,7 +54,7 @@ test_tls_options_SOURCES = \
   tls_test_common.c
 test_tls_options_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_get_parallel_SOURCES = \
@@ -62,7 +62,7 @@ test_https_get_parallel_SOURCES = \
   tls_test_common.c
 test_https_get_parallel_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_empty_response_SOURCES = \
@@ -70,7 +70,7 @@ test_empty_response_SOURCES = \
   tls_test_common.c
 test_empty_response_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_get_parallel_threads_SOURCES = \
@@ -78,7 +78,7 @@ test_https_get_parallel_threads_SOURCES = \
   tls_test_common.c
 test_https_get_parallel_threads_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_tls_authentication_SOURCES = \
@@ -86,7 +86,7 @@ test_tls_authentication_SOURCES = \
   tls_test_common.c
 test_tls_authentication_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_session_info_SOURCES = \
@@ -94,7 +94,7 @@ test_https_session_info_SOURCES = \
   tls_test_common.c
 test_https_session_info_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_multi_daemon_SOURCES = \
@@ -102,7 +102,7 @@ test_https_multi_daemon_SOURCES = \
   tls_test_common.c
 test_https_multi_daemon_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_get_SOURCES = \
@@ -110,7 +110,7 @@ test_https_get_SOURCES = \
   tls_test_common.c
 test_https_get_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_https_get_select_SOURCES = \
@@ -118,6 +118,6 @@ test_https_get_select_SOURCES = \
   tls_test_common.c
 test_https_get_select_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
-  $(top_builddir)/src/daemon/libmicrohttpd.la \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 

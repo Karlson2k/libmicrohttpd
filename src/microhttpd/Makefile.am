@@ -74,19 +74,19 @@ TESTS = $(check_PROGRAMS)
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
 test_postprocessor_amp_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/daemon/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
