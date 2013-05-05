@@ -19,7 +19,7 @@
 */
 
 /**
- * @file postprocessor_large_test.c
+ * @file test_postprocessor_large.c
  * @brief  Testcase with very large input for postprocessor
  * @author Christian Grothoff
  */

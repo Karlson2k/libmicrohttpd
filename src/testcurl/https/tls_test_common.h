@@ -98,6 +98,14 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
                 const char *version, size_t *upload_data_size,
                 void **ptr);
 
+
+/**
+ * compile test file url pointing to the current running directory path
+ *
+ * @param url - char buffer into which the url is compiled
+ * @param port port to use for the test
+ * @return -1 on error
+ */
 int gen_test_file_url (char *url, int port);
 
 int

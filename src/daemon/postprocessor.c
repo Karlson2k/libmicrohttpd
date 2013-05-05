@@ -71,19 +71,19 @@ enum RN_State
   RN_Inactive = 0,
 
   /**
-   * If the next character is '\n', skip it.  Otherwise,
+   * If the next character is CR, skip it.  Otherwise,
    * just go inactive.
    */
   RN_OptN = 1,
 
   /**
-   * Expect '\r\n' (and only '\r\n').  As always, we also
-   * expect only '\r' or only '\n'.
+   * Expect LFCR (and only LFCR).  As always, we also
+   * expect only LF or only CR.
    */
   RN_Full = 2,
 
   /**
-   * Expect either '\r\n' or '--\r\n'.  If '--\r\n', transition into dash-state
+   * Expect either LFCR or '--'LFCR.  If '--'LFCR, transition into dash-state
    * for the main state machine
    */
   RN_Dash = 3,
@@ -221,9 +221,9 @@ struct MHD_PostProcessor
   enum PP_State state;
 
   /**
-   * Side-state-machine: skip '\r\n' (or just '\n').
+   * Side-state-machine: skip LRCR (or just LF).
    * Set to 0 if we are not in skip mode.  Set to 2
-   * if a '\r\n' is expected, set to 1 if a '\n' should
+   * if a LFCR is expected, set to 1 if a CR should
    * be skipped if it is the next character.
    */
   enum RN_State skip_rn;
@@ -256,22 +256,22 @@ struct MHD_PostProcessor
  *        specifically the parsing of the keys).  A
  *        tiny value (256-1024) should be sufficient.
  *        Do NOT use 0.
- * @param ikvi iterator to be called with the parsed data
- * @param cls first argument to ikvi
+ * @param iter iterator to be called with the parsed data
+ * @param iter_cls first argument to iter
  * @return NULL on error (out of memory, unsupported encoding),
  *         otherwise a PP handle
  */
 struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
                            size_t buffer_size,
-                           MHD_PostDataIterator ikvi, void *cls)
+                           MHD_PostDataIterator iter, void *iter_cls)
 {
   struct MHD_PostProcessor *ret;
   const char *encoding;
   const char *boundary;
   size_t blen;
 
-  if ((buffer_size < 256) || (connection == NULL) || (ikvi == NULL))
+  if ((buffer_size < 256) || (connection == NULL) || (iter == NULL))
     mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL);
   encoding = MHD_lookup_connection_value (connection,
                                           MHD_HEADER_KIND,
@@ -312,8 +312,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
     return NULL;
   memset (ret, 0, sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   ret->connection = connection;
-  ret->ikvi = ikvi;
-  ret->cls = cls;
+  ret->ikvi = iter;
+  ret->cls = iter_cls;
   ret->encoding = encoding;
   ret->buffer_size = buffer_size;
   ret->state = PP_Init;
@@ -508,6 +508,15 @@ try_match_header (const char *prefix, char *line, char **suffix)
 /**
  *
  * @param pp post processor context
+ * @param boundary boundary to look for
+ * @param blen number of bytes in boundary
+ * @param ioffptr set to the end of the boundary if found,
+ *                otherwise incremented by one (FIXME: quirky API!)
+ * @param next_state state to which we should advance the post processor
+ *                   if the boundary is found
+ * @param next_dash_state dash_state to which we should advance the
+ *                   post processor if the boundary is found
+ * @return MHD_NO if the boundary is not found, MHD_YES if we did find it
  */
 static int
 find_boundary (struct MHD_PostProcessor *pp,
@@ -595,6 +604,8 @@ try_get_value (const char *buf,
  * @param pp post processor context
  * @param ioffptr set to how many bytes have been
  *                processed
+ * @param next_state state to which the post processor should
+ *                be advanced if we find the end of the headers
  * @return MHD_YES if we can continue processing,
  *         MHD_NO on error or if we do not have
  *                enough data yet
@@ -617,7 +628,7 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
     }
   if (newline == pp->buffer_pos)
     return MHD_NO;              /* will need more data */
-  if (newline == 0)
+  if (0 == newline)
     {
       /* empty line - end of headers */
       pp->skip_rn = RN_Full;
@@ -652,6 +663,7 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
  * process accordingly.
  *
  * @param pp post processor context
+ * @param ioffptr incremented based on the number of bytes processed
  * @param boundary the boundary to look for
  * @param blen strlen(boundary)
  * @param next_state what state to go into after the
@@ -707,7 +719,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
           /* cannot check for boundary, process content that
              we have and check again later; except, if we have
              no content, abort (out of memory) */
-          if ((newline == 0) && (pp->buffer_pos == pp->buffer_size))
+          if ((0 == newline) && (pp->buffer_pos == pp->buffer_size))
             {
               pp->state = PP_Error;
               return MHD_NO;
@@ -745,23 +757,23 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
 static void
 free_unmarked (struct MHD_PostProcessor *pp)
 {
-  if ((pp->content_name != NULL) && (0 == (pp->have & NE_content_name)))
+  if ((NULL != pp->content_name) && (0 == (pp->have & NE_content_name)))
     {
       free (pp->content_name);
       pp->content_name = NULL;
     }
-  if ((pp->content_type != NULL) && (0 == (pp->have & NE_content_type)))
+  if ((NULL != pp->content_type) && (0 == (pp->have & NE_content_type)))
     {
       free (pp->content_type);
       pp->content_type = NULL;
     }
-  if ((pp->content_filename != NULL) &&
+  if ((NULL != pp->content_filename) &&
       (0 == (pp->have & NE_content_filename)))
     {
       free (pp->content_filename);
       pp->content_filename = NULL;
     }
-  if ((pp->content_transfer_encoding != NULL) &&
+  if ((NULL != pp->content_transfer_encoding) &&
       (0 == (pp->have & NE_content_transfer_encoding)))
     {
       free (pp->content_transfer_encoding);
@@ -774,6 +786,9 @@ free_unmarked (struct MHD_PostProcessor *pp)
  * Decode multipart POST data.
  *
  * @param pp post processor context
+ * @param post_data data to decode
+ * @param post_data_len number of bytes in 'post_data'
+ * @return MHD_NO on error, 
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,

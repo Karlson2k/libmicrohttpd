@@ -95,7 +95,7 @@
  * @param cls unused
  * @param file name of the file with the problem
  * @param line line number with the problem
- * @param msg error message with details
+ * @param reason error message with details
  */
 static void 
 mhd_panic_std (void *cls,
@@ -722,7 +722,7 @@ exit:
 /**
  * Callback for receiving data from the socket.
  *
- * @param conn the MHD connection structure
+ * @param connection the MHD connection structure
  * @param other where to write received data to
  * @param i maximum size of other (in bytes)
  * @return number of bytes actually received
@@ -747,7 +747,7 @@ recv_param_adapter (struct MHD_Connection *connection,
 /**
  * Callback for writing data to the socket.
  *
- * @param conn the MHD connection structure
+ * @param connection the MHD connection structure
  * @param other data to write
  * @param i number of bytes to write
  * @return actual number of bytes written
@@ -803,6 +803,9 @@ send_param_adapter (struct MHD_Connection *connection,
 
 /**
  * Signature of main function for a thread.
+ *
+ * @param cls closure argument for the function
+ * @return termination code from the thread
  */
 typedef void *(*ThreadStartRoutine)(void *cls);
 
@@ -817,7 +820,7 @@ typedef void *(*ThreadStartRoutine)(void *cls);
  * @return 0 on success
  */
 static int
-create_thread (pthread_t * thread,
+create_thread (pthread_t *thread,
 	       const struct MHD_Daemon *daemon,
 	       ThreadStartRoutine start_routine,
 	       void *arg)
@@ -1057,29 +1060,22 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       gnutls_transport_set_ptr (connection->tls_session,
 				(gnutls_transport_ptr_t) connection);
       gnutls_transport_set_pull_function (connection->tls_session,
-					  (gnutls_pull_func) &
-                                               recv_param_adapter);
+					  (gnutls_pull_func) &recv_param_adapter);
       gnutls_transport_set_push_function (connection->tls_session,
-					  (gnutls_push_func) &
-                                               send_param_adapter);
+					  (gnutls_push_func) &send_param_adapter);
 
-      if (daemon->https_mem_trust){
-      gnutls_certificate_server_set_request(connection->tls_session, GNUTLS_CERT_REQUEST);
-      }
+      if (daemon->https_mem_trust)
+	  gnutls_certificate_server_set_request(connection->tls_session, GNUTLS_CERT_REQUEST);
     }
 #endif
 
   if (0 != pthread_mutex_lock(&daemon->cleanup_connection_mutex))
-    {
-      MHD_PANIC ("Failed to acquire cleanup mutex\n");
-    }
+    MHD_PANIC ("Failed to acquire cleanup mutex\n");    
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
   if (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex))
-    {
-      MHD_PANIC ("Failed to release cleanup mutex\n");
-    }
+    MHD_PANIC ("Failed to release cleanup mutex\n");    
 
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -1742,6 +1738,7 @@ MHD_select_thread (void *cls)
 /**
  * Start a webserver on the given port.
  *
+ * @param flags combination of MHD_FLAG values
  * @param port port to bind to
  * @param apc callback to call to check which clients
  *        will be allowed to connect
@@ -1751,7 +1748,7 @@ MHD_select_thread (void *cls)
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *
-MHD_start_daemon (unsigned int options,
+MHD_start_daemon (unsigned int flags,
                   uint16_t port,
                   MHD_AcceptPolicyCallback apc,
                   void *apc_cls,
@@ -1761,7 +1758,7 @@ MHD_start_daemon (unsigned int options,
   va_list ap;
 
   va_start (ap, dh_cls);
-  daemon = MHD_start_daemon_va (options, port, apc, apc_cls, dh, dh_cls, ap);
+  daemon = MHD_start_daemon_va (flags, port, apc, apc_cls, dh, dh_cls, ap);
   va_end (ap);
   return daemon;
 }
@@ -2163,16 +2160,19 @@ create_socket (int domain, int type, int protocol)
 /**
  * Start a webserver on the given port.
  *
+ * @param flags combination of MHD_FLAG values
  * @param port port to bind to
  * @param apc callback to call to check which clients
  *        will be allowed to connect
  * @param apc_cls extra argument to apc
  * @param dh default handler for all URIs
  * @param dh_cls extra argument to dh
+ * @param ap list of options (type-value pairs,
+ *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *
-MHD_start_daemon_va (unsigned int options,
+MHD_start_daemon_va (unsigned int flags,
                      uint16_t port,
                      MHD_AcceptPolicyCallback apc,
                      void *apc_cls,
@@ -2193,15 +2193,15 @@ MHD_start_daemon_va (unsigned int options,
   int use_pipe;
 
 #ifndef HAVE_INET6
-  if (0 != (options & MHD_USE_IPv6))
+  if (0 != (flags & MHD_USE_IPv6))
     return NULL;    
 #endif
 #ifndef HAVE_POLL_H
-  if (0 != (options & MHD_USE_POLL))
+  if (0 != (flags & MHD_USE_POLL))
     return NULL;    
 #endif
 #if ! HTTPS_SUPPORT
-  if (0 != (options & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_SSL))
     return NULL;    
 #endif
   if (NULL == dh)
@@ -2211,7 +2211,7 @@ MHD_start_daemon_va (unsigned int options,
   memset (daemon, 0, sizeof (struct MHD_Daemon));
   /* try to open listen socket */
 #if HTTPS_SUPPORT
-  if (0 != (options & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_SSL))
     {
       gnutls_priority_init (&daemon->priority_cache,
 			    "NORMAL",
@@ -2219,7 +2219,7 @@ MHD_start_daemon_va (unsigned int options,
     }
 #endif
   daemon->socket_fd = -1;
-  daemon->options = (enum MHD_OPTION) options;
+  daemon->options = (enum MHD_OPTION) flags;
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;
@@ -2252,7 +2252,7 @@ MHD_start_daemon_va (unsigned int options,
       return NULL;
     }
 #ifndef WINDOWS
-  if ( (0 == (options & MHD_USE_POLL)) &&
+  if ( (0 == (flags & MHD_USE_POLL)) &&
        (daemon->wpipe[0] >= FD_SETSIZE) )
     {
 #if HAVE_MESSAGES
@@ -2271,7 +2271,7 @@ MHD_start_daemon_va (unsigned int options,
   daemon->nonce_nc_size = 4; /* tiny */
 #endif
 #if HTTPS_SUPPORT
-  if (0 != (options & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_SSL))
     {
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
@@ -2281,7 +2281,7 @@ MHD_start_daemon_va (unsigned int options,
   if (MHD_YES != parse_options_va (daemon, &servaddr, ap))
     {
 #if HTTPS_SUPPORT
-      if ( (0 != (options & MHD_USE_SSL)) &&
+      if ( (0 != (flags & MHD_USE_SSL)) &&
 	   (NULL != daemon->priority_cache) )
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif
@@ -2299,7 +2299,7 @@ MHD_start_daemon_va (unsigned int options,
 		    "Specified value for NC_SIZE too large\n");
 #endif
 #if HTTPS_SUPPORT
-	  if (0 != (options & MHD_USE_SSL))
+	  if (0 != (flags & MHD_USE_SSL))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
 	  free (daemon);
@@ -2314,7 +2314,7 @@ MHD_start_daemon_va (unsigned int options,
 		    STRERROR (errno));
 #endif
 #if HTTPS_SUPPORT
-	  if (0 != (options & MHD_USE_SSL))
+	  if (0 != (flags & MHD_USE_SSL))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
 	  free (daemon);
@@ -2329,7 +2329,7 @@ MHD_start_daemon_va (unsigned int options,
 		"MHD failed to initialize nonce-nc mutex\n");
 #endif
 #if HTTPS_SUPPORT
-      if (0 != (options & MHD_USE_SSL))
+      if (0 != (flags & MHD_USE_SSL))
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif
       free (daemon->nnc);
@@ -2339,7 +2339,7 @@ MHD_start_daemon_va (unsigned int options,
 #endif
 
   /* Thread pooling currently works only with internal select thread model */
-  if ( (0 == (options & MHD_USE_SELECT_INTERNALLY)) && 
+  if ( (0 == (flags & MHD_USE_SELECT_INTERNALLY)) && 
        (daemon->worker_pool_size > 0) )
     {
 #if HAVE_MESSAGES
@@ -2350,7 +2350,7 @@ MHD_start_daemon_va (unsigned int options,
     }
 
 #ifdef __SYMBIAN32__
-  if (0 != (options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
+  if (0 != (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -2363,14 +2363,14 @@ MHD_start_daemon_va (unsigned int options,
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
-      if ((options & MHD_USE_IPv6) != 0)
+      if ((flags & MHD_USE_IPv6) != 0)
 	socket_fd = create_socket (PF_INET6, SOCK_STREAM, 0);
       else
 	socket_fd = create_socket (PF_INET, SOCK_STREAM, 0);
       if (-1 == socket_fd)
 	{
 #if HAVE_MESSAGES
-	  if (0 != (options & MHD_USE_DEBUG))
+	  if (0 != (flags & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon, 
 		      "Call to socket failed: %s\n", 
 		      STRERROR (errno));
@@ -2380,7 +2380,7 @@ MHD_start_daemon_va (unsigned int options,
       if ((SETSOCKOPT (socket_fd,
 		       SOL_SOCKET,
 		       SO_REUSEADDR,
-		       &on, sizeof (on)) < 0) && ((options & MHD_USE_DEBUG) != 0))
+		       &on, sizeof (on)) < 0) && ((flags & MHD_USE_DEBUG) != 0))
 	{
 #if HAVE_MESSAGES
 	  MHD_DLOG (daemon, 
@@ -2391,7 +2391,7 @@ MHD_start_daemon_va (unsigned int options,
       
       /* check for user supplied sockaddr */
 #if HAVE_INET6
-      if (0 != (options & MHD_USE_IPv6))
+      if (0 != (flags & MHD_USE_IPv6))
 	addrlen = sizeof (struct sockaddr_in6);
       else
 #endif
@@ -2399,7 +2399,7 @@ MHD_start_daemon_va (unsigned int options,
       if (NULL == servaddr)
 	{
 #if HAVE_INET6
-	  if (0 != (options & MHD_USE_IPv6))
+	  if (0 != (flags & MHD_USE_IPv6))
 	    {
 	      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
 	      servaddr6.sin6_family = AF_INET6;
@@ -2423,7 +2423,7 @@ MHD_start_daemon_va (unsigned int options,
 	}
       daemon->socket_fd = socket_fd;
 
-      if (0 != (options & MHD_USE_IPv6))
+      if (0 != (flags & MHD_USE_IPv6))
 	{
 #ifdef IPPROTO_IPV6
 #ifdef IPV6_V6ONLY
@@ -2448,7 +2448,7 @@ MHD_start_daemon_va (unsigned int options,
       if (-1 == BIND (socket_fd, servaddr, addrlen))
 	{
 #if HAVE_MESSAGES
-	  if (0 != (options & MHD_USE_DEBUG))
+	  if (0 != (flags & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Failed to bind to port %u: %s\n", 
 		      (unsigned int) port, 
@@ -2461,7 +2461,7 @@ MHD_start_daemon_va (unsigned int options,
       if (LISTEN (socket_fd, 20) < 0)
 	{
 #if HAVE_MESSAGES
-	  if (0 != (options & MHD_USE_DEBUG))
+	  if (0 != (flags & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Failed to listen for connections: %s\n", 
 		      STRERROR (errno));
@@ -2476,10 +2476,10 @@ MHD_start_daemon_va (unsigned int options,
     }
 #ifndef WINDOWS
   if ( (socket_fd >= FD_SETSIZE) &&
-       (0 == (options & MHD_USE_POLL)) )
+       (0 == (flags & MHD_USE_POLL)) )
     {
 #if HAVE_MESSAGES
-      if ((options & MHD_USE_DEBUG) != 0)
+      if ((flags & MHD_USE_DEBUG) != 0)
         MHD_DLOG (daemon,
 		  "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
 		  socket_fd,
@@ -2514,7 +2514,7 @@ MHD_start_daemon_va (unsigned int options,
 
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if ((0 != (options & MHD_USE_SSL)) && (0 != MHD_TLS_init (daemon)))
+  if ((0 != (flags & MHD_USE_SSL)) && (0 != MHD_TLS_init (daemon)))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, 
@@ -2527,8 +2527,8 @@ MHD_start_daemon_va (unsigned int options,
       goto free_and_fail;
     }
 #endif
-  if ( ( (0 != (options & MHD_USE_THREAD_PER_CONNECTION)) ||
-	 ( (0 != (options & MHD_USE_SELECT_INTERNALLY)) &&
+  if ( ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) ||
+	 ( (0 != (flags & MHD_USE_SELECT_INTERNALLY)) &&
 	   (0 == daemon->worker_pool_size)) ) && 
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) &&
        (0 != (res_thread_create =
@@ -2671,7 +2671,7 @@ thread_failed:
   pthread_mutex_destroy (&daemon->nnc_lock);
 #endif
 #if HTTPS_SUPPORT
-  if (0 != (options & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_SSL))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
   free (daemon);

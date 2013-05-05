@@ -736,6 +736,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
+ * @param response reply to send; should contain the "access denied"
+ *        body; note that this function will set the "WWW Authenticate"
+ *        header and that the caller should not do this
  * @param signal_stale MHD_YES if the nonce is invalid to add
  * 			'stale=true' to the authentication header
  * @return MHD_YES on success, MHD_NO otherwise

@@ -492,9 +492,9 @@ post_iterator (void *cls,
 /**
  * Main MHD callback for handling requests.
  *
- *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
+ * @param connection handle identifying the incoming connection
  * @param url the requested url
  * @param method the HTTP method used ("GET", "PUT", etc.)
  * @param version the HTTP version string (i.e. "HTTP/1.1")
@@ -508,7 +508,7 @@ post_iterator (void *cls,
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param con_cls pointer that the callback can set to some
+ * @param ptr pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation

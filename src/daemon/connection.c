@@ -1107,7 +1107,7 @@ get_next_header_line (struct MHD_Connection *connection)
 	}        
       return NULL;
     }
-  /* found, check if we have proper CRLF */
+  /* found, check if we have proper LFCR */
   if (('\r' == rbuf[pos]) && ('\n' == rbuf[pos + 1]))
     rbuf[pos++] = '\0';         /* skip both r and n */
   rbuf[pos++] = '\0';

@@ -18,7 +18,7 @@
 */
 
 /**
- * @file include/plibc.h
+ * @file plibc.h
  * @brief PlibC header
  * @attention This file is usually not installed under Unix,
  *            so ship it with your application

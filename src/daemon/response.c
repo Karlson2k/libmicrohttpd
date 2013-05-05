@@ -158,6 +158,7 @@ MHD_del_response_header (struct MHD_Response *response,
 /**
  * Get all of the headers added to a response.
  *
+ * @param response response to query
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to iterator
@@ -185,11 +186,13 @@ MHD_get_response_headers (struct MHD_Response *response,
 /**
  * Get a particular header from the response.
  *
+ * @param response response to query
  * @param key which header to get
  * @return NULL if header does not exist
  */
 const char *
-MHD_get_response_header (struct MHD_Response *response, const char *key)
+MHD_get_response_header (struct MHD_Response *response, 
+			 const char *key)
 {
   struct MHD_HTTP_Header *pos;
 
@@ -296,7 +299,7 @@ free_callback (void *cls)
  *
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the data
- * @param off offset to start reading from in the file
+ * @param offset offset to start reading from in the file
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,

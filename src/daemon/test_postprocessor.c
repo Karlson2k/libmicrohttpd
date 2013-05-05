@@ -19,7 +19,7 @@
 */
 
 /**
- * @file postprocessor_test.c
+ * @file test_postprocessor.c
  * @brief  Testcase for postprocessor
  * @author Christian Grothoff
  */

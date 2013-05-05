@@ -66,7 +66,7 @@
  * "platform.h" in the MHD distribution).  If you have done so, you
  * should also have a line with "#define MHD_PLATFORM_H" which will
  * prevent this header from trying (and, depending on your platform,
- * failing) to #include the right headers.
+ * failing) to include the right headers.
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -1066,12 +1066,12 @@ typedef int
  * @param apc_cls extra argument to apc
  * @param dh handler called for all requests (repeatedly)
  * @param dh_cls extra argument to dh
- * @param ... list of options (type-value pairs,
+ * @param ap list of options (type-value pairs,
  *        terminated with MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
 struct MHD_Daemon *
-MHD_start_daemon_va (unsigned int options,
+MHD_start_daemon_va (unsigned int flags,
 		     uint16_t port,
 		     MHD_AcceptPolicyCallback apc, void *apc_cls,
 		     MHD_AccessHandlerCallback dh, void *dh_cls, 
@@ -1458,7 +1458,7 @@ MHD_create_response_from_fd (size_t size,
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
- * @param off offset to start reading from in the file;
+ * @param offset offset to start reading from in the file;
  *        Be careful! 'off_t' may have been compiled to be a 
  *        64-bit variable for MHD, in which case your application
  *        also has to be compiled using the same options! Read
@@ -1655,6 +1655,7 @@ int
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header, const char *content);
 
+
 /**
  * Get all of the headers (and footers) added to a response.
  *
@@ -1702,14 +1703,14 @@ const char *MHD_get_response_header (struct MHD_Response *response,
  *        performance, use 32 or 64k (i.e. 65536).
  * @param iter iterator to be called with the parsed data,
  *        Must NOT be NULL.
- * @param cls first argument to ikvi
+ * @param iter_cls first argument to iter
  * @return  NULL on error (out of memory, unsupported encoding),
  *          otherwise a PP handle
  */
 struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
 			   size_t buffer_size,
-			   MHD_PostDataIterator iter, void *cls);
+			   MHD_PostDataIterator iter, void *iter_cls);
 
 /**
  * Parse and process POST data.
@@ -1818,9 +1819,13 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 
 /**
  * Queues a response to request basic authentication from the client
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
  *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
+ * @param response response object to modify and queue
  * @return MHD_YES on success, MHD_NO otherwise
  */
 int

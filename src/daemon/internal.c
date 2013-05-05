@@ -111,6 +111,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
  *
  * @param cls closure (use NULL)
  * @param connection handle to connection, not used
+ * @param val value to unescape (modified in the process)
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */

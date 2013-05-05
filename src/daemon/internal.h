@@ -57,14 +57,14 @@ extern void *mhd_panic_cls;
 /**
  * Trigger 'panic' action based on fatal errors.
  * 
- * @param error message (const char *)
+ * @param msg error message (const char *)
  */
 #define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg)
 #else
 /**
  * Trigger 'panic' action based on fatal errors.
  * 
- * @param error message (const char *)
+ * @param msg error message (const char *)
  */
 #define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL)
 #endif
@@ -156,6 +156,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
  *
  * @param cls closure (use NULL)
  * @param connection handle to connection, not used
+ * @param val value to unescape (modified in the process)
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */

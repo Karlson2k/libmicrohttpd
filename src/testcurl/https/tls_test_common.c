@@ -252,10 +252,13 @@ send_curl_req (char *url, struct CBC * cbc, const char *cipher_suite,
   return CURLE_OK;
 }
 
+
 /**
  * compile test file url pointing to the current running directory path
+ *
  * @param url - char buffer into which the url is compiled
- * @return
+ * @param port port to use for the test
+ * @return -1 on error
  */
 int
 gen_test_file_url (char *url, int port)

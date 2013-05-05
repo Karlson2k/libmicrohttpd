@@ -42,6 +42,7 @@ struct MemoryPool;
  * Create a memory pool.
  *
  * @param max maximum size of the pool
+ * @return NULL on error
  */
 struct MemoryPool *
 MHD_pool_create (size_t max);
@@ -49,6 +50,8 @@ MHD_pool_create (size_t max);
 
 /**
  * Destroy a memory pool.
+ *
+ * @param pool memory pool to destroy
  */
 void 
 MHD_pool_destroy (struct MemoryPool *pool);
@@ -57,6 +60,8 @@ MHD_pool_destroy (struct MemoryPool *pool);
 /**
  * Allocate size bytes from the pool.
  *
+ * @param pool memory pool to use for the operation
+ * @param size number of bytes to allocate
  * @param from_end allocate from end of pool (set to MHD_YES);
  *        use this for small, persistent allocations that
  *        will never be reallocated
@@ -77,6 +82,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * allocation may be leaked until the pool is
  * destroyed (and copying the data maybe required).
  *
+ * @param pool memory pool to use for the operation
  * @param old the existing block
  * @param old_size the size of the existing block
  * @param new_size the new size of the block
@@ -95,6 +101,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * Clear all entries from the memory pool except
  * for "keep" of the given "size".
  *
+ * @param pool memory pool to use for the operation
  * @param keep pointer to the entry to keep (maybe NULL)
  * @param size how many bytes need to be kept at this address
  * @return addr new address of "keep" (if it had to change)

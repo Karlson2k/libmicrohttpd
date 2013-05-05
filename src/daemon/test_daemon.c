@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemon_test.c
+ * @file test_daemon.c
  * @brief  Testcase for libmicrohttpd starts and stops
  * @author Christian Grothoff
  */
