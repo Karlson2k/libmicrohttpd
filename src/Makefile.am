@@ -6,4 +6,13 @@ zzuftests = testzzuf
 endif
 endif
 endif
-SUBDIRS = include microhttpd examples $(curltests) $(zzuftests) . 
+if ENABLE_SPDY
+# fixme: should test for spdylay before building testspdy!
+microspdy = microspdy testspdy
+endif
+
+SUBDIRS = include microhttpd $(microspdy) examples $(curltests) $(zzuftests) . 
+
+EXTRA_DIST = \
+ datadir/cert-and-key.pem \
+ datadir/cert-and-key-for-wireshark.pem

@@ -9,20 +9,32 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   @LIBGCRYPT_CFLAGS@
 
+AM_CFLAGS = -DDATADIR=\"$(top_srcdir)/src/datadir/\"
+
 if USE_COVERAGE
-  AM_CFLAGS = --coverage
+  AM_CFLAGS += --coverage
 endif
+
+if ENABLE_SPDY
+spdyex = \
+  spdy_event_loop \
+  spdy_fileserver \
+  spdy_response_with_callback
+endif
+
 
 # example programs
 noinst_PROGRAMS = \
-minimal_example \
-dual_stack_example \
-minimal_example_comet \
-querystring_example \
-fileserver_example \
-fileserver_example_dirs \
-fileserver_example_external_select \
-refuse_post_example
+ minimal_example \
+ dual_stack_example \
+ minimal_example_comet \
+ querystring_example \
+ fileserver_example \
+ fileserver_example_dirs \
+ fileserver_example_external_select \
+ refuse_post_example \
+ $(spdyex)
+
 
 if ENABLE_HTTPS
 noinst_PROGRAMS += https_fileserver_example 
@@ -116,3 +128,31 @@ https_fileserver_example_SOURCES = \
 https_fileserver_example.c
 https_fileserver_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+
+spdy_event_loop_SOURCES = \
+ spdy_event_loop.c 
+spdy_event_loop_LDADD = \
+  $(top_builddir)/src/microspdy/libmicrospdy.la \
+ -lssl \
+ -lcrypto \
+ -lz \
+ -ldl
+
+spdy_fileserver_SOURCES = \
+ spdy_fileserver.c 
+spdy_fileserver_LDADD = \
+  $(top_builddir)/src/microspdy/libmicrospdy.la \
+ -lssl \
+ -lcrypto \
+ -lz \
+ -ldl
+
+spdy_response_with_callback_SOURCES = \
+ spdy_response_with_callback.c 
+spdy_response_with_callback_LDADD = \
+  $(top_builddir)/src/microspdy/libmicrospdy.la \
+ -lssl \
+ -lcrypto \
+ -lz \
+ -ldl

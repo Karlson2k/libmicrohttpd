@@ -34,6 +34,14 @@ AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
 
+LIBSPDY_VERSION_CURRENT=0
+LIBSPDY_VERSION_REVISION=0
+LIBSPDY_VERSION_AGE=0
+AC_SUBST(LIBSPDY_VERSION_CURRENT)
+AC_SUBST(LIBSPDY_VERSION_REVISION)
+AC_SUBST(LIBSPDY_VERSION_AGE)
+
+
 if test `uname -s` = "OS/390"
 then
 # configure binaries for z/OS
@@ -263,6 +271,39 @@ AC_CHECK_LIB(magic, magic_open,
    AM_CONDITIONAL(HAVE_MAGIC, false))],
   AM_CONDITIONAL(HAVE_MAGIC, false))
 
+
+# optional: libmicrospdy support. Enabled by default
+AC_MSG_CHECKING(whether to support libmicrospdy)
+AC_ARG_ENABLE([spdy],
+		AS_HELP_STRING([--disable-spdy],
+			[disable libmicrospdy]),
+		[enable_spdy=${enableval}],
+		[enable_spdy=yes])
+if test "$enable_spdy" = "yes"
+then
+ AC_DEFINE([SPDY_SUPPORT],[1],[include libmicrospdy support])
+else
+ AC_DEFINE([SPDY_SUPPORT],[0],[disable libmicrospdy support])
+fi
+AC_MSG_RESULT($enable_spdy)
+AM_CONDITIONAL(ENABLE_SPDY, [test "x$enable_spdy" != "xno"])
+
+spdy_OPENSSL
+# for pkg-config
+SPDY_LIBDEPS=""
+
+
+AC_SUBST(SPDY_LIB_LDFLAGS)
+# for pkg-config
+AC_SUBST(SPDY_LIBDEPS)
+
+AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
+AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
+AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
+AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
+
+
+
 LIBS=$SAVE_LIBS
 AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 
@@ -450,9 +491,12 @@ src/Makefile
 src/include/Makefile
 src/include/plibc/Makefile
 src/microhttpd/Makefile
+src/microspdy/Makefile
+src/spdy2http/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
+src/testspdy/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 
