@@ -11,7 +11,7 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/daemon \
+  -I$(top_srcdir)/src/microhttpd \
   $(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \
