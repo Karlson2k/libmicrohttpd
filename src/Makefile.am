@@ -8,7 +8,7 @@ endif
 endif
 if ENABLE_SPDY
 # fixme: should test for spdylay before building testspdy!
-microspdy = microspdy testspdy
+microspdy = microspdy spdy2http testspdy
 endif
 
 SUBDIRS = include microhttpd $(microspdy) examples $(curltests) $(zzuftests) . 
