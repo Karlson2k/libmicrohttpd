@@ -1,3 +1,7 @@
+Sun May  5 20:13:59 CEST 2013
+	Improved documentation and code style a bit.
+	Releasing libmicrohttpd 0.9.27. -CG
+
 Thu Apr 25 13:08:10 CEST 2013
 	Added 'MHD_quiesce_daemon' to allow application to stop
 	processing new incoming connections while finishing
