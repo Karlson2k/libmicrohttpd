@@ -2034,6 +2034,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 pthread_mutex_unlock (&response->mutex);
               break;
             }
+#if 0
 	  if (response->data_size == connection->response_write_position - response->data_start)
 	    {
 	      /* nothing to transmit, move on */
@@ -2042,6 +2043,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 	      connection->state = MHD_CONNECTION_BODY_SENT;
 	      return MHD_YES;
 	    }
+#endif
 	  ret = connection->send_cls (connection,
 				      &response->data
 				      [connection->response_write_position
