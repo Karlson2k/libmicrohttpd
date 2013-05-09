@@ -781,6 +781,34 @@ generate_page (void *cls,
 }
 
 
+static void
+catcher (int sig)
+{
+}
+
+
+/**
+ * setup handlers to ignore SIGPIPE.
+ */
+static void
+ignore_sigpipe ()
+{
+  struct sigaction oldsig;
+  struct sigaction sig;
+
+  sig.sa_handler = &catcher;
+  sigemptyset (&sig.sa_mask);
+#ifdef SA_INTERRUPT
+  sig.sa_flags = SA_INTERRUPT;  /* SunOS */
+#else
+  sig.sa_flags = SA_RESTART;
+#endif
+  if (0 != sigaction (SIGPIPE, &sig, &oldsig))
+    fprintf (stderr,
+             "Failed to install SIGPIPE handler: %s\n", strerror (errno));
+}
+
+
 /**
  * Entry point to demo.  Note: this HTTP server will make all
  * files in the current directory and its subdirectories available
@@ -804,6 +832,7 @@ main (int argc, char *const *argv)
 	       "%s PORT\n", argv[0]);
       return 1;
     }
+  ignore_sigpipe ();
   magic = magic_open (MAGIC_MIME_TYPE);
   (void) magic_load (magic, NULL);
 
