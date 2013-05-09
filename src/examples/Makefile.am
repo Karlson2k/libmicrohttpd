@@ -43,7 +43,7 @@ if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
   post_example 
 if HAVE_MAGIC
-noinst_PROGRAMS += \
+bin_PROGRAMS = \
   demo 
 endif
 endif

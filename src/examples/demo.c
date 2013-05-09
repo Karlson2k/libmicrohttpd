@@ -37,6 +37,7 @@
 #include <dirent.h>
 #include <magic.h>
 #include <limits.h>
+#include <ctype.h>
 
 /**
  * Number of threads to run in the thread pool.  Should (roughly) match
@@ -280,7 +281,7 @@ list_directory (struct ResponseDataContext *rdc,
       rdc->off += snprintf (&rdc->buf[rdc->off], 
 			    rdc->buf_len - rdc->off,
 			    "<li><a href=\"/%s\">%s</a></li>\n",
-			    de->d_name,
+			    fullname,
 			    de->d_name);
     }
   (void) closedir (dir);
@@ -472,6 +473,7 @@ process_upload_data (void *cls,
 		     size_t size)
 {
   struct UploadContext *uc = cls;
+  int i;
 
   if (0 == strcmp (key, "category"))
     return do_append (&uc->category, data, size);
@@ -529,7 +531,10 @@ process_upload_data (void *cls,
 		"%s/%s/%s",
 		uc->language,
 		uc->category,
-		filename);      
+		filename); 
+      for (i=strlen (fn)-1;i>=0;i--)
+	if (! isprint ((int) fn[i]))
+	  fn[i] = '_';
       uc->fd = open (fn, 
 		     O_CREAT | O_EXCL 
 #if O_LARGEFILE
