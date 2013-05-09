@@ -781,9 +781,15 @@ generate_page (void *cls,
 }
 
 
+/**
+ * Function called if we get a SIGPIPE. Does nothing.
+ *
+ * @param sig will be SIGPIPE (ignored)
+ */
 static void
 catcher (int sig)
 {
+  /* do nothing */
 }
 
 
