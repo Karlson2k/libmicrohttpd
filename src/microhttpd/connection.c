@@ -2037,6 +2037,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 	  if (response->data_size == connection->response_write_position - response->data_start)
 	    {
 	      /* nothing to transmit, move on */
+              if (response->crc != NULL)
+                pthread_mutex_unlock (&response->mutex);
 	      connection->state = MHD_CONNECTION_BODY_SENT;
 	      return MHD_YES;
 	    }
