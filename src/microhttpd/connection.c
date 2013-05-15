@@ -2034,16 +2034,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 pthread_mutex_unlock (&response->mutex);
               break;
             }
-#if 0
-	  if (response->data_size == connection->response_write_position - response->data_start)
-	    {
-	      /* nothing to transmit, move on */
-              if (response->crc != NULL)
-                pthread_mutex_unlock (&response->mutex);
-	      connection->state = MHD_CONNECTION_BODY_SENT;
-	      return MHD_YES;
-	    }
-#endif
 	  ret = connection->send_cls (connection,
 				      &response->data
 				      [connection->response_write_position
@@ -2359,6 +2349,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
           if (connection->response->crc != NULL)
             pthread_mutex_lock (&connection->response->mutex);
+          if (0 == connection->response->total_size)
+            {
+              if (connection->response->crc != NULL)
+                pthread_mutex_unlock (&connection->response->mutex);
+              connection->state = MHD_CONNECTION_BODY_SENT;
+              continue;
+            }
           if (MHD_YES == try_ready_normal_body (connection))
             {
               if (connection->response->crc != NULL)
@@ -2376,6 +2373,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           if (connection->response->crc != NULL)
             pthread_mutex_lock (&connection->response->mutex);
+          if (0 == connection->response->total_size)
+            {
+              if (connection->response->crc != NULL)
+                pthread_mutex_unlock (&connection->response->mutex);
+              connection->state = MHD_CONNECTION_BODY_SENT;
+              continue;
+            }
           if (MHD_YES == try_ready_chunked_body (connection))
             {
               if (connection->response->crc != NULL)
