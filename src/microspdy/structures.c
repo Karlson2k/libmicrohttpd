@@ -48,8 +48,8 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 					const char *name, 
 					const char *value)
 {
-	uint i;
-	uint len;
+	unsigned int i;
+	unsigned int len;
 	struct SPDY_NameValue *pair;
 	struct SPDY_NameValue *temp;
 	char **temp_value;
@@ -202,7 +202,7 @@ SPDY_name_value_lookup (struct SPDY_NameValue *container,
 void
 SPDY_name_value_destroy (struct SPDY_NameValue *container)
 {
-	uint i;
+	unsigned int i;
 	struct SPDY_NameValue *temp = container;
 	
 	while(NULL != temp)
@@ -286,7 +286,7 @@ SPDYF_response_queue_create(bool is_data,
 	struct SPDYF_Response_Queue *response_to_queue;
 	struct SPDYF_Control_Frame *control_frame;
 	struct SPDYF_Data_Frame *data_frame;
-	uint i;
+	unsigned int i;
 	bool is_last;
 	
 	SPDYF_ASSERT(!is_data
@@ -444,9 +444,9 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
 	int32_t value_size;
 	int32_t name_size;
 	int32_t temp;
-	uint i;
-	uint offset;
-	uint value_offset;
+	unsigned int i;
+	unsigned int offset;
+	unsigned int value_offset;
 	struct SPDY_NameValue * iterator;
 	int j;
 	
@@ -533,8 +533,8 @@ SPDYF_name_value_from_stream(void *stream,
 	int32_t value_size;
 	int32_t name_size;
 	int i;
-	uint offset = 0;
-	uint value_end_offset;
+	unsigned int offset = 0;
+	unsigned int value_end_offset;
 	char *name;
 	char *value;
 

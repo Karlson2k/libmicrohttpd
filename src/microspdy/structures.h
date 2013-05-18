@@ -487,7 +487,7 @@ struct SPDY_NameValue
 	/**
 	* Number of values, this is >= 0.
 	*/
-	uint num_values;
+	unsigned int num_values;
 };
 
 

@@ -40,7 +40,7 @@ char* basedir;
 
 	
 #define GET_MIME_TYPE(fname, mime)	do {\
-		uint __len = strlen(fname);\
+		unsigned int __len = strlen(fname);\
 		if (__len < 4 || '.' != (fname)[__len - 4]) break;\
 		const char * __ext = &(fname)[__len - 3];\
 		if(0 == strcmp(__ext, "jpg")) (mime) = strdup("image/jpeg");\

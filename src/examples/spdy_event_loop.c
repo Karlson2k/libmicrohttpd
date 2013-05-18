@@ -35,7 +35,9 @@
 #include "microspdy.h"
 #include <sys/time.h>
 #include <time.h>
+#ifndef MINGW
 #include <arpa/inet.h>
+#endif
 //#include "../framinglayer/structures.h"
 //#include "../applicationlayer/alstructures.h"
 
@@ -259,8 +261,10 @@ main (int argc, char *const *argv)
 {	
 	if(argc != 2) return 1;
 	
-	  if (signal(SIGPIPE, sig_handler) == SIG_ERR)
-  printf("\ncan't catch SIGPIPE\n");
+	#ifndef MINGW
+	if (signal(SIGPIPE, sig_handler) == SIG_ERR)
+		printf("\ncan't catch SIGPIPE\n");
+	#endif
 	
 	SPDY_init();
 	
@@ -272,8 +276,8 @@ main (int argc, char *const *argv)
 	addr4.sin_port = htons(atoi(argv[1]));
 	
 	struct SPDY_Daemon *daemon = SPDY_start_daemon(atoi(argv[1]),
-	 DATADIR "cert-and-key.pem",
-	 DATADIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
 	&new_session_callback,&session_closed_handler,&standard_request_handler,NULL,NULL,
 	SPDY_DAEMON_OPTION_SESSION_TIMEOUT, 10,
 	//SPDY_DAEMON_OPTION_SOCK_ADDR,  (struct sockaddr *)&addr4,
@@ -290,8 +294,8 @@ main (int argc, char *const *argv)
 	addr6.sin6_port = htons(atoi(argv[1]) + 1);
 	
 	struct SPDY_Daemon *daemon2 = SPDY_start_daemon(atoi(argv[1]) + 1,
-	 DATADIR "cert-and-key.pem",
-	 DATADIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
 	&new_session_callback,NULL,&standard_request_handler,NULL,&main,
 	//SPDY_DAEMON_OPTION_SESSION_TIMEOUT, 0,
 	//SPDY_DAEMON_OPTION_SOCK_ADDR,  (struct sockaddr *)&addr6,

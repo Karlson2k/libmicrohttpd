@@ -43,8 +43,8 @@ main()
 		for(j=0;j<num_daemons;++j)
 		{
 			daemon[j] = SPDY_start_daemon(port + j,
-			DATADIR "cert-and-key.pem",
-			DATADIR "cert-and-key.pem",
+			DATA_DIR "cert-and-key.pem",
+			DATA_DIR "cert-and-key.pem",
 			NULL,NULL,NULL,NULL,NULL,SPDY_DAEMON_OPTION_END);
 	
 			if(NULL==daemon[j]){

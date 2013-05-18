@@ -114,7 +114,7 @@ standard_request_handler(void *cls,
 	
 	printf("received request for '%s %s %s'\n", method, path, version);
 	
-		FILE *fd = fopen(DATADIR "spdy-draft.txt","r");
+		FILE *fd = fopen(DATA_DIR "spdy-draft.txt","r");
 		
 		if(NULL == (resp_headers = SPDY_name_value_create()))
 		{
@@ -161,8 +161,8 @@ parentproc()
 	SPDY_init();
 	
 	daemon = SPDY_start_daemon(port,
-								DATADIR "cert-and-key.pem",
-								DATADIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
 								NULL,
 								NULL,
 								&standard_request_handler,
@@ -257,7 +257,7 @@ childproc()
 	uint64_t usecs;
 	
 	asprintf(&cmd1, "spdycat https://127.0.0.1:%i/ | md5sum",port);
-	asprintf(&cmd2, "md5sum " DATADIR "spdy-draft.txt");
+	asprintf(&cmd2, "md5sum " DATA_DIR "spdy-draft.txt");
 	
 	gettimeofday(&tv1, NULL);
 	md5(cmd1,md5_sum1);
@@ -268,7 +268,7 @@ childproc()
 	printf("original   file md5: %s\n", md5_sum2);
 	ret = strcmp(md5_sum1, md5_sum2);
 	
-	if(0 == ret && 0 == stat(DATADIR "spdy-draft.txt", &st))
+	if(0 == ret && 0 == stat(DATA_DIR "spdy-draft.txt", &st))
 	{
 		usecs = (uint64_t)1000000 * (uint64_t)(tv2.tv_sec - tv1.tv_sec) + tv2.tv_usec - tv1.tv_usec;
 		printf("%i bytes read in %i usecs\n", st.st_size, usecs);

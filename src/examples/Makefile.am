@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   @LIBGCRYPT_CFLAGS@
 
-AM_CFLAGS = -DDATADIR=\"$(top_srcdir)/src/datadir/\"
+AM_CFLAGS = -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage

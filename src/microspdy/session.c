@@ -44,7 +44,7 @@ static void
 spdyf_handler_read_syn_stream (struct SPDY_Session *session)
 {
 	size_t name_value_strm_size = 0;
-	uint compressed_data_size;
+	unsigned int compressed_data_size;
 	int ret;
 	void *name_value_strm = NULL;
 	struct SPDYF_Control_Frame *frame;

@@ -32,8 +32,8 @@ main()
 	SPDY_init();
 	
 	struct SPDY_Daemon *daemon = SPDY_start_daemon(get_port(16123),
-	 DATADIR "cert-and-key.pem",
-	 DATADIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
+	 DATA_DIR "cert-and-key.pem",
 	NULL,NULL,NULL,NULL,NULL,SPDY_DAEMON_OPTION_END);
 	
 	if(NULL==daemon){

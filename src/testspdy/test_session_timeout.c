@@ -105,8 +105,8 @@ parentproc()
 	SPDY_init();
 	
 	daemon = SPDY_start_daemon(port,
-								DATADIR "cert-and-key.pem",
-								DATADIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
 								&new_session_cb,
 								&closed_session_cb,
 								NULL,

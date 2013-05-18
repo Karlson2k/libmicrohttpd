@@ -796,6 +796,7 @@ catcher (int sig)
 /**
  * setup handlers to ignore SIGPIPE.
  */
+#ifndef MINGW
 static void
 ignore_sigpipe ()
 {
@@ -813,7 +814,7 @@ ignore_sigpipe ()
     fprintf (stderr,
              "Failed to install SIGPIPE handler: %s\n", strerror (errno));
 }
-
+#endif
 
 /**
  * Entry point to demo.  Note: this HTTP server will make all
@@ -838,7 +839,9 @@ main (int argc, char *const *argv)
 	       "%s PORT\n", argv[0]);
       return 1;
     }
+  #ifndef MINGW
   ignore_sigpipe ();
+  #endif
   magic = magic_open (MAGIC_MIME_TYPE);
   (void) magic_load (magic, NULL);
 

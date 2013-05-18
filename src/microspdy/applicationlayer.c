@@ -44,7 +44,7 @@ spdy_handler_new_stream (void *cls,
 						struct SPDYF_Stream * stream)
 {
 	(void)cls;
-	uint i;
+	unsigned int i;
 	char *method = NULL;
 	char *path = NULL;
 	char *version = NULL;

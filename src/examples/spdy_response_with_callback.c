@@ -92,7 +92,7 @@ standard_request_handler(void *cls,
 	printf("received request for '%s %s %s'\n", method, path, version);
 	if(strcmp(path,"/spdy-draft.txt")==0)
 	{
-		FILE *fd = fopen(DATADIR "spdy-draft.txt","r");
+		FILE *fd = fopen(DATA_DIR "spdy-draft.txt","r");
 		
 		if(NULL == (resp_headers = SPDY_name_value_create()))
 		{
@@ -161,8 +161,8 @@ main (int argc, char *const *argv)
 	SPDY_init();
 	
 	daemon = SPDY_start_daemon(atoi(argv[1]),
-								DATADIR "cert-and-key.pem",
-								DATADIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
+								DATA_DIR "cert-and-key.pem",
 								NULL,
 								NULL,
 								&standard_request_handler,

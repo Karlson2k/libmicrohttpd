@@ -256,7 +256,7 @@ SPDYF_zlib_deflate(z_stream *strm,
 {
 	int ret;
 	int flush;
-	uint have;
+	unsigned int have;
 	Bytef out[SPDYF_ZLIB_CHUNK];
 	
 	*dest = NULL;
