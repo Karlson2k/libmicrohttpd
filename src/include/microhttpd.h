@@ -791,7 +791,14 @@ enum MHD_ConnectionInfoType
   /**
    * Get the 'struct MHD_Daemon' responsible for managing this connection.
    */
-  MHD_CONNECTION_INFO_DAEMON
+  MHD_CONNECTION_INFO_DAEMON,
+
+
+  /**
+   * Request the file descriptor for the listening socket.
+   * No extra arguments should be passed.
+   */
+  MHD_CONNECTION_INFO_CONNECTION_FD
 
 };
 
@@ -1850,6 +1857,11 @@ union MHD_ConnectionInfo
    * Protocol used, of type "enum gnutls_protocol".
    */
   int /* enum gnutls_protocol */ protocol;
+
+  /**
+   * Connect socket 
+   */
+  int connect_fd;
 
   /**
    * GNUtls session handle, of type "gnutls_session_t".

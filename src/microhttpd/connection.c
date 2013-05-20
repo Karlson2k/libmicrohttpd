@@ -2555,6 +2555,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return (const union MHD_ConnectionInfo *) &connection->addr;
     case MHD_CONNECTION_INFO_DAEMON:
       return (const union MHD_ConnectionInfo *) &connection->daemon;
+    case MHD_CONNECTION_INFO_CONNECTION_FD:
+      return (const union MHD_ConnectionInfo *) &connection->socket_fd;
     default:
       return NULL;
     };

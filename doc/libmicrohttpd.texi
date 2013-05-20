@@ -2138,6 +2138,18 @@ and then call @code{gnutls_certificate_get_peers()}.
 Returns information about @code{struct MHD_Daemon} which manages
 this connection.
 
+@item MHD_CONNECTION_INFO_CONNECTION_FD
+Returns the file descriptor (usually a TCP socket) associated with
+this connection (in the ``connect-fd'' member of the returned struct).
+Note that manipulating the descriptor directly can have problematic
+consequences (as in, break HTTP).  Applications might use this access
+to manipulate TCP options, for example to set the ``TCP-NODELAY''
+option for COMET-like applications.  Note that MHD will set TCP-CORK
+after sending the HTTP header and clear it after finishing the footers
+automatically (if the platform supports it).  As the connection
+callbacks are invoked in between, those might be used to set different
+values for TCP-CORK and TCP-NODELAY in the meantime.
+
 @end table
 @end deftp
 

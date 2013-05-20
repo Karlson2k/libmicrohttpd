@@ -1,3 +1,8 @@
+Mon May 20 12:29:35 CEST 2013
+	Added MHD_CONNECTION_INFO_CONNECTION_FD to allow clients
+	direct access to connection socket; useful for COMET
+	applications that need to disable NAGLE (#2886). -CG
+
 Mon May 15 12:49:01 CEST 2013
 	Fixing #2859. -CG
 
