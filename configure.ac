@@ -279,19 +279,37 @@ AC_ARG_ENABLE([spdy],
 			[disable libmicrospdy]),
 		[enable_spdy=${enableval}],
 		[enable_spdy=yes])
+AC_MSG_RESULT($enable_spdy)
+
+if test "$enable_spdy" = "yes"
+then
+ AC_CHECK_HEADERS([openssl/err.h], 
+                   [AM_CONDITIONAL(HAVE_OPENSSL, true)
+                   enable_spdy="yes"], 
+                   [AM_CONDITIONAL(HAVE_OPENSSL, false)
+                   enable_spdy="no"])
+fi
+
 if test "$enable_spdy" = "yes"
 then
  AC_DEFINE([SPDY_SUPPORT],[1],[include libmicrospdy support])
 else
  AC_DEFINE([SPDY_SUPPORT],[0],[disable libmicrospdy support])
 fi
-AC_MSG_RESULT($enable_spdy)
 AM_CONDITIONAL(ENABLE_SPDY, [test "x$enable_spdy" != "xno"])
+AC_MSG_CHECKING(whether we have OpenSSL and thus can support libmicrospdy)
+AC_MSG_RESULT($enable_spdy)
 
 spdy_OPENSSL
 # for pkg-config
 SPDY_LIBDEPS=""
 
+
+AC_CHECK_HEADERS([spdylay/spdylay.h], 
+                 [AM_CONDITIONAL(HAVE_SPDYLAY, true) 
+		 have_spdylay="yes"], 
+                 [AM_CONDITIONAL(HAVE_SPDYLAY, false) 
+                 have_spdylay="no"])
 
 AC_SUBST(SPDY_LIB_LDFLAGS)
 # for pkg-config
@@ -529,6 +547,8 @@ AC_MSG_NOTICE([Configuration Summary:
   Digest auth.:      ${enable_dauth}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${enable_https}
+  libmicrospdy:      ${enable_spdy}
+  spdylay (testing): ${have_spdylay}
 ])
 
 if test "x$enable_https" = "xyes"

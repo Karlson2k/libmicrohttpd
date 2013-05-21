@@ -1,3 +1,8 @@
+Tue May 21 14:34:36 CEST 2013
+	Improving configure tests for OpenSSL and spdylay to
+	avoid build errors in libmicrospdy code if those libraries
+	are not present. -CG
+
 Mon May 20 12:29:35 CEST 2013
 	Added MHD_CONNECTION_INFO_CONNECTION_FD to allow clients
 	direct access to connection socket; useful for COMET
