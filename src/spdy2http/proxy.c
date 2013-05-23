@@ -20,6 +20,10 @@
  * @file proxy.c
  * @brief   Translates incoming SPDY requests to http server on localhost.
  * 			Uses libcurl.
+ * 			BUGS:
+ * 			Now the proxy works only when the HTTP server issues
+ * 			"Content-Length" header. Will brake on chunhed response.
+ * 			No error handling for curl requests.
  * @author Andrey Uzunov
  */
  
@@ -422,7 +426,12 @@ standard_request_handler(void *cls,
 		abort();
 	}
 	
-	if(-1 == asprintf(&url,"%s%s%s","http://", http_host, path))
+	if(0 == strcmp(http_host, "any"))
+		ret = asprintf(&url,"%s%s%s","http://", host, path);
+	else
+		ret = asprintf(&url,"%s%s%s","http://", http_host, path);
+		
+	if(-1 == ret)
 	{
 		PRINT_INFO("No memory");
 		abort();
@@ -489,7 +498,10 @@ main (int argc, char *const *argv)
 	
 	if(argc != 6)
 	{
-		printf("Usage: %s cert-file key-file host port http/1.0(yes/no)\n", argv[0]);
+		printf("Usage: %s cert-file key-file host port http/1.0(yes/no)\n\
+\n\
+Example for forward proxy (':host' header is used to know which HTTP server to connect):\n\
+%s cert.pem key.pem any 8080 no\n", argv[0], argv[0]);
 		return 1;
 	}
 	
