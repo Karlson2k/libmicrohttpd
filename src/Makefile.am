@@ -8,7 +8,10 @@ endif
 endif
 if ENABLE_SPDY
 if HAVE_OPENSSL
-microspdy = microspdy spdy2http
+microspdy = microspdy 
+if HAVE_CURL
+microspdy += spdy2http
+endif
 if HAVE_SPDYLAY
 microspdy += testspdy
 endif
