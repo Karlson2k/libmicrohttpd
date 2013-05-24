@@ -19,4 +19,5 @@ SUBDIRS = include microhttpd $(microspdy) examples $(curltests) $(zzuftests) .
 
 EXTRA_DIST = \
  datadir/cert-and-key.pem \
- datadir/cert-and-key-for-wireshark.pem
+ datadir/cert-and-key-for-wireshark.pem \
+ datadir/spdy-draft.txt

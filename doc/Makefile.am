@@ -25,5 +25,5 @@ microhttpd_TEXINFOS = \
   lgpl.texi \
   ecos.texi
 
-EXTRA_DIST = $(man_MANS) Doxyfile $(microhttpd_TEXINFOS) spdy-draft.txt
+EXTRA_DIST = $(man_MANS) Doxyfile $(microhttpd_TEXINFOS) 
 
