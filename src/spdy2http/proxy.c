@@ -20,9 +20,6 @@
  * @file proxy.c
  * @brief   Translates incoming SPDY requests to http server on localhost.
  * 			Uses libcurl.
- * 			BUGS:
- * 			Now the proxy works only when the HTTP server issues
- * 			"Content-Length" header. Will brake on chunhed response.
  * 			No error handling for curl requests.
  * @author Andrey Uzunov
  */
@@ -86,8 +83,9 @@ struct Proxy
 	char *status_msg;
 	void *http_body;
 	size_t http_body_size;
-	ssize_t length;
+	//ssize_t length;
 	int status;
+  bool done;
 };
 
 
@@ -102,12 +100,14 @@ response_callback (void *cls,
 	void *newbody;
 	
 	//printf("response_callback\n");
+  
+  *more = true;
 	
-	assert(0 != proxy->length);
-	
-	*more = true;
 	if(!proxy->http_body_size)//nothing to write now
+  {
+    if(proxy->done) *more = false;
 		return 0;
+  }
 	
 	if(max >= proxy->http_body_size)
 	{
@@ -129,17 +129,7 @@ response_callback (void *cls,
 	proxy->http_body = newbody;
 	proxy->http_body_size -= ret;
 	
-	if(proxy->length >= 0)
-	{
-		proxy->length -= ret;
-		//printf("pr len %i", proxy->length);
-		if(proxy->length <= 0)
-		{
-			*more = false;
-			//last frame
-			proxy->length = 0;
-		}
-	}
+  if(proxy->done && 0 == proxy->http_body_size) *more = false;
 	
 	return ret;
 }
@@ -188,11 +178,17 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	char *name;
 	char *value;
 	char *status;
-	const char *const*length;
 	int i;
 	int pos;
+	int ret;
+  int num_values;
+  const char * const * values;
+  bool abort_it;
 	
-	//printf("curl_header_cb\n");
+	//printf("curl_header_cb %s\n", line);
+  
+  //trailer
+  if(NULL != proxy->response) return 0;
 
 	if('\r' == line[0])
 	{
@@ -208,12 +204,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			PRINT_INFO("no response");
 			abort();
 		}
-		if(NULL != (length = SPDY_name_value_lookup(proxy->headers,
-						SPDY_HTTP_HEADER_CONTENT_LENGTH,
-						&i)))
-			proxy->length = atoi(length[0]);
-		else
-			proxy->length = -1;
+    
 		SPDY_name_value_destroy(proxy->headers);
 		free(proxy->status_msg);
 		free(proxy->version);
@@ -228,7 +219,6 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			PRINT_INFO("no queue");
 			abort();
 		}
-		//printf("spdy headers queued %i\n");
 		
 		return realsize;
 	}
@@ -310,10 +300,23 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 		PRINT_INFO("no memory");
 		abort();
 	}
-	if(SPDY_YES != SPDY_name_value_add(proxy->headers, name, value))
+	if(SPDY_YES != (ret = SPDY_name_value_add(proxy->headers, name, value)))
 	{
-		PRINT_INFO("SPDY_name_value_add failed");
-		abort();
+    abort_it=true;
+    if(NULL != (values = SPDY_name_value_lookup(proxy->headers, name, &num_values)))
+      for(i=0; i<num_values; ++i)
+        if(0 == strcasecmp(value, values[i]))
+        {
+          abort_it=false;
+          PRINT_INFO2("header appears more than once with same value '%s: %s'", name, value);
+          break;
+        }
+    
+    if(abort_it)
+    {
+      PRINT_INFO2("SPDY_name_value_add failed (%i) for '%s'", ret, name);
+      abort();
+    }
 	}
 	free(name);
 	free(value);
@@ -329,7 +332,7 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
 	struct Proxy *proxy = (struct Proxy *)userp;
 	
 	//printf("curl_write_cb %i\n", realsize);
-	
+  
 	if(NULL == proxy->http_body)
 		proxy->http_body = malloc(realsize);
 	else
@@ -351,13 +354,13 @@ int
 iterate_cb (void *cls, const char *name, const char * const * value, int num_values)
 {
 	struct Proxy *proxy = (struct Proxy *)cls;
-    struct curl_slist **curl_headers = (&(proxy->curl_headers));
-    char *line;
-    int line_len = strlen(name) + 3; //+ ": \0"
-    int i;
-    
-    for(i=0; i<num_values; ++i)
-    {
+  struct curl_slist **curl_headers = (&(proxy->curl_headers));
+  char *line;
+  int line_len = strlen(name) + 3; //+ ": \0"
+  int i;
+  
+  for(i=0; i<num_values; ++i)
+  {
 		if(i) line_len += 2; //", "
 		line_len += strlen(value[i]);
 	}
@@ -394,14 +397,14 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 
 void
 standard_request_handler(void *cls,
-						struct SPDY_Request * request,
-						uint8_t priority,
+                        struct SPDY_Request * request,
+                        uint8_t priority,
                         const char *method,
                         const char *path,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+                        struct SPDY_NameValue * headers)
 {
 	(void)cls;
 	(void)priority;
@@ -426,6 +429,7 @@ standard_request_handler(void *cls,
 		abort();
 	}
 	
+  //TODO add https
 	if(0 == strcmp(http_host, "any"))
 		ret = asprintf(&url,"%s%s%s","http://", host, path);
 	else
@@ -460,9 +464,10 @@ standard_request_handler(void *cls,
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_WRITEDATA, proxy);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HEADERFUNCTION, curl_header_cb);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HEADERDATA, proxy);
+	CURL_SETOPT(proxy->curl_handle, CURLOPT_PRIVATE, proxy);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HTTPHEADER, proxy->curl_headers);
-    CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-    CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+  CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+  CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
 	
 	if(CURLM_OK != (ret = curl_multi_add_handle(multi_handle, proxy->curl_handle)))
 	{
@@ -482,7 +487,7 @@ int
 main (int argc, char *const *argv)
 {	
 	unsigned long long timeoutlong=0;
-    long curl_timeo = -1;
+  long curl_timeo = -1;
 	struct timeval timeout;
 	int ret;
 	fd_set rs;
@@ -493,14 +498,17 @@ main (int argc, char *const *argv)
 	fd_set curl_es;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
-	//signal(SIGPIPE, SIG_IGN);
+  CURLMsg *msg;
+  int msgs_left;
+  struct Proxy *proxy;
+
+	signal(SIGPIPE, SIG_IGN);
 	
 	if(argc != 6)
 	{
 		printf("Usage: %s cert-file key-file host port http/1.0(yes/no)\n\
 \n\
-Example for forward proxy (':host' header is used to know which HTTP server to connect):\n\
+Example for transparent proxy (':host' header is used to know which HTTP server to connect):\n\
 %s cert.pem key.pem any 8080 no\n", argv[0], argv[0]);
 		return 1;
 	}
@@ -623,8 +631,29 @@ Example for forward proxy (':host' header is used to know which HTTP server to c
 				}
 				break;
 		}
-	}
-	while(run);
+    
+    while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
+      if (msg->msg == CURLMSG_DONE) {
+        if(CURLE_OK == msg->data.result)
+        {
+          if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &proxy)))
+          {
+            PRINT_INFO2("err %i",ret);
+            abort();
+          }
+
+          proxy->done = true;
+        }
+        else
+        {
+          //TODO handle error
+          PRINT_INFO("bad curl result");
+        }
+      }
+      else PRINT_INFO("shouldn't happen");
+    }
+  }
+  while(run);
 	
 	curl_multi_cleanup(multi_handle);
 
