@@ -99,6 +99,9 @@ In particular, the following functions are not covered by 'make check':
 This is an early alpha release for libmicrospdy.  The following things
 should be implemented (in order of importance) before we can claim to
 be reasonably complete:
+- 8 different output queues (one for each priority) have to be implemented
+together with a suitable algorithm for utilizing them. Otherwise, downloading
+a file will block all responses with same or smaller priority
 - Change session timeout to use not seconds but something more precise
 - SPDY RST_STREAM sending on each possible error (DONE?)
 - SPDY_close_session
