@@ -48,6 +48,7 @@ struct global_options
   char *http_backend;
   char *cert;
   char *cert_key;
+  char *listen_host;
   uint16_t listen_port;
   bool verbose;
   bool curl_verbose;
@@ -584,7 +585,7 @@ standard_request_handler(void *cls,
         DIE("No memory");
   }
   
-  free(uri);
+  free_uri(uri);
   
   PRINT_VERBOSE2("curl will request '%s'", proxy->url);
     
@@ -642,7 +643,13 @@ run()
   CURLMsg *msg;
   int msgs_left;
   struct Proxy *proxy;
-
+	struct sockaddr_in *addr;
+	struct sockaddr_in addr4;
+	struct in_addr inaddr4;
+  struct addrinfo hints;
+  char service[NI_MAXSERV];
+  struct addrinfo *gai;
+  
 	signal(SIGPIPE, SIG_IGN);
 	
   if (signal(SIGINT, catch_signal) == SIG_ERR)
@@ -653,8 +660,10 @@ run()
     DIE("Regexp compilation failed");
     
 	SPDY_init();
-	
-	daemon = SPDY_start_daemon(glob_opt.listen_port,
+  
+  if(NULL == glob_opt.listen_host)
+	{
+    daemon = SPDY_start_daemon(glob_opt.listen_port,
 								glob_opt.cert,
 								glob_opt.cert_key,
 								NULL,
@@ -665,6 +674,34 @@ run()
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
 								SPDY_DAEMON_OPTION_END);
+  }
+  else
+  {
+    snprintf(service, sizeof(service), "%u", glob_opt.listen_port);
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    ret = getaddrinfo(glob_opt.listen_host, service, &hints, &gai);
+    if(ret != 0)
+      DIE("problem with specified host");
+    
+    addr=gai->ai_addr;
+    
+    daemon = SPDY_start_daemon(0,
+								glob_opt.cert,
+								glob_opt.cert_key,
+								NULL,
+								NULL,
+								&standard_request_handler,
+								NULL,
+								NULL,
+								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
+								1800,
+                SPDY_DAEMON_OPTION_SOCK_ADDR,
+                addr,
+								SPDY_DAEMON_OPTION_END);
+  }
 	
 	if(NULL==daemon){
 		printf("no daemon\n");
@@ -801,9 +838,11 @@ void
 display_usage()
 {
   printf(
-    "Usage: microspdy2http [-vh0t] [-b <HTTP-SERVER>] -p <PORT> -c <CERTIFICATE> -k <CERT-KEY>\n\n"
+    "Usage: microspdy2http -p <PORT> -c <CERTIFICATE> -k <CERT-KEY>\n"
+    "                      [-vh0t] [-b <HTTP-SERVER>] [-l <HOST>]\n\n"
     "OPTIONS:\n"
     "    -p, --port            Listening port.\n"
+    "    -l, --host            Listening host. If not set, will listen on [::]\n"
     "    -c, --certificate     Path to a certificate file.\n"
     "    -k, --certificate-key Path to a key file for the certificate.\n"
     "    -b, --backend-server  If set, the proxy will connect always to it.\n"
@@ -839,7 +878,7 @@ main (int argc, char *const *argv)
   
   while (1)
   {
-    getopt_ret = getopt_long( argc, argv, "p:c:k:b:v0t", long_options, &option_index);
+    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:v0t", long_options, &option_index);
     if (getopt_ret == -1)
       break;
 
@@ -847,6 +886,12 @@ main (int argc, char *const *argv)
     {
       case 'p':
         glob_opt.listen_port = atoi(optarg);
+        break;
+        
+      case 'l':
+        glob_opt.listen_host= strdup(optarg);
+        if(NULL == glob_opt.listen_host)
+          return 1;
         break;
         
       case 'c':
