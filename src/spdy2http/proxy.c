@@ -21,6 +21,9 @@
  * @brief   Translates incoming SPDY requests to http server on localhost.
  * 			Uses libcurl.
  * 			No error handling for curl requests.
+ *      TODO:
+ * - test all options!
+ * - don't abort on lack of memory
  * @author Andrey Uzunov
  */
  
@@ -36,6 +39,36 @@
 #include "microspdy.h"
 #include <curl/curl.h>
 #include <assert.h>
+#include <getopt.h>
+#include <regex.h>
+
+
+struct global_options
+{
+  char *http_backend;
+  char *cert;
+  char *cert_key;
+  uint16_t listen_port;
+  bool verbose;
+  bool curl_verbose;
+  bool transparent;
+  bool http10;
+} glob_opt;
+
+
+struct URI
+{
+  char * full_uri;
+  char * scheme;
+  char * host_and_port;
+  //char * host_and_port_for_connecting;
+  char * host;
+  char * path;
+  char * path_and_more;
+  char * query;
+  char * fragment;
+  uint16_t port;
+};
 
 
 #define PRINT_INFO(msg) do{\
@@ -54,6 +87,26 @@
 	while(0)
 
 
+#define PRINT_VERBOSE(msg) do{\
+  if(glob_opt.verbose){\
+	printf("%i:%s\n", __LINE__, msg);\
+	fflush(stdout);\
+	}\
+  }\
+	while(0)
+
+
+#define PRINT_VERBOSE2(fmt, ...) do{\
+  if(glob_opt.verbose){\
+	printf("%i\n", __LINE__);\
+	printf(fmt,##__VA_ARGS__);\
+	printf("\n");\
+	fflush(stdout);\
+	}\
+	}\
+	while(0)
+
+
 #define CURL_SETOPT(handle, opt, val) do{\
 	int ret; \
 	if(CURLE_OK != (ret = curl_easy_setopt(handle, opt, val))) \
@@ -63,17 +116,25 @@
 	} \
 	}\
 	while(0)
+  
+
+#define DIE(msg) do{\
+	printf("FATAL ERROR (line %i): %s\n", __LINE__, msg);\
+	fflush(stdout);\
+  exit(EXIT_FAILURE);\
+	}\
+	while(0)
 
 
-int run = 1;
-char* http_host;
+int loop = 1;
 CURLM *multi_handle;
 int still_running = 0; /* keep number of running handles */
-int http10=0;
+regex_t uri_preg;
+
 
 struct Proxy
 {
-	char *path;
+	char *url;
 	struct SPDY_Request *request;
 	struct SPDY_Response *response;
 	CURL *curl_handle;
@@ -87,6 +148,114 @@ struct Proxy
 	int status;
   bool done;
 };
+
+
+void
+free_uri(struct URI * uri)
+{
+  if(NULL != uri)
+  {
+    free(uri->full_uri);
+    free(uri->scheme);
+    free(uri->host_and_port);
+    //free(uri->host_and_port_for_connecting);
+    free(uri->host);
+    free(uri->path);
+    free(uri->path_and_more);
+    free(uri->query);
+    free(uri->fragment);
+    uri->port = 0;
+    free(uri);
+  }
+}
+
+int
+init_parse_uri(regex_t * preg)
+{
+  // RFC 2396
+  // ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
+      /*
+        scheme    = $2
+      authority = $4
+      path      = $5
+      query     = $7
+      fragment  = $9
+      */
+  
+  return regcomp(preg, "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?", REG_EXTENDED);
+}
+
+void
+deinit_parse_uri(regex_t * preg)
+{
+  regfree(preg);
+}
+  
+int
+parse_uri(regex_t * preg, char * full_uri, struct URI ** uri)
+{
+  int ret;
+  char *colon;
+  long long port;
+  size_t nmatch = 10;
+  regmatch_t pmatch[10];
+
+  if (0 != (ret = regexec(preg, full_uri, nmatch, pmatch, 0)))
+    return ret;
+    
+  *uri = malloc(sizeof(struct URI));
+  if(NULL == *uri)
+    return -200;
+    
+  (*uri)->full_uri = strdup(full_uri);
+  
+  asprintf(&((*uri)->scheme), "%.*s",pmatch[2].rm_eo - pmatch[2].rm_so, &full_uri[pmatch[2].rm_so]);
+  asprintf(&((*uri)->host_and_port), "%.*s",pmatch[4].rm_eo - pmatch[4].rm_so, &full_uri[pmatch[4].rm_so]);
+  asprintf(&((*uri)->path), "%.*s",pmatch[5].rm_eo - pmatch[5].rm_so, &full_uri[pmatch[5].rm_so]);
+  asprintf(&((*uri)->path_and_more), "%.*s",pmatch[9].rm_eo - pmatch[5].rm_so, &full_uri[pmatch[5].rm_so]);
+  asprintf(&((*uri)->query), "%.*s",pmatch[7].rm_eo - pmatch[7].rm_so, &full_uri[pmatch[7].rm_so]);
+  asprintf(&((*uri)->fragment), "%.*s",pmatch[9].rm_eo - pmatch[9].rm_so, &full_uri[pmatch[9].rm_so]);
+  
+  colon = strrchr((*uri)->host_and_port, ':');
+  if(NULL == colon)
+  {
+    (*uri)->host = strdup((*uri)->host_and_port);
+    /*if(0 == strcasecmp("http", uri->scheme))
+    {
+      uri->port = 80;
+      asprintf(&(uri->host_and_port_for_connecting), "%s:80", uri->host_and_port);
+    }
+    else if(0 == strcasecmp("https", uri->scheme))
+    {
+      uri->port = 443;
+      asprintf(&(uri->host_and_port_for_connecting), "%s:443", uri->host_and_port);
+    }
+    else
+    {
+      PRINT_INFO("no standard scheme!");
+      */(*uri)->port = 0;
+      /*uri->host_and_port_for_connecting = strdup(uri->host_and_port);
+    }*/
+    return 0;
+  }
+  
+  port = atoi(colon  + 1);
+  if(port<1 || port >= 256 * 256)
+  {
+    free_uri(*uri);
+    return -100;
+  }
+  (*uri)->port = port;
+  asprintf(&((*uri)->host), "%.*s", (int)(colon - (*uri)->host_and_port), (*uri)->host_and_port);
+  
+  return 0;
+}
+
+
+static void catch_signal(int signal)
+{
+  loop = 0;
+}
 
 
 ssize_t
@@ -146,10 +315,6 @@ response_done_callback(void *cls,
 	struct Proxy *proxy = (struct Proxy *)cls;
 	int ret;
 	
-	//printf("response_done_callback\n");
-	
-	//printf("answer for %s was sent\n", (char *)cls);
-	
 	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
 	{
 		printf("answer was NOT sent, %i\n",status);
@@ -163,8 +328,7 @@ response_done_callback(void *cls,
 	
 	SPDY_destroy_request(request);
 	SPDY_destroy_response(response);
-	if(!strcmp("/close",proxy->path)) run = 0;
-	free(proxy->path);
+	free(proxy->url);
 	free(proxy);
 }
 
@@ -200,10 +364,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							&response_callback,
 							proxy,
 							0)))
-		{
-			PRINT_INFO("no response");
-			abort();
-		}
+			DIE("no response");
     
 		SPDY_name_value_destroy(proxy->headers);
 		free(proxy->status_msg);
@@ -215,10 +376,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							false,
 							&response_done_callback,
 							proxy))
-		{
-			PRINT_INFO("no queue");
-			abort();
-		}
+			DIE("no queue");
 		
 		return realsize;
 	}
@@ -230,24 +388,15 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 		//version
 		for(i=pos; i<realsize && ' '!=line[i]; ++i);
 		if(i == realsize)
-		{
-			PRINT_INFO("error on parsing headers");
-			abort();
-		}
+			DIE("error on parsing headers");
 		if(NULL == (proxy->version = strndup(line, i - pos)))
-		{
-			PRINT_INFO("no memory");
-			abort();
-		}
+        DIE("No memory");
 		pos = i+1;
 		
 		//status (number)
 		for(i=pos; i<realsize && ' '!=line[i] && '\r'!=line[i]; ++i);
 		if(NULL == (status = strndup(&(line[pos]), i - pos)))
-		{
-			PRINT_INFO("no memory");
-			abort();
-		}
+        DIE("No memory");
 		proxy->status = atoi(status);
 		free(status);
 		if(i<realsize && '\r'!=line[i])
@@ -256,10 +405,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			pos = i+1;
 			for(i=pos; i<realsize && '\r'!=line[i]; ++i);
 			if(NULL == (proxy->status_msg = strndup(&(line[pos]), i - pos)))
-			{
-				PRINT_INFO("no memory");
-				abort();
-			}
+        DIE("No memory");
 		}
 		return realsize;
 	}
@@ -269,10 +415,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	for(i=pos; i<realsize && ':'!=line[i] && '\r'!=line[i]; ++i)
 		line[i] = tolower(line[i]); //spdy requires lower case
 	if(NULL == (name = strndup(line, i - pos)))
-	{
-		PRINT_INFO("no memory");
-		abort();
-	}
+        DIE("No memory");
 	if(0 == strcmp(SPDY_HTTP_HEADER_CONNECTION, name)
 		|| 0 == strcmp(SPDY_HTTP_HEADER_KEEP_ALIVE, name))
 	{
@@ -284,10 +427,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	{
 		//no value. is it possible?
 		if(SPDY_YES != SPDY_name_value_add(proxy->headers, name, ""))
-		{
-			PRINT_INFO("SPDY_name_value_add failed");
-			abort();
-		}
+			DIE("SPDY_name_value_add failed");
 		return realsize;
 	}
 	
@@ -296,10 +436,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	while(pos<realsize && isspace(line[pos])) ++pos; //remove leading space
 	for(i=pos; i<realsize && '\r'!=line[i]; ++i);
 	if(NULL == (value = strndup(&(line[pos]), i - pos)))
-	{
-		PRINT_INFO("no memory");
-		abort();
-	}
+        DIE("No memory");
 	if(SPDY_YES != (ret = SPDY_name_value_add(proxy->headers, name, value)))
 	{
     abort_it=true;
@@ -365,12 +502,8 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 		line_len += strlen(value[i]);
 	}
 	
-	if(NULL == (line = malloc(line_len)))
-	{
-		//no recovory
-		PRINT_INFO("no memory");
-		abort();
-	}
+	if(NULL == (line = malloc(line_len)))//no recovery
+    DIE("No memory");
 	line[0] = 0;
     
     strcat(line, name);
@@ -384,11 +517,8 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 		if(i) strcat(line, ", ");
 		strcat(line, value[i]);
 	}
-    if(NULL == (*curl_headers = curl_slist_append(*curl_headers, line)))
-    {
-		PRINT_INFO("curl_slist_append failed");
-		abort();
-	}
+  if(NULL == (*curl_headers = curl_slist_append(*curl_headers, line)))
+		DIE("curl_slist_append failed");
 	free(line);
 	
 	return SPDY_YES;
@@ -411,43 +541,54 @@ standard_request_handler(void *cls,
 	(void)host;
 	(void)scheme;
 	
-	char *url;
 	struct Proxy *proxy;
 	int ret;
+  struct URI *uri;
 	
-	//printf("received request for '%s %s %s'\n", method, path, version);
+	PRINT_VERBOSE2("received request for '%s %s %s'\n", method, path, version);
 	if(NULL == (proxy = malloc(sizeof(struct Proxy))))
-	{
-		PRINT_INFO("No memory");
-		abort();
-	}
+        DIE("No memory");
 	memset(proxy, 0, sizeof(struct Proxy));
 	proxy->request = request;
 	if(NULL == (proxy->headers = SPDY_name_value_create()))
-	{
-		PRINT_INFO("No memory");
-		abort();
-	}
-	
-  //TODO add https
-	if(0 == strcmp(http_host, "any"))
-		ret = asprintf(&url,"%s%s%s","http://", host, path);
-	else
-		ret = asprintf(&url,"%s%s%s","http://", http_host, path);
-		
-	if(-1 == ret)
-	{
-		PRINT_INFO("No memory");
-		abort();
-	}
-	
-	if(NULL == (proxy->path = strdup(path)))
-	{
-		PRINT_INFO("No memory");
-		abort();
-	}
+        DIE("No memory");
+  
+  if(glob_opt.transparent)
+  {
+    if(NULL != glob_opt.http_backend) //use always same host
+      ret = asprintf(&(proxy->url),"%s://%s%s", scheme, glob_opt.http_backend, path);
+    else //use host header
+      ret = asprintf(&(proxy->url),"%s://%s%s", scheme, host, path);
+    if(-1 == ret)
+        DIE("No memory");
+        
+    ret = parse_uri(&uri_preg, proxy->url, &uri);
+    if(ret != 0)
+      DIE("parsing built uri failed");
+  }
+  else
+  {
+    ret = parse_uri(&uri_preg, path, &uri);
+    PRINT_INFO2("path %s '%s' '%s'", path, uri->scheme, uri->host);
+    if(ret != 0 || !strlen(uri->scheme) || !strlen(uri->host))
+      DIE("parsing received uri failed");
+      
+    if(NULL != glob_opt.http_backend) //use backend host
+    {
+      ret = asprintf(&(proxy->url),"%s://%s%s", uri->scheme, glob_opt.http_backend, uri->path_and_more);
+      if(-1 == ret)
+        DIE("No memory");
+    }
+    else //use request path
+      if(NULL == (proxy->url = strdup(path)))
+        DIE("No memory");
+  }
+  
+  free(uri);
+  
+  PRINT_VERBOSE2("curl will request '%s'", proxy->url);
     
-    SPDY_name_value_iterate(headers, &iterate_cb, proxy);
+  SPDY_name_value_iterate(headers, &iterate_cb, proxy);
 	
 	if(NULL == (proxy->curl_handle = curl_easy_init()))
     {
@@ -455,10 +596,10 @@ standard_request_handler(void *cls,
 		abort();
 	}
 	
-	//CURL_SETOPT(proxy->curl_handle, CURLOPT_VERBOSE, 1);
-	CURL_SETOPT(proxy->curl_handle, CURLOPT_URL, url);
-	free(url);
-	if(http10)
+	if(glob_opt.curl_verbose)
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_VERBOSE, 1);
+	CURL_SETOPT(proxy->curl_handle, CURLOPT_URL, proxy->url);
+	if(glob_opt.http10)
 		CURL_SETOPT(proxy->curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_WRITEFUNCTION, curl_write_cb);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_WRITEDATA, proxy);
@@ -484,9 +625,9 @@ standard_request_handler(void *cls,
 }
 
 int
-main (int argc, char *const *argv)
-{	
-	unsigned long long timeoutlong=0;
+run()
+{
+  unsigned long long timeoutlong=0;
   long curl_timeo = -1;
 	struct timeval timeout;
 	int ret;
@@ -504,20 +645,18 @@ main (int argc, char *const *argv)
 
 	signal(SIGPIPE, SIG_IGN);
 	
-	if(argc != 6)
-	{
-		printf("Usage: %s cert-file key-file host port http/1.0(yes/no)\n\
-\n\
-Example for transparent proxy (':host' header is used to know which HTTP server to connect):\n\
-%s cert.pem key.pem any 8080 no\n", argv[0], argv[0]);
-		return 1;
-	}
-	
+  if (signal(SIGINT, catch_signal) == SIG_ERR)
+    PRINT_VERBOSE("signal failed");
+    
+  srand(time(NULL));
+  if(init_parse_uri(&uri_preg))
+    DIE("Regexp compilation failed");
+    
 	SPDY_init();
 	
-	daemon = SPDY_start_daemon(atoi(argv[4]),
-								argv[1],
-								argv[2],
+	daemon = SPDY_start_daemon(glob_opt.listen_port,
+								glob_opt.cert,
+								glob_opt.cert_key,
 								NULL,
 								NULL,
 								&standard_request_handler,
@@ -533,21 +672,13 @@ Example for transparent proxy (':host' header is used to know which HTTP server 
 	}
 	
 	multi_handle = curl_multi_init();
-	
-	if(NULL==multi_handle){
-		PRINT_INFO("no multi_handle");
-		abort();
-	}
-	
-	if(!strcmp("yes", argv[5]))
-		http10 = 1;
-	
-	http_host = argv[3];
+	if(NULL==multi_handle)
+		DIE("no multi_handle");
+  
 	timeout.tv_usec = 0;
 
 	do
 	{
-		//printf("still %i\n", still_running);
 		FD_ZERO(&rs);
 		FD_ZERO(&ws);
 		FD_ZERO(&es);
@@ -653,14 +784,129 @@ Example for transparent proxy (':host' header is used to know which HTTP server 
       else PRINT_INFO("shouldn't happen");
     }
   }
-  while(run);
+  while(loop);
 	
 	curl_multi_cleanup(multi_handle);
 
 	SPDY_stop_daemon(daemon);
 	
 	SPDY_deinit();
+  
+  deinit_parse_uri(&uri_preg);
 	
 	return 0;
+}
+
+void
+display_usage()
+{
+  printf(
+    "Usage: microspdy2http [-vh0t] [-b <HTTP-SERVER>] -p <PORT> -c <CERTIFICATE> -k <CERT-KEY>\n\n"
+    "OPTIONS:\n"
+    "    -p, --port            Listening port.\n"
+    "    -c, --certificate     Path to a certificate file.\n"
+    "    -k, --certificate-key Path to a key file for the certificate.\n"
+    "    -b, --backend-server  If set, the proxy will connect always to it.\n"
+    "                          Otherwise the proxy will connect to the URL\n"
+    "                          which is specified in the path or 'Host:'.\n"
+    "    -v, --verbose         Print debug information.\n"
+    "    -h, --curl-verbose    Print debug information for curl.\n"
+    "    -0, --http10          Prefer HTTP/1.0 connections to the next hop.\n"
+    "    -t, --transparent     If set, the proxy will fetch an URL which\n"
+    "                          is based on 'Host:' header and requested path.\n"
+    "                          Otherwise, full URL in the requested path is required.\n\n"
+
+  );
+}
+
+int
+main (int argc, char *const *argv)
+{	
+	  
+  int getopt_ret;
+  int option_index;
+  struct option long_options[] = {
+    {"port",  required_argument, 0, 'p'},
+    {"certificate",  required_argument, 0, 'c'},
+    {"certificate-key",  required_argument, 0, 'k'},
+    {"backend-server",  required_argument, 0, 'b'},
+    {"verbose",  no_argument, 0, 'v'},
+    {"curl-verbose",  no_argument, 0, 'h'},
+    {"http10",  no_argument, 0, '0'},
+    {"transparent",  no_argument, 0, 't'},
+    {0, 0, 0, 0}
+  };
+  
+  while (1)
+  {
+    getopt_ret = getopt_long( argc, argv, "p:c:k:b:v0t", long_options, &option_index);
+    if (getopt_ret == -1)
+      break;
+
+    switch(getopt_ret)
+    {
+      case 'p':
+        glob_opt.listen_port = atoi(optarg);
+        break;
+        
+      case 'c':
+        glob_opt.cert = strdup(optarg);
+        if(NULL == glob_opt.cert)
+          return 1;
+        break;
+        
+      case 'k':
+        glob_opt.cert_key = strdup(optarg);
+        if(NULL == glob_opt.cert_key)
+          return 1;
+        break;
+        
+      case 'b':
+        glob_opt.http_backend = strdup(optarg);
+        if(NULL == glob_opt.http_backend)
+          return 1;
+        break;
+        
+      case 'v':
+        glob_opt.verbose = true;
+        break;
+        
+      case 'h':
+        glob_opt.curl_verbose = true;
+        break;
+        
+      case '0':
+        glob_opt.http10 = true;
+        break;
+        
+      case 't':
+        glob_opt.transparent = true;
+        break;
+        
+      case 0:
+        PRINT_INFO("0 from getopt");
+        break;
+        
+      case '?':
+        display_usage();
+        return 1;
+        
+      default:
+        DIE("default from getopt");
+    }
+  }
+  
+  if(
+    0 == glob_opt.listen_port
+    || NULL == glob_opt.cert
+    || NULL == glob_opt.cert_key
+    //|| !glob_opt.transparent && NULL != glob_opt.http_backend
+    )
+  {
+    display_usage();
+    return 1;
+  }
+    
+  return run();
 }
 
