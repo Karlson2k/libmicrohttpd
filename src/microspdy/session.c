@@ -322,9 +322,40 @@ spdyf_handler_read_rst_stream (struct SPDY_Session *session)
 static void
 spdyf_handler_read_data (struct SPDY_Session *session)
 {
-	(void)session;
-	//TODO ignore data frames for now
-	SPDYF_PANIC("POST requests are Not yet implemented!");
+  //just ignore the whole frame for now
+  struct SPDYF_Data_Frame * frame;
+  
+	SPDYF_ASSERT(SPDY_SESSION_STATUS_WAIT_FOR_SUBHEADER == session->status
+		|| SPDY_SESSION_STATUS_WAIT_FOR_BODY == session->status,
+		"the function is called wrong");
+    
+  SPDYF_DEBUG("DATA frame received (POST?). Ignoring");
+	
+  //SPDYF_SIGINT("");
+  
+	frame = (struct SPDYF_Data_Frame *)session->frame_handler_cls;
+	
+	//handle subheaders
+	if(SPDY_SESSION_STATUS_WAIT_FOR_SUBHEADER == session->status)
+	{
+		if(frame->length > SPDY_MAX_SUPPORTED_FRAME_SIZE)
+		{
+			session->status = SPDY_SESSION_STATUS_IGNORE_BYTES;
+			return;
+		}
+		else
+			session->status = SPDY_SESSION_STATUS_WAIT_FOR_BODY;
+	}
+	
+	//handle body
+	
+	if(session->read_buffer_offset - session->read_buffer_beginning
+		>= frame->length)
+	{
+		session->read_buffer_beginning += frame->length;
+		session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
+		free(frame);
+	}
 }
 
  
@@ -1071,6 +1102,7 @@ SPDYF_session_idle (struct SPDY_Session *session)
 					session->read_buffer + session->read_buffer_beginning,
 					sizeof(struct SPDYF_Data_Frame));
 				session->read_buffer_beginning += sizeof(struct SPDYF_Data_Frame);
+				SPDYF_DATA_FRAME_NTOH(data_frame);
 				
 				session->status = SPDY_SESSION_STATUS_WAIT_FOR_BODY;
 				session->frame_handler = &spdyf_handler_read_data;

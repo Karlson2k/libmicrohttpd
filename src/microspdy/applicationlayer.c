@@ -31,6 +31,22 @@
 #include "session.h"
 
 
+void
+spdy_callback_response_done(void *cls,
+						struct SPDY_Response *response,
+						struct SPDY_Request *request,
+						enum SPDY_RESPONSE_RESULT status,
+						bool streamopened)
+{
+	(void)cls;
+	(void)status;
+	(void)streamopened;
+  
+	SPDY_destroy_request(request);
+	SPDY_destroy_response(response);
+}
+
+
 /**
  * Callback called when new stream is created. It extracts the info from
  * the stream to create (HTTP) request object and pass it to the client.
@@ -136,6 +152,28 @@ spdy_handler_new_stream (void *cls,
 		
 		return SPDY_YES;
 	}
+  
+  //ignore everything but GET
+  if(strcasecmp("GET",method))
+  {
+    SPDYF_DEBUG("received method '%s'", method);
+    static char * html = "Method not implemented. libmicrospdy supports now only GET.";
+		struct SPDY_Response *response = SPDY_build_response(501, NULL, SPDY_HTTP_VERSION_1_1, NULL, html, strlen(html));
+    if(NULL==response)
+    {
+      SPDY_destroy_request(request);
+      return SPDY_YES;
+    }
+    
+    if(SPDY_YES != SPDY_queue_response(request, response, true, false, &spdy_callback_response_done, NULL))
+    {
+      SPDY_destroy_response(response);
+      SPDY_destroy_request(request);
+    }
+		
+		//SPDY_destroy_request(request);
+		return SPDY_YES;
+  }
 	
 	//call client's callback function to notify
 	daemon->new_request_cb(daemon->cls,
