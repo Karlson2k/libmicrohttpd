@@ -602,7 +602,7 @@ struct MHD_Connection
 
   /**
    * How many more bytes of the body do we expect
-   * to read? "-1" for unknown.
+   * to read? MHD_SIZE_UNKNOWN for unknown.
    */
   uint64_t remaining_upload_size;
 
