@@ -22,6 +22,7 @@ print_out_key (void *cls, enum MHD_ValueKind kind, const char *key,
   return MHD_YES;
 }
 
+
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
@@ -36,6 +37,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   return MHD_NO;
 }
 
+
 int
 main ()
 {
@@ -46,7 +48,7 @@ main ()
   if (NULL == daemon)
     return 1;
 
-  getchar ();
+  (void) getchar ();
 
   MHD_stop_daemon (daemon);
   return 0;

@@ -33,6 +33,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
+
 int
 main ()
 {
@@ -43,7 +44,7 @@ main ()
   if (NULL == daemon)
     return 1;
 
-  getchar ();
+  (void) getchar ();
 
   MHD_stop_daemon (daemon);
   return 0;
