@@ -93,6 +93,46 @@ enum MHD_PollActions
 
 
 /**
+ * State of the socket with respect to epoll.
+ */
+enum MHD_EpollState
+  {
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+    /**
+     *
+     */
+    MHD_EPOLL_STATE_NOTHING = 0,
+
+
+  };
+
+
+/**
  * Socket descriptor and events we care about.
  */
 struct MHD_Pollfd 
