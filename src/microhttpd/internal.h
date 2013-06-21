@@ -101,32 +101,8 @@ enum MHD_EpollState
     /**
      *
      */
-    MHD_EPOLL_STATE_NOTHING = 0,
+    MHD_EPOLL_STATE_NOTHING = 0
 
-    /**
-     *
-     */
-    MHD_EPOLL_STATE_NOTHING = 0,
-
-    /**
-     *
-     */
-    MHD_EPOLL_STATE_NOTHING = 0,
-
-    /**
-     *
-     */
-    MHD_EPOLL_STATE_NOTHING = 0,
-
-    /**
-     *
-     */
-    MHD_EPOLL_STATE_NOTHING = 0,
-
-    /**
-     *
-     */
-    MHD_EPOLL_STATE_NOTHING = 0,
 
 
   };
