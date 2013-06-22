@@ -418,7 +418,9 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	if(NULL == (name = strndup(line, i - pos)))
         DIE("No memory");
 	if(0 == strcmp(SPDY_HTTP_HEADER_CONNECTION, name)
-		|| 0 == strcmp(SPDY_HTTP_HEADER_KEEP_ALIVE, name))
+		|| 0 == strcmp(SPDY_HTTP_HEADER_KEEP_ALIVE, name)
+		|| 0 == strcmp(SPDY_HTTP_HEADER_TRANSFER_ENCODING, name)
+    )
 	{
 		//forbidden in spdy, ignore
 		free(name);
@@ -857,6 +859,7 @@ display_usage()
 
   );
 }
+
 
 int
 main (int argc, char *const *argv)
