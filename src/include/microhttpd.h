@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00092101
+#define MHD_VERSION 0x00092103
 
 /**
  * MHD-internal return code for "YES".
@@ -351,7 +351,7 @@ enum MHD_FLAG
   MHD_USE_THREAD_PER_CONNECTION = 4,
 
   /**
-   * Run using an internal thread doing SELECT.
+   * Run using an internal thread (or thread pool) doing SELECT.
    */
   MHD_USE_SELECT_INTERNALLY = 8,
 
@@ -373,9 +373,18 @@ enum MHD_FLAG
   MHD_USE_PEDANTIC_CHECKS = 32,
 
   /**
-   * Use poll instead of select. This allows sockets with fd >= FD_SETSIZE.
+   * Use poll instead of select. This allows sockets with fd >=
+   * FD_SETSIZE.  This option is not compatible with using an
+   * 'external' select mode (as there is no API to get the file
+   * descriptors for the external select from MHD) and must also not
+   * be used in combination with MHD_USE_EPOLL_LINUX_ONLY.
    */
   MHD_USE_POLL = 64,
+
+  /**
+   * Run using an internal thread (or thread pool) doing POLL.
+   */
+  MHD_USE_POLL_INTERNALLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL,
 
   /**
    * Suppress (automatically) adding the 'Date:' header to HTTP responses.
@@ -392,7 +401,34 @@ enum MHD_FLAG
    * using a thread pool; if it is used, 'MHD_OPTION_THREAD_POOL_SIZE'
    * is ignored.
    */
-  MHD_USE_NO_LISTEN_SOCKET = 256
+  MHD_USE_NO_LISTEN_SOCKET = 256,
+
+  /**
+   * Use 'epoll' instead of 'select' or 'poll' for the event loop. 
+   * This option is only available on Linux; using the option on
+   * non-Linux systems will cause 'MHD_start_daemon' to fail.
+   */
+  MHD_USE_EPOLL_LINUX_ONLY = 512,
+
+  /**
+   * Run using an internal thread (or thread pool) doing EPOLL.
+   * This option is only available on Linux; using the option on
+   * non-Linux systems will cause 'MHD_start_daemon' to fail.
+   */
+  MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL_LINUX_ONLY,
+
+  /**
+   * Force MHD to use a signal pipe to notify the event loop (of
+   * threads) of our shutdown.  This is required if an appliction uses
+   * 'MHD_USE_INTERNAL_SELECT' or 'MHD_USE_THREAD_PER_CONNECTION' and
+   * then performs 'MHD_quiesce_daemon' (which eliminates our ability
+   * to signal termination via the listen socket).  In these modes,
+   * 'MHD_quiesce_daemon' will fail if this option was not set.  Also,
+   * use of this option is automatic (as in, you do not even have to
+   * specify it), if 'MHD_USE_NO_LISTEN_SOCKET' is specified.  In
+   * "external" select mode, this option is always simply ignored.
+   */
+  MHD_USE_PIPE_FOR_SHUTDOWN = 1024
 
 };
 
@@ -629,7 +665,7 @@ enum MHD_OPTION
    * HTTPS daemon for client authentification.
    * This option should be followed by a "const char*" argument.
    */
-  MHD_OPTION_HTTPS_MEM_TRUST =20
+  MHD_OPTION_HTTPS_MEM_TRUST = 20
 };
 
 
@@ -814,6 +850,7 @@ enum MHD_DaemonInfoType
    * a particular cipher algorithm.  The cipher
    * algorithm should be passed as an extra
    * argument (of type 'enum MHD_GNUTLS_CipherAlgorithm').
+   * No longer supported (will return NULL).
    */
   MHD_DAEMON_INFO_KEY_SIZE,
 
@@ -822,6 +859,7 @@ enum MHD_DaemonInfoType
    * a particular cipher algorithm.  The cipher
    * algorithm should be passed as an extra
    * argument (of type 'enum MHD_GNUTLS_HashAlgorithm').
+   * No longer supported (will return NULL).
    */
   MHD_DAEMON_INFO_MAC_KEY_SIZE,
 
@@ -829,7 +867,13 @@ enum MHD_DaemonInfoType
    * Request the file descriptor for the listening socket.
    * No extra arguments should be passed.
    */
-  MHD_DAEMON_INFO_LISTEN_FD
+  MHD_DAEMON_INFO_LISTEN_FD,
+
+  /**
+   * Request the file descriptor for the external epoll.
+   * No extra arguments should be passed.
+   */
+  MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
 };
 
 
@@ -881,7 +925,7 @@ typedef
  */
 typedef int
   (*MHD_AcceptPolicyCallback) (void *cls,
-                               const struct sockaddr * addr,
+                               const struct sockaddr *addr,
                                socklen_t addrlen);
 
 
@@ -1117,6 +1161,11 @@ MHD_start_daemon (unsigned int flags,
  * "MHD_stop_daemon" has been called (as it is theoretically possible
  * that an existing thread is still using it).
  *
+ * Note that some thread modes require the caller to have passed
+ * MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
+ * in one of those modes and this option was not given to
+ * 'MHD_start_daemon', this function will return -1.
+ *
  * @param daemon daemon to stop accepting new connections for
  * @return old listen socket on success, -1 if the daemon was 
  *         already not listening anymore
@@ -1246,6 +1295,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *read_fd_set,
 		     const fd_set *write_fd_set,
 		     const fd_set *except_fd_set);
+
+
 
 
 /* **************** Connection handling functions ***************** */
