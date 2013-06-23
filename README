@@ -53,6 +53,7 @@ You can use the following options to disable certain MHD features:
 --disable-messages: no error messages (they take space!)
 --disable-postprocessor: no MHD_PostProcessor API
 --disable-dauth: no digest authentication API
+--disable-epoll: no support for epoll, even on Linux
 
 The resulting binary should be about 30-40k depending on the platform.
 
