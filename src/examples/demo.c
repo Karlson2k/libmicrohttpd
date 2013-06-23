@@ -43,7 +43,7 @@
  * Number of threads to run in the thread pool.  Should (roughly) match
  * the number of cores on your system.
  */
-#define NUMBER_OF_THREADS 8
+#define NUMBER_OF_THREADS 4
 
 /**
  * How many bytes of a file do we give to libmagic to determine the mime type?
@@ -362,6 +362,9 @@ update_directory ()
 					      rdc.buf,
 					      MHD_RESPMEM_MUST_FREE);
   mark_as_html (response);
+  (void) MHD_add_response_header (response,
+				  MHD_HTTP_HEADER_CONNECTION,
+				  "close");
   update_cached_response (response);
 }
 
@@ -859,12 +862,18 @@ main (int argc, char *const *argv)
 							     MHD_RESPMEM_PERSISTENT);
   mark_as_html (internal_error_response);
   update_directory ();
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG
+#if EPOLL_SUPPORT 
+			| MHD_USE_EPOLL_LINUX_ONLY
+#endif
+			,
                         port,
                         NULL, NULL, 
 			&generate_page, NULL, 
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256 * 1024),
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256 * 1024), 
+#if PRODUCTION
 			MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
+#endif
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) (120 /* seconds */),
 			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) NUMBER_OF_THREADS,
 			MHD_OPTION_NOTIFY_COMPLETED, &response_completed_callback, NULL,

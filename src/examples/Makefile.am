@@ -25,6 +25,7 @@ endif
 
 # example programs
 noinst_PROGRAMS = \
+ benchmark \
  minimal_example \
  dual_stack_example \
  minimal_example_comet \
@@ -72,6 +73,11 @@ demo_SOURCES = \
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  -lmagic
+
+benchmark_SOURCES = \
+ benchmark.c 
+benchmark_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la  
 
 dual_stack_example_SOURCES = \
  dual_stack_example.c 
