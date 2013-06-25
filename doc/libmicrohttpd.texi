@@ -142,6 +142,72 @@ Examples based on reports we've received from developers include:
 @c If you have other interesting examples, please let us know
 @end itemize
 
+@section Thread modes and event loops
+@cindex poll
+@cindex epoll
+@cindex select
+
+MHD supports four basic thread modes and up to three event loop
+styes.  
+
+The four basic thread modes are external (MHD creates no threads,
+event loop is fully managed by the application), internal (MHD creates
+one thread for all connections), thread pool (MHD creates a thread
+pool which is used to process all connections) and
+thread-per-connection (MHD creates one listen thread and then one
+thread per accepted connection).
+
+These thread modes are then combined with the event loop styles.
+MHD support select, poll and epoll.  epoll is only available on
+Linux, poll may not be available on some platforms.  Note that
+it is possible to combine MHD using epoll with an external
+select-based event loop.
+
+The default (if no other option is passed) is ``external select''.
+The highest performance can typically be obtained with a thread pool
+using @code{epoll}.  Apache Benchmark (ab) was used to compare the
+performance of @code{select} and @code{epoll} when using a thread pool
+and a large number of connections. @ref{fig:performance} shows the
+resulting plot from the @code{benchmark.c} example, which measures the
+latency between an incoming request and the completion of the
+transmission of the response.  In this setting, the @code{epoll}
+thread pool with four threads was able to handle more than 45,000
+connections per second on loopback (with Apache Benchmark running
+three processes on the same machine).
+@cindex performance
+
+
+@float Figure,fig:performance
+@image{performance_data,400pt,300pt,Data,.png}
+@caption{Performance measurements for select vs. epoll (with thread-pool).}
+@end float
+
+
+Not all combinations of thread modes and event loop styles are
+supported.  This is partially to keep the API simple, and partially
+because some combinations simply make no sense as others are strictly
+superior.  Note that the choice of style depends fist of all on the
+application logic, and then on the performance requirements.
+Applications that perform a blocking operation while handling a
+request within the callbacks from MHD must use a thread per
+connection.  This is typically rather costly.  Applications that do
+not support threads or that must run on embedded devices without
+thread-support must use the external mode.  Using @code{epoll} is only
+supported on Linux, thus portable applications must at least have a
+fallback option available.  @ref{tbl:supported} lists the sane
+combinations.
+
+@float Table,tbl:supported
+@multitable {@b{thread-per-connection}} {@b{select}} {@b{poll}} {@b{epoll}}
+@item                           @tab @b{select} @tab @b{poll} @tab @b{epoll}
+@item @b{external}              @tab  yes       @tab no       @tab yes
+@item @b{internal}              @tab  yes       @tab yes      @tab yes
+@item @b{thread pool}           @tab  yes       @tab yes      @tab yes
+@item @b{thread-per-connection} @tab  yes       @tab yes      @tab no 
+@end multitable
+@caption{Supported combinations of event styles and thread modes.}
+@end float
+
 
 @section Compiling GNU libmicrohttpd
 @cindex compilation
@@ -187,6 +253,9 @@ do not include the post processor API (results in binary incompatibility)
 
 @item ``--disable-dauth''
 do not include the authentication APIs (results in binary incompatibility)
+
+@item ``--disable-epoll
+do not include epoll support, even on Linux (minimally smaller binary size, good for testing portability to non-Linux systems)
 
 @item ``--enable-coverage''
 set flags for analysis of code-coverage with gcc/gcov (results in slow, large binaries)
@@ -341,6 +410,16 @@ Run using the IPv6 protocol (otherwise, MHD will just support IPv4).
 If you specify @code{MHD_USE_IPV6} and the local platform does not
 support it, @code{MHD_start_daemon} will return NULL.
 
+If you want MHD to support IPv4 and IPv6 using a single socket, pass
+MHD_USE_DUAL_STACK, otherwise, if you only pass this option, MHD will
+try to bind to IPv6-only (resulting in no IPv4 support).
+
+@item MHD_USE_DUAL_STACK
+@cindex IPv6
+Use a single socket for IPv4 and IPv6.  Note that this will mean
+that IPv4 addresses are returned by MHD in the IPv6-mapped format
+(the 'struct sockaddr_in6' format will be used for IPv4 and IPv6).
+
 @item MHD_USE_PEDANTIC_CHECKS
 Be pedantic about the protocol (as opposed to as tolerant as possible).
 Specifically, at the moment, this flag causes MHD to reject HTTP
@@ -355,10 +434,26 @@ production.
 @cindex poll
 @cindex select
 Use poll instead of select. This allows sockets with descriptors
-@code{>= FD_SETSIZE}.  This option only works in conjunction with
-@code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you
-specify @code{MHD_USE_POLL} and the local platform does not support
-it, @code{MHD_start_daemon} will return NULL.
+@code{>= FD_SETSIZE}.  This option currently only works in conjunction
+with @code{MHD_USE_THREAD_PER_CONNECTION} or
+@code{MHD_USE_INTERNAL_SELECT} (at this point).  If you specify
+@code{MHD_USE_POLL} and the local platform does not support it,
+@code{MHD_start_daemon} will return NULL.
+
+@item MHD_USE_EPOLL_LINUX_ONLY
+@cindex FD_SETSIZE
+@cindex epoll
+@cindex select
+Use epoll instead of poll or select. This allows sockets with
+descriptors @code{>= FD_SETSIZE}.  This option is only available on
+Linux systems and only works in conjunction with
+@code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you specify
+@code{MHD_USE_EPOLL_LINUX_ONLY} and the local platform does not
+support it, @code{MHD_start_daemon} will return NULL.  Using epoll
+instead of select or poll can in some situations result in significantly
+higher performance as the system call has fundamentally lower complexity
+(O(1) for epoll vs. O(n) for select/poll where n is the number of
+open connections).
 
 @item MHD_SUPPRESS_DATE_NO_CLOCK
 @cindex date
@@ -379,6 +474,18 @@ sense if @code{MHD_add_connection} is going to be used exclusively to
 connect HTTP clients to the HTTP server.  This option is incompatible
 with using a thread pool; if it is used,
 @code{MHD_OPTION_THREAD_POOL_SIZE} is ignored.
+
+@item MHD_USE_PIPE_FOR_SHUTDOWN
+@cindex quiesce
+Force MHD to use a signal pipe to notify the event loop (of threads)
+of our shutdown.  This is required if an appliction uses
+@code{MHD_USE_INTERNAL_SELECT} or @code{MHD_USE_THREAD_PER_CONNECTION}
+and then performs @code{MHD_quiesce_daemon} (which eliminates our
+ability to signal termination via the listen socket).  In these modes,
+@code{MHD_quiesce_daemon} will fail if this option was not set.  Also,
+use of this option is automatic (as in, you do not even have to
+specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In
+"external" select mode, this option is always simply ignored.  
 
 @end table
 @end deftp
@@ -1087,6 +1194,7 @@ Return @code{NULL} on error, handle to daemon on success.
 
 
 @deftypefun int MHD_quiesce_daemon (struct MHD_Daemon *daemon)
+@cindex quiesce
 Stop accepting connections from the listening socket.  Allows clients
 to continue processing, but stops accepting new connections.  Note
 that the caller is responsible for closing the returned socket;
@@ -1102,6 +1210,7 @@ processed until they are finished.
 
 Return @code{-1} on error (daemon not listening), the handle to the
 listen socket otherwise.
+
 @end deftypefun
 
 
@@ -1129,6 +1238,7 @@ daemon to process connections of
 Return @code{MHD_YES} on success, @code{MHD_NO} if this daemon was not
 started with the right options for this call.
 @end deftypefun
+
 
 @deftypefun int MHD_run_from_select (struct MHD_Daemon *daemon, const fd_set *read_fd_set, const fd_set *write_fd_set, const fd_set *except_fd_set)
 Run webserver operations given sets of ready socket handles.
@@ -1160,6 +1270,7 @@ Return @code{MHD_YES} on success, @code{MHD_NO} on serious internal
 errors.
 
 @end deftypefun
+
 
 
 @deftypefun void MHD_add_connection (struct MHD_Daemon *daemon, int client_socket, const struct sockaddr *addr, socklen_t addrlen)
@@ -2055,12 +2166,14 @@ information about a daemon is desired.
 @item MHD_DAEMON_INFO_KEY_SIZE
 Request information about the key size for a particular cipher
 algorithm.  The cipher algorithm should be passed as an extra argument
-(of type 'enum MHD_GNUTLS_CipherAlgorithm').
+(of type 'enum MHD_GNUTLS_CipherAlgorithm').  No longer supported,
+using this value will cause MHD_get_daemon_info to return NULL.
 
 @item MHD_DAEMON_INFO_MAC_KEY_SIZE
 Request information about the key size for a particular cipher
 algorithm.  The cipher algorithm should be passed as an extra argument
-(of type 'enum MHD_GNUTLS_HashAlgorithm').
+(of type 'enum MHD_GNUTLS_HashAlgorithm').  No longer supported,
+using this value will cause MHD_get_daemon_info to return NULL.
 
 @item MHD_DAEMON_INFO_LISTEN_FD
 @cindex listen
@@ -2069,6 +2182,17 @@ server socket.  This can be useful if no port
 was specified and a client needs to learn what port
 is actually being used by MHD.
 No extra arguments should be passed.
+
+@item MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
+@cindex epoll
+Request the file-descriptor number that MHD is using for epoll.  If
+the build is not supporting epoll, NULL is returned; if we are using a
+thread pool or this daemon was not started with
+MHD_USE_EPOLL_LINUX_ONLY, (a pointer to) -1 is returned.  If we are
+using MHD_USE_SELECT_INTERNALLY or are in 'external' select mode, the
+internal epoll FD is returned.  This function must be used in external
+select mode with epoll to obtain the FD to call epoll on.  No extra
+arguments should be passed.
 
 @end table
 @end deftp
