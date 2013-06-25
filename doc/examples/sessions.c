@@ -12,7 +12,7 @@
 #include <microhttpd.h>
 
 #ifdef _WIN32
-int
+static int
 asprintf (char **resultp, const char *format, ...)
 {
   va_list argptr;
@@ -758,7 +758,14 @@ main (int argc, char *const *argv)
 	}
       else
 	tvp = NULL;
-      select (max + 1, &rs, &ws, &es, tvp);
+      if (-1 == select (max + 1, &rs, &ws, &es, tvp))
+	{
+	  if (EINTR != errno)
+	    fprintf (stderr, 
+		     "Aborting due to error during select: %s\n",
+		     strerror (errno));
+	  break;
+	}
       MHD_run (d);
     }
   MHD_stop_daemon (d);
