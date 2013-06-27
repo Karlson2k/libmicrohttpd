@@ -932,6 +932,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 			//on respones with callbacks it is possible that their is no
 			//data available 
 			if(0 == session->write_buffer_size)//nothing to write
+			  {
 				if(response_queue != session->response_queue_head)
 				{
 					//the handler modified the queue
@@ -942,6 +943,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 					//no need to try the same frame again
 					break;
 				}
+			  }
 		}
 
 		session->last_activity = SPDYF_monotonic_time();

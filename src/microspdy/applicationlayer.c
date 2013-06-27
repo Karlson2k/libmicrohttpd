@@ -217,11 +217,11 @@ spdy_handler_response_queue_result(void * cls,
 	int streamopened;
 	struct SPDY_Request *request = (struct SPDY_Request *)cls;
 	
-	SPDYF_ASSERT(NULL == response_queue->data_frame
-		&& NULL != response_queue->control_frame
-		|| NULL != response_queue->data_frame
-		&& NULL == response_queue->control_frame,
-		"response queue must have either control frame or data frame");
+	SPDYF_ASSERT( ( (NULL == response_queue->data_frame) &&
+			(NULL != response_queue->control_frame) ) ||
+		      ( (NULL != response_queue->data_frame) &&
+			(NULL == response_queue->control_frame) ),
+		     "response queue must have either control frame or data frame");
 	
 	streamopened = !response_queue->stream->is_out_closed;
 	

@@ -32,10 +32,10 @@
 #include <errno.h>
 #include "microspdy.h"
 
-int run = 1;
+static int run = 1;
 
 
-ssize_t
+static ssize_t
 response_callback (void *cls,
 						void *buffer,
 						size_t max,
@@ -53,11 +53,12 @@ response_callback (void *cls,
 }
 
 
-void
+static void
 response_done_callback(void *cls,
-						struct SPDY_Response *response,
-						struct SPDY_Request *request,
-						bool streamopened)
+		       struct SPDY_Response *response,
+		       struct SPDY_Request *request,
+		       enum SPDY_RESPONSE_RESULT status,
+		       bool streamopened)
 {
 	(void)streamopened;
 	printf("answer for %s was sent\n", (char *)cls);
@@ -67,7 +68,8 @@ response_done_callback(void *cls,
 	free(cls);
 }
 
-void
+
+static void
 standard_request_handler(void *cls,
 						struct SPDY_Request * request,
 						uint8_t priority,
@@ -140,6 +142,7 @@ standard_request_handler(void *cls,
 		abort();
 	}
 }
+
 
 int
 main (int argc, char *const *argv)

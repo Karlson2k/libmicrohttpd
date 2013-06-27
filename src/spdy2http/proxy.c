@@ -127,10 +127,13 @@ struct URI
 	while(0)
 
 
-int loop = 1;
-CURLM *multi_handle;
-int still_running = 0; /* keep number of running handles */
-regex_t uri_preg;
+static int loop = 1;
+
+static CURLM *multi_handle;
+
+static int still_running = 0; /* keep number of running handles */
+
+static regex_t uri_preg;
 
 
 struct Proxy
@@ -151,7 +154,7 @@ struct Proxy
 };
 
 
-void
+static void
 free_uri(struct URI * uri)
 {
   if(NULL != uri)
@@ -170,7 +173,8 @@ free_uri(struct URI * uri)
   }
 }
 
-int
+
+static int
 init_parse_uri(regex_t * preg)
 {
   // RFC 2396
@@ -186,14 +190,16 @@ init_parse_uri(regex_t * preg)
   return regcomp(preg, "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?", REG_EXTENDED);
 }
 
-void
+
+static void
 deinit_parse_uri(regex_t * preg)
 {
   regfree(preg);
 }
   
-int
-parse_uri(regex_t * preg, char * full_uri, struct URI ** uri)
+
+static int
+parse_uri(regex_t * preg, const char * full_uri, struct URI ** uri)
 {
   int ret;
   char *colon;
@@ -305,7 +311,7 @@ response_callback (void *cls,
 }
 
 
-void
+static void
 response_done_callback(void *cls,
 						struct SPDY_Response *response,
 						struct SPDY_Request *request,
@@ -490,7 +496,7 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
 }
 
 
-int
+static int
 iterate_cb (void *cls, const char *name, const char * const * value, int num_values)
 {
 	struct Proxy *proxy = (struct Proxy *)cls;
@@ -528,7 +534,7 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 }
 
 
-void
+static void
 standard_request_handler(void *cls,
                         struct SPDY_Request * request,
                         uint8_t priority,
@@ -627,8 +633,9 @@ standard_request_handler(void *cls,
 	}
 }
 
-int
-run()
+
+static int
+run ()
 {
   unsigned long long timeoutlong=0;
   long curl_timeo = -1;
@@ -645,9 +652,7 @@ run()
   CURLMsg *msg;
   int msgs_left;
   struct Proxy *proxy;
-	struct sockaddr_in *addr;
-	struct sockaddr_in addr4;
-	struct in_addr inaddr4;
+  struct sockaddr_in *addr;
   struct addrinfo hints;
   char service[NI_MAXSERV];
   struct addrinfo *gai;
@@ -679,16 +684,16 @@ run()
   }
   else
   {
-    snprintf(service, sizeof(service), "%u", glob_opt.listen_port);
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
+    snprintf (service, sizeof(service), "%u", glob_opt.listen_port);
+    memset (&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     
     ret = getaddrinfo(glob_opt.listen_host, service, &hints, &gai);
     if(ret != 0)
       DIE("problem with specified host");
     
-    addr=gai->ai_addr;
+    addr = (struct sockaddr_in *) gai->ai_addr;
     
     daemon = SPDY_start_daemon(0,
 								glob_opt.cert,
@@ -836,7 +841,8 @@ run()
 	return 0;
 }
 
-void
+
+static void
 display_usage()
 {
   printf(

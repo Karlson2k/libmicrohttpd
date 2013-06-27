@@ -423,15 +423,15 @@ SPDYF_get_fdset (struct SPDY_Daemon *daemon,
 	{
 		fd = pos->socket_fd;
 		FD_SET(fd, read_fd_set);
-		if(all
-			|| NULL != pos->response_queue_head //frames pending
-			|| NULL != pos->write_buffer //part of last frame pending
-			|| SPDY_SESSION_STATUS_CLOSING == pos->status //the session is about to be closed
-			|| daemon->session_timeout //timeout passed for the session
-				&& (pos->last_activity + daemon->session_timeout < SPDYF_monotonic_time())
-			|| SPDY_YES == SPDYF_tls_is_pending(pos) //data in TLS' read buffer pending
-			|| ((pos->read_buffer_offset - pos->read_buffer_beginning) > 0) // data in lib's read buffer pending
-		)
+		if (all
+		    || (NULL != pos->response_queue_head) //frames pending
+		    || (NULL != pos->write_buffer) //part of last frame pending
+		    || (SPDY_SESSION_STATUS_CLOSING == pos->status) //the session is about to be closed
+		    || (daemon->session_timeout //timeout passed for the session
+			&& (pos->last_activity + daemon->session_timeout < SPDYF_monotonic_time()))
+		    || (SPDY_YES == SPDYF_tls_is_pending(pos)) //data in TLS' read buffer pending
+		    || ((pos->read_buffer_offset - pos->read_buffer_beginning) > 0) // data in lib's read buffer pending
+		    )
 			FD_SET(fd, write_fd_set);
 		if(fd > max_fd)
 			max_fd = fd;

@@ -51,6 +51,30 @@
 #include <zlib.h>
 #include <stdbool.h>
 
+/* While we generally would like users to use a configure-driven
+   build process which detects which headers are present and
+   hence works on any platform, we use "standard" includes here
+   to build out-of-the-box for beginning users on common systems.
+
+   Once you have a proper build system and go for more exotic 
+   platforms, you should define MHD_PLATFORM_H in some header that
+   you always include *before* "microhttpd.h".  Then the following
+   "standard" includes won't be used (which might be a good
+   idea, especially on platforms where they do not exist). */
+#ifndef MHD_PLATFORM_H
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
+#ifdef __MINGW32__
+#include <ws2tcpip.h>
+#else
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#endif
+#endif
+
+
 /**
  * return code for "YES".
  */

@@ -27,6 +27,7 @@
 #include "structures.h"
 #include "internal.h"
 #include "session.h"
+#include <ctype.h>
 
 
 struct SPDY_NameValue *
@@ -60,7 +61,7 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 		
 	for(i=0; i<len; ++i)
 	{
-		if(isupper(name[i]))
+	  if(isupper((int) name[i]))
 			return SPDY_INPUT_ERROR;
 	}
 	
@@ -289,12 +290,12 @@ SPDYF_response_queue_create(bool is_data,
 	unsigned int i;
 	bool is_last;
 	
-	SPDYF_ASSERT(!is_data
-		|| 0 == data_size && NULL != response->rcb
-		|| 0 < data_size && NULL == response->rcb,
-		"either data or request->rcb must not be null");
+	SPDYF_ASSERT((! is_data)
+		     || ((0 == data_size) && (NULL != response->rcb))
+		     || ((0 < data_size) && (NULL == response->rcb)),
+		     "either data or request->rcb must not be null");
 	
-	if(is_data && data_size > SPDY_MAX_SUPPORTED_FRAME_SIZE)
+	if (is_data && (data_size > SPDY_MAX_SUPPORTED_FRAME_SIZE))
 	{
 		//separate the data in more frames and add them to the queue
 		

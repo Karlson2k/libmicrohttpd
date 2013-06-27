@@ -41,15 +41,17 @@
 //#include "../framinglayer/structures.h"
 //#include "../applicationlayer/alstructures.h"
 
-int run = 1;
-int run2 = 1;
+static int run = 1;
+
+static int run2 = 1;
 
 	
-	uint64_t loops;
-	time_t start;
+static uint64_t loops;
+
+static time_t start;
 
 
-void
+static void
 new_session_callback (void *cls,
 						struct SPDY_Session * session)
 {
@@ -88,7 +90,8 @@ new_session_callback (void *cls,
 	}
 }
 
-void
+
+static void
 session_closed_handler (void *cls,
 						struct SPDY_Session * session,
 						int by_client)
@@ -108,7 +111,8 @@ session_closed_handler (void *cls,
 	//session_closed_called = 1;
 }
 
-void
+
+static void
 response_done_callback(void *cls,
 						struct SPDY_Response *response,
 						struct SPDY_Request *request,
@@ -135,7 +139,8 @@ response_done_callback(void *cls,
 	free(cls);
 }
 
-int
+
+static int
 print_headers (void *cls,
                            const char *name, const char *value)
 {
@@ -163,11 +168,12 @@ new_request_cb (void *cls,
 }
 */
 
-int
+
+static int
 append_headers_to_data (void *cls,
-                           const char *name, const char **value, int num_values)
+                           const char *name, const char * const *value, int num_values)
 {
-	char **data = (char **)cls;
+	char **data = cls;
 	void *tofree = *data;
 	int i;
 	
@@ -183,7 +189,8 @@ append_headers_to_data (void *cls,
 	return SPDY_YES;
 }  
 
-void
+
+static void
 standard_request_handler(void *cls,
 						struct SPDY_Request * request,
 						uint8_t priority,
@@ -251,10 +258,13 @@ standard_request_handler(void *cls,
 	}
 }
 
-void sig_handler(int signo)
+
+static void 
+sig_handler(int signo)
 {
     printf("received signal\n");
 }
+
 
 int
 main (int argc, char *const *argv)
