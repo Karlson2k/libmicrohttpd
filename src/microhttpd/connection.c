@@ -2221,7 +2221,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
               break;
             }
-          if (connection->response != NULL)
+          if ( (NULL != connection->response) &&
+	       ( (0 == strcasecmp (connection->method,
+				   MHD_HTTP_METHOD_POST)) ||
+		 (0 == strcasecmp (connection->method,
+				   MHD_HTTP_METHOD_PUT))) )
             {
               /* we refused (no upload allowed!) */
               connection->remaining_upload_size = 0;
@@ -2413,7 +2417,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           end =
             MHD_get_response_header (connection->response, 
 				     MHD_HTTP_HEADER_CONNECTION);
-	  rend = ( (end != NULL) && (0 == strcasecmp (end, "close")) );
+	  rend = ( (MHD_YES == connection->read_closed) ||
+		   ( (end != NULL) && (0 == strcasecmp (end, "close")) ) );
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if (connection->daemon->notify_completed != NULL)

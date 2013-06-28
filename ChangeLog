@@ -1,3 +1,11 @@
+Fri Jun 28 14:05:15 CEST 2013
+	If we shutdown connection for reading on POST due to error,
+	really do not process further requests even if we already
+	read the next request from the connection.  Furthermore, do
+	not shutdown connections for reading on GET/HEAD/etc. just
+	because	the application queued a response immediately ---
+	reserve that behavior for PUT/POST. -CG
+
 Tue May 21 14:34:36 CEST 2013
 	Improving configure tests for OpenSSL and spdylay to
 	avoid build errors in libmicrospdy code if those libraries
