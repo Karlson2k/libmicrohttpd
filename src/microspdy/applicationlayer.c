@@ -124,17 +124,20 @@ spdy_handler_new_stream (void *cls,
 		else
 			for(i=0; i<iterator->num_values; ++i)
 				if (SPDY_YES != SPDY_name_value_add(headers,iterator->name,iterator->value[i]))
+        {
+          SPDY_destroy_request(request);
 					goto free_and_fail;
+        }
 		
 		iterator = iterator->next;
 	}
 	
 	request->method=method;
-    request->path=path;
-    request->version=version;
-    request->host=host;
-    request->scheme=scheme;
-    request->headers=headers;
+  request->path=path;
+  request->version=version;
+  request->host=host;
+  request->scheme=scheme;
+  request->headers=headers;
 	
 	//check request validity, all these fields are mandatory for a request
 	if(NULL == method || strlen(method) == 0
@@ -366,7 +369,7 @@ SPDY_build_response(int status,
 					size_t size)
 {
 	struct SPDY_Response *response = NULL;
-	struct SPDY_NameValue ** all_headers = NULL;
+	struct SPDY_NameValue ** all_headers = NULL; //TODO maybe array in stack is enough
 	char *fullstatus = NULL;
 	int ret;
 	int num_hdr_containers = 1;
@@ -417,6 +420,7 @@ SPDY_build_response(int status,
 		
 	SPDY_name_value_destroy(all_headers[0]);
 	free(all_headers);
+  all_headers = NULL;
 	
 	if(size > 0)
 	{

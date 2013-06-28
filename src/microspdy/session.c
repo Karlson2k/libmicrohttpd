@@ -136,29 +136,32 @@ spdyf_handler_read_syn_stream (struct SPDY_Session *session)
 			return;
 		}
 	}
-	
-	ret = SPDYF_name_value_from_stream(name_value_strm, name_value_strm_size, &headers);
-	if(SPDY_NO == ret)
-	{
-		//memory error, try later
-		free(name_value_strm);
-		return;
-	}
+	else
+  {
+    ret = SPDYF_name_value_from_stream(name_value_strm, name_value_strm_size, &headers);
+    if(SPDY_NO == ret)
+    {
+      //memory error, try later
+      free(name_value_strm);
+      return;
+    }
 
-	session->streams_head->headers = headers;
-	//inform the application layer for the new stream received
-	if(SPDY_YES != session->daemon->fnew_stream_cb(session->daemon->fcls, session->streams_head))
-	{
-		//memory error, try later
-		free(name_value_strm);
-		return;
-	}
-		
-	session->read_buffer_beginning += compressed_data_size;
+    session->streams_head->headers = headers;
+    //inform the application layer for the new stream received
+    if(SPDY_YES != session->daemon->fnew_stream_cb(session->daemon->fcls, session->streams_head))
+    {
+      //memory error, try later
+      free(name_value_strm);
+      return;
+    }
+      
+    session->read_buffer_beginning += compressed_data_size;
+    free(name_value_strm);
+  }
+  
 	//change state to wait for new frame
 	session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
 	free(frame);
-	free(name_value_strm);
 }
 
 

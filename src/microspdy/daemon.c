@@ -231,9 +231,7 @@ SPDYF_start_daemon_va (uint16_t port,
 	}
 	
 	if(NULL == daemon->address)
-	{
-		addrlen = sizeof (struct sockaddr_in6);
-		
+	{		
 		if (NULL == (servaddr6 = malloc (addrlen)))
 		{
 			SPDYF_DEBUG("malloc");
@@ -246,7 +244,16 @@ SPDYF_start_daemon_va (uint16_t port,
 		daemon->address = (struct sockaddr *) servaddr6;
 	}
 	
-	afamily = AF_INET6 == daemon->address->sa_family ? PF_INET6 : PF_INET;
+  if(AF_INET6 == daemon->address->sa_family)
+  {
+    afamily = PF_INET6;
+		addrlen = sizeof (struct sockaddr_in6);
+  }
+  else
+  {
+    afamily = PF_INET;
+		addrlen = sizeof (struct sockaddr_in);
+  }
 #else
 	//handling IPv4
 	if(daemon->flags & SPDY_DAEMON_FLAG_ONLY_IPV6)
@@ -255,10 +262,10 @@ SPDYF_start_daemon_va (uint16_t port,
 		goto free_and_fail;
 	}
 	
+  addrlen = sizeof (struct sockaddr_in);
+    
 	if(NULL == daemon->address)
-	{
-		addrlen = sizeof (struct sockaddr_in);
-		
+	{		
 		if (NULL == (servaddr4 = malloc (addrlen)))
 		{
 			SPDYF_DEBUG("malloc");

@@ -455,25 +455,25 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
 
 	for(j=0; j<num_containers; ++j)
 	{
-		iterator = container[j];
-	while(iterator != NULL)
-	{
-		++num_pairs;
-		size += 4 + strlen(iterator->name); //length + string
-		
-		SPDYF_ASSERT(iterator->num_values>0, "num_values is 0");
-		
-		size += 4; //value length
-		
-		for(i=0; i<iterator->num_values; ++i)
-		{
-			size += strlen(iterator->value[i]); // string
-			if(i/* || !strlen(iterator->value[i])*/) ++size; //NULL separator
-		}
-			
-		iterator = iterator->next;
-	}
-}
+    iterator = container[j];
+    while(iterator != NULL)
+    {
+      ++num_pairs;
+      size += 4 + strlen(iterator->name); //length + string
+
+      SPDYF_ASSERT(iterator->num_values>0, "num_values is 0");
+
+      size += 4; //value length
+
+      for(i=0; i<iterator->num_values; ++i)
+      {
+        size += strlen(iterator->value[i]); // string
+        if(i/* || !strlen(iterator->value[i])*/) ++size; //NULL separator
+      }
+
+      iterator = iterator->next;
+    }
+  }
 	
 	if(NULL == (*stream = malloc(size)))
 	{
@@ -488,36 +488,36 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
 	//put all other headers to the stream
 	for(j=0; j<num_containers; ++j)
 	{
-		iterator = container[j];
-	while(iterator != NULL)
-	{
-		name_size = strlen(iterator->name);
-		temp = htonl(name_size);
-		memcpy(*stream + offset, &temp, 4);
-		offset += 4;
-		strncpy(*stream + offset, iterator->name, name_size);
-		offset += name_size;
-		
-		value_offset = offset;
-		offset += 4;
-		for(i=0; i<iterator->num_values; ++i)
-		{
-			if(i /*|| !strlen(iterator->value[0])*/)
-			{
-				memset(*stream + offset, 0, 1);
-				++offset;
-				if(!i) continue;
-			}
-			strncpy(*stream + offset, iterator->value[i], strlen(iterator->value[i]));
-			offset += strlen(iterator->value[i]);
-		}
-		value_size = offset - value_offset - 4;
-		value_size = htonl(value_size);
-		memcpy(*stream + value_offset, &value_size, 4);
-			
-		iterator = iterator->next;
-	}
-}
+    iterator = container[j];
+    while(iterator != NULL)
+    {
+      name_size = strlen(iterator->name);
+      temp = htonl(name_size);
+      memcpy(*stream + offset, &temp, 4);
+      offset += 4;
+      strncpy(*stream + offset, iterator->name, name_size);
+      offset += name_size;
+
+      value_offset = offset;
+      offset += 4;
+      for(i=0; i<iterator->num_values; ++i)
+      {
+        if(i /*|| !strlen(iterator->value[0])*/)
+        {
+          memset(*stream + offset, 0, 1);
+          ++offset;
+          //if(!i) continue;
+        }
+        strncpy(*stream + offset, iterator->value[i], strlen(iterator->value[i]));
+        offset += strlen(iterator->value[i]);
+      }
+      value_size = offset - value_offset - 4;
+      value_size = htonl(value_size);
+      memcpy(*stream + value_offset, &value_size, 4);
+
+      iterator = iterator->next;
+    }
+  }
 	
 	SPDYF_ASSERT(offset == size,"offset is wrong");
 	
