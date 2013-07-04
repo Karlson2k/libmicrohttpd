@@ -28,8 +28,8 @@ endif
 
 check_PROGRAMS = \
   test_start_stop \
-  test_get \
   test_quiesce \
+  test_get \
   test_get_sendfile \
   test_urlparse \
   test_put \
@@ -51,6 +51,8 @@ check_PROGRAMS = \
   test_callback \
   $(CURL_FORK_TEST) \
   perf_get $(PERF_GET_CONCURRENT)
+
+
 
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \

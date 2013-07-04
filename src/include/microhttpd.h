@@ -356,8 +356,11 @@ enum MHD_FLAG
   MHD_USE_SELECT_INTERNALLY = 8,
 
   /**
-   * Run using the IPv6 protocol (otherwise, MHD will
-   * just support IPv4).
+   * Run using the IPv6 protocol (otherwise, MHD will just support
+   * IPv4).  If you want MHD to support IPv4 and IPv6 using a single
+   * socket, pass MHD_USE_DUAL_STACK, otherwise, if you only pass
+   * this option, MHD will try to bind to IPv6-only (resulting in
+   * no IPv4 support).
    */
   MHD_USE_IPv6 = 16,
 
@@ -428,7 +431,12 @@ enum MHD_FLAG
    * specify it), if 'MHD_USE_NO_LISTEN_SOCKET' is specified.  In
    * "external" select mode, this option is always simply ignored.
    */
-  MHD_USE_PIPE_FOR_SHUTDOWN = 1024
+  MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
+
+  /**
+   * Use a single socket for IPv4 and IPv6.
+   */
+  MHD_USE_DUAL_STACK = MHD_USE_IPv6 | 2048
 
 };
 

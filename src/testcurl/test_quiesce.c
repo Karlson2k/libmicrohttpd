@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -38,7 +40,7 @@
 #endif
 
 static int oneone;
-static int done;
+
 
 struct CBC
 {
@@ -46,6 +48,7 @@ struct CBC
   size_t pos;
   size_t size;
 };
+
 
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
@@ -58,6 +61,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -91,24 +95,28 @@ ahc_echo (void *cls,
   return ret;
 }
 
-void request_completed (void *cls, struct MHD_Connection *connection,
-      void **con_cls, enum MHD_RequestTerminationCode code)
+
+static void
+request_completed (void *cls, struct MHD_Connection *connection,
+		   void **con_cls, enum MHD_RequestTerminationCode code)
 {
   int *done = (int *)cls;
   *done = 1;
 }
 
-void ServeOneRequest(int fd)
+
+static void
+ServeOneRequest(int fd)
 {
   struct MHD_Daemon *d;
   fd_set rs;
   fd_set ws;
   fd_set es;
   int max;
-  struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
   int done = 0;
+
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         1082, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_LISTEN_SOCKET, fd,
@@ -140,9 +148,12 @@ void ServeOneRequest(int fd)
   _exit(0);
 }
 
-CURL *setupCURL(void *cbc)
+
+static CURL *
+setupCURL (void *cbc)
 {
   CURL *c;
+
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -162,6 +173,7 @@ CURL *setupCURL(void *cbc)
   return c;
 }
 
+
 static int
 testGet (int type, int pool_count, int poll_flag)
 {
@@ -171,18 +183,17 @@ testGet (int type, int pool_count, int poll_flag)
   struct CBC cbc;
   CURLcode errornum;
   int fd;
-  pid_t pid;
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   if (pool_count > 0) {
-    d = MHD_start_daemon (type | MHD_USE_DEBUG  | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_PIPE_FOR_SHUTDOWN | poll_flag,
                           11080, NULL, NULL, &ahc_echo, "GET",
                           MHD_OPTION_THREAD_POOL_SIZE, pool_count, MHD_OPTION_END);
 
   } else {
-    d = MHD_start_daemon (type | MHD_USE_DEBUG  | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_PIPE_FOR_SHUTDOWN | poll_flag,
                           11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   }
   if (d == NULL)
@@ -211,12 +222,12 @@ testGet (int type, int pool_count, int poll_flag)
     return 8;
   }
 
-  fd = MHD_quiesce_daemon(d);
-
-  if (fork() == 0) {
-    ServeOneRequest(fd);
-    _exit(1);
-  }
+  fd = MHD_quiesce_daemon (d);
+  if (fork() == 0) 
+    {
+      ServeOneRequest (fd);
+      _exit(1);
+    }
 
   cbc.pos = 0;
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
@@ -225,25 +236,28 @@ testGet (int type, int pool_count, int poll_flag)
                "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
       return 2;
     }
 
   waitpid(-1, NULL, 0);
 
-  if (cbc.pos != strlen ("/hello_world")) {
-    fprintf(stderr, "%s\n", cbc.buf);
-    curl_easy_cleanup (c);
-    MHD_stop_daemon (d);
-    close(fd);
-    return 4;
-  }
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world"))) {
-    fprintf(stderr, "%s\n", cbc.buf);
-    curl_easy_cleanup (c);
-    MHD_stop_daemon (d);
-    close(fd);
-    return 8;
-  }
+  if (cbc.pos != strlen ("/hello_world")) 
+    {
+      fprintf(stderr, "%s\n", cbc.buf);
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      close(fd);
+      return 4;
+    }
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world"))) 
+    {
+      fprintf(stderr, "%s\n", cbc.buf);
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      close(fd);
+      return 8;
+    }
 
   /* at this point, the forked server quit, and the new
    * server has quiesced, so new requests should fail
@@ -407,6 +421,10 @@ main (int argc, char *const *argv)
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_POLL);
   errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, MHD_USE_POLL);
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 4, MHD_USE_POLL);
+#endif
+#if EPOLL_SUPPORT
+  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 4, MHD_USE_EPOLL_LINUX_ONLY);
 #endif
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

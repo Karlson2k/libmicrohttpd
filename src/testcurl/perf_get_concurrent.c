@@ -336,6 +336,10 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedGet (port++, MHD_USE_POLL);
   errorCount += testMultithreadedPoolGet (port++, MHD_USE_POLL);
 #endif
+#if EPOLL_SUPPORT
+  errorCount += testInternalGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testMultithreadedPoolGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
+#endif
   MHD_destroy_response (response);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

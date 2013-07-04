@@ -145,6 +145,7 @@ testInternalGet (int poll_flag)
   return 0;
 }
 
+
 static int
 testMultithreadedGet (int poll_flag)
 {
@@ -193,6 +194,7 @@ testMultithreadedGet (int poll_flag)
     return 128;
   return 0;
 }
+
 
 static int
 testMultithreadedPoolGet (int poll_flag)
@@ -243,6 +245,7 @@ testMultithreadedPoolGet (int poll_flag)
     return 128;
   return 0;
 }
+
 
 static int
 testExternalGet ()
@@ -365,6 +368,7 @@ testExternalGet ()
     return 16384;
   return 0;
 }
+
 
 static int
 testUnknownPortGet (int poll_flag)
@@ -505,6 +509,11 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
   errorCount += testUnknownPortGet (MHD_USE_POLL);
   errorCount += testStopRace (MHD_USE_POLL);
+#endif
+#if EPOLL_SUPPORT
+  errorCount += testInternalGet (MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testMultithreadedPoolGet (MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testUnknownPortGet (MHD_USE_EPOLL_LINUX_ONLY);
 #endif
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

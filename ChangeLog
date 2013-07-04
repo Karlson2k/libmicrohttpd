@@ -6,6 +6,35 @@ Fri Jun 28 14:05:15 CEST 2013
 	because	the application queued a response immediately ---
 	reserve that behavior for PUT/POST. -CG
 
+Tue Jun 25 15:08:30 CEST 2013
+	Added option 'MHD_USE_DUAL_STACK' to support a single
+	daemon for IPv4 and IPv6 without the application having
+	to do the binding. -CG
+
+Mon Jun 24 22:33:34 CEST 2013
+	Finished integration with epoll, including benchmarking and
+	documentation. -CG
+
+Sun Jun 23 15:28:13 CEST 2013
+	Added option 'MHD_USE_PIPE_FOR_SHUTDOWN' to cleanly support
+	'MHD_quiesce_daemon' with thread pools and per-connection
+	threads (we then need a pipe for shutdown, but if
+	'MHD_quiesce_daemon' is not used, we do not want to
+	require the use of a pipe; introducing the pipe after
+	the threads have been started can also fail, so the
+	application needs to tell us early on). -CG
+
+Sat Jun 22 20:24:17 CEST 2013
+	Removed locking calls for thread modes that do not need them.
+	Reorganized way to obtain connection's event loop state.
+	Added sorted XDLL for connections with default timeout to
+	avoid having to loop over all connections to determine current
+	timeout (custom per-connection timeouts are in another list
+	which is iterated each time). -CG
+
+Fri Jun 21 20:55:48 CEST 2013
+	Preparing build system and tests for epoll support. -CG
+
 Tue May 21 14:34:36 CEST 2013
 	Improving configure tests for OpenSSL and spdylay to
 	avoid build errors in libmicrospdy code if those libraries

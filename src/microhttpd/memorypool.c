@@ -90,10 +90,13 @@ MHD_pool_create (size_t max)
 
   pool = malloc (sizeof (struct MemoryPool));
   if (pool == NULL)
-    return NULL;
+    return NULL; 
 #ifdef MAP_ANONYMOUS
-  pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
-                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (max <= 32 * 1024)
+    pool->memory = MAP_FAILED;
+  else
+    pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
+			 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
   pool->memory = MAP_FAILED;
 #endif
