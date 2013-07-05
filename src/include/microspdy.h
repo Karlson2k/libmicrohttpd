@@ -319,7 +319,7 @@ enum SPDY_IO_SUBSYSTEM
 	/**
 	 * No TLS is used.
 	 */
-	SPDY_IO_SUBSYSTEM_RAW = 0,
+	SPDY_IO_SUBSYSTEM_RAW = 2,
 };
 
 

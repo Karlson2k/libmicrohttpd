@@ -161,4 +161,24 @@ typedef int
 typedef int
 (*SPDYF_IOIsPending) (struct SPDY_Session *session);
 
+
+/**
+ * Sets callbacks for the daemon with regard to the IO subsystem.
+ *
+ * @param daemon
+ * @return SPDY_YES on success or SPDY_NO otherwise
+ */
+int
+SPDYF_io_set_daemon(struct SPDY_Daemon *daemon, enum SPDY_IO_SUBSYSTEM io_subsystem);
+
+
+/**
+ * Sets callbacks for the session with regard to the IO subsystem.
+ *
+ * @param session
+ * @return SPDY_YES on success or SPDY_NO otherwise
+ */
+int
+SPDYF_io_set_session(struct SPDY_Session *session, enum SPDY_IO_SUBSYSTEM io_subsystem);
+
 #endif

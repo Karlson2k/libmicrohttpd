@@ -1305,12 +1305,8 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	
 	session->daemon = daemon;
 	session->socket_fd = new_socket_fd;
-    
-  session->fio_new_session = &SPDYF_openssl_new_session;
-  session->fio_close_session = &SPDYF_openssl_close_session;
-  session->fio_is_pending = &SPDYF_openssl_is_pending;
-  session->fio_recv = &SPDYF_openssl_recv;
-  session->fio_send = &SPDYF_openssl_send;
+  
+  SPDYF_io_set_session(session, SPDY_IO_SUBSYSTEM_OPENSSL);
 	
 	//init TLS context, handshake will be done
 	if(SPDY_YES != session->fio_new_session(session))

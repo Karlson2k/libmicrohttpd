@@ -191,8 +191,8 @@ SPDYF_start_daemon_va (uint16_t port,
 	memset (daemon, 0, sizeof (struct SPDY_Daemon));
 	daemon->socket_fd = -1;
 	daemon->port = port;
-  daemon->fio_init = &SPDYF_openssl_init;
-  daemon->fio_deinit = &SPDYF_openssl_deinit;
+  SPDYF_io_set_daemon(daemon, SPDY_IO_SUBSYSTEM_OPENSSL);
+  
 	if (NULL == (daemon->certfile = strdup (certfile)))
 	{
 		SPDYF_DEBUG("str");
