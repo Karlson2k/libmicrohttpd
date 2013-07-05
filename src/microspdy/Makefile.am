@@ -16,7 +16,7 @@ lib_LTLIBRARIES = \
 
 libmicrospdy_la_SOURCES = \
   io.h \
-  tls.h tls.c \
+  io_openssl.h io_openssl.c \
   structures.h structures.c \
   internal.h internal.c \
   daemon.h daemon.c \

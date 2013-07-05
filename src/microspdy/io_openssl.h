@@ -17,50 +17,21 @@
 */
 
 /**
- * @file tls.h
+ * @file io_openssl.h
  * @brief  TLS handling. openssl with NPN is used, but as long as the
  * 			functions conform to this interface file, other libraries
  * 			can be used.
  * @author Andrey Uzunov
  */
 
-#ifndef TLS_H
-#define TLS_H
+#ifndef IO_OPENSSL_H
+#define IO_OPENSSL_H
 
 #include "platform.h"
+#include "io.h"
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
-
-/* macros used in other files instead of types.
- * useful in case of changing openssl to something else */
-//#define SPDYF_TLS_SESSION_CONTEXT SSL
-//#define SPDYF_TLS_DAEMON_CONTEXT SSL_CTX
-
-
-/**
- * Used for return code when reading and writing to the TLS socket.
- */
-enum SPDY_TLS_ERROR
-{
-	/**
-	 * The connection was closed by the other party.
-	 */
-	SPDY_TLS_ERROR_CLOSED = 0,
-	
-	/**
-	 * Any kind of error ocurred. The session has to be closed.
-	 */
-	SPDY_TLS_ERROR_ERROR = -2,
-	
-	/**
-	 * The function had to return without processing any data. The whole
-	 * cycle of events has to be called again (SPDY_run) as something
-	 * either has to be written or read or the the syscall was
-	 * interrupted by a signal.
-	 */
-	SPDY_TLS_ERROR_AGAIN = -3,
-};
 
 
 /**
@@ -68,7 +39,7 @@ enum SPDY_TLS_ERROR
  *
  */
 void
-SPDYF_tls_global_init();
+SPDYF_openssl_global_init();
 
 
 /**
@@ -77,7 +48,7 @@ SPDYF_tls_global_init();
  *
  */
 void
-SPDYF_tls_global_deinit();
+SPDYF_openssl_global_deinit();
 
 
 /**
@@ -89,7 +60,7 @@ SPDYF_tls_global_deinit();
  * @return SPDY_YES on success or SPDY_NO on error
  */
 int
-SPDYF_tls_init(struct SPDY_Daemon *daemon);
+SPDYF_openssl_init(struct SPDY_Daemon *daemon);
 
 
 /**
@@ -99,7 +70,7 @@ SPDYF_tls_init(struct SPDY_Daemon *daemon);
  * @param daemon SPDY_Daemon which is being stopped
  */
 void
-SPDYF_tls_deinit(struct SPDY_Daemon *daemon);
+SPDYF_openssl_deinit(struct SPDY_Daemon *daemon);
 
 
 /**
@@ -110,7 +81,7 @@ SPDYF_tls_deinit(struct SPDY_Daemon *daemon);
  * @return SPDY_NO if some openssl funcs fail. SPDY_YES otherwise
  */
 int
-SPDYF_tls_new_session(struct SPDY_Session *session);
+SPDYF_openssl_new_session(struct SPDY_Session *session);
 
 
 /**
@@ -120,7 +91,7 @@ SPDYF_tls_new_session(struct SPDY_Session *session);
  * @param session SPDY_Session whose socket is used by openssl
  */
 void
-SPDYF_tls_close_session(struct SPDY_Session *session);
+SPDYF_openssl_close_session(struct SPDY_Session *session);
 
 
 /**
@@ -132,10 +103,10 @@ SPDYF_tls_close_session(struct SPDY_Session *session);
  * @param size of the buffer
  * @return number of bytes (at most size) read from the TLS connection
  *         0 if the other party has closed the connection
- *         SPDY_TLS_ERROR code on error
+ *         SPDY_IO_ERROR code on error
  */
 int
-SPDYF_tls_recv(struct SPDY_Session *session,
+SPDYF_openssl_recv(struct SPDY_Session *session,
 				void * buffer,
 				size_t size);
 
@@ -150,10 +121,10 @@ SPDYF_tls_recv(struct SPDY_Session *session,
  * @return number of bytes (at most size) from the buffer that has been
  * 			written to the TLS connection
  *         0 if the other party has closed the connection
- *         SPDY_TLS_ERROR code on error
+ *         SPDY_IO_ERROR code on error
  */
 int
-SPDYF_tls_send(struct SPDY_Session *session,
+SPDYF_openssl_send(struct SPDY_Session *session,
 				const void * buffer,
 				size_t size);
 
@@ -166,6 +137,6 @@ SPDYF_tls_send(struct SPDY_Session *session,
  * @return SPDY_YES if data is pending or SPDY_NO otherwise
  */
 int
-SPDYF_tls_is_pending(struct SPDY_Session *session);
+SPDYF_openssl_is_pending(struct SPDY_Session *session);
 
 #endif

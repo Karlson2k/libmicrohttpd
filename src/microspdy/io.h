@@ -26,6 +26,7 @@
 #define IO_H
 
 #include "platform.h"
+#include "io_openssl.h"
 
 
 /**

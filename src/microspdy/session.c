@@ -28,8 +28,8 @@
 #include "internal.h"
 #include "session.h"
 #include "compression.h"
-#include "tls.h"
 #include "stream.h"
+#include "io.h"
 
 
 /**
@@ -826,7 +826,7 @@ SPDYF_session_read (struct SPDY_Session *session)
 					
 	switch(bytes_read)
 	{
-		case SPDY_TLS_ERROR_CLOSED:
+		case SPDY_IO_ERROR_CLOSED:
 			//The TLS connection was closed by the other party, clean 
 			//or not
 			shutdown (session->socket_fd, SHUT_RD);
@@ -834,7 +834,7 @@ SPDYF_session_read (struct SPDY_Session *session)
 			session->status = SPDY_SESSION_STATUS_CLOSING;
 			return SPDY_YES;
 			
-		case SPDY_TLS_ERROR_ERROR:
+		case SPDY_IO_ERROR_ERROR:
 			//any kind of error in the TLS subsystem
 			//try to prepare GOAWAY frame
 			SPDYF_prepare_goaway(session, SPDY_GOAWAY_STATUS_INTERNAL_ERROR, false);
@@ -842,7 +842,7 @@ SPDYF_session_read (struct SPDY_Session *session)
 			session->status = SPDY_SESSION_STATUS_FLUSHING;
 			return SPDY_YES;
 			
-		case SPDY_TLS_ERROR_AGAIN:
+		case SPDY_IO_ERROR_AGAIN:
 			//read or write should be called again; leave it for the
 			//next time
 			return SPDY_NO;
@@ -958,7 +958,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 			
 		switch(bytes_written)
 		{
-			case SPDY_TLS_ERROR_CLOSED:
+			case SPDY_IO_ERROR_CLOSED:
 				//The TLS connection was closed by the other party, clean 
 				//or not
 				shutdown (session->socket_fd, SHUT_RD);
@@ -966,13 +966,13 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 				session->status = SPDY_SESSION_STATUS_CLOSING;
 				return SPDY_YES;
 				
-			case SPDY_TLS_ERROR_ERROR:
+			case SPDY_IO_ERROR_ERROR:
 				//any kind of error in the TLS subsystem
 				//forbid more writing
 				session->status = SPDY_SESSION_STATUS_CLOSING;
 				return SPDY_YES;
 				
-			case SPDY_TLS_ERROR_AGAIN:
+			case SPDY_IO_ERROR_AGAIN:
 				//read or write should be called again; leave it for the
 				//next time; return from the function as we do not now
 				//whether reading or writing is needed
@@ -1306,11 +1306,11 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	session->daemon = daemon;
 	session->socket_fd = new_socket_fd;
     
-  session->fio_new_session = &SPDYF_tls_new_session;
-  session->fio_close_session = &SPDYF_tls_close_session;
-  session->fio_is_pending = &SPDYF_tls_is_pending;
-  session->fio_recv = &SPDYF_tls_recv;
-  session->fio_send = &SPDYF_tls_send;
+  session->fio_new_session = &SPDYF_openssl_new_session;
+  session->fio_close_session = &SPDYF_openssl_close_session;
+  session->fio_is_pending = &SPDYF_openssl_is_pending;
+  session->fio_recv = &SPDYF_openssl_recv;
+  session->fio_send = &SPDYF_openssl_send;
 	
 	//init TLS context, handshake will be done
 	if(SPDY_YES != session->fio_new_session(session))

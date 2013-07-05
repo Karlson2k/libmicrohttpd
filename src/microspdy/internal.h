@@ -27,7 +27,6 @@
 
 #include "platform.h"
 #include "microspdy.h"
-#include "tls.h"
 
 /* size of read buffers for each connection
  * must be at least the size of SPDY_MAX_SUPPORTED_FRAME_SIZE */

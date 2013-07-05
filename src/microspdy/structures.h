@@ -28,7 +28,6 @@
 
 #include "platform.h"
 #include "microspdy.h"
-#include "tls.h"
 #include "io.h"
 
 

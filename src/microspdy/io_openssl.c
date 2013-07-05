@@ -17,7 +17,7 @@
 */
 
 /**
- * @file tls.c
+ * @file io_openssl.c
  * @brief  TLS handling using libssl. The current code assumes that
  * 			blocking I/O is in use.
  * @author Andrey Uzunov
@@ -26,7 +26,7 @@
 #include "platform.h"
 #include "internal.h"
 #include "session.h"
-#include "tls.h"
+#include "io_openssl.h"
 
 
 /**
@@ -53,7 +53,7 @@ spdyf_next_protos_advertised_cb (SSL *ssl, const unsigned char **out, unsigned i
 
 
 void
-SPDYF_tls_global_init()
+SPDYF_openssl_global_init()
 {
 	//error strings are now not used by the lib
     //SSL_load_error_strings();
@@ -65,7 +65,7 @@ SPDYF_tls_global_init()
 
 
 void
-SPDYF_tls_global_deinit()
+SPDYF_openssl_global_deinit()
 {
 	//if SSL_load_error_strings was called
     //ERR_free_strings();
@@ -75,7 +75,7 @@ SPDYF_tls_global_deinit()
 
 
 int
-SPDYF_tls_init(struct SPDY_Daemon *daemon)
+SPDYF_openssl_init(struct SPDY_Daemon *daemon)
 {
     //create ssl context. TLSv1 used
     if(NULL == (daemon->io_context = SSL_CTX_new(TLSv1_server_method())))
@@ -117,14 +117,14 @@ SPDYF_tls_init(struct SPDY_Daemon *daemon)
 
 
 void
-SPDYF_tls_deinit(struct SPDY_Daemon *daemon)
+SPDYF_openssl_deinit(struct SPDY_Daemon *daemon)
 {
     SSL_CTX_free(daemon->io_context);
 }
 
 
 int
-SPDYF_tls_new_session(struct SPDY_Session *session)
+SPDYF_openssl_new_session(struct SPDY_Session *session)
 {
 	int ret;
 	
@@ -160,7 +160,7 @@ SPDYF_tls_new_session(struct SPDY_Session *session)
 
 
 void
-SPDYF_tls_close_session(struct SPDY_Session *session)
+SPDYF_openssl_close_session(struct SPDY_Session *session)
 {
 	//SSL_shutdown sends TLS "close notify" as in TLS standard.
 	//The function may fail as it waits for the other party to also close
@@ -174,7 +174,7 @@ SPDYF_tls_close_session(struct SPDY_Session *session)
 
 
 int
-SPDYF_tls_recv(struct SPDY_Session *session,
+SPDYF_openssl_recv(struct SPDY_Session *session,
 				void * buffer,
 				size_t size)
 {
@@ -193,14 +193,14 @@ SPDYF_tls_recv(struct SPDY_Session *session,
 				
 			case SSL_ERROR_WANT_READ:
 			case SSL_ERROR_WANT_WRITE:
-				return SPDY_TLS_ERROR_AGAIN;
+				return SPDY_IO_ERROR_AGAIN;
 				
 			case SSL_ERROR_SYSCALL:
 				if(EINTR == errno)
-					return SPDY_TLS_ERROR_AGAIN;
+					return SPDY_IO_ERROR_AGAIN;
 				
 			default:
-				return SPDY_TLS_ERROR_ERROR;
+				return SPDY_IO_ERROR_ERROR;
 		}
 	}
 
@@ -209,7 +209,7 @@ SPDYF_tls_recv(struct SPDY_Session *session,
 
 
 int
-SPDYF_tls_send(struct SPDY_Session *session,
+SPDYF_openssl_send(struct SPDY_Session *session,
 				const void * buffer,
 				size_t size)
 {
@@ -229,14 +229,14 @@ SPDYF_tls_send(struct SPDY_Session *session,
 				
 			case SSL_ERROR_WANT_READ:
 			case SSL_ERROR_WANT_WRITE:
-				return SPDY_TLS_ERROR_AGAIN;
+				return SPDY_IO_ERROR_AGAIN;
 				
 			case SSL_ERROR_SYSCALL:
 				if(EINTR == errno)
-					return SPDY_TLS_ERROR_AGAIN;
+					return SPDY_IO_ERROR_AGAIN;
 				
 			default:
-				return SPDY_TLS_ERROR_ERROR;
+				return SPDY_IO_ERROR_ERROR;
 		}
 	}
 	
@@ -245,7 +245,7 @@ SPDYF_tls_send(struct SPDY_Session *session,
 
 
 int
-SPDYF_tls_is_pending(struct SPDY_Session *session)
+SPDYF_openssl_is_pending(struct SPDY_Session *session)
 {
 	/* From openssl docs:
 	 * BUGS

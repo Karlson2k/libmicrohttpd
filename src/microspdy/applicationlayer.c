@@ -239,7 +239,7 @@ SPDY_init ()
 		"Buffer size is less than max supported frame size!");
 	SPDYF_ASSERT(SPDY_MAX_SUPPORTED_FRAME_SIZE >= 32,
 		"Max supported frame size must be bigger than the minimal value!");
-	SPDYF_tls_global_init();
+	SPDYF_openssl_global_init();
 	return SPDY_YES;
 }
 
@@ -248,8 +248,8 @@ void
 SPDY_deinit ()
 {
 	//currently nothing to be freed/deinited
-	//SPDYF_tls_global_deinit doesn't do anything now
-	//SPDYF_tls_global_deinit();
+	//SPDYF_openssl_global_deinit doesn't do anything now
+	//SPDYF_openssl_global_deinit();
 }
 
 
