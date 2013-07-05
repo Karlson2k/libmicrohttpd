@@ -37,14 +37,6 @@
 #include <netinet/tcp.h>
 #endif
 
-/**
- * Minimum size by which MHD tries to increment read/write buffers.
- * We usually begin with half the available pool space for the
- * IO-buffer, but if absolutely needed we additively grow by the
- * number of bytes given here (up to -- theoretically -- the full pool
- * space).
- */
-#define MHD_BUF_INC_SIZE 1024
 
 /**
  * Message to transmit when http 1.1 request is received
@@ -1861,7 +1853,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     return MHD_YES;
   /* make sure "read" has a reasonable number of bytes
      in buffer to use per system call (if possible) */
-  if (connection->read_buffer_offset + MHD_BUF_INC_SIZE >
+  if (connection->read_buffer_offset + connection->daemon->pool_increment >
       connection->read_buffer_size)
     try_grow_read_buffer (connection);
   if (MHD_NO == do_read (connection))

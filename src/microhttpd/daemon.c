@@ -1305,8 +1305,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
   int s;
-  int flags;
-  int need_fcntl;
   int fd;
 
   addrlen = sizeof (addrstorage);
@@ -1315,10 +1313,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     return MHD_NO;
 #if HAVE_ACCEPT4
   s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC);
-  need_fcntl = MHD_NO;
 #else
   s = ACCEPT (fd, addr, &addrlen);
-  need_fcntl = MHD_YES;
 #endif
   if ((-1 == s) || (addrlen <= 0))
     {
@@ -1339,7 +1335,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
 #if !HAVE_ACCEPT4
-  if (MHD_YES == need_fcntl)
   {
     /* make socket non-inheritable */
 #ifdef WINDOWS
@@ -1356,6 +1351,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       }
 #else
+    int flags;
+
     flags = fcntl (s, F_GETFD);
     if ( ( (-1 == flags) ||
 	   ( (flags != (flags | FD_CLOEXEC)) &&
@@ -2377,6 +2374,9 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
           daemon->pool_size = va_arg (ap, size_t);
           break;
+        case MHD_OPTION_CONNECTION_MEMORY_INCREMENT:
+          daemon->pool_increment= va_arg (ap, size_t);
+          break;
         case MHD_OPTION_CONNECTION_LIMIT:
           daemon->max_connections = va_arg (ap, unsigned int);
           break;
@@ -2500,6 +2500,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		{
 		  /* all options taking 'size_t' */
 		case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
+		case MHD_OPTION_CONNECTION_MEMORY_INCREMENT:
 		case MHD_OPTION_THREAD_STACK_SIZE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
@@ -2786,6 +2787,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->default_handler_cls = dh_cls;
   daemon->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
   daemon->pool_size = MHD_POOL_SIZE_DEFAULT;
+  daemon->pool_increment = MHD_BUF_INC_SIZE;
   daemon->unescape_callback = &MHD_http_unescape;
   daemon->connection_timeout = 0;       /* no timeout */
   daemon->wpipe[0] = -1;

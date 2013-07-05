@@ -673,7 +673,13 @@ enum MHD_OPTION
    * HTTPS daemon for client authentification.
    * This option should be followed by a "const char*" argument.
    */
-  MHD_OPTION_HTTPS_MEM_TRUST = 20
+  MHD_OPTION_HTTPS_MEM_TRUST = 20,
+
+  /**
+   * Increment to use for growing the read buffer (followed by a
+   * size_t). Must fit within MHD_OPTION_CONNECTION_MEMORY_LIMIT.
+   */
+  MHD_OPTION_CONNECTION_MEMORY_INCREMENT = 21
 };
 
 

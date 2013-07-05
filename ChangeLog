@@ -1,3 +1,8 @@
+Fri Jul  5 12:05:01 CEST 2013
+	Added MHD_OPTION_CONNECTION_MEMORY_INCREMENT to allow users
+	to specify a custom value for incrementing read buffer
+	sizes (#2899). -MH
+
 Fri Jun 28 14:05:15 CEST 2013
 	If we shutdown connection for reading on POST due to error,
 	really do not process further requests even if we already
