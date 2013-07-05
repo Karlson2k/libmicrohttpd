@@ -193,8 +193,6 @@ parentproc()
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
 	
-	SPDY_init();
-	
 	daemon = SPDY_start_daemon(port,
 								DATA_DIR "cert-and-key.pem",
 								DATA_DIR "cert-and-key.pem",

@@ -233,13 +233,24 @@ spdy_handler_response_queue_result(void * cls,
 
 
 int
-SPDY_init ()
+(SPDY_init) (enum SPDY_IO_SUBSYSTEM io_subsystem, ...)
 {
 	SPDYF_ASSERT(SPDYF_BUFFER_SIZE >= SPDY_MAX_SUPPORTED_FRAME_SIZE,
 		"Buffer size is less than max supported frame size!");
 	SPDYF_ASSERT(SPDY_MAX_SUPPORTED_FRAME_SIZE >= 32,
 		"Max supported frame size must be bigger than the minimal value!");
-	SPDYF_openssl_global_init();
+	SPDYF_ASSERT(SPDY_IO_SUBSYSTEM_NONE == spdyf_io_initialized,
+		"SPDY_init must be called only once per program or after SPDY_deinit");
+    
+  if(SPDY_IO_SUBSYSTEM_OPENSSL & io_subsystem)
+  {
+    SPDYF_openssl_global_init();
+    spdyf_io_initialized |= SPDY_IO_SUBSYSTEM_OPENSSL;
+  }
+  
+	SPDYF_ASSERT(SPDY_IO_SUBSYSTEM_NONE != spdyf_io_initialized,
+		"SPDY_init could not find even one IO subsystem");
+    
 	return SPDY_YES;
 }
 
@@ -247,9 +258,13 @@ SPDY_init ()
 void
 SPDY_deinit ()
 {
+	SPDYF_ASSERT(SPDY_IO_SUBSYSTEM_NONE != spdyf_io_initialized,
+		"SPDY_init has not been called!");
+    
 	//currently nothing to be freed/deinited
 	//SPDYF_openssl_global_deinit doesn't do anything now
 	//SPDYF_openssl_global_deinit();
+  spdyf_io_initialized = SPDY_IO_SUBSYSTEM_NONE;
 }
 
 
@@ -317,6 +332,11 @@ SPDY_start_daemon (uint16_t port,
 	struct SPDY_Daemon *daemon;
 	va_list valist;
 	
+	if(SPDY_IO_SUBSYSTEM_NONE == spdyf_io_initialized)
+	{
+		SPDYF_DEBUG("library not initialized");
+		return NULL;
+	}
 	if(NULL == certfile)
 	{
 		SPDYF_DEBUG("certfile is NULL");

@@ -29,6 +29,12 @@
 
 
 /**
+ * Global flags containing the initialized IO subsystems.
+ */
+enum SPDY_IO_SUBSYSTEM spdyf_io_initialized;
+
+
+/**
  * Start a SPDDY webserver on the given port.
  *
  * @param port port to bind to

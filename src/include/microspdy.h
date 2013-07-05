@@ -298,6 +298,27 @@ struct SPDY_Settings;
 
 
 /**
+ * SPDY IO sybsystem flags used by SPDY_init() and SPDY_deinit().<p>
+ * 
+ * The values are used internally as flags, that is why they must be
+ * powers of 2.
+ */
+enum SPDY_IO_SUBSYSTEM
+{
+
+	/**
+	 * No subsystem. For internal use.
+	 */
+	SPDY_IO_SUBSYSTEM_NONE = 0,
+
+	/**
+	 * Default TLS implementation provided by openSSL/libssl.
+	 */
+	SPDY_IO_SUBSYSTEM_OPENSSL = 1,
+};
+
+
+/**
  * SPDY daemon options. Passed in the varargs portion of 
  * SPDY_start_daemon to customize the daemon. Each option must
  * be followed by a value of a specific type.<p>
@@ -513,7 +534,6 @@ enum SPDY_RESPONSE_RESULT
 	 */
 	SPDY_RESPONSE_RESULT_STREAM_CLOSED = 2,
 };
-
 
 /**
  * Callback for serious error condition. The default action is to print
@@ -736,12 +756,16 @@ typedef void
  * and possibly other stuff needed by the lib. Currently the call
  * always returns SPDY_YES.
  * 
+ * @param enum SPDY_IO_SUBSYSTEM io_subsystem the IO subsystem that will
+ *        be initialized. Several can be used with bitwise OR. If no
+ *        parameter is set, the default openssl subsystem will be used.
  * @return SPDY_YES if the library was correctly initialized and its
  * 			functions can be used now;
  * 			SPDY_NO on error
  */
 int
-SPDY_init (void);
+(SPDY_init) (enum SPDY_IO_SUBSYSTEM io_subsystem, ...);
+#define SPDY_init() SPDY_init(SPDY_IO_SUBSYSTEM_OPENSSL)
 
 
 /**
@@ -750,7 +774,7 @@ SPDY_init (void);
  * SPDY_init. Currently the function does not do anything.
  */
 void
-SPDY_deinit (void);
+SPDY_deinit ();
 
 
 /**
@@ -1294,6 +1318,5 @@ int
 SPDY_send_ping(struct SPDY_Session * session,
 				SPDY_PingCallback rttcb,
 				void * rttcb_cls);
-
 
 #endif
