@@ -360,6 +360,13 @@ enum SPDY_DAEMON_OPTION
 	 * which is the result of bitwise OR of desired flags.
 	 */
 	SPDY_DAEMON_OPTION_FLAGS = 4,
+
+	/**
+	 * IO subsystem type used by daemon and all its sessions. If not set, 
+   * TLS provided by openssl is used. Must be followed by a
+   * SPDY_IO_SUBSYSTEM value.
+	 */
+	SPDY_DAEMON_OPTION_IO_SUBSYSTEM = 8,
 };
 
 

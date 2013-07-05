@@ -27,6 +27,7 @@ check_PROGRAMS = \
   test_struct_namevalue \
   test_new_connection \
   test_request_response \
+  test_notls \
   test_request_response_with_callback \
   test_requests_with_assets \
   test_misc \
@@ -69,6 +70,12 @@ test_request_response_SOURCES = \
  test_request_response.c  \
  $(SPDY_SOURCES) 
 test_request_response_LDADD = $(SPDY_LDADD) \
+ -lspdylay
+
+test_notls_SOURCES = \
+ test_notls.c  \
+ $(SPDY_SOURCES) 
+test_notls_LDADD = $(SPDY_LDADD) \
  -lspdylay
 
 test_request_response_with_callback_SOURCES = \

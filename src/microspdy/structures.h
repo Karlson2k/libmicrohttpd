@@ -920,6 +920,11 @@ struct SPDY_Daemon
 	enum SPDY_DAEMON_FLAG flags;
 
 	/**
+	 * IO subsystem type used by daemon and all its sessions.
+	 */
+	enum SPDY_IO_SUBSYSTEM io_subsystem;
+
+	/**
 	 * Listen port.
 	 */
 	uint16_t port;

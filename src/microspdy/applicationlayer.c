@@ -344,6 +344,8 @@ SPDY_start_daemon (uint16_t port,
 		SPDYF_DEBUG("library not initialized");
 		return NULL;
 	}
+  /*
+   * for now make this checks in framing layer
 	if(NULL == certfile)
 	{
 		SPDYF_DEBUG("certfile is NULL");
@@ -354,6 +356,7 @@ SPDY_start_daemon (uint16_t port,
 		SPDYF_DEBUG("keyfile is NULL");
 		return NULL;
 	}
+  */
 	
 	va_start(valist, cls);
 	daemon = SPDYF_start_daemon_va ( port,

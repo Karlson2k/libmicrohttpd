@@ -1264,10 +1264,11 @@ int
 SPDYF_session_accept(struct SPDY_Daemon *daemon)
 {
 	int new_socket_fd;
-	//int fd_flags;
+  int ret;
 	struct SPDY_Session *session = NULL;
 	socklen_t addr_len;
 	struct sockaddr *addr;
+  
 #if HAVE_INET6
 	struct sockaddr_in6 addr6;
 	
@@ -1280,25 +1281,13 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	addr_len = sizeof(addr6);
 #endif
 	
-    new_socket_fd = accept (daemon->socket_fd, addr, &addr_len);
-      
-    if(new_socket_fd < 1)
-		return SPDY_NO;	
-	
-	//setting the socket to be non-blocking
-	/* 
-	 * different handling is needed by libssl if non-blocking is used
-	 * 
-	fd_flags = fcntl (new_socket_fd, F_GETFL);
-	if ( -1 == fd_flags
-		|| 0 != fcntl (new_socket_fd, F_SETFL, fd_flags | O_NONBLOCK))
-	{
-		SPDYF_DEBUG("WARNING: Couldn't set the new connection to be non-blocking");
-	}
-	*/
+  new_socket_fd = accept (daemon->socket_fd, addr, &addr_len);
+    
+  if(new_socket_fd < 1)
+		return SPDY_NO;
       
 	if (NULL == (session = malloc (sizeof (struct SPDY_Session))))
-    {
+  {
 		goto free_and_fail;
 	}
 	memset (session, 0, sizeof (struct SPDY_Session));
@@ -1306,7 +1295,8 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	session->daemon = daemon;
 	session->socket_fd = new_socket_fd;
   
-  SPDYF_io_set_session(session, SPDY_IO_SUBSYSTEM_OPENSSL);
+  ret = SPDYF_io_set_session(session, daemon->io_subsystem);
+  SPDYF_ASSERT(SPDY_YES == ret, "Somehow daemon->io_subsystem iswrong here");
 	
 	//init TLS context, handshake will be done
 	if(SPDY_YES != session->fio_new_session(session))

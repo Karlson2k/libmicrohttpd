@@ -142,6 +142,9 @@ spdyf_parse_options_va (struct SPDY_Daemon *daemon,
 			case SPDY_DAEMON_OPTION_FLAGS:
 				daemon->flags = va_arg (valist, enum SPDY_DAEMON_FLAG);
 				break;
+			case SPDY_DAEMON_OPTION_IO_SUBSYSTEM:
+				daemon->io_subsystem = va_arg (valist, enum SPDY_IO_SUBSYSTEM);
+				break;
 			default:
 				SPDYF_DEBUG("Wrong option for the daemon %i",opt);
 				return SPDY_NO;
@@ -191,25 +194,6 @@ SPDYF_start_daemon_va (uint16_t port,
 	memset (daemon, 0, sizeof (struct SPDY_Daemon));
 	daemon->socket_fd = -1;
 	daemon->port = port;
-  SPDYF_io_set_daemon(daemon, SPDY_IO_SUBSYSTEM_OPENSSL);
-  
-	if (NULL == (daemon->certfile = strdup (certfile)))
-	{
-		SPDYF_DEBUG("str");
-		goto free_and_fail;
-	}
-	if (NULL == (daemon->keyfile = strdup (keyfile)))
-	{
-		SPDYF_DEBUG("str");
-		goto free_and_fail;
-	}
-	daemon->new_session_cb = nscb;
-	daemon->session_closed_cb = sccb;
-	daemon->new_request_cb = nrcb;
-	daemon->new_post_data_cb = npdcb;
-	daemon->cls = cls;
-	daemon->fcls = fcls;
-	daemon->fnew_stream_cb = fnscb;
 
 	if(SPDY_YES != spdyf_parse_options_va (daemon, valist))
 	{
@@ -222,6 +206,35 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("Port is 0");
 		goto free_and_fail;
 	}
+  if(0 == daemon->io_subsystem)
+    daemon->io_subsystem = SPDY_IO_SUBSYSTEM_OPENSSL;
+  
+  if(SPDY_YES != SPDYF_io_set_daemon(daemon, daemon->io_subsystem))
+		goto free_and_fail;
+  
+  if(SPDY_IO_SUBSYSTEM_RAW != daemon->io_subsystem)
+  {
+    if (NULL == certfile
+      || NULL == (daemon->certfile = strdup (certfile)))
+    {
+      SPDYF_DEBUG("strdup (certfile)");
+      goto free_and_fail;
+    }
+    if (NULL == keyfile
+      || NULL == (daemon->keyfile = strdup (keyfile)))
+    {
+      SPDYF_DEBUG("strdup (keyfile)");
+      goto free_and_fail;
+    }
+  }
+  
+	daemon->new_session_cb = nscb;
+	daemon->session_closed_cb = sccb;
+	daemon->new_request_cb = nrcb;
+	daemon->new_post_data_cb = npdcb;
+	daemon->cls = cls;
+	daemon->fcls = fcls;
+	daemon->fnew_stream_cb = fnscb;
 
 #if HAVE_INET6
 	//handling IPv6
