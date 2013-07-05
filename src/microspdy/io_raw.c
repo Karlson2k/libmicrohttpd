@@ -154,3 +154,31 @@ SPDYF_raw_is_pending(struct SPDY_Session *session)
   
 	return SPDY_NO;
 }
+
+
+int
+SPDYF_raw_before_write(struct SPDY_Session *session)
+{
+  int val = 1;
+  int ret;
+  
+  ret = setsockopt(session->socket_fd, IPPROTO_TCP, TCP_CORK, &val, (socklen_t)sizeof(val));
+  if(-1 == ret)
+    SPDYF_DEBUG("WARNING: Couldn't set the new connection to TCP_CORK");
+  
+	return SPDY_YES;
+}
+
+
+int
+SPDYF_raw_after_write(struct SPDY_Session *session, int was_written)
+{
+  int val = 0;
+  int ret;
+  
+  ret = setsockopt(session->socket_fd, IPPROTO_TCP, TCP_CORK, &val, (socklen_t)sizeof(val));
+  if(-1 == ret)
+    SPDYF_DEBUG("WARNING: Couldn't unset the new connection to TCP_CORK");
+  
+	return was_written;
+}

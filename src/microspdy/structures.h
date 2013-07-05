@@ -684,6 +684,16 @@ struct SPDY_Session
 	SPDYF_IOIsPending fio_is_pending;
 
 	/**
+	 * Function to call before writing set of frames.
+	 */
+	SPDYF_IOBeforeWrite fio_before_write;
+
+	/**
+	 * Function to call after writing set of frames.
+	 */
+	SPDYF_IOAfterWrite fio_after_write;
+
+	/**
 	 * Number of bytes that the lib must ignore immediately after they 
 	 * are read from the TLS socket without adding them to the read buf.
 	 * This is needed, for instance, when receiving frame bigger than

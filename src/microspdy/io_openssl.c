@@ -253,3 +253,21 @@ SSL_pending() takes into account only bytes from the TLS/SSL record that is curr
 	 */
 	return SSL_pending(session->io_context) > 0 ? SPDY_YES : SPDY_NO;
 }
+
+
+int
+SPDYF_openssl_before_write(struct SPDY_Session *session)
+{
+  (void)session;
+  
+  return SPDY_YES;
+}
+
+
+int
+SPDYF_openssl_after_write(struct SPDY_Session *session, int was_written)
+{
+  (void)session;
+  
+  return was_written;
+}

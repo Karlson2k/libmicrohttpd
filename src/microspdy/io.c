@@ -64,6 +64,8 @@ SPDYF_io_set_session(struct SPDY_Session *session, enum SPDY_IO_SUBSYSTEM io_sub
       session->fio_is_pending = &SPDYF_openssl_is_pending;
       session->fio_recv = &SPDYF_openssl_recv;
       session->fio_send = &SPDYF_openssl_send;
+      session->fio_before_write = &SPDYF_openssl_before_write;
+      session->fio_after_write = &SPDYF_openssl_after_write;
       break;
       
     case SPDY_IO_SUBSYSTEM_RAW:
@@ -72,6 +74,8 @@ SPDYF_io_set_session(struct SPDY_Session *session, enum SPDY_IO_SUBSYSTEM io_sub
       session->fio_is_pending = &SPDYF_raw_is_pending;
       session->fio_recv = &SPDYF_raw_recv;
       session->fio_send = &SPDYF_raw_send;
+      session->fio_before_write = &SPDYF_raw_before_write;
+      session->fio_after_write = &SPDYF_raw_after_write;
       break;
       
     case SPDY_IO_SUBSYSTEM_NONE:

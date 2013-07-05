@@ -868,6 +868,9 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 	
 	if(SPDY_SESSION_STATUS_CLOSING == session->status)
 		return SPDY_NO;
+    
+  if(SPDY_NO == session->fio_before_write(session))
+    return SPDY_NO;
 	
 	for(i=0;
 		only_one_frame
@@ -935,7 +938,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 			//on respones with callbacks it is possible that their is no
 			//data available 
 			if(0 == session->write_buffer_size)//nothing to write
-			  {
+      {
 				if(response_queue != session->response_queue_head)
 				{
 					//the handler modified the queue
@@ -946,12 +949,12 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 					//no need to try the same frame again
 					break;
 				}
-			  }
+      }
 		}
 
 		session->last_activity = SPDYF_monotonic_time();
 		
-		//actual write to the TLS socket
+		//actual write to the IO
 		bytes_written = session->fio_send(session,
 			session->write_buffer + session->write_buffer_beginning,
 			session->write_buffer_offset - session->write_buffer_beginning);
@@ -1021,8 +1024,8 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 		&& NULL == session->response_queue_head)
 		session->status = SPDY_SESSION_STATUS_CLOSING;
 	
-
-	return i>0 ? SPDY_YES : SPDY_NO;
+	//return i>0 ? SPDY_YES : SPDY_NO;
+	return session->fio_after_write(session, i>0);
 }
 
 

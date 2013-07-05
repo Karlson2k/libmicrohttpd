@@ -163,6 +163,31 @@ typedef int
 
 
 /**
+ * Called just before frames are about to be processed and written
+ * to the socket.
+ *
+ * @param session
+ * @return SPDY_NO if writing must not happen in the call;
+ *         SPDY_YES otherwise
+ */
+typedef int
+(*SPDYF_IOBeforeWrite) (struct SPDY_Session *session);
+
+
+/**
+ * Called just after frames have been processed and written
+ * to the socket.
+ *
+ * @param session
+ * @param was_written has the same value as the write function for the
+ *        session will return 
+ * @return returned value will be used by the write function to return
+ */
+typedef int
+(*SPDYF_IOAfterWrite) (struct SPDY_Session *session, int was_written);
+
+
+/**
  * Sets callbacks for the daemon with regard to the IO subsystem.
  *
  * @param daemon

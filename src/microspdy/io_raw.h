@@ -132,4 +132,27 @@ SPDYF_raw_send(struct SPDY_Session *session,
 int
 SPDYF_raw_is_pending(struct SPDY_Session *session);
 
+
+/**
+ * Sets TCP_CORK.
+ *
+ * @param session
+ * @return SPDY_NO if writing must not happen in the call;
+ *         SPDY_YES otherwise
+ */
+int
+SPDYF_raw_before_write(struct SPDY_Session *session);
+
+
+/**
+ * Unsets TCP_CORK.
+ *
+ * @param session
+ * @param was_written has the same value as the write function for the
+ *        session will return 
+ * @return returned value will be used by the write function to return
+ */
+int
+SPDYF_raw_after_write(struct SPDY_Session *session, int was_written);
+
 #endif
