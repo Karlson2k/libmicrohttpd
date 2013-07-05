@@ -78,37 +78,37 @@ int
 SPDYF_tls_init(struct SPDY_Daemon *daemon)
 {
     //create ssl context. TLSv1 used
-    if(NULL == (daemon->tls_context = SSL_CTX_new(TLSv1_server_method())))
+    if(NULL == (daemon->io_context = SSL_CTX_new(TLSv1_server_method())))
     {
 		SPDYF_DEBUG("Couldn't create ssl context");
 		return SPDY_NO;
 	}
 	//set options for tls
 	//TODO DH is not enabled for easier debugging
-    //SSL_CTX_set_options(daemon->tls_context, SSL_OP_SINGLE_DH_USE);
+    //SSL_CTX_set_options(daemon->io_context, SSL_OP_SINGLE_DH_USE);
     
     //TODO here session tickets are disabled for easier debuging with 
     //wireshark when using Chrome
     //SSL_OP_NO_COMPRESSION disables TLS compression to avoid CRIME attack
-    SSL_CTX_set_options(daemon->tls_context, SSL_OP_NO_TICKET | SSL_OP_NO_COMPRESSION);
-    if(1 != SSL_CTX_use_certificate_file(daemon->tls_context, daemon->certfile , SSL_FILETYPE_PEM))
+    SSL_CTX_set_options(daemon->io_context, SSL_OP_NO_TICKET | SSL_OP_NO_COMPRESSION);
+    if(1 != SSL_CTX_use_certificate_file(daemon->io_context, daemon->certfile , SSL_FILETYPE_PEM))
     {
 		SPDYF_DEBUG("Couldn't load the cert file");
-		SSL_CTX_free(daemon->tls_context);
+		SSL_CTX_free(daemon->io_context);
 		return SPDY_NO;
 	}
-    if(1 != SSL_CTX_use_PrivateKey_file(daemon->tls_context, daemon->keyfile, SSL_FILETYPE_PEM))
+    if(1 != SSL_CTX_use_PrivateKey_file(daemon->io_context, daemon->keyfile, SSL_FILETYPE_PEM))
     {
 		SPDYF_DEBUG("Couldn't load the name file");
-		SSL_CTX_free(daemon->tls_context);
+		SSL_CTX_free(daemon->io_context);
 		return SPDY_NO;
 	}
-    SSL_CTX_set_next_protos_advertised_cb(daemon->tls_context, &spdyf_next_protos_advertised_cb, NULL);
+    SSL_CTX_set_next_protos_advertised_cb(daemon->io_context, &spdyf_next_protos_advertised_cb, NULL);
 	//TODO only RC4-SHA is used to make it easy to debug with wireshark
-    if (1 != SSL_CTX_set_cipher_list(daemon->tls_context, "RC4-SHA"))
+    if (1 != SSL_CTX_set_cipher_list(daemon->io_context, "RC4-SHA"))
     {
 		SPDYF_DEBUG("Couldn't set the desired cipher list");
-		SSL_CTX_free(daemon->tls_context);
+		SSL_CTX_free(daemon->io_context);
 		return SPDY_NO;
 	}
 	
@@ -119,7 +119,7 @@ SPDYF_tls_init(struct SPDY_Daemon *daemon)
 void
 SPDYF_tls_deinit(struct SPDY_Daemon *daemon)
 {
-    SSL_CTX_free(daemon->tls_context);
+    SSL_CTX_free(daemon->io_context);
 }
 
 
@@ -128,30 +128,30 @@ SPDYF_tls_new_session(struct SPDY_Session *session)
 {
 	int ret;
 	
-	if(NULL == (session->tls_context = SSL_new(session->daemon->tls_context)))
+	if(NULL == (session->io_context = SSL_new(session->daemon->io_context)))
     {
 		SPDYF_DEBUG("Couldn't create ssl structure");
 		return SPDY_NO;
 	}
-	if(1 != (ret = SSL_set_fd(session->tls_context, session->socket_fd)))
+	if(1 != (ret = SSL_set_fd(session->io_context, session->socket_fd)))
     {
 		SPDYF_DEBUG("SSL_set_fd %i",ret);
-		SSL_free(session->tls_context);
-		session->tls_context = NULL;
+		SSL_free(session->io_context);
+		session->io_context = NULL;
 		return SPDY_NO;
 	}
 	
 	//for non-blocking I/O SSL_accept may return -1
 	//and this function won't work
-	if(1 != (ret = SSL_accept(session->tls_context)))
+	if(1 != (ret = SSL_accept(session->io_context)))
     {
 		SPDYF_DEBUG("SSL_accept %i",ret);
-		SSL_free(session->tls_context);
-		session->tls_context = NULL;
+		SSL_free(session->io_context);
+		session->io_context = NULL;
 		return SPDY_NO;
 	}
 	/* alternatively 
-	SSL_set_accept_state(session->tls_context);
+	SSL_set_accept_state(session->io_context);
 	* may be called and then the negotiation will be done on reading
 	*/
 	
@@ -167,9 +167,9 @@ SPDYF_tls_close_session(struct SPDY_Session *session)
 	//the TLS session. The lib just sends it and will close the socket
 	//after that because the browsers don't seem to care much about
 	//"close notify"
-	SSL_shutdown(session->tls_context);
+	SSL_shutdown(session->io_context);
 	
-	SSL_free(session->tls_context);
+	SSL_free(session->io_context);
 }
 
 
@@ -179,13 +179,13 @@ SPDYF_tls_recv(struct SPDY_Session *session,
 				size_t size)
 {
 	int ret;
-	int n = SSL_read(session->tls_context, 
+	int n = SSL_read(session->io_context, 
 					buffer,
 					size);
 	//if(n > 0) SPDYF_DEBUG("recvd: %i",n);
 	if (n <= 0)
 	{
-		ret = SSL_get_error(session->tls_context, n);
+		ret = SSL_get_error(session->io_context, n);
 		switch(ret)
 		{
 			case SSL_ERROR_ZERO_RETURN:
@@ -215,13 +215,13 @@ SPDYF_tls_send(struct SPDY_Session *session,
 {
 	int ret;
 	
-	int n = SSL_write(session->tls_context, 
+	int n = SSL_write(session->io_context, 
 					buffer,
 					size);
 	//if(n > 0) SPDYF_DEBUG("sent: %i",n);
 	if (n <= 0)
 	{
-		ret = SSL_get_error(session->tls_context, n);
+		ret = SSL_get_error(session->io_context, n);
 		switch(ret)
 		{
 			case SSL_ERROR_ZERO_RETURN:
@@ -251,5 +251,5 @@ SPDYF_tls_is_pending(struct SPDY_Session *session)
 	 * BUGS
 SSL_pending() takes into account only bytes from the TLS/SSL record that is currently being processed (if any). If the SSL object's read_ahead flag is set, additional protocol bytes may have been read containing more TLS/SSL records; these are ignored by SSL_pending().
 	 */
-	return SSL_pending(session->tls_context) > 0 ? SPDY_YES : SPDY_NO;
+	return SSL_pending(session->io_context) > 0 ? SPDY_YES : SPDY_NO;
 }

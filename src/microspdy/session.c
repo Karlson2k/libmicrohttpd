@@ -30,7 +30,7 @@
 #include "compression.h"
 #include "tls.h"
 #include "stream.h"
-	
+
 
 /**
  * Handler for reading the full SYN_STREAM frame after we know that
@@ -820,7 +820,7 @@ SPDYF_session_read (struct SPDY_Session *session)
 	session->last_activity = SPDYF_monotonic_time();
 
 	//actual read from the TLS socket
-	bytes_read = SPDYF_tls_recv(session,
+	bytes_read = session->fio_recv(session,
 					session->read_buffer + session->read_buffer_offset,
 					session->read_buffer_size - session->read_buffer_offset);
 					
@@ -952,7 +952,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 		session->last_activity = SPDYF_monotonic_time();
 		
 		//actual write to the TLS socket
-		bytes_written = SPDYF_tls_send(session,
+		bytes_written = session->fio_send(session,
 			session->write_buffer + session->write_buffer_beginning,
 			session->write_buffer_offset - session->write_buffer_beginning);
 			
@@ -1016,11 +1016,12 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 			SPDYF_response_queue_destroy(queue_head);
 		}
 	}
-	
+
 	if(SPDY_SESSION_STATUS_FLUSHING == session->status
 		&& NULL == session->response_queue_head)
 		session->status = SPDY_SESSION_STATUS_CLOSING;
 	
+
 	return i>0 ? SPDY_YES : SPDY_NO;
 }
 
@@ -1237,7 +1238,7 @@ SPDYF_session_close (struct SPDY_Session *session)
 	int by_client = session->read_closed ? SPDY_YES : SPDY_NO;
 	
 	//shutdown the tls and deinit the tls context
-	SPDYF_tls_close_session(session);
+	session->fio_close_session(session);
 	shutdown (session->socket_fd, 
 		session->read_closed ? SHUT_WR : SHUT_RDWR);
 	session->read_closed = true;
@@ -1304,9 +1305,15 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	
 	session->daemon = daemon;
 	session->socket_fd = new_socket_fd;
+    
+  session->fio_new_session = &SPDYF_tls_new_session;
+  session->fio_close_session = &SPDYF_tls_close_session;
+  session->fio_is_pending = &SPDYF_tls_is_pending;
+  session->fio_recv = &SPDYF_tls_recv;
+  session->fio_send = &SPDYF_tls_send;
 	
 	//init TLS context, handshake will be done
-	if(SPDY_YES != SPDYF_tls_new_session(session))
+	if(SPDY_YES != session->fio_new_session(session))
 	{
 		goto free_and_fail;
 	}
@@ -1315,14 +1322,14 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	session->read_buffer_size = SPDYF_BUFFER_SIZE;
 	if (NULL == (session->read_buffer = malloc (session->read_buffer_size)))
     {
-		SPDYF_tls_close_session(session);
+		session->fio_close_session(session);
 		goto free_and_fail;
 	}
 	
 	//address of the client
 	if (NULL == (session->addr = malloc (addr_len)))
     {
-		SPDYF_tls_close_session(session);
+		session->fio_close_session(session);
 		goto free_and_fail;
 	}
 	memcpy (session->addr, addr, addr_len);
@@ -1333,12 +1340,12 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	//init zlib context for the whole session
 	if(SPDY_YES != SPDYF_zlib_deflate_init(&session->zlib_send_stream))
     {
-		SPDYF_tls_close_session(session);
+		session->fio_close_session(session);
 		goto free_and_fail;
 	}
 	if(SPDY_YES != SPDYF_zlib_inflate_init(&session->zlib_recv_stream))
     {
-		SPDYF_tls_close_session(session);
+		session->fio_close_session(session);
 		SPDYF_zlib_deflate_end(&session->zlib_send_stream);
 		goto free_and_fail;
 	}

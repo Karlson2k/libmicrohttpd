@@ -191,6 +191,8 @@ SPDYF_start_daemon_va (uint16_t port,
 	memset (daemon, 0, sizeof (struct SPDY_Daemon));
 	daemon->socket_fd = -1;
 	daemon->port = port;
+  daemon->fio_init = &SPDYF_tls_init;
+  daemon->fio_deinit = &SPDYF_tls_deinit;
 	if (NULL == (daemon->certfile = strdup (certfile)))
 	{
 		SPDYF_DEBUG("str");
@@ -229,7 +231,9 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("SPDY_DAEMON_FLAG_ONLY_IPV6 set but IPv4 address provided");
 		goto free_and_fail;
 	}
-	
+  
+  addrlen = sizeof (struct sockaddr_in6);
+    
 	if(NULL == daemon->address)
 	{		
 		if (NULL == (servaddr6 = malloc (addrlen)))
@@ -247,12 +251,10 @@ SPDYF_start_daemon_va (uint16_t port,
   if(AF_INET6 == daemon->address->sa_family)
   {
     afamily = PF_INET6;
-		addrlen = sizeof (struct sockaddr_in6);
   }
   else
   {
     afamily = PF_INET;
-		addrlen = sizeof (struct sockaddr_in);
   }
 #else
 	//handling IPv4
@@ -319,7 +321,7 @@ SPDYF_start_daemon_va (uint16_t port,
 		goto free_and_fail;
 	}
 
-	if(SPDY_YES != SPDYF_tls_init(daemon))
+	if(SPDY_YES != daemon->fio_init(daemon))
 	{
 		SPDYF_DEBUG("tls");
 		goto free_and_fail;
@@ -349,7 +351,7 @@ SPDYF_start_daemon_va (uint16_t port,
 void 
 SPDYF_stop_daemon (struct SPDY_Daemon *daemon)
 {
-	SPDYF_tls_deinit(daemon);
+	daemon->fio_deinit(daemon);
 	
 	shutdown (daemon->socket_fd, SHUT_RDWR);
 	spdyf_close_all_sessions (daemon);
@@ -387,7 +389,7 @@ SPDYF_get_timeout (struct SPDY_Daemon *daemon,
 
 		have_timeout = true;
 		
-		if (SPDY_YES == SPDYF_tls_is_pending(pos))
+		if (SPDY_YES == pos->fio_is_pending(pos))
 		{
 			earliest_deadline = 0;
 			break;
@@ -436,7 +438,7 @@ SPDYF_get_fdset (struct SPDY_Daemon *daemon,
 		    || (SPDY_SESSION_STATUS_CLOSING == pos->status) //the session is about to be closed
 		    || (daemon->session_timeout //timeout passed for the session
 			&& (pos->last_activity + daemon->session_timeout < SPDYF_monotonic_time()))
-		    || (SPDY_YES == SPDYF_tls_is_pending(pos)) //data in TLS' read buffer pending
+		    || (SPDY_YES == pos->fio_is_pending(pos)) //data in TLS' read buffer pending
 		    || ((pos->read_buffer_offset - pos->read_buffer_beginning) > 0) // data in lib's read buffer pending
 		    )
 			FD_SET(fd, write_fd_set);
@@ -487,7 +489,7 @@ SPDYF_run (struct SPDY_Daemon *daemon)
 		if (ds != -1)
 		{
 			//fill the read buffer
-			if (FD_ISSET (ds, &rs) || SPDYF_tls_is_pending(pos)){
+			if (FD_ISSET (ds, &rs) || pos->fio_is_pending(pos)){
 				SPDYF_session_read(pos);
 			}
 			

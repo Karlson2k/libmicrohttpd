@@ -29,6 +29,7 @@
 #include "platform.h"
 #include "microspdy.h"
 #include "tls.h"
+#include "io.h"
 
 
 /**
@@ -617,10 +618,10 @@ struct SPDY_Session
 	struct SPDYF_Stream *streams_tail;
 
 	/**
-	 * Unique TLS context for the session. Initialized on each creation
+	 * Unique IO context for the session. Initialized on each creation
 	 * (actually when the TCP connection is established).
 	 */
-	SPDYF_TLS_SESSION_CONTEXT *tls_context;
+	void *io_context;
 	
 	/**
 	 * Head of doubly-linked list of the responses.
@@ -657,6 +658,31 @@ struct SPDY_Session
 	 * purpose he wants.
 	 */
 	void *user_cls;
+
+	/**
+	 * Function to initialize the IO context for a new session.
+	 */
+	SPDYF_IONewSession fio_new_session;
+
+	/**
+	 * Function to deinitialize the IO context for a session.
+	 */
+	SPDYF_IOCloseSession fio_close_session;
+
+	/**
+	 * Function to read data from socket.
+	 */
+	SPDYF_IORecv fio_recv;
+
+	/**
+	 * Function to write data to socket.
+	 */
+	SPDYF_IOSend fio_send;
+
+	/**
+	 * Function to check for pending data in IO buffers.
+	 */
+	SPDYF_IOIsPending fio_is_pending;
 
 	/**
 	 * Number of bytes that the lib must ignore immediately after they 
@@ -805,9 +831,9 @@ struct SPDY_Daemon
 	struct SPDY_Session *cleanup_tail;
 
 	/**
-	 * Unique TLS context for the daemon. Initialized on daemon start.
+	 * Unique IO context for the daemon. Initialized on daemon start.
 	 */
-	SPDYF_TLS_DAEMON_CONTEXT *tls_context;
+	void *io_context;
 
 	/**
 	 * Certificate file of the server. File path is kept here.
@@ -862,6 +888,16 @@ struct SPDY_Daemon
 	 * Closure argument for all the callbacks defined in the framing layer.
 	 */
 	void *fcls;
+
+	/**
+	 * Function to initialize the IO context for the daemon.
+	 */
+	SPDYF_IOInit fio_init;
+
+	/**
+	 * Function to deinitialize the IO context for the daemon.
+	 */
+	SPDYF_IODeinit fio_deinit;
 
 	/**
 	 * After how many seconds of inactivity should

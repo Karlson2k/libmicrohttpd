@@ -5,7 +5,7 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microspdy 
+  -I$(top_srcdir)/src/microspdy
 
 
 EXTRA_DIST = EXPORT.sym
@@ -15,6 +15,7 @@ lib_LTLIBRARIES = \
   libmicrospdy.la
 
 libmicrospdy_la_SOURCES = \
+  io.h \
   tls.h tls.c \
   structures.h structures.c \
   internal.h internal.c \
