@@ -315,6 +315,11 @@ enum SPDY_IO_SUBSYSTEM
 	 * Default TLS implementation provided by openSSL/libssl.
 	 */
 	SPDY_IO_SUBSYSTEM_OPENSSL = 1,
+
+	/**
+	 * No TLS is used.
+	 */
+	SPDY_IO_SUBSYSTEM_RAW = 0,
 };
 
 

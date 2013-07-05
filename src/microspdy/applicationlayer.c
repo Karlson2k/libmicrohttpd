@@ -247,6 +247,11 @@ int
     SPDYF_openssl_global_init();
     spdyf_io_initialized |= SPDY_IO_SUBSYSTEM_OPENSSL;
   }
+  else if(SPDY_IO_SUBSYSTEM_RAW & io_subsystem)
+  {
+    SPDYF_raw_global_init();
+    spdyf_io_initialized |= SPDY_IO_SUBSYSTEM_RAW;
+  }
   
 	SPDYF_ASSERT(SPDY_IO_SUBSYSTEM_NONE != spdyf_io_initialized,
 		"SPDY_init could not find even one IO subsystem");
@@ -261,9 +266,11 @@ SPDY_deinit ()
 	SPDYF_ASSERT(SPDY_IO_SUBSYSTEM_NONE != spdyf_io_initialized,
 		"SPDY_init has not been called!");
     
-	//currently nothing to be freed/deinited
-	//SPDYF_openssl_global_deinit doesn't do anything now
-	//SPDYF_openssl_global_deinit();
+  if(SPDY_IO_SUBSYSTEM_OPENSSL & spdyf_io_initialized)
+    SPDYF_openssl_global_deinit();
+  else if(SPDY_IO_SUBSYSTEM_RAW & spdyf_io_initialized)
+    SPDYF_raw_global_deinit();
+  
   spdyf_io_initialized = SPDY_IO_SUBSYSTEM_NONE;
 }
 

@@ -17,106 +17,77 @@
 */
 
 /**
- * @file io.h
- * @brief  Signatures for IO functions.
+ * @file io_raw.h
+ * @brief  IO for SPDY without TLS.
  * @author Andrey Uzunov
  */
 
-#ifndef IO_H
-#define IO_H
+#ifndef IO_RAW_H
+#define IO_RAW_H
 
 #include "platform.h"
-#include "io_openssl.h"
-#include "io_raw.h"
 
 
 /**
- * Used for return code when reading and writing to the TLS socket.
- */
-enum SPDY_IO_ERROR
-{
-	/**
-	 * The connection was closed by the other party.
-	 */
-	SPDY_IO_ERROR_CLOSED = 0,
-	
-	/**
-	 * Any kind of error ocurred. The session has to be closed.
-	 */
-	SPDY_IO_ERROR_ERROR = -2,
-	
-	/**
-	 * The function had to return without processing any data. The whole
-	 * cycle of events has to be called again (SPDY_run) as something
-	 * either has to be written or read or the the syscall was
-	 * interrupted by a signal.
-	 */
-	SPDY_IO_ERROR_AGAIN = -3,
-};
-
-
-/**
- * Global initializing. Must be called only once in the program.
+ * Must be called only once in the program.
  *
  */
-typedef void
-(*SPDYF_IOGlobalInit) ();
+void
+SPDYF_raw_global_init();
 
 
 /**
- * Global deinitializing for the whole program. Should be called
+ * Should be called
  * at the end of the program.
  *
  */
-typedef void
-(*SPDYF_IOGlobalDeinit) ();
+void
+SPDYF_raw_global_deinit();
 
 
 /**
- * Initializing of io context for a specific daemon.
  * Must be called when the daemon starts.
  *
- * @param daemon SPDY_Daemon for which io will be used. Daemon's
- * 				certificate and key file are used for tls.
+ * @param daemon SPDY_Daemon 
  * @return SPDY_YES on success or SPDY_NO on error
  */
-typedef int
-(*SPDYF_IOInit) (struct SPDY_Daemon *daemon);
+int
+SPDYF_raw_init(struct SPDY_Daemon *daemon);
 
 
 /**
- * Deinitializing io context for a daemon. Should be called
+ * Should be called
  * when the deamon is stopped.
  *
  * @param daemon SPDY_Daemon which is being stopped
  */
-typedef void
-(*SPDYF_IODeinit) (struct SPDY_Daemon *daemon);
+void
+SPDYF_raw_deinit(struct SPDY_Daemon *daemon);
 
 
 /**
- * Initializing io for a specific connection. Must be called
+ * Must be called
  * after the connection has been accepted.
  *
  * @param session SPDY_Session whose socket will be used
- * @return SPDY_NO if some funcs inside fail. SPDY_YES otherwise
+ * @return SPDY_NO if some funcs fail. SPDY_YES otherwise
  */
-typedef int
-(*SPDYF_IONewSession) (struct SPDY_Session *session);
+int
+SPDYF_raw_new_session(struct SPDY_Session *session);
 
 
 /**
- * Deinitializing io for a specific connection. Should be called
+ * Should be called
  * closing session's socket.
  *
  * @param session SPDY_Session whose socket is used
  */
-typedef void
-(*SPDYF_IOCloseSession) (struct SPDY_Session *session);
+void
+SPDYF_raw_close_session(struct SPDY_Session *session);
 
 
 /**
- * Reading from session's socket. Reads available data and put it to the
+ * Reading from socket. Reads available data and put it to the
  * buffer.
  *
  * @param session for which data is received
@@ -126,15 +97,15 @@ typedef void
  *         0 if the other party has closed the connection
  *         SPDY_IO_ERROR code on error
  */
-typedef int
-(*SPDYF_IORecv) (struct SPDY_Session *session,
+int
+SPDYF_raw_recv(struct SPDY_Session *session,
 				void * buffer,
 				size_t size);
 
 
 /**
- * Writing to session's socket. Writes the data given into the buffer to the
- *  socket.
+ * Writing to socket. Writes the data given into the buffer to the
+ * socket.
  *
  * @param session whose context is used
  * @param buffer from where data will be written to the socket
@@ -144,21 +115,21 @@ typedef int
  *         0 if the other party has closed the connection
  *         SPDY_IO_ERROR code on error
  */
-typedef int
-(*SPDYF_IOSend) (struct SPDY_Session *session,
+int
+SPDYF_raw_send(struct SPDY_Session *session,
 				const void * buffer,
 				size_t size);
 
 
 /**
  * Checks if there is data staying in the buffers of the underlying
- * system that waits to be read. In case of TLS, this will call
- * something like SSL_pending().
+ * system that waits to be read. Always returns SPDY_NO, as we do not
+ * use a subsystem here.
  *
  * @param session which is checked
  * @return SPDY_YES if data is pending or SPDY_NO otherwise
  */
-typedef int
-(*SPDYF_IOIsPending) (struct SPDY_Session *session);
+int
+SPDYF_raw_is_pending(struct SPDY_Session *session);
 
 #endif
