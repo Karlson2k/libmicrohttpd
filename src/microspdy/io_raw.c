@@ -59,20 +59,15 @@ SPDYF_raw_deinit(struct SPDY_Daemon *daemon)
 int
 SPDYF_raw_new_session(struct SPDY_Session *session)
 {	
-  (void)session;
+  int fd_flags;
   
-	//TODO
 	//setting the socket to be non-blocking
-	/* 
-	 * different handling is needed by libssl if non-blocking is used
-	 * 
-	fd_flags = fcntl (new_socket_fd, F_GETFL);
+	fd_flags = fcntl (session->socket_fd, F_GETFL);
 	if ( -1 == fd_flags
-		|| 0 != fcntl (new_socket_fd, F_SETFL, fd_flags | O_NONBLOCK))
+		|| 0 != fcntl (session->socket_fd, F_SETFL, fd_flags | O_NONBLOCK))
 	{
 		SPDYF_DEBUG("WARNING: Couldn't set the new connection to be non-blocking");
 	}
-	*/
   
 	return SPDY_YES;
 }
