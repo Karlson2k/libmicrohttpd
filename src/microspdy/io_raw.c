@@ -26,6 +26,8 @@
 #include "internal.h"
 #include "session.h"
 #include "io_raw.h"
+//TODO put in in the right place
+#include <netinet/tcp.h>
 
 
 void
@@ -60,14 +62,21 @@ int
 SPDYF_raw_new_session(struct SPDY_Session *session)
 {	
   int fd_flags;
+  int val = 1;
+  int ret;
   
 	//setting the socket to be non-blocking
 	fd_flags = fcntl (session->socket_fd, F_GETFL);
 	if ( -1 == fd_flags
 		|| 0 != fcntl (session->socket_fd, F_SETFL, fd_flags | O_NONBLOCK))
-	{
 		SPDYF_DEBUG("WARNING: Couldn't set the new connection to be non-blocking");
-	}
+  
+  if(SPDY_DAEMON_FLAG_NO_DELAY & session->daemon->flags)
+  {
+    ret = setsockopt(session->socket_fd, IPPROTO_TCP, TCP_NODELAY, &val, (socklen_t)sizeof(val));
+    if(-1 == ret)
+      SPDYF_DEBUG("WARNING: Couldn't set the new connection to TCP_NODELAY");
+  }
   
 	return SPDY_YES;
 }

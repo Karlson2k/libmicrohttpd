@@ -852,6 +852,7 @@ parentproc( int port)
 								NULL,
 								NULL,&session_closed_handler,&standard_request_handler,NULL,CLS,
                 SPDY_DAEMON_OPTION_IO_SUBSYSTEM, SPDY_IO_SUBSYSTEM_RAW,
+                SPDY_DAEMON_OPTION_FLAGS, SPDY_DAEMON_FLAG_NO_DELAY,
                 SPDY_DAEMON_OPTION_END);
 	
 	if(NULL==daemon){

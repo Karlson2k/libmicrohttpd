@@ -399,6 +399,12 @@ enum SPDY_DAEMON_FLAG
 	 * starting daemon will fail.
 	 */
 	SPDY_DAEMON_FLAG_ONLY_IPV6 = 1,
+  
+	/**
+   * All sessions' sockets will be set with TCP_NODELAY if the flag is
+   * used. Option considered only by SPDY_IO_SUBSYSTEM_RAW.
+	 */
+	SPDY_DAEMON_FLAG_NO_DELAY = 2,
 };
 
 	
