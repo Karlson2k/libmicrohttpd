@@ -772,6 +772,15 @@ struct SPDY_Session
 	 * frame, e.g. larger than supported.
 	 */
 	uint32_t current_stream_id;
+	
+	/**
+	 * Maximum number of frames to be written to the socket at once. The
+   * library tries to send max_num_frames in a single call to SPDY_run
+   * for a single session. This means no requests can be received nor
+   * other sessions can send data as long the current one has enough
+   * frames to send and there is no error on writing.
+	 */
+	uint32_t max_num_frames;
 
 	/**
 	 * Shows the current receiving state the session, i.e. what is
@@ -908,6 +917,16 @@ struct SPDY_Daemon
 	 * Listen socket.
 	 */
 	int socket_fd;
+	
+	/**
+   * This value is inherited by all sessions of the daemon.
+	 * Maximum number of frames to be written to the socket at once. The
+   * library tries to send max_num_frames in a single call to SPDY_run
+   * for a single session. This means no requests can be received nor
+   * other sessions can send data as long the current one has enough
+   * frames to send and there is no error on writing.
+	 */
+	uint32_t max_num_frames;
 
 	/**
 	 * Daemon's options.

@@ -145,6 +145,9 @@ spdyf_parse_options_va (struct SPDY_Daemon *daemon,
 			case SPDY_DAEMON_OPTION_IO_SUBSYSTEM:
 				daemon->io_subsystem = va_arg (valist, enum SPDY_IO_SUBSYSTEM);
 				break;
+			case SPDY_DAEMON_OPTION_MAX_NUM_FRAMES:
+				daemon->max_num_frames = va_arg (valist, uint32_t);
+				break;
 			default:
 				SPDYF_DEBUG("Wrong option for the daemon %i",opt);
 				return SPDY_NO;
@@ -200,6 +203,9 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("parse");
 		goto free_and_fail;
 	}
+  
+  if(0 == daemon->max_num_frames)
+    daemon->max_num_frames = SPDYF_NUM_SENT_FRAMES_AT_ONCE;
 	
 	if(!port && NULL == daemon->address)
 	{

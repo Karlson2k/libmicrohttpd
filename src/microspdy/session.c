@@ -861,7 +861,7 @@ SPDYF_session_read (struct SPDY_Session *session)
 int
 SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 {
-	int i;
+	unsigned int i;
 	int bytes_written;
 	struct SPDYF_Response_Queue *queue_head;
 	struct SPDYF_Response_Queue *response_queue;
@@ -872,7 +872,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 	for(i=0;
 		only_one_frame
 		? i < 1
-		: i < SPDYF_NUM_SENT_FRAMES_AT_ONCE;
+		: i < session->max_num_frames;
 		++i)
 	{
 		//if the buffer is not null, part of the last frame is still
@@ -1294,6 +1294,7 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	
 	session->daemon = daemon;
 	session->socket_fd = new_socket_fd;
+  session->max_num_frames = daemon->max_num_frames;
   
   ret = SPDYF_io_set_session(session, daemon->io_subsystem);
   SPDYF_ASSERT(SPDY_YES == ret, "Somehow daemon->io_subsystem iswrong here");

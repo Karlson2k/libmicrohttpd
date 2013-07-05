@@ -367,6 +367,18 @@ enum SPDY_DAEMON_OPTION
    * SPDY_IO_SUBSYSTEM value.
 	 */
 	SPDY_DAEMON_OPTION_IO_SUBSYSTEM = 8,
+  
+	/**
+	 * Maximum number of frames to be written to the socket at once. The
+   * library tries to send max_num_frames in a single call to SPDY_run
+   * for a single session. This means no requests can be received nor
+   * other sessions can send data as long the current one has enough
+   * frames to send and there is no error on writing. Thus, a big value
+   * will affect the performance. Small value gives fairnes for sessions.
+   * Must be followed by a positive integer (uin32_t). If not set, the
+   * default value 10 will be used.
+	 */
+	SPDY_DAEMON_OPTION_MAX_NUM_FRAMES = 16,
 };
 
 

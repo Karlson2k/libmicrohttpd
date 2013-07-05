@@ -120,9 +120,6 @@ a file will block all responses with same or smaller priority
 Additional ideas for features include:
 - Individual callbacks for each session
 - Individual timeout for each session
-- Setting number of frames that can be written to the output at once. 
-  A big number means faster sending of a big resource, but the other 
-  sessions will wait longer.
 
 Unimplemented API functions of libmicrospdy:
 - SPDY_settings_create ();
