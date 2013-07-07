@@ -273,7 +273,7 @@ response_callback (void *cls,
 						size_t max,
 						bool *more)
 {
-	int ret;
+	ssize_t ret;
 	struct Proxy *proxy = (struct Proxy *)cls;
 	void *newbody;
 	
@@ -308,6 +308,8 @@ response_callback (void *cls,
 	proxy->http_body_size -= ret;
 	
   if(proxy->done && 0 == proxy->http_body_size) *more = false;
+  
+  PRINT_VERBOSE2("given bytes to microspdy: %zd", ret);
 	
 	return ret;
 }
@@ -493,6 +495,8 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
 
 	memcpy(proxy->http_body + proxy->http_body_size, contents, realsize);
 	proxy->http_body_size += realsize;
+  
+  PRINT_VERBOSE2("received bytes from curl: %zu", realsize);
 
 	return realsize;
 }
@@ -772,6 +776,7 @@ run ()
 			case 0:
 				break;
 			default:
+				PRINT_VERBOSE("run");
 				SPDY_run(daemon);
 			break;
 		}
