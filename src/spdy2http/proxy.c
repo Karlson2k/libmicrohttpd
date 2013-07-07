@@ -54,6 +54,8 @@ struct global_options
   bool curl_verbose;
   bool transparent;
   bool http10;
+  bool notls;
+  bool nodelay;
 } glob_opt;
 
 
@@ -656,6 +658,8 @@ run ()
   struct addrinfo hints;
   char service[NI_MAXSERV];
   struct addrinfo *gai;
+  enum SPDY_IO_SUBSYSTEM io = glob_opt.notls ? SPDY_IO_SUBSYSTEM_RAW : SPDY_IO_SUBSYSTEM_OPENSSL;
+  enum SPDY_DAEMON_FLAG flags = SPDY_DAEMON_FLAG_NO;
   
 	signal(SIGPIPE, SIG_IGN);
 	
@@ -667,6 +671,9 @@ run ()
     DIE("Regexp compilation failed");
     
 	SPDY_init();
+  
+  if(glob_opt.nodelay)
+    flags |= SPDY_DAEMON_FLAG_NO_DELAY;
   
   if(NULL == glob_opt.listen_host)
 	{
@@ -680,6 +687,10 @@ run ()
 								NULL,
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
+                SPDY_DAEMON_OPTION_IO_SUBSYSTEM,
+                io,
+                SPDY_DAEMON_OPTION_FLAGS,
+                flags,
 								SPDY_DAEMON_OPTION_END);
   }
   else
@@ -705,6 +716,10 @@ run ()
 								NULL,
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
+                SPDY_DAEMON_OPTION_IO_SUBSYSTEM,
+                io,
+                SPDY_DAEMON_OPTION_FLAGS,
+                flags,
                 SPDY_DAEMON_OPTION_SOCK_ADDR,
                 addr,
 								SPDY_DAEMON_OPTION_END);
@@ -846,19 +861,24 @@ static void
 display_usage()
 {
   printf(
-    "Usage: microspdy2http -p <PORT> -c <CERTIFICATE> -k <CERT-KEY>\n"
-    "                      [-vh0t] [-b <HTTP-SERVER>] [-l <HOST>]\n\n"
+    "Usage: microspdy2http -p <PORT> [-c <CERTIFICATE>] [-k <CERT-KEY>]\n"
+    "                      [-rvh0Dt] [-b <HTTP-SERVER>] [-l <HOST>]\n\n"
     "OPTIONS:\n"
     "    -p, --port            Listening port.\n"
     "    -l, --host            Listening host. If not set, will listen on [::]\n"
-    "    -c, --certificate     Path to a certificate file.\n"
+    "    -c, --certificate     Path to a certificate file. Requiered if\n"
+    "                          --no-tls is not set.\n"
     "    -k, --certificate-key Path to a key file for the certificate.\n"
+    "                          Requiered if --no-tls is not set.\n"
     "    -b, --backend-server  If set, the proxy will connect always to it.\n"
     "                          Otherwise the proxy will connect to the URL\n"
     "                          which is specified in the path or 'Host:'.\n"
     "    -v, --verbose         Print debug information.\n"
+    "    -r, --no-tls          Do not use TLS. Client must use SPDY/3.\n"
     "    -h, --curl-verbose    Print debug information for curl.\n"
     "    -0, --http10          Prefer HTTP/1.0 connections to the next hop.\n"
+    "    -D, --no-delay        This makes sense only if --no-tls is used.\n"
+    "                          TCP_NODELAY will be used for all sessions' sockets.\n"
     "    -t, --transparent     If set, the proxy will fetch an URL which\n"
     "                          is based on 'Host:' header and requested path.\n"
     "                          Otherwise, full URL in the requested path is required.\n\n"
@@ -878,16 +898,18 @@ main (int argc, char *const *argv)
     {"certificate",  required_argument, 0, 'c'},
     {"certificate-key",  required_argument, 0, 'k'},
     {"backend-server",  required_argument, 0, 'b'},
+    {"no-tls",  no_argument, 0, 'r'},
     {"verbose",  no_argument, 0, 'v'},
     {"curl-verbose",  no_argument, 0, 'h'},
     {"http10",  no_argument, 0, '0'},
+    {"no-delay",  no_argument, 0, 'D'},
     {"transparent",  no_argument, 0, 't'},
     {0, 0, 0, 0}
   };
   
   while (1)
   {
-    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:v0t", long_options, &option_index);
+    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:rv0Dt", long_options, &option_index);
     if (getopt_ret == -1)
       break;
 
@@ -905,20 +927,20 @@ main (int argc, char *const *argv)
         
       case 'c':
         glob_opt.cert = strdup(optarg);
-        if(NULL == glob_opt.cert)
-          return 1;
         break;
         
       case 'k':
         glob_opt.cert_key = strdup(optarg);
-        if(NULL == glob_opt.cert_key)
-          return 1;
         break;
         
       case 'b':
         glob_opt.http_backend = strdup(optarg);
         if(NULL == glob_opt.http_backend)
           return 1;
+        break;
+        
+      case 'r':
+        glob_opt.notls = true;
         break;
         
       case 'v':
@@ -931,6 +953,10 @@ main (int argc, char *const *argv)
         
       case '0':
         glob_opt.http10 = true;
+        break;
+        
+      case 'D':
+        glob_opt.nodelay = true;
         break;
         
       case 't':
@@ -952,8 +978,7 @@ main (int argc, char *const *argv)
   
   if(
     0 == glob_opt.listen_port
-    || NULL == glob_opt.cert
-    || NULL == glob_opt.cert_key
+    || (!glob_opt.notls && (NULL == glob_opt.cert || NULL == glob_opt.cert_key))
     //|| !glob_opt.transparent && NULL != glob_opt.http_backend
     )
   {
