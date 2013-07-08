@@ -27,8 +27,16 @@
 #include "structures.h"
 #include "internal.h"
 #include "session.h"
+//TODO not for here?
 #include <ctype.h>
 
+
+int
+SPDYF_name_value_is_empty(struct SPDY_NameValue *container)
+{
+  SPDYF_ASSERT(NULL != container, "NULL is not an empty container!");
+  return (NULL == container->name && NULL == container->value) ? SPDY_YES : SPDY_NO;
+}
 
 struct SPDY_NameValue *
 SPDY_name_value_create ()
@@ -65,7 +73,7 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 			return SPDY_INPUT_ERROR;
 	}
 	
-	if(NULL == container->name && NULL == container->value)
+	if(SPDYF_name_value_is_empty(container))
 	{
 		//container is empty/just created 
 		if (NULL == (container->name = strdup (name)))
@@ -181,7 +189,7 @@ SPDY_name_value_lookup (struct SPDY_NameValue *container,
 	
 	if(NULL == container || NULL == name || NULL == num_values)
 		return NULL;
-	if(NULL == container->name && NULL == container->value)
+	if(SPDYF_name_value_is_empty(container))
 		return NULL;
 	
 	do
@@ -232,7 +240,7 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
 		return SPDY_INPUT_ERROR;
 		
 	//check if container is an empty struct
-	if(NULL == container->name && NULL == container->value)
+	if(SPDYF_name_value_is_empty(container))
 		return 0;
 	
 	count = 0;

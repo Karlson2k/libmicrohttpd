@@ -1161,6 +1161,18 @@ SPDYF_response_queue_destroy(struct SPDYF_Response_Queue *response_queue);
 
 
 /**
+ * Checks if the container is empty, i.e. created but no values were
+ * added to it.
+ *
+ * @param container
+ * @return SPDY_YES if empty
+ *         SPDY_NO if not
+ */
+int
+SPDYF_name_value_is_empty(struct SPDY_NameValue *container);
+
+
+/**
  * Transforms raw binary decomressed stream of headers
  * into SPDY_NameValue, containing all of the headers and values.
  *

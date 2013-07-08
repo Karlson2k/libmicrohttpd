@@ -414,7 +414,7 @@ SPDY_build_response(int status,
 		goto free_and_fail;
 	memset(response, 0, sizeof(struct SPDY_Response));
 	
-	if(NULL != headers)
+	if(NULL != headers && !SPDYF_name_value_is_empty(headers))
 		num_hdr_containers = 2;
 	
 	if(NULL == (all_headers = malloc(num_hdr_containers * sizeof(struct SPDY_NameValue *))))
