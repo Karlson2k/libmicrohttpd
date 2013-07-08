@@ -56,6 +56,8 @@ struct global_options
   bool http10;
   bool notls;
   bool nodelay;
+  bool ipv4;
+  bool ipv6;
 } glob_opt;
 
 
@@ -153,6 +155,7 @@ struct Proxy
 	//ssize_t length;
 	int status;
   bool done;
+  bool *session_alive;
 };
 
 
@@ -266,7 +269,39 @@ static void catch_signal(int signal)
   loop = 0;
 }
 
+static void
+new_session_cb (void * cls,
+							struct SPDY_Session * session)
+{
+  bool *session_alive;
+  
+  PRINT_VERBOSE("new session");
+  //TODO clean this memory
+  if(NULL == (session_alive = malloc(sizeof(bool))))
+  {
+			DIE("no memory");
+  }
+  *session_alive = true;
+  SPDY_set_cls_to_session(session,
+						session_alive);
+}
 
+static void
+session_closed_cb (void * cls,
+								struct SPDY_Session * session,
+								int by_client)
+{
+  bool *session_alive;
+  
+  PRINT_VERBOSE2("session closed; by client: %i", by_client);
+  
+  session_alive = SPDY_get_cls_from_session(session);
+  assert(NULL != session_alive);
+  
+  *session_alive = false;
+}
+                
+                
 ssize_t
 response_callback (void *cls,
 						void *buffer,
@@ -361,6 +396,11 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
   bool abort_it;
 	
 	//printf("curl_header_cb %s\n", line);
+  if(!*(proxy->session_alive))
+  {
+    PRINT_VERBOSE("headers received, but session is dead");
+    return 0;
+  }
   
   //trailer
   if(NULL != proxy->response) return 0;
@@ -418,6 +458,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			if(NULL == (proxy->status_msg = strndup(&(line[pos]), i - pos)))
         DIE("No memory");
 		}
+    PRINT_VERBOSE2("Header line received '%s' '%i' '%s' ", proxy->version, proxy->status, proxy->status_msg);
 		return realsize;
 	}
 	
@@ -450,6 +491,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	for(i=pos; i<realsize && '\r'!=line[i]; ++i);
 	if(NULL == (value = strndup(&(line[pos]), i - pos)))
         DIE("No memory");
+  PRINT_VERBOSE2("Adding header: '%s': '%s'", name, value);
 	if(SPDY_YES != (ret = SPDY_name_value_add(proxy->headers, name, value)))
 	{
     abort_it=true;
@@ -482,6 +524,11 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
 	struct Proxy *proxy = (struct Proxy *)userp;
 	
 	//printf("curl_write_cb %i\n", realsize);
+  if(!*(proxy->session_alive))
+  {
+    PRINT_VERBOSE("data received, but session is dead");
+    return 0;
+  }
   
 	if(NULL == proxy->http_body)
 		proxy->http_body = malloc(realsize);
@@ -559,11 +606,18 @@ standard_request_handler(void *cls,
 	struct Proxy *proxy;
 	int ret;
   struct URI *uri;
+  struct SPDY_Session *session;
 	
 	PRINT_VERBOSE2("received request for '%s %s %s'\n", method, path, version);
 	if(NULL == (proxy = malloc(sizeof(struct Proxy))))
         DIE("No memory");
 	memset(proxy, 0, sizeof(struct Proxy));
+  
+  session = SPDY_get_session_for_request(request);
+  assert(NULL != session);
+  proxy->session_alive = SPDY_get_cls_from_session(session);
+  assert(NULL != proxy->session_alive);
+  
 	proxy->request = request;
 	if(NULL == (proxy->headers = SPDY_name_value_create()))
         DIE("No memory");
@@ -624,6 +678,10 @@ standard_request_handler(void *cls,
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HTTPHEADER, proxy->curl_headers);
   CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
   CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+  if(glob_opt.ipv4 && !glob_opt.ipv6)
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+  else if(glob_opt.ipv6 && !glob_opt.ipv4)
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
 	
 	if(CURLM_OK != (ret = curl_multi_add_handle(multi_handle, proxy->curl_handle)))
 	{
@@ -684,8 +742,8 @@ run ()
     daemon = SPDY_start_daemon(glob_opt.listen_port,
 								glob_opt.cert,
 								glob_opt.cert_key,
-								NULL,
-								NULL,
+								&new_session_cb,
+								&session_closed_cb,
 								&standard_request_handler,
 								NULL,
 								NULL,
@@ -713,8 +771,8 @@ run ()
     daemon = SPDY_start_daemon(0,
 								glob_opt.cert,
 								glob_opt.cert_key,
-								NULL,
-								NULL,
+								&new_session_cb,
+								&session_closed_cb,
 								&standard_request_handler,
 								NULL,
 								NULL,
@@ -884,6 +942,10 @@ display_usage()
     "    -0, --http10          Prefer HTTP/1.0 connections to the next hop.\n"
     "    -D, --no-delay        This makes sense only if --no-tls is used.\n"
     "                          TCP_NODELAY will be used for all sessions' sockets.\n"
+    "    -4, --curl-ipv4       Curl may use IPv4 to connect to the final destination.\n"
+    "    -6, --curl-ipv6       Curl may use IPv6 to connect to the final destination.\n"
+    "                          If neither --curl-ipv4 nor --curl-ipv6 is set,\n"
+    "                          both will be used by default.\n"
     "    -t, --transparent     If set, the proxy will fetch an URL which\n"
     "                          is based on 'Host:' header and requested path.\n"
     "                          Otherwise, full URL in the requested path is required.\n\n"
@@ -909,12 +971,14 @@ main (int argc, char *const *argv)
     {"http10",  no_argument, 0, '0'},
     {"no-delay",  no_argument, 0, 'D'},
     {"transparent",  no_argument, 0, 't'},
+    {"curl-ipv4",  no_argument, 0, '4'},
+    {"curl-ipv6",  no_argument, 0, '6'},
     {0, 0, 0, 0}
   };
   
   while (1)
   {
-    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:rv0Dt", long_options, &option_index);
+    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:rv0Dth46", long_options, &option_index);
     if (getopt_ret == -1)
       break;
 
@@ -966,6 +1030,14 @@ main (int argc, char *const *argv)
         
       case 't':
         glob_opt.transparent = true;
+        break;
+        
+      case '4':
+        glob_opt.ipv4 = true;
+        break;
+        
+      case '6':
+        glob_opt.ipv6 = true;
         break;
         
       case 0:
