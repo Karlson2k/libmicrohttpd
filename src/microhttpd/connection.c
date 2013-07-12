@@ -228,49 +228,6 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
 
 
 /**
- * Queue a response to be transmitted to the client (as soon as
- * possible but after MHD_AccessHandlerCallback returns).
- *
- * @param connection the connection identifying the client
- * @param status_code HTTP status code (i.e. 200 for OK)
- * @param response response to transmit
- * @return MHD_NO on error (i.e. reply already sent),
- *         MHD_YES on success or if message has been queued
- */
-int
-MHD_queue_response (struct MHD_Connection *connection,
-                    unsigned int status_code, struct MHD_Response *response)
-{
-  if ( (NULL == connection) ||
-       (NULL == response) ||
-       (NULL != connection->response) ||
-       ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
-	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
-    return MHD_NO;
-  MHD_increment_response_rc (response);
-  connection->response = response;
-  connection->responseCode = status_code;
-  if ( (NULL != connection->method) &&
-       (0 == strcasecmp (connection->method, MHD_HTTP_METHOD_HEAD)) )
-    {
-      /* if this is a "HEAD" request, pretend that we
-         have already sent the full message body */
-      connection->response_write_position = response->total_size;
-    }
-  if (MHD_CONNECTION_HEADERS_PROCESSED == connection->state)
-    {
-      /* response was queued "early",
-         refuse to read body / footers or further
-         requests! */
-      (void) SHUTDOWN (connection->socket_fd, SHUT_RD);
-      connection->read_closed = MHD_YES;
-      connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-    }
-  return MHD_YES;
-}
-
-
-/**
  * Do we (still) need to send a 100 continue
  * message for this connection?
  *
@@ -2592,6 +2549,50 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     default:
       return MHD_NO;
     }
+}
+
+
+/**
+ * Queue a response to be transmitted to the client (as soon as
+ * possible but after MHD_AccessHandlerCallback returns).
+ *
+ * @param connection the connection identifying the client
+ * @param status_code HTTP status code (i.e. 200 for OK)
+ * @param response response to transmit
+ * @return MHD_NO on error (i.e. reply already sent),
+ *         MHD_YES on success or if message has been queued
+ */
+int
+MHD_queue_response (struct MHD_Connection *connection,
+                    unsigned int status_code, struct MHD_Response *response)
+{
+  if ( (NULL == connection) ||
+       (NULL == response) ||
+       (NULL != connection->response) ||
+       ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
+	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
+    return MHD_NO;
+  MHD_increment_response_rc (response);
+  connection->response = response;
+  connection->responseCode = status_code;
+  if ( (NULL != connection->method) &&
+       (0 == strcasecmp (connection->method, MHD_HTTP_METHOD_HEAD)) )
+    {
+      /* if this is a "HEAD" request, pretend that we
+         have already sent the full message body */
+      connection->response_write_position = response->total_size;
+    }
+  if (MHD_CONNECTION_HEADERS_PROCESSED == connection->state)
+    {
+      /* response was queued "early",
+         refuse to read body / footers or further
+         requests! */
+      (void) SHUTDOWN (connection->socket_fd, SHUT_RD);
+      connection->read_closed = MHD_YES;
+      connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+    }
+  MHD_connection_update_event_loop_info (connection);
+  return MHD_YES;
 }
 
 
