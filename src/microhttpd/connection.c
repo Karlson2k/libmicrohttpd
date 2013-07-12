@@ -2591,7 +2591,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       connection->read_closed = MHD_YES;
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     }
-  MHD_connection_update_event_loop_info (connection);
+  (void) MHD_connection_handle_idle (connection);
   return MHD_YES;
 }
 
