@@ -3019,7 +3019,7 @@ MHD_start_daemon_va (unsigned int flags,
       daemon->socket_fd = socket_fd;
 
       if ( (0 != (flags & MHD_USE_IPv6)) &&
-	   (0 == (flags & MHD_USE_DUAL_STACK)) )
+	   (MHD_USE_DUAL_STACK == (flags & MHD_USE_DUAL_STACK)) )
 	{
 #ifdef IPPROTO_IPV6
 #ifdef IPV6_V6ONLY
