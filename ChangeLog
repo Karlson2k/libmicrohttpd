@@ -1,3 +1,9 @@
+Sun Jul 14 19:57:56 CEST 2013
+	Removing 'shutdown' calls that happen just before close or
+	that are for read-only and for a client that has already
+	stopped sending anyway (thus reducing number of system calls
+	slightly). -CG
+
 Sun Jul 14 19:37:37 CEST 2013
 	Name MHD worker threads on glibc >= 2.12. -,L4X[o](B
 

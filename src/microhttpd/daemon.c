@@ -1002,7 +1002,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 				     client_socket,
 				     addr, addrlen);
       /* all pools are at their connection limit, must refuse */
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       return MHD_NO;      
@@ -1018,7 +1017,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		client_socket,
 		FD_SETSIZE);
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       return MHD_NO;
@@ -1039,7 +1037,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon,
                 "Server reached connection limit (closing inbound connection)\n");
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       return MHD_NO;
@@ -1055,7 +1052,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon, "Connection rejected, closing connection\n");
 #endif
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1079,7 +1075,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n", 
 		STRERROR (errno));
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1094,7 +1089,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n", 
 		STRERROR (errno));
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1110,7 +1104,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n", 
 		STRERROR (errno));
 #endif
-      SHUTDOWN (client_socket, SHUT_RDWR);
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1184,7 +1177,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                     "Failed to setup TLS credentials: unknown credential type %d\n",
                     daemon->cred_type);
 #endif
-          SHUTDOWN (client_socket, SHUT_RDWR);
           if (0 != CLOSE (client_socket))
 	    MHD_PANIC ("close failed\n");
           MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1261,7 +1253,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   return MHD_YES;  
 #if HTTPS_SUPPORT || EPOLL_SUPPORT
  cleanup:
-  SHUTDOWN (client_socket, SHUT_RDWR);
   if (0 != CLOSE (client_socket))
     MHD_PANIC ("close failed\n");
   MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1330,7 +1321,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       if (-1 != s)
         {
-          SHUTDOWN (s, SHUT_RDWR);
           if (0 != CLOSE (s))
 	    MHD_PANIC ("close failed\n");
           /* just in case */
