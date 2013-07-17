@@ -139,6 +139,9 @@ static int still_running = 0; /* keep number of running handles */
 
 static regex_t uri_preg;
 
+static bool call_spdy_run;
+static bool call_curl_run;
+
 
 struct Proxy
 {
@@ -429,6 +432,8 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							proxy))
 			DIE("no queue");
 		
+    call_spdy_run = true;
+    
 		return realsize;
 	}
 	
@@ -545,6 +550,8 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
   
   PRINT_VERBOSE2("received bytes from curl: %zu", realsize);
 
+  call_spdy_run = true;
+          
 	return realsize;
 }
 
@@ -609,6 +616,7 @@ standard_request_handler(void *cls,
   struct SPDY_Session *session;
 	
 	PRINT_VERBOSE2("received request for '%s %s %s'\n", method, path, version);
+  
 	if(NULL == (proxy = malloc(sizeof(struct Proxy))))
         DIE("No memory");
 	memset(proxy, 0, sizeof(struct Proxy));
@@ -688,30 +696,38 @@ standard_request_handler(void *cls,
 		PRINT_INFO2("curl_multi_add_handle failed (%i)", ret);
 		abort();
 	}
-	
+    
+  //~5ms additional latency for calling this
 	if(CURLM_OK != (ret = curl_multi_perform(multi_handle, &still_running))
 		&& CURLM_CALL_MULTI_PERFORM != ret)
 	{
 		PRINT_INFO2("curl_multi_perform failed (%i)", ret);
 		abort();
 	}
+  
+  call_curl_run = true;
 }
 
 
 static int
 run ()
 {
-  unsigned long long timeoutlong=0;
-  long curl_timeo = -1;
+  unsigned long long timeoutlong = 0;
+  unsigned long long timeout_spdy = 0;
+  long timeout_curl = -1;
 	struct timeval timeout;
 	int ret;
+	//int ret2;
+	int ret_curl;
+	int ret_spdy;
 	fd_set rs;
 	fd_set ws;
 	fd_set es;
-	fd_set curl_rs;
-	fd_set curl_ws;
-	fd_set curl_es;
+	//fd_set curl_rs;
+	//fd_set curl_ws;
+	//fd_set curl_es;
 	int maxfd = -1;
+	int maxfd_curl = -1;
 	struct SPDY_Daemon *daemon;
   CURLMsg *msg;
   int msgs_left;
@@ -803,87 +819,77 @@ run ()
 		FD_ZERO(&rs);
 		FD_ZERO(&ws);
 		FD_ZERO(&es);
-		FD_ZERO(&curl_rs);
-		FD_ZERO(&curl_ws);
-		FD_ZERO(&curl_es);
-
-		if(still_running > 0)
-			timeout.tv_sec = 0; //return immediately
-		else
-		{
-			ret = SPDY_get_timeout(daemon, &timeoutlong);
-			if(SPDY_NO == ret)
-				timeout.tv_sec = 1;
-			else
-				timeout.tv_sec = timeoutlong;
-		}
-		timeout.tv_usec = 0;
-		
+    
+    ret_spdy = SPDY_get_timeout(daemon, &timeout_spdy);
+    if(SPDY_NO == ret_spdy || timeout_spdy > 5000)
+      timeoutlong = 5000;
+    else
+      timeoutlong = timeout_spdy;
+    PRINT_VERBOSE2("SPDY timeout %i; %i", timeout_spdy, ret_spdy);
+    
+    if(CURLM_OK != (ret_curl = curl_multi_timeout(multi_handle, &timeout_curl)))
+    {
+      PRINT_VERBOSE2("curl_multi_timeout failed (%i)", ret_curl);
+      //curl_timeo = timeoutlong;
+    }
+    else if(timeoutlong > timeout_curl)
+      timeoutlong = timeout_curl;
+      
+    PRINT_VERBOSE2("curl timeout %i", timeout_curl);
+      
+    timeout.tv_sec = timeoutlong / 1000;
+		timeout.tv_usec = (timeoutlong % 1000) * 1000;
+    
 		maxfd = SPDY_get_fdset (daemon,
 								&rs,
 								&ws, 
 								&es);	
 		assert(-1 != maxfd);
+
+		if(CURLM_OK != (ret = curl_multi_fdset(multi_handle, &rs,
+								&ws, 
+								&es, &maxfd_curl)))
+		{
+			PRINT_INFO2("curl_multi_fdset failed (%i)", ret);
+			abort();
+		}
+    
+    if(maxfd_curl > maxfd)
+      maxfd = maxfd_curl;
+      
+    PRINT_VERBOSE2("timeout before %i %i", timeout.tv_sec, timeout.tv_usec);
+    ret = select(maxfd+1, &rs, &ws, &es, &timeout);
+    PRINT_VERBOSE2("timeout after %i %i; ret is %i", timeout.tv_sec, timeout.tv_usec, ret);
 		
-		ret = select(maxfd+1, &rs, &ws, &es, &timeout);
-		
-		switch(ret) {
+		/*switch(ret) {
 			case -1:
 				PRINT_INFO2("select error: %i", errno);
 				break;
 			case 0:
 				break;
-			default:
-				PRINT_VERBOSE("run");
+			default:*/
+      
+      //the second part should not happen with current implementation
+      if(ret > 0 || (SPDY_YES == ret_spdy && 0 == timeout_spdy))
+      {
+				PRINT_VERBOSE("run spdy");
 				SPDY_run(daemon);
-			break;
-		}
-		
-		timeout.tv_sec = 0;
-		if(still_running > 0)
-		{
-			if(CURLM_OK != (ret = curl_multi_timeout(multi_handle, &curl_timeo)))
-			{
-				PRINT_INFO2("curl_multi_timeout failed (%i)", ret);
-				abort();
-			}
-			if(curl_timeo >= 0 && curl_timeo < 500)
-				timeout.tv_usec = curl_timeo * 1000;
-			else
-				timeout.tv_usec = 500000;
-		}
-		else continue;
-		//else timeout.tv_usec = 500000;
-
-		if(CURLM_OK != (ret = curl_multi_fdset(multi_handle, &curl_rs, &curl_ws, &curl_es, &maxfd)))
-		{
-			PRINT_INFO2("curl_multi_fdset failed (%i)", ret);
-			abort();
-		}
-		if(-1 == maxfd)
-		{
-			PRINT_INFO("maxfd is -1");
-			//continue;
-			ret = 0;
-		}
-		else
-		ret = select(maxfd+1, &curl_rs, &curl_ws, &curl_es, &timeout);
-
-		switch(ret) {
-			case -1:
-				PRINT_INFO2("select error: %i", errno);
-				break;
-			case 0: /* timeout */
-				//break or not
-			default: /* action */
+        call_spdy_run = false;
+      }
+        
+      if(ret > 0 || (CURLM_OK == ret_curl && 0 == timeout_curl) || call_curl_run)
+      {
+				PRINT_VERBOSE("run curl");
 				if(CURLM_OK != (ret = curl_multi_perform(multi_handle, &still_running))
 					&& CURLM_CALL_MULTI_PERFORM != ret)
 				{
 					PRINT_INFO2("curl_multi_perform failed (%i)", ret);
 					abort();
 				}
-				break;
-		}
+        call_curl_run = false;
+      }
+			/*break;
+		}*/
     
     while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
@@ -896,6 +902,7 @@ run ()
           }
 
           proxy->done = true;
+          call_spdy_run = true;
         }
         else
         {
@@ -904,6 +911,21 @@ run ()
         }
       }
       else PRINT_INFO("shouldn't happen");
+    }
+    
+    if(call_spdy_run)
+    {
+      PRINT_VERBOSE("second call to SPDY_run");
+      SPDY_run(daemon);
+      call_spdy_run = false;
+    }
+    
+    if(glob_opt.verbose)
+    {
+      
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+    PRINT_VERBOSE2("time now %i %i", ts.tv_sec, ts.tv_nsec);
     }
   }
   while(loop);
