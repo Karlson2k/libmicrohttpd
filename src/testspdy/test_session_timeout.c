@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 
 #define TIMEOUT 2
+#define SELECT_MS_TIMEOUT 20
 
 int port;
 
@@ -95,13 +96,16 @@ parentproc()
 	int childstatus;
 	unsigned long long timeoutlong=0;
 	struct timeval timeout;
+	struct timespec ts;
 	int ret;
 	fd_set read_fd_set;
 	fd_set write_fd_set;
 	fd_set except_fd_set;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
+  unsigned long long  beginning = 0;
+	unsigned long long now;
+  
 	SPDY_init();
 	
 	daemon = SPDY_start_daemon(port,
@@ -120,8 +124,6 @@ parentproc()
 		printf("no daemon\n");
 		return 1;
 	}
-	
-	timeout.tv_usec = 0;
 
 	do
 	{
@@ -138,10 +140,32 @@ parentproc()
 			{
 				killchild("SPDY_get_timeout returned wrong SPDY_NO");
 			}
-			if(timeoutlong)
+			/*if(timeoutlong)
 			{
 				killchild("SPDY_get_timeout returned wrong timeout");
-			}
+			}*/
+      if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+        now = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
+      else
+				killchild("clock_gettime returned wrong value");
+      if(now - beginning > TIMEOUT*1000 + SELECT_MS_TIMEOUT)
+      {
+        printf("Started at: %ims\n",beginning);
+        printf("Now is: %ims\n",now);
+        printf("Timeout is: %i\n",TIMEOUT);
+        printf("Select Timeout is: %ims\n",SELECT_MS_TIMEOUT);
+        printf("SPDY_get_timeout gave: %ims\n",timeoutlong);
+				killchild("Timeout passed but session was not closed");
+      }
+      if(timeoutlong > beginning + TIMEOUT *1000)
+      {
+        printf("Started at: %ims\n",beginning);
+        printf("Now is: %ims\n",now);
+        printf("Timeout is: %i\n",TIMEOUT);
+        printf("Select Timeout is: %ims\n",SELECT_MS_TIMEOUT);
+        printf("SPDY_get_timeout gave: %ims\n",timeoutlong);
+				killchild("SPDY_get_timeout returned wrong timeout");
+      }
 		}
 		else
 		{
@@ -151,14 +175,20 @@ parentproc()
 			}
 		}
 		
-		if(SPDY_NO == ret || timeoutlong > 1)
+		if(SPDY_NO == ret || timeoutlong >= 1000)
 		{
 			timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
 		}
 		else
 		{
-			timeout.tv_sec = timeoutlong;
+			timeout.tv_sec = timeoutlong / 1000;
+      timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
+    
+    //ignore values
+    timeout.tv_sec = 0;
+    timeout.tv_usec = SELECT_MS_TIMEOUT * 1000;
 		
 		maxfd = SPDY_get_fdset (daemon,
 								&read_fd_set,
@@ -179,12 +209,16 @@ parentproc()
 				break;
 			default:
 				SPDY_run(daemon);
-				if(do_sleep)
+        if(0 == beginning)
+        if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+          beginning = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
+        else
+					killchild("clock_gettime returned wrong number");
+				/*if(do_sleep)
 				{
 					sleep(TIMEOUT);
 					do_sleep = 0;
-				}
-					
+				}*/
 			break;
 		}
 	}

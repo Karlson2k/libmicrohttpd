@@ -134,7 +134,7 @@ spdyf_parse_options_va (struct SPDY_Daemon *daemon,
 		switch (opt)
 		{
 			case SPDY_DAEMON_OPTION_SESSION_TIMEOUT:
-				daemon->session_timeout = va_arg (valist, unsigned int);
+				daemon->session_timeout = va_arg (valist, unsigned int) * 1000;
 				break;
 			case SPDY_DAEMON_OPTION_SOCK_ADDR:
 				daemon->address = va_arg (valist, struct sockaddr *);
@@ -390,8 +390,8 @@ int
 SPDYF_get_timeout (struct SPDY_Daemon *daemon, 
 		     unsigned long long *timeout)
 {
-	time_t earliest_deadline = 0;
-	time_t now;
+	unsigned long long earliest_deadline = 0;
+	unsigned long long now;
 	struct SPDY_Session *pos;
 	bool have_timeout;
 	
@@ -417,10 +417,9 @@ SPDYF_get_timeout (struct SPDY_Daemon *daemon,
 	
 	if (!have_timeout)
 		return SPDY_NO;
-	if (earliest_deadline < now)
+	if (earliest_deadline <= now)
 		*timeout = 0;
 	else
-		//*timeout = 1000 * (1 + earliest_deadline - now);
 		*timeout = earliest_deadline - now;
 		
 	return SPDY_YES;

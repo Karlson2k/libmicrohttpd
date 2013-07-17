@@ -103,7 +103,6 @@ be reasonably complete:
 - 8 different output queues (one for each priority) have to be implemented
 together with a suitable algorithm for utilizing them. Otherwise, downloading
 a file will block all responses with same or smaller priority
-- Change session timeout to use not seconds but something more precise
 - SPDY RST_STREAM sending on each possible error (DONE?)
 - SPDY_close_session
 - Find the best way for closing still opened stream (new call or existing)

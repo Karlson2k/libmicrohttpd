@@ -86,7 +86,7 @@ SPDYF_run (struct SPDY_Daemon *daemon);
  * should at most block, not the timeout value set for connections.
  *
  * @param daemon daemon to query for timeout
- * @param timeout set to the timeout (in seconds)
+ * @param timeout set to the timeout (in milliseconds)
  * @return SPDY_YES on success, SPDY_NO if no connections exist that
  * 			would necessiate the use of a timeout right now
  */

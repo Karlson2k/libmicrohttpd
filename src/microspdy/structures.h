@@ -739,9 +739,9 @@ struct SPDY_Session
 	
 	/**
 	 * Last time this connection had any activity
-	 * (reading or writing).
+	 * (reading or writing). In milliseconds.
 	 */
-	time_t last_activity;
+	unsigned long long last_activity;
 
 	/**
 	 * Socket for this connection.  Set to -1 if
@@ -918,10 +918,10 @@ struct SPDY_Daemon
 	SPDYF_IODeinit fio_deinit;
 
 	/**
-	 * After how many seconds of inactivity should
+	 * After how many milliseconds of inactivity should
 	 * connections time out? Zero for no timeout.
 	 */
-	time_t session_timeout;
+	unsigned long long session_timeout;
 
 	/**
 	 * Listen socket.

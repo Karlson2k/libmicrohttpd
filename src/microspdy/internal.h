@@ -180,9 +180,9 @@ extern void *spdyf_panic_cls;
 /**
  * Returns monotonic time, to be used for session timeouts.
  *
- * @return time in seconds
+ * @return time in milliseconds
  */
-time_t
+unsigned long long
 SPDYF_monotonic_time(void);
 
 #endif

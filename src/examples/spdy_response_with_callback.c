@@ -180,8 +180,6 @@ main (int argc, char *const *argv)
 		return 1;
 	}
 	
-	timeout.tv_usec = 0;
-	
 	do
 	{
 		FD_ZERO(&read_fd_set);
@@ -189,17 +187,15 @@ main (int argc, char *const *argv)
 		FD_ZERO(&except_fd_set);
 
 		ret = SPDY_get_timeout(daemon, &timeoutlong);
-		if(SPDY_NO == ret || timeoutlong > 1)
-		{ 
-			//do sth else
-			//sleep(1);
-
-			//try new connection
+		if(SPDY_NO == ret || timeoutlong > 1000)
+		{
 			timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
 		}
 		else
 		{
-			timeout.tv_sec = timeoutlong;
+			timeout.tv_sec = timeoutlong / 1000;
+			timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
 		
 		maxfd = SPDY_get_fdset (daemon,

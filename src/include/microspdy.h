@@ -905,7 +905,7 @@ SPDY_get_fdset (struct SPDY_Daemon * daemon,
  * should at most block, not the timeout value set for connections.
  *
  * @param daemon to query for timeout
- * @param timeout will be set to the timeout value (in seconds)
+ * @param timeout will be set to the timeout value (in milliseconds)
  * @return SPDY_YES on success
  *         SPDY_NO if no connections exist that
  * 			would necessiate the use of a timeout right now
