@@ -176,7 +176,7 @@ SPDYF_raw_before_write(struct SPDY_Session *session)
 int
 SPDYF_raw_after_write(struct SPDY_Session *session, int was_written)
 {
-  if(0 == (SPDY_DAEMON_FLAG_NO_DELAY & session->daemon->flags))
+  if(SPDY_YES == was_written && 0 == (SPDY_DAEMON_FLAG_NO_DELAY & session->daemon->flags))
   {
     int val = 0;
     int ret;

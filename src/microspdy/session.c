@@ -1025,7 +1025,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 		session->status = SPDY_SESSION_STATUS_CLOSING;
 	
 	//return i>0 ? SPDY_YES : SPDY_NO;
-	return session->fio_after_write(session, i>0);
+	return session->fio_after_write(session, i>0 ? SPDY_YES : SPDY_NO);
 }
 
 
