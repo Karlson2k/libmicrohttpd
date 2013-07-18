@@ -717,15 +717,11 @@ run ()
   long timeout_curl = -1;
 	struct timeval timeout;
 	int ret;
-	//int ret2;
 	int ret_curl;
 	int ret_spdy;
 	fd_set rs;
 	fd_set ws;
 	fd_set es;
-	//fd_set curl_rs;
-	//fd_set curl_ws;
-	//fd_set curl_es;
 	int maxfd = -1;
 	int maxfd_curl = -1;
 	struct SPDY_Daemon *daemon;
@@ -906,8 +902,10 @@ run ()
         }
         else
         {
-          //TODO handle error
-          PRINT_INFO("bad curl result");
+          PRINT_VERBOSE2("bad curl result for '%s'", proxy->url);
+          proxy->done = true;
+          call_spdy_run = true;
+          //TODO spdy should be notified to send RST_STREAM
         }
       }
       else PRINT_INFO("shouldn't happen");
