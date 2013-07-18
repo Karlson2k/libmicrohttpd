@@ -160,14 +160,14 @@ SPDYF_prepare_goaway (struct SPDY_Session *session,
  * will be discarded soon.
  * 
  * @param session SPDY session
- * @param stream_id stream to terminate
+ * @param stream stream to terminate
  * @param status code for the RST_STREAM frame
  * @return SPDY_NO on memory error or
  * 			SPDY_YES on success
  */
 int
 SPDYF_prepare_rst_stream (struct SPDY_Session *session,
-					uint32_t stream_id,
+					struct SPDYF_Stream * stream,
 					enum SPDY_RST_STREAM_STATUS status);
 
 

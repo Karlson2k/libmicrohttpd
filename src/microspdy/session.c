@@ -129,7 +129,7 @@ spdyf_handler_read_syn_stream (struct SPDY_Session *session)
 	if(0 == name_value_strm_size || 0 == compressed_data_size)
 	{
 		//Protocol error: send RST_STREAM
-		if(SPDY_YES != SPDYF_prepare_rst_stream(session, session->current_stream_id,
+		if(SPDY_YES != SPDYF_prepare_rst_stream(session, session->streams_head,
 						SPDY_RST_STREAM_STATUS_PROTOCOL_ERROR))
 		{
 			//no memory, try later to send RST
@@ -571,11 +571,22 @@ SPDYF_handler_write_data (struct SPDY_Session *session)
 			
 		if(ret < 0 || ret > response_queue->response->rcb_block_size)
 		{
-			//TODO send RST_STREAM (app error)
+			free(session->write_buffer);
+      session->write_buffer = NULL;
+      
+      //send RST_STREAM
+      if(SPDY_YES == (ret = SPDYF_prepare_rst_stream(session,
+        response_queue->stream,
+        SPDY_RST_STREAM_STATUS_INTERNAL_ERROR)))
+      {
+        return SPDY_NO;
+      }
+      
+      //else no memory
 			//for now close session
+			//TODO what?
 			session->status = SPDY_SESSION_STATUS_CLOSING;
 		
-			free(session->write_buffer);
 			return SPDY_NO;
 		}
 		if(0 == ret && more)
@@ -619,6 +630,7 @@ SPDYF_handler_write_data (struct SPDY_Session *session)
 				session->status = SPDY_SESSION_STATUS_CLOSING;
 		
 				free(session->write_buffer);
+        session->write_buffer = NULL;
 				return SPDY_NO;
 			}
 			
@@ -992,7 +1004,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 		if(session->write_buffer_beginning == session->write_buffer_size)
 		{
 			//that response is handled, remove it from queue
-		    free(session->write_buffer);
+      free(session->write_buffer);
 			session->write_buffer = NULL;
 			session->write_buffer_size = 0;
 			queue_head = session->response_queue_head;
@@ -1175,7 +1187,7 @@ SPDYF_session_idle (struct SPDY_Session *session)
 						session->read_buffer_beginning = session->read_buffer_offset;
 						
 						SPDYF_prepare_rst_stream(session,
-							session->current_stream_id, //may be 0 here which is not good
+							session->current_stream_id > 0 ? session->streams_head : NULL, //may be 0 here which is not good
 							SPDY_RST_STREAM_STATUS_FRAME_TOO_LARGE);
 						
 						//actually the read buffer can be bigger than the 
@@ -1541,13 +1553,19 @@ SPDYF_prepare_goaway (struct SPDY_Session *session,
 
 int
 SPDYF_prepare_rst_stream (struct SPDY_Session *session,
-					uint32_t stream_id,
+					struct SPDYF_Stream * stream,
 					enum SPDY_RST_STREAM_STATUS status)
 {
 	struct SPDYF_Response_Queue *response_to_queue;
 	struct SPDYF_Control_Frame *control_frame;
 	uint32_t *data;
+	uint32_t stream_id;
 	
+  if(NULL == stream)
+    stream_id = 0;
+  else
+    stream_id = stream->stream_id;
+  
 	if(NULL == (response_to_queue = malloc(sizeof(struct SPDYF_Response_Queue))))
 	{
 		return SPDY_NO;
@@ -1579,6 +1597,7 @@ SPDYF_prepare_rst_stream (struct SPDY_Session *session,
 	response_to_queue->process_response_handler = &SPDYF_handler_write_rst_stream;
 	response_to_queue->data = data;
 	response_to_queue->data_size = 8;
+	response_to_queue->stream = stream;
 	
 	SPDYF_queue_response (response_to_queue,
 						session,
