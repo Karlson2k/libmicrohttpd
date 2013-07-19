@@ -111,7 +111,12 @@ enum MHD_EpollState
     /**
      * Is this connection currently in the 'eready' EDLL?
      */
-    MHD_EPOLL_STATE_IN_EREADY_EDLL = 4
+    MHD_EPOLL_STATE_IN_EREADY_EDLL = 4,
+
+    /**
+     * Is this connection currently in the 'epoll' set?
+     */
+    MHD_EPOLL_STATE_IN_EPOLL_SET = 8
 
   };
 
@@ -718,6 +723,11 @@ struct MHD_Connection
    * Set to MHD_YES if the thread has been joined.
    */
   int thread_joined;
+
+  /**
+   * Are we currently inside the "idle" handler (to avoid recursively invoking it).
+   */
+  int in_idle;
 
 #if EPOLL_SUPPORT
   /**

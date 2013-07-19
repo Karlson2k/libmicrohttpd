@@ -809,7 +809,7 @@ recv_param_adapter (struct MHD_Connection *connection,
     }
   ret = RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (ret < i)
+  if (ret < (ssize_t) i)
     {
       /* partial read --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
@@ -884,7 +884,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
   ret = SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (ret < i)
+  if (ret < (ssize_t) i)
     {
       /* partial write --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
@@ -1121,37 +1121,43 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   MHD_set_http_callbacks_ (connection);
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
-  /* non-blocking sockets are required on most systems and for GNUtls;
-     however, they somehow cause serious problems on CYGWIN (#1824) */
+
+  if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
+    {
+      /* non-blocking sockets are required on most systems and for GNUtls;
+	 however, they somehow cause serious problems on CYGWIN (#1824);
+	 in turbo mode, we assume that non-blocking was already set
+	 by 'accept4' or whoever calls 'MHD_add_connection' */
 #ifdef CYGWIN
-  if (0 != (daemon->options & MHD_USE_SSL))
+      if (0 != (daemon->options & MHD_USE_SSL))
 #endif
-  {
-    /* make socket non-blocking */
+	{
+	  /* make socket non-blocking */
 #ifndef MINGW
-    int flags = fcntl (connection->socket_fd, F_GETFL);
-    if ( (-1 == flags) ||
-	 (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
-      {
+	  int flags = fcntl (connection->socket_fd, F_GETFL);
+	  if ( (-1 == flags) ||
+	       (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
+	    {
 #if HAVE_MESSAGES
-	MHD_DLOG (daemon,
-		  "Failed to make socket %d non-blocking: %s\n", 
-		  connection->socket_fd,
-		  STRERROR (errno));
+	      MHD_DLOG (daemon,
+			"Failed to make socket %d non-blocking: %s\n", 
+			connection->socket_fd,
+			STRERROR (errno));
 #endif
-      }
+	    }
 #else
-    unsigned long flags = 1;
-    if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
-      {
+	  unsigned long flags = 1;
+	  if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
+	    {
 #if HAVE_MESSAGES
-	MHD_DLOG (daemon, 
-		  "Failed to make socket non-blocking: %s\n", 
-		  STRERROR (errno));
+	      MHD_DLOG (daemon, 
+			"Failed to make socket non-blocking: %s\n", 
+			STRERROR (errno));
 #endif
-      }
+	    }
 #endif
-  }
+	}
+    }
 
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL))
@@ -1228,25 +1234,35 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #if EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
-      struct epoll_event event;
-
-      event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-      event.data.ptr = connection;	  
-      if (0 != epoll_ctl (daemon->epoll_fd,
-			  EPOLL_CTL_ADD,
-			  client_socket,
-			  &event))
+      if (0 == (daemon->options & MHD_USE_EPOLL_TURBO))
 	{
+	  struct epoll_event event;
+	  
+	  event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	  event.data.ptr = connection;	  
+	  if (0 != epoll_ctl (daemon->epoll_fd,
+			      EPOLL_CTL_ADD,
+			      client_socket,
+			      &event))
+	    {
 #if HAVE_MESSAGES
-	  if (0 != (daemon->options & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon, 
-		      "Call to epoll_ctl failed: %s\n", 
-		      STRERROR (errno));
+	      if (0 != (daemon->options & MHD_USE_DEBUG))
+		MHD_DLOG (daemon, 
+			  "Call to epoll_ctl failed: %s\n", 
+			  STRERROR (errno));
 #endif
-	  goto cleanup;
+	      goto cleanup;
+	    }
+	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
 	}
-      daemon->listen_socket_in_epoll = MHD_YES;
-
+      else
+	{
+	  connection->epoll_state |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY
+	    | MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	  EDLL_insert (daemon->eready_head,
+		       daemon->eready_tail,
+		       connection);
+	}
     }
 #endif
   daemon->max_connections--;  
@@ -1300,13 +1316,19 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   socklen_t addrlen;
   int s;
   int fd;
+  int nonblock;
 
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
   if (-1 == (fd = daemon->socket_fd))
     return MHD_NO;
+  nonblock = SOCK_NONBLOCK;
+#ifdef CYGWIN
+  if (0 == (daemon->options & MHD_USE_SSL))
+    nonblock = 0;
+#endif
 #if HAVE_ACCEPT4
-  s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC);
+  s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC | nonblock);
 #else
   s = ACCEPT (fd, addr, &addrlen);
 #endif
@@ -1329,9 +1351,19 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
 #if !HAVE_ACCEPT4
   {
-    /* make socket non-inheritable */
+    /* make socket non-inheritable and non-blocking */
 #ifdef WINDOWS
     DWORD dwFlags;
+    unsigned long flags = 1;
+
+    if (0 != ioctlsocket (s, FIONBIO, &flags))
+      {
+#if HAVE_MESSAGES
+	MHD_DLOG (daemon, 
+		  "Failed to make socket non-blocking: %s\n", 
+		  STRERROR (errno));
+#endif
+      }
     if (!GetHandleInformation ((HANDLE) s, &dwFlags) ||
         ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
         !SetHandleInformation ((HANDLE) s, HANDLE_FLAG_INHERIT, 0)))
@@ -1342,14 +1374,19 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 		  "Failed to make socket non-inheritable: %s\n", 
 		  STRERROR (errno));
 #endif
-      }
+      }    
 #else
     int flags;
 
+    nonblock = O_NONBLOCK;
+#ifdef CYGWIN
+    if (0 == (daemon->options & MHD_USE_SSL))
+      nonblock = 0;
+#endif
     flags = fcntl (s, F_GETFD);
     if ( ( (-1 == flags) ||
 	   ( (flags != (flags | FD_CLOEXEC)) &&
-	     (0 != fcntl (s, F_SETFD, flags | FD_CLOEXEC)) ) ) )
+	     (0 != fcntl (s, F_SETFD, flags | nonblock | FD_CLOEXEC)) ) ) )
       {
 #if HAVE_MESSAGES
 	MHD_DLOG (daemon,
@@ -1358,7 +1395,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       }
 #endif
+    /* make socket non-blocking */
+
   }
+  
 #endif
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
@@ -1406,10 +1446,13 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (pos->tls_session != NULL)
 	gnutls_deinit (pos->tls_session);
 #endif
-      MHD_ip_limit_del (daemon, (struct sockaddr*)pos->addr, pos->addr_len);
+      MHD_ip_limit_del (daemon, 
+			(struct sockaddr *) pos->addr, 
+			pos->addr_len);
 #if EPOLL_SUPPORT
       if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
-	   (-1 != daemon->epoll_fd) )
+	   (-1 != daemon->epoll_fd) &&
+	   (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
 	{
 	  /* epoll documentation suggests that closing a FD
 	     automatically removes it from the epoll set; however,
@@ -1422,6 +1465,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 			      pos->socket_fd,
 			      NULL))
 	    MHD_PANIC ("Failed to remove FD from epoll set\n");
+	  pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
 	}
 #endif
       if (NULL != pos->response)
@@ -1949,10 +1993,10 @@ MHD_poll (struct MHD_Daemon *daemon,
 
 /**
  * Do 'epoll'-based processing (this function is allowed to
- * block).
+ * block if 'may_block' is set to MHD_YES).
  *
  * @param daemon daemon to run poll loop for
- * @param may_block YES if blocking, NO if non-blocking
+ * @param may_block MHD_YES if blocking, MHD_NO if non-blocking
  * @return MHD_NO on serious errors, MHD_YES on success
  */
 static int
@@ -1966,7 +2010,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int timeout_ms;
   MHD_UNSIGNED_LONG_LONG timeout_ll;
   int num_events;
-  unsigned int i;
+  unsigned int i;  
+  unsigned int series_length;
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -2082,8 +2127,11 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	    {
 	      /* run 'accept' until it fails or we are not allowed to take
 		 on more connections */
+	      series_length = 0;
 	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
-		      (0 != daemon->max_connections) ) ;
+		      (0 != daemon->max_connections) &&
+		      (series_length < 128) )
+		      series_length++;
 	    }
 	}
     }
@@ -2094,7 +2142,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
       EDLL_remove (daemon->eready_head,
 		   daemon->eready_tail,
 		   pos);
-      pos->epoll_state -= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+      pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
       if (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info)
 	pos->read_handler (pos);
       if (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info)

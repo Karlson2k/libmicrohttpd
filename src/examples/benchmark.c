@@ -122,10 +122,12 @@ main (int argc, char *const *argv)
   response = MHD_create_response_from_buffer (strlen (PAGE),
 					      (void *) PAGE,
 					      MHD_RESPMEM_PERSISTENT);
-
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY 
-#if ! EPOLL_SUPPORT
-			| MHD_USE_EPOLL_LINUX_ONLY
+  (void) MHD_add_response_header (response,
+				  MHD_HTTP_HEADER_CONNECTION,
+				  "close");
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_SUPPRESS_DATE_NO_CLOCK
+#if EPOLL_SUPPORT
+			| MHD_USE_EPOLL_LINUX_ONLY | MHD_USE_EPOLL_TURBO
 #endif
 			,
                         atoi (argv[1]),
@@ -134,6 +136,7 @@ main (int argc, char *const *argv)
 			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) NUMBER_OF_THREADS,
 			MHD_OPTION_URI_LOG_CALLBACK, &uri_logger_cb, NULL,
 			MHD_OPTION_NOTIFY_COMPLETED, &completed_callback, NULL,
+			MHD_OPTION_CONNECTION_LIMIT, (unsigned int) 1000,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;

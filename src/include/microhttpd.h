@@ -436,7 +436,13 @@ enum MHD_FLAG
   /**
    * Use a single socket for IPv4 and IPv6.
    */
-  MHD_USE_DUAL_STACK = MHD_USE_IPv6 | 2048
+  MHD_USE_DUAL_STACK = MHD_USE_IPv6 | 2048,
+
+  /**
+   * Enable EPOLL turbo.  Only useful with MHD_USE_EPOLL_LINUX_ONLY.
+   * Highly experimental, do not use in production yet.
+   */
+  MHD_USE_EPOLL_TURBO = 4096
 
 };
 

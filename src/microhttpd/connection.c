@@ -1,6 +1,6 @@
 /*
     This file is part of libmicrohttpd
-     (C) 2007, 2008, 2009, 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
+     (C) 2007-2013 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -266,8 +266,9 @@ MHD_connection_close (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon;
 
   daemon = connection->daemon;
-  SHUTDOWN (connection->socket_fd, 
-	    (MHD_YES == connection->read_closed) ? SHUT_WR : SHUT_RDWR);
+  if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
+    SHUTDOWN (connection->socket_fd, 
+	      (MHD_YES == connection->read_closed) ? SHUT_WR : SHUT_RDWR);
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   if ( (NULL != daemon->notify_completed) &&
@@ -1485,7 +1486,7 @@ do_read (struct MHD_Connection *connection)
   if (bytes_read < 0)
     {
       if ((EINTR == errno) || (EAGAIN == errno))
-        return MHD_NO;
+	  return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
       if (0 != (connection->daemon->options & MHD_USE_SSL))
@@ -2032,6 +2033,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   int rend;
   char *line;
 
+  connection->in_idle = MHD_YES;
   while (1)
     {
 #if DEBUG_STATES
@@ -2376,32 +2378,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           continue;
         case MHD_CONNECTION_CLOSED:
-	  if (connection->response != NULL)
-	    {
-	      MHD_destroy_response (connection->response);
-	      connection->response = NULL;
-	    }
-	  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )		
-	    MHD_PANIC ("Failed to acquire cleanup mutex\n");		
-	  if (connection->connection_timeout == daemon->connection_timeout)
-	    XDLL_remove (daemon->normal_timeout_head,
-			 daemon->normal_timeout_tail,
-			 connection);
-	  else
-	    XDLL_remove (daemon->manual_timeout_head,
-			 daemon->manual_timeout_tail,
-			 connection);
-	  DLL_remove (daemon->connections_head,
-		      daemon->connections_tail,
-		      connection);
-	  DLL_insert (daemon->cleanup_head,
-		      daemon->cleanup_tail,
-		      connection);
-	  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	       (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )		
-	    MHD_PANIC ("Failed to release cleanup mutex\n");	    
-	  return MHD_NO;
+	  goto cleanup_connection;
         default:
           EXTRA_CHECK (0);
           break;
@@ -2413,35 +2390,109 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
        (timeout <= (MHD_monotonic_time() - connection->last_activity)) )
     {
       MHD_connection_close (connection, MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+      connection->in_idle = MHD_NO;
       return MHD_YES;
     }
   MHD_connection_update_event_loop_info (connection);
   switch (connection->event_loop_info)
     {
     case MHD_EVENT_LOOP_INFO_READ:
-      if (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY))
-	EDLL_insert (daemon->eready_head,
-		     daemon->eready_tail,
-		     connection);
+      if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
+	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
+	{
+	  EDLL_insert (daemon->eready_head,
+		       daemon->eready_tail,
+		       connection);
+	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	}
       break;
     case MHD_EVENT_LOOP_INFO_WRITE:
-      if (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY))
-	EDLL_insert (daemon->eready_head,
-		     daemon->eready_tail,
-		     connection);
+      if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) &&
+	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
+	{
+	  EDLL_insert (daemon->eready_head,
+		       daemon->eready_tail,
+		       connection);
+	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	}
       break;
     case MHD_EVENT_LOOP_INFO_BLOCK:
       /* we should look at this connection again in the next iteration
 	 of the event loop, as we're waiting on the application */
-      EDLL_insert (daemon->eready_head,
-		   daemon->eready_tail,
-		   connection);      
+      if (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+	{
+	  EDLL_insert (daemon->eready_head,
+		       daemon->eready_tail,
+		       connection);      
+	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	}
       break;
     case MHD_EVENT_LOOP_INFO_CLEANUP:
       /* This connection is finished, nothing left to do */
       break;
     }
+
+#if EPOLL_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&  
+       (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
+       ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ||
+	 ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
+	   (MHD_EVENT_LOOP_INFO_READ == connection->event_loop_info) &&
+	   (MHD_NO == connection->read_closed) ) ) )
+    {
+      /* add to epoll set */
+      struct epoll_event event;
+
+      event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+      event.data.ptr = connection;	  
+      if (0 != epoll_ctl (daemon->epoll_fd,
+			  EPOLL_CTL_ADD,
+			  connection->socket_fd,
+			  &event))
+	{
+#if HAVE_MESSAGES
+	  if (0 != (daemon->options & MHD_USE_DEBUG))
+	    MHD_DLOG (daemon, 
+		      "Call to epoll_ctl failed: %s\n", 
+		      STRERROR (errno));
+#endif
+	  connection->state = MHD_CONNECTION_CLOSED;
+	  goto cleanup_connection;
+	}
+      connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
+    }
+#endif
+  connection->in_idle = MHD_NO;
   return MHD_YES;
+
+ cleanup_connection:
+  if (NULL != connection->response)
+    {
+      MHD_destroy_response (connection->response);
+      connection->response = NULL;
+    }
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )		
+    MHD_PANIC ("Failed to acquire cleanup mutex\n");		
+  if (connection->connection_timeout == daemon->connection_timeout)
+    XDLL_remove (daemon->normal_timeout_head,
+		 daemon->normal_timeout_tail,
+		 connection);
+  else
+    XDLL_remove (daemon->manual_timeout_head,
+		 daemon->manual_timeout_tail,
+		 connection);
+  DLL_remove (daemon->connections_head,
+	      daemon->connections_tail,
+	      connection);
+  DLL_insert (daemon->cleanup_head,
+	      daemon->cleanup_tail,
+	      connection);
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )		
+    MHD_PANIC ("Failed to release cleanup mutex\n");	    
+  connection->in_idle = MHD_NO;
+  return MHD_NO;
 }
 
 
@@ -2589,11 +2640,13 @@ MHD_queue_response (struct MHD_Connection *connection,
       /* response was queued "early",
          refuse to read body / footers or further
          requests! */
-      (void) SHUTDOWN (connection->socket_fd, SHUT_RD);
+      if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
+	(void) SHUTDOWN (connection->socket_fd, SHUT_RD);
       connection->read_closed = MHD_YES;
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     }
-  (void) MHD_connection_handle_idle (connection);
+  if (MHD_NO == connection->in_idle)
+    (void) MHD_connection_handle_idle (connection);
   return MHD_YES;
 }
 
