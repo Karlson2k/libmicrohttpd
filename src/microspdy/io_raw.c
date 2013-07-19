@@ -159,6 +159,7 @@ SPDYF_raw_is_pending(struct SPDY_Session *session)
 int
 SPDYF_raw_before_write(struct SPDY_Session *session)
 {
+#if HAVE_DECL_TCP_CORK
   if(0 == (SPDY_DAEMON_FLAG_NO_DELAY & session->daemon->flags))
   {
     int val = 1;
@@ -168,6 +169,7 @@ SPDYF_raw_before_write(struct SPDY_Session *session)
     if(-1 == ret)
       SPDYF_DEBUG("WARNING: Couldn't set the new connection to TCP_CORK");
   }
+#endif
   
 	return SPDY_YES;
 }
@@ -176,6 +178,7 @@ SPDYF_raw_before_write(struct SPDY_Session *session)
 int
 SPDYF_raw_after_write(struct SPDY_Session *session, int was_written)
 {
+#if HAVE_DECL_TCP_CORK
   if(SPDY_YES == was_written && 0 == (SPDY_DAEMON_FLAG_NO_DELAY & session->daemon->flags))
   {
     int val = 0;
@@ -186,5 +189,6 @@ SPDYF_raw_after_write(struct SPDY_Session *session, int was_written)
       SPDYF_DEBUG("WARNING: Couldn't unset the new connection to TCP_CORK");
   }
   
+#endif
 	return was_written;
 }

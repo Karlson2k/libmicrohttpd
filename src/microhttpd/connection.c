@@ -2312,7 +2312,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_FOOTERS_SENT:
 #if HAVE_DECL_TCP_CORK
           /* done sending, uncork */
-          {
+          if (0) {
             const int val = 0;
             setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val,
                         sizeof (val));

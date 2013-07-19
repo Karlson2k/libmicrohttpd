@@ -19,7 +19,11 @@ if ENABLE_SPDY
 spdyex = \
   spdy_event_loop \
   spdy_fileserver \
-  spdy_response_with_callback
+  spdy_response_with_callback 
+
+if HAVE_SPDYLAY
+spdyex += mhd2spdy
+endif
 endif
 
 
@@ -73,6 +77,15 @@ demo_SOURCES = \
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  -lmagic
+
+mhd2spdy_SOURCES = \
+ mhd2spdy.c \
+ mhd2spdy_spdy.c mhd2spdy_spdy.h \
+ mhd2spdy_http.c mhd2spdy_http.h \
+ mhd2spdy_structures.c mhd2spdy_structures.h
+mhd2spdy_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
+ -lssl -lcrypto -lspdylay
 
 benchmark_SOURCES = \
  benchmark.c 
