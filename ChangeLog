@@ -1,4 +1,6 @@
 Fri Jul 19 09:57:27 CEST 2013
+	Fix issue where connections were not cleaned up when
+	'MHD_run_from_select' was used.
 	Releasing libmicrohttpd 0.9.28. -CG
 
 Sun Jul 14 19:57:56 CEST 2013

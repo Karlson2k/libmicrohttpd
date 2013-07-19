@@ -1610,6 +1610,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 	  pos->idle_handler (pos);	
         }
     }
+  MHD_cleanup_connections (daemon);
   return MHD_YES;
 }
 
@@ -2153,14 +2154,22 @@ MHD_run (struct MHD_Daemon *daemon)
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
     return MHD_NO;
   if (0 != (daemon->options & MHD_USE_POLL)) 
+  {
     MHD_poll (daemon, MHD_NO);    
+    MHD_cleanup_connections (daemon);
+  }
 #if EPOLL_SUPPORT     
   else if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) 
+  {
     MHD_epoll (daemon, MHD_NO);
+    MHD_cleanup_connections (daemon);
+  }
 #endif
-  else    
+  else
+  { 
     MHD_select (daemon, MHD_NO);    
-  MHD_cleanup_connections (daemon);
+    /* MHD_select does MHD_cleanup_connections already */
+  }
   return MHD_YES;
 }
 
