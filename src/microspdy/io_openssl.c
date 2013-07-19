@@ -77,20 +77,28 @@ SPDYF_openssl_global_deinit()
 int
 SPDYF_openssl_init(struct SPDY_Daemon *daemon)
 {
+    int options;
     //create ssl context. TLSv1 used
     if(NULL == (daemon->io_context = SSL_CTX_new(TLSv1_server_method())))
     {
 		SPDYF_DEBUG("Couldn't create ssl context");
 		return SPDY_NO;
-	}
+        }
 	//set options for tls
 	//TODO DH is not enabled for easier debugging
     //SSL_CTX_set_options(daemon->io_context, SSL_OP_SINGLE_DH_USE);
     
     //TODO here session tickets are disabled for easier debuging with 
     //wireshark when using Chrome
-    //SSL_OP_NO_COMPRESSION disables TLS compression to avoid CRIME attack
-    SSL_CTX_set_options(daemon->io_context, SSL_OP_NO_TICKET | SSL_OP_NO_COMPRESSION);
+    // SSL_OP_NO_COMPRESSION disables TLS compression to avoid CRIME attack
+    options = SSL_OP_NO_TICKET;
+#ifdef SSL_OP_NO_COMPRESSION
+    options |= SSL_OP_NO_COMPRESSION;
+#elif OPENSSL_VERSION_NUMBER >= 0x00908000L /* workaround for OpenSSL 0.9.8 */
+    sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
+#endif
+
+    SSL_CTX_set_options(daemon->io_context, options);
     if(1 != SSL_CTX_use_certificate_file(daemon->io_context, daemon->certfile , SSL_FILETYPE_PEM))
     {
 		SPDYF_DEBUG("Couldn't load the cert file");
