@@ -50,6 +50,21 @@ struct CBC
   size_t size;
 };
 
+
+static void
+completed_cb (void *cls,
+	      struct MHD_Connection *connection,
+	      void **con_cls,
+	      enum MHD_RequestTerminationCode toe)
+{
+  struct MHD_PostProcessor *pp = *con_cls;
+
+  if (NULL != pp)
+    MHD_destroy_post_processor (pp);
+  *con_cls = NULL;
+}
+
+
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 {
@@ -61,6 +76,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 /**
  * Note that this post_iterator is not perfect
@@ -142,7 +158,9 @@ testInternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY /* | MHD_USE_DEBUG */ ,
-                        11080, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        11080, NULL, NULL, &ahc_echo, NULL, 
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+			MHD_OPTION_END);
   if (d == NULL)
     return 1;
   zzuf_socat_start ();
@@ -191,7 +209,9 @@ testMultithreadedPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION /* | MHD_USE_DEBUG */ ,
-                        11080, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        11080, NULL, NULL, &ahc_echo, NULL, 
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
+			MHD_OPTION_END);
   if (d == NULL)
     return 16;
 
@@ -252,7 +272,9 @@ testExternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_NO_FLAG /* | MHD_USE_DEBUG */ ,
-                        1082, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        1082, NULL, NULL, &ahc_echo, NULL, 
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
+			MHD_OPTION_END);
   if (d == NULL)
     return 256;
   multi = curl_multi_init ();
