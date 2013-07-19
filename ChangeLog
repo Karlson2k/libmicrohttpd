@@ -1,3 +1,6 @@
+Fri Jul 19 09:57:27 CEST 2013
+	Releasing libmicrohttpd 0.9.28. -CG
+
 Sun Jul 14 19:57:56 CEST 2013
 	Removing 'shutdown' calls that happen just before close or
 	that are for read-only and for a client that has already
