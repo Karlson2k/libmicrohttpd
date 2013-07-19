@@ -57,7 +57,7 @@ completed_cb (void *cls,
   struct MHD_PostProcessor *pp = *con_cls;
 
   if (NULL != pp)
-    MHD_destroy_post_processor (pp);
+    MHD_destroy_post_processor (pp);   
   *con_cls = NULL;
 }
 
@@ -99,6 +99,7 @@ post_iterator (void *cls,
     (*eok) |= 2;
   return MHD_YES;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -433,6 +434,7 @@ testExternalPost ()
   return 0;
 }
 
+
 static int
 ahc_cancel (void *cls,
 	    struct MHD_Connection *connection,
@@ -508,6 +510,7 @@ slowReadBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 #define FLAG_SLOW_READ 8
 #define FLAG_COUNT 16
 
+
 static int
 testMultithreadedPostCancelPart(int flags)
 {
@@ -532,7 +535,6 @@ testMultithreadedPostCancelPart(int flags)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         1081, NULL, NULL, &ahc_cancel, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
 			MHD_OPTION_END);
   if (d == NULL)
     return 32768;
