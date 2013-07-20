@@ -351,7 +351,7 @@ SPDYF_start_daemon_va (uint16_t port,
 	//for GOTO
 	free_and_fail:
 	if(daemon->socket_fd > 0)
-		close (daemon->socket_fd);
+		(void)close (daemon->socket_fd);
 		
 	free(servaddr4);
 #if HAVE_INET6
@@ -374,7 +374,7 @@ SPDYF_stop_daemon (struct SPDY_Daemon *daemon)
 	
 	shutdown (daemon->socket_fd, SHUT_RDWR);
 	spdyf_close_all_sessions (daemon);
-	close (daemon->socket_fd);
+	(void)close (daemon->socket_fd);
 	
 	if(!(SPDY_DAEMON_OPTION_SOCK_ADDR & daemon->options))
 		free(daemon->address);
