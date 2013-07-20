@@ -42,6 +42,8 @@
 #include <getopt.h>
 #include <regex.h>
 
+#define ERROR_RESPONSE "502 Bad Gateway"
+
 
 struct global_options
 {
@@ -49,6 +51,7 @@ struct global_options
   char *cert;
   char *cert_key;
   char *listen_host;
+  unsigned int timeout;
   uint16_t listen_port;
   bool verbose;
   bool curl_verbose;
@@ -142,6 +145,8 @@ static regex_t uri_preg;
 static bool call_spdy_run;
 static bool call_curl_run;
 
+int debug_num_curls;
+
 
 struct Proxy
 {
@@ -158,6 +163,7 @@ struct Proxy
 	//ssize_t length;
 	int status;
   bool done;
+  bool error;
   bool *session_alive;
 };
 
@@ -318,6 +324,12 @@ response_callback (void *cls,
 	//printf("response_callback\n");
   
   *more = true;
+  
+  if(proxy->error)
+  {
+    PRINT_VERBOSE("tell spdy about the error");
+    return -1;
+  }
 	
 	if(!proxy->http_body_size)//nothing to write now
   {
@@ -367,11 +379,14 @@ response_done_callback(void *cls,
 	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
 	{
 		printf("answer was NOT sent, %i\n",status);
+    free(proxy->http_body);
+    proxy->http_body = NULL;
 	}
 	if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
 	{
 		PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
 	}
+  debug_num_curls--;
 	curl_slist_free_all(proxy->curl_headers);
 	curl_easy_cleanup(proxy->curl_handle);
 	
@@ -675,6 +690,8 @@ standard_request_handler(void *cls,
 	
 	if(glob_opt.curl_verbose)
     CURL_SETOPT(proxy->curl_handle, CURLOPT_VERBOSE, 1);
+  if(glob_opt.timeout)
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_TIMEOUT, glob_opt.timeout);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_URL, proxy->url);
 	if(glob_opt.http10)
 		CURL_SETOPT(proxy->curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
@@ -684,7 +701,7 @@ standard_request_handler(void *cls,
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HEADERDATA, proxy);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_PRIVATE, proxy);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_HTTPHEADER, proxy->curl_headers);
-  CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+  CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);//TODO
   CURL_SETOPT(proxy->curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
   if(glob_opt.ipv4 && !glob_opt.ipv6)
     CURL_SETOPT(proxy->curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
@@ -696,6 +713,7 @@ standard_request_handler(void *cls,
 		PRINT_INFO2("curl_multi_add_handle failed (%i)", ret);
 		abort();
 	}
+  debug_num_curls++;
     
   //~5ms additional latency for calling this
 	if(CURLM_OK != (ret = curl_multi_perform(multi_handle, &still_running))
@@ -734,6 +752,7 @@ run ()
   struct addrinfo *gai;
   enum SPDY_IO_SUBSYSTEM io = glob_opt.notls ? SPDY_IO_SUBSYSTEM_RAW : SPDY_IO_SUBSYSTEM_OPENSSL;
   enum SPDY_DAEMON_FLAG flags = SPDY_DAEMON_FLAG_NO;
+  struct SPDY_Response *error_response;
   
 	signal(SIGPIPE, SIG_IGN);
 	
@@ -816,6 +835,8 @@ run ()
 		FD_ZERO(&ws);
 		FD_ZERO(&es);
     
+    PRINT_INFO2("num  curls %i", debug_num_curls);
+    
     ret_spdy = SPDY_get_timeout(daemon, &timeout_spdy);
     if(SPDY_NO == ret_spdy || timeout_spdy > 5000)
       timeoutlong = 5000;
@@ -873,7 +894,7 @@ run ()
         call_spdy_run = false;
       }
         
-      if(ret > 0 || (CURLM_OK == ret_curl && 0 == timeout_curl) || call_curl_run)
+      //if(ret > 0 || (CURLM_OK == ret_curl && 0 == timeout_curl) || call_curl_run)
       {
 				PRINT_VERBOSE("run curl");
 				if(CURLM_OK != (ret = curl_multi_perform(multi_handle, &still_running))
@@ -889,21 +910,45 @@ run ()
     
     while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
+        if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &proxy)))
+        {
+          PRINT_INFO2("err %i",ret);
+          abort();
+        }
         if(CURLE_OK == msg->data.result)
         {
-          if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &proxy)))
-          {
-            PRINT_INFO2("err %i",ret);
-            abort();
-          }
-
           proxy->done = true;
           call_spdy_run = true;
         }
         else
         {
-          PRINT_VERBOSE2("bad curl result for '%s'", proxy->url);
-          proxy->done = true;
+          PRINT_VERBOSE2("bad curl result (%i) for '%s'", msg->data.result, proxy->url);
+          if(NULL == proxy->response)
+          {
+            SPDY_name_value_destroy(proxy->headers);
+            if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
+                  NULL,
+                  SPDY_HTTP_VERSION_1_1,
+                  NULL,
+                  ERROR_RESPONSE,
+                  strlen(ERROR_RESPONSE))))
+              DIE("no response");
+            if(SPDY_YES != SPDY_queue_response(proxy->request,
+                      error_response,
+                      true,
+                      false,
+                      &response_done_callback,
+                      proxy))
+            {
+              //clean and forget
+              //TODO
+              DIE("no queue");
+            }
+          }
+          else
+          {
+            proxy->error = true;
+          }
           call_spdy_run = true;
           //TODO spdy should be notified to send RST_STREAM
         }
@@ -945,7 +990,7 @@ display_usage()
 {
   printf(
     "Usage: microspdy2http -p <PORT> [-c <CERTIFICATE>] [-k <CERT-KEY>]\n"
-    "                      [-rvh0Dt] [-b <HTTP-SERVER>] [-l <HOST>]\n\n"
+    "                      [-rvh0DtT] [-b <HTTP-SERVER>] [-l <HOST>]\n\n"
     "OPTIONS:\n"
     "    -p, --port            Listening port.\n"
     "    -l, --host            Listening host. If not set, will listen on [::]\n"
@@ -966,6 +1011,8 @@ display_usage()
     "    -6, --curl-ipv6       Curl may use IPv6 to connect to the final destination.\n"
     "                          If neither --curl-ipv4 nor --curl-ipv6 is set,\n"
     "                          both will be used by default.\n"
+    "    -T, --timeout         Maximum time in seconds for each HTTP transfer.\n"
+    "                          Use 0 for no timeout; this is the default value.\n"
     "    -t, --transparent     If set, the proxy will fetch an URL which\n"
     "                          is based on 'Host:' header and requested path.\n"
     "                          Otherwise, full URL in the requested path is required.\n\n"
@@ -993,12 +1040,13 @@ main (int argc, char *const *argv)
     {"transparent",  no_argument, 0, 't'},
     {"curl-ipv4",  no_argument, 0, '4'},
     {"curl-ipv6",  no_argument, 0, '6'},
+    {"timeout",  required_argument, 0, 'T'},
     {0, 0, 0, 0}
   };
   
   while (1)
   {
-    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:rv0Dth46", long_options, &option_index);
+    getopt_ret = getopt_long( argc, argv, "p:l:c:k:b:rv0Dth46T:", long_options, &option_index);
     if (getopt_ret == -1)
       break;
 
@@ -1058,6 +1106,15 @@ main (int argc, char *const *argv)
         
       case '6':
         glob_opt.ipv6 = true;
+        break;
+        
+      case 'T':
+        glob_opt.timeout = atoi(optarg);
+        if(glob_opt.timeout < 0)
+        {
+          display_usage();
+          return 1;
+        }
         break;
         
       case 0:
