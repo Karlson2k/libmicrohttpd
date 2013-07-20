@@ -30,6 +30,7 @@ endif
 # example programs
 noinst_PROGRAMS = \
  benchmark \
+ benchmark_https \
  minimal_example \
  dual_stack_example \
  minimal_example_comet \
@@ -90,6 +91,11 @@ mhd2spdy_LDADD = \
 benchmark_SOURCES = \
  benchmark.c 
 benchmark_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la  
+
+benchmark_https_SOURCES = \
+ benchmark_https.c 
+benchmark_https_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  
 
 dual_stack_example_SOURCES = \
