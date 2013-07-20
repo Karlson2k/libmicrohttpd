@@ -236,6 +236,9 @@ void spdy_cb_on_ctrl_recv(spdylay_session *session,
       //name = "SYN_REPLY";
       stream_id = frame->syn_reply.stream_id;
     break;
+    case SPDYLAY_RST_STREAM:
+      stream_id = frame->rst_stream.stream_id;
+    break;
     case SPDYLAY_HEADERS:
       nv = frame->headers.nv;
       //name = "HEADERS";
@@ -247,9 +250,26 @@ void spdy_cb_on_ctrl_recv(spdylay_session *session,
   }
 
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
-  PRINT_INFO2("received headers for %s", proxy->url);
+  if(NULL == proxy)
+    DIE("no proxy obj");
 
+  switch(type) {
+    case SPDYLAY_SYN_REPLY:
+  PRINT_INFO2("received headers for %s", proxy->url);
   http_create_response(proxy, nv);
+    break;
+    case SPDYLAY_RST_STREAM:
+  PRINT_INFO2("received reset stream for %s", proxy->url);
+  proxy->error = true;
+    break;
+    case SPDYLAY_HEADERS:
+  PRINT_INFO2("received headers for %s", proxy->url);
+  http_create_response(proxy, nv);
+    break;
+    default:
+      return;
+    break;
+  }
   glob_opt.spdy_data_received = true;
 }
 

@@ -127,7 +127,7 @@ parse_uri(regex_t * preg, char * full_uri, struct URI ** uri)
 void
 free_proxy(struct Proxy *proxy)
 {
-  //PRINT_INFO("free proxy called");
+  PRINT_INFO2("free proxy called for '%s'", proxy->url);
   free(proxy->http_body);
   free_uri(proxy->uri);
 	free(proxy->url);

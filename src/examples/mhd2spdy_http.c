@@ -31,6 +31,7 @@ void * http_log_cb(void * cls, const char * uri)
   
   PRINT_INFO2("log uri '%s'\n", uri);
   
+  //TODO free
   if(NULL == (http_uri = au_malloc(sizeof(struct HTTP_URI ))))
     DIE("no memory");
   //memset(http_uri, 0 , sizeof(struct HTTP_URI));
@@ -99,6 +100,9 @@ http_response_callback (void *cls,
 	//	return MHD_CONTENT_READER_END_OF_STREAM;
   
   PRINT_INFO2("http_response_callback for %s", proxy->url);
+  
+  if(proxy->error)
+    return MHD_CONTENT_READER_END_WITH_ERROR;
   
 	if(0 == proxy->http_body_size &&( proxy->done || !proxy->spdy_active)){
     PRINT_INFO("sent end of stream");
@@ -183,7 +187,6 @@ http_response_done_callback(void *cls)
 	*/
 	//SPDY_destroy_request(request);
 	//SPDY_destroy_response(response);
-      MHD_destroy_response (proxy->http_response);
 	//if(!strcmp("/close",proxy->path)) run = 0;
 	//free(proxy->path);
   if(proxy->spdy_active)
@@ -349,7 +352,6 @@ http_cb_request (void *cls,
   if(MHD_NO == MHD_add_response_header (proxy->http_response,
                  "Keep-Alive", "timeout=5, max=100"))
     PRINT_INFO("SPDY_name_value_add failed: ");
-    
     /*
   const  union MHD_ConnectionInfo *info;
   info = MHD_get_connection_info (connection,
@@ -447,4 +449,5 @@ http_create_response(struct Proxy* proxy, char **nv)
   //MHD_destroy_response (proxy->http_response);
   //PRINT_INFO2("state after %i", proxy->http_connection->state);
   //PRINT_INFO2("loop after %i", proxy->http_connection->event_loop_info);
+      MHD_destroy_response (proxy->http_response);
 }

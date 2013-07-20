@@ -113,9 +113,11 @@ struct Proxy
 	int status;
 	int id;
 	bool done;
+	bool error;
   bool http_active;
   bool spdy_active;
 };
+
 
 struct HTTP_URI
 {

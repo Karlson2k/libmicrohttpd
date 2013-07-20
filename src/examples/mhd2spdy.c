@@ -41,6 +41,7 @@ static int run = 1;
 
 static void catch_signal(int signal)
 {
+  (void)signal;
   //spdy_close = 1;
   run = 0;
 }
@@ -122,7 +123,7 @@ run_everything ()
       if(NULL == glob_opt.spdy_connection && glob_opt.only_proxy)
         PRINT_INFO("cannot connect to the proxy");
     }
-  
+
     //PRINT_INFO("while1");
     FD_ZERO(&rs);
     FD_ZERO(&ws);
@@ -166,7 +167,7 @@ else{*/
                                   connections, MAX_SPDY_CONNECTIONS, &spdy_npollfds);
     if(maxfd_s > maxfd) maxfd = maxfd_s;
  
-    PRINT_INFO2("MHD timeout %i %i", timeout.tv_sec, timeout.tv_usec);
+    PRINT_INFO2("MHD timeout %lld %lld", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec);
     //TODO
     //timeout.tv_sec = 0;
     //timeout.tv_usec = 0;
@@ -174,9 +175,10 @@ else{*/
     glob_opt.spdy_data_received = false;
       
     ret = select(maxfd+1, &rs, &ws, &es, &timeout);
-    PRINT_INFO2("timeout now %i %i", timeout.tv_sec, timeout.tv_usec);
+    PRINT_INFO2("timeout now %lld %lld", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec);
 
-    switch(ret) {
+    switch(ret)
+    {
       case -1:
         PRINT_INFO2("select error: %i", errno);
         break;
@@ -184,12 +186,14 @@ else{*/
         break;
       default:
       PRINT_INFO("run");
-        MHD_run_from_select(daemon,&rs, &ws, &es);
+        //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs
+        MHD_run(daemon);
         spdy_run_select(&rs, &ws, &es, connections, spdy_npollfds);
         if(glob_opt.spdy_data_received)
         {
           PRINT_INFO("MHD run again");
-          MHD_run_from_select(daemon,&rs, &ws, &es);
+          //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs
+          MHD_run(daemon);
         }
         break;
     }
@@ -215,7 +219,7 @@ else{*/
     }*/   
   }
   while(run);
-  
+
   //TODO exit from loop and clean
 
   MHD_stop_daemon (daemon);
