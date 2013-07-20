@@ -173,10 +173,7 @@ main (int argc, char *const *argv)
   response = MHD_create_response_from_buffer (strlen (PAGE),
 					      (void *) PAGE,
 					      MHD_RESPMEM_PERSISTENT);
-  (void) MHD_add_response_header (response,
-				  MHD_HTTP_HEADER_CONNECTION,
-				  "close");
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_SUPPRESS_DATE_NO_CLOCK | MHD_USE_SSL
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL
 #if EPOLL_SUPPORT
 			| MHD_USE_EPOLL_LINUX_ONLY  | MHD_USE_EPOLL_TURBO
 #endif
