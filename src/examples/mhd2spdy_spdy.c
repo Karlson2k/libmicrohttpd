@@ -70,9 +70,14 @@ void spdy_diec(const char *func, int error_code)
  * spdylay_send_callback for the details.
  */
 static ssize_t spdy_cb_send(spdylay_session *session,
-                             const uint8_t *data, size_t length, int flags,
+                             const uint8_t *data,
+                             size_t length,
+                             int flags,
                              void *user_data)
 {
+  (void)session;
+  (void)flags;
+  
   //PRINT_INFO("spdy_cb_send called");
   struct SPDY_Connection *connection;
   ssize_t rv;
@@ -129,6 +134,9 @@ static ssize_t spdy_cb_recv(spdylay_session *session,
                              uint8_t *buf, size_t length, int flags,
                              void *user_data)
 {
+  (void)session;
+  (void)flags;
+  
   struct SPDY_Connection *connection;
   ssize_t rv;
   
@@ -199,6 +207,8 @@ static void spdy_cb_on_ctrl_send(spdylay_session *session,
                                   spdylay_frame_type type,
                                   spdylay_frame *frame, void *user_data)
 {
+  (void)user_data;
+  
   //char **nv;
   //const char *name = NULL;
   int32_t stream_id;
@@ -224,6 +234,8 @@ void spdy_cb_on_ctrl_recv(spdylay_session *session,
                                   spdylay_frame_type type,
                                   spdylay_frame *frame, void *user_data)
 {
+  (void)user_data;
+  
   //struct SPDY_Request *req;
   char **nv;
   //const char *name = NULL;
@@ -284,6 +296,9 @@ static void spdy_cb_on_stream_close(spdylay_session *session,
                                      spdylay_status_code status_code,
                                      void *user_data)
 {
+  (void)status_code;
+  (void)user_data;
+  
   struct Proxy * proxy = spdylay_session_get_stream_user_data(session, stream_id);
   
   assert(NULL != proxy);
@@ -312,6 +327,9 @@ static void spdy_cb_on_data_chunk_recv(spdylay_session *session, uint8_t flags,
                                         const uint8_t *data, size_t len,
                                         void *user_data)
 {
+  (void)flags;
+  (void)user_data;
+  
   //struct SPDY_Request *req;
   struct Proxy *proxy;
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
@@ -335,6 +353,9 @@ static void spdy_cb_on_data_chunk_recv(spdylay_session *session, uint8_t flags,
 static void spdy_cb_on_data_recv(spdylay_session *session,
 		uint8_t flags, int32_t stream_id, int32_t length, void *user_data)
 {
+  (void)length;
+  (void)user_data;
+  
 	if(flags & SPDYLAY_DATA_FLAG_FIN)
 	{
     struct Proxy *proxy;
@@ -373,6 +394,8 @@ static int spdy_cb_ssl_select_next_proto(SSL* ssl,
                                 const unsigned char *in, unsigned int inlen,
                                 void *arg)
 {
+  (void)ssl;
+  
     //PRINT_INFO("spdy_cb_ssl_select_next_proto");
   int rv;
   uint16_t *spdy_proto_version;
@@ -505,6 +528,8 @@ bool spdy_ctl_select(fd_set * read_fd_set,
 				fd_set * except_fd_set,
          struct SPDY_Connection *connection)
 {
+  (void)except_fd_set;
+  
   bool ret = false;
   
   if(spdylay_session_want_read(connection->session) ||
@@ -687,7 +712,7 @@ spdy_request(const char **nv, struct Proxy *proxy)
 
 
 void
-spdy_get_pollfdset(struct pollfd fds[], struct SPDY_Connection *connections[], int max_size, nfds_t *real_size)
+spdy_get_pollfdset(struct pollfd fds[], struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size)
 {
   struct SPDY_Connection *connection;
   struct Proxy *proxy;
@@ -756,7 +781,7 @@ int
 spdy_get_selectfdset(fd_set * read_fd_set,
 				fd_set * write_fd_set, 
 				fd_set * except_fd_set,
-        struct SPDY_Connection *connections[], int max_size, nfds_t *real_size)
+        struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size)
 {
   struct SPDY_Connection *connection;
   struct Proxy *proxy;

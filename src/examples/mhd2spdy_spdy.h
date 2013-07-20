@@ -47,14 +47,14 @@ void
 spdy_free_connection(struct SPDY_Connection * connection);
 
 void
-spdy_get_pollfdset(struct pollfd fds[], struct SPDY_Connection *connections[], int max_size, nfds_t *real_size);
+spdy_get_pollfdset(struct pollfd fds[], struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size);
 
 
 int
 spdy_get_selectfdset(fd_set * read_fd_set,
 				fd_set * write_fd_set, 
 				fd_set * except_fd_set,
-        struct SPDY_Connection *connections[], int max_size, nfds_t *real_size);
+        struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size);
         
 void
 spdy_run(struct pollfd fds[], struct SPDY_Connection *connections[], int size);

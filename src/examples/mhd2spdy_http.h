@@ -25,6 +25,7 @@
 
 #include "mhd2spdy_structures.h"
 
+
 int
 http_cb_request (void *cls,
                 struct MHD_Connection *connection,

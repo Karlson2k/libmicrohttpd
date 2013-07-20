@@ -27,6 +27,8 @@
 
 void * http_log_cb(void * cls, const char * uri)
 {
+  (void)cls;
+  
   struct HTTP_URI * http_uri;
   
   PRINT_INFO2("log uri '%s'\n", uri);
@@ -55,6 +57,8 @@ http_iterate_cb(void *cls,
                            enum MHD_ValueKind kind,
                            const char *name, const char *value)
 {
+  (void)kind;
+  
   static char * const forbidden[] = {"Transfer-Encoding",
     "Proxy-Connection",
     "Keep-Alive",
@@ -84,6 +88,8 @@ http_response_callback (void *cls,
 				char *buffer,
 				size_t max)
 {
+  (void)pos;
+  
 	int ret;
 	struct Proxy *proxy = (struct Proxy *)cls;
 	void *newbody;
@@ -207,6 +213,11 @@ http_cb_request (void *cls,
                 size_t *upload_data_size,
                 void **ptr)
 {
+  (void)cls;
+  (void)url;
+  (void)upload_data;
+  (void)upload_data_size;
+  
   //struct MHD_Response *response;
   int ret;
   struct Proxy *proxy;
