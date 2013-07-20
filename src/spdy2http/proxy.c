@@ -275,6 +275,8 @@ parse_uri(regex_t * preg, const char * full_uri, struct URI ** uri)
 
 static void catch_signal(int signal)
 {
+  (void)signal;
+  
   loop = 0;
 }
 
@@ -282,6 +284,8 @@ static void
 new_session_cb (void * cls,
 							struct SPDY_Session * session)
 {
+  (void)cls;
+  
   bool *session_alive;
   
   PRINT_VERBOSE("new session");
@@ -300,6 +304,8 @@ session_closed_cb (void * cls,
 								struct SPDY_Session * session,
 								int by_client)
 {
+  (void)cls;
+  
   bool *session_alive;
   
   PRINT_VERBOSE2("session closed; by client: %i", by_client);
@@ -406,8 +412,8 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	char *name;
 	char *value;
 	char *status;
-	int i;
-	int pos;
+	unsigned int i;
+	unsigned int pos;
 	int ret;
   int num_values;
   const char * const * values;
@@ -516,7 +522,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	{
     abort_it=true;
     if(NULL != (values = SPDY_name_value_lookup(proxy->headers, name, &num_values)))
-      for(i=0; i<num_values; ++i)
+      for(i=0; i<(unsigned int)num_values; ++i)
         if(0 == strcasecmp(value, values[i]))
         {
           abort_it=false;
@@ -753,6 +759,7 @@ run ()
   enum SPDY_IO_SUBSYSTEM io = glob_opt.notls ? SPDY_IO_SUBSYSTEM_RAW : SPDY_IO_SUBSYSTEM_OPENSSL;
   enum SPDY_DAEMON_FLAG flags = SPDY_DAEMON_FLAG_NO;
   struct SPDY_Response *error_response;
+  char *curl_private;
   
 	signal(SIGPIPE, SIG_IGN);
 	
@@ -842,17 +849,17 @@ run ()
       timeoutlong = 5000;
     else
       timeoutlong = timeout_spdy;
-    PRINT_VERBOSE2("SPDY timeout %i; %i", timeout_spdy, ret_spdy);
+    PRINT_VERBOSE2("SPDY timeout %lld; %i", timeout_spdy, ret_spdy);
     
     if(CURLM_OK != (ret_curl = curl_multi_timeout(multi_handle, &timeout_curl)))
     {
       PRINT_VERBOSE2("curl_multi_timeout failed (%i)", ret_curl);
       //curl_timeo = timeoutlong;
     }
-    else if(timeoutlong > timeout_curl)
-      timeoutlong = timeout_curl;
+    else if(timeout_curl >= 0 && timeoutlong > (unsigned long)timeout_curl)
+      timeoutlong = (unsigned long)timeout_curl;
       
-    PRINT_VERBOSE2("curl timeout %i", timeout_curl);
+    PRINT_VERBOSE2("curl timeout %ld", timeout_curl);
       
     timeout.tv_sec = timeoutlong / 1000;
 		timeout.tv_usec = (timeoutlong % 1000) * 1000;
@@ -874,9 +881,9 @@ run ()
     if(maxfd_curl > maxfd)
       maxfd = maxfd_curl;
       
-    PRINT_VERBOSE2("timeout before %i %i", timeout.tv_sec, timeout.tv_usec);
+    PRINT_VERBOSE2("timeout before %lld %lld", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec);
     ret = select(maxfd+1, &rs, &ws, &es, &timeout);
-    PRINT_VERBOSE2("timeout after %i %i; ret is %i", timeout.tv_sec, timeout.tv_usec, ret);
+    PRINT_VERBOSE2("timeout after %lld %lld; ret is %i", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec, ret);
 		
 		/*switch(ret) {
 			case -1:
@@ -910,11 +917,13 @@ run ()
     
     while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
-        if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &proxy)))
+        if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl_private)))
         {
           PRINT_INFO2("err %i",ret);
           abort();
         }
+        assert(NULL != curl_private);
+        proxy = (struct Proxy *)curl_private;
         if(CURLE_OK == msg->data.result)
         {
           proxy->done = true;
@@ -926,23 +935,26 @@ run ()
           if(NULL == proxy->response)
           {
             SPDY_name_value_destroy(proxy->headers);
-            if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
-                  NULL,
-                  SPDY_HTTP_VERSION_1_1,
-                  NULL,
-                  ERROR_RESPONSE,
-                  strlen(ERROR_RESPONSE))))
-              DIE("no response");
-            if(SPDY_YES != SPDY_queue_response(proxy->request,
-                      error_response,
-                      true,
-                      false,
-                      &response_done_callback,
-                      proxy))
+            if(!*(proxy->session_alive))
             {
-              //clean and forget
-              //TODO
-              DIE("no queue");
+              if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
+                    NULL,
+                    SPDY_HTTP_VERSION_1_1,
+                    NULL,
+                    ERROR_RESPONSE,
+                    strlen(ERROR_RESPONSE))))
+                DIE("no response");
+              if(SPDY_YES != SPDY_queue_response(proxy->request,
+                        error_response,
+                        true,
+                        false,
+                        &response_done_callback,
+                        proxy))
+              {
+                //clean and forget
+                //TODO
+                DIE("no queue");
+              }
             }
           }
           else
@@ -968,7 +980,7 @@ run ()
       
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-    PRINT_VERBOSE2("time now %i %i", ts.tv_sec, ts.tv_nsec);
+    PRINT_VERBOSE2("time now %lld %lld", (unsigned long long)ts.tv_sec, (unsigned long long)ts.tv_nsec);
     }
   }
   while(loop);
@@ -1110,11 +1122,6 @@ main (int argc, char *const *argv)
         
       case 'T':
         glob_opt.timeout = atoi(optarg);
-        if(glob_opt.timeout < 0)
-        {
-          display_usage();
-          return 1;
-        }
         break;
         
       case 0:
