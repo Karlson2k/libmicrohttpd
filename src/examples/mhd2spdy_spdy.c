@@ -1,5 +1,4 @@
 /*
- * Spdylay - SPDY Library
  *
  * Copyright (c) 2012 Tatsuhiro Tsujikawa
  *
@@ -24,7 +23,10 @@
  */
 
 /**
- * @file spdy.c
+ * @file mhd2spdy_spdy.c
+ * @brief  SPDY part of the proxy. libspdylay is used for the client side.
+ *         The example spdycli.c from spdylay was used as basis;
+ *         however, multiple changes were made.
  * @author Tatsuhiro Tsujikawa
  * @author Andrey Uzunov
  */

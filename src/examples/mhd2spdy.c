@@ -16,21 +16,16 @@
 */
 
 /**
- * @file structures.h
+ * @file mhd2spdy.c
+ * @brief  The main file of the HTTP-to-SPDY proxy with the 'main' function
+ *         and event loop. No threads are used.
+ *         Currently only GET is supported.
+ *         TODOs:
+ *         - non blocking SSL connect
+ *         - check certificate
  * @author Andrey Uzunov
  */
  
- /*
-  * TODOs
-  * non blocking SSL connect
-  * check certificate
-  * 
-  * 
-  * 
-  * 
-  
-  
-  */
  
 #include "mhd2spdy_structures.h"
 #include "mhd2spdy_spdy.h"

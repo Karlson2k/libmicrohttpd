@@ -16,7 +16,8 @@
 */
 
 /**
- * @file spdy.h
+ * @file mhd2spdy_spdy.h
+ * @brief  SPDY part of the proxy. libspdylay is used for the client side.
  * @author Andrey Uzunov
  */
  

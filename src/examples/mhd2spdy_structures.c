@@ -16,7 +16,8 @@
 */
 
 /**
- * @file structures.h
+ * @file mhd2spdy_structures.h
+ * @brief  Common functions, macros.
  * @author Andrey Uzunov
  */
  

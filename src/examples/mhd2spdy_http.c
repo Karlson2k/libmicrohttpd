@@ -16,7 +16,8 @@
 */
 
 /**
- * @file structures.h
+ * @file mhd2spdy_http.c
+ * @brief  HTTP part of the proxy. libmicrohttpd is used for the server side.
  * @author Andrey Uzunov
  */
  

@@ -16,7 +16,8 @@
 */
 
 /**
- * @file structures.h
+ * @file mhd2spdy_structures.h
+ * @brief  Common structures, functions, macros and global variables.
  * @author Andrey Uzunov
  */
 #ifndef STRUCTURES_H
