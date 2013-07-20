@@ -57,29 +57,23 @@ ahc_echo (void *cls,
   return ret;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
-  struct MHD_Daemon *d4;
-  struct MHD_Daemon *d6;
+  struct MHD_Daemon *d;
 
   if (argc != 2)
     {
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-  d4 = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-			 atoi (argv[1]),
-			 NULL, NULL, &ahc_echo, PAGE,
-			 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-			 MHD_OPTION_END);
-  d6 = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_IPv6,
-                        atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_DUAL_STACK,
+			atoi (argv[1]),
+			NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
 			MHD_OPTION_END);
   (void) getc (stdin);
-  MHD_stop_daemon (d4);
-  MHD_stop_daemon (d6);
+  MHD_stop_daemon (d);
   return 0;
 }
