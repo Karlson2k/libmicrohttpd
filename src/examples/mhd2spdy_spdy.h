@@ -26,43 +26,76 @@
 
 #include "mhd2spdy_structures.h"
 
-struct SPDY_Connection * spdy_connect(const struct URI *uri, uint16_t port, bool is_tls);
 
-void spdy_ctl_poll(struct pollfd *pollfd, struct SPDY_Connection *connection);
+struct SPDY_Connection *
+spdy_connect(const struct URI *uri,
+             uint16_t port,
+             bool is_tls);
 
-bool spdy_ctl_select(fd_set * read_fd_set,
-				fd_set * write_fd_set, 
-				fd_set * except_fd_set,
-         struct SPDY_Connection *connection);
 
-int spdy_exec_io(struct SPDY_Connection *connection);
+void
+spdy_ctl_poll(struct pollfd *pollfd,
+              struct SPDY_Connection *connection);
 
-void spdy_diec(const char *func, int error_code);
+
+bool
+spdy_ctl_select(fd_set * read_fd_set,
+                fd_set * write_fd_set, 
+                fd_set * except_fd_set,
+                struct SPDY_Connection *connection);
+
+
+int
+spdy_exec_io(struct SPDY_Connection *connection);
+
+
+void
+spdy_diec(const char *func,
+          int error_code);
+
 
 int 
-spdy_request(const char **nv, struct Proxy *proxy);
+spdy_request(const char **nv,
+             struct Proxy *proxy);
 
-void spdy_ssl_init_ssl_ctx(SSL_CTX *ssl_ctx, uint16_t *spdy_proto_version);
+
+void
+spdy_ssl_init_ssl_ctx(SSL_CTX *ssl_ctx,
+                      uint16_t *spdy_proto_version);
+
 
 void
 spdy_free_connection(struct SPDY_Connection * connection);
 
+
 void
-spdy_get_pollfdset(struct pollfd fds[], struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size);
+spdy_get_pollfdset(struct pollfd fds[],
+                   struct SPDY_Connection *connections[],
+                   unsigned int max_size,
+                   nfds_t *real_size);
 
 
 int
 spdy_get_selectfdset(fd_set * read_fd_set,
-				fd_set * write_fd_set, 
-				fd_set * except_fd_set,
-        struct SPDY_Connection *connections[], unsigned int max_size, nfds_t *real_size);
-        
+                    fd_set * write_fd_set, 
+                    fd_set * except_fd_set,
+                    struct SPDY_Connection *connections[],
+                    unsigned int max_size,
+                    nfds_t *real_size);
+
+
 void
-spdy_run(struct pollfd fds[], struct SPDY_Connection *connections[], int size);
+spdy_run(struct pollfd fds[],
+        struct SPDY_Connection *connections[],
+        int size);
+
 
 void
 spdy_run_select(fd_set * read_fd_set,
-				fd_set * write_fd_set, 
-				fd_set * except_fd_set, struct SPDY_Connection *connections[], int size);
-        
+                fd_set * write_fd_set, 
+                fd_set * except_fd_set,
+                struct SPDY_Connection *connections[],
+                int size);
+
+
 #endif

@@ -49,23 +49,32 @@
 #include <spdylay/spdylay.h>
 #include <getopt.h>
 
+
+/* WANT_READ if SSL connection needs more input; or WANT_WRITE if it
+   needs more output; or IO_NONE. This is necessary because SSL/TLS
+   re-negotiation is possible at any time. Spdylay API offers
+   similar functions like spdylay_session_want_read() and
+   spdylay_session_want_write() but they do not take into account
+   SSL connection. */
+enum
+{
+  IO_NONE,
+  WANT_READ,
+  WANT_WRITE
+};
+
+
 struct Proxy;
+
 
 struct SPDY_Connection {
   SSL *ssl;
-  //SSL_CTX *ssl_ctx;
   spdylay_session *session;
   struct SPDY_Connection *prev;
   struct SPDY_Connection *next;
   struct Proxy *proxies_head;
   struct Proxy *proxies_tail;
   char *host;
-  /* WANT_READ if SSL connection needs more input; or WANT_WRITE if it
-     needs more output; or IO_NONE. This is necessary because SSL/TLS
-     re-negotiation is possible at any time. Spdylay API offers
-     similar functions like spdylay_session_want_read() and
-     spdylay_session_want_write() but they do not take into account
-     SSL connection. */
   int fd;
   int want_io;
   uint counter;
@@ -79,7 +88,6 @@ struct URI
   char * full_uri;
   char * scheme;
   char * host_and_port;
-  //char * host_and_port_for_connecting;
   char * host;
   char * path;
   char * path_and_more;
@@ -88,26 +96,21 @@ struct URI
   uint16_t port;
 };
 
+
 struct HTTP_URI;
+
 
 struct Proxy
 {
 	struct MHD_Connection *http_connection;
 	struct MHD_Response *http_response;
 	struct URI *uri;
-  struct HTTP_URI *http_uri; //TODO remove me
+  struct HTTP_URI *http_uri;
   struct SPDY_Connection *spdy_connection;
   struct Proxy *next;
   struct Proxy *prev;
-	//char *path;
 	char *url;
-	//struct SPDY_Request *request;
-	//struct SPDY_Response *response;
-	//CURL *curl_handle;
-	//struct curl_slist *curl_headers;
-	//struct SPDY_NameValue *headers;
 	char *version;
-	//char *status_msg;
 	void *http_body;
 	size_t http_body_size;
 	ssize_t length;
@@ -126,12 +129,14 @@ struct HTTP_URI
   struct Proxy * proxy;
 };
 
+
 struct SPDY_Headers
 {
   const char **nv;
   int num;
   int cnt;
 };
+
 
 struct global_options
 {
@@ -150,24 +155,9 @@ struct global_options
   bool verbose;
   bool only_proxy;
   bool spdy_data_received;
-} glob_opt;
+}
+glob_opt;
 
-/*
-
-#define SOCK_ADDR_IN_PTR(sa)	((struct sockaddr_in *)(sa))
-#define SOCK_ADDR_IN_FAMILY(sa)	SOCK_ADDR_IN_PTR(sa)->sin_family
-#define SOCK_ADDR_IN_PORT(sa)	SOCK_ADDR_IN_PTR(sa)->sin_port
-#define SOCK_ADDR_IN_ADDR(sa)	SOCK_ADDR_IN_PTR(sa)->sin_addr
-
-#ifdef HAS_IPV6
-
-#define SOCK_ADDR_IN6_PTR(sa)	((struct sockaddr_in6 *)(sa))
-#define SOCK_ADDR_IN6_FAMILY(sa) SOCK_ADDR_IN6_PTR(sa)->sin6_family
-#define SOCK_ADDR_IN6_PORT(sa)	SOCK_ADDR_IN6_PTR(sa)->sin6_port
-#define SOCK_ADDR_IN6_ADDR(sa)	SOCK_ADDR_IN6_PTR(sa)->sin6_addr
-
-#endif
-*/
 
 //forbidden headers
 #define SPDY_HTTP_HEADER_TRANSFER_ENCODING "transfer-encoding"
@@ -177,6 +167,7 @@ struct global_options
 
 #define MAX_SPDY_CONNECTIONS 100
 
+#define SPDY_MAX_OUTLEN 4096
 
 /**
  * Insert an element at the head of a DLL. Assumes that head, tail and
@@ -251,18 +242,27 @@ struct global_options
 void
 free_uri(struct URI * uri);
 
+
 int
 init_parse_uri(regex_t * preg);
 
+
 void
 deinit_parse_uri(regex_t * preg);
-  
+
+
 int
-parse_uri(regex_t * preg, char * full_uri, struct URI ** uri);
+parse_uri(regex_t * preg,
+          char * full_uri,
+          struct URI ** uri);
+
 
 void
 free_proxy(struct Proxy *proxy);
 
-void *au_malloc(size_t size);
+
+void *
+au_malloc(size_t size);
+
 
 #endif

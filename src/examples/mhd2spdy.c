@@ -31,15 +31,19 @@
 #include "mhd2spdy_spdy.h"
 #include "mhd2spdy_http.h"
 
+
 static int run = 1;
 //static int spdy_close = 0;
 
-static void catch_signal(int signal)
+
+static void
+catch_signal(int signal)
 {
   (void)signal;
   //spdy_close = 1;
   run = 0;
 }
+
 
 int
 run_everything ()
@@ -54,10 +58,7 @@ run_everything ()
   int maxfd_s = -1;
   struct MHD_Daemon *daemon;
   nfds_t spdy_npollfds = 1;
-  //struct pollfd spdy_pollfds[MAX_SPDY_CONNECTIONS];
   struct URI * spdy2http_uri = NULL;
-  //int spdy_nfds;
-  //int spdylay_timeout = 0;
   struct SPDY_Connection *connection;
   struct SPDY_Connection *connections[MAX_SPDY_CONNECTIONS];
   struct SPDY_Connection *connection_for_delete;
@@ -68,17 +69,14 @@ run_everything ()
   if (signal(SIGINT, catch_signal) == SIG_ERR)
     PRINT_INFO("signal failed");
 
-  //spdy2http_url = argv[2];
   glob_opt.streams_opened = 0;
   glob_opt.responses_pending = 0;
   glob_opt.global_memory = 0;
-  //spdy_proto_version = 0;
 
   srand(time(NULL));
   
   if(init_parse_uri(&glob_opt.uri_preg))
     DIE("Regexp compilation failed");
-    
     
   if(NULL != glob_opt.spdy2http_str)
   {
@@ -105,12 +103,10 @@ run_everything ()
   if(NULL==daemon)
     DIE("MHD_start_daemon failed");
 
-
   do
   {
-
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 0;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
   
     if(NULL == glob_opt.spdy_connection && NULL != glob_opt.spdy2http_str)
     {
@@ -119,32 +115,19 @@ run_everything ()
         PRINT_INFO("cannot connect to the proxy");
     }
 
-    //PRINT_INFO("while1");
     FD_ZERO(&rs);
     FD_ZERO(&ws);
     FD_ZERO(&es);
-    
-    /*if(glob_opt.spdy_data_received)
-        {
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-  glob_opt.spdy_data_received = false;
-}
-else{*/
-    /*if(glob_opt.responses_pending || glob_opt.streams_opened)// TODO only streams_opened true?
-      timeout.tv_usec = 0; //return immediately
+
+    ret = MHD_get_timeout(daemon, &timeoutlong);
+    if(MHD_NO == ret || timeoutlong > 5000)
+      timeout.tv_sec = 5;
     else
-    {*/
-      ret = MHD_get_timeout(daemon, &timeoutlong);
-      if(MHD_NO == ret || timeoutlong > 5000)
-        timeout.tv_sec = 5;
-      else
-      {
-        timeout.tv_sec = timeoutlong / 1000;
-        timeout.tv_usec = (timeoutlong % 1000) * 1000;
-      }
-    //}
-//}
+    {
+      timeout.tv_sec = timeoutlong / 1000;
+      timeout.tv_usec = (timeoutlong % 1000) * 1000;
+    }
+    
     if(MHD_NO == MHD_get_fdset (daemon,
                                   &rs,
                                   &ws, 
@@ -160,12 +143,10 @@ else{*/
                                   &ws, 
                                   &es,
                                   connections, MAX_SPDY_CONNECTIONS, &spdy_npollfds);
-    if(maxfd_s > maxfd) maxfd = maxfd_s;
+    if(maxfd_s > maxfd) 
+      maxfd = maxfd_s;
  
     PRINT_INFO2("MHD timeout %lld %lld", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec);
-    //TODO
-    //timeout.tv_sec = 0;
-    //timeout.tv_usec = 0;
 
     glob_opt.spdy_data_received = false;
       
@@ -181,41 +162,19 @@ else{*/
         break;
       default:
       PRINT_INFO("run");
-        //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs
+        //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs at some time in past
         MHD_run(daemon);
         spdy_run_select(&rs, &ws, &es, connections, spdy_npollfds);
         if(glob_opt.spdy_data_received)
         {
           PRINT_INFO("MHD run again");
-          //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs
+          //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs at some time in past
           MHD_run(daemon);
         }
         break;
     }
-    
-    /*
-    //if(glob_opt.streams_opened) spdylay_timeout = 500;
-    //if(glob_opt.responses_pending || glob_opt.streams_opened) spdylay_timeout = 0;
-    //else spdylay_timeout = 0;
-    //else spdylay_timeout = 0;
-    
-    spdy_get_pollfdset(spdy_pollfds, connections, MAX_SPDY_CONNECTIONS, &spdy_npollfds);
-    
-    //TODO
-    //spdylay_timeout = 0;
-    
-    PRINT_INFO2("spdylay timeout %i", spdylay_timeout);
-    ret = poll(spdy_pollfds, spdy_npollfds, spdylay_timeout);
-    if(ret == -1)
-      DIE("poll");
-    if(ret > 0){
-      PRINT_INFO("spdy_run");
-    spdy_run(spdy_pollfds, connections, spdy_npollfds); 
-    }*/   
   }
   while(run);
-
-  //TODO exit from loop and clean
 
   MHD_stop_daemon (daemon);
   
@@ -245,6 +204,7 @@ else{*/
 
   return 0;
 }
+
 
 void
 display_usage()
