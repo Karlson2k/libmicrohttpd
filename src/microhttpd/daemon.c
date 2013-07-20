@@ -400,7 +400,6 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      fprintf (stderr, "RAGAIN!\n");
       errno = EINTR;
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
       return -1;
