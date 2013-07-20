@@ -19,7 +19,7 @@
 */
 
 /**
- * @file mhds_get_test.c
+ * @file test_https_get.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  */
@@ -37,8 +37,11 @@ extern const char srv_self_signed_cert_pem[];
 extern const char srv_signed_cert_pem[];
 extern const char srv_signed_key_pem[];
 
+
 static int
-test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
+test_cipher_option (FILE * test_fd, 
+		    const char *cipher_suite, 
+		    int proto_version)
 {
 
   int ret;
@@ -62,9 +65,12 @@ test_cipher_option (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
+
 /* perform a HTTP GET request via SSL/TLS */
-int
-test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
+static int
+test_secure_get (FILE * test_fd, 
+		 const char *cipher_suite, 
+		 int proto_version)
 {
   int ret;
   struct MHD_Daemon *d;
@@ -88,10 +94,15 @@ test_secure_get (FILE * test_fd, char *cipher_suite, int proto_version)
   return ret;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  const char *aes256_sha_tlsv1   = "AES256-SHA";
+  const char *aes256_sha_sslv3   = "AES256-SHA";
+  const char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
+
 
   if (!gcry_check_version (GCRYPT_VERSION))
     abort ();
@@ -101,13 +112,9 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  char *aes256_sha_tlsv1   = "AES256-SHA";
-  char *aes256_sha_sslv3   = "AES256-SHA";
-  char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
-
   if (curl_uses_nss_ssl() == 0)
     {
-      aes256_sha_tlsv1 = "rsa_aes_256_sha";
+      aes256_sha_tlsv1 = "rsa_aes_256_sha";    
       aes256_sha_sslv3 = "rsa_aes_256_sha";
       des_cbc3_sha_tlsv1 = "rsa_aes_128_sha";
     }
@@ -118,7 +125,6 @@ main (int argc, char *const *argv)
     test_secure_get (NULL, aes256_sha_sslv3, CURL_SSLVERSION_SSLv3);
   errorCount +=
     test_cipher_option (NULL, des_cbc3_sha_tlsv1, CURL_SSLVERSION_TLSv1);
-
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();

@@ -19,7 +19,7 @@
 */
 
 /**
- * @file tls_thread_mode_test.c
+ * @file test_https_get_parallel.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  * @author Christian Grothoff
@@ -37,6 +37,7 @@ extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
 int curl_check_version (const char *req_version, ...);
+
 
 /**
  * used when spawning multiple threads executing curl server requests
@@ -58,6 +59,7 @@ https_transfer_thread_adapter (void *args)
   return &nonnull;
 }
 
+
 /**
  * Test non-parallel requests.
  *
@@ -78,6 +80,7 @@ test_single_client (void *cls, const char *cipher_suite,
     return -1;
   return 0;
 }
+
 
 /**
  * Test parallel request handling.
@@ -124,6 +127,7 @@ int
 main (int argc, char *const *argv)
 {  
   unsigned int errorCount = 0;
+  const char *aes256_sha = "AES256-SHA";
 
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
@@ -135,12 +139,17 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
-    {
-      aes256_sha = "rsa_aes_256_sha";
-    }
-
+    aes256_sha = "rsa_aes_256_sha";    
+#if LINUX
+  errorCount +=
+    test_wrap ("single threaded daemon, single client, epoll", &test_single_client,
+               NULL,
+               MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_EPOLL_LINUX_ONLY,
+               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
+#endif
   errorCount +=
     test_wrap ("single threaded daemon, single client", &test_single_client,
                NULL,
@@ -148,7 +157,15 @@ main (int argc, char *const *argv)
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
-
+#if LINUX
+  errorCount +=
+    test_wrap ("single threaded daemon, parallel clients, epoll",
+               &test_parallel_clients, NULL,
+               MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL | MHD_USE_DEBUG | MHD_USE_EPOLL_LINUX_ONLY,
+               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_cert_pem, MHD_OPTION_END);
+#endif
   errorCount +=
     test_wrap ("single threaded daemon, parallel clients",
                &test_parallel_clients, NULL,
