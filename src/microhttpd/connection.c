@@ -2017,6 +2017,46 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 
 
 /**
+ * Clean up the state of the given connection and move it into the
+ * clean up queue for final disposal.
+ *
+ * @param connection handle for the connection to clean up
+ */
+static void
+cleanup_connection (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+
+  if (NULL != connection->response)
+    {
+      MHD_destroy_response (connection->response);
+      connection->response = NULL;
+    }
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )		
+    MHD_PANIC ("Failed to acquire cleanup mutex\n");		
+  if (connection->connection_timeout == daemon->connection_timeout)
+    XDLL_remove (daemon->normal_timeout_head,
+		 daemon->normal_timeout_tail,
+		 connection);
+  else
+    XDLL_remove (daemon->manual_timeout_head,
+		 daemon->manual_timeout_tail,
+		 connection);
+  DLL_remove (daemon->connections_head,
+	      daemon->connections_tail,
+	      connection);
+  DLL_insert (daemon->cleanup_head,
+	      daemon->cleanup_tail,
+	      connection);
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )		
+    MHD_PANIC ("Failed to release cleanup mutex\n");	    
+  connection->in_idle = MHD_NO;
+}
+
+
+/**
  * This function was created to handle per-connection processing that
  * has to happen even if the socket cannot be read or written to. 
  *
@@ -2378,7 +2418,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           continue;
         case MHD_CONNECTION_CLOSED:
-	  goto cleanup_connection;
+	  cleanup_connection (connection);
+	  return MHD_NO;
         default:
           EXTRA_CHECK (0);
           break;
@@ -2431,8 +2472,28 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* This connection is finished, nothing left to do */
       break;
     }
+#if EPOLL_SUPPORT
+  return MHD_connection_epoll_update_ (connection);
+#else
+  return MHD_YES;
+#endif
+}
+
 
 #if EPOLL_SUPPORT
+/**
+ * Perform epoll processing, possibly moving the connection back into
+ * the epoll set if needed.
+ *
+ * @param connection connection to process
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */ 
+int
+MHD_connection_epoll_update_ (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&  
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
        ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ||
@@ -2457,43 +2518,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 		      STRERROR (errno));
 #endif
 	  connection->state = MHD_CONNECTION_CLOSED;
-	  goto cleanup_connection;
+	  cleanup_connection (connection);
+	  return MHD_NO;
 	}
       connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
     }
-#endif
   connection->in_idle = MHD_NO;
   return MHD_YES;
-
- cleanup_connection:
-  if (NULL != connection->response)
-    {
-      MHD_destroy_response (connection->response);
-      connection->response = NULL;
-    }
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )		
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");		
-  if (connection->connection_timeout == daemon->connection_timeout)
-    XDLL_remove (daemon->normal_timeout_head,
-		 daemon->normal_timeout_tail,
-		 connection);
-  else
-    XDLL_remove (daemon->manual_timeout_head,
-		 daemon->manual_timeout_tail,
-		 connection);
-  DLL_remove (daemon->connections_head,
-	      daemon->connections_tail,
-	      connection);
-  DLL_insert (daemon->cleanup_head,
-	      daemon->cleanup_tail,
-	      connection);
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )		
-    MHD_PANIC ("Failed to release cleanup mutex\n");	    
-  connection->in_idle = MHD_NO;
-  return MHD_NO;
 }
+#endif
 
 
 /**

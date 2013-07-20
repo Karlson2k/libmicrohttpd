@@ -93,4 +93,18 @@ MHD_connection_close (struct MHD_Connection *connection,
 		      enum MHD_RequestTerminationCode termination_code);
 
 
+#if EPOLL_SUPPORT
+/**
+ * Perform epoll processing, possibly moving the connection back into
+ * the epoll set if needed.
+ *
+ * @param connection connection to process
+ * @return MHD_YES if we should continue to process the
+ *         connection (not dead yet), MHD_NO if it died
+ */ 
+int
+MHD_connection_epoll_update_ (struct MHD_Connection *connection);
+#endif
+
+
 #endif

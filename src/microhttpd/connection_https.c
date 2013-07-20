@@ -131,6 +131,7 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 static int
 MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
   unsigned int timeout;
 
 #if DEBUG_STATES
@@ -145,7 +146,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
     {
       /* on newly created connections we might reach here before any reply has been received */
     case MHD_TLS_CONNECTION_INIT:
-      return MHD_YES;
+      break;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
       gnutls_bye (connection->tls_session, GNUTLS_SHUT_RDWR);
@@ -156,7 +157,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 	return MHD_YES;
       return MHD_connection_handle_idle (connection);
     }
-  return MHD_YES;
+  return MHD_connection_epoll_update_ (connection);
 }
 
 

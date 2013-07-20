@@ -178,7 +178,7 @@ main (int argc, char *const *argv)
 				  "close");
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_SUPPRESS_DATE_NO_CLOCK | MHD_USE_SSL
 #if EPOLL_SUPPORT
-			| MHD_USE_EPOLL_LINUX_ONLY | MHD_USE_EPOLL_TURBO
+			| MHD_USE_EPOLL_LINUX_ONLY  | MHD_USE_EPOLL_TURBO
 #endif
 			,
                         atoi (argv[1]),
