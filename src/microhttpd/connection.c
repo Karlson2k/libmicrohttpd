@@ -2435,6 +2435,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_YES;
     }
   MHD_connection_update_event_loop_info (connection);
+#if EPOLL_SUPPORT   
   switch (connection->event_loop_info)
     {
     case MHD_EVENT_LOOP_INFO_READ:
@@ -2472,7 +2473,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* This connection is finished, nothing left to do */
       break;
     }
-#if EPOLL_SUPPORT
   return MHD_connection_epoll_update_ (connection);
 #else
   return MHD_YES;

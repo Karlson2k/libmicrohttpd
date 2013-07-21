@@ -157,7 +157,11 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 	return MHD_YES;
       return MHD_connection_handle_idle (connection);
     }
+#if EPOLL_SUPPORT   
   return MHD_connection_epoll_update_ (connection);
+#else
+  return MHD_YES;
+#endif
 }
 
 

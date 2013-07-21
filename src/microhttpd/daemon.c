@@ -401,7 +401,9 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
        (GNUTLS_E_INTERRUPTED == res) )
     {
       errno = EINTR;
+#if EPOLL_SUPPORT   
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif
       return -1;
     }
   if (res < 0)
@@ -441,7 +443,9 @@ send_tls_adapter (struct MHD_Connection *connection,
     {
       fprintf (stderr, "WAGAIN!\n");
       errno = EINTR;
+#if EPOLL_SUPPORT   
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif
       return -1;
     }
   return res;
@@ -3344,8 +3348,10 @@ thread_failed:
  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to 
      indicate failure */
+#if EPOLL_SUPPORT   
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
+#endif
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
   pthread_mutex_destroy (&daemon->nnc_lock);
@@ -3532,9 +3538,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      MHD_PANIC ("Failed to join a thread\n");	    
 	  close_all_connections (&daemon->worker_pool[i]);	  
 	  pthread_mutex_destroy (&daemon->worker_pool[i].cleanup_connection_mutex);
+#if EPOLL_SUPPORT   
 	  if ( (-1 != daemon->worker_pool[i].epoll_fd) &&
 	       (0 != CLOSE (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
+#endif
 	}
       free (daemon->worker_pool);
     }
