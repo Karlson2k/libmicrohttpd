@@ -284,6 +284,8 @@ serve_simple_form (const void *cls,
   response = MHD_create_response_from_buffer (strlen (form),
 					      (void *) form,
 					      MHD_RESPMEM_PERSISTENT);
+  if (NULL == response)
+    return MHD_NO;
   add_session_cookie (session, response);
   MHD_add_response_header (response,
 			   MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -316,6 +318,8 @@ fill_v1_form (const void *cls,
   struct MHD_Response *response;
 
   reply = malloc (strlen (form) + strlen (session->value_1) + 1);
+  if (NULL == reply)
+    return NULL;
   snprintf (reply,
 	    strlen (form) + strlen (session->value_1) + 1,
 	    form,
@@ -324,6 +328,8 @@ fill_v1_form (const void *cls,
   response = MHD_create_response_from_buffer (strlen (reply),
 					      (void *) reply,
 					      MHD_RESPMEM_MUST_FREE);
+  if (NULL == response)
+    return MHD_NO;
   add_session_cookie (session, response);
   MHD_add_response_header (response,
 			   MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -356,6 +362,8 @@ fill_v1_v2_form (const void *cls,
   struct MHD_Response *response;
 
   reply = malloc (strlen (form) + strlen (session->value_1) + strlen (session->value_2) + 1);
+  if (NULL == reply)
+    return MHD_NO;
   snprintf (reply,
 	    strlen (form) + strlen (session->value_1) + strlen (session->value_2) + 1,
 	    form,
@@ -364,6 +372,8 @@ fill_v1_v2_form (const void *cls,
   response = MHD_create_response_from_buffer (strlen (reply),
 					      (void *) reply,
 					      MHD_RESPMEM_MUST_FREE);
+  if (NULL == response)
+    return MHD_NO;
   add_session_cookie (session, response);
   MHD_add_response_header (response,
 			   MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -397,6 +407,8 @@ not_found_page (const void *cls,
   response = MHD_create_response_from_buffer (strlen (NOT_FOUND_ERROR),
 					      (void *) NOT_FOUND_ERROR,
 					      MHD_RESPMEM_PERSISTENT);
+  if (NULL == response)
+    return MHD_NO;
   ret = MHD_queue_response (connection, 
 			    MHD_HTTP_NOT_FOUND, 
 			    response);
