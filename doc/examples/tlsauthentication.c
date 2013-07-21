@@ -261,7 +261,7 @@ main ()
       return 1;
     }
 
-  getchar ();
+  (void) getchar ();
 
   MHD_stop_daemon (daemon);
   free (key_pem);
