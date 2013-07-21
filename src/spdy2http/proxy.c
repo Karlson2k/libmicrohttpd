@@ -24,6 +24,10 @@
  *      TODO:
  * - test all options!
  * - don't abort on lack of memory
+ * - Memory leak: in rare cases the proxy object is not freed (and there
+ * is a lot of data pointed from it)
+ * - Correct recapitalizetion of header names before giving the headers
+ * to curl.
  * @author Andrey Uzunov
  */
  
@@ -80,16 +84,16 @@ struct URI
 
 
 #define PRINT_INFO(msg) do{\
-	printf("%i:%s\n", __LINE__, msg);\
+	fprintf(stdout, "%i:%s\n", __LINE__, msg);\
 	fflush(stdout);\
 	}\
 	while(0)
 
 
 #define PRINT_INFO2(fmt, ...) do{\
-	printf("%i\n", __LINE__);\
-	printf(fmt,##__VA_ARGS__);\
-	printf("\n");\
+	fprintf(stdout, "%i\n", __LINE__);\
+	fprintf(stdout, fmt,##__VA_ARGS__);\
+	fprintf(stdout, "\n");\
 	fflush(stdout);\
 	}\
 	while(0)
@@ -97,7 +101,7 @@ struct URI
 
 #define PRINT_VERBOSE(msg) do{\
   if(glob_opt.verbose){\
-	printf("%i:%s\n", __LINE__, msg);\
+	fprintf(stdout, "%i:%s\n", __LINE__, msg);\
 	fflush(stdout);\
 	}\
   }\
@@ -106,9 +110,9 @@ struct URI
 
 #define PRINT_VERBOSE2(fmt, ...) do{\
   if(glob_opt.verbose){\
-	printf("%i\n", __LINE__);\
-	printf(fmt,##__VA_ARGS__);\
-	printf("\n");\
+	fprintf(stdout, "%i\n", __LINE__);\
+	fprintf(stdout, fmt,##__VA_ARGS__);\
+	fprintf(stdout, "\n");\
 	fflush(stdout);\
 	}\
 	}\
@@ -159,12 +163,12 @@ struct Proxy
 	char *version;
 	char *status_msg;
 	void *http_body;
+  bool *session_alive;
 	size_t http_body_size;
 	//ssize_t length;
 	int status;
   bool done;
   bool error;
-  bool *session_alive;
 };
 
 
@@ -526,7 +530,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
         if(0 == strcasecmp(value, values[i]))
         {
           abort_it=false;
-          PRINT_INFO2("header appears more than once with same value '%s: %s'", name, value);
+          PRINT_VERBOSE2("header appears more than once with same value '%s: %s'", name, value);
           break;
         }
     
@@ -596,17 +600,19 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
     DIE("No memory");
 	line[0] = 0;
     
-    strcat(line, name);
-    strcat(line, ": ");
-    //all spdy header names are lower case;
-    //for simplicity here we just capitalize the first letter
-    line[0] = toupper(line[0]);
+  strcat(line, name);
+  strcat(line, ": ");
+  //all spdy header names are lower case;
+  //for simplicity here we just capitalize the first letter
+  line[0] = toupper(line[0]);
     
 	for(i=0; i<num_values; ++i)
 	{
 		if(i) strcat(line, ", ");
+  PRINT_VERBOSE2("Adding request header: '%s' len %ld", value[i], strlen(value[i]));
 		strcat(line, value[i]);
 	}
+  PRINT_VERBOSE2("Adding request header: '%s'", line);
   if(NULL == (*curl_headers = curl_slist_append(*curl_headers, line)))
 		DIE("curl_slist_append failed");
 	free(line);
@@ -638,8 +644,9 @@ standard_request_handler(void *cls,
 	
 	PRINT_VERBOSE2("received request for '%s %s %s'\n", method, path, version);
   
+  //TODO not freed once in a while
 	if(NULL == (proxy = malloc(sizeof(struct Proxy))))
-        DIE("No memory");
+    DIE("No memory");
 	memset(proxy, 0, sizeof(struct Proxy));
   
   session = SPDY_get_session_for_request(request);
@@ -842,7 +849,7 @@ run ()
 		FD_ZERO(&ws);
 		FD_ZERO(&es);
     
-    PRINT_INFO2("num  curls %i", debug_num_curls);
+    PRINT_VERBOSE2("num  curls %i", debug_num_curls);
     
     ret_spdy = SPDY_get_timeout(daemon, &timeout_spdy);
     if(SPDY_NO == ret_spdy || timeout_spdy > 5000)
@@ -956,11 +963,11 @@ run ()
                 DIE("no queue");
               }
             }
+            else
+              proxy->error = true;
           }
           else
-          {
             proxy->error = true;
-          }
           call_spdy_run = true;
           //TODO spdy should be notified to send RST_STREAM
         }
