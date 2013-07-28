@@ -3119,9 +3119,11 @@ MHD_start_daemon_va (unsigned int flags,
 	  int sk_flags = fcntl (socket_fd, F_GETFL);
 	  if (0 != fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK))
 	    {
+#if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
 			"Failed to make listen socket non-blocking: %s\n", 
 			STRERROR (errno));
+#endif
 	      if (0 != CLOSE (socket_fd))
 		MHD_PANIC ("close failed\n");	      
 	      goto free_and_fail;	      

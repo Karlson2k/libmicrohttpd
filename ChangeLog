@@ -1,3 +1,7 @@
+Sun Jul 28 16:35:17 CEST 2013
+	Fixing build issue (missing #ifdef) in conjunction with
+	--disable-messages. -blueness
+
 Sat Jul 20 12:35:40 CEST 2013
 	Fixing combination of MHD_USE_SSL and MHD_USE_EPOLL_LINUX_ONLY. -CG
 
