@@ -232,6 +232,28 @@ AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)
 AC_CHECK_FUNCS_ONCE(memmem)
 AC_CHECK_FUNCS_ONCE(accept4)
 
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM(
+                   [
+                    #if defined HAVE_SYS_TYPES_H
+                    #  include <sys/types.h>      
+                    #endif
+                    #if defined HAVE_SYS_SOCKET_H
+                    #  include <sys/socket.h>
+                    #elif defined HAVE_WINSOCK2_H
+                    #  include <winsock2.h>
+                    #endif],
+                   [
+                    #ifndef SOCK_NONBLOCK
+                    # error do not have SOCK_NONBLOCK
+                    #endif
+                   ])
+  ],
+  [
+    AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])
+  ])
+
+
 AC_SEARCH_LIBS([clock_gettime], [rt], [
 				AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
 ])

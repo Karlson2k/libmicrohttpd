@@ -1329,7 +1329,11 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   memset (addr, 0, sizeof (addrstorage));
   if (-1 == (fd = daemon->socket_fd))
     return MHD_NO;
+#ifdef HAVE_SOCK_NONBLOCK
   nonblock = SOCK_NONBLOCK;
+#else
+  nonblock = 0;
+#endif
 #ifdef CYGWIN
   if (0 == (daemon->options & MHD_USE_SSL))
     nonblock = 0;
