@@ -141,24 +141,19 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 
 /**
- * This function can be used to append an entry to
- * the list of HTTP headers of a connection (so that the
- * MHD_get_connection_values function will return
- * them -- and the MHD PostProcessor will also
- * see them).  This maybe required in certain
- * situations (see Mantis #1399) where (broken)
- * HTTP implementations fail to supply values needed
- * by the post processor (or other parts of the
- * application).
- * <p>
- * This function MUST only be called from within
- * the MHD_AccessHandlerCallback (otherwise, access
- * maybe improperly synchronized).  Furthermore,
- * the client must guarantee that the key and
- * value arguments are 0-terminated strings that
- * are NOT freed until the connection is closed.
- * (The easiest way to do this is by passing only
- * arguments to permanently allocated strings.).
+ * This function can be used to append an entry to the list of HTTP
+ * headers of a connection (so that the MHD_get_connection_values
+ * function will return them -- and the MHD PostProcessor will also
+ * see them).  This maybe required in certain situations (see Mantis
+ * #1399) where (broken) HTTP implementations fail to supply values
+ * needed by the post processor (or other parts of the application).
+ *
+ * This function MUST only be called from within the
+ * MHD_AccessHandlerCallback (otherwise, access maybe improperly
+ * synchronized).  Furthermore, the client must guarantee that the key
+ * and value arguments are 0-terminated strings that are NOT freed
+ * until the connection is closed.  (The easiest way to do this is by
+ * passing only arguments to permanently allocated strings.).
  *
  * @param connection the connection for which a
  *  value should be set
@@ -186,15 +181,15 @@ MHD_set_connection_value (struct MHD_Connection *connection,
   pos->next = NULL;
   /* append 'pos' to the linked list of headers */
   if (NULL == connection->headers_received_tail)
-  {
-    connection->headers_received = pos;
-    connection->headers_received_tail = pos;
-  }
+    {
+      connection->headers_received = pos;
+      connection->headers_received_tail = pos;
+    }
   else
-  {
-    connection->headers_received_tail->next = pos;
-    connection->headers_received_tail = pos;
-  }
+    {
+      connection->headers_received_tail->next = pos;
+      connection->headers_received_tail = pos;
+    }
   return MHD_YES;
 }
 
@@ -550,9 +545,27 @@ add_extra_headers (struct MHD_Connection *connection)
 	add_close = MHD_YES; /* client asked for it, so add it */
 
       /* if not present, add content length */
-      if (NULL == MHD_get_response_header (connection->response,
-					   MHD_HTTP_HEADER_CONTENT_LENGTH))
+      if ( (NULL == MHD_get_response_header (connection->response,
+					     MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
+	   ( (0 != strcasecmp (connection->method,
+			       MHD_HTTP_METHOD_CONNECT)) ||
+	     (0 != connection->response->total_size) ) )
 	{
+	  /* 
+	     Here we add a content-length if one is missing; however,
+	     for 'connect' methods, the responses MUST NOT include a 
+	     content-length header *if* the response code is 2xx (in
+	     which case we expect there to be no body).  Still,
+	     as we don't know the response code here in some cases, we 
+	     simply only force adding a content-length header if this
+	     is not a 'connect' or if the response is not empty
+	     (which is kind of more sane, because if some crazy
+	     application did return content with a 2xx status code,
+	     then having a content-length might again be a good idea). 
+
+	     Note that the change from 'SHOULD NOT' to 'MUST NOT' is
+	     a recent development of the HTTP 1.1 specification.
+	  */
 	  SPRINTF (buf,
 		   MHD_UNSIGNED_LONG_LONG_PRINTF,
 		   (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
@@ -783,12 +796,12 @@ transmit_error_response (struct MHD_Connection *connection,
             "Error %u (`%s') processing request, closing connection.\n",
             status_code, message);
 #endif
-  EXTRA_CHECK (connection->response == NULL);
+  EXTRA_CHECK (NULL == connection->response);
   response = MHD_create_response_from_buffer (strlen (message),
 					      (void *) message, 
 					      MHD_RESPMEM_PERSISTENT);
   MHD_queue_response (connection, status_code, response);
-  EXTRA_CHECK (connection->response != NULL);
+  EXTRA_CHECK (NULL != connection->response);
   MHD_destroy_response (response);
   if (MHD_NO == build_header_response (connection))
     {
@@ -1130,10 +1143,10 @@ parse_cookie_header (struct MHD_Connection *connection)
   hdr = MHD_lookup_connection_value (connection,
 				     MHD_HEADER_KIND,
 				     MHD_HTTP_HEADER_COOKIE);
-  if (hdr == NULL)
+  if (NULL == hdr)
     return MHD_YES;
   cpy = MHD_pool_allocate (connection->pool, strlen (hdr) + 1, MHD_YES);
-  if (cpy == NULL)
+  if (NULL == cpy)
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon, "Not enough memory to parse cookies!\n");
@@ -1144,9 +1157,9 @@ parse_cookie_header (struct MHD_Connection *connection)
     }
   memcpy (cpy, hdr, strlen (hdr) + 1);
   pos = cpy;
-  while (pos != NULL)
+  while (NULL != pos)
     {
-      while (*pos == ' ')
+      while (' ' == *pos)
         pos++;                  /* skip spaces */
 
       sce = pos;
@@ -1183,7 +1196,7 @@ parse_cookie_header (struct MHD_Connection *connection)
         }
       if (semicolon[0] == '\0')
         semicolon = NULL;
-      if (semicolon != NULL)
+      if (NULL != semicolon)
         {
           semicolon[0] = '\0';
           semicolon++;
@@ -1214,7 +1227,7 @@ static int
 parse_initial_message_line (struct MHD_Connection *connection, char *line)
 {
   char *uri;
-  char *httpVersion;
+  char *http_version;
   char *args;
 
   if (NULL == (uri = strchr (line, ' ')))
@@ -1224,11 +1237,11 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   uri++;
   while (uri[0] == ' ')
     uri++;
-  httpVersion = strchr (uri, ' ');
-  if (httpVersion != NULL)
+  http_version = strchr (uri, ' ');
+  if (NULL != http_version)
     {
-      httpVersion[0] = '\0';
-      httpVersion++;
+      http_version[0] = '\0';
+      http_version++;
     }
   if (connection->daemon->uri_log_callback != NULL)
     connection->client_context
@@ -1246,10 +1259,10 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
 					 connection,
 					 uri);
   connection->url = uri;
-  if (NULL == httpVersion)
+  if (NULL == http_version)
     connection->version = "";
   else
-    connection->version = httpVersion;
+    connection->version = http_version;
   return MHD_YES;
 }
 
@@ -1794,7 +1807,6 @@ update_last_activity (struct MHD_Connection *connection)
 	(0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");    
 }
-
 
 
 /**

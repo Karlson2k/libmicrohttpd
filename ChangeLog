@@ -1,3 +1,10 @@
+Fri Aug  2 20:55:47 CEST 2013
+	Fix HTTP 1.1 compliance with respect to not returning
+	content-length headers for successful "CONNECT" requests.
+	Note that for unsuccessful "CONNECT" requests with an
+	empty response body, users must now explicitly set the
+	content-length header. -CG
+
 Sun Jul 28 16:35:17 CEST 2013
 	Fixing build issue (missing #ifdef) in conjunction with
 	--disable-messages. -blueness

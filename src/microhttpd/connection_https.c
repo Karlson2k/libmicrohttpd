@@ -131,7 +131,6 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 static int
 MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
   unsigned int timeout;
 
 #if DEBUG_STATES

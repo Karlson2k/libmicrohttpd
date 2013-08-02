@@ -106,7 +106,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00092104
+#define MHD_VERSION 0x00092105
 
 /**
  * MHD-internal return code for "YES".
