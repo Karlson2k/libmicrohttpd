@@ -21,6 +21,7 @@ $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
+TEST_QUIESCE=test_quiesce
 if HAVE_CURL_BINARY
 CURL_FORK_TEST = test_get_response_cleanup
 endif
@@ -28,7 +29,7 @@ endif
 
 check_PROGRAMS = \
   test_start_stop \
-  test_quiesce \
+  $(TEST_QUIESCE) \
   test_get \
   test_get_sendfile \
   test_urlparse \
