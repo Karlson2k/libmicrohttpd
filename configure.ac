@@ -170,12 +170,6 @@ netbsd*)
      AM_CONDITIONAL(HAVE_W32, true)    
      LDFLAGS="$LDFLAGS -Wl,-no-undefined -Wl,--export-all-symbols -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     # check if PlibC is available
-     CHECK_PLIBC
-     LIBS="$PLIBC_LIBS $LIBS"
-     AC_SUBST(PLIBC_LIBS)
-     AC_SUBST(PLIBC_LDFLAGS)
-     AC_SUBST(PLIBC_CPPFLAGS)
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
@@ -224,10 +218,6 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h winsock2.h ws2tcpip.h])
 
 AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
-
-# Check for plibc.h from system, if not found, use our own
-AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
-AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    
 
 AC_CHECK_FUNCS_ONCE(memmem)
 AC_CHECK_FUNCS_ONCE(accept4)
@@ -560,7 +550,6 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
-src/include/plibc/Makefile
 src/microhttpd/Makefile
 src/microspdy/Makefile
 src/spdy2http/Makefile
