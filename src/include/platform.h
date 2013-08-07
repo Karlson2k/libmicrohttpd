@@ -109,7 +109,32 @@
 #include <arpa/inet.h>
 #endif
 
-#include <plibc.h>
+#ifndef WINDOWS
+
+#define DIR_SEPARATOR '/'
+#define DIR_SEPARATOR_STR "/"
+#define PATH_SEPARATOR ':'
+#define PATH_SEPARATOR_STR ":"
+#define NEWLINE "\n"
+
+#else /* ifndef WINDOWS */
+
+#include <ws2tcpip.h>
+#include <windows.h>
+
+#define DIR_SEPARATOR '\\'
+#define DIR_SEPARATOR_STR "\\"
+#define PATH_SEPARATOR ';'
+#define PATH_SEPARATOR_STR ";"
+#define NEWLINE "\r\n"
+
+#define SHUT_WR SD_SEND
+#define SHUT_RD SD_RECEIVE
+#define SHUT_RDWR SD_BOTH
+
+#define SetErrnoFromWinError(e) _SetErrnoFromWinError(e, __FILE__, __LINE__)
+
+#endif /* ifndef WINDOWS */
 
 
 #endif

@@ -262,7 +262,7 @@ MHD_connection_close (struct MHD_Connection *connection,
 
   daemon = connection->daemon;
   if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-    SHUTDOWN (connection->socket_fd, 
+    shutdown (connection->socket_fd, 
 	      (MHD_YES == connection->read_closed) ? SHUT_WR : SHUT_RDWR);
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
@@ -566,7 +566,7 @@ add_extra_headers (struct MHD_Connection *connection)
 	     Note that the change from 'SHOULD NOT' to 'MUST NOT' is
 	     a recent development of the HTTP 1.1 specification.
 	  */
-	  SPRINTF (buf,
+	  sprintf (buf,
 		   MHD_UNSIGNED_LONG_LONG_PRINTF,
 		   (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
 	  MHD_add_response_header (connection->response,
@@ -598,15 +598,19 @@ get_date_string (char *date)
   time_t t;
 
   time (&t);
+#ifndef WINDOWS
   gmtime_r (&t, &now);
-  SPRINTF (date,
+#else
+  gmtime_s (&now, &t);
+#endif
+  sprintf (date,
            "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
            days[now.tm_wday % 7],
            (unsigned int) now.tm_mday,
            mons[now.tm_mon % 12],
            (unsigned int) (1900 + now.tm_year),
-	   (unsigned int) now.tm_hour, 
-	   (unsigned int) now.tm_min, 
+	   (unsigned int) now.tm_hour,
+	   (unsigned int) now.tm_min,
 	   (unsigned int) now.tm_sec);
 }
 
@@ -681,21 +685,21 @@ build_header_response (struct MHD_Connection *connection)
       add_extra_headers (connection);
       rc = connection->responseCode & (~MHD_ICY_FLAG);
       reason_phrase = MHD_get_reason_phrase_for (rc);
-      SPRINTF (code,
+      sprintf (code,
                "%s %u %s\r\n",
 	       (0 != (connection->responseCode & MHD_ICY_FLAG))
-	       ? "ICY" 
+	       ? "ICY"
 	       : ( (0 == strcasecmp (MHD_HTTP_VERSION_1_0,
-				     connection->version)) 
-		   ? MHD_HTTP_VERSION_1_0 
+				     connection->version))
+		   ? MHD_HTTP_VERSION_1_0
 		   : MHD_HTTP_VERSION_1_1),
-	       rc, 
+	       rc,
 	       reason_phrase);
       off = strlen (code);
       /* estimate size */
       size = off + 2;           /* extra \r\n at the end */
       kind = MHD_HEADER_KIND;
-      if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) && 
+      if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) &&
 	   (NULL == MHD_get_response_header (connection->response,
 					     MHD_HTTP_HEADER_DATE)) )
         get_date_string (date);
@@ -745,9 +749,9 @@ build_header_response (struct MHD_Connection *connection)
     }
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
     if (pos->kind == kind)
-      off += SPRINTF (&data[off], 
+      off += sprintf (&data[off],
 		      "%s: %s\r\n",
-		      pos->header, 
+		      pos->header,
 		      pos->value);
   if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
     {
@@ -1507,9 +1511,9 @@ do_read (struct MHD_Connection *connection)
 		  "Failed to receive data: %s\n",
 		  gnutls_strerror (bytes_read));
       else
-#endif      
+#endif
 	MHD_DLOG (connection->daemon,
-		  "Failed to receive data: %s\n", STRERROR (errno));
+		  "Failed to receive data: %s\n", strerror (errno));
 #endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
@@ -1520,7 +1524,7 @@ do_read (struct MHD_Connection *connection)
       connection->read_closed = MHD_YES;
       /* shutdown is not required here, as the other side already
 	 knows; so flagging this internally should suffice */
-      /* SHUTDOWN (connection->socket_fd, SHUT_RD); */
+      /* shutdown (connection->socket_fd, SHUT_RD); */
       return MHD_YES;
     }
   connection->read_buffer_offset += bytes_read;
@@ -1556,9 +1560,9 @@ do_write (struct MHD_Connection *connection)
 		  "Failed to send data: %s\n",
 		  gnutls_strerror (ret));
       else
-#endif      
+#endif
 	MHD_DLOG (connection->daemon,
-		  "Failed to send data: %s\n", STRERROR (errno));
+		  "Failed to send data: %s\n", strerror (errno));
 #endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
@@ -1914,7 +1918,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 break;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
-                        "Failed to send data: %s\n", STRERROR (errno));
+                        "Failed to send data: %s\n", strerror (errno));
 #endif
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return MHD_YES;
@@ -1976,7 +1980,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 return MHD_YES;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
-                        "Failed to send data: %s\n", STRERROR (errno));
+                        "Failed to send data: %s\n", strerror (errno));
 #endif
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return MHD_YES;
@@ -2527,7 +2531,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 	  if (0 != (daemon->options & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon, 
 		      "Call to epoll_ctl failed: %s\n", 
-		      STRERROR (errno));
+		      strerror (errno));
 #endif
 	  connection->state = MHD_CONNECTION_CLOSED;
 	  cleanup_connection (connection);
@@ -2686,7 +2690,7 @@ MHD_queue_response (struct MHD_Connection *connection,
          refuse to read body / footers or further
          requests! */
       if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-	(void) SHUTDOWN (connection->socket_fd, SHUT_RD);
+	(void) shutdown (connection->socket_fd, SHUT_RD);
       connection->read_closed = MHD_YES;
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     }
