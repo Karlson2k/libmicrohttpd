@@ -29,7 +29,7 @@ noinst_PROGRAMS += simplepost largepost sessions
 endif
 
 if HAVE_W32
-IBERTY=-liberty
+AM_CFLAGS = -DWINDOWS
 endif
 
 basicauthentication_SOURCES = \
@@ -45,8 +45,7 @@ hellobrowser_LDADD = \
 logging_SOURCES = \
  logging.c 
 logging_LDADD = \
- $(top_builddir)/src/microhttpd/libmicrohttpd.la \
- $(IBERTY)
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 responseheaders_SOURCES = \
  responseheaders.c 
