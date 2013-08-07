@@ -19,21 +19,13 @@
  */
 
 /**
- * @file test_options.c
+ * @file mhds_get_test.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  */
+
 #include "platform.h"
 #include "microhttpd.h"
-
-/* inet_pton requires Vista, add defines to declare that we
-   are compiling for Vista */
-#if (defined(__MINGW64__) || defined(__MINGW32__))
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
-#endif
-
 
 #define MHD_E_MEM "Error: memory error\n"
 #define MHD_E_SERVER_INIT "Error: failed to start server\n"

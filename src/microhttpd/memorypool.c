@@ -95,7 +95,7 @@ MHD_pool_create (size_t max)
   if (max <= 32 * 1024)
     pool->memory = MAP_FAILED;
   else
-    pool->memory = mmap (NULL, max, PROT_READ | PROT_WRITE,
+    pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
 			 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
   pool->memory = MAP_FAILED;
@@ -134,11 +134,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
   if (pool->is_mmap == MHD_NO)
     free (pool->memory);
   else
-#ifndef WINDOWS
-    munmap (pool->memory, pool->size);
-#else
-    VirtualFree (pool->memory, 0, MEM_RELEASE);
-#endif
+    MUNMAP (pool->memory, pool->size);
   free (pool);
 }
 
@@ -155,7 +151,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
  *         bytes
  */
 void *
-MHD_pool_allocate (struct MemoryPool *pool,
+MHD_pool_allocate (struct MemoryPool *pool, 
 		   size_t size, int from_end)
 {
   void *ret;
@@ -196,8 +192,8 @@ MHD_pool_allocate (struct MemoryPool *pool,
  */
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,
-                     void *old,
-		     size_t old_size,
+                     void *old, 
+		     size_t old_size, 
 		     size_t new_size)
 {
   void *ret;
@@ -246,8 +242,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * @return addr new address of "keep" (if it had to change)
  */
 void *
-MHD_pool_reset (struct MemoryPool *pool,
-		void *keep,
+MHD_pool_reset (struct MemoryPool *pool, 
+		void *keep, 
 		size_t size)
 {
   size = ROUND_TO_ALIGN (size);
