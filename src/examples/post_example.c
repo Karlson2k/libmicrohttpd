@@ -180,10 +180,10 @@ get_session (struct MHD_Connection *connection)
   snprintf (ret->sid,
 	    sizeof (ret->sid),
 	    "%X%X%X%X",
-	    (unsigned int) random (),
-	    (unsigned int) random (),
-	    (unsigned int) random (),
-	    (unsigned int) random ());
+	    (unsigned int) rand (),
+	    (unsigned int) rand (),
+	    (unsigned int) rand (),
+	    (unsigned int) rand ());
   ret->rc++;  
   ret->start = time (NULL);
   ret->next = sessions;
@@ -319,7 +319,7 @@ fill_v1_form (const void *cls,
 
   reply = malloc (strlen (form) + strlen (session->value_1) + 1);
   if (NULL == reply)
-    return NULL;
+    return MHD_NO;
   snprintf (reply,
 	    strlen (form) + strlen (session->value_1) + 1,
 	    form,
@@ -715,7 +715,7 @@ main (int argc, char *const *argv)
       return 1;
     }
   /* initialize PRNG */
-  srandom ((unsigned int) time (NULL));
+  srand ((unsigned int) time (NULL));
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, 
