@@ -547,7 +547,8 @@ add_extra_headers (struct MHD_Connection *connection)
       /* if not present, add content length */
       if ( (NULL == MHD_get_response_header (connection->response,
 					     MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
-	   ( (0 != strcasecmp (connection->method,
+	   ( (NULL == connection->method) ||
+	     (0 != strcasecmp (connection->method,
 			       MHD_HTTP_METHOD_CONNECT)) ||
 	     (0 != connection->response->total_size) ) )
 	{
