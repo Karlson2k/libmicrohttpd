@@ -2681,7 +2681,11 @@ MHD_queue_response (struct MHD_Connection *connection,
          have already sent the full message body */
       connection->response_write_position = response->total_size;
     }
-  if (MHD_CONNECTION_HEADERS_PROCESSED == connection->state)
+  if ( (MHD_CONNECTION_HEADERS_PROCESSED == connection->state) &&
+       ( (0 == strcasecmp (connection->method,
+			   MHD_HTTP_METHOD_POST)) ||
+	 (0 == strcasecmp (connection->method,
+			   MHD_HTTP_METHOD_PUT))) )
     {
       /* response was queued "early",
          refuse to read body / footers or further
