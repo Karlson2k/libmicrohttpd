@@ -439,8 +439,11 @@ enum MHD_FLAG
   MHD_USE_DUAL_STACK = MHD_USE_IPv6 | 2048,
 
   /**
-   * Enable EPOLL turbo.  Only useful with MHD_USE_EPOLL_LINUX_ONLY.
-   * Highly experimental, do not use in production yet.
+   * Enable EPOLL turbo.  Disables certain calls to 'shutdown'
+   * and enables aggressive non-blocking optimisitc reads.
+   * Most effects only happen with MHD_USE_EPOLL_LINUX_ONLY.
+   * Enalbed always on W32 as winsock doesn't properly behave
+   * with shutdown and this then fixes potential problems.
    */
   MHD_USE_EPOLL_TURBO = 4096
 

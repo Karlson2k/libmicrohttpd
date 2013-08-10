@@ -2841,6 +2841,11 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   daemon->socket_fd = -1;
   daemon->options = (enum MHD_OPTION) flags;
+#if WINDOWS
+  /* Winsock is broken with respect to 'shutdown';
+     this disables us calling 'shutdown' on W32. */
+  daemon->options |= MHD_USE_EPOLL_TURBO;
+#endif
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;
