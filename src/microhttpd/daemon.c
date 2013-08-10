@@ -981,16 +981,19 @@ create_thread (pthread_t *thread,
  *        to receive an HTTP request from this socket next).
  * @param addr IP address of the client
  * @param addrlen number of bytes in addr
+ * @param external_add perform additional operations needed due
+ *        to the application calling us directly
  * @return MHD_YES on success, MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in any case; 'errno' is
  *        set to indicate further details about the error.
  */
-int 
-MHD_add_connection (struct MHD_Daemon *daemon, 
-		    int client_socket,
-		    const struct sockaddr *addr,
-		    socklen_t addrlen)
+static int 
+internal_add_connection (struct MHD_Daemon *daemon, 
+			 int client_socket,
+			 const struct sockaddr *addr,
+			 socklen_t addrlen,
+			 int external_add)
 {
   struct MHD_Connection *connection;
   int res_thread_create;
@@ -1007,9 +1010,10 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 	 balancing */
       for (i=0;i<daemon->worker_pool_size;i++)
 	if (0 < daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].max_connections)
-	  return MHD_add_connection (&daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size],
-				     client_socket,
-				     addr, addrlen);
+	  return internal_add_connection (&daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size],
+					  client_socket,
+					  addr, addrlen,
+					  external_add);
       /* all pools are at their connection limit, must refuse */
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
@@ -1263,6 +1267,13 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 	  goto cleanup;
         }
     }
+  else
+    if ( (MHD_YES == external_add) &&
+	 (-1 != daemon->wpipe[1]) &&
+	 (1 != WRITE (daemon->wpipe[1], "n", 1)) )
+      MHD_DLOG (daemon,
+		"failed to signal new connection via pipe");
+
 #if EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
@@ -1329,6 +1340,113 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 
 
 /**
+ * Change socket options to be non-blocking, non-inheritable.
+ *
+ * @param daemon daemon context
+ * @param sock socket to manipulate
+ */ 
+static void
+make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
+				 int sock)
+{
+  int nonblock;
+
+#ifdef HAVE_SOCK_NONBLOCK
+  nonblock = SOCK_NONBLOCK;
+#else
+  nonblock = 0;
+#endif
+#ifdef CYGWIN
+  if (0 == (daemon->options & MHD_USE_SSL))
+    nonblock = 0;
+#endif
+
+#ifdef WINDOWS
+  DWORD dwFlags;
+  unsigned long flags = 1;
+  
+  if (0 != ioctlsocket (sock, FIONBIO, &flags))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon, 
+		"Failed to make socket non-blocking: %s\n", 
+		STRERROR (errno));
+#endif
+    }
+  if (!GetHandleInformation ((HANDLE) sock, &dwFlags) ||
+      ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
+       !SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0)))
+    {
+#if HAVE_MESSAGES
+      SetErrnoFromWinError (GetLastError ());
+      MHD_DLOG (daemon,
+		"Failed to make socket non-inheritable: %s\n", 
+		STRERROR (errno));
+#endif
+    }    
+#else
+  int flags;
+  
+  nonblock = O_NONBLOCK;
+#ifdef CYGWIN
+  if (0 == (daemon->options & MHD_USE_SSL))
+    nonblock = 0;
+#endif
+  flags = fcntl (sock, F_GETFD);
+  if ( ( (-1 == flags) ||
+	 ( (flags != (flags | FD_CLOEXEC)) &&
+	   (0 != fcntl (sock, F_SETFD, flags | nonblock | FD_CLOEXEC)) ) ) )
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		"Failed to make socket non-inheritable: %s\n", 
+		STRERROR (errno));
+#endif
+    }
+#endif
+}
+
+
+/**
+ * Add another client connection to the set of connections 
+ * managed by MHD.  This API is usually not needed (since
+ * MHD will accept inbound connections on the server socket).
+ * Use this API in special cases, for example if your HTTP
+ * server is behind NAT and needs to connect out to the 
+ * HTTP client.
+ *
+ * The given client socket will be managed (and closed!) by MHD after
+ * this call and must no longer be used directly by the application
+ * afterwards.
+ *
+ * Per-IP connection limits are ignored when using this API.
+ *
+ * @param daemon daemon that manages the connection
+ * @param client_socket socket to manage (MHD will expect
+ *        to receive an HTTP request from this socket next).
+ * @param addr IP address of the client
+ * @param addrlen number of bytes in addr
+ * @return MHD_YES on success, MHD_NO if this daemon could
+ *        not handle the connection (i.e. malloc failed, etc).
+ *        The socket will be closed in any case; 'errno' is
+ *        set to indicate further details about the error.
+ */
+int 
+MHD_add_connection (struct MHD_Daemon *daemon, 
+		    int client_socket,
+		    const struct sockaddr *addr,
+		    socklen_t addrlen)
+{
+  make_nonblocking_noninheritable (daemon, 
+				   client_socket);
+  return internal_add_connection (daemon,
+				  client_socket,
+				  addr, addrlen,
+				  MHD_YES);
+}
+
+
+/**
  * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
  * accept policy callback.
@@ -1390,63 +1508,16 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
 #if !HAVE_ACCEPT4
-  {
-    /* make socket non-inheritable and non-blocking */
-#ifdef WINDOWS
-    DWORD dwFlags;
-    unsigned long flags = 1;
-
-    if (0 != ioctlsocket (s, FIONBIO, &flags))
-      {
-#if HAVE_MESSAGES
-	MHD_DLOG (daemon, 
-		  "Failed to make socket non-blocking: %s\n", 
-		  STRERROR (errno));
-#endif
-      }
-    if (!GetHandleInformation ((HANDLE) s, &dwFlags) ||
-        ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
-        !SetHandleInformation ((HANDLE) s, HANDLE_FLAG_INHERIT, 0)))
-      {
-#if HAVE_MESSAGES
-        SetErrnoFromWinError (GetLastError ());
-	MHD_DLOG (daemon,
-		  "Failed to make socket non-inheritable: %s\n", 
-		  STRERROR (errno));
-#endif
-      }    
-#else
-    int flags;
-
-    nonblock = O_NONBLOCK;
-#ifdef CYGWIN
-    if (0 == (daemon->options & MHD_USE_SSL))
-      nonblock = 0;
-#endif
-    flags = fcntl (s, F_GETFD);
-    if ( ( (-1 == flags) ||
-	   ( (flags != (flags | FD_CLOEXEC)) &&
-	     (0 != fcntl (s, F_SETFD, flags | nonblock | FD_CLOEXEC)) ) ) )
-      {
-#if HAVE_MESSAGES
-	MHD_DLOG (daemon,
-		  "Failed to make socket non-inheritable: %s\n", 
-		  STRERROR (errno));
-#endif
-      }
-#endif
-    /* make socket non-blocking */
-
-  }
-  
+  make_nonblocking_noninheritable (daemon, s);
 #endif
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
 #endif
 #endif
-  (void) MHD_add_connection (daemon, s,
-			     addr, addrlen);
+  (void) internal_add_connection (daemon, s,
+				  addr, addrlen,
+				  MHD_NO);
   return MHD_YES;
 }
 

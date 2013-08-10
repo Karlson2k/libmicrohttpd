@@ -1,3 +1,6 @@
+Sat Aug 10 21:01:18 CEST 2013
+	Trying to fix #2983 (untested). -CG
+
 Sat Aug 10 20:39:27 CEST 2013
 	Use 'errno' to indicate why 'MHD_add_connection' failed
 	(#2984). -CG
