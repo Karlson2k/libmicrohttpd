@@ -983,7 +983,8 @@ create_thread (pthread_t *thread,
  * @param addrlen number of bytes in addr
  * @return MHD_YES on success, MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case.
+ *        The socket will be closed in any case; 'errno' is
+ *        set to indicate further details about the error.
  */
 int 
 MHD_add_connection (struct MHD_Daemon *daemon, 
@@ -994,6 +995,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   struct MHD_Connection *connection;
   int res_thread_create;
   unsigned int i;
+  int eno;
 #if OSX
   static int on = 1;
 #endif  
@@ -1011,6 +1013,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       /* all pools are at their connection limit, must refuse */
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
+#if ENFILE
+      errno = ENFILE;
+#endif
       return MHD_NO;      
     }
 
@@ -1026,6 +1031,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
+#if EINVAL
+      errno = EINVAL;
+#endif
       return MHD_NO;
     }
 #endif
@@ -1046,6 +1054,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
+#if ENFILE
+      errno = ENFILE;
+#endif
       return MHD_NO;
     }
 
@@ -1062,6 +1073,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
+#if EACCESS
+      errno = EACCESS;
+#endif
       return MHD_NO;
     }
 
@@ -1077,6 +1091,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 
   if (NULL == (connection = malloc (sizeof (struct MHD_Connection))))
     {
+      eno = errno;
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, 
 		"Error allocating memory: %s\n", 
@@ -1085,6 +1100,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       if (0 != CLOSE (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
+      errno = eno;
       return MHD_NO;
     }
   memset (connection, 0, sizeof (struct MHD_Connection));
@@ -1100,12 +1116,16 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
       free (connection);      
+#if ENOMEM
+      errno = ENOMEM;
+#endif
       return MHD_NO;
     }
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
     {
+      eno = errno;
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, 
 		"Error allocating memory: %s\n", 
@@ -1116,6 +1136,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       MHD_ip_limit_del (daemon, addr, addrlen);
       MHD_pool_destroy (connection->pool);
       free (connection);
+      errno = eno;
       return MHD_NO;
     }
   memcpy (connection->addr, addr, addrlen);
@@ -1196,6 +1217,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
           free (connection->addr);
           free (connection);
           MHD_PANIC ("Unknown credential type");
+#if EINVAL
+	  errno = EINVAL;
+#endif
  	  return MHD_NO;
         }
       gnutls_transport_set_ptr (connection->tls_session,
@@ -1231,6 +1255,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 					 &MHD_handle_connection, connection);
       if (0 != res_thread_create)
         {
+	  eno = errno;
 #if HAVE_MESSAGES
           MHD_DLOG (daemon, "Failed to create a thread: %s\n",
                     STRERROR (res_thread_create));
@@ -1252,6 +1277,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 			      client_socket,
 			      &event))
 	    {
+	      eno = errno;
 #if HAVE_MESSAGES
 	      if (0 != (daemon->options & MHD_USE_DEBUG))
 		MHD_DLOG (daemon, 
@@ -1294,6 +1320,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   MHD_pool_destroy (connection->pool); 
   free (connection->addr);
   free (connection);
+#if EINVAL
+  errno = eno;
+#endif
   return MHD_NO;
 #endif
 }

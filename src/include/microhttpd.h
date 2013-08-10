@@ -1225,7 +1225,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  * @param addrlen number of bytes in addr
  * @return MHD_YES on success, MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case.
+ *        The socket will be closed in any case; 'errno' is
+ *        set to indicate further details about the error.
  */
 int 
 MHD_add_connection (struct MHD_Daemon *daemon, 

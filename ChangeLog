@@ -1,3 +1,7 @@
+Sat Aug 10 20:39:27 CEST 2013
+	Use 'errno' to indicate why 'MHD_add_connection' failed
+	(#2984). -CG
+
 Sat Aug 10 17:31:31 CEST 2013
 	Disable use of 'shutdown' on W32 always as winsock
 	doesn't properly behave with half-closed connections
