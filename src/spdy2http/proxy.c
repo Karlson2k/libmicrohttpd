@@ -28,6 +28,8 @@
  * is a lot of data pointed from it)
  * - Correct recapitalizetion of header names before giving the headers
  * to curl.
+ * - curl does not close sockets when connection is closed and no
+ * new sockets are opened (they stay in CLOSE_WAIT)
  * @author Andrey Uzunov
  */
  

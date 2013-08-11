@@ -8,9 +8,9 @@ protocol.  The main application must still provide the application
 logic to generate the content.
 
 Additionally, a second, still very experimental library is provided
-for SPDY/HTTP 2.0 support.  libmicrospdy provides a compact API and
-implementation of SPDY server. libmicrospdy currently only implements
-version 3 of SPDY and accepts only TLS connections.
+for SPDY (the base for HTTP 2.0) support.  libmicrospdy provides a
+compact API and implementation of SPDY server. libmicrospdy currently
+only implements partially version 3 of SPDY.
 
 
 Installation
@@ -108,12 +108,10 @@ a file will block all responses with same or smaller priority
 - Find the best way for closing still opened stream (new call or existing)
 - SPDY_is_stream_opened
 - SPDY PING (used often by browsers)
-- SPDY WINDOW_UPDATE - used often by browsers
+- receiving SPDY WINDOW_UPDATE
 - SPDY Settings
 - SPDY PUSH
 - SPDY HEADERS
-- HTTP POST over SPDY and receiving DATA frames
-- HTTP PUT over SPDY
 - SPDY Credentials
 
 Additional ideas for features include:
@@ -132,6 +130,7 @@ Unimplemented API functions of libmicrospdy:
 
 In particular, we should write tests for:
 - Enqueueing responses while considering request priorities.
+- HTTP methods other than GET
 
 
 

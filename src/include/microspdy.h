@@ -42,8 +42,17 @@
  * "platform.h" in the libmicrospdy distribution).<p>
  * 
  * All of the functions returning SPDY_YES/SPDY_NO return
- * SPDY_INPUT_ERROR when any of the parameters are invalid, e.g.,
- * required parameter is NULL.
+ * SPDY_INPUT_ERROR when any of the parameters are invalid, e.g.
+ * required parameter is NULL.<p>
+ * 
+ * The library does not check if anything at the application layer --
+ * requests and responses -- is correct. For example, it
+ * is up to the user to check if a client is sending HTTP body but the
+ * method is GET.<p>
+ * 
+ * The SPDY flow control is just partially implemented: the receiving
+ * window is updated, and the client is notified, to prevent a client
+ * from stop sending POST body data, for example.
  */
 #ifndef SPDY_MICROSPDY_H
 #define SPDY_MICROSPDY_H
@@ -647,8 +656,10 @@ typedef int
  * @param more a flag saying if more data related to the request is
  *        expected to be received. HTTP body may arrive (e.g. POST data);
  *        then SPDY_NewDataCallback will be called for the connection.
- *        It is also possible that more headers/trailers may arrive;
- *        then the same callback will be invoked.
+ *        It is also possible that more headers/trailers arrive;
+ *        then the same callback will be invoked. The user should detect
+ *        that it is not the first invocation of the function for that
+ *        request.
  */
 typedef void (*SPDY_NewRequestCallback) (void * cls,
 					 struct SPDY_Request * request,
@@ -851,7 +862,7 @@ SPDY_set_panic_func (SPDY_PanicCallback cb,
  * 			established	by a client
  * @param sccb callback called when a session is closed
  * @param nrcb callback called when a client sends request
- * @param npdcb callback called when HTTP POST params are received
+ * @param npdcb callback called when HTTP body (POST data) is received
  * 			after request
  * @param cls common extra argument to all of the callbacks
  * @param ... list of options (type-value pairs,
