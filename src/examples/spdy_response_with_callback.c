@@ -22,6 +22,9 @@
  * @author Andrey Uzunov
  */
  
+//for asprintf
+#define _GNU_SOURCE 
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -61,6 +64,8 @@ response_done_callback(void *cls,
 		       bool streamopened)
 {
 	(void)streamopened;
+	(void)status;
+  
 	printf("answer for %s was sent\n", (char *)cls);
 	
 	SPDY_destroy_request(request);
@@ -78,7 +83,8 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
 	(void)cls;
 	(void)request;
@@ -86,6 +92,7 @@ standard_request_handler(void *cls,
 	(void)host;
 	(void)scheme;
 	(void)headers;
+	(void)more;
 	
 	char *html;
 	struct SPDY_Response *response=NULL;

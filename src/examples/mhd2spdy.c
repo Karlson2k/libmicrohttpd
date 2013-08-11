@@ -151,7 +151,7 @@ run_everything ()
     glob_opt.spdy_data_received = false;
       
     ret = select(maxfd+1, &rs, &ws, &es, &timeout);
-    PRINT_INFO2("timeout now %lld %lld", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec);
+    PRINT_INFO2("timeout now %lld %lld ret is %i", (unsigned long long)timeout.tv_sec, (unsigned long long)timeout.tv_usec, ret);
 
     switch(ret)
     {

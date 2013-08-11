@@ -21,7 +21,7 @@
  * @brief  starts and stops several SPDY daemons, reusing port numbers
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "common.h"

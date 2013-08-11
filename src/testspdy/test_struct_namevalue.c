@@ -37,6 +37,7 @@ int size2;
 int brake_at = 3;
 bool flag;
 
+
 int
 iterate_cb (void *cls, const char *name, const char * const * value, int num_values)
 {
@@ -68,6 +69,10 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 int
 iterate_brake_cb (void *cls, const char *name, const char * const *value, int num_values)
 {
+  (void)name;
+  (void)value;
+  (void)num_values;
+  
 	int *c = (int*)cls;
 	
 	if(*c < 0 || *c >= brake_at)
@@ -102,7 +107,7 @@ main()
 	struct SPDY_NameValue *container;
 	struct SPDY_NameValue *container2;
 	struct SPDY_NameValue *container3;
-	struct SPDY_NameValue *container_arr[1];
+	struct SPDY_NameValue *container_arr[2];
 	
 	size = sizeof(pairs)/sizeof(pairs[0]);
 	
@@ -144,7 +149,7 @@ main()
 		value = SPDY_name_value_lookup(container,pairs[i], &ret);
 		if(NULL == value || 1 !=ret || strcmp(value[0], pairs[i+1]) != 0)
 		{
-			printf("%i; %i; %i\n", value, ret, strcmp(value[0], pairs[i+1]));
+			printf("%p; %i; %i\n", value, ret, strcmp(value[0], pairs[i+1]));
 			FAIL_TEST("SPDY_name_value_lookup failed\n");
 		}
 	}
@@ -251,7 +256,7 @@ main()
 		value = SPDY_name_value_lookup(container,pairs_with_empty[i], &ret);
 		if(NULL == value || 1 != ret)
 		{
-			printf("%i; %i\n", value, ret);
+			printf("%p; %i\n", value, ret);
 			FAIL_TEST("SPDY_name_value_lookup failed\n");
 		}
 	}

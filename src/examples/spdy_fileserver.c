@@ -22,7 +22,10 @@
  * 			files directly read from the system
  * @author Andrey Uzunov
  */
- 
+
+//for asprintf
+#define _GNU_SOURCE 
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -114,6 +117,7 @@ response_done_callback(void *cls,
 						bool streamopened)
 {
 	(void)streamopened;
+	(void)status;
 	//printf("answer for %s was sent\n", (char *)cls);
 	
 	/*if(SPDY_RESPONSE_RESULT_SUCCESS != status)
@@ -135,7 +139,8 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
 	(void)cls;
 	(void)request;
@@ -143,6 +148,9 @@ standard_request_handler(void *cls,
 	(void)host;
 	(void)scheme;
 	(void)headers;
+	(void)method;
+	(void)version;
+	(void)more;
 	
 	struct SPDY_Response *response=NULL;
 	struct SPDY_NameValue *resp_headers;
@@ -165,7 +173,7 @@ standard_request_handler(void *cls,
 				|| -1 == (filesize = ftell(fd))
 				|| 0 != (ret = fseek(fd, 0L, SEEK_SET)))
 			{
-				printf("Error on opening %s\n%i %i %i\n",fname, fd, ret, filesize);
+				printf("Error on opening %s\n%p %i %zd\n",fname, fd, ret, filesize);
 				response = SPDY_build_response(SPDY_HTTP_INTERNAL_SERVER_ERROR,NULL,SPDY_HTTP_VERSION_1_1,NULL,NULL,0);
 			}
 			else
@@ -185,7 +193,7 @@ standard_request_handler(void *cls,
 				}
 				free(date);
 				
-				if(-1 == asprintf(&fsize, "%i", filesize)
+				if(-1 == asprintf(&fsize, "%zd", filesize)
 					|| SPDY_YES != SPDY_name_value_add(resp_headers,SPDY_HTTP_HEADER_CONTENT_LENGTH,fsize))
 				{
 					printf("SPDY_name_value_add or asprintf failed\n");

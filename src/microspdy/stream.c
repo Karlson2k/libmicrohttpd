@@ -122,7 +122,7 @@ SPDYF_stream_destroy(struct SPDYF_Stream *stream)
 
 
 void
-SPDYF_stream_set_flags(struct SPDYF_Response_Queue *response_queue)
+SPDYF_stream_set_flags_on_write(struct SPDYF_Response_Queue *response_queue)
 {
 	struct SPDYF_Stream * stream = response_queue->stream;
 	
@@ -148,4 +148,21 @@ SPDYF_stream_set_flags(struct SPDYF_Response_Queue *response_queue)
 				
 		}
 	}
+}
+
+
+//TODO add function *on_read
+
+
+struct SPDYF_Stream * 
+SPDYF_stream_find(uint32_t stream_id, struct SPDY_Session * session)
+{
+  struct SPDYF_Stream * stream = session->streams_head;
+  
+  while(NULL != stream && stream_id != stream->stream_id)
+  {
+    stream = stream->next;
+  }
+  
+  return stream;
 }

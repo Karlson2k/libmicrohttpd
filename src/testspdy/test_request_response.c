@@ -23,7 +23,7 @@
  * @author Andrey Uzunov
  * @author Tatsuhiro Tsujikawa
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include <sys/wait.h>
@@ -202,6 +202,9 @@ static ssize_t send_callback(spdylay_session *session,
                              const uint8_t *data, size_t length, int flags,
                              void *user_data)
 {
+  (void)session;
+  (void)flags;
+  
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -231,6 +234,9 @@ static ssize_t recv_callback(spdylay_session *session,
                              uint8_t *buf, size_t length, int flags,
                              void *user_data)
 {
+  (void)session;
+  (void)flags;
+  
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -263,6 +269,8 @@ static void before_ctrl_send_callback(spdylay_session *session,
                                       spdylay_frame *frame,
                                       void *user_data)
 {
+  (void)user_data;
+  
   if(type == SPDYLAY_SYN_STREAM) {
     struct Request *req;
     int stream_id = frame->syn_stream.stream_id;
@@ -278,6 +286,8 @@ static void on_ctrl_send_callback(spdylay_session *session,
                                   spdylay_frame_type type,
                                   spdylay_frame *frame, void *user_data)
 {
+  (void)user_data;
+  
   char **nv;
   const char *name = NULL;
   int32_t stream_id;
@@ -303,6 +313,8 @@ static void on_ctrl_recv_callback(spdylay_session *session,
                                   spdylay_frame_type type,
                                   spdylay_frame *frame, void *user_data)
 {
+  (void)user_data;
+
   struct Request *req;
   char **nv;
   const char *name = NULL;
@@ -346,6 +358,9 @@ static void on_stream_close_callback(spdylay_session *session,
                                      spdylay_status_code status_code,
                                      void *user_data)
 {
+  (void)user_data;
+  (void)status_code;
+  
   struct Request *req;
   req = spdylay_session_get_stream_user_data(session, stream_id);
   if(req) {
@@ -368,6 +383,9 @@ static void on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags,
                                         const uint8_t *data, size_t len,
                                         void *user_data)
 {
+  (void)user_data;
+  (void)flags;
+  
   struct Request *req;
   req = spdylay_session_get_stream_user_data(session, stream_id);
   if(req) {
@@ -433,6 +451,8 @@ static int select_next_proto_cb(SSL* ssl,
                                 const unsigned char *in, unsigned int inlen,
                                 void *arg)
 {
+  (void)ssl;
+  
   int rv;
   uint16_t *spdy_proto_version;
   /* spdylay_select_next_protocol() selects SPDY protocol version the
@@ -795,15 +815,30 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
+	(void)cls;
+	(void)request;
+	(void)priority;
+	(void)host;
+	(void)scheme;
+	(void)headers;
+	(void)method;
+	(void)version;
+  
 	struct SPDY_Response *response=NULL;
 	
 	if(strcmp(CLS,cls)!=0)
 	{
 		killchild(child,"wrong cls");
 	}
-	
+		
+	if(false != more){
+		fprintf(stdout,"more has wrong value\n");
+		exit(5);
+	}
+  
 	response = SPDY_build_response(200,NULL,SPDY_HTTP_VERSION_1_1,NULL,RESPONSE_BODY,strlen(RESPONSE_BODY));
 	
 	if(NULL==response){
@@ -961,7 +996,7 @@ parentproc( int port)
 	return WEXITSTATUS(childstatus);
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	int port = get_port(12123);
 	parent = getpid();

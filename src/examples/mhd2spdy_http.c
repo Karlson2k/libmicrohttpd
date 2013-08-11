@@ -36,6 +36,7 @@ const char * uri)
   
   PRINT_INFO2("log uri '%s'\n", uri);
   
+  //TODO not freed once in a while
   if(NULL == (http_uri = au_malloc(sizeof(struct HTTP_URI ))))
     DIE("no memory");
   http_uri->uri = strdup(uri);
@@ -176,6 +177,7 @@ http_cb_request (void *cls,
   int ret;
   struct Proxy *proxy;
   struct SPDY_Headers spdy_headers;
+  bool with_body = false;
   
   //PRINT_INFO2("request cb %i; %s", *ptr,url);
 
@@ -185,14 +187,14 @@ http_cb_request (void *cls,
     
   if(NULL == http_uri->proxy)
   {  
-    if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
+    if (0 != strcmp (method, MHD_HTTP_METHOD_GET) && 0 != strcmp (method, MHD_HTTP_METHOD_POST))
     {
       free(http_uri->uri);
       free(http_uri);
       PRINT_INFO2("unexpected method %s", method);
       return MHD_NO;
     }
-  
+    
     if(NULL == (proxy = au_malloc(sizeof(struct Proxy))))
     {
       PRINT_INFO("No memory");
@@ -211,14 +213,62 @@ http_cb_request (void *cls,
 
   if(proxy->spdy_active)
   {
+    if(0 == strcmp (method, MHD_HTTP_METHOD_POST))
+    {
+        PRINT_INFO("POST processing");
+        
+      int rc= spdylay_session_resume_data(proxy->spdy_connection->session, proxy->stream_id);
+      PRINT_INFO2("rc is %i stream is %i", rc, proxy->stream_id);
+      proxy->spdy_connection->want_io |= WANT_WRITE;
+      
+      if(0 == *upload_data_size)
+      {
+      PRINT_INFO("POST http EOF");
+        proxy->receiving_done = true;
+        return MHD_YES;
+      }
+      
+      if(!copy_buffer(upload_data, *upload_data_size, &proxy->received_body, &proxy->received_body_size))
+      {
+        //TODO handle it better?
+        PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
+        return MHD_NO;
+      }
+      /*
+      if(NULL == proxy->received_body)
+        proxy->received_body = malloc(*upload_data_size);
+      else
+        proxy->received_body = realloc(proxy->received_body, proxy->received_body_size + *upload_data_size);
+      if(NULL == proxy->received_body)
+      {
+        //TODO handle it better?
+        PRINT_INFO("not enough memory (realloc returned NULL)");
+        return MHD_NO;
+      }
+
+      memcpy(proxy->received_body + proxy->received_body_size, upload_data, *upload_data_size);
+      proxy->received_body_size += *upload_data_size;
+        */
+      *upload_data_size = 0;
+      
+      //raise(SIGINT);
+                               
+      return MHD_YES;
+    }
+  
     //already handled
     PRINT_INFO("unnecessary call to http_cb_request");
     return MHD_YES;
   }
 
-  PRINT_INFO2("received request for '%s %s %s'\n", method, http_uri->uri, version);
+  PRINT_INFO2("received request for '%s %s %s'", method, http_uri->uri, version);
 
   proxy->url = http_uri->uri;
+  
+  with_body = 0 == strcmp (method, MHD_HTTP_METHOD_POST) && 0 != strcmp ("0",
+    MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH));
+    
+  PRINT_INFO2("body will be sent %i", with_body);
     
   ret = parse_uri(&glob_opt.uri_preg, proxy->url, &proxy->uri);
   if(ret != 0)
@@ -232,7 +282,7 @@ http_cb_request (void *cls,
                        NULL);
   if(NULL == (spdy_headers.nv = au_malloc(((spdy_headers.num + 5) * 2 + 1) * sizeof(char *))))
     DIE("no memory");
-  spdy_headers.nv[0] = ":method";     spdy_headers.nv[1] = "GET";
+  spdy_headers.nv[0] = ":method";     spdy_headers.nv[1] = method;
   spdy_headers.nv[2] = ":path";       spdy_headers.nv[3] = proxy->uri->path_and_more;
   spdy_headers.nv[4] = ":version";    spdy_headers.nv[5] = (char *)version;
   spdy_headers.nv[6] = ":scheme";     spdy_headers.nv[7] = proxy->uri->scheme;
@@ -248,7 +298,7 @@ http_cb_request (void *cls,
   if(NULL == spdy_headers.nv[9])
     spdy_headers.nv[9] = proxy->uri->host_and_port;
 
-  if(0 != spdy_request(spdy_headers.nv, proxy))
+  if(0 != spdy_request(spdy_headers.nv, proxy, with_body))
   {
     free(spdy_headers.nv);
     free_proxy(proxy);

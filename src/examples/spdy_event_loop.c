@@ -199,7 +199,8 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
 	char *html;
 	char *data;
@@ -259,6 +260,20 @@ standard_request_handler(void *cls,
 }
 
 
+static int
+new_post_data_cb (void * cls,
+					 struct SPDY_Request *request,
+					 const void * buf,
+					 size_t size,
+					 bool more)
+{
+	printf("DATA:\n===============================\n");
+  write(0, buf, size);
+	printf("\n===============================\n");
+  return SPDY_YES;
+}
+
+
 static void 
 sig_handler(int signo)
 {
@@ -288,7 +303,7 @@ main (int argc, char *const *argv)
 	struct SPDY_Daemon *daemon = SPDY_start_daemon(atoi(argv[1]),
 	 DATA_DIR "cert-and-key.pem",
 	 DATA_DIR "cert-and-key.pem",
-	&new_session_callback,&session_closed_handler,&standard_request_handler,NULL,NULL,
+	&new_session_callback,&session_closed_handler,&standard_request_handler,&new_post_data_cb,NULL,
 	SPDY_DAEMON_OPTION_SESSION_TIMEOUT, 10,
 	//SPDY_DAEMON_OPTION_SOCK_ADDR,  (struct sockaddr *)&addr4,
 	SPDY_DAEMON_OPTION_END);
@@ -306,7 +321,7 @@ main (int argc, char *const *argv)
 	struct SPDY_Daemon *daemon2 = SPDY_start_daemon(atoi(argv[1]) + 1,
 	 DATA_DIR "cert-and-key.pem",
 	 DATA_DIR "cert-and-key.pem",
-	&new_session_callback,NULL,&standard_request_handler,NULL,&main,
+	&new_session_callback,NULL,&standard_request_handler,&new_post_data_cb,&main,
 	//SPDY_DAEMON_OPTION_SESSION_TIMEOUT, 0,
 	//SPDY_DAEMON_OPTION_SOCK_ADDR,  (struct sockaddr *)&addr6,
 	//SPDY_DAEMON_OPTION_FLAGS, SPDY_DAEMON_FLAG_ONLY_IPV6,

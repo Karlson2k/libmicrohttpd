@@ -63,6 +63,69 @@ spdy_diec(const char *func,
 }
 
 
+static ssize_t
+spdy_cb_data_source_read(spdylay_session *session, int32_t stream_id, uint8_t *buf, size_t length, int *eof, spdylay_data_source *source, void *user_data)
+{
+  (void)session;
+  (void)stream_id;
+  (void)user_data;
+  
+  ssize_t ret;
+  assert(NULL != source);
+  assert(NULL != source->ptr);
+	struct Proxy *proxy = (struct Proxy *)(source->ptr);
+	void *newbody;
+  
+ 
+  if(length < 1)
+  {
+    PRINT_INFO("spdy_cb_data_source_read: length is 0");
+    return 0;
+	}
+  
+	if(!proxy->received_body_size)//nothing to write now
+  {
+    if(proxy->receiving_done)
+    {
+      PRINT_INFO("POST spdy EOF");
+      *eof = 1;
+    }
+      PRINT_INFO("POST SPDYLAY_ERR_DEFERRED");
+		return SPDYLAY_ERR_DEFERRED;//TODO SPDYLAY_ERR_DEFERRED should be used
+  }
+	
+	if(length >= proxy->received_body_size)
+	{
+		ret = proxy->received_body_size;
+		newbody = NULL;
+	}
+	else
+	{
+		ret = length;
+		if(NULL == (newbody = malloc(proxy->received_body_size - length)))
+		{
+			PRINT_INFO("no memory");
+			return SPDYLAY_ERR_TEMPORAL_CALLBACK_FAILURE;
+		}
+		memcpy(newbody, proxy->received_body + length, proxy->received_body_size - length);
+	}
+	memcpy(buf, proxy->received_body, ret);
+	free(proxy->received_body);
+	proxy->received_body = newbody;
+	proxy->received_body_size -= ret;
+  
+  if(0 == proxy->received_body_size && proxy->receiving_done)
+    {
+      PRINT_INFO("POST spdy EOF");
+    *eof = 1;
+  }
+  
+  PRINT_INFO2("given POST bytes to spdylay: %zd", ret);
+  
+  return ret;
+}
+
+
 /*
  * The implementation of spdylay_send_callback type. Here we write
  * |data| with size |length| to the network and return the number of
@@ -91,7 +154,7 @@ spdy_cb_send(spdylay_session *session,
     if(rv < 0) {
       int err = SSL_get_error(connection->ssl, rv);
       if(err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-        connection->want_io = (err == SSL_ERROR_WANT_READ ?
+        connection->want_io |= (err == SSL_ERROR_WANT_READ ?
                                WANT_READ : WANT_WRITE);
         rv = SPDYLAY_ERR_WOULDBLOCK;
       } else {
@@ -113,7 +176,7 @@ spdy_cb_send(spdylay_session *session,
   #if EAGAIN != EWOULDBLOCK
         case EWOULDBLOCK:
   #endif
-          connection->want_io = WANT_WRITE;
+          connection->want_io |= WANT_WRITE;
           rv = SPDYLAY_ERR_WOULDBLOCK;
           break;
           
@@ -122,6 +185,9 @@ spdy_cb_send(spdylay_session *session,
       }
     }
   }
+  
+  PRINT_INFO2("%zd bytes written by spdy", rv);
+  
   return rv;
 }
 
@@ -156,7 +222,7 @@ spdy_cb_recv(spdylay_session *session,
     if(rv < 0) {
       int err = SSL_get_error(connection->ssl, rv);
       if(err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-        connection->want_io = (err == SSL_ERROR_WANT_READ ?
+        connection->want_io |= (err == SSL_ERROR_WANT_READ ?
                                WANT_READ : WANT_WRITE);
         rv = SPDYLAY_ERR_WOULDBLOCK;
       } else {
@@ -180,7 +246,7 @@ spdy_cb_recv(spdylay_session *session,
   #if EAGAIN != EWOULDBLOCK
         case EWOULDBLOCK:
   #endif
-          connection->want_io = WANT_READ;
+          connection->want_io |= WANT_READ;
           rv = SPDYLAY_ERR_WOULDBLOCK;
           break;
           
@@ -210,6 +276,7 @@ spdy_cb_on_ctrl_send(spdylay_session *session,
     case SPDYLAY_SYN_STREAM:
       stream_id = frame->syn_stream.stream_id;
       proxy = spdylay_session_get_stream_user_data(session, stream_id);
+      proxy->stream_id = stream_id;
       ++glob_opt.streams_opened;
       ++proxy->spdy_connection->streams_opened;
       PRINT_INFO2("opening stream: str open %i; %s", glob_opt.streams_opened, proxy->url);
@@ -325,6 +392,13 @@ spdy_cb_on_data_chunk_recv(spdylay_session *session,
   struct Proxy *proxy;
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
 	
+  if(!copy_buffer(data, len, &proxy->http_body, &proxy->http_body_size))
+  {
+    //TODO handle it better?
+    PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
+    return;
+  }
+  /*
 	if(NULL == proxy->http_body)
 		proxy->http_body = au_malloc(len);
   else
@@ -337,6 +411,7 @@ spdy_cb_on_data_chunk_recv(spdylay_session *session,
 
 	memcpy(proxy->http_body + proxy->http_body_size, data, len);
 	proxy->http_body_size += len;
+  */
   PRINT_INFO2("received data for %s; %zu bytes", proxy->url, len);
   glob_opt.spdy_data_received = true;
 }
@@ -533,12 +608,12 @@ spdy_ctl_poll(struct pollfd *pollfd,
 {
   pollfd->events = 0;
   if(spdylay_session_want_read(connection->session) ||
-     connection->want_io == WANT_READ)
+     connection->want_io & WANT_READ)
   {
     pollfd->events |= POLLIN;
   }
   if(spdylay_session_want_write(connection->session) ||
-     connection->want_io == WANT_WRITE)
+     connection->want_io & WANT_WRITE)
   {
     pollfd->events |= POLLOUT;
   }
@@ -559,13 +634,13 @@ spdy_ctl_select(fd_set * read_fd_set,
   bool ret = false;
   
   if(spdylay_session_want_read(connection->session) ||
-     connection->want_io == WANT_READ)
+     connection->want_io & WANT_READ)
   {
     FD_SET(connection->fd, read_fd_set);
     ret = true;
   }
   if(spdylay_session_want_write(connection->session) ||
-     connection->want_io == WANT_WRITE)
+     connection->want_io & WANT_WRITE)
   {
     FD_SET(connection->fd, write_fd_set);
     ret = true;
@@ -690,11 +765,13 @@ spdy_free_connection(struct SPDY_Connection * connection)
 
 int
 spdy_request(const char **nv,
-             struct Proxy *proxy)
+             struct Proxy *proxy,
+             bool with_body)
 {
   int ret;
   uint16_t port;
   struct SPDY_Connection *connection;
+  spdylay_data_provider post_data;
   
   if(glob_opt.only_proxy)
   {
@@ -733,7 +810,15 @@ spdy_request(const char **nv,
   }
   
   proxy->spdy_connection = connection;
-  ret = spdylay_submit_request(connection->session, 0, nv, NULL, proxy);
+  if(with_body)
+  {
+    post_data.source.ptr = proxy;
+    post_data.read_callback = &spdy_cb_data_source_read;
+    ret = spdylay_submit_request(connection->session, 0, nv, &post_data, proxy);
+  }
+  else
+    ret = spdylay_submit_request(connection->session, 0, nv, NULL, proxy);
+  
   if(ret != 0) {
     spdy_diec("spdylay_spdy_submit_request", ret);
   }
@@ -958,6 +1043,7 @@ spdy_run_select(fd_set * read_fd_set,
     //  PRINT_INFO2("exec about to be called for %s", connections[i]->host);
     if(FD_ISSET(connections[i]->fd, read_fd_set) || FD_ISSET(connections[i]->fd, write_fd_set) || FD_ISSET(connections[i]->fd, except_fd_set))
     {
+      //raise(SIGINT);
       ret = spdy_exec_io(connections[i]);
         
       if(0 != ret)
@@ -981,6 +1067,12 @@ spdy_run_select(fd_set * read_fd_set,
       }
     }
     else
+    {
       PRINT_INFO("not called");
+      PRINT_INFO2("connection->want_io %i",connections[i]->want_io);
+      PRINT_INFO2("read %i",spdylay_session_want_read(connections[i]->session));
+      PRINT_INFO2("write %i",spdylay_session_want_write(connections[i]->session));
+      //raise(SIGINT);
+    }
   }
 }

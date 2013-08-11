@@ -157,7 +157,7 @@ spdy_handler_new_stream (void *cls,
 	}
   
   //ignore everything but GET
-  if(strcasecmp("GET",method))
+  if(strcasecmp("GET",method) && strcasecmp("POST",method))
   {
     SPDYF_DEBUG("received method '%s'", method);
     static char * html = "Method not implemented. libmicrospdy supports now only GET.";
@@ -187,7 +187,10 @@ spdy_handler_new_stream (void *cls,
                         version,
                         host,
                         scheme,
-						headers);
+						headers,
+            !stream->is_in_closed);
+            
+  stream->cls = request;
 
 	return SPDY_YES;
 
@@ -197,6 +200,21 @@ spdy_handler_new_stream (void *cls,
 	SPDY_name_value_destroy(headers);
 	return SPDY_NO;
 }
+
+
+/**
+ * TODO
+ */
+static int
+spdy_handler_new_data (void * cls,
+					 struct SPDYF_Stream *stream,
+					 const void * buf,
+					 size_t size,
+					 bool more)
+{
+  return stream->session->daemon->received_data_cb(cls, stream->cls, buf, size, more);
+}
+
 
 
 /**
@@ -332,7 +350,7 @@ SPDY_start_daemon (uint16_t port,
 		     SPDY_NewSessionCallback nscb,
 		     SPDY_SessionClosedCallback sccb,
 		     SPDY_NewRequestCallback nrcb,
-		     SPDY_NewPOSTDataCallback npdcb,
+		     SPDY_NewDataCallback npdcb,
 		     void * cls,
 		     ...)
 {
@@ -367,6 +385,7 @@ SPDY_start_daemon (uint16_t port,
 		      nrcb,
 		      npdcb,
 		      &spdy_handler_new_stream,
+		      &spdy_handler_new_data,
 		      cls,
 		      NULL,
 		      valist

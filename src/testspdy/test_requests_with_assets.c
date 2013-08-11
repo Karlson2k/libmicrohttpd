@@ -23,7 +23,7 @@
  * 			libxml2.
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "common.h"
@@ -133,8 +133,19 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
+	(void)cls;
+	(void)request;
+	(void)priority;
+	(void)host;
+	(void)scheme;
+	(void)headers;
+	(void)method;
+	(void)version;
+	(void)more;
+  
 	struct SPDY_Response *response;
 	
 	if(NULL != strstr(path,".css"))
@@ -279,7 +290,7 @@ parentproc()
 	return html_resp_count != html_req_count;
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	parent = getpid();
 	port = get_port(10123);

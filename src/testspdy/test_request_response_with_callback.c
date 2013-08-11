@@ -21,7 +21,7 @@
  * @brief  tests responses with callbacks
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "stdio.h"
@@ -85,10 +85,14 @@ response_callback (void *cls,
 
 void
 response_done_callback(void *cls,
-						struct SPDY_Response *response,
-						struct SPDY_Request *request,
+								struct SPDY_Response * response,
+								struct SPDY_Request * request,
+								enum SPDY_RESPONSE_RESULT status,
 						bool streamopened)
 {
+  (void)status;
+  (void)streamopened;
+  
 	printf("answer for %s was sent\n", (char*)cls);
 	
 	SPDY_destroy_request(request);
@@ -107,8 +111,19 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
+	(void)cls;
+	(void)request;
+	(void)priority;
+	(void)host;
+	(void)scheme;
+	(void)headers;
+	(void)method;
+	(void)version;
+	(void)more;
+  
 	struct SPDY_Response *response=NULL;
 	struct SPDY_NameValue *resp_headers;
 	
@@ -271,7 +286,7 @@ childproc()
 	if(0 == ret && 0 == stat(DATA_DIR "spdy-draft.txt", &st))
 	{
 		usecs = (uint64_t)1000000 * (uint64_t)(tv2.tv_sec - tv1.tv_sec) + tv2.tv_usec - tv1.tv_usec;
-		printf("%i bytes read in %i usecs\n", st.st_size, usecs);
+		printf("%lld bytes read in %llu usecs\n", (long long)st.st_size, (long long unsigned )usecs);
 	}
 	
 	return ret;
@@ -279,7 +294,7 @@ childproc()
 
 
 int
-main(int argc, char **argv)
+main()
 {
 	port = get_port(11123);
 	parent = getpid();

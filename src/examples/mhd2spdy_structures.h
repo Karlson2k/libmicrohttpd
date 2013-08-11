@@ -112,14 +112,18 @@ struct Proxy
 	char *url;
 	char *version;
 	void *http_body;
+	void *received_body;
 	size_t http_body_size;
+	size_t received_body_size;
 	ssize_t length;
 	int status;
 	int id;
+  int32_t stream_id;
 	bool done;
 	bool error;
   bool http_active;
   bool spdy_active;
+  bool receiving_done;
 };
 
 
@@ -264,5 +268,8 @@ free_proxy(struct Proxy *proxy);
 void *
 au_malloc(size_t size);
 
+
+bool
+copy_buffer(const void *src, size_t src_size, void **dst, size_t *dst_size);
 
 #endif

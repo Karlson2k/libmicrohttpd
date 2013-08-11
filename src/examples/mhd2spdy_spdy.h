@@ -56,7 +56,8 @@ spdy_diec(const char *func,
 
 int 
 spdy_request(const char **nv,
-             struct Proxy *proxy);
+             struct Proxy *proxy,
+             bool with_body);
 
 
 void

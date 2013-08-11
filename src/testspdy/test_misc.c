@@ -21,7 +21,7 @@
  * @brief  tests a lot of small calls and callbacks. TODO mention what
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "stdio.h"
@@ -93,10 +93,14 @@ create_child()
 
 void
 response_done_callback(void *cls,
-						struct SPDY_Response *response,
-						struct SPDY_Request *request,
+								struct SPDY_Response * response,
+								struct SPDY_Request * request,
+								enum SPDY_RESPONSE_RESULT status,
 						bool streamopened)
 {
+  (void)status;
+  (void)streamopened;
+  
 	if(strcmp(cls,"/main.css"))
 	{
 		session1 = SPDY_get_session_for_request(request);
@@ -152,8 +156,19 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-						struct SPDY_NameValue * headers)
+						struct SPDY_NameValue * headers,
+            bool more)
 {
+	(void)cls;
+	(void)request;
+	(void)priority;
+	(void)host;
+	(void)scheme;
+	(void)headers;
+	(void)method;
+	(void)version;
+	(void)more;
+  
 	struct SPDY_Response *response=NULL;
 	char *cls_path = strdup(path);
 	
@@ -259,7 +274,7 @@ parentproc()
 
 
 int
-main(int argc, char **argv)
+main()
 {
 	port = get_port(13123);
 	SPDY_init();

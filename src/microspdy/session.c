@@ -325,14 +325,15 @@ spdyf_handler_read_rst_stream (struct SPDY_Session *session)
 static void
 spdyf_handler_read_data (struct SPDY_Session *session)
 {
-  //just ignore the whole frame for now
+  int ret;
   struct SPDYF_Data_Frame * frame;
+  struct SPDYF_Stream * stream;
   
 	SPDYF_ASSERT(SPDY_SESSION_STATUS_WAIT_FOR_SUBHEADER == session->status
 		|| SPDY_SESSION_STATUS_WAIT_FOR_BODY == session->status,
 		"the function is called wrong");
     
-  SPDYF_DEBUG("DATA frame received (POST?). Ignoring");
+  //SPDYF_DEBUG("DATA frame received (POST?). Ignoring");
 	
   //SPDYF_SIGINT("");
   
@@ -355,9 +356,41 @@ spdyf_handler_read_data (struct SPDY_Session *session)
 	if(session->read_buffer_offset - session->read_buffer_beginning
 		>= frame->length)
 	{
-		session->read_buffer_beginning += frame->length;
-		session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
-		free(frame);
+    stream = SPDYF_stream_find(frame->stream_id, session);
+    
+    if(NULL == stream || stream->is_in_closed || NULL == session->daemon->received_data_cb)
+    {
+      if(NULL == session->daemon->received_data_cb)
+      SPDYF_DEBUG("No callback for DATA frame set");
+      
+      SPDYF_DEBUG("Ignoring DATA frame!");
+      
+      //TODO send error?
+      
+      //TODO for now ignore frame
+      session->read_buffer_beginning += frame->length;
+      session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
+      free(frame);
+      return;
+    }
+    
+    ret = session->daemon->freceived_data_cb(session->daemon->cls,
+                                      stream,
+                                      session->read_buffer + session->read_buffer_beginning,
+                                      frame->length,
+                                      0 == (SPDY_DATA_FLAG_FIN & frame->flags));
+        
+    session->read_buffer_beginning += frame->length;   
+         
+    //TODO close in and send rst maybe
+    SPDYF_ASSERT(SPDY_YES == ret, "Cancel POST data is not yet implemented");
+    
+    if(SPDY_DATA_FLAG_FIN & frame->flags)
+    {
+      stream->is_in_closed = true;
+    }
+    session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
+    free(frame);
 	}
 }
 
@@ -1020,7 +1053,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 			}
 			
 			//set stream to closed if the frame's fin flag is set
-			SPDYF_stream_set_flags(queue_head);
+			SPDYF_stream_set_flags_on_write(queue_head);
 			
 			if(NULL != queue_head->frqcb)
 			{

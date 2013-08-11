@@ -22,7 +22,7 @@
  * 			client
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "stdio.h"
@@ -66,6 +66,9 @@ void
 new_session_cb (void *cls,
 						struct SPDY_Session * session)
 {
+  (void)cls;
+  (void)session;
+  
 	if(!new_session)do_sleep = 1;
 	new_session = 1;
 	printf("new session\n");
@@ -76,6 +79,9 @@ closed_session_cb (void *cls,
 						struct SPDY_Session * session,
 						int by_client)
 {
+  (void)cls;
+  (void)session;
+  
 	printf("closed_session_cb called\n");
 	
 	if(SPDY_YES == by_client)
@@ -150,20 +156,20 @@ parentproc()
 				killchild("clock_gettime returned wrong value");
       if(now - beginning > TIMEOUT*1000 + SELECT_MS_TIMEOUT)
       {
-        printf("Started at: %ims\n",beginning);
-        printf("Now is: %ims\n",now);
+        printf("Started at: %llums\n",beginning);
+        printf("Now is: %llums\n",now);
         printf("Timeout is: %i\n",TIMEOUT);
         printf("Select Timeout is: %ims\n",SELECT_MS_TIMEOUT);
-        printf("SPDY_get_timeout gave: %ims\n",timeoutlong);
+        printf("SPDY_get_timeout gave: %llums\n",timeoutlong);
 				killchild("Timeout passed but session was not closed");
       }
       if(timeoutlong > beginning + TIMEOUT *1000)
       {
-        printf("Started at: %ims\n",beginning);
-        printf("Now is: %ims\n",now);
+        printf("Started at: %llums\n",beginning);
+        printf("Now is: %llums\n",now);
         printf("Timeout is: %i\n",TIMEOUT);
         printf("Select Timeout is: %ims\n",SELECT_MS_TIMEOUT);
-        printf("SPDY_get_timeout gave: %ims\n",timeoutlong);
+        printf("SPDY_get_timeout gave: %llums\n",timeoutlong);
 				killchild("SPDY_get_timeout returned wrong timeout");
       }
 		}
@@ -210,10 +216,12 @@ parentproc()
 			default:
 				SPDY_run(daemon);
         if(0 == beginning)
-        if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-          beginning = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
-        else
-					killchild("clock_gettime returned wrong number");
+        {
+          if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+            beginning = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
+          else
+            killchild("clock_gettime returned wrong number");
+        }
 				/*if(do_sleep)
 				{
 					sleep(TIMEOUT);
@@ -283,7 +291,7 @@ childproc()
 
 
 int
-main(int argc, char **argv)
+main()
 {
 	port = get_port(11123);
 	parent = getpid();

@@ -317,6 +317,28 @@ struct SPDYF_Stream;
 
 struct SPDYF_Response_Queue;
 
+
+/**
+ * Callback for received new data chunk.
+ *
+ * @param cls client-defined closure
+ * @param stream handler
+ * @param buf data chunk from the data
+ * @param size the size of the data chunk 'buf' in bytes
+ * @param more false if this is the last frame received on this stream. Note:
+ *             true does not mean that more data will come, exceptional
+ *             situation is possible
+ * @return SPDY_YES to continue calling the function,
+ *         SPDY_NO to stop calling the function for this stream
+ */
+typedef int
+(*SPDYF_NewDataCallback) (void * cls,
+					 struct SPDYF_Stream *stream,
+					 const void * buf,
+					 size_t size,
+					 bool more);
+           
+           
 /**
  * Callback for new stream. To be used in the application layer of the
  * lib.
@@ -515,6 +537,11 @@ struct SPDYF_Stream
 	 * Name value pairs, sent within the frame which created the stream.
 	 */
 	struct SPDY_NameValue *headers;
+	
+	/**
+	 * Any object to be used by the application layer.
+	 */
+	void *cls;
   
 	/**
 	 * This stream's ID.
@@ -888,9 +915,14 @@ struct SPDY_Daemon
 
 	/**
 	* Callback called when HTTP POST params are received
-	* after request
+	* after request. To be used by the application layer
 	*/
-	SPDY_NewPOSTDataCallback new_post_data_cb;
+	SPDY_NewDataCallback received_data_cb;
+
+	/**
+	* Callback called when DATA frame is received.
+	*/
+	SPDYF_NewDataCallback freceived_data_cb;
 
 	/**
 	 * Closure argument for all the callbacks that can be used by the client.

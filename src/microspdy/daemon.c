@@ -173,8 +173,9 @@ SPDYF_start_daemon_va (uint16_t port,
 					SPDY_NewSessionCallback nscb,
 					SPDY_SessionClosedCallback sccb,
 					SPDY_NewRequestCallback nrcb,
-					SPDY_NewPOSTDataCallback npdcb,
+					SPDY_NewDataCallback npdcb,
 					SPDYF_NewStreamCallback fnscb,
+					SPDYF_NewDataCallback fndcb,
 					void * cls,
 					void * fcls,
 					va_list valist)
@@ -237,10 +238,11 @@ SPDYF_start_daemon_va (uint16_t port,
 	daemon->new_session_cb = nscb;
 	daemon->session_closed_cb = sccb;
 	daemon->new_request_cb = nrcb;
-	daemon->new_post_data_cb = npdcb;
+	daemon->received_data_cb = npdcb;
 	daemon->cls = cls;
 	daemon->fcls = fcls;
 	daemon->fnew_stream_cb = fnscb;
+	daemon->freceived_data_cb = fndcb;
 
 #if HAVE_INET6
 	//handling IPv6

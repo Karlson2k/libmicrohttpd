@@ -60,6 +60,17 @@ SPDYF_stream_destroy(struct SPDYF_Stream *stream);
  * @param response_queue sent for this stream
  */
 void
-SPDYF_stream_set_flags(struct SPDYF_Response_Queue *response_queue);
+SPDYF_stream_set_flags_on_write(struct SPDYF_Response_Queue *response_queue);
+
+
+/**
+ * Find and return a session's stream, based on stream's ID.
+ *
+ * @param stream_id to search for
+ * @param session whose streams are considered
+ * @return SPDY_Stream with the desired ID. Can be NULL.
+ */
+struct SPDYF_Stream * 
+SPDYF_stream_find(uint32_t stream_id, struct SPDY_Session * session);
 
 #endif

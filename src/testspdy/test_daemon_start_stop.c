@@ -21,7 +21,7 @@
  * @brief  starts and stops a SPDY daemon
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "common.h"

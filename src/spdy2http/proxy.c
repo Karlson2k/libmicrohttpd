@@ -163,11 +163,16 @@ struct Proxy
 	char *version;
 	char *status_msg;
 	void *http_body;
+	void *received_body;
   bool *session_alive;
 	size_t http_body_size;
+	size_t received_body_size;
 	//ssize_t length;
 	int status;
   bool done;
+  bool receiving_done;
+  bool is_curl_read_paused;
+  bool is_with_body_data;
   bool error;
 };
 
@@ -219,6 +224,7 @@ deinit_parse_uri(regex_t * preg)
 static int
 parse_uri(regex_t * preg, const char * full_uri, struct URI ** uri)
 {
+  //TODO memeory checks
   int ret;
   char *colon;
   long long port;
@@ -277,7 +283,55 @@ parse_uri(regex_t * preg, const char * full_uri, struct URI ** uri)
 }
 
 
-static void catch_signal(int signal)
+static bool
+store_in_buffer(const void *src, size_t src_size, void **dst, size_t *dst_size)
+{
+  if(0 == src_size)
+    return true;
+  
+  if(NULL == *dst)
+		*dst = malloc(src_size);
+	else
+		*dst = realloc(*dst, src_size + *dst_size);
+	if(NULL == *dst)
+		return false;
+
+	memcpy(*dst + *dst_size, src, src_size);
+	*dst_size += src_size;
+  
+  return true;
+}
+
+
+static ssize_t
+get_from_buffer(void **src, size_t *src_size, void *dst, size_t max_size)
+{
+  size_t ret;
+  void *newbody;
+  
+	if(max_size >= *src_size)
+	{
+		ret = *src_size;
+		newbody = NULL;
+	}
+	else
+	{
+		ret = max_size;
+		if(NULL == (newbody = malloc(*src_size - max_size)))
+			return -1;
+		memcpy(newbody, *src + ret, *src_size - ret);
+	}
+	memcpy(dst, *src, ret);
+	free(*src);
+	*src = newbody;
+	*src_size -= ret;
+  
+  return ret;
+}
+
+
+static void
+catch_signal(int signal)
 {
   (void)signal;
   
@@ -319,7 +373,58 @@ session_closed_cb (void * cls,
   
   *session_alive = false;
 }
-                
+   
+
+static int
+spdy_post_data_cb (void * cls,
+					 struct SPDY_Request *request,
+					 const void * buf,
+					 size_t size,
+					 bool more)
+{
+  (void)cls;
+  int ret;
+	struct Proxy *proxy = (struct Proxy *)SPDY_get_cls_from_request(request);
+  
+  if(!store_in_buffer(buf, size, &proxy->received_body, &proxy->received_body_size))
+	{
+		PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
+		return 0;
+	}
+  /*
+	if(NULL == proxy->received_body)
+		proxy->received_body = malloc(size);
+	else
+		proxy->received_body = realloc(proxy->received_body, proxy->received_body_size + size);
+	if(NULL == proxy->received_body)
+	{
+		PRINT_INFO("not enough memory (realloc returned NULL)");
+		return 0;
+	}
+
+	memcpy(proxy->received_body + proxy->received_body_size, buf, size);
+	proxy->received_body_size += size;
+  */
+  
+  proxy->receiving_done = !more;
+  
+  PRINT_VERBOSE2("POST bytes from SPDY: %zu", size);
+
+  call_curl_run = true;
+  
+  if(proxy->is_curl_read_paused)
+  {
+    if(CURLE_OK != (ret = curl_easy_pause(proxy->curl_handle, CURLPAUSE_CONT)))
+    {
+      PRINT_INFO2("curl_easy_pause returned %i", ret);
+      abort();
+    }
+    PRINT_VERBOSE("curl_read_cb pause resumed");
+  }
+  
+  return SPDY_YES;
+}
+             
                 
 ssize_t
 response_callback (void *cls,
@@ -329,7 +434,7 @@ response_callback (void *cls,
 {
 	ssize_t ret;
 	struct Proxy *proxy = (struct Proxy *)cls;
-	void *newbody;
+	//void *newbody;
 	
 	//printf("response_callback\n");
   
@@ -347,6 +452,14 @@ response_callback (void *cls,
 		return 0;
   }
 	
+  ret = get_from_buffer(&(proxy->http_body), &(proxy->http_body_size), buffer, max);
+  if(ret < 0)
+  {
+    PRINT_INFO("no memory");
+    return -1;
+  }
+  
+  /*
 	if(max >= proxy->http_body_size)
 	{
 		ret = proxy->http_body_size;
@@ -366,7 +479,7 @@ response_callback (void *cls,
 	free(proxy->http_body);
 	proxy->http_body = newbody;
 	proxy->http_body_size -= ret;
-	
+	*/
   if(proxy->done && 0 == proxy->http_body_size) *more = false;
   
   PRINT_VERBOSE2("given bytes to microspdy: %zd", ret);
@@ -405,6 +518,7 @@ response_done_callback(void *cls,
 	free(proxy->url);
 	free(proxy);
 }
+
 
 
 static size_t
@@ -560,6 +674,12 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
     return 0;
   }
   
+  if(!store_in_buffer(contents, realsize, &proxy->http_body, &proxy->http_body_size))
+	{
+		PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
+		return 0;
+	}
+  /*
 	if(NULL == proxy->http_body)
 		proxy->http_body = malloc(realsize);
 	else
@@ -572,12 +692,76 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
 
 	memcpy(proxy->http_body + proxy->http_body_size, contents, realsize);
 	proxy->http_body_size += realsize;
+  */ 
   
   PRINT_VERBOSE2("received bytes from curl: %zu", realsize);
 
   call_spdy_run = true;
           
 	return realsize;
+}
+
+
+static size_t
+curl_read_cb(void *ptr, size_t size, size_t nmemb, void *userp)
+{
+	ssize_t ret;
+	size_t max = size * nmemb;
+	struct Proxy *proxy = (struct Proxy *)userp;
+	//void *newbody;
+ 
+    
+  if((proxy->receiving_done && !proxy->received_body_size) || !proxy->is_with_body_data || max < 1)
+  {
+    PRINT_VERBOSE("curl_read_cb last call");
+    return 0;
+  }
+    
+  if(!*(proxy->session_alive))
+  {
+    PRINT_VERBOSE("POST is still being sent, but session is dead");
+    return CURL_READFUNC_ABORT;
+  }
+	
+	if(!proxy->received_body_size)//nothing to write now
+  {
+    PRINT_VERBOSE("curl_read_cb called paused");
+    proxy->is_curl_read_paused = true;
+		return CURL_READFUNC_PAUSE;//TODO curl pause should be used
+  }
+  
+  ret = get_from_buffer(&(proxy->received_body), &(proxy->received_body_size), ptr, max);
+  if(ret < 0)
+  {
+    PRINT_INFO("no memory");
+    return CURL_READFUNC_ABORT;
+  }
+  
+	/*
+	if(max >= proxy->received_body_size)
+	{
+		ret = proxy->received_body_size;
+		newbody = NULL;
+	}
+	else
+	{
+		ret = max;
+		if(NULL == (newbody = malloc(proxy->received_body_size - max)))
+		{
+			PRINT_INFO("no memory");
+			return CURL_READFUNC_ABORT;
+		}
+		memcpy(newbody, proxy->received_body + max, proxy->received_body_size - max);
+	}
+	memcpy(ptr, proxy->received_body, ret);
+	free(proxy->received_body);
+	proxy->received_body = newbody;
+	proxy->received_body_size -= ret;
+  * */
+  
+  PRINT_VERBOSE2("given POST bytes to curl: %zd", ret);
+	
+	return ret;
 }
 
 
@@ -630,7 +814,8 @@ standard_request_handler(void *cls,
                         const char *version,
                         const char *host,
                         const char *scheme,
-                        struct SPDY_NameValue * headers)
+                        struct SPDY_NameValue * headers,
+                        bool more)
 {
 	(void)cls;
 	(void)priority;
@@ -641,6 +826,13 @@ standard_request_handler(void *cls,
 	int ret;
   struct URI *uri;
   struct SPDY_Session *session;
+  
+  proxy = SPDY_get_cls_from_request(request);
+  if(NULL != proxy)
+  {
+    //ignore trailers or more headers
+    return;
+  }
 	
 	PRINT_VERBOSE2("received request for '%s %s %s'\n", method, path, version);
   
@@ -654,7 +846,10 @@ standard_request_handler(void *cls,
   proxy->session_alive = SPDY_get_cls_from_session(session);
   assert(NULL != proxy->session_alive);
   
+  SPDY_set_cls_to_request(request, proxy);
+  
 	proxy->request = request;
+	proxy->is_with_body_data = more;
 	if(NULL == (proxy->headers = SPDY_name_value_create()))
         DIE("No memory");
   
@@ -703,6 +898,16 @@ standard_request_handler(void *cls,
 	
 	if(glob_opt.curl_verbose)
     CURL_SETOPT(proxy->curl_handle, CURLOPT_VERBOSE, 1);
+	
+  if(0 == strcmp(SPDY_HTTP_METHOD_POST,method))
+  {
+    if(NULL == (proxy->curl_headers = curl_slist_append(proxy->curl_headers, "Expect:")))
+      DIE("curl_slist_append failed");
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_POST, 1);
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_READFUNCTION, curl_read_cb);
+    CURL_SETOPT(proxy->curl_handle, CURLOPT_READDATA, proxy);
+  }
+  
   if(glob_opt.timeout)
     CURL_SETOPT(proxy->curl_handle, CURLOPT_TIMEOUT, glob_opt.timeout);
 	CURL_SETOPT(proxy->curl_handle, CURLOPT_URL, proxy->url);
@@ -720,7 +925,7 @@ standard_request_handler(void *cls,
     CURL_SETOPT(proxy->curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
   else if(glob_opt.ipv6 && !glob_opt.ipv4)
     CURL_SETOPT(proxy->curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
-	
+    
 	if(CURLM_OK != (ret = curl_multi_add_handle(multi_handle, proxy->curl_handle)))
 	{
 		PRINT_INFO2("curl_multi_add_handle failed (%i)", ret);
@@ -765,7 +970,7 @@ run ()
   struct addrinfo *gai;
   enum SPDY_IO_SUBSYSTEM io = glob_opt.notls ? SPDY_IO_SUBSYSTEM_RAW : SPDY_IO_SUBSYSTEM_OPENSSL;
   enum SPDY_DAEMON_FLAG flags = SPDY_DAEMON_FLAG_NO;
-  struct SPDY_Response *error_response;
+  //struct SPDY_Response *error_response;
   char *curl_private;
   
 	signal(SIGPIPE, SIG_IGN);
@@ -790,7 +995,7 @@ run ()
 								&new_session_cb,
 								&session_closed_cb,
 								&standard_request_handler,
-								NULL,
+								&spdy_post_data_cb,
 								NULL,
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
@@ -819,7 +1024,7 @@ run ()
 								&new_session_cb,
 								&session_closed_cb,
 								&standard_request_handler,
-								NULL,
+								&spdy_post_data_cb,
 								NULL,
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
@@ -924,6 +1129,7 @@ run ()
     
     while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
+        PRINT_VERBOSE("A curl handler is done");
         if(CURLE_OK != (ret = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl_private)))
         {
           PRINT_INFO2("err %i",ret);
@@ -944,7 +1150,7 @@ run ()
             SPDY_name_value_destroy(proxy->headers);
             if(!*(proxy->session_alive))
             {
-              if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
+              /*if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
                     NULL,
                     SPDY_HTTP_VERSION_1_1,
                     NULL,
@@ -961,7 +1167,24 @@ run ()
                 //clean and forget
                 //TODO
                 DIE("no queue");
-              }
+              }*/
+              
+                  free(proxy->http_body);
+    proxy->http_body = NULL;
+
+	if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
+	{
+		PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
+	}
+  debug_num_curls--;
+	curl_slist_free_all(proxy->curl_headers);
+	curl_easy_cleanup(proxy->curl_handle);
+	
+	SPDY_destroy_request(proxy->request);
+	//SPDY_destroy_response(proxy->response);
+	free(proxy->url);
+	free(proxy);
+
             }
             else
               proxy->error = true;
