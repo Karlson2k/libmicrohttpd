@@ -11,7 +11,7 @@
 #include <time.h>
 #include <microhttpd.h>
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined(__MINGW64_VERSION_MAJOR)
 static int
 asprintf (char **resultp, const char *format, ...)
 {
