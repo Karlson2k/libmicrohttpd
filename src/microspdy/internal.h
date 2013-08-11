@@ -28,14 +28,24 @@
 #include "platform.h"
 #include "microspdy.h"
 
-/* size of read buffers for each connection
- * must be at least the size of SPDY_MAX_SUPPORTED_FRAME_SIZE */
+/**
+ * size of read buffers for each connection
+ * must be at least the size of SPDY_MAX_SUPPORTED_FRAME_SIZE
+ */
 #define SPDYF_BUFFER_SIZE 8192
 
-/* number of frames written to the socket at once. After X frames
+/**
+ * initial size of window for each stream (this is for the data
+ * within data frames that can be handled)
+ */
+#define SPDYF_INITIAL_WINDOW_SIZE 65536
+
+/**
+ * number of frames written to the socket at once. After X frames
  * everything should be run again. In this way the application can
  * response to more important requests while a big file is still
- * being transmitted to the client  */
+ * being transmitted to the client
+ */
 #define SPDYF_NUM_SENT_FRAMES_AT_ONCE 10
 
 

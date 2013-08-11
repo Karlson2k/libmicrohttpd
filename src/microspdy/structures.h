@@ -554,6 +554,11 @@ struct SPDYF_Stream
 	uint32_t assoc_stream_id;
 	
 	/**
+	 * The window of the data within data frames.
+	 */
+	uint32_t window_size;
+	
+	/**
 	 * Stream priority. 0 is the highest, 7 is the lowest.
 	 */
 	uint8_t priority;

@@ -104,6 +104,7 @@ SPDYF_stream_new (struct SPDY_Session *session)
 	stream->flag_unidirectional = (frame->flags & SPDY_SYN_STREAM_FLAG_UNIDIRECTIONAL) != 0;
 	stream->is_out_closed = stream->flag_unidirectional;
 	stream->is_server_initiator = false;
+	stream->window_size = SPDYF_INITIAL_WINDOW_SIZE;
 	
 	//put the stream to the list of streams for the session
 	DLL_insert(session->streams_head, session->streams_tail, stream);

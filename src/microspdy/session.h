@@ -172,6 +172,23 @@ SPDYF_prepare_rst_stream (struct SPDY_Session *session,
 
 
 /**
+ * Prepares WINDOW_UPDATE frame to tell the other party that more
+ * data can be sent on the stream. The frame will be put at the head of
+ * the queue.
+ * 
+ * @param session SPDY session
+ * @param stream stream to which the changed window will apply
+ * @param delta_window_size how much the window grows
+ * @return SPDY_NO on memory error or
+ * 			SPDY_YES on success
+ */
+int
+SPDYF_prepare_window_update (struct SPDY_Session *session,
+					struct SPDYF_Stream * stream,
+					int32_t delta_window_size);
+          
+
+/**
  * Handler called by session_write to fill the write buffer according to
  * the data frame waiting in the response queue.
  * When response data is given by user callback, the lib does not know
@@ -230,6 +247,20 @@ SPDYF_handler_write_goaway (struct SPDY_Session *session);
  */				
 int
 SPDYF_handler_write_rst_stream (struct SPDY_Session *session);
+
+
+/**
+ * Handler called by session_write to fill the write buffer based on the
+ * control frame (WINDOW_UPDATE) waiting in the response queue.
+ * 
+ * @param session SPDY session
+ * @return SPDY_NO on error (not enough memory). If
+ *         the error is unrecoverable the handler changes session's
+ *         status.
+ * 			SPDY_YES on success
+ */			
+int
+SPDYF_handler_write_window_update (struct SPDY_Session *session);
 
 
 /**
