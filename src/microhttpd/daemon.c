@@ -1311,7 +1311,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
   daemon->max_connections--;  
   return MHD_YES;  
-#if HTTPS_SUPPORT || EPOLL_SUPPORT
  cleanup:
   if (0 != CLOSE (client_socket))
     MHD_PANIC ("close failed\n");
@@ -1335,7 +1334,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
   errno = eno;
 #endif
   return MHD_NO;
-#endif
 }
 
 
