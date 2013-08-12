@@ -115,6 +115,10 @@ enum
   _SC_PAGE_SIZE = 30
 };
 
+#if !defined(EACCESS)
+#  define EACCESS EACCES
+#endif
+
 /* Thanks to the Cygwin project */
 #define ENOCSI 43	/* No CSI structure available */
 #define EL2HLT 44	/* Level 2 halted */
@@ -501,6 +505,7 @@ int _win_setsockopt(int s, int level, int optname, const void *optval,
                     int optlen);
 int _win_shutdown(int s, int how);
 int _win_socket(int af, int type, int protocol);
+int _win_socketpair(int af, int type, int protocol, int socket_vector[2]);
 struct hostent *_win_gethostbyaddr(const char *addr, int len, int type);
 struct hostent *_win_gethostbyname(const char *name);
 struct hostent *gethostbyname2(const char *name, int af);
@@ -605,6 +610,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define SETSOCKOPT(s, l, o, v, n) setsockopt(s, l, o, v, n)
  #define SHUTDOWN(s, h) shutdown(s, h)
  #define SOCKET(a, t, p) socket(a, t, p)
+ #define SOCKETPAIR(a, t, p, v) socketpair(a, t, p, v)
  #define GETHOSTBYADDR(a, l, t) gethostbyname(a, l, t)
  #define GETHOSTBYNAME(n) gethostbyname(n)
  #define GETTIMEOFDAY(t, n) gettimeofday(t, n)
@@ -703,6 +709,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define SETSOCKOPT(s, l, o, v, n) _win_setsockopt(s, l, o, v, n)
  #define SHUTDOWN(s, h) _win_shutdown(s, h)
  #define SOCKET(a, t, p) _win_socket(a, t, p)
+ #define SOCKETPAIR(a, t, p, v) _win_socketpair(a, t, p, v)
  #define GETHOSTBYADDR(a, l, t) _win_gethostbyname(a, l, t)
  #define GETHOSTBYNAME(n) _win_gethostbyname(n)
  #define GETTIMEOFDAY(t, n) _win_gettimeofday(t, n)
