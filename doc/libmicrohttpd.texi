@@ -13,7 +13,7 @@ This manual is for GNU libmicrohttpd
 (version @value{VERSION}, @value{UPDATED}), a library for embedding
 an HTTP(S) server into C applications.
 
-Copyright @copyright{} 2007--2012 Christian Grothoff
+Copyright @copyright{} 2007--2013 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -267,8 +267,8 @@ specifies path to libgcrypt installation
 specifies path to libgnutls installation
 
 
- 
 @end table
+
 
 @section Including the microhttpd.h header
 @cindex portability
@@ -356,6 +356,40 @@ versions are deprecated.  Also, for historical reasons,
 written code should only use the unsigned versions.  However, you need
 to define both in "platform.h" if you need to change the definition
 for the specific platform.
+
+
+@section Portability to W32
+
+On W32, GNUnet requires PlibC, a lightweight library to provide some
+more POSIX-like calls on W32.  While PlibC takes care of most issues,
+it is unable to make @code{select} (or equivalent alternative socket
+calls) unblock when a socket is @code{shutdown}.  This can be
+problematic if MHD is used in ``one thread per connection'' mode.  In
+this case, an inactive TCP connection may block @code{MHD_stop_daemon}
+until the connection times out.  You may be able to mitigate the issue
+by setting a reasonably low timeout, but in general we of course
+recommend migrating away from Windows.  Using MHD with other types of
+event loops is unaffected by this issue.
+
+
+@section Portability to z/OS
+
+To compile MHD on z/OS, extract the archive and run
+
+@verbatim
+iconv -f UTF-8 -t IBM-1047 contrib/ascebc > /tmp/ascebc.sh
+chmod +x /tmp/ascebc.sh
+for n in `find * -type f`
+do
+  /tmp/ascebc.sh $n
+done
+@end verbatim
+to convert all source files to EBCDIC.  Note that you must run
+@code{configure} from the directory where the configure script is
+located.   Otherwise, configure will fail to find the
+@code{contrib/xcc} script (which is a wrapper around the z/OS c89
+compiler).
+
 
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

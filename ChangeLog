@@ -1,3 +1,6 @@
+Mon Aug 12 23:51:18 CEST 2013
+	Updated manual, documenting W32 select/shutdown issue. -CG
+
 Sat Aug 10 21:01:18 CEST 2013
 	Trying to fix #2983 (untested). -CG
 
