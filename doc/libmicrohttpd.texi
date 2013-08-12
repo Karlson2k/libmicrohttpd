@@ -1322,7 +1322,12 @@ managed by MHD.  This API is usually not needed (since
 MHD will accept inbound connections on the server socket).
 Use this API in special cases, for example if your HTTP
 server is behind NAT and needs to connect out to the 
-HTTP client.
+HTTP client, or if you are building a proxy.
+
+If you use this API in conjunction with a internal select or a thread
+pool, you must set the option @code{MHD_USE_PIPE_FOR_SHUTDOWN} to
+ensure that the freshly added connection is immediately processed by
+MHD.
 
 The given client socket will be managed (and closed!) by MHD after
 this call and must no longer be used directly by the application
@@ -1342,7 +1347,8 @@ number of bytes in addr
 This function will return @code{MHD_YES} on success, 
 @code{MHD_NO} if this daemon could
 not handle the connection (i.e. malloc failed, etc).
-The socket will be closed in any case.
+The socket will be closed in any case; 'errno' is set
+to indicate further details about the error.
 @end deftypefun
 
 

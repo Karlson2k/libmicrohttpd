@@ -431,6 +431,9 @@ enum MHD_FLAG
    * specify it), if 'MHD_USE_NO_LISTEN_SOCKET' is specified.  In
    * "external" select mode, this option is always simply ignored.
    * On W32 a pair of sockets is used instead of a pipe.
+   *
+   * You must also use this option if you use internal select mode
+   * or a thread pool in conjunction with 'MHD_add_connection'.
    */
   MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
 
@@ -1208,12 +1211,16 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
 
 
 /**
- * Add another client connection to the set of connections 
- * managed by MHD.  This API is usually not needed (since
- * MHD will accept inbound connections on the server socket).
- * Use this API in special cases, for example if your HTTP
- * server is behind NAT and needs to connect out to the 
- * HTTP client.
+ * Add another client connection to the set of connections managed by
+ * MHD.  This API is usually not needed (since MHD will accept inbound
+ * connections on the server socket).  Use this API in special cases,
+ * for example if your HTTP server is behind NAT and needs to connect
+ * out to the HTTP client, or if you are building a proxy.
+ *
+ * If you use this API in conjunction with a internal select or a
+ * thread pool, you must set the option
+ * @code{MHD_USE_PIPE_FOR_SHUTDOWN} to ensure that the freshly added
+ * connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
  * this call and must no longer be used directly by the application
