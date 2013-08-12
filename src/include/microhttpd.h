@@ -430,6 +430,7 @@ enum MHD_FLAG
    * use of this option is automatic (as in, you do not even have to
    * specify it), if 'MHD_USE_NO_LISTEN_SOCKET' is specified.  In
    * "external" select mode, this option is always simply ignored.
+   * On W32 a pair of sockets is used instead of a pipe.
    */
   MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
 

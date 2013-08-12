@@ -2968,7 +2968,12 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 == (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     use_pipe = 0; /* useless if we are using 'external' select */
   if ( (use_pipe) &&
-       (0 != PIPE (daemon->wpipe)) )
+#ifdef WINDOWS
+       (0 != SOCKETPAIR (AF_INET, SOCK_STREAM, IPPROTO_TCP, daemon->wpipe))
+#else
+       (0 != PIPE (daemon->wpipe))
+#endif
+    )
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon, 
