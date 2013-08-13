@@ -65,7 +65,7 @@ noinst_PROGRAMS += \
 endif
 
 if HAVE_W32
-AM_CFLAGS = -DWINDOWS
+AM_CFLAGS += -DWINDOWS
 endif
 
 minimal_example_SOURCES = \
