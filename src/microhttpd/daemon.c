@@ -1582,9 +1582,14 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	  MHD_destroy_response (pos->response);
 	  pos->response = NULL;
 	}
-      if ( (-1 != pos->socket_fd) &&
-	   (0 != CLOSE (pos->socket_fd)) )
-	MHD_PANIC ("close failed\n");
+      if (-1 != pos->socket_fd)
+	{
+#ifdef WINDOWS
+	  SHUTDOWN (pos->socket_fd, SHUT_WR);
+#endif
+	  if (0 != CLOSE (pos->socket_fd))
+	    MHD_PANIC ("close failed\n");
+	}
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
