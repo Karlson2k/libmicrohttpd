@@ -69,11 +69,18 @@
  * failing) to include the right headers.
  *
  * @defgroup event event-loop control
+ * MHD API to start and stop the HTTP server and manage the event loop.
  * @defgroup response generation of responses
+ * MHD API used to generate responses.
  * @defgroup request handling of requests
+ * MHD API used to access information about requests.
  * @defgroup authentication HTTP authentication
- * @defgroup logging logging and error handling
+ * MHD API related to basic and digest HTTP authentication.
+ * @defgroup logging logging
+ * MHD API to mange logging and error handling
  * @defgroup specialized misc. specialized functions
+ * This group includes functions that do not fit into any particular
+ * category and that are rarely used.
  */
 
 #ifndef MHD_MICROHTTPD_H
@@ -175,6 +182,7 @@ extern "C"
 
 /**
  * @defgroup httpcode HTTP response codes.
+ * These are the status codes defined for HTTP responses.
  * @{
  */
 #define MHD_HTTP_CONTINUE 100
@@ -250,6 +258,7 @@ extern "C"
 
 /**
  * @defgroup headers HTTP headers
+ * These are the standard headers found in HTTP requests and responses.
  * @{
  */
 /* See also: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html */
@@ -308,8 +317,9 @@ extern "C"
 /** @} */ /* end of group headers */
 
 /**
- * @defgroup versions HTTP versions (used to match against the first line of the
- * HTTP header as well as in the response code).
+ * @defgroup versions HTTP versions 
+ * These strings should be used to match against the first line of the
+ * HTTP header.
  * @{
  */
 #define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
@@ -319,6 +329,7 @@ extern "C"
 
 /**
  * @defgroup methods HTTP methods
+ * Standard HTTP methods (as strings).
  * @{
  */
 #define MHD_HTTP_METHOD_CONNECT "CONNECT"
@@ -333,8 +344,8 @@ extern "C"
 /** @} */ /* end of group methods */
 
 /**
- * @defgroup postenc HTTP POST encodings, see also
- * http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
+ * @defgroup postenc HTTP POST encodings
+ * See also: http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
  * @{
  */
 #define MHD_HTTP_POST_ENCODING_FORM_URLENCODED "application/x-www-form-urlencoded"
@@ -344,38 +355,40 @@ extern "C"
 
 
 /**
- * Handle for the daemon (listening on a socket for HTTP traffic).
+ * @brief Handle for the daemon (listening on a socket for HTTP traffic).
  * @ingroup event
  */
 struct MHD_Daemon;
 
 /**
- * Handle for a connection / HTTP request.  With HTTP/1.1, multiple
- * requests can be run over the same connection.  However, MHD will
- * only show one request per TCP connection to the client at any given
- * time.
+ * @brief Handle for a connection / HTTP request.
+ *
+ * With HTTP/1.1, multiple requests can be run over the same
+ * connection.  However, MHD will only show one request per TCP
+ * connection to the client at any given time.  
  * @ingroup request
  */
 struct MHD_Connection;
 
 /**
- * Handle for a response.
+ * @brief Handle for a response.
  * @ingroup response
  */
 struct MHD_Response;
 
 /**
- * Handle for POST processing.
+ * @brief Handle for POST processing.
  * @ingroup response
  */
 struct MHD_PostProcessor;
 
 
 /**
- * Options for the MHD daemon.  Note that if neither
- * #MHD_USE_THREAD_PER_CONNECTION nor #MHD_USE_SELECT_INTERNALLY is
- * used, the client wants control over the process and will call the
- * appropriate microhttpd callbacks.
+ * @brief Flags for the `struct MHD_Daemon`. 
+ *
+ * Note that if neither #MHD_USE_THREAD_PER_CONNECTION nor
+ * #MHD_USE_SELECT_INTERNALLY is used, the client wants control over
+ * the process and will call the appropriate microhttpd callbacks.
  *
  * Starting the daemon may also fail if a particular option is not
  * implemented or not supported on the target platform (i.e. no
@@ -520,7 +533,9 @@ typedef void (*MHD_LogCallback)(void *cls, const char *fm, va_list ap);
 
 
 /**
- * MHD options.  Passed in the varargs portion of #MHD_start_daemon.
+ * @brief MHD options.
+ *
+ * Passed in the varargs portion of #MHD_start_daemon.
  */
 enum MHD_OPTION
 {
