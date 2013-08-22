@@ -556,6 +556,7 @@ libmicrohttpd.pc
 Makefile
 contrib/Makefile
 doc/Makefile
+doc/doxygen/Makefile
 doc/examples/Makefile
 m4/Makefile
 src/Makefile

@@ -348,6 +348,7 @@ check_nonce_nc (struct MHD_Connection *connection,
  * @param connection The MHD connection structure
  * @return NULL if no username could be found, a pointer
  * 			to the username if found
+ * @ingroup authentication
  */
 char *
 MHD_digest_auth_get_username(struct MHD_Connection *connection)
@@ -539,8 +540,9 @@ check_argument_match (struct MHD_Connection *connection,
  * @param password The password used in the authentication
  * @param nonce_timeout The amount of time for a nonce to be
  * 			invalid in seconds
- * @return MHD_YES if authenticated, MHD_NO if not,
- * 			MHD_INVALID_NONCE if nonce is invalid
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
  */
 int
 MHD_digest_auth_check (struct MHD_Connection *connection,
@@ -739,9 +741,10 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
  *        header and that the caller should not do this
- * @param signal_stale MHD_YES if the nonce is invalid to add
+ * @param signal_stale #MHD_YES if the nonce is invalid to add
  * 			'stale=true' to the authentication header
- * @return MHD_YES on success, MHD_NO otherwise
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @ingroup authentication
  */
 int
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,

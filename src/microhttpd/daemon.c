@@ -548,7 +548,7 @@ add_to_fd_set (int fd,
 
 
 /**
- * Obtain the select sets for this daemon.
+ * Obtain the `select()` sets for this daemon.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -556,9 +556,10 @@ add_to_fd_set (int fd,
  * @param except_fd_set except set
  * @param max_fd increased to largest FD added (if larger
  *               than existing value); can be NULL
- * @return MHD_YES on success, MHD_NO if this
+ * @return #MHD_YES on success, #MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.
+ * @ingroup event
  */
 int
 MHD_get_fdset (struct MHD_Daemon *daemon,
@@ -1406,12 +1407,16 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 
 
 /**
- * Add another client connection to the set of connections 
- * managed by MHD.  This API is usually not needed (since
- * MHD will accept inbound connections on the server socket).
- * Use this API in special cases, for example if your HTTP
- * server is behind NAT and needs to connect out to the 
- * HTTP client.
+ * Add another client connection to the set of connections managed by
+ * MHD.  This API is usually not needed (since MHD will accept inbound
+ * connections on the server socket).  Use this API in special cases,
+ * for example if your HTTP server is behind NAT and needs to connect
+ * out to the HTTP client, or if you are building a proxy.
+ *
+ * If you use this API in conjunction with a internal select or a
+ * thread pool, you must set the option
+ * #MHD_USE_PIPE_FOR_SHUTDOWN to ensure that the freshly added
+ * connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
  * this call and must no longer be used directly by the application
@@ -1423,11 +1428,12 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).
  * @param addr IP address of the client
- * @param addrlen number of bytes in addr
- * @return MHD_YES on success, MHD_NO if this daemon could
- *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case; 'errno' is
+ * @param addrlen number of bytes in @a addr
+ * @return #MHD_YES on success, #MHD_NO if this daemon could
+ *        not handle the connection (i.e. `malloc()` failed, etc).
+ *        The socket will be closed in any case; `errno` is
  *        set to indicate further details about the error.
+ * @ingroup specialized
  */
 int 
 MHD_add_connection (struct MHD_Daemon *daemon, 
@@ -1602,16 +1608,18 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 
 
 /**
- * Obtain timeout value for select for this daemon
- * (only needed if connection timeout is used).  The
- * returned value is how long select should at most
- * block, not the timeout value set for connections.
+ * Obtain timeout value for `select()` for this daemon (only needed if
+ * connection timeout is used).  The returned value is how long
+ * `select()` or `poll()` should at most block, not the timeout value set
+ * for connections.  This function MUST NOT be called if MHD is
+ * running with #MHD_USE_THREAD_PER_CONNECTION.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
- * @return MHD_YES on success, MHD_NO if timeouts are
+ * @return #MHD_YES on success, #MHD_NO if timeouts are
  *        not used (or no connections exist that would
  *        necessiate the use of a timeout right now).
+ * @ingroup event
  */
 int
 MHD_get_timeout (struct MHD_Daemon *daemon,
@@ -1685,21 +1693,22 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 /**
  * Run webserver operations. This method should be called by clients
- * in combination with MHD_get_fdset if the client-controlled select
+ * in combination with #MHD_get_fdset if the client-controlled select
  * method is used.
  *
- * You can use this function instead of "MHD_run" if you called
- * 'select' on the result from "MHD_get_fdset".  File descriptors in
+ * You can use this function instead of #MHD_run if you called
+ * `select()` on the result from #MHD_get_fdset.  File descriptors in
  * the sets that are not controlled by MHD will be ignored.  Calling
- * this function instead of "MHD_run" is more efficient as MHD will
- * not have to call 'select' again to determine which operations are
+ * this function instead of #MHD_run is more efficient as MHD will
+ * not have to call `select()` again to determine which operations are
  * ready.
  *
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set
  * @param write_fd_set write set
  * @param except_fd_set except set (not used, can be NULL)
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @ingroup event
  */
 int
 MHD_run_from_select (struct MHD_Daemon *daemon, 
@@ -2295,18 +2304,23 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
 
 /**
- * Run webserver operations (without blocking unless
- * in client callbacks).  This method should be called
- * by clients in combination with MHD_get_fdset
- * if the client-controlled select method is used.
+ * Run webserver operations (without blocking unless in client
+ * callbacks).  This method should be called by clients in combination
+ * with #MHD_get_fdset if the client-controlled select method is used.
  *
- * This function will work for external 'poll' and 'select' mode.
- * However, if using external 'select' mode, you may want to
- * instead use 'MHD_run_from_select', as it is more efficient.
+ * This function is a convenience method, which is useful if the
+ * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
+ * with this function, MHD will internally do the appropriate `select()`
+ * call itself again.  While it is always safe to call #MHD_run (in
+ * external select mode), you should call #MHD_run_from_select if
+ * performance is important (as it saves an expensive call to
+ * `select()`).
  *
- * @return MHD_YES on success, MHD_NO if this
+ * @param daemon daemon to run
+ * @return #MHD_YES on success, #MHD_NO if this
  *         daemon was not started with the right
  *         options for this call.
+ * @ingroup event
  */
 int
 MHD_run (struct MHD_Daemon *daemon)
@@ -2365,16 +2379,20 @@ MHD_select_thread (void *cls)
 
 
 /**
- * Start a webserver on the given port.
+ * Start a webserver on the given port.  Variadic version of
+ * #MHD_start_daemon_va.
  *
- * @param flags combination of MHD_FLAG values
+ * @param flags combination of `enum MHD_FLAG` values
  * @param port port to bind to
  * @param apc callback to call to check which clients
- *        will be allowed to connect
+ *        will be allowed to connect; you can pass NULL
+ *        in which case connections from any IP will be
+ *        accepted
  * @param apc_cls extra argument to apc
- * @param dh default handler for all URIs
- * @param dh_cls extra argument to dh
+ * @param dh handler called for all requests (repeatedly)
+ * @param dh_cls extra argument to @a dh
  * @return NULL on error, handle to daemon on success
+ * @ingroup event
  */
 struct MHD_Daemon *
 MHD_start_daemon (unsigned int flags,
@@ -2399,12 +2417,18 @@ MHD_start_daemon (unsigned int flags,
  * connections.  Note that the caller is responsible for closing the
  * returned socket; however, if MHD is run using threads (anything but
  * external select mode), it must not be closed until AFTER
- * "MHD_stop_daemon" has been called (as it is theoretically possible
+ * #MHD_stop_daemon has been called (as it is theoretically possible
  * that an existing thread is still using it).
+ *
+ * Note that some thread modes require the caller to have passed
+ * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
+ * in one of those modes and this option was not given to
+ * #MHD_start_daemon, this function will return -1.
  *
  * @param daemon daemon to stop accepting new connections for
  * @return old listen socket on success, -1 if the daemon was 
  *         already not listening anymore
+ * @ingroup specialized
  */
 int
 MHD_quiesce_daemon (struct MHD_Daemon *daemon)
@@ -2877,20 +2901,22 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
 
 
-
 /**
  * Start a webserver on the given port.
  *
- * @param flags combination of MHD_FLAG values
- * @param port port to bind to
+ * @param flags combination of `enum MHD_FLAG` values
+ * @param port port to bind to (in host byte order)
  * @param apc callback to call to check which clients
- *        will be allowed to connect
+ *        will be allowed to connect; you can pass NULL
+ *        in which case connections from any IP will be
+ *        accepted
  * @param apc_cls extra argument to apc
- * @param dh default handler for all URIs
- * @param dh_cls extra argument to dh
+ * @param dh handler called for all requests (repeatedly)
+ * @param dh_cls extra argument to @a dh
  * @param ap list of options (type-value pairs,
- *        terminated with MHD_OPTION_END).
+ *        terminated with #MHD_OPTION_END).
  * @return NULL on error, handle to daemon on success
+ * @ingroup event
  */
 struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int flags,
@@ -3587,9 +3613,10 @@ epoll_shutdown (struct MHD_Daemon *daemon)
 
 
 /**
- * Shutdown an http daemon
+ * Shutdown an HTTP daemon.
  *
  * @param daemon daemon to stop
+ * @ingroup event
  */
 void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
@@ -3722,16 +3749,18 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
  * (not fully implemented!).
  *
  * @param daemon what daemon to get information about
- * @param infoType what information is desired?
- * @param ... depends on infoType
+ * @param info_type what information is desired?
+ * @param ... depends on @a info_type
  * @return NULL if this information is not available
- *         (or if the infoType is unknown)
+ *         (or if the @a info_type is unknown)
+ * @ingroup specialized
  */
 const union MHD_DaemonInfo *
 MHD_get_daemon_info (struct MHD_Daemon *daemon,
-                     enum MHD_DaemonInfoType infoType, ...)
+		     enum MHD_DaemonInfoType info_type, 
+		     ...)
 {
-  switch (infoType)
+  switch (info_type)
     {
     case MHD_DAEMON_INFO_KEY_SIZE:
       return NULL; /* no longer supported */
@@ -3750,19 +3779,20 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 
 
 /**
- * Sets the global error handler to a different implementation.  "cb"
+ * Sets the global error handler to a different implementation.  @a cb
  * will only be called in the case of typically fatal, serious
  * internal consistency issues.  These issues should only arise in the
  * case of serious memory corruption or similar problems with the
- * architecture.  While "cb" is allowed to return and MHD will then
+ * architecture.  While @a cb is allowed to return and MHD will then
  * try to continue, this is never safe.
  *
  * The default implementation that is used if no panic function is set
- * simply prints an error message and calls "abort".  Alternative
- * implementations might call "exit" or other similar functions.
+ * simply prints an error message and calls `abort()`.  Alternative
+ * implementations might call `exit()` or other similar functions.
  *
  * @param cb new error handler
- * @param cls passed to error handler
+ * @param cls passed to @a cb
+ * @ingroup logging
  */
 void 
 MHD_set_panic_func (MHD_PanicCallback cb, void *cls)
@@ -3775,7 +3805,8 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls)
 /**
  * Obtain the version of this library
  *
- * @return static version string, e.g. "0.4.1"
+ * @return static version string, e.g. "0.9.9"
+ * @ingroup specialized
  */
 const char *
 MHD_get_version (void)

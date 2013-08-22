@@ -113,8 +113,9 @@
  * @param kind types of values to iterate over
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
- * @param iterator_cls extra argument to iterator
+ * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over
+ * @ingroup request
  */
 int
 MHD_get_connection_values (struct MHD_Connection *connection,
@@ -141,15 +142,15 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 
 /**
- * This function can be used to append an entry to the list of HTTP
- * headers of a connection (so that the MHD_get_connection_values
- * function will return them -- and the MHD PostProcessor will also
- * see them).  This maybe required in certain situations (see Mantis
+ * This function can be used to add an entry to the HTTP headers of a
+ * connection (so that the #MHD_get_connection_values function will
+ * return them -- and the `struct MHD_PostProcessor` will also see
+ * them).  This maybe required in certain situations (see Mantis
  * #1399) where (broken) HTTP implementations fail to supply values
  * needed by the post processor (or other parts of the application).
- *
+ * 
  * This function MUST only be called from within the
- * MHD_AccessHandlerCallback (otherwise, access maybe improperly
+ * #MHD_AccessHandlerCallback (otherwise, access maybe improperly
  * synchronized).  Furthermore, the client must guarantee that the key
  * and value arguments are 0-terminated strings that are NOT freed
  * until the connection is closed.  (The easiest way to do this is by
@@ -160,9 +161,10 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  * @param kind kind of the value
  * @param key key for the value
  * @param value the value itself
- * @return MHD_NO if the operation could not be
+ * @return #MHD_NO if the operation could not be
  *         performed due to insufficient memory;
- *         MHD_YES on success
+ *         #MHD_YES on success
+ * @ingroup request
  */
 int
 MHD_set_connection_value (struct MHD_Connection *connection,
@@ -202,6 +204,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @param kind what kind of value are we looking for
  * @param key the header to look for, NULL to lookup 'trailing' value without a key
  * @return NULL if no such item was found
+ * @ingroup request
  */
 const char *
 MHD_lookup_connection_value (struct MHD_Connection *connection,
@@ -2561,15 +2564,16 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
  *
  * @param connection what connection to get information about
  * @param infoType what information is desired?
- * @param ... depends on infoType
+ * @param ... depends on @a info_type
  * @return NULL if this information is not available
- *         (or if the infoType is unknown)
+ *         (or if the @a info_type is unknown)
+ * @ingroup specialized
  */
 const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection *connection,
-                         enum MHD_ConnectionInfoType infoType, ...)
+                         enum MHD_ConnectionInfoType info_type, ...)
 {
-  switch (infoType)
+  switch (info_type)
     {
 #if HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
@@ -2605,7 +2609,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
  * @param connection connection to modify
  * @param option option to set
  * @param ... arguments to the option, depending on the option type
- * @return MHD_YES on success, MHD_NO if setting the option failed
+ * @return #MHD_YES on success, #MHD_NO if setting the option failed
+ * @ingroup specialized
  */
 int 
 MHD_set_connection_option (struct MHD_Connection *connection,
@@ -2653,13 +2658,14 @@ MHD_set_connection_option (struct MHD_Connection *connection,
 
 /**
  * Queue a response to be transmitted to the client (as soon as
- * possible but after MHD_AccessHandlerCallback returns).
+ * possible but after #MHD_AccessHandlerCallback returns).
  *
  * @param connection the connection identifying the client
- * @param status_code HTTP status code (i.e. 200 for OK)
+ * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
  * @param response response to transmit
- * @return MHD_NO on error (i.e. reply already sent),
- *         MHD_YES on success or if message has been queued
+ * @return #MHD_NO on error (i.e. reply already sent),
+ *         #MHD_YES on success or if message has been queued
+ * @ingroup response
  */
 int
 MHD_queue_response (struct MHD_Connection *connection,

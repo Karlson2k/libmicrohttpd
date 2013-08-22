@@ -83,7 +83,8 @@ add_response_entry (struct MHD_Response *response,
  * @param response response to add a header to
  * @param header the header to add
  * @param content value to add
- * @return MHD_NO on error (i.e. invalid header or content format).
+ * @return #MHD_NO on error (i.e. invalid header or content format).
+ * @ingroup response
  */
 int
 MHD_add_response_header (struct MHD_Response *response,
@@ -102,7 +103,8 @@ MHD_add_response_header (struct MHD_Response *response,
  * @param response response to remove a header from
  * @param footer the footer to delete
  * @param content value to delete
- * @return MHD_NO on error (i.e. invalid footer or content format).
+ * @return #MHD_NO on error (i.e. invalid footer or content format).
+ * @ingroup response
  */
 int
 MHD_add_response_footer (struct MHD_Response *response,
@@ -116,16 +118,18 @@ MHD_add_response_footer (struct MHD_Response *response,
 
 
 /**
- * Delete a header line from the response.
+ * Delete a header (or footer) line from the response.
  *
  * @param response response to remove a header from
  * @param header the header to delete
  * @param content value to delete
- * @return MHD_NO on error (no such header known)
+ * @return #MHD_NO on error (no such header known)
+ * @ingroup response
  */
 int
 MHD_del_response_header (struct MHD_Response *response,
-                         const char *header, const char *content)
+                         const char *header,
+			 const char *content)
 {
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
@@ -156,13 +160,14 @@ MHD_del_response_header (struct MHD_Response *response,
 
 
 /**
- * Get all of the headers added to a response.
+ * Get all of the headers (and footers) added to a response.
  *
  * @param response response to query
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
- * @param iterator_cls extra argument to iterator
+ * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over
+ * @ingroup response
  */
 int
 MHD_get_response_headers (struct MHD_Response *response,
@@ -184,11 +189,12 @@ MHD_get_response_headers (struct MHD_Response *response,
 
 
 /**
- * Get a particular header from the response.
+ * Get a particular header (or footer) from the response.
  *
  * @param response response to query
  * @param key which header to get
  * @return NULL if header does not exist
+ * @ingroup response
  */
 const char *
 MHD_get_response_header (struct MHD_Response *response, 
@@ -209,16 +215,17 @@ MHD_get_response_header (struct MHD_Response *response,
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *
- * @param size size of the data portion of the response, MHD_SIZE_UNKNOWN for unknown
+ * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
- *                   MHD may still call crc using smaller chunks); this
+ *                   MHD may still call @a crc using smaller chunks); this
  *                   is essentially the buffer size used for IO, clients
  *                   should pick a value that is appropriate for IO and
  *                   memory performance requirements
  * @param crc callback to use to obtain response data
- * @param crc_cls extra argument to crc
- * @param crfc callback to call to free crc_cls resources
+ * @param crc_cls extra argument to @a crc
+ * @param crfc callback to call to free @a crc_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
  */
 struct MHD_Response *
 MHD_create_response_from_callback (uint64_t size,
@@ -298,13 +305,21 @@ free_callback (void *cls)
  * header information and then be used any number of times.
  *
  * @param size size of the data portion of the response
- * @param fd file descriptor referring to a file on disk with the data
- * @param offset offset to start reading from in the file
+ * @param fd file descriptor referring to a file on disk with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
+ * @param offset offset to start reading from in the file;
+ *        Be careful! `off_t` may have been compiled to be a 
+ *        64-bit variable for MHD, in which case your application
+ *        also has to be compiled using the same options! Read
+ *        the MHD manual for more details.
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
  */
-struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,
-							    int fd,
-							    off_t offset)
+struct MHD_Response *
+MHD_create_response_from_fd_at_offset (size_t size,
+				       int fd,
+				       off_t offset)
 {
   struct MHD_Response *response;
 
@@ -329,9 +344,11 @@ struct MHD_Response *MHD_create_response_from_fd_at_offset (size_t size,
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the data
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
  */
-struct MHD_Response *MHD_create_response_from_fd (size_t size,
-						  int fd)
+struct MHD_Response *
+MHD_create_response_from_fd (size_t size,
+			     int fd)
 {
   return MHD_create_response_from_fd_at_offset (size, fd, 0);
 }
@@ -341,14 +358,15 @@ struct MHD_Response *MHD_create_response_from_fd (size_t size,
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *
- * @param size size of the data portion of the response
+ * @param size size of the @a data portion of the response
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
- * @param must_copy libmicrohttpd must make a copy of data
+ * @param must_copy libmicrohttpd must make a copy of @a data
  *        right away, the data maybe released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @deprecated use MHD_create_response_from_buffer instead
+ * @deprecated use #MHD_create_response_from_buffer instead
+ * @ingroup response
  */
 struct MHD_Response *
 MHD_create_response_from_data (size_t size,
@@ -399,6 +417,7 @@ MHD_create_response_from_data (size_t size,
  * @param buffer size bytes containing the response's data portion
  * @param mode flags for buffer management
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
  */
 struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
@@ -417,6 +436,9 @@ MHD_create_response_from_buffer (size_t size,
  * libmicrohttpd may keep some of the resources around if the response
  * is still in the queue for some clients, so the memory may not
  * necessarily be freed immediatley.
+ *
+ * @param response response to destroy
+ * @ingroup response
  */
 void
 MHD_destroy_response (struct MHD_Response *response)

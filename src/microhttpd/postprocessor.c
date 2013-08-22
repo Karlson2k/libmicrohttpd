@@ -244,10 +244,14 @@ struct MHD_PostProcessor
 
 
 /**
- * Create a PostProcessor.
+ * Create a `struct MHD_PostProcessor`.
  *
- * A PostProcessor can be used to (incrementally)
- * parse the data portion of a POST request.
+ * A `struct MHD_PostProcessor` can be used to (incrementally) parse
+ * the data portion of a POST request.  Note that some buggy browsers
+ * fail to set the encoding type.  If you want to support those, you
+ * may have to call #MHD_set_connection_value with the proper encoding
+ * type before creating a post processor (if no supported encoding
+ * type is set, this function will fail).
  *
  * @param connection the connection on which the POST is
  *        happening (used to determine the POST format)
@@ -255,11 +259,14 @@ struct MHD_PostProcessor
  *        internal buffering (used only for the parsing,
  *        specifically the parsing of the keys).  A
  *        tiny value (256-1024) should be sufficient.
- *        Do NOT use 0.
- * @param iter iterator to be called with the parsed data
- * @param iter_cls first argument to iter
+ *        Do NOT use a value smaller than 256.  For good
+ *        performance, use 32 or 64k (i.e. 65536).
+ * @param iter iterator to be called with the parsed data,
+ *        Must NOT be NULL.
+ * @param iter_cls first argument to @a iter
  * @return NULL on error (out of memory, unsupported encoding),
  *         otherwise a PP handle
+ * @ingroup request
  */
 struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
@@ -1082,26 +1089,25 @@ END:
 
 
 /**
- * Parse and process POST data.
- * Call this function when POST data is available
- * (usually during an MHD_AccessHandlerCallback)
- * with the upload_data and upload_data_size.
- * Whenever possible, this will then cause calls
- * to the MHD_IncrementalKeyValueIterator.
+ * Parse and process POST data.  Call this function when POST data is
+ * available (usually during an #MHD_AccessHandlerCallback) with the
+ * "upload_data" and "upload_data_size".  Whenever possible, this will
+ * then cause calls to the #MHD_IncrementalKeyValueIterator.
  *
  * @param pp the post processor
- * @param post_data post_data_len bytes of POST data
- * @param post_data_len length of post_data
- * @return MHD_YES on success, MHD_NO on error
+ * @param post_data @a post_data_len bytes of POST data
+ * @param post_data_len length of @a post_data
+ * @return #MHD_YES on success, #MHD_NO on error
  *         (out-of-memory, iterator aborted, parse error)
+ * @ingroup request
  */
 int
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data, size_t post_data_len)
 {
-  if (post_data_len == 0)
+  if (0 == post_data_len)
     return MHD_YES;
-  if (pp == NULL)
+  if (NULL == pp)
     return MHD_NO;
   if (0 == strncasecmp (MHD_HTTP_POST_ENCODING_FORM_URLENCODED, pp->encoding,
                          strlen(MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
@@ -1119,10 +1125,11 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  * Release PostProcessor resources.
  *
  * @param pp post processor context to destroy
- * @return MHD_YES if processing completed nicely,
- *         MHD_NO if there were spurious characters / formatting
+ * @return #MHD_YES if processing completed nicely,
+ *         #MHD_NO if there were spurious characters / formatting
  *                problems; it is common to ignore the return
  *                value of this function
+ * @ingroup request
  */
 int
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)

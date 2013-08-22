@@ -40,10 +40,11 @@
  * @param password a pointer for the password
  * @return NULL if no username could be found, a pointer
  * 			to the username if found
+ * @ingroup authentication
  */
 char *
-MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
-				     char** password) 
+MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
+				      char** password) 
 {
   const char *header;
   char *decode;
@@ -108,7 +109,8 @@ MHD_basic_auth_get_username_password(struct MHD_Connection *connection,
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param response response object to modify and queue
- * @return MHD_YES on success, MHD_NO otherwise
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @ingroup authentication
  */
 int 
 MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
