@@ -1,6 +1,6 @@
 man_MANS = libmicrohttpd.3
 
-SUBDIRS = . examples
+SUBDIRS = . examples doxygen
 
 DISTCLEANFILES = \
   libmicrohttpd.cps \
