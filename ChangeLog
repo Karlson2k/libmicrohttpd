@@ -2,6 +2,9 @@ Tue Aug 27 18:39:08 CEST 2013
 	Fix build issue if SOCK_NONBLOCK/EPOLL_CLOEXEC are not
 	defined (as is the case on older glibc versions). -CG
 
+Fri Aug 23 14:28:02 CEST 2013
+	Releasing libmicrohttpd 0.9.29. -CG
+
 Mon Aug 12 23:51:18 CEST 2013
 	Updated manual, documenting W32 select/shutdown issue. -CG
 

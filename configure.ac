@@ -21,7 +21,7 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.28],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd], [0.9.29],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
