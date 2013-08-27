@@ -86,6 +86,10 @@
 #define SOCK_CLOEXEC 0
 #endif
 
+#ifndef EPOLL_CLOEXEC
+#define EPOLL_CLOEXEC 0
+#endif
+
 
 /**
  * Default implementation of the panic function,
@@ -1511,9 +1515,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#if !HAVE_ACCEPT4
-  make_nonblocking_noninheritable (daemon, s);
-#endif
+  if ( (! HAVE_ACCEPT4) || (0 == SOCK_CLOEXEC) )
+    make_nonblocking_noninheritable (daemon, s);
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
@@ -2794,62 +2797,30 @@ parse_options_va (struct MHD_Daemon *daemon,
 /**
  * Create a listen socket, if possible with CLOEXEC flag set.
  *
+ * @param daemon daemon for which we create the socket
  * @param domain socket domain (i.e. PF_INET)
  * @param type socket type (usually SOCK_STREAM)
  * @param protocol desired protocol, 0 for default
  */
 static int
-create_socket (int domain, int type, int protocol)
+create_socket (struct MHD_Daemon *daemon,
+	       int domain, int type, int protocol)
 {
-  static int sock_cloexec = SOCK_CLOEXEC;
-  int ctype = SOCK_STREAM | sock_cloexec;
+  int ctype = type | SOCK_CLOEXEC;
   int fd;
-  int flags;
-#ifdef WINDOWS
-  DWORD dwFlags;
-#endif
  
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
   fd = SOCKET (domain, ctype, protocol);
-  if ( (-1 == fd) && (EINVAL == errno) && (0 != sock_cloexec) )
+  if ( (-1 == fd) && (EINVAL == errno) && (0 != SOCK_CLOEXEC) )
   {
-    sock_cloexec = 0;
+    ctype = type;
     fd = SOCKET(domain, type, protocol);
   }
   if (-1 == fd)
     return -1;
-  if (0 != sock_cloexec)
-    return fd; /* this is it */  
-  /* flag was not set during 'socket' call, let's try setting it manually */
-#ifndef WINDOWS
-  flags = fcntl (fd, F_GETFD);
-  if (flags < 0)
-#else
-  if (!GetHandleInformation ((HANDLE) fd, &dwFlags))
-#endif
-  {
-#ifdef WINDOWS
-    SetErrnoFromWinError (GetLastError ());
-#endif
-    return fd; /* good luck */
-  }
-#ifndef WINDOWS
-  if (flags == (flags | FD_CLOEXEC))
-    return fd; /* already set */
-  flags |= FD_CLOEXEC;
-  if (0 != fcntl (fd, F_SETFD, flags))
-#else
-  if (dwFlags != (dwFlags | HANDLE_FLAG_INHERIT))
-    return fd; /* already unset */
-  if (!SetHandleInformation ((HANDLE) fd, HANDLE_FLAG_INHERIT, 0))
-#endif
-  {
-#ifdef WINDOWS
-    SetErrnoFromWinError (GetLastError ());
-#endif
-    return fd; /* good luck */
-  }
+  if (type == ctype)
+    make_nonblocking_noninheritable (daemon, fd);
   return fd;
 }
 
@@ -2878,6 +2849,9 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
+  if (0 == EPOLL_CLOEXEC)
+    make_nonblocking_noninheritable (daemon, 
+				     daemon->epoll_fd);
   if (-1 == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
@@ -3155,9 +3129,11 @@ MHD_start_daemon_va (unsigned int flags,
     {
       /* try to open listen socket */
       if ((flags & MHD_USE_IPv6) != 0)
-	socket_fd = create_socket (PF_INET6, SOCK_STREAM, 0);
+	socket_fd = create_socket (daemon,
+				   PF_INET6, SOCK_STREAM, 0);
       else
-	socket_fd = create_socket (PF_INET, SOCK_STREAM, 0);
+	socket_fd = create_socket (daemon,
+				   PF_INET, SOCK_STREAM, 0);
       if (-1 == socket_fd)
 	{
 #if HAVE_MESSAGES
