@@ -185,7 +185,6 @@ struct MHD_NonceNc
 void 
 MHD_DLOG (const struct MHD_Daemon *daemon, 
 	  const char *format, ...);
-
 #endif
 
 /**

@@ -625,7 +625,9 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 	}
     }
 #if DEBUG_CONNECT
+#if HAVE_MESSAGES
   MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
+#endif
 #endif
   return MHD_YES;
 }
@@ -1276,9 +1278,12 @@ internal_add_connection (struct MHD_Daemon *daemon,
     if ( (MHD_YES == external_add) &&
 	 (-1 != daemon->wpipe[1]) &&
 	 (1 != WRITE (daemon->wpipe[1], "n", 1)) )
-      MHD_DLOG (daemon,
-		"failed to signal new connection via pipe");
-
+      {
+#if HAVE_MESSAGES
+	MHD_DLOG (daemon,
+		  "failed to signal new connection via pipe");
+#endif
+      }
 #if EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
