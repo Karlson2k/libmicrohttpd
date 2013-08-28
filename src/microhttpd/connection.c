@@ -2688,6 +2688,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       connection->response_write_position = response->total_size;
     }
   if ( (MHD_CONNECTION_HEADERS_PROCESSED == connection->state) &&
+       (NULL != connection->method) &&
        ( (0 == strcasecmp (connection->method,
 			   MHD_HTTP_METHOD_POST)) ||
 	 (0 == strcasecmp (connection->method,
