@@ -114,7 +114,8 @@ run_everything ()
           MHD_SUPPRESS_DATE_NO_CLOCK,
           glob_opt.listen_port,
           NULL, NULL, &http_cb_request, NULL,
-          MHD_OPTION_URI_LOG_CALLBACK, &http_log_cb, NULL,
+          MHD_OPTION_URI_LOG_CALLBACK, &http_cb_log, NULL,
+          MHD_OPTION_NOTIFY_COMPLETED, &http_cb_request_completed, NULL,
           MHD_OPTION_END);
   if(NULL==daemon)
     DIE("MHD_start_daemon failed");
@@ -175,7 +176,7 @@ run_everything ()
         PRINT_INFO2("select error: %i", errno);
         break;
       case 0:
-        break;
+        //break;
       default:
       PRINT_INFO("run");
         //MHD_run_from_select(daemon,&rs, &ws, &es); //not closing FDs at some time in past

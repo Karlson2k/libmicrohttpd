@@ -120,7 +120,8 @@ struct Proxy
 	int id;
   int32_t stream_id;
 	bool done;
-	bool error;
+	bool http_error;
+	bool spdy_error;
   bool http_active;
   bool spdy_active;
   bool receiving_done;

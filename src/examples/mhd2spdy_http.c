@@ -27,7 +27,7 @@
 
 
 void *
-http_log_cb(void * cls,
+http_cb_log(void * cls,
 const char * uri)
 {
   (void)cls;
@@ -45,7 +45,7 @@ const char * uri)
 
 
 static int
-http_iterate_cb(void *cls,
+http_cb_iterate(void *cls,
                  enum MHD_ValueKind kind,
                  const char *name,
                  const char *value)
@@ -76,7 +76,7 @@ http_iterate_cb(void *cls,
 
 
 static ssize_t
-http_response_callback (void *cls,
+http_cb_response (void *cls,
                         uint64_t pos,
                         char *buffer,
                         size_t max)
@@ -89,9 +89,9 @@ http_response_callback (void *cls,
   const union MHD_ConnectionInfo *info;
   int val = 1;
   
-  PRINT_INFO2("http_response_callback for %s", proxy->url);
+  PRINT_INFO2("http_cb_response for %s", proxy->url);
   
-  if(proxy->error)
+  if(proxy->spdy_error)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   
 	if(0 == proxy->http_body_size &&( proxy->done || !proxy->spdy_active)){
@@ -145,18 +145,15 @@ http_response_callback (void *cls,
 
 
 static void
-http_response_done_callback(void *cls)
+http_cb_response_done(void *cls)
 {
-	struct Proxy *proxy = (struct Proxy *)cls;
   
-  PRINT_INFO2("http_response_done_callback for %s", proxy->url);
+  //TODO
+	/*struct Proxy *proxy = (struct Proxy *)cls;
   
-  if(proxy->spdy_active)
-    proxy->http_active = false;
-  else
-    free_proxy(proxy);
+  PRINT_INFO2("http_cb_response_done for %s", proxy->url);
+  */
 
-  --glob_opt.responses_pending;
 }
 
 int
@@ -291,7 +288,7 @@ http_cb_request (void *cls,
   spdy_headers.cnt = 10;
   MHD_get_connection_values (connection,
                        MHD_HEADER_KIND,
-                       &http_iterate_cb,
+                       &http_cb_iterate,
                        &spdy_headers);
                        
   spdy_headers.nv[spdy_headers.cnt] = NULL;
@@ -309,9 +306,9 @@ http_cb_request (void *cls,
   
   proxy->http_response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                          4096,
-                         &http_response_callback,
+                         &http_cb_response,
                          proxy,
-                         &http_response_done_callback);
+                         &http_cb_response_done);
 
   if (proxy->http_response == NULL)
     DIE("no response");
@@ -370,4 +367,34 @@ http_create_response(struct Proxy* proxy,
   }
   
   MHD_destroy_response (proxy->http_response);
+}
+
+void
+http_cb_request_completed (void *cls,
+                                   struct MHD_Connection *connection,
+                                   void **con_cls,
+                                   enum MHD_RequestTerminationCode toe)
+{
+  struct HTTP_URI *http_uri = (struct HTTP_URI *)*con_cls;
+  if(NULL == http_uri) return;
+  struct Proxy *proxy = (struct Proxy *)http_uri->proxy;
+  
+  PRINT_INFO2("http_cb_request_completed %i for %s",toe, http_uri->uri);
+  
+  if(proxy->spdy_active)
+  {
+    proxy->http_active = false;
+    if(MHD_REQUEST_TERMINATED_COMPLETED_OK != toe)
+    {
+      proxy->http_error = true;
+      assert(proxy->stream_id > 0);
+      //send RST_STREAM_STATUS_CANCEL
+      PRINT_INFO("send rst_stream" );
+      spdylay_submit_rst_stream(proxy->spdy_connection->session, proxy->stream_id, 5);
+    }
+  }
+  else
+    free_proxy(proxy);
+    
+  --glob_opt.responses_pending;
 }

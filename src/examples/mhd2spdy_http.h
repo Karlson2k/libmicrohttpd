@@ -38,11 +38,17 @@ http_cb_request (void *cls,
                 void **ptr);
 
 
-void * http_log_cb(void * cls, const char * uri);
+void * http_cb_log(void * cls, const char * uri);
 
 
 void
 http_create_response(struct Proxy* proxy, char **nv);
 
+
+void
+http_cb_request_completed (void *cls,
+                                   struct MHD_Connection *connection,
+                                   void **con_cls,
+                                   enum MHD_RequestTerminationCode toe);
 
 #endif

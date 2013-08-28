@@ -334,7 +334,7 @@ spdy_cb_on_ctrl_recv(spdylay_session *session,
     break;
     case SPDYLAY_RST_STREAM:
       PRINT_INFO2("received reset stream for %s", proxy->url);
-      proxy->error = true;
+      proxy->spdy_error = true;
     break;
     case SPDYLAY_HEADERS:
       PRINT_INFO2("received headers for %s", proxy->url);
@@ -398,7 +398,13 @@ spdy_cb_on_data_chunk_recv(spdylay_session *session,
   
   struct Proxy *proxy;
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
-	
+  
+  if(NULL == proxy)
+  {
+    PRINT_INFO("proxy in spdy_cb_on_data_chunk_recv is NULL)");
+    return;
+	}
+  
   if(!copy_buffer(data, len, &proxy->http_body, &proxy->http_body_size))
   {
     //TODO handle it better?
@@ -1076,9 +1082,9 @@ spdy_run_select(fd_set * read_fd_set,
     else
     {
       PRINT_INFO("not called");
-      PRINT_INFO2("connection->want_io %i",connections[i]->want_io);
-      PRINT_INFO2("read %i",spdylay_session_want_read(connections[i]->session));
-      PRINT_INFO2("write %i",spdylay_session_want_write(connections[i]->session));
+      //PRINT_INFO2("connection->want_io %i",connections[i]->want_io);
+      //PRINT_INFO2("read %i",spdylay_session_want_read(connections[i]->session));
+      //PRINT_INFO2("write %i",spdylay_session_want_write(connections[i]->session));
       //raise(SIGINT);
     }
   }
