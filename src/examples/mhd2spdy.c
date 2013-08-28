@@ -45,6 +45,22 @@ catch_signal(int signal)
 }
 
 
+void
+print_stat()
+{
+  if(!glob_opt.statistics)
+    return;
+  
+  printf("--------------------------\n");
+  printf("Statistics (TLS overhead is ignored when used):\n");
+  //printf("HTTP bytes received: %lld\n", glob_stat.http_bytes_received);
+  //printf("HTTP bytes sent: %lld\n", glob_stat.http_bytes_sent);
+  printf("SPDY bytes sent: %lld\n", glob_stat.spdy_bytes_sent);
+  printf("SPDY bytes received: %lld\n", glob_stat.spdy_bytes_received);
+  printf("SPDY bytes received and dropped: %lld\n", glob_stat.spdy_bytes_received_and_dropped);
+}
+
+
 int
 run_everything ()
 {	
@@ -201,6 +217,8 @@ run_everything ()
     
   PRINT_INFO2("spdy streams: %i; http requests: %i", glob_opt.streams_opened, glob_opt.responses_pending);
   PRINT_INFO2("memory allocated %zu bytes", glob_opt.global_memory);
+  
+  print_stat();
 
   return 0;
 }
@@ -210,7 +228,7 @@ void
 display_usage()
 {
   printf(
-    "Usage: http2spdy [-vo] [-b <SPDY2HTTP-PROXY>] -p <PORT>\n"
+    "Usage: mhd2spdy [-vos] [-b <SPDY2HTTP-PROXY>] -p <PORT>\n"
     "TODO\n"
   );
 }
@@ -227,12 +245,13 @@ main (int argc,
     {"backend-proxy",  required_argument, 0, 'b'},
     {"verbose",  no_argument, 0, 'v'},
     {"only-proxy",  no_argument, 0, 'o'},
+    {"statistics",  no_argument, 0, 's'},
     {0, 0, 0, 0}
   };
   
   while (1)
   {
-    getopt_ret = getopt_long( argc, argv, "p:b:vo", long_options, &option_index);
+    getopt_ret = getopt_long( argc, argv, "p:b:vos", long_options, &option_index);
     if (getopt_ret == -1)
       break;
 
@@ -254,6 +273,10 @@ main (int argc,
         
       case 'o':
         glob_opt.only_proxy = true;
+        break;
+        
+      case 's':
+        glob_opt.statistics = true;
         break;
         
       case 0:

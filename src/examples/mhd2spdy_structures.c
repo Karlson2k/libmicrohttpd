@@ -118,6 +118,8 @@ void
 free_proxy(struct Proxy *proxy)
 {
   PRINT_INFO2("free proxy called for '%s'", proxy->url);
+  if(NULL != proxy->http_body && proxy->http_body_size > 0)
+    UPDATE_STAT(glob_stat.spdy_bytes_received_and_dropped, proxy->http_body_size);
   free(proxy->http_body);
   free_uri(proxy->uri);
 	free(proxy->url);

@@ -188,6 +188,9 @@ spdy_cb_send(spdylay_session *session,
   
   PRINT_INFO2("%zd bytes written by spdy", rv);
   
+  if(rv > 0)
+    UPDATE_STAT(glob_stat.spdy_bytes_sent, rv);
+  
   return rv;
 }
 
@@ -257,6 +260,10 @@ spdy_cb_recv(spdylay_session *session,
     else if(rv == 0)
       rv = SPDYLAY_ERR_EOF;
   }
+  
+  if(rv > 0)
+    UPDATE_STAT(glob_stat.spdy_bytes_received, rv);
+  
   return rv;
 }
 

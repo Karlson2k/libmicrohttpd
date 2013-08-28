@@ -159,8 +159,20 @@ struct global_options
   bool verbose;
   bool only_proxy;
   bool spdy_data_received;
+  bool statistics;
 }
 glob_opt;
+
+
+struct global_statistics
+{
+  //unsigned long long http_bytes_sent;
+  //unsigned long long http_bytes_received;
+  unsigned long long spdy_bytes_sent;
+  unsigned long long spdy_bytes_received;
+  unsigned long long spdy_bytes_received_and_dropped;
+}
+glob_stat;
 
 
 //forbidden headers
@@ -241,6 +253,13 @@ glob_opt;
 	while(0)
   
   
+#define UPDATE_STAT(stat, value) do{\
+  if(glob_opt.statistics)\
+  {\
+    stat += value;\
+  }\
+  }\
+  while(0)
 
 
 void
