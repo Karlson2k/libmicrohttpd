@@ -1568,6 +1568,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 			(struct sockaddr *) pos->addr, 
 			pos->addr_len);
 #if EPOLL_SUPPORT
+      if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+	MHD_PANIC ("Internal error");
       if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	   (-1 != daemon->epoll_fd) &&
 	   (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
