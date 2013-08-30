@@ -120,7 +120,7 @@ extern "C"
 /**
  * Current version of the library.
  */
-#define MHD_VERSION 0x00092201
+#define MHD_VERSION 0x00092202
 
 /**
  * MHD-internal return code for "YES".
@@ -882,7 +882,15 @@ enum MHD_RequestTerminationCode
    * data.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_READ_ERROR = 4
+  MHD_REQUEST_TERMINATED_READ_ERROR = 4,
+
+  /**
+   * The client terminated the connection by closing the socket
+   * for writing (TCP half-closed); MHD aborted sending the
+   * response according to RFC 2616, section 8.1.4.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 5
 
 };
 

@@ -1494,7 +1494,6 @@ do_read (struct MHD_Connection *connection)
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return MHD_NO;
-
   bytes_read = connection->recv_cls (connection,
                                      &connection->read_buffer
                                      [connection->read_buffer_offset],
@@ -1520,11 +1519,11 @@ do_read (struct MHD_Connection *connection)
     }
   if (0 == bytes_read)
     {
-      /* other side closed connection */
+      /* other side closed connection; RFC 2616, section 8.1.4 suggests
+	 we should then shutdown ourselves as well. */
       connection->read_closed = MHD_YES;
-      /* shutdown is not required here, as the other side already
-	 knows; so flagging this internally should suffice */
-      /* SHUTDOWN (connection->socket_fd, SHUT_RD); */
+      MHD_connection_close (connection,
+			    MHD_REQUEST_TERMINATED_CLIENT_ABORT);
       return MHD_YES;
     }
   connection->read_buffer_offset += bytes_read;
@@ -2465,6 +2464,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	}
       break;
     case MHD_EVENT_LOOP_INFO_WRITE:
+      if ( (connection->read_buffer_size > connection->read_buffer_offset) && 
+	   (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
+	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
+	{
+	  EDLL_insert (daemon->eready_head,
+		       daemon->eready_tail,
+		       connection);
+	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	}
       if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) &&
 	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
 	{
@@ -2498,8 +2506,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 
 #if EPOLL_SUPPORT
 /**
- * Perform epoll processing, possibly moving the connection back into
- * the epoll set if needed.
+ * Perform epoll() processing, possibly moving the connection back into
+ * the epoll() set if needed.
  *
  * @param connection connection to process
  * @return MHD_YES if we should continue to process the
@@ -2514,7 +2522,8 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
        ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ||
 	 ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
-	   (MHD_EVENT_LOOP_INFO_READ == connection->event_loop_info) &&
+	   ( (MHD_EVENT_LOOP_INFO_READ == connection->event_loop_info) ||
+	     (connection->read_buffer_size > connection->read_buffer_offset) ) &&
 	   (MHD_NO == connection->read_closed) ) ) )
     {
       /* add to epoll set */
@@ -2694,11 +2703,8 @@ MHD_queue_response (struct MHD_Connection *connection,
 	 (0 == strcasecmp (connection->method,
 			   MHD_HTTP_METHOD_PUT))) )
     {
-      /* response was queued "early",
-         refuse to read body / footers or further
-         requests! */
-      if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-	(void) SHUTDOWN (connection->socket_fd, SHUT_RD);
+      /* response was queued "early", refuse to read body / footers or
+         further requests! */
       connection->read_closed = MHD_YES;
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     }

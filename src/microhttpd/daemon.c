@@ -615,9 +615,12 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
 	  add_to_fd_set (pos->socket_fd, write_fd_set, max_fd);
+	  if (pos->read_buffer_size > pos->read_buffer_offset)
+	    add_to_fd_set (pos->socket_fd, read_fd_set, max_fd);
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
-	  /* not in any FD set */
+	  if (pos->read_buffer_size > pos->read_buffer_offset)
+	    add_to_fd_set (pos->socket_fd, read_fd_set, max_fd);
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
 	  /* this should never happen */
@@ -693,8 +696,12 @@ MHD_handle_connection (void *data)
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
 	      add_to_fd_set (con->socket_fd, &ws, &max);
+	      if (con->read_buffer_size > con->read_buffer_offset)
+		add_to_fd_set (con->socket_fd, &rs, &max);
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
+	      if (con->read_buffer_size > con->read_buffer_offset)
+		add_to_fd_set (con->socket_fd, &rs, &max);
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
 	      tvp = &tv;
@@ -741,8 +748,12 @@ MHD_handle_connection (void *data)
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
 	      p[0].events |= POLLOUT;
+	      if (con->read_buffer_size > con->read_buffer_offset)
+		p[0].events |= POLLIN;  
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
+	      if (con->read_buffer_size > con->read_buffer_offset)
+		p[0].events |= POLLIN;  
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
 	      tvp = &tv;
@@ -1774,11 +1785,16 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		pos->read_handler (pos);
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
+	      if ( (FD_ISSET (ds, read_fd_set)) &&
+		   (pos->read_buffer_size > pos->read_buffer_offset) )
+		pos->read_handler (pos);
 	      if (FD_ISSET (ds, write_fd_set))
 		pos->write_handler (pos);
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      /* only idle handler */
+	      if ( (FD_ISSET (ds, read_fd_set)) &&
+		   (pos->read_buffer_size > pos->read_buffer_offset) )
+		pos->read_handler (pos);
 	      break;
 	    case MHD_EVENT_LOOP_INFO_CLEANUP:
 	      /* should never happen */
@@ -1903,9 +1919,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   /* count number of connections and thus determine poll set size */
   num_connections = 0;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
-    if ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
-	 (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) )
-      num_connections++;
+    num_connections++;
   {
     struct pollfd p[2 + num_connections];
     MHD_UNSIGNED_LONG_LONG ltimeout;
@@ -1953,9 +1967,12 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	    break;
 	  case MHD_EVENT_LOOP_INFO_WRITE:
 	    p[poll_server+i].events |= POLLOUT;
+	    if (pos->read_buffer_size > pos->read_buffer_offset)
+	      p[poll_server+i].events |= POLLIN;        
 	    break;
 	  case MHD_EVENT_LOOP_INFO_BLOCK:
-	    /* not in poll */
+	    if (pos->read_buffer_size > pos->read_buffer_offset)
+	      p[poll_server+i].events |= POLLIN;        
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
 	    /* should never happen */
@@ -2005,12 +2022,16 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	    if (p[poll_server+i].fd != pos->socket_fd)
 	      break; /* fd mismatch, something else happened, retry later ... */
 	    /* normal handling */
+	    if (0 != (p[poll_server+i].revents & POLLIN)) 
+	      pos->read_handler (pos);
 	    if (0 != (p[poll_server+i].revents & POLLOUT)) 
 	      pos->write_handler (pos);
 	    pos->idle_handler (pos);
 	    i++;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_BLOCK:
+	    if (0 != (p[poll_server+i].revents & POLLIN)) 
+	      pos->read_handler (pos);
 	    pos->idle_handler (pos);
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
@@ -2234,7 +2255,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	      if (0 != (events[i].events & EPOLLIN))
 		{
 		  pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
-		  if ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) &&
+		  if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
+			 (pos->read_buffer_size > pos->read_buffer_offset) ) &&
 		       (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
 		    {
 		      EDLL_insert (daemon->eready_head, 

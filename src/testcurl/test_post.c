@@ -481,6 +481,7 @@ struct CRBC
   size_t pos;
 };
 
+
 static size_t 
 readBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 {
@@ -497,12 +498,14 @@ readBuffer(void *p, size_t size, size_t nmemb, void *opaque)
   return required/size;
 }
 
+
 static size_t 
 slowReadBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 {
   sleep(1);
   return readBuffer(p, size, nmemb, opaque);
 }
+
 
 #define FLAG_EXPECT_CONTINUE 1
 #define FLAG_CHUNKED 2
@@ -603,6 +606,7 @@ testMultithreadedPostCancelPart(int flags)
   curl_slist_free_all(headers);
   return result;
 }
+
 
 static int
 testMultithreadedPostCancel()
