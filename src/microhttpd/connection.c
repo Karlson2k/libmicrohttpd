@@ -984,7 +984,8 @@ get_next_header_line (struct MHD_Connection *connection)
   while ((pos < connection->read_buffer_offset - 1) &&
          ('\r' != rbuf[pos]) && ('\n' != rbuf[pos]))
     pos++;
-  if (pos == connection->read_buffer_offset - 1)
+  if ( (pos == connection->read_buffer_offset - 1) &&
+       ('\n' != rbuf[pos]) )
     {
       /* not found, consider growing... */
       if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
@@ -1247,11 +1248,10 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
       http_version[0] = '\0';
       http_version++;
     }
-  if (connection->daemon->uri_log_callback != NULL)
+  if (NULL != connection->daemon->uri_log_callback)
     connection->client_context
-      =
-      connection->daemon->uri_log_callback (connection->daemon->
-                                            uri_log_callback_cls, uri);
+      = connection->daemon->uri_log_callback (connection->daemon->uri_log_callback_cls, 
+					      uri);
   args = strchr (uri, '?');
   if (NULL != args)
     {
@@ -2118,7 +2118,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_URL_RECEIVED:
           line = get_next_header_line (connection);
-          if (line == NULL)
+          if (NULL == line)
             {
               if (MHD_CONNECTION_URL_RECEIVED != connection->state)
                 continue;
