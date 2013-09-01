@@ -231,7 +231,7 @@ MHD_ip_addr_compare (const void *a1, const void *a2)
  * @param addr address to parse
  * @param addrlen number of bytes in addr
  * @param key where to store the parsed address
- * @return MHD_YES on success and MHD_NO otherwise (e.g., invalid address type)
+ * @return #MHD_YES on success and #MHD_NO otherwise (e.g., invalid address type)
  */
 static int
 MHD_ip_addr_to_key (const struct sockaddr *addr, 
@@ -271,8 +271,8 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
  * @param daemon handle to daemon where connection counts are tracked
  * @param addr address to add (or increment counter)
  * @param addrlen number of bytes in addr
- * @return Return MHD_YES if IP below limit, MHD_NO if IP has surpassed limit.
- *   Also returns MHD_NO if fails to allocate memory.
+ * @return Return #MHD_YES if IP below limit, #MHD_NO if IP has surpassed limit.
+ *   Also returns #MHD_NO if fails to allocate memory.
  */
 static int
 MHD_ip_limit_add (struct MHD_Daemon *daemon,
@@ -332,11 +332,11 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
 
 /**
  * Decrement connection count for IP address, removing from table
- * count reaches 0
+ * count reaches 0.
  *
  * @param daemon handle to daemon where connection counts are tracked
  * @param addr address to remove (or decrement counter)
- * @param addrlen number of bytes in addr
+ * @param addrlen number of bytes in @a addr
  */
 static void
 MHD_ip_limit_del (struct MHD_Daemon *daemon,
@@ -389,7 +389,7 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
 /**
  * Callback for receiving data from the socket.
  *
- * @param connection the MHD connection structure
+ * @param connection the MHD_Connection structure
  * @param other where to write received data to
  * @param i maximum size of other (in bytes)
  * @return number of bytes actually received
@@ -536,10 +536,10 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 
 
 /**
- * Add "fd" to the "fd_set".  If "fd" is
- * greater than "*max", set "*max" to fd.
+ * Add @a fd to the @a set.  If @a fd is
+ * greater than @a max_fd, set @a max_fd to @a fd.
  *
- * @param fd file descriptor to add to the set
+ * @param fd file descriptor to add to the @a set
  * @param set set to modify
  * @param max_fd maximum value to potentially update
  */
@@ -642,7 +642,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 
 /**
  * Main function of the thread that handles an individual
- * connection when MHD_USE_THREAD_PER_CONNECTION is set.
+ * connection when #MHD_USE_THREAD_PER_CONNECTION is set.
  * 
  * @param data the 'struct MHD_Connection' this thread will handle
  * @return always NULL
@@ -1002,10 +1002,10 @@ create_thread (pthread_t *thread,
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).
  * @param addr IP address of the client
- * @param addrlen number of bytes in addr
+ * @param addrlen number of bytes in @a addr
  * @param external_add perform additional operations needed due
  *        to the application calling us directly
- * @return MHD_YES on success, MHD_NO if this daemon could
+ * @return #MHD_YES on success, #MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in any case; 'errno' is
  *        set to indicate further details about the error.
@@ -1813,12 +1813,12 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 
 
 /**
- * Main internal select call.  Will compute select sets, call 'select'
- * and then MHD_run_from_select with the result.
+ * Main internal select() call.  Will compute select sets, call select()
+ * and then #MHD_run_from_select with the result.
  *
- * @param daemon daemon to run select loop for
- * @param may_block YES if blocking, NO if non-blocking
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @param daemon daemon to run select() loop for
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
  */
 static int
 MHD_select (struct MHD_Daemon *daemon, 
@@ -1906,11 +1906,11 @@ MHD_select (struct MHD_Daemon *daemon,
 #ifdef HAVE_POLL_H
 /**
  * Process all of our connections and possibly the server
- * socket using 'poll'.
+ * socket using poll().
  *
  * @param daemon daemon to run poll loop for
- * @param may_block YES if blocking, NO if non-blocking
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
  */
 static int
 MHD_poll_all (struct MHD_Daemon *daemon,
@@ -2053,11 +2053,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 
 
 /**
- * Process only the listen socket using 'poll'.
+ * Process only the listen socket using poll().
  *
  * @param daemon daemon to run poll loop for
- * @param may_block YES if blocking, NO if non-blocking
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
  */
 static int
 MHD_poll_listen_socket (struct MHD_Daemon *daemon,
@@ -2113,11 +2113,11 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 
 
 /**
- * Do 'poll'-based processing.
+ * Do poll()-based processing.
  *
- * @param daemon daemon to run poll loop for
- * @param may_block YES if blocking, NO if non-blocking
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @param daemon daemon to run poll()-loop for
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
  */
 static int
 MHD_poll (struct MHD_Daemon *daemon,
@@ -2139,23 +2139,23 @@ MHD_poll (struct MHD_Daemon *daemon,
 #if EPOLL_SUPPORT
 
 /**
- * How many events to we process at most per epoll call?  Trade-off
+ * How many events to we process at most per epoll() call?  Trade-off
  * between required stack-size and number of system calls we have to
  * make; 128 should be way enough to avoid more than one system call
  * for most scenarios, and still be moderate in stack size
  * consumption.  Embedded systems might want to choose a smaller value
- * --- but why use 'epoll' on such a system in the first place?
+ * --- but why use epoll() on such a system in the first place?
  */
 #define MAX_EVENTS 128
 
 
 /**
- * Do 'epoll'-based processing (this function is allowed to
- * block if 'may_block' is set to MHD_YES).
+ * Do epoll()-based processing (this function is allowed to
+ * block if @a may_block is set to #MHD_YES).
  *
  * @param daemon daemon to run poll loop for
- * @param may_block MHD_YES if blocking, MHD_NO if non-blocking
- * @return MHD_NO on serious errors, MHD_YES on success
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
  */
 static int
 MHD_epoll (struct MHD_Daemon *daemon,
@@ -2424,7 +2424,7 @@ MHD_select_thread (void *cls)
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
  *        accepted
- * @param apc_cls extra argument to apc
+ * @param apc_cls extra argument to @a apc
  * @param dh handler called for all requests (repeatedly)
  * @param dh_cls extra argument to @a dh
  * @return NULL on error, handle to daemon on success
@@ -2539,7 +2539,7 @@ typedef void (*VfprintfFunctionPointerType)(void *cls,
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
  * @param ap the options
- * @return MHD_YES on success, MHD_NO on error
+ * @return #MHD_YES on success, #MHD_NO on error
  */
 static int
 parse_options_va (struct MHD_Daemon *daemon,
@@ -2553,7 +2553,7 @@ parse_options_va (struct MHD_Daemon *daemon,
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
  * @param ... the options
- * @return MHD_YES on success, MHD_NO on error
+ * @return #MHD_YES on success, #MHD_NO on error
  */
 static int
 parse_options (struct MHD_Daemon *daemon,
@@ -2576,7 +2576,7 @@ parse_options (struct MHD_Daemon *daemon,
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
  * @param ap the options
- * @return MHD_YES on success, MHD_NO on error
+ * @return #MHD_YES on success, #MHD_NO on error
  */
 static int
 parse_options_va (struct MHD_Daemon *daemon,
@@ -2828,7 +2828,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 
 
 /**
- * Create a listen socket, if possible with CLOEXEC flag set.
+ * Create a listen socket, if possible with SOCK_CLOEXEC flag set.
  *
  * @param daemon daemon for which we create the socket
  * @param domain socket domain (i.e. PF_INET)
@@ -2860,11 +2860,11 @@ create_socket (struct MHD_Daemon *daemon,
 
 #if EPOLL_SUPPORT
 /**
- * Setup epoll FD for the daemon and initialize it to listen
+ * Setup epoll() FD for the daemon and initialize it to listen
  * on the listen FD.
  *
- * @param daemon daemon to initialize for epoll
- * @return MHD_YES on success, MHD_NO on failure
+ * @param daemon daemon to initialize for epoll()
+ * @return #MHD_YES on success, #MHD_NO on failure
  */
 static int
 setup_epoll_to_listen (struct MHD_Daemon *daemon)
@@ -2917,7 +2917,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
  *        accepted
- * @param apc_cls extra argument to apc
+ * @param apc_cls extra argument to @a apc
  * @param dh handler called for all requests (repeatedly)
  * @param dh_cls extra argument to @a dh
  * @param ap list of options (type-value pairs,
@@ -3596,9 +3596,9 @@ close_all_connections (struct MHD_Daemon *daemon)
 
 #if EPOLL_SUPPORT
 /**
- * Shutdown 'epoll' event loop by adding 'wpipe' to its event set.
+ * Shutdown epoll()-event loop by adding 'wpipe' to its event set.
  *
- * @param daemon daemon of which the epoll instance must be signalled
+ * @param daemon daemon of which the epoll() instance must be signalled
  */
 static void
 epoll_shutdown (struct MHD_Daemon *daemon)
@@ -3868,3 +3868,4 @@ MHD_fini ()
 }
 
 /* end of daemon.c */
+
