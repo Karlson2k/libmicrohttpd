@@ -50,6 +50,10 @@
 #include <sys/sendfile.h>
 #endif
 
+#ifndef HAVE_ACCEPT4
+#define HAVE_ACCEPT4
+#endif
+
 /**
  * Default connection limit.
  */
