@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
  -I$(top_srcdir) \
  -I$(top_srcdir)/src/include \
  -I$(top_srcdir)/src/applicationlayer \
-$(LIBCURL_CPPFLAGS)
+$(LIBCURL_CPPFLAGS) 
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
@@ -98,3 +98,14 @@ test_session_timeout_SOURCES = \
  $(SPDY_SOURCES) 
 test_session_timeout_LDADD = $(SPDY_LDADD)
 
+if HAVE_CURL_BINARY
+
+check_PROGRAMS +=  \
+  test_proxies
+  
+test_proxies_SOURCES = \
+ test_proxies.c \
+ $(SPDY_SOURCES) 
+test_proxies_LDADD = $(SPDY_LDADD)
+
+endif
