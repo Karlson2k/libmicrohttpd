@@ -341,6 +341,8 @@ then
                    enable_spdy="yes"], 
                    [AM_CONDITIONAL(HAVE_OPENSSL, false)
                    enable_spdy="no"])
+else
+ AM_CONDITIONAL(HAVE_OPENSSL, false)
 fi
 
 if test "$enable_spdy" = "yes"
