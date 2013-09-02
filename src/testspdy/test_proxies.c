@@ -85,6 +85,7 @@ int main()
 {
   //pid_t child;
 	int childstatus;
+	pid_t wpid;
   
 	parent = getpid();
 	mhd_port = get_port(4000);
@@ -95,7 +96,7 @@ int main()
 	if (child_mhd == 0)
 	{
     //run MHD
-		int devnull;
+		pid_t devnull;
     char *port_s;
 
 		close(1);
@@ -117,7 +118,7 @@ int main()
 	if (child_spdy2http == 0)
 	{
     //run spdy2http
-		int devnull;
+		pid_t devnull;
     char *port_s;
     //char *url;
 
@@ -141,7 +142,7 @@ int main()
 	if (child_mhd2spdy == 0)
 	{
     //run MHD2sdpy
-		int devnull;
+		pid_t devnull;
     char *port_s;
     char *url;
 
@@ -166,7 +167,7 @@ int main()
 	{
     //run curl
     FILE *p;
-		int devnull;
+		pid_t devnull;
 		char *cmd;
     unsigned int i;
     char buf[strlen(EXPECTED_BODY) + 1];
@@ -200,18 +201,35 @@ int main()
   
   do
   {
-    if(waitpid(child_mhd,&childstatus,WNOHANG) == child_mhd
-     || waitpid(child_spdy2http,&childstatus,WNOHANG) == child_spdy2http
-     || waitpid(child_mhd2spdy,&childstatus,WNOHANG) == child_mhd2spdy)
-     {
-    killchildren();
-    return 1;
-     }
-     if(waitpid(child_curl,&childstatus,WNOHANG) == child_curl)
-     {
-    killchildren();
-    return WEXITSTATUS(childstatus);
-     }
+    wpid = waitpid(child_mhd,&childstatus,WNOHANG);
+    if(wpid == child_mhd)
+    {
+      fprintf(stderr, "mhd died unexpectedly\n");
+      killchildren();
+      return 1;
+    }
+    
+    wpid = waitpid(child_spdy2http,&childstatus,WNOHANG);
+    if(wpid == child_spdy2http)
+    {
+      fprintf(stderr, "spdy2http died unexpectedly\n");
+      killchildren();
+      return 1;
+    }
+    
+    wpid = waitpid(child_mhd2spdy,&childstatus,WNOHANG);
+    if(wpid == child_mhd2spdy)
+    {
+      fprintf(stderr, "mhd2spdy died unexpectedly\n");
+      killchildren();
+      return 1;
+    }
+    
+    if(waitpid(child_curl,&childstatus,WNOHANG) == child_curl)
+    {
+      killchildren();
+      return WEXITSTATUS(childstatus);
+    }
     sleep(1);
   }
 	while(true);
