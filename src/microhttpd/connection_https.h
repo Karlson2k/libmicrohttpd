@@ -29,7 +29,14 @@
 #include "internal.h"
 
 #if HTTPS_SUPPORT
-void MHD_set_https_callbacks (struct MHD_Connection *connection);
+/**
+ * Set connection callback function to be used through out
+ * the processing of this secure connection.
+ *
+ * @param connection which callbacks should be modified
+ */
+void 
+MHD_set_https_callbacks (struct MHD_Connection *connection);
 #endif
 
 #endif

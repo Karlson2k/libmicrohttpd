@@ -1,5 +1,6 @@
 Mon Sep  2 22:59:45 CEST 2013
-	Fix use-after-free in epoll()-mode on read error. -CG
+	Fix use-after-free in epoll()-mode on read error.
+	Releasing libmicrohttpd 0.9.30. -CG
 
 Sun Sep  1 21:55:53 CEST 2013
 	Fixing build issues on FreeBSD. -CG

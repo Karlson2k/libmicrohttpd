@@ -35,7 +35,7 @@
  * @param kind header or footer
  * @param header the header to add
  * @param content value to add
- * @return MHD_NO on error (i.e. invalid header or content format).
+ * @return #MHD_NO on error (i.e. invalid header or content format).
  */
 static int
 add_response_entry (struct MHD_Response *response,

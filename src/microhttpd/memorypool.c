@@ -144,7 +144,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
  *
  * @param pool memory pool to use for the operation
  * @param size number of bytes to allocate
- * @param from_end allocate from end of pool (set to MHD_YES);
+ * @param from_end allocate from end of pool (set to #MHD_YES);
  *        use this for small, persistent allocations that
  *        will never be reallocated
  * @return NULL if the pool cannot support size more
@@ -187,8 +187,8 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * @param old_size the size of the existing block
  * @param new_size the new size of the block
  * @return new address of the block, or
- *         NULL if the pool cannot support new_size
- *         bytes (old continues to be valid for old_size)
+ *         NULL if the pool cannot support @a new_size
+ *         bytes (old continues to be valid for @a old_size)
  */
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,
@@ -234,12 +234,12 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
 /**
  * Clear all entries from the memory pool except
- * for "keep" of the given "size".
+ * for @a keep of the given @a size.
  *
  * @param pool memory pool to use for the operation
  * @param keep pointer to the entry to keep (maybe NULL)
  * @param size how many bytes need to be kept at this address
- * @return addr new address of "keep" (if it had to change)
+ * @return addr new address of @a keep (if it had to change)
  */
 void *
 MHD_pool_reset (struct MemoryPool *pool, 

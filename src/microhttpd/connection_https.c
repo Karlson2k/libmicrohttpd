@@ -38,8 +38,8 @@
  * Give gnuTLS chance to work on the TLS handshake.  
  *
  * @param connection connection to handshake on
- * @return MHD_YES on error or if the handshake is progressing
- *         MHD_NO if the handshake has completed successfully
+ * @return #MHD_YES on error or if the handshake is progressing
+ *         #MHD_NO if the handshake has completed successfully
  *         and we should start to read/write data
  */
 static int
@@ -90,7 +90,7 @@ run_tls_handshake (struct MHD_Connection *connection)
  * processing.
  *
  * @param connection the source connection
- * @return always MHD_YES (we should continue to process the connection)
+ * @return always #MHD_YES (we should continue to process the connection)
  */
 static int
 MHD_tls_connection_handle_read (struct MHD_Connection *connection)
@@ -107,7 +107,7 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
  * will forward all write requests to the underlying daemon unless
  * the connection has been marked for closing.
  *
- * @return always MHD_YES (we should continue to process the connection)
+ * @return always #MHD_YES (we should continue to process the connection)
  */
 static int
 MHD_tls_connection_handle_write (struct MHD_Connection *connection)
@@ -125,8 +125,8 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
  * call this function.
  *
  * @param connection being handled
- * @return MHD_YES if we should continue to process the
- *         connection (not dead yet), MHD_NO if it died
+ * @return #MHD_YES if we should continue to process the
+ *         connection (not dead yet), #MHD_NO if it died
  */
 static int
 MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
@@ -167,6 +167,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 /**
  * Set connection callback function to be used through out
  * the processing of this secure connection.
+ *
+ * @param connection which callbacks should be modified
  */
 void
 MHD_set_https_callbacks (struct MHD_Connection *connection)
