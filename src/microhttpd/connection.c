@@ -1824,7 +1824,7 @@ int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
   update_last_activity (connection);
-  if (connection->state == MHD_CONNECTION_CLOSED)
+  if (MHD_CONNECTION_CLOSED == connection->state)
     return MHD_YES;
   /* make sure "read" has a reasonable number of bytes
      in buffer to use per system call (if possible) */
@@ -2169,13 +2169,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_HEADERS_RECEIVED:
           parse_connection_headers (connection);
-          if (connection->state == MHD_CONNECTION_CLOSED)
+          if (MHD_CONNECTION_CLOSED == connection->state)
             continue;
           connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
           continue;
         case MHD_CONNECTION_HEADERS_PROCESSED:
           call_connection_handler (connection); /* first call */
-          if (connection->state == MHD_CONNECTION_CLOSED)
+          if (MHD_CONNECTION_CLOSED == connection->state)
             continue;
           if (need_100_continue (connection))
             {
@@ -2208,7 +2208,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (connection->read_buffer_offset != 0)
             {
               process_request_body (connection);     /* loop call */
-              if (connection->state == MHD_CONNECTION_CLOSED)
+              if (MHD_CONNECTION_CLOSED == connection->state)
                 continue;
             }
           if ((connection->remaining_upload_size == 0) ||
