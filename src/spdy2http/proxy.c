@@ -30,6 +30,8 @@
  * to curl.
  * - curl does not close sockets when connection is closed and no
  * new sockets are opened (they stay in CLOSE_WAIT)
+ * - add '/' when a user requests http://example.com . Now this is a bad
+ * request
  * @author Andrey Uzunov
  */
  
@@ -393,20 +395,6 @@ spdy_post_data_cb (void * cls,
 		PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
 		return 0;
 	}
-  /*
-	if(NULL == proxy->received_body)
-		proxy->received_body = malloc(size);
-	else
-		proxy->received_body = realloc(proxy->received_body, proxy->received_body_size + size);
-	if(NULL == proxy->received_body)
-	{
-		PRINT_INFO("not enough memory (realloc returned NULL)");
-		return 0;
-	}
-
-	memcpy(proxy->received_body + proxy->received_body_size, buf, size);
-	proxy->received_body_size += size;
-  */
   
   proxy->receiving_done = !more;
   
@@ -436,9 +424,6 @@ response_callback (void *cls,
 {
 	ssize_t ret;
 	struct Proxy *proxy = (struct Proxy *)cls;
-	//void *newbody;
-	
-	//printf("response_callback\n");
   
   *more = true;
   
@@ -461,27 +446,6 @@ response_callback (void *cls,
     return -1;
   }
   
-  /*
-	if(max >= proxy->http_body_size)
-	{
-		ret = proxy->http_body_size;
-		newbody = NULL;
-	}
-	else
-	{
-		ret = max;
-		if(NULL == (newbody = malloc(proxy->http_body_size - max)))
-		{
-			PRINT_INFO("no memory");
-			return -1;
-		}
-		memcpy(newbody, proxy->http_body + max, proxy->http_body_size - max);
-	}
-	memcpy(buffer, proxy->http_body, ret);
-	free(proxy->http_body);
-	proxy->http_body = newbody;
-	proxy->http_body_size -= ret;
-	*/
   if(proxy->done && 0 == proxy->http_body_size) *more = false;
   
   PRINT_VERBOSE2("given bytes to microspdy: %zd", ret);
@@ -503,7 +467,7 @@ response_done_callback(void *cls,
 	
 	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
 	{
-		printf("answer was NOT sent, %i\n",status);
+		PRINT_VERBOSE2("answer was NOT sent, %i\n",status);
     free(proxy->http_body);
     proxy->http_body = NULL;
 	}
@@ -520,7 +484,6 @@ response_done_callback(void *cls,
 	free(proxy->url);
 	free(proxy);
 }
-
 
 
 static size_t
@@ -559,6 +522,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							&response_callback,
 							proxy,
 							0)))
+							//256)))
 			DIE("no response");
     
 		SPDY_name_value_destroy(proxy->headers);
@@ -571,7 +535,12 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							false,
 							&response_done_callback,
 							proxy))
-			DIE("no queue");
+              {
+			//DIE("no queue");
+      //TODO right?
+      proxy->error = true;
+      return 0;
+    }
 		
     call_spdy_run = true;
     
@@ -1036,6 +1005,8 @@ run ()
                 flags,
                 SPDY_DAEMON_OPTION_SOCK_ADDR,
                 addr,
+                //SPDY_DAEMON_OPTION_MAX_NUM_FRAMES,
+                //1,
 								SPDY_DAEMON_OPTION_END);
   }
 	
@@ -1152,41 +1123,21 @@ run ()
             SPDY_name_value_destroy(proxy->headers);
             if(!*(proxy->session_alive))
             {
-              /*if(NULL == (error_response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
-                    NULL,
-                    SPDY_HTTP_VERSION_1_1,
-                    NULL,
-                    ERROR_RESPONSE,
-                    strlen(ERROR_RESPONSE))))
-                DIE("no response");
-              if(SPDY_YES != SPDY_queue_response(proxy->request,
-                        error_response,
-                        true,
-                        false,
-                        &response_done_callback,
-                        proxy))
+              free(proxy->http_body);
+              proxy->http_body = NULL;
+
+              if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
               {
-                //clean and forget
-                //TODO
-                DIE("no queue");
-              }*/
+                PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
+              }
+              debug_num_curls--;
+              curl_slist_free_all(proxy->curl_headers);
+              curl_easy_cleanup(proxy->curl_handle);
               
-                  free(proxy->http_body);
-    proxy->http_body = NULL;
-
-	if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
-	{
-		PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
-	}
-  debug_num_curls--;
-	curl_slist_free_all(proxy->curl_headers);
-	curl_easy_cleanup(proxy->curl_handle);
-	
-	SPDY_destroy_request(proxy->request);
-	//SPDY_destroy_response(proxy->response);
-	free(proxy->url);
-	free(proxy);
-
+              SPDY_destroy_request(proxy->request);
+              //SPDY_destroy_response(proxy->response);
+              free(proxy->url);
+              free(proxy);
             }
             else
               proxy->error = true;
@@ -1216,10 +1167,10 @@ run ()
     }
   }
   while(loop);
-	
-	curl_multi_cleanup(multi_handle);
 
 	SPDY_stop_daemon(daemon);
+	
+	curl_multi_cleanup(multi_handle);
 	
 	SPDY_deinit();
   
