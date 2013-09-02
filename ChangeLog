@@ -8,7 +8,7 @@ Fri Aug 30 13:53:04 CEST 2013
 	Started to implement #3008 (RFC 2616, section 8.1.4
 	says HTTP server SHOULD terminate connection if the
 	client closes it for writing via TCP FIN, so we should
-	to continue to try to read and react differently
+	continue to try to read and react differently
 	if recv() returns zero). -CG
 
 Wed Aug 28 18:40:47 CEST 2013
