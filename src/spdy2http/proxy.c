@@ -455,22 +455,12 @@ response_callback (void *cls,
 
 
 static void
-response_done_callback(void *cls,
-						struct SPDY_Response *response,
-						struct SPDY_Request *request,
-						enum SPDY_RESPONSE_RESULT status,
-						bool streamopened)
+cleanup(struct Proxy *proxy)
 {
-	(void)streamopened;
-	struct Proxy *proxy = (struct Proxy *)cls;
-	int ret;
-	
-	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
-	{
-		PRINT_VERBOSE2("answer was NOT sent, %i\n",status);
-    free(proxy->http_body);
-    proxy->http_body = NULL;
-	}
+  int ret;
+  
+  //fprintf(stderr, "free proxy for %s\n", proxy->url);
+  
 	if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
 	{
 		PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
@@ -479,10 +469,30 @@ response_done_callback(void *cls,
 	curl_slist_free_all(proxy->curl_headers);
 	curl_easy_cleanup(proxy->curl_handle);
 	
-	SPDY_destroy_request(request);
-	SPDY_destroy_response(response);
 	free(proxy->url);
 	free(proxy);
+}
+
+
+static void
+response_done_callback(void *cls,
+						struct SPDY_Response *response,
+						struct SPDY_Request *request,
+						enum SPDY_RESPONSE_RESULT status,
+						bool streamopened)
+{
+	(void)streamopened;
+	struct Proxy *proxy = (struct Proxy *)cls;
+	
+	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
+	{
+		PRINT_VERBOSE2("answer was NOT sent, %i\n",status);
+    free(proxy->http_body);
+    proxy->http_body = NULL;
+	}
+	cleanup(proxy);
+	SPDY_destroy_request(request);
+	SPDY_destroy_response(response);
 }
 
 
@@ -506,6 +516,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
   if(!*(proxy->session_alive))
   {
     PRINT_VERBOSE("headers received, but session is dead");
+    proxy->error = true;
     return 0;
   }
   
@@ -535,10 +546,11 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 							false,
 							&response_done_callback,
 							proxy))
-              {
+    {
 			//DIE("no queue");
       //TODO right?
       proxy->error = true;
+      PRINT_INFO2("erorr in curl_header_cb for %s", proxy->url);
       return 0;
     }
 		
@@ -811,6 +823,8 @@ standard_request_handler(void *cls,
 	if(NULL == (proxy = malloc(sizeof(struct Proxy))))
     DIE("No memory");
 	memset(proxy, 0, sizeof(struct Proxy));
+  
+  //fprintf(stderr, "new  proxy for %s\n", path);
   
   session = SPDY_get_session_for_request(request);
   assert(NULL != session);
@@ -1114,6 +1128,9 @@ run ()
         {
           proxy->done = true;
           call_spdy_run = true;
+          //TODO what happens with proxy when the client resets a stream
+          //and response_done is not yet set for the last frame? is it
+          //possible?
         }
         else
         {
@@ -1121,29 +1138,24 @@ run ()
           if(NULL == proxy->response)
           {
             SPDY_name_value_destroy(proxy->headers);
-            if(!*(proxy->session_alive))
+            /*if(!*(proxy->session_alive))
             {
               free(proxy->http_body);
               proxy->http_body = NULL;
-
-              if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
-              {
-                PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
-              }
-              debug_num_curls--;
-              curl_slist_free_all(proxy->curl_headers);
-              curl_easy_cleanup(proxy->curl_handle);
-              
+*/
               SPDY_destroy_request(proxy->request);
-              //SPDY_destroy_response(proxy->response);
-              free(proxy->url);
-              free(proxy);
-            }
+              cleanup(proxy);
+            /*}
             else
-              proxy->error = true;
+              proxy->error = true;*/
           }
           else
-            proxy->error = true;
+          {
+            //proxy->error = true;
+            SPDY_destroy_request(proxy->request);
+            SPDY_destroy_response(proxy->response);
+            cleanup(proxy);
+          }
           call_spdy_run = true;
           //TODO spdy should be notified to send RST_STREAM
         }
