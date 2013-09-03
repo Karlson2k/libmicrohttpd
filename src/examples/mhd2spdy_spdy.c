@@ -370,14 +370,19 @@ spdy_cb_on_stream_close(spdylay_session *session,
   
   --glob_opt.streams_opened;
   --proxy->spdy_connection->streams_opened;
-  PRINT_INFO2("closing stream: str opened %i", glob_opt.streams_opened);
-  
-  DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
-  
+  PRINT_INFO2("closing stream: str opened %i; remove proxy %i", glob_opt.streams_opened, proxy->id);
+    
   if(proxy->http_active)
+  {
     proxy->spdy_active = false;
+    //DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
+  }
   else
-    free_proxy(proxy);
+  {
+            PRINT_INFO2("proxy free close id %i ", proxy->id);
+    //DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
+    //free_proxy(proxy);
+  }
 }
 
 
@@ -615,6 +620,7 @@ spdy_socket_set_tcp_nodelay(int fd)
 /*
  * Update |pollfd| based on the state of |connection|.
  */
+ /*
 void
 spdy_ctl_poll(struct pollfd *pollfd,
               struct SPDY_Connection *connection)
@@ -630,7 +636,7 @@ spdy_ctl_poll(struct pollfd *pollfd,
   {
     pollfd->events |= POLLOUT;
   }
-}
+}*/
 
 
 /*
@@ -766,12 +772,26 @@ spdy_connect(const struct URI *uri,
 void
 spdy_free_connection(struct SPDY_Connection * connection)
 {
+  struct Proxy *proxy;
+  
   if(NULL != connection)
   {
+    for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy->next)
+    {
+      DLL_remove(connection->proxies_head, connection->proxies_tail, proxy);
+      proxy->spdy_active = false;
+      proxy->spdy_error = true;
+      PRINT_INFO2("spdy_free_connection for id %i", proxy->id);
+      if(!proxy->http_active)
+      {
+        //free_proxy(proxy);
+      }
+    }
     spdylay_session_del(connection->session);
     SSL_free(connection->ssl);
     free(connection->host);
-    free(connection);
+    //free(connection);
+    connection->session = NULL;
   }
 }
 
@@ -835,12 +855,15 @@ spdy_request(const char **nv,
   if(ret != 0) {
     spdy_diec("spdylay_spdy_submit_request", ret);
   }
+  PRINT_INFO2("adding proxy %i", proxy->id);
+  if(NULL != connection->proxies_head)
+    PRINT_INFO2("before proxy %i", connection->proxies_head->id);
   DLL_insert(connection->proxies_head, connection->proxies_tail, proxy);
   
   return ret;
 }
 
-
+/*
 void
 spdy_get_pollfdset(struct pollfd fds[],
                    struct SPDY_Connection *connections[],
@@ -864,6 +887,7 @@ spdy_get_pollfdset(struct pollfd fds[],
       
       for(proxy = glob_opt.spdy_connection->proxies_head; NULL != proxy; proxy=proxy->next)
       {
+        abort();
         DLL_remove(glob_opt.spdy_connection->proxies_head, glob_opt.spdy_connection->proxies_tail, proxy);
         proxy->spdy_active = false;
       }
@@ -893,6 +917,7 @@ spdy_get_pollfdset(struct pollfd fds[],
       
       for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy->next)
       {
+        abort();
         DLL_remove(connection->proxies_head, connection->proxies_tail, proxy);
         proxy->spdy_active = false;
       }
@@ -910,7 +935,7 @@ spdy_get_pollfdset(struct pollfd fds[],
   //, "TODO max num of conn reached; close something"
   assert(NULL == connection);
 }
-
+*/
 
 int
 spdy_get_selectfdset(fd_set * read_fd_set,
@@ -921,7 +946,7 @@ spdy_get_selectfdset(fd_set * read_fd_set,
                       nfds_t *real_size)
 {
   struct SPDY_Connection *connection;
-  struct Proxy *proxy;
+  struct SPDY_Connection *next_connection;
   bool ret;
   int maxfd = 0;
   
@@ -936,14 +961,9 @@ spdy_get_selectfdset(fd_set * read_fd_set,
 				 except_fd_set, glob_opt.spdy_connection);
     if(!ret)
     {
-      //PRINT_INFO("TODO drop connection");
       glob_opt.streams_opened -= glob_opt.spdy_connection->streams_opened;
       
-      for(proxy = glob_opt.spdy_connection->proxies_head; NULL != proxy; proxy=proxy->next)
-      {
-        DLL_remove(glob_opt.spdy_connection->proxies_head, glob_opt.spdy_connection->proxies_tail, proxy);
-        proxy->spdy_active = false;
-      }
+      PRINT_INFO("spdy_free_connection in spdy_get_selectfdset");
       spdy_free_connection(glob_opt.spdy_connection);
       glob_opt.spdy_connection = NULL;
     }
@@ -963,18 +983,15 @@ spdy_get_selectfdset(fd_set * read_fd_set,
     ret = spdy_ctl_select(read_fd_set,
 				 write_fd_set, 
 				 except_fd_set, connection);
+         
+    next_connection = connection->next;
     if(!ret)
     {
-      //PRINT_INFO("TODO drop connection");
       glob_opt.streams_opened -= connection->streams_opened;
       DLL_remove(glob_opt.spdy_connections_head, glob_opt.spdy_connections_tail, connection);
       glob_opt.total_spdy_connections--;
       
-      for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy->next)
-      {
-        DLL_remove(connection->proxies_head, connection->proxies_tail, proxy);
-        proxy->spdy_active = false;
-      }
+      PRINT_INFO("spdy_free_connection in spdy_get_selectfdset");
       spdy_free_connection(connection);
     }
     else
@@ -983,7 +1000,7 @@ spdy_get_selectfdset(fd_set * read_fd_set,
       ++(*real_size);
       if(maxfd < connection->fd) maxfd = connection->fd;
     }
-    connection = connection->next;
+    connection = next_connection;
   }
   
   //, "TODO max num of conn reached; close something"
@@ -992,7 +1009,7 @@ spdy_get_selectfdset(fd_set * read_fd_set,
   return maxfd;
 }
 
-
+/*
 void
 spdy_run(struct pollfd fds[],
          struct SPDY_Connection *connections[],
@@ -1029,9 +1046,13 @@ spdy_run(struct pollfd fds[],
         }
         for(proxy = connections[i]->proxies_head; NULL != proxy; proxy=proxy->next)
         {
+        abort();
           DLL_remove(connections[i]->proxies_head, connections[i]->proxies_tail, proxy);
           proxy->spdy_active = false;
+          proxy->spdy_error = true;
+          PRINT_INFO2("spdy_free_connection for id %i", proxy->id);
         }
+        PRINT_INFO("spdy_free_connection in loop");
         spdy_free_connection(connections[i]);
       }
     }
@@ -1039,6 +1060,7 @@ spdy_run(struct pollfd fds[],
       PRINT_INFO("not called");
   }
 }
+*/
 
 void
 spdy_run_select(fd_set * read_fd_set,
@@ -1049,7 +1071,6 @@ spdy_run_select(fd_set * read_fd_set,
 {
   int i;
   int ret;
-  struct Proxy *proxy;
   
   for(i=0; i<size; ++i)
   {
@@ -1071,11 +1092,7 @@ spdy_run_select(fd_set * read_fd_set,
           DLL_remove(glob_opt.spdy_connections_head, glob_opt.spdy_connections_tail, connections[i]);
           glob_opt.total_spdy_connections--;
         }
-        for(proxy = connections[i]->proxies_head; NULL != proxy; proxy=proxy->next)
-        {
-          DLL_remove(connections[i]->proxies_head, connections[i]->proxies_tail, proxy);
-          proxy->spdy_active = false;
-        }
+        PRINT_INFO("in spdy_run_select");
         spdy_free_connection(connections[i]);
       }
     }

@@ -23,6 +23,7 @@
  *         TODOs:
  *         - non blocking SSL connect
  *         - check certificate
+ *         - on closing spdy session, close sockets for all requests
  * @author Andrey Uzunov
  */
  
@@ -87,7 +88,7 @@ run_everything ()
 
   glob_opt.streams_opened = 0;
   glob_opt.responses_pending = 0;
-  glob_opt.global_memory = 0;
+  //glob_opt.global_memory = 0;
 
   srand(time(NULL));
   
@@ -217,7 +218,7 @@ run_everything ()
   EVP_cleanup();
     
   PRINT_INFO2("spdy streams: %i; http requests: %i", glob_opt.streams_opened, glob_opt.responses_pending);
-  PRINT_INFO2("memory allocated %zu bytes", glob_opt.global_memory);
+  //PRINT_INFO2("memory allocated %zu bytes", glob_opt.global_memory);
   
   print_stat();
 
