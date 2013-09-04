@@ -1,3 +1,7 @@
+Wed Sep  4 17:23:15 CEST 2013
+	Set IPV6_V6ONLY socket option correctly when IPv6 is 
+	enabled (MHD_USE_IPv6) but not dual stack 
+	(MHD_USE_DUAL_STACK) -MW
 Mon Sep  2 22:59:45 CEST 2013
 	Fix use-after-free in epoll()-mode on read error.
 	Releasing libmicrohttpd 0.9.30. -CG
