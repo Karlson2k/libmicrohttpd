@@ -62,6 +62,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Error: %s\n", MHD_E_FAILED_TO_CONNECT);
+      close (sd);
       return -1;
     }
 
@@ -69,6 +70,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Handshake failed\n");
+      close (sd);
       return -1;
     }
 
@@ -79,6 +81,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (send (sd, "", 1, 0) == 0)
     {
       fprintf (stderr, "Connection failed to time-out\n");
+      close (sd);
       return -1;
     }
 

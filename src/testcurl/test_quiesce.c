@@ -384,8 +384,10 @@ testExternalGet ()
       if (i == 0) {
         /* quiesce the daemon on the 1st iteration, so the 2nd should fail */
         fd = MHD_quiesce_daemon(d);
-        close(fd);
-        c = setupCURL(&cbc);
+	if (-1 == fd)
+	  abort ();
+        close (fd);
+        c = setupCURL (&cbc);
         multi = curl_multi_init ();
         mret = curl_multi_add_handle (multi, c);
       }

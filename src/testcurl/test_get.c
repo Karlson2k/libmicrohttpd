@@ -472,6 +472,7 @@ testStopRace (int poll_flag)
     if (CONNECT (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
        fprintf(stderr, "connect: %m\n");
+       CLOSE (fd);
        return 512;
     }
     
