@@ -18,7 +18,7 @@
 */
 
 /**
- * @file internal.h
+ * @file microhttpd/internal.h
  * @brief  internal shared structures
  * @author Daniel Pittman
  * @author Christian Grothoff

@@ -17,7 +17,7 @@
 */
 
 /**
- * @file internal.c
+ * @file microspdy/internal.c
  * @brief  internal functions and macros for the framing layer
  * @author Andrey Uzunov
  */

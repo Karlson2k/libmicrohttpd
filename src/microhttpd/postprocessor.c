@@ -1091,7 +1091,7 @@ END:
  * Parse and process POST data.  Call this function when POST data is
  * available (usually during an #MHD_AccessHandlerCallback) with the
  * "upload_data" and "upload_data_size".  Whenever possible, this will
- * then cause calls to the #MHD_IncrementalKeyValueIterator.
+ * then cause calls to the #MHD_PostDataIterator.
  *
  * @param pp the post processor
  * @param post_data @a post_data_len bytes of POST data

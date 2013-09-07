@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemon.c
+ * @file microhttpd/daemon.c
  * @brief  A minimal-HTTP server library
  * @author Daniel Pittman
  * @author Christian Grothoff

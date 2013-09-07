@@ -2572,7 +2572,7 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
  * Obtain information about the given connection.
  *
  * @param connection what connection to get information about
- * @param infoType what information is desired?
+ * @param info_type what information is desired?
  * @param ... depends on @a info_type
  * @return NULL if this information is not available
  *         (or if the @a info_type is unknown)

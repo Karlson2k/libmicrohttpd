@@ -1091,7 +1091,7 @@ typedef int
  *        with plenty of upload data) this allows the application
  *        to easily associate some request-specific state.
  *        If necessary, this state can be cleaned up in the
- *        global #MHD_RequestCompleted callback (which
+ *        global #MHD_RequestCompletedCallback (which
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
  *        Initially, `*con_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
@@ -1764,7 +1764,7 @@ enum MHD_UpgradeEventMask
  * the local platform), to wait for the 'external' select loop to
  * trigger another round.  It is also possible to specify "no events"
  * to terminate the connection; in this case, the
- * MHD_RequestCompletedCallback will be called and all resources of
+ * #MHD_RequestCompletedCallback will be called and all resources of
  * the connection will be released.
  *
  * Except when in 'thread-per-connection' mode, implementations
@@ -1777,7 +1777,7 @@ enum MHD_UpgradeEventMask
  *                   to inspect the original HTTP request
  * @param con_cls value as set by the last call to the
  *                MHD_AccessHandlerCallback; will afterwards
- *                be also given to the MHD_RequestCompletedCallback
+ *                be also given to the #MHD_RequestCompletedCallback
  * @param data_in_size available data for reading, set to data read
  * @param data_in data read from the socket
  * @param data_out_size available buffer for writing, set to bytes 
@@ -1952,7 +1952,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  * Parse and process POST data.  Call this function when POST data is
  * available (usually during an #MHD_AccessHandlerCallback) with the
  * "upload_data" and "upload_data_size".  Whenever possible, this will
- * then cause calls to the #MHD_IncrementalKeyValueIterator.
+ * then cause calls to the #MHD_PostDataIterator.
  *
  * @param pp the post processor
  * @param post_data @a post_data_len bytes of POST data

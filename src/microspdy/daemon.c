@@ -17,7 +17,7 @@
 */
 
 /**
- * @file daemon.c
+ * @file microspdy/daemon.c
  * @brief  daemon functionality
  * @author Andrey Uzunov
  */
