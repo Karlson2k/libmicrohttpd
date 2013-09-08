@@ -371,17 +371,15 @@ spdy_cb_on_stream_close(spdylay_session *session,
   --glob_opt.streams_opened;
   --proxy->spdy_connection->streams_opened;
   PRINT_INFO2("closing stream: str opened %i; remove proxy %i", glob_opt.streams_opened, proxy->id);
-    
+   
+  DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy); 
   if(proxy->http_active)
   {
     proxy->spdy_active = false;
-    //DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
   }
   else
   {
-            PRINT_INFO2("proxy free close id %i ", proxy->id);
-    //DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
-    //free_proxy(proxy);
+    free_proxy(proxy);
   }
 }
 
@@ -773,25 +771,27 @@ void
 spdy_free_connection(struct SPDY_Connection * connection)
 {
   struct Proxy *proxy;
+  struct Proxy *proxy_next;
   
   if(NULL != connection)
   {
-    for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy->next)
+    for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy_next)
     {
+      proxy_next = proxy->next;
       DLL_remove(connection->proxies_head, connection->proxies_tail, proxy);
       proxy->spdy_active = false;
       proxy->spdy_error = true;
       PRINT_INFO2("spdy_free_connection for id %i", proxy->id);
       if(!proxy->http_active)
       {
-        //free_proxy(proxy);
+        free_proxy(proxy);
       }
     }
     spdylay_session_del(connection->session);
     SSL_free(connection->ssl);
     free(connection->host);
-    //free(connection);
-    connection->session = NULL;
+    free(connection);
+    //connection->session = NULL;
   }
 }
 

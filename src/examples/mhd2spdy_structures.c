@@ -127,7 +127,7 @@ free_proxy(struct Proxy *proxy)
 	free(proxy);
 }
 
-//TODO remove this
+
 void *au_malloc(size_t size)
 {
   void *new_memory;

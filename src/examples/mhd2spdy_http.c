@@ -190,6 +190,8 @@ http_cb_request (void *cls,
     
     if(NULL == (proxy = au_malloc(sizeof(struct Proxy))))
     {
+      free(http_uri->uri);
+      free(http_uri);
       PRINT_INFO("No memory");
       return MHD_NO; 
     }
@@ -391,19 +393,23 @@ http_cb_request_completed (void *cls,
     if(MHD_REQUEST_TERMINATED_COMPLETED_OK != toe)
     {
       proxy->http_error = true;
-      if(proxy->stream_id > 0 && NULL != proxy->spdy_connection->session)
+      if(proxy->stream_id > 0 /*&& NULL != proxy->spdy_connection->session*/)
       {
         //send RST_STREAM_STATUS_CANCEL
         PRINT_INFO2("send rst_stream %i",proxy->spdy_active );
         spdylay_submit_rst_stream(proxy->spdy_connection->session, proxy->stream_id, 5);
       }
+      /*else
+      {
+        DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy); 
+        free_proxy(proxy);
+      }*/
     }
   }
   else
   {
-            PRINT_INFO2("proxy free http id %i ", proxy->id);
-    //DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
-    //free_proxy(proxy);
+    PRINT_INFO2("proxy free http id %i ", proxy->id);
+    free_proxy(proxy);
   }
     
   --glob_opt.responses_pending;
