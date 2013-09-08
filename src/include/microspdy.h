@@ -807,7 +807,7 @@ typedef void
  * and possibly other stuff needed by the lib. Currently the call
  * always returns SPDY_YES.
  * 
- * @param enum SPDY_IO_SUBSYSTEM io_subsystem the IO subsystem that will
+ * @param io_subsystem the IO subsystem that will
  *        be initialized. Several can be used with bitwise OR. If no
  *        parameter is set, the default openssl subsystem will be used.
  * @return SPDY_YES if the library was correctly initialized and its

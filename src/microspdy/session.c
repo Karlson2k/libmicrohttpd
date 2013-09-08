@@ -159,6 +159,8 @@ spdyf_handler_read_syn_stream (struct SPDY_Session *session)
     free(name_value_strm);
   }
   
+  //SPDYF_DEBUG("syn_stream received: id %i", session->current_stream_id);
+  
 	//change state to wait for new frame
 	session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
 	free(frame);
@@ -235,6 +237,8 @@ spdyf_handler_read_goaway (struct SPDY_Session *session)
 			case SPDY_GOAWAY_STATUS_INTERNAL_ERROR:
 				break;
 		}
+  
+    //SPDYF_DEBUG("goaway received: status %i", status);
 	}
 	
 	session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
@@ -256,7 +260,7 @@ spdyf_handler_read_rst_stream (struct SPDY_Session *session)
 	struct SPDYF_Control_Frame *frame;
 	uint32_t stream_id;
 	int32_t status_int;
-	enum SPDY_RST_STREAM_STATUS status;
+	//enum SPDY_RST_STREAM_STATUS status; //for debug
 	struct SPDYF_Stream *stream;
 	
 	SPDYF_ASSERT(SPDY_SESSION_STATUS_WAIT_FOR_SUBHEADER == session->status,
@@ -285,7 +289,7 @@ spdyf_handler_read_rst_stream (struct SPDY_Session *session)
 	session->read_buffer_beginning += 4;
 	
     memcpy(&status_int, session->read_buffer + session->read_buffer_beginning, 4);
-	status = ntohl(status_int);
+	//status = ntohl(status_int); //for debug
 	session->read_buffer_beginning += 4;
 	
 	session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
@@ -304,7 +308,7 @@ spdyf_handler_read_rst_stream (struct SPDY_Session *session)
 		stream = stream->next;
 	}
 	
-	SPDYF_DEBUG("Received RST_STREAM; status=%i; id=%i",status,stream_id);
+	//SPDYF_DEBUG("Received RST_STREAM; status=%i; id=%i",status,stream_id);
 	
 	//do something according to the status
 	//TODO
@@ -361,9 +365,7 @@ spdyf_handler_read_data (struct SPDY_Session *session)
     if(NULL == stream || stream->is_in_closed || NULL == session->daemon->received_data_cb)
     {
       if(NULL == session->daemon->received_data_cb)
-      SPDYF_DEBUG("No callback for DATA frame set");
-      
-      SPDYF_DEBUG("Ignoring DATA frame!");
+      SPDYF_DEBUG("No callback for DATA frame set; Ignoring DATA frame!");
       
       //TODO send error?
       
@@ -405,6 +407,9 @@ spdyf_handler_read_data (struct SPDY_Session *session)
       }
       //else: do it later
     }
+  
+    //SPDYF_DEBUG("data received: id %i", frame->stream_id);
+  
     session->status = SPDY_SESSION_STATUS_WAIT_FOR_HEADER;
     free(frame);
 	}
@@ -499,6 +504,8 @@ SPDYF_handler_write_syn_reply (struct SPDY_Session *session)
 	free(compressed_headers);
 	
 	session->last_replied_to_stream_id = stream->stream_id;
+	
+  //SPDYF_DEBUG("syn_reply sent: id %i", stream->stream_id);
 
 	return SPDY_YES;
 }
@@ -548,6 +555,8 @@ SPDYF_handler_write_goaway (struct SPDY_Session *session)
 	//data is not freed by the destroy function so:
 	//free(response_queue->data);
 	
+  //SPDYF_DEBUG("goaway sent: status %i", NTOH31(*(uint32_t*)(response_queue->data)));
+  
 	SPDYF_ASSERT(0 == session->write_buffer_beginning, "bug1");
 	SPDYF_ASSERT(session->write_buffer_offset == session->write_buffer_size, "bug2");
 
@@ -717,6 +726,8 @@ SPDYF_handler_write_data (struct SPDY_Session *session)
 		session->write_buffer_offset +=  ret;
 		session->write_buffer_size = session->write_buffer_offset;
 	}
+  
+  //SPDYF_DEBUG("data sent: id %i", NTOH31(data_frame.stream_id));
 
 	SPDYF_ASSERT(0 == session->write_buffer_beginning, "bug1");
 	SPDYF_ASSERT(session->write_buffer_offset == session->write_buffer_size, "bug2");
@@ -761,6 +772,8 @@ SPDYF_handler_write_rst_stream (struct SPDY_Session *session)
 	//data is not freed by the destroy function so:
 	//free(response_queue->data);
 	
+  //SPDYF_DEBUG("rst_stream sent: id %i", NTOH31((((uint64_t)response_queue->data) & 0xFFFF0000) >> 32));
+  
 	SPDYF_ASSERT(0 == session->write_buffer_beginning, "bug1");
 	SPDYF_ASSERT(session->write_buffer_offset == session->write_buffer_size, "bug2");
 
@@ -801,6 +814,8 @@ SPDYF_handler_write_window_update (struct SPDY_Session *session)
 	//put stream id and delta-window-size to write buffer
 	memcpy(session->write_buffer + session->write_buffer_offset, response_queue->data, 8);
 	session->write_buffer_offset +=  8;
+	
+  //SPDYF_DEBUG("window_update sent: id %i", NTOH31((((uint64_t)response_queue->data) & 0xFFFF0000) >> 32));
 	
 	SPDYF_ASSERT(0 == session->write_buffer_beginning, "bug1");
 	SPDYF_ASSERT(session->write_buffer_offset == session->write_buffer_size, "bug2");
@@ -961,7 +976,8 @@ SPDYF_session_read (struct SPDY_Session *session)
 
 
 int
-SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
+SPDYF_session_write (struct SPDY_Session *session,
+                     bool only_one_frame)
 {
 	unsigned int i;
 	int bytes_written;
@@ -1033,6 +1049,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 				}
 				
 				//just return from the loop to return from this function
+        ++i;
 				break;
 			}
 			
@@ -1049,6 +1066,7 @@ SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame)
 				else
 				{
 					//no need to try the same frame again
+          ++i;
 					break;
 				}
       }

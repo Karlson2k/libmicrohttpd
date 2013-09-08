@@ -47,6 +47,8 @@ enum SPDY_IO_SUBSYSTEM spdyf_io_initialized;
  * @param npdcb callback called when HTTP POST params are received
  * 			after request
  * @param fnscb callback called when new stream is opened by a client
+ * @param fndcb callback called when new data -- within a data frame --
+ *        is received by the server
  * @param cls extra argument to all of the callbacks without those
  * 				 specific only for the framing layer
  * @param fcls extra argument to all of the callbacks, specific only for

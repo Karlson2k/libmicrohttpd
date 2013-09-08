@@ -184,26 +184,33 @@ typedef int
  * @return returned value will be used by the write function to return
  */
 typedef int
-(*SPDYF_IOAfterWrite) (struct SPDY_Session *session, int was_written);
+(*SPDYF_IOAfterWrite) (struct SPDY_Session *session,
+                       int was_written);
 
 
 /**
  * Sets callbacks for the daemon with regard to the IO subsystem.
  *
  * @param daemon
+ * @param io_subsystem the IO subsystem that will
+ *        be initialized and used by daemon.
  * @return SPDY_YES on success or SPDY_NO otherwise
  */
 int
-SPDYF_io_set_daemon(struct SPDY_Daemon *daemon, enum SPDY_IO_SUBSYSTEM io_subsystem);
+SPDYF_io_set_daemon(struct SPDY_Daemon *daemon,
+                    enum SPDY_IO_SUBSYSTEM io_subsystem);
 
 
 /**
  * Sets callbacks for the session with regard to the IO subsystem.
  *
  * @param session
+ * @param io_subsystem the IO subsystem that will
+ *        be initialized and used by session.
  * @return SPDY_YES on success or SPDY_NO otherwise
  */
 int
-SPDYF_io_set_session(struct SPDY_Session *session, enum SPDY_IO_SUBSYSTEM io_subsystem);
+SPDYF_io_set_session(struct SPDY_Session *session,
+                     enum SPDY_IO_SUBSYSTEM io_subsystem);
 
 #endif

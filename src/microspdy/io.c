@@ -18,7 +18,7 @@
 
 /**
  * @file io.c
- * @brief  Functions for IO.
+ * @brief Generic functions for IO.
  * @author Andrey Uzunov
  */
 
@@ -29,7 +29,8 @@
 
 
 int
-SPDYF_io_set_daemon(struct SPDY_Daemon *daemon, enum SPDY_IO_SUBSYSTEM io_subsystem)
+SPDYF_io_set_daemon(struct SPDY_Daemon *daemon,
+                    enum SPDY_IO_SUBSYSTEM io_subsystem)
 {
   switch(io_subsystem)
   {
@@ -54,7 +55,8 @@ SPDYF_io_set_daemon(struct SPDY_Daemon *daemon, enum SPDY_IO_SUBSYSTEM io_subsys
 
 
 int
-SPDYF_io_set_session(struct SPDY_Session *session, enum SPDY_IO_SUBSYSTEM io_subsystem)
+SPDYF_io_set_session(struct SPDY_Session *session,
+                     enum SPDY_IO_SUBSYSTEM io_subsystem)
 {
   switch(io_subsystem)
   {

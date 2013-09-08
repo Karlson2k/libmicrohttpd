@@ -51,20 +51,22 @@ SPDYF_session_read (struct SPDY_Session *session);
  * queue, and to write data to the TLS socket. 
  *
  * @param session SPDY_Session for which data will be written.
- * @return  TODO document after changes
- * SPDY_YES if something was written, the status was changed or
- * response callback was called but did not provide data
- * @return SPDY_YES if something was written, session's status was
- *         changed or response callback was called but did not provide
+ * @param only_one_frame when true, the function will write at most one
+ *        SPDY frame to the underlying IO subsystem;
+ *        when false, the function will write up to
+ *        session->max_num_frames SPDY frames
+ * @return SPDY_YES if the session's internal writing state has changed:
+ *         something was written and/or session's status was
+ *         changed and/or response callback was called but did not provide
  *         data. It is possible that error occurred but was handled
  *         and the status was therefore changed.
- *         SPDY_NO if nothing happened, e.g. the subsystem wants read/
- *         write to be called again. However, it is possible that some
+ *         SPDY_NO if nothing happened. However, it is possible that some
  *         frames were discarded within the call, e.g. frames belonging
  *         to a closed stream.
  */
 int
-SPDYF_session_write (struct SPDY_Session *session, bool only_one_frame);
+SPDYF_session_write (struct SPDY_Session *session,
+                     bool only_one_frame);
 
 
 /**
