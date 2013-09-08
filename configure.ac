@@ -337,7 +337,7 @@ AC_MSG_RESULT($enable_spdy)
 if test "$enable_spdy" = "yes"
 then
  AC_CHECK_HEADERS([openssl/err.h], 
-                   AC_CHECK_LIB(crypto, SSL_CTX_set_next_protos_advertised_cb,
+                   AC_CHECK_LIB(ssl, SSL_CTX_set_next_protos_advertised_cb,
                     [AM_CONDITIONAL(HAVE_OPENSSL, true)
                      enable_spdy="yes"], 
                     [AM_CONDITIONAL(HAVE_OPENSSL, false)
