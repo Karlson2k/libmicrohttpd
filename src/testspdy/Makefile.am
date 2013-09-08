@@ -29,7 +29,7 @@ check_PROGRAMS = \
   test_request_response \
   test_notls \
   test_request_response_with_callback \
-  test_requests_with_assets \
+  #test_requests_with_assets \
   test_misc \
   test_session_timeout
 
@@ -83,10 +83,10 @@ test_request_response_with_callback_SOURCES = \
  $(SPDY_SOURCES) 
 test_request_response_with_callback_LDADD = $(SPDY_LDADD)
 
-test_requests_with_assets_SOURCES = \
- test_requests_with_assets.c  \
- $(SPDY_SOURCES) 
-test_requests_with_assets_LDADD = $(SPDY_LDADD)
+#test_requests_with_assets_SOURCES = \
+# test_requests_with_assets.c  \
+# $(SPDY_SOURCES) 
+#test_requests_with_assets_LDADD = $(SPDY_LDADD)
 
 test_misc_SOURCES = \
  test_misc.c  \
