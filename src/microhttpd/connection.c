@@ -174,7 +174,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
   struct MHD_HTTP_Header *pos;
 
   pos = MHD_pool_allocate (connection->pool,
-                           sizeof (struct MHD_HTTP_Header), MHD_NO);
+                           sizeof (struct MHD_HTTP_Header), MHD_YES);
   if (NULL == pos)
     return MHD_NO;
   pos->header = (char *) key;
@@ -388,7 +388,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
  * return MHD_NO).
  *
  * @param connection the connection
- * @return MHD_NO if readying the response failed
+ * @return #MHD_NO if readying the response failed
  */
 static int
 try_ready_chunked_body (struct MHD_Connection *connection)
@@ -624,7 +624,7 @@ get_date_string (char *date)
  * point.
  *
  * @param connection the connection
- * @return MHD_YES on success, MHD_NO on failure
+ * @return #MHD_YES on success, #MHD_NO on failure
  */
 static int
 try_grow_read_buffer (struct MHD_Connection *connection)
@@ -671,7 +671,7 @@ build_header_response (struct MHD_Connection *connection)
   int must_add_close;
 
   EXTRA_CHECK (NULL != connection->version);
-  if (0 == strlen(connection->version))
+  if (0 == strlen (connection->version))
     {
       data = MHD_pool_allocate (connection->pool, 0, MHD_YES);
       connection->write_buffer = data;
@@ -725,7 +725,7 @@ build_header_response (struct MHD_Connection *connection)
     if (pos->kind == kind)
       size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
   /* produce data */
-  data = MHD_pool_allocate (connection->pool, size + 1, MHD_YES);
+  data = MHD_pool_allocate (connection->pool, size + 1, MHD_NO);
   if (NULL == data)
     {
 #if HAVE_MESSAGES
@@ -1130,7 +1130,7 @@ parse_arguments (enum MHD_ValueKind kind,
 /**
  * Parse the cookie header (see RFC 2109).
  *
- * @return MHD_YES for success, MHD_NO for failure (malformed, out of memory)
+ * @return #MHD_YES for success, #MHD_NO for failure (malformed, out of memory)
  */
 static int
 parse_cookie_header (struct MHD_Connection *connection)
@@ -1583,7 +1583,7 @@ do_write (struct MHD_Connection *connection)
  *
  * @param connection connection to check write status for
  * @param next_state the next state to transition to
- * @return MHY_NO if we are not done, MHD_YES if we are
+ * @return #MHD_NO if we are not done, #MHD_YES if we are
  */
 static int
 check_write_done (struct MHD_Connection *connection,
@@ -1595,7 +1595,8 @@ check_write_done (struct MHD_Connection *connection,
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
   connection->state = next_state;
-  MHD_pool_reallocate (connection->pool, connection->write_buffer,
+  MHD_pool_reallocate (connection->pool, 
+		       connection->write_buffer,
                        connection->write_buffer_size, 0);
   connection->write_buffer = NULL;
   connection->write_buffer_size = 0;
@@ -1646,7 +1647,7 @@ process_header_line (struct MHD_Connection *connection, char *line)
  * @param line the current input line
  * @param kind if the line is complete, add a header
  *        of the given kind
- * @return MHD_YES if the line was processed successfully
+ * @return #MHD_YES if the line was processed successfully
  */
 static int
 process_broken_line (struct MHD_Connection *connection,
@@ -1668,11 +1669,20 @@ process_broken_line (struct MHD_Connection *connection,
       while ((tmp[0] == ' ') || (tmp[0] == '\t'))
         tmp++;                  
       tmp_len = strlen (tmp);
+      /* FIXME: we might be able to do this better (faster!), as most
+	 likely 'last' and 'line' should already be adjacent in
+	 memory; however, doing this right gets tricky if we have a
+	 value continued over multiple lines (in which case we need to
+	 record how often we have done this so we can check for
+	 adjaency); also, in the case where these are not adjacent
+	 (not sure how it can happen!), we would want to allocate from
+	 the end of the pool, so as to not destroy the read-buffer's
+	 ability to grow nicely. */
       last = MHD_pool_reallocate (connection->pool,
                                   last,
                                   last_len + 1,
                                   last_len + tmp_len + 1);
-      if (last == NULL)
+      if (NULL == last)
         {
           transmit_error_response (connection,
                                    MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
@@ -1683,7 +1693,7 @@ process_broken_line (struct MHD_Connection *connection,
       connection->last = last;
       return MHD_YES;           /* possibly more than 2 lines... */
     }
-  EXTRA_CHECK ((last != NULL) && (connection->colon != NULL));
+  EXTRA_CHECK ((NULL != last) && (NULL != connection->colon));
   if ((MHD_NO == connection_add_header (connection,
                                         last, connection->colon, kind)))
     {
@@ -1692,7 +1702,7 @@ process_broken_line (struct MHD_Connection *connection,
       return MHD_NO;
     }
   /* we still have the current line to deal with... */
-  if (strlen (line) != 0)
+  if (0 != strlen (line))
     {
       if (MHD_NO == process_header_line (connection, line))
         {
@@ -2146,7 +2156,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
           line = get_next_header_line (connection);
-          if (line == NULL)
+          if (NULL == line)
             {
               if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
                 continue;
@@ -2161,7 +2171,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_NO ==
               process_broken_line (connection, line, MHD_HEADER_KIND))
             continue;
-          if (strlen (line) == 0)
+          if (0 == strlen (line))
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
               continue;

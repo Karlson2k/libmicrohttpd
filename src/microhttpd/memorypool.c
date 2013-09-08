@@ -71,7 +71,7 @@ struct MemoryPool
   size_t end;
 
   /**
-   * MHD_NO if pool was malloc'ed, MHD_YES if mmapped.
+   * #MHD_NO if pool was malloc'ed, #MHD_YES if mmapped.
    */
   int is_mmap;
 };
@@ -247,7 +247,7 @@ MHD_pool_reset (struct MemoryPool *pool,
 		size_t size)
 {
   size = ROUND_TO_ALIGN (size);
-  if (keep != NULL)
+  if (NULL != keep)
     {
       if (keep != pool->memory)
         {
@@ -257,6 +257,9 @@ MHD_pool_reset (struct MemoryPool *pool,
       pool->pos = size;
     }
   pool->end = pool->size;
+  memset (&pool->memory[size],
+	  0,
+	  pool->size - size);
   return keep;
 }
 
