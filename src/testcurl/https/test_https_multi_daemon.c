@@ -119,6 +119,9 @@ main (int argc, char *const *argv)
 
   curl_global_cleanup ();
   fclose (cert);
-  remove (ca_cert_file_name);
+  if (0 != remove (ca_cert_file_name))
+    fprintf (stderr,
+	     "Failed to remove `%s'\n",
+	     ca_cert_file_name);
   return errorCount != 0;
 }

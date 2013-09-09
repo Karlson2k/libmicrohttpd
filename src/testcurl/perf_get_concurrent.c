@@ -306,7 +306,15 @@ testExternalGet (int port)
       if (MHD_YES != tret) tt = 1;
       tv.tv_sec = tt / 1000;
       tv.tv_usec = 1000 * (tt % 1000);
-      select (max + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+	{
+	  if (EINTR == errno)
+	    continue;
+	  fprintf (stderr,
+		   "select failed: %s\n",
+		   strerror (errno));
+	  break;	      	  
+	}
       MHD_run (d);
     }
   stop ("external select");

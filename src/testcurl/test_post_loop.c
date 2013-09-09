@@ -396,7 +396,15 @@ testExternalPost ()
 	    timeout = 0; /* terminate quickly... */
           tv.tv_sec = timeout / 1000;
           tv.tv_usec = (timeout % 1000) * 1000;
-          select (max + 1, &rs, &ws, &es, &tv);
+          if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+	    {
+	      if (EINTR == errno)
+		continue;
+	      fprintf (stderr,
+		       "select failed: %s\n",
+		       strerror (errno));
+	      break;	      
+	    }
           while (CURLM_CALL_MULTI_PERFORM ==
                  curl_multi_perform (multi, &running));
           if (running == 0)
