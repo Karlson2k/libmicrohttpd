@@ -3030,6 +3030,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #ifndef WINDOWS
   if ( (0 == (flags & MHD_USE_POLL)) &&
+       (1 == use_pipe) &&
        (daemon->wpipe[0] >= FD_SETSIZE) )
     {
 #if HAVE_MESSAGES
