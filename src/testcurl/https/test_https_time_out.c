@@ -29,13 +29,14 @@
 #include "microhttpd.h"
 #include "internal.h"
 #include "tls_test_common.h"
+#include <gcrypt.h>
 
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
 static const int TIME_OUT = 3;
 
-char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
+static const char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 
 static int
 test_tls_session_time_out (gnutls_session_t session)
@@ -89,6 +90,8 @@ test_tls_session_time_out (gnutls_session_t session)
   return 0;
 }
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 int
 main (int argc, char *const *argv)
 {
@@ -99,6 +102,12 @@ main (int argc, char *const *argv)
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
 
+
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   gnutls_global_init ();
   gnutls_global_set_log_level (11);
 

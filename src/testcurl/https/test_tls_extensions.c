@@ -193,6 +193,8 @@ cleanup:
   return ret;
 }
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL
+
 int
 main (int argc, char *const *argv)
 {
@@ -208,6 +210,12 @@ main (int argc, char *const *argv)
     -1
   };
 
+
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   MHD_gtls_global_set_log_level (11);
 
   if ((test_fd = setup_test_file ()) == NULL)

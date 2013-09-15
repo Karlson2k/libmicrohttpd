@@ -29,7 +29,7 @@
 #include <curl/curl.h>
 #include <limits.h>
 #include <sys/stat.h>
-
+#include <gcrypt.h>
 #include "tls_test_common.h"
 
 extern int curl_check_version (const char *req_version, ...);
@@ -40,14 +40,16 @@ extern const char srv_self_signed_cert_pem[];
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
  */
-int
-test_concurent_daemon_pair (void * cls, char *cipher_suite,
+static int
+test_concurent_daemon_pair (void *cls, 
+			    const char *cipher_suite,
                             int proto_version)
 {
 
   int ret;
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
+
   d1 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
                          MHD_USE_DEBUG, DEAMON_TEST_PORT,
                          NULL, NULL, &http_ahc, NULL,
@@ -88,12 +90,21 @@ test_concurent_daemon_pair (void * cls, char *cipher_suite,
   return ret;
 }
 
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   FILE *cert;
 
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u). l:%d f:%s\n", errorCount, __LINE__,
@@ -106,7 +117,7 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  char *aes256_sha = "AES256-SHA";
+  const char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
     {
       aes256_sha = "rsa_aes_256_sha";

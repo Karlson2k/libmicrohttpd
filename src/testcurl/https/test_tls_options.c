@@ -75,6 +75,8 @@ test_unmatching_ssl_version (void * cls, const char *cipher_suite,
   return 0;
 }
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 /* setup a temporary transfer test file */
 int
 main (int argc, char *const *argv)
@@ -85,7 +87,11 @@ main (int argc, char *const *argv)
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
   gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+ if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return 0;
     }

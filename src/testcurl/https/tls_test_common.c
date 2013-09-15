@@ -63,7 +63,8 @@ setup_ca_cert ()
  * test HTTPS transfer
  */
 int
-test_daemon_get (void *cls, char *cipher_suite, int proto_version,
+test_daemon_get (void *cls,
+		 const char *cipher_suite, int proto_version,
 		 int port,
 		 int ver_peer)
 {

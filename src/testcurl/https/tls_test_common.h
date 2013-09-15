@@ -80,7 +80,8 @@ setup_ca_cert ();
  * perform cURL request for file
  */
 int
-test_daemon_get (void * cls, char *cipher_suite, int proto_version,
+test_daemon_get (void * cls,
+		 const char *cipher_suite, int proto_version,
                  int port, int ver_peer);
 
 void print_test_result (int test_outcome, char *test_name);

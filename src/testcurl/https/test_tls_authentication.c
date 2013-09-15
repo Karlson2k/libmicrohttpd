@@ -29,7 +29,7 @@
 #include <curl/curl.h>
 #include <limits.h>
 #include <sys/stat.h>
-
+#include <gcrypt.h>
 #include "tls_test_common.h"
 
 extern int curl_check_version (const char *req_version, ...);
@@ -69,11 +69,19 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
 }
 
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   if (setup_ca_cert () == NULL)
     {
       fprintf (stderr, MHD_E_TEST_FILE_CREAT);
