@@ -121,7 +121,7 @@ extern "C"
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093000
+#define MHD_VERSION 0x00093001
 
 /**
  * MHD-internal return code for "YES".
@@ -611,7 +611,7 @@ enum MHD_OPTION
    * logging.  This option should be followed by two arguments, the first
    * one must be of the form
    * 
-   *     void * my_logger(void *cls, const char *uri)
+   *     void * my_logger(void *cls, const char *uri, struct MHD_Connection *con)
    * 
    * where the return value will be passed as
    * (`* con_cls`) in calls to the #MHD_AccessHandlerCallback
@@ -623,6 +623,11 @@ enum MHD_OPTION
    * "cls" will be set to the second argument following
    * #MHD_OPTION_URI_LOG_CALLBACK.  Finally, uri will
    * be the 0-terminated URI of the request.
+   *
+   * Note that during the time of this call, most of the connection's
+   * state is not initialized (as we have not yet parsed he headers).
+   * However, information about the connecting client (IP, socket)
+   * is available.
    */
   MHD_OPTION_URI_LOG_CALLBACK = 7,
 

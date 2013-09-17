@@ -1,3 +1,6 @@
+Tue Sep 17 21:32:47 CEST 2013
+	Also pass MHD connection handle in URI log callback. -CG
+
 Fri Sep  6 10:00:44 CEST 2013
 	Improved check for proper OpenSSL version for
 	libmicrospdy. -CG

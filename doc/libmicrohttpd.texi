@@ -631,7 +631,7 @@ parsing will no longer contain the options, which maybe inconvenient for
 logging.  This option should be followed by two arguments, the first
 one must be of the form
 @example
- void * my_logger(void * cls, const char * uri)
+ void * my_logger(void * cls, const char * uri, struct MHD_Connection *con)
 @end example
 where the return value will be passed as
 @code{*con_cls} in calls to the @code{MHD_AccessHandlerCallback}
@@ -643,6 +643,10 @@ rely on the first call to the access handler having
 @code{cls} will be set to the second argument following
 MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
 be the 0-terminated URI of the request.
+
+Note that during the time of this call, most of the connection's state
+is not initialized (as we have not yet parsed he headers).  However,
+information about the connecting client (IP, socket) is available.
 
 @item MHD_OPTION_HTTPS_MEM_KEY
 @cindex SSL

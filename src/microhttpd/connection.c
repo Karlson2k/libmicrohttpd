@@ -1255,7 +1255,8 @@ parse_initial_message_line (struct MHD_Connection *connection, char *line)
   if (NULL != connection->daemon->uri_log_callback)
     connection->client_context
       = connection->daemon->uri_log_callback (connection->daemon->uri_log_callback_cls, 
-					      uri);
+					      uri,
+					      connection);
   args = strchr (uri, '?');
   if (NULL != args)
     {
