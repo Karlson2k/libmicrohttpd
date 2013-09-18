@@ -317,7 +317,9 @@ connection_close_error (struct MHD_Connection *connection,
  * #MHD_NO).
  *
  * @param connection the connection
- * @return #MHD_NO if readying the response failed
+ * @return #MHD_NO if readying the response failed (the
+ *  lock on the response will have been released already
+ *  in this case).
  */
 static int
 try_ready_normal_body (struct MHD_Connection *connection)
@@ -364,8 +366,10 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
+      if (NULL != response->crc)
+	pthread_mutex_unlock (&response->mutex);
       if (MHD_CONTENT_READER_END_OF_STREAM == ret) 
-	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETD_OK);
+	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
 	CONNECTION_CLOSE_ERROR (connection,
 				"Closing connection (stream error)\n");
@@ -376,6 +380,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
   if (0 == ret)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+      if (NULL != response->crc)
+	pthread_mutex_unlock (&response->mutex);
       return MHD_NO;
     }
   return MHD_YES;
@@ -1978,12 +1984,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           response = connection->response;
           if (response->crc != NULL)
             pthread_mutex_lock (&response->mutex);
-          if (MHD_YES != try_ready_normal_body (connection))
-            {
-              if (response->crc != NULL)
-                pthread_mutex_unlock (&response->mutex);
-              break;
-            }
+          if (MHD_YES != try_ready_normal_body (connection))            
+	    break;            
 	  ret = connection->send_cls (connection,
 				      &response->data
 				      [connection->response_write_position
@@ -2351,8 +2353,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
-              if (connection->response->crc != NULL)
-                pthread_mutex_unlock (&connection->response->mutex);
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               break;
             }
