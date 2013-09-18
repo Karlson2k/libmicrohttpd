@@ -1,3 +1,8 @@
+Wed Sep 18 18:29:24 CEST 2013
+	Signal connection termination as OK (and not as ERROR) if the
+	stream was terminated by the callback returning
+	MHD_CONTENT_READER_END_OF_STREAM. -CG
+
 Wed Sep 18 14:31:35 CEST 2013
 	Adding #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN. -CG
 

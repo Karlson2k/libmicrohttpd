@@ -314,10 +314,10 @@ connection_close_error (struct MHD_Connection *connection,
  * sending.  Assumes that the response mutex is
  * already held.  If the transmission is complete,
  * this function may close the socket (and return
- * MHD_NO).
+ * #MHD_NO).
  *
  * @param connection the connection
- * @return MHD_NO if readying the response failed
+ * @return #MHD_NO if readying the response failed
  */
 static int
 try_ready_normal_body (struct MHD_Connection *connection)
@@ -364,10 +364,11 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
-      CONNECTION_CLOSE_ERROR (connection,
-			      (ret == MHD_CONTENT_READER_END_OF_STREAM) 
-			      ? "Closing connection (end of response)\n"
-			      : "Closing connection (stream error)\n");
+      if (MHD_CONTENT_READER_END_OF_STREAM == ret) 
+	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETD_OK);
+      else
+	CONNECTION_CLOSE_ERROR (connection,
+				"Closing connection (stream error)\n");
       return MHD_NO;
     }
   response->data_start = connection->response_write_position;
