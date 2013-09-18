@@ -2353,11 +2353,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
+	      if (NULL != connection->response->crc)
+		pthread_mutex_unlock (&connection->response->mutex);
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               break;
             }
-          if (connection->response->crc != NULL)
-            pthread_mutex_unlock (&connection->response->mutex);
           /* not ready, no socket action */
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
