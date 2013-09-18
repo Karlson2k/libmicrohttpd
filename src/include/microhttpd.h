@@ -121,7 +121,7 @@ extern "C"
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093001
+#define MHD_VERSION 0x00093002
 
 /**
  * MHD-internal return code for "YES".
@@ -314,6 +314,7 @@ extern "C"
 #define MHD_HTTP_HEADER_VIA "Via"
 #define MHD_HTTP_HEADER_WARNING "Warning"
 #define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN "Access-Control-Allow-Origin"
 
 /** @} */ /* end of group headers */
 

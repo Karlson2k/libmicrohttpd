@@ -1470,7 +1470,7 @@ process_request_body (struct MHD_Connection *connection)
 		   , NULL
 #endif
 		   );
-      if (processed != 0)
+      if (0 != processed)
         instant_retry = MHD_NO; /* client did not process everything */
       used -= processed;
       if (connection->have_chunked_upload == MHD_YES)

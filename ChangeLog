@@ -1,3 +1,6 @@
+Wed Sep 18 14:31:35 CEST 2013
+	Adding #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN. -CG
+
 Tue Sep 17 21:32:47 CEST 2013
 	Also pass MHD connection handle in URI log callback. -CG
 
