@@ -12,9 +12,9 @@ microspdy = microspdy
 if HAVE_CURL
 microspdy += spdy2http
 endif
-if HAVE_SPDYLAY
+#if HAVE_SPDYLAY
 microspdy += testspdy
-endif
+#endif
 endif
 endif
 

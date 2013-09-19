@@ -21,19 +21,23 @@ if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
 endif
 
-if HAVE_SPDYLAY  
-  SPDYLAY_CHECKS = test_new_connection  test_request_response test_notls 
-endif 
 
 check_PROGRAMS = \
 	test_daemon_start_stop \
   test_daemon_start_stop_many \
-  test_struct_namevalue \
+  test_struct_namevalue
+
+if HAVE_SPDYLAY  
+  check_PROGRAMS += \
+  test_new_connection  \
+  test_request_response \
+  test_notls \
   test_request_response_with_callback \
-  $(SPDYLAY_CHECKS)
-  #test_requests_with_assets \
   test_misc \
   test_session_timeout
+  #test_requests_with_assets 
+endif 
+
 
 TESTS = $(check_PROGRAMS)
 
@@ -81,7 +85,6 @@ test_notls_SOURCES = \
  $(SPDY_SOURCES) 
 test_notls_LDADD = $(SPDY_LDADD) \
  -lspdylay
-endif
 
 test_request_response_with_callback_SOURCES = \
  test_request_response_with_callback.c  \
@@ -111,4 +114,6 @@ test_proxies_SOURCES = \
  test_proxies.c \
  $(SPDY_SOURCES) 
 test_proxies_LDADD = $(SPDY_LDADD)
+endif
+
 endif

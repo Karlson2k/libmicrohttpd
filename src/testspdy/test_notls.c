@@ -488,6 +488,7 @@ static int connect_to(const char *host, uint16_t port)
     }
     close(fd);
     fd = -1;
+    dief("connect", strerror(errno));
   }
   freeaddrinfo(res);
   return fd;
@@ -498,11 +499,11 @@ static void make_non_block(int fd)
   int flags, rv;
   while((flags = fcntl(fd, F_GETFL, 0)) == -1 && errno == EINTR);
   if(flags == -1) {
-    dief("fcntl", strerror(errno));
+    dief("fcntl1", strerror(errno));
   }
   while((rv = fcntl(fd, F_SETFL, flags | O_NONBLOCK)) == -1 && errno == EINTR);
   if(rv == -1) {
-    dief("fcntl", strerror(errno));
+    dief("fcntl2", strerror(errno));
   }
 }
 
@@ -843,6 +844,7 @@ childproc(int port)
   act.sa_handler = SIG_IGN;
   sigaction(SIGPIPE, &act, 0);
 
+	usleep(10000);
 	asprintf(&uristr, "https://127.0.0.1:%i/",port);
 	if(NULL == (rcvbuf = malloc(strlen(RESPONSE_BODY)+1)))
 		killparent(parent,"no memory");
