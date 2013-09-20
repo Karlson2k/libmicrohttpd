@@ -21,14 +21,15 @@ if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
 endif
 
-
+if ENABLE_SPDY
+if HAVE_OPENSSL
 check_PROGRAMS = \
-	test_daemon_start_stop \
+  test_daemon_start_stop \
   test_daemon_start_stop_many \
   test_struct_namevalue
 
 if HAVE_SPDYLAY  
-  check_PROGRAMS += \
+check_PROGRAMS += \
   test_new_connection  \
   test_request_response \
   test_notls \
@@ -36,6 +37,8 @@ if HAVE_SPDYLAY
   test_misc \
   test_session_timeout
   #test_requests_with_assets 
+endif 
+endif 
 endif 
 
 
@@ -109,7 +112,7 @@ test_session_timeout_LDADD = $(SPDY_LDADD)
 if HAVE_CURL_BINARY
 check_PROGRAMS +=  \
   test_proxies
-  
+
 test_proxies_SOURCES = \
  test_proxies.c \
  $(SPDY_SOURCES) 
