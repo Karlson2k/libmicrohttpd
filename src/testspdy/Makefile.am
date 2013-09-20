@@ -37,7 +37,11 @@ check_PROGRAMS += \
   test_misc \
   test_session_timeout
   #test_requests_with_assets 
+if HAVE_CURL_BINARY
+check_PROGRAMS +=  \
+  test_proxies
 endif 
+endif
 endif 
 endif 
 
@@ -109,14 +113,10 @@ test_session_timeout_SOURCES = \
  $(SPDY_SOURCES) 
 test_session_timeout_LDADD = $(SPDY_LDADD)
 
-if HAVE_CURL_BINARY
-check_PROGRAMS +=  \
-  test_proxies
 
 test_proxies_SOURCES = \
  test_proxies.c \
  $(SPDY_SOURCES) 
 test_proxies_LDADD = $(SPDY_LDADD)
-endif
 
 endif
