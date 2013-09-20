@@ -82,6 +82,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  cosnt char *ssl_version;
 
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
@@ -95,6 +96,17 @@ main (int argc, char *const *argv)
     {
       return 0;
     }
+  ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == ssl_version)
+  {
+    fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+    return 0;
+  }
+  if (NULL != strcasestr (ssl_version, "openssl"))
+  {
+    fprintf (stderr, "Refusing to run test with OpenSSL.  Please install libcurl-gnutls\n");
+    return 0;
+  }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
