@@ -306,15 +306,17 @@ curl=0
 if test "$enable_curl" = "yes"
 then
   LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
+  AC_CHECK_HEADERS([curl/curl.h],[
 # Lib cURL & cURL - OpenSSL versions
-  MHD_REQ_CURL_VERSION=7.16.4
-  MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
-  MHD_REQ_CURL_GNUTLS_VERSION=2.8.6
-  MHD_REQ_CURL_NSS_VERSION=3.12.0
-  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
-  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
-  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
-  AC_DEFINE_UNQUOTED([MHD_REQ_CURL_NSS_VERSION], "$MHD_REQ_CURL_NSS_VERSION", [NSS lib version - used in conjunction with cURL])
+   MHD_REQ_CURL_VERSION=7.16.4
+   MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
+   MHD_REQ_CURL_GNUTLS_VERSION=2.8.6
+   MHD_REQ_CURL_NSS_VERSION=3.12.0
+   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
+   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
+   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
+   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_NSS_VERSION], "$MHD_REQ_CURL_NSS_VERSION", [NSS lib version - used in conjunction with cURL])
+ ],[curl=0])
 fi
 
 AC_MSG_CHECKING(for magic_open -lmagic)
