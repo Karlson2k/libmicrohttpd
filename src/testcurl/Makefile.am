@@ -27,6 +27,7 @@ CURL_FORK_TEST = test_get_response_cleanup
 endif
 endif
 
+if HAVE_CURL
 check_PROGRAMS = \
   test_start_stop \
   $(TEST_QUIESCE) \
@@ -54,7 +55,6 @@ check_PROGRAMS = \
   perf_get $(PERF_GET_CONCURRENT)
 
 
-
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \
   test_post \
@@ -76,6 +76,7 @@ endif
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libcurl_version_check.a
+endif
 
 libcurl_version_check_a_SOURCES = \
   curl_version_check.c
