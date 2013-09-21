@@ -82,7 +82,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  cosnt char *ssl_version;
+  const char *ssl_version;
 
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG;
