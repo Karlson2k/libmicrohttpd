@@ -23,7 +23,6 @@
  * @brief  Testcase for libmicrohttpd Digest Auth with arguments
  * @author Amr Ali
  */
-
 #include "MHD_config.h"
 #include "platform.h"
 #include <curl/curl.h>
@@ -31,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <gcrypt.h>
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -221,11 +221,19 @@ testDigestAuth ()
   return 0;
 }
 
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();

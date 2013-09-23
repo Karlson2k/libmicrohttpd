@@ -127,13 +127,13 @@ test_digestauth_SOURCES = \
   test_digestauth.c
 test_digestauth_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ @LIBGCRYPT_LIBS@
 
 test_digestauth_with_arguments_SOURCES = \
   test_digestauth_with_arguments.c
 test_digestauth_with_arguments_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
+  @LIBCURL@ @LIBGCRYPT_LIBS@
 
 test_get_sendfile_SOURCES = \
   test_get_sendfile.c
