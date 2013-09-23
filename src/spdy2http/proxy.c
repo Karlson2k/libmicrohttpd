@@ -1174,9 +1174,11 @@ run ()
     {
       
     struct timespec ts;
+#ifdef CLOCK_MONOTONIC    
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
     PRINT_VERBOSE2("time now %lld %lld", (unsigned long long)ts.tv_sec, (unsigned long long)ts.tv_nsec);
     }
+#endif
   }
   while(loop);
 
