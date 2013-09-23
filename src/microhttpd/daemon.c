@@ -3841,7 +3841,9 @@ MHD_get_version (void)
 #endif  // __GNUC__
 
 #if HTTPS_SUPPORT
+#if GCRYPT_VERSION_NUMBER < 0x010600
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
 #endif
 
 
@@ -3856,9 +3858,12 @@ MHD_init ()
 
 #ifdef WINDOWS
   plibc_init ("GNU", "libmicrohttpd");
-#endif
+#endif#
 #if HTTPS_SUPPORT
+#if GCRYPT_VERSION_NUMBER < 0x010600
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#endif
+  gcry_check_version (NULL);
   gnutls_global_init ();
 #endif
 }

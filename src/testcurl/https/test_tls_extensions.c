@@ -193,7 +193,6 @@ cleanup:
   return ret;
 }
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL
 
 int
 main (int argc, char *const *argv)
@@ -206,13 +205,12 @@ main (int argc, char *const *argv)
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
 
-  int ext_arr[] = { GNUTLS_EXTENSION_SERVER_NAME,
+  const int ext_arr[] = { 
+    GNUTLS_EXTENSION_SERVER_NAME,
     -1
   };
 
-
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif

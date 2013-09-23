@@ -90,7 +90,6 @@ test_tls_session_time_out (gnutls_session_t session)
   return 0;
 }
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 int
 main (int argc, char *const *argv)
@@ -104,7 +103,6 @@ main (int argc, char *const *argv)
 
 
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif

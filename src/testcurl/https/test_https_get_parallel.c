@@ -121,7 +121,6 @@ test_parallel_clients (void * cls, const char *cipher_suite,
   return 0;
 }
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 int
 main (int argc, char *const *argv)
@@ -132,7 +131,6 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));

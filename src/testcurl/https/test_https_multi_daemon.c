@@ -91,9 +91,6 @@ test_concurent_daemon_pair (void *cls,
 }
 
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-
-
 int
 main (int argc, char *const *argv)
 {
@@ -101,7 +98,6 @@ main (int argc, char *const *argv)
   FILE *cert;
 
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif

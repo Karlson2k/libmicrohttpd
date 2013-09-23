@@ -222,7 +222,6 @@ testDigestAuth ()
   return 0;
 }
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 
 int
@@ -231,7 +230,6 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
 
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif

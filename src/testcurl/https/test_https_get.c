@@ -95,9 +95,6 @@ test_secure_get (FILE * test_fd,
 }
 
 
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-
-
 int
 main (int argc, char *const *argv)
 {
@@ -106,11 +103,7 @@ main (int argc, char *const *argv)
   const char *aes256_sha_sslv3   = "AES256-SHA";
   const char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
 
-
-  if (!gcry_check_version (GCRYPT_VERSION))
-    abort ();
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
