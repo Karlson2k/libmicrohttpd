@@ -3858,7 +3858,7 @@ MHD_init ()
 
 #ifdef WINDOWS
   plibc_init ("GNU", "libmicrohttpd");
-#endif#
+#endif
 #if HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
