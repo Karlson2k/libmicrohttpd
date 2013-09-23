@@ -463,6 +463,8 @@ testExternalPost ()
 }
 
 
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 
 int
 main (int argc, char *const *argv)

@@ -39,6 +39,7 @@
 static int oneone;
 
 static int withTimeout = 1;
+
 static int withoutTimeout = 1;
 
 struct CBC
@@ -49,8 +50,37 @@ struct CBC
 };
 
 
-static void
-termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe);
+static void 
+termination_cb (void *cls, 
+		struct MHD_Connection *connection, 
+		void **con_cls, 
+		enum MHD_RequestTerminationCode toe)
+{
+  int *test = cls;
+
+  switch (toe)
+    {
+    case MHD_REQUEST_TERMINATED_COMPLETED_OK :
+      if (test == &withoutTimeout)
+	{
+	  withoutTimeout = 0;
+	}
+      break;
+    case MHD_REQUEST_TERMINATED_WITH_ERROR :
+    case MHD_REQUEST_TERMINATED_READ_ERROR :
+      break;
+    case MHD_REQUEST_TERMINATED_TIMEOUT_REACHED :
+      if (test == &withTimeout)
+	{
+	  withTimeout = 0;
+	}
+      break;
+    case MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
+      break;
+    case MHD_REQUEST_TERMINATED_CLIENT_ABORT:
+      break;
+    }
+}
 
 
 static size_t
@@ -74,6 +104,7 @@ putBuffer_fail (void *stream, size_t size, size_t nmemb, void *ptr)
   return 0;
 }
 
+
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 {
@@ -85,6 +116,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -124,6 +156,7 @@ ahc_echo (void *cls,
   MHD_destroy_response (response);
   return ret;
 }
+
 
 static int
 testWithoutTimeout ()
@@ -238,32 +271,6 @@ testWithTimeout ()
 }
 
 
-static void 
-termination_cb (void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe)
-{
-	int * test = cls;
-	switch (toe)
-	{
-		case MHD_REQUEST_TERMINATED_COMPLETED_OK :
-			if (test==&withoutTimeout)
-			{
-				withoutTimeout = 0;
-			}
-			break;
-		case MHD_REQUEST_TERMINATED_WITH_ERROR :
-		case MHD_REQUEST_TERMINATED_READ_ERROR :
-			break;
-		case MHD_REQUEST_TERMINATED_TIMEOUT_REACHED :
-			if (test==&withTimeout)
-			{
-				withTimeout = 0;
-			}
-			break;
-		case MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN :
-			break;
-	}
-}
-
 
 int
 main (int argc, char *const *argv)
@@ -276,10 +283,12 @@ main (int argc, char *const *argv)
   errorCount += testWithoutTimeout ();
   errorCount += testWithTimeout ();
   if (errorCount != 0)
-    fprintf (stderr, "Error during test execution (code: %u)\n", errorCount);
+    fprintf (stderr, 
+	     "Error during test execution (code: %u)\n",
+	     errorCount);
   curl_global_cleanup ();
   if ((withTimeout == 0) && (withoutTimeout == 0))
-	  return 0;
+    return 0;
   else
-	  return errorCount;       /* 0 == pass */
+    return errorCount;       /* 0 == pass */
 }
