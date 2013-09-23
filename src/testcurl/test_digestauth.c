@@ -44,7 +44,7 @@
 
 #define DENIED "<html><head><title>libmicrohttpd demo</title></head><body>Access denied</body></html>"
 
-#define OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"
+#define MY_OPAQUE "11733b200778ce33060f31c9af70a870ba96ddd4"
 
 struct CBC
 {
@@ -88,7 +88,7 @@ ahc_echo (void *cls,
 						 DENIED,
 						 MHD_RESPMEM_PERSISTENT);  
       ret = MHD_queue_auth_fail_response(connection, realm,
-					 OPAQUE,
+					 MY_OPAQUE,
 					 response,
 					 MHD_NO);    
       MHD_destroy_response(response);  
@@ -108,7 +108,7 @@ ahc_echo (void *cls,
       if (NULL == response) 
 	return MHD_NO;
       ret = MHD_queue_auth_fail_response(connection, realm,
-					 OPAQUE,
+					 MY_OPAQUE,
 					 response,
 					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
       MHD_destroy_response(response);  
