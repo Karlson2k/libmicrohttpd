@@ -1,3 +1,7 @@
+Mon Sep 23 20:24:48 CEST 2013
+	Fixing build issues on OS X with CLOCK_MONOTONIC not being
+	implemented on OS X. -CG
+
 Mon Sep 23 14:15:00 CEST 2013
 	Make libmicrohttpd play nicely with upcoming libgcrypt 1.6.0. -CG
 

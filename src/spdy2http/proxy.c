@@ -244,12 +244,29 @@ parse_uri(regex_t * preg, const char * full_uri, struct URI ** uri)
     
   (*uri)->full_uri = strdup(full_uri);
   
-  asprintf(&((*uri)->scheme), "%.*s",pmatch[2].rm_eo - pmatch[2].rm_so, &full_uri[pmatch[2].rm_so]);
-  asprintf(&((*uri)->host_and_port), "%.*s",pmatch[4].rm_eo - pmatch[4].rm_so, &full_uri[pmatch[4].rm_so]);
-  asprintf(&((*uri)->path), "%.*s",pmatch[5].rm_eo - pmatch[5].rm_so, &full_uri[pmatch[5].rm_so]);
-  asprintf(&((*uri)->path_and_more), "%.*s",pmatch[9].rm_eo - pmatch[5].rm_so, &full_uri[pmatch[5].rm_so]);
-  asprintf(&((*uri)->query), "%.*s",pmatch[7].rm_eo - pmatch[7].rm_so, &full_uri[pmatch[7].rm_so]);
-  asprintf(&((*uri)->fragment), "%.*s",pmatch[9].rm_eo - pmatch[9].rm_so, &full_uri[pmatch[9].rm_so]);
+  asprintf(&((*uri)->scheme),
+	   "%.*s", 
+	   (int) (pmatch[2].rm_eo - pmatch[2].rm_so), 
+	   &full_uri[pmatch[2].rm_so]);
+  asprintf(&((*uri)->host_and_port), "%.*s", 
+	   (int) (pmatch[4].rm_eo - pmatch[4].rm_so),
+	   &full_uri[pmatch[4].rm_so]);
+  asprintf(&((*uri)->path),
+	   "%.*s",
+	   (int) (pmatch[5].rm_eo - pmatch[5].rm_so), 
+	   &full_uri[pmatch[5].rm_so]);
+  asprintf(&((*uri)->path_and_more), 
+	   "%.*s",
+	   (int) (pmatch[9].rm_eo - pmatch[5].rm_so), 
+	   &full_uri[pmatch[5].rm_so]);
+  asprintf(&((*uri)->query),
+	   "%.*s",
+	   (int) (pmatch[7].rm_eo - pmatch[7].rm_so),
+	   &full_uri[pmatch[7].rm_so]);
+  asprintf(&((*uri)->fragment), 
+	   "%.*s",
+	   (int) (pmatch[9].rm_eo - pmatch[9].rm_so),
+	   &full_uri[pmatch[9].rm_so]);
   
   colon = strrchr((*uri)->host_and_port, ':');
   if(NULL == colon)
@@ -1173,11 +1190,16 @@ run ()
     if(glob_opt.verbose)
     {
       
-    struct timespec ts;
+#ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC    
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-    PRINT_VERBOSE2("time now %lld %lld", (unsigned long long)ts.tv_sec, (unsigned long long)ts.tv_nsec);
+    struct timespec ts;
+
+    if (0 == clock_gettime(CLOCK_MONOTONIC, &ts))
+    PRINT_VERBOSE2 ("time now %lld %lld",
+		    (unsigned long long) ts.tv_sec,
+		    (unsigned long long) ts.tv_nsec);
     }
+#endif
 #endif
   }
   while(loop);

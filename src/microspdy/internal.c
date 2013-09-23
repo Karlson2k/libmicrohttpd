@@ -27,12 +27,14 @@
 
 
 unsigned long long
-SPDYF_monotonic_time(void)
+SPDYF_monotonic_time (void)
 {
 #ifdef HAVE_CLOCK_GETTIME
+#ifdef CLOCK_MONOTONIC
   struct timespec ts;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+  if (0 == clock_gettime (CLOCK_MONOTONIC, &ts))
     return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 #endif
-    return time(NULL) * 1000;
+#endif
+  return time (NULL) * 1000;
 }

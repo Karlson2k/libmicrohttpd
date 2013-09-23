@@ -31,6 +31,7 @@
 #include "common.h"
 #include <sys/time.h>
 #include <sys/stat.h>
+#include "../microspdy/internal.h"
 
 #define TIMEOUT 2
 #define SELECT_MS_TIMEOUT 20
@@ -102,7 +103,6 @@ parentproc()
 	int childstatus;
 	unsigned long long timeoutlong=0;
 	struct timeval timeout;
-	struct timespec ts;
 	int ret;
 	fd_set read_fd_set;
 	fd_set write_fd_set;
@@ -150,10 +150,7 @@ parentproc()
 			{
 				killchild("SPDY_get_timeout returned wrong timeout");
 			}*/
-      if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-        now = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
-      else
-				killchild("clock_gettime returned wrong value");
+			now = SPDYF_monotonic_time ();
       if(now - beginning > TIMEOUT*1000 + SELECT_MS_TIMEOUT)
       {
         printf("Started at: %llums\n",beginning);
@@ -217,10 +214,7 @@ parentproc()
 				SPDY_run(daemon);
         if(0 == beginning)
         {
-          if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
-            beginning = ts.tv_nsec / 1000000 + ts.tv_sec*1000;
-          else
-            killchild("clock_gettime returned wrong number");
+	  beginning = SPDYF_monotonic_time ();
         }
 				/*if(do_sleep)
 				{
