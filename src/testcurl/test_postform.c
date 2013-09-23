@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <gcrypt.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -468,6 +469,11 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   oneone = NULL != strstr (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;

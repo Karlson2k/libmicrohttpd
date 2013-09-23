@@ -186,7 +186,7 @@ test_postform_SOURCES = \
   test_postform.c
 test_postform_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@  @LIBGCRYPT_LIBS@
 
 test_post_loop_SOURCES = \
   test_post_loop.c
@@ -228,7 +228,7 @@ test_postform11_SOURCES = \
   test_postform.c
 test_postform11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@  @LIBGCRYPT_LIBS@
 
 test_post_loop11_SOURCES = \
   test_post_loop.c
