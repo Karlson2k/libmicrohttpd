@@ -234,6 +234,7 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();
