@@ -364,7 +364,7 @@ enum
 /* Make sure it's the same as WSATIMEDOUT */
 #  define ETIMEDOUT 138		/* Connection timed out */
 #endif
-#if !defined(EWOULDBLOCK) || EWOULBLOCK == 140
+#if !defined(EWOULDBLOCK) || EWOULDBLOCK == 140
 #  undef EWOULDBLOCK /* MinGW-w64 defines it as 140, but we want it as EAGAIN */
 #  define EWOULDBLOCK EAGAIN	/* Operation would block */
 #endif
