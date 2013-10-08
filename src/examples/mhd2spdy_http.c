@@ -148,7 +148,8 @@ http_cb_response (void *cls,
 static void
 http_cb_response_done(void *cls)
 {
-
+  (void)cls;
+  //TODO remove
 }
 
 int
@@ -370,6 +371,8 @@ http_cb_request_completed (void *cls,
                                    void **con_cls,
                                    enum MHD_RequestTerminationCode toe)
 {
+  (void)cls;
+  (void)connection;
   struct HTTP_URI *http_uri;
   struct Proxy *proxy;
   
@@ -396,7 +399,7 @@ http_cb_request_completed (void *cls,
       if(proxy->stream_id > 0 /*&& NULL != proxy->spdy_connection->session*/)
       {
         //send RST_STREAM_STATUS_CANCEL
-        PRINT_INFO2("send rst_stream %i",proxy->spdy_active );
+        PRINT_INFO2("send rst_stream %i %i",proxy->spdy_active, proxy->stream_id );
         spdylay_submit_rst_stream(proxy->spdy_connection->session, proxy->stream_id, 5);
       }
       /*else

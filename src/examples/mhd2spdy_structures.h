@@ -161,6 +161,7 @@ struct global_options
   bool only_proxy;
   bool spdy_data_received;
   bool statistics;
+  bool ignore_rst_stream;
 }
 glob_opt;
 

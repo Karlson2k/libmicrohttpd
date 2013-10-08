@@ -147,6 +147,20 @@ spdy_cb_send(spdylay_session *session,
   ssize_t rv;
   connection = (struct SPDY_Connection*)user_data;
   connection->want_io = IO_NONE;
+  
+  if(glob_opt.ignore_rst_stream
+    && 16 == length
+    && 0x80 == data[0]
+    && 0x00 == data[2]
+    && 0x03 == data[3]
+    )
+  {
+    PRINT_INFO2("ignoring RST_STREAM for stream_id %i %i %i %i", data[8], data[9], data[10], data[11]);
+    glob_opt.ignore_rst_stream = false;
+    return 16;
+  }
+  glob_opt.ignore_rst_stream = false;
+  
   if(connection->is_tls)
   {
     ERR_clear_error();
@@ -269,7 +283,7 @@ spdy_cb_recv(spdylay_session *session,
 
 
 static void
-spdy_cb_on_ctrl_send(spdylay_session *session,
+spdy_cb_before_ctrl_send(spdylay_session *session,
                     spdylay_frame_type type,
                     spdylay_frame *frame,
                     void *user_data)
@@ -288,6 +302,15 @@ spdy_cb_on_ctrl_send(spdylay_session *session,
       ++proxy->spdy_connection->streams_opened;
       PRINT_INFO2("opening stream: str open %i; %s", glob_opt.streams_opened, proxy->url);
       break;
+    case SPDYLAY_RST_STREAM:
+      //try to ignore duplicate RST_STREAMs
+      //TODO this will ignore RST_STREAMs also for bogus data
+      glob_opt.ignore_rst_stream = NULL==spdylay_session_get_stream_user_data(session, frame->rst_stream.stream_id);
+      PRINT_INFO2("sending RST_STREAM for %i; ignore %i; status %i",
+        frame->rst_stream.stream_id,
+        glob_opt.ignore_rst_stream,
+        frame->rst_stream.status_code);
+    break;
     default:
       break;
   }
@@ -465,7 +488,7 @@ spdy_setup_spdylay_callbacks(spdylay_session_callbacks *callbacks)
   memset(callbacks, 0, sizeof(spdylay_session_callbacks));
   callbacks->send_callback = spdy_cb_send;
   callbacks->recv_callback = spdy_cb_recv;
-  callbacks->on_ctrl_send_callback = spdy_cb_on_ctrl_send;
+  callbacks->before_ctrl_send_callback = spdy_cb_before_ctrl_send;
   callbacks->on_ctrl_recv_callback = spdy_cb_on_ctrl_recv;
   callbacks->on_stream_close_callback = spdy_cb_on_stream_close;
   callbacks->on_data_chunk_recv_callback = spdy_cb_on_data_chunk_recv;
