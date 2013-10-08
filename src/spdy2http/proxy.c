@@ -567,7 +567,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			//DIE("no queue");
       //TODO right?
       proxy->error = true;
-      PRINT_INFO2("erorr in curl_header_cb for %s", proxy->url);
+      PRINT_VERBOSE2("erorr in curl_header_cb for %s", proxy->url);
       return 0;
     }
 		
