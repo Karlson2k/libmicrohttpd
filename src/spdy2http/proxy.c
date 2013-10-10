@@ -1173,7 +1173,7 @@ run ()
         else
         {
           PRINT_VERBOSE2("bad curl result (%i) for '%s'", msg->data.result, proxy->url);
-          if(proxy->spdy_done || proxy->spdy_error || NULL == proxy->response)
+          if(proxy->spdy_done || proxy->spdy_error || (NULL == proxy->response && !*(proxy->session_alive)))
           {
             PRINT_VERBOSE("cleaning");
             SPDY_name_value_destroy(proxy->headers);
@@ -1181,32 +1181,37 @@ run ()
             SPDY_destroy_response(proxy->response);
             cleanup(proxy);
           }
+          else if(NULL == proxy->response && *(proxy->session_alive))
+          {
+            //generate error for the client
+            PRINT_VERBOSE("will send Bad Gateway");
+            SPDY_name_value_destroy(proxy->headers);
+            proxy->headers = NULL;
+            if(NULL == (proxy->response = SPDY_build_response(SPDY_HTTP_BAD_GATEWAY,
+                  NULL,
+                  SPDY_HTTP_VERSION_1_1,
+                  NULL,
+                  ERROR_RESPONSE,
+                  strlen(ERROR_RESPONSE))))
+              DIE("no response");
+            if(SPDY_YES != SPDY_queue_response(proxy->request,
+                      proxy->response,
+                      true,
+                      false,
+                      &response_done_callback,
+                      proxy))
+            {
+              //clean and forget
+              PRINT_VERBOSE("cleaning");
+              SPDY_destroy_request(proxy->request);
+              SPDY_destroy_response(proxy->response);
+              cleanup(proxy);
+            }
+          }
           else
           {
             proxy->curl_error = true;
           }
-          /*if(NULL == proxy->response)
-          {
-            SPDY_name_value_destroy(proxy->headers);
-            *//*if(!*(proxy->session_alive))
-            {
-              free(proxy->http_body);
-              proxy->http_body = NULL;
-*//*
-              SPDY_destroy_request(proxy->request);
-              cleanup(proxy);
-            *//*}
-            else
-              proxy->error = true;*/
-         /* }
-          else
-          {
-            //TODO too early to clean them
-            proxy->error = true;
-            //SPDY_destroy_request(proxy->request);
-            //SPDY_destroy_response(proxy->response);
-            //cleanup(proxy);
-          }*/
           call_spdy_run = true;
           //TODO spdy should be notified to send RST_STREAM
         }
