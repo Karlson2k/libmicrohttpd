@@ -24,14 +24,14 @@
  *      TODO:
  * - test all options!
  * - don't abort on lack of memory
- * - Memory leak: in rare cases the proxy object is not freed (and there
- * is a lot of data pointed from it)
  * - Correct recapitalizetion of header names before giving the headers
  * to curl.
  * - curl does not close sockets when connection is closed and no
  * new sockets are opened (they stay in CLOSE_WAIT)
  * - add '/' when a user requests http://example.com . Now this is a bad
  * request
+ * - curl returns 0 or 1 ms for timeout even when nothing will be done;
+ * thus the loop uses CPU for nothing
  * @author Andrey Uzunov
  */
  
@@ -173,11 +173,15 @@ struct Proxy
 	size_t received_body_size;
 	//ssize_t length;
 	int status;
-  bool done;
+  //bool done;
   bool receiving_done;
   bool is_curl_read_paused;
   bool is_with_body_data;
-  bool error;
+  //bool error;
+  bool curl_done;
+  bool curl_error;
+  bool spdy_done;
+  bool spdy_error;
 };
 
 
@@ -444,7 +448,9 @@ response_callback (void *cls,
   
   *more = true;
   
-  if(proxy->error)
+  assert(!proxy->spdy_error);
+  
+  if(proxy->curl_error)
   {
     PRINT_VERBOSE("tell spdy about the error");
     return -1;
@@ -452,8 +458,8 @@ response_callback (void *cls,
 	
 	if(!proxy->http_body_size)//nothing to write now
   {
-    PRINT_VERBOSE2("nothing to write now? %i", proxy->done);
-    if(proxy->done) *more = false;
+    PRINT_VERBOSE("nothing to write now");
+    if(proxy->curl_done || proxy->curl_error) *more = false;
 		return 0;
   }
 	
@@ -461,10 +467,11 @@ response_callback (void *cls,
   if(ret < 0)
   {
     PRINT_INFO("no memory");
+    //TODO error?
     return -1;
   }
   
-  if(proxy->done && 0 == proxy->http_body_size) *more = false;
+  if((proxy->curl_done || proxy->curl_error) && 0 == proxy->http_body_size) *more = false;
   
   PRINT_VERBOSE2("given bytes to microspdy: %zd", ret);
 	
@@ -482,8 +489,11 @@ cleanup(struct Proxy *proxy)
 	if(CURLM_OK != (ret = curl_multi_remove_handle(multi_handle, proxy->curl_handle)))
 	{
 		PRINT_INFO2("curl_multi_remove_handle failed (%i)", ret);
+    DIE("bug in cleanup");
 	}
   debug_num_curls--;
+  //TODO bug on ku6.com or amazon.cn
+  // after curl_multi_remove_handle returned CURLM_BAD_EASY_HANDLE
 	curl_slist_free_all(proxy->curl_headers);
 	curl_easy_cleanup(proxy->curl_handle);
 	
@@ -506,6 +516,7 @@ response_done_callback(void *cls,
 	{
     free(proxy->http_body);
     proxy->http_body = NULL;
+    proxy->spdy_error = true;
 	}
 	cleanup(proxy);
 	SPDY_destroy_request(request);
@@ -533,7 +544,8 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
   if(!*(proxy->session_alive))
   {
     PRINT_VERBOSE("headers received, but session is dead");
-    proxy->error = true;
+    proxy->spdy_error = true;
+    proxy->curl_error = true;
     return 0;
   }
   
@@ -554,8 +566,11 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 			DIE("no response");
     
 		SPDY_name_value_destroy(proxy->headers);
+    proxy->headers = NULL;
 		free(proxy->status_msg);
+    proxy->status_msg = NULL;
 		free(proxy->version);
+    proxy->version = NULL;
 		
 		if(SPDY_YES != SPDY_queue_response(proxy->request,
 							proxy->response,
@@ -566,8 +581,11 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
     {
 			//DIE("no queue");
       //TODO right?
-      proxy->error = true;
-      PRINT_VERBOSE2("erorr in curl_header_cb for %s", proxy->url);
+      proxy->spdy_error = true;
+      proxy->curl_error = true;
+      PRINT_VERBOSE2("no queue in curl_header_cb for %s", proxy->url);
+      SPDY_destroy_response(proxy->response);
+      proxy->response = NULL;
       return 0;
     }
 		
@@ -671,12 +689,15 @@ curl_write_cb(void *contents, size_t size, size_t nmemb, void *userp)
   if(!*(proxy->session_alive))
   {
     PRINT_VERBOSE("data received, but session is dead");
+      proxy->spdy_error = true;
+      proxy->curl_error = true;
     return 0;
   }
   
   if(!store_in_buffer(contents, realsize, &proxy->http_body, &proxy->http_body_size))
 	{
 		PRINT_INFO("not enough memory (malloc/realloc returned NULL)");
+      proxy->curl_error = true;
 		return 0;
 	}
   /*
@@ -1143,7 +1164,7 @@ run ()
         proxy = (struct Proxy *)curl_private;
         if(CURLE_OK == msg->data.result)
         {
-          proxy->done = true;
+          proxy->curl_done = true;
           call_spdy_run = true;
           //TODO what happens with proxy when the client resets a stream
           //and response_done is not yet set for the last frame? is it
@@ -1152,27 +1173,40 @@ run ()
         else
         {
           PRINT_VERBOSE2("bad curl result (%i) for '%s'", msg->data.result, proxy->url);
-          if(NULL == proxy->response)
+          if(proxy->spdy_done || proxy->spdy_error || NULL == proxy->response)
           {
+            PRINT_VERBOSE("cleaning");
             SPDY_name_value_destroy(proxy->headers);
-            /*if(!*(proxy->session_alive))
-            {
-              free(proxy->http_body);
-              proxy->http_body = NULL;
-*/
-              SPDY_destroy_request(proxy->request);
-              cleanup(proxy);
-            /*}
-            else
-              proxy->error = true;*/
-          }
-          else
-          {
-            //proxy->error = true;
             SPDY_destroy_request(proxy->request);
             SPDY_destroy_response(proxy->response);
             cleanup(proxy);
           }
+          else
+          {
+            proxy->curl_error = true;
+          }
+          /*if(NULL == proxy->response)
+          {
+            SPDY_name_value_destroy(proxy->headers);
+            *//*if(!*(proxy->session_alive))
+            {
+              free(proxy->http_body);
+              proxy->http_body = NULL;
+*//*
+              SPDY_destroy_request(proxy->request);
+              cleanup(proxy);
+            *//*}
+            else
+              proxy->error = true;*/
+         /* }
+          else
+          {
+            //TODO too early to clean them
+            proxy->error = true;
+            //SPDY_destroy_request(proxy->request);
+            //SPDY_destroy_response(proxy->response);
+            //cleanup(proxy);
+          }*/
           call_spdy_run = true;
           //TODO spdy should be notified to send RST_STREAM
         }
