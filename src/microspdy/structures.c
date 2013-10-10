@@ -272,6 +272,8 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
 void
 SPDY_destroy_response(struct SPDY_Response *response)
 {
+  if(NULL == response)
+    return;
 	free(response->data);
 	free(response->headers);
 	free(response);
