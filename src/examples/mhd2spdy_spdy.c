@@ -348,7 +348,11 @@ spdy_cb_on_ctrl_recv(spdylay_session *session,
 
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
   if(NULL == proxy)
-    DIE("no proxy obj");
+  {
+    PRINT_INFO2("received frame type %i for unkonwn stream id %i", type, stream_id);
+    return;
+    //DIE("no proxy obj");
+  }
 
   switch(type) {
     case SPDYLAY_SYN_REPLY:
