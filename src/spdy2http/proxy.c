@@ -452,6 +452,7 @@ response_callback (void *cls,
 	
 	if(!proxy->http_body_size)//nothing to write now
   {
+    PRINT_VERBOSE2("nothing to write now? %i", proxy->done);
     if(proxy->done) *more = false;
 		return 0;
   }
@@ -503,7 +504,6 @@ response_done_callback(void *cls,
 	
 	if(SPDY_RESPONSE_RESULT_SUCCESS != status)
 	{
-		PRINT_VERBOSE2("answer was NOT sent, %i\n",status);
     free(proxy->http_body);
     proxy->http_body = NULL;
 	}
@@ -540,7 +540,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
   //trailer
   if(NULL != proxy->response) return 0;
 
-	if('\r' == line[0])
+	if('\r' == line[0] || '\n' == line[0])
 	{
 		//all headers were already handled; prepare spdy frames
 		if(NULL == (proxy->response = SPDY_build_response_with_callback(proxy->status,
@@ -589,16 +589,16 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 		pos = i+1;
 		
 		//status (number)
-		for(i=pos; i<realsize && ' '!=line[i] && '\r'!=line[i]; ++i);
+		for(i=pos; i<realsize && ' '!=line[i] && '\r'!=line[i] && '\n'!=line[i]; ++i);
 		if(NULL == (status = strndup(&(line[pos]), i - pos)))
         DIE("No memory");
 		proxy->status = atoi(status);
 		free(status);
-		if(i<realsize && '\r'!=line[i])
+		if(i<realsize && '\r'!=line[i] && '\n'!=line[i])
 		{
 			//status (message)
 			pos = i+1;
-			for(i=pos; i<realsize && '\r'!=line[i]; ++i);
+			for(i=pos; i<realsize && '\r'!=line[i] && '\n'!=line[i]; ++i);
 			if(NULL == (proxy->status_msg = strndup(&(line[pos]), i - pos)))
         DIE("No memory");
 		}
@@ -608,7 +608,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	
 	//other lines
 	//header name
-	for(i=pos; i<realsize && ':'!=line[i] && '\r'!=line[i]; ++i)
+	for(i=pos; i<realsize && ':'!=line[i] && '\r'!=line[i] && '\n'!=line[i]; ++i)
 		line[i] = tolower(line[i]); //spdy requires lower case
 	if(NULL == (name = strndup(line, i - pos)))
         DIE("No memory");
@@ -621,7 +621,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 		free(name);
 		return realsize;
 	}
-	if(i == realsize || '\r'==line[i])
+	if(i == realsize || '\r'==line[i] || '\n'==line[i])
 	{
 		//no value. is it possible?
 		if(SPDY_YES != SPDY_name_value_add(proxy->headers, name, ""))
@@ -632,7 +632,7 @@ curl_header_cb(void *ptr, size_t size, size_t nmemb, void *userp)
 	//header value
 	pos = i+1;
 	while(pos<realsize && isspace(line[pos])) ++pos; //remove leading space
-	for(i=pos; i<realsize && '\r'!=line[i]; ++i);
+	for(i=pos; i<realsize && '\r'!=line[i] && '\n'!=line[i]; ++i);
 	if(NULL == (value = strndup(&(line[pos]), i - pos)))
         DIE("No memory");
   PRINT_VERBOSE2("Adding header: '%s': '%s'", name, value);
