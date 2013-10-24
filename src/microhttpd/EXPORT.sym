@@ -35,3 +35,5 @@ MHD_basic_auth_get_username_password
 MHD_queue_basic_auth_fail_response
 MHD_add_connection
 MHD_set_connection_option
+MHD_suspend_connection
+MHD_resume_connection

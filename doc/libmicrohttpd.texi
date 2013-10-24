@@ -63,6 +63,7 @@ Free Documentation License".
 * microhttpd-inspect::          Implementing external @code{select}.
 * microhttpd-requests::         Handling requests.
 * microhttpd-responses::        Building responses to requests.
+* microhttpd-flow::             Flow control.
 * microhttpd-dauth::            Utilizing Authentication.
 * microhttpd-post::             Adding a @code{POST} processor.
 * microhttpd-info::             Obtaining and modifying status information.
@@ -132,7 +133,7 @@ used per connection to avoid resource exhaustion.
 
 @section Scope
 
-MHD is currently used in a wide range of implementations. 
+MHD is currently used in a wide range of implementations.
 Examples based on reports we've received from developers include:
 @itemize
 @item Embedded HTTP server on a cortex M3 (128 KB code space)
@@ -148,7 +149,7 @@ Examples based on reports we've received from developers include:
 @cindex select
 
 MHD supports four basic thread modes and up to three event loop
-styes.  
+styes.
 
 The four basic thread modes are external (MHD creates no threads,
 event loop is fully managed by the application), internal (MHD creates
@@ -203,7 +204,7 @@ combinations.
 @item @b{external}              @tab  yes       @tab no       @tab yes
 @item @b{internal}              @tab  yes       @tab yes      @tab yes
 @item @b{thread pool}           @tab  yes       @tab yes      @tab yes
-@item @b{thread-per-connection} @tab  yes       @tab yes      @tab no 
+@item @b{thread-per-connection} @tab  yes       @tab yes      @tab no
 @end multitable
 @caption{Supported combinations of event styles and thread modes.}
 @end float
@@ -239,7 +240,7 @@ full list of options run ``./configure --help''):
 @item ``--disable-curl''
 disable running testcases using libcurl
 
-@item ``--disable-largefile'' 
+@item ``--disable-largefile''
 disable support for 64-bit files
 
 @item ``--disable-messages''
@@ -285,7 +286,7 @@ conditional operations.  For possible suggestions consult
 Once you have ensured that you manually (!) included the right headers
 for your platform before "microhttpd.h", you should also add a line
 with @code{#define MHD_PLATFORM_H} which will prevent the
-"microhttpd.h" header from trying (and, depending on your platform, 
+"microhttpd.h" header from trying (and, depending on your platform,
 failing) to include the right headers.
 
 If you do not define MHD_PLATFORM_H, the "microhttpd.h" header will
@@ -297,12 +298,12 @@ causing problems when porting to other platforms).
 MHD does not install a signal handler for SIGPIPE.  On platforms
 where this is possible (such as GNU/Linux), it disables SIGPIPE for
 its I/O operations (by passing MSG_NOSIGNAL).  On other platforms,
-SIGPIPE signals may be generated from network operations by 
+SIGPIPE signals may be generated from network operations by
 MHD and will cause the process to die unless the developer
 explicitly installs a signal handler for SIGPIPE.
 
 Hence portable code using MHD must install a SIGPIPE handler or
-explicitly block the SIGPIPE signal.  MHD does not do so in order 
+explicitly block the SIGPIPE signal.  MHD does not do so in order
 to avoid messing with other parts of the application that may
 need to handle SIGPIPE in a particular way.  You can make your application handle SIGPIPE by calling the following function in @code{main}:
 
@@ -422,8 +423,8 @@ No options selected.
 Run in debug mode.  If this flag is used, the library should print error
 messages and warnings to stderr.  Note that for this
 run-time option to have any effect, MHD needs to be
-compiled with messages enabled. This is done by default except you ran 
-configure with the @code{--disable-messages} flag set. 
+compiled with messages enabled. This is done by default except you ran
+configure with the @code{--disable-messages} flag set.
 
 @item MHD_USE_SSL
 @cindex TLS
@@ -519,7 +520,7 @@ ability to signal termination via the listen socket).  In these modes,
 @code{MHD_quiesce_daemon} will fail if this option was not set.  Also,
 use of this option is automatic (as in, you do not even have to
 specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In
-"external" select mode, this option is always simply ignored.  
+"external" select mode, this option is always simply ignored.
 
 @end table
 @end deftp
@@ -533,7 +534,7 @@ MHD options.  Passed in the varargs portion of
 @item MHD_OPTION_END
 No more options / last option.  This is used to terminate the VARARGs
 list.
-  
+
 @item MHD_OPTION_CONNECTION_MEMORY_LIMIT
 @cindex memory, limiting memory utilization
 Maximum memory size per connection (followed by a @code{size_t}).  The
@@ -558,19 +559,19 @@ Maximum number of concurrent connections to accept (followed by an
 @code{unsigned int}).  The default is @code{FD_SETSIZE - 4} (the
 maximum number of file descriptors supported by @code{select} minus
 four for @code{stdin}, @code{stdout}, @code{stderr} and the server
-socket).  In other words, the default is as large as possible.  
+socket).  In other words, the default is as large as possible.
 
 Note that if you set a low connection limit, you can easily get into
 trouble with browsers doing request pipelining.  For example, if your
 connection limit is ``1'', a browser may open a first connection to
-access your ``index.html'' file, keep it open but use a second 
+access your ``index.html'' file, keep it open but use a second
 connection to retrieve CSS files, images and the like.  In fact, modern
 browsers are typically by default configured for up to 15 parallel
 connections to a single server.  If this happens, MHD will refuse to
 even accept the second connection until the first connection is
 closed --- which does not happen until timeout.  As a result, the
 browser will fail to render the page and seem to hang.  If you expect
-your server to operate close to the connection limit, you should 
+your server to operate close to the connection limit, you should
 first consider using a lower timeout value and also possibly add
 a ``Connection: close'' header to your response to ensure that
 request pipelining is not used and connections are closed immediately
@@ -613,8 +614,8 @@ from the same IP address.
 @item MHD_OPTION_SOCK_ADDR
 @cindex bind, restricting bind
 Bind daemon to the supplied socket address. This option should be followed by a
-@code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified, 
-the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6}, 
+@code{struct sockaddr *}.  If @code{MHD_USE_IPv6} is specified,
+the @code{struct sockaddr*} should point to a @code{struct sockaddr_in6},
 otherwise to a @code{struct sockaddr_in}.  If this option is not specified,
 the daemon will listen to incoming connections from anywhere.  If you use this
 option, the 'port' argument from @code{MHD_start_daemon} is ignored and the port
@@ -655,7 +656,7 @@ Memory pointer to the private key to be used by the
 HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
-   
+
 @item MHD_OPTION_HTTPS_MEM_CERT
 @cindex SSL
 @cindex TLS
@@ -663,7 +664,7 @@ Memory pointer to the certificate to be used by the
 HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
-   
+
 @item MHD_OPTION_HTTPS_MEM_TRUST
 @cindex SSL
 @cindex TLS
@@ -677,14 +678,14 @@ of the certificate if needed.
 Note that most browsers will only present a client certificate
 only if they have one matching the specified CA, not sending
 any certificate otherwise.
-   
+
 @item MHD_OPTION_HTTPS_CRED_TYPE
 @cindex SSL
 @cindex TLS
 Daemon credentials type.  Either certificate or anonymous,
 this option should be followed by one of the values listed in
 "enum gnutls_credentials_type_t".
-   
+
 @item MHD_OPTION_HTTPS_PRIORITIES
 @cindex SSL
 @cindex TLS
@@ -706,7 +707,7 @@ type "size_t" which specifies the size of the buffer pointed to by the
 second argument in bytes.  Note that the application must ensure that
 the buffer of the second argument remains allocated and unmodified
 while the daemon is running.  For security, you SHOULD provide a fresh
-random nonce when using MHD with Digest Authentication.  
+random nonce when using MHD with Digest Authentication.
 
 @item MHD_OPTION_NONCE_NC_SIZE
 @cindex digest auth
@@ -737,7 +738,7 @@ Listen socket to use.  Pass a listen socket for MHD to use
 (systemd-style).  If this option is used, MHD will not open its own
 listen socket(s). The argument passed must be of type "int" and refer
 to an existing socket that has been bound to a port and is listening.
-  
+
 @item MHD_OPTION_EXTERNAL_LOGGER
 @cindex logging
 Use the given function for logging error messages.
@@ -746,10 +747,10 @@ first must be a pointer to a function
 of type 'void fun(void * arg, const char * fmt, va_list ap)'
 and the second a pointer of type 'void*' which will
 be passed as the "arg" argument to "fun".
- 
-Note that MHD will not generate any log messages without  
-the MHD_USE_DEBUG flag set and if MHD was compiled 
-with the "--disable-messages" flag. 
+
+Note that MHD will not generate any log messages without
+the MHD_USE_DEBUG flag set and if MHD was compiled
+with the "--disable-messages" flag.
 
 @item MHD_OPTION_THREAD_POOL_SIZE
 @cindex performance
@@ -806,7 +807,7 @@ updated.  Note that the unescape function must not lengthen @code{s}
 @code{cls} will be set to the second argument following
 MHD_OPTION_UNESCAPE_CALLBACK.
 
-  
+
 @item MHD_OPTION_THREAD_STACK_SIZE
 @cindex stack
 @cindex thread
@@ -814,7 +815,7 @@ MHD_OPTION_UNESCAPE_CALLBACK.
 @cindex embedded systems
 Maximum stack size for threads created by MHD.  This option must be
 followed by a @code{size_t}).  Not specifying this option or using
-a value of zero means using the system default (which is likely to 
+a value of zero means using the system default (which is likely to
 differ based on your platform).
 
 @end table
@@ -823,7 +824,7 @@ differ based on your platform).
 
 @deftp {C Struct} MHD_OptionItem
 Entry in an MHD_OPTION_ARRAY.  See the @code{MHD_OPTION_ARRAY} option
-argument for its use. 
+argument for its use.
 
 The @code{option} member is used to specify which option is specified
 in the array.  The other members specify the respective argument.
@@ -895,7 +896,7 @@ We had to close the session since MHD was being shut down.
 
 @deftp {Enumeration} MHD_ResponseMemoryMode
 The @code{MHD_ResponeMemoryMode} specifies how MHD should treat
-the memory buffer given for the response in 
+the memory buffer given for the response in
 @code{MHD_create_response_from_buffer}.
 
 @table @code
@@ -903,12 +904,12 @@ the memory buffer given for the response in
 Buffer is a persistent (static/global) buffer that won't change
 for at least the lifetime of the response, MHD should just use
 it, not free it, not copy it, just keep an alias to it.
- 
+
 @item MHD_RESPMEM_MUST_FREE
 Buffer is heap-allocated with @code{malloc} (or equivalent) and
 should be freed by MHD after processing the response has
 concluded (response reference counter reaches zero).
-  
+
 @item MHD_RESPMEM_MUST_COPY
 Buffer is in transient memory, but not on the heap (for example,
 on the stack or non-malloc allocated) and only valid during the
@@ -1094,13 +1095,9 @@ Callback used by MHD in order to obtain content.  The callback has to
 copy at most @var{max} bytes of content into @var{buf}.  The total
 number of bytes that has been placed into @var{buf} should be returned.
 
-Note that returning zero will cause MHD to try again, either
-``immediately'' if in multi-threaded mode (in which case the callback
-may want to do blocking operations to avoid busy waiting) or in the
-next round if @code{MHD_run} is used.  Returning zero for a daemon
-that runs in internal @code{select}-mode is an error (since it
-would result in busy waiting) and cause the program to be aborted
-(@code{abort()}).
+Note that returning zero will cause MHD to try again.
+Thus, returning zero should only be used in conjunction
+with @code{MHD_suspend_connection()} to avoid busy waiting.
 
 While usually the callback simply returns the number of bytes written
 into @var{buf}, there are two special return value:
@@ -1108,7 +1105,7 @@ into @var{buf}, there are two special return value:
 @code{MHD_CONTENT_READER_END_OF_STREAM} (-1) should be returned
 for the regular end of transmission (with chunked encoding, MHD will then
 terminate the chunk and send any HTTP footers that might be
-present; without chunked encoding and given an unknown 
+present; without chunked encoding and given an unknown
 response size, MHD will simply close the connection; note
 that while returning @code{MHD_CONTENT_READER_END_OF_STREAM} is not technically
 legal if a response size was specified, MHD accepts this
@@ -1121,7 +1118,7 @@ given or if chunked encoding is in use, this will indicate
 an error to the client.  Note, however, that if the client
 does not know a response size and chunked encoding is not in
 use, then clients will not be able to tell the difference between
-@code{MHD_CONTENT_READER_END_WITH_ERROR} and 
+@code{MHD_CONTENT_READER_END_WITH_ERROR} and
 @code{MHD_CONTENT_READER_END_OF_STREAM}.
 This is not a limitation of MHD but rather of the HTTP protocol.
 
@@ -1198,7 +1195,7 @@ iteration.
 Set a handler for fatal errors.
 
 @table @var
-@item cb 
+@item cb
 function to call if MHD encounters a fatal internal error.  If no handler was set explicitly, MHD will call @code{abort}.
 
 @item cls
@@ -1252,7 +1249,7 @@ is still using it).
 
 This function is useful in the special case that a listen socket
 is to be migrated to another process (i.e. a newer version of the
-HTTP server) while existing connections should continue to be 
+HTTP server) while existing connections should continue to be
 processed until they are finished.
 
 Return @code{-1} on error (daemon not listening), the handle to the
@@ -1278,7 +1275,7 @@ However, if using external @code{select} mode, you may want to
 instead use @code{MHD_run_from_select}, as it is more efficient.
 
 @table @var
-@item daemon 
+@item daemon
 daemon to process connections of
 @end table
 
@@ -1291,7 +1288,7 @@ started with the right options for this call.
 Run webserver operations given sets of ready socket handles.
 @cindex select
 
-This method should be called by clients in combination with 
+This method should be called by clients in combination with
 @code{MHD_get_fdset} if the client-controlled (external)
 select method is used.
 
@@ -1303,7 +1300,7 @@ not have to call @code{select} again to determine which operations are
 ready.
 
 @table @var
-@item daemon 
+@item daemon
 daemon to process connections of
 @item read_fd_set
 set of descriptors that must be ready for reading without blocking
@@ -1321,11 +1318,11 @@ errors.
 
 
 @deftypefun void MHD_add_connection (struct MHD_Daemon *daemon, int client_socket, const struct sockaddr *addr, socklen_t addrlen)
-Add another client connection to the set of connections 
+Add another client connection to the set of connections
 managed by MHD.  This API is usually not needed (since
 MHD will accept inbound connections on the server socket).
 Use this API in special cases, for example if your HTTP
-server is behind NAT and needs to connect out to the 
+server is behind NAT and needs to connect out to the
 HTTP client, or if you are building a proxy.
 
 If you use this API in conjunction with a internal select or a thread
@@ -1338,17 +1335,17 @@ this call and must no longer be used directly by the application
 afterwards.
 
 @table @var
-@item daemon 
+@item daemon
 daemon that manages the connection
-@item client_socket 
+@item client_socket
 socket to manage (MHD will expect to receive an HTTP request from this socket next).
-@item addr 
+@item addr
 IP address of the client
-@item addrlen 
+@item addrlen
 number of bytes in addr
 @end table
 
-This function will return @code{MHD_YES} on success, 
+This function will return @code{MHD_YES} on success,
 @code{MHD_NO} if this daemon could
 not handle the connection (i.e. malloc failed, etc).
 The socket will be closed in any case; 'errno' is set
@@ -1387,7 +1384,7 @@ connection timeout is used).  The returned value is how long
 @code{select} should at most block, not the timeout value set for
 connections.  This function must not be called if the
 @code{MHD_USE_THREAD_PER_CONNECTION} mode is in use (since then it
-is not meaningful to ask for a timeout, after all, there is 
+is not meaningful to ask for a timeout, after all, there is
 concurrenct activity).  The function must also not be called by
 user-code if @code{MHD_USE_INTERNAL_SELECT} is in use.  In the latter
 case, the behavior is undefined.
@@ -1411,7 +1408,7 @@ right now).
 
 
 @deftypefun int MHD_get_connection_values (struct MHD_Connection *connection, enum MHD_ValueKind kind, MHD_KeyValueIterator iterator, void *iterator_cls)
-Get all the headers matching @var{kind} from the request.  
+Get all the headers matching @var{kind} from the request.
 
 The @var{iterator} callback is invoked once for each header, with
 @var{iterator_cls} as first argument.  After version 0.9.19, the
@@ -1439,9 +1436,9 @@ would contain the string ``key''.
 
 @deftypefun int MHD_set_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char * key, const char * value)
 This function can be used to append an entry to
-the list of HTTP headers of a connection (so that the 
+the list of HTTP headers of a connection (so that the
 @code{MHD_get_connection_values function} will return
-them -- and the MHD PostProcessor will also 
+them -- and the MHD PostProcessor will also
 see them).  This maybe required in certain
 situations (see Mantis #1399) where (broken)
 HTTP implementations fail to supply values needed
@@ -1457,11 +1454,11 @@ are NOT freed until the connection is closed.
 (The easiest way to do this is by passing only
 arguments to permanently allocated strings.).
 
-@var{connection} is the connection for which 
+@var{connection} is the connection for which
 the entry for @var{key} of the given @var{kind}
 should be set to the given @var{value}.
 
-The function returns @code{MHD_NO} if the operation 
+The function returns @code{MHD_NO} if the operation
 could not be performed due to insufficient memory
 and @code{MHD_YES} on success.
 @end deftypefun
@@ -1636,8 +1633,8 @@ size of the file)
 
 @item fd
 file descriptor referring to a file on disk with the data; will be
-closed when response is destroyed; note that 'fd' must be an actual 
-file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
+closed when response is destroyed; note that 'fd' must be an actual
+file descriptor (not a pipe or socket) since MHD might use 'sendfile'
 or 'seek' on it.  The descriptor should be in blocking-IO mode.
 @end table
 
@@ -1678,8 +1675,8 @@ file starting at offset).
 
 @item fd
 file descriptor referring to a file on disk with the data; will be
-closed when response is destroyed; note that 'fd' must be an actual 
-file descriptor (not a pipe or socket) since MHD might use 'sendfile' 
+closed when response is destroyed; note that 'fd' must be an actual
+file descriptor (not a pipe or socket) since MHD might use 'sendfile'
 or 'seek' on it.    The descriptor should be in blocking-IO mode.
 
 @item offset
@@ -1701,8 +1698,8 @@ size of the data portion of the response;
 @item buffer
 the data itself;
 
-@item mode 
-memory management options for buffer; use 
+@item mode
+memory management options for buffer; use
 MHD_RESPMEM_PERSISTENT if the buffer is static/global memory,
 use MHD_RESPMEM_MUST_FREE if the buffer is heap-allocated and
 should be freed by MHD and MHD_RESPMEM_MUST_COPY if the
@@ -1779,7 +1776,7 @@ memory allocation error).
 @deftypefun int MHD_add_response_footer (struct MHD_Response *response, const char *footer, const char *content)
 Add a footer line to the response. The strings referenced by
 @var{footer} and @var{content} must be zero-terminated and they are
-duplicated into memory blocks embedded in @var{response}.  
+duplicated into memory blocks embedded in @var{response}.
 
 Notice that the strings must not hold newlines, carriage returns or tab
 chars.  You can add response footers at any time before signalling the
@@ -1827,6 +1824,72 @@ representing the header to look for. The search is case sensitive.
 Return @code{NULL} if header does not exist or @var{key} is @code{NULL}.
 
 We should not modify the value, unless we know what we are doing.
+@end deftypefun
+
+
+@c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+@c ------------------------------------------------------------
+@node microhttpd-flow
+@chapter Flow control.
+
+@noindent
+Sometimes it may be possible that clients upload data faster
+than an application can process it, or that an application
+needs an extended period of time to generate a response.
+If @code{MHD_USE_THREAD_PER_CONNECTION} is used, applications
+can simply deal with this by performing their logic within the
+thread and thus effectively blocking connection processing
+by MHD.  In all other modes, blocking logic must not be
+placed within the callbacks invoked by MHD as this would also
+block processing of other requests, as a single thread may be
+responsible for tens of thousands of connections.
+
+Instead, applications using thread modes other than
+@code{MHD_USE_THREAD_PER_CONNECTION} should use the
+following functions to perform flow control.
+
+@deftypefun int MHD_suspend_connection (struct MHD_Connection *connection)
+Suspend handling of network data for a given connection.  This can
+be used to dequeue a connection from MHD's event loop (external
+select, internal select or thread pool; not applicable to
+thread-per-connection!) for a while.
+
+If you use this API in conjunction with a internal select or a
+thread pool, you must set the option @code{MHD_USE_PIPE_FOR_SHUTDOWN} to
+ensure that a resumed connection is immediately processed by MHD.
+
+Suspended connections continue to count against the total number of
+connections allowed (per daemon, as well as per IP, if such limits
+are set).  Suspended connections will NOT time out; timeouts will
+restart when the connection handling is resumed.  While a
+connection is suspended, MHD will not detect disconnects by the
+client.
+
+The only safe time to suspend a connection is from the
+@code{MHD_AccessHandlerCallback}.
+
+Finally, it is an API violation to call @code{MHD_stop_daemon} while
+having suspended connections (this will at least create memory and
+socket leaks or lead to undefined behavior).  You must explicitly
+resume all connections before stopping the daemon.
+
+@table @var
+@item connection
+the connection to suspend
+@end table
+@end deftypefun
+
+@deftypefun int MHD_resume_connection (struct MHD_Connection *connection)
+Resume handling of network data for suspended connection.  It is safe
+to resume a suspended connection at any time.  Calling this function
+on a connection that was not previously suspended will result in
+undefined behavior.
+
+@table @var
+@item connection
+the connection to resume
+@end table
 @end deftypefun
 
 
@@ -1960,41 +2023,41 @@ ahc_echo (void *cls,
   int ret;
 
   username = MHD_digest_auth_get_username(connection);
-  if (username == NULL) 
+  if (username == NULL)
     @{
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
+      response = MHD_create_response_from_buffer(strlen (DENIED),
 					         DENIED,
-					         MHD_RESPMEM_PERSISTENT);  
+					         MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 OPAQUE,
 					 response,
-					 MHD_NO);    
-      MHD_destroy_response(response);  
+					 MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     @}
   ret = MHD_digest_auth_check(connection, realm,
-			      username, 
-			      password, 
+			      username,
+			      password,
 			      300);
   free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     @{
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
+      response = MHD_create_response_from_buffer(strlen (DENIED),
 					         DENIED,
-					         MHD_RESPMEM_PERSISTENT);  
-      if (NULL == response) 
+					         MHD_RESPMEM_PERSISTENT);
+      if (NULL == response)
 	return MHD_NO;
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 OPAQUE,
 					 response,
-					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
-      MHD_destroy_response(response);  
+					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     @}
   response = MHD_create_response_from_buffer (strlen(PAGE), PAGE,
  					      MHD_RESPMEM_PERSISTENT);
-  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
+  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
   MHD_destroy_response(response);
   return ret;
 @}
@@ -2026,7 +2089,7 @@ its @code{*@var{con_cls}} argument is set to @code{NULL}. When @code{POST}
 data comes in the upload buffer it is @strong{mandatory} to use the
 @var{con_cls} to store a reference to per-connection data.  The fact
 that the pointer was initially @code{NULL} can be used to detect that
-this is a new request.  
+this is a new request.
 
 One method to detect that a new connection was established is
 to set @code{*con_cls} to an unused integer:
@@ -2043,7 +2106,7 @@ access_handler (void *cls,
   static int old_connection_marker;
   int new_connection = (NULL == *con_cls);
 
-  if (new_connection) 
+  if (new_connection)
     @{
       /* new connection with POST */
       *con_cls = &old_connection_marker;
@@ -2070,13 +2133,13 @@ access_handler (void *cls,
 @{
   struct MHD_PostProcessor * pp = *con_cls;
 
-  if (pp == NULL) 
+  if (pp == NULL)
     @{
       pp = MHD_create_post_processor(connection, ...);
       *con_cls = pp;
       return MHD_YES;
     @}
-  if (*upload_data_size) 
+  if (*upload_data_size)
     @{
       MHD_post_process(pp, upload_data, *upload_data_size);
       *upload_data_size = 0;
@@ -2161,7 +2224,7 @@ is no special call to the iterator to indicate the end of the post processing
 stream.  After destroying the PostProcessor, the programmer should
 perform any necessary work to complete the processing of the iterator.
 
-Return @code{MHD_YES} if processing completed nicely, @code{MHD_NO} 
+Return @code{MHD_YES} if processing completed nicely, @code{MHD_NO}
 if there were spurious characters or formatting problems with
 the post request.  It is common to ignore the return value
 of this function.
@@ -2285,7 +2348,7 @@ connection is desired.
 @table @code
 
 @item MHD_CONNECTION_INFO_CIPHER_ALGO
-What cipher algorithm is being used (HTTPS connections only).  
+What cipher algorithm is being used (HTTPS connections only).
 Takes no extra arguments.
 @code{NULL} is returned for non-HTTPS connections.
 
@@ -2295,7 +2358,7 @@ Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
 @code{NULL} is returned for non-HTTPS connections.
 
 @item MHD_CONNECTION_INFO_CLIENT_ADDRESS
-Returns information about the address of the client.  Returns 
+Returns information about the address of the client.  Returns
 essentially a @code{struct sockaddr **} (since the API returns
 a @code{union MHD_ConnectionInfo *} and that union contains
 a @code{struct sockaddr *}).
@@ -2303,7 +2366,7 @@ a @code{struct sockaddr *}).
 @item MHD_CONNECTION_INFO_GNUTLS_SESSION,
 Takes no extra arguments.  Allows access to the underlying GNUtls session,
 including access to the underlying GNUtls client certificate
-(HTTPS connections only).  Takes no extra arguments.  
+(HTTPS connections only).  Takes no extra arguments.
 @code{NULL} is returned for non-HTTPS connections.
 
 @item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
@@ -2367,7 +2430,7 @@ connection should be changed.
 @item MHD_CONNECTION_OPTION_TIMEOUT
 Set a custom timeout for the given connection.   Specified
 as the number of seconds, given as an @code{unsigned int}.  Use
-zero for no timeout. 
+zero for no timeout.
 
 @end table
 @end deftp
