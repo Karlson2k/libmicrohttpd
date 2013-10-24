@@ -8,7 +8,7 @@ if USE_PRIVATE_PLIBC_H
  PLIBC_INCLUDE = -I$(top_srcdir)/src/include/plibc
 endif
 
-INCLUDES = $(PLIBC_INCLUDE) -I$(top_srcdir)/src/include
+AM_CPPFLAGS = $(PLIBC_INCLUDE) -I$(top_srcdir)/src/include
 
 EXTRA_DIST = README socat.c
 

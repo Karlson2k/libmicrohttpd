@@ -1,3 +1,6 @@
+Sat Oct 19 16:40:32 CEST 2013
+	Releasing libmicrohttpd 0.9.31. -CG
+
 Mon Sep 23 20:24:48 CEST 2013
 	Fixing build issues on OS X with CLOCK_MONOTONIC not being
 	implemented on OS X. -CG
