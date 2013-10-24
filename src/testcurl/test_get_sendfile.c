@@ -406,7 +406,7 @@ testUnknownPortGet ()
   if (di == NULL)
     return 65536;
 
-  if (0 != getsockname(di->listen_fd, &addr, &addr_len))
+  if (0 != getsockname(di->listen_fd, (struct sockaddr *) &addr, &addr_len))
     return 131072;
 
   if (addr.sin_family != AF_INET)
@@ -455,10 +455,10 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   const char *tmp;
   FILE *f;
-  
+
   if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
        (NULL == (tmp = getenv ("TMP"))) )
-    tmp = "/tmp";  
+    tmp = "/tmp";
   sourcefile = malloc (strlen (tmp) + 32);
   sprintf (sourcefile,
 	   "%s%s%s",
