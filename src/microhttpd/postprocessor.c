@@ -308,7 +308,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
 	  /* remove enclosing quotes */
 	  ++boundary;
 	  blen -= 2;
-	} 
+	}
     }
   else
     blen = 0;
@@ -564,8 +564,8 @@ find_boundary (struct MHD_PostProcessor *pp,
  * If destination is already non-NULL, do nothing.
  */
 static void
-try_get_value (const char *buf, 
-	       const char *key, 
+try_get_value (const char *buf,
+	       const char *key,
 	       char **destination)
 {
   const char *spos;
@@ -676,8 +676,8 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
  *        boundary was found
  * @param next_dash_state state to go into if the next
  *        boundary ends with "--"
- * @return MHD_YES if we can continue processing,
- *         MHD_NO on error or if we do not have
+ * @return #MHD_YES if we can continue processing,
+ *         #MHD_NO on error or if we do not have
  *                enough data yet
  */
 static int
@@ -690,15 +690,26 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
 {
   char *buf = (char *) &pp[1];
   size_t newline;
+  const char *r;
 
   /* all data in buf until the boundary
      (\r\n--+boundary) is part of the value */
   newline = 0;
   while (1)
     {
-      while ((newline + 4 < pp->buffer_pos) &&
-             (0 != memcmp ("\r\n--", &buf[newline], 4)))
-        newline++;
+      while (newline + 4 < pp->buffer_pos)
+        {
+          r = memchr (&buf[newline], '\r', pp->buffer_pos - newline);
+          if (NULL == r)
+          {
+            newline = pp->buffer_pos - 4;
+            break;
+          }
+          newline = r - buf;
+          if (0 == memcmp ("\r\n--", &buf[newline], 4))
+            break;
+          newline++;
+        }
       if (newline + pp->blen + 4 <= pp->buffer_pos)
         {
           /* can check boundary */
@@ -794,7 +805,7 @@ free_unmarked (struct MHD_PostProcessor *pp)
  * @param pp post processor context
  * @param post_data data to decode
  * @param post_data_len number of bytes in @a post_data
- * @return #MHD_NO on error, 
+ * @return #MHD_NO on error,
  */
 static int
 post_process_multipart (struct MHD_PostProcessor *pp,
@@ -1147,7 +1158,7 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
   /* These internal strings need cleaning up since
      the post-processing may have been interrupted
      at any stage */
-  if ((pp->xbuf_pos > 0) || 
+  if ((pp->xbuf_pos > 0) ||
       ( (pp->state != PP_Done) &&
 	(pp->state != PP_ExpectNewLine)))
     ret = MHD_NO;
