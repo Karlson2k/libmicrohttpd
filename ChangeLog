@@ -1,3 +1,7 @@
+Wed Oct 30 09:34:20 CET 2013
+	Fixing issue in PostProcessor when getting partial boundary
+	at the beginning, expanding test suite. -CG
+
 Sun Oct 27 15:19:44 CET 2013
 	Implementing faster processing of upload data in multipart
 	encoding (thanks to performance analysis by Adam Homolya). -CG
