@@ -71,7 +71,7 @@ extern "C" {
 #define Li2Double(x) ((double)((x).HighPart) * 4.294967296E9 + \
   (double)((x).LowPart))
 #ifndef __MINGW64_VERSION_MAJOR
-struct stat64
+struct _stati64
 {
     _dev_t st_dev;
     _ino_t st_ino;
@@ -81,9 +81,9 @@ struct stat64
     short st_gid;
     _dev_t st_rdev;
     __int64 st_size;
-    __time64_t st_atime;
-    __time64_t st_mtime;
-    __time64_t st_ctime;
+    time_t st_atime;
+    time_t st_mtime;
+    time_t st_ctime;
 };
 #endif
 typedef unsigned int sa_family_t;
@@ -558,7 +558,7 @@ int _win_close(int fd);
 int _win_creat(const char *path, mode_t mode);
 char *_win_ctime(const time_t *clock);
 char *_win_ctime_r(const time_t *clock, char *buf);
-int _win_fstat(int handle, struct _stat *buffer);
+int _win_fstat(int handle, struct stat *buffer);
 int _win_ftruncate(int fildes, off_t length);
 int _win_truncate(const char *fname, int distance);
 int _win_kill(pid_t pid, int sig);
@@ -572,8 +572,8 @@ long _win_random(void);
 void _win_srandom(unsigned int seed);
 int _win_remove(const char *path);
 int _win_rename(const char *oldname, const char *newname);
-int _win_stat(const char *path, struct _stat *buffer);
-int _win_stat64(const char *path, struct stat64 *buffer);
+int _win_stat(const char *path, struct stat *buffer);
+int _win_stati64(const char *path, struct _stati64 *buffer);
 long _win_sysconf(int name);
 int _win_unlink(const char *filename);
 int _win_write(int fildes, const void *buf, size_t nbyte);
@@ -585,8 +585,8 @@ void *_win_mmap(void *start, size_t len, int access, int flags, int fd,
                 unsigned long long offset);
 int _win_msync(void *start, size_t length, int flags);
 int _win_munmap(void *start, size_t length);
-int _win_lstat(const char *path, struct _stat *buf);
-int _win_lstat64(const char *path, struct stat64 *buf);
+int _win_lstat(const char *path, struct stat *buf);
+int _win_lstati64(const char *path, struct _stati64 *buf);
 int _win_readlink(const char *path, char *buf, size_t bufsize);
 int _win_accept(int s, struct sockaddr *addr, int *addrlen);
 
@@ -745,6 +745,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define TDESTROY(r, f) tdestroy(r, f)
  #define LFIND(k, b, n, s, c) lfind(k, b, n, s, c)
  #define LSEARCH(k, b, n, s, c) lsearch(k, b, n, s, c)
+ #define STRUCT_STAT64 struct stat64
 #else
  #define DIR_SEPARATOR '\\'
  #define DIR_SEPARATOR_STR "\\"
@@ -780,7 +781,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define REMOVE(p) _win_remove(p)
  #define RENAME(o, n) _win_rename(o, n)
  #define STAT(p, b) _win_stat(p, b)
- #define STAT64(p, b) _win_stat64(p, b)
+ #define STAT64(p, b) _win_stati64(p, b)
  #define SYSCONF(n) _win_sysconf(n)
  #define UNLINK(f) _win_unlink(f)
  #define WRITE(f, b, n) _win_write(f, b, n)
@@ -795,7 +796,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define STRERROR(i) _win_strerror(i)
  #define READLINK(p, b, s) _win_readlink(p, b, s)
  #define LSTAT(p, b) _win_lstat(p, b)
- #define LSTAT64(p, b) _win_lstat64(p, b)
+ #define LSTAT64(p, b) _win_lstati64(p, b)
  #define PRINTF printf
  #define FPRINTF fprintf
  #define VPRINTF(f, a) vprintf(f, a)
@@ -845,6 +846,7 @@ char *strcasestr(const char *haystack_start, const char *needle_start);
  #define TDESTROY(r, f) _win_tdestroy(r, f)
  #define LFIND(k, b, n, s, c) _win_lfind(k, b, n, s, c)
  #define LSEARCH(k, b, n, s, c) _win_lsearch(k, b, n, s, c)
+ #define STRUCT_STAT64 struct _stati64
 #endif
 
 /* search.h */
