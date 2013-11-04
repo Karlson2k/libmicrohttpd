@@ -3,11 +3,9 @@
 @include version.texi
 @settitle The GNU libmicrohttpd Reference Manual
 @c Unify all the indices into concept index.
-@syncodeindex fn cp
 @syncodeindex vr cp
 @syncodeindex ky cp
 @syncodeindex pg cp
-@syncodeindex tp cp
 @copying
 This manual is for GNU libmicrohttpd
 (version @value{VERSION}, @value{UPDATED}), a library for embedding
@@ -1390,8 +1388,10 @@ user-code if @code{MHD_USE_INTERNAL_SELECT} is in use.  In the latter
 case, the behavior is undefined.
 
 @table @var
-@cindex timeout
-set to the timeout (in milliseconds).
+@item daemon
+which daemon to obtain the timeout from.
+@item timeout
+will be set to the timeout (in milliseconds).
 @end table
 
 Return @code{MHD_YES} on success, @code{MHD_NO} if timeouts are not used
