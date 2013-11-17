@@ -1,17 +1,17 @@
 /*
   This file is part of libmicrohttpd
   (C) 2007 Christian Grothoff
-  
+
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2, or (at your
+  by the Free Software Foundation; either version 3, or (at your
   option) any later version.
-  
+
   libmicrohttpd is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with libmicrohttpd; see the file COPYING.  If not, write to the
   Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -39,8 +39,8 @@ extern const char srv_signed_key_pem[];
 
 
 static int
-test_cipher_option (FILE * test_fd, 
-		    const char *cipher_suite, 
+test_cipher_option (FILE * test_fd,
+		    const char *cipher_suite,
 		    int proto_version)
 {
 
@@ -68,8 +68,8 @@ test_cipher_option (FILE * test_fd,
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-test_secure_get (FILE * test_fd, 
-		 const char *cipher_suite, 
+test_secure_get (FILE * test_fd,
+		 const char *cipher_suite,
 		 int proto_version)
 {
   int ret;
@@ -115,7 +115,7 @@ main (int argc, char *const *argv)
 
   if (curl_uses_nss_ssl() == 0)
     {
-      aes256_sha_tlsv1 = "rsa_aes_256_sha";    
+      aes256_sha_tlsv1 = "rsa_aes_256_sha";
       aes256_sha_sslv3 = "rsa_aes_256_sha";
       des_cbc3_sha_tlsv1 = "rsa_aes_128_sha";
     }
