@@ -1398,6 +1398,9 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   daemon = connection->daemon;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     MHD_PANIC ("Cannot suspend connections in THREAD_PER_CONNECTION mode!\n");
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
+    MHD_PANIC ("Failed to acquire cleanup mutex\n");
   DLL_remove (daemon->connections_head,
               daemon->connections_tail,
               connection);
@@ -1410,22 +1413,29 @@ MHD_suspend_connection (struct MHD_Connection *connection)
                  daemon->manual_timeout_tail,
                  connection);
 #if EPOLL_SUPPORT
-  if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-    {
-      EDLL_remove (daemon->eready_head,
-                   daemon->eready_tail,
-                   connection);
-    }
-  if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET))
-    {
-      if (0 != epoll_ctl (daemon->epoll_fd,
-                          EPOLL_CTL_DEL,
-                          connection->socket_fd,
-                          NULL))
-        MHD_PANIC ("Failed to remove FD from epoll set\n");
-      connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
-    }
+  if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
+  {
+    if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+      {
+        EDLL_remove (daemon->eready_head,
+                     daemon->eready_tail,
+                     connection);
+      }
+    if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET))
+      {
+        if (0 != epoll_ctl (daemon->epoll_fd,
+                            EPOLL_CTL_DEL,
+                            connection->socket_fd,
+                            NULL))
+          MHD_PANIC ("Failed to remove FD from epoll set\n");
+        connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
+      }
+    connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
+  }
 #endif
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex)) )
+    MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
 
@@ -1460,33 +1470,30 @@ MHD_resume_connection (struct MHD_Connection *connection)
                  daemon->manual_timeout_tail,
                  connection);
 #if EPOLL_SUPPORT
-  if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-    {
-      EDLL_insert (daemon->eready_head,
-                   daemon->eready_tail,
-                   connection);
-    }
-  else
-    {
-      struct epoll_event event;
+  if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
+  {
+    if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+      {
+        EDLL_insert (daemon->eready_head,
+                     daemon->eready_tail,
+                     connection);
+      }
+    else
+      {
+        struct epoll_event event;
 
-      event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-      event.data.ptr = connection;
-      if (0 != epoll_ctl (daemon->epoll_fd,
-                          EPOLL_CTL_ADD,
-                          connection->socket_fd,
-                          &event))
-        {
-#if HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    "Call to epoll_ctl failed: %s\n",
-                    STRERROR (errno));
-#endif
-          /* and now, good luck with this... */
-        }
-      else
-        connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+        event.data.ptr = connection;
+        if (0 != epoll_ctl (daemon->epoll_fd,
+                            EPOLL_CTL_ADD,
+                            connection->socket_fd,
+                            &event))
+          MHD_PANIC ("Failed to add FD to epoll set\n");
+        else
+          connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
     }
+    connection->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
+  }
 #endif
   if ( (-1 != daemon->wpipe[1]) &&
        (1 != WRITE (daemon->wpipe[1], "n", 1)) )

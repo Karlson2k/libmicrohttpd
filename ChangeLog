@@ -1,3 +1,8 @@
+Sun Nov 24 13:41:15 CET 2013
+	Introduce state to mark connections in suspended state (with
+	epoll); add missing locking operations in MHD_suspend_connection.
+	Fix definition of MHD_TLS_CONNECTION_INIT.  -MH/JC
+
 Wed Oct 30 09:34:20 CET 2013
 	Fixing issue in PostProcessor when getting partial boundary
 	at the beginning, expanding test suite. -CG

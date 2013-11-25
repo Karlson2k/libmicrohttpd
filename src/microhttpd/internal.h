@@ -116,8 +116,12 @@ enum MHD_EpollState
     /**
      * Is this connection currently in the 'epoll' set?
      */
-    MHD_EPOLL_STATE_IN_EPOLL_SET = 8
+    MHD_EPOLL_STATE_IN_EPOLL_SET = 8,
 
+    /**
+     * Is this connection currently suspended?
+     */
+    MHD_EPOLL_STATE_SUSPENDED = 16
   };
 
 
@@ -452,7 +456,7 @@ enum MHD_CONNECTION_STATE
    * Handshake messages will be processed in this state & while
    * in the 'MHD_TLS_HELLO_REQUEST' state
    */
-  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_CLOSED + 1
+  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1
 
 };
 

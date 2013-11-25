@@ -2474,6 +2474,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     {
     case MHD_EVENT_LOOP_INFO_READ:
       if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
+           (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
 	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
 	{
 	  EDLL_insert (daemon->eready_head,
@@ -2485,6 +2486,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_EVENT_LOOP_INFO_WRITE:
       if ( (connection->read_buffer_size > connection->read_buffer_offset) &&
 	   (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
+           (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
 	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
 	{
 	  EDLL_insert (daemon->eready_head,
@@ -2493,6 +2495,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
 	}
       if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) &&
+           (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
 	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
 	{
 	  EDLL_insert (daemon->eready_head,
@@ -2504,7 +2507,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_EVENT_LOOP_INFO_BLOCK:
       /* we should look at this connection again in the next iteration
 	 of the event loop, as we're waiting on the application */
-      if (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+      if ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) &&
+           (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED))) )
 	{
 	  EDLL_insert (daemon->eready_head,
 		       daemon->eready_tail,
@@ -2539,6 +2543,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
+       (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
        ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ||
 	 ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
 	   ( (MHD_EVENT_LOOP_INFO_READ == connection->event_loop_info) ||
