@@ -1894,7 +1894,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *except_fd_set)
 {
   int ds;
-  int tmp;
+  char tmp;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
 
@@ -3812,7 +3812,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (-1 != daemon->wpipe[1])
     {
       if (1 != WRITE (daemon->wpipe[1], "e", 1))
-	MHD_PANIC ("failed to signal shutdownn via pipe");
+	MHD_PANIC ("failed to signal shutdown via pipe");
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
   else
@@ -3842,6 +3842,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       /* MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
       for (i = 0; i < daemon->worker_pool_size; ++i)
 	{
+	  if (-1 != daemon->wpipe[1])
+	    {
+	      if (1 != WRITE (daemon->wpipe[1], "e", 1))
+		MHD_PANIC ("failed to signal shutdown via pipe");
+	    }
 	  if (0 != (rc = pthread_join (daemon->worker_pool[i].pid, &unused)))
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);

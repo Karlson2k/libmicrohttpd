@@ -1,3 +1,7 @@
+Tue Nov 26 01:26:15 CET 2013
+	Fix race on shutdown signal with thread pool on non-Linux
+	systems by signalling n times for n threads. -CG
+
 Sun Nov 24 13:41:15 CET 2013
 	Introduce state to mark connections in suspended state (with
 	epoll); add missing locking operations in MHD_suspend_connection.
