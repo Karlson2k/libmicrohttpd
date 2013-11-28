@@ -90,7 +90,7 @@ MHD_pool_create (size_t max)
 
   pool = malloc (sizeof (struct MemoryPool));
   if (pool == NULL)
-    return NULL; 
+    return NULL;
 #ifdef MAP_ANONYMOUS
   if (max <= 32 * 1024)
     pool->memory = MAP_FAILED;
@@ -151,12 +151,14 @@ MHD_pool_destroy (struct MemoryPool *pool)
  *         bytes
  */
 void *
-MHD_pool_allocate (struct MemoryPool *pool, 
+MHD_pool_allocate (struct MemoryPool *pool,
 		   size_t size, int from_end)
 {
   void *ret;
 
   size = ROUND_TO_ALIGN (size);
+  if (0 == size)
+    return NULL; /* size too close to SIZE_MAX */
   if ((pool->pos + size > pool->end) || (pool->pos + size < pool->pos))
     return NULL;
   if (from_end == MHD_YES)
@@ -192,13 +194,15 @@ MHD_pool_allocate (struct MemoryPool *pool,
  */
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,
-                     void *old, 
-		     size_t old_size, 
+                     void *old,
+		     size_t old_size,
 		     size_t new_size)
 {
   void *ret;
 
   new_size = ROUND_TO_ALIGN (new_size);
+  if (0 == new_size)
+    return NULL; /* size too close to SIZE_MAX */
   if ((pool->end < old_size) || (pool->end < new_size))
     return NULL;                /* unsatisfiable or bogus request */
 
@@ -242,8 +246,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * @return addr new address of @a keep (if it had to change)
  */
 void *
-MHD_pool_reset (struct MemoryPool *pool, 
-		void *keep, 
+MHD_pool_reset (struct MemoryPool *pool,
+		void *keep,
 		size_t size)
 {
   size = ROUND_TO_ALIGN (size);
