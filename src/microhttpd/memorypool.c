@@ -89,7 +89,7 @@ MHD_pool_create (size_t max)
   struct MemoryPool *pool;
 
   pool = malloc (sizeof (struct MemoryPool));
-  if (pool == NULL)
+  if (NULL == pool)
     return NULL;
 #ifdef MAP_ANONYMOUS
   if (max <= 32 * 1024)
@@ -155,21 +155,22 @@ MHD_pool_allocate (struct MemoryPool *pool,
 		   size_t size, int from_end)
 {
   void *ret;
+  size_t asize;
 
-  size = ROUND_TO_ALIGN (size);
-  if (0 == size)
+  asize = ROUND_TO_ALIGN (size);
+  if ( (0 == asize) && (0 != size) )
     return NULL; /* size too close to SIZE_MAX */
-  if ((pool->pos + size > pool->end) || (pool->pos + size < pool->pos))
+  if ((pool->pos + asize > pool->end) || (pool->pos + asize < pool->pos))
     return NULL;
   if (from_end == MHD_YES)
     {
-      ret = &pool->memory[pool->end - size];
-      pool->end -= size;
+      ret = &pool->memory[pool->end - asize];
+      pool->end -= asize;
     }
   else
     {
       ret = &pool->memory[pool->pos];
-      pool->pos += size;
+      pool->pos += asize;
     }
   return ret;
 }
@@ -199,36 +200,37 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 		     size_t new_size)
 {
   void *ret;
+  size_t asize;
 
-  new_size = ROUND_TO_ALIGN (new_size);
-  if (0 == new_size)
-    return NULL; /* size too close to SIZE_MAX */
-  if ((pool->end < old_size) || (pool->end < new_size))
+  asize = ROUND_TO_ALIGN (new_size);
+  if ( (0 == asize) && (0 != new_size) )
+    return NULL; /* new_size too close to SIZE_MAX */
+  if ((pool->end < old_size) || (pool->end < asize))
     return NULL;                /* unsatisfiable or bogus request */
 
   if ((pool->pos >= old_size) && (&pool->memory[pool->pos - old_size] == old))
     {
       /* was the previous allocation - optimize! */
-      if (pool->pos + new_size - old_size <= pool->end)
+      if (pool->pos + asize - old_size <= pool->end)
         {
           /* fits */
-          pool->pos += new_size - old_size;
-          if (new_size < old_size)      /* shrinking - zero again! */
-            memset (&pool->memory[pool->pos], 0, old_size - new_size);
+          pool->pos += asize - old_size;
+          if (asize < old_size)      /* shrinking - zero again! */
+            memset (&pool->memory[pool->pos], 0, old_size - asize);
           return old;
         }
       /* does not fit */
       return NULL;
     }
-  if (new_size <= old_size)
+  if (asize <= old_size)
     return old;                 /* cannot shrink, no need to move */
-  if ((pool->pos + new_size >= pool->pos) &&
-      (pool->pos + new_size <= pool->end))
+  if ((pool->pos + asize >= pool->pos) &&
+      (pool->pos + asize <= pool->end))
     {
       /* fits */
       ret = &pool->memory[pool->pos];
       memcpy (ret, old, old_size);
-      pool->pos += new_size;
+      pool->pos += asize;
       return ret;
     }
   /* does not fit */
