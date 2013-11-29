@@ -51,7 +51,7 @@
 
 
 /**
- * convert bin to hex 
+ * convert bin to hex
  *
  * @param bin binary data
  * @param len number of bytes in bin
@@ -64,12 +64,12 @@ cvthex (const unsigned char *bin,
 {
   size_t i;
   unsigned int j;
-  
-  for (i = 0; i < len; ++i) 
+
+  for (i = 0; i < len; ++i)
     {
-      j = (bin[i] >> 4) & 0x0f;      
-      hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);    
-      j = bin[i] & 0x0f;    
+      j = (bin[i] >> 4) & 0x0f;
+      hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);
+      j = bin[i] & 0x0f;
       hex[i * 2 + 1] = j <= 9 ? (j + '0') : (j + 'a' - 10);
     }
   hex[len * 2] = '\0';
@@ -99,7 +99,7 @@ digest_calc_ha1 (const char *alg,
 {
   struct MD5Context md5;
   unsigned char ha1[MD5_DIGEST_SIZE];
-  
+
   MD5Init (&md5);
   MD5Update (&md5, username, strlen (username));
   MD5Update (&md5, ":", 1);
@@ -107,7 +107,7 @@ digest_calc_ha1 (const char *alg,
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, password, strlen (password));
   MD5Final (ha1, &md5);
-  if (0 == strcasecmp (alg, "md5-sess")) 
+  if (0 == strcasecmp (alg, "md5-sess"))
     {
       MD5Init (&md5);
       MD5Update (&md5, ha1, sizeof (ha1));
@@ -122,8 +122,8 @@ digest_calc_ha1 (const char *alg,
 
 
 /**
- * Calculate request-digest/response-digest as per RFC2617 spec 
- * 
+ * Calculate request-digest/response-digest as per RFC2617 spec
+ *
  * @param ha1 H(A1)
  * @param nonce nonce from server
  * @param noncecount 8 hex digits
@@ -149,11 +149,11 @@ digest_calc_response (const char *ha1,
   unsigned char ha2[MD5_DIGEST_SIZE];
   unsigned char resphash[MD5_DIGEST_SIZE];
   char ha2hex[HASH_MD5_HEX_LEN + 1];
-  
+
   MD5Init (&md5);
   MD5Update (&md5, method, strlen(method));
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen(uri)); 
+  MD5Update (&md5, uri, strlen(uri));
 #if 0
   if (0 == strcasecmp(qop, "auth-int"))
     {
@@ -163,15 +163,15 @@ digest_calc_response (const char *ha1,
       if (NULL != hentity)
 	MD5Update (&md5, hentity, strlen(hentity));
     }
-#endif  
+#endif
   MD5Final (ha2, &md5);
   cvthex (ha2, MD5_DIGEST_SIZE, ha2hex);
-  MD5Init (&md5);  
-  /* calculate response */  
+  MD5Init (&md5);
+  /* calculate response */
   MD5Update (&md5, ha1, HASH_MD5_HEX_LEN);
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, nonce, strlen(nonce));
-  MD5Update (&md5, ":", 1);  
+  MD5Update (&md5, ":", 1);
   if ('\0' != *qop)
     {
       MD5Update (&md5, noncecount, strlen(noncecount));
@@ -180,7 +180,7 @@ digest_calc_response (const char *ha1,
       MD5Update (&md5, ":", 1);
       MD5Update (&md5, qop, strlen(qop));
       MD5Update (&md5, ":", 1);
-    }  
+    }
   MD5Update (&md5, ha2hex, HASH_MD5_HEX_LEN);
   MD5Final (resphash, &md5);
   cvthex (resphash, sizeof (resphash), response);
@@ -225,7 +225,7 @@ lookup_sub_value (char *dest,
 	return 0;
       q1 = eq + 1;
       while (' ' == *q1)
-	q1++;      
+	q1++;
       if ('\"' != *q1)
 	{
 	  q2 = strchr (q1, ',');
@@ -238,7 +238,7 @@ lookup_sub_value (char *dest,
 	  if (NULL == q2)
 	    return 0; /* end quote not found */
 	  qn = q2 + 1;
-	}      
+	}
       if ( (0 == strncasecmp (ptr,
 			      key,
 			      keylen)) &&
@@ -261,7 +261,7 @@ lookup_sub_value (char *dest,
 	      if (size > (q2 - q1) + 1)
 		size = (q2 - q1) + 1;
 	      size--;
-	      memcpy (dest, 
+	      memcpy (dest,
 		      q1,
 		      size);
 	      dest[size] = '\0';
@@ -316,13 +316,13 @@ check_nonce_nc (struct MHD_Connection *connection,
    * nonce counter is less than the current nonce counter by 1,
    * then only increase the nonce counter by one.
    */
-  
+
   (void) pthread_mutex_lock (&connection->daemon->nnc_lock);
   if (0 == nc)
     {
-      strcpy(connection->daemon->nnc[off].nonce, 
+      strcpy(connection->daemon->nnc[off].nonce,
 	     nonce);
-      connection->daemon->nnc[off].nc = 0;  
+      connection->daemon->nnc[off].nc = 0;
       (void) pthread_mutex_unlock (&connection->daemon->nnc_lock);
       return MHD_YES;
     }
@@ -331,7 +331,7 @@ check_nonce_nc (struct MHD_Connection *connection,
     {
       (void) pthread_mutex_unlock (&connection->daemon->nnc_lock);
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, 
+      MHD_DLOG (connection->daemon,
 		"Stale nonce received.  If this happens a lot, you should probably increase the size of the nonce array.\n");
 #endif
       return MHD_NO;
@@ -356,9 +356,9 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   size_t len;
   char user[MAX_USERNAME_LENGTH];
   const char *header;
-  
+
   if (NULL == (header = MHD_lookup_connection_value (connection,
-						     MHD_HEADER_KIND, 
+						     MHD_HEADER_KIND,
 						     MHD_HTTP_HEADER_AUTHORIZATION)))
     return NULL;
   if (0 != strncmp (header, _BASE, strlen (_BASE)))
@@ -366,7 +366,7 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   header += strlen (_BASE);
   if (0 == (len = lookup_sub_value (user,
 				    sizeof (user),
-				    header, 
+				    header,
 				    "username")))
     return NULL;
   return strdup (user);
@@ -404,7 +404,7 @@ calculate_nonce (uint32_t nonce_time,
   timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
   timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
   timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
-  timestamp[3] = (nonce_time & 0x000000ff);    
+  timestamp[3] = (nonce_time & 0x000000ff);
   MD5Update (&md5, timestamp, 4);
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, method, strlen(method));
@@ -415,8 +415,8 @@ calculate_nonce (uint32_t nonce_time,
   MD5Update (&md5, uri, strlen(uri));
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, realm, strlen(realm));
-  MD5Final (tmpnonce, &md5);  
-  cvthex (tmpnonce, sizeof (tmpnonce), nonce);  
+  MD5Final (tmpnonce, &md5);
+  cvthex (tmpnonce, sizeof (tmpnonce), nonce);
   cvthex (timestamp, 4, timestamphex);
   strncat (nonce, timestamphex, 8);
 }
@@ -429,7 +429,7 @@ calculate_nonce (uint32_t nonce_time,
  * @param connection the connection
  * @param key the key
  * @param value the value, can be NULL
- * @return MHD_YES if the key-value pair is in the headers, 
+ * @return MHD_YES if the key-value pair is in the headers,
  *         MHD_NO if not
  */
 static int
@@ -445,14 +445,14 @@ test_header (struct MHD_Connection *connection,
 	continue;
       if (0 != strcmp (key, pos->header))
 	continue;
-      if ( (NULL == value) && 
+      if ( (NULL == value) &&
 	   (NULL == pos->value) )
 	return MHD_YES;
-      if ( (NULL == value) || 
+      if ( (NULL == value) ||
 	   (NULL == pos->value) ||
 	   (0 != strcmp (value, pos->value)) )
 	continue;
-      return MHD_YES;      
+      return MHD_YES;
     }
   return MHD_NO;
 }
@@ -487,8 +487,8 @@ check_argument_match (struct MHD_Connection *connection,
 	  ('\0' != argp[0]) )
     {
       equals = strchr (argp, '=');
-      if (NULL == equals) 
-	{	  
+      if (NULL == equals)
+	{
 	  /* add with 'value' NULL */
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
@@ -517,7 +517,7 @@ check_argument_match (struct MHD_Connection *connection,
       num_headers++;
       argp = amper;
     }
-  
+
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
     {
@@ -525,7 +525,7 @@ check_argument_match (struct MHD_Connection *connection,
 	continue;
       num_headers--;
     }
-  if (0 != num_headers)  
+  if (0 != num_headers)
     return MHD_NO;
   return MHD_YES;
 }
@@ -570,10 +570,10 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 
   header = MHD_lookup_connection_value (connection,
 					MHD_HEADER_KIND,
-					MHD_HTTP_HEADER_AUTHORIZATION);  
-  if (NULL == header) 
+					MHD_HTTP_HEADER_AUTHORIZATION);
+  if (NULL == header)
     return MHD_NO;
-  if (0 != strncmp(header, _BASE, strlen(_BASE))) 
+  if (0 != strncmp(header, _BASE, strlen(_BASE)))
     return MHD_NO;
   header += strlen (_BASE);
   left = strlen (header);
@@ -585,7 +585,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 			    sizeof (un),
 			    header, "username");
     if ( (0 == len) ||
-	 (0 != strcmp(username, un)) ) 
+	 (0 != strcmp(username, un)) )
       return MHD_NO;
     left -= strlen ("username") + len;
   }
@@ -593,32 +593,42 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
   {
     char r[MAX_REALM_LENGTH];
 
-    len = lookup_sub_value(r, 
+    len = lookup_sub_value(r,
 			   sizeof (r),
-			   header, "realm");  
-    if ( (0 == len) || 
+			   header, "realm");
+    if ( (0 == len) ||
 	 (0 != strcmp(realm, r)) )
       return MHD_NO;
     left -= strlen ("realm") + len;
   }
 
-  if (0 == (len = lookup_sub_value (nonce, 
+  if (0 == (len = lookup_sub_value (nonce,
 				    sizeof (nonce),
 				    header, "nonce")))
     return MHD_NO;
   left -= strlen ("nonce") + len;
-
+  if (left > 32 * 1024)
   {
-    char uri[left];  
-  
-    if (0 == lookup_sub_value(uri,
-			      sizeof (uri),
-			      header, "uri")) 
+    /* we do not permit URIs longer than 32k, as we want to
+       make sure to not blow our stack (or per-connection
+       heap memory limit).  Besides, 32k is already insanely
+       large, but of course in theory the
+       #MHD_OPTION_CONNECTION_MEMORY_LIMIT might be very large
+       and would thus permit sending a >32k authorization
+       header value. */
+    return MHD_NO;
+  }
+  {
+    char uri[left];
+
+    if (0 == lookup_sub_value (uri,
+                               sizeof (uri),
+                               header, "uri"))
       return MHD_NO;
-      
-    /* 8 = 4 hexadecimal numbers for the timestamp */  
-    nonce_time = strtoul(nonce + len - 8, (char **)NULL, 16);  
-    t = (uint32_t) MHD_monotonic_time();    
+
+    /* 8 = 4 hexadecimal numbers for the timestamp */
+    nonce_time = strtoul (nonce + len - 8, (char **)NULL, 16);
+    t = (uint32_t) MHD_monotonic_time();
     /*
      * First level vetting for the nonce validity if the timestamp
      * attached to the nonce exceeds `nonce_timeout' then the nonce is
@@ -632,7 +642,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 		      strlen (connection->url)))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, 
+      MHD_DLOG (connection->daemon,
 		"Authentication failed, URI does not match.\n");
 #endif
       return MHD_NO;
@@ -646,10 +656,10 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 	args++;
       if (MHD_YES !=
 	  check_argument_match (connection,
-				args) ) 
+				args) )
       {
 #if HAVE_MESSAGES
-	MHD_DLOG (connection->daemon, 
+	MHD_DLOG (connection->daemon,
 		  "Authentication failed, arguments do not match.\n");
 #endif
 	return MHD_NO;
@@ -671,31 +681,31 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
      * not, the nonce fabrication process going to be
      * very hard to achieve.
      */
-    
+
     if (0 != strcmp (nonce, noncehashexp))
       return MHD_INVALID_NONCE;
     if ( (0 == lookup_sub_value (cnonce,
-				 sizeof (cnonce), 
+				 sizeof (cnonce),
 				 header, "cnonce")) ||
 	 (0 == lookup_sub_value (qop, sizeof (qop), header, "qop")) ||
-	 ( (0 != strcmp (qop, "auth")) && 
+	 ( (0 != strcmp (qop, "auth")) &&
 	   (0 != strcmp (qop, "")) ) ||
 	 (0 == lookup_sub_value (nc, sizeof (nc), header, "nc"))  ||
 	 (0 == lookup_sub_value (response, sizeof (response), header, "response")) )
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, 
+      MHD_DLOG (connection->daemon,
 		"Authentication failed, invalid format.\n");
 #endif
       return MHD_NO;
     }
     nci = strtoul (nc, &end, 16);
     if ( ('\0' != *end) ||
-	 ( (LONG_MAX == nci) && 
+	 ( (LONG_MAX == nci) &&
 	   (ERANGE == errno) ) )
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, 
+      MHD_DLOG (connection->daemon,
 		"Authentication failed, invalid format.\n");
 #endif
       return MHD_NO; /* invalid nonce format */
@@ -705,10 +715,10 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
      * and not a replay attack attempt. Also adds the nonce
      * to the nonce-nc map if it does not exist there.
      */
-    
+
     if (MHD_YES != check_nonce_nc (connection, nonce, nci))
       return MHD_NO;
-    
+
     digest_calc_ha1("md5",
 		    username,
 		    realm,
@@ -724,9 +734,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 			  connection->method,
 			  uri,
 			  hentity,
-			  respexp);  
-    return (0 == strcmp(response, respexp)) 
-      ? MHD_YES 
+			  respexp);
+    return (0 == strcmp(response, respexp))
+      ? MHD_YES
       : MHD_NO;
   }
 }
@@ -757,7 +767,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
   size_t hlen;
   char nonce[HASH_MD5_HEX_LEN + 9];
 
-  /* Generating the server nonce */  
+  /* Generating the server nonce */
   calculate_nonce ((uint32_t) MHD_monotonic_time(),
 		   connection->method,
 		   connection->daemon->digest_auth_random,
@@ -768,20 +778,20 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
   if (MHD_YES != check_nonce_nc (connection, nonce, 0))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, 
+      MHD_DLOG (connection->daemon,
 		"Could not register nonce (is the nonce array size zero?).\n");
 #endif
-      return MHD_NO;  
+      return MHD_NO;
     }
   /* Building the authentication header */
   hlen = snprintf (NULL,
 		   0,
 		   "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-		   realm, 
+		   realm,
 		   nonce,
 		   opaque,
-		   signal_stale 
-		   ? ",stale=\"true\"" 
+		   signal_stale
+		   ? ",stale=\"true\""
 		   : "");
   {
     char header[hlen + 1];
@@ -789,20 +799,20 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
     snprintf (header,
 	      sizeof(header),
 	      "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-	      realm, 
+	      realm,
 	      nonce,
 	      opaque,
-	      signal_stale 
-	      ? ",stale=\"true\"" 
+	      signal_stale
+	      ? ",stale=\"true\""
 	      : "");
     ret = MHD_add_response_header(response,
-				  MHD_HTTP_HEADER_WWW_AUTHENTICATE, 
+				  MHD_HTTP_HEADER_WWW_AUTHENTICATE,
 				  header);
   }
-  if (MHD_YES == ret) 
-    ret = MHD_queue_response(connection, 
-			     MHD_HTTP_UNAUTHORIZED, 
-			     response);  
+  if (MHD_YES == ret)
+    ret = MHD_queue_response(connection,
+			     MHD_HTTP_UNAUTHORIZED,
+			     response);
   return ret;
 }
 

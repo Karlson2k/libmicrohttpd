@@ -1,3 +1,10 @@
+Fri Nov 29 20:17:03 CET 2013
+	Eliminating theoretical stack overflow by limiting length
+	of URIs in authentication headers to 32k (only applicable
+	if the application explicitly raised the memroy limits,
+	and only applies to MHD_digest_auth_check). Issue was
+	reported by Florian Weimer. -CG
+
 Tue Nov 26 01:26:15 CET 2013
 	Fix race on shutdown signal with thread pool on non-Linux
 	systems by signalling n times for n threads. -CG
