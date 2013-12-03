@@ -21,15 +21,15 @@
 #
 #
 AC_PREREQ(2.57)
-AC_INIT([libmicrohttpd], [0.9.31],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd], [0.9.32],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=30
+LIB_VERSION_CURRENT=31
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=20
+LIB_VERSION_AGE=21
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -89,7 +89,7 @@ AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
-if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1; 
+if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1;
 then
  CFLAGS="-fno-strict-aliasing $CFLAGS"
 fi
@@ -102,40 +102,40 @@ case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
-     AM_CONDITIONAL(HAVE_GNU_LD, false)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, false)
+     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
+     AM_CONDITIONAL(HAVE_W32, false)
      CFLAGS="-D_THREAD_SAFE $CFLAGS"
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
+     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
+     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, false)
+     AM_CONDITIONAL(HAVE_W32, false)
      LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
      AM_CONDITIONAL(HAVE_W32, false)
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
@@ -148,8 +148,8 @@ netbsd*)
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
+     AM_CONDITIONAL(HAVE_W32, false)
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
 		AS_HELP_STRING([--disable-epoll],
@@ -161,15 +161,15 @@ netbsd*)
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_W32, false)
      LDFLAGS="$LDFLAGS -no-undefined"
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
-     AM_CONDITIONAL(HAVE_W32, true)    
+     AM_CONDITIONAL(HAVE_W32, true)
      LDFLAGS="$LDFLAGS -Wl,-no-undefined -Wl,--export-all-symbols -lws2_32"
-     AM_CONDITIONAL(HAVE_GNU_LD, true)    
+     AM_CONDITIONAL(HAVE_GNU_LD, true)
      # check if PlibC is available
      CHECK_PLIBC
      LIBS="$PLIBC_LIBS $LIBS"
@@ -179,8 +179,8 @@ netbsd*)
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, false)
+     AM_CONDITIONAL(HAVE_W32, false)
     ;;
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
@@ -189,16 +189,16 @@ netbsd*)
 #    and extend the switch statement; if we do not have 'HAVE_LISTEN_SHUTDOWN',
 #    pipes are used instead to signal 'select'.
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)    
-     AM_CONDITIONAL(HAVE_W32, false)        
+     AM_CONDITIONAL(HAVE_GNU_LD, false)
+     AM_CONDITIONAL(HAVE_W32, false)
 ;;
 esac
 
 
 if test "$enable_epoll" = "yes"
 then
- AC_CHECK_HEADERS([sys/epoll.h], 
-                   [enable_epoll="yes"], 
+ AC_CHECK_HEADERS([sys/epoll.h],
+                   [enable_epoll="yes"],
                    [enable_epoll="no"])
 fi
 
@@ -227,7 +227,7 @@ AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(
 
 # Check for plibc.h from system, if not found, use our own
 AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
-AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)    
+AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)
 
 AC_CHECK_FUNCS_ONCE(memmem)
 AC_CHECK_FUNCS_ONCE(accept4)
@@ -236,7 +236,7 @@ AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM(
                    [
                     #if defined HAVE_SYS_TYPES_H
-                    #  include <sys/types.h>      
+                    #  include <sys/types.h>
                     #endif
                     #if defined HAVE_SYS_SOCKET_H
                     #  include <sys/socket.h>
@@ -291,7 +291,7 @@ AC_MSG_RESULT($have_inet6)
 AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
 
 # TCP_NOPUSH
-AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]]) 
+AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
@@ -338,10 +338,10 @@ AC_MSG_RESULT($enable_spdy)
 
 if test "$enable_spdy" = "yes"
 then
- AC_CHECK_HEADERS([openssl/err.h], 
+ AC_CHECK_HEADERS([openssl/err.h],
                    AC_CHECK_LIB(ssl, SSL_CTX_set_next_protos_advertised_cb,
                     [AM_CONDITIONAL(HAVE_OPENSSL, true)
-                     enable_spdy="yes"], 
+                     enable_spdy="yes"],
                     [AM_CONDITIONAL(HAVE_OPENSSL, false)
                     enable_spdy="no"]),
                    [AM_CONDITIONAL(HAVE_OPENSSL, false)
@@ -365,10 +365,10 @@ spdy_OPENSSL
 SPDY_LIBDEPS=""
 
 
-AC_CHECK_HEADERS([spdylay/spdylay.h], 
-                 [AM_CONDITIONAL(HAVE_SPDYLAY, true) 
-		 have_spdylay="yes"], 
-                 [AM_CONDITIONAL(HAVE_SPDYLAY, false) 
+AC_CHECK_HEADERS([spdylay/spdylay.h],
+                 [AM_CONDITIONAL(HAVE_SPDYLAY, true)
+		 have_spdylay="yes"],
+                 [AM_CONDITIONAL(HAVE_SPDYLAY, false)
                  have_spdylay="no"])
 
 AC_SUBST(SPDY_LIB_LDFLAGS)
@@ -423,10 +423,10 @@ AM_CONDITIONAL(HAVE_ZZUF, test 0 != $HAVE_ZZUF)
 AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 
-# libgcrypt linkage: required for HTTPS support 
+# libgcrypt linkage: required for HTTPS support
 AM_PATH_LIBGCRYPT(1.2.2, gcrypt=true)
 
-# define the minimal version of libgcrypt required   
+# define the minimal version of libgcrypt required
 MHD_GCRYPT_VERSION=1:1.2.2
 AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
 
@@ -527,7 +527,7 @@ MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
 # TODO insert a proper check here
 AC_CACHE_CHECK([whether -export-symbols-regex works],
- gn_cv_export_symbols_regex_works, 
+ gn_cv_export_symbols_regex_works,
  [
   case "$host_os" in
   mingw*) gn_cv_export_symbols_regex_works=no;;
@@ -538,10 +538,10 @@ AC_CACHE_CHECK([whether -export-symbols-regex works],
 
 # gcov compilation
 AC_MSG_CHECKING(whether to compile with support for code coverage analysis)
-AC_ARG_ENABLE([coverage], 
+AC_ARG_ENABLE([coverage],
               AS_HELP_STRING([--enable-coverage],
                              [compile the library with code coverage support]),
-              [use_gcov=${enableval}], 
+              [use_gcov=${enableval}],
               [use_gcov=no])
 AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
@@ -558,7 +558,7 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(EXT_LIB_PATH)
 AC_SUBST(EXT_LIBS)
 
-AC_CONFIG_FILES([ 
+AC_CONFIG_FILES([
 libmicrohttpd.pc
 Makefile
 contrib/Makefile
@@ -598,7 +598,7 @@ else
  MSG_GCRYPT="yes"
 fi
 
-AC_MSG_NOTICE([Configuration Summary:  
+AC_MSG_NOTICE([Configuration Summary:
   Operating System:  ${host_os}
   libgcrypt:         ${MSG_GCRYPT}
   libcurl (testing): ${MSG_CURL}
@@ -622,4 +622,4 @@ else
  AC_MSG_NOTICE([
   License         :  LGPL or eCos
 ])
-fi  
+fi

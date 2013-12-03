@@ -1,3 +1,8 @@
+Tue Dec  3 21:25:56 CET 2013
+	Security fix: do not read past 0-terminator when unescaping
+	strings (thanks to Florian Weimer for reporting).
+	Releasing 0.9.32. -CG
+
 Tue Dec  3 21:05:38 CET 2013
 	Signaling n times for shutdown works, but for resume we need to
 	wake up the correct daemon. Even if we signal n times in that
