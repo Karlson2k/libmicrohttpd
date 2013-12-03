@@ -136,6 +136,12 @@ MHD_http_unescape (void *cls,
 	  rpos++;
 	  break;
 	case '%':
+          if ( ('\0' == rpos[1]) ||
+               ('\0' == rpos[2]) )
+          {
+            *wpos = '\0';
+            return wpos - val;
+          }
 	  buf3[0] = rpos[1];
 	  buf3[1] = rpos[2];
 	  buf3[2] = '\0';
@@ -159,7 +165,7 @@ MHD_http_unescape (void *cls,
 }
 
 
-time_t 
+time_t
 MHD_monotonic_time (void)
 {
 #ifdef HAVE_CLOCK_GETTIME

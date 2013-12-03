@@ -1395,7 +1395,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon;
 
   daemon = connection->daemon;
-  if (0 == (daemon->options & MHD_USE_SUSPEND_RESUME))
+  if (MHD_USE_SUSPEND_RESUME != (daemon->options & MHD_USE_SUSPEND_RESUME))
     MHD_PANIC ("Cannot suspend connections without enabling MHD_USE_SUSPEND_RESUME!\n");
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
@@ -1456,7 +1456,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon;
 
   daemon = connection->daemon;
-  if (0 == (daemon->options & MHD_USE_SUSPEND_RESUME))
+  if (MHD_USE_SUSPEND_RESUME != (daemon->options & MHD_USE_SUSPEND_RESUME))
     MHD_PANIC ("Cannot resume connections without enabling MHD_USE_SUSPEND_RESUME!\n");
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
@@ -2037,7 +2037,7 @@ MHD_select (struct MHD_Daemon *daemon,
   max = -1;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (0 != (daemon->options & MHD_USE_SUSPEND_RESUME))
+      if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
         resume_suspended_connections (daemon);
 
       /* single-threaded, go over everything */
@@ -2117,7 +2117,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
 
-  if (0 != (daemon->options & MHD_USE_SUSPEND_RESUME))
+  if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
     resume_suspended_connections (daemon);
 
   /* count number of connections and thus determine poll set size */
@@ -2504,7 +2504,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
-  if (0 != (daemon->options & MHD_USE_SUSPEND_RESUME))
+  if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
     resume_suspended_connections (daemon);
 
   /* process events for connections */
@@ -3115,7 +3115,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
   if ( (-1 != daemon->wpipe[0]) &&
-       (0 != (daemon->options & MHD_USE_SUSPEND_RESUME)) )
+       (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
       event.events = EPOLLIN | EPOLLET;
       event.data.ptr = NULL;
@@ -3354,7 +3354,7 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 
-  if ( (0 != (flags & MHD_USE_SUSPEND_RESUME)) &&
+  if ( (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
        (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) )
     {
 #if HAVE_MESSAGES
@@ -3678,7 +3678,7 @@ MHD_start_daemon_va (unsigned int flags,
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
 
-          if ( (0 != (flags & MHD_USE_SUSPEND_RESUME)) &&
+          if ( (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
 #ifdef WINDOWS
                (0 != SOCKETPAIR (AF_INET, SOCK_STREAM, IPPROTO_TCP, d->wpipe))
 #else
@@ -3695,7 +3695,7 @@ MHD_start_daemon_va (unsigned int flags,
             }
 #ifndef WINDOWS
           if ( (0 == (flags & MHD_USE_POLL)) &&
-               (0 != (flags & MHD_USE_SUSPEND_RESUME)) &&
+               (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
                (d->wpipe[0] >= FD_SETSIZE) )
             {
 #if HAVE_MESSAGES
