@@ -1500,7 +1500,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       next = pos->next;
       if (MHD_NO == pos->resuming)
         continue;
- 
+
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
@@ -3359,7 +3359,7 @@ MHD_start_daemon_va (unsigned int flags,
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Combining MHD_USE_THREAD_PER_CONNECTION and MHD_USE_SUSPEND_RESUME is not supported.");
+                "Combining MHD_USE_THREAD_PER_CONNECTION and MHD_USE_SUSPEND_RESUME is not supported.\n");
 #endif
       goto free_and_fail;
     }
