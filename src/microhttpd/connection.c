@@ -2079,16 +2079,23 @@ cleanup_connection (struct MHD_Connection *connection)
     XDLL_remove (daemon->manual_timeout_head,
 		 daemon->manual_timeout_tail,
 		 connection);
-  DLL_remove (daemon->connections_head,
-	      daemon->connections_tail,
-	      connection);
+  if (MHD_YES == connection->suspended)
+    DLL_remove (daemon->suspended_connections_head,
+                daemon->suspended_connections_tail,
+                connection);
+  else
+    DLL_remove (daemon->connections_head,
+                daemon->connections_tail,
+                connection);
   DLL_insert (daemon->cleanup_head,
 	      daemon->cleanup_tail,
 	      connection);
+  connection->suspended = MHD_NO;
+  connection->resuming = MHD_NO;
+  connection->in_idle = MHD_NO;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
-  connection->in_idle = MHD_NO;
 }
 
 

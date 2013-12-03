@@ -520,6 +520,12 @@ use of this option is automatic (as in, you do not even have to
 specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In
 "external" select mode, this option is always simply ignored.
 
+@item MHD_USE_SUSPEND_RESUME
+Enables using @code{MHD_suspend_connection} and
+@code{MHD_resume_connection}, as performing these calls requires some
+additional pipes to be created, and code not using these calls should
+not pay the cost.
+
 @end table
 @end deftp
 
@@ -1856,7 +1862,7 @@ select, internal select or thread pool; not applicable to
 thread-per-connection!) for a while.
 
 If you use this API in conjunction with a internal select or a
-thread pool, you must set the option @code{MHD_USE_PIPE_FOR_SHUTDOWN} to
+thread pool, you must set the option @code{MHD_USE_SUSPEND_RESUME} to
 ensure that a resumed connection is immediately processed by MHD.
 
 Suspended connections continue to count against the total number of

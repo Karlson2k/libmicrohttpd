@@ -834,6 +834,15 @@ struct MHD_Connection
    */
   int tls_read_ready;
 
+  /**
+   * Is the connection suspended?
+   */
+  int suspended;
+
+  /**
+   * Is the connection wanting to resume?
+   */
+  int resuming;
 #endif
 };
 
@@ -892,6 +901,16 @@ struct MHD_Daemon
    * Tail of doubly-linked list of our current, active connections.
    */
   struct MHD_Connection *connections_tail;
+
+  /**
+   * Head of doubly-linked list of our current but suspended connections.
+   */
+  struct MHD_Connection *suspended_connections_head;
+
+  /**
+   * Tail of doubly-linked list of our current but suspended connections.
+   */
+  struct MHD_Connection *suspended_connections_tail;
 
   /**
    * Head of doubly-linked list of connections to clean up.
@@ -1087,6 +1106,11 @@ struct MHD_Daemon
    * Are we shutting down?
    */
   int shutdown;
+
+  /*
+   * Do we need to process resuming connections?
+   */
+  int resuming;
 
   /**
    * Limit on the number of parallel connections.

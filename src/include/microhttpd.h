@@ -518,7 +518,13 @@ enum MHD_FLAG
    * Enalbed always on W32 as winsock does not properly behave
    * with `shutdown()` and this then fixes potential problems.
    */
-  MHD_USE_EPOLL_TURBO = 4096
+  MHD_USE_EPOLL_TURBO = 4096,
+
+  /**
+   * Enable suspend/resume functions, which also implies setting up
+   * pipes to signal resume.
+   */
+  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_PIPE_FOR_SHUTDOWN
 
 };
 

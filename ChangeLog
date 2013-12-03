@@ -1,3 +1,32 @@
+Tue Dec  3 21:05:38 CET 2013
+	Signaling n times for shutdown works, but for resume we need to
+	wake up the correct daemon. Even if we signal n times in that
+	case also, there's no guarantee that some daemon can't run
+	through its select loop more than once before the daemon we want
+	to wake up gets a chance to read.  Thus we need a signal pipe
+	per thread in the thread pool IF MHD_suspend_connection is used.
+	This introduces a new flag MHD_USE_SUSPEND_RESUME to add those
+	additional pipes and only allow MHD_suspend_connection to be
+	used in conjunction with this flag.
+
+	Also, as MHD_resume_connection() will be called on a non-daemon
+	thread, but none of the queue insert/delete calls are thread safe,
+	we need to be concerned about (a) corrupting the queue, and (b)
+	having to add mutex protection around every access to the queues,
+	including loops through timer queues, etc. This wasn't a problem
+	before adding resume; even suspend should be safe since it happens
+	in a callback from the daemon.
+
+	I think it's easier to (a) have MHD_suspend_connection() move the
+	connection to a suspended queue, (b) have MHD_resume_connection()
+	mark the connection as resuming, and then (c) do all the actual
+	queue manipulations in MHD_select (poll, epoll, etc.) to move the
+	resumed connections back to their normal queues, in response to
+	the wake up. The changes are simpler & cleaner. There is a cost to
+	the basic select loop that is avoided by making suspend/resume a
+	startup option. The per-worker pipes can then also be enabled only
+	with that option set. -MH
+
 Fri Nov 29 20:17:03 CET 2013
 	Eliminating theoretical stack overflow by limiting length
 	of URIs in authentication headers to 32k (only applicable
