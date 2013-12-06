@@ -1,3 +1,7 @@
+Sat Dec  7 00:44:49 CET 2013
+	Fixing warnings and build issue if --disable-https is given
+	to configure. -CG
+
 Tue Dec  3 21:25:56 CET 2013
 	Security fix: do not read past 0-terminator when unescaping
 	strings (thanks to Florian Weimer for reporting).

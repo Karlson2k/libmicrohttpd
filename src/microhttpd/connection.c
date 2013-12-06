@@ -352,14 +352,14 @@ try_ready_normal_body (struct MHD_Connection *connection)
                        MHD_MIN (response->data_buffer_size,
                                 response->total_size -
                                 connection->response_write_position));
-  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
-       (MHD_CONTENT_READER_END_WITH_ERROR == ret) )
+  if ( (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret) ||
+       (((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret) )
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
       if (NULL != response->crc)
 	pthread_mutex_unlock (&response->mutex);
-      if (MHD_CONTENT_READER_END_OF_STREAM == ret)
+      if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
 	CONNECTION_CLOSE_ERROR (connection,
@@ -426,7 +426,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     {
       /* buffer already ready, use what is there for the chunk */
       ret = response->data_size + response->data_start - connection->response_write_position;
-      if (ret > connection->write_buffer_size - sizeof (cbuf) - 2)
+      if ( (ret > 0) &&
+           (((size_t) ret) > connection->write_buffer_size - sizeof (cbuf) - 2) )
 	ret = connection->write_buffer_size - sizeof (cbuf) - 2;
       memcpy (&connection->write_buffer[sizeof (cbuf)],
 	      &response->data[connection->response_write_position - response->data_start],
@@ -443,7 +444,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 			     &connection->write_buffer[sizeof (cbuf)],
 			     connection->write_buffer_size - sizeof (cbuf) - 2);
     }
-  if (MHD_CONTENT_READER_END_WITH_ERROR == ret)
+  if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
     {
       /* error, close socket! */
       response->total_size = connection->response_write_position;
@@ -451,7 +452,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 			      "Closing connection (error generating response)\n");
       return MHD_NO;
     }
-  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
+  if ( (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret) ||
        (0 == response->total_size) )
     {
       /* end of message, signal other side! */
