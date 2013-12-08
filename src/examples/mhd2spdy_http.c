@@ -172,6 +172,7 @@ http_cb_request (void *cls,
   struct SPDY_Headers spdy_headers;
   bool with_body = false;
   struct HTTP_URI *http_uri;
+  const char *header_value;
 
   if (NULL == ptr || NULL == *ptr)
     return MHD_NO;
@@ -250,9 +251,11 @@ http_cb_request (void *cls,
 
   proxy->url = http_uri->uri;
   
+  header_value = MHD_lookup_connection_value(connection,
+    MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH);
+  
   with_body = 0 == strcmp (method, MHD_HTTP_METHOD_POST)
-    && 0 != strcmp ("0",
-    MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH));
+    && (NULL == header_value || 0 != strcmp ("0", header_value));
     
   PRINT_INFO2("body will be sent %i", with_body);
     

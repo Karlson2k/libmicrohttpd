@@ -727,7 +727,7 @@ spdy_connect(const struct URI *uri,
   spdylay_session_callbacks callbacks;
   int fd;
   SSL *ssl=NULL;
-  struct SPDY_Connection * connection;
+  struct SPDY_Connection * connection = NULL;
   int rv;
 
   spdy_setup_spdylay_callbacks(&callbacks);
@@ -757,11 +757,7 @@ spdy_connect(const struct URI *uri,
     {
       PRINT_INFO("Closing SSL");
       //no spdy on the other side
-      SSL_shutdown(ssl);
-      close(fd);
-      SSL_free(ssl);
-      
-      return NULL;
+      goto free_and_fail;
     }
   }
   else
@@ -770,12 +766,13 @@ spdy_connect(const struct URI *uri,
   }
 
   if(NULL == (connection = au_malloc(sizeof(struct SPDY_Connection))))
-    return NULL;
+    goto free_and_fail;
   
   connection->is_tls = is_tls;
   connection->ssl = ssl;
   connection->want_io = IO_NONE;
-  connection->host = strdup(uri->host);
+  if(NULL == (connection->host = strdup(uri->host)))
+    goto free_and_fail;
 
   /* Here make file descriptor non-block */
   spdy_socket_make_non_block(fd);
@@ -791,6 +788,24 @@ spdy_connect(const struct URI *uri,
   connection->fd = fd;
 
 	return connection;
+  
+	//for GOTO
+	free_and_fail:
+  if(NULL != connection)
+  {
+    free(connection->host);
+    free(connection);
+  }
+  
+  if(is_tls)
+    SSL_shutdown(ssl);
+    
+  close(fd);
+  
+  if(is_tls)
+    SSL_free(ssl);
+  
+  return NULL;
 }
 
 
