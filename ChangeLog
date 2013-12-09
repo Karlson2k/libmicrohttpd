@@ -1,3 +1,8 @@
+Mon Dec  9 21:41:57 CET 2013
+	Fix for per-worker daemon pipes enabled with 
+	MHD_USE_SUSPEND_RESUME that were not closed in
+	MHD_stop_daemon. -MH
+
 Sat Dec  7 00:44:49 CET 2013
 	Fixing warnings and build issue if --disable-https is given
 	to configure. -CG

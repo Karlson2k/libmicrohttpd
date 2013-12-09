@@ -3978,6 +3978,16 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	       (0 != CLOSE (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
 #endif
+          if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
+            {
+              if (-1 != daemon->worker_pool[i].wpipe[1])
+                {
+	           if (0 != CLOSE (daemon->worker_pool[i].wpipe[0]))
+	             MHD_PANIC ("close failed\n");
+	           if (0 != CLOSE (daemon->worker_pool[i].wpipe[1]))
+	             MHD_PANIC ("close failed\n");
+                }
+	    }
 	}
       free (daemon->worker_pool);
     }
