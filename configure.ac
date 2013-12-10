@@ -85,7 +85,8 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
 
 AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
-
+AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
+AM_CONDITIONAL(HAVE_MAKEINFO_BINARY,$HAVE_MAKEINFO_BINARY)
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
