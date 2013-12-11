@@ -7,11 +7,9 @@ DISTCLEANFILES = \
   libmicrohttpd.dvi \
   libmicrohttpd-tutorial.cps \
   libmicrohttpd-tutorial.dvi
-if HAVE_MAKEINFO_BINARY
 info_TEXINFOS = \
   libmicrohttpd.texi \
   libmicrohttpd-tutorial.texi
-endif
 microhttpd_TEXINFOS = \
   chapters/basicauthentication.inc \
   chapters/bibliography.inc \
