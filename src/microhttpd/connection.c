@@ -1551,12 +1551,13 @@ static int
 do_write (struct MHD_Connection *connection)
 {
   int ret;
+  size_t max;
 
+  max = connection->write_buffer_append_offset - connection->write_buffer_send_offset;
   ret = connection->send_cls (connection,
                               &connection->write_buffer
                               [connection->write_buffer_send_offset],
-                              connection->write_buffer_append_offset
-                              - connection->write_buffer_send_offset);
+                              max);
 
   if (ret < 0)
     {
@@ -1582,7 +1583,10 @@ do_write (struct MHD_Connection *connection)
            ret,
            &connection->write_buffer[connection->write_buffer_send_offset]);
 #endif
-  connection->write_buffer_send_offset += ret;
+  /* only increment if this wasn't a "sendfile" transmission without
+     buffer involvement! */
+  if (0 != max)
+    connection->write_buffer_send_offset += ret;
   return MHD_YES;
 }
 
