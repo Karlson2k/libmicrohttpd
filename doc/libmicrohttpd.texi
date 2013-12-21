@@ -701,6 +701,22 @@ are acceptable for the application.  The string is passed
 unchanged to gnutls_priority_init.  If this option is not
 specified, ``NORMAL'' is used.
 
+@item MHD_OPTION_HTTPS_CERT_CALLBACK
+@cindex SSL
+@cindex TLS
+@cindex SNI
+Use a callback to determine which X.509 certificate should be used for
+a given HTTPS connection.  This option should be followed by a
+argument of type "gnutls_certificate_retrieve_function2 *".  This
+option provides an alternative to MHD_OPTION_HTTPS_MEM_KEY and
+MHD_OPTION_HTTPS_MEM_CERT.  You must use this version if multiple
+domains are to be hosted at the same IP address using TLS's Server
+Name Indication (SNI) extension.  In this case, the callback is
+expected to select the correct certificate based on the SNI
+information provided.  The callback is expected to access the SNI data
+using gnutls_server_name_get().  Using this option requires GnuTLS 3.0
+or higher.
+
 @item MHD_OPTION_DIGEST_AUTH_RANDOM
 @cindex digest auth
 @cindex random

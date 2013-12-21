@@ -471,6 +471,13 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   gnutls_datum_t key;
   gnutls_datum_t cert;
 
+#if GNUTLS_VERSION_MAJOR >= 3
+  if (NULL != daemon->cert_callback)
+    {
+      gnutls_certificate_set_retrieve_function2 (daemon->x509_cred,
+                                                 daemon->cert_callback);
+    }
+#endif
   if (NULL != daemon->https_mem_trust)
     {
       cert.data = (unsigned char *) daemon->https_mem_trust;
@@ -499,6 +506,10 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 						  &cert, &key,
 						  GNUTLS_X509_FMT_PEM);
     }
+#if GNUTLS_VERSION_MAJOR >= 3
+  if (NULL != daemon->cert_callback)
+    return 0;
+#endif
 #if HAVE_MESSAGES
   MHD_DLOG (daemon, "You need to specify a certificate and key location\n");
 #endif
@@ -2900,6 +2911,18 @@ parse_options_va (struct MHD_Daemon *daemon,
 	      }
 	    }
           break;
+        case MHD_OPTION_HTTPS_CERT_CALLBACK:
+#if GNUTLS_VERSION_MAJOR < 3
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "MHD_OPTION_HTTPS_CERT_CALLBACK requires building MHD with GnuTLS >= 3.0\n");
+#endif
+          return MHD_NO;
+#else
+          if (0 != (daemon->options & MHD_USE_SSL))
+            daemon->cert_callback = va_arg (ap, gnutls_certificate_retrieve_function2 *);
+          break;
+#endif
 #endif
 #ifdef DAUTH_SUPPORT
 	case MHD_OPTION_DIGEST_AUTH_RANDOM:
@@ -2974,6 +2997,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_HTTPS_MEM_TRUST:
 		case MHD_OPTION_HTTPS_PRIORITIES:
 		case MHD_OPTION_ARRAY:
+                case MHD_OPTION_HTTPS_CERT_CALLBACK:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,

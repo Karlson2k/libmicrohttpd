@@ -21,7 +21,7 @@
  * @file demo.c
  * @brief complex demonstration site: create directory index, offer
  *        upload via form and HTTP POST, download with mime type detection
- *        and error reporting (403, etc.) --- and all of this with 
+ *        and error reporting (403, etc.) --- and all of this with
  *        high-performance settings (large buffers, thread pool).
  *        If you want to benchmark MHD, this code should be used to
  *        run tests against.  Note that the number of threads may need
@@ -222,7 +222,7 @@ struct ResponseDataContext
    * Response data string.
    */
   char *buf;
-  
+
   /**
    * Number of bytes allocated for 'buf'.
    */
@@ -253,12 +253,12 @@ list_directory (struct ResponseDataContext *rdc,
   struct dirent *de;
 
   if (NULL == (dir = opendir (dirname)))
-    return MHD_NO;      
+    return MHD_NO;
   while (NULL != (de = readdir (dir)))
     {
       if ('.' == de->d_name[0])
 	continue;
-      if (sizeof (fullname) <= 
+      if (sizeof (fullname) <=
 	  snprintf (fullname, sizeof (fullname),
 		    "%s/%s",
 		    dirname, de->d_name))
@@ -278,7 +278,7 @@ list_directory (struct ResponseDataContext *rdc,
 	    break; /* out of memory */
 	  rdc->buf = r;
 	}
-      rdc->off += snprintf (&rdc->buf[rdc->off], 
+      rdc->off += snprintf (&rdc->buf[rdc->off],
 			    rdc->buf_len - rdc->off,
 			    "<li><a href=\"/%s\">%s</a></li>\n",
 			    fullname,
@@ -305,11 +305,11 @@ update_directory ()
   char dir_name[128];
   struct stat sbuf;
 
-  rdc.buf_len = initial_allocation; 
+  rdc.buf_len = initial_allocation;
   if (NULL == (rdc.buf = malloc (rdc.buf_len)))
     {
       update_cached_response (NULL);
-      return; 
+      return;
     }
   rdc.off = snprintf (rdc.buf, rdc.buf_len,
 		      "%s",
@@ -342,7 +342,7 @@ update_directory ()
 	  rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
 			       "<h3>%s</h3>\n",
 			       category);
-	  	  
+
 	  if (MHD_NO == list_directory (&rdc, dir_name))
 	    {
 	      free (rdc.buf);
@@ -352,7 +352,7 @@ update_directory ()
 	}
     }
   /* we ensured always +1k room, filenames are ~256 bytes,
-     so there is always still enough space for the footer 
+     so there is always still enough space for the footer
      without need for a final reallocation check. */
   rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
 		       "%s",
@@ -427,7 +427,7 @@ do_append (char **ret,
 {
   char *buf;
   size_t old_len;
-  
+
   if (NULL == *ret)
     old_len = 0;
   else
@@ -471,8 +471,8 @@ process_upload_data (void *cls,
 		     const char *filename,
 		     const char *content_type,
 		     const char *transfer_encoding,
-		     const char *data, 
-		     uint64_t off, 
+		     const char *data,
+		     uint64_t off,
 		     size_t size)
 {
   struct UploadContext *uc = cls;
@@ -484,10 +484,10 @@ process_upload_data (void *cls,
     return do_append (&uc->language, data, size);
   if (0 != strcmp (key, "upload"))
     {
-      fprintf (stderr, 
+      fprintf (stderr,
 	       "Ignoring unexpected form value `%s'\n",
 	       key);
-      return MHD_YES; /* ignore */  
+      return MHD_YES; /* ignore */
     }
   if (NULL == filename)
     {
@@ -497,7 +497,7 @@ process_upload_data (void *cls,
   if ( (NULL == uc->category) ||
        (NULL == uc->language) )
     {
-      fprintf (stderr, 
+      fprintf (stderr,
 	       "Missing form data for upload `%s'\n",
 	       filename);
       uc->response = request_refused_response;
@@ -523,8 +523,8 @@ process_upload_data (void *cls,
       snprintf (fn, sizeof (fn),
 		"%s/%s",
 		uc->language,
-		uc->category);  
-#ifdef WINDOWS    
+		uc->category);
+#ifdef WINDOWS
       (void) mkdir (fn);
 #else
       (void) mkdir (fn, S_IRWXU);
@@ -534,12 +534,12 @@ process_upload_data (void *cls,
 		"%s/%s/%s",
 		uc->language,
 		uc->category,
-		filename); 
+		filename);
       for (i=strlen (fn)-1;i>=0;i--)
 	if (! isprint ((int) fn[i]))
 	  fn[i] = '_';
-      uc->fd = open (fn, 
-		     O_CREAT | O_EXCL 
+      uc->fd = open (fn,
+		     O_CREAT | O_EXCL
 #if O_LARGEFILE
 		     | O_LARGEFILE
 #endif
@@ -547,20 +547,20 @@ process_upload_data (void *cls,
 		     S_IRUSR | S_IWUSR);
       if (-1 == uc->fd)
 	{
-	  fprintf (stderr, 
+	  fprintf (stderr,
 		   "Error opening file `%s' for upload: %s\n",
 		   fn,
 		   strerror (errno));
 	  uc->response = request_refused_response;
 	  return MHD_NO;
-	}      
+	}
       uc->filename = strdup (fn);
     }
   if ( (0 != size) &&
-       (size != write (uc->fd, data, size)) )    
+       (size != write (uc->fd, data, size)) )
     {
       /* write failed; likely: disk full */
-      fprintf (stderr, 
+      fprintf (stderr,
 	       "Error writing to file `%s': %s\n",
 	       uc->filename,
 	       strerror (errno));
@@ -573,7 +573,7 @@ process_upload_data (void *cls,
 	  free (uc->filename);
 	  uc->filename = NULL;
 	}
-      return MHD_NO; 
+      return MHD_NO;
     }
   return MHD_YES;
 }
@@ -610,13 +610,13 @@ response_completed_callback (void *cls,
     (void) close (uc->fd);
     if (NULL != uc->filename)
       {
-	fprintf (stderr, 
+	fprintf (stderr,
 		 "Upload of file `%s' failed (incomplete or aborted), removing file.\n",
 		 uc->filename);
 	(void) unlink (uc->filename);
       }
   }
-  if (NULL != uc->filename)    
+  if (NULL != uc->filename)
     free (uc->filename);
   free (uc);
 }
@@ -624,7 +624,7 @@ response_completed_callback (void *cls,
 
 /**
  * Return the current directory listing.
- * 
+ *
  * @param connection connection to return the directory for
  * @return MHD_YES on success, MHD_NO on error
  */
@@ -635,12 +635,12 @@ return_directory_response (struct MHD_Connection *connection)
 
   (void) pthread_mutex_lock (&mutex);
   if (NULL == cached_directory_response)
-    ret = MHD_queue_response (connection, 
-			      MHD_HTTP_INTERNAL_SERVER_ERROR, 
+    ret = MHD_queue_response (connection,
+			      MHD_HTTP_INTERNAL_SERVER_ERROR,
 			      internal_error_response);
   else
-    ret = MHD_queue_response (connection, 
-			      MHD_HTTP_OK, 
+    ret = MHD_queue_response (connection,
+			      MHD_HTTP_OK,
 			      cached_directory_response);
   (void) pthread_mutex_unlock (&mutex);
   return ret;
@@ -657,7 +657,7 @@ return_directory_response (struct MHD_Connection *connection)
  * @param version HTTP version
  * @param upload_data data from upload (PUT/POST)
  * @param upload_data_size number of bytes in "upload_data"
- * @param ptr our context 
+ * @param ptr our context
  * @return MHD_YES on success, MHD_NO to drop connection
  */
 static int
@@ -668,11 +668,11 @@ generate_page (void *cls,
 	       const char *version,
 	       const char *upload_data,
 	       size_t *upload_data_size, void **ptr)
-{  
+{
   struct MHD_Response *response;
   int ret;
   int fd;
-  struct stat buf;  
+  struct stat buf;
 
   if (0 != strcmp (url, "/"))
     {
@@ -685,13 +685,13 @@ generate_page (void *cls,
 	return MHD_NO;  /* unexpected method (we're not polite...) */
       if ( (0 == stat (&url[1], &buf)) &&
 	   (NULL == strstr (&url[1], "..")) &&
-	   ('/' != url[1]))	   
+	   ('/' != url[1]))
 	fd = open (&url[1], O_RDONLY);
       else
 	fd = -1;
       if (-1 == fd)
-	return MHD_queue_response (connection, 
-				   MHD_HTTP_NOT_FOUND, 
+	return MHD_queue_response (connection,
+				   MHD_HTTP_NOT_FOUND,
 				   file_not_found_response);
       /* read beginning of the file to determine mime type  */
       got = read (fd, file_data, sizeof (file_data));
@@ -701,12 +701,12 @@ generate_page (void *cls,
 	mime = NULL;
       (void) lseek (fd, 0, SEEK_SET);
 
-      if (NULL == (response = MHD_create_response_from_fd (buf.st_size, 
+      if (NULL == (response = MHD_create_response_from_fd (buf.st_size,
 							   fd)))
 	{
 	  /* internal error (i.e. out of memory) */
 	  (void) close (fd);
-	  return MHD_NO; 
+	  return MHD_NO;
 	}
 
       /* add mime type if we had one */
@@ -714,8 +714,8 @@ generate_page (void *cls,
 	(void) MHD_add_response_header (response,
 					MHD_HTTP_HEADER_CONTENT_TYPE,
 					mime);
-      ret = MHD_queue_response (connection, 
-				MHD_HTTP_OK, 
+      ret = MHD_queue_response (connection,
+				MHD_HTTP_OK,
 				response);
       MHD_destroy_response (response);
       return ret;
@@ -744,11 +744,11 @@ generate_page (void *cls,
 	    }
 	  *ptr = uc;
 	  return MHD_YES;
-	}     
+	}
       if (0 != *upload_data_size)
 	{
 	  if (NULL == uc->response)
-	    (void) MHD_post_process (uc->pp, 
+	    (void) MHD_post_process (uc->pp,
 				     upload_data,
 				     *upload_data_size);
 	  *upload_data_size = 0;
@@ -764,8 +764,8 @@ generate_page (void *cls,
 	}
       if (NULL != uc->response)
 	{
-	  return MHD_queue_response (connection, 
-				     MHD_HTTP_FORBIDDEN, 
+	  return MHD_queue_response (connection,
+				     MHD_HTTP_FORBIDDEN,
 				     uc->response);
 	}
       else
@@ -778,8 +778,8 @@ generate_page (void *cls,
     return return_directory_response (connection);
 
   /* unexpected request, refuse */
-  return MHD_queue_response (connection, 
-			     MHD_HTTP_FORBIDDEN, 
+  return MHD_queue_response (connection,
+			     MHD_HTTP_FORBIDDEN,
 			     request_refused_response);
 }
 
@@ -837,7 +837,7 @@ main (int argc, char *const *argv)
 
   if ( (argc != 2) ||
        (1 != sscanf (argv[1], "%u", &port)) ||
-       (UINT16_MAX < port) ) 
+       (UINT16_MAX < port) )
     {
       fprintf (stderr,
 	       "%s PORT\n", argv[0]);
@@ -864,14 +864,14 @@ main (int argc, char *const *argv)
   mark_as_html (internal_error_response);
   update_directory ();
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG
-#if EPOLL_SUPPORT 
+#if EPOLL_SUPPORT
 			| MHD_USE_EPOLL_LINUX_ONLY
 #endif
 			,
                         port,
-                        NULL, NULL, 
-			&generate_page, NULL, 
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256 * 1024), 
+                        NULL, NULL,
+			&generate_page, NULL,
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256 * 1024),
 #if PRODUCTION
 			MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
 #endif

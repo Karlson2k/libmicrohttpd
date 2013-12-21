@@ -31,6 +31,9 @@
 #include "microhttpd.h"
 #if HTTPS_SUPPORT
 #include <gnutls/gnutls.h>
+#if GNUTLS_VERSION_MAJOR >= 3
+#include <gnutls/abstract.h>
+#endif
 #endif
 #if EPOLL_SUPPORT
 #include <sys/epoll.h>
@@ -1160,6 +1163,14 @@ struct MHD_Daemon
    * Diffie-Hellman parameters
    */
   gnutls_dh_params_t dh_params;
+
+#if GNUTLS_VERSION_MAJOR >= 3
+  /**
+   * Function that can be used to obtain the certificate.  Needed
+   * for SNI support.  See #MHD_OPTION_HTTPS_CERT_CALLBACK.
+   */
+  gnutls_certificate_retrieve_function2 *cert_callback;
+#endif
 
   /**
    * Pointer to our SSL/TLS key (in ASCII) in memory.

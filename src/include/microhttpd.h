@@ -774,7 +774,24 @@ enum MHD_OPTION
    * Increment to use for growing the read buffer (followed by a
    * `size_t`). Must fit within #MHD_OPTION_CONNECTION_MEMORY_LIMIT.
    */
-  MHD_OPTION_CONNECTION_MEMORY_INCREMENT = 21
+  MHD_OPTION_CONNECTION_MEMORY_INCREMENT = 21,
+
+  /**
+   * Use a callback to determine which X.509 certificate should be
+   * used for a given HTTPS connection.  This option should be
+   * followed by a argument of type `gnutls_certificate_retrieve_function2 *`.
+   * This option provides an
+   * alternative to #MHD_OPTION_HTTPS_MEM_KEY,
+   * #MHD_OPTION_HTTPS_MEM_CERT.  You must use this version if
+   * multiple domains are to be hosted at the same IP address using
+   * TLS's Server Name Indication (SNI) extension.  In this case,
+   * the callback is expected to select the correct certificate
+   * based on the SNI information provided.  The callback is expected
+   * to access the SNI data using `gnutls_server_name_get()`.
+   * Using this option requires GnuTLS 3.0 or higher.
+   */
+  MHD_OPTION_HTTPS_CERT_CALLBACK = 22
+
 };
 
 

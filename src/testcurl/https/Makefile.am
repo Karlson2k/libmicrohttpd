@@ -19,6 +19,7 @@ check_PROGRAMS = \
   test_tls_authentication \
   test_https_multi_daemon \
   test_https_get \
+  test_https_sni \
   test_https_get_select \
   test_https_get_parallel \
   test_https_get_parallel_threads \
@@ -32,6 +33,7 @@ TESTS = \
   test_tls_options \
   test_https_multi_daemon \
   test_https_get \
+  test_https_sni \
   test_https_get_select \
   test_https_get_parallel \
   test_https_get_parallel_threads \
@@ -109,6 +111,14 @@ test_https_get_SOURCES = \
   test_https_get.c \
   tls_test_common.c
 test_https_get_LDADD  = \
+  $(top_builddir)/src/testcurl/libcurl_version_check.a \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
+
+test_https_sni_SOURCES = \
+  test_https_sni.c \
+  tls_test_common.c
+test_https_sni_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
