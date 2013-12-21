@@ -1,5 +1,10 @@
+Sat Dec 21 17:26:08 CET 2013
+	Fixed an issue with a missing argument in the postexample.
+	Fixed issue with bogus offset increment involving sendfile
+	on GNU/Linux.
+
 Mon Dec  9 21:41:57 CET 2013
-	Fix for per-worker daemon pipes enabled with 
+	Fix for per-worker daemon pipes enabled with
 	MHD_USE_SUSPEND_RESUME that were not closed in
 	MHD_stop_daemon. -MH
 
