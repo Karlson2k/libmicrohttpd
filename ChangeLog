@@ -1,7 +1,8 @@
 Sat Dec 21 17:26:08 CET 2013
 	Fixed an issue with a missing argument in the postexample.
 	Fixed issue with bogus offset increment involving sendfile
-	on GNU/Linux.  Adding support for SNI. -CG
+	on GNU/Linux.  Adding support for SNI.
+	Releasing 0.9.33. -CG
 
 Mon Dec  9 21:41:57 CET 2013
 	Fix for per-worker daemon pipes enabled with
