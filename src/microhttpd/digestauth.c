@@ -258,7 +258,7 @@ lookup_sub_value (char *dest,
 	    }
 	  else
 	    {
-	      if (size > (q2 - q1) + 1)
+	      if (size > (size_t) ((q2 - q1) + 1))
 		size = (q2 - q1) + 1;
 	      size--;
 	      memcpy (dest,

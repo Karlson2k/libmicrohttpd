@@ -258,7 +258,7 @@ list_directory (struct ResponseDataContext *rdc,
     {
       if ('.' == de->d_name[0])
 	continue;
-      if (sizeof (fullname) <=
+      if (sizeof (fullname) <= (size_t)
 	  snprintf (fullname, sizeof (fullname),
 		    "%s/%s",
 		    dirname, de->d_name))
@@ -557,7 +557,7 @@ process_upload_data (void *cls,
       uc->filename = strdup (fn);
     }
   if ( (0 != size) &&
-       (size != write (uc->fd, data, size)) )
+       (size != (size_t) write (uc->fd, data, size)) )
     {
       /* write failed; likely: disk full */
       fprintf (stderr,

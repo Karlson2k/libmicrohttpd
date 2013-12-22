@@ -1,3 +1,6 @@
+Sun Dec 22 14:54:30 CET 2013
+	Adding a few lines to avoid warnings from picky compilers. -CG
+
 Sat Dec 21 17:26:08 CET 2013
 	Fixed an issue with a missing argument in the postexample.
 	Fixed issue with bogus offset increment involving sendfile

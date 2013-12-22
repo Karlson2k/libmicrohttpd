@@ -1878,6 +1878,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 #endif
 
   have_timeout = MHD_NO;
+  earliest_deadline = 0; /* avoid compiler warnings */
   for (pos = daemon->manual_timeout_head; NULL != pos; pos = pos->nextX)
     {
       if (0 != pos->connection_timeout)
@@ -2457,7 +2458,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
 	  return MHD_NO;
 	}
-      for (i=0;i<num_events;i++)
+      for (i=0;i<(unsigned int) num_events;i++)
 	{
 	  if (NULL == events[i].data.ptr)
 	    continue; /* shutdown signal! */

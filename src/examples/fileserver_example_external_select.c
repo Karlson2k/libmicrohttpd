@@ -134,12 +134,11 @@ main (int argc, char *const *argv)
       if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
 	break; /* fatal internal error */
       if (MHD_get_timeout (d, &mhd_timeout) == MHD_YES)
-
         {
-          if (tv.tv_sec * 1000 < mhd_timeout)
+          if (((MHD_UNSIGNED_LONG_LONG)tv.tv_sec) < mhd_timeout / 1000LL)
             {
-              tv.tv_sec = mhd_timeout / 1000;
-              tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
+              tv.tv_sec = mhd_timeout / 1000LL;
+              tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000LL)) * 1000LL;
             }
         }
       select (max + 1, &rs, &ws, &es, &tv);

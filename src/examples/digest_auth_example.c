@@ -47,41 +47,41 @@ ahc_echo (void *cls,
   int ret;
 
   username = MHD_digest_auth_get_username(connection);
-  if (username == NULL) 
+  if (username == NULL)
     {
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
+      response = MHD_create_response_from_buffer(strlen (DENIED),
 						 DENIED,
-						 MHD_RESPMEM_PERSISTENT);  
+						 MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 MY_OPAQUE_STR,
 					 response,
-					 MHD_NO);    
-      MHD_destroy_response(response);  
+					 MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     }
   ret = MHD_digest_auth_check(connection, realm,
-			      username, 
-			      password, 
+			      username,
+			      password,
 			      300);
   free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     {
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
+      response = MHD_create_response_from_buffer(strlen (DENIED),
 						 DENIED,
-						 MHD_RESPMEM_PERSISTENT);  
-      if (NULL == response) 
+						 MHD_RESPMEM_PERSISTENT);
+      if (NULL == response)
 	return MHD_NO;
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 MY_OPAQUE_STR,
 					 response,
-					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
-      MHD_destroy_response(response);  
+					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     }
   response = MHD_create_response_from_buffer(strlen(PAGE), PAGE,
 					     MHD_RESPMEM_PERSISTENT);
-  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
+  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
   MHD_destroy_response(response);
   return ret;
 }
@@ -91,7 +91,7 @@ main (int argc, char *const *argv)
 {
   int fd;
   char rnd[8];
-  size_t len;
+  ssize_t len;
   size_t off;
   struct MHD_Daemon *d;
 
