@@ -6,7 +6,7 @@ AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/daemon \
-  @LIBGCRYPT_CFLAGS@ 
+  @LIBGCRYPT_CFLAGS@
 
 EXTRA_DIST = EXPORT.sym
 
@@ -23,6 +23,7 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
+  -export-symbols $(top_srcdir)/src/microhttpd/EXPORT.sym \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 
 if USE_COVERAGE
@@ -60,7 +61,7 @@ endif
 
 
 check_PROGRAMS = \
-  test_daemon 
+  test_daemon
 
 if HAVE_POSTPROCESSOR
 check_PROGRAMS += \
@@ -74,19 +75,19 @@ TESTS = $(check_PROGRAMS)
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
 test_postprocessor_amp_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
