@@ -83,6 +83,7 @@ struct MemoryPool
  * @param max maximum size of the pool
  * @return NULL on error
  */
+HIDDEN_SYMBOL
 struct MemoryPool *
 MHD_pool_create (size_t max)
 {
@@ -126,7 +127,7 @@ MHD_pool_create (size_t max)
  *
  * @param pool memory pool to destroy
  */
-void
+void HIDDEN_SYMBOL
 MHD_pool_destroy (struct MemoryPool *pool)
 {
   if (pool == NULL)
@@ -150,6 +151,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
  * @return NULL if the pool cannot support size more
  *         bytes
  */
+HIDDEN_SYMBOL
 void *
 MHD_pool_allocate (struct MemoryPool *pool,
 		   size_t size, int from_end)
@@ -193,6 +195,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
  *         NULL if the pool cannot support @a new_size
  *         bytes (old continues to be valid for @a old_size)
  */
+HIDDEN_SYMBOL
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,
                      void *old,
@@ -247,6 +250,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * @param size how many bytes need to be kept at this address
  * @return addr new address of @a keep (if it had to change)
  */
+HIDDEN_SYMBOL
 void *
 MHD_pool_reset (struct MemoryPool *pool,
 		void *keep,

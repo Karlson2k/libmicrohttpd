@@ -257,7 +257,7 @@ need_100_continue (struct MHD_Connection *connection)
  * @param connection connection to close
  * @param termination_code termination reason to give
  */
-void
+void HIDDEN_SYMBOL
 MHD_connection_close (struct MHD_Connection *connection,
                       enum MHD_RequestTerminationCode termination_code)
 {

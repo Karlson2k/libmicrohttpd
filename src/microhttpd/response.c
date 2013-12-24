@@ -40,7 +40,7 @@
 static int
 add_response_entry (struct MHD_Response *response,
 		    enum MHD_ValueKind kind,
-		    const char *header, 
+		    const char *header,
 		    const char *content)
 {
   struct MHD_HTTP_Header *hdr;
@@ -54,7 +54,7 @@ add_response_entry (struct MHD_Response *response,
        (NULL != strchr (header, '\r')) ||
        (NULL != strchr (header, '\n')) ||
        (NULL != strchr (content, '\t')) ||
-       (NULL != strchr (content, '\r')) || 
+       (NULL != strchr (content, '\r')) ||
        (NULL != strchr (content, '\n')) )
     return MHD_NO;
   if (NULL == (hdr = malloc (sizeof (struct MHD_HTTP_Header))))
@@ -197,7 +197,7 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @ingroup response
  */
 const char *
-MHD_get_response_header (struct MHD_Response *response, 
+MHD_get_response_header (struct MHD_Response *response,
 			 const char *key)
 {
   struct MHD_HTTP_Header *pos;
@@ -261,7 +261,7 @@ MHD_create_response_from_callback (uint64_t size,
 /**
  * Given a file descriptor, read data from the file
  * to generate the response.
- * 
+ *
  * @param cls pointer to the response
  * @param pos offset in the file to access
  * @param buf where to write the data
@@ -276,9 +276,9 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 
   (void) lseek (response->fd, pos + response->fd_off, SEEK_SET);
   n = read (response->fd, buf, max);
-  if (0 == n) 
+  if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
-  if (n < 0) 
+  if (n < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   return n;
 }
@@ -309,7 +309,7 @@ free_callback (void *cls)
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
  * @param offset offset to start reading from in the file;
- *        Be careful! `off_t` may have been compiled to be a 
+ *        Be careful! `off_t` may have been compiled to be a
  *        64-bit variable for MHD, in which case your application
  *        also has to be compiled using the same options! Read
  *        the MHD manual for more details.
@@ -469,7 +469,7 @@ MHD_destroy_response (struct MHD_Response *response)
 }
 
 
-void
+void HIDDEN_SYMBOL
 MHD_increment_response_rc (struct MHD_Response *response)
 {
   pthread_mutex_lock (&response->mutex);
