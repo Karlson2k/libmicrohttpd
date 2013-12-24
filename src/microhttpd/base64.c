@@ -26,14 +26,15 @@ static const char base64_digits[] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
-char * 
-BASE64Decode(const char* src) 
+HIDDEN_SYMBOL
+char *
+BASE64Decode(const char* src)
 {
   size_t in_len = strlen (src);
   char* dest;
   char* result;
-  
-  if (in_len % 4) 
+
+  if (in_len % 4)
     {
       /* Wrong base64 string length */
       return NULL;

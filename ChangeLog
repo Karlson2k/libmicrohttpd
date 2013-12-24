@@ -1,3 +1,7 @@
+Tue Dec 24 12:27:39 CET 2013
+	Adding explicit annotations to hide symbols that are not for
+	export in the C code (gcc 4.0 or higher only). -CG
+
 Sun Dec 22 14:54:30 CET 2013
 	Adding a few lines to avoid warnings from picky compilers. -CG
 

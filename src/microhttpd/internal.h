@@ -189,7 +189,7 @@ struct MHD_NonceNc
  * fprintf-like helper function for logging debug
  * messages.
  */
-void
+void HIDDEN_SYMBOL
 MHD_DLOG (const struct MHD_Daemon *daemon,
 	  const char *format, ...);
 #endif

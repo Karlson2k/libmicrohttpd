@@ -121,11 +121,13 @@ mhd_panic_std (void *cls,
 /**
  * Handler for fatal errors.
  */
+HIDDEN_SYMBOL
 MHD_PanicCallback mhd_panic;
 
 /**
  * Closure argument for "mhd_panic".
  */
+HIDDEN_SYMBOL
 void *mhd_panic_cls;
 
 

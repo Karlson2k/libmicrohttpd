@@ -111,5 +111,14 @@
 
 #include <plibc.h>
 
+#define GCC_VERSION (__GNUC__ * 10000                 \
+                     + __GNUC_MINOR__ * 100           \
+                     + __GNUC_PATCHLEVEL__)
+#if GCC_VERSION > 40000
+#define HIDDEN_SYMBOL __attribute__ ((visibility ("hidden")))
+#else
+#define HIDDEN_SYMBOL
+#endif
+
 
 #endif

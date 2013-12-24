@@ -1850,6 +1850,7 @@ update_last_activity (struct MHD_Connection *connection)
  * @return always #MHD_YES (we should continue to process the
  *         connection)
  */
+HIDDEN_SYMBOL
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
@@ -1912,6 +1913,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
  * @return always #MHD_YES (we should continue to process the
  *         connection)
  */
+HIDDEN_SYMBOL
 int
 MHD_connection_handle_write (struct MHD_Connection *connection)
 {
@@ -2112,6 +2114,7 @@ cleanup_connection (struct MHD_Connection *connection)
  * @return #MHD_YES if we should continue to process the
  *         connection (not dead yet), #MHD_NO if it died
  */
+HIDDEN_SYMBOL
 int
 MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
@@ -2548,6 +2551,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
  * @return #MHD_YES if we should continue to process the
  *         connection (not dead yet), #MHD_NO if it died
  */
+HIDDEN_SYMBOL
 int
 MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 {
@@ -2595,6 +2599,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
  *
  * @param connection connection to initialize
  */
+HIDDEN_SYMBOL
 void
 MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {

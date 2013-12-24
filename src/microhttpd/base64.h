@@ -11,7 +11,8 @@
 
 #include "platform.h"
 
-char * 
+HIDDEN_SYMBOL
+char *
 BASE64Decode(const char* src);
 
 #endif /* !BASE64_H */

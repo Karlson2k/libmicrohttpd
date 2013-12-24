@@ -31,6 +31,7 @@
 /**
  * State to string dictionary.
  */
+HIDDEN_SYMBOL
 const char *
 MHD_state_to_string (enum MHD_CONNECTION_STATE state)
 {
@@ -90,7 +91,7 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
  * fprintf-like helper function for logging debug
  * messages.
  */
-void
+void HIDDEN_SYMBOL
 MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 {
   va_list va;
@@ -115,6 +116,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */
+HIDDEN_SYMBOL
 size_t
 MHD_http_unescape (void *cls,
 		   struct MHD_Connection *connection,
@@ -165,6 +167,7 @@ MHD_http_unescape (void *cls,
 }
 
 
+HIDDEN_SYMBOL
 time_t
 MHD_monotonic_time (void)
 {

@@ -35,7 +35,7 @@
 
 
 /**
- * Give gnuTLS chance to work on the TLS handshake.  
+ * Give gnuTLS chance to work on the TLS handshake.
  *
  * @param connection connection to handshake on
  * @return #MHD_YES on error or if the handshake is progressing
@@ -51,13 +51,13 @@ run_tls_handshake (struct MHD_Connection *connection)
   if (connection->state == MHD_TLS_CONNECTION_INIT)
     {
       ret = gnutls_handshake (connection->tls_session);
-      if (ret == GNUTLS_E_SUCCESS) 
+      if (ret == GNUTLS_E_SUCCESS)
 	{
 	  /* set connection state to enable HTTP processing */
 	  connection->state = MHD_CONNECTION_INIT;
-	  return MHD_YES;	  
+	  return MHD_YES;
 	}
-      if ( (ret == GNUTLS_E_AGAIN) || 
+      if ( (ret == GNUTLS_E_AGAIN) ||
 	   (ret == GNUTLS_E_INTERRUPTED) )
 	{
 	  /* handshake not done */
@@ -156,7 +156,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 	return MHD_YES;
       return MHD_connection_handle_idle (connection);
     }
-#if EPOLL_SUPPORT   
+#if EPOLL_SUPPORT
   return MHD_connection_epoll_update_ (connection);
 #else
   return MHD_YES;
@@ -170,6 +170,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
  *
  * @param connection which callbacks should be modified
  */
+HIDDEN_SYMBOL
 void
 MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
