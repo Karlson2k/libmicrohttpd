@@ -24,7 +24,7 @@
  * @author Elliot Glaysher
  * @author Christian Grothoff (minor code clean up)
  */
-
+#include "platform.h"
 #include "reason_phrase.h"
 
 #ifndef NULL
