@@ -27,7 +27,8 @@ check_PROGRAMS = \
   test_https_time_out \
   test_empty_response
 
-EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h
+EXTRA_DIST = cert.pem key.pem tls_test_keys.h tls_test_common.h \
+  host1.crt host1.key host2.crt host2.key
 
 TESTS = \
   test_tls_options \
