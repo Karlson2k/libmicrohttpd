@@ -230,8 +230,23 @@ void
 display_usage()
 {
   printf(
-    "Usage: mhd2spdy [-vos] [-b <SPDY2HTTP-PROXY>] -p <PORT>\n"
-    "TODO\n"
+    "Usage: mhd2spdy [-ovs] [-b <SPDY2HTTP-PROXY>] -p <PORT>\n\n"
+    "OPTIONS:\n"
+    "    -p, --port            Listening port.\n"
+    "    -b, --backend-proxy   If set, he proxy will send requests to\n"
+    "                          that SPDY server or proxy. Set the address\n"
+    "                          in the form 'http://host:port'. Use 'https'\n"
+    "                          for SPDY over TLS, or 'http' for plain SPDY\n"
+    "                          communication with the backend.\n"
+    "    -o, --only-proxy      If set, the proxy will always forward the\n"
+    "                          requests to the backend proxy. If not set,\n"
+    "                          the proxy will first try to establsh SPDY\n"
+    "                          connection to the requested server. If the\n"
+    "                          server does not support SPDY and TLS, the\n"
+    "                          backend proxy will be used for the request.\n"
+    "    -v, --verbose         Print debug information.\n"
+    "    -s, --statistics      Print simple statistics on exit.\n\n"
+
   );
 }
 
