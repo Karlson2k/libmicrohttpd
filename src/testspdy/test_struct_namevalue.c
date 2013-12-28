@@ -165,7 +165,7 @@ main()
 	SPDY_name_value_destroy(container);
 	
 	//check everything with NULL values
-	for(i=0; i<6; ++i)
+	for(i=0; i<7; ++i)
 	{
 		printf("%i ",i);
 		ob1 = (i & 4) ? data : NULL;

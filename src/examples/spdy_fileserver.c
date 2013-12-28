@@ -44,18 +44,24 @@ char* basedir;
 	
 #define GET_MIME_TYPE(fname, mime)	do {\
 		unsigned int __len = strlen(fname);\
-		if (__len < 4 || '.' != (fname)[__len - 4]) break;\
-		const char * __ext = &(fname)[__len - 3];\
-		if(0 == strcmp(__ext, "jpg")) (mime) = strdup("image/jpeg");\
-		else if(0 == strcmp(__ext, "png")) (mime) = strdup("image/png");\
-		else if(0 == strcmp(__ext, "css")) (mime) = strdup("text/css");\
-		else if(0 == strcmp(__ext, "gif")) (mime) = strdup("image/gif");\
-		else if(0 == strcmp(__ext, "htm")) (mime) = strdup("text/html");\
-		else \
+		if (__len < 4 || '.' != (fname)[__len - 4]) \
 		{	\
 			(mime) = strdup("application/octet-stream");\
 			printf("MIME for %s is applic...\n", (fname));\
 		}\
+    else {\
+      const char * __ext = &(fname)[__len - 3];\
+      if(0 == strcmp(__ext, "jpg")) (mime) = strdup("image/jpeg");\
+      else if(0 == strcmp(__ext, "png")) (mime) = strdup("image/png");\
+      else if(0 == strcmp(__ext, "css")) (mime) = strdup("text/css");\
+      else if(0 == strcmp(__ext, "gif")) (mime) = strdup("image/gif");\
+      else if(0 == strcmp(__ext, "htm")) (mime) = strdup("text/html");\
+      else \
+      {	\
+        (mime) = strdup("application/octet-stream");\
+        printf("MIME for %s is applic...\n", (fname));\
+      }\
+    }\
 		if(NULL == (mime))\
 		{\
 			printf("no memory\n");\

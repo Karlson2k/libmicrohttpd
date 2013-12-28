@@ -64,8 +64,10 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 	char **temp_value;
 	char *temp_string;
 	
-	if(NULL == container || NULL == name || 0 == (len = strlen(name)))
+	if(NULL == container || NULL == name || NULL == value || 0 == (len = strlen(name)))
 		return SPDY_INPUT_ERROR;
+  //TODO there is old code handling value==NULL
+  //update it to handle strlen(value)==0
 		
 	for(i=0; i<len; ++i)
 	{
@@ -85,7 +87,9 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 			free(container->name);
 			return SPDY_NO;
 		}
-		if (NULL == (container->value[0] = strdup (value)))
+    /*if(NULL == value)
+      container->value[0] = NULL;
+		else */if (NULL == (container->value[0] = strdup (value)))
 		{
 			free(container->value);
 			free(container->name);
@@ -125,7 +129,9 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 			free(pair);
 			return SPDY_NO;
 		}
-		if (NULL == (pair->value[0] = strdup (value)))
+    /*if(NULL == value)
+      pair->value[0] = NULL;
+		else */if (NULL == (pair->value[0] = strdup (value)))
 		{
 			free(pair->value);
 			free(pair->name);
@@ -477,6 +483,8 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
 
       for(i=0; i<iterator->num_values; ++i)
       {
+        //if(NULL == iterator->value[i])
+        //  continue;
         size += strlen(iterator->value[i]); // string
         if(i/* || !strlen(iterator->value[i])*/) ++size; //NULL separator
       }
@@ -518,8 +526,11 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
           ++offset;
           //if(!i) continue;
         }
-        strncpy(*stream + offset, iterator->value[i], strlen(iterator->value[i]));
-        offset += strlen(iterator->value[i]);
+        //else if(NULL != iterator->value[i])
+        //{
+          strncpy(*stream + offset, iterator->value[i], strlen(iterator->value[i]));
+          offset += strlen(iterator->value[i]);
+        //}
       }
       value_size = offset - value_offset - 4;
       value_size = htonl(value_size);
