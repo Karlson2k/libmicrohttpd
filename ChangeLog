@@ -1,3 +1,8 @@
+Wed Jan  1 21:38:18 CET 2014
+	Allow Keep-Alive with HTTP 1.0 (if explicitly requested),
+	and automatically set "Connection: Keep-Alive" in response
+	in this case as well. -CG
+
 Tue Dec 24 12:27:39 CET 2013
 	Adding explicit annotations to hide symbols that are not for
 	export in the C code (gcc 4.0 or higher only). -CG
