@@ -630,8 +630,8 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     nonce_time = strtoul (nonce + len - 8, (char **)NULL, 16);
     t = (uint32_t) MHD_monotonic_time();
     /*
-     * First level vetting for the nonce validity if the timestamp
-     * attached to the nonce exceeds `nonce_timeout' then the nonce is
+     * First level vetting for the nonce validity: if the timestamp
+     * attached to the nonce exceeds `nonce_timeout', then the nonce is
      * invalid.
      */
     if ( (t > nonce_time + nonce_timeout) ||
