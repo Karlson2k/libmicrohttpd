@@ -3493,8 +3493,7 @@ MHD_start_daemon_va (unsigned int flags,
 	}
       daemon->socket_fd = socket_fd;
 
-      if ( (0 != (flags & MHD_USE_IPv6)) &&
-	   (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK)) )
+      if (0 != (flags & MHD_USE_IPv6))
 	{
 #ifdef IPPROTO_IPV6
 #ifdef IPV6_V6ONLY
@@ -3503,10 +3502,11 @@ MHD_start_daemon_va (unsigned int flags,
 	     and may also be missing on older POSIX systems; good luck if you have any of those,
 	     your IPv6 socket may then also bind against IPv4 anyway... */
 #ifndef WINDOWS
-	  const int on = 1;
+	  const int
 #else
-	  const char on = 1;
+	  const char
 #endif
+            on = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
 	  if ( (0 > SETSOCKOPT (socket_fd,
 				IPPROTO_IPV6, IPV6_V6ONLY,
 				&on, sizeof (on))) &&

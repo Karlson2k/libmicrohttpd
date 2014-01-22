@@ -1,3 +1,11 @@
+Wed Jan 22 09:44:33 CET 2014
+	MHD_USE_DUAL_STACK in libmicrohttpd currently just *inhibits
+	setting* the IPV6_V6ONLY socket option, but per Microsoft's
+	documentation the default on Windows is that this is enabled, thus
+	MHD_USE_DUAL_STACK will not work (since it leaves the
+	default). libmicrohttpd should probably just unconditionally set
+	IPV6_V6ONLY to the desired value when the option is available. -LJ
+
 Wed Jan  1 21:38:18 CET 2014
 	Allow Keep-Alive with HTTP 1.0 (if explicitly requested),
 	and automatically set "Connection: Keep-Alive" in response
