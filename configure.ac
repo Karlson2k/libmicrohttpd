@@ -163,7 +163,7 @@ netbsd*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
      AM_CONDITIONAL(HAVE_W32, false)
-     LDFLAGS="$LDFLAGS -no-undefined"
+     LDFLAGS="$LDFLAGS -Wl,no-undefined"
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
@@ -524,7 +524,7 @@ AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
 
 
 
-MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
+MHD_LIB_LDFLAGS="-export-dynamic -Wl,-no-undefined"
 
 # TODO insert a proper check here
 AC_CACHE_CHECK([whether -export-symbols-regex works],
