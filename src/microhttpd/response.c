@@ -469,7 +469,7 @@ MHD_destroy_response (struct MHD_Response *response)
 }
 
 
-void HIDDEN_SYMBOL
+void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
   pthread_mutex_lock (&response->mutex);

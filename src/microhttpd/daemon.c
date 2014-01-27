@@ -121,13 +121,11 @@ mhd_panic_std (void *cls,
 /**
  * Handler for fatal errors.
  */
-HIDDEN_SYMBOL
 MHD_PanicCallback mhd_panic;
 
 /**
  * Closure argument for "mhd_panic".
  */
-HIDDEN_SYMBOL
 void *mhd_panic_cls;
 
 
@@ -4141,11 +4139,11 @@ MHD_get_version (void)
 
 
 #ifdef __GNUC__
-#define ATTRIBUTE_CONSTRUCTOR __attribute__ ((constructor))
-#define ATTRIBUTE_DESTRUCTOR __attribute__ ((destructor))
+#define FUNC_CONSTRUCTOR(f) static void __attribute__ ((constructor)) f
+#define FUNC_DESTRUCTOR(f) static void __attribute__ ((destructor)) f
 #else  // !__GNUC__
-#define ATTRIBUTE_CONSTRUCTOR
-#define ATTRIBUTE_DESTRUCTOR
+#define FUNC_CONSTRUCTOR(f) _MHD_EXTERN void f
+#define FUNC_DESTRUCTOR(f) _MHD_EXTERN void f
 #endif  // __GNUC__
 
 #if HTTPS_SUPPORT
@@ -4158,8 +4156,7 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 /**
  * Initialize do setup work.
  */
-void ATTRIBUTE_CONSTRUCTOR
-MHD_init ()
+FUNC_CONSTRUCTOR (MHD_init) ()
 {
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
@@ -4177,8 +4174,7 @@ MHD_init ()
 }
 
 
-void ATTRIBUTE_DESTRUCTOR
-MHD_fini ()
+FUNC_DESTRUCTOR (MHD_fini) ()
 {
 #if HTTPS_SUPPORT
   gnutls_global_deinit ();

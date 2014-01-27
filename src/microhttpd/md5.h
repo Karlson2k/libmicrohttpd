@@ -37,15 +37,15 @@ struct MD5Context
 };
 
 
-void  HIDDEN_SYMBOL
+void
 MD5Init(struct MD5Context *ctx);
 
-void HIDDEN_SYMBOL
+void
 MD5Update(struct MD5Context *ctx,
 	  const void *buf,
 	  unsigned len);
 
-void HIDDEN_SYMBOL
+void
 MD5Final(unsigned char digest[MD5_DIGEST_SIZE],
          struct MD5Context *ctx);
 

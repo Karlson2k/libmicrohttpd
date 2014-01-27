@@ -6,9 +6,8 @@ AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/daemon \
+  $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@
-
-EXTRA_DIST = EXPORT.sym
 
 lib_LTLIBRARIES = \
   libmicrohttpd.la
@@ -23,7 +22,6 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
-  -export-symbols $(top_srcdir)/src/microhttpd/EXPORT.sym \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 
 if USE_COVERAGE

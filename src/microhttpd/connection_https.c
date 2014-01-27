@@ -170,7 +170,6 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
  *
  * @param connection which callbacks should be modified
  */
-HIDDEN_SYMBOL
 void
 MHD_set_https_callbacks (struct MHD_Connection *connection)
 {

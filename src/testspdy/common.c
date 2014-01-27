@@ -27,21 +27,19 @@
 #include <sys/time.h>
 
 #ifdef __GNUC__
-#define ATTRIBUTE_CONSTRUCTOR __attribute__ ((constructor))
-#define ATTRIBUTE_DESTRUCTOR __attribute__ ((destructor))
+#define FUNC_CONSTRUCTOR(f) static void __attribute__ ((constructor)) f
+#define FUNC_DESTRUCTOR(f) static void __attribute__ ((destructor)) f
 #else  // !__GNUC__
-#define ATTRIBUTE_CONSTRUCTOR
-#define ATTRIBUTE_DESTRUCTOR
+#define FUNC_CONSTRUCTOR(f) _MHD_EXTERN void f
+#define FUNC_DESTRUCTOR(f) _MHD_EXTERN void f
 #endif  // __GNUC__
 
-void ATTRIBUTE_CONSTRUCTOR
-constructor()
+FUNC_CONSTRUCTOR (constructor)()
 {
 	printf("\nTEST START -------------------------------------------------------\n");
 }
 
-void ATTRIBUTE_DESTRUCTOR
-destructor()
+FUNC_DESTRUCTOR (destructor)()
 {
 	printf("------------------------------------------------------- TEST END\n");
 }

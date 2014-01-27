@@ -156,6 +156,10 @@ extern "C"
 #define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
 #endif
 
+#ifndef _MHD_EXTERN
+#define _MHD_EXTERN extern
+#endif
+
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
  * This gives the ability to replace `long long` with just a `long`,
@@ -1287,7 +1291,7 @@ typedef int
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
-struct MHD_Daemon *
+_MHD_EXTERN struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int flags,
 		     uint16_t port,
 		     MHD_AcceptPolicyCallback apc, void *apc_cls,
@@ -1311,7 +1315,7 @@ MHD_start_daemon_va (unsigned int flags,
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
-struct MHD_Daemon *
+_MHD_EXTERN struct MHD_Daemon *
 MHD_start_daemon (unsigned int flags,
 		  uint16_t port,
 		  MHD_AcceptPolicyCallback apc, void *apc_cls,
@@ -1338,7 +1342,7 @@ MHD_start_daemon (unsigned int flags,
  *         already not listening anymore
  * @ingroup specialized
  */
-int
+_MHD_EXTERN int
 MHD_quiesce_daemon (struct MHD_Daemon *daemon);
 
 
@@ -1348,7 +1352,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon);
  * @param daemon daemon to stop
  * @ingroup event
  */
-void
+_MHD_EXTERN void
 MHD_stop_daemon (struct MHD_Daemon *daemon);
 
 
@@ -1381,7 +1385,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  *        set to indicate further details about the error.
  * @ingroup specialized
  */
-int
+_MHD_EXTERN int
 MHD_add_connection (struct MHD_Daemon *daemon,
 		    int client_socket,
 		    const struct sockaddr *addr,
@@ -1402,7 +1406,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *         options for this call.
  * @ingroup event
  */
-int
+_MHD_EXTERN int
 MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
@@ -1424,7 +1428,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  *        necessiate the use of a timeout right now).
  * @ingroup event
  */
-int
+_MHD_EXTERN int
 MHD_get_timeout (struct MHD_Daemon *daemon,
 		 MHD_UNSIGNED_LONG_LONG *timeout);
 
@@ -1448,7 +1452,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  *         options for this call.
  * @ingroup event
  */
-int
+_MHD_EXTERN int
 MHD_run (struct MHD_Daemon *daemon);
 
 
@@ -1471,7 +1475,7 @@ MHD_run (struct MHD_Daemon *daemon);
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-int
+_MHD_EXTERN int
 MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *read_fd_set,
 		     const fd_set *write_fd_set,
@@ -1493,7 +1497,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
  * @return number of entries iterated over
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
                            MHD_KeyValueIterator iterator, void *iterator_cls);
@@ -1524,7 +1528,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
@@ -1547,7 +1551,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @param cls passed to @a cb
  * @ingroup logging
  */
-void
+_MHD_EXTERN void
 MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
 
 
@@ -1561,7 +1565,7 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
  * @return NULL if no such item was found
  * @ingroup request
  */
-const char *
+_MHD_EXTERN const char *
 MHD_lookup_connection_value (struct MHD_Connection *connection,
 			     enum MHD_ValueKind kind,
 			     const char *key);
@@ -1578,7 +1582,7 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
 		    struct MHD_Response *response);
@@ -1611,7 +1615,7 @@ MHD_queue_response (struct MHD_Connection *connection,
  *
  * @param connection the connection to suspend
  */
-void
+_MHD_EXTERN void
 MHD_suspend_connection (struct MHD_Connection *connection);
 
 
@@ -1623,7 +1627,7 @@ MHD_suspend_connection (struct MHD_Connection *connection);
  *
  * @param connection the connection to resume
  */
-void
+_MHD_EXTERN void
 MHD_resume_connection (struct MHD_Connection *connection);
 
 
@@ -1645,7 +1649,7 @@ MHD_resume_connection (struct MHD_Connection *connection);
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_callback (uint64_t size,
 				   size_t block_size,
 				   MHD_ContentReaderCallback crc, void *crc_cls,
@@ -1666,7 +1670,7 @@ MHD_create_response_from_callback (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
 			       void *data,
 			       int must_free,
@@ -1719,7 +1723,7 @@ enum MHD_ResponseMemoryMode
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
 				 void *buffer,
 				 enum MHD_ResponseMemoryMode mode);
@@ -1736,7 +1740,7 @@ MHD_create_response_from_buffer (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
 			     int fd);
 
@@ -1757,7 +1761,7 @@ MHD_create_response_from_fd (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
 				       int fd,
 				       off_t offset);
@@ -1906,7 +1910,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * @param response response to destroy
  * @ingroup response
  */
-void
+_MHD_EXTERN void
 MHD_destroy_response (struct MHD_Response *response);
 
 
@@ -1920,7 +1924,7 @@ MHD_destroy_response (struct MHD_Response *response);
  *         or out of memory
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
 			 const char *content);
@@ -1935,7 +1939,7 @@ MHD_add_response_header (struct MHD_Response *response,
  * @return #MHD_NO on error (i.e. invalid footer or content format).
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_add_response_footer (struct MHD_Response *response,
                          const char *footer,
 			 const char *content);
@@ -1950,7 +1954,7 @@ MHD_add_response_footer (struct MHD_Response *response,
  * @return #MHD_NO on error (no such header known)
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
 			 const char *content);
@@ -1966,7 +1970,7 @@ MHD_del_response_header (struct MHD_Response *response,
  * @return number of entries iterated over
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_get_response_headers (struct MHD_Response *response,
                           MHD_KeyValueIterator iterator, void *iterator_cls);
 
@@ -1979,7 +1983,7 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @return NULL if header does not exist
  * @ingroup response
  */
-const char *
+_MHD_EXTERN const char *
 MHD_get_response_header (struct MHD_Response *response,
 			 const char *key);
 
@@ -2011,7 +2015,7 @@ MHD_get_response_header (struct MHD_Response *response,
  *         otherwise a PP handle
  * @ingroup request
  */
-struct MHD_PostProcessor *
+_MHD_EXTERN struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
 			   size_t buffer_size,
 			   MHD_PostDataIterator iter, void *iter_cls);
@@ -2030,7 +2034,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  *         (out-of-memory, iterator aborted, parse error)
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data, size_t post_data_len);
 
@@ -2045,7 +2049,7 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  *                value of this function
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
@@ -2068,7 +2072,7 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * 			to the username if found
  * @ingroup authentication
  */
-char *
+_MHD_EXTERN char *
 MHD_digest_auth_get_username (struct MHD_Connection *connection);
 
 
@@ -2085,7 +2089,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection);
  * 			#MHD_INVALID_NONCE if nonce is invalid
  * @ingroup authentication
  */
-int
+_MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
 		       const char *realm,
 		       const char *username,
@@ -2107,7 +2111,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int
+_MHD_EXTERN int
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 			      const char *realm,
 			      const char *opaque,
@@ -2124,7 +2128,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
  * 			to the username if found
  * @ingroup authentication
  */
-char *
+_MHD_EXTERN char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 				      char** password);
 
@@ -2141,7 +2145,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int
+_MHD_EXTERN int
 MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 				    const char *realm,
 				    struct MHD_Response *response);
@@ -2159,7 +2163,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
  *         (or if the @a info_type is unknown)
  * @ingroup specialized
  */
-const union MHD_ConnectionInfo *
+_MHD_EXTERN const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection *connection,
 			 enum MHD_ConnectionInfoType info_type,
 			 ...);
@@ -2191,7 +2195,7 @@ enum MHD_CONNECTION_OPTION
  * @return #MHD_YES on success, #MHD_NO if setting the option failed
  * @ingroup specialized
  */
-int
+_MHD_EXTERN int
 MHD_set_connection_option (struct MHD_Connection *connection,
 			   enum MHD_CONNECTION_OPTION option,
 			   ...);
@@ -2232,7 +2236,7 @@ union MHD_DaemonInfo
  *         (or if the @a info_type is unknown)
  * @ingroup specialized
  */
-const union MHD_DaemonInfo *
+_MHD_EXTERN const union MHD_DaemonInfo *
 MHD_get_daemon_info (struct MHD_Daemon *daemon,
 		     enum MHD_DaemonInfoType info_type,
 		     ...);
@@ -2244,7 +2248,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  * @return static version string, e.g. "0.9.9"
  * @ingroup specialized
  */
-const char*
+_MHD_EXTERN const char*
 MHD_get_version (void);
 
 

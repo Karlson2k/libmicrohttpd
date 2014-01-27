@@ -149,7 +149,6 @@ static const struct MHD_Reason_Block reasons[] = {
 };
 
 
-HIDDEN_SYMBOL
 const char *
 MHD_get_reason_phrase_for (unsigned int code)
 {

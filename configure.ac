@@ -83,6 +83,9 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
       #include <netinet/in.h>
    ])
 
+# Needed for plibc.h
+AC_CHECK_DECLS([_stati64, _wstat32i64])
+
 AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
@@ -163,13 +166,13 @@ netbsd*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
      AM_CONDITIONAL(HAVE_W32, false)
-     LDFLAGS="$LDFLAGS -Wl,no-undefined"
+     LDFLAGS="$LDFLAGS"
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      AM_CONDITIONAL(HAVE_W32, true)
-     LDFLAGS="$LDFLAGS -Wl,-no-undefined -Wl,--export-all-symbols -lws2_32"
+     LDFLAGS="$LDFLAGS -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)
      # check if PlibC is available
      CHECK_PLIBC
@@ -293,6 +296,35 @@ AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
 
 # TCP_NOPUSH
 AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
+
+HIDDEN_VISIBILITY_CFLAGS=""
+case "$host" in
+  *-*-mingw*)
+    dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
+    AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
+              [defines how to decorate public symbols while building])
+    HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+    ;;
+  *)
+    dnl on other compilers, check if we can do -fvisibility=hidden
+    SAVED_CFLAGS="${CFLAGS}"
+    CFLAGS="-fvisibility=hidden"
+    AC_MSG_CHECKING([for -fvisibility=hidden compiler flag])
+    AC_TRY_COMPILE([], [int main (void) { return 0; }],
+                   AC_MSG_RESULT(yes)
+                   enable_fvisibility_hidden=yes,
+                   AC_MSG_RESULT(no)
+                   enable_fvisibility_hidden=no)
+    CFLAGS="${SAVED_CFLAGS}"
+
+    AS_IF([test "${enable_fvisibility_hidden}" = "yes"], [
+      AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
+                [defines how to decorate public symbols while building])
+      HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+    ])
+    ;;
+esac
+AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 
 # libcurl (required for testing)
 SAVE_LIBS=$LIBS
@@ -524,18 +556,7 @@ AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
 
 
 
-MHD_LIB_LDFLAGS="-export-dynamic -Wl,-no-undefined"
-
-# TODO insert a proper check here
-AC_CACHE_CHECK([whether -export-symbols-regex works],
- gn_cv_export_symbols_regex_works,
- [
-  case "$host_os" in
-  mingw*) gn_cv_export_symbols_regex_works=no;;
-  *) gn_cv_export_symbols_regex_works=yes;;
-  esac
- ])
-
+MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
 
 # gcov compilation
 AC_MSG_CHECKING(whether to compile with support for code coverage analysis)

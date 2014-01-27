@@ -5,10 +5,8 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microspdy
-
-
-EXTRA_DIST = EXPORT.sym
+  -I$(top_srcdir)/src/microspdy \
+  $(HIDDEN_VISIBILITY_CFLAGS)
 
 
 lib_LTLIBRARIES = \

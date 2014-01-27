@@ -26,7 +26,6 @@ static const char base64_digits[] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
-HIDDEN_SYMBOL
 char *
 BASE64Decode(const char* src)
 {

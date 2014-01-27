@@ -31,7 +31,7 @@
  * Increment response RC.  Should this be part of the
  * public API?
  */
-void HIDDEN_SYMBOL
+void
 MHD_increment_response_rc (struct MHD_Response *response);
 
 

@@ -83,6 +83,9 @@
 #endif
 #endif
 
+#ifndef _MHD_EXTERN
+#define _MHD_EXTERN extern
+#endif
 
 /**
  * return code for "YES".
@@ -814,7 +817,7 @@ typedef void
  * 			functions can be used now;
  * 			SPDY_NO on error
  */
-int
+_MHD_EXTERN int
 (SPDY_init) (enum SPDY_IO_SUBSYSTEM io_subsystem, ...);
 #define SPDY_init() SPDY_init(SPDY_IO_SUBSYSTEM_OPENSSL)
 
@@ -824,7 +827,7 @@ int
  * using the library. It frees and cleans up resources allocated in
  * SPDY_init. Currently the function does not do anything.
  */
-void
+_MHD_EXTERN void
 SPDY_deinit ();
 
 
@@ -843,7 +846,7 @@ SPDY_deinit ();
  * @param cb new error handler
  * @param cls passed to error handler
  */
-void 
+_MHD_EXTERN void 
 SPDY_set_panic_func (SPDY_PanicCallback cb,
 					void *cls);
 
@@ -869,7 +872,7 @@ SPDY_set_panic_func (SPDY_PanicCallback cb,
  *        terminated with SPDY_DAEMON_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
-struct SPDY_Daemon *
+_MHD_EXTERN struct SPDY_Daemon *
 SPDY_start_daemon (uint16_t port,
 					const char * certfile,
 					const char * keyfile,
@@ -887,7 +890,7 @@ SPDY_start_daemon (uint16_t port,
  *
  * @param daemon to stop
  */
-void 
+_MHD_EXTERN void 
 SPDY_stop_daemon (struct SPDY_Daemon *daemon);
 
 
@@ -913,7 +916,7 @@ SPDY_stop_daemon (struct SPDY_Daemon *daemon);
  * @param except_fd_set except set
  * @return largest FD added to any of the sets
  */
-int
+_MHD_EXTERN int
 SPDY_get_fdset (struct SPDY_Daemon * daemon,
 				fd_set * read_fd_set,
 				fd_set * write_fd_set, 
@@ -931,7 +934,7 @@ SPDY_get_fdset (struct SPDY_Daemon * daemon,
  *         SPDY_NO if no connections exist that
  * 			would necessiate the use of a timeout right now
  */
-int
+_MHD_EXTERN int
 SPDY_get_timeout (struct SPDY_Daemon * daemon, 
 					unsigned long long * timeout);
 
@@ -942,7 +945,7 @@ SPDY_get_timeout (struct SPDY_Daemon * daemon,
  *
  * @param daemon to run
  */
-void 
+_MHD_EXTERN void 
 SPDY_run (struct SPDY_Daemon *daemon);
 
 
@@ -958,7 +961,7 @@ SPDY_run (struct SPDY_Daemon *daemon);
  *
  * @param session handler to be closed
  */
-void
+_MHD_EXTERN void
 SPDY_close_session(struct SPDY_Session * session);
 
 
@@ -969,7 +972,7 @@ SPDY_close_session(struct SPDY_Session * session);
  * @param session handler
  * @param cls any data pointed by a pointer to be accessible later
  */
-void
+_MHD_EXTERN void
 SPDY_set_cls_to_session(struct SPDY_Session * session,
 						void * cls);
 
@@ -981,7 +984,7 @@ SPDY_set_cls_to_session(struct SPDY_Session * session,
  * @return same pointer added by SPDY_set_cls_to_session() or
  * 			NULL when nothing was associated
  */
-void *
+_MHD_EXTERN void *
 SPDY_get_cls_from_session(struct SPDY_Session * session);
 
 
@@ -992,7 +995,7 @@ SPDY_get_cls_from_session(struct SPDY_Session * session);
  * @param addr out parameter; pointing to remote address
  * @return length of the address structure
  */
-socklen_t
+_MHD_EXTERN socklen_t
 SPDY_get_remote_addr(struct SPDY_Session * session,
 					 struct sockaddr ** addr);
 
@@ -1007,7 +1010,7 @@ SPDY_get_remote_addr(struct SPDY_Session * session,
  *
  * @return hendler to the new empty structure or NULL on error
  */
-struct SPDY_NameValue *
+_MHD_EXTERN struct SPDY_NameValue *
 SPDY_name_value_create ();
 
 
@@ -1021,7 +1024,7 @@ SPDY_name_value_create ();
  * @param value the value itself. Null-terminated string.
  * @return SPDY_NO on error or SPDY_YES on success
  */
-int
+_MHD_EXTERN int
 SPDY_name_value_add (struct SPDY_NameValue * container,
 					const char * name, 
 					const char * value);
@@ -1036,7 +1039,7 @@ SPDY_name_value_add (struct SPDY_NameValue * container,
  * @return NULL if no such item was found, or an array containing the
  * 			values
  */
-const char * const * 
+_MHD_EXTERN const char * const * 
 SPDY_name_value_lookup (struct SPDY_NameValue *container,
 						const char *name,
 						int * num_values);
@@ -1051,7 +1054,7 @@ SPDY_name_value_lookup (struct SPDY_NameValue *container,
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
  */
-int
+_MHD_EXTERN int
 SPDY_name_value_iterate (struct SPDY_NameValue *container,
 						SPDY_NameValueIterator iterator,
 						void *iterator_cls);
@@ -1063,7 +1066,7 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
  * functions.
  * 
  */
-void
+_MHD_EXTERN void
 SPDY_name_value_destroy (struct SPDY_NameValue * container);
 
 
@@ -1077,7 +1080,7 @@ SPDY_name_value_destroy (struct SPDY_NameValue * container);
  * @param request for which the session is wanted
  * @return session handler for the request
  */
-struct SPDY_Session *
+_MHD_EXTERN struct SPDY_Session *
 SPDY_get_session_for_request(const struct SPDY_Request * request);
 
 
@@ -1088,7 +1091,7 @@ SPDY_get_session_for_request(const struct SPDY_Request * request);
  * @param request with which to associate a pointer
  * @param cls any data pointed by a pointer to be accessible later
  */
-void
+_MHD_EXTERN void
 SPDY_set_cls_to_request(struct SPDY_Request * request,
 						void * cls);
 
@@ -1101,7 +1104,7 @@ SPDY_set_cls_to_request(struct SPDY_Request * request,
  * @return same pointer added by SPDY_set_cls_to_request() or
  * 			NULL when nothing was associated
  */
-void *
+_MHD_EXTERN void *
 SPDY_get_cls_from_request(struct SPDY_Request * request);
 
 
@@ -1132,7 +1135,7 @@ SPDY_get_cls_from_request(struct SPDY_Request * request);
  * 				headers
  * @return NULL on error, handle to response object on success
  */
-struct SPDY_Response *
+_MHD_EXTERN struct SPDY_Response *
 SPDY_build_response(int status,
 					const char * statustext,
 					const char * version,
@@ -1172,7 +1175,7 @@ SPDY_build_response(int status,
  *                   SPDY_MAX_SUPPORTED_FRAME_SIZE instead.
  * @return NULL on error, handle to response object on success
  */
-struct SPDY_Response *
+_MHD_EXTERN struct SPDY_Response *
 SPDY_build_response_with_callback(int status,
 					const char * statustext,
 					const char * version,
@@ -1210,7 +1213,7 @@ SPDY_build_response_with_callback(int status,
  * @param rrcb_cls extra argument to rcb
  * @return SPDY_NO on error or SPDY_YES on success
  */
-int
+_MHD_EXTERN int
 SPDY_queue_response (struct SPDY_Request * request,
 		    struct SPDY_Response *response,
 		    bool closestream,
@@ -1230,7 +1233,7 @@ SPDY_queue_response (struct SPDY_Request * request,
  * 
  * @param response to destroy
  */
-void
+_MHD_EXTERN void
 SPDY_destroy_response (struct SPDY_Response *response);
 
 
@@ -1244,7 +1247,7 @@ SPDY_destroy_response (struct SPDY_Response *response);
  *
  * @return hendler to the new empty structure or NULL on error
  */
-const struct SPDY_Settings *
+_MHD_EXTERN const struct SPDY_Settings *
 SPDY_settings_create ();
 
 
@@ -1261,7 +1264,7 @@ SPDY_settings_create ();
  * @return SPDY_NO on error
  * 			or SPDY_YES if a new setting was added
  */
-int
+_MHD_EXTERN int
 SPDY_settings_add (struct SPDY_Settings *container,
 							enum SPDY_SETTINGS id, 
 							enum SPDY_FLAG_SETTINGS flags, 
@@ -1279,7 +1282,7 @@ SPDY_settings_add (struct SPDY_Settings *container,
  * @return SPDY_NO if the setting is not into the structure
  * 			or SPDY_YES if it is into it
  */
-int
+_MHD_EXTERN int
 SPDY_settings_lookup (const struct SPDY_Settings * container,
 								enum SPDY_SETTINGS id,
 								enum SPDY_FLAG_SETTINGS * flags,
@@ -1295,7 +1298,7 @@ SPDY_settings_lookup (const struct SPDY_Settings * container,
  * @param iterator_cls extra argument to iterator
  * @return number of entries iterated over
  */
-int
+_MHD_EXTERN int
 SPDY_settings_iterate (const struct SPDY_Settings * container,
 								SPDY_SettingsIterator iterator,
 								void * iterator_cls);
@@ -1308,7 +1311,7 @@ SPDY_settings_iterate (const struct SPDY_Settings * container,
  * 
  * @param container structure which to detroy
  */
-void
+_MHD_EXTERN void
 SPDY_settings_destroy (struct SPDY_Settings * container);
 
 
@@ -1330,7 +1333,7 @@ SPDY_settings_destroy (struct SPDY_Settings * container);
  * @return SPDY_NO on error or SPDY_YES on
  * 			success
  */
-int
+_MHD_EXTERN int
 SPDY_send_settings (struct SPDY_Session * session,
 					struct SPDY_Settings * settings,
 					enum SPDY_FLAG_SETTINGS_FRAME flags,
@@ -1352,7 +1355,7 @@ SPDY_send_settings (struct SPDY_Session * session,
  * 
  * @param request to destroy
  */
-void
+_MHD_EXTERN void
 SPDY_destroy_request (struct SPDY_Request * request);
 
 
@@ -1365,7 +1368,7 @@ SPDY_destroy_request (struct SPDY_Request * request);
  * @param rttcb_cls extra argument to rttcb
  * @return SPDY_NO on error or SPDY_YES on success
  */
-int
+_MHD_EXTERN int
 SPDY_send_ping(struct SPDY_Session * session,
 				SPDY_PingCallback rttcb,
 				void * rttcb_cls);

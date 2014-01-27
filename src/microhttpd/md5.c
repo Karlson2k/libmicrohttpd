@@ -150,7 +150,7 @@ MD5Transform(uint32_t buf[4],
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void HIDDEN_SYMBOL
+void
 MD5Init(struct MD5Context *ctx)
 {
     ctx->buf[0] = 0x67452301;
@@ -166,7 +166,7 @@ MD5Init(struct MD5Context *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void HIDDEN_SYMBOL
+void
 MD5Update(struct MD5Context *ctx,
 	  const void *data,
 	  unsigned len)
@@ -218,7 +218,7 @@ MD5Update(struct MD5Context *ctx,
  * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void HIDDEN_SYMBOL
+void
 MD5Final (unsigned char digest[16],
           struct MD5Context *ctx)
 {

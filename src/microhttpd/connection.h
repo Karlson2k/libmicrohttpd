@@ -88,7 +88,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection);
  * @param connection connection to close
  * @param termination_code termination reason to give
  */
-void HIDDEN_SYMBOL
+void
 MHD_connection_close (struct MHD_Connection *connection,
 		      enum MHD_RequestTerminationCode termination_code);
 
