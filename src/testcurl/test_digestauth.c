@@ -31,7 +31,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef HAVE_GCRYPT_H
 #include <gcrypt.h>
+#endif
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -229,9 +231,11 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
+#ifdef HAVE_GCRYPT_H
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
 #endif
 if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
