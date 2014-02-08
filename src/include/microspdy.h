@@ -31,25 +31,25 @@
  * values. Not everything is implemented. The provided constants are exported as a convenience
  * for users of the library.  The lib does not verify that provided
  * HTTP headers and if their values conform to the SPDY protocol,
- * it only checks if the required headers for the SPDY requests and 
+ * it only checks if the required headers for the SPDY requests and
  * responses are provided.<p>
- * 
+ *
  * The library uses just a single thread.<p>
  *
  * Before including "microspdy.h" you should add the necessary
  * includes to define the types used in this file (which headers are needed may
  * depend on your platform; for possible suggestions consult
  * "platform.h" in the libmicrospdy distribution).<p>
- * 
+ *
  * All of the functions returning SPDY_YES/SPDY_NO return
  * SPDY_INPUT_ERROR when any of the parameters are invalid, e.g.
  * required parameter is NULL.<p>
- * 
+ *
  * The library does not check if anything at the application layer --
  * requests and responses -- is correct. For example, it
  * is up to the user to check if a client is sending HTTP body but the
  * method is GET.<p>
- * 
+ *
  * The SPDY flow control is just partially implemented: the receiving
  * window is updated, and the client is notified, to prevent a client
  * from stop sending POST body data, for example.
@@ -65,7 +65,7 @@
    hence works on any platform, we use "standard" includes here
    to build out-of-the-box for beginning users on common systems.
 
-   Once you have a proper build system and go for more exotic 
+   Once you have a proper build system and go for more exotic
    platforms, you should define MHD_PLATFORM_H in some header that
    you always include *before* "microhttpd.h".  Then the following
    "standard" includes won't be used (which might be a good
@@ -311,77 +311,77 @@ struct SPDY_Settings;
 
 /**
  * SPDY IO sybsystem flags used by SPDY_init() and SPDY_deinit().<p>
- * 
+ *
  * The values are used internally as flags, that is why they must be
  * powers of 2.
  */
 enum SPDY_IO_SUBSYSTEM
 {
 
-	/**
-	 * No subsystem. For internal use.
-	 */
-	SPDY_IO_SUBSYSTEM_NONE = 0,
+  /**
+   * No subsystem. For internal use.
+   */
+  SPDY_IO_SUBSYSTEM_NONE = 0,
 
-	/**
-	 * Default TLS implementation provided by openSSL/libssl.
-	 */
-	SPDY_IO_SUBSYSTEM_OPENSSL = 1,
+  /**
+   * Default TLS implementation provided by openSSL/libssl.
+   */
+  SPDY_IO_SUBSYSTEM_OPENSSL = 1,
 
-	/**
-	 * No TLS is used.
-	 */
-	SPDY_IO_SUBSYSTEM_RAW = 2,
+  /**
+   * No TLS is used.
+   */
+  SPDY_IO_SUBSYSTEM_RAW = 2
 };
 
 
 /**
- * SPDY daemon options. Passed in the varargs portion of 
+ * SPDY daemon options. Passed in the varargs portion of
  * SPDY_start_daemon to customize the daemon. Each option must
  * be followed by a value of a specific type.<p>
- * 
+ *
  * The values are used internally as flags, that is why they must be
  * powers of 2.
  */
 enum SPDY_DAEMON_OPTION
 {
 
-	/**
-	 * No more options / last option.  This is used
-	 * to terminate the VARARGs list.
-	 */
-	SPDY_DAEMON_OPTION_END = 0,
+  /**
+   * No more options / last option.  This is used
+   * to terminate the VARARGs list.
+   */
+  SPDY_DAEMON_OPTION_END = 0,
 
-	/**
-	 * Set a custom timeout for all connections.  Must be followed by
-	 * a number of seconds, given as an 'unsigned int'.  Use
-	 * zero for no timeout.
-	 */
-	SPDY_DAEMON_OPTION_SESSION_TIMEOUT = 1,
-	
-	/**
-	 * Bind daemon to the supplied sockaddr. This option must be
-	 * followed by a 'struct sockaddr *'.  The 'struct sockaddr*'
-	 * should point to a 'struct sockaddr_in6' or to a
-	 * 'struct sockaddr_in'.
-	 */
-	SPDY_DAEMON_OPTION_SOCK_ADDR = 2,
+  /**
+   * Set a custom timeout for all connections.  Must be followed by
+   * a number of seconds, given as an 'unsigned int'.  Use
+   * zero for no timeout.
+   */
+  SPDY_DAEMON_OPTION_SESSION_TIMEOUT = 1,
 
-	/**
-	 * Flags for the daemon. Must be followed by a SPDY_DAEMON_FLAG value
-	 * which is the result of bitwise OR of desired flags.
-	 */
-	SPDY_DAEMON_OPTION_FLAGS = 4,
+  /**
+   * Bind daemon to the supplied sockaddr. This option must be
+   * followed by a 'struct sockaddr *'.  The 'struct sockaddr*'
+   * should point to a 'struct sockaddr_in6' or to a
+   * 'struct sockaddr_in'.
+   */
+  SPDY_DAEMON_OPTION_SOCK_ADDR = 2,
 
-	/**
-	 * IO subsystem type used by daemon and all its sessions. If not set, 
+  /**
+   * Flags for the daemon. Must be followed by a SPDY_DAEMON_FLAG value
+   * which is the result of bitwise OR of desired flags.
+   */
+  SPDY_DAEMON_OPTION_FLAGS = 4,
+
+  /**
+   * IO subsystem type used by daemon and all its sessions. If not set,
    * TLS provided by openssl is used. Must be followed by a
    * SPDY_IO_SUBSYSTEM value.
-	 */
-	SPDY_DAEMON_OPTION_IO_SUBSYSTEM = 8,
-  
-	/**
-	 * Maximum number of frames to be written to the socket at once. The
+   */
+  SPDY_DAEMON_OPTION_IO_SUBSYSTEM = 8,
+
+  /**
+   * Maximum number of frames to be written to the socket at once. The
    * library tries to send max_num_frames in a single call to SPDY_run
    * for a single session. This means no requests can be received nor
    * other sessions can send data as long the current one has enough
@@ -389,8 +389,8 @@ enum SPDY_DAEMON_OPTION
    * will affect the performance. Small value gives fairnes for sessions.
    * Must be followed by a positive integer (uin32_t). If not set, the
    * default value 10 will be used.
-	 */
-	SPDY_DAEMON_OPTION_MAX_NUM_FRAMES = 16,
+   */
+  SPDY_DAEMON_OPTION_MAX_NUM_FRAMES = 16
 };
 
 
@@ -400,88 +400,88 @@ enum SPDY_DAEMON_OPTION
  */
 enum SPDY_DAEMON_FLAG
 {
-	/**
-	 * No flags selected.
-	 */
-	SPDY_DAEMON_FLAG_NO = 0,
-  
-	/**
-	 * The server will bind only on IPv6 addresses. If the flag is set and
-	 * the daemon is provided with IPv4 address or IPv6 is not supported,
-	 * starting daemon will fail.
-	 */
-	SPDY_DAEMON_FLAG_ONLY_IPV6 = 1,
-  
-	/**
+  /**
+   * No flags selected.
+   */
+  SPDY_DAEMON_FLAG_NO = 0,
+
+  /**
+   * The server will bind only on IPv6 addresses. If the flag is set and
+   * the daemon is provided with IPv4 address or IPv6 is not supported,
+   * starting daemon will fail.
+   */
+  SPDY_DAEMON_FLAG_ONLY_IPV6 = 1,
+
+  /**
    * All sessions' sockets will be set with TCP_NODELAY if the flag is
    * used. Option considered only by SPDY_IO_SUBSYSTEM_RAW.
-	 */
-	SPDY_DAEMON_FLAG_NO_DELAY = 2,
+   */
+  SPDY_DAEMON_FLAG_NO_DELAY = 2
 };
 
-	
+
 /**
  * SPDY settings IDs sent by both client and server in SPDY SETTINGS frame.
  * They affect the whole SPDY session. Defined in SPDY Protocol - Draft 3.
  */
 enum SPDY_SETTINGS
 {
-	
-	/**
-	 * Allows the sender to send its expected upload bandwidth on this
-	 * channel. This number is an estimate. The value should be the
-	 * integral number of kilobytes per second that the sender predicts
-	 * as an expected maximum upload channel capacity.
-	 */
-	SPDY_SETTINGS_UPLOAD_BANDWIDTH = 1,
-	
-	/**
-	 * Allows the sender to send its expected download bandwidth on this
-	 * channel. This number is an estimate. The value should be the
-	 * integral number of kilobytes per second that the sender predicts as
-	 * an expected maximum download channel capacity.
-	 */
-	SPDY_SETTINGS_DOWNLOAD_BANDWIDTH = 2,
-	
-	/**
-	 * Allows the sender to send its expected round-trip-time on this
-	 * channel. The round trip time is defined as the minimum amount of
-	 * time to send a control frame from this client to the remote and
-	 * receive a response. The value is represented in milliseconds.
-	 */
-	SPDY_SETTINGS_ROUND_TRIP_TIME = 3,
-	
-	/**
-	 * Allows the sender to inform the remote endpoint the maximum number
-	 * of concurrent streams which it will allow. By default there is no
-	 * limit. For implementors it is recommended that this value be no
-	 * smaller than 100.
-	 */
-	SPDY_SETTINGS_MAX_CONCURRENT_STREAMS = 4,
-	
-	/**
-	 * Allows the sender to inform the remote endpoint of the current TCP
-	 * CWND value.
-	 */
-	SPDY_SETTINGS_CURRENT_CWND = 5,
-	
-	/**
-	 * Allows the sender to inform the remote endpoint the retransmission
-	 * rate (bytes retransmitted / total bytes transmitted).
-	 */
-	SPDY_SETTINGS_DOWNLOAD_RETRANS_RATE = 6,
-	
-	/**
-	 * Allows the sender to inform the remote endpoint the initial window
-	 * size (in bytes) for new streams.
-	 */
-	SPDY_SETTINGS_INITIAL_WINDOW_SIZE = 7,
-	
-	/**
-	 * Allows the server to inform the client if the new size of the
-	 * client certificate vector.
-	 */
-	SPDY_SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE = 8,
+
+  /**
+   * Allows the sender to send its expected upload bandwidth on this
+   * channel. This number is an estimate. The value should be the
+   * integral number of kilobytes per second that the sender predicts
+   * as an expected maximum upload channel capacity.
+   */
+  SPDY_SETTINGS_UPLOAD_BANDWIDTH = 1,
+
+  /**
+   * Allows the sender to send its expected download bandwidth on this
+   * channel. This number is an estimate. The value should be the
+   * integral number of kilobytes per second that the sender predicts as
+   * an expected maximum download channel capacity.
+   */
+  SPDY_SETTINGS_DOWNLOAD_BANDWIDTH = 2,
+
+  /**
+   * Allows the sender to send its expected round-trip-time on this
+   * channel. The round trip time is defined as the minimum amount of
+   * time to send a control frame from this client to the remote and
+   * receive a response. The value is represented in milliseconds.
+   */
+  SPDY_SETTINGS_ROUND_TRIP_TIME = 3,
+
+  /**
+   * Allows the sender to inform the remote endpoint the maximum number
+   * of concurrent streams which it will allow. By default there is no
+   * limit. For implementors it is recommended that this value be no
+   * smaller than 100.
+   */
+  SPDY_SETTINGS_MAX_CONCURRENT_STREAMS = 4,
+
+  /**
+   * Allows the sender to inform the remote endpoint of the current TCP
+   * CWND value.
+   */
+  SPDY_SETTINGS_CURRENT_CWND = 5,
+
+  /**
+   * Allows the sender to inform the remote endpoint the retransmission
+   * rate (bytes retransmitted / total bytes transmitted).
+   */
+  SPDY_SETTINGS_DOWNLOAD_RETRANS_RATE = 6,
+
+  /**
+   * Allows the sender to inform the remote endpoint the initial window
+   * size (in bytes) for new streams.
+   */
+  SPDY_SETTINGS_INITIAL_WINDOW_SIZE = 7,
+
+  /**
+   * Allows the server to inform the client if the new size of the
+   * client certificate vector.
+   */
+  SPDY_SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE = 8
 };
 
 
@@ -490,26 +490,27 @@ enum SPDY_SETTINGS
  * They affect only one setting to which they are set.
  * Defined in SPDY Protocol - Draft 3.
  */
-enum SPDY_FLAG_SETTINGS{
-	
-	/**
-	 * When set, the sender of this SETTINGS frame is requesting that the
-	 * recipient persist the ID/Value and return it in future SETTINGS
-	 * frames sent from the sender to this recipient. Because persistence
-	 * is only implemented on the client, this flag is only sent by the
-	 * server.
-	 */
-	SPDY_FLAG_SETTINGS_PERSIST_VALUE = 1,
-	
-	/**
-	 * When set, the sender is notifying the recipient that this ID/Value
-	 * pair was previously sent to the sender by the recipient with the
-	 * SPDY_FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.
-	 * Because persistence is only implemented on the client, this flag is
-	 * only sent by the client.
-	 */
-	SPDY_FLAG_SETTINGS_PERSISTED = 2,
-};	
+enum SPDY_FLAG_SETTINGS
+{
+
+  /**
+   * When set, the sender of this SETTINGS frame is requesting that the
+   * recipient persist the ID/Value and return it in future SETTINGS
+   * frames sent from the sender to this recipient. Because persistence
+   * is only implemented on the client, this flag is only sent by the
+   * server.
+   */
+  SPDY_FLAG_SETTINGS_PERSIST_VALUE = 1,
+
+  /**
+   * When set, the sender is notifying the recipient that this ID/Value
+   * pair was previously sent to the sender by the recipient with the
+   * #SPDY_FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.
+   * Because persistence is only implemented on the client, this flag is
+   * only sent by the client.
+   */
+  SPDY_FLAG_SETTINGS_PERSISTED = 2
+};
 
 
 /**
@@ -518,37 +519,37 @@ enum SPDY_FLAG_SETTINGS{
  */
 enum SPDY_FLAG_SETTINGS_FRAME
 {
-	
-	/**
-	 * When set, the client should clear any previously persisted SETTINGS
-	 * ID/Value pairs. If this frame contains ID/Value pairs with the
-	 * SPDY_FLAG_SETTINGS_PERSIST_VALUE set, then the client will first
-	 * clear its existing, persisted settings, and then persist the values
-	 * with the flag set which are contained within this frame. Because
-	 * persistence is only implemented on the client, this flag can only
-	 * be used when the sender is the server.
-	 */
-	SPDY_FLAG_SETTINGS_CLEAR_SETTINGS = 1,
+
+  /**
+   * When set, the client should clear any previously persisted SETTINGS
+   * ID/Value pairs. If this frame contains ID/Value pairs with the
+   * #SPDY_FLAG_SETTINGS_PERSIST_VALUE set, then the client will first
+   * clear its existing, persisted settings, and then persist the values
+   * with the flag set which are contained within this frame. Because
+   * persistence is only implemented on the client, this flag can only
+   * be used when the sender is the server.
+   */
+  SPDY_FLAG_SETTINGS_CLEAR_SETTINGS = 1
 };
 
 
 /**
- * SPDY settings function options. Passed in the varargs portion of 
+ * SPDY settings function options. Passed in the varargs portion of
  * SPDY_SettingsReceivedCallback and SPDY_send_settings to customize
  * more the settings handling. Each option must
  * be followed by a value of a specific type.<p>
- * 
+ *
  * The values are used internally as flags, that is why they must be
  * powers of 2.
  */
 enum SPDY_SETTINGS_OPTION
 {
 
-	/**
-	 * No more options / last option.  This is used
-	 * to terminate the VARARGs list.
-	 */
-	SPDY_SETTINGS_OPTION_END = 0,
+  /**
+   * No more options / last option.  This is used
+   * to terminate the VARARGs list.
+   */
+  SPDY_SETTINGS_OPTION_END = 0
 };
 
 
@@ -560,22 +561,23 @@ enum SPDY_SETTINGS_OPTION
 enum SPDY_RESPONSE_RESULT
 {
 
-	/**
-	 * The lib has written the full response to the TLS socket.
-	 */
-	SPDY_RESPONSE_RESULT_SUCCESS = 0,
+  /**
+   * The lib has written the full response to the TLS socket.
+   */
+  SPDY_RESPONSE_RESULT_SUCCESS = 0,
 
-	/**
-	 * The session is being closed, so the data is being discarded
-	 */
-	SPDY_RESPONSE_RESULT_SESSION_CLOSED = 1,
+  /**
+   * The session is being closed, so the data is being discarded
+   */
+  SPDY_RESPONSE_RESULT_SESSION_CLOSED = 1,
 
-	/**
-	 * The stream for this response has been closed. May happen when the
-	 * sender had sent first SYN_STREAM and after that RST_STREAM.
-	 */
-	SPDY_RESPONSE_RESULT_STREAM_CLOSED = 2,
+  /**
+   * The stream for this response has been closed. May happen when the
+   * sender had sent first SYN_STREAM and after that RST_STREAM.
+   */
+  SPDY_RESPONSE_RESULT_STREAM_CLOSED = 2
 };
+
 
 /**
  * Callback for serious error condition. The default action is to print
@@ -588,9 +590,9 @@ enum SPDY_RESPONSE_RESULT
  */
 typedef void
 (*SPDY_PanicCallback) (void * cls,
-							const char * file,
-							unsigned int line,
-							const char * reason);
+                       const char *file,
+                       unsigned int line,
+                       const char *reason);
 
 
 /**
@@ -602,7 +604,7 @@ typedef void
  */
 typedef void
 (*SPDY_NewSessionCallback) (void * cls,
-							struct SPDY_Session * session);
+                            struct SPDY_Session * session);
 
 
 /**
@@ -613,14 +615,14 @@ typedef void
  *
  * @param cls client-defined closure
  * @param session handler for the closed SPDY session
- * @param by_client SPDY_YES if the session close was initiated by the
+ * @param by_client #SPDY_YES if the session close was initiated by the
  * 					client;
- * 					SPDY_NO if closed by the server
+ * 		    #SPDY_NO if closed by the server
  */
 typedef void
-(*SPDY_SessionClosedCallback) (void * cls,
-								struct SPDY_Session * session,
-								int by_client);
+(*SPDY_SessionClosedCallback) (void *cls,
+                               struct SPDY_Session *session,
+                               int by_client);
 
 
 /**
@@ -629,15 +631,15 @@ typedef void
  * @param cls client-defined closure
  * @param name of the pair
  * @param value of the pair
- * @return SPDY_YES to continue iterating,
- *         SPDY_NO to abort the iteration
+ * @return #SPDY_YES to continue iterating,
+ *         #SPDY_NO to abort the iteration
  */
 typedef int
-(*SPDY_NameValueIterator) (void * cls,
-							const char * name,
-							const char * const * value,
-							int num_values);
-                           
+(*SPDY_NameValueIterator) (void *cls,
+                           const char *name,
+                           const char * const * value,
+                           int num_values);
+
 
 /**
  * Callback for received SPDY request. The functions is called whenever
@@ -651,7 +653,7 @@ typedef int
  * 			sent over
  * @param method HTTP method
  * @param path HTTP path
- * @param version HTTP version just like in HTTP request/response: 
+ * @param version HTTP version just like in HTTP request/response:
  * 			"HTTP/1.0" or "HTTP/1.1" currently
  * @param host called host as in HTTP
  * @param scheme used ("http" or "https"). In SPDY 3 it is only "https".
@@ -664,16 +666,17 @@ typedef int
  *        that it is not the first invocation of the function for that
  *        request.
  */
-typedef void (*SPDY_NewRequestCallback) (void * cls,
-					 struct SPDY_Request * request,
-					 uint8_t priority,
-					 const char * method,
-					 const char * path,
-					 const char * version,
-					 const char * host,
-					 const char * scheme,
-					 struct SPDY_NameValue * headers,
-           bool more);
+typedef void
+(*SPDY_NewRequestCallback) (void *cls,
+                            struct SPDY_Request *request,
+                            uint8_t priority,
+                            const char *method,
+                            const char *path,
+                            const char *version,
+                            const char *host,
+                            const char *scheme,
+                            struct SPDY_NameValue *headers,
+                            bool more);
 
 
 /**
@@ -688,18 +691,18 @@ typedef void (*SPDY_NewRequestCallback) (void * cls,
  * @param more false if this is the last chunk from the data. Note:
  *             true does not mean that more data will come, exceptional
  *             situation is possible
- * @return SPDY_YES to continue calling the function,
- *         SPDY_NO to stop calling the function for this request
+ * @return #SPDY_YES to continue calling the function,
+ *         #SPDY_NO to stop calling the function for this request
  */
 typedef int
-(*SPDY_NewDataCallback) (void * cls,
-					 struct SPDY_Request *request,
-					 const void * buf,
-					 size_t size,
-					 bool more);
+(*SPDY_NewDataCallback) (void *cls,
+                         struct SPDY_Request *request,
+                         const void *buf,
+                         size_t size,
+                         bool more);
 // How about passing POST encoding information
 // here as well?
-//TODO 
+//TODO
 
 
 /**
@@ -709,7 +712,7 @@ typedef int
  *
  * @param cls client-defined closure
  * @param max maximum number of bytes that are allowed to be written
- * 			to the buffer. 
+ * 			to the buffer.
  * @param more true if more data will be sent (i.e. the function must
  * 				be calleed again),
  *             false if this is the last chunk, the lib will close
@@ -717,10 +720,11 @@ typedef int
  * @return number of bytes written to buffer. On error the call MUST
  * 			return value less than 0 to indicate the library.
  */
-typedef ssize_t (*SPDY_ResponseCallback) (void * cls,
-					  void * buffer,
-					  size_t max,
-					  bool * more);
+typedef ssize_t
+(*SPDY_ResponseCallback) (void *cls,
+                          void *buffer,
+                          size_t max,
+                          bool *more);
 
 
 /**
@@ -747,10 +751,10 @@ typedef ssize_t (*SPDY_ResponseCallback) (void * cls,
  */
 typedef void
 (*SPDY_ResponseResultCallback) (void * cls,
-								struct SPDY_Response * response,
-								struct SPDY_Request * request,
-								enum SPDY_RESPONSE_RESULT status,
-								bool streamopened);
+                                struct SPDY_Response *response,
+                                struct SPDY_Request *request,
+                                enum SPDY_RESPONSE_RESULT status,
+                                bool streamopened);
 
 
 /**
@@ -762,8 +766,8 @@ typedef void
  */
 typedef void
 (*SPDY_PingCallback) (void * cls,
-						struct SPDY_Session * session,
-						struct timeval * rtt);
+                      struct SPDY_Session *session,
+                      struct timeval *rtt);
 
 
 /**
@@ -773,15 +777,15 @@ typedef void
  * @param id SPDY settings ID
  * @param value value for this setting
  * @param flags flags for this tuple; use
- * 			enum SPDY_FLAG_SETTINGS
- * @return SPDY_YES to continue iterating,
- *         SPDY_NO to abort the iteration
+ * 			`enum SPDY_FLAG_SETTINGS`
+ * @return #SPDY_YES to continue iterating,
+ *         #SPDY_NO to abort the iteration
  */
 typedef int
-(*SPDY_SettingsIterator) (void * cls,
-								enum SPDY_SETTINGS id, 
-								int32_t value, 
-								uint8_t flags);
+(*SPDY_SettingsIterator) (void *cls,
+                          enum SPDY_SETTINGS id,
+                          int32_t value,
+                          uint8_t flags);
 
 
 /**
@@ -792,13 +796,13 @@ typedef int
  * @param flags for the whole settings frame; use
  * 			enum SPDY_FLAG_SETTINGS_FRAME
  * @param ... list of options (type-value pairs,
- *        terminated with SPDY_SETTINGS_OPTION_END).
- */				
+ *        terminated with #SPDY_SETTINGS_OPTION_END).
+ */
 typedef void
-(*SPDY_SettingsReceivedCallback) (struct SPDY_Session * session,
-								struct SPDY_Settings * settings,
-								uint8_t flags,
-								...);
+(*SPDY_SettingsReceivedCallback) (struct SPDY_Session *session,
+                                  struct SPDY_Settings *settings,
+                                  uint8_t flags,
+                                  ...);
 
 
 /* Global functions for the library */
@@ -808,18 +812,18 @@ typedef void
  * Init function for the whole library. It MUST be called before any
  * other function of the library to initialize things like TLS context
  * and possibly other stuff needed by the lib. Currently the call
- * always returns SPDY_YES.
- * 
+ * always returns #SPDY_YES.
+ *
  * @param io_subsystem the IO subsystem that will
  *        be initialized. Several can be used with bitwise OR. If no
  *        parameter is set, the default openssl subsystem will be used.
- * @return SPDY_YES if the library was correctly initialized and its
+ * @return #SPDY_YES if the library was correctly initialized and its
  * 			functions can be used now;
- * 			SPDY_NO on error
+ * 			#SPDY_NO on error
  */
 _MHD_EXTERN int
 (SPDY_init) (enum SPDY_IO_SUBSYSTEM io_subsystem, ...);
-#define SPDY_init() SPDY_init(SPDY_IO_SUBSYSTEM_OPENSSL)
+#define SPDY_init() SPDY_init (SPDY_IO_SUBSYSTEM_OPENSSL)
 
 
 /**
@@ -828,7 +832,7 @@ _MHD_EXTERN int
  * SPDY_init. Currently the function does not do anything.
  */
 _MHD_EXTERN void
-SPDY_deinit ();
+SPDY_deinit (void);
 
 
 /**
@@ -846,7 +850,7 @@ SPDY_deinit ();
  * @param cb new error handler
  * @param cls passed to error handler
  */
-_MHD_EXTERN void 
+_MHD_EXTERN void
 SPDY_set_panic_func (SPDY_PanicCallback cb,
 					void *cls);
 
@@ -869,19 +873,19 @@ SPDY_set_panic_func (SPDY_PanicCallback cb,
  * 			after request
  * @param cls common extra argument to all of the callbacks
  * @param ... list of options (type-value pairs,
- *        terminated with SPDY_DAEMON_OPTION_END).
+ *        terminated with #SPDY_DAEMON_OPTION_END).
  * @return NULL on error, handle to daemon on success
  */
 _MHD_EXTERN struct SPDY_Daemon *
 SPDY_start_daemon (uint16_t port,
-					const char * certfile,
-					const char * keyfile,
-					SPDY_NewSessionCallback nscb,
-					SPDY_SessionClosedCallback sccb,
-					SPDY_NewRequestCallback nrcb,
-					SPDY_NewDataCallback npdcb,
-					void * cls,
-					...);
+                   const char *certfile,
+                   const char *keyfile,
+                   SPDY_NewSessionCallback nscb,
+                   SPDY_SessionClosedCallback sccb,
+                   SPDY_NewRequestCallback nrcb,
+                   SPDY_NewDataCallback npdcb,
+                   void *cls,
+                   ...);
 
 
 /**
@@ -890,7 +894,7 @@ SPDY_start_daemon (uint16_t port,
  *
  * @param daemon to stop
  */
-_MHD_EXTERN void 
+_MHD_EXTERN void
 SPDY_stop_daemon (struct SPDY_Daemon *daemon);
 
 
@@ -898,9 +902,9 @@ SPDY_stop_daemon (struct SPDY_Daemon *daemon);
  * Obtain the select sets for this daemon. Only those are retrieved,
  * which some processing should be done for, i.e. not all sockets are
  * added to write_fd_set.<p>
- * 
+ *
  * It is possible that there is
- * nothing to be read from a socket but there is data either in the 
+ * nothing to be read from a socket but there is data either in the
  * TLS subsystem's read buffers or in libmicrospdy's read buffers, which
  * waits for being processed. In such case the file descriptor will be
  * added to write_fd_set. Since it is very likely for the socket to be
@@ -917,10 +921,10 @@ SPDY_stop_daemon (struct SPDY_Daemon *daemon);
  * @return largest FD added to any of the sets
  */
 _MHD_EXTERN int
-SPDY_get_fdset (struct SPDY_Daemon * daemon,
-				fd_set * read_fd_set,
-				fd_set * write_fd_set, 
-				fd_set * except_fd_set);
+SPDY_get_fdset (struct SPDY_Daemon *daemon,
+                fd_set *read_fd_set,
+                fd_set *write_fd_set,
+                fd_set *except_fd_set);
 
 
 /**
@@ -930,13 +934,13 @@ SPDY_get_fdset (struct SPDY_Daemon * daemon,
  *
  * @param daemon to query for timeout
  * @param timeout will be set to the timeout value (in milliseconds)
- * @return SPDY_YES on success
- *         SPDY_NO if no connections exist that
+ * @return #SPDY_YES on success
+ *         #SPDY_NO if no connections exist that
  * 			would necessiate the use of a timeout right now
  */
 _MHD_EXTERN int
-SPDY_get_timeout (struct SPDY_Daemon * daemon, 
-					unsigned long long * timeout);
+SPDY_get_timeout (struct SPDY_Daemon *daemon,
+                  unsigned long long *timeout);
 
 
 /**
@@ -945,7 +949,7 @@ SPDY_get_timeout (struct SPDY_Daemon * daemon,
  *
  * @param daemon to run
  */
-_MHD_EXTERN void 
+_MHD_EXTERN void
 SPDY_run (struct SPDY_Daemon *daemon);
 
 
@@ -962,19 +966,19 @@ SPDY_run (struct SPDY_Daemon *daemon);
  * @param session handler to be closed
  */
 _MHD_EXTERN void
-SPDY_close_session(struct SPDY_Session * session);
+SPDY_close_session (struct SPDY_Session * session);
 
 
 /**
- * Associate a void pointer with a session. The data accessible by the 
+ * Associate a void pointer with a session. The data accessible by the
  * pointer can later be used wherever the session handler is available.
  *
  * @param session handler
  * @param cls any data pointed by a pointer to be accessible later
  */
 _MHD_EXTERN void
-SPDY_set_cls_to_session(struct SPDY_Session * session,
-						void * cls);
+SPDY_set_cls_to_session (struct SPDY_Session *session,
+                         void *cls);
 
 
 /**
@@ -985,7 +989,7 @@ SPDY_set_cls_to_session(struct SPDY_Session * session,
  * 			NULL when nothing was associated
  */
 _MHD_EXTERN void *
-SPDY_get_cls_from_session(struct SPDY_Session * session);
+SPDY_get_cls_from_session (struct SPDY_Session *session);
 
 
 /**
@@ -996,8 +1000,8 @@ SPDY_get_cls_from_session(struct SPDY_Session * session);
  * @return length of the address structure
  */
 _MHD_EXTERN socklen_t
-SPDY_get_remote_addr(struct SPDY_Session * session,
-					 struct sockaddr ** addr);
+SPDY_get_remote_addr (struct SPDY_Session *session,
+                      struct sockaddr **addr);
 
 
 /* SPDY name/value data structure handling functions */
@@ -1008,10 +1012,10 @@ SPDY_get_remote_addr(struct SPDY_Session * session,
  * HTTP headers and their values for a response. The user should later
  * destroy alone the structure.
  *
- * @return hendler to the new empty structure or NULL on error
+ * @return handler to the new empty structure or NULL on error
  */
 _MHD_EXTERN struct SPDY_NameValue *
-SPDY_name_value_create ();
+SPDY_name_value_create (void);
 
 
 /**
@@ -1022,12 +1026,12 @@ SPDY_name_value_create ();
  * @param container structure to which the new pair is added
  * @param name for the value. Null-terminated string.
  * @param value the value itself. Null-terminated string.
- * @return SPDY_NO on error or SPDY_YES on success
+ * @return #SPDY_NO on error or #SPDY_YES on success
  */
 _MHD_EXTERN int
-SPDY_name_value_add (struct SPDY_NameValue * container,
-					const char * name, 
-					const char * value);
+SPDY_name_value_add (struct SPDY_NameValue *container,
+                     const char *name,
+                     const char *value);
 
 
 /**
@@ -1039,10 +1043,10 @@ SPDY_name_value_add (struct SPDY_NameValue * container,
  * @return NULL if no such item was found, or an array containing the
  * 			values
  */
-_MHD_EXTERN const char * const * 
+_MHD_EXTERN const char * const *
 SPDY_name_value_lookup (struct SPDY_NameValue *container,
-						const char *name,
-						int * num_values);
+                        const char *name,
+                        int *num_values);
 
 
 /**
@@ -1051,23 +1055,23 @@ SPDY_name_value_lookup (struct SPDY_NameValue *container,
  * @param container structure which to iterate over
  * @param iterator callback to call on each name/value pair;
  *        maybe NULL (then just count headers)
- * @param iterator_cls extra argument to iterator
+ * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over
  */
 _MHD_EXTERN int
 SPDY_name_value_iterate (struct SPDY_NameValue *container,
-						SPDY_NameValueIterator iterator,
-						void *iterator_cls);
+                         SPDY_NameValueIterator iterator,
+                         void *iterator_cls);
 
 
 /**
  * Destroy a NameValue structure. Use this function to destroy only
  * objects which, after passed to, will not be destroied by other
  * functions.
- * 
+ *
  */
 _MHD_EXTERN void
-SPDY_name_value_destroy (struct SPDY_NameValue * container);
+SPDY_name_value_destroy (struct SPDY_NameValue *container);
 
 
 /* SPDY request handling functions */
@@ -1081,21 +1085,21 @@ SPDY_name_value_destroy (struct SPDY_NameValue * container);
  * @return session handler for the request
  */
 _MHD_EXTERN struct SPDY_Session *
-SPDY_get_session_for_request(const struct SPDY_Request * request);
+SPDY_get_session_for_request (const struct SPDY_Request *request);
 
 
 /**
- * Associate a void pointer with a request. The data accessible by the 
+ * Associate a void pointer with a request. The data accessible by the
  * pointer can later be used wherever the request handler is available.
  *
  * @param request with which to associate a pointer
  * @param cls any data pointed by a pointer to be accessible later
  */
 _MHD_EXTERN void
-SPDY_set_cls_to_request(struct SPDY_Request * request,
-						void * cls);
+SPDY_set_cls_to_request (struct SPDY_Request *request,
+                         void *cls);
 
-	
+
 /**
  * Retrieves the pointer associated with the request by
  * SPDY_set_cls_to_request().
@@ -1105,7 +1109,7 @@ SPDY_set_cls_to_request(struct SPDY_Request * request,
  * 			NULL when nothing was associated
  */
 _MHD_EXTERN void *
-SPDY_get_cls_from_request(struct SPDY_Request * request);
+SPDY_get_cls_from_request (struct SPDY_Request *request);
 
 
 /* SPDY response handling functions */
@@ -1116,9 +1120,9 @@ SPDY_get_cls_from_request(struct SPDY_Request * request);
  * response object is not bound to a request, so it can be used multiple
  * times with SPDY_queue_response() and schould be
  * destroied by calling the SPDY_destroy_response().<p>
- * 
+ *
  * Currently the library does not provide compression of the body data.
- * It is up to the user to pass already compressed data and the 
+ * It is up to the user to pass already compressed data and the
  * appropriate headers to this function when desired.
  *
  * @param status HTTP status code for the response (e.g. 404)
@@ -1131,17 +1135,17 @@ SPDY_get_cls_from_request(struct SPDY_Request * request);
  * @param data the body of the response. The lib will make a copy of it,
  *             so it is up to the user to take care of the memory
  *             pointed by data
- * @param size length of data. It can be 0, then the lib will send only
+ * @param size length of @a data. It can be 0, then the lib will send only
  * 				headers
  * @return NULL on error, handle to response object on success
  */
 _MHD_EXTERN struct SPDY_Response *
-SPDY_build_response(int status,
-					const char * statustext,
-					const char * version,
-					struct SPDY_NameValue * headers,
-					const void * data,
-					size_t size);
+SPDY_build_response (int status,
+                     const char *statustext,
+                     const char *version,
+                     struct SPDY_NameValue *headers,
+                     const void *data,
+                     size_t size);
 
 
 /**
@@ -1151,9 +1155,9 @@ SPDY_build_response(int status,
  * response object is not bound to a request, so it can be used multiple
  * times with SPDY_queue_response() and schould be
  * destroied by calling the SPDY_destroy_response().<p>
- * 
+ *
  * Currently the library does not provide compression of the body data.
- * It is up to the user to pass already compressed data and the 
+ * It is up to the user to pass already compressed data and the
  * appropriate headers to this function and the callback when desired.
  *
  * @param status HTTP status code for the response (e.g. 404)
@@ -1164,25 +1168,25 @@ SPDY_build_response(int status,
  *                Can be NULL. Can be used multiple times, it is up to
  *                the user to destoy the object when not needed anymore.
  * @param rcb callback to use to obtain response data
- * @param rcb_cls extra argument to rcb
+ * @param rcb_cls extra argument to @a rcb
  * @param block_size preferred block size for querying rcb (advisory only,
  *                   the lib will call rcb specifying the block size); clients
  *                   should pick a value that is appropriate for IO and
  *                   memory performance requirements. The function will
- *                   fail if the value is bigger than the maximum 
+ *                   fail if the value is bigger than the maximum
  *                   supported value (SPDY_MAX_SUPPORTED_FRAME_SIZE).
  *                   Can be 0, then the lib will use
- *                   SPDY_MAX_SUPPORTED_FRAME_SIZE instead.
+ *                   #SPDY_MAX_SUPPORTED_FRAME_SIZE instead.
  * @return NULL on error, handle to response object on success
  */
 _MHD_EXTERN struct SPDY_Response *
 SPDY_build_response_with_callback(int status,
-					const char * statustext,
-					const char * version,
-					struct SPDY_NameValue * headers,
-					SPDY_ResponseCallback rcb,
-					void *rcb_cls,
-					uint32_t block_size);
+                                  const char *statustext,
+                                  const char *version,
+                                  struct SPDY_NameValue *headers,
+                                  SPDY_ResponseCallback rcb,
+                                  void *rcb_cls,
+                                  uint32_t block_size);
 
 
 /**
@@ -1210,16 +1214,16 @@ SPDY_build_response_with_callback(int status,
  * @param rrcb callback called when all the data was sent (last frame
  * 			from response) or when that frame was discarded (e.g. the
  * 			stream has been closed meanwhile)
- * @param rrcb_cls extra argument to rcb
- * @return SPDY_NO on error or SPDY_YES on success
+ * @param rrcb_cls extra argument to @a rrcb
+ * @return #SPDY_NO on error or #SPDY_YES on success
  */
 _MHD_EXTERN int
-SPDY_queue_response (struct SPDY_Request * request,
-		    struct SPDY_Response *response,
-		    bool closestream,
-		    bool consider_priority,
-			SPDY_ResponseResultCallback rrcb,
-			void * rrcb_cls);
+SPDY_queue_response (struct SPDY_Request *request,
+                     struct SPDY_Response *response,
+                     bool closestream,
+                     bool consider_priority,
+                     SPDY_ResponseResultCallback rrcb,
+                     void *rrcb_cls);
 
 
 /**
@@ -1230,25 +1234,25 @@ SPDY_queue_response (struct SPDY_Request * request,
  * the lib anymore, this means after SPDY_ResponseResultCallback
  * callbacks were called for all calls to SPDY_queue_response() passing
  * this response.
- * 
+ *
  * @param response to destroy
  */
 _MHD_EXTERN void
 SPDY_destroy_response (struct SPDY_Response *response);
 
 
-/* SPDY settings ID/value data structure handling functions */	
+/* SPDY settings ID/value data structure handling functions */
 
 
 /**
  * Create a new SettingsIDValue structure. It is needed for putting
- * inside tuples of SPDY option, flags and value for sending to the 
+ * inside tuples of SPDY option, flags and value for sending to the
  * client.
  *
  * @return hendler to the new empty structure or NULL on error
  */
 _MHD_EXTERN const struct SPDY_Settings *
-SPDY_settings_create ();
+SPDY_settings_create (void);
 
 
 /**
@@ -1261,14 +1265,14 @@ SPDY_settings_create ();
  *           added.
  * @param flags SPDY settings flags applied only to this setting
  * @param value of the setting
- * @return SPDY_NO on error
- * 			or SPDY_YES if a new setting was added
+ * @return #SPDY_NO on error
+ * 			or #SPDY_YES if a new setting was added
  */
 _MHD_EXTERN int
 SPDY_settings_add (struct SPDY_Settings *container,
-							enum SPDY_SETTINGS id, 
-							enum SPDY_FLAG_SETTINGS flags, 
-							int32_t value);
+                   enum SPDY_SETTINGS id,
+                   enum SPDY_FLAG_SETTINGS flags,
+                   int32_t value);
 
 
 /**
@@ -1279,14 +1283,14 @@ SPDY_settings_add (struct SPDY_Settings *container,
  * @param flags out param for SPDY settings flags for this setting;
  * 			check it against the flags in enum SPDY_FLAG_SETTINGS
  * @param value out param for the value of this setting
- * @return SPDY_NO if the setting is not into the structure
- * 			or SPDY_YES if it is into it
+ * @return #SPDY_NO if the setting is not into the structure
+ * 			or #SPDY_YES if it is into it
  */
 _MHD_EXTERN int
-SPDY_settings_lookup (const struct SPDY_Settings * container,
-								enum SPDY_SETTINGS id,
-								enum SPDY_FLAG_SETTINGS * flags,
-								int32_t * value);
+SPDY_settings_lookup (const struct SPDY_Settings *container,
+                      enum SPDY_SETTINGS id,
+                      enum SPDY_FLAG_SETTINGS *flags,
+                      int32_t *value);
 
 
 /**
@@ -1299,16 +1303,16 @@ SPDY_settings_lookup (const struct SPDY_Settings * container,
  * @return number of entries iterated over
  */
 _MHD_EXTERN int
-SPDY_settings_iterate (const struct SPDY_Settings * container,
-								SPDY_SettingsIterator iterator,
-								void * iterator_cls);
+SPDY_settings_iterate (const struct SPDY_Settings *container,
+                       SPDY_SettingsIterator iterator,
+                       void *iterator_cls);
 
 
 /**
  * Destroy a settings ID/value structure. Use this function to destroy
  * only objects which, after passed to, will not be destroied by other
  * functions.
- * 
+ *
  * @param container structure which to detroy
  */
 _MHD_EXTERN void
@@ -1329,17 +1333,17 @@ SPDY_settings_destroy (struct SPDY_Settings * container);
  * 			the object when not needed anymore.
  * @param flags for the whole settings frame. They are valid for all tuples
  * @param ... list of options (type-value pairs,
- *        terminated with SPDY_SETTINGS_OPTION_END).
+ *        terminated with #SPDY_SETTINGS_OPTION_END).
  * @return SPDY_NO on error or SPDY_YES on
  * 			success
  */
 _MHD_EXTERN int
-SPDY_send_settings (struct SPDY_Session * session,
-					struct SPDY_Settings * settings,
-					enum SPDY_FLAG_SETTINGS_FRAME flags,
-					...);
+SPDY_send_settings (struct SPDY_Session *session,
+                    struct SPDY_Settings *settings,
+                    enum SPDY_FLAG_SETTINGS_FRAME flags,
+                    ...);
 
- 
+
 /* SPDY misc functions */
 
 
@@ -1352,7 +1356,7 @@ SPDY_send_settings (struct SPDY_Session * session,
  * had been sent, was closed and all SPDY_ResponseResultCallback
  * callbacks were called for all calls to SPDY_queue_response() passing
  * this request object.
- * 
+ *
  * @param request to destroy
  */
 _MHD_EXTERN void
@@ -1365,12 +1369,12 @@ SPDY_destroy_request (struct SPDY_Request * request);
  * @param session handler for which the ping request is sent
  * @param rttcb callback called when ping response to the request is
  * 			received
- * @param rttcb_cls extra argument to rttcb
- * @return SPDY_NO on error or SPDY_YES on success
+ * @param rttcb_cls extra argument to @a rttcb
+ * @return #SPDY_NO on error or #SPDY_YES on success
  */
 _MHD_EXTERN int
-SPDY_send_ping(struct SPDY_Session * session,
-				SPDY_PingCallback rttcb,
-				void * rttcb_cls);
+SPDY_send_ping (struct SPDY_Session *session,
+                SPDY_PingCallback rttcb,
+                void *rttcb_cls);
 
 #endif
