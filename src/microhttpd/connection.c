@@ -396,7 +396,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   struct MHD_Response *response;
   size_t size;
   char cbuf[10];                /* 10: max strlen of "%x\r\n" */
-  int cblen;
+  size_t cblen;
 
   response = connection->response;
   if (0 == connection->write_buffer_size)
@@ -1491,7 +1491,7 @@ process_request_body (struct MHD_Connection *connection)
 
               if (available > 0)
                 instant_retry = MHD_YES;
-              if (connection->current_chunk_size == 0)
+              if (0 == connection->current_chunk_size)
                 {
                   connection->remaining_upload_size = 0;
                   break;
@@ -1625,7 +1625,7 @@ do_read (struct MHD_Connection *connection)
 static int
 do_write (struct MHD_Connection *connection)
 {
-  int ret;
+  ssize_t ret;
   size_t max;
 
   max = connection->write_buffer_append_offset - connection->write_buffer_send_offset;
@@ -1643,7 +1643,7 @@ do_write (struct MHD_Connection *connection)
       if (0 != (connection->daemon->options & MHD_USE_SSL))
 	MHD_DLOG (connection->daemon,
 		  "Failed to send data: %s\n",
-		  gnutls_strerror (ret));
+		  gnutls_strerror ((int) ret));
       else
 #endif
 	MHD_DLOG (connection->daemon,
@@ -1994,7 +1994,7 @@ int
 MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
-  int ret;
+  ssize_t ret;
 
   update_last_activity (connection);
   while (1)
@@ -2035,7 +2035,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if DEBUG_SEND_DATA
           FPRINTF (stderr,
                    "Sent 100 continue response: `%.*s'\n",
-                   ret,
+                   (int) ret,
                    &HTTP_100_CONTINUE[connection->continue_message_write_offset]);
 #endif
           connection->continue_message_write_offset += ret;
@@ -2072,7 +2072,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (ret > 0)
             FPRINTF (stderr,
                      "Sent DATA response: `%.*s'\n",
-                     ret,
+                     (int) ret,
                      &response->data[connection->response_write_position -
                                      response->data_start]);
 #endif

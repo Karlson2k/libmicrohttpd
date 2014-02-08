@@ -201,7 +201,7 @@ digest_calc_response (const char *ha1,
  * @param key key to look up in data
  * @return size of the located value, 0 if otherwise
  */
-static int
+static size_t
 lookup_sub_value (char *dest,
 		  size_t size,
 		  const char *data,
@@ -381,7 +381,7 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
  * @param nonce_time The amount of time in seconds for a nonce to be invalid
  * @param method HTTP method
  * @param rnd A pointer to a character array for the random seed
- * @param rnd_size The size of the random seed array
+ * @param rnd_size The size of the random seed array @a rnd
  * @param uri HTTP URI (in MHD, without the arguments ("?k=v")
  * @param realm A string of characters that describes the realm of auth.
  * @param nonce A pointer to a character array for the nonce to put in
@@ -390,7 +390,7 @@ static void
 calculate_nonce (uint32_t nonce_time,
 		 const char *method,
 		 const char *rnd,
-		 unsigned int rnd_size,
+		 size_t rnd_size,
 		 const char *uri,
 		 const char *realm,
 		 char *nonce)
@@ -407,14 +407,14 @@ calculate_nonce (uint32_t nonce_time,
   timestamp[3] = (nonce_time & 0x000000ff);
   MD5Update (&md5, timestamp, 4);
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, method, strlen(method));
+  MD5Update (&md5, method, strlen (method));
   MD5Update (&md5, ":", 1);
   if (rnd_size > 0)
     MD5Update (&md5, rnd, rnd_size);
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen(uri));
+  MD5Update (&md5, uri, strlen (uri));
   MD5Update (&md5, ":", 1);
-  MD5Update (&md5, realm, strlen(realm));
+  MD5Update (&md5, realm, strlen (realm));
   MD5Final (tmpnonce, &md5);
   cvthex (tmpnonce, sizeof (tmpnonce), nonce);
   cvthex (timestamp, 4, timestamphex);
@@ -429,8 +429,8 @@ calculate_nonce (uint32_t nonce_time,
  * @param connection the connection
  * @param key the key
  * @param value the value, can be NULL
- * @return MHD_YES if the key-value pair is in the headers,
- *         MHD_NO if not
+ * @return #MHD_YES if the key-value pair is in the headers,
+ *         #MHD_NO if not
  */
 static int
 test_header (struct MHD_Connection *connection,

@@ -1,3 +1,6 @@
+Sat Feb  8 15:08:35 CET 2014
+	Corrected some uses of 'int' vs. 'size_t'. -EG/CG
+
 Wed Jan 22 09:44:33 CET 2014
 	MHD_USE_DUAL_STACK in libmicrohttpd currently just *inhibits
 	setting* the IPV6_V6ONLY socket option, but per Microsoft's
