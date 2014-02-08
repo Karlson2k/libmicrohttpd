@@ -1596,7 +1596,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 #endif
     }
   if (!GetHandleInformation ((HANDLE) sock, &dwFlags) ||
-      ((dwFlags != dwFlags & ~HANDLE_FLAG_INHERIT) &&
+      ((dwFlags != (dwFlags & ~HANDLE_FLAG_INHERIT)) &&
        !SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0)))
     {
 #if HAVE_MESSAGES

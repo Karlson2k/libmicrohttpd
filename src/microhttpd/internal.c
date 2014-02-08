@@ -148,7 +148,7 @@ MHD_http_unescape (void *cls,
 	  num = strtoul (buf3, &end, 16);
 	  if ('\0' == *end)
 	    {
-	      *wpos = (unsigned char) num;
+	      *wpos = (char)((unsigned char) num);
 	      wpos++;
 	      rpos += 3;
 	      break;
