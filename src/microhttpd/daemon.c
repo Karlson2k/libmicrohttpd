@@ -593,7 +593,6 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
        || (NULL == read_fd_set)
        || (NULL == write_fd_set)
        || (NULL == except_fd_set)
-       || (NULL == max_fd)
        || (MHD_YES == daemon->shutdown)
        || (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
        || (0 != (daemon->options & MHD_USE_POLL)))
@@ -607,7 +606,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       if (daemon->epoll_fd >= FD_SETSIZE)
 	return MHD_NO; /* poll fd too big, fail hard */
       FD_SET (daemon->epoll_fd, read_fd_set);
-      if ((*max_fd) < daemon->epoll_fd)
+      if ( (NULL != max_fd) && (*max_fd) < daemon->epoll_fd) )
 	*max_fd = daemon->epoll_fd;
       return MHD_YES;
     }
@@ -617,7 +616,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
   {
     FD_SET (fd, read_fd_set);
     /* update max file descriptor */
-    if ((*max_fd) < fd)
+    if ( (NULL != max_fd) && ((*max_fd) < fd))
       *max_fd = fd;
   }
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
