@@ -1394,6 +1394,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 
 /**
  * Obtain the `select()` sets for this daemon.
+ * Daemon's FDs will be added to fd_sets. To get only
+ * daemon FDs in fd_sets, call FD_ZERO for each fd_set
+ * before calling this function.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
