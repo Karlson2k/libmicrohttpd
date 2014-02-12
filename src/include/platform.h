@@ -36,6 +36,13 @@
 
 #include "MHD_config.h"
 
+#ifndef BUILDING_MHD_LIB
+#ifdef _MHD_EXTERN
+#undef _MHD_EXTERN
+#endif /* _MHD_EXTERN */
+#define _MHD_EXTERN extern
+#endif /* BUILDING_MHD_LIB */
+
 #define _XOPEN_SOURCE_EXTENDED  1
 #if OS390
 #define _OPEN_THREADS

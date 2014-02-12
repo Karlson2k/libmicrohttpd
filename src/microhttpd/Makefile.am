@@ -20,6 +20,9 @@ libmicrohttpd_la_SOURCES = \
   internal.c internal.h \
   memorypool.c memorypool.h \
   response.c response.h
+libmicrohttpd_la_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@

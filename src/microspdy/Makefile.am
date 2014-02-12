@@ -29,6 +29,10 @@ libmicrospdy_la_SOURCES = \
 libmicrospdy_la_LDFLAGS = \
   $(SPDY_LIB_LDFLAGS) 
 
+libmicrospdy_la_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -DBUILDING_MHD_LIB=1
+
 libmicrospdy_la_CFLAGS = -Wextra \
   $(SPDY_LIB_CFLAGS)
 
