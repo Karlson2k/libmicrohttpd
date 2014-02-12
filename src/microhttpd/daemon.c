@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  (C) 2007-2013 Daniel Pittman and Christian Grothoff
+  (C) 2007-2014 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -1573,18 +1573,6 @@ static void
 make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 int sock)
 {
-  int nonblock;
-
-#ifdef HAVE_SOCK_NONBLOCK
-  nonblock = SOCK_NONBLOCK;
-#else
-  nonblock = 0;
-#endif
-#ifdef CYGWIN
-  if (0 == (daemon->options & MHD_USE_SSL))
-    nonblock = 0;
-#endif
-
 #ifdef WINDOWS
   DWORD dwFlags;
   unsigned long flags = 1;
@@ -1610,6 +1598,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
     }
 #else
   int flags;
+  int nonblock;
 
   nonblock = O_NONBLOCK;
 #ifdef CYGWIN
@@ -1736,7 +1725,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#if !defined(HAVE_ACCEPT4) || SOCK_CLOEXEC+0 == 0
+#if !defined(HAVE_ACCEPT4) || !defined(HAVE_SOCK_NONBLOCK) || SOCK_CLOEXEC+0 == 0
   make_nonblocking_noninheritable (daemon, s);
 #endif
 #if HAVE_MESSAGES
