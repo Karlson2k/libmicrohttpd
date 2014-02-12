@@ -609,7 +609,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       if (daemon->epoll_fd >= FD_SETSIZE)
 	return MHD_NO; /* poll fd too big, fail hard */
       FD_SET (daemon->epoll_fd, read_fd_set);
-      if ( (NULL != max_fd) && (*max_fd) < daemon->epoll_fd) )
+      if ( (NULL != max_fd) &&  ((*max_fd) < daemon->epoll_fd) )
 	*max_fd = daemon->epoll_fd;
       return MHD_YES;
     }
@@ -1736,8 +1736,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-  if ( (! HAVE_ACCEPT4) || (0 == SOCK_CLOEXEC) )
-    make_nonblocking_noninheritable (daemon, s);
+#if !defined(HAVE_ACCEPT4) || SOCK_CLOEXEC+0 == 0
+  make_nonblocking_noninheritable (daemon, s);
+#endif
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
