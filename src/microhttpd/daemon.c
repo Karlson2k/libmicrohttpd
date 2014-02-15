@@ -645,7 +645,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
     }
 #if DEBUG_CONNECT
 #if HAVE_MESSAGES
-  MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
+  if (NULL != max_fd)
+    MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
 #endif
 #endif
   return MHD_YES;
