@@ -31,6 +31,13 @@
 #include "tls_test_common.h"
 #include <gcrypt.h>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif
+
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 

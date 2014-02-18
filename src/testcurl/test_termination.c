@@ -41,6 +41,13 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif
+
 static int
 connection_handler (void *cls,
                     struct MHD_Connection *connection,

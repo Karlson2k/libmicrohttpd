@@ -120,6 +120,8 @@
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <ws2tcpip.h>
+#define sleep(seconds) (SleepEx((seconds)*1000, 1)/1000)
+#define usleep(useconds) (void)SleepEx((useconds)/1000, 1)
 #endif
 
 #ifndef MHD_SOCKET_DEFINED

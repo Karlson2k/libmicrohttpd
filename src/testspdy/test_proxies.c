@@ -34,6 +34,13 @@
 #include <sys/wait.h> /* pid_t */
 #include "common.h"
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif
+
 #define EXPECTED_BODY "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
 
 

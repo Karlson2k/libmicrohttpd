@@ -32,8 +32,11 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef __MINGW32__
-#define usleep(usec) (Sleep ((usec) / 1000),0)
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
 #endif
 
 #ifndef WINDOWS
