@@ -50,6 +50,13 @@
 #include <sys/sendfile.h>
 #endif
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif
+
 #ifndef HAVE_ACCEPT4
 #define HAVE_ACCEPT4 0
 #endif
@@ -128,6 +135,12 @@ MHD_PanicCallback mhd_panic;
  */
 void *mhd_panic_cls;
 
+#ifdef _WIN32
+/**
+ * Track initialization of winsock
+ */
+static int mhd_winsock_inited_ = 0;
+#endif
 
 /**
  * Trace up to and return master daemon. If the supplied daemon
@@ -4152,8 +4165,13 @@ FUNC_CONSTRUCTOR (MHD_init) ()
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
 
-#ifdef WINDOWS
-  plibc_init ("GNU", "libmicrohttpd");
+#ifdef _WIN32
+  WSADATA wsd;
+  if (0 != WSAStartup(MAKEWORD(2, 2), &wsd))
+    MHD_PANIC ("Failed to initialize winsock\n");
+  mhd_winsock_inited_ = 1;
+  if (2 != LOBYTE(wsd.wVersion) && 2 != HIBYTE(wsd.wVersion))
+    MHD_PANIC ("Winsock version 2.2 is not available\n");
 #endif
 #if HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
@@ -4170,8 +4188,9 @@ FUNC_DESTRUCTOR (MHD_fini) ()
 #if HTTPS_SUPPORT
   gnutls_global_deinit ();
 #endif
-#ifdef WINDOWS
-  plibc_shutdown ();
+#ifdef _WIN32
+  if (mhd_winsock_inited_)
+    WSACleanup();
 #endif
 }
 
