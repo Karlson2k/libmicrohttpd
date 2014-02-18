@@ -91,7 +91,7 @@ testExternalRun ()
 {
   struct MHD_Daemon *d;
   fd_set rs;
-  int maxfd;
+  MHD_socket maxfd;
   int i;
 
   d = MHD_start_daemon (MHD_USE_DEBUG,

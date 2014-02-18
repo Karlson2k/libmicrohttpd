@@ -41,7 +41,8 @@ static const char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
 static int
 test_tls_session_time_out (gnutls_session_t session)
 {
-  int sd, ret;
+  int ret;
+  MHD_socket sd;
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);

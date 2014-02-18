@@ -46,7 +46,8 @@ static int
 test_hello_extension (gnutls_session_t session, extensions_t exten_t,
                       int ext_count, int ext_length)
 {
-  int i, sd, ret = 0, pos = 0;
+  int i, ret = 0, pos = 0;
+  MHD_socket sd;
   int exten_data_len, ciphersuite_len, datalen;
   struct sockaddr_in sa;
   char url[255];

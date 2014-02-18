@@ -241,7 +241,7 @@ MHD_create_response_from_callback (uint64_t size,
   if (NULL == (response = malloc (sizeof (struct MHD_Response) + block_size)))
     return NULL;
   memset (response, 0, sizeof (struct MHD_Response));
-  response->fd = -1;
+  response->fd = MHD_INVALID_SOCKET;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
   if (0 != pthread_mutex_init (&response->mutex, NULL))
@@ -296,7 +296,7 @@ free_callback (void *cls)
   struct MHD_Response *response = cls;
 
   (void) close (response->fd);
-  response->fd = -1;
+  response->fd = MHD_INVALID_SOCKET;
 }
 
 
@@ -380,7 +380,7 @@ MHD_create_response_from_data (size_t size,
   if (NULL == (response = malloc (sizeof (struct MHD_Response))))
     return NULL;
   memset (response, 0, sizeof (struct MHD_Response));
-  response->fd = -1;
+  response->fd = MHD_INVALID_SOCKET;
   if (0 != pthread_mutex_init (&response->mutex, NULL))
     {
       free (response);

@@ -280,7 +280,7 @@ testExternalGet (int port)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   struct timeval tv;
   MHD_UNSIGNED_LONG_LONG tt;
   int tret;

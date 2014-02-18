@@ -118,4 +118,21 @@
 
 #include <plibc.h>
 
+#ifndef MHD_SOCKET_DEFINED
+/**
+ * MHD_socket is type for socket FDs
+ */
+#if !defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+#define MHD_POSIX_SOCKETS 1
+typedef int MHD_socket;
+#define MHD_INVALID_SOCKET (-1)
+#else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_WINSOCK_SOCKETS 1
+#include <winsock2.h>
+typedef SOCKET MHD_socket;
+#define MHD_INVALID_SOCKET (INVALID_SOCKET)
+#endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_SOCKET_DEFINED 1
+#endif /* MHD_SOCKET_DEFINED */
+
 #endif

@@ -217,7 +217,7 @@ testExternalGet ()
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   time_t start;
   struct timeval tv;
   pid_t curl;

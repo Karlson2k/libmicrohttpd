@@ -554,13 +554,13 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
  * @param max_fd maximum value to potentially update
  */
 static void
-add_to_fd_set (int fd,
+add_to_fd_set (MHD_socket fd,
 	       fd_set *set,
-	       int *max_fd)
+	       MHD_socket *max_fd)
 {
   FD_SET (fd, set);
-  if ( (NULL != max_fd) &&
-       (fd > *max_fd) )
+  if ( (NULL != max_fd) && (MHD_INVALID_SOCKET != fd) &&
+       ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
     *max_fd = fd;
 }
 
@@ -587,10 +587,10 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
 	       fd_set *except_fd_set,
-	       int *max_fd)
+	       MHD_socket *max_fd)
 {
   struct MHD_Connection *pos;
-  int fd;
+  MHD_socket fd;
 
   if ( (NULL == daemon)
        || (NULL == read_fd_set)
@@ -615,11 +615,12 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
     }
 #endif
   fd = daemon->socket_fd;
-  if (-1 != fd)
+  if (MHD_INVALID_SOCKET != fd)
   {
     FD_SET (fd, read_fd_set);
     /* update max file descriptor */
-    if ( (NULL != max_fd) && ((*max_fd) < fd))
+    if ( (NULL != max_fd) &&
+         ((*max_fd) < fd || MHD_INVALID_SOCKET == (*max_fd)))
       *max_fd = fd;
   }
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -667,7 +668,7 @@ MHD_handle_connection (void *data)
   int num_ready;
   fd_set rs;
   fd_set ws;
-  int max;
+  MHD_socket max;
   struct timeval tv;
   struct timeval *tvp;
   unsigned int timeout;
@@ -843,7 +844,7 @@ recv_param_adapter (struct MHD_Connection *connection,
 {
   ssize_t ret;
 
-  if ( (-1 == connection->socket_fd) ||
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
       errno = ENOTCONN;
@@ -876,12 +877,12 @@ send_param_adapter (struct MHD_Connection *connection,
 {
   ssize_t ret;
 #if LINUX
-  int fd;
+  MHD_socket fd;
   off_t offset;
   off_t left;
 #endif
 
-  if ( (-1 == connection->socket_fd) ||
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
       errno = ENOTCONN;
@@ -893,7 +894,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
        (NULL != connection->response) &&
-       (-1 != (fd = connection->response->fd)) )
+       (MHD_INVALID_SOCKET != (fd = connection->response->fd)) )
     {
       /* can use sendfile */
       offset = (off_t) connection->response_write_position + connection->response->fd_off;
@@ -1027,7 +1028,7 @@ create_thread (pthread_t *thread,
  */
 static int
 internal_add_connection (struct MHD_Daemon *daemon,
-			 int client_socket,
+			 MHD_socket client_socket,
 			 const struct sockaddr *addr,
 			 socklen_t addrlen,
 			 int external_add)
@@ -1572,7 +1573,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
  */
 static void
 make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
-				 int sock)
+				 MHD_socket sock)
 {
 #ifdef WINDOWS
   DWORD dwFlags;
@@ -1652,7 +1653,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
  */
 int
 MHD_add_connection (struct MHD_Daemon *daemon,
-		    int client_socket,
+		    MHD_socket client_socket,
 		    const struct sockaddr *addr,
 		    socklen_t addrlen)
 {
@@ -1687,13 +1688,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   struct sockaddr *addr = (struct sockaddr *) &addrstorage;
   socklen_t addrlen;
-  int s;
-  int fd;
+  MHD_socket s;
+  MHD_socket fd;
   int nonblock;
 
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
-  if (-1 == (fd = daemon->socket_fd))
+  if (MHD_INVALID_SOCKET == (fd = daemon->socket_fd))
     return MHD_NO;
 #ifdef HAVE_SOCK_NONBLOCK
   nonblock = SOCK_NONBLOCK;
@@ -1709,7 +1710,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #else
   s = ACCEPT (fd, addr, &addrlen);
 #endif
-  if ((-1 == s) || (addrlen <= 0))
+  if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
       /* This could be a common occurance with multiple worker threads */
@@ -1718,7 +1719,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 		  "Error accepting connection: %s\n",
 		  STRERROR (errno));
 #endif
-      if (-1 != s)
+      if (MHD_INVALID_SOCKET != s)
         {
           if (0 != CLOSE (s))
 	    MHD_PANIC ("close failed\n");
@@ -1788,7 +1789,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	  pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
 	}
       if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
-	   (-1 != daemon->epoll_fd) &&
+	   (MHD_INVALID_SOCKET != daemon->epoll_fd) &&
 	   (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
 	{
 	  /* epoll documentation suggests that closing a FD
@@ -1810,7 +1811,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	  MHD_destroy_response (pos->response);
 	  pos->response = NULL;
 	}
-      if (-1 != pos->socket_fd)
+      if (MHD_INVALID_SOCKET != pos->socket_fd)
 	{
 #ifdef WINDOWS
 	  SHUTDOWN (pos->socket_fd, SHUT_WR);
@@ -1939,7 +1940,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *write_fd_set,
 		     const fd_set *except_fd_set)
 {
-  int ds;
+  MHD_socket ds;
   char tmp;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
@@ -1958,7 +1959,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #endif
 
   /* select connection thread handling type */
-  if ( (-1 != (ds = daemon->socket_fd)) &&
+  if ( (MHD_INVALID_SOCKET != (ds = daemon->socket_fd)) &&
        (FD_ISSET (ds, read_fd_set)) )
     (void) MHD_accept_connection (daemon);
   /* drain signaling pipe to avoid spinning select */
@@ -1974,7 +1975,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
         {
 	  next = pos->next;
           ds = pos->socket_fd;
-          if (-1 == ds)
+          if (MHD_INVALID_SOCKET == ds)
 	    continue;
 	  switch (pos->event_loop_info)
 	    {
@@ -2026,7 +2027,7 @@ MHD_select (struct MHD_Daemon *daemon,
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   struct timeval timeout;
   struct timeval *tv;
   MHD_UNSIGNED_LONG_LONG ltimeout;
@@ -2038,7 +2039,7 @@ MHD_select (struct MHD_Daemon *daemon,
   FD_ZERO (&rs);
   FD_ZERO (&ws);
   FD_ZERO (&es);
-  max = -1;
+  max = MHD_INVALID_SOCKET;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
@@ -2051,13 +2052,13 @@ MHD_select (struct MHD_Daemon *daemon,
       /* If we're at the connection limit, no need to
          accept new connections. */
       if ( (0 == daemon->max_connections) &&
-	   (-1 != daemon->socket_fd) )
+	   (MHD_INVALID_SOCKET != daemon->socket_fd) )
         FD_CLR (daemon->socket_fd, &rs);
     }
   else
     {
       /* accept only, have one thread per connection */
-      if (-1 != daemon->socket_fd)
+      if (MHD_INVALID_SOCKET != daemon->socket_fd)
 	{
 	  max = daemon->socket_fd;
 	  FD_SET (daemon->socket_fd, &rs);
@@ -2067,7 +2068,7 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       FD_SET (daemon->wpipe[0], &rs);
       /* update max file descriptor */
-      if (max < daemon->wpipe[0])
+      if (max < daemon->wpipe[0] || max == MHD_INVALID_SOCKET)
 	max = daemon->wpipe[0];
     }
 
@@ -2086,7 +2087,7 @@ MHD_select (struct MHD_Daemon *daemon,
       timeout.tv_sec = ltimeout / 1000;
       tv = &timeout;
     }
-  if (-1 == max)
+  if (MHD_INVALID_SOCKET == max)
     return MHD_YES;
   num_ready = SELECT (max + 1, &rs, &ws, &es, tv);
   if (MHD_YES == daemon->shutdown)
@@ -2139,7 +2140,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     memset (p, 0, sizeof (p));
     poll_server = 0;
     poll_listen = -1;
-    if ( (-1 != daemon->socket_fd) &&
+    if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
 	 (0 != daemon->max_connections) )
       {
 	/* only listen if we are not at the connection limit */
@@ -2275,7 +2276,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   memset (&p, 0, sizeof (p));
   poll_count = 0;
   poll_listen = -1;
-  if (-1 != daemon->socket_fd)
+  if (MHD_INVALID_SOCKET != daemon->socket_fd)
     {
       p[poll_count].fd = daemon->socket_fd;
       p[poll_count].events = POLLIN;
@@ -2380,7 +2381,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     return MHD_NO; /* we're down! */
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
-  if ( (-1 != daemon->socket_fd) &&
+  if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (0 != daemon->max_connections) &&
        (MHD_NO == daemon->listen_socket_in_epoll) )
     {
@@ -2675,22 +2676,22 @@ MHD_start_daemon (unsigned int flags,
  * Note that some thread modes require the caller to have passed
  * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
  * in one of those modes and this option was not given to
- * #MHD_start_daemon, this function will return -1.
+ * #MHD_start_daemon, this function will return #MHD_INVALID_SOCKET.
  *
  * @param daemon daemon to stop accepting new connections for
- * @return old listen socket on success, -1 if the daemon was
- *         already not listening anymore
+ * @return old listen socket on success, #MHD_INVALID_SOCKET if
+ *         the daemon was already not listening anymore
  * @ingroup specialized
  */
-int
+MHD_socket
 MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 {
   unsigned int i;
-  int ret;
+  MHD_socket ret;
 
   ret = daemon->socket_fd;
-  if (-1 == ret)
-    return -1;
+  if (MHD_INVALID_SOCKET == ret)
+    return MHD_INVALID_SOCKET;
   if ( (-1 == daemon->wpipe[1]) &&
        (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
     {
@@ -2698,13 +2699,13 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
       MHD_DLOG (daemon,
 		"Using MHD_quiesce_daemon in this mode requires MHD_USE_PIPE_FOR_SHUTDOWN\n");
 #endif
-      return -1;
+      return MHD_INVALID_SOCKET;
     }
 
   if (NULL != daemon->worker_pool)
     for (i = 0; i < daemon->worker_pool_size; i++)
       {
-	daemon->worker_pool[i].socket_fd = -1;
+	daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
 #if EPOLL_SUPPORT
 	if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	     (-1 != daemon->worker_pool[i].epoll_fd) &&
@@ -2719,7 +2720,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 	  }
 #endif
       }
-  daemon->socket_fd = -1;
+  daemon->socket_fd = MHD_INVALID_SOCKET;
 #if EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
@@ -2928,7 +2929,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 	  break;
 #endif
 	case MHD_OPTION_LISTEN_SOCKET:
-	  daemon->socket_fd = va_arg (ap, int);
+	  daemon->socket_fd = va_arg (ap, MHD_socket);
 	  break;
         case MHD_OPTION_EXTERNAL_LOGGER:
 #if HAVE_MESSAGES
@@ -2974,9 +2975,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 						MHD_OPTION_END))
 		    return MHD_NO;
 		  break;
-		  /* all options taking 'int' or 'enum' */
+		  /* all options taking 'enum' */
 		case MHD_OPTION_HTTPS_CRED_TYPE:
-		case MHD_OPTION_LISTEN_SOCKET:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -2984,6 +2984,15 @@ parse_options_va (struct MHD_Daemon *daemon,
 						MHD_OPTION_END))
 		    return MHD_NO;
 		  break;
+                  /* all options taking 'MHD_socket' */
+                case MHD_OPTION_LISTEN_SOCKET:
+                  if (MHD_YES != parse_options (daemon,
+                                                servaddr,
+                                                opt,
+                                                (MHD_socket) oa[i].value,
+                                                MHD_OPTION_END))
+                    return MHD_NO;
+                  break;
 		  /* all options taking one pointer */
 		case MHD_OPTION_SOCK_ADDR:
 		case MHD_OPTION_HTTPS_MEM_KEY:
@@ -3064,23 +3073,23 @@ parse_options_va (struct MHD_Daemon *daemon,
  * @param type socket type (usually SOCK_STREAM)
  * @param protocol desired protocol, 0 for default
  */
-static int
+static MHD_socket
 create_socket (struct MHD_Daemon *daemon,
 	       int domain, int type, int protocol)
 {
   int ctype = type | SOCK_CLOEXEC;
-  int fd;
+  MHD_socket fd;
 
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
   fd = SOCKET (domain, ctype, protocol);
-  if ( (-1 == fd) && (EINVAL == errno) && (0 != SOCK_CLOEXEC) )
+  if ( (MHD_INVALID_SOCKET == fd) && (EINVAL == errno) && (0 != SOCK_CLOEXEC) )
   {
     ctype = type;
     fd = SOCKET(domain, type, protocol);
   }
-  if (-1 == fd)
-    return -1;
+  if (MHD_INVALID_SOCKET == fd)
+    return MHD_INVALID_SOCKET;
   if (type == ctype)
     make_nonblocking_noninheritable (daemon, fd);
   return fd;
@@ -3114,7 +3123,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (0 == EPOLL_CLOEXEC)
     make_nonblocking_noninheritable (daemon,
 				     daemon->epoll_fd);
-  if (-1 == daemon->socket_fd)
+  if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
   event.data.ptr = daemon;
@@ -3184,7 +3193,7 @@ MHD_start_daemon_va (unsigned int flags,
 {
   const int on = 1;
   struct MHD_Daemon *daemon;
-  int socket_fd;
+  MHD_socket socket_fd;
   struct sockaddr_in servaddr4;
 #if HAVE_INET6
   struct sockaddr_in6 servaddr6;
@@ -3224,7 +3233,7 @@ MHD_start_daemon_va (unsigned int flags,
 			    NULL);
     }
 #endif
-  daemon->socket_fd = -1;
+  daemon->socket_fd = MHD_INVALID_SOCKET;
   daemon->options = (enum MHD_OPTION) flags;
 #if WINDOWS
   /* Winsock is broken with respect to 'shutdown';
@@ -3417,7 +3426,7 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 #endif
-  if ( (-1 == daemon->socket_fd) &&
+  if ( (MHD_INVALID_SOCKET == daemon->socket_fd) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
@@ -3427,7 +3436,7 @@ MHD_start_daemon_va (unsigned int flags,
       else
 	socket_fd = create_socket (daemon,
 				   PF_INET, SOCK_STREAM, 0);
-      if (-1 == socket_fd)
+      if (MHD_INVALID_SOCKET == socket_fd)
 	{
 #if HAVE_MESSAGES
 	  if (0 != (flags & MHD_USE_DEBUG))
@@ -3582,7 +3591,7 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
                "MHD failed to initialize IP connection limit mutex\n");
 #endif
-      if ( (-1 != socket_fd) &&
+      if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != CLOSE (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
@@ -3594,7 +3603,7 @@ MHD_start_daemon_va (unsigned int flags,
                "MHD failed to initialize IP connection limit mutex\n");
 #endif
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
-      if ( (-1 != socket_fd) &&
+      if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != CLOSE (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
@@ -3608,7 +3617,7 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
 		"Failed to initialize TLS support\n");
 #endif
-      if ( (-1 != socket_fd) &&
+      if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != CLOSE (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
@@ -3630,7 +3639,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
-      if ( (-1 != socket_fd) &&
+      if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != CLOSE (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
@@ -3773,7 +3782,7 @@ thread_failed:
      MHD_USE_SELECT_INTERNALLY mode. */
   if (0 == i)
     {
-      if ( (-1 != socket_fd) &&
+      if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != CLOSE (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
@@ -3923,7 +3932,7 @@ void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
   void *unused;
-  int fd;
+  MHD_socket fd;
   unsigned int i;
   int rc;
 
@@ -3931,7 +3940,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     return;
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
-  daemon->socket_fd = -1;
+  daemon->socket_fd = MHD_INVALID_SOCKET;
   /* Prepare workers for shutdown */
   if (NULL != daemon->worker_pool)
     {
@@ -3939,11 +3948,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       for (i = 0; i < daemon->worker_pool_size; ++i)
 	{
 	  daemon->worker_pool[i].shutdown = MHD_YES;
-	  daemon->worker_pool[i].socket_fd = -1;
+	  daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
 #if EPOLL_SUPPORT
 	  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	       (-1 != daemon->worker_pool[i].epoll_fd) &&
-	       (-1 == fd) )
+	       (MHD_INVALID_SOCKET == fd) )
 	    epoll_shutdown (&daemon->worker_pool[i]);
 #endif
 	}
@@ -3956,15 +3965,15 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifdef HAVE_LISTEN_SHUTDOWN
   else
     {
-      /* fd might be -1 here due to 'MHD_quiesce_daemon' */
-      if (-1 != fd)
+      /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
+      if (MHD_INVALID_SOCKET != fd)
 	(void) SHUTDOWN (fd, SHUT_RDWR);
     }
 #endif
 #if EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
-       (-1 == fd) )
+       (MHD_INVALID_SOCKET == fd) )
     epoll_shutdown (daemon);
 #endif
 
@@ -4022,7 +4031,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	}
     }
   close_all_connections (daemon);
-  if ( (-1 != fd) &&
+  if ( (MHD_INVALID_SOCKET != fd) &&
        (0 != CLOSE (fd)) )
     MHD_PANIC ("close failed\n");
 

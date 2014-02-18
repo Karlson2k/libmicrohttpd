@@ -88,7 +88,7 @@ int main(int argc, char **argv)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   CURL *c;
   CURLM *multi;
   CURLMcode mret;
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   extra = 10;
   while ( (c != NULL) || (--extra > 0) )
     {
-      max = -1;
+      max = MHD_INVALID_SOCKET;
       FD_ZERO(&ws);
       FD_ZERO(&rs);
       FD_ZERO(&es);

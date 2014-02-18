@@ -259,7 +259,7 @@ testExternalGet ()
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   int running; 
   struct CURLMsg *msg;
   time_t start;
@@ -448,7 +448,7 @@ static int
 testStopRace (int poll_flag)
 {
     struct sockaddr_in sin;
-    int fd;
+    MHD_socket fd;
     struct MHD_Daemon *d;
     
     d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG | poll_flag,

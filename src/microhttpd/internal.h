@@ -711,11 +711,11 @@ struct MHD_Connection
   int client_aware;
 
   /**
-   * Socket for this connection.  Set to -1 if
+   * Socket for this connection.  Set to MHD_INVALID_SOCKET if
    * this connection has died (daemon should clean
    * up in that case).
    */
-  int socket_fd;
+  MHD_socket socket_fd;
 
   /**
    * Has this socket been closed for reading (i.e.  other side closed
@@ -1082,7 +1082,7 @@ struct MHD_Daemon
   /**
    * Listen socket.
    */
-  int socket_fd;
+  MHD_socket socket_fd;
 
 #if EPOLL_SUPPORT
   /**

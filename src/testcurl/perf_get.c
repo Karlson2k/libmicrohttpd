@@ -361,7 +361,7 @@ testExternalGet (int port)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   int running;
   struct CURLMsg *msg;
   time_t start;

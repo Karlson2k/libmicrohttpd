@@ -105,12 +105,12 @@ extern "C"
    "standard" includes won't be used (which might be a good
    idea, especially on platforms where they do not exist). */
 #ifndef MHD_PLATFORM_H
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
-#ifdef __MINGW32__
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <ws2tcpip.h>
 #else
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -159,6 +159,23 @@ extern "C"
 #ifndef _MHD_EXTERN
 #define _MHD_EXTERN extern
 #endif
+
+#ifndef MHD_SOCKET_DEFINED
+/**
+ * MHD_socket is type for socket FDs
+ */
+#if !defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+#define MHD_POSIX_SOCKETS 1
+typedef int MHD_socket;
+#define MHD_INVALID_SOCKET (-1)
+#else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_WINSOCK_SOCKETS 1
+#include <winsock2.h>
+typedef SOCKET MHD_socket;
+#define MHD_INVALID_SOCKET (INVALID_SOCKET)
+#endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_SOCKET_DEFINED 1
+#endif /* MHD_SOCKET_DEFINED */
 
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
@@ -948,7 +965,7 @@ union MHD_ConnectionInfo
   /**
    * Connect socket
    */
-  int connect_fd;
+  MHD_socket connect_fd;
 
   /**
    * GNUtls session handle, of type "gnutls_session_t".
@@ -1335,14 +1352,14 @@ MHD_start_daemon (unsigned int flags,
  * Note that some thread modes require the caller to have passed
  * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
  * in one of those modes and this option was not given to
- * #MHD_start_daemon, this function will return -1.
+ * #MHD_start_daemon, this function will return #MHD_INVALID_SOCKET.
  *
  * @param daemon daemon to stop accepting new connections for
- * @return old listen socket on success, -1 if the daemon was
- *         already not listening anymore
+ * @return old listen socket on success, #MHD_INVALID_SOCKET if
+ *         the daemon was already not listening anymore
  * @ingroup specialized
  */
-_MHD_EXTERN int
+_MHD_EXTERN MHD_socket
 MHD_quiesce_daemon (struct MHD_Daemon *daemon);
 
 
@@ -1387,7 +1404,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  */
 _MHD_EXTERN int
 MHD_add_connection (struct MHD_Daemon *daemon,
-		    int client_socket,
+		    MHD_socket client_socket,
 		    const struct sockaddr *addr,
 		    socklen_t addrlen);
 
@@ -1414,7 +1431,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
 	       fd_set *except_fd_set,
-	       int *max_fd);
+	       MHD_socket *max_fd);
 
 
 /**
@@ -2224,7 +2241,7 @@ union MHD_DaemonInfo
   /**
    * Listen socket file descriptor
    */
-  int listen_fd;
+  MHD_socket listen_fd;
 };
 
 

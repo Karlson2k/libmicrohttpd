@@ -112,7 +112,7 @@ ServeOneRequest(int fd)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   time_t start;
   struct timeval tv;
   int done = 0;
@@ -182,7 +182,7 @@ testGet (int type, int pool_count, int poll_flag)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int fd;
+  MHD_socket fd;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -290,13 +290,13 @@ testExternalGet ()
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   int running; 
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
   int i;
-  int fd;
+  MHD_socket fd;
 
   multi = NULL;
   cbc.buf = buf;
@@ -384,7 +384,7 @@ testExternalGet ()
       if (i == 0) {
         /* quiesce the daemon on the 1st iteration, so the 2nd should fail */
         fd = MHD_quiesce_daemon(d);
-	if (-1 == fd)
+	if (MHD_INVALID_SOCKET == fd)
 	  abort ();
         close (fd);
         c = setupCURL (&cbc);
