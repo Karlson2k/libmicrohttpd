@@ -83,7 +83,7 @@ test_simple_large ()
   size = strlen (data);
   while (i < size)
     {
-      delta = 1 + RANDOM () % (size - i);
+      delta = 1 + MHD_random_ () % (size - i);
       MHD_post_process (pp, &data[i], delta);
       i += delta;
     }

@@ -27,6 +27,8 @@
 #include <errno.h>
 #include <winsock2.h>
 #include <string.h>
+#include <stdint.h>
+#include <time.h>
 
 /**
  * Return errno equivalent of last winsock error
@@ -617,4 +619,23 @@ int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2])
   sockets_pair[0] = INVALID_SOCKET;
   sockets_pair[1] = INVALID_SOCKET;
   return -1;
+}
+
+/**
+ * Static variable used by pseudo random number generator
+ */
+static int32_t rnd_val = 0;
+/**
+ * Generate 31-bit pseudo random number.
+ * Function initialize itself at first call to current time.
+ * @return 31-bit pseudo random number.
+ */
+int MHD_W32_random(void)
+{
+  if (0 == rnd_val)
+    rnd_val = (int32_t)time(NULL);
+  /* stolen from winsup\cygwin\random.cc */
+  rnd_val = (16807 * (rnd_val % 127773) - 2836 * (rnd_val / 127773))
+               & 0x7fffffff;
+  return (int)rnd_val;
 }
