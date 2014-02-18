@@ -5,8 +5,9 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microspdy \
-  $(HIDDEN_VISIBILITY_CFLAGS)
+  -I$(top_srcdir)/src/microspdy
+
+AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
 
 lib_LTLIBRARIES = \
@@ -38,5 +39,5 @@ libmicrospdy_la_CFLAGS = -Wextra \
 
 
 if USE_COVERAGE
-  AM_CFLAGS = --coverage
+  AM_CFLAGS += --coverage
 endif

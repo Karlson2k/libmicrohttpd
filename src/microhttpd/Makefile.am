@@ -5,8 +5,9 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd \
-  $(HIDDEN_VISIBILITY_CFLAGS) \
+  -I$(top_srcdir)/src/microhttpd
+
+AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@
 
 lib_LTLIBRARIES = \
@@ -28,7 +29,7 @@ libmicrohttpd_la_LDFLAGS = \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 
 if USE_COVERAGE
-  AM_CFLAGS = --coverage
+  AM_CFLAGS += --coverage
 endif
 
 if !HAVE_TSEARCH

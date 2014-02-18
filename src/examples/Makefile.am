@@ -7,9 +7,9 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  @LIBGCRYPT_CFLAGS@
+  -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
 
-AM_CFLAGS = -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
+AM_CFLAGS = @LIBGCRYPT_CFLAGS@
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage

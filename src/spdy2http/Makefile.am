@@ -1,6 +1,6 @@
 SUBDIRS  = .
 
-AM_CFLAGS = -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
+AM_CFLAGS =
 
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
@@ -15,6 +15,7 @@ AM_CPPFLAGS = \
  -I$(top_srcdir) \
  -I$(top_srcdir)/src/include \
  -I$(top_srcdir)/src/applicationlayer \
+ -DDATA_DIR=\"$(top_srcdir)/src/datadir/\" \
 $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32

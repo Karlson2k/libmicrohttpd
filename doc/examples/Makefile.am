@@ -6,11 +6,12 @@ endif
 
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
-  -I$(top_srcdir)/src/include \
-  @LIBGCRYPT_CFLAGS@
+  -I$(top_srcdir)/src/include
+
+AM_CFLAGS = @LIBGCRYPT_CFLAGS@
 
 if USE_COVERAGE
-  AM_CFLAGS = --coverage
+  AM_CFLAGS += --coverage
 endif
 
 # example programs
@@ -29,7 +30,7 @@ noinst_PROGRAMS += simplepost largepost sessions
 endif
 
 if HAVE_W32
-AM_CFLAGS = -DWINDOWS
+AM_CPPFLAGS += -DWINDOWS
 endif
 
 basicauthentication_SOURCES = \
