@@ -100,9 +100,9 @@ main (int argc, char *const *argv)
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
     return 0;
   }
-  if (NULL != strcasestr (ssl_version, "openssl"))
+  if (0 != strncmp (ssl_version, "GnuTLS", 6))
   {
-    fprintf (stderr, "Refusing to run test with OpenSSL.  Please install libcurl-gnutls\n");
+    fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
     return 0;
   }
 
