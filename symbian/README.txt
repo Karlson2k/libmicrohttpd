@@ -1,3 +1,7 @@
+Note: plibc was removed from MHD after this was written, so most likely
+the following won't work anymore right now.  As usual, patches are welcome... 
+
+
 This directory contains a MHD_config.h that allows compilation on Symbian OS 9
 with OpenC 1.6 (possibly earlier and later versions too) and plibc. It also
 contains a Scons-for-Symbian (http://code.google.com/p/scons-for-symbian/)
