@@ -117,7 +117,7 @@ ServeOneRequest(void *param)
   struct timeval tv;
   int done = 0;
 
-  fd = (MHD_socket) param;
+  fd = (MHD_socket) (intptr_t) param;
 
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         1082, NULL, NULL, &ahc_echo, "GET",
@@ -227,7 +227,7 @@ testGet (int type, int pool_count, int poll_flag)
   }
 
   fd = MHD_quiesce_daemon (d);
-  if (0 != pthread_create(&thrd, NULL, ServeOneRequest, (void*)fd))
+  if (0 != pthread_create(&thrd, NULL, &ServeOneRequest, (void*)(intptr_t) fd))
     {
       fprintf (stderr, "pthread_create failed\n");
       curl_easy_cleanup (c);
@@ -261,7 +261,7 @@ testGet (int type, int pool_count, int poll_flag)
       return 16;
     }
 
-  if (cbc.pos != strlen ("/hello_world")) 
+  if (cbc.pos != strlen ("/hello_world"))
     {
       fprintf(stderr, "%s\n", cbc.buf);
       curl_easy_cleanup (c);
@@ -269,7 +269,7 @@ testGet (int type, int pool_count, int poll_flag)
       MHD_socket_close_(fd);
       return 4;
     }
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world"))) 
+  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
     {
       fprintf(stderr, "%s\n", cbc.buf);
       curl_easy_cleanup (c);
@@ -310,7 +310,7 @@ testExternalGet ()
   fd_set ws;
   fd_set es;
   MHD_socket max;
-  int running; 
+  int running;
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
