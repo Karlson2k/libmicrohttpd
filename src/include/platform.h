@@ -116,7 +116,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include <plibc.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <ws2tcpip.h>
