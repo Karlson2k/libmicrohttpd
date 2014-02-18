@@ -117,6 +117,11 @@ extern "C"
 #endif
 #endif
 
+#if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)
+/* Do not define __USE_W32_SOCKETS under Cygwin! */
+#error Cygwin with winsock fd_set is not supported
+#endif
+
 /**
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
