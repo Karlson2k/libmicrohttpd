@@ -71,7 +71,7 @@ struct MemoryPool
   size_t end;
 
   /**
-   * #MHD_NO if pool was malloc'ed, #MHD_YES if mmapped.
+   * #MHD_NO if pool was malloc'ed, #MHD_YES if mmapped (VirtualAlloc'ed for W32).
    */
   int is_mmap;
 };
@@ -91,12 +91,17 @@ MHD_pool_create (size_t max)
   pool = malloc (sizeof (struct MemoryPool));
   if (NULL == pool)
     return NULL;
-#ifdef MAP_ANONYMOUS
+#if defined(MAP_ANONYMOUS) || defined(_WIN32)
   if (max <= 32 * 1024)
     pool->memory = MAP_FAILED;
   else
-    pool->memory = MMAP (NULL, max, PROT_READ | PROT_WRITE,
+#if defined(MAP_ANONYMOUS) && !defined(_WIN32)
+    pool->memory = mmap (NULL, max, PROT_READ | PROT_WRITE,
 			 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#elif defined(_WIN32)
+    pool->memory = VirtualAlloc(NULL, max, MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
+#endif
 #else
   pool->memory = MAP_FAILED;
 #endif
@@ -134,7 +139,13 @@ MHD_pool_destroy (struct MemoryPool *pool)
   if (pool->is_mmap == MHD_NO)
     free (pool->memory);
   else
-    MUNMAP (pool->memory, pool->size);
+#if defined(MAP_ANONYMOUS) && !defined(_WIN32)
+    munmap (pool->memory, pool->size);
+#elif defined(_WIN32)
+    VirtualFree(pool->memory, 0, MEM_RELEASE);
+#else
+    abort();
+#endif
   free (pool);
 }
 
