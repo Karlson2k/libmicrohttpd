@@ -663,18 +663,37 @@ get_date_string (char *date)
   };
   struct tm now;
   time_t t;
+#if defined(_WIN32) && !defined(HAVE_GMTIME_S) && !defined(__CYGWIN__)
+  struct tm* pNow;
+#endif
 
+  date[0] = 0;
   time (&t);
-  gmtime_r (&t, &now);
-  SPRINTF (date,
-           "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
-           days[now.tm_wday % 7],
-           (unsigned int) now.tm_mday,
-           mons[now.tm_mon % 12],
-           (unsigned int) (1900 + now.tm_year),
-	   (unsigned int) now.tm_hour,
-	   (unsigned int) now.tm_min,
-	   (unsigned int) now.tm_sec);
+#if !defined(_WIN32)
+  if (NULL != gmtime_r (&t, &now))
+    {
+#elif defined(HAVE_GMTIME_S)
+  if (0 == gmtime_s (&now, &t))
+    {
+#elif defined(__CYGWIN__)
+  if (NULL != gmtime_r (&t, &now))
+    {
+#else
+  pNow = gmtime(&t);
+  if (NULL != pNow)
+    {
+      now = *pNow;
+#endif
+      sprintf (date,
+             "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+             days[now.tm_wday % 7],
+             (unsigned int) now.tm_mday,
+             mons[now.tm_mon % 12],
+             (unsigned int) (1900 + now.tm_year),
+             (unsigned int) now.tm_hour,
+             (unsigned int) now.tm_min,
+             (unsigned int) now.tm_sec);
+    }
 }
 
 

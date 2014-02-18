@@ -268,6 +268,18 @@ AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)
 
 AC_CHECK_FUNCS_ONCE(memmem)
 AC_CHECK_FUNCS_ONCE(accept4)
+AC_MSG_CHECKING([[for gmtime_s]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+    [[ #include <time.h>]], [[struct tm now; time_t t; time (&t); gmtime_s (&now, &t)]])
+  ],
+  [
+    AC_DEFINE([HAVE_GMTIME_S], [1], [Define to 1 if you have `gmtime_s' function (only for W32).])
+    AC_MSG_RESULT([[yes]])
+  ],
+  [AC_MSG_RESULT([[no]])
+  ])
+
 
 AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM(
