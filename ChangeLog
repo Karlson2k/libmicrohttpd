@@ -1,3 +1,10 @@
+Tue Feb 18 19:46:45 CET 2014
+	Removed dependency on plibc for simpler compilation for W32.
+	Added configure option "--disable-pipes" to use socketpairs
+	instead of pipes for signalling to child threads. Pipes are 
+	always disabled on W32.
+	Some code refactoring. - EG
+
 Sat Feb  8 15:08:35 CET 2014
 	Corrected some uses of 'int' vs. 'size_t'. -EG/CG
 

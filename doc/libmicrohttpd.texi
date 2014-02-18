@@ -359,16 +359,9 @@ for the specific platform.
 
 @section Portability to W32
 
-On W32, GNUnet requires PlibC, a lightweight library to provide some
-more POSIX-like calls on W32.  While PlibC takes care of most issues,
-it is unable to make @code{select} (or equivalent alternative socket
-calls) unblock when a socket is @code{shutdown}.  This can be
-problematic if MHD is used in ``one thread per connection'' mode.  In
-this case, an inactive TCP connection may block @code{MHD_stop_daemon}
-until the connection times out.  You may be able to mitigate the issue
-by setting a reasonably low timeout, but in general we of course
-recommend migrating away from Windows.  Using MHD with other types of
-event loops is unaffected by this issue.
+libmicrohttpd in general ported well to W32. Most libmicrohttpd features
+are supported. W32 do not support some functions, like epoll and 
+corresponding MHD features are not available on W32.
 
 
 @section Portability to z/OS

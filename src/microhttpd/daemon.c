@@ -3681,14 +3681,8 @@ MHD_start_daemon_va (unsigned int flags,
         goto thread_failed;
 #else
       sk_flags = 1;
-#if HAVE_PLIBC_FD
-      if (SOCKET_ERROR ==
-	  ioctlsocket (plibc_fd_get_handle (socket_fd), FIONBIO, &sk_flags))
+      if (SOCKET_ERROR == ioctlsocket (socket_fd, FIONBIO, &sk_flags))
         goto thread_failed;
-#else
-      if (ioctlsocket (socket_fd, FIONBIO, &sk_flags) == SOCKET_ERROR)
-        goto thread_failed;
-#endif // PLIBC_FD
 #endif // MINGW
 
       /* Allocate memory for pooled objects */
