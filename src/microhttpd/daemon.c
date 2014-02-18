@@ -25,6 +25,7 @@
  * @author Christian Grothoff
  */
 #include "platform.h"
+#include "platform_interface.h"
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
@@ -1052,7 +1053,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 					  addr, addrlen,
 					  external_add);
       /* all pools are at their connection limit, must refuse */
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
 #if ENFILE
       errno = ENFILE;
@@ -1070,7 +1071,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		client_socket,
 		FD_SETSIZE);
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
 #if EINVAL
       errno = EINVAL;
@@ -1093,7 +1094,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon,
                 "Server reached connection limit (closing inbound connection)\n");
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
 #if ENFILE
       errno = ENFILE;
@@ -1111,7 +1112,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon, "Connection rejected, closing connection\n");
 #endif
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
 #if EACCESS
@@ -1138,7 +1139,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n",
 		STRERROR (errno));
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
       errno = eno;
@@ -1153,7 +1154,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n",
 		STRERROR (errno));
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
       free (connection);
@@ -1172,7 +1173,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n",
 		STRERROR (errno));
 #endif
-      if (0 != CLOSE (client_socket))
+      if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
       MHD_ip_limit_del (daemon, addr, addrlen);
       MHD_pool_destroy (connection->pool);
@@ -1209,8 +1210,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	    {
 #if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
-			"Failed to make socket %d non-blocking: %s\n",
-			connection->socket_fd,
+			"Failed to make socket non-blocking: %s\n",
 			STRERROR (errno));
 #endif
 	    }
@@ -1252,7 +1252,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                     "Failed to setup TLS credentials: unknown credential type %d\n",
                     daemon->cred_type);
 #endif
-          if (0 != CLOSE (client_socket))
+          if (0 != MHD_socket_close_ (client_socket))
 	    MHD_PANIC ("close failed\n");
           MHD_ip_limit_del (daemon, addr, addrlen);
           free (connection->addr);
@@ -1351,7 +1351,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   daemon->max_connections--;
   return MHD_YES;
  cleanup:
-  if (0 != CLOSE (client_socket))
+  if (0 != MHD_socket_close_ (client_socket))
     MHD_PANIC ("close failed\n");
   MHD_ip_limit_del (daemon, addr, addrlen);
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
@@ -1721,7 +1721,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       if (MHD_INVALID_SOCKET != s)
         {
-          if (0 != CLOSE (s))
+          if (0 != MHD_socket_close_ (s))
 	    MHD_PANIC ("close failed\n");
           /* just in case */
         }
@@ -1816,7 +1816,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #ifdef WINDOWS
 	  SHUTDOWN (pos->socket_fd, SHUT_WR);
 #endif
-	  if (0 != CLOSE (pos->socket_fd))
+	  if (0 != MHD_socket_close_ (pos->socket_fd))
 	    MHD_PANIC ("close failed\n");
 	}
       if (NULL != pos->addr)
@@ -3530,7 +3530,7 @@ MHD_start_daemon_va (unsigned int flags,
 		      (unsigned int) port,
 		      STRERROR (errno));
 #endif
-	  if (0 != CLOSE (socket_fd))
+	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
 	  goto free_and_fail;
 	}
@@ -3545,7 +3545,7 @@ MHD_start_daemon_va (unsigned int flags,
 			"Failed to make listen socket non-blocking: %s\n",
 			STRERROR (errno));
 #endif
-	      if (0 != CLOSE (socket_fd))
+	      if (0 != MHD_socket_close_ (socket_fd))
 		MHD_PANIC ("close failed\n");
 	      goto free_and_fail;
 	    }
@@ -3559,7 +3559,7 @@ MHD_start_daemon_va (unsigned int flags,
 		      "Failed to listen for connections: %s\n",
 		      STRERROR (errno));
 #endif
-	  if (0 != CLOSE (socket_fd))
+	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
 	  goto free_and_fail;
 	}
@@ -3579,7 +3579,7 @@ MHD_start_daemon_va (unsigned int flags,
 		  socket_fd,
 		  FD_SETSIZE);
 #endif
-      if (0 != CLOSE (socket_fd))
+      if (0 != MHD_socket_close_ (socket_fd))
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
@@ -3592,7 +3592,7 @@ MHD_start_daemon_va (unsigned int flags,
                "MHD failed to initialize IP connection limit mutex\n");
 #endif
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
-	   (0 != CLOSE (socket_fd)) )
+	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
@@ -3604,7 +3604,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
-	   (0 != CLOSE (socket_fd)) )
+	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
@@ -3618,7 +3618,7 @@ MHD_start_daemon_va (unsigned int flags,
 		"Failed to initialize TLS support\n");
 #endif
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
-	   (0 != CLOSE (socket_fd)) )
+	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
@@ -3640,7 +3640,7 @@ MHD_start_daemon_va (unsigned int flags,
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
-	   (0 != CLOSE (socket_fd)) )
+	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
@@ -3783,7 +3783,7 @@ thread_failed:
   if (0 == i)
     {
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
-	   (0 != CLOSE (socket_fd)) )
+	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
@@ -4001,7 +4001,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  pthread_mutex_destroy (&daemon->worker_pool[i].cleanup_connection_mutex);
 #if EPOLL_SUPPORT
 	  if ( (-1 != daemon->worker_pool[i].epoll_fd) &&
-	       (0 != CLOSE (daemon->worker_pool[i].epoll_fd)) )
+	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
 #endif
           if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
@@ -4032,7 +4032,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   close_all_connections (daemon);
   if ( (MHD_INVALID_SOCKET != fd) &&
-       (0 != CLOSE (fd)) )
+       (0 != MHD_socket_close_ (fd)) )
     MHD_PANIC ("close failed\n");
 
   /* TLS clean up */
@@ -4047,7 +4047,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #if EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
-       (0 != CLOSE (daemon->epoll_fd)) )
+       (0 != MHD_socket_close_ (daemon->epoll_fd)) )
     MHD_PANIC ("close failed\n");
 #endif
 

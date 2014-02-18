@@ -12,6 +12,7 @@ AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
+  -I$(top_srcdir)/src/platform \
   $(LIBCURL_CPPFLAGS)
 
 check_PROGRAMS = \

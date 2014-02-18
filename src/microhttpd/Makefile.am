@@ -5,7 +5,8 @@ endif
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd
+  -I$(top_srcdir)/src/microhttpd \
+  -I$(top_srcdir)/src/platform
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@
@@ -20,7 +21,8 @@ libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
-  response.c response.h
+  response.c response.h \
+  ../platform/platform_interface.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1

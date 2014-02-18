@@ -17,6 +17,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir) \
 -I$(top_srcdir)/src/microhttpd \
 -I$(top_srcdir)/src/include \
+-I$(top_srcdir)/src/platform \
 $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32

@@ -27,6 +27,7 @@
 
 #include "MHD_config.h"
 #include "platform.h"
+#include "platform_interface.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -472,7 +473,7 @@ testStopRace (int poll_flag)
     if (CONNECT (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
        fprintf(stderr, "connect: %m\n");
-       CLOSE (fd);
+       MHD_socket_close_ (fd);
        return 512;
     }
     
@@ -483,7 +484,7 @@ testStopRace (int poll_flag)
     /* printf("Stopping daemon\n"); */
     MHD_stop_daemon (d);
  
-    CLOSE (fd);
+    MHD_socket_close_ (fd);
     
     /* printf("good\n"); */
     return 0;
