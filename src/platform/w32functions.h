@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <winsock2.h>
 #include "platform.h"
+#include "platform_interface.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -169,6 +170,13 @@ const char* MHD_W32_strerror_last_winsock_(void);
  * @param errnum the errno value to set
  */
 void MHD_W32_set_last_winsock_error_(int errnum);
+
+/**
+ * Create pair of mutually connected TCP/IP sockets on loopback address
+ * @param sockets_pair array to receive resulted sockets
+ * @return zero on success, -1 otherwise
+ */
+int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
 
 #ifdef __cplusplus
 }

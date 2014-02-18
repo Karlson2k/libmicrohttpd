@@ -167,6 +167,7 @@ netbsd*)
      AM_CONDITIONAL(HAVE_GNU_LD, false)
      AM_CONDITIONAL(HAVE_W32, false)
      LDFLAGS="$LDFLAGS"
+     os_is_windows=yes
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
@@ -180,6 +181,7 @@ netbsd*)
      AC_SUBST(PLIBC_LIBS)
      AC_SUBST(PLIBC_LDFLAGS)
      AC_SUBST(PLIBC_CPPFLAGS)
+     os_is_windows=yes
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
@@ -228,6 +230,37 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h winsock2.h ws2tcpip.h gcrypt.h])
 
 AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
+
+# Check for pipe/socketpair signaling 
+AC_MSG_CHECKING([[whether to disable pipes signaling]])
+AC_ARG_ENABLE([[pipes]],
+	[AS_HELP_STRING([[--disable-pipes]], [[disable internal singalling by pipes and use socket pair instead]])],
+	[], [[enable_pipes=yes]])
+AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
+        AC_MSG_RESULT([[yes, forced on W32]])],
+	[[test "x$enable_pipes" != "xno"]], [disable_pipes=no
+        AC_MSG_RESULT([[$disable_pipes]])], 
+        [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+				#ifdef HAVE_SYS_TYPES_H
+				#include <sys/types.h>
+				#endif
+				#ifdef HAVE_SYS_SOCKET_H
+				#include <sys/socket.h>
+				#endif
+				]],[[
+				  int sv[2];
+				  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return 1
+				
+				]])], 
+            [disable_pipes=yes
+              AC_MSG_RESULT([[yes, socketpair in available]])],
+            [disable_pipes=no
+              AC_MSG_RESULT([[no, socketpair in not available]])]
+          )
+       ])
+if test "x$disable_pipes" = "xyes"; then
+	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
+fi
 
 # Check for plibc.h from system, if not found, use our own
 AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)

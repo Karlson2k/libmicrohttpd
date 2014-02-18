@@ -1102,9 +1102,10 @@ struct MHD_Daemon
    * Pipe we use to signal shutdown, unless
    * 'HAVE_LISTEN_SHUTDOWN' is defined AND we have a listen
    * socket (which we can then 'shutdown' to stop listening).
-   * On W32 this is a socketpair, not a pipe.
+   * MHD can be build with usage of socketpair instead of
+   * pipe (forced on W32).
    */
-  int wpipe[2];
+  MHD_pipe wpipe[2];
 
   /**
    * Are we shutting down?

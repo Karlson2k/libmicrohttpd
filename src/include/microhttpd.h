@@ -520,7 +520,8 @@ enum MHD_FLAG
    * use of this option is automatic (as in, you do not even have to
    * specify it), if #MHD_USE_NO_LISTEN_SOCKET is specified.  In
    * "external" `select()` mode, this option is always simply ignored.
-   * On W32 a pair of sockets is used instead of a pipe.
+   * MHD can be build for use a pair of sockets instead of a pipe.
+   * Pair of sockets is forced on W32.
    *
    * You must also use this option if you use internal select mode
    * or a thread pool in conjunction with #MHD_add_connection.

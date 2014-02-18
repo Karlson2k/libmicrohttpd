@@ -135,4 +135,16 @@ typedef SOCKET MHD_socket;
 #define MHD_SOCKET_DEFINED 1
 #endif /* MHD_SOCKET_DEFINED */
 
+/* Force don't use pipes on W32 */
+#if defined(_WIN32) && !defined(MHD_DONT_USE_PIPES)
+#define MHD_DONT_USE_PIPES 1
+#endif /* defined(_WIN32) && !defined(MHD_DONT_USE_PIPES) */
+
+/* MHD_pipe is type for pipe FDs*/
+#ifndef MHD_DONT_USE_PIPES
+typedef int MHD_pipe;
+#else /* ! MHD_DONT_USE_PIPES */
+typedef MHD_socket MHD_pipe;
+#endif /* ! MHD_DONT_USE_PIPES */
+
 #endif
