@@ -458,13 +458,13 @@ main (int argc, char *const *argv)
   FILE *f;
 
   if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
-       (NULL == (tmp = getenv ("TMP"))) )
+       (NULL == (tmp = getenv ("TMP"))) &&
+       (NULL == (tmp = getenv ("TEMP"))) )
     tmp = "/tmp";
   sourcefile = malloc (strlen (tmp) + 32);
   sprintf (sourcefile,
-	   "%s%s%s",
+	   "%s/%s",
 	   tmp,
-	   DIR_SEPARATOR_STR,
 	   "test-mhd-sendfile");
   f = fopen (sourcefile, "w");
   if (NULL == f)
