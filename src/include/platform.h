@@ -118,6 +118,10 @@
 
 #include <plibc.h>
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <ws2tcpip.h>
+#endif
+
 #ifndef MHD_SOCKET_DEFINED
 /**
  * MHD_socket is type for socket FDs

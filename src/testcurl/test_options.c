@@ -80,16 +80,13 @@ test_ip_addr_option ()
   memset (&daemon_ip_addr, 0, sizeof (struct sockaddr_in));
   daemon_ip_addr.sin_family = AF_INET;
   daemon_ip_addr.sin_port = htons (4233);
+  daemon_ip_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
 #if HAVE_INET6
   memset (&daemon_ip_addr6, 0, sizeof (struct sockaddr_in6));
   daemon_ip_addr6.sin6_family = AF_INET6;
   daemon_ip_addr6.sin6_port = htons (4233);
-#endif
-
-  inet_pton (AF_INET, "127.0.0.1", &daemon_ip_addr.sin_addr);
-#if HAVE_INET6
-  inet_pton (AF_INET6, "::ffff:127.0.0.1", &daemon_ip_addr6.sin6_addr);
+  daemon_ip_addr6.sin6_addr = in6addr_loopback;
 #endif
 
   d = MHD_start_daemon (MHD_USE_DEBUG, 4233,

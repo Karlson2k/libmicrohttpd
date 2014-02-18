@@ -55,7 +55,7 @@ test_tls_session_time_out (gnutls_session_t session)
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (DEAMON_TEST_PORT);
-  inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
+  sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
   gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) (long) sd);
 

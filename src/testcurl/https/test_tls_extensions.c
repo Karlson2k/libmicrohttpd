@@ -80,7 +80,7 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (DEAMON_TEST_PORT);
-  inet_pton (AF_INET, "127.0.0.1", &sa.sin_addr);
+  sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
   enum MHD_GNUTLS_Protocol hver;
 
