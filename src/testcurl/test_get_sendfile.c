@@ -26,6 +26,7 @@
 
 #include "MHD_config.h"
 #include "platform.h"
+#include "platform_interface.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -93,7 +94,7 @@ ahc_echo (void *cls,
     {
       fprintf (stderr, "Failed to open `%s': %s\n",
 	       sourcefile,
-	       STRERROR (errno));
+	       MHD_strerror_ (errno));
       exit (1);
     }
   response = MHD_create_response_from_fd (strlen (TESTSTR), fd);

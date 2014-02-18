@@ -137,7 +137,12 @@ test_digestauth_with_arguments_LDADD = \
   @LIBCURL@ @LIBGCRYPT_LIBS@
 
 test_get_sendfile_SOURCES = \
-  test_get_sendfile.c
+  test_get_sendfile.c \
+  ../platform/platform_interface.h
+if HAVE_W32
+test_get_sendfile_SOURCES += \
+  ../platform/w32functions.h ../platform/w32functions.c
+endif
 test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ 
@@ -215,6 +220,10 @@ test_get11_LDADD = \
 
 test_get_sendfile11_SOURCES = \
   test_get_sendfile.c
+if HAVE_W32
+test_get_sendfile11_SOURCES += \
+  ../platform/w32functions.h ../platform/w32functions.c
+endif
 test_get_sendfile11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@ 

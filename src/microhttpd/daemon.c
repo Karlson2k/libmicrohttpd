@@ -25,7 +25,6 @@
  * @author Christian Grothoff
  */
 #include "platform.h"
-#include "platform_interface.h"
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
@@ -409,7 +408,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      errno = EINTR;
+      MHD_set_socket_errno_ (EINTR);
 #if EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
@@ -420,7 +419,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
 	 disrupted); set errno to something caller will interpret
 	 correctly as a hard error */
-      errno = EPIPE;
+      MHD_set_socket_errno_ (ECONNRESET);
       return res;
     }
   if (res == i)
@@ -450,7 +449,7 @@ send_tls_adapter (struct MHD_Connection *connection,
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      errno = EINTR;
+      MHD_set_socket_errno_ (EINTR);
 #if EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
@@ -732,13 +731,13 @@ MHD_handle_connection (void *data)
 	  num_ready = SELECT (max + 1, &rs, &ws, NULL, tvp);
 	  if (num_ready < 0)
 	    {
-	      if (EINTR == errno)
+	      if (EINTR == MHD_socket_errno_)
 		continue;
 #if HAVE_MESSAGES
 	      MHD_DLOG (con->daemon,
 			"Error during select (%d): `%s'\n",
 			max,
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	      break;
 	    }
@@ -784,11 +783,11 @@ MHD_handle_connection (void *data)
 	  if (poll (p, 1,
 		    (NULL == tvp) ? -1 : tv.tv_sec * 1000) < 0)
 	    {
-	      if (EINTR == errno)
+	      if (EINTR == MHD_socket_errno_)
 		continue;
 #if HAVE_MESSAGES
 	      MHD_DLOG (con->daemon, "Error during poll: `%s'\n",
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	      break;
 	    }
@@ -848,7 +847,7 @@ recv_param_adapter (struct MHD_Connection *connection,
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      errno = ENOTCONN;
+      MHD_set_socket_errno_ (ENOTCONN);
       return -1;
     }
   ret = RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
@@ -886,7 +885,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      errno = ENOTCONN;
+      MHD_set_socket_errno_ (ENOTCONN);
       return -1;
     }
   if (0 != (connection->daemon->options & MHD_USE_SSL))
@@ -916,9 +915,10 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
 	  return ret;
 	}
-      if ( (EINTR == errno) || (EAGAIN == errno) )
+      const int err = MHD_socket_errno_;
+      if ( (EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err) )
 	return 0;
-      if ( (EINVAL == errno) || (EBADF == errno) )
+      if ( (EINVAL == err) || (EBADF == err) )
 	return -1;
       /* None of the 'usual' sendfile errors occurred, so we should try
 	 to fall back to 'SEND'; see also this thread for info on
@@ -1137,7 +1137,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Error allocating memory: %s\n",
-		STRERROR (errno));
+		MHD_strerror_ (errno));
 #endif
       if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
@@ -1152,7 +1152,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Error allocating memory: %s\n",
-		STRERROR (errno));
+		MHD_strerror_ (errno));
 #endif
       if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
@@ -1171,7 +1171,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Error allocating memory: %s\n",
-		STRERROR (errno));
+		MHD_strerror_ (errno));
 #endif
       if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
@@ -1211,7 +1211,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
 			"Failed to make socket non-blocking: %s\n",
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	    }
 #else
@@ -1221,7 +1221,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
 			"Failed to make socket non-blocking: %s\n",
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	    }
 #endif
@@ -1299,7 +1299,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  eno = errno;
 #if HAVE_MESSAGES
           MHD_DLOG (daemon, "Failed to create a thread: %s\n",
-                    STRERROR (res_thread_create));
+                    MHD_strerror_ (res_thread_create));
 #endif
 	  goto cleanup;
         }
@@ -1332,7 +1332,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
               MHD_DLOG (daemon,
                         "Call to epoll_ctl failed: %s\n",
-                        STRERROR (errno));
+                        MHD_socket_last_strerr_ ());
 #endif
 	      goto cleanup;
 	    }
@@ -1584,7 +1584,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Failed to make socket non-blocking: %s\n",
-		STRERROR (errno));
+		MHD_socket_last_strerr_ ());
 #endif
     }
   if (!GetHandleInformation ((HANDLE) sock, &dwFlags) ||
@@ -1592,10 +1592,9 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
        !SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0)))
     {
 #if HAVE_MESSAGES
-      SetErrnoFromWinError (GetLastError ());
       MHD_DLOG (daemon,
-		"Failed to make socket non-inheritable: %s\n",
-		STRERROR (errno));
+		"Failed to make socket non-inheritable: %u\n",
+		(unsigned int) GetLastError ());
 #endif
     }
 #else
@@ -1615,7 +1614,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Failed to make socket non-inheritable: %s\n",
-		STRERROR (errno));
+		MHD_socket_last_strerr_ ());
 #endif
     }
 #endif
@@ -1713,11 +1712,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
 #if HAVE_MESSAGES
+      const int err = MHD_socket_errno_;
       /* This could be a common occurance with multiple worker threads */
-      if ((EAGAIN != errno) && (EWOULDBLOCK != errno))
+      if ((EAGAIN != err) && (EWOULDBLOCK != err))
         MHD_DLOG (daemon,
 		  "Error accepting connection: %s\n",
-		  STRERROR (errno));
+		  MHD_socket_last_strerr_ ());
 #endif
       if (MHD_INVALID_SOCKET != s)
         {
@@ -2094,10 +2094,10 @@ MHD_select (struct MHD_Daemon *daemon,
     return MHD_NO;
   if (num_ready < 0)
     {
-      if (EINTR == errno)
+      if (EINTR == MHD_socket_errno_)
         return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "select failed: %s\n", STRERROR (errno));
+      MHD_DLOG (daemon, "select failed: %s\n", MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -2193,12 +2193,12 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       return MHD_YES;
     if (poll (p, poll_server + num_connections, timeout) < 0)
       {
-	if (EINTR == errno)
+	if (EINTR == MHD_socket_errno_)
 	  return MHD_YES;
 #if HAVE_MESSAGES
 	MHD_DLOG (daemon,
 		  "poll failed: %s\n",
-		  STRERROR (errno));
+		  MHD_socket_last_strerr_ ());
 #endif
 	return MHD_NO;
       }
@@ -2299,10 +2299,10 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     return MHD_YES;
   if (poll (p, poll_count, timeout) < 0)
     {
-      if (EINTR == errno)
+      if (EINTR == MHD_socket_errno_)
 	return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "poll failed: %s\n", STRERROR (errno));
+      MHD_DLOG (daemon, "poll failed: %s\n", MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -2396,7 +2396,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	  if (0 != (daemon->options & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Call to epoll_ctl failed: %s\n",
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  return MHD_NO;
 	}
@@ -2442,13 +2442,13 @@ MHD_epoll (struct MHD_Daemon *daemon,
 			       events, MAX_EVENTS, timeout_ms);
       if (-1 == num_events)
 	{
-	  if (EINTR == errno)
+	  if (EINTR == MHD_socket_errno_)
 	    return MHD_YES;
 #if HAVE_MESSAGES
 	  if (0 != (daemon->options & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Call to epoll_wait failed: %s\n",
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  return MHD_NO;
 	}
@@ -3083,7 +3083,7 @@ create_socket (struct MHD_Daemon *daemon,
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
   fd = SOCKET (domain, ctype, protocol);
-  if ( (MHD_INVALID_SOCKET == fd) && (EINVAL == errno) && (0 != SOCK_CLOEXEC) )
+  if ( (MHD_INVALID_SOCKET == fd) && (EINVAL == MHD_socket_errno_) && (0 != SOCK_CLOEXEC) )
   {
     ctype = type;
     fd = SOCKET(domain, type, protocol);
@@ -3116,7 +3116,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       if (0 != (daemon->options & MHD_USE_DEBUG))
 	MHD_DLOG (daemon,
 		  "Call to epoll_create1 failed: %s\n",
-		  STRERROR (errno));
+		  MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -3136,7 +3136,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       if (0 != (daemon->options & MHD_USE_DEBUG))
 	MHD_DLOG (daemon,
 		  "Call to epoll_ctl failed: %s\n",
-		  STRERROR (errno));
+		  MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -3155,7 +3155,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
           if (0 != (daemon->options & MHD_USE_DEBUG))
             MHD_DLOG (daemon,
                       "Call to epoll_ctl failed: %s\n",
-                      STRERROR (errno));
+                      MHD_socket_last_strerr_ ());
 #endif
           return MHD_NO;
         }
@@ -3274,7 +3274,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Failed to create control pipe: %s\n",
-		STRERROR (errno));
+		MHD_strerror_ (errno));
 #endif
       free (daemon);
       return NULL;
@@ -3342,7 +3342,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
 	  MHD_DLOG (daemon,
 		    "Failed to allocate memory for nonce-nc map: %s\n",
-		    STRERROR (errno));
+		    MHD_strerror_ (errno));
 #endif
 #if HTTPS_SUPPORT
 	  if (0 != (flags & MHD_USE_SSL))
@@ -3442,7 +3442,7 @@ MHD_start_daemon_va (unsigned int flags,
 	  if (0 != (flags & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Call to socket failed: %s\n",
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  goto free_and_fail;
 	}
@@ -3455,7 +3455,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
 	  MHD_DLOG (daemon,
 		    "setsockopt failed: %s\n",
-		    STRERROR (errno));
+		    MHD_socket_last_strerr_ ());
 #endif
 	}
 
@@ -3515,7 +3515,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
 			"setsockopt failed: %s\n",
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	    }
 #endif
@@ -3528,7 +3528,7 @@ MHD_start_daemon_va (unsigned int flags,
 	    MHD_DLOG (daemon,
 		      "Failed to bind to port %u: %s\n",
 		      (unsigned int) port,
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
@@ -3543,7 +3543,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
 	      MHD_DLOG (daemon,
 			"Failed to make listen socket non-blocking: %s\n",
-			STRERROR (errno));
+			MHD_socket_last_strerr_ ());
 #endif
 	      if (0 != MHD_socket_close_ (socket_fd))
 		MHD_PANIC ("close failed\n");
@@ -3557,7 +3557,7 @@ MHD_start_daemon_va (unsigned int flags,
 	  if (0 != (flags & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Failed to listen for connections: %s\n",
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
@@ -3635,7 +3635,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "Failed to create listen thread: %s\n",
-		STRERROR (res_thread_create));
+		MHD_strerror_ (res_thread_create));
 #endif
       pthread_mutex_destroy (&daemon->cleanup_connection_mutex);
       pthread_mutex_destroy (&daemon->per_ip_connection_mutex);
@@ -3715,7 +3715,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
               MHD_DLOG (daemon,
                         "Failed to create worker control pipe: %s\n",
-                        STRERROR (errno));
+                        MHD_strerror_ (errno));
 #endif
               goto thread_failed;
             }
@@ -3764,7 +3764,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_MESSAGES
               MHD_DLOG (daemon,
                         "Failed to create pool thread: %s\n",
-			STRERROR (res_thread_create));
+			MHD_strerror_ (res_thread_create));
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */

@@ -2,6 +2,10 @@ if USE_PRIVATE_PLIBC_H
  PLIBC_INCLUDE = -I$(top_srcdir)/src/include/plibc
 endif
 
+if HAVE_W32
+  W32FUNC_SRC = ../platform/w32functions.c ../platform/w32functions.h
+endif
+
 AM_CPPFLAGS = \
   $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
@@ -22,7 +26,7 @@ libmicrohttpd_la_SOURCES = \
   internal.c internal.h \
   memorypool.c memorypool.h \
   response.c response.h \
-  ../platform/platform_interface.h
+  ../platform/platform_interface.h $(W32FUNC_SRC)
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1

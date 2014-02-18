@@ -1583,7 +1583,9 @@ do_read (struct MHD_Connection *connection)
                                      connection->read_buffer_offset);
   if (bytes_read < 0)
     {
-      if ((EINTR == errno) || (EAGAIN == errno) || (ECONNRESET == errno))
+      const int err = MHD_socket_errno_;
+      if ((EINTR == err) || (EAGAIN == err) || (ECONNRESET == err)
+          || (EWOULDBLOCK == err))
 	  return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
@@ -1595,7 +1597,7 @@ do_read (struct MHD_Connection *connection)
 #endif
 	MHD_DLOG (connection->daemon,
 		  "Failed to receive data: %s\n",
-                  STRERROR (errno));
+                  MHD_socket_last_strerr_ ());
 #endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
@@ -1636,7 +1638,8 @@ do_write (struct MHD_Connection *connection)
 
   if (ret < 0)
     {
-      if ((EINTR == errno) || (EAGAIN == errno))
+      const int err = MHD_socket_errno_;
+      if ((EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err))
         return MHD_NO;
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
@@ -1647,7 +1650,7 @@ do_write (struct MHD_Connection *connection)
       else
 #endif
 	MHD_DLOG (connection->daemon,
-		  "Failed to send data: %s\n", STRERROR (errno));
+		  "Failed to send data: %s\n", MHD_socket_last_strerr_ ());
 #endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
@@ -2022,12 +2025,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       connection->continue_message_write_offset);
           if (ret < 0)
             {
-              if ((errno == EINTR) || (errno == EAGAIN))
+              const int err = MHD_socket_errno_;
+              if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
                 break;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to send data: %s\n",
-                        STRERROR (errno));
+                        MHD_socket_last_strerr_ ());
 #endif
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return MHD_YES;
@@ -2068,6 +2072,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 				      response->data_size -
 				      (connection->response_write_position
 				       - response->data_start));
+	  const int err = MHD_socket_errno_;
 #if DEBUG_SEND_DATA
           if (ret > 0)
             FPRINTF (stderr,
@@ -2080,12 +2085,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             pthread_mutex_unlock (&response->mutex);
           if (ret < 0)
             {
-              if ((errno == EINTR) || (errno == EAGAIN))
+              if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
                 return MHD_YES;
 #if HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to send data: %s\n",
-                        STRERROR (errno));
+                        MHD_socket_last_strerr_ ());
 #endif
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return MHD_YES;
@@ -2658,7 +2663,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 	  if (0 != (daemon->options & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Call to epoll_ctl failed: %s\n",
-		      STRERROR (errno));
+		      MHD_socket_last_strerr_ ());
 #endif
 	  connection->state = MHD_CONNECTION_CLOSED;
 	  cleanup_connection (connection);

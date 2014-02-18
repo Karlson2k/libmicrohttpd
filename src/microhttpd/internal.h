@@ -29,6 +29,7 @@
 
 #include "platform.h"
 #include "microhttpd.h"
+#include "platform_interface.h"
 #if HTTPS_SUPPORT
 #include <gnutls/gnutls.h>
 #if GNUTLS_VERSION_MAJOR >= 3
