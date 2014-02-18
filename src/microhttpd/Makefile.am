@@ -1,13 +1,8 @@
-if USE_PRIVATE_PLIBC_H
- PLIBC_INCLUDE = -I$(top_srcdir)/src/include/plibc
-endif
-
 if HAVE_W32
   W32FUNC_SRC = ../platform/w32functions.c ../platform/w32functions.h
 endif
 
 AM_CPPFLAGS = \
-  $(PLIBC_INCLUDE) \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
   -I$(top_srcdir)/src/platform

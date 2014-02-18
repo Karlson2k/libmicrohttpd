@@ -83,9 +83,6 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
       #include <netinet/in.h>
    ])
 
-# Needed for plibc.h
-AC_CHECK_DECLS([_stati64, _wstat32i64])
-
 AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
@@ -175,12 +172,6 @@ netbsd*)
      AM_CONDITIONAL(HAVE_W32, true)
      LDFLAGS="$LDFLAGS -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     # check if PlibC is available
-     CHECK_PLIBC
-     LIBS="$PLIBC_LIBS $LIBS"
-     AC_SUBST(PLIBC_LIBS)
-     AC_SUBST(PLIBC_LDFLAGS)
-     AC_SUBST(PLIBC_CPPFLAGS)
      os_is_windows=yes
      ;;
 *openedition*)
@@ -261,10 +252,6 @@ AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
 if test "x$disable_pipes" = "xyes"; then
 	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
 fi
-
-# Check for plibc.h from system, if not found, use our own
-AC_CHECK_HEADERS([plibc.h],our_private_plibc_h=0,our_private_plibc_h=1)
-AM_CONDITIONAL(USE_PRIVATE_PLIBC_H, test x$our_private_plibc_h = x1)
 
 AC_CHECK_FUNCS_ONCE(memmem)
 AC_CHECK_FUNCS_ONCE(accept4)
@@ -635,7 +622,6 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
-src/include/plibc/Makefile
 src/microhttpd/Makefile
 src/microspdy/Makefile
 src/spdy2http/Makefile

@@ -1,4 +1,4 @@
-SUBDIRS = plibc .
+SUBDIRS = .
 
 if ENABLE_SPDY
 microspdy = microspdy.h
