@@ -486,7 +486,7 @@ main (int argc, char *const *argv)
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
-  UNLINK (sourcefile);
+  unlink (sourcefile);
   free (sourcefile);
   return errorCount != 0;       /* 0 == pass */
 }

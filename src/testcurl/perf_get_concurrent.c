@@ -78,7 +78,7 @@ now ()
 {
   struct timeval tv;
 
-  GETTIMEOFDAY (&tv, NULL);
+  gettimeofday (&tv, NULL);
   return (((unsigned long long) tv.tv_sec * 1000LL) +
 	  ((unsigned long long) tv.tv_usec / 1000LL));
 }

@@ -265,7 +265,7 @@ MHD_connection_close (struct MHD_Connection *connection,
 
   daemon = connection->daemon;
   if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-    SHUTDOWN (connection->socket_fd,
+    shutdown (connection->socket_fd,
 	      (MHD_YES == connection->read_closed) ? SHUT_WR : SHUT_RDWR);
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
@@ -625,7 +625,7 @@ add_extra_headers (struct MHD_Connection *connection)
 	     Note that the change from 'SHOULD NOT' to 'MUST NOT' is
 	     a recent development of the HTTP 1.1 specification.
 	  */
-	  SPRINTF (buf,
+	  sprintf (buf,
 		   MHD_UNSIGNED_LONG_LONG_PRINTF,
 		   (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
 	  MHD_add_response_header (connection->response,
@@ -769,7 +769,7 @@ build_header_response (struct MHD_Connection *connection)
       add_extra_headers (connection);
       rc = connection->responseCode & (~MHD_ICY_FLAG);
       reason_phrase = MHD_get_reason_phrase_for (rc);
-      SPRINTF (code,
+      sprintf (code,
                "%s %u %s\r\n",
 	       (0 != (connection->responseCode & MHD_ICY_FLAG))
 	       ? "ICY"
@@ -835,7 +835,7 @@ build_header_response (struct MHD_Connection *connection)
     }
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
     if (pos->kind == kind)
-      off += SPRINTF (&data[off],
+      off += sprintf (&data[off],
 		      "%s: %s\r\n",
 		      pos->header,
 		      pos->value);
@@ -1675,7 +1675,7 @@ do_write (struct MHD_Connection *connection)
       return MHD_YES;
     }
 #if DEBUG_SEND_DATA
-  FPRINTF (stderr,
+  fprintf (stderr,
            "Sent response: `%.*s'\n",
            ret,
            &connection->write_buffer[connection->write_buffer_send_offset]);
@@ -2056,7 +2056,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               return MHD_YES;
             }
 #if DEBUG_SEND_DATA
-          FPRINTF (stderr,
+          fprintf (stderr,
                    "Sent 100 continue response: `%.*s'\n",
                    (int) ret,
                    &HTTP_100_CONTINUE[connection->continue_message_write_offset]);
@@ -2094,7 +2094,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 	  const int err = MHD_socket_errno_;
 #if DEBUG_SEND_DATA
           if (ret > 0)
-            FPRINTF (stderr,
+            fprintf (stderr,
                      "Sent DATA response: `%.*s'\n",
                      (int) ret,
                      &response->data[connection->response_write_position -

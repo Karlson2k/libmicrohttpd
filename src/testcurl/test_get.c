@@ -461,10 +461,10 @@ testStopRace (int poll_flag)
     if (d == NULL)
        return 16;
     
-    fd = SOCKET (PF_INET, SOCK_STREAM, 0);
-    if (fd < 0)
+    fd = socket (PF_INET, SOCK_STREAM, 0);
+    if (fd == MHD_INVALID_SOCKET)
     {
-       fprintf(stderr, "socket: %m\n");
+       fprintf(stderr, "socket error\n");
        return 256;
     }
     
@@ -473,9 +473,9 @@ testStopRace (int poll_flag)
     sin.sin_port = htons(1081);
     sin.sin_addr.s_addr = htonl(0x7f000001);
     
-    if (CONNECT (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
+    if (connect (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
-       fprintf(stderr, "connect: %m\n");
+       fprintf(stderr, "connect error\n");
        MHD_socket_close_ (fd);
        return 512;
     }

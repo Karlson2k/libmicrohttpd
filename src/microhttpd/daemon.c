@@ -302,7 +302,7 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  if (NULL == (nodep = TSEARCH (key,
+  if (NULL == (nodep = tsearch (key,
 				&daemon->per_ip_connection_count,
 				&MHD_ip_addr_compare)))
     {
@@ -358,7 +358,7 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  if (NULL == (nodep = TFIND (&search_key,
+  if (NULL == (nodep = tfind (&search_key,
 			      &daemon->per_ip_connection_count,
 			      &MHD_ip_addr_compare)))
     {
@@ -375,7 +375,7 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
   /* Remove the node entirely if count reduces to 0 */
   if (0 == --found_key->count)
     {
-      TDELETE (found_key,
+      tdelete (found_key,
 	       &daemon->per_ip_connection_count,
 	       &MHD_ip_addr_compare);
       free (found_key);
@@ -850,7 +850,7 @@ recv_param_adapter (struct MHD_Connection *connection,
       MHD_set_socket_errno_ (ENOTCONN);
       return -1;
     }
-  ret = RECV (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  ret = recv (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
   if (ret < (ssize_t) i)
     {
@@ -889,7 +889,7 @@ send_param_adapter (struct MHD_Connection *connection,
       return -1;
     }
   if (0 != (connection->daemon->options & MHD_USE_SSL))
-    return SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
+    return send (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
@@ -926,7 +926,7 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  ret = SEND (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  ret = send (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
   if (ret < (ssize_t) i)
     {
@@ -1707,7 +1707,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if HAVE_ACCEPT4
   s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC | nonblock);
 #else
-  s = ACCEPT (fd, addr, &addrlen);
+  s = accept (fd, addr, &addrlen);
 #endif
   if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
@@ -1814,7 +1814,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (MHD_INVALID_SOCKET != pos->socket_fd)
 	{
 #ifdef WINDOWS
-	  SHUTDOWN (pos->socket_fd, SHUT_WR);
+	  shutdown (pos->socket_fd, SHUT_WR);
 #endif
 	  if (0 != MHD_socket_close_ (pos->socket_fd))
 	    MHD_PANIC ("close failed\n");
@@ -3082,11 +3082,11 @@ create_socket (struct MHD_Daemon *daemon,
 
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
-  fd = SOCKET (domain, ctype, protocol);
+  fd = socket (domain, ctype, protocol);
   if ( (MHD_INVALID_SOCKET == fd) && (EINVAL == MHD_socket_errno_) && (0 != SOCK_CLOEXEC) )
   {
     ctype = type;
-    fd = SOCKET(domain, type, protocol);
+    fd = socket(domain, type, protocol);
   }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
@@ -3440,10 +3440,10 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 	  goto free_and_fail;
 	}
-      if ( (0 > SETSOCKOPT (socket_fd,
+      if ( (0 > setsockopt (socket_fd,
 			    SOL_SOCKET,
 			    SO_REUSEADDR,
-			    &on, sizeof (on))) &&
+			    (void*)&on, sizeof (on))) &&
 	   (0 != (flags & MHD_USE_DEBUG)) )
 	{
 #if HAVE_MESSAGES
@@ -3501,7 +3501,7 @@ MHD_start_daemon_va (unsigned int flags,
 	  const char
 #endif
             on = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
-	  if ( (0 > SETSOCKOPT (socket_fd,
+	  if ( (0 > setsockopt (socket_fd,
 				IPPROTO_IPV6, IPV6_V6ONLY,
 				&on, sizeof (on))) &&
 	       (0 != (flags & MHD_USE_DEBUG)) )
@@ -3515,7 +3515,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #endif
 	}
-      if (-1 == BIND (socket_fd, servaddr, addrlen))
+      if (-1 == bind (socket_fd, servaddr, addrlen))
 	{
 #if HAVE_MESSAGES
 	  if (0 != (flags & MHD_USE_DEBUG))
@@ -3545,7 +3545,7 @@ MHD_start_daemon_va (unsigned int flags,
 	    }
 	}
 #endif
-      if (LISTEN (socket_fd, 32) < 0)
+      if (listen (socket_fd, 32) < 0)
 	{
 #if HAVE_MESSAGES
 	  if (0 != (flags & MHD_USE_DEBUG))
@@ -3860,7 +3860,7 @@ close_all_connections (struct MHD_Daemon *daemon)
        (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   for (pos = daemon->connections_head; NULL != pos; pos = pos->nextX)
-    SHUTDOWN (pos->socket_fd,
+    shutdown (pos->socket_fd,
 	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex)) )
@@ -3956,7 +3956,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     {
       /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
       if (MHD_INVALID_SOCKET != fd)
-	(void) SHUTDOWN (fd, SHUT_RDWR);
+	(void) shutdown (fd, SHUT_RDWR);
     }
 #endif
 #if EPOLL_SUPPORT
