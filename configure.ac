@@ -223,7 +223,7 @@ AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/
 
 AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
 
-# Check for pipe/socketpair signaling 
+# Check for pipe/socketpair signaling
 AC_MSG_CHECKING([[whether to disable pipes signaling]])
 AC_ARG_ENABLE([[pipes]],
 	[AS_HELP_STRING([[--disable-pipes]], [[disable internal singalling by pipes and use socket pair instead]])],
@@ -231,7 +231,7 @@ AC_ARG_ENABLE([[pipes]],
 AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
         AC_MSG_RESULT([[yes, forced on W32]])],
 	[[test "x$enable_pipes" != "xno"]], [disable_pipes=no
-        AC_MSG_RESULT([[$disable_pipes]])], 
+        AC_MSG_RESULT([[$disable_pipes]])],
         [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 				#ifdef HAVE_SYS_TYPES_H
 				#include <sys/types.h>
@@ -242,8 +242,8 @@ AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
 				]],[[
 				  int sv[2];
 				  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return 1
-				
-				]])], 
+
+				]])],
             [disable_pipes=yes
               AC_MSG_RESULT([[yes, socketpair in available]])],
             [disable_pipes=no
@@ -623,6 +623,7 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
+src/platform/Makefile
 src/microhttpd/Makefile
 src/microspdy/Makefile
 src/spdy2http/Makefile

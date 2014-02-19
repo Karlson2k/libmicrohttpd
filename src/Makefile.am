@@ -18,7 +18,7 @@ microspdy += testspdy
 endif
 endif
 
-SUBDIRS = include microhttpd $(microspdy) examples $(curltests) $(zzuftests) .
+SUBDIRS = include platform microhttpd $(microspdy) examples $(curltests) $(zzuftests) .
 
 EXTRA_DIST = \
  datadir/cert-and-key.pem \

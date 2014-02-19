@@ -1,11 +1,6 @@
-if HAVE_W32
-  W32FUNC_SRC = ../platform/w32functions.c ../platform/w32functions.h
-endif
-
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd \
-  -I$(top_srcdir)/src/platform
+  -I$(top_srcdir)/src/microhttpd
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@
@@ -21,13 +16,19 @@ libmicrohttpd_la_SOURCES = \
   internal.c internal.h \
   memorypool.c memorypool.h \
   response.c response.h \
-  ../platform/platform_interface.h $(W32FUNC_SRC)
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
+  -DBUILDING_MHD_LIB=1
+libmicrohttpd_la_CFLAGS = \
+  $(AM_CFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
+if HAVE_W32
+libmicrohttpd_LDADD =
+ $(top_builddir)/src/platform/libmicrohttpd_w32.la
+endif
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage

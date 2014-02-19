@@ -12,7 +12,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir) \
 -I$(top_srcdir)/src/microhttpd \
 -I$(top_srcdir)/src/include \
--I$(top_srcdir)/src/platform \
 $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
@@ -57,7 +56,7 @@ if HAVE_POSTPROCESSOR
   test_post_loop \
   test_post11 \
   test_postform11 \
-  test_post_loop11 
+  test_post_loop11
 endif
 
 noinst_PROGRAMS = \
@@ -90,33 +89,33 @@ test_get_SOURCES = \
   test_get.c
 test_get_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_quiesce_SOURCES = \
   test_quiesce.c
 test_quiesce_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_callback_SOURCES = \
   test_callback.c
 test_callback_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 perf_get_SOURCES = \
   perf_get.c \
   gauger.h
 perf_get_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 perf_get_concurrent_SOURCES = \
   perf_get_concurrent.c \
   gauger.h
 perf_get_concurrent_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_digestauth_SOURCES = \
   test_digestauth.c
@@ -131,56 +130,55 @@ test_digestauth_with_arguments_LDADD = \
   @LIBCURL@ @LIBGCRYPT_LIBS@
 
 test_get_sendfile_SOURCES = \
-  test_get_sendfile.c \
-  ../platform/platform_interface.h
-if HAVE_W32
-test_get_sendfile_SOURCES += \
-  ../platform/w32functions.h ../platform/w32functions.c
-endif
+  test_get_sendfile.c
 test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
+if HAVE_W32
+test_get_sendfile_LDADD +=
+ $(top_builddir)/src/platform/libmicrohttpd_w32.la
+endif
 
 test_urlparse_SOURCES = \
   test_urlparse.c
 test_urlparse_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_get_response_cleanup_SOURCES = \
   test_get_response_cleanup.c
 test_get_response_cleanup_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_get_chunked_SOURCES = \
   test_get_chunked.c
 test_get_chunked_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_post_SOURCES = \
   test_post.c
 test_post_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_process_headers_SOURCES = \
   test_process_headers.c
 test_process_headers_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_parse_cookies_SOURCES = \
   test_parse_cookies.c
 test_parse_cookies_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_process_arguments_SOURCES = \
   test_process_arguments.c
 test_process_arguments_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_postform_SOURCES = \
   test_postform.c
@@ -192,41 +190,41 @@ test_post_loop_SOURCES = \
   test_post_loop.c
 test_post_loop_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_put_SOURCES = \
   test_put.c
 test_put_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_put_chunked_SOURCES = \
   test_put_chunked.c
 test_put_chunked_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_get11_SOURCES = \
   test_get.c
 test_get11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_get_sendfile11_SOURCES = \
   test_get_sendfile.c
-if HAVE_W32
-test_get_sendfile11_SOURCES += \
-  ../platform/w32functions.h ../platform/w32functions.c
-endif
 test_get_sendfile11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
+if HAVE_W32
+test_get_sendfile11_LDADD += \
+  $(top_builddir)/src/platform/libmicrohttpd_w32.la
+endif
 
 test_post11_SOURCES = \
   test_post.c
 test_post11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_postform11_SOURCES = \
   test_postform.c
@@ -238,53 +236,53 @@ test_post_loop11_SOURCES = \
   test_post_loop.c
 test_post_loop11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_put11_SOURCES = \
   test_put.c
 test_put11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_large_put_SOURCES = \
   test_large_put.c
 test_large_put_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_large_put11_SOURCES = \
   test_large_put.c
 test_large_put11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_long_header_SOURCES = \
   test_long_header.c
 test_long_header_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_long_header11_SOURCES = \
   test_long_header.c
 test_long_header11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_iplimit11_SOURCES = \
   test_iplimit.c
 test_iplimit11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_termination_SOURCES = \
   test_termination.c
 test_termination_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
 test_timeout_SOURCES = \
   test_timeout.c
 test_timeout_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ 
+  @LIBCURL@
 
