@@ -23,7 +23,7 @@ libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 if HAVE_W32
-libmicrohttpd_LDADD =
+libmicrohttpd_LDADD = \
  $(top_builddir)/src/platform/libmicrohttpd_w32.la
 endif
 
