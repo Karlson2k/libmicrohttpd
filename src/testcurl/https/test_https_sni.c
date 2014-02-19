@@ -67,6 +67,8 @@ load_keys(const char *hostname,
   struct Hosts *host;
 
   host = malloc (sizeof (struct Hosts));
+  if (NULL == host)
+    abort ();
   host->hostname = hostname;
   host->next = hosts;
   hosts = host;
@@ -256,8 +258,8 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
-  load_keys ("host1", "host1.crt", "host1.key");
-  load_keys ("host2", "host2.crt", "host2.key");
+  load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
+  load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL | MHD_USE_DEBUG,
                         4233,
                         NULL, NULL,
