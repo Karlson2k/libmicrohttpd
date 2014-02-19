@@ -135,7 +135,7 @@ test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 if HAVE_W32
-test_get_sendfile_LDADD +=
+test_get_sendfile_LDADD += \
  $(top_builddir)/src/platform/libmicrohttpd_w32.la
 endif
 

@@ -22,8 +22,10 @@ libmicrohttpd_la_CPPFLAGS = \
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
+libmicrohttpd_la_LIBADD =
+
 if HAVE_W32
-libmicrohttpd_LDADD = \
+libmicrohttpd_la_LIBADD += \
  $(top_builddir)/src/platform/libmicrohttpd_w32.la
 endif
 
@@ -56,7 +58,7 @@ endif
 if ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
-libmicrohttpd_la_LIBADD = -lgnutls @LIBGCRYPT_LIBS@
+libmicrohttpd_la_LIBADD += -lgnutls @LIBGCRYPT_LIBS@
 endif
 
 

@@ -10,12 +10,12 @@ if USE_COVERAGE
 endif
 
 if HAVE_W32
-lib_LIBRARIES = \
-  libmicrohttpd_w32.a
-libmicrohttpd_w32_a_CPPFLAGS = \
+noinst_LTLIBRARIES = \
+  libmicrohttpd_w32.la
+libmicrohttpd_w32_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
-libmicrohttpd_w32_a_SOURCES = \
+libmicrohttpd_w32_la_SOURCES = \
   w32functions.c
 endif
 
