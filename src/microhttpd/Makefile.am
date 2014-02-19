@@ -15,12 +15,9 @@ libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
-  response.c response.h \
+  response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -DBUILDING_MHD_LIB=1
-libmicrohttpd_la_CFLAGS = \
-  $(AM_CFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
