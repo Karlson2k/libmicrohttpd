@@ -206,6 +206,7 @@ if test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"; then
 fi
 AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
+AM_CONDITIONAL(W32_STATIC_LIB, [test "x$os_is_native_w32" = "xyes"  && test "x$enable_static" = "xyes"])
 
 
 if test "$enable_epoll" = "yes"

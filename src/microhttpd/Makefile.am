@@ -43,6 +43,18 @@ else
   W32_MHD_LIB_LDFLAGS =
 endif
 
+if W32_STATIC_LIB
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd-static.lib
+MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd-static.lib
+
+$(lt_cv_objdir)/libmicrohttpd-static.lib: libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+if USE_MS_LIB_TOOL
+	$(MS_LIB_TOOL) -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
+else
+	cp $(lt_cv_objdir)/libmicrohttpd.a $@
+endif
+endif
+
 
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
