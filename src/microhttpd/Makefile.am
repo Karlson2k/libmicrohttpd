@@ -73,6 +73,28 @@ libmicrohttpd_la_LDFLAGS = \
 libmicrohttpd_la_LIBADD = \
   $(MHD_W32_LIB)
 
+if HAVE_W32
+MHD_DLL_RES_SRC = microhttpd_dll_res.rc
+MHD_DLL_RES_LO = libmicrohttpd_la-$(MHD_DLL_RES_SRC:.rc=.lo)
+
+EXTRA_libmicrohttpd_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
+libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
+
+# General rule is not required, but keep it just in case
+.rc.lo:
+	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $< -o $@
+
+# To add dll resource only to .dll file and exclude it form static
+# lib, a little trick was used. Allow libtool to create file.lo,
+# file.o and .libs/file.lo, .libs/file.o files, then overwrite file.o
+# by empty object generated from empty c-file. Later libtool will
+# use .libs/file.o for shared lib and empty file.o for static lib.
+# This implementation is based on trick found in liblzma.
+$(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
+	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) $< -o $@ && \
+	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-tmp.c
+endif
+
 if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
