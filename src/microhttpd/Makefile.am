@@ -12,6 +12,37 @@ endif
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
+noinst_DATA =
+MOSTLYCLEANFILES =
+
+if W32_SHARED_LIB_EXP
+W32_MHD_LIB_LDFLAGS = -Wl,--output-def,$(lt_cv_objdir)/libmicrohttpd.def
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
+MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
+
+$(lt_cv_objdir)/libmicrohttpd.def: libmicrohttpd.la
+
+$(lt_cv_objdir)/libmicrohttpd.exp: $(lt_cv_objdir)/libmicrohttpd.lib
+
+$(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+if USE_MS_LIB_TOOL
+	@echo Creating $@ and libmicrohttpd.exp by $(MS_LIB_TOOL)... && \
+	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
+	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
+	echo Using .dll filename: $$dll_name.. && \
+	$(MS_LIB_TOOL) -def:$(lt_cv_objdir)/libmicrohttpd.def -name:$$dll_name -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
+else
+	@echo Creating $@ and libmicrohttpd.exp by $(DLLTOOL)... && \
+	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
+	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
+	echo Using .dll filename: $$dll_name.. && \
+	$(DLLTOOL) -d $(lt_cv_objdir)/libmicrohttpd.def -D $$dll_name -l $@ $(libmicrohttpd_la_OBJECTS:.lo=.o) -e $(lt_cv_objdir)/libmicrohttpd.exp && \
+	echo Created libmicrohttpd.exp and libmicrohttpd.lib.
+endif
+else
+  W32_MHD_LIB_LDFLAGS =
+endif
+
 
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
@@ -25,6 +56,7 @@ libmicrohttpd_la_CPPFLAGS = \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
+  $(W32_MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
   $(MHD_W32_LIB)

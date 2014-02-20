@@ -104,32 +104,27 @@ case "$host_os" in
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     AM_CONDITIONAL(HAVE_W32, false)
      CFLAGS="-D_THREAD_SAFE $CFLAGS"
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     AM_CONDITIONAL(HAVE_W32, false)
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)
      LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
@@ -137,7 +132,6 @@ netbsd*)
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     AM_CONDITIONAL(HAVE_W32, false)
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
 		AS_HELP_STRING([--disable-epoll],
@@ -150,7 +144,6 @@ netbsd*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      AM_CONDITIONAL(HAVE_GNU_LD, true)
-     AM_CONDITIONAL(HAVE_W32, false)
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
 		AS_HELP_STRING([--disable-epoll],
@@ -162,23 +155,33 @@ netbsd*)
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)
      LDFLAGS="$LDFLAGS"
      os_is_windows=yes
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
-     AM_CONDITIONAL(HAVE_W32, true)
      LDFLAGS="$LDFLAGS -lws2_32"
      AM_CONDITIONAL(HAVE_GNU_LD, true)
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h],, AC_MSG_ERROR([[Winsock2 headers are required for W32]]))
+     AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
+       [[mslibcheck=`lib 2>&1`
+        if [[ $mslibcheck = "Microsoft (R) Library Manager"* ]]; then
+          ac_cv_use_ms_lib_tool=yes
+        else
+          ac_cv_use_ms_lib_tool=no
+        fi
+         ]])
+     if test "x$ac_cv_use_ms_lib_tool" = "xyes"; then
+       AC_SUBST([MS_LIB_TOOL], [[lib]])
+     fi
+     AC_SUBST([lt_cv_objdir])
      os_is_windows=yes
+     os_is_native_w32=yes
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)
     ;;
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
@@ -188,9 +191,21 @@ netbsd*)
 #    pipes are used instead to signal 'select'.
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     AM_CONDITIONAL(HAVE_W32, false)
 ;;
 esac
+
+AM_CONDITIONAL(HAVE_W32, [test "x$os_is_native_w32" = "xyes"])
+w32_shared_lib_exp=no
+if test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"; then
+  if test "x$ac_cv_use_ms_lib_tool" = "xyes" || test -n "$DLLTOOL"; then
+    w32_shared_lib_exp=yes
+  else
+    AC_MSG_WARN([[GNU dlltool or MS lib.exe is required for creating shared library export on W32]])
+    AC_MSG_WARN([[Export library libmicrohttpd.lib will not be created]])
+  fi
+fi
+AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
+AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 
 
 if test "$enable_epoll" = "yes"
