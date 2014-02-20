@@ -182,8 +182,7 @@ int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
  * Function initialize itself at first call to current time.
  * @return 31-bit pseudo random number.
  */
-_MHD_EXTERN int MHD_W32_random(void); /* must be exported for "make check" tests */
-                                      /* TODO: exclude from exports */
+int MHD_W32_random_(void);
 
 #ifdef __cplusplus
 }

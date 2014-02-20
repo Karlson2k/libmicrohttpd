@@ -5,6 +5,10 @@ AM_CPPFLAGS = \
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@
 
+if HAVE_W32
+MHD_W32_LIB = $(top_builddir)/src/platform/libmicrohttpd_w32.la
+endif
+
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
@@ -22,12 +26,8 @@ libmicrohttpd_la_CPPFLAGS = \
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
-libmicrohttpd_la_LIBADD =
-
-if HAVE_W32
-libmicrohttpd_la_LIBADD += \
- $(top_builddir)/src/platform/libmicrohttpd_w32.la
-endif
+libmicrohttpd_la_LIBADD = \
+  $(MHD_W32_LIB)
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage
@@ -83,7 +83,8 @@ test_daemon_LDADD = \
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(MHD_W32_LIB)
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
@@ -93,4 +94,5 @@ test_postprocessor_amp_LDADD = \
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(MHD_W32_LIB)

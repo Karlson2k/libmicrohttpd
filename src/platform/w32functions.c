@@ -630,7 +630,7 @@ static int32_t rnd_val = 0;
  * Function initialize itself at first call to current time.
  * @return 31-bit pseudo random number.
  */
-int MHD_W32_random(void)
+int MHD_W32_random_(void)
 {
   if (0 == rnd_val)
     rnd_val = (int32_t)time(NULL);

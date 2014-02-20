@@ -1,6 +1,5 @@
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd
+  -I$(top_srcdir)/src/include
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
   @LIBGCRYPT_CFLAGS@

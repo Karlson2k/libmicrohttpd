@@ -136,7 +136,7 @@
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #define MHD_random_() random()
 #else
-#define MHD_random_() MHD_W32_random()
+#define MHD_random_() MHD_W32_random_()
 #endif
 
 #endif // MHD_PLATFORM_INTERFACE_H
