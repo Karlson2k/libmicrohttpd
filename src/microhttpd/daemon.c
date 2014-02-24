@@ -3243,7 +3243,7 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 #endif
 #ifndef TCP_FASTOPEN
-  if (0 != (flags & MHD_USE_TCP_FASTSEND))
+  if (0 != (flags & MHD_USE_TCP_FASTOPEN))
     return NULL;
 #endif
   if (NULL == dh)
