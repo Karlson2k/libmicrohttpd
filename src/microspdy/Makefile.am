@@ -20,7 +20,7 @@ libmicrospdy_la_SOURCES = \
   session.h session.c \
   applicationlayer.c applicationlayer.h \
   alstructures.c alstructures.h 
-libmicrospdy_la_LIBADD = \ 
+libmicrospdy_la_LIBADD = \
   -lssl
 
 libmicrospdy_la_LDFLAGS = \
