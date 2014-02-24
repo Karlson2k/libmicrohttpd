@@ -75,6 +75,13 @@
  */
 #define MHD_POOL_SIZE_DEFAULT (32 * 1024)
 
+#ifdef TCP_FASTOPEN
+/**
+ * Default TCP fastopen queue size.
+ */
+#define MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT 10
+#endif
+
 /**
  * Print extra messages with reasons for closing
  * sockets? (only adds non-error messages).
@@ -2957,6 +2964,11 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_THREAD_STACK_SIZE:
           daemon->thread_stack_size = va_arg (ap, size_t);
           break;
+#ifdef TCP_FASTOPEN
+        case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
+          daemon->fastopen_queue_size = va_arg (ap, unsigned int);
+          break;
+#endif
 	case MHD_OPTION_ARRAY:
 	  oa = va_arg (ap, struct MHD_OptionItem*);
 	  i = 0;
@@ -2981,6 +2993,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_CONNECTION_TIMEOUT:
 		case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
 		case MHD_OPTION_THREAD_POOL_SIZE:
+                case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -3227,6 +3240,10 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #if ! HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_SSL))
+    return NULL;
+#endif
+#ifndef TCP_FASTOPEN
+  if (0 != (flags & MHD_USE_TCP_FASTSEND))
     return NULL;
 #endif
   if (NULL == dh)
@@ -3541,6 +3558,24 @@ MHD_start_daemon_va (unsigned int flags,
 	    MHD_PANIC ("close failed\n");
 	  goto free_and_fail;
 	}
+#ifdef TCP_FASTOPEN
+      if (0 != (flags & MHD_USE_TCP_FASTOPEN))
+      {
+        if (0 == daemon->fastopen_queue_size)
+          daemon->fastopen_queue_size = MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT;
+        if (0 != setsockopt (socket_fd,
+                             IPPROTO_TCP, TCP_FASTOPEN,
+                             &daemon->fastopen_queue_size,
+                             sizeof (daemon->fastopen_queue_size)))
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "setsockopt failed: %s\n",
+                    MHD_socket_last_strerr_ ());
+#endif
+        }
+      }
+#endif
 #if EPOLL_SUPPORT
       if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY))
 	{

@@ -39,6 +39,10 @@
 #if EPOLL_SUPPORT
 #include <sys/epoll.h>
 #endif
+#if HAVE_NETINET_TCP_H
+/* for TCP_FASTOPEN */
+#include <netinet/tcp.h>
+#endif
 
 
 /**
@@ -1228,6 +1232,12 @@ struct MHD_Daemon
 
 #endif
 
+#ifdef TCP_FASTOPEN
+  /**
+   * The queue size for incoming SYN + DATA packets.
+   */
+  unsigned int fastopen_queue_size;
+#endif
 };
 
 

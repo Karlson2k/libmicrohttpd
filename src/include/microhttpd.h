@@ -551,7 +551,14 @@ enum MHD_FLAG
    * Enable suspend/resume functions, which also implies setting up
    * pipes to signal resume.
    */
-  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_PIPE_FOR_SHUTDOWN
+  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_PIPE_FOR_SHUTDOWN,
+
+  /**
+   * Enable TCP_FASTOPEN option.  This option is only available on Linux with a
+   * kernel >= 3.6.  On other systems, using this option cases #MHD_start_daemon
+   * to fail.
+   */
+  MHD_USE_TCP_FASTOPEN = 16384
 
 };
 
@@ -817,7 +824,16 @@ enum MHD_OPTION
    * to access the SNI data using `gnutls_server_name_get()`.
    * Using this option requires GnuTLS 3.0 or higher.
    */
-  MHD_OPTION_HTTPS_CERT_CALLBACK = 22
+  MHD_OPTION_HTTPS_CERT_CALLBACK = 22,
+
+  /**
+   * When using #MHD_USE_TCP_FASTOPEN, this option changes the default TCP
+   * fastopen queue length of 50.  Note that having a larger queue size can
+   * cause resource exhaustion attack as the TCP stack has to now allocate
+   * resources for the SYN packet along with its DATA.  This option should be
+   * followed by an `unsigned int` argument.
+   */
+  MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE = 23
 
 };
 
