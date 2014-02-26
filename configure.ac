@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 #
 #
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 LT_PREREQ([2.4.0])
 AC_INIT([libmicrohttpd], [0.9.34],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
@@ -72,7 +72,6 @@ AC_CANONICAL_HOST
 AM_PROG_CC_C_O
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
-AC_C_BIGENDIAN
 
 PACKAGE_VERSION_MAJOR=${PACKAGE_VERSION%.*.*}
 PACKAGE_VERSION_MINOR=${PACKAGE_VERSION%.*}; PACKAGE_VERSION_MINOR=${PACKAGE_VERSION_MINOR#*.}
@@ -81,6 +80,12 @@ AC_SUBST([PACKAGE_VERSION_MAJOR])
 AC_SUBST([PACKAGE_VERSION_MINOR])
 AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
+
+# set GCC options
+# use '-fno-strict-aliasing', but only if the compiler can take it
+AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
+
+AC_C_BIGENDIAN
 
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
@@ -96,13 +101,6 @@ AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
 AM_CONDITIONAL(HAVE_MAKEINFO_BINARY,$HAVE_MAKEINFO_BINARY)
-
-# set GCC options
-# use '-fno-strict-aliasing', but only if the compiler can take it
-if gcc -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1;
-then
- CFLAGS="-fno-strict-aliasing $CFLAGS"
-fi
 
 # for pkg-config
 MHD_LIBDEPS=""
