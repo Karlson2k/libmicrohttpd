@@ -1,6 +1,23 @@
+Wed Feb 20 17:42:34 CET 2014
+	Refactoring of configure.ac: custom macros replaced with macros
+	from Autoconf Archive.
+	Minor corrections of configure.ac.
+	Excluded pthread flags from global flags, pthread now used only
+	where required.
+	W32: fixed .dll resource compilation with '-isystem' CPPFLAG.
+	W32: improved header compatibility with MSVC.
+	W32: now tested on Win64, compiled by MinGW-w64. -EG
+
 Mon Feb 24 23:13:53 CET 2014
 	Added support for TCP FASTOPEN. -SHT
 	Releasing 0.9.34. -CG
+
+Thu Feb 20 14:17:05 CET 2014
+	W32: Added creation of libmicrohttpd.lib, libmicrohttpd.def,
+	libmicrohttpd.exp and libmicrohttpd-static.lib for easy use
+	compiled MHD with MSVC.
+	W32: Use MS lib.exe tool if available for creating MSVC staff.
+	W32: Added .dll information resource. -EG
 
 Tue Feb 18 19:46:45 CET 2014
 	Removed dependency on plibc for simpler compilation for W32.
