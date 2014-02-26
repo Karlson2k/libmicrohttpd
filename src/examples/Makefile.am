@@ -42,10 +42,10 @@ noinst_PROGRAMS += https_fileserver_example
 endif
 if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
-  post_example 
+  post_example
 if HAVE_MAGIC
 bin_PROGRAMS = \
-  demo 
+  demo
 endif
 endif
 
@@ -69,10 +69,12 @@ minimal_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
 demo_SOURCES = \
- demo.c 
+ demo.c
+demo_CFLAGS = \
+ $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
- -lmagic
+ $(PTHREAD_LIBS) -lmagic
 
 mhd2spdy_SOURCES = \
  mhd2spdy.c \

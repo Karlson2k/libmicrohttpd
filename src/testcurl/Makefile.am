@@ -93,9 +93,11 @@ test_get_LDADD = \
 
 test_quiesce_SOURCES = \
   test_quiesce.c
+test_quiesce_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_quiesce_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
+  $(PTHREAD_LIBS) @LIBCURL@
 
 test_callback_SOURCES = \
   test_callback.c

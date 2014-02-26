@@ -59,10 +59,12 @@ test_tls_options_LDADD = \
 test_https_get_parallel_SOURCES = \
   test_https_get_parallel.c \
   tls_test_common.c
+test_https_get_parallel_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
+  $(PTHREAD_LIBS) @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_empty_response_SOURCES = \
   test_empty_response.c \
@@ -75,10 +77,12 @@ test_empty_response_LDADD = \
 test_https_get_parallel_threads_SOURCES = \
   test_https_get_parallel_threads.c \
   tls_test_common.c
+test_https_get_parallel_threads_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_threads_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
+  $(PTHREAD_LIBS) @LIBCURL@ -lgnutls @LIBGCRYPT_LIBS@
 
 test_tls_authentication_SOURCES = \
   test_tls_authentication.c \

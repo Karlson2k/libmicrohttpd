@@ -82,8 +82,6 @@ AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
 
 AX_PTHREAD(,[AC_MSG_ERROR([[Compiling libmicrohttpd requires pthread support]])])
-LIBS="$PTHREAD_LIBS $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 # set GCC options
