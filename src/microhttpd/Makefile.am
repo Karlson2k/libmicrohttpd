@@ -94,7 +94,7 @@ libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
 # This implementation is based on trick found in liblzma.
 $(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
 	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) $< -o $@ && \
-	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-tmp.c
+	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
 endif
 
 if USE_COVERAGE
