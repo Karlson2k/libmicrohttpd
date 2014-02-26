@@ -81,6 +81,11 @@ AC_SUBST([PACKAGE_VERSION_MINOR])
 AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
 
+AX_PTHREAD(,[AC_MSG_ERROR([[Compiling libmicrohttpd requires pthread support]])])
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
+
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler can take it
 AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
@@ -132,7 +137,6 @@ netbsd*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
      AM_CONDITIONAL(HAVE_GNU_LD, false)
-     LDFLAGS="$LDFLAGS -lpthread"
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
@@ -231,12 +235,6 @@ else
 fi
 AM_CONDITIONAL(ENABLE_EPOLL, [test "x$enable_epoll" != "xno"])
 
-
-CHECK_PTHREAD
-LIBS="$PTHREAD_LIBS $LIBS"
-AC_SUBST(PTHREAD_LIBS)
-AC_SUBST(PTHREAD_LDFLAGS)
-AC_SUBST(PTHREAD_CPPFLAGS)
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
