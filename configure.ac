@@ -92,16 +92,6 @@ AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
 
 AC_C_BIGENDIAN
 
-AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
-   [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
-   ],
-   [],
-   [
-      #include <sys/types.h>
-      #include <sys/socket.h>
-      #include <netinet/in.h>
-   ])
-
 AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
 AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
 AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
@@ -243,6 +233,22 @@ AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sy
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h gcrypt.h])
 
 AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
+
+AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
+   [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
+   ],
+   [],
+   [
+    #ifdef HAVE_SYS_TYPES_H
+      #include <sys/types.h>
+    #endif
+    #ifdef HAVE_SYS_SOCKET_H
+      #include <sys/socket.h>
+    #endif
+    #ifdef HAVE_NETINET_IN_H
+      #include <netinet/in.h>
+    #endif
+   ])
 
 # Check for pipe/socketpair signaling
 AC_MSG_CHECKING([[whether to disable pipes signaling]])
