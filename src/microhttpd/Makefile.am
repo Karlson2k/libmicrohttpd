@@ -92,8 +92,11 @@ libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
 # by empty object generated from empty c-file. Later libtool will
 # use .libs/file.o for shared lib and empty file.o for static lib.
 # This implementation is based on trick found in liblzma.
+# Note: windres does not understand '-isystem' flag, so all
+# possible '-isystem' flags are replaced by simple '-I' flags.
 $(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
-	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) $< -o $@ && \
+	RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) " && \
+	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_CPP_FLAGS// -isystem / -I } $< -o $@ && \
 	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
 endif
 
