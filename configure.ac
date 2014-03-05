@@ -123,24 +123,10 @@ netbsd*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
      CFLAGS="-fPIC -pipe $CFLAGS"
-     AC_MSG_CHECKING(whether to support epoll)
-     AC_ARG_ENABLE([epoll],
-		AS_HELP_STRING([--disable-epoll],
-			[disable epoll]),
-		[enable_epoll=${enableval}],
-		[enable_epoll=yes])
-     AC_MSG_RESULT($enable_epoll)
      ;;
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AC_MSG_CHECKING(whether to support epoll)
-     AC_ARG_ENABLE([epoll],
-		AS_HELP_STRING([--disable-epoll],
-			[disable epoll]),
-		[enable_epoll=${enableval}],
-		[enable_epoll=yes])
-     AC_MSG_RESULT($enable_epoll)
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
@@ -195,20 +181,25 @@ AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL(W32_STATIC_LIB, [test "x$os_is_native_w32" = "xyes"  && test "x$enable_static" = "xyes"])
 
 
-if test "$enable_epoll" = "yes"
-then
- AC_CHECK_HEADERS([sys/epoll.h],
-                   [enable_epoll="yes"],
-                   [enable_epoll="no"])
-fi
+AC_ARG_ENABLE([[epoll]],
+  [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
+    [enable_epoll=${enableval}],
+    [enable_epoll='auto']
+  )
 
-if test "$enable_epoll" = "yes"
-then
- AC_DEFINE([EPOLL_SUPPORT],[1],[include epoll support])
-else
- AC_DEFINE([EPOLL_SUPPORT],[0],[disable epoll support])
+if test "$enable_epoll" != "no"; then
+  AX_HAVE_EPOLL
+  if test "${ax_cv_have_epoll}" = "yes"; then
+    AC_DEFINE([EPOLL_SUPPORT],[1],[define to 1 to enable epoll support])
+    enable_epoll='yes'
+  else
+    AC_DEFINE([EPOLL_SUPPORT],[0],[define to 0 to disable epoll support])
+    if test "$enable_epoll" = "yes"; then
+      AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])
+    fi
+    enable_epoll='no'
+  fi
 fi
-
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
