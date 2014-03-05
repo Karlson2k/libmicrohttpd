@@ -1,5 +1,6 @@
 dnl Autoconf macros for libgcrypt
 dnl       Copyright (C) 2002, 2004, 2011 Free Software Foundation, Inc.
+dnl       Copyright (C) 2014 Karlson2k (Evgeny Grin)
 dnl
 dnl This file is free software; as a special exception the author gives
 dnl unlimited permission to copy and/or distribute it, with or without
@@ -20,8 +21,12 @@ dnl version of libgcrypt is at least 1.2.5 *and* the API number is 1.  Using
 dnl this features allows to prevent build against newer versions of libgcrypt
 dnl with a changed API.
 dnl
+dnl Updated by Karlson2k to be more tolerant to host tools variations.
+dnl
 AC_DEFUN([AM_PATH_LIBGCRYPT],
 [ AC_REQUIRE([AC_CANONICAL_HOST])
+  AC_REQUIRE([AC_PROG_GREP])
+  AC_REQUIRE([AC_PROG_SED])
   AC_ARG_WITH(libgcrypt-prefix,
             AC_HELP_STRING([--with-libgcrypt-prefix=PFX],
                            [prefix where LIBGCRYPT is installed (optional)]),
@@ -34,9 +39,9 @@ AC_DEFUN([AM_PATH_LIBGCRYPT],
 
   AC_PATH_TOOL(LIBGCRYPT_CONFIG, libgcrypt-config, no)
   tmp=ifelse([$1], ,1:1.2.0,$1)
-  if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
-     req_libgcrypt_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
-     min_libgcrypt_version=`echo "$tmp" | sed 's/\(.*\):\(.*\)/\2/'`
+  if echo "$tmp" | $GREP ':' >/dev/null 2>/dev/null ; then
+     req_libgcrypt_api=`echo "$tmp"     | $SED 's/\(.*\):\(.*\)/\1/'`
+     min_libgcrypt_version=`echo "$tmp" | $SED 's/\(.*\):\(.*\)/\2/'`
   else
      req_libgcrypt_api=0
      min_libgcrypt_version="$tmp"
@@ -46,18 +51,18 @@ AC_DEFUN([AM_PATH_LIBGCRYPT],
   ok=no
   if test "$LIBGCRYPT_CONFIG" != "no" ; then
     req_major=`echo $min_libgcrypt_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
     req_minor=`echo $min_libgcrypt_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
     req_micro=`echo $min_libgcrypt_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
     libgcrypt_config_version=`$LIBGCRYPT_CONFIG --version`
     major=`echo $libgcrypt_config_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
     minor=`echo $libgcrypt_config_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
     micro=`echo $libgcrypt_config_version | \
-               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\3/'`
+               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\3/'`
     if test "$major" -gt "$req_major"; then
         ok=yes
     else
