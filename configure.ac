@@ -90,47 +90,39 @@ AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
 
 AC_C_BIGENDIAN
 
-AC_CHECK_PROG(HAVE_CURL_BINARY,[curl],true,false)
-AM_CONDITIONAL(HAVE_CURL_BINARY,$HAVE_CURL_BINARY)
-AC_CHECK_PROG(HAVE_MAKEINFO_BINARY,[makeinfo],true,false)
-AM_CONDITIONAL(HAVE_MAKEINFO_BINARY,$HAVE_MAKEINFO_BINARY)
+AC_CHECK_PROG([HAVE_CURL_BINARY],[curl],[yes],[no])
+AM_CONDITIONAL([HAVE_CURL_BINARY],[test "x$HAVE_CURL_BINARY" = "xyes"])
+AC_CHECK_PROG([HAVE_MAKEINFO_BINARY],[makeinfo],[yes],[no])
+AM_CONDITIONAL([HAVE_MAKEINFO_BINARY],[test "x$HAVE_MAKEINFO_BINARY" = "xyes"])
 
 # for pkg-config
 MHD_LIBDEPS=""
-epoll=0
 # Check system type
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
-     AM_CONDITIONAL(HAVE_GNU_LD, false)
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
-     CFLAGS="-D_THREAD_SAFE $CFLAGS"
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     CFLAGS="-D_REENTRANT -fPIC -pipe $CFLAGS"
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
+     CFLAGS="-fPIC -pipe $CFLAGS"
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
 		AS_HELP_STRING([--disable-epoll],
@@ -142,7 +134,6 @@ netbsd*)
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
      AC_MSG_CHECKING(whether to support epoll)
      AC_ARG_ENABLE([epoll],
 		AS_HELP_STRING([--disable-epoll],
@@ -153,7 +144,6 @@ netbsd*)
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)
      LDFLAGS="$LDFLAGS"
      os_is_windows=yes
      ;;
@@ -161,7 +151,6 @@ netbsd*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      LDFLAGS="$LDFLAGS -lws2_32"
-     AM_CONDITIONAL(HAVE_GNU_LD, true)
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h],, AC_MSG_ERROR([[Winsock2 headers are required for W32]]))
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [[mslibcheck=`lib 2>&1`
@@ -180,7 +169,6 @@ netbsd*)
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)
     ;;
 *)
      AC_MSG_RESULT(Unrecognised OS $host_os)
@@ -189,7 +177,6 @@ netbsd*)
 #    and extend the switch statement; if we do not have 'HAVE_LISTEN_SHUTDOWN',
 #    pipes are used instead to signal 'select'.
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
-     AM_CONDITIONAL(HAVE_GNU_LD, false)
 ;;
 esac
 
@@ -221,16 +208,14 @@ then
 else
  AC_DEFINE([EPOLL_SUPPORT],[0],[disable epoll support])
 fi
-AM_CONDITIONAL(ENABLE_EPOLL, [test "x$enable_epoll" != "xno"])
 
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h gcrypt.h])
-
-AC_CHECK_HEADERS([search.h], AM_CONDITIONAL(HAVE_TSEARCH, true), AM_CONDITIONAL(HAVE_TSEARCH, false))
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h gcrypt.h search.h])
+AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
@@ -279,8 +264,7 @@ if test "x$disable_pipes" = "xyes"; then
 	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
 fi
 
-AC_CHECK_FUNCS_ONCE(memmem)
-AC_CHECK_FUNCS_ONCE(accept4)
+AC_CHECK_FUNCS_ONCE([memmem accept4])
 AC_MSG_CHECKING([[for gmtime_s]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
@@ -349,11 +333,8 @@ have_inet6=no
 ])
 AC_MSG_RESULT($have_inet6)
 
-# TCP_CORK
-AC_CHECK_DECLS([TCP_CORK], [], [], [[#include <netinet/tcp.h>]])
-
-# TCP_NOPUSH
-AC_CHECK_DECLS([TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
+# TCP_CORK and TCP_NOPUSH
+AC_CHECK_DECLS([TCP_CORK, TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
 
 HIDDEN_VISIBILITY_CFLAGS=""
 case "$host" in
@@ -399,8 +380,7 @@ then
  ],[curl=0])
 fi
 
-AC_MSG_CHECKING(for magic_open -lmagic)
-AC_CHECK_LIB(magic, magic_open,
+AC_CHECK_LIB([[magic]], [[magic_open]],
   [AC_CHECK_HEADERS([magic.h],
    AM_CONDITIONAL(HAVE_MAGIC, true),
    AM_CONDITIONAL(HAVE_MAGIC, false))],
@@ -454,12 +434,6 @@ AC_CHECK_HEADERS([spdylay/spdylay.h],
 AC_SUBST(SPDY_LIB_LDFLAGS)
 # for pkg-config
 AC_SUBST(SPDY_LIBDEPS)
-
-AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
-AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
-AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
-AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
-
 
 
 LIBS=$SAVE_LIBS
@@ -648,11 +622,6 @@ src/testspdy/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 
-AM_CONDITIONAL(ENABLE_MINITASN1,  [test -n " " ] )
-AM_CONDITIONAL(ENABLE_OPENSSL,  [test -n "" ] )
-AM_CONDITIONAL(HAVE_LD_OUTPUT_DEF,  [test -n "" ] )
-AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT,  [test -n "" ] )
-
 # Finally: summary
 if test "$curl" != 1 ; then
  MSG_CURL="no, many unit tests will not run"
@@ -677,7 +646,7 @@ AC_MSG_NOTICE([Configuration Summary:
   Digest auth.:      ${enable_dauth}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${enable_https}
-  epoll support:     ${enable_epoll}
+  epoll support:     ${enable_epoll=no}
   libmicrospdy:      ${enable_spdy}
   spdylay (testing): ${have_spdylay}
 ])
