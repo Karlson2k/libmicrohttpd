@@ -1,4 +1,15 @@
-Wed Feb 20 17:42:34 CET 2014
+Wed Mar 05 13:15:05 CET 2014
+	Cleanup and refactoring of configure.ac.
+	m4 macros updated.
+	Custom configure macros replaced with autoconf archive macros.
+	SPDY disabled by default on W32.
+	Changed configure flag from '--disable-pipe' to
+	'--enable-soketpair'.
+	Added configure flags '--disable-doc' and '--disable-examples'.
+	Narrowed down extrenal lib specific compiler and linker flags
+	usage. -EG
+
+Wed Feb 26 17:42:34 CET 2014
 	Refactoring of configure.ac: custom macros replaced with macros
 	from Autoconf Archive.
 	Minor corrections of configure.ac.
