@@ -494,10 +494,10 @@ AM_CONDITIONAL([HAVE_POSTPROCESSOR],test "x$enable_postprocessor" != "xno")
 
 
 # optional: have zzuf, socat?
-AC_CHECK_PROG([HAVE_ZZUF],[zzuf], 1, 0)
-AC_CHECK_PROG([HAVE_SOCAT],[socat], 1, 0)
-AM_CONDITIONAL(HAVE_ZZUF, test 0 != $HAVE_ZZUF)
-AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
+AC_CHECK_PROG([have_zzuf],[zzuf], [yes], [no])
+AC_CHECK_PROG([have_socat],[socat], [yes], [no])
+AM_CONDITIONAL([HAVE_ZZUF], [test "x$have_zzuf" = "xyes"])
+AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
 
 
 # libgcrypt linkage: required for HTTPS support
