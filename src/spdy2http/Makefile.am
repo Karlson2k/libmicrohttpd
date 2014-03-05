@@ -27,5 +27,4 @@ microspdy2http_LDADD = \
  -lssl \
  -lcrypto \
  -lz \
- -ldl \
  -lcurl
