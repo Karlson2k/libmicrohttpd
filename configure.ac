@@ -379,14 +379,12 @@ AC_CHECK_LIB([[magic]], [[magic_open]],
   AM_CONDITIONAL(HAVE_MAGIC, false))
 
 
-# optional: libmicrospdy support. Enabled by default
-AC_MSG_CHECKING(whether to support libmicrospdy)
+# optional: libmicrospdy support. Enabled by default if not on W32
 AC_ARG_ENABLE([spdy],
 		AS_HELP_STRING([--disable-spdy],
 			[disable libmicrospdy]),
 		[enable_spdy=${enableval}],
-		[enable_spdy=yes])
-AC_MSG_RESULT($enable_spdy)
+		[ AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_spdy=no], [enable_spdy=yes]) ])
 
 if test "$enable_spdy" = "yes"
 then
