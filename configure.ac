@@ -476,8 +476,9 @@ AC_ARG_ENABLE([postprocessor],
                [disable MHD PostProcessor functionality])],
    [enable_postprocessor=${enableval}],
    [enable_postprocessor=yes])
-AC_MSG_RESULT($disable_postprocessor)
-AM_CONDITIONAL([HAVE_POSTPROCESSOR],test x$enable_postprocessor != xno)
+test "x$enable_postprocessor" = "xno" || enable_postprocessor=yes
+AC_MSG_RESULT([[$enable_postprocessor]])
+AM_CONDITIONAL([HAVE_POSTPROCESSOR],test "x$enable_postprocessor" != "xno")
 
 
 # optional: have zzuf, socat?
@@ -599,8 +600,9 @@ AC_ARG_ENABLE([bauth],
 			[disable HTTP basic Auth support]),
 		[enable_bauth=${enableval}],
 		[enable_bauth=yes])
-if test "$enable_bauth" = "yes"
+if test "x$enable_bauth" != "xno"
 then
+ enable_bauth=yes
  AC_DEFINE([BAUTH_SUPPORT],[1],[include basic Auth support])
 else
  AC_DEFINE([BAUTH_SUPPORT],[0],[disable basic Auth support])
@@ -615,8 +617,9 @@ AC_ARG_ENABLE([dauth],
 			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
-if test "$enable_dauth" = "yes"
+if test "$enable_dauth" != "xno"
 then
+ enable_dauth=yes
  AC_DEFINE([DAUTH_SUPPORT],[1],[include digest Auth support])
 else
  AC_DEFINE([DAUTH_SUPPORT],[0],[disable digest Auth support])
