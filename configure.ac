@@ -20,9 +20,9 @@
 # Process this file with autoconf to produce a configure script.
 #
 #
-AC_PREREQ(2.59)
+AC_PREREQ([2.60])
 LT_PREREQ([2.4.0])
-AC_INIT([libmicrohttpd], [0.9.34],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd],[0.9.34],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -322,7 +322,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [
 
 # IPv6
 AC_MSG_CHECKING(for IPv6)
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -336,17 +336,17 @@ AC_TRY_COMPILE([
 #if HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
-],[
+]], [[
 int af=AF_INET6;
 int pf=PF_INET6;
 struct sockaddr_in6 sa;
 printf("%d %d %p\n", af, pf, &sa);
-],[
+]])],[
 have_inet6=yes;
 AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])
-],
+],[
 have_inet6=no
-)
+])
 AC_MSG_RESULT($have_inet6)
 
 # TCP_CORK
@@ -365,21 +365,10 @@ case "$host" in
     ;;
   *)
     dnl on other compilers, check if we can do -fvisibility=hidden
-    SAVED_CFLAGS="${CFLAGS}"
-    CFLAGS="-fvisibility=hidden"
-    AC_MSG_CHECKING([for -fvisibility=hidden compiler flag])
-    AC_TRY_COMPILE([], [int main (void) { return 0; }],
-                   AC_MSG_RESULT(yes)
-                   enable_fvisibility_hidden=yes,
-                   AC_MSG_RESULT(no)
-                   enable_fvisibility_hidden=no)
-    CFLAGS="${SAVED_CFLAGS}"
-
-    AS_IF([test "${enable_fvisibility_hidden}" = "yes"], [
-      AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
-                [defines how to decorate public symbols while building])
-      HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
-    ])
+    AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
+                           [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
+                                       [defines how to decorate public symbols while building])
+                            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])
     ;;
 esac
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
