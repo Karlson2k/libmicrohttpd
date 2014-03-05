@@ -279,8 +279,7 @@ AC_LINK_IFELSE(
   ])
 
 
-AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM(
+AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],
                    [
                     #if defined HAVE_SYS_TYPES_H
                     #  include <sys/types.h>
@@ -289,16 +288,8 @@ AC_COMPILE_IFELSE(
                     #  include <sys/socket.h>
                     #elif defined HAVE_WINSOCK2_H
                     #  include <winsock2.h>
-                    #endif],
-                   [
-                    #ifndef SOCK_NONBLOCK
-                    # error do not have SOCK_NONBLOCK
                     #endif
                    ])
-  ],
-  [
-    AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])
-  ])
 
 
 AC_SEARCH_LIBS([clock_gettime], [rt], [
