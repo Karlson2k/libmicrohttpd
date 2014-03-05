@@ -49,10 +49,7 @@ SPDY_SOURCES= \
 
 SPDY_LDADD=  \
  $(top_builddir)/src/microspdy/libmicrospdy.la \
- -lssl \
- -lcrypto \
- -lz \
- -ldl
+ -lz
 
 test_daemon_start_stop_SOURCES = \
  test_daemon_start_stop.c \

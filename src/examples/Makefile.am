@@ -155,25 +155,16 @@ spdy_event_loop_SOURCES = \
  spdy_event_loop.c 
 spdy_event_loop_LDADD = \
   $(top_builddir)/src/microspdy/libmicrospdy.la \
- -lssl \
- -lcrypto \
- -lz \
- -ldl
+ -lz
 
 spdy_fileserver_SOURCES = \
  spdy_fileserver.c 
 spdy_fileserver_LDADD = \
   $(top_builddir)/src/microspdy/libmicrospdy.la \
- -lssl \
- -lcrypto \
- -lz \
- -ldl
+ -lz
 
 spdy_response_with_callback_SOURCES = \
  spdy_response_with_callback.c 
 spdy_response_with_callback_LDADD = \
   $(top_builddir)/src/microspdy/libmicrospdy.la \
- -lssl \
- -lcrypto \
- -lz \
- -ldl
+ -lz

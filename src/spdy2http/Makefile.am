@@ -24,7 +24,5 @@ microspdy2http_SOURCES = \
  proxy.c 
 microspdy2http_LDADD = \
   $(top_builddir)/src/microspdy/libmicrospdy.la \
- -lssl \
- -lcrypto \
  -lz \
  -lcurl
