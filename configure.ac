@@ -180,6 +180,18 @@ AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL(W32_STATIC_LIB, [test "x$os_is_native_w32" = "xyes"  && test "x$enable_static" = "xyes"])
 
 
+AC_ARG_ENABLE([[doc]],
+  [AS_HELP_STRING([[--disable-doc]], [do not build any documentation])], ,
+    [enable_doc=yes])
+test "x$enable_doc" = "xno" || enable_doc=yes
+AM_CONDITIONAL([BUILD_DOC], [test "x$enable_doc" = "xyes"])
+
+AC_ARG_ENABLE([[examples]],
+  [AS_HELP_STRING([[--disable-examples]], [do not build any examples])], ,
+    [enable_examples=yes])
+test "x$enable_examples" = "xno" || enable_examples=yes
+AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
+
 AC_ARG_ENABLE([[epoll]],
   [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
     [enable_epoll=${enableval}],
@@ -691,6 +703,8 @@ AC_MSG_NOTICE([Configuration Summary:
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${MSG_HTTPS}
   epoll support:     ${enable_epoll=no}
+  build docs:        ${enable_doc}
+  build examples:    ${enable_examples}
   libmicrospdy:      ${enable_spdy}
   spdylay (testing): ${have_spdylay}
 ])

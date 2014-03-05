@@ -20,6 +20,10 @@ endif
 
 SUBDIRS = include platform microhttpd $(microspdy) examples $(curltests) $(zzuftests) .
 
+if BUILD_EXAMPLES
+SUBDIRS += examples
+endif
+
 EXTRA_DIST = \
  datadir/cert-and-key.pem \
  datadir/cert-and-key-for-wireshark.pem \
