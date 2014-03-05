@@ -506,8 +506,12 @@ if test "x$have_gcrypt" = "xyes"
 then
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+  # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
+  SAVE_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
   AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no])
   CFLAGS="$SAVE_CFLAGS"
+  CPPFLAGS="$SAVE_CPPFLAGS"
 fi
 
 # gnutls
@@ -561,47 +565,28 @@ AC_ARG_ENABLE([https],
    [enable_https=${enableval}])
 if test "x$enable_https" != "xno"
 then
-  AS_IF([test "x$have_gnutls" = "xyes"], [
+  AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
           AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
-          CPP_FLAGS_CRYPT="$GNUTLS_CPPFLAGS"
-          C_FLAGS_CRYPT="$GNUTLS_CFLAGS"
-          LD_FLAGS_CRYPT="$GNUTLS_LDFLAGS"
-          LIB_CRYPT="$GNUTLS_LIBS"
+          MHD_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS $LIBGCRYPT_CFLAGS"
+          MHD_LIB_CFLAGS="$GNUTLS_CFLAGS $LIBGCRYPT_CFLAGS"
+          MHD_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
+          MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS"
           enable_https=yes
-          MSG_HTTPS="yes (using GnuTLS)"
-        ],
-        [test "x$have_gcrypt" = "xyes"], [
-          AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
-          CPP_FLAGS_CRYPT=""
-          C_FLAGS_CRYPT="$LIBGCRYPT_CFLAGS"
-          LD_FLAGS_CRYPT=""
-          LIB_CRYPT="$LIBGCRYPT_LIBS"
-          enable_https=yes
-          MSG_HTTPS="yes (using libgcrypt)"
-        ],
-      [
-        AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without libgcrypt or GnuTLS.]])])
-        AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
-        enable_https=no
-        MSG_HTTPS="no (lacking libgcrypt or libgnutls)"
-      ])
+          MSG_HTTPS="yes (using libgnutls and libgcrypt)"
+        ], [
+          AS_IF([test "x$have_gnutls" = "xyes"], [crypt_missing="libgrypt"],
+                [test "x$have_gcrypt" = "xyes"], [crypt_missing="libgnutls"],
+                                                 [crypt_missing="libgrypt and libgnutls"])
+          AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
+          AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
+          enable_https=no
+          MSG_HTTPS="no (lacking $crypt_missing)"
+        ])
 else
   AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
   MSG_HTTPS="no (disabled)"
 fi
 AC_MSG_RESULT([$MSG_HTTPS])
-
-if test "x$enable_https" = "yes"; then
-  MHD_LIB_CPPFLAGS="$CPP_FLAGS_CRYPT"
-  MHD_LIB_CFLAGS="$C_FLAGS_CRYPT"
-  MHD_LIB_LDFLAGS="$LD_FLAGS_CRYPT"
-  MHD_LIBDEPS="$LIB_CRYPT"
-else
-  CPP_FLAGS_CRYPT=""
-  C_FLAGS_CRYPT=""
-  LD_FLAGS_CRYPT=""
-  LIB_CRYPT=""
-fi
 
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
