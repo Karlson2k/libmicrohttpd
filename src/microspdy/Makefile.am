@@ -21,17 +21,17 @@ libmicrospdy_la_SOURCES = \
   applicationlayer.c applicationlayer.h \
   alstructures.c alstructures.h 
 libmicrospdy_la_LIBADD = \
-  -lssl
+  $(SPDY_LIBDEPS)
 
 libmicrospdy_la_LDFLAGS = \
-  $(SPDY_LIB_LDFLAGS) 
+  $(SPDY_LIB_LDFLAGS)
 
 libmicrospdy_la_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
+  $(AM_CPPFLAGS) $(SPDY_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
 
 libmicrospdy_la_CFLAGS = -Wextra \
-  $(SPDY_LIB_CFLAGS)
+  $(AM_CFLAGS) $(SPDY_LIB_CFLAGS)
 
 
 if USE_COVERAGE

@@ -380,24 +380,49 @@ AC_CHECK_LIB([[magic]], [[magic_open]],
 
 # optional: libmicrospdy support. Enabled by default if not on W32
 AC_ARG_ENABLE([spdy],
-		AS_HELP_STRING([--disable-spdy],
-			[disable libmicrospdy]),
+		AS_HELP_STRING([--enable-spdy],
+			[enable build libmicrospdy (yes, no, auto) [auto]]),
 		[enable_spdy=${enableval}],
-		[ AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_spdy=no], [enable_spdy=yes]) ])
+		[ AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_spdy=no]) ])
 
-if test "$enable_spdy" = "yes"
+if test "$enable_spdy" != "no"
 then
- AC_CHECK_HEADERS([openssl/err.h],
-                   AC_CHECK_LIB(ssl, SSL_CTX_set_next_protos_advertised_cb,
-                    [AM_CONDITIONAL(HAVE_OPENSSL, true)
-                     enable_spdy="yes"],
-                    [AM_CONDITIONAL(HAVE_OPENSSL, false)
-                    enable_spdy="no"]),
-                   [AM_CONDITIONAL(HAVE_OPENSSL, false)
-                   enable_spdy="no"])
+  AX_CHECK_OPENSSL([ have_openssl=yes ],[ have_openssl=no ])
+  if test "x$have_openssl" = "xyes"
+  then
+    # check OpenSSL headers
+    SAVE_CPP_FLAGS="$CPPFLAGS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+    AC_CHECK_HEADERS([openssl/evp.h openssl/rsa.h openssl/rand.h openssl/err.h openssl/sha.h openssl/pem.h openssl/engine.h], [ have_openssl=yes ],[ have_openssl=no ])
+    if test "x$have_openssl" = "xyes"
+    then
+      # check OpenSSL libs
+      SAVE_LIBS="$LIBS"
+      SAVE_LD_FLAGS="$LDFLAGS"
+      LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+      LIBS="$OPENSSL_LIBS $LIBS"
+      AC_CHECK_FUNC([SSL_CTX_set_next_protos_advertised_cb], 
+        [
+          AC_CHECK_FUNC([SSL_library_init], [ have_openssl=yes ],[ have_openssl=no ])
+        ],[ have_openssl=no ])
+      LIBS="$SAVE_LIBS"
+      LDFLAGS="$SAVE_LD_FLAGS"
+    fi
+    CPPFLAGS="$SAVE_CPP_FLAGS"
+  fi
+  if test "x$have_openssl" = "xyes"
+  then
+    enable_spdy=yes
+  else
+    AS_IF([[test "x$enable_spdy" = "xyes" ]], [AC_MSG_ERROR([[libmicrospdy cannot be enabled without OpenSSL.]])])
+    have_openssl=no
+    enable_spdy=no
+  fi
 else
- AM_CONDITIONAL(HAVE_OPENSSL, false)
+  # OpenSSL is used only for libmicrospdy
+  have_openssl=no
 fi
+AM_CONDITIONAL([HAVE_OPENSSL], [test "x$have_openssl" = "xyes"])
 
 if test "$enable_spdy" = "yes"
 then
@@ -409,24 +434,20 @@ AM_CONDITIONAL(ENABLE_SPDY, [test "x$enable_spdy" != "xno"])
 AC_MSG_CHECKING(whether we have OpenSSL and thus can support libmicrospdy)
 AC_MSG_RESULT($enable_spdy)
 
-SAVE_LIBS=$LIBS
-spdy_OPENSSL
 # for pkg-config
-SPDY_LIBDEPS=""
+SPDY_LIBDEPS="$OPENSSL_LIBS"
 
-
-AC_CHECK_HEADERS([spdylay/spdylay.h],
-                 [AM_CONDITIONAL(HAVE_SPDYLAY, true)
-		 have_spdylay="yes"],
-                 [AM_CONDITIONAL(HAVE_SPDYLAY, false)
-                 have_spdylay="no"])
-
+SPDY_LIB_LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+SPDY_LIB_CFLAGS="$CFLAGS"
+SPDY_LIB_CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
 AC_SUBST(SPDY_LIB_LDFLAGS)
+AC_SUBST(SPDY_LIB_CFLAGS)
+AC_SUBST(SPDY_LIB_CPPFLAGS)
 # for pkg-config
 AC_SUBST(SPDY_LIBDEPS)
 
-
-LIBS=$SAVE_LIBS
+AC_CHECK_HEADERS([spdylay/spdylay.h], [ have_spdylay="yes" ], [have_spdylay="no"])
+AM_CONDITIONAL(HAVE_SPDYLAY, [test "x$have_spdylay" = "xyes"])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
