@@ -43,8 +43,6 @@ extern const char srv_self_signed_cert_pem[];
 
 static const int TIME_OUT = 3;
 
-static const char *http_get_req = "GET / HTTP/1.1\r\n\r\n";
-
 static int
 test_tls_session_time_out (gnutls_session_t session)
 {
