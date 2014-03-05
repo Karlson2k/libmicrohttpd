@@ -204,7 +204,7 @@ fi
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h gcrypt.h search.h])
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h search.h])
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
@@ -488,70 +488,109 @@ AM_CONDITIONAL(HAVE_SOCAT, test 0 != $HAVE_SOCAT)
 
 
 # libgcrypt linkage: required for HTTPS support
-AM_PATH_LIBGCRYPT(1.2.2, gcrypt=true)
-
-# define the minimal version of libgcrypt required
-MHD_GCRYPT_VERSION=1:1.2.2
-AC_DEFINE_UNQUOTED([MHD_GCRYPT_VERSION], "$MHD_GCRYPT_VERSION", [gcrypt lib version])
-
+AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
+if test "x$have_gcrypt" = "xyes"
+then
+  SAVE_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+  AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no])
+  CFLAGS="$SAVE_CFLAGS"
+fi
 
 # gnutls
-gnutls=0
+have_gnutls=no
 AC_MSG_CHECKING(for gnutls)
 AC_ARG_WITH(gnutls,
-   [  --with-gnutls=PFX   base of gnutls installation],
+   [AC_HELP_STRING([--with-gnutls=PFX],[base of gnutls installation])],
    [AC_MSG_RESULT([$with_gnutls])
     case $with_gnutls in
       no)
         ;;
       yes)
+        GNUTLS_CPPFLAGS=""
+        GNUTLS_CFLAGS=""
+        GNUTLS_LDFLAGS=""
+        GNUTLS_LIBS="-lgnutls"
         AC_CHECK_HEADERS([gnutls/gnutls.h],
             AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-	     gnutls=true))
+	     have_gnutls=yes))
         ;;
       *)
+        GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+        GNUTLS_CFLAGS=""
+        GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+        GNUTLS_LIBS="-lgnutls"
+        SAVE_LDFLAGS="$LDFLAGS"
+        SAVE_CPPFLAGS="$CPPFLAGS"
         LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
         AC_CHECK_HEADERS([gnutls/gnutls.h],
             AC_CHECK_LIB([gnutls], [gnutls_priority_set],
               EXT_LIB_PATH="-L$with_gnutls/lib $EXT_LIB_PATH"
-              gnutls=true))
+              have_gnutls=yes))
+        LDFLAGS="$SAVE_LDFLAGS"
+        CPPFLAGS="$SAVE_CPPFLAGS"
         ;;
     esac
    ],
    [AC_MSG_RESULT([--with-gnutls not specified])
     AC_CHECK_HEADERS([gnutls/gnutls.h],
         AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-          gnutls=true))])
-AM_CONDITIONAL(HAVE_GNUTLS, test x$gnutls = xtrue)
-AC_DEFINE_UNQUOTED([HAVE_GNUTLS], $gnutls, [We have gnutls])
-
+          have_gnutls=yes))])
+AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
 
 
 # optional: HTTPS support.  Enabled by default
 AC_MSG_CHECKING(whether to support HTTPS)
 AC_ARG_ENABLE([https],
-   [AS_HELP_STRING([--disable-https],
-               [disable HTTPS support])],
-   [enable_https=${enableval}],
-   [enable_https=yes])
-if test "$enable_https" = "yes"
+   [AS_HELP_STRING([--enable-https],
+               [enable HTTPS support (yes, no, auto)[auto]])],
+   [enable_https=${enableval}])
+if test "x$enable_https" != "xno"
 then
- if test "$gcrypt" = "true" -a "$gnutls" = "true"
- then
-   AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
-   MHD_LIBDEPS="$LIBGCRYPT_LIBS"
- else
-   AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
-   enable_https="no (lacking libgcrypt or libgnutls)"
- fi
+  AS_IF([test "x$have_gnutls" = "xyes"], [
+          AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
+          CPP_FLAGS_CRYPT="$GNUTLS_CPPFLAGS"
+          C_FLAGS_CRYPT="$GNUTLS_CFLAGS"
+          LD_FLAGS_CRYPT="$GNUTLS_LDFLAGS"
+          LIB_CRYPT="$GNUTLS_LIBS"
+          enable_https=yes
+          MSG_HTTPS="yes (using GnuTLS)"
+        ],
+        [test "x$have_gcrypt" = "xyes"], [
+          AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
+          CPP_FLAGS_CRYPT=""
+          C_FLAGS_CRYPT="$LIBGCRYPT_CFLAGS"
+          LD_FLAGS_CRYPT=""
+          LIB_CRYPT="$LIBGCRYPT_LIBS"
+          enable_https=yes
+          MSG_HTTPS="yes (using libgcrypt)"
+        ],
+      [
+        AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without libgcrypt or GnuTLS.]])])
+        AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
+        enable_https=no
+        MSG_HTTPS="no (lacking libgcrypt or libgnutls)"
+      ])
 else
   AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
-  enable_https="no (disabled)"
+  MSG_HTTPS="no (disabled)"
 fi
-AC_MSG_RESULT($enable_https)
+AC_MSG_RESULT([$MSG_HTTPS])
 
-AM_CONDITIONAL(ENABLE_HTTPS, test "$enable_https" = "yes")
+if test "x$enable_https" = "yes"; then
+  MHD_LIB_CPPFLAGS="$CPP_FLAGS_CRYPT"
+  MHD_LIB_CFLAGS="$C_FLAGS_CRYPT"
+  MHD_LIB_LDFLAGS="$LD_FLAGS_CRYPT"
+  MHD_LIBDEPS="$LIB_CRYPT"
+else
+  CPP_FLAGS_CRYPT=""
+  C_FLAGS_CRYPT=""
+  LD_FLAGS_CRYPT=""
+  LIB_CRYPT=""
+fi
+
+AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING(whether to support HTTP basic authentication)
@@ -587,7 +626,7 @@ AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
 
 
 
-MHD_LIB_LDFLAGS="-export-dynamic -no-undefined"
+MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 
 # gcov compilation
 AC_MSG_CHECKING(whether to compile with support for code coverage analysis)
@@ -600,6 +639,8 @@ AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 
+AC_SUBST(MHD_LIB_CPPFLAGS)
+AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
 
 # for pkg-config
@@ -608,8 +649,6 @@ AC_SUBST(MHD_LIBDEPS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(LDFLAGS)
-AC_SUBST(EXT_LIB_PATH)
-AC_SUBST(EXT_LIBS)
 
 AC_CONFIG_FILES([
 libmicrohttpd.pc
@@ -639,23 +678,15 @@ else
  MSG_CURL="yes"
 fi
 
-if test "$gcrypt" != true
-then
- MSG_GCRYPT="no, HTTPS will not be built"
-else
- MSG_GCRYPT="yes"
-fi
-
 AC_MSG_NOTICE([Configuration Summary:
   Operating System:  ${host_os}
-  libgcrypt:         ${MSG_GCRYPT}
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   Postproc:          ${enable_postprocessor}
-  HTTPS support:     ${enable_https}
+  HTTPS support:     ${MSG_HTTPS}
   epoll support:     ${enable_epoll=no}
   libmicrospdy:      ${enable_spdy}
   spdylay (testing): ${have_spdylay}
