@@ -347,30 +347,29 @@ esac
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 
 # libcurl (required for testing)
-SAVE_LIBS=$LIBS
-
-AC_MSG_CHECKING(whether to use libcurl for testing)
 AC_ARG_ENABLE([curl],
   [AS_HELP_STRING([--disable-curl],[disable cURL based testcases])],
-  [enable_curl=${enableval}],
-  [enable_curl=yes])
-AC_MSG_RESULT($enable_curl)
+  [enable_curl=${enableval}])
 curl=0
-if test "$enable_curl" = "yes"
+if test "$enable_curl" != "no"
 then
-  LIBCURL_CHECK_CONFIG(,,curl=1,curl=0)
-  AC_CHECK_HEADERS([curl/curl.h],[
-# Lib cURL & cURL - OpenSSL versions
-   MHD_REQ_CURL_VERSION=7.16.4
-   MHD_REQ_CURL_OPENSSL_VERSION=0.9.8
-   MHD_REQ_CURL_GNUTLS_VERSION=2.8.6
-   MHD_REQ_CURL_NSS_VERSION=3.12.0
-   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_VERSION], "$MHD_REQ_CURL_VERSION", [required cURL version to run tests])
-   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_OPENSSL_VERSION], "$MHD_REQ_CURL_OPENSSL_VERSION", [required cURL SSL version to run tests])
-   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_GNUTLS_VERSION], "$MHD_REQ_CURL_GNUTLS_VERSION", [gnuTLS lib version - used in conjunction with cURL])
-   AC_DEFINE_UNQUOTED([MHD_REQ_CURL_NSS_VERSION], "$MHD_REQ_CURL_NSS_VERSION", [NSS lib version - used in conjunction with cURL])
- ],[curl=0])
+  LIBCURL_CHECK_CONFIG([yes],[7.16.4],[enable_curl=yes],
+    [
+      if test "x$enable_curl" = "xyes"; then
+        AC_MSG_WARN([[cURL-based tests cannot be enabled because libcurl is missing]])
+      fi
+      enable_curl=no
+    ])
 fi
+if test "$enable_curl" != "no"
+then
+# Lib cURL & cURL - OpenSSL versions
+  AC_DEFINE([MHD_REQ_CURL_VERSION], ["7.16.4"], [required cURL version to run tests])
+  AC_DEFINE([MHD_REQ_CURL_OPENSSL_VERSION], ["0.9.8"], [required cURL SSL version to run tests])
+  AC_DEFINE([MHD_REQ_CURL_GNUTLS_VERSION], ["2.8.6"], [gnuTLS lib version - used in conjunction with cURL])
+  AC_DEFINE([MHD_REQ_CURL_NSS_VERSION], ["3.12.0"], [NSS lib version - used in conjunction with cURL])
+fi
+AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 AC_CHECK_LIB([[magic]], [[magic_open]],
   [AC_CHECK_HEADERS([magic.h],
@@ -410,6 +409,7 @@ AM_CONDITIONAL(ENABLE_SPDY, [test "x$enable_spdy" != "xno"])
 AC_MSG_CHECKING(whether we have OpenSSL and thus can support libmicrospdy)
 AC_MSG_RESULT($enable_spdy)
 
+SAVE_LIBS=$LIBS
 spdy_OPENSSL
 # for pkg-config
 SPDY_LIBDEPS=""
@@ -427,7 +427,6 @@ AC_SUBST(SPDY_LIBDEPS)
 
 
 LIBS=$SAVE_LIBS
-AM_CONDITIONAL(HAVE_CURL, test x$curl = x1)
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
@@ -613,7 +612,7 @@ src/testzzuf/Makefile])
 AC_OUTPUT
 
 # Finally: summary
-if test "$curl" != 1 ; then
+if test "x$enable_curl" != "xyes"; then
  MSG_CURL="no, many unit tests will not run"
 else
  MSG_CURL="yes"
