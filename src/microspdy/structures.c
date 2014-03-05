@@ -42,19 +42,19 @@ struct SPDY_NameValue *
 SPDY_name_value_create ()
 {
 	struct SPDY_NameValue *pair;
-	
+
 	if(NULL == (pair = malloc(sizeof(struct SPDY_NameValue))))
 		return NULL;
-		
+
 	memset (pair, 0, sizeof (struct SPDY_NameValue));
-	
+
 	return pair;
 }
 
 
 int
 SPDY_name_value_add (struct SPDY_NameValue *container,
-					const char *name, 
+					const char *name,
 					const char *value)
 {
 	unsigned int i;
@@ -63,21 +63,21 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 	struct SPDY_NameValue *temp;
 	char **temp_value;
 	char *temp_string;
-	
+
 	if(NULL == container || NULL == name || NULL == value || 0 == (len = strlen(name)))
 		return SPDY_INPUT_ERROR;
   //TODO there is old code handling value==NULL
   //update it to handle strlen(value)==0
-		
+
 	for(i=0; i<len; ++i)
 	{
 	  if(isupper((int) name[i]))
 			return SPDY_INPUT_ERROR;
 	}
-	
+
 	if(SPDYF_name_value_is_empty(container))
 	{
-		//container is empty/just created 
+		//container is empty/just created
 		if (NULL == (container->name = strdup (name)))
 		{
 			return SPDY_NO;
@@ -98,7 +98,7 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 		container->num_values = 1;
 		return SPDY_YES;
 	}
-	
+
 	pair = container;
 	while(NULL != pair)
 	{
@@ -109,20 +109,20 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 		}
 		pair = pair->next;
 	}
-	
+
 	if(NULL == pair)
 	{
 		//the name doesn't exist in container, add new pair
 		if(NULL == (pair = malloc(sizeof(struct SPDY_NameValue))))
 			return SPDY_NO;
-		
+
 		memset(pair, 0, sizeof(struct SPDY_NameValue));
-	
+
 		if (NULL == (pair->name = strdup (name)))
 		{
 			free(pair);
 			return SPDY_NO;
-		}		
+		}
 		if (NULL == (pair->value = malloc(sizeof(char *))))
 		{
 			free(pair->name);
@@ -139,21 +139,21 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 			return SPDY_NO;
 		}
 		pair->num_values = 1;
-	
+
 		temp = container;
 		while(NULL != temp->next)
 			temp = temp->next;
 		temp->next = pair;
 		pair->prev = temp;
-		
+
 		return SPDY_YES;
 	}
-	
+
 	//check for duplication (case sensitive)
 	for(i=0; i<pair->num_values; ++i)
 		if(0 == strcmp(pair->value[i], value))
 			return SPDY_NO;
-	
+
 	if(strlen(pair->value[0]) > 0)
 	{
 		//the value will be appended to the others for this name
@@ -172,32 +172,32 @@ SPDY_name_value_add (struct SPDY_NameValue *container,
 		++pair->num_values;
 		return SPDY_YES;
 	}
-	
+
 	//just replace the empty value
-	
+
 	if (NULL == (temp_string = strdup (value)))
 	{
 		return SPDY_NO;
 	}
 	free(pair->value[0]);
 	pair->value[0] = temp_string;
-		
+
 	return SPDY_YES;
 }
 
 
-const char * const * 
+const char * const *
 SPDY_name_value_lookup (struct SPDY_NameValue *container,
 						const char *name,
 						int *num_values)
 {
 	struct SPDY_NameValue *temp = container;
-	
+
 	if(NULL == container || NULL == name || NULL == num_values)
 		return NULL;
 	if(SPDYF_name_value_is_empty(container))
 		return NULL;
-	
+
 	do
 	{
 		if(strcmp(name, temp->name) == 0)
@@ -205,11 +205,11 @@ SPDY_name_value_lookup (struct SPDY_NameValue *container,
 			*num_values = temp->num_values;
 			return (const char * const *)temp->value;
 		}
-			
+
 		temp = temp->next;
 	}
 	while(NULL != temp);
-	
+
 	return NULL;
 }
 
@@ -219,7 +219,7 @@ SPDY_name_value_destroy (struct SPDY_NameValue *container)
 {
 	unsigned int i;
 	struct SPDY_NameValue *temp = container;
-	
+
 	while(NULL != temp)
 	{
 		container = container->next;
@@ -241,16 +241,16 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
 	int count;
 	int ret;
 	struct SPDY_NameValue *temp = container;
-	
+
 	if(NULL == container)
 		return SPDY_INPUT_ERROR;
-		
+
 	//check if container is an empty struct
 	if(SPDYF_name_value_is_empty(container))
 		return 0;
-	
+
 	count = 0;
-	
+
 	if(NULL == iterator)
 	{
 		do
@@ -259,10 +259,10 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
 			temp=temp->next;
 		}
 		while(NULL != temp);
-		
+
 		return count;
 	}
-	
+
 	//code duplication for avoiding if here
 	do
 	{
@@ -271,7 +271,7 @@ SPDY_name_value_iterate (struct SPDY_NameValue *container,
 		temp=temp->next;
 	}
 	while(NULL != temp && SPDY_YES == ret);
-	
+
 	return count;
 }
 
@@ -305,21 +305,21 @@ SPDYF_response_queue_create(bool is_data,
 	struct SPDYF_Data_Frame *data_frame;
 	unsigned int i;
 	bool is_last;
-	
+
 	SPDYF_ASSERT((! is_data)
 		     || ((0 == data_size) && (NULL != response->rcb))
 		     || ((0 < data_size) && (NULL == response->rcb)),
 		     "either data or request->rcb must not be null");
-	
+
 	if (is_data && (data_size > SPDY_MAX_SUPPORTED_FRAME_SIZE))
 	{
 		//separate the data in more frames and add them to the queue
-		
+
 		prev=NULL;
 		for(i = 0; i < data_size; i += SPDY_MAX_SUPPORTED_FRAME_SIZE)
 		{
 			is_last = (i + SPDY_MAX_SUPPORTED_FRAME_SIZE) >= data_size;
-						
+
 			if(NULL == (response_to_queue = malloc(sizeof(struct SPDYF_Response_Queue))))
 				goto free_and_fail;
 
@@ -337,7 +337,7 @@ SPDYF_response_queue_create(bool is_data,
 			data_frame->stream_id = stream->stream_id;
 			if(is_last && closestream)
 				data_frame->flags |= SPDY_DATA_FLAG_FIN;
-			
+
 			response_to_queue->data_frame = data_frame;
 			response_to_queue->process_response_handler = &SPDYF_handler_write_data;
 			response_to_queue->is_data = is_data;
@@ -354,15 +354,15 @@ SPDYF_response_queue_create(bool is_data,
 				? (data_size - 1) % SPDY_MAX_SUPPORTED_FRAME_SIZE + 1
 				: SPDY_MAX_SUPPORTED_FRAME_SIZE;
 			response_to_queue->response = response;
-	
+
 			response_to_queue->prev = prev;
 			if(NULL != prev)
 				prev->next = response_to_queue;
 			prev = response_to_queue;
-		}		
-		
+		}
+
 		return head;
-		
+
 		//for GOTO
 		free_and_fail:
 		while(NULL != head)
@@ -374,17 +374,17 @@ SPDYF_response_queue_create(bool is_data,
 		}
 		return NULL;
 	}
-	
+
 	//create only one frame for data, data with callback or control frame
-	
+
 	if(NULL == (response_to_queue = malloc(sizeof(struct SPDYF_Response_Queue))))
 	{
 		return NULL;
 	}
 	memset(response_to_queue, 0, sizeof(struct SPDYF_Response_Queue));
-	
+
 	if(is_data)
-	{		
+	{
 		if(NULL == (data_frame = malloc(sizeof(struct SPDYF_Data_Frame))))
 		{
 			free(response_to_queue);
@@ -395,7 +395,7 @@ SPDYF_response_queue_create(bool is_data,
 		data_frame->stream_id = stream->stream_id;
 		if(closestream && NULL == response->rcb)
 			data_frame->flags |= SPDY_DATA_FLAG_FIN;
-		
+
 		response_to_queue->data_frame = data_frame;
 		response_to_queue->process_response_handler = &SPDYF_handler_write_data;
 	}
@@ -412,11 +412,11 @@ SPDYF_response_queue_create(bool is_data,
 		control_frame->type = SPDY_CONTROL_FRAME_TYPES_SYN_REPLY;
 		if(closestream)
 			control_frame->flags |= SPDY_SYN_REPLY_FLAG_FIN;
-		
+
 		response_to_queue->control_frame = control_frame;
 		response_to_queue->process_response_handler = &SPDYF_handler_write_syn_reply;
 	}
-	
+
 	response_to_queue->is_data = is_data;
 	response_to_queue->stream = stream;
 	response_to_queue->frqcb = frqcb;
@@ -426,7 +426,7 @@ SPDYF_response_queue_create(bool is_data,
 	response_to_queue->data = data;
 	response_to_queue->data_size = data_size;
 	response_to_queue->response = response;
-	
+
 	return response_to_queue;
 }
 
@@ -446,15 +446,17 @@ SPDYF_response_queue_destroy(struct SPDYF_Response_Queue *response_queue)
 		free(response_queue->data_frame);
 	else
 		free(response_queue->control_frame);
-		
+
 	free(response_queue);
 }
 
 
-ssize_t
+/* Needed by testcase to be extern -- should this be
+   in the header? */
+_MHD_EXTERN ssize_t
 SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
-							int num_containers,
-							void **stream)
+                           int num_containers,
+                           void **stream)
 {
 	size_t size;
 	int32_t num_pairs = 0;
@@ -466,7 +468,7 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
 	unsigned int value_offset;
 	struct SPDY_NameValue * iterator;
 	int j;
-	
+
 	size = 4; //for num pairs
 
 	for(j=0; j<num_containers; ++j)
@@ -492,17 +494,17 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
       iterator = iterator->next;
     }
   }
-	
+
 	if(NULL == (*stream = malloc(size)))
 	{
 		return -1;
 	}
-	
+
 	//put num_pairs to the stream
 	num_pairs = htonl(num_pairs);
 	memcpy(*stream, &num_pairs, 4);
 	offset = 4;
-	
+
 	//put all other headers to the stream
 	for(j=0; j<num_containers; ++j)
 	{
@@ -539,14 +541,16 @@ SPDYF_name_value_to_stream(struct SPDY_NameValue * container[],
       iterator = iterator->next;
     }
   }
-	
+
 	SPDYF_ASSERT(offset == size,"offset is wrong");
-	
+
 	return size;
 }
 
 
-int
+/* Needed by testcase to be extern -- should this be
+   in the header? */
+_MHD_EXTERN int
 SPDYF_name_value_from_stream(void *stream,
 							size_t size,
 							struct SPDY_NameValue ** container)
@@ -564,14 +568,14 @@ SPDYF_name_value_from_stream(void *stream,
 	{
 		return SPDY_NO;
 	}
-	
+
 	//get number of pairs
 	memcpy(&num_pairs, stream, 4);
 	offset = 4;
 	num_pairs = ntohl(num_pairs);
 
 	if(num_pairs > 0)
-	{		
+	{
 		for(i = 0; i < num_pairs; ++i)
 		{
 			//get name size
@@ -585,7 +589,7 @@ SPDYF_name_value_from_stream(void *stream,
 				return SPDY_NO;
 			}
 			offset+=name_size;
-			
+
 			//get value size
 			memcpy(&value_size, stream + offset, 4);
 			offset += 4;
@@ -603,7 +607,7 @@ SPDYF_name_value_from_stream(void *stream,
 				offset += strlen(value);
 				if(offset < value_end_offset)
 					++offset; //NULL separator
-				
+
 				//add name/value to the struct
 				if(SPDY_YES != SPDY_name_value_add(*container, name, value))
 				{
@@ -615,9 +619,9 @@ SPDYF_name_value_from_stream(void *stream,
 				free(value);
 			}
 			while(offset < value_end_offset);
-			
+
 			free(name);
-			
+
 			if(offset != value_end_offset)
 			{
 				SPDY_name_value_destroy(*container);
@@ -625,10 +629,10 @@ SPDYF_name_value_from_stream(void *stream,
 			}
 		}
 	}
-	
+
 	if(offset == size)
 		return SPDY_YES;
-		
+
 	SPDY_name_value_destroy(*container);
 	return SPDY_INPUT_ERROR;
 }

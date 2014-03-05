@@ -852,7 +852,7 @@ SPDY_deinit (void);
  */
 _MHD_EXTERN void
 SPDY_set_panic_func (SPDY_PanicCallback cb,
-					void *cls);
+                     void *cls);
 
 
 /* Daemon functions */
