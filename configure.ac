@@ -225,15 +225,19 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    ])
 
 # Check for pipe/socketpair signaling
-AC_MSG_CHECKING([[whether to disable pipes signaling]])
-AC_ARG_ENABLE([[pipes]],
-	[AS_HELP_STRING([[--disable-pipes]], [[disable internal singalling by pipes and use socket pair instead]])],
-	[], [[enable_pipes=yes]])
-AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
-        AC_MSG_RESULT([[yes, forced on W32]])],
-	[[test "x$enable_pipes" != "xno"]], [disable_pipes=no
-        AC_MSG_RESULT([[$disable_pipes]])],
-        [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_MSG_CHECKING([[whether to enable signaling by socketpair]])
+
+AC_ARG_ENABLE([[socketpair]],
+	[AS_HELP_STRING([[--enable-socketpair[=ARG]]], [disable internal singalling by pipes and use socket pair instead (yes, no, try) [no]])], ,
+	[AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_socketpair=yes], [enable_socketpair=no])]
+  )
+
+AS_IF(
+       [[test "x$enable_socketpair" != "xno"]],
+         [AS_IF([[test "x$os_is_windows" = "xyes"]],
+           [ AC_MSG_RESULT([[yes, forced on W32]]) ],
+           [ AC_LINK_IFELSE(
+             [ AC_LANG_PROGRAM([[
 				#ifdef HAVE_SYS_TYPES_H
 				#include <sys/types.h>
 				#endif
@@ -243,15 +247,22 @@ AS_IF([[test "x$os_is_windows" = "xyes"]], [disable_pipes=yes
 				]],[[
 				  int sv[2];
 				  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return 1
-
-				]])],
-            [disable_pipes=yes
-              AC_MSG_RESULT([[yes, socketpair in available]])],
-            [disable_pipes=no
-              AC_MSG_RESULT([[no, socketpair in not available]])]
+				]])
+             ],
+             [ AC_MSG_RESULT([[yes, socketpair in available]]) ],
+             [ AC_MSG_RESULT([[no, socketpair in not available]])
+              AS_IF([[test "x$enable_socketpair" = "xyes"]], [ AC_MSG_ERROR([[socketpair signalling cannot be enabled.]]) ])
+             ]
+             )
+           ]
           )
-       ])
-if test "x$disable_pipes" = "xyes"; then
+         ],
+       [
+        AC_MSG_RESULT([[no]])
+        AS_IF([[test "x$os_is_windows" = "xyes"]], [ AC_MSG_ERROR([[socketpair must be enabled on W32]]) ])
+       ]
+     )
+if test "x$enable_socketpair" = "xyes"; then
 	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
 fi
 
