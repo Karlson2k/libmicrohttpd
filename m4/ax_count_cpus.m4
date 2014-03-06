@@ -15,6 +15,7 @@
 #
 # LICENSE
 #
+#   Copyright (c) 2014 Karlson2k (Evgeny Grin) <k2k@narod.ru>
 #   Copyright (c) 2012 Brian Aker <brian@tangent.org>
 #   Copyright (c) 2008 Michael Paul Bailey <jinxidoru@byu.net>
 #   Copyright (c) 2008 Christophe Tournayre <turn3r@users.sourceforge.net>
@@ -45,6 +46,14 @@
           AS_IF([test "x$CPU_COUNT" = "x0" -a -e /proc/cpuinfo],[
             CPU_COUNT=`$EGREP -c '^processor' /proc/cpuinfo`
             ])
+          ])],[
+        *mingw*],[
+        AS_IF([test -n "$NUMBER_OF_PROCESSORS"],[
+          CPU_COUNT="$NUMBER_OF_PROCESSORS"
+          ])],[
+        *cygwin*],[
+        AS_IF([test -n "$NUMBER_OF_PROCESSORS"],[
+          CPU_COUNT="$NUMBER_OF_PROCESSORS"
           ])
         ])
 
