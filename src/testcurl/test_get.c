@@ -46,6 +46,13 @@
 #include <sys/socket.h>
 #endif
 
+#if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
+#undef CPU_COUNT
+#endif
+#if !defined(CPU_COUNT)
+#define CPU_COUNT 2
+#endif
+
 static int oneone;
 
 struct CBC
@@ -214,7 +221,7 @@ testMultithreadedPoolGet (int poll_flag)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         1081, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+                        MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   c = curl_easy_init ();

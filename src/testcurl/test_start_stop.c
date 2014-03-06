@@ -28,6 +28,13 @@
 #include <curl/curl.h>
 #include <microhttpd.h>
 
+#if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
+#undef CPU_COUNT
+#endif
+#if !defined(CPU_COUNT)
+#define CPU_COUNT 2
+#endif
+
 
 static int
 ahc_echo (void *cls,
@@ -75,7 +82,7 @@ testMultithreadedPoolGet (int poll_flag)
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         1081, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+                        MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 4;
   MHD_stop_daemon (d);

@@ -6,6 +6,8 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = @LIBGCRYPT_CFLAGS@
 
+CPU_COUNT_DEF = -DCPU_COUNT=$(CPU_COUNT)
+
 if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
@@ -72,6 +74,8 @@ demo_SOURCES = \
  demo.c
 demo_CFLAGS = \
  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+demo_CPPFLAGS = \
+ $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  $(PTHREAD_LIBS) -lmagic
@@ -87,11 +91,15 @@ mhd2spdy_LDADD = \
 
 benchmark_SOURCES = \
  benchmark.c 
+benchmark_CPPFLAGS = \
+ $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 benchmark_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  
 
 benchmark_https_SOURCES = \
  benchmark_https.c 
+benchmark_https_CPPFLAGS = \
+ $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 benchmark_https_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  
 

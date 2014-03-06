@@ -9,6 +9,7 @@ if ENABLE_HTTPS
 endif
 
 AM_CPPFLAGS = \
+-DCPU_COUNT=$(CPU_COUNT) \
 -I$(top_srcdir) \
 -I$(top_srcdir)/src/microhttpd \
 -I$(top_srcdir)/src/include \

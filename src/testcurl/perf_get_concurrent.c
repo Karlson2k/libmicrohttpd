@@ -41,6 +41,13 @@
 #include <time.h>
 #include "gauger.h"
 
+#if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
+#undef CPU_COUNT
+#endif
+#if !defined(CPU_COUNT)
+#define CPU_COUNT 2
+#endif
+
 /**
  * How many rounds of operations do we do for each
  * test (total number of requests will be ROUNDS * PAR).
@@ -50,7 +57,7 @@
 /**
  * How many requests do we do in parallel?
  */
-#define PAR 4
+#define PAR CPU_COUNT
 
 /**
  * Do we use HTTP 1.1?
@@ -262,7 +269,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_THREAD_POOL_SIZE, 4, MHD_OPTION_END);
+                        MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   start_timer ();

@@ -39,6 +39,13 @@
 #include <sys/socket.h>
 #endif
 
+#if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
+#undef CPU_COUNT
+#endif
+#if !defined(CPU_COUNT)
+#define CPU_COUNT 2
+#endif
+
 static int oneone;
 
 
@@ -436,16 +443,16 @@ main (int argc, char *const *argv)
     return 2;
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, 0);
   errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, 0);
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 4, 0);
+  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, 0);
   errorCount += testExternalGet ();
 #ifndef WINDOWS
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_POLL);
   errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, MHD_USE_POLL);
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 4, MHD_USE_POLL);
+  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_POLL);
 #endif
 #if EPOLL_SUPPORT
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL_LINUX_ONLY);
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 4, MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_EPOLL_LINUX_ONLY);
 #endif
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

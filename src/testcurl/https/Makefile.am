@@ -4,6 +4,8 @@ if USE_COVERAGE
   AM_CFLAGS = --coverage
 endif
 
+CPU_COUNT_DEF = -DCPU_COUNT=$(CPU_COUNT)
+
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
@@ -59,6 +61,8 @@ test_tls_options_LDADD = \
 test_https_get_parallel_SOURCES = \
   test_https_get_parallel.c \
   tls_test_common.c
+test_https_get_parallel_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 test_https_get_parallel_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_LDADD = \
@@ -77,6 +81,8 @@ test_empty_response_LDADD = \
 test_https_get_parallel_threads_SOURCES = \
   test_https_get_parallel_threads.c \
   tls_test_common.c
+test_https_get_parallel_threads_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 test_https_get_parallel_threads_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_threads_LDADD = \
