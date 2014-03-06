@@ -519,7 +519,7 @@ have_gnutls=no
 AC_MSG_CHECKING(for gnutls)
 AC_ARG_WITH(gnutls,
    [AC_HELP_STRING([--with-gnutls=PFX],[base of gnutls installation])],
-   [AC_MSG_RESULT([$with_gnutls])
+   [AC_MSG_RESULT([using prefix $with_gnutls])
     case $with_gnutls in
       no)
         GNUTLS_CPPFLAGS=""
@@ -543,12 +543,12 @@ AC_ARG_WITH(gnutls,
         GNUTLS_LIBS="-lgnutls"
         SAVE_LDFLAGS="$LDFLAGS"
         SAVE_CPPFLAGS="$CPPFLAGS"
-        LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
-        CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
-        AC_CHECK_HEADERS([gnutls/gnutls.h],
-            AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-              EXT_LIB_PATH="-L$with_gnutls/lib $EXT_LIB_PATH"
-              have_gnutls=yes))
+        LDFLAGS="$GNUTLS_LDFLAGS $LDFLAGS"
+        CPPFLAGS="$GNUTLS_CPPFLAGS $CPPFLAGS"
+        AC_CHECK_FILE([$with_gnutls/include/gnutls/gnutls.h],
+          [AC_CHECK_HEADERS([gnutls/gnutls.h],
+            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], [have_gnutls=yes])])])
+        AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
         LDFLAGS="$SAVE_LDFLAGS"
         CPPFLAGS="$SAVE_CPPFLAGS"
         ;;
@@ -556,8 +556,14 @@ AC_ARG_WITH(gnutls,
    ],
    [AC_MSG_RESULT([--with-gnutls not specified])
     AC_CHECK_HEADERS([gnutls/gnutls.h],
-        AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-          have_gnutls=yes))])
+        [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+          [
+            GNUTLS_CPPFLAGS=""
+            GNUTLS_CFLAGS=""
+            GNUTLS_LDFLAGS=""
+            GNUTLS_LIBS="-lgnutls"
+            have_gnutls=yes
+          ])])])
 AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
 
 AC_SUBST([GNUTLS_CPPFLAGS])
