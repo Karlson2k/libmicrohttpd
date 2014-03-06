@@ -201,6 +201,8 @@ if (x) ;
               # protocols are available
               _libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT TFTP"
 
+              test -z "$_libcurl_version" && _libcurl_version=0
+
               if test x$libcurl_feature_SSL = xyes ; then
                  _libcurl_protocols="$_libcurl_protocols HTTPS"
 
