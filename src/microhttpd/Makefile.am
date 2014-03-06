@@ -2,8 +2,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd
 
-AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS) \
-  @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
 if HAVE_W32
 MHD_W32_LIB = $(top_builddir)/src/platform/libmicrohttpd_w32.la
