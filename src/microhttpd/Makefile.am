@@ -129,7 +129,9 @@ endif
 if ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
-libmicrohttpd_la_LIBADD += -lgnutls @LIBGCRYPT_LIBS@
+libmicrohttpd_la_CPPFLAGS += $(GNUTLS_CPPFLAGS)
+libmicrohttpd_la_LDFLAGS += $(GNUTLS_LDFLAGS)
+libmicrohttpd_la_LIBADD += $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@
 endif
 
 

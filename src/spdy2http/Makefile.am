@@ -11,7 +11,7 @@ AM_CPPFLAGS = \
  -I$(top_srcdir)/src/include \
  -I$(top_srcdir)/src/applicationlayer \
  -DDATA_DIR=\"$(top_srcdir)/src/datadir/\" \
-$(LIBCURL_CPPFLAGS)
+ $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
@@ -25,4 +25,4 @@ microspdy2http_SOURCES = \
 microspdy2http_LDADD = \
   $(top_builddir)/src/microspdy/libmicrospdy.la \
  -lz \
- -lcurl
+ $(LIBCURL)

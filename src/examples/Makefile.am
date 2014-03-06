@@ -147,6 +147,8 @@ fileserver_example_external_select_LDADD = \
 
 https_fileserver_example_SOURCES = \
 https_fileserver_example.c
+https_fileserver_example_CPPFLAGS = \
+ $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 https_fileserver_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 

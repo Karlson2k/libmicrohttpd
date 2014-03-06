@@ -522,6 +522,10 @@ AC_ARG_WITH(gnutls,
    [AC_MSG_RESULT([$with_gnutls])
     case $with_gnutls in
       no)
+        GNUTLS_CPPFLAGS=""
+        GNUTLS_CFLAGS=""
+        GNUTLS_LDFLAGS=""
+        GNUTLS_LIBS=""
         ;;
       yes)
         GNUTLS_CPPFLAGS=""
@@ -556,6 +560,9 @@ AC_ARG_WITH(gnutls,
           have_gnutls=yes))])
 AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
 
+AC_SUBST([GNUTLS_CPPFLAGS])
+AC_SUBST([GNUTLS_LDFLAGS])
+AC_SUBST([GNUTLS_LIBS])
 
 # optional: HTTPS support.  Enabled by default
 AC_MSG_CHECKING(whether to support HTTPS)

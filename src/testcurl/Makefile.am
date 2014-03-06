@@ -123,13 +123,13 @@ test_digestauth_SOURCES = \
   test_digestauth.c
 test_digestauth_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ @LIBGCRYPT_LIBS@
+  @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_digestauth_with_arguments_SOURCES = \
   test_digestauth_with_arguments.c
 test_digestauth_with_arguments_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@ @LIBGCRYPT_LIBS@
+  @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_get_sendfile_SOURCES = \
   test_get_sendfile.c
@@ -186,7 +186,7 @@ test_postform_SOURCES = \
   test_postform.c
 test_postform_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@  @LIBGCRYPT_LIBS@
+  @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_post_loop_SOURCES = \
   test_post_loop.c
@@ -232,7 +232,7 @@ test_postform11_SOURCES = \
   test_postform.c
 test_postform11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@  @LIBGCRYPT_LIBS@
+  @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_post_loop11_SOURCES = \
   test_post_loop.c
