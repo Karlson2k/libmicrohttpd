@@ -515,6 +515,10 @@ then
 fi
 
 # gnutls
+GNUTLS_CPPFLAGS=""
+GNUTLS_CFLAGS=""
+GNUTLS_LDFLAGS=""
+GNUTLS_LIBS=""
 have_gnutls=no
 AC_MSG_CHECKING(for gnutls)
 AC_ARG_WITH(gnutls,
@@ -522,32 +526,27 @@ AC_ARG_WITH(gnutls,
    [AC_MSG_RESULT([using prefix $with_gnutls])
     case $with_gnutls in
       no)
-        GNUTLS_CPPFLAGS=""
-        GNUTLS_CFLAGS=""
-        GNUTLS_LDFLAGS=""
-        GNUTLS_LIBS=""
         ;;
       yes)
-        GNUTLS_CPPFLAGS=""
-        GNUTLS_CFLAGS=""
-        GNUTLS_LDFLAGS=""
-        GNUTLS_LIBS="-lgnutls"
         AC_CHECK_HEADERS([gnutls/gnutls.h],
-            AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-	     have_gnutls=yes))
+            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], [
+              GNUTLS_LIBS="-lgnutls"
+              have_gnutls=yes])])
         ;;
       *)
-        GNUTLS_CPPFLAGS="-I$with_gnutls/include"
-        GNUTLS_CFLAGS=""
-        GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-        GNUTLS_LIBS="-lgnutls"
         SAVE_LDFLAGS="$LDFLAGS"
         SAVE_CPPFLAGS="$CPPFLAGS"
-        LDFLAGS="$GNUTLS_LDFLAGS $LDFLAGS"
-        CPPFLAGS="$GNUTLS_CPPFLAGS $CPPFLAGS"
+        LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
+        CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
         AC_CHECK_FILE([$with_gnutls/include/gnutls/gnutls.h],
           [AC_CHECK_HEADERS([gnutls/gnutls.h],
-            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], [have_gnutls=yes])])])
+            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], 
+              [
+                GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+                GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+                GNUTLS_LIBS="-lgnutls"
+                have_gnutls=yes
+              ])])])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
         LDFLAGS="$SAVE_LDFLAGS"
         CPPFLAGS="$SAVE_CPPFLAGS"
@@ -558,9 +557,6 @@ AC_ARG_WITH(gnutls,
     AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
-            GNUTLS_CPPFLAGS=""
-            GNUTLS_CFLAGS=""
-            GNUTLS_LDFLAGS=""
             GNUTLS_LIBS="-lgnutls"
             have_gnutls=yes
           ])])])
