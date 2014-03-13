@@ -663,6 +663,7 @@ AC_SUBST(LDFLAGS)
 
 AC_CONFIG_FILES([
 libmicrohttpd.pc
+libmicrospdy.pc
 Makefile
 contrib/Makefile
 doc/Makefile
