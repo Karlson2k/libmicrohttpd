@@ -572,16 +572,33 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
  * @param fd file descriptor to add to the @a set
  * @param set set to modify
  * @param max_fd maximum value to potentially update
+ * @return #MHD_YES on success, #MHD_NO otherwise
  */
-static void
+static int
 add_to_fd_set (MHD_socket fd,
 	       fd_set *set,
 	       MHD_socket *max_fd)
 {
+  if (NULL == set)
+    return MHD_NO;
+#ifdef MHD_WINSOCK_SOCKETS
+  if (set->fd_count >= FD_SETSIZE)
+    {
+      if (FD_ISSET(fd, set))
+        return MHD_YES;
+      else
+        return MHD_NO;
+    }
+#else  // ! MHD_WINSOCK_SOCKETS
+  if (fd >= FD_SETSIZE)
+    return MHD_NO;
+#endif // ! MHD_WINSOCK_SOCKETS
   FD_SET (fd, set);
   if ( (NULL != max_fd) && (MHD_INVALID_SOCKET != fd) &&
        ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
     *max_fd = fd;
+
+  return MHD_YES;
 }
 
 
@@ -599,7 +616,8 @@ add_to_fd_set (MHD_socket fd,
  *               than existing value); can be NULL
  * @return #MHD_YES on success, #MHD_NO if this
  *         daemon was not started with the right
- *         options for this call.
+ *         options for this call or any FD didn't
+ *         fit fd_set.
  * @ingroup event
  */
 int
@@ -610,7 +628,6 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 	       MHD_socket *max_fd)
 {
   struct MHD_Connection *pos;
-  MHD_socket fd;
 
   if ( (NULL == daemon)
        || (NULL == read_fd_set)
@@ -626,38 +643,32 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       /* we're in epoll mode, use the epoll FD as a stand-in for
 	 the entire event set */
 
-      if (daemon->epoll_fd >= FD_SETSIZE)
-	return MHD_NO; /* poll fd too big, fail hard */
-      FD_SET (daemon->epoll_fd, read_fd_set);
-      if ( (NULL != max_fd) &&  ((*max_fd) < daemon->epoll_fd) )
-	*max_fd = daemon->epoll_fd;
-      return MHD_YES;
+      return add_to_fd_set (daemon->epoll_fd, read_fd_set, max_fd);
     }
 #endif
-  fd = daemon->socket_fd;
-  if (MHD_INVALID_SOCKET != fd)
-  {
-    FD_SET (fd, read_fd_set);
-    /* update max file descriptor */
-    if ( (NULL != max_fd) &&
-         ((*max_fd) < fd || MHD_INVALID_SOCKET == (*max_fd)))
-      *max_fd = fd;
-  }
+  if (MHD_INVALID_SOCKET != daemon->socket_fd &&
+      MHD_YES != add_to_fd_set (daemon->socket_fd, read_fd_set, max_fd))
+    return MHD_NO;
+
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
       switch (pos->event_loop_info)
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
-	  add_to_fd_set (pos->socket_fd, read_fd_set, max_fd);
+	  if (MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+	    return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
-	  add_to_fd_set (pos->socket_fd, write_fd_set, max_fd);
-	  if (pos->read_buffer_size > pos->read_buffer_offset)
-	    add_to_fd_set (pos->socket_fd, read_fd_set, max_fd);
+	  if (MHD_YES != add_to_fd_set (pos->socket_fd, write_fd_set, max_fd))
+	    return MHD_NO;
+	  if (pos->read_buffer_size > pos->read_buffer_offset &&
+	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+            return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
-	  if (pos->read_buffer_size > pos->read_buffer_offset)
-	    add_to_fd_set (pos->socket_fd, read_fd_set, max_fd);
+	  if (pos->read_buffer_size > pos->read_buffer_offset &&
+	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+            return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
 	  /* this should never happen */
@@ -724,22 +735,27 @@ MHD_handle_connection (void *data)
       if (0 == (con->daemon->options & MHD_USE_POLL))
 	{
 	  /* use select */
+	  int err_state = 0;
 	  FD_ZERO (&rs);
 	  FD_ZERO (&ws);
 	  max = 0;
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
-	      add_to_fd_set (con->socket_fd, &rs, &max);
+	      if (MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      add_to_fd_set (con->socket_fd, &ws, &max);
-	      if (con->read_buffer_size > con->read_buffer_offset)
-		add_to_fd_set (con->socket_fd, &rs, &max);
+	      if (MHD_YES != add_to_fd_set (con->socket_fd, &ws, &max))
+                err_state = 1;
+	      if (con->read_buffer_size > con->read_buffer_offset &&
+	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      if (con->read_buffer_size > con->read_buffer_offset)
-		add_to_fd_set (con->socket_fd, &rs, &max);
+	      if (con->read_buffer_size > con->read_buffer_offset &&
+	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	        err_state = 1;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
 	      tvp = &tv;
@@ -748,6 +764,15 @@ MHD_handle_connection (void *data)
 	      /* how did we get here!? */
 	      goto exit;
 	    }
+            if (0 != err_state)
+              {
+#if HAVE_MESSAGES
+                MHD_DLOG (con->daemon,
+                        "Can't add FD to fd_set\n");
+#endif
+                goto exit;
+              }
+
 	  num_ready = MHD_SYS_select_ (max + 1, &rs, &ws, NULL, tvp);
 	  if (num_ready < 0)
 	    {
@@ -756,7 +781,7 @@ MHD_handle_connection (void *data)
 #if HAVE_MESSAGES
 	      MHD_DLOG (con->daemon,
 			"Error during select (%d): `%s'\n",
-			max,
+			MHD_socket_errno_,
 			MHD_socket_last_strerr_ ());
 #endif
 	      break;
@@ -2078,19 +2103,13 @@ MHD_select (struct MHD_Daemon *daemon,
   else
     {
       /* accept only, have one thread per connection */
-      if (MHD_INVALID_SOCKET != daemon->socket_fd)
-	{
-	  max = daemon->socket_fd;
-	  FD_SET (daemon->socket_fd, &rs);
-	}
+      if (MHD_INVALID_SOCKET != daemon->socket_fd &&
+          MHD_YES != add_to_fd_set(daemon->socket_fd, &rs, &max))
+        return MHD_NO;
     }
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[0])
-    {
-      FD_SET (daemon->wpipe[0], &rs);
-      /* update max file descriptor */
-      if (max < daemon->wpipe[0] || max == MHD_INVALID_SOCKET)
-	max = daemon->wpipe[0];
-    }
+  if (MHD_INVALID_PIPE_ != daemon->wpipe[0] &&
+      MHD_YES != add_to_fd_set(daemon->wpipe[0], &rs, &max))
+    return MHD_NO;
 
   tv = NULL;
   if (MHD_NO == may_block)
