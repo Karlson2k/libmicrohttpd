@@ -1,3 +1,6 @@
+Tue Mar 25 12:53:55 CET 2014
+	Fix limiting by IPv6 address. -EG
+
 Tue Mar 25 09:06:13 CET 2014
 	Added more FD_SETSIZE checks.
 	Implemented FD_SETSIZE checks for W32. -EG

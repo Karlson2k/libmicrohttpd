@@ -184,7 +184,7 @@ struct MHD_IPCount
      * IPv4 address.
      */
     struct in_addr ipv4;
-#if HAVE_IPV6
+#if HAVE_INET6
     /**
      * IPv6 address.
      */
@@ -269,7 +269,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
       return MHD_YES;
     }
 
-#if HAVE_IPV6
+#if HAVE_INET6
   /* IPv6 addresses */
   if (sizeof (struct sockaddr_in6) == addrlen)
     {
