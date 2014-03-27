@@ -1,3 +1,7 @@
+Thu Mar 27 14:47:54 CET 2014
+	Used larger FD_SETSIZE internally on W32.
+	Extended API to work with non-default FD_SETSIZE. -EG
+
 Tue Mar 25 12:53:55 CET 2014
 	Fix limiting by IPv6 address. -EG
 

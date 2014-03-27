@@ -1439,7 +1439,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * Obtain the `select()` sets for this daemon.
  * Daemon's FDs will be added to fd_sets. To get only
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
- * before calling this function.
+ * before calling this function. FD_SETSIZE is assumed
+ * to be platform's default.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -1449,7 +1450,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *               than existing value); can be NULL
  * @return #MHD_YES on success, #MHD_NO if this
  *         daemon was not started with the right
- *         options for this call.
+ *         options for this call or any FD didn't
+ *         fit fd_set.
  * @ingroup event
  */
 _MHD_EXTERN int
@@ -1458,6 +1460,59 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *write_fd_set,
 	       fd_set *except_fd_set,
 	       MHD_socket *max_fd);
+
+
+/**
+ * Obtain the `select()` sets for this daemon.
+ * Daemon's FDs will be added to fd_sets. To get only
+ * daemon FDs in fd_sets, call FD_ZERO for each fd_set
+ * before calling this function. Passing custom FD_SETSIZE
+ * as @a fd_setsize allow usage of larger/smaller than
+ * platform's default fd_sets.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @param fd_setsize value of FD_SETSIZE
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or any FD didn't
+ *         fit fd_set.
+ * @ingroup event
+ */
+_MHD_EXTERN int
+MHD_get_fdset2 (struct MHD_Daemon *daemon,
+               fd_set *read_fd_set,
+               fd_set *write_fd_set,
+               fd_set *except_fd_set,
+               MHD_socket *max_fd,
+               unsigned int fd_setsize);
+
+
+/**
+ * Obtain the `select()` sets for this daemon.
+ * Daemon's FDs will be added to fd_sets. To get only
+ * daemon FDs in fd_sets, call FD_ZERO for each fd_set
+ * before calling this function. Size of fd_set is
+ * determined by current value of FD_SETSIZE.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or any FD didn't
+ *         fit fd_set.
+ * @ingroup event
+ */
+#define MHD_get_fdset(daemon,read_fd_set,write_fd_set,except_fd_set,max_fd) \
+  MHD_get_fdset2((daemon),(read_fd_set),(write_fd_set),(except_fd_set),(max_fd),FD_SETSIZE)
 
 
 /**

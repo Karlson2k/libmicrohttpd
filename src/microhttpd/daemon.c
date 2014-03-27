@@ -24,6 +24,13 @@
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* override small default value */
+#define FD_SETSIZE 1024
+#define MHD_DEFAULT_FD_SETSIZE 64
+#else
+#define MHD_DEFAULT_FD_SETSIZE FD_SETSIZE
+#endif
 #include "platform.h"
 #include "internal.h"
 #include "response.h"
@@ -572,17 +579,19 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
  * @param fd file descriptor to add to the @a set
  * @param set set to modify
  * @param max_fd maximum value to potentially update
+ * @param fd_setsize value of FD_SETSIZE
  * @return #MHD_YES on success, #MHD_NO otherwise
  */
 static int
 add_to_fd_set (MHD_socket fd,
 	       fd_set *set,
-	       MHD_socket *max_fd)
+	       MHD_socket *max_fd,
+	       unsigned int fd_setsize)
 {
   if (NULL == set)
     return MHD_NO;
 #ifdef MHD_WINSOCK_SOCKETS
-  if (set->fd_count >= FD_SETSIZE)
+  if (set->fd_count >= fd_setsize)
     {
       if (FD_ISSET(fd, set))
         return MHD_YES;
@@ -590,7 +599,7 @@ add_to_fd_set (MHD_socket fd,
         return MHD_NO;
     }
 #else  // ! MHD_WINSOCK_SOCKETS
-  if (fd >= FD_SETSIZE)
+  if (fd >= fd_setsize)
     return MHD_NO;
 #endif // ! MHD_WINSOCK_SOCKETS
   FD_SET (fd, set);
@@ -601,12 +610,14 @@ add_to_fd_set (MHD_socket fd,
   return MHD_YES;
 }
 
+#undef MHD_get_fdset
 
 /**
  * Obtain the `select()` sets for this daemon.
  * Daemon's FDs will be added to fd_sets. To get only
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
- * before calling this function.
+ * before calling this function. FD_SETSIZE is assumed
+ * to be platform's default.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -627,6 +638,40 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 	       fd_set *except_fd_set,
 	       MHD_socket *max_fd)
 {
+  return MHD_get_fdset2(daemon, read_fd_set,
+      write_fd_set, except_fd_set,
+      max_fd, MHD_DEFAULT_FD_SETSIZE);
+}
+
+/**
+ * Obtain the `select()` sets for this daemon.
+ * Daemon's FDs will be added to fd_sets. To get only
+ * daemon FDs in fd_sets, call FD_ZERO for each fd_set
+ * before calling this function. Passing custom FD_SETSIZE
+ * as @a fd_setsize allow usage of larger/smaller than
+ * platform's default fd_sets.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @param fd_setsize value of FD_SETSIZE
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or any FD didn't
+ *         fit fd_set.
+ * @ingroup event
+ */
+int
+MHD_get_fdset2 (struct MHD_Daemon *daemon,
+               fd_set *read_fd_set,
+               fd_set *write_fd_set,
+               fd_set *except_fd_set,
+               MHD_socket *max_fd,
+               unsigned int fd_setsize)
+{
   struct MHD_Connection *pos;
 
   if ( (NULL == daemon)
@@ -643,11 +688,11 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       /* we're in epoll mode, use the epoll FD as a stand-in for
 	 the entire event set */
 
-      return add_to_fd_set (daemon->epoll_fd, read_fd_set, max_fd);
+      return add_to_fd_set (daemon->epoll_fd, read_fd_set, max_fd, fd_setsize);
     }
 #endif
   if (MHD_INVALID_SOCKET != daemon->socket_fd &&
-      MHD_YES != add_to_fd_set (daemon->socket_fd, read_fd_set, max_fd))
+      MHD_YES != add_to_fd_set (daemon->socket_fd, read_fd_set, max_fd, fd_setsize))
     return MHD_NO;
 
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -655,19 +700,19 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
       switch (pos->event_loop_info)
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
-	  if (MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+	  if (MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
 	    return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
-	  if (MHD_YES != add_to_fd_set (pos->socket_fd, write_fd_set, max_fd))
+	  if (MHD_YES != add_to_fd_set (pos->socket_fd, write_fd_set, max_fd, fd_setsize))
 	    return MHD_NO;
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
             return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd))
+	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
             return MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
@@ -742,19 +787,19 @@ MHD_handle_connection (void *data)
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
-	      if (MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	      if (MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      if (MHD_YES != add_to_fd_set (con->socket_fd, &ws, &max))
+	      if (MHD_YES != add_to_fd_set (con->socket_fd, &ws, &max, FD_SETSIZE))
                 err_state = 1;
 	      if (con->read_buffer_size > con->read_buffer_offset &&
-	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
 	      if (con->read_buffer_size > con->read_buffer_offset &&
-	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max))
+	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
 	        err_state = 1;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
@@ -2091,7 +2136,7 @@ MHD_select (struct MHD_Daemon *daemon,
         resume_suspended_connections (daemon);
 
       /* single-threaded, go over everything */
-      if (MHD_NO == MHD_get_fdset (daemon, &rs, &ws, &es, &max))
+      if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &max, FD_SETSIZE))
         return MHD_NO;
 
       /* If we're at the connection limit, no need to
@@ -2104,11 +2149,11 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       /* accept only, have one thread per connection */
       if (MHD_INVALID_SOCKET != daemon->socket_fd &&
-          MHD_YES != add_to_fd_set(daemon->socket_fd, &rs, &max))
+          MHD_YES != add_to_fd_set(daemon->socket_fd, &rs, &max, FD_SETSIZE))
         return MHD_NO;
     }
   if (MHD_INVALID_PIPE_ != daemon->wpipe[0] &&
-      MHD_YES != add_to_fd_set(daemon->wpipe[0], &rs, &max))
+      MHD_YES != add_to_fd_set(daemon->wpipe[0], &rs, &max, FD_SETSIZE))
     return MHD_NO;
 
   tv = NULL;
