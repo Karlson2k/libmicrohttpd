@@ -491,6 +491,10 @@ AC_ARG_ENABLE([postprocessor],
 test "x$enable_postprocessor" = "xno" || enable_postprocessor=yes
 AC_MSG_RESULT([[$enable_postprocessor]])
 AM_CONDITIONAL([HAVE_POSTPROCESSOR],test "x$enable_postprocessor" != "xno")
+if test "x$enable_postprocessor" != "xno"
+then
+ AC_DEFINE([HAVE_POSTPROCESSOR],[1],[define to 1 if MHD was build with postprocessor.c])
+fi
 
 
 # optional: have zzuf, socat?

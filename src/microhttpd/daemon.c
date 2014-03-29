@@ -4235,6 +4235,105 @@ MHD_get_version (void)
 }
 
 
+/**
+ * Get information about supported MHD features.
+ * Indicate that MHD was compiled with or without support for
+ * particular feature. Some features require additional support
+ * by kernel. Kernel support is not checked by this function.
+ *
+ * @param feature type of requested information
+ * @return #MHD_YES if feature is supported by MHD, #MHD_NO if
+ * feature is not supported or feature is unknown.
+ * @ingroup specialized
+ */
+_MHD_EXTERN int
+MHD_is_feature_supported(enum MHD_FEATURE feature)
+{
+  switch(feature)
+    {
+    case MHD_FEATURE_MESSGES:
+#if HAVE_MESSAGES
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_SSL:
+#if HTTPS_SUPPORT
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_HTTPS_CERT_CALLBACK:
+#if HTTPS_SUPPORT && GNUTLS_VERSION_MAJOR >= 3
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_IPv6:
+#ifdef HAVE_INET6
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_IPv6_ONLY:
+#if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_POLL:
+#ifdef HAVE_POLL_H
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_EPOLL:
+#if EPOLL_SUPPORT
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET:
+#ifdef HAVE_LISTEN_SHUTDOWN
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_SOCKETPAIR:
+#ifdef MHD_DONT_USE_PIPES
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_TCP_FASTOPEN:
+#ifdef TCP_FASTOPEN
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_BASIC_AUTH:
+#if BAUTH_SUPPORT
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_DIGEST_AUTH:
+#if DAUTH_SUPPORT
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_POSTPROCESSOR:
+#if HAVE_POSTPROCESSOR
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    }
+  return MHD_NO;
+}
+
+
 #ifdef __GNUC__
 #define FUNC_CONSTRUCTOR(f) static void __attribute__ ((constructor)) f
 #define FUNC_DESTRUCTOR(f) static void __attribute__ ((destructor)) f

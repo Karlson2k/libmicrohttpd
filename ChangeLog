@@ -1,3 +1,6 @@
+Sat Mar 29 16:12:03 CET 2014
+	Added MHD_is_feature_supported() function. -EG
+
 Thu Mar 27 14:47:54 CET 2014
 	Used larger FD_SETSIZE internally on W32.
 	Extended API to work with non-default FD_SETSIZE. -EG
