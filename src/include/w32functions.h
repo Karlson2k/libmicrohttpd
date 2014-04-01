@@ -152,6 +152,7 @@ extern "C"
  * @return errno equivalent of last winsock error
  */
 int MHD_W32_errno_from_winsock_(void);
+
 /**
  * Return pointer to string description of errnum error
  * Works fine with both standard errno errnums
@@ -160,11 +161,13 @@ int MHD_W32_errno_from_winsock_(void);
  * @return pointer to string description of error
  */
 const char* MHD_W32_strerror_(int errnum);
+
 /**
  * Return pointer to string description of last winsock error
  * @return pointer to string description of last winsock error
  */
 const char* MHD_W32_strerror_last_winsock_(void);
+
 /**
  * Set last winsock error to equivalent of given errno value
  * @param errnum the errno value to set
@@ -177,6 +180,7 @@ void MHD_W32_set_last_winsock_error_(int errnum);
  * @return zero on success, -1 otherwise
  */
 int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
+
 /**
  * Generate 31-bit pseudo random number.
  * Function initialize itself at first call to current time.
