@@ -1,3 +1,6 @@
+Tue Apr 01 07:10:23 CET 2014
+	Added usage of native mutex on W32. -EG
+
 Sat Mar 29 16:12:03 CET 2014
 	Added MHD_is_feature_supported() function. -EG
 
