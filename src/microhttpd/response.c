@@ -27,6 +27,13 @@
 #include "internal.h"
 #include "response.h"
 
+#if defined(_WIN32) && defined(MHD_W32_MUTEX_)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif /* _WIN32 && MHD_W32_MUTEX_ */
+
 
 /**
  * Add a header or footer line to the response.
@@ -244,7 +251,7 @@ MHD_create_response_from_callback (uint64_t size,
   response->fd = -1;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
-  if (0 != pthread_mutex_init (&response->mutex, NULL))
+  if (MHD_YES != MHD_mutex_create_ (&response->mutex))
     {
       free (response);
       return NULL;
@@ -381,7 +388,7 @@ MHD_create_response_from_data (size_t size,
     return NULL;
   memset (response, 0, sizeof (struct MHD_Response));
   response->fd = -1;
-  if (0 != pthread_mutex_init (&response->mutex, NULL))
+  if (MHD_YES != MHD_mutex_create_ (&response->mutex))
     {
       free (response);
       return NULL;
@@ -390,7 +397,7 @@ MHD_create_response_from_data (size_t size,
     {
       if (NULL == (tmp = malloc (size)))
         {
-	  pthread_mutex_destroy (&response->mutex);
+          MHD_mutex_destroy_ (&response->mutex);
           free (response);
           return NULL;
         }
@@ -447,14 +454,14 @@ MHD_destroy_response (struct MHD_Response *response)
 
   if (NULL == response)
     return;
-  pthread_mutex_lock (&response->mutex);
+  MHD_mutex_lock_ (&response->mutex);
   if (0 != --(response->reference_count))
     {
-      pthread_mutex_unlock (&response->mutex);
+      MHD_mutex_unlock_ (&response->mutex);
       return;
     }
-  pthread_mutex_unlock (&response->mutex);
-  pthread_mutex_destroy (&response->mutex);
+  MHD_mutex_unlock_ (&response->mutex);
+  MHD_mutex_destroy_ (&response->mutex);
   if (response->crfc != NULL)
     response->crfc (response->crc_cls);
   while (NULL != response->first_header)
@@ -472,9 +479,9 @@ MHD_destroy_response (struct MHD_Response *response)
 void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
-  pthread_mutex_lock (&response->mutex);
+  MHD_mutex_lock_ (&response->mutex);
   (response->reference_count)++;
-  pthread_mutex_unlock (&response->mutex);
+  MHD_mutex_unlock_ (&response->mutex);
 }
 
 

@@ -37,6 +37,13 @@
 #include <netinet/tcp.h>
 #endif
 
+#if defined(_WIN32) && defined(MHD_W32_MUTEX_)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#endif /* _WIN32 && MHD_W32_MUTEX_ */
+
 
 /**
  * Message to transmit when http 1.1 request is received
@@ -358,7 +365,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
       if (NULL != response->crc)
-	pthread_mutex_unlock (&response->mutex);
+        MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
@@ -372,7 +379,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
       if (NULL != response->crc)
-	pthread_mutex_unlock (&response->mutex);
+        MHD_mutex_unlock_ (&response->mutex);
       return MHD_NO;
     }
   return MHD_YES;
@@ -1927,7 +1934,7 @@ update_last_activity (struct MHD_Connection *connection)
 
   /* move connection to head of timeout list (by remove + add operation) */
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
+       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   XDLL_remove (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
@@ -1936,7 +1943,7 @@ update_last_activity (struct MHD_Connection *connection)
 	       daemon->normal_timeout_tail,
 	       connection);
   if  ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	(0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex)) )
+	(MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
@@ -2081,7 +2088,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_NORMAL_BODY_READY:
           response = connection->response;
           if (NULL != response->crc)
-            pthread_mutex_lock (&response->mutex);
+            MHD_mutex_lock_ (&response->mutex);
           if (MHD_YES != try_ready_normal_body (connection))
 	    break;
 	  ret = connection->send_cls (connection,
@@ -2101,7 +2108,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                      response->data_start]);
 #endif
           if (NULL != response->crc)
-            pthread_mutex_unlock (&response->mutex);
+            MHD_mutex_unlock_ (&response->mutex);
           if (ret < 0)
             {
               if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
@@ -2179,7 +2186,7 @@ cleanup_connection (struct MHD_Connection *connection)
       connection->response = NULL;
     }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
+       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   if (connection->connection_timeout == daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
@@ -2204,7 +2211,7 @@ cleanup_connection (struct MHD_Connection *connection)
   connection->resuming = MHD_NO;
   connection->in_idle = MHD_NO;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 != pthread_mutex_unlock(&daemon->cleanup_connection_mutex)) )
+       (MHD_YES != MHD_mutex_unlock_(&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
@@ -2452,18 +2459,18 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            pthread_mutex_lock (&connection->response->mutex);
+            MHD_mutex_lock_ (&connection->response->mutex);
           if (0 == connection->response->total_size)
             {
               if (NULL != connection->response->crc)
-                pthread_mutex_unlock (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
 	      if (NULL != connection->response->crc)
-		pthread_mutex_unlock (&connection->response->mutex);
+	        MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               break;
             }
@@ -2474,23 +2481,23 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            pthread_mutex_lock (&connection->response->mutex);
+            MHD_mutex_lock_ (&connection->response->mutex);
           if (0 == connection->response->total_size)
             {
               if (NULL != connection->response->crc)
-                pthread_mutex_unlock (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_chunked_body (connection))
             {
               if (NULL != connection->response->crc)
-                pthread_mutex_unlock (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               continue;
             }
           if (NULL != connection->response->crc)
-            pthread_mutex_unlock (&connection->response->mutex);
+            MHD_mutex_unlock_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
           build_header_response (connection);
@@ -2776,7 +2783,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     {
     case MHD_CONNECTION_OPTION_TIMEOUT:
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (0 != pthread_mutex_lock (&daemon->cleanup_connection_mutex)) )
+	   (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
 	MHD_PANIC ("Failed to acquire cleanup mutex\n");
       if (connection->connection_timeout == daemon->connection_timeout)
 	XDLL_remove (daemon->normal_timeout_head,
@@ -2798,7 +2805,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
 		     daemon->manual_timeout_tail,
 		     connection);
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (0 != pthread_mutex_unlock (&daemon->cleanup_connection_mutex)) )
+	   (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
 	MHD_PANIC ("Failed to release cleanup mutex\n");
       return MHD_YES;
     default:

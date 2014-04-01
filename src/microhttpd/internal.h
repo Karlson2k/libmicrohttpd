@@ -287,7 +287,7 @@ struct MHD_Response
    * Mutex to synchronize access to data/size and
    * reference counts.
    */
-  pthread_mutex_t mutex;
+  MHD_mutex_ mutex;
 
   /**
    * Set to MHD_SIZE_UNKNOWN if size is not known.
@@ -1077,12 +1077,12 @@ struct MHD_Daemon
   /**
    * Mutex for per-IP connection counts.
    */
-  pthread_mutex_t per_ip_connection_mutex;
+  MHD_mutex_ per_ip_connection_mutex;
 
   /**
    * Mutex for (modifying) access to the "cleanup" connection DLL.
    */
-  pthread_mutex_t cleanup_connection_mutex;
+  MHD_mutex_ cleanup_connection_mutex;
 
   /**
    * Listen socket.
@@ -1218,7 +1218,7 @@ struct MHD_Daemon
   /**
    * A rw-lock for synchronizing access to `nnc'.
    */
-  pthread_mutex_t nnc_lock;
+  MHD_mutex_ nnc_lock;
 
   /**
    * Size of `digest_auth_random.
