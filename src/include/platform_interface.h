@@ -176,7 +176,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_destroy_(mutex) \
-  ((0 == pthread_mutex_destroy ((mutex), NULL)) ? MHD_YES : MHD_NO)
+  ((0 == pthread_mutex_destroy ((mutex))) ? MHD_YES : MHD_NO)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Destroy previously created mutex.
@@ -196,7 +196,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_lock_(mutex) \
-  ((0 == pthread_mutex_lock((mutex), NULL)) ? MHD_YES : MHD_NO)
+  ((0 == pthread_mutex_lock((mutex))) ? MHD_YES : MHD_NO)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Acquire lock on previously created mutex.
@@ -218,7 +218,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * mutex was not locked.
  */
 #define MHD_mutex_trylock_(mutex) \
-  ((0 == pthread_mutex_trylock((mutex), NULL)) ? MHD_YES : MHD_NO)
+  ((0 == pthread_mutex_trylock((mutex))) ? MHD_YES : MHD_NO)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Try to acquire lock on previously created mutex.
@@ -238,7 +238,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_unlock_(mutex) \
-  ((0 == pthread_mutex_unlock((mutex), NULL)) ? MHD_YES : MHD_NO)
+  ((0 == pthread_mutex_unlock((mutex))) ? MHD_YES : MHD_NO)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Unlock previously created and locked mutex.
