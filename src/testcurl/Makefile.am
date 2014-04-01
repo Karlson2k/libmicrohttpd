@@ -139,7 +139,7 @@ test_get_sendfile_LDADD = \
   @LIBCURL@
 if HAVE_W32
 test_get_sendfile_LDADD += \
- $(top_builddir)/src/platform/libmicrohttpd_w32.la
+ $(top_builddir)/src/platform/libplatform_interface.la
 endif
 
 test_urlparse_SOURCES = \
@@ -220,7 +220,7 @@ test_get_sendfile11_LDADD = \
   @LIBCURL@
 if HAVE_W32
 test_get_sendfile11_LDADD += \
-  $(top_builddir)/src/platform/libmicrohttpd_w32.la
+  $(top_builddir)/src/platform/libplatform_interface.la
 endif
 
 test_post11_SOURCES = \

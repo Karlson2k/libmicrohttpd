@@ -5,7 +5,7 @@ AM_CPPFLAGS = \
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
 if HAVE_W32
-MHD_W32_LIB = $(top_builddir)/src/platform/libmicrohttpd_w32.la
+MHD_W32_LIB = $(top_builddir)/src/platform/libplatform_interface.la
 endif
 
 lib_LTLIBRARIES = \
