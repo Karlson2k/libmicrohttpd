@@ -51,6 +51,16 @@
 #define _LP64
 #endif
 
+#if defined(_WIN32)
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+#else // _WIN32_WINNT
+#if _WIN32_WINNT < 0x0501
+#error "Headers for Windows XP or later are required"
+#endif // _WIN32_WINNT < 0x0501
+#endif // _WIN32_WINNT
+#endif // _WIN32
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
