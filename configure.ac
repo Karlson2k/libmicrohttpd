@@ -212,6 +212,14 @@ if test "$enable_epoll" != "no"; then
   fi
 fi
 
+# Check for pthread_setname_np()
+AC_MSG_CHECKING([[for pthread_setname_np]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[#include <pthread.h>]], [[  pthread_setname_np(pthread_self(), "name")]])],
+  [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP]], [[1]], [Define if you have pthread_setname_np function.])
+   AC_MSG_RESULT([[yes]])],
+  [AC_MSG_RESULT([[no]])] )
+
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 

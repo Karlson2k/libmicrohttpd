@@ -1073,11 +1073,9 @@ create_thread (pthread_t *thread,
     }
   ret = pthread_create (thread, pattr,
 			start_routine, arg);
-#if (__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 12)
-#if LINUX
+#ifdef HAVE_PTHREAD_SETNAME_NP
   (void) pthread_setname_np (*thread, "libmicrohttpd");
-#endif
-#endif
+#endif /* HAVE_PTHREAD_SETNAME_NP */
   if (0 != daemon->thread_stack_size)
     pthread_attr_destroy (&attr);
   return ret;
