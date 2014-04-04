@@ -4365,9 +4365,13 @@ FUNC_CONSTRUCTOR (MHD_init) ()
 #endif
 #if HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
-  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-#endif
+  if (!gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread))
+    MHD_PANIC ("Failed to initialise multithreading in libgcrypt\n");
   gcry_check_version (NULL);
+#else
+  if (NULL == gcry_check_version ("1.6.0"))
+    MHD_PANIC ("libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer\n");
+#endif
   gnutls_global_init ();
 #endif
 }
