@@ -141,9 +141,8 @@
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define MHD_W32_MUTEX_ 1
-/* 'void*' is the same as 'HANDLE'
- * this way allow typedef without including "windows.h" */
-typedef void* MHD_mutex_;
+#include <windows.h>
+typedef CRITICAL_SECTION MHD_mutex_;
 #elif defined(HAVE_PTHREAD_H)
 #define MHD_PTHREAD_MUTEX_ 1
 typedef pthread_mutex_t MHD_mutex_;
@@ -166,7 +165,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_create_(mutex) \
-  ((NULL != (mutex) && NULL != (*(mutex) = CreateMutex(NULL, FALSE, NULL))) ? MHD_YES : MHD_NO)
+  ((NULL != (mutex) && 0 != InitializeCriticalSectionAndSpinCount((mutex),2000)) ? MHD_YES : MHD_NO)
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -184,7 +183,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_destroy_(mutex) \
-  ((NULL != (mutex) && 0 != CloseHandle(*(mutex)) && NULL == (*(mutex) = NULL)) ? MHD_YES : MHD_NO)
+  ((NULL != (mutex)) ? (DeleteCriticalSection(mutex), MHD_YES) : MHD_NO)
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -206,7 +205,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_lock_(mutex) \
-  ((NULL != (mutex) && WAIT_OBJECT_0 == WaitForSingleObject(*(mutex), INFINITE)) ? MHD_YES : MHD_NO)
+  ((NULL != (mutex)) ? (EnterCriticalSection((mutex)), MHD_YES) : MHD_NO)
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -228,7 +227,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * mutex was not locked.
  */
 #define MHD_mutex_trylock_(mutex) \
-  ((NULL != (mutex) && WAIT_OBJECT_0 == WaitForSingleObject(*(mutex), 0)) ? MHD_YES : MHD_NO)
+  ((NULL != (mutex) && 0 != TryEnterCriticalSection ((mutex))) ? MHD_YES : MHD_NO)
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -246,7 +245,7 @@ typedef pthread_mutex_t MHD_mutex_;
  * @return #MHD_YES on success, #MHD_NO on failure
  */
 #define MHD_mutex_unlock_(mutex) \
-  ((NULL != (mutex) && 0 != ReleaseMutex(*(mutex))) ? MHD_YES : MHD_NO)
+  ((NULL != (mutex)) ? (LeaveCriticalSection((mutex)), MHD_YES) : MHD_NO)
 #endif
 
 #endif // MHD_PLATFORM_INTERFACE_H

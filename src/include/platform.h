@@ -59,6 +59,9 @@
 #error "Headers for Windows XP or later are required"
 #endif // _WIN32_WINNT < 0x0501
 #endif // _WIN32_WINNT
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
 #endif // _WIN32
 
 #include <stdio.h>
