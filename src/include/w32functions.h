@@ -29,9 +29,9 @@
 #error w32functions.h is designed only for W32 systems
 #endif
 
+#include "platform.h"
 #include <errno.h>
 #include <winsock2.h>
-#include "platform.h"
 #include "platform_interface.h"
 
 #ifdef __cplusplus
