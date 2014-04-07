@@ -4,6 +4,10 @@ if USE_COVERAGE
   AM_CFLAGS = --coverage
 endif
 
+if HAVE_GNUTLS_SNI
+  TEST_HTTPS_SNI = test_https_sni
+endif
+
 CPU_COUNT_DEF = -DCPU_COUNT=$(CPU_COUNT)
 
 AM_CPPFLAGS = \
@@ -17,7 +21,7 @@ check_PROGRAMS = \
   test_tls_authentication \
   test_https_multi_daemon \
   test_https_get \
-  test_https_sni \
+  $(TEST_HTTPS_SNI) \
   test_https_get_select \
   test_https_get_parallel \
   test_https_get_parallel_threads \
@@ -32,7 +36,7 @@ TESTS = \
   test_tls_options \
   test_https_multi_daemon \
   test_https_get \
-  test_https_sni \
+  $(TEST_HTTPS_SNI) \
   test_https_get_select \
   test_https_get_parallel \
   test_https_get_parallel_threads \
@@ -122,6 +126,7 @@ test_https_get_LDADD  = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
+if HAVE_GNUTLS_SNI
 test_https_sni_SOURCES = \
   test_https_sni.c \
   tls_test_common.c
@@ -132,6 +137,7 @@ test_https_sni_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+endif
 
 test_https_get_select_SOURCES = \
   test_https_get_select.c \

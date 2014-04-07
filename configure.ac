@@ -538,6 +538,7 @@ GNUTLS_CFLAGS=""
 GNUTLS_LDFLAGS=""
 GNUTLS_LIBS=""
 have_gnutls=no
+have_gnutls_sni=no
 AC_MSG_CHECKING(for gnutls)
 AC_ARG_WITH(gnutls,
    [AC_HELP_STRING([--with-gnutls=PFX],[base of gnutls installation])],
@@ -549,6 +550,7 @@ AC_ARG_WITH(gnutls,
         AC_CHECK_HEADERS([gnutls/gnutls.h],
             [AC_CHECK_LIB([gnutls], [gnutls_priority_set], [
               GNUTLS_LIBS="-lgnutls"
+              AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
               have_gnutls=yes])])
         ;;
       *)
@@ -563,6 +565,7 @@ AC_ARG_WITH(gnutls,
                 GNUTLS_CPPFLAGS="-I$with_gnutls/include"
                 GNUTLS_LDFLAGS="-L$with_gnutls/lib"
                 GNUTLS_LIBS="-lgnutls"
+                AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
                 have_gnutls=yes
               ])])])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
@@ -576,9 +579,11 @@ AC_ARG_WITH(gnutls,
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
             GNUTLS_LIBS="-lgnutls"
+            AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])])])
 AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
+AM_CONDITIONAL([HAVE_GNUTLS_SNI], [test "x$have_gnutls_sni" = "xyes"])
 
 AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
