@@ -4411,7 +4411,7 @@ FUNC_CONSTRUCTOR (MHD_init) ()
 #endif
 #if HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
-  if (!gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread))
+  if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread))
     MHD_PANIC ("Failed to initialise multithreading in libgcrypt\n");
   gcry_check_version (NULL);
 #else
