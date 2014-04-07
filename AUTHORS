@@ -6,6 +6,7 @@ Sagie Amir (TLS/SSL support using GNUtls)
 Richard Alimi <rich@velvetsea.net> (performance)
 Amr Ali <amr.ali.cc@gmail.com> (digest authentication)
 Matthieu Speder <mspeder@users.sourceforge.net> (basic authentication, client certificates)
+Evgeny Grin (Karlson2k) <k2k@narod.ru> (W32 port)
 
 Code contributions also came from:
 Chris GauthierDickey <chrisg@cs.du.edu>
@@ -47,7 +48,6 @@ Scott Goldman <scottjg@github.com>
 Jared Cantwell
 Luke-Jr <luke@dashjr.org>
 Sree Harsha Totakura <sreeharsha@totakura.in>
-Evgeny Grin (Karlson2k) <k2k@narod.ru>
 Hani Benhabiles <kroosec@gmail.com>
 
 Documentation contributions also came from:
