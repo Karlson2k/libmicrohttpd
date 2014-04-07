@@ -25,7 +25,6 @@
  */
 
 #include "platform.h"
-#include "platform.h"
 #include "microhttpd.h"
 #include <stdlib.h>
 #include <string.h>
