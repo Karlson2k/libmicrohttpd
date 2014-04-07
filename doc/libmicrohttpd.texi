@@ -360,7 +360,7 @@ for the specific platform.
 @section Portability to W32
 
 libmicrohttpd in general ported well to W32. Most libmicrohttpd features
-are supported. W32 do not support some functions, like epoll and 
+are supported. W32 do not support some functions, like epoll and
 corresponding MHD features are not available on W32.
 
 
@@ -847,6 +847,16 @@ associate state until handshake is completed.  If this option is not
 given the queue size is set to a default value of 10.  This option must
 be followed by a @code{unsigned int}.
 
+@item MHD_OPTION_HTTPS_MEM_DHPARAMS
+@cindex TLS
+@cindex SSL
+@cindex DH
+Memory pointer for the Diffie-Hellman parameters (dh.pem) to be used
+by the HTTPS daemon for key exchange.  This option must be followed by
+a @code{const char *} argument.  The argument would be a GNUtls
+property string, such as ``NORMAL:+DHE-RSA''.  This option is needed
+to activate ciphersuites with so-called ``Perfect Forward Secrecy''
+property.
 @end table
 @end deftp
 

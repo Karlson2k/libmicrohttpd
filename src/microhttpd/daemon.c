@@ -520,6 +520,11 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 	}
     }
 
+  if (MHD_YES == daemon->have_dhparams)
+    {
+      gnutls_certificate_set_dh_params (daemon->x509_cred,
+                                        daemon->https_mem_dhparams);
+    }
   /* certificate & key loaded from memory */
   if ( (NULL != daemon->https_mem_cert) &&
        (NULL != daemon->https_mem_key) )
@@ -2968,6 +2973,42 @@ parse_options_va (struct MHD_Daemon *daemon,
 	case MHD_OPTION_HTTPS_CRED_TYPE:
 	  daemon->cred_type = (gnutls_credentials_type_t) va_arg (ap, int);
 	  break;
+        case MHD_OPTION_HTTPS_MEM_DHPARAMS:
+          if (0 != (daemon->options & MHD_USE_SSL))
+            {
+              const char *arg = va_arg (ap, const unsigned char *);
+              gnutls_datum_t dhpar;
+
+              if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
+                {
+#if HAVE_MESSAGES
+                  MHD_DLOG(daemon, "Error initializing DH parameters\n");
+#endif
+                  return MHD_NO;
+                }
+              dhpar.data = (unsigned char *) arg;
+              dhpar.size = strlen (arg);
+              if (gnutls_dh_params_import_pkcs3 (daemon->https_mem_dhparams, &dhpar,
+                                                 GNUTLS_X509_FMT_PEM) < 0)
+                {
+#if HAVE_MESSAGES
+                  MHD_DLOG(daemon, "Bad Diffie-Hellman parameters format\n");
+#endif
+                  gnutls_dh_params_deinit (daemon->https_mem_dhparams);
+                  return MHD_NO;
+                }
+              daemon->have_dhparams = MHD_YES;
+            }
+          else
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+                        opt);
+#endif
+              return MHD_NO;
+            }
+          break;
         case MHD_OPTION_HTTPS_PRIORITIES:
 	  if (0 != (daemon->options & MHD_USE_SSL))
 	    {
@@ -3706,7 +3747,7 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
                "MHD failed to initialize IP connection limit mutex\n");
 #endif
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
@@ -3724,8 +3765,8 @@ MHD_start_daemon_va (unsigned int flags,
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
       goto free_and_fail;
     }
 #endif
@@ -3741,8 +3782,8 @@ MHD_start_daemon_va (unsigned int flags,
                 "Failed to create listen thread: %s\n",
 		MHD_strerror_ (res_thread_create));
 #endif
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
@@ -3861,7 +3902,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
-              MHD_mutex_destroy_ (&d->cleanup_connection_mutex);
+              (void) MHD_mutex_destroy_ (&d->cleanup_connection_mutex);
               goto thread_failed;
             }
         }
@@ -3878,8 +3919,8 @@ thread_failed:
       if ( (MHD_INVALID_SOCKET != socket_fd) &&
 	   (0 != MHD_socket_close_ (socket_fd)) )
 	MHD_PANIC ("close failed\n");
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
       if (NULL != daemon->worker_pool)
         free (daemon->worker_pool);
       goto free_and_fail;
@@ -3902,7 +3943,7 @@ thread_failed:
 #endif
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
-  MHD_mutex_destroy_ (&daemon->nnc_lock);
+  (void) MHD_mutex_destroy_ (&daemon->nnc_lock);
 #endif
 #if HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_SSL))
@@ -4091,7 +4132,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  if (0 != (rc = pthread_join (daemon->worker_pool[i].pid, &unused)))
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);
-	  MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
+	  (void) MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
 #if EPOLL_SUPPORT
 	  if ( (-1 != daemon->worker_pool[i].epoll_fd) &&
 	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_fd)) )
@@ -4130,6 +4171,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
+  if (MHD_YES == daemon->have_dhparams)
+    {
+      gnutls_dh_params_deinit (daemon->https_mem_dhparams);
+      daemon->have_dhparams = MHD_NO;
+    }
   if (0 != (daemon->options & MHD_USE_SSL))
     {
       gnutls_priority_deinit (daemon->priority_cache);
@@ -4146,10 +4192,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
-  MHD_mutex_destroy_ (&daemon->nnc_lock);
+  (void) MHD_mutex_destroy_ (&daemon->nnc_lock);
 #endif
-  MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
-  MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+  (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+  (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
 
   if (MHD_INVALID_PIPE_ != daemon->wpipe[1])
     {

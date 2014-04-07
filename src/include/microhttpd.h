@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093400
+#define MHD_VERSION 0x00093401
 
 /**
  * MHD-internal return code for "YES".
@@ -837,7 +837,14 @@ enum MHD_OPTION
    * resources for the SYN packet along with its DATA.  This option should be
    * followed by an `unsigned int` argument.
    */
-  MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE = 23
+  MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE = 23,
+
+  /**
+   * Memory pointer for the Diffie-Hellman parameters (dh.pem) to be used by the
+   * HTTPS daemon for key exchange.
+   * This option must be followed by a `const char *` argument.
+   */
+  MHD_OPTION_HTTPS_MEM_DHPARAMS = 24
 
 };
 
@@ -2448,7 +2455,7 @@ enum MHD_FEATURE
    * #MHD_destroy_post_processor, #MHD_destroy_post_processor can
    * be used.
    */
-  MHD_FEATURE_POSTPROCESSOR = 13,
+  MHD_FEATURE_POSTPROCESSOR = 13
 };
 
 

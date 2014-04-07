@@ -1194,6 +1194,16 @@ struct MHD_Daemon
   const char *https_mem_trust;
 
   /**
+   * Our Diffie-Hellman parameters in memory.
+   */
+  gnutls_dh_params_t https_mem_dhparams;
+
+  /**
+   * #MHD_YES if we have initialized @e https_mem_dhparams.
+   */
+  int have_dhparams;
+
+  /**
    * For how many connections do we have 'tls_read_ready' set to MHD_YES?
    * Used to avoid O(n) traversal over all connections when determining
    * event-loop timeout (as it needs to be zero if there is any connection
