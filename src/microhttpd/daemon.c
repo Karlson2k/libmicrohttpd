@@ -1846,8 +1846,6 @@ static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  void *unused;
-  int rc;
 
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
@@ -1860,7 +1858,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) )
 	{
-	  if (0 != (rc = pthread_join (pos->pid, &unused)))
+	  if (0 != pthread_join (pos->pid, NULL))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
@@ -3996,8 +3994,6 @@ static void
 close_all_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  void *unused;
-  int rc;
 
   /* first, make sure all threads are aware of shutdown; need to
      traverse DLLs in peace... */
@@ -4016,7 +4012,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     {
       while (NULL != (pos = daemon->connections_head))
 	{
-	  if (0 != (rc = pthread_join (pos->pid, &unused)))
+	  if (0 != pthread_join (pos->pid, NULL))
 	    MHD_PANIC ("Failed to join a thread\n");
 	  pos->thread_joined = MHD_YES;
 	}
@@ -4065,10 +4061,8 @@ epoll_shutdown (struct MHD_Daemon *daemon)
 void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
-  void *unused;
   MHD_socket fd;
   unsigned int i;
-  int rc;
 
   if (NULL == daemon)
     return;
@@ -4129,7 +4123,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1], "e", 1))
 		MHD_PANIC ("failed to signal shutdown via pipe");
 	    }
-	  if (0 != (rc = pthread_join (daemon->worker_pool[i].pid, &unused)))
+	  if (0 != pthread_join (daemon->worker_pool[i].pid, NULL))
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);
 	  (void) MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
@@ -4158,7 +4152,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
 	   && (0 == daemon->worker_pool_size)))
 	{
-	  if (0 != (rc = pthread_join (daemon->pid, &unused)))
+	  if (0 != pthread_join (daemon->pid, NULL))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
