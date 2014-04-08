@@ -33,6 +33,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #ifndef WINDOWS
 #include <unistd.h>

@@ -8,6 +8,11 @@ if HAVE_GNUTLS_SNI
   TEST_HTTPS_SNI = test_https_sni
 endif
 
+if HAVE_POSIX_THREADS
+  HTTPS_PARALLEL_TESTS = test_https_get_parallel \
+  test_https_get_parallel_threads
+endif
+
 CPU_COUNT_DEF = -DCPU_COUNT=$(CPU_COUNT)
 
 AM_CPPFLAGS = \
@@ -23,8 +28,7 @@ check_PROGRAMS = \
   test_https_get \
   $(TEST_HTTPS_SNI) \
   test_https_get_select \
-  test_https_get_parallel \
-  test_https_get_parallel_threads \
+  $(HTTPS_PARALLEL_TESTS) \
   test_https_session_info \
   test_https_time_out \
   test_empty_response
@@ -38,8 +42,7 @@ TESTS = \
   test_https_get \
   $(TEST_HTTPS_SNI) \
   test_https_get_select \
-  test_https_get_parallel \
-  test_https_get_parallel_threads \
+  $(HTTPS_PARALLEL_TESTS) \
   test_https_session_info \
   test_https_time_out \
   test_tls_authentication \

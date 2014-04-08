@@ -637,10 +637,10 @@ struct MHD_Connection
   struct sockaddr *addr;
 
   /**
-   * Thread for this connection (if we are using
+   * Thread handle for this connection (if we are using
    * one thread per connection).
    */
-  pthread_t pid;
+  MHD_thread_handle_ pid;
 
   /**
    * Size of read_buffer (in bytes).  This value indicates
@@ -1070,9 +1070,9 @@ struct MHD_Daemon
   unsigned int worker_pool_size;
 
   /**
-   * PID of the select thread (if we have internal select)
+   * The select thread handle (if we have internal select)
    */
-  pthread_t pid;
+  MHD_thread_handle_ pid;
 
   /**
    * Mutex for per-IP connection counts.

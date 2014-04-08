@@ -740,9 +740,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * connection when #MHD_USE_THREAD_PER_CONNECTION is set.
  *
  * @param data the 'struct MHD_Connection' this thread will handle
- * @return always NULL
+ * @return always 0
  */
-static void *
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_handle_connection (void *data)
 {
   struct MHD_Connection *con = data;
@@ -920,7 +920,7 @@ exit:
       MHD_destroy_response (con->response);
       con->response = NULL;
     }
-  return NULL;
+  return (MHD_THRD_RTRN_TYPE_)0;
 }
 
 
@@ -1039,7 +1039,7 @@ send_param_adapter (struct MHD_Connection *connection,
  * @param cls closure argument for the function
  * @return termination code from the thread
  */
-typedef void *(*ThreadStartRoutine)(void *cls);
+typedef MHD_THRD_RTRN_TYPE_ (MHD_THRD_CALL_SPEC_ *ThreadStartRoutine)(void *cls);
 
 
 /**
@@ -1052,11 +1052,12 @@ typedef void *(*ThreadStartRoutine)(void *cls);
  * @return 0 on success
  */
 static int
-create_thread (pthread_t *thread,
+create_thread (MHD_thread_handle_ *thread,
 	       const struct MHD_Daemon *daemon,
 	       ThreadStartRoutine start_routine,
 	       void *arg)
 {
+#if defined(MHD_USE_POSIX_THREADS)
   pthread_attr_t attr;
   pthread_attr_t *pattr;
   int ret;
@@ -1091,6 +1092,11 @@ create_thread (pthread_t *thread,
 #endif
   errno = EINVAL;
   return ret;
+#elif defined(MHD_USE_W32_THREADS)
+  *thread = CreateThread(NULL, daemon->thread_stack_size, start_routine,
+                          arg, 0, NULL);
+  return (NULL != (*thread)) ? 0 : 1;
+#endif
 }
 
 
@@ -1858,7 +1864,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) )
 	{
-	  if (0 != pthread_join (pos->pid, NULL))
+	  if (0 != MHD_join_thread_ (pos->pid))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
@@ -2693,9 +2699,9 @@ MHD_run (struct MHD_Daemon *daemon)
  * is explicitly shut down.
  *
  * @param cls 'struct MHD_Deamon' to run select loop in a thread for
- * @return always NULL (on shutdown)
+ * @return always 0 (on shutdown)
  */
-static void *
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_select_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
@@ -2712,7 +2718,7 @@ MHD_select_thread (void *cls)
 	MHD_select (daemon, MHD_YES);
       MHD_cleanup_connections (daemon);
     }
-  return NULL;
+  return (MHD_THRD_RTRN_TYPE_)0;
 }
 
 
@@ -4012,7 +4018,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     {
       while (NULL != (pos = daemon->connections_head))
 	{
-	  if (0 != pthread_join (pos->pid, NULL))
+	  if (0 != MHD_join_thread_ (pos->pid))
 	    MHD_PANIC ("Failed to join a thread\n");
 	  pos->thread_joined = MHD_YES;
 	}
@@ -4123,7 +4129,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1], "e", 1))
 		MHD_PANIC ("failed to signal shutdown via pipe");
 	    }
-	  if (0 != pthread_join (daemon->worker_pool[i].pid, NULL))
+	  if (0 != MHD_join_thread_ (daemon->worker_pool[i].pid))
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);
 	  (void) MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
@@ -4152,7 +4158,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
 	   && (0 == daemon->worker_pool_size)))
 	{
-	  if (0 != pthread_join (daemon->pid, NULL))
+	  if (0 != MHD_join_thread_ (daemon->pid))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
@@ -4380,11 +4386,42 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #define FUNC_DESTRUCTOR(f) _MHD_EXTERN void f
 #endif  // __GNUC__
 
-#if HTTPS_SUPPORT
-#if GCRYPT_VERSION_NUMBER < 0x010600
+#if HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600
+#if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif
-#endif
+#elif defined(MHD_W32_MUTEX_)
+static int gcry_w32_mutex_init (void **ppmtx)
+{
+  *ppmtx = malloc (sizeof (MHD_mutex_));
+
+  if (NULL == *ppmtx)
+    return ENOMEM;
+
+  if (MHD_YES != MHD_mutex_create_ ((MHD_mutex_*)*ppmtx))
+    {
+      free (*ppmtx);
+      *ppmtx = NULL;
+      return EPERM;
+    }
+
+  return 0;
+}
+static int gcry_w32_mutex_destroy (void **ppmtx)
+  { int res = (MHD_YES == MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+    free (*ppmtx); return res; }
+static int gcry_w32_mutex_lock (void **ppmtx)
+  { return (MHD_YES == MHD_mutex_lock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1; }
+static int gcry_w32_mutex_unlock (void **ppmtx)
+  { return (MHD_YES == MHD_mutex_unlock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1; }
+
+static struct gcry_thread_cbs gcry_threads_w32 = {
+  (GCRY_THREAD_OPTION_USER | (GCRY_THREAD_OPTION_VERSION << 8)),
+  NULL, gcry_w32_mutex_init, gcry_w32_mutex_destroy,
+  gcry_w32_mutex_lock, gcry_w32_mutex_unlock,
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+
+#endif // defined(MHD_W32_MUTEX_)
+#endif // HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600
 
 
 /**
@@ -4405,8 +4442,13 @@ FUNC_CONSTRUCTOR (MHD_init) ()
 #endif
 #if HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
+#if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread))
     MHD_PANIC ("Failed to initialise multithreading in libgcrypt\n");
+#elif defined(MHD_W32_MUTEX_)
+  if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_w32))
+    MHD_PANIC ("Failed to initialise multithreading in libgcrypt\n");
+#endif // defined(MHD_W32_MUTEX_)
   gcry_check_version (NULL);
 #else
   if (NULL == gcry_check_version ("1.6.0"))

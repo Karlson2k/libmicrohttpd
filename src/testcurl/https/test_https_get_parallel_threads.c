@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <curl/curl.h>
+#include <pthread.h>
 #include <gcrypt.h>
 #include "tls_test_common.h"
 

@@ -25,7 +25,6 @@ endif
 if HAVE_CURL
 check_PROGRAMS = \
   test_start_stop \
-  test_quiesce \
   test_get \
   test_get_sendfile \
   test_urlparse \
@@ -49,6 +48,10 @@ check_PROGRAMS = \
   $(CURL_FORK_TEST) \
   perf_get $(PERF_GET_CONCURRENT)
 
+if HAVE_POSIX_THREADS
+check_PROGRAMS += \
+  test_quiesce
+endif
 
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \

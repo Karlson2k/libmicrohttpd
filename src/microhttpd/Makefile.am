@@ -66,13 +66,13 @@ libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
+  $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
-  $(MHD_W32_LIB) $(PTHREAD_LIBS) $(MHD_LIBDEPS)
+  $(MHD_W32_LIB) $(MHD_LIBDEPS)
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc

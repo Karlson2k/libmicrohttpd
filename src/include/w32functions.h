@@ -146,6 +146,9 @@ extern "C"
 #ifndef ENODATA
 #define ENODATA (MHDW32ERRBASE+35)
 #endif
+#ifndef ETIMEDOUT
+#define ETIMEDOUT (MHDW32ERRBASE+36)
+#endif
 
 /**
  * Return errno equivalent of last winsock error

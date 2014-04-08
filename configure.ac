@@ -81,19 +81,36 @@ AC_SUBST([PACKAGE_VERSION_MINOR])
 AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
 
-AX_PTHREAD(,[AC_MSG_ERROR([[Compiling libmicrohttpd requires pthread support]])])
-CC="$PTHREAD_CC"
+MHD_LIB_CPPFLAGS=""
+MHD_LIB_CFLAGS=""
+MHD_LIB_LDFLAGS=""
+MHD_LIBDEPS=""
 
-# set GCC options
-# use '-fno-strict-aliasing', but only if the compiler can take it
-AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
+AC_ARG_WITH([threads],
+   [AC_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
+   [], [with_threads='auto'])
+test "x$with_threads" = "xwin32" && with_threads='w32'
+test "x$with_threads" = "xpthreads" && with_threads='posix'
 
-AC_C_BIGENDIAN
-
-AC_CHECK_PROG([HAVE_CURL_BINARY],[curl],[yes],[no])
-AM_CONDITIONAL([HAVE_CURL_BINARY],[test "x$HAVE_CURL_BINARY" = "xyes"])
-AC_CHECK_PROG([HAVE_MAKEINFO_BINARY],[makeinfo],[yes],[no])
-AM_CONDITIONAL([HAVE_MAKEINFO_BINARY],[test "x$HAVE_MAKEINFO_BINARY" = "xyes"])
+# Check for posix threads support
+AX_PTHREAD([HAVE_POSIX_THREADS='yes'],[HAVE_POSIX_THREADS='no'])
+AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$HAVE_POSIX_THREADS" = "xyes"])
+# Simple check for W32 threads support
+AC_CHECK_HEADER([windows.h],
+  [
+    AC_MSG_CHECKING([for CreateThread()])
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])],
+      [
+        AC_MSG_RESULT([yes])
+        HAVE_W32_THREADS='yes'
+      ],
+      [
+        AC_MSG_RESULT([no])
+        HAVE_W32_THREADS='no'
+      ])
+  ],
+  [HAVE_W32_THREADS='no'])
 
 # for pkg-config
 MHD_LIBDEPS=""
@@ -156,7 +173,7 @@ netbsd*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
     ;;
 *)
-     AC_MSG_RESULT(Unrecognised OS $host_os)
+     AC_MSG_WARN([Unrecognised OS $host_os])
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
 #    You might want to find out if your OS supports shutdown on listen sockets,
 #    and extend the switch statement; if we do not have 'HAVE_LISTEN_SHUTDOWN',
@@ -164,6 +181,57 @@ netbsd*)
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
 ;;
 esac
+
+if test "x$with_threads" = "xposix"; then
+# forced posix threads
+  if test "x$HAVE_POSIX_THREADS" = "xyes"; then
+    USE_THREADS='posix'
+  else
+    if test "x$HAVE_W32_THREADS" = "xyes"; then
+      AC_MSG_ERROR([[Posix threads are not available. Try to configure --with-threads=auto]])
+    else
+      AC_MSG_ERROR([[Posix threads are not available]])
+    fi
+  fi
+elif test "x$with_threads" = "xw32"; then
+# forced w32 threads
+  if test "x$HAVE_W32_THREADS" = "xyes"; then
+    USE_THREADS='w32'
+  else
+    if test "x$HAVE_POSIX_THREADS" = "xyes"; then
+      AC_MSG_ERROR([[W32 threads are not available. Try to configure --with-threads=auto]])
+    else
+      AC_MSG_ERROR([[W32 threads are not available]])
+    fi
+  fi
+else
+# automatic threads lib selection
+  if test "x$HAVE_POSIX_THREADS" = "xyes" && test "x$HAVE_W32_THREADS" = "xyes"; then
+    if test "x$os_is_native_w32" = "xyes"; then
+      USE_THREADS='w32'
+    else
+      USE_THREADS='posix'
+    fi
+  elif test "x$HAVE_POSIX_THREADS" = "xyes"; then
+    USE_THREADS='posix'
+  elif test "x$HAVE_W32_THREADS" = "xyes"; then
+    USE_THREADS='w32'
+  else
+    AC_MSG_ERROR([[No threading lib is available. Cosider installing pthreads]])
+  fi
+fi
+
+if test "x$USE_THREADS" = "xposix"; then
+  CC="$PTHREAD_CC"
+  AC_DEFINE([MHD_USE_POSIX_THREADS],[1],[define to use pthreads])
+  MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $PTHREAD_CFLAGS"
+  MHD_LIBDEPS="$PTHREAD_LIBS $MHD_LIBDEPS"
+elif test "x$USE_THREADS" = "xw32"; then
+  AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])
+fi
+AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
+AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
+
 
 AM_CONDITIONAL(HAVE_W32, [test "x$os_is_native_w32" = "xyes"])
 w32_shared_lib_exp=no
@@ -177,6 +245,17 @@ if test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"; then
 fi
 AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
+
+# set GCC options
+# use '-fno-strict-aliasing', but only if the compiler can take it
+AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
+
+AC_C_BIGENDIAN
+
+AC_CHECK_PROG([HAVE_CURL_BINARY],[curl],[yes],[no])
+AM_CONDITIONAL([HAVE_CURL_BINARY],[test "x$HAVE_CURL_BINARY" = "xyes"])
+AC_CHECK_PROG([HAVE_MAKEINFO_BINARY],[makeinfo],[yes],[no])
+AM_CONDITIONAL([HAVE_MAKEINFO_BINARY],[test "x$HAVE_MAKEINFO_BINARY" = "xyes"])
 AM_CONDITIONAL(W32_STATIC_LIB, [test "x$os_is_native_w32" = "xyes"  && test "x$enable_static" = "xyes"])
 
 
@@ -212,19 +291,21 @@ if test "$enable_epoll" != "no"; then
   fi
 fi
 
-SAVE_LIBS="$LIBS"
-SAVE_CFLAGS="$CFLAGS"
-LIBS="$PTHREAD_LIBS $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-# Check for pthread_setname_np()
-AC_MSG_CHECKING([[for pthread_setname_np]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM([[#include <pthread.h>]], [[  pthread_setname_np(pthread_self(), "name")]])],
-  [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP]], [[1]], [Define if you have pthread_setname_np function.])
-   AC_MSG_RESULT([[yes]])],
-  [AC_MSG_RESULT([[no]])] )
-LIBS="$SAVE_LIBS"
-CFLAGS="$SAVE_CFLAGS"
+if test "x$HAVE_POSIX_THREADS" = "xyes"; then
+  # Check for pthread_setname_np()
+  SAVE_LIBS="$LIBS"
+  SAVE_CFLAGS="$CFLAGS"
+  LIBS="$PTHREAD_LIBS $LIBS"
+  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  AC_MSG_CHECKING([[for pthread_setname_np]])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[  pthread_setname_np(pthread_self(), "name")]])],
+    [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP]], [[1]], [Define if you have pthread_setname_np function.])
+     AC_MSG_RESULT([[yes]])],
+    [AC_MSG_RESULT([[no]])] )
+  LIBS="$SAVE_LIBS"
+  CFLAGS="$SAVE_CFLAGS"
+fi
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
@@ -599,10 +680,10 @@ if test "x$enable_https" != "xno"
 then
   AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
           AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
-          MHD_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS $LIBGCRYPT_CFLAGS"
-          MHD_LIB_CFLAGS="$GNUTLS_CFLAGS $LIBGCRYPT_CFLAGS"
-          MHD_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
-          MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS"
+          MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $GNUTLS_CPPFLAGS $LIBGCRYPT_CFLAGS"
+          MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS $LIBGCRYPT_CFLAGS"
+          MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
+          MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
           enable_https=yes
           MSG_HTTPS="yes (using libgnutls and libgcrypt)"
         ], [
@@ -715,6 +796,7 @@ fi
 
 AC_MSG_NOTICE([Configuration Summary:
   Operating System:  ${host_os}
+  Threading lib:     ${USE_THREADS}
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}

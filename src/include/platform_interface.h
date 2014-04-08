@@ -139,11 +139,45 @@
 #define MHD_random_() MHD_W32_random_()
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(MHD_USE_POSIX_THREADS)
+typedef pthread_t MHD_thread_handle_;
+#elif defined(MHD_USE_W32_THREADS)
+#include <windows.h>
+typedef HANDLE MHD_thread_handle_;
+#else
+#error "No threading API is available."
+#endif
+
+#if defined(MHD_USE_POSIX_THREADS)
+#define MHD_THRD_RTRN_TYPE_ void*
+#define MHD_THRD_CALL_SPEC_
+#elif defined(MHD_USE_W32_THREADS)
+#define MHD_THRD_RTRN_TYPE_ DWORD
+#define MHD_THRD_CALL_SPEC_ WINAPI
+#endif
+
+#if defined(MHD_USE_POSIX_THREADS)
+/**
+ * Wait until specified thread is ended
+ * @param thread ID to watch
+ * @return zero on success, nonzero on failure
+ */
+#define MHD_join_thread_(thread) pthread_join((thread), NULL)
+#elif defined(MHD_USE_W32_THREADS)
+/**
+ * Wait until specified thread is ended
+ * Close thread handle on success
+ * @param thread handle to watch
+ * @return zero on success, nonzero on failure
+ */
+#define MHD_join_thread_(thread) (WAIT_OBJECT_0 == WaitForSingleObject((thread), INFINITE) ? (CloseHandle((thread)), 0) : 1 )
+#endif
+
+#if defined(MHD_USE_W32_THREADS)
 #define MHD_W32_MUTEX_ 1
 #include <windows.h>
 typedef CRITICAL_SECTION MHD_mutex_;
-#elif defined(HAVE_PTHREAD_H)
+#elif defined(HAVE_PTHREAD_H) && defined(MHD_USE_POSIX_THREADS)
 #define MHD_PTHREAD_MUTEX_ 1
 typedef pthread_mutex_t MHD_mutex_;
 #else
