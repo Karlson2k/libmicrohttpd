@@ -365,7 +365,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
       if (NULL != response->crc)
-        MHD_mutex_unlock_ (&response->mutex);
+        (void) MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
@@ -379,7 +379,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
       if (NULL != response->crc)
-        MHD_mutex_unlock_ (&response->mutex);
+        (void) MHD_mutex_unlock_ (&response->mutex);
       return MHD_NO;
     }
   return MHD_YES;
@@ -2090,7 +2090,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_NORMAL_BODY_READY:
           response = connection->response;
           if (NULL != response->crc)
-            MHD_mutex_lock_ (&response->mutex);
+            (void) MHD_mutex_lock_ (&response->mutex);
           if (MHD_YES != try_ready_normal_body (connection))
 	    break;
 	  ret = connection->send_cls (connection,
@@ -2110,7 +2110,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                      response->data_start]);
 #endif
           if (NULL != response->crc)
-            MHD_mutex_unlock_ (&response->mutex);
+            (void) MHD_mutex_unlock_ (&response->mutex);
           if (ret < 0)
             {
               if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
@@ -2461,18 +2461,18 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            MHD_mutex_lock_ (&connection->response->mutex);
+            (void) MHD_mutex_lock_ (&connection->response->mutex);
           if (0 == connection->response->total_size)
             {
               if (NULL != connection->response->crc)
-                MHD_mutex_unlock_ (&connection->response->mutex);
+                (void) MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
 	      if (NULL != connection->response->crc)
-	        MHD_mutex_unlock_ (&connection->response->mutex);
+	        (void) MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               break;
             }
@@ -2483,23 +2483,23 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            MHD_mutex_lock_ (&connection->response->mutex);
+            (void) MHD_mutex_lock_ (&connection->response->mutex);
           if (0 == connection->response->total_size)
             {
               if (NULL != connection->response->crc)
-                MHD_mutex_unlock_ (&connection->response->mutex);
+                (void) MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_chunked_body (connection))
             {
               if (NULL != connection->response->crc)
-                MHD_mutex_unlock_ (&connection->response->mutex);
+                (void) MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               continue;
             }
           if (NULL != connection->response->crc)
-            MHD_mutex_unlock_ (&connection->response->mutex);
+            (void) MHD_mutex_unlock_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
           build_header_response (connection);

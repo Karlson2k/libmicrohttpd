@@ -397,7 +397,7 @@ MHD_create_response_from_data (size_t size,
     {
       if (NULL == (tmp = malloc (size)))
         {
-          MHD_mutex_destroy_ (&response->mutex);
+          (void) MHD_mutex_destroy_ (&response->mutex);
           free (response);
           return NULL;
         }
@@ -454,14 +454,14 @@ MHD_destroy_response (struct MHD_Response *response)
 
   if (NULL == response)
     return;
-  MHD_mutex_lock_ (&response->mutex);
+  (void) MHD_mutex_lock_ (&response->mutex);
   if (0 != --(response->reference_count))
     {
-      MHD_mutex_unlock_ (&response->mutex);
+      (void) MHD_mutex_unlock_ (&response->mutex);
       return;
     }
-  MHD_mutex_unlock_ (&response->mutex);
-  MHD_mutex_destroy_ (&response->mutex);
+  (void) MHD_mutex_unlock_ (&response->mutex);
+  (void) MHD_mutex_destroy_ (&response->mutex);
   if (response->crfc != NULL)
     response->crfc (response->crc_cls);
   while (NULL != response->first_header)
@@ -479,9 +479,9 @@ MHD_destroy_response (struct MHD_Response *response)
 void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
-  MHD_mutex_lock_ (&response->mutex);
+  (void) MHD_mutex_lock_ (&response->mutex);
   (response->reference_count)++;
-  MHD_mutex_unlock_ (&response->mutex);
+  (void) MHD_mutex_unlock_ (&response->mutex);
 }
 
 
