@@ -93,12 +93,12 @@ ahc_echo (void *cls,
                                      MHD_GET_ARGUMENT_KIND, "space");
   if ((hdr == NULL) || (0 != strcmp (hdr, "\240bar")))
     abort ();
-  if (3 != MHD_get_connection_values (connection, 
+  if (3 != MHD_get_connection_values (connection,
 				      MHD_GET_ARGUMENT_KIND,
 				      NULL, NULL))
     abort ();
   response = MHD_create_response_from_buffer (strlen (url),
-					      (void *) url, 
+					      (void *) url,
 					      MHD_RESPMEM_MUST_COPY);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
@@ -136,7 +136,7 @@ testExternalGet ()
     return 256;
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL,
-                    "http://127.0.0.1:21080/hello_world?k=v+x&hash=%23foo&space=%A0bar");
+                    "http://127.0.0.1:21080/hello+world?k=v+x&hash=%23foo&space=%A0bar");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -224,9 +224,9 @@ testExternalGet ()
       curl_multi_cleanup (multi);
     }
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != strlen ("/hello+world"))
     return 8192;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
+  if (0 != strncmp ("/hello+world", cbc.buf, strlen ("/hello+world")))
     return 16384;
   return 0;
 }

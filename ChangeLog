@@ -1,3 +1,14 @@
+Thu Apr 10 09:39:38 CEST 2014
+	Removed unescaping for URI path (#3371) as '+' should not
+	be converted to space in accordance with
+	http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
+	and http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1
+	Note that we now also no longer convert '#38;' to '&'; if needed,
+	the application needs to apply unescaping to the path of the URI
+	itself (before, MHD unescaped '#38;' but not '&amp;', so this
+	inconsistency was now resolved by simply not unescaping anything
+	before the first '&'). -CG
+
 Tue Apr 08 15:35:44 CET 2014
 	Added support for W32 native threads.
 	Added --with-threads=LIB configure parameter. -EG

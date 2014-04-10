@@ -1361,9 +1361,11 @@ parse_initial_message_line (struct MHD_Connection *connection,
       args++;
       parse_arguments (MHD_GET_ARGUMENT_KIND, connection, args);
     }
+#if 0
   connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					 connection,
 					 uri);
+#endif
   connection->url = uri;
   if (NULL == http_version)
     connection->version = "";
