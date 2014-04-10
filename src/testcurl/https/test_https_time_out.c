@@ -62,7 +62,7 @@ test_tls_session_time_out (gnutls_session_t session)
   sa.sin_port = htons (DEAMON_TEST_PORT);
   sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
-  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) sd);
+  gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) (intptr_t) sd);
 
   ret = connect (sd, &sa, sizeof (struct sockaddr_in));
 
