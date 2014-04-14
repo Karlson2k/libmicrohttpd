@@ -853,10 +853,9 @@ be followed by a @code{unsigned int}.
 @cindex DH
 Memory pointer for the Diffie-Hellman parameters (dh.pem) to be used
 by the HTTPS daemon for key exchange.  This option must be followed by
-a @code{const char *} argument.  The argument would be a GNUtls
-property string, such as ``NORMAL:+DHE-RSA''.  This option is needed
-to activate ciphersuites with so-called ``Perfect Forward Secrecy''
-property.
+a @code{const char *} argument.  The argument would be a zero-terminated
+string with a PEM encoded PKCS3 DH parameters structure suitable
+for passing to @code{gnutls_dh_parms_import_pkcs3}.
 @end table
 @end deftp
 
