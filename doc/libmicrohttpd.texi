@@ -1123,6 +1123,21 @@ over all of the cookies, headers, or @code{POST}-data fields of a
 request, and also to iterate over the headers that have been added to a
 response.
 
+@table @var
+@item cls
+custom value specified when iteration was triggered;
+
+@item kind
+kind of the header we are looking at
+
+@item key
+key for the value, can be an empty string
+
+@item value
+value corresponding value, can be NULL
+
+@end table
+
 Return @code{MHD_YES} to continue iterating, @code{MHD_NO} to abort the
 iteration.
 @end deftypefn

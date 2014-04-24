@@ -1589,6 +1589,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
     MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
+
 /**
  * Run through the suspended connections and move any that are no
  * longer suspended back to the active state.

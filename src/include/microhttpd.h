@@ -1218,6 +1218,10 @@ typedef void
  * also to iterate over the headers that have been
  * added to a response.
  *
+ * @param cls closure
+ * @param kind kind of the header we are looking at
+ * @param key key for the value, can be an empty string
+ * @param value corresponding value, can be NULL
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
