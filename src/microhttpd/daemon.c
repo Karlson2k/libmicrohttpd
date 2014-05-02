@@ -1535,6 +1535,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
           EDLL_remove (daemon->eready_head,
                        daemon->eready_tail,
                        connection);
+          connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
         }
       if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET))
         {
@@ -1633,25 +1634,13 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
         {
           if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-            {
-              EDLL_insert (daemon->eready_head,
-                           daemon->eready_tail,
-                           pos);
-            }
-          else
-            {
-              struct epoll_event event;
-
-              event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-              event.data.ptr = pos;
-              if (0 != epoll_ctl (daemon->epoll_fd,
-                                  EPOLL_CTL_ADD,
-                                  pos->socket_fd,
-                                  &event))
-                MHD_PANIC ("Failed to add FD to epoll set\n");
-              else
-                pos->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
-            }
+            MHD_PANIC ("Resumed connection was already in EREADY set\n");
+          /* we always mark resumed connections as ready, as we
+             might have missed the edge poll event during suspension */
+          EDLL_insert (daemon->eready_head,
+                       daemon->eready_tail,
+                       pos);
+          pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
           pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
         }
 #endif
@@ -2981,7 +2970,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_MEM_DHPARAMS:
           if (0 != (daemon->options & MHD_USE_SSL))
             {
-              const char *arg = va_arg (ap, const unsigned char *);
+              const char *arg = va_arg (ap, const char *);
               gnutls_datum_t dhpar;
 
               if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
