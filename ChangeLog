@@ -1,3 +1,6 @@
+May  2 20:22:45 CEST 2014
+	Fix infinite loop (DoS) when HTTP connection is reset (#3392). -GM
+
 Thu Apr 10 09:39:38 CEST 2014
 	Removed unescaping for URI path (#3371) as '+' should not
 	be converted to space in accordance with
