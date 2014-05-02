@@ -22,15 +22,15 @@
 #
 AC_PREREQ([2.60])
 LT_PREREQ([2.4.0])
-AC_INIT([libmicrohttpd],[0.9.34],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd],[0.9.35],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=33
+LIB_VERSION_CURRENT=34
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=23
+LIB_VERSION_AGE=24
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -508,7 +508,7 @@ then
       SAVE_LD_FLAGS="$LDFLAGS"
       LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
       LIBS="$OPENSSL_LIBS $LIBS"
-      AC_CHECK_FUNC([SSL_CTX_set_next_protos_advertised_cb], 
+      AC_CHECK_FUNC([SSL_CTX_set_next_protos_advertised_cb],
         [
           AC_CHECK_FUNC([SSL_library_init], [ have_openssl=yes ],[ have_openssl=no ])
         ],[ have_openssl=no ])
@@ -641,7 +641,7 @@ AC_ARG_WITH(gnutls,
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
         AC_CHECK_FILE([$with_gnutls/include/gnutls/gnutls.h],
           [AC_CHECK_HEADERS([gnutls/gnutls.h],
-            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], 
+            [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
               [
                 GNUTLS_CPPFLAGS="-I$with_gnutls/include"
                 GNUTLS_LDFLAGS="-L$with_gnutls/lib"

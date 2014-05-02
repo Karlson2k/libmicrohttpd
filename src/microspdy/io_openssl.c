@@ -45,7 +45,7 @@ spdyf_next_protos_advertised_cb (SSL *ssl, const unsigned char **out, unsigned i
 	(void)arg;
 	static unsigned char npn_spdy3[] = {0x06, // length of "spdy/3"
 		0x73,0x70,0x64,0x79,0x2f,0x33};// spdy/3
-	
+
 	*out = npn_spdy3;
 	*outlen = 7; // total length of npn_spdy3
 	return SSL_TLSEXT_ERR_OK;
@@ -87,8 +87,8 @@ SPDYF_openssl_init(struct SPDY_Daemon *daemon)
 	//set options for tls
 	//TODO DH is not enabled for easier debugging
     //SSL_CTX_set_options(daemon->io_context, SSL_OP_SINGLE_DH_USE);
-    
-    //TODO here session tickets are disabled for easier debuging with 
+
+    //TODO here session tickets are disabled for easier debuging with
     //wireshark when using Chrome
     // SSL_OP_NO_COMPRESSION disables TLS compression to avoid CRIME attack
     options = SSL_OP_NO_TICKET;
@@ -112,14 +112,13 @@ SPDYF_openssl_init(struct SPDY_Daemon *daemon)
 		return SPDY_NO;
 	}
     SSL_CTX_set_next_protos_advertised_cb(daemon->io_context, &spdyf_next_protos_advertised_cb, NULL);
-	//TODO only RC4-SHA is used to make it easy to debug with wireshark
-    if (1 != SSL_CTX_set_cipher_list(daemon->io_context, "RC4-SHA"))
+    if (1 != SSL_CTX_set_cipher_list(daemon->io_context, "HIGH"))
     {
 		SPDYF_DEBUG("Couldn't set the desired cipher list");
 		SSL_CTX_free(daemon->io_context);
 		return SPDY_NO;
 	}
-	
+
 	return SPDY_YES;
 }
 
@@ -135,7 +134,7 @@ int
 SPDYF_openssl_new_session(struct SPDY_Session *session)
 {
 	int ret;
-	
+
 	if(NULL == (session->io_context = SSL_new(session->daemon->io_context)))
     {
 		SPDYF_DEBUG("Couldn't create ssl structure");
@@ -148,7 +147,7 @@ SPDYF_openssl_new_session(struct SPDY_Session *session)
 		session->io_context = NULL;
 		return SPDY_NO;
 	}
-	
+
 	//for non-blocking I/O SSL_accept may return -1
 	//and this function won't work
 	if(1 != (ret = SSL_accept(session->io_context)))
@@ -158,11 +157,11 @@ SPDYF_openssl_new_session(struct SPDY_Session *session)
 		session->io_context = NULL;
 		return SPDY_NO;
 	}
-	/* alternatively 
+	/* alternatively
 	SSL_set_accept_state(session->io_context);
 	* may be called and then the negotiation will be done on reading
 	*/
-	
+
 	return SPDY_YES;
 }
 
@@ -176,7 +175,7 @@ SPDYF_openssl_close_session(struct SPDY_Session *session)
 	//after that because the browsers don't seem to care much about
 	//"close notify"
 	SSL_shutdown(session->io_context);
-	
+
 	SSL_free(session->io_context);
 }
 
@@ -187,7 +186,7 @@ SPDYF_openssl_recv(struct SPDY_Session *session,
 				size_t size)
 {
 	int ret;
-	int n = SSL_read(session->io_context, 
+	int n = SSL_read(session->io_context,
 					buffer,
 					size);
 	//if(n > 0) SPDYF_DEBUG("recvd: %i",n);
@@ -198,15 +197,15 @@ SPDYF_openssl_recv(struct SPDY_Session *session,
 		{
 			case SSL_ERROR_ZERO_RETURN:
 				return 0;
-				
+
 			case SSL_ERROR_WANT_READ:
 			case SSL_ERROR_WANT_WRITE:
 				return SPDY_IO_ERROR_AGAIN;
-				
+
 			case SSL_ERROR_SYSCALL:
 				if(EINTR == errno)
 					return SPDY_IO_ERROR_AGAIN;
-				
+
 			default:
 				return SPDY_IO_ERROR_ERROR;
 		}
@@ -222,8 +221,8 @@ SPDYF_openssl_send(struct SPDY_Session *session,
 				size_t size)
 {
 	int ret;
-	
-	int n = SSL_write(session->io_context, 
+
+	int n = SSL_write(session->io_context,
 					buffer,
 					size);
 	//if(n > 0) SPDYF_DEBUG("sent: %i",n);
@@ -234,20 +233,20 @@ SPDYF_openssl_send(struct SPDY_Session *session,
 		{
 			case SSL_ERROR_ZERO_RETURN:
 				return 0;
-				
+
 			case SSL_ERROR_WANT_READ:
 			case SSL_ERROR_WANT_WRITE:
 				return SPDY_IO_ERROR_AGAIN;
-				
+
 			case SSL_ERROR_SYSCALL:
 				if(EINTR == errno)
 					return SPDY_IO_ERROR_AGAIN;
-				
+
 			default:
 				return SPDY_IO_ERROR_ERROR;
 		}
 	}
-	
+
 	return n;
 }
 
@@ -267,7 +266,7 @@ int
 SPDYF_openssl_before_write(struct SPDY_Session *session)
 {
   (void)session;
-  
+
   return SPDY_YES;
 }
 
@@ -276,6 +275,6 @@ int
 SPDYF_openssl_after_write(struct SPDY_Session *session, int was_written)
 {
   (void)session;
-  
+
   return was_written;
 }
