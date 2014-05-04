@@ -639,8 +639,7 @@ AC_ARG_WITH(gnutls,
         SAVE_CPPFLAGS="$CPPFLAGS"
         LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
-        AC_CHECK_FILE([$with_gnutls/include/gnutls/gnutls.h],
-          [AC_CHECK_HEADERS([gnutls/gnutls.h],
+          AC_CHECK_HEADERS([gnutls/gnutls.h],
             [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
               [
                 GNUTLS_CPPFLAGS="-I$with_gnutls/include"
@@ -648,7 +647,7 @@ AC_ARG_WITH(gnutls,
                 GNUTLS_LIBS="-lgnutls"
                 AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
                 have_gnutls=yes
-              ])])])
+              ])])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
         LDFLAGS="$SAVE_LDFLAGS"
         CPPFLAGS="$SAVE_CPPFLAGS"
