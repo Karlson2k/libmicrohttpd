@@ -501,6 +501,105 @@ testStopRace (int poll_flag)
 }
 
 
+static int
+ahc_empty (void *cls,
+          struct MHD_Connection *connection,
+          const char *url,
+          const char *method,
+          const char *version,
+          const char *upload_data, size_t *upload_data_size,
+          void **unused)
+{
+  static int ptr;
+  struct MHD_Response *response;
+  int ret;
+
+  if (0 != strcmp ("GET", method))
+    return MHD_NO;              /* unexpected method */
+  if (&ptr != *unused)
+    {
+      *unused = &ptr;
+      return MHD_YES;
+    }
+  *unused = NULL;
+  response = MHD_create_response_from_buffer (0,
+					      NULL,
+					      MHD_RESPMEM_PERSISTENT);
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  MHD_destroy_response (response);
+  if (ret == MHD_NO)
+    abort ();
+  return ret;
+}
+
+
+static int
+curlExcessFound(CURL *c, curl_infotype type, char *data, size_t size, void *cls)
+{
+  static const char *excess_found = "Excess found";
+  const size_t str_size = strlen (excess_found);
+
+  if (CURLINFO_TEXT == type
+      && size >= str_size
+      && 0 == strncmp(excess_found, data, str_size))
+    *(int *)cls = 1;
+  return 0;
+}
+
+
+static int
+testEmptyGet (int poll_flag)
+{
+  struct MHD_Daemon *d;
+  CURL *c;
+  char buf[2048];
+  struct CBC cbc;
+  CURLcode errornum;
+  int excess_found = 0;
+
+  cbc.buf = buf;
+  cbc.size = 2048;
+  cbc.pos = 0;
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
+                        11081, NULL, NULL, &ahc_empty, NULL, MHD_OPTION_END);
+  if (d == NULL)
+    return 4194304;
+  c = curl_easy_init ();
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
+  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
+  curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION, &curlExcessFound);
+  curl_easy_setopt (c, CURLOPT_DEBUGDATA, &excess_found);
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
+  if (oneone)
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  else
+    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  /* NOTE: use of CONNECTTIMEOUT without also
+     setting NOSIGNAL results in really weird
+     crashes on my system!*/
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  if (CURLE_OK != (errornum = curl_easy_perform (c)))
+    {
+      fprintf (stderr,
+               "curl_easy_perform failed: `%s'\n",
+               curl_easy_strerror (errornum));
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      return 8388608;
+    }
+  curl_easy_cleanup (c);
+  MHD_stop_daemon (d);
+  if (cbc.pos != 0)
+    return 16777216;
+  if (excess_found)
+    return 33554432;
+  return 0;
+}
+
 
 int
 main (int argc, char *const *argv)
@@ -516,17 +615,20 @@ main (int argc, char *const *argv)
   errorCount += testUnknownPortGet (0);
   errorCount += testStopRace (0);
   errorCount += testExternalGet ();
+  errorCount += testEmptyGet (0);
 #ifndef WINDOWS
   errorCount += testInternalGet (MHD_USE_POLL);
   errorCount += testMultithreadedGet (MHD_USE_POLL);
   errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
   errorCount += testUnknownPortGet (MHD_USE_POLL);
   errorCount += testStopRace (MHD_USE_POLL);
+  errorCount += testEmptyGet (MHD_USE_POLL);
 #endif
 #if EPOLL_SUPPORT
   errorCount += testInternalGet (MHD_USE_EPOLL_LINUX_ONLY);
   errorCount += testMultithreadedPoolGet (MHD_USE_EPOLL_LINUX_ONLY);
   errorCount += testUnknownPortGet (MHD_USE_EPOLL_LINUX_ONLY);
+  errorCount += testEmptyGet (MHD_USE_EPOLL_LINUX_ONLY);
 #endif
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
