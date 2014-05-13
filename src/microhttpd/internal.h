@@ -290,7 +290,7 @@ struct MHD_Response
   MHD_mutex_ mutex;
 
   /**
-   * Set to MHD_SIZE_UNKNOWN if size is not known.
+   * Set to #MHD_SIZE_UNKNOWN if size is not known.
    */
   uint64_t total_size;
 

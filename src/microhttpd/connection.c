@@ -585,15 +585,23 @@ add_extra_headers (struct MHD_Connection *connection)
                (0 == strcasecmp (connection->version,
                                  MHD_HTTP_VERSION_1_1)) )
             {
-              connection->have_chunked_upload = MHD_YES;
               have_encoding = MHD_get_response_header (connection->response,
 						       MHD_HTTP_HEADER_TRANSFER_ENCODING);
               if (NULL == have_encoding)
+              {
                 MHD_add_response_header (connection->response,
                                          MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                          "chunked");
+                connection->have_chunked_upload = MHD_YES;
+              }
 	      else if (0 != strcasecmp (have_encoding, "chunked"))
+              {
 		add_close = MHD_YES; /* application already set some strange encoding, can't do 'chunked' */
+              }
+              else
+              {
+                connection->have_chunked_upload = MHD_YES;
+              }
             }
           else
             {
@@ -615,7 +623,7 @@ add_extra_headers (struct MHD_Connection *connection)
 	   ( (NULL == connection->method) ||
 	     (0 != strcasecmp (connection->method,
 			       MHD_HTTP_METHOD_CONNECT)) ||
-	     (0 != connection->response->total_size) ) )
+	     (MHD_SIZE_UNKNOWN != connection->response->total_size) ) )
 	{
 	  /*
 	     Here we add a content-length if one is missing; however,
@@ -2133,7 +2141,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
           do_write (connection);
-	  if (connection->state !=  MHD_CONNECTION_CHUNKED_BODY_READY)
+	  if (MHD_CONNECTION_CHUNKED_BODY_READY != connection->state)
 	     break;
           check_write_done (connection,
                             (connection->response->total_size ==
@@ -2503,8 +2511,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_BODY_SENT:
           build_header_response (connection);
-          if (connection->write_buffer_send_offset ==
-              connection->write_buffer_append_offset)
+          if ( (MHD_NO == connection->have_chunked_upload) ||
+               (connection->write_buffer_send_offset ==
+                connection->write_buffer_append_offset) )
             connection->state = MHD_CONNECTION_FOOTERS_SENT;
           else
             connection->state = MHD_CONNECTION_FOOTERS_SENDING;
