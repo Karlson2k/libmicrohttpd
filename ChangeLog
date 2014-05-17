@@ -1,3 +1,7 @@
+Sat May 17 06:47:00 CEST 2014
+	Fix notifying client about completed request twice
+	under certain circumstances. -CG
+
 Tue May 13 18:24:37 CEST 2014
 	Fix accidental transmission of footer termination '\r\n'
 	for responses with zero byte payload and non-chunked

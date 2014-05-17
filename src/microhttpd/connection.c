@@ -2535,11 +2535,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 				     MHD_HTTP_HEADER_CONNECTION);
           MHD_destroy_response (connection->response);
           connection->response = NULL;
-          if (NULL != daemon->notify_completed)
+          if ( (NULL != daemon->notify_completed) &&
+               (MHD_YES == connection->client_aware) )
+          {
 	    daemon->notify_completed (daemon->notify_completed_cls,
 				      connection,
 				      &connection->client_context,
 						  MHD_REQUEST_TERMINATED_COMPLETED_OK);
+            connection->client_aware = MHD_NO;
+          }
           end =
             MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_CONNECTION);
