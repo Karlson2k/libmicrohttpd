@@ -28,14 +28,14 @@ if USE_MS_LIB_TOOL
 	@echo Creating $@ and libmicrohttpd.exp by $(MS_LIB_TOOL)... && \
 	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
 	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
-	echo Using .dll filename: $$dll_name.. && \
-	$(MS_LIB_TOOL) -def:$(lt_cv_objdir)/libmicrohttpd.def -name:$$dll_name -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
+	echo Creating $$dll_name by $(MS_LIB_TOOL).. && cd "$(lt_cv_objdir)" && \
+	$(MS_LIB_TOOL) -def:libmicrohttpd.def -name:$$dll_name -out:libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) && cd ..
 else
 	@echo Creating $@ and libmicrohttpd.exp by $(DLLTOOL)... && \
 	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
 	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
-	echo Using .dll filename: $$dll_name.. && \
-	$(DLLTOOL) -d $(lt_cv_objdir)/libmicrohttpd.def -D $$dll_name -l $@ $(libmicrohttpd_la_OBJECTS:.lo=.o) -e $(lt_cv_objdir)/libmicrohttpd.exp && \
+	echo Creating $$dll_name by $(DLLTOOL).. && cd "$(lt_cv_objdir)" && \
+	$(DLLTOOL) -d ./libmicrohttpd.def -D $$dll_name -l libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) -e ./libmicrohttpd.exp && cd .. &&\
 	echo Created libmicrohttpd.exp and libmicrohttpd.lib.
 endif
 else
