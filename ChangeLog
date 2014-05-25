@@ -1,3 +1,7 @@
+Sun May 25 20:18:27 CEST 2014
+	Fixed W32 build issues. -EG
+	Releasing 0.9.36. -CG
+
 Sat May 17 06:47:00 CEST 2014
 	Fix notifying client about completed request twice
 	under certain circumstances. -CG
