@@ -1,3 +1,8 @@
+Wed May 28 15:30:56 CEST 2014
+	Properly applying patch that was supposed to be
+	committed on "May  2 20:22:45 CEST 2014" to address
+	infinite loop (DoS) when HTTP connection is reset (#3392). -GM
+
 Sun May 25 20:18:27 CEST 2014
 	Fixed W32 build issues. -EG
 	Releasing 0.9.36. -CG

@@ -1620,9 +1620,13 @@ do_read (struct MHD_Connection *connection)
   if (bytes_read < 0)
     {
       const int err = MHD_socket_errno_;
-      if ((EINTR == err) || (EAGAIN == err) || (ECONNRESET == err)
-          || (EWOULDBLOCK == err))
+      if ((EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err))
 	  return MHD_NO;
+      if (ECONNRESET == err)
+        {
+           CONNECTION_CLOSE_ERROR(connection, NULL);
+	   return MHD_NO;
+	}
 #if HAVE_MESSAGES
 #if HTTPS_SUPPORT
       if (0 != (connection->daemon->options & MHD_USE_SSL))
