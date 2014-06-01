@@ -1,3 +1,12 @@
+Mon Jun  2 00:03:28 CEST 2014
+	Added back unescaping for URI path (#3413) but without
+	unescaping '+' (#3371) to remain compatible with
+	MHD 0.9.34 and before.  Note that applications providing
+	a custom MHD_OPTION_UNESCAPE_CALLBACK are no longer expected
+	to replace '+' with ' ', as that is now done separately for
+	the locations where this transformation is appropriate.
+	Releasing 0.9.37. -CG
+
 Wed May 28 15:30:56 CEST 2014
 	Properly applying patch that was supposed to be
 	committed on "May  2 20:22:45 CEST 2014" to address

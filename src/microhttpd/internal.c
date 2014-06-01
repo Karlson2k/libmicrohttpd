@@ -105,7 +105,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 
 
 /**
- * Process escape sequences ('+'=space, %HH) Updates val in place; the
+ * Process escape sequences ('%HH') Updates val in place; the
  * result should be UTF-8 encoded and cannot be larger than the input.
  * The result must also still be 0-terminated.
  *
@@ -130,11 +130,6 @@ MHD_http_unescape (void *cls,
     {
       switch (*rpos)
 	{
-	case '+':
-	  *wpos = ' ';
-	  wpos++;
-	  rpos++;
-	  break;
 	case '%':
           if ( ('\0' == rpos[1]) ||
                ('\0' == rpos[2]) )
