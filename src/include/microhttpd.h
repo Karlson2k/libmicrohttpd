@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093700
+#define MHD_VERSION 0x00093701
 
 /**
  * MHD-internal return code for "YES".
@@ -1744,6 +1744,53 @@ MHD_resume_connection (struct MHD_Connection *connection);
 
 
 /* **************** Response manipulation functions ***************** */
+
+
+/**
+ * Flags for special handling of responses.
+ */
+enum MHD_ResponseFlags
+{
+  /**
+   * Default: no special flags.
+   */
+  MHD_RF_NONE = 0,
+
+  /**
+   * Only respond in conservative HTTP 1.0-mode.   In particular,
+   * do not (automatically) sent "Connection" headers and always
+   * close the connection after generating the response.
+   */
+  MHD_RF_HTTP_VERSION_1_0_ONLY = 1
+
+};
+
+
+/**
+ * MHD options (for future extensions).
+ */
+enum MHD_ResponseOptions
+{
+  /**
+   * End of the list of options.
+   */
+  MHD_RO_END = 0
+};
+
+
+/**
+ * Set special flags and options for a response.
+ *
+ * @param response the response to modify
+ * @param flags to set for the response
+ * @param ... #MHD_RO_END terminated list of options
+ * @return #MHD_YES on success, #MHD_NO on error
+ */
+int
+MHD_set_response_options (struct MHD_Response *response,
+                          enum MHD_ResponseFlags flags,
+                          ...);
+
 
 /**
  * Create a response object.  The response object can be extended with

@@ -160,6 +160,13 @@ MHD_http_unescape (void *cls,
 }
 
 
+/**
+ * Equivalent to time(NULL) but tries to use some sort of monotonic
+ * clock that isn't affected by someone setting the system real time
+ * clock.
+ *
+ * @return 'current' time
+ */
 time_t
 MHD_monotonic_time (void)
 {

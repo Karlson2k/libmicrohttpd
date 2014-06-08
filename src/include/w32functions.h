@@ -13,12 +13,12 @@
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
-  License along with this library. 
+  License along with this library.
   If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
- * @file platform/w32functions.h
+ * @file include/w32functions.h
  * @brief  internal functions for W32 systems
  * @author Karlson2k (Evgeny Grin)
  */

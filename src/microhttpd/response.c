@@ -266,6 +266,40 @@ MHD_create_response_from_callback (uint64_t size,
 
 
 /**
+ * Set special flags and options for a response.
+ *
+ * @param response the response to modify
+ * @param flags to set for the response
+ * @param ... #MHD_RO_END terminated list of options
+ * @return #MHD_YES on success, #MHD_NO on error
+ */
+int
+MHD_set_response_options (struct MHD_Response *response,
+                          enum MHD_ResponseFlags flags,
+                          ...)
+{
+  va_list ap;
+  int ret;
+  enum MHD_ResponseOptions ro;
+
+  ret = MHD_YES;
+  response->flags = flags;
+  va_start (ap, flags);
+  while (MHD_RO_END != (ro = va_arg (ap, enum MHD_ResponseOptions)))
+  {
+    switch (ro)
+    {
+    default:
+      ret = MHD_NO;
+      break;
+    }
+  }
+  va_end (ap);
+  return ret;
+}
+
+
+/**
  * Given a file descriptor, read data from the file
  * to generate the response.
  *

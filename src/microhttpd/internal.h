@@ -266,8 +266,8 @@ struct MHD_Response
   char *data;
 
   /**
-   * Closure to give to the content reader
-   * free callback.
+   * Closure to give to the content reader @e crc
+   * and content reader free callback @crfc.
    */
   void *crc_cls;
 
@@ -284,8 +284,8 @@ struct MHD_Response
   MHD_ContentReaderFreeCallback crfc;
 
   /**
-   * Mutex to synchronize access to data/size and
-   * reference counts.
+   * Mutex to synchronize access to @e data, @e size and
+   * @e reference_count.
    */
   MHD_mutex_ mutex;
 
@@ -296,22 +296,23 @@ struct MHD_Response
 
   /**
    * At what offset in the stream is the
-   * beginning of data located?
+   * beginning of @e data located?
    */
   uint64_t data_start;
 
   /**
-   * Offset to start reading from when using 'fd'.
+   * Offset to start reading from when using @e fd.
    */
   off_t fd_off;
 
   /**
-   * Size of data.
+   * Number of bytes ready in @e data (buffer may be larger
+   * than what is filled with payload).
    */
   size_t data_size;
 
   /**
-   * Size of the data buffer.
+   * Size of the data buffer @e data.
    */
   size_t data_buffer_size;
 
@@ -325,6 +326,11 @@ struct MHD_Response
    * File-descriptor if this response is FD-backed.
    */
   int fd;
+
+  /**
+   * Flags set for the MHD response.
+   */
+  enum MHD_ResponseFlags flags;
 
 };
 
@@ -1386,6 +1392,7 @@ struct MHD_Daemon
  *
  * @return 'current' time
  */
-time_t MHD_monotonic_time(void);
+time_t
+MHD_monotonic_time(void);
 
 #endif

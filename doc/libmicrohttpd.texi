@@ -958,6 +958,33 @@ own private copy of the data for processing.
 @end deftp
 
 
+@deftp {Enumeration} MHD_ResponseFlags
+Response-specific flags.  Passed as an argument to
+@code{MHD_set_response_options()}.
+
+@table @code
+@item MHD_RF_NONE
+No special handling.
+
+@item MHD_RF_HTTP_VERSION_1_0_ONLY
+Only respond in conservative HTTP 1.0-mode.   In particular,
+do not (automatically) sent "Connection" headers and always
+close the connection after generating the response.
+
+@end table
+@end deftp
+
+
+@deftp {Enumeration} MHD_ResponseOptions
+Response-specific options.  Passed in the varargs portion of
+@code{MHD_set_response_options()}.
+
+@table @code
+@item MHD_RO_END
+No more options / last option.  This is used to terminate the VARARGs
+list.
+@end table
+@end deftp
 
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1559,6 +1586,7 @@ response and we finally destroy it only when the daemon shuts down.
 * microhttpd-response enqueue:: Enqueuing a response.
 * microhttpd-response create::  Creating a response object.
 * microhttpd-response headers:: Adding headers to a response.
+* microhttpd-response options:: Setting response options.
 * microhttpd-response inspect:: Inspecting a response object.
 @end menu
 
@@ -1849,6 +1877,34 @@ memory allocation error).
 @deftypefun int MHD_del_response_header (struct MHD_Response *response, const char *header, const char *content)
 Delete a header (or footer) line from the response.  Return @code{MHD_NO} on error
 (arguments are invalid or no such header known).
+@end deftypefun
+
+
+@c ------------------------------------------------------------
+@node microhttpd-response options
+@section Setting response options
+
+
+@deftypefun int MHD_set_response_options (struct MHD_Response *response, enum MHD_ResponseFlags flags, ...)
+Set special flags and options for a response.
+
+Calling this functions sets the given flags and options for the response.
+
+@table @var
+@item response
+which response should be modified;
+
+@item flags
+flags to set for the response;
+
+@end table
+
+Additional arguments are a list of options (type-value pairs,
+terminated with @code{MHD_RO_END}). It is mandatory to use
+@code{MHD_RO_END} as last argument, even when there are no
+additional arguments.
+
+Return @code{MHD_NO} on error, @code{MHD_YES} on success.
 @end deftypefun
 
 

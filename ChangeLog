@@ -1,3 +1,9 @@
+Sun Jun  8 15:10:44 CEST 2014
+	Add 'MHD_set_response_options' as a way to set per-response
+	flags.  Add flag to force HTTP 1.0-only conservative
+	behavior, in particular suppressing adding "Connection"
+	headers. -CG
+
 Mon Jun  2 00:03:28 CEST 2014
 	Added back unescaping for URI path (#3413) but without
 	unescaping '+' (#3371) to remain compatible with

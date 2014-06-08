@@ -528,6 +528,9 @@ keepalive_possible (struct MHD_Connection *connection)
 
   if (NULL == connection->version)
     return MHD_NO;
+  if ( (NULL != connection->response) &&
+       (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
+    return MHD_NO;
   end = MHD_lookup_connection_value (connection,
                                      MHD_HEADER_KIND,
                                      MHD_HTTP_HEADER_CONNECTION);
@@ -596,6 +599,7 @@ add_extra_headers (struct MHD_Connection *connection)
 	  /* 'close' header doesn't exist yet, see if we need to add one;
 	     if the client asked for a close, no need to start chunk'ing */
           if ( (NULL == client_close) &&
+               (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
                (MHD_YES == keepalive_possible (connection)) &&
                (0 == strcasecmp (connection->version,
                                  MHD_HTTP_VERSION_1_1)) )
@@ -662,13 +666,15 @@ add_extra_headers (struct MHD_Connection *connection)
 				   MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
 	}
     }
-  if (MHD_YES == add_close)
+  if ( (MHD_YES == add_close) &&
+       (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
     MHD_add_response_header (connection->response,
 			     MHD_HTTP_HEADER_CONNECTION,
                              "close");
   if ( (NULL == have_keepalive) &&
        (NULL == have_close) &&
        (MHD_NO == add_close) &&
+       (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
        (MHD_YES == keepalive_possible (connection)) )
     MHD_add_response_header (connection->response,
 			     MHD_HTTP_HEADER_CONNECTION,
