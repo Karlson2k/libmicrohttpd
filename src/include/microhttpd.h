@@ -1786,7 +1786,7 @@ enum MHD_ResponseOptions
  * @param ... #MHD_RO_END terminated list of options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-int
+_MHD_EXTERN int
 MHD_set_response_options (struct MHD_Response *response,
                           enum MHD_ResponseFlags flags,
                           ...);
