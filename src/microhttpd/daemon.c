@@ -3521,37 +3521,11 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 #endif
-#if EPOLL_SUPPORT
-  if ( (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY)) &&
-       (0 == daemon->worker_pool_size) &&
-       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
-    {
-      if (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))
-	{
-#if HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    "Combining MHD_USE_THREAD_PER_CONNECTION and MHD_USE_EPOLL_LINUX_ONLY is not supported.\n");
-#endif
-	  goto free_and_fail;
-	}
-      if (MHD_YES != setup_epoll_to_listen (daemon))
-	goto free_and_fail;
-    }
-#else
-  if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY))
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		"epoll is not supported on this platform by this build.\n");
-#endif
-      goto free_and_fail;
-    }
-#endif
   if ( (MHD_INVALID_SOCKET == daemon->socket_fd) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
-      if ((flags & MHD_USE_IPv6) != 0)
+      if (0 != (flags & MHD_USE_IPv6))
 	socket_fd = create_socket (daemon,
 				   PF_INET6, SOCK_STREAM, 0);
       else
@@ -3720,6 +3694,33 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       if (0 != MHD_socket_close_ (socket_fd))
 	MHD_PANIC ("close failed\n");
+      goto free_and_fail;
+    }
+#endif
+
+#if EPOLL_SUPPORT
+  if ( (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY)) &&
+       (0 == daemon->worker_pool_size) &&
+       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
+    {
+      if (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))
+	{
+#if HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    "Combining MHD_USE_THREAD_PER_CONNECTION and MHD_USE_EPOLL_LINUX_ONLY is not supported.\n");
+#endif
+	  goto free_and_fail;
+	}
+      if (MHD_YES != setup_epoll_to_listen (daemon))
+	goto free_and_fail;
+    }
+#else
+  if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		"epoll is not supported on this platform by this build.\n");
+#endif
       goto free_and_fail;
     }
 #endif

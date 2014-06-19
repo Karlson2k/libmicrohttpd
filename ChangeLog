@@ -1,3 +1,9 @@
+Thu Jun 19 17:32:32 CEST 2014
+	Ensure that listen FD is bound to epoll FD even before
+	MHD_run() is called if running with MHD_USE_EPOLL_LINUX_ONLY
+	in combination with 'external select' mode.  Thanks to
+	Marcos Pindado Sebastian for reporting. -CG
+
 Sun Jun  8 15:10:44 CEST 2014
 	Add 'MHD_set_response_options' as a way to set per-response
 	flags.  Add flag to force HTTP 1.0-only conservative
