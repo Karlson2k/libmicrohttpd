@@ -586,7 +586,7 @@ add_extra_headers (struct MHD_Connection *connection)
        (0 != strcasecmp (have_close, "close")) )
     have_close = NULL;
   if ( (NULL != have_keepalive) &&
-       (0 != strcasecmp (have_keepalive, "keep-alive")) )
+       (0 != strcasecmp (have_keepalive, "Keep-Alive")) )
     have_keepalive = NULL;
   connection->have_chunked_upload = MHD_NO;
   add_close = MHD_NO;
@@ -1923,7 +1923,7 @@ parse_connection_headers (struct MHD_Connection *connection)
   enc = MHD_lookup_connection_value (connection,
 				     MHD_HEADER_KIND,
 				     MHD_HTTP_HEADER_TRANSFER_ENCODING);
-  if (enc != NULL)
+  if (NULL != enc)
     {
       connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
       if (0 == strcasecmp (enc, "chunked"))
@@ -1934,7 +1934,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       clen = MHD_lookup_connection_value (connection,
 					  MHD_HEADER_KIND,
 					  MHD_HTTP_HEADER_CONTENT_LENGTH);
-      if (clen != NULL)
+      if (NULL != clen)
         {
           cval = strtoul (clen, &end, 10);
           if ( ('\0' != *end) ||
