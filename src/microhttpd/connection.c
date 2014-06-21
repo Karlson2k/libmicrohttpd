@@ -2466,13 +2466,16 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             continue;
           if (NULL == connection->response)
             break;              /* try again next time */
+          (void) MHD_mutex_lock_ (&connection->response->mutex);
           if (MHD_NO == build_header_response (connection))
             {
               /* oops - close! */
+              (void) MHD_mutex_unlock_ (&connection->response->mutex);
 	      CONNECTION_CLOSE_ERROR (connection,
 				      "Closing connection (failed to create response header)\n");
               continue;
             }
+          (void) MHD_mutex_unlock_ (&connection->response->mutex);
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
 
 #if HAVE_DECL_TCP_CORK
@@ -2539,7 +2542,16 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             (void) MHD_mutex_unlock_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
-          build_header_response (connection);
+          (void) MHD_mutex_lock_ (&connection->response->mutex);
+          if (MHD_NO == build_header_response (connection))
+            {
+              /* oops - close! */
+              (void) MHD_mutex_unlock_ (&connection->response->mutex);
+	      CONNECTION_CLOSE_ERROR (connection,
+				      "Closing connection (failed to create response header)\n");
+              continue;
+            }
+          (void) MHD_mutex_unlock_ (&connection->response->mutex);
           if ( (MHD_NO == connection->have_chunked_upload) ||
                (connection->write_buffer_send_offset ==
                 connection->write_buffer_append_offset) )

@@ -1,3 +1,7 @@
+Sun Jun 22 00:22:08 CEST 2014
+	Lock on response if adding headers, needed if response
+	object is shared across threads and connections. -CG
+
 Thu Jun 19 17:32:32 CEST 2014
 	Ensure that listen FD is bound to epoll FD even before
 	MHD_run() is called if running with MHD_USE_EPOLL_LINUX_ONLY
