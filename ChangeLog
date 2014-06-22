@@ -1,3 +1,11 @@
+Sun Jun 22 12:22:08 CEST 2014
+	Actually, avoid locking on response as responses must
+	not be modified in a connection-specific way; instead
+	modify the connection's data buffer to add missing
+	responses headers.  If we are forced to add
+	"Connection: close", suppress output of conflicting
+	application-provided "Connection: Keep-Alive" header. -CG
+
 Sun Jun 22 00:22:08 CEST 2014
 	Lock on response if adding headers, needed if response
 	object is shared across threads and connections. -CG

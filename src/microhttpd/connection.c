@@ -557,132 +557,6 @@ keepalive_possible (struct MHD_Connection *connection)
 
 
 /**
- * Check if we need to set some additional headers
- * for HTTP-compiliance.
- *
- * @param connection connection to check (and possibly modify)
- */
-static void
-add_extra_headers (struct MHD_Connection *connection)
-{
-  const char *have_close;
-  const char *have_keepalive;
-  const char *client_close;
-  const char *have_encoding;
-  char buf[128];
-  int add_close;
-
-  client_close = MHD_lookup_connection_value (connection,
-					      MHD_HEADER_KIND,
-					      MHD_HTTP_HEADER_CONNECTION);
-  /* we only care about 'close', everything else is ignored */
-  if ( (NULL != client_close) &&
-       (0 != strcasecmp (client_close, "close")) )
-    client_close = NULL;
-  have_close = MHD_get_response_header (connection->response,
-					MHD_HTTP_HEADER_CONNECTION);
-  have_keepalive = have_close;
-  if ( (NULL != have_close) &&
-       (0 != strcasecmp (have_close, "close")) )
-    have_close = NULL;
-  if ( (NULL != have_keepalive) &&
-       (0 != strcasecmp (have_keepalive, "Keep-Alive")) )
-    have_keepalive = NULL;
-  connection->have_chunked_upload = MHD_NO;
-  add_close = MHD_NO;
-  if (MHD_SIZE_UNKNOWN == connection->response->total_size)
-    {
-      /* size is unknown, need to either to HTTP 1.1 chunked encoding or
-	 close the connection */
-      if (NULL == have_close)
-        {
-	  /* 'close' header doesn't exist yet, see if we need to add one;
-	     if the client asked for a close, no need to start chunk'ing */
-          if ( (NULL == client_close) &&
-               (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
-               (MHD_YES == keepalive_possible (connection)) &&
-               (0 == strcasecmp (connection->version,
-                                 MHD_HTTP_VERSION_1_1)) )
-            {
-              have_encoding = MHD_get_response_header (connection->response,
-						       MHD_HTTP_HEADER_TRANSFER_ENCODING);
-              if (NULL == have_encoding)
-              {
-                MHD_add_response_header (connection->response,
-                                         MHD_HTTP_HEADER_TRANSFER_ENCODING,
-                                         "chunked");
-                connection->have_chunked_upload = MHD_YES;
-              }
-	      else if (0 != strcasecmp (have_encoding, "chunked"))
-              {
-		add_close = MHD_YES; /* application already set some strange encoding, can't do 'chunked' */
-              }
-              else
-              {
-                connection->have_chunked_upload = MHD_YES;
-              }
-            }
-          else
-            {
-	      /* HTTP not 1.1 or client asked for close => set close header */
-	      add_close = MHD_YES;
-            }
-        }
-    }
-  else
-    {
-      /* check if we should add a 'close' anyway */
-      if ( (NULL != client_close) &&
-	   (NULL == have_close) )
-	add_close = MHD_YES; /* client asked for it, so add it */
-
-      /* if not present, add content length */
-      if ( (NULL == MHD_get_response_header (connection->response,
-					     MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
-	   ( (NULL == connection->method) ||
-	     (0 != strcasecmp (connection->method,
-			       MHD_HTTP_METHOD_CONNECT)) ||
-	     (MHD_SIZE_UNKNOWN != connection->response->total_size) ) )
-	{
-	  /*
-	     Here we add a content-length if one is missing; however,
-	     for 'connect' methods, the responses MUST NOT include a
-	     content-length header *if* the response code is 2xx (in
-	     which case we expect there to be no body).  Still,
-	     as we don't know the response code here in some cases, we
-	     simply only force adding a content-length header if this
-	     is not a 'connect' or if the response is not empty
-	     (which is kind of more sane, because if some crazy
-	     application did return content with a 2xx status code,
-	     then having a content-length might again be a good idea).
-
-	     Note that the change from 'SHOULD NOT' to 'MUST NOT' is
-	     a recent development of the HTTP 1.1 specification.
-	  */
-	  sprintf (buf,
-		   MHD_UNSIGNED_LONG_LONG_PRINTF,
-		   (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
-	  MHD_add_response_header (connection->response,
-				   MHD_HTTP_HEADER_CONTENT_LENGTH, buf);
-	}
-    }
-  if ( (MHD_YES == add_close) &&
-       (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
-    MHD_add_response_header (connection->response,
-			     MHD_HTTP_HEADER_CONNECTION,
-                             "close");
-  if ( (NULL == have_keepalive) &&
-       (NULL == have_close) &&
-       (MHD_NO == add_close) &&
-       (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
-       (MHD_YES == keepalive_possible (connection)) )
-    MHD_add_response_header (connection->response,
-			     MHD_HTTP_HEADER_CONNECTION,
-                             "Keep-Alive");
-}
-
-
-/**
  * Produce HTTP "Date:" header.
  *
  * @param date where to write the header, with
@@ -770,7 +644,8 @@ try_grow_read_buffer (struct MHD_Connection *connection)
 /**
  * Allocate the connection's write buffer and fill it with all of the
  * headers (or footers, if we have already sent the body) from the
- * HTTPd's response.
+ * HTTPd's response.  If headers are missing in the response supplied
+ * by the application, additional headers may be added here.
  *
  * @param connection the connection
  * @return #MHD_YES on success, #MHD_NO on failure (out of memory)
@@ -783,12 +658,21 @@ build_header_response (struct MHD_Connection *connection)
   struct MHD_HTTP_Header *pos;
   char code[256];
   char date[128];
+  char content_length_buf[128];
+  size_t content_length_len;
   char *data;
   enum MHD_ValueKind kind;
   const char *reason_phrase;
   uint32_t rc;
+  const char *client_requested_close;
+  const char *response_has_close;
+  const char *response_has_keepalive;
+  const char *have_encoding;
+  const char *have_content_length;
   int must_add_close;
-  const char *end;
+  int must_add_chunked_encoding;
+  int must_add_keep_alive;
+  int must_add_content_length;
 
   EXTRA_CHECK (NULL != connection->version);
   if (0 == strlen (connection->version))
@@ -802,7 +686,6 @@ build_header_response (struct MHD_Connection *connection)
     }
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
-      add_extra_headers (connection);
       rc = connection->responseCode & (~MHD_ICY_FLAG);
       reason_phrase = MHD_get_reason_phrase_for (rc);
       sprintf (code,
@@ -834,16 +717,141 @@ build_header_response (struct MHD_Connection *connection)
       kind = MHD_FOOTER_KIND;
       off = 0;
     }
-  end = MHD_get_response_header (connection->response,
-                                 MHD_HTTP_HEADER_CONNECTION);
-  must_add_close = ( (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state) &&
-		     (MHD_YES == connection->read_closed) &&
-                     (MHD_YES == keepalive_possible (connection)) &&
-		     (NULL == end) );
+
+  /* calculate extra headers we need to add, such as 'Connection: close',
+     first see what was explicitly requested by the application */
+  must_add_close = MHD_NO;
+  must_add_chunked_encoding = MHD_NO;
+  must_add_keep_alive = MHD_NO;
+  must_add_content_length = MHD_NO;
+  switch (connection->state)
+    {
+    case MHD_CONNECTION_FOOTERS_RECEIVED:
+      response_has_close = MHD_get_response_header (connection->response,
+                                                    MHD_HTTP_HEADER_CONNECTION);
+      response_has_keepalive = response_has_close;
+      if ( (NULL != response_has_close) &&
+           (0 != strcasecmp (response_has_close, "close")) )
+        response_has_close = NULL;
+      if ( (NULL != response_has_keepalive) &&
+           (0 != strcasecmp (response_has_keepalive, "Keep-Alive")) )
+        response_has_keepalive = NULL;
+      client_requested_close = MHD_lookup_connection_value (connection,
+                                                            MHD_HEADER_KIND,
+                                                            MHD_HTTP_HEADER_CONNECTION);
+      if ( (NULL != client_requested_close) &&
+           (0 != strcasecmp (client_requested_close, "close")) )
+        client_requested_close = NULL;
+
+      /* now analyze chunked encoding situation */
+      connection->have_chunked_upload = MHD_NO;
+
+      if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
+           (NULL == response_has_close) &&
+           (NULL == client_requested_close) )
+        {
+          /* size is unknown, and close was not explicitly requested;
+             need to either to HTTP 1.1 chunked encoding or
+             close the connection */
+          /* 'close' header doesn't exist yet, see if we need to add one;
+             if the client asked for a close, no need to start chunk'ing */
+          if (MHD_YES == keepalive_possible (connection))
+            {
+              have_encoding = MHD_get_response_header (connection->response,
+                                                       MHD_HTTP_HEADER_TRANSFER_ENCODING);
+              if (NULL == have_encoding)
+                {
+                  must_add_chunked_encoding = MHD_YES;
+                  connection->have_chunked_upload = MHD_YES;
+                }
+              else if (0 == strcasecmp (have_encoding, "identity"))
+                {
+                  /* application forced identity encoding, can't do 'chunked' */
+                  must_add_close = MHD_YES;
+                }
+              else
+                {
+                  connection->have_chunked_upload = MHD_YES;
+                }
+            }
+          else
+            {
+              /* Keep alive not possible => set close header if not present */
+              if (NULL == response_has_close)
+                must_add_close = MHD_YES;
+            }
+        }
+
+      /* check for other reasons to add 'close' header */
+      if ( ( (NULL != client_requested_close) ||
+             (MHD_YES == connection->read_closed) ) &&
+           (NULL == response_has_close) &&
+           (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
+        must_add_close = MHD_YES;
+
+      /* check if we should add a 'content length' header */
+      have_content_length = MHD_get_response_header (connection->response,
+                                                     MHD_HTTP_HEADER_CONTENT_LENGTH);
+
+      if ( (MHD_SIZE_UNKNOWN != connection->response->total_size) &&
+           (NULL == have_content_length) &&
+           ( (NULL == connection->method) ||
+             (0 != strcasecmp (connection->method,
+                               MHD_HTTP_METHOD_CONNECT)) ) )
+        {
+          /*
+            Here we add a content-length if one is missing; however,
+            for 'connect' methods, the responses MUST NOT include a
+            content-length header *if* the response code is 2xx (in
+            which case we expect there to be no body).  Still,
+            as we don't know the response code here in some cases, we
+            simply only force adding a content-length header if this
+            is not a 'connect' or if the response is not empty
+            (which is kind of more sane, because if some crazy
+            application did return content with a 2xx status code,
+            then having a content-length might again be a good idea).
+
+            Note that the change from 'SHOULD NOT' to 'MUST NOT' is
+            a recent development of the HTTP 1.1 specification.
+          */
+          content_length_len
+            = sprintf (content_length_buf,
+                       MHD_HTTP_HEADER_CONTENT_LENGTH ": " MHD_UNSIGNED_LONG_LONG_PRINTF "\r\n",
+                       (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
+          must_add_content_length = MHD_YES;
+        }
+
+      /* check for adding keep alive */
+      if ( (NULL == response_has_keepalive) &&
+           (NULL == response_has_close) &&
+           (MHD_NO == must_add_close) &&
+           (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
+           (MHD_YES == keepalive_possible (connection)) )
+        must_add_keep_alive = MHD_YES;
+      break;
+    case MHD_CONNECTION_BODY_SENT:
+      break;
+    default:
+      EXTRA_CHECK (0);
+    }
+
   if (must_add_close)
     size += strlen ("Connection: close\r\n");
+  if (must_add_keep_alive)
+    size += strlen ("Connection: Keep-Alive\r\n");
+  if (must_add_chunked_encoding)
+    size += strlen ("Transfer-Encoding: chunked\r\n");
+  if (must_add_content_length)
+    size += content_length_len;
+  EXTRA_CHECK (! (must_add_close && must_add_keep_alive) );
+  EXTRA_CHECK (! (must_add_chunked_encoding && must_add_content_length) );
+
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
-    if (pos->kind == kind)
+    if ( (pos->kind == kind) &&
+         (! ( (pos->value == response_has_keepalive) &&
+              (MHD_YES == must_add_close) &&
+              (0 == strcasecmp (pos->header,
+                                MHD_HTTP_HEADER_CONNECTION) ) ) ) )
       size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
   /* produce data */
   data = MHD_pool_allocate (connection->pool, size + 1, MHD_NO);
@@ -861,21 +869,47 @@ build_header_response (struct MHD_Connection *connection)
     }
   if (must_add_close)
     {
-      /* we must add the 'close' header because circumstances forced us to
-	 stop reading from the socket; however, we are not adding the header
-	 to the response as the response may be used in a different context
-	 as well */
-      memcpy (&data[off], "Connection: close\r\n",
+      /* we must add the 'Connection: close' header */
+      memcpy (&data[off],
+              "Connection: close\r\n",
 	      strlen ("Connection: close\r\n"));
       off += strlen ("Connection: close\r\n");
     }
+  if (must_add_keep_alive)
+    {
+      /* we must add the 'Connection: Keep-Alive' header */
+      memcpy (&data[off],
+              "Connection: Keep-Alive\r\n",
+	      strlen ("Connection: Keep-Alive\r\n"));
+      off += strlen ("Connection: Keep-Alive\r\n");
+    }
+  if (must_add_chunked_encoding)
+    {
+      /* we must add the 'Transfer-Encoding: chunked' header */
+      memcpy (&data[off],
+              "Transfer-Encoding: chunked\r\n",
+	      strlen ("Transfer-Encoding: chunked\r\n"));
+      off += strlen ("Transfer-Encoding: chunked\r\n");
+    }
+  if (must_add_content_length)
+    {
+      /* we must add the 'Content-Length' header */
+      memcpy (&data[off],
+              content_length_buf,
+	      content_length_len);
+      off += content_length_len;
+    }
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
-    if (pos->kind == kind)
+    if ( (pos->kind == kind) &&
+         (! ( (pos->value == response_has_keepalive) &&
+              (MHD_YES == must_add_close) &&
+              (0 == strcasecmp (pos->header,
+                                MHD_HTTP_HEADER_CONNECTION) ) ) ) )
       off += sprintf (&data[off],
 		      "%s: %s\r\n",
 		      pos->header,
 		      pos->value);
-  if (connection->state == MHD_CONNECTION_FOOTERS_RECEIVED)
+  if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
       strcpy (&data[off], date);
       off += strlen (date);
@@ -2466,16 +2500,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             continue;
           if (NULL == connection->response)
             break;              /* try again next time */
-          (void) MHD_mutex_lock_ (&connection->response->mutex);
           if (MHD_NO == build_header_response (connection))
             {
               /* oops - close! */
-              (void) MHD_mutex_unlock_ (&connection->response->mutex);
 	      CONNECTION_CLOSE_ERROR (connection,
 				      "Closing connection (failed to create response header)\n");
               continue;
             }
-          (void) MHD_mutex_unlock_ (&connection->response->mutex);
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
 
 #if HAVE_DECL_TCP_CORK
@@ -2542,16 +2573,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             (void) MHD_mutex_unlock_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
-          (void) MHD_mutex_lock_ (&connection->response->mutex);
           if (MHD_NO == build_header_response (connection))
             {
               /* oops - close! */
-              (void) MHD_mutex_unlock_ (&connection->response->mutex);
 	      CONNECTION_CLOSE_ERROR (connection,
 				      "Closing connection (failed to create response header)\n");
               continue;
             }
-          (void) MHD_mutex_unlock_ (&connection->response->mutex);
           if ( (MHD_NO == connection->have_chunked_upload) ||
                (connection->write_buffer_send_offset ==
                 connection->write_buffer_append_offset) )
@@ -2883,7 +2911,8 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  */
 int
 MHD_queue_response (struct MHD_Connection *connection,
-                    unsigned int status_code, struct MHD_Response *response)
+                    unsigned int status_code,
+                    struct MHD_Response *response)
 {
   if ( (NULL == connection) ||
        (NULL == response) ||
