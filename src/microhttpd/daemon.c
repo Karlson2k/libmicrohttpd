@@ -682,7 +682,6 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   if ( (NULL == daemon)
        || (NULL == read_fd_set)
        || (NULL == write_fd_set)
-       || (NULL == except_fd_set)
        || (MHD_YES == daemon->shutdown)
        || (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
        || (0 != (daemon->options & MHD_USE_POLL)))
