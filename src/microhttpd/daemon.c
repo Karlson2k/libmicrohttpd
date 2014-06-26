@@ -3996,7 +3996,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
-  for (pos = daemon->connections_head; NULL != pos; pos = pos->nextX)
+  for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     shutdown (pos->socket_fd,
 	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&

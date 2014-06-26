@@ -1,3 +1,8 @@
+Thu Jun 26 21:06:04 CEST 2014
+	Fix failure to terminate 'instantly' in thread-per-connection
+	mode if there is a client with open connections.
+	Thanks to Kenneth Mastro for reporting. -CG
+
 Sun Jun 22 12:22:08 CEST 2014
 	Actually, avoid locking on response as responses must
 	not be modified in a connection-specific way; instead
