@@ -244,6 +244,8 @@ typedef SOCKET MHD_socket;
 #define MHD_HTTP_FORBIDDEN 403
 #define MHD_HTTP_NOT_FOUND 404
 #define MHD_HTTP_METHOD_NOT_ALLOWED 405
+#define MHD_HTTP_NOT_ACCEPTABLE 406
+/** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE 406
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
 #define MHD_HTTP_REQUEST_TIMEOUT 408
@@ -1132,6 +1134,7 @@ typedef
 /**
  * Allow or deny a client to connect.
  *
+ * @param cls closure
  * @param addr address information from the client
  * @param addrlen length of @a addr
  * @return #MHD_YES if connection is allowed, #MHD_NO if not
