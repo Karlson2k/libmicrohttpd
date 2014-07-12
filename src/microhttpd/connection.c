@@ -2003,7 +2003,7 @@ update_last_activity (struct MHD_Connection *connection)
 
   connection->last_activity = MHD_monotonic_time();
   if (connection->connection_timeout != daemon->connection_timeout)
-    return; /* custom timeout, no need to move it in DLL */
+    return; /* custom timeout, no need to move it in "normal" DLL */
 
   /* move connection to head of timeout list (by remove + add operation) */
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&

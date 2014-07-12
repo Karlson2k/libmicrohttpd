@@ -541,6 +541,10 @@ struct MHD_Connection
 
   /**
    * Next pointer for the XDLL organizing connections by timeout.
+   * This DLL can be either the
+   * 'manual_timeout_head/manual_timeout_tail' or the
+   * 'normal_timeout_head/normal_timeout_tail', depending on whether a
+   * custom timeout is set for the connection.
    */
   struct MHD_Connection *nextX;
 
@@ -1258,7 +1262,7 @@ struct MHD_Daemon
 
 
 #if EXTRA_CHECKS
-#define EXTRA_CHECK(a) if (!(a)) abort();
+#define EXTRA_CHECK(a) do { if (!(a)) abort(); } while (0)
 #else
 #define EXTRA_CHECK(a)
 #endif
@@ -1273,6 +1277,8 @@ struct MHD_Daemon
  * @param element element to insert
  */
 #define DLL_insert(head,tail,element) do { \
+  EXTRA_CHECK (NULL == (element)->next); \
+  EXTRA_CHECK (NULL == (element)->prev); \
   (element)->next = (head); \
   (element)->prev = NULL; \
   if ((tail) == NULL) \
@@ -1292,6 +1298,8 @@ struct MHD_Daemon
  * @param element element to remove
  */
 #define DLL_remove(head,tail,element) do { \
+  EXTRA_CHECK ( (NULL != (element)->next) || ((element) == (tail)));  \
+  EXTRA_CHECK ( (NULL != (element)->prev) || ((element) == (head)));  \
   if ((element)->prev == NULL) \
     (head) = (element)->next;  \
   else \
@@ -1314,9 +1322,11 @@ struct MHD_Daemon
  * @param element element to insert
  */
 #define XDLL_insert(head,tail,element) do { \
+  EXTRA_CHECK (NULL == (element)->nextX); \
+  EXTRA_CHECK (NULL == (element)->prevX); \
   (element)->nextX = (head); \
   (element)->prevX = NULL; \
-  if ((tail) == NULL) \
+  if (NULL == (tail)) \
     (tail) = element; \
   else \
     (head)->prevX = element; \
@@ -1333,11 +1343,13 @@ struct MHD_Daemon
  * @param element element to remove
  */
 #define XDLL_remove(head,tail,element) do { \
-  if ((element)->prevX == NULL) \
+  EXTRA_CHECK ( (NULL != (element)->nextX) || ((element) == (tail)));  \
+  EXTRA_CHECK ( (NULL != (element)->prevX) || ((element) == (head)));  \
+  if (NULL == (element)->prevX) \
     (head) = (element)->nextX;  \
   else \
     (element)->prevX->nextX = (element)->nextX; \
-  if ((element)->nextX == NULL) \
+  if (NULL == (element)->nextX) \
     (tail) = (element)->prevX;  \
   else \
     (element)->nextX->prevX = (element)->prevX; \
