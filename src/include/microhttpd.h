@@ -1531,10 +1531,10 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 
 /**
  * Obtain timeout value for `select()` for this daemon (only needed if
- * connection timeout is used).  The returned value is how long
- * `select()` or `poll()` should at most block, not the timeout value set
- * for connections.  This function MUST NOT be called if MHD is
- * running with #MHD_USE_THREAD_PER_CONNECTION.
+ * connection timeout is used).  The returned value is how many milliseconds
+ * `select()` or `poll()` should at most block, not the timeout value set for
+ * connections.  This function MUST NOT be called if MHD is running with
+ * #MHD_USE_THREAD_PER_CONNECTION.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
