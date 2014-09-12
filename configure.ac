@@ -726,7 +726,7 @@ AC_ARG_ENABLE([dauth],
 			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
-if test "$enable_dauth" != "xno"
+if test "x$enable_dauth" != "xno"
 then
  enable_dauth=yes
  AC_DEFINE([DAUTH_SUPPORT],[1],[include digest Auth support])

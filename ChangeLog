@@ -1,3 +1,6 @@
+Fri Sep 12 17:32:09 CEST 2014
+	Fix --disable-dauth configure option (#3543). -doostee
+
 Thu Jun 26 21:06:04 CEST 2014
 	Fix failure to terminate 'instantly' in thread-per-connection
 	mode if there is a client with open connections.
