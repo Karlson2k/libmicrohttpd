@@ -381,6 +381,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
             return MHD_YES;     /* no '=' yet */
           buf[pp->buffer_pos] = '\0';   /* 0-terminate key */
           pp->buffer_pos = 0;   /* reset for next key */
+	  MHD_unescape_plus (buf);
           MHD_http_unescape (NULL, NULL, buf);
           poff += equals + 1;
           pp->state = PP_ProcessValue;
@@ -441,6 +442,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
 
           /* unescape */
           xbuf[xoff] = '\0';    /* 0-terminate in preparation */
+	  MHD_unescape_plus (xbuf);
           xoff = MHD_http_unescape (NULL, NULL, xbuf);
           /* finally: call application! */
 	  pp->must_ikvi = MHD_NO;

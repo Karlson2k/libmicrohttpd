@@ -726,7 +726,7 @@ struct MHD_Connection
   int client_aware;
 
   /**
-   * Socket for this connection.  Set to MHD_INVALID_SOCKET if
+   * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
    * this connection has died (daemon should clean
    * up in that case).
    */
@@ -741,7 +741,7 @@ struct MHD_Connection
   int read_closed;
 
   /**
-   * Set to MHD_YES if the thread has been joined.
+   * Set to #MHD_YES if the thread has been joined.
    */
   int thread_joined;
 
@@ -878,7 +878,7 @@ typedef void * (*LogCallback)(void * cls,
 
 /**
  * Signature of function called to unescape URIs.  See also
- * MHD_http_unescape.
+ * #MHD_http_unescape().
  *
  * @param cls closure
  * @param conn connection handle
@@ -1017,7 +1017,7 @@ struct MHD_Daemon
   LogCallback uri_log_callback;
 
   /**
-   * Closure argument to uri_log_callback.
+   * Closure argument to @e uri_log_callback.
    */
   void *uri_log_callback_cls;
 
@@ -1027,7 +1027,7 @@ struct MHD_Daemon
   UnescapeCallback unescape_callback;
 
   /**
-   * Closure for unescape callback.
+   * Closure for @e unescape_callback.
    */
   void *unescape_callback_cls;
 
@@ -1398,7 +1398,7 @@ struct MHD_Daemon
 
 
 /**
- * Equivalent to time(NULL) but tries to use some sort of monotonic
+ * Equivalent to `time(NULL)` but tries to use some sort of monotonic
  * clock that isn't affected by someone setting the system real time
  * clock.
  *
@@ -1406,5 +1406,15 @@ struct MHD_Daemon
  */
 time_t
 MHD_monotonic_time(void);
+
+
+/**
+ * Convert all occurences of '+' to ' '.
+ *
+ * @param arg string that is modified (in place), must be 0-terminated
+ */
+void
+MHD_escape_plus (char *arg);
+
 
 #endif

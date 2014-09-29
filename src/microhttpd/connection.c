@@ -149,21 +149,6 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 
 /**
- * Convert all occurences of '+' to ' '.
- *
- * @param arg string that is modified
- */
-static void
-escape_plus (char *arg)
-{
-  char *p;
-
-  for (p=strchr (arg, '+'); NULL != p; p = strchr (p + 1, '+'))
-    *p = ' ';
-}
-
-
-/**
  * This function can be used to add an entry to the HTTP headers of a
  * connection (so that the #MHD_get_connection_values function will
  * return them -- and the `struct MHD_PostProcessor` will also see
@@ -1230,7 +1215,7 @@ parse_arguments (enum MHD_ValueKind kind,
 	  if (NULL == equals)
 	    {
 	      /* got 'foo', add key 'foo' with NULL for value */
-              escape_plus (args);
+              MHD_unescape_plus (args);
 	      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						     connection,
 						     args);
@@ -1242,11 +1227,11 @@ parse_arguments (enum MHD_ValueKind kind,
 	  /* got 'foo=bar' */
 	  equals[0] = '\0';
 	  equals++;
-          escape_plus (args);
+          MHD_unescape_plus (args);
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
 						 args);
-          escape_plus (equals);
+          MHD_unescape_plus (equals);
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
 						 equals);
@@ -1259,7 +1244,7 @@ parse_arguments (enum MHD_ValueKind kind,
 	   (equals >= amper) )
 	{
 	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
-          escape_plus (args);
+          MHD_unescape_plus (args);
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
 						 args);
@@ -1278,11 +1263,11 @@ parse_arguments (enum MHD_ValueKind kind,
 	 so we got regular 'foo=value&bar...'-kind of argument */
       equals[0] = '\0';
       equals++;
-      escape_plus (args);
+      MHD_unescape_plus (args);
       connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					     connection,
 					     args);
-      escape_plus (equals);
+      MHD_unescape_plus (equals);
       connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					     connection,
 					     equals);

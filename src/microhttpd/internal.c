@@ -105,6 +105,21 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 
 
 /**
+ * Convert all occurences of '+' to ' '.
+ *
+ * @param arg string that is modified (in place), must be 0-terminated
+ */
+void
+MHD_unescape_plus (char *arg)
+{
+  char *p;
+
+  for (p=strchr (arg, '+'); NULL != p; p = strchr (p + 1, '+'))
+    *p = ' ';
+}
+
+
+/**
  * Process escape sequences ('%HH') Updates val in place; the
  * result should be UTF-8 encoded and cannot be larger than the input.
  * The result must also still be 0-terminated.

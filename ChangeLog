@@ -1,3 +1,6 @@
+Mon Sep 29 22:25:34 CEST 2014
+	Properly decode '+' in URL-encoded POST data. -CG/KM
+
 Fri Sep 12 17:32:09 CEST 2014
 	Fix --disable-dauth configure option (#3543). -doostee
 
