@@ -267,7 +267,7 @@ struct MHD_Response
 
   /**
    * Closure to give to the content reader @e crc
-   * and content reader free callback @crfc.
+   * and content reader free callback @e crfc.
    */
   void *crc_cls;
 
@@ -1414,7 +1414,7 @@ MHD_monotonic_time(void);
  * @param arg string that is modified (in place), must be 0-terminated
  */
 void
-MHD_escape_plus (char *arg);
+MHD_unescape_plus (char *arg);
 
 
 #endif

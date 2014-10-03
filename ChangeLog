@@ -1,3 +1,6 @@
+Fri Oct  3 14:28:58 CEST 2014
+	Releasing 0.9.38. -CG
+
 Mon Sep 29 22:25:34 CEST 2014
 	Properly decode '+' in URL-encoded POST data. -CG/KM
 
