@@ -738,7 +738,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * Main function of the thread that handles an individual
  * connection when #MHD_USE_THREAD_PER_CONNECTION is set.
  *
- * @param data the 'struct MHD_Connection' this thread will handle
+ * @param data the `struct MHD_Connection` this thread will handle
  * @return always 0
  */
 static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
