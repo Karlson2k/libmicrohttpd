@@ -2773,7 +2773,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
   if ( (MHD_INVALID_PIPE_ == daemon->wpipe[1]) &&
-       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
+       (0 != (daemon->options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION))) )
     {
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
