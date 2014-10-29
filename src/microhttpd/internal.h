@@ -1132,9 +1132,14 @@ struct MHD_Daemon
   int resuming;
 
   /**
+   * Number of active parallel connections.
+   */
+  unsigned int connections;
+
+  /**
    * Limit on the number of parallel connections.
    */
-  unsigned int max_connections;
+  unsigned int connection_limit;
 
   /**
    * After how many seconds of inactivity should

@@ -1145,7 +1145,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	 socket as the initial offset into the pool for load
 	 balancing */
       for (i=0;i<daemon->worker_pool_size;i++)
-	if (0 < daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].max_connections)
+	if (daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].connections <
+	    daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].connection_limit)
 	  return internal_add_connection (&daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size],
 					  client_socket,
 					  addr, addrlen,
@@ -1184,7 +1185,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   MHD_DLOG (daemon, "Accepted connection on socket %d\n", client_socket);
 #endif
 #endif
-  if ( (0 == daemon->max_connections) ||
+  if ( (daemon->connections == daemon->connection_limit) ||
        (MHD_NO == MHD_ip_limit_add (daemon, addr, addrlen)) )
     {
       /* above connection limit - reject */
@@ -1446,7 +1447,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	}
     }
 #endif
-  daemon->max_connections--;
+  daemon->connections++;
   return MHD_YES;
  cleanup:
   if (0 != MHD_socket_close_ (client_socket))
@@ -1908,7 +1909,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
-      daemon->max_connections++;
+      daemon->connections--;
     }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
@@ -2137,7 +2138,7 @@ MHD_select (struct MHD_Daemon *daemon,
 
       /* If we're at the connection limit, no need to
          accept new connections. */
-      if ( (0 == daemon->max_connections) &&
+      if ( (daemon->connections == daemon->connection_limit) &&
 	   (MHD_INVALID_SOCKET != daemon->socket_fd) )
         FD_CLR (daemon->socket_fd, &rs);
     }
@@ -2221,7 +2222,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     poll_server = 0;
     poll_listen = -1;
     if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-	 (0 != daemon->max_connections) )
+	 (daemon->connections < daemon->connection_limit) )
       {
 	/* only listen if we are not at the connection limit */
 	p[poll_server].fd = daemon->socket_fd;
@@ -2462,7 +2463,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-       (0 != daemon->max_connections) &&
+       (daemon->connections < daemon->connection_limit) &&
        (MHD_NO == daemon->listen_socket_in_epoll) )
     {
       event.events = EPOLLIN;
@@ -2483,7 +2484,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
       daemon->listen_socket_in_epoll = MHD_YES;
     }
   if ( (MHD_YES == daemon->listen_socket_in_epoll) &&
-       (0 == daemon->max_connections) )
+       (daemon->connections == daemon->connection_limit) )
     {
       /* we're at the connection limit, disable listen socket
 	 for event loop for now */
@@ -2580,7 +2581,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 		 on more connections */
 	      series_length = 0;
 	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
-		      (0 != daemon->max_connections) &&
+		      (daemon->connections < daemon->connection_limit) &&
 		      (series_length < 128) )
 		      series_length++;
 	    }
@@ -2899,7 +2900,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           daemon->pool_increment= va_arg (ap, size_t);
           break;
         case MHD_OPTION_CONNECTION_LIMIT:
-          daemon->max_connections = va_arg (ap, unsigned int);
+          daemon->connection_limit = va_arg (ap, unsigned int);
           break;
         case MHD_OPTION_CONNECTION_TIMEOUT:
           daemon->connection_timeout = va_arg (ap, unsigned int);
@@ -3371,7 +3372,8 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->apc_cls = apc_cls;
   daemon->default_handler = dh;
   daemon->default_handler_cls = dh_cls;
-  daemon->max_connections = MHD_MAX_CONNECTIONS_DEFAULT;
+  daemon->connections = 0;
+  daemon->connection_limit = MHD_MAX_CONNECTIONS_DEFAULT;
   daemon->pool_size = MHD_POOL_SIZE_DEFAULT;
   daemon->pool_increment = MHD_BUF_INC_SIZE;
   daemon->unescape_callback = &MHD_http_unescape;
@@ -3795,9 +3797,9 @@ MHD_start_daemon_va (unsigned int flags,
       /* Coarse-grained count of connections per thread (note error
        * due to integer division). Also keep track of how many
        * connections are leftover after an equal split. */
-      unsigned int conns_per_thread = daemon->max_connections
+      unsigned int conns_per_thread = daemon->connection_limit
                                       / daemon->worker_pool_size;
-      unsigned int leftover_conns = daemon->max_connections
+      unsigned int leftover_conns = daemon->connection_limit
                                     % daemon->worker_pool_size;
 
       i = 0; /* we need this in case fcntl or malloc fails */
@@ -3867,9 +3869,9 @@ MHD_start_daemon_va (unsigned int flags,
           /* Divide available connections evenly amongst the threads.
            * Thread indexes in [0, leftover_conns) each get one of the
            * leftover connections. */
-          d->max_connections = conns_per_thread;
+          d->connection_limit = conns_per_thread;
           if (i < leftover_conns)
-            ++d->max_connections;
+            ++d->connection_limit;
 #if EPOLL_SUPPORT
 	  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	       (MHD_YES != setup_epoll_to_listen (d)) )
