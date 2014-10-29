@@ -2394,13 +2394,13 @@ information about a daemon is desired.
 Request information about the key size for a particular cipher
 algorithm.  The cipher algorithm should be passed as an extra argument
 (of type 'enum MHD_GNUTLS_CipherAlgorithm').  No longer supported,
-using this value will cause MHD_get_daemon_info to return NULL.
+using this value will cause @code{MHD_get_daemon_info} to return NULL.
 
 @item MHD_DAEMON_INFO_MAC_KEY_SIZE
 Request information about the key size for a particular cipher
 algorithm.  The cipher algorithm should be passed as an extra argument
 (of type 'enum MHD_GNUTLS_HashAlgorithm').  No longer supported,
-using this value will cause MHD_get_daemon_info to return NULL.
+using this value will cause @code{MHD_get_daemon_info} to return NULL.
 
 @item MHD_DAEMON_INFO_LISTEN_FD
 @cindex listen
@@ -2415,11 +2415,25 @@ No extra arguments should be passed.
 Request the file-descriptor number that MHD is using for epoll.  If
 the build is not supporting epoll, NULL is returned; if we are using a
 thread pool or this daemon was not started with
-MHD_USE_EPOLL_LINUX_ONLY, (a pointer to) -1 is returned.  If we are
-using MHD_USE_SELECT_INTERNALLY or are in 'external' select mode, the
+@code{MHD_USE_EPOLL_LINUX_ONLY}, (a pointer to) -1 is returned.  If we are
+using @code{MHD_USE_SELECT_INTERNALLY} or are in 'external' select mode, the
 internal epoll FD is returned.  This function must be used in external
 select mode with epoll to obtain the FD to call epoll on.  No extra
 arguments should be passed.
+
+@item MHD_DAEMON_INFO_CURRENT_CONNECTIONS
+@cindex connection, limiting number of connections
+Request the number of current connections handled by the daemon.  No
+extra arguments should be passed and a pointer to a @code{union
+MHD_DaemonInfo} value is returned, with the @code{num_connections}
+member of type @code{unsigned int} set to the number of active
+connections.
+
+Note that in multi-threaded or internal-select mode, the real number of current
+connections may already be different when @code{MHD_get_daemon_info} returns.
+The number of current connections can be used (even in multi-threaded and
+internal-select mode) after @code{MHD_quiesce_daemon} to detect whether all
+connections have been handled.
 
 @end table
 @end deftp

@@ -1,3 +1,7 @@
+Wed Oct 29 16:27:05 CET 2014
+	Adding MHD_DAEMON_INFO_CURRENT_CONNECTIONS to allow clients
+	to query the number of active connections. -MS
+
 Fri Oct  3 14:28:58 CEST 2014
 	Releasing 0.9.38. -CG
 

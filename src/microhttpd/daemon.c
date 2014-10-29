@@ -4232,6 +4232,17 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
     case MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY:
       return (const union MHD_DaemonInfo *) &daemon->epoll_fd;
 #endif
+    case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
+      if (daemon->worker_pool)
+        {
+          /* Collect the connection information stored in the workers. */
+          unsigned int i;
+
+          daemon->connections = 0;
+          for (i=0;i<daemon->worker_pool_size;i++)
+            daemon->connections += daemon->worker_pool[i].connections;
+        }
+      return (const union MHD_DaemonInfo *) &daemon->connections;
     default:
       return NULL;
     };

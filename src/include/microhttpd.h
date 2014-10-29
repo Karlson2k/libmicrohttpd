@@ -1111,7 +1111,13 @@ enum MHD_DaemonInfoType
    * Request the file descriptor for the external epoll.
    * No extra arguments should be passed.
    */
-  MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
+  MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
+
+  /**
+   * Request the number of current connections handled by the daemon.
+   * No extra arguments should be passed.
+   */
+  MHD_DAEMON_INFO_CURRENT_CONNECTIONS,
 };
 
 
@@ -2369,21 +2375,27 @@ MHD_set_connection_option (struct MHD_Connection *connection,
 union MHD_DaemonInfo
 {
   /**
-   * Size of the key.
+   * Size of the key, no longer supported.
    * @deprecated
    */
   size_t key_size;
 
   /**
-   * Size of the mac key.
+   * Size of the mac key, no longer supported.
    * @deprecated
    */
   size_t mac_key_size;
 
   /**
-   * Listen socket file descriptor
+   * Listen socket file descriptor, for #MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
+   * and #MHD_DAEMON_INFO_LISTEN_FD.
    */
   MHD_socket listen_fd;
+
+  /**
+   * Number of active connections, for #MHD_DAEMON_INFO_CURRENT_CONNECTIONS.
+   */
+  unsigned int num_connections;
 };
 
 
