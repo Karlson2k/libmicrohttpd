@@ -552,7 +552,8 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     return 0;
 #endif
 #if HAVE_MESSAGES
-  MHD_DLOG (daemon, "You need to specify a certificate and key location\n");
+  MHD_DLOG (daemon,
+            "You need to specify a certificate and key location\n");
 #endif
   return -1;
 }
@@ -736,7 +737,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 #if DEBUG_CONNECT
 #if HAVE_MESSAGES
   if (NULL != max_fd)
-    MHD_DLOG (daemon, "Maximum socket in select set: %d\n", *max_fd);
+    MHD_DLOG (daemon,
+              "Maximum socket in select set: %d\n",
+              *max_fd);
 #endif
 #endif
   return MHD_YES;
@@ -826,7 +829,7 @@ MHD_handle_connection (void *data)
               {
 #if HAVE_MESSAGES
                 MHD_DLOG (con->daemon,
-                        "Can't add FD to fd_set\n");
+                          "Can't add FD to fd_set\n");
 #endif
                 goto exit;
               }
@@ -1200,7 +1203,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
-  MHD_DLOG (daemon, "Accepted connection on socket %d\n", client_socket);
+  MHD_DLOG (daemon,
+            "Accepted connection on socket %d\n",
+            client_socket);
 #endif
 #endif
   if ( (daemon->connections == daemon->connection_limit) ||
@@ -1226,7 +1231,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
     {
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Connection rejected, closing connection\n");
+      MHD_DLOG (daemon,
+                "Connection rejected, closing connection\n");
 #endif
 #endif
       if (0 != MHD_socket_close_ (client_socket))
@@ -1415,7 +1421,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
         {
 	  eno = errno;
 #if HAVE_MESSAGES
-          MHD_DLOG (daemon, "Failed to create a thread: %s\n",
+          MHD_DLOG (daemon,
+                    "Failed to create a thread: %s\n",
                     MHD_strerror_ (res_thread_create));
 #endif
 	  goto cleanup;
@@ -1839,7 +1846,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
 #if HAVE_MESSAGES
 #if DEBUG_CONNECT
-  MHD_DLOG (daemon, "Accepted connection on socket %d\n", s);
+  MHD_DLOG (daemon,
+            "Accepted connection on socket %d\n",
+            s);
 #endif
 #endif
   (void) internal_add_connection (daemon, s,
@@ -1961,7 +1970,8 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "Illegal call to MHD_get_timeout\n");
+      MHD_DLOG (daemon,
+                "Illegal call to MHD_get_timeout\n");
 #endif
       return MHD_NO;
     }
@@ -2196,7 +2206,9 @@ MHD_select (struct MHD_Daemon *daemon,
       if (EINTR == MHD_socket_errno_)
         return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "select failed: %s\n", MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                "select failed: %s\n",
+                MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -2401,7 +2413,9 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       if (EINTR == MHD_socket_errno_)
 	return MHD_YES;
 #if HAVE_MESSAGES
-      MHD_DLOG (daemon, "poll failed: %s\n", MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                "poll failed: %s\n",
+                MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -2492,10 +2506,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
 			  &event))
 	{
 #if HAVE_MESSAGES
-	  if (0 != (daemon->options & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon,
-		      "Call to epoll_ctl failed: %s\n",
-		      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Call to epoll_ctl failed: %s\n",
+                    MHD_socket_last_strerr_ ());
 #endif
 	  return MHD_NO;
 	}
@@ -2544,10 +2557,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	  if (EINTR == MHD_socket_errno_)
 	    return MHD_YES;
 #if HAVE_MESSAGES
-	  if (0 != (daemon->options & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon,
-		      "Call to epoll_wait failed: %s\n",
-		      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Call to epoll_wait failed: %s\n",
+                    MHD_socket_last_strerr_ ());
 #endif
 	  return MHD_NO;
 	}
@@ -2994,7 +3006,8 @@ parse_options_va (struct MHD_Daemon *daemon,
               if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
                 {
 #if HAVE_MESSAGES
-                  MHD_DLOG(daemon, "Error initializing DH parameters\n");
+                  MHD_DLOG(daemon,
+                           "Error initializing DH parameters\n");
 #endif
                   return MHD_NO;
                 }
@@ -3004,7 +3017,8 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                  GNUTLS_X509_FMT_PEM) < 0)
                 {
 #if HAVE_MESSAGES
-                  MHD_DLOG(daemon, "Bad Diffie-Hellman parameters format\n");
+                  MHD_DLOG(daemon,
+                           "Bad Diffie-Hellman parameters format\n");
 #endif
                   gnutls_dh_params_deinit (daemon->https_mem_dhparams);
                   return MHD_NO;
@@ -3028,7 +3042,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 	      ret = gnutls_priority_init (&daemon->priority_cache,
 					  pstr = va_arg (ap, const char*),
 					  NULL);
-	      if (ret != GNUTLS_E_SUCCESS)
+	      if (GNUTLS_E_SUCCESS != ret)
 	      {
 #if HAVE_MESSAGES
 		MHD_DLOG (daemon,
@@ -3084,6 +3098,9 @@ parse_options_va (struct MHD_Daemon *daemon,
           daemon->fastopen_queue_size = va_arg (ap, unsigned int);
           break;
 #endif
+	case MHD_OPTION_LISTENING_ADDRESS_REUSE:
+	  daemon->listening_address_reuse = va_arg (ap, unsigned int) ? 1 : -1;
+	  break;
 	case MHD_OPTION_ARRAY:
 	  oa = va_arg (ap, struct MHD_OptionItem*);
 	  i = 0;
@@ -3109,6 +3126,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
 		case MHD_OPTION_THREAD_POOL_SIZE:
                 case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
+		case MHD_OPTION_LISTENING_ADDRESS_REUSE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -3254,10 +3272,9 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (-1 == daemon->epoll_fd)
     {
 #if HAVE_MESSAGES
-      if (0 != (daemon->options & MHD_USE_DEBUG))
-	MHD_DLOG (daemon,
-		  "Call to epoll_create1 failed: %s\n",
-		  MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                "Call to epoll_create1 failed: %s\n",
+                MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -3274,10 +3291,9 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 		      &event))
     {
 #if HAVE_MESSAGES
-      if (0 != (daemon->options & MHD_USE_DEBUG))
-	MHD_DLOG (daemon,
-		  "Call to epoll_ctl failed: %s\n",
-		  MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                "Call to epoll_ctl failed: %s\n",
+                MHD_socket_last_strerr_ ());
 #endif
       return MHD_NO;
     }
@@ -3293,10 +3309,9 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
                           &event))
         {
 #if HAVE_MESSAGES
-          if (0 != (daemon->options & MHD_USE_DEBUG))
-            MHD_DLOG (daemon,
-                      "Call to epoll_ctl failed: %s\n",
-                      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Call to epoll_ctl failed: %s\n",
+                    MHD_socket_last_strerr_ ());
 #endif
           return MHD_NO;
         }
@@ -3379,6 +3394,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif
   daemon->socket_fd = MHD_INVALID_SOCKET;
+  daemon->listening_address_reuse = 0;
   daemon->options = (enum MHD_OPTION) flags;
 #if WINDOWS
   /* Winsock is broken with respect to 'shutdown';
@@ -3553,25 +3569,111 @@ MHD_start_daemon_va (unsigned int flags,
       if (MHD_INVALID_SOCKET == socket_fd)
 	{
 #if HAVE_MESSAGES
-	  if (0 != (flags & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon,
-		      "Call to socket failed: %s\n",
-		      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Call to socket failed: %s\n",
+                    MHD_socket_last_strerr_ ());
 #endif
 	  goto free_and_fail;
 	}
-      if ( (0 > setsockopt (socket_fd,
-			    SOL_SOCKET,
-			    SO_REUSEADDR,
-			    (void*)&on, sizeof (on))) &&
-	   (0 != (flags & MHD_USE_DEBUG)) )
-	{
+
+      /* Apply the socket options according to listening_address_reuse. */
+      if (0 == daemon->listening_address_reuse)
+        {
+          /* No user requirement, use "traditional" default SO_REUSEADDR,
+           and do not fail if it doesn't work */
+          if (0 > setsockopt (socket_fd,
+                              SOL_SOCKET,
+                              SO_REUSEADDR,
+                              (void*)&on, sizeof (on)))
 #if HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    "setsockopt failed: %s\n",
-		    MHD_socket_last_strerr_ ());
+            MHD_DLOG (daemon,
+                      "setsockopt failed: %s\n",
+                      MHD_socket_last_strerr_ ());
 #endif
-	}
+        }
+      else if (daemon->listening_address_reuse > 0)
+        {
+          /* User requested to allow reusing listening address:port.
+           * Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
+           * Fail if SO_REUSEPORT does not exist or setsockopt fails.
+           */
+#ifdef _WIN32
+          /* SO_REUSEADDR on W32 has the same semantics
+             as SO_REUSEPORT on BSD/Linux */
+          if (0 > setsockopt (socket_fd,
+                              SOL_SOCKET,
+                              SO_REUSEADDR,
+                              (void*)&on, sizeof (on)))
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "setsockopt failed: %s\n",
+                        MHD_socket_last_strerr_ ());
+#endif
+              goto free_and_fail;
+            }
+#else
+#ifndef SO_REUSEPORT
+#ifdef LINUX
+/* Supported since Linux 3.9, but often not present (or commented out)
+   in the headers at this time; but 15 is reserved for this and
+   thus should be safe to use. */
+#define SO_REUSEPORT 15
+#endif
+#endif
+#ifdef SO_REUSEPORT
+          if (0 > setsockopt (socket_fd,
+                              SOL_SOCKET,
+                              SO_REUSEPORT,
+                              (void*)&on, sizeof (on)))
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "setsockopt failed: %s\n",
+                        MHD_socket_last_strerr_ ());
+#endif
+              goto free_and_fail;
+            }
+#else
+          /* we're supposed to allow address:port re-use, but
+             on this platform we cannot; fail hard */
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Cannot allow listening address reuse: SO_REUSEPORT not defined\n");
+#endif
+          goto free_and_fail;
+#endif
+#endif
+        }
+      else /* if (daemon->listening_address_reuse < 0) */
+        {
+          /* User requested to disallow reusing listening address:port.
+           * Do nothing except for Windows where SO_EXCLUSIVEADDRUSE
+           * is used. Fail if it does not exist or setsockopt fails.
+           */
+#ifdef _WIN32
+#ifdef SO_EXCLUSIVEADDRUSE
+          if (0 > setsockopt (socket_fd,
+                              SOL_SOCKET,
+                              SO_EXCLUSIVEADDRUSE,
+                              (void*)&on, sizeof (on)))
+            {
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "setsockopt failed: %s\n",
+                        MHD_socket_last_strerr_ ());
+#endif
+              goto free_and_fail;
+            }
+#else /* SO_EXCLUSIVEADDRUSE not defined on W32? */
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined\n");
+#endif
+          goto free_and_fail;
+#endif
+#endif /* _WIN32 */
+        }
 
       /* check for user supplied sockaddr */
 #if HAVE_INET6
@@ -3621,28 +3723,24 @@ MHD_start_daemon_va (unsigned int flags,
 	  const char
 #endif
             on = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
-	  if ( (0 > setsockopt (socket_fd,
-				IPPROTO_IPV6, IPV6_V6ONLY,
-				&on, sizeof (on))) &&
-	       (0 != (flags & MHD_USE_DEBUG)) )
-	    {
+	  if (0 > setsockopt (socket_fd,
+                              IPPROTO_IPV6, IPV6_V6ONLY,
+                              &on, sizeof (on)))
 #if HAVE_MESSAGES
-	      MHD_DLOG (daemon,
-			"setsockopt failed: %s\n",
-			MHD_socket_last_strerr_ ());
+            MHD_DLOG (daemon,
+                      "setsockopt failed: %s\n",
+                      MHD_socket_last_strerr_ ());
 #endif
-	    }
 #endif
 #endif
 	}
       if (-1 == bind (socket_fd, servaddr, addrlen))
 	{
 #if HAVE_MESSAGES
-	  if (0 != (flags & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon,
-		      "Failed to bind to port %u: %s\n",
-		      (unsigned int) port,
-		      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Failed to bind to port %u: %s\n",
+                    (unsigned int) port,
+                    MHD_socket_last_strerr_ ());
 #endif
 	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
@@ -3686,10 +3784,9 @@ MHD_start_daemon_va (unsigned int flags,
       if (listen (socket_fd, 32) < 0)
 	{
 #if HAVE_MESSAGES
-	  if (0 != (flags & MHD_USE_DEBUG))
-	    MHD_DLOG (daemon,
-		      "Failed to listen for connections: %s\n",
-		      MHD_socket_last_strerr_ ());
+          MHD_DLOG (daemon,
+                    "Failed to listen for connections: %s\n",
+                    MHD_socket_last_strerr_ ());
 #endif
 	  if (0 != MHD_socket_close_ (socket_fd))
 	    MHD_PANIC ("close failed\n");
@@ -3705,11 +3802,10 @@ MHD_start_daemon_va (unsigned int flags,
        (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY)) ) )
     {
 #if HAVE_MESSAGES
-      if ((flags & MHD_USE_DEBUG) != 0)
-        MHD_DLOG (daemon,
-		  "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-		  socket_fd,
-		  FD_SETSIZE);
+      MHD_DLOG (daemon,
+                "Socket descriptor larger than FD_SETSIZE: %d > %d\n",
+                socket_fd,
+                FD_SETSIZE);
 #endif
       if (0 != MHD_socket_close_ (socket_fd))
 	MHD_PANIC ("close failed\n");
@@ -4123,7 +4219,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
 #if DEBUG_CLOSE
 #if HAVE_MESSAGES
-  MHD_DLOG (daemon, "MHD listen socket shutdown\n");
+  MHD_DLOG (daemon,
+            "MHD listen socket shutdown\n");
 #endif
 #endif
 

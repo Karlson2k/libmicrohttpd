@@ -95,7 +95,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon, const char *format, ...)
 {
   va_list va;
 
-  if ((daemon->options & MHD_USE_DEBUG) == 0)
+  if (0 == (daemon->options & MHD_USE_DEBUG))
     return;
   va_start (va, format);
   daemon->custom_error_log (daemon->custom_error_log_cls, format, va);

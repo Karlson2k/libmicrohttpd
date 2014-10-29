@@ -1306,7 +1306,8 @@ parse_cookie_header (struct MHD_Connection *connection)
   if (NULL == cpy)
     {
 #if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon, "Not enough memory to parse cookies!\n");
+      MHD_DLOG (connection->daemon,
+                "Not enough memory to parse cookies!\n");
 #endif
       transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
                                REQUEST_TOO_BIG);

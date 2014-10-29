@@ -856,6 +856,20 @@ by the HTTPS daemon for key exchange.  This option must be followed by
 a @code{const char *} argument.  The argument would be a zero-terminated
 string with a PEM encoded PKCS3 DH parameters structure suitable
 for passing to @code{gnutls_dh_parms_import_pkcs3}.
+
+@item MHD_OPTION_LISTENING_ADDRESS_REUSE
+@cindex bind, restricting bind
+@cindex reusing listening address
+This option must be followed by a @code{unsigned int} argument.
+If this option is present and true (nonzero) parameter is given, allow reusing
+the address:port of the listening socket (using @code{SO_REUSEPORT} on most
+platforms, and @code{SO_REUSEADDR} on Windows).  If a false (zero) parameter is
+given, disallow reusing the the address:port of the listening socket (this
+usually requires no special action, but @code{SO_EXCLUSIVEADDRUSE} is needed on
+Windows).  If this option is not present, default behaviour is undefined
+(currently, @code{SO_REUSEADDR} is used on all platforms, which disallows
+address:port reusing with the exception of Windows).
+
 @end table
 @end deftp
 

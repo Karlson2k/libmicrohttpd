@@ -846,8 +846,16 @@ enum MHD_OPTION
    * HTTPS daemon for key exchange.
    * This option must be followed by a `const char *` argument.
    */
-  MHD_OPTION_HTTPS_MEM_DHPARAMS = 24
+  MHD_OPTION_HTTPS_MEM_DHPARAMS = 24,
 
+  /**
+   * If present and set to true, allow reusing address:port socket
+   * (by using SO_REUSEPORT on most platform, or platform-specific ways).
+   * If present and set to false, disallow reusing address:port socket
+   * (does nothing on most plaform, but uses SO_EXCLUSIVEADDRUSE on Windows).
+   * This option must be followed by a `unsigned int` argument.
+   */
+  MHD_OPTION_LISTENING_ADDRESS_REUSE = 25,
 };
 
 

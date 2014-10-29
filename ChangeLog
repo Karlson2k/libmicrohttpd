@@ -1,3 +1,8 @@
+Wed Oct 29 20:45:21 CET 2014
+	Adding MHD_OPTION_LISTENING_ADDRESS_REUSE option allowing clients
+	to force allowing re-use of the address:port combination
+	(SO_REUSEPORT). -MS
+
 Wed Oct 29 16:27:05 CET 2014
 	Adding MHD_DAEMON_INFO_CURRENT_CONNECTIONS to allow clients
 	to query the number of active connections. -MS
