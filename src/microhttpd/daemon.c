@@ -1136,21 +1136,25 @@ internal_add_connection (struct MHD_Daemon *daemon,
   int res_thread_create;
   unsigned int i;
   int eno;
+  struct MHD_Daemon *worker;
 #if OSX
   static int on = 1;
 #endif
+
   if (NULL != daemon->worker_pool)
     {
       /* have a pool, try to find a pool with capacity; we use the
 	 socket as the initial offset into the pool for load
 	 balancing */
       for (i=0;i<daemon->worker_pool_size;i++)
-	if (daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].connections <
-	    daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size].connection_limit)
-	  return internal_add_connection (&daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size],
-					  client_socket,
-					  addr, addrlen,
-					  external_add);
+        {
+          worker = &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
+          if (worker->connections < worker->connection_limit)
+            return internal_add_connection (worker,
+                                            client_socket,
+                                            addr, addrlen,
+                                            external_add);
+        }
       /* all pools are at their connection limit, must refuse */
       if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
