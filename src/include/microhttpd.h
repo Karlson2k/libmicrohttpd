@@ -1117,7 +1117,7 @@ enum MHD_DaemonInfoType
    * Request the number of current connections handled by the daemon.
    * No extra arguments should be passed.
    */
-  MHD_DAEMON_INFO_CURRENT_CONNECTIONS,
+  MHD_DAEMON_INFO_CURRENT_CONNECTIONS
 };
 
 
