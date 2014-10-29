@@ -482,6 +482,15 @@ send_tls_adapter (struct MHD_Connection *connection,
 #endif
       return -1;
     }
+  if (res < 0)
+    {
+      /* some other GNUTLS error, should set 'errno'; as we do not
+         really understand the error (not listed in GnuTLS
+         documentation explicitly), we set 'errno' to something that
+         will cause the connection to fail. */
+      MHD_set_socket_errno_ (ECONNRESET);
+      return -1;
+    }
   return res;
 }
 
