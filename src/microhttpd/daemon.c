@@ -4344,6 +4344,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
       return (const union MHD_DaemonInfo *) &daemon->epoll_fd;
 #endif
     case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
+      MHD_cleanup_connections (daemon);
       if (daemon->worker_pool)
         {
           /* Collect the connection information stored in the workers. */
@@ -4351,7 +4352,10 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 
           daemon->connections = 0;
           for (i=0;i<daemon->worker_pool_size;i++)
-            daemon->connections += daemon->worker_pool[i].connections;
+            {
+              MHD_cleanup_connections (&daemon->worker_pool[i]);
+              daemon->connections += daemon->worker_pool[i].connections;
+            }
         }
       return (const union MHD_DaemonInfo *) &daemon->connections;
     default:

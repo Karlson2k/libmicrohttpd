@@ -1,3 +1,7 @@
+Tue Nov 18 13:52:29 CET 2014
+	Call MHD_cleanup_connections() during MHD_DAEMON_INFO_CURRENT_CONNECTIONS
+	processing for more accurate results. -MS
+
 Wed Oct 29 20:45:21 CET 2014
 	Adding MHD_OPTION_LISTENING_ADDRESS_REUSE option allowing clients
 	to force allowing re-use of the address:port combination
