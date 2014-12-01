@@ -18,7 +18,7 @@ microspdy += testspdy
 endif
 endif
 
-SUBDIRS = include platform microhttpd $(microspdy) examples $(curltests) $(zzuftests) .
+SUBDIRS = include platform microhttpd $(microspdy) $(curltests) $(zzuftests) .
 
 if BUILD_EXAMPLES
 SUBDIRS += examples
