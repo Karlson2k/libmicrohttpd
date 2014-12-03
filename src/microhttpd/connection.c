@@ -524,9 +524,10 @@ keepalive_possible (struct MHD_Connection *connection)
   {
     if (NULL == end)
       return MHD_YES;
-    if (0 == strcasecmp (end, "close"))
+    if ( (0 == strcasecmp (end, "close")) ||
+         (0 == strcasecmp (end, "upgrade")) )
       return MHD_NO;
-    return MHD_YES;
+   return MHD_YES;
   }
   if (0 == strcasecmp (connection->version,
                        MHD_HTTP_VERSION_1_0))
