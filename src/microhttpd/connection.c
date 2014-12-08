@@ -686,7 +686,7 @@ build_header_response (struct MHD_Connection *connection)
 	       reason_phrase);
       off = strlen (code);
       /* estimate size */
-      size = off + 2;           /* extra \r\n at the end */
+      size = off + 2;           /* +2 for extra "\r\n" at the end */
       kind = MHD_HEADER_KIND;
       if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) &&
 	   (NULL == MHD_get_response_header (connection->response,
