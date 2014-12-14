@@ -1139,11 +1139,11 @@ enum MHD_DaemonInfoType
  * @param reason error detail, may be NULL
  * @ingroup logging
  */
-typedef
-  void (*MHD_PanicCallback) (void *cls,
-			     const char *file,
-			     unsigned int line,
-			     const char *reason);
+typedef void
+(*MHD_PanicCallback) (void *cls,
+                      const char *file,
+                      unsigned int line,
+                      const char *reason);
 
 /**
  * Allow or deny a client to connect.
@@ -1154,9 +1154,9 @@ typedef
  * @return #MHD_YES if connection is allowed, #MHD_NO if not
  */
 typedef int
-  (*MHD_AcceptPolicyCallback) (void *cls,
-                               const struct sockaddr *addr,
-                               socklen_t addrlen);
+(*MHD_AcceptPolicyCallback) (void *cls,
+                             const struct sockaddr *addr,
+                             socklen_t addrlen);
 
 
 /**
@@ -1199,14 +1199,14 @@ typedef int
  *         error while handling the request
  */
 typedef int
-  (*MHD_AccessHandlerCallback) (void *cls,
-                                struct MHD_Connection *connection,
-                                const char *url,
-                                const char *method,
-                                const char *version,
-                                const char *upload_data,
-                                size_t *upload_data_size,
-                                void **con_cls);
+(*MHD_AccessHandlerCallback) (void *cls,
+                              struct MHD_Connection *connection,
+                              const char *url,
+                              const char *method,
+                              const char *version,
+                              const char *upload_data,
+                              size_t *upload_data_size,
+                              void **con_cls);
 
 
 /**
@@ -1222,10 +1222,10 @@ typedef int
  * @ingroup request
  */
 typedef void
-  (*MHD_RequestCompletedCallback) (void *cls,
-                                   struct MHD_Connection *connection,
-                                   void **con_cls,
-                                   enum MHD_RequestTerminationCode toe);
+(*MHD_RequestCompletedCallback) (void *cls,
+                                 struct MHD_Connection *connection,
+                                 void **con_cls,
+                                 enum MHD_RequestTerminationCode toe);
 
 
 /**
@@ -1244,9 +1244,10 @@ typedef void
  * @ingroup request
  */
 typedef int
-  (*MHD_KeyValueIterator) (void *cls,
-                           enum MHD_ValueKind kind,
-                           const char *key, const char *value);
+(*MHD_KeyValueIterator) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         const char *value);
 
 
 /**
@@ -1294,10 +1295,10 @@ typedef int
  *    This is not a limitation of MHD but rather of the HTTP protocol.
  */
 typedef ssize_t
-  (*MHD_ContentReaderCallback) (void *cls,
-				uint64_t pos,
-				char *buf,
-				size_t max);
+(*MHD_ContentReaderCallback) (void *cls,
+                              uint64_t pos,
+                              char *buf,
+                              size_t max);
 
 
 /**
@@ -1310,7 +1311,7 @@ typedef ssize_t
  * @ingroup response
  */
 typedef void
-  (*MHD_ContentReaderFreeCallback) (void *cls);
+(*MHD_ContentReaderFreeCallback) (void *cls);
 
 
 /**
@@ -1333,15 +1334,15 @@ typedef void
  *         #MHD_NO to abort the iteration
  */
 typedef int
-  (*MHD_PostDataIterator) (void *cls,
-                           enum MHD_ValueKind kind,
-                           const char *key,
-                           const char *filename,
-                           const char *content_type,
-                           const char *transfer_encoding,
-                           const char *data,
-			   uint64_t off,
-			   size_t size);
+(*MHD_PostDataIterator) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         const char *filename,
+                         const char *content_type,
+                         const char *transfer_encoding,
+                         const char *data,
+                         uint64_t off,
+                         size_t size);
 
 /* **************** Daemon handling functions ***************** */
 
@@ -1945,51 +1946,53 @@ MHD_create_response_from_fd_at_offset (size_t size,
 
 #if 0
 /**
- * Bits in an event mask that specifies which actions
- * MHD should perform and under which conditions it
- * should call the 'upgrade' callback again.
+ * Enumeration for actions MHD should perform on the underlying socket
+ * of the upgrade.  This API is not finalized, and in particular
+ * the final set of actions is yet to be decided. This is just an
+ * idea for what we might want.
  */
-enum MHD_UpgradeEventMask
+enum MHD_UpgradeAction
 {
 
   /**
-   * Never call the handler again; finish sending bytes
-   * in the 'write' buffer and then close the socket.
+   * Close the socket, the application is done with it.
+   *
+   * Takes no extra arguments.
+   *
+   * NOTE: it is unclear if we want to have this in the
+   * "final" API, this is all just ideas.
    */
-  MHD_UPGRADE_EVENT_TERMINATE = 0,
-
-  /**
-   * Call the handler again once there is data ready
-   * for reading.
-   */
-  MHD_UPGRADE_EVENT_READ = 1,
-
-  /**
-   * Call the handler again once there is buffer space
-   * available for writing.
-   */
-  MHD_UPGRADE_EVENT_WRITE = 2,
-
-  /**
-   * Do not wait on any socket actions, we're waiting on
-   * an 'external' event.  Run the function again once
-   * the 'select' call returns _without_ this socket even
-   * being involved in the select sets (useful in
-   * conjunction with the external select loop).
-   */
-  MHD_UPGRADE_EVENT_EXTERNAL = 4,
+  MHD_UPGRADE_ACTION_CLOSE = 0,
 
   /**
    * Uncork the TCP write buffer (that is, tell the OS to transmit all
-   * bytes in the buffer now, and to not use TCP-CORKing).  This is
-   * not really an event flag, but an additional request (which MHD
-   * may ignore if the platform does not support it).  Note that
-   * only returning 'CORK' will *also* cause the socket to be closed!
+   * bytes in the buffer now, and to not use TCP-CORKing).
+   *
+   * Takes no extra arguments.
+   *
+   * NOTE: it is unclear if we want to have this in the
+   * "final" API, this is all just ideas.
    */
-  MHD_UPGRADE_EVENT_CORK = 8
+  MHD_UPGRADE_ACTION_CORK
 
 };
 
+
+/**
+ * This connection-specific callback is provided by MHD to
+ * applications (unusual) during the #MHD_UpgradeHandler.
+ * It allows applications to perform 'special' actions on
+ * the underlying socket from the upgrade.
+ *
+ * @param cls the closure (from `upgrade_action_cls`)
+ * @param action which action should be performed
+ * @param ... arguments to the action (depends on the action)
+ * @return #MHD_NO on error, #MHD_YES on success
+ */
+typedef int
+(*MHD_UpgradeActionCallback)(void *cls,
+                             enum MHD_UpgradeAction action,
+                             ...);
 
 /**
  * Function called after a protocol "upgrade" response was sent
@@ -2024,33 +2027,34 @@ enum MHD_UpgradeEventMask
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls value as set by the last call to the
- *                MHD_AccessHandlerCallback; will afterwards
- *                be also given to the #MHD_RequestCompletedCallback
- * @param data_in_size available data for reading, set to data read
- * @param data_in data read from the socket
- * @param data_out_size available buffer for writing, set to bytes
- *                written to 'data_out'
- * @param data_out buffer for sending data via the connection
- * @return desired actions for event handling loop
+ * @param sock socket to use for bi-directional communication
+ *        with the client.  For HTTPS, this may not be a socket
+ *        that is directly connected to the client and thus certain
+ *        operations (TCP-specific setsockopt(), getsockopt(), etc.)
+ *        may not work as expected (as the socket could be from a
+ *        socketpair() or a TCP-loopback)
+ * @param upgrade_action function that can be used to perform actions
+ *        on the @a sock (like those that cannot be done explicitly).
+ *        Applications must use this callback to perform the
+ *        close() action on the @a sock.
+ * @param upgrade_action_cls closure that must be passed to @a upgrade_action
  */
-typedef enum MHD_UpgradeEventMask (*MHD_UpgradeHandler)(void *cls,
-							struct MHD_Connection *connection,
-							void **con_cls,
-							size_t *data_in_size,
-							const char *data_in,
-							size_t *data_out_size,
-							char *data_out);
+typedef void
+(*MHD_UpgradeHandler)(void *cls,
+                      struct MHD_Connection *connection,
+                      MHD_SOCKET sock,
+                      MHD_UpgradeActionCallback upgrade_action,
+                      void *upgrade_action_cls);
 
 
 /**
  * Create a response object that can be used for 101 UPGRADE
- * responses, for example to implement websockets.  After sending the
+ * responses, for example to implement WebSockets.  After sending the
  * response, control over the data stream is given to the callback (which
  * can then, for example, start some bi-directional communication).
  * If the response is queued for multiple connections, the callback
  * will be called for each connection.  The callback
- * will ONLY be called if the response header was successfully passed
+ * will ONLY be called after the response header was successfully passed
  * to the OS; if there are communication errors before, the usual MHD
  * connection error handling code will be performed.
  *
@@ -2058,7 +2062,7 @@ typedef enum MHD_UpgradeEventMask (*MHD_UpgradeHandler)(void *cls,
  * and setting correct HTTP headers for the upgrade must be done
  * manually (this way, it is possible to implement most existing
  * WebSocket versions using this API; in fact, this API might be useful
- * for any protocol switch, not just websockets).  Note that
+ * for any protocol switch, not just WebSockets).  Note that
  * draft-ietf-hybi-thewebsocketprotocol-00 cannot be implemented this
  * way as the header "HTTP/1.1 101 WebSocket Protocol Handshake"
  * cannot be generated; instead, MHD will always produce "HTTP/1.1 101
@@ -2069,7 +2073,7 @@ typedef enum MHD_UpgradeEventMask (*MHD_UpgradeHandler)(void *cls,
  * header information is not connection-specific).
  *
  * @param upgrade_handler function to call with the 'upgraded' socket
- * @param upgrade_handler_cls closure for 'upgrade_handler'
+ * @param upgrade_handler_cls closure for @a upgrade_handler
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
 struct MHD_Response *
