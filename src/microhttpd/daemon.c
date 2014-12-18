@@ -3585,11 +3585,13 @@ MHD_start_daemon_va (unsigned int flags,
                               SOL_SOCKET,
                               SO_REUSEADDR,
                               (void*)&on, sizeof (on)))
+          {
 #if HAVE_MESSAGES
             MHD_DLOG (daemon,
                       "setsockopt failed: %s\n",
                       MHD_socket_last_strerr_ ());
 #endif
+          }
         }
       else if (daemon->listening_address_reuse > 0)
         {
@@ -3726,11 +3728,13 @@ MHD_start_daemon_va (unsigned int flags,
 	  if (0 > setsockopt (socket_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,
                               &on, sizeof (on)))
+      {
 #if HAVE_MESSAGES
             MHD_DLOG (daemon,
                       "setsockopt failed: %s\n",
                       MHD_socket_last_strerr_ ());
 #endif
+      }
 #endif
 #endif
 	}
