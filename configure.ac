@@ -247,8 +247,10 @@ AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 
 # set GCC options
-# use '-fno-strict-aliasing', but only if the compiler can take it
-AX_APPEND_COMPILE_FLAGS([[-fno-strict-aliasing]])
+# use '-fno-strict-aliasing', but only if the compiler
+# and linker can take it
+AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
+  [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing])])
 
 AC_C_BIGENDIAN
 
