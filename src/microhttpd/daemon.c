@@ -2743,6 +2743,26 @@ MHD_select_thread (void *cls)
 
 
 /**
+ * Process escape sequences ('%HH') Updates val in place; the
+ * result should be UTF-8 encoded and cannot be larger than the input.
+ * The result must also still be 0-terminated.
+ *
+ * @param cls closure (use NULL)
+ * @param connection handle to connection, not used
+ * @param val value to unescape (modified in the process)
+ * @return length of the resulting val (strlen(val) maybe
+ *  shorter afterwards due to elimination of escape sequences)
+ */
+static size_t
+unescape_wrapper (void *cls,
+                  struct MHD_Connection *connection,
+                  char *val)
+{
+  return MHD_http_unescape (val);
+}
+
+
+/**
  * Start a webserver on the given port.  Variadic version of
  * #MHD_start_daemon_va.
  *
@@ -3410,7 +3430,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->connection_limit = MHD_MAX_CONNECTIONS_DEFAULT;
   daemon->pool_size = MHD_POOL_SIZE_DEFAULT;
   daemon->pool_increment = MHD_BUF_INC_SIZE;
-  daemon->unescape_callback = &MHD_http_unescape;
+  daemon->unescape_callback = &unescape_wrapper;
   daemon->connection_timeout = 0;       /* no timeout */
   daemon->wpipe[0] = MHD_INVALID_PIPE_;
   daemon->wpipe[1] = MHD_INVALID_PIPE_;

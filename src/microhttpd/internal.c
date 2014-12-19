@@ -124,16 +124,12 @@ MHD_unescape_plus (char *arg)
  * result should be UTF-8 encoded and cannot be larger than the input.
  * The result must also still be 0-terminated.
  *
- * @param cls closure (use NULL)
- * @param connection handle to connection, not used
  * @param val value to unescape (modified in the process)
  * @return length of the resulting val (strlen(val) maybe
  *  shorter afterwards due to elimination of escape sequences)
  */
 size_t
-MHD_http_unescape (void *cls,
-		   struct MHD_Connection *connection,
-		   char *val)
+MHD_http_unescape (char *val)
 {
   char *rpos = val;
   char *wpos = val;

@@ -1,3 +1,8 @@
+Sat Dec 20 00:35:40 CET 2014
+	Adding MHD_http_unescape() to public API (#3585). -CG
+	Updating documentation to document
+	MHD_is_feature_supported(). -CG
+
 Thu Dec  4 00:43:10 CET 2014
 	If "Connection: upgrade" is requested, do not add
 	"Connection: Keep-Alive" in the response. -GJ

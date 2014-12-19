@@ -1686,6 +1686,19 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
 
 
 /**
+ * Process escape sequences ('%HH') Updates val in place; the
+ * result should be UTF-8 encoded and cannot be larger than the input.
+ * The result must also still be 0-terminated.
+ *
+ * @param val value to unescape (modified in the process)
+ * @return length of the resulting val (`strlen(val)` may be
+ *  shorter afterwards due to elimination of escape sequences)
+ */
+_MHD_EXTERN size_t
+MHD_http_unescape (char *val);
+
+
+/**
  * Get a particular header value.  If multiple
  * values match the kind, return any one of them.
  *
@@ -2439,9 +2452,9 @@ MHD_get_version (void);
 
 
 /**
-* Types of information about MHD features,
-* used by #MHD_is_feature_supported.
-*/
+ * Types of information about MHD features,
+ * used by #MHD_is_feature_supported().
+ */
 enum MHD_FEATURE
 {
   /**
@@ -2495,7 +2508,7 @@ enum MHD_FEATURE
   /**
    * Get whether shutdown on listen socket to signal other
    * threads is supported. If not supported flag
-   * MHD_USE_PIPE_FOR_SHUTDOWN is automatically forced.
+   * #MHD_USE_PIPE_FOR_SHUTDOWN is automatically forced.
    */
   MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET = 8,
 
@@ -2522,15 +2535,15 @@ enum MHD_FEATURE
   /**
    * Get whether HTTP Digest authorization is supported. If
    * supported then options #MHD_OPTION_DIGEST_AUTH_RANDOM,
-   * #MHD_OPTION_NONCE_NC_SIZE and functions #MHD_digest_auth_check,
-   * #MHD_digest_auth_check can be used.
+   * #MHD_OPTION_NONCE_NC_SIZE and
+   * #MHD_digest_auth_check() can be used.
    */
   MHD_FEATURE_DIGEST_AUTH = 12,
 
   /**
    * Get whether postprocessor is supported. If supported then
-   * functions #MHD_create_post_processor, #MHD_post_process,
-   * #MHD_destroy_post_processor, #MHD_destroy_post_processor can
+   * functions #MHD_create_post_processor(), #MHD_post_process() and
+   * #MHD_destroy_post_processor() can
    * be used.
    */
   MHD_FEATURE_POSTPROCESSOR = 13
