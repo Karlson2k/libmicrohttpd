@@ -21,7 +21,7 @@
  * @brief  tests all the API functions for handling struct SPDY_NameValue
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include "common.h"
@@ -42,15 +42,15 @@ int
 iterate_cb (void *cls, const char *name, const char * const * value, int num_values)
 {
 	int *c = (int*)cls;
-	
+
 	if(*c < 0 || *c > size)
 		exit(11);
-	
+
 	if(strcmp(name,pairs[*c]) != 0)
 	{
 		FAIL_TEST("name is wrong\n");
 	}
-	
+
 	if(1 != num_values)
 	{
 		FAIL_TEST("num_values is wrong\n");
@@ -60,9 +60,9 @@ iterate_cb (void *cls, const char *name, const char * const * value, int num_val
 	{
 		FAIL_TEST("value is wrong\n");
 	}
-	
+
 	(*c)+=2;
-	
+
 	return SPDY_YES;
 }
 
@@ -72,18 +72,18 @@ iterate_brake_cb (void *cls, const char *name, const char * const *value, int nu
   (void)name;
   (void)value;
   (void)num_values;
-  
+
 	int *c = (int*)cls;
-	
+
 	if(*c < 0 || *c >= brake_at)
 	{
 		FAIL_TEST("iteration was not interrupted\n");
 	}
-	
+
 	(*c)++;
-	
+
 	if(*c == brake_at) return SPDY_NO;
-	
+
 	return SPDY_YES;
 }
 
@@ -91,7 +91,7 @@ int
 main()
 {
 	SPDY_init();
-	
+
 	const char *const*value;
 	const char *const*value2;
 	int i;
@@ -108,62 +108,63 @@ main()
 	struct SPDY_NameValue *container2;
 	struct SPDY_NameValue *container3;
 	struct SPDY_NameValue *container_arr[2];
-	
+
 	size = sizeof(pairs)/sizeof(pairs[0]);
-	
+
 	if(NULL == (container = SPDY_name_value_create ()))
 	{
 		FAIL_TEST("SPDY_name_value_create failed\n");
 	}
-	
+
 	if(NULL != SPDY_name_value_lookup (container, "anything", &ret))
 	{
 		FAIL_TEST("SPDY_name_value_lookup failed\n");
 	}
-	
+
 	if(SPDY_name_value_iterate (container, NULL, NULL) != 0)
 	{
 		FAIL_TEST("SPDY_name_value_iterate failed\n");
 	}
-	
+
 	for(i=0;i<size; i+=2)
 	{
 		if(SPDY_YES != SPDY_name_value_add(container,pairs[i],pairs[i+1]))
 		{
 			FAIL_TEST("SPDY_name_value_add failed\n");
 		}
-		
+
 		if(SPDY_name_value_iterate (container, NULL, NULL) != ((i / 2) + 1))
 		{
 			FAIL_TEST("SPDY_name_value_iterate failed\n");
 		}
 	}
-	
+
 	if(NULL != SPDY_name_value_lookup (container, "anything", &ret))
 	{
 		FAIL_TEST("SPDY_name_value_lookup failed\n");
 	}
-	
+
 	for(i=size - 2; i >= 0; i-=2)
 	{
 		value = SPDY_name_value_lookup(container,pairs[i], &ret);
 		if(NULL == value || 1 !=ret || strcmp(value[0], pairs[i+1]) != 0)
 		{
-			printf("%p; %i; %i\n", value, ret, strcmp(value[0], pairs[i+1]));
+			printf("%p; %i; %i\n", value, ret,
+                               (NULL == value) ? -1 : strcmp(value[0], pairs[i+1]));
 			FAIL_TEST("SPDY_name_value_lookup failed\n");
 		}
 	}
-	
+
 	SPDY_name_value_iterate (container, &iterate_cb, &cls);
-	
+
 	cls = 0;
 	if(SPDY_name_value_iterate (container, &iterate_brake_cb, &cls) != brake_at)
 	{
 		FAIL_TEST("SPDY_name_value_iterate with brake failed\n");
 	}
-	
+
 	SPDY_name_value_destroy(container);
-	
+
 	//check everything with NULL values
 	for(i=0; i<7; ++i)
 	{
@@ -178,12 +179,12 @@ main()
 	}
 	printf("\n");
 	fflush(stdout);
-	
+
 	if(SPDY_INPUT_ERROR != SPDY_name_value_iterate(NULL,NULL,NULL))
 	{
 		FAIL_TEST("SPDY_name_value_iterate with NULLs failed\n");
 	}
-	
+
 	for(i=0; i<7; ++i)
 	{
 		printf("%i ",i);
@@ -197,14 +198,14 @@ main()
 	}
 	printf("\n");
 	SPDY_name_value_destroy(NULL);
-	
+
 	if(NULL == (container = SPDY_name_value_create ()))
 	{
 		FAIL_TEST("SPDY_name_value_create failed\n");
 	}
-	
+
 	size = sizeof(pairs_with_dups)/sizeof(pairs_with_dups[0]);
-	
+
 	for(i=0;i<size; i+=2)
 	{
 		if(SPDY_YES != SPDY_name_value_add(container,pairs_with_dups[i],pairs_with_dups[i+1]))
@@ -231,22 +232,22 @@ main()
 					FAIL_TEST("SPDY_name_value_lookup failed\n");
 				flag=true;
 			}
-		
+
 		if(!flag)
 			FAIL_TEST("SPDY_name_value_lookup failed\n");
 	}
 	if(SPDY_NO != SPDY_name_value_add(container,pairs_with_dups[0],pairs_with_dups[1]))
 		FAIL_TEST("SPDY_name_value_add failed\n");
-		
+
 	SPDY_name_value_destroy(container);
-	
+
 	if(NULL == (container = SPDY_name_value_create ()))
 	{
 		FAIL_TEST("SPDY_name_value_create failed\n");
 	}
-		
+
 	size = sizeof(pairs_with_empty)/sizeof(pairs_with_empty[0]);
-	
+
 	for(i=0;i<size; i+=2)
 	{
 		if(SPDY_YES != SPDY_name_value_add(container,pairs_with_empty[i],pairs_with_empty[i+1]))
@@ -260,23 +261,23 @@ main()
 			FAIL_TEST("SPDY_name_value_lookup failed\n");
 		}
 	}
-	
-	ret = SPDY_name_value_iterate(container, NULL, NULL);	
+
+	ret = SPDY_name_value_iterate(container, NULL, NULL);
 	if(SPDY_INPUT_ERROR != SPDY_name_value_add(container, "capitalLeter","anything")
 		|| SPDY_name_value_iterate(container, NULL, NULL) != ret)
 	{
 		FAIL_TEST("SPDY_name_value_add failed\n");
 	}
-	
+
 	SPDY_name_value_destroy(container);
-	
+
 	if(NULL == (container = SPDY_name_value_create ()))
 	{
 		FAIL_TEST("SPDY_name_value_create failed\n");
 	}
-	
+
 	size = sizeof(pairs_with_dups)/sizeof(pairs_with_dups[0]);
-	
+
 	for(i=0;i<size; i+=2)
 	{
 		if(SPDY_YES != SPDY_name_value_add(container,pairs_with_dups[i],pairs_with_dups[i+1]))
@@ -284,14 +285,14 @@ main()
 			FAIL_TEST("SPDY_name_value_add failed\n");
 		}
 	}
-	
+
 	if(NULL == (container2 = SPDY_name_value_create ()))
 	{
 		FAIL_TEST("SPDY_name_value_create failed\n");
 	}
-	
+
 	size2 = sizeof(pairs_different)/sizeof(pairs_different[0]);
-	
+
 	for(i=0;i<size2; i+=2)
 	{
 		if(SPDY_YES != SPDY_name_value_add(container2,pairs_different[i],pairs_different[i+1]))
@@ -299,7 +300,7 @@ main()
 			FAIL_TEST("SPDY_name_value_add failed\n");
 		}
 	}
-	
+
 	container_arr[0] = container;
 	container_arr[1] = container2;
 	if(0 > (ret = SPDYF_name_value_to_stream(container_arr, 2, &stream)) || NULL == stream)
@@ -307,11 +308,11 @@ main()
 	ret = SPDYF_name_value_from_stream(stream, ret, &container3);
 	if(SPDY_YES != ret)
 		FAIL_TEST("SPDYF_name_value_from_stream failed\n");
-	
+
 	if(SPDY_name_value_iterate(container3, NULL, NULL)
 		!= (SPDY_name_value_iterate(container, NULL, NULL) + SPDY_name_value_iterate(container2, NULL, NULL)))
 		FAIL_TEST("SPDYF_name_value_from_stream failed\n");
-	
+
 	for(i=size - 2; i >= 0; i-=2)
 	{
 		value = SPDY_name_value_lookup(container,pairs_with_dups[i], &ret);
@@ -338,8 +339,8 @@ main()
 			if(0 != strcmp(value2[j], value[j]))
 				FAIL_TEST("SPDY_name_value_lookup failed\n");
 	}
-	
+
 	SPDY_deinit();
-	
+
 	return 0;
 }
