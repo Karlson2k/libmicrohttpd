@@ -68,7 +68,7 @@ create_child()
 
 	child = fork();
 	if (-1 == child)
-	{   
+	{
 		fprintf(stderr, "can't fork, error %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
@@ -79,6 +79,8 @@ create_child()
 		char *uri;
 		fflush(stdout);
 		devnull = open("/dev/null", O_WRONLY);
+                if (-1 == devnull)
+                  abort ();
 		if (1 != devnull)
 		{
 			dup2(devnull, 1);
@@ -100,7 +102,7 @@ response_done_callback(void *cls,
 {
   (void)status;
   (void)streamopened;
-  
+
 	if(strcmp(cls,"/main.css"))
 	{
 		session1 = SPDY_get_session_for_request(request);
@@ -109,7 +111,7 @@ response_done_callback(void *cls,
 			printf("SPDY_get_session_for_request failed\n");
 			killchild();
 		}
-		
+
 		char *session_cls = strdup(SESSION_CLS);
 		SPDY_set_cls_to_session(session1,session_cls);
 	}
@@ -122,7 +124,7 @@ response_done_callback(void *cls,
 			killchild();
 		}
 		printf("SPDY_get_session_for_request tested...\n");
-		
+
 		void *session_cls = SPDY_get_cls_from_session(session2);
 		if(NULL == session_cls || strcmp(session_cls, SESSION_CLS))
 		{
@@ -131,7 +133,7 @@ response_done_callback(void *cls,
 		}
 		printf("SPDY_set_cls_to_session tested...\n");
 		printf("SPDY_get_cls_from_session tested...\n");
-		
+
 		void *request_cls = SPDY_get_cls_from_request(request);
 		if(NULL == request_cls || strcmp(request_cls, REQUEST_CLS))
 		{
@@ -141,7 +143,7 @@ response_done_callback(void *cls,
 		printf("SPDY_set_cls_to_request tested...\n");
 		printf("SPDY_get_cls_from_request tested...\n");
 	}
-	
+
 	SPDY_destroy_request(request);
 	SPDY_destroy_response(response);
 	free(cls);
@@ -168,10 +170,10 @@ standard_request_handler(void *cls,
 	(void)method;
 	(void)version;
 	(void)more;
-  
+
 	struct SPDY_Response *response=NULL;
 	char *cls_path = strdup(path);
-	
+
 	if(strcmp(path,"/main.css")==0)
 	{
 		char *request_cls = strdup(REQUEST_CLS);
@@ -182,12 +184,12 @@ standard_request_handler(void *cls,
 	{
 		response = SPDY_build_response(200,NULL,SPDY_HTTP_VERSION_1_1,NULL,HTML,strlen(HTML));
 	}
-	
+
 	if(NULL==response){
 		fprintf(stdout,"no response obj\n");
 		killchild();
 	}
-	
+
 	if(SPDY_queue_response(request,response,true,false,&response_done_callback,cls_path)!=SPDY_YES)
 	{
 		fprintf(stdout,"queue\n");
@@ -197,7 +199,7 @@ standard_request_handler(void *cls,
 
 int
 parentproc()
-{	
+{
 	int childstatus;
 	unsigned long long timeoutlong=0;
 	struct timeval timeout;
@@ -207,7 +209,7 @@ parentproc()
 	fd_set except_fd_set;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
+
 	daemon = SPDY_start_daemon(port,
 								DATA_DIR "cert-and-key.pem",
 								DATA_DIR "cert-and-key.pem",
@@ -219,12 +221,12 @@ parentproc()
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
 								SPDY_DAEMON_OPTION_END);
-	
+
 	if(NULL==daemon){
 		printf("no daemon\n");
 		return 1;
 	}
-	
+
 	create_child();
 
 	do
@@ -244,14 +246,14 @@ parentproc()
 			timeout.tv_sec = timeoutlong / 1000;
 			timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
-		
+
 		maxfd = SPDY_get_fdset (daemon,
 								&read_fd_set,
-								&write_fd_set, 
+								&write_fd_set,
 								&except_fd_set);
-								
+
 		ret = select(maxfd+1, &read_fd_set, &write_fd_set, &except_fd_set, &timeout);
-		
+
 		switch(ret) {
 			case -1:
 				printf("select error: %i\n", errno);
@@ -268,7 +270,7 @@ parentproc()
 	while(waitpid(child,&childstatus,WNOHANG) != child);
 
 	SPDY_stop_daemon(daemon);
-	
+
 	return WEXITSTATUS(childstatus);
 }
 
@@ -278,10 +280,10 @@ main()
 {
 	port = get_port(13123);
 	SPDY_init();
-	
+
 	int ret = parentproc();
-	
+
 	SPDY_deinit();
-	
+
 	return ret;
 }

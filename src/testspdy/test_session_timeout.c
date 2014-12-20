@@ -283,12 +283,16 @@ childproc()
 		close(devnull);
 	}*/
 	devnull = open("/dev/null", O_WRONLY);
+        if (-1 == devnull)
+          abort ();
 	if (1 != devnull)
 	{
 		dup2(devnull, 1);
 		close(devnull);
 	}
 	devnull = open("/dev/null", O_WRONLY);
+        if (-1 == devnull)
+          abort ();
 	if (2 != devnull)
 	{
 		dup2(devnull, 2);

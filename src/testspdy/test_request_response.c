@@ -39,7 +39,7 @@ char *rcvbuf;
 int rcvbuf_c = 0;
 
 int session_closed_called = 0;
- 
+
 void
 killchild(int pid, char *message)
 {
@@ -55,7 +55,7 @@ killparent(int pid, char *message)
 	kill(pid, SIGKILL);
 	_exit(1);
 }
-		
+
 
 /*****
  * start of code needed to utilize spdylay
@@ -131,6 +131,8 @@ static char* strcopy(const char *s, size_t len)
 {
   char *dst;
   dst = malloc(len+1);
+  if (NULL == dst)
+    abort ();
   memcpy(dst, s, len);
   dst[len] = '\0';
   return dst;
@@ -204,7 +206,7 @@ static ssize_t send_callback(spdylay_session *session,
 {
   (void)session;
   (void)flags;
-  
+
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -236,7 +238,7 @@ static ssize_t recv_callback(spdylay_session *session,
 {
   (void)session;
   (void)flags;
-  
+
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -270,7 +272,7 @@ static void before_ctrl_send_callback(spdylay_session *session,
                                       void *user_data)
 {
   (void)user_data;
-  
+
   if(type == SPDYLAY_SYN_STREAM) {
     struct Request *req;
     int stream_id = frame->syn_stream.stream_id;
@@ -287,7 +289,7 @@ static void on_ctrl_send_callback(spdylay_session *session,
                                   spdylay_frame *frame, void *user_data)
 {
   (void)user_data;
-  
+
   char **nv;
   const char *name = NULL;
   int32_t stream_id;
@@ -360,7 +362,7 @@ static void on_stream_close_callback(spdylay_session *session,
 {
   (void)user_data;
   (void)status_code;
-  
+
   struct Request *req;
   req = spdylay_session_get_stream_user_data(session, stream_id);
   if(req) {
@@ -385,7 +387,7 @@ static void on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags,
 {
   (void)user_data;
   (void)flags;
-  
+
   struct Request *req;
   req = spdylay_session_get_stream_user_data(session, stream_id);
   if(req) {
@@ -409,13 +411,13 @@ static void on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags,
     } else {
       /* TODO add support gzip */
       fwrite(data, 1, len, stdout);
-      
+
       //check if the data is correct
       //if(strcmp(RESPONSE_BODY, data) != 0)
 		//killparent(parent, "\nreceived data is not the same");
       if(len + rcvbuf_c > strlen(RESPONSE_BODY))
 		killparent(parent, "\nreceived data is not the same");
-	
+
 		strcpy(rcvbuf + rcvbuf_c,(char*)data);
 		rcvbuf_c+=len;
     }
@@ -452,7 +454,7 @@ static int select_next_proto_cb(SSL* ssl,
                                 void *arg)
 {
   (void)ssl;
-  
+
   int rv;
   uint16_t *spdy_proto_version;
   /* spdylay_select_next_protocol() selects SPDY protocol version the
@@ -655,6 +657,8 @@ static void fetch_uri(const struct URI *uri)
 
   /* Establish connection and setup SSL */
   fd = connect_to(req.host, req.port);
+  if (-1 == fd)
+    abort ();
   ssl_ctx = SSL_CTX_new(SSLv23_client_method());
   if(ssl_ctx == NULL) {
     dief("SSL_CTX_new", ERR_error_string(ERR_get_error(), NULL));
@@ -799,7 +803,7 @@ static int parse_uri(struct URI *res, const char *uri)
 /*****
  * end of code needed to utilize spdylay
  */
- 
+
 
 /*****
  * start of code needed to utilize microspdy
@@ -826,26 +830,26 @@ standard_request_handler(void *cls,
 	(void)headers;
 	(void)method;
 	(void)version;
-  
+
 	struct SPDY_Response *response=NULL;
-	
+
 	if(strcmp(CLS,cls)!=0)
 	{
 		killchild(child,"wrong cls");
 	}
-		
+
 	if(false != more){
 		fprintf(stdout,"more has wrong value\n");
 		exit(5);
 	}
-  
+
 	response = SPDY_build_response(200,NULL,SPDY_HTTP_VERSION_1_1,NULL,RESPONSE_BODY,strlen(RESPONSE_BODY));
-	
+
 	if(NULL==response){
 		fprintf(stdout,"no response obj\n");
 		exit(3);
 	}
-	
+
 	if(SPDY_queue_response(request,response,true,false,NULL,(void*)strdup(path))!=SPDY_YES)
 	{
 		fprintf(stdout,"queue\n");
@@ -859,12 +863,12 @@ session_closed_handler (void *cls,
 						int by_client)
 {
 	printf("session_closed_handler called\n");
-	
+
 	if(strcmp(CLS,cls)!=0)
 	{
 		killchild(child,"wrong cls");
 	}
-	
+
 	if(SPDY_YES != by_client)
 	{
 		//killchild(child,"wrong by_client");
@@ -874,12 +878,12 @@ session_closed_handler (void *cls,
 	{
 		printf("session closed by client\n");
 	}
-	
+
 	if(NULL == session)
 	{
 		killchild(child,"session is NULL");
 	}
-	
+
 	session_closed_called = 1;
 }
 
@@ -887,7 +891,7 @@ session_closed_handler (void *cls,
 /*****
  * end of code needed to utilize microspdy
  */
- 
+
 //child process
 void
 childproc(int port)
@@ -896,7 +900,7 @@ childproc(int port)
   struct sigaction act;
   int rv;
   char *uristr;
-  
+
   memset(&act, 0, sizeof(struct sigaction));
   act.sa_handler = SIG_IGN;
   sigaction(SIGPIPE, &act, 0);
@@ -913,7 +917,7 @@ childproc(int port)
     killparent(parent,"parse_uri failed");
   }
   fetch_uri(&uri);
-  
+
   if(strcmp(rcvbuf, RESPONSE_BODY))
     killparent(parent,"received data is different");
 }
@@ -931,14 +935,14 @@ parentproc( int port)
 	fd_set except_fd_set;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
+
 	SPDY_init();
-	
+
 	daemon = SPDY_start_daemon(port,
 								DATA_DIR "cert-and-key.pem",
 								DATA_DIR "cert-and-key.pem",
 								NULL,&session_closed_handler,&standard_request_handler,NULL,CLS,SPDY_DAEMON_OPTION_END);
-	
+
 	if(NULL==daemon){
 		printf("no daemon\n");
 		return 1;
@@ -961,14 +965,14 @@ parentproc( int port)
 			timeout.tv_sec = timeoutlong / 1000;
 			timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
-		
+
 		maxfd = SPDY_get_fdset (daemon,
 								&read_fd_set,
-								&write_fd_set, 
+								&write_fd_set,
 								&except_fd_set);
-								
+
 		ret = select(maxfd+1, &read_fd_set, &write_fd_set, &except_fd_set, &timeout);
-		
+
 		switch(ret) {
 			case -1:
 				printf("select error: %i\n", errno);
@@ -990,9 +994,9 @@ parentproc( int port)
 	SPDY_run(daemon);
 
 	SPDY_stop_daemon(daemon);
-	
+
 	SPDY_deinit();
-	
+
 	return WEXITSTATUS(childstatus);
 }
 
@@ -1000,21 +1004,21 @@ int main()
 {
 	int port = get_port(12123);
 	parent = getpid();
- 
+
    child = fork();
    if (child == -1)
-   {   
+   {
       fprintf(stderr, "can't fork, error %d\n", errno);
       exit(EXIT_FAILURE);
    }
- 
+
    if (child == 0)
    {
       childproc(port);
       _exit(0);
    }
    else
-   { 
+   {
 	   int ret = parentproc(port);
 	   if(1 == session_closed_called && 0 == ret)
       exit(0);
