@@ -183,6 +183,7 @@ int main()
 		pid_t devnull;
 		char *cmd;
     unsigned int i;
+    int retc;
     char buf[strlen(EXPECTED_BODY) + 1];
 
 		close(1);
@@ -202,7 +203,10 @@ int main()
     {
       for (i = 0; i < strlen(EXPECTED_BODY) && !feof(p); i++)
       {
-          buf[i] = fgetc(p);
+          retc = fgetc (p);
+          if (EOF == retc)
+            abort (); /* what did feof(p) do there!? */
+          buf[i] = (char) retc;
       }
 
       pclose(p);
