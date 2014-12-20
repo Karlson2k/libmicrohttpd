@@ -108,6 +108,8 @@ int main()
 
 		close(1);
 		devnull = open("/dev/null", O_WRONLY);
+                if (-1 == devnull)
+                  abort();
 		if (1 != devnull)
 		{
 			dup2(devnull, 1);
@@ -131,6 +133,8 @@ int main()
 
 		close(1);
 		devnull = open("/dev/null", O_WRONLY);
+                if (-1 == devnull)
+                  abort();
 		if (1 != devnull)
 		{
 			dup2(devnull, 1);
@@ -155,6 +159,8 @@ int main()
 
 		close(1);
 		devnull = open("/dev/null", O_WRONLY);
+                if (-1 == devnull)
+                  abort();
 		if (1 != devnull)
 		{
 			dup2(devnull, 1);

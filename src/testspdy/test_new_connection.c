@@ -23,9 +23,9 @@
  * @author Andrey Uzunov
  * @author Tatsuhiro Tsujikawa
  */
- 
+
 //TODO child exits with ret val 1 sometimes
- 
+
 #include "platform.h"
 #include "microspdy.h"
 #include <sys/wait.h>
@@ -45,7 +45,7 @@ int
 spdylay_printf(const char *format, ...)
 {
   (void)format;
-  
+
 	return 0;
 }
 
@@ -54,10 +54,10 @@ spdylay_fprintf(FILE *stream, const char *format, ...)
 {
   (void)stream;
   (void)format;
-  
+
 	return 0;
 }
- 
+
 void
 killchild(int pid, char *message)
 {
@@ -73,7 +73,7 @@ killparent(int pid, char *message)
 	kill(pid, SIGKILL);
 	_exit(2);
 }
-		
+
 
 /*****
  * start of code needed to utilize spdylay
@@ -222,7 +222,7 @@ static ssize_t send_callback(spdylay_session *session,
 {
   (void)session;
   (void)flags;
-  
+
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -254,7 +254,7 @@ static ssize_t recv_callback(spdylay_session *session,
 {
   (void)session;
   (void)flags;
-  
+
   struct Connection *connection;
   ssize_t rv;
   connection = (struct Connection*)user_data;
@@ -288,7 +288,7 @@ static void before_ctrl_send_callback(spdylay_session *session,
                                       void *user_data)
 {
   (void)user_data;
-  
+
   if(type == SPDYLAY_SYN_STREAM) {
     struct Request *req;
     int stream_id = frame->syn_stream.stream_id;
@@ -305,7 +305,7 @@ static void on_ctrl_send_callback(spdylay_session *session,
                                   spdylay_frame *frame, void *user_data)
 {
   (void)user_data;
-  
+
   char **nv;
   const char *name = NULL;
   int32_t stream_id;
@@ -332,7 +332,7 @@ static void on_ctrl_recv_callback(spdylay_session *session,
                                   spdylay_frame *frame, void *user_data)
 {
   (void)user_data;
-  
+
   struct Request *req;
   char **nv;
   const char *name = NULL;
@@ -402,7 +402,7 @@ static void on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags,
 {
   (void)user_data;
   (void)flags;
-  
+
   struct Request *req;
   req = spdylay_session_get_stream_user_data(session, stream_id);
   if(req) {
@@ -426,7 +426,7 @@ static void on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags,
     } else {
       /* TODO add support gzip */
       fwrite(data, 1, len, stdout);
-      
+
       //check if the data is correct
       if(strcmp(RESPONSE_BODY, (char *)data) != 0)
 		killparent(parent, "\nreceived data is not the same");
@@ -464,7 +464,7 @@ static int select_next_proto_cb(SSL* ssl,
                                 void *arg)
 {
   (void)ssl;
-  
+
   int rv;
   uint16_t *spdy_proto_version;
   /* spdylay_select_next_protocol() selects SPDY protocol version the
@@ -667,6 +667,8 @@ static void fetch_uri(const struct URI *uri)
 
   /* Establish connection and setup SSL */
   fd = connect_to(req.host, req.port);
+  if (-1 == fd)
+    abort ();
   ssl_ctx = SSL_CTX_new(SSLv23_client_method());
   if(ssl_ctx == NULL) {
     dief("SSL_CTX_new", ERR_error_string(ERR_get_error(), NULL));
@@ -811,32 +813,32 @@ static int parse_uri(struct URI *res, const char *uri)
 /*****
  * end of code needed to utilize spdylay
  */
- 
+
 
 /*****
  * start of code needed to utilize microspdy
  */
- 
+
 void
 new_session_callback (void *cls,
 						struct SPDY_Session * session)
 {
 	char ipstr[1024];
-		
+
 	struct sockaddr *addr;
-	socklen_t addr_len = SPDY_get_remote_addr(session, &addr);	
-	
+	socklen_t addr_len = SPDY_get_remote_addr(session, &addr);
+
 	if(!addr_len)
 	{
 		printf("SPDY_get_remote_addr");
 		abort();
 	}
-	
+
 	if(strcmp(CLS,cls)!=0)
 	{
 		killchild(child,"wrong cls");
 	}
-	
+
 	if(AF_INET == addr->sa_family)
 	{
 		struct sockaddr_in * addr4 = (struct sockaddr_in *) addr;
@@ -845,7 +847,7 @@ new_session_callback (void *cls,
 			killchild(child,"inet_ntop");
 		}
 		printf("New connection from: %s:%i\n", ipstr, ntohs(addr4->sin_port));
-		
+
 		loop = 0;
 	}
 #if HAVE_INET6
@@ -857,7 +859,7 @@ new_session_callback (void *cls,
 			killchild(child,"inet_ntop");
 		}
 		printf("New connection from: %s:%i\n", ipstr, ntohs(addr6->sin6_port));
-		
+
 		loop = 0;
 	}
 #endif
@@ -870,7 +872,7 @@ new_session_callback (void *cls,
 /*****
  * end of code needed to utilize microspdy
  */
- 
+
 //child process
 void
 childproc(int parent)
@@ -879,7 +881,7 @@ childproc(int parent)
   struct sigaction act;
   int rv;
   char *uristr;
-  
+
   memset(&act, 0, sizeof(struct sigaction));
   act.sa_handler = SIG_IGN;
   sigaction(SIGPIPE, &act, 0);
@@ -909,14 +911,14 @@ parentproc(int child)
 	fd_set except_fd_set;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
+
 	SPDY_init();
-	
+
 	daemon = SPDY_start_daemon(port,
 								DATA_DIR "cert-and-key.pem",
 								DATA_DIR "cert-and-key.pem",
 								&new_session_callback,NULL,NULL,NULL,CLS,SPDY_DAEMON_OPTION_END);
-	
+
 	if(NULL==daemon){
 		printf("no daemon\n");
 		return 1;
@@ -939,14 +941,14 @@ parentproc(int child)
 			timeout.tv_sec = timeoutlong / 1000;
 			timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
-		
+
 		maxfd = SPDY_get_fdset (daemon,
 								&read_fd_set,
-								&write_fd_set, 
+								&write_fd_set,
 								&except_fd_set);
-								
+
 		ret = select(maxfd+1, &read_fd_set, &write_fd_set, &except_fd_set, &timeout);
-		
+
 		switch(ret) {
 			case -1:
 				printf("select error: %i\n", errno);
@@ -964,18 +966,18 @@ parentproc(int child)
 	while(loop && waitpid(child,&childstatus,WNOHANG) != child);
 
 	SPDY_stop_daemon(daemon);
-	
+
 	SPDY_deinit();
-	
+
 	if(loop)
 		return WEXITSTATUS(childstatus);
 	if(waitpid(child,&childstatus,WNOHANG) == child)
 		return WEXITSTATUS(childstatus);
-		
+
 	kill(child,SIGKILL);
-	
-	waitpid(child,&childstatus,0); 
-	
+
+	waitpid(child,&childstatus,0);
+
 	return 0;
 }
 
@@ -983,21 +985,21 @@ int main()
 {
 	port = get_port(14123);
 	parent = getpid();
- 
+
    child = fork();
    if (child == -1)
-   {   
+   {
       fprintf(stderr, "can't fork, error %d\n", errno);
       exit(EXIT_FAILURE);
    }
- 
+
    if (child == 0)
    {
       childproc(parent);
       _exit(0);
    }
    else
-   { 
+   {
 	   int ret = parentproc(child);
       exit(ret);
    }

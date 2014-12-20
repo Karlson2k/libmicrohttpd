@@ -270,9 +270,11 @@ static int
 childproc()
 {
 	pid_t devnull;
-	pid_t out;
+	int out;
 
 	out=dup(1);
+        if (-1 == out)
+          abort();
 	//close(0);
 	close(1);
 	close(2);
