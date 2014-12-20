@@ -24,7 +24,7 @@
  */
 
 //for asprintf
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -36,12 +36,12 @@
 #include <errno.h>
 #include "microspdy.h"
 #include "time.h"
-     
+
 
 int run = 1;
 char* basedir;
 
-	
+
 #define GET_MIME_TYPE(fname, mime)	do {\
 		unsigned int __len = strlen(fname);\
 		if (__len < 4 || '.' != (fname)[__len - 4]) \
@@ -68,11 +68,11 @@ char* basedir;
 			abort();\
 		}\
 	} while (0)
-	
-	
+
+
 static const char *DAY_NAMES[] =
   { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-  
+
 static const char *MONTH_NAMES[] =
   { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -86,6 +86,8 @@ char *Rfc1123_DateTimeNow()
     struct tm tm;
     char * buf = malloc(RFC1123_TIME_LEN+1);
 
+    if (NULL == buf)
+      return NULL;
     time(&t);
     gmtime_r( &t, &tm);
 
@@ -104,13 +106,13 @@ response_callback (void *cls,
 						bool *more)
 {
 	FILE *fd =(FILE*)cls;
-	
+
 	int ret = fread(buffer,1,max,fd);
 	*more = feof(fd) == 0;
-	
+
 	//if(!(*more))
 	//	fclose(fd);
-	
+
 	return ret;
 }
 
@@ -125,12 +127,12 @@ response_done_callback(void *cls,
 	(void)streamopened;
 	(void)status;
 	//printf("answer for %s was sent\n", (char *)cls);
-	
+
 	/*if(SPDY_RESPONSE_RESULT_SUCCESS != status)
 	{
 		printf("answer for %s was NOT sent, %i\n", (char *)cls,status);
 	}*/
-	
+
 	SPDY_destroy_request(request);
 	SPDY_destroy_response(response);
 	if(NULL!=cls)fclose(cls);
@@ -157,7 +159,7 @@ standard_request_handler(void *cls,
 	(void)method;
 	(void)version;
 	(void)more;
-	
+
 	struct SPDY_Response *response=NULL;
 	struct SPDY_NameValue *resp_headers;
 	char *fname;
@@ -167,7 +169,7 @@ standard_request_handler(void *cls,
 	ssize_t filesize = -666;
 	FILE *fd = NULL;
 	int ret = -666;
-	
+
 	//printf("received request for '%s %s %s'\n", method, path, version);
 	if(strlen(path) > 1 && NULL == strstr(path, "..") && '/' == path[0])
 	{
@@ -189,7 +191,7 @@ standard_request_handler(void *cls,
 					printf("SPDY_name_value_create failed\n");
 					abort();
 				}
-				
+
 				date = Rfc1123_DateTimeNow();
 				if(NULL == date
 					|| SPDY_YES != SPDY_name_value_add(resp_headers,SPDY_HTTP_HEADER_DATE,date))
@@ -198,7 +200,7 @@ standard_request_handler(void *cls,
 					abort();
 				}
 				free(date);
-				
+
 				if(-1 == asprintf(&fsize, "%zd", filesize)
 					|| SPDY_YES != SPDY_name_value_add(resp_headers,SPDY_HTTP_HEADER_CONTENT_LENGTH,fsize))
 				{
@@ -206,7 +208,7 @@ standard_request_handler(void *cls,
 					abort();
 				}
 				free(fsize);
-				
+
 				GET_MIME_TYPE(path,mime);
 				if(SPDY_YES != SPDY_name_value_add(resp_headers,SPDY_HTTP_HEADER_CONTENT_TYPE,mime))
 				{
@@ -214,48 +216,48 @@ standard_request_handler(void *cls,
 					abort();
 				}
 				free(mime);
-				
+
 				if(SPDY_YES != SPDY_name_value_add(resp_headers,SPDY_HTTP_HEADER_SERVER,"libmicrospdy/fileserver"))
 				{
 					printf("SPDY_name_value_add failed\n");
 					abort();
 				}
-				
+
 				response = SPDY_build_response_with_callback(200,NULL,
 					SPDY_HTTP_VERSION_1_1,resp_headers,&response_callback,fd,SPDY_MAX_SUPPORTED_FRAME_SIZE);
 				SPDY_name_value_destroy(resp_headers);
 			}
-			
+
 			if(NULL==response){
 				printf("no response obj\n");
 				abort();
 			}
-			
+
 			if(SPDY_queue_response(request,response,true,false,&response_done_callback,fd)!=SPDY_YES)
 			{
 				printf("queue\n");
 				abort();
 			}
-			
+
 			free(fname);
 			return;
 		}
 		free(fname);
 	}
-	
+
 	if(strcmp(path,"/close")==0)
 	{
 		run = 0;
 	}
-	
+
 	response = SPDY_build_response(SPDY_HTTP_NOT_FOUND,NULL,SPDY_HTTP_VERSION_1_1,NULL,NULL,0);
 	printf("Not found %s\n",path);
-	
+
 	if(NULL==response){
 		printf("no response obj\n");
 		abort();
 	}
-	
+
 	if(SPDY_queue_response(request,response,true,false,&response_done_callback,NULL)!=SPDY_YES)
 	{
 		printf("queue\n");
@@ -265,7 +267,7 @@ standard_request_handler(void *cls,
 
 int
 main (int argc, char *const *argv)
-{	
+{
 	unsigned long long timeoutlong=0;
 	struct timeval timeout;
 	int ret;
@@ -274,15 +276,15 @@ main (int argc, char *const *argv)
 	fd_set except_fd_set;
 	int maxfd = -1;
 	struct SPDY_Daemon *daemon;
-	
+
 	if(argc != 5)
 	{
 		printf("Usage: %s cert-file key-file base-dir port\n", argv[0]);
 		return 1;
 	}
-	
+
 	SPDY_init();
-	
+
 	daemon = SPDY_start_daemon(atoi(argv[4]),
 								argv[1],
 								argv[2],
@@ -294,12 +296,12 @@ main (int argc, char *const *argv)
 								SPDY_DAEMON_OPTION_SESSION_TIMEOUT,
 								1800,
 								SPDY_DAEMON_OPTION_END);
-	
+
 	if(NULL==daemon){
 		printf("no daemon\n");
 		return 1;
 	}
-	
+
 	basedir = argv[3];
 
 	do
@@ -319,14 +321,14 @@ main (int argc, char *const *argv)
 			timeout.tv_sec = timeoutlong / 1000;
 			timeout.tv_usec = (timeoutlong % 1000) * 1000;
 		}
-		
+
 		maxfd = SPDY_get_fdset (daemon,
 								&read_fd_set,
-								&write_fd_set, 
+								&write_fd_set,
 								&except_fd_set);
-								
+
 		ret = select(maxfd+1, &read_fd_set, &write_fd_set, &except_fd_set, &timeout);
-		
+
 		switch(ret) {
 			case -1:
 				printf("select error: %i\n", errno);
@@ -343,9 +345,9 @@ main (int argc, char *const *argv)
 	while(run);
 
 	SPDY_stop_daemon(daemon);
-	
+
 	SPDY_deinit();
-	
+
 	return 0;
 }
 
