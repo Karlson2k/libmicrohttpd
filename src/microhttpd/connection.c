@@ -834,8 +834,8 @@ build_header_response (struct MHD_Connection *connection)
 
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
     if ( (pos->kind == kind) &&
-         (! ( (pos->value == response_has_keepalive) &&
-              (MHD_YES == must_add_close) &&
+         (! ( (MHD_YES == must_add_close) &&
+              (pos->value == response_has_keepalive) &&
               (0 == strcasecmp (pos->header,
                                 MHD_HTTP_HEADER_CONNECTION) ) ) ) )
       size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
