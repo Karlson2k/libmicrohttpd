@@ -128,6 +128,8 @@ static char* strcopy(const char *s, size_t len)
 {
   char *dst;
   dst = malloc(len+1);
+  if (NULL == dst)
+    abort ();
   memcpy(dst, s, len);
   dst[len] = '\0';
   return dst;
