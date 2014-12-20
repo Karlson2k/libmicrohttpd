@@ -75,20 +75,28 @@ extern MHD_PanicCallback mhd_panic;
  */
 extern void *mhd_panic_cls;
 
+/* If we have Clang or gcc >= 4.5, use __buildin_unreachable() */
+#if defined(__clang__) || (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
+#define BUILTIN_NOT_REACHED __builtin_unreachable()
+#else
+#define BUILTIN_NOT_REACHED
+#endif
+
+
 #if HAVE_MESSAGES
 /**
  * Trigger 'panic' action based on fatal errors.
  *
  * @param msg error message (const char *)
  */
-#define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg)
+#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg); BUILTIN_NOT_REACHED; } while (0)
 #else
 /**
  * Trigger 'panic' action based on fatal errors.
  *
  * @param msg error message (const char *)
  */
-#define MHD_PANIC(msg) mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL)
+#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL); BUILTIN_NOT_REACHED; } while (0)
 #endif
 
 
