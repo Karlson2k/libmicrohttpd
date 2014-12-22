@@ -72,6 +72,13 @@
 #define MHD_str_equal_caseless_n_(a,b,n) (0==_strnicmp((a),(b),(n)))
 #endif
 
+/* Platform-independent snprintf name */
+#if !defined(_WIN32) || defined(__CYGWIN__)
+#define MHD_snprintf_ snprintf
+#else
+#define MHD_snprintf_ W32_snprintf
+#endif
+
 
 
 /* MHD_socket_close_(fd) close any FDs (non-W32) / close only socket FDs (W32) */

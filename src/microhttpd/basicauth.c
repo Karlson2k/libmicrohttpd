@@ -121,7 +121,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   size_t hlen = strlen(realm) + strlen("Basic realm=\"\"") + 1;
   char header[hlen];
 
-  snprintf (header, 
+  MHD_snprintf_ (header, 
 	    sizeof (header), 
 	    "Basic realm=\"%s\"", 
 	    realm);

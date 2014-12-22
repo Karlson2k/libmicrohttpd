@@ -791,7 +791,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
   /* Building the authentication header */
-  hlen = snprintf (NULL,
+  hlen = MHD_snprintf_(NULL,
 		   0,
 		   "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
 		   realm,
@@ -803,7 +803,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
   {
     char header[hlen + 1];
 
-    snprintf (header,
+    MHD_snprintf_(header,
 	      sizeof(header),
 	      "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
 	      realm,
