@@ -9,7 +9,18 @@
 #ifndef _SEARCH_H_
 #define _SEARCH_H_
 
+#ifndef _MSC_FULL_VER
 #include <sys/cdefs.h>
+#endif  /* _MSC_FULL_VER */
+#if !defined(__BEGIN_DECLS) || !defined(__END_DECLS)
+#if defined(__cplusplus)
+#define	__BEGIN_DECLS	extern "C" {
+#define	__END_DECLS	};
+#else  /* !__cplusplus */
+#define	__BEGIN_DECLS
+#define	__END_DECLS
+#endif /* !__cplusplus */
+#endif /* !__BEGIN_DECLS || !__END_DECLS */
 #include <sys/types.h>
 
 typedef	enum {
