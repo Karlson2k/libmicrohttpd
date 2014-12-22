@@ -1,3 +1,6 @@
+Mon Dec 22 16:33:18 CET 2014
+	Releasing 0.9.39. -CG
+
 Mon Dec 22 13:02:36 CET 2014
 	Fix generated compiler flags for Solaris Studio linker (#3584). -CG
 
