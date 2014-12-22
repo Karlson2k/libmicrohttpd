@@ -191,6 +191,9 @@ int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
  */
 int MHD_W32_random_(void);
 
+/* Emulate snprintf function on W32 */
+int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...);
+
 #ifdef __cplusplus
 }
 #endif

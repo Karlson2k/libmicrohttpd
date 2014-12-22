@@ -29,6 +29,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 
 /**
@@ -639,4 +641,28 @@ int MHD_W32_random_(void)
   rnd_val = (16807 * (rnd_val % 127773) - 2836 * (rnd_val / 127773))
                & 0x7fffffff;
   return (int)rnd_val;
+}
+
+/* Emulate snprintf function on W32 */
+int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...)
+{
+  int ret;
+  va_list args;
+  if (0 != n && NULL != s )
+  {
+    va_start(args, format);
+    ret = _vsnprintf(s, n, format, args);
+    va_end(args);
+    if (n == ret)
+      s[n - 1] = 0;
+    if (ret >= 0)
+      return ret;
+  }
+  va_start(args, format);
+  ret = _vscprintf(format, args);
+  va_end(args);
+  if (0 <= ret && 0 != n && NULL == s)
+    return -1;
+
+  return ret;
 }
