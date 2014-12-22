@@ -197,4 +197,9 @@ typedef int MHD_pipe;
 typedef MHD_socket MHD_pipe;
 #endif /* ! MHD_DONT_USE_PIPES */
 
+#if !defined(IPPROTO_IPV6) && defined(_MSC_FULL_VER) && _WIN32_WINNT >= 0x0501
+/* VC use IPPROTO_IPV6 as part of enum */
+#define IPPROTO_IPV6 IPPROTO_IPV6
+#endif
+
 #endif
