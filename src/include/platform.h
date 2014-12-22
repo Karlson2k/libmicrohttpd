@@ -148,6 +148,10 @@
 #define SHUT_RDWR SD_BOTH
 #endif
 
+#if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
+#define _SSIZE_T_DEFINED
+typedef intptr_t ssize_t;
+#endif // !_SSIZE_T_DEFINED */
 #ifndef MHD_SOCKET_DEFINED
 /**
  * MHD_socket is type for socket FDs
