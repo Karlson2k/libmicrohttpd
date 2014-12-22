@@ -1326,7 +1326,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
 	{
 	  /* make socket non-blocking */
-#ifndef MINGW
+#if !defined(WINDOWS) || defined(CYGWIN)
 	  int flags = fcntl (connection->socket_fd, F_GETFL);
 	  if ( (-1 == flags) ||
 	       (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
@@ -3926,7 +3926,7 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (daemon->worker_pool_size > 0) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
-#ifndef MINGW
+#if !defined(WINDOWS) || defined(CYGWIN)
       int sk_flags;
 #else
       unsigned long sk_flags;
@@ -3945,7 +3945,7 @@ MHD_start_daemon_va (unsigned int flags,
       /* Accept must be non-blocking. Multiple children may wake up
        * to handle a new connection, but only one will win the race.
        * The others must immediately return. */
-#ifndef MINGW
+#if !defined(WINDOWS) || defined(CYGWIN)
       sk_flags = fcntl (socket_fd, F_GETFL);
       if (sk_flags < 0)
         goto thread_failed;
@@ -3955,7 +3955,7 @@ MHD_start_daemon_va (unsigned int flags,
       sk_flags = 1;
       if (SOCKET_ERROR == ioctlsocket (socket_fd, FIONBIO, &sk_flags))
         goto thread_failed;
-#endif // MINGW
+#endif /* WINDOWS && !CYGWIN */
 
       /* Allocate memory for pooled objects */
       daemon->worker_pool = malloc (sizeof (struct MHD_Daemon)
