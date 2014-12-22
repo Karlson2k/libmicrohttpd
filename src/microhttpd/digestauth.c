@@ -114,7 +114,7 @@ digest_calc_ha1 (const char *alg,
   MD5Update (&md5, ":", 1);
   MD5Update (&md5, password, strlen (password));
   MD5Final (ha1, &md5);
-  if (0 == strcasecmp (alg, "md5-sess"))
+  if (MHD_str_equal_caseless_(alg, "md5-sess"))
     {
       MD5Init (&md5);
       MD5Update (&md5, ha1, sizeof (ha1));
@@ -246,7 +246,7 @@ lookup_sub_value (char *dest,
 	    return 0; /* end quote not found */
 	  qn = q2 + 1;
 	}
-      if ( (0 == strncasecmp (ptr,
+      if ((MHD_str_equal_caseless_n_(ptr,
 			      key,
 			      keylen)) &&
 	   (eq == &ptr[keylen]) )

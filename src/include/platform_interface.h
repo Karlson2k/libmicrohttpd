@@ -31,6 +31,49 @@
 #include "w32functions.h"
 #endif
 
+/* ***************************** 
+     General function mapping 
+   *****************************/
+#if !defined(_WIN32) || defined(__CYGWIN__)
+/**
+ * Check two strings case-insensitive equality
+ * @param a first string to check
+ * @param b second string to check
+ * @return boolean true if strings are equal, boolean false if strings are unequal
+ */
+#define MHD_str_equal_caseless_(a,b) (0==strcasecmp((a),(b)))
+#else
+/**
+ * Check two strings case-insensitive equality
+ * @param a first string to check
+ * @param b second string to check
+ * @return boolean true if strings are equal, boolean false if strings are unequal
+ */
+#define MHD_str_equal_caseless_(a,b) (0==_stricmp((a),(b)))
+#endif
+
+#if !defined(_WIN32) || defined(__CYGWIN__)
+/**
+ * Check not more than n chars in two strings case-insensitive equality
+ * @param a first string to check
+ * @param b second string to check
+ * @param n maximum number of chars to check
+ * @return boolean true if strings are equal, boolean false if strings are unequal
+ */
+#define MHD_str_equal_caseless_n_(a,b,n) (0==strncasecmp((a),(b),(n)))
+#else
+/**
+ * Check not more than n chars in two strings case-insensitive equality
+ * @param a first string to check
+ * @param b second string to check
+ * @param n maximum number of chars to check
+ * @return boolean true if strings are equal, boolean false if strings are unequal
+ */
+#define MHD_str_equal_caseless_n_(a,b,n) (0==_strnicmp((a),(b),(n)))
+#endif
+
+
+
 /* MHD_socket_close_(fd) close any FDs (non-W32) / close only socket FDs (W32) */
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #define MHD_socket_close_(fd) close((fd))
