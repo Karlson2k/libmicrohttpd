@@ -33,6 +33,9 @@
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
 #endif /* _WIN32 && MHD_W32_MUTEX_ */
+#if defined(_WIN32)
+#include <io.h> /* for lseek(), read() */
+#endif /* _WIN32 */
 
 
 /**
