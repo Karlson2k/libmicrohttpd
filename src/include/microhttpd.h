@@ -166,7 +166,14 @@ typedef intptr_t ssize_t;
 #endif
 
 #ifndef _MHD_EXTERN
+#if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
+#elif defined (_WIN32) && defined(MHD_W32DLL)
+/* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
+#define _MHD_EXTERN __declspec(dllimport) 
+#else
+#define _MHD_EXTERN extern
+#endif
 #endif
 
 #ifndef MHD_SOCKET_DEFINED

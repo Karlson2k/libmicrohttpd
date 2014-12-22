@@ -40,7 +40,21 @@
 #ifdef _MHD_EXTERN
 #undef _MHD_EXTERN
 #endif /* _MHD_EXTERN */
+#if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
+#elif defined (_WIN32) && defined(MHD_W32DLL)
+#define _MHD_EXTERN __declspec(dllimport) 
+#else
+#define _MHD_EXTERN extern
+#endif
+#elif !defined(_MHD_EXTERN) /* && BUILDING_MHD_LIB */
+#if defined(_WIN32) && defined(MHD_W32LIB)
+#define _MHD_EXTERN extern
+#elif defined (_WIN32) && defined(MHD_W32DLL)
+#define _MHD_EXTERN extern __declspec(dllexport) 
+#else
+#define _MHD_EXTERN extern
+#endif
 #endif /* BUILDING_MHD_LIB */
 
 #define _XOPEN_SOURCE_EXTENDED  1
