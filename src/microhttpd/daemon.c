@@ -4421,7 +4421,21 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls)
 const char *
 MHD_get_version (void)
 {
+#ifdef PACKAGE_VERSION
   return PACKAGE_VERSION;
+#else  /* !PACKAGE_VERSION */
+  static char ver[12] = "\0\0\0\0\0\0\0\0\0\0\0";
+  if (0 == ver[0])
+  {
+    int res = MHD_snprintf_(ver, sizeof(ver), "%x.%x.%x",
+                            (((int)MHD_VERSION >> 24) & 0xFF),
+                            (((int)MHD_VERSION >> 16) & 0xFF),
+                            (((int)MHD_VERSION >> 8) & 0xFF));
+    if (0 >= res || sizeof(ver) <= res)
+      return "0.0.0"; /* Can't return real version*/
+  }
+  return ver;
+#endif /* !PACKAGE_VERSION */
 }
 
 
