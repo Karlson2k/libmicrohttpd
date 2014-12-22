@@ -37,6 +37,7 @@
 #include "connection.h"
 #include "memorypool.h"
 #include <limits.h>
+#include "autoinit_funcs.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>
@@ -4538,14 +4539,6 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 }
 
 
-#ifdef __GNUC__
-#define FUNC_CONSTRUCTOR(f) static void __attribute__ ((constructor)) f
-#define FUNC_DESTRUCTOR(f) static void __attribute__ ((destructor)) f
-#else  // !__GNUC__
-#define FUNC_CONSTRUCTOR(f) _MHD_EXTERN void f
-#define FUNC_DESTRUCTOR(f) _MHD_EXTERN void f
-#endif  // __GNUC__
-
 #if HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -4587,7 +4580,7 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 /**
  * Initialize do setup work.
  */
-FUNC_CONSTRUCTOR (MHD_init) ()
+void MHD_init(void)
 {
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
@@ -4619,7 +4612,7 @@ FUNC_CONSTRUCTOR (MHD_init) ()
 }
 
 
-FUNC_DESTRUCTOR (MHD_fini) ()
+void MHD_fini(void)
 {
 #if HTTPS_SUPPORT
   gnutls_global_deinit ();
@@ -4629,6 +4622,8 @@ FUNC_DESTRUCTOR (MHD_fini) ()
     WSACleanup();
 #endif
 }
+
+_SET_INIT_AND_DEINIT_FUNCS(MHD_init, MHD_fini);
 
 /* end of daemon.c */
 
