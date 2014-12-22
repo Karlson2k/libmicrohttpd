@@ -1,3 +1,6 @@
+Mon Dec 22 13:02:36 CET 2014
+	Fix generated compiler flags for Solaris Studio linker (#3584). -CG
+
 Sat Dec 20 00:35:40 CET 2014
 	Adding MHD_http_unescape() to public API (#3585). -CG
 	Updating documentation to document

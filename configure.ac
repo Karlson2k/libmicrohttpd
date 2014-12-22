@@ -447,10 +447,11 @@ case "$host" in
     ;;
   *)
     dnl on other compilers, check if we can do -fvisibility=hidden
-    AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
+    AX_CHECK_LINK_FLAG([-fvisibility=hidden],
+      [AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
                            [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
                                        [defines how to decorate public symbols while building])
-                            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])
+                            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])])
     ;;
 esac
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
