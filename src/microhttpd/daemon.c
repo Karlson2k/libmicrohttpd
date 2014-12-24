@@ -1110,9 +1110,15 @@ create_thread (MHD_thread_handle_ *thread,
   errno = EINVAL;
   return ret;
 #elif defined(MHD_USE_W32_THREADS)
+  DWORD threadID;
   *thread = CreateThread(NULL, daemon->thread_stack_size, start_routine,
-                          arg, 0, NULL);
-  return (NULL != (*thread)) ? 0 : 1;
+                          arg, 0, &threadID);
+  if (NULL == (*thread))
+    return EINVAL;
+
+  W32_SetThreadName(threadID, "libmicrohttpd");
+
+  return 0;
 #endif
 }
 

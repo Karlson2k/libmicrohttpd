@@ -666,3 +666,39 @@ int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ..
 
   return ret;
 }
+
+#ifdef _MSC_FULL_VER
+/**
+ * Set thread name
+ * @param thread_id ID of thread, -1 for current thread
+ * @param thread_name name to set
+ */
+void W32_SetThreadName(const DWORD thread_id, const char *thread_name)
+{
+  static const DWORD VC_SETNAME_EXC = 0x406D1388;
+#pragma pack(push,8)
+  struct thread_info_struct
+  {
+    DWORD type;   // Must be 0x1000.
+    LPCSTR name;  // Pointer to name (in user address space).
+    DWORD ID;     // Thread ID (-1=caller thread).
+    DWORD flags;  // Reserved for future use, must be zero.
+  } thread_info;
+#pragma pack(pop)
+
+  if (NULL == thread_name)
+    return;
+
+  thread_info.type  = 0x1000;
+  thread_info.name  = thread_name;
+  thread_info.ID    = thread_id;
+  thread_info.flags = 0;
+
+  __try
+  { /* This exception is intercepted by debugger */
+    RaiseException(VC_SETNAME_EXC, 0, sizeof(thread_info) / sizeof(ULONG_PTR), (ULONG_PTR*)&thread_info);
+  }
+  __except (EXCEPTION_EXECUTE_HANDLER)
+  {}
+}
+#endif /* _MSC_FULL_VER */

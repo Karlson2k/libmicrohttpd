@@ -194,6 +194,19 @@ int MHD_W32_random_(void);
 /* Emulate snprintf function on W32 */
 int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...);
 
+#ifndef _MSC_FULL_VER
+/* Thread name available only for VC-compiler */
+static void W32_SetThreadName(const DWORD thread_id, const char *thread_name)
+{ }
+#else  /* _MSC_FULL_VER */
+/**
+ * Set thread name
+ * @param thread_id ID of thread, -1 for current thread
+ * @param thread_name name to set
+ */
+void W32_SetThreadName(const DWORD thread_id, const char *thread_name);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
