@@ -2590,7 +2590,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           end =
             MHD_get_response_header (connection->response,
 				     MHD_HTTP_HEADER_CONNECTION);
-          client_close = ((NULL != end) && (0 == strcasecmp (end, "close")));
+          client_close = ((NULL != end) && (MHD_str_equal_caseless_(end, "close")));
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if ( (NULL != daemon->notify_completed) &&
