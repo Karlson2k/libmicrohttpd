@@ -1,6 +1,8 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = contrib src m4 .
-EXTRA_DIST = acinclude.m4 libmicrohttpd.pc.in libmicrospdy.pc.in
+EXTRA_DIST = acinclude.m4 libmicrohttpd.pc.in libmicrospdy.pc.in  \
+  w32/VS2013/libmicrohttpd.sln w32/VS2013/libmicrohttpd.vcxproj w32/VS2013/libmicrohttpd.vcxproj.filters \
+  w32/VS2013/hellobrowser.vcxproj w32/VS2013/hellobrowser.vcxproj.filters w32/VS2013/MHD_config.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc libmicrospdy.pc
