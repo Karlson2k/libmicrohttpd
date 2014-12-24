@@ -6,4 +6,4 @@ endif
 
 include_HEADERS = microhttpd.h $(microspdy)
 
-EXTRA_DIST = platform.h platform_interface.h w32functions.h autoinit_functions.h
+EXTRA_DIST = platform.h platform_interface.h w32functions.h autoinit_funcs.h
