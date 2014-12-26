@@ -202,8 +202,8 @@ typedef HANDLE MHD_thread_handle_;
 #define MHD_THRD_RTRN_TYPE_ void*
 #define MHD_THRD_CALL_SPEC_
 #elif defined(MHD_USE_W32_THREADS)
-#define MHD_THRD_RTRN_TYPE_ DWORD
-#define MHD_THRD_CALL_SPEC_ WINAPI
+#define MHD_THRD_RTRN_TYPE_ unsigned
+#define MHD_THRD_CALL_SPEC_ __stdcall
 #endif
 
 #if defined(MHD_USE_POSIX_THREADS)

@@ -63,6 +63,7 @@
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
+#include <process.h>
 #endif
 
 #ifndef HAVE_ACCEPT4
@@ -1110,11 +1111,11 @@ create_thread (MHD_thread_handle_ *thread,
   errno = EINVAL;
   return ret;
 #elif defined(MHD_USE_W32_THREADS)
-  DWORD threadID;
-  *thread = CreateThread(NULL, daemon->thread_stack_size, start_routine,
+  unsigned threadID;
+  *thread = (HANDLE)_beginthreadex(NULL, (unsigned)daemon->thread_stack_size, start_routine,
                           arg, 0, &threadID);
   if (NULL == (*thread))
-    return EINVAL;
+    return errno;
 
   W32_SetThreadName(threadID, "libmicrohttpd");
 
