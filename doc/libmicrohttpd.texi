@@ -1740,7 +1740,7 @@ Return @code{NULL} on error (i.e. invalid arguments, out of memory).
 @end deftypefun
 
 
-@deftypefun {struct MHD_Response *} MHD_create_response_from_fd_at_offset (uint64_t size, int fd, off_t offset)
+@deftypefun {struct MHD_Response *} MHD_create_response_from_fd_at_offset (size_t size, int fd, off_t offset)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.
 Note that you need to be a bit careful about @code{off_t} when
