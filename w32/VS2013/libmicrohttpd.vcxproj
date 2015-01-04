@@ -169,14 +169,14 @@
     <TargetName>$(ProjectName)_d</TargetName>
     <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">
     <TargetName>$(ProjectName)-dll_d</TargetName>
     <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">
@@ -197,13 +197,13 @@
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <TargetName>$(ProjectName)-dll</TargetName>
   </PropertyGroup>

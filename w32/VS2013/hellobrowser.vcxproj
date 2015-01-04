@@ -135,7 +135,7 @@
     <TargetName>$(ProjectName)_d</TargetName>
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -149,7 +149,7 @@
     <TargetName>$(ProjectName)-dll_d</TargetName>
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -161,7 +161,7 @@
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -175,7 +175,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)-dll</TargetName>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)</IntDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">
     <ClCompile>
