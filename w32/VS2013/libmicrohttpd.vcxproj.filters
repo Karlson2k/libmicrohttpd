@@ -16,6 +16,10 @@
     <Filter Include="Source Files\platform_interface">
       <UniqueIdentifier>{af799bf7-9787-4134-8e56-9e5aae50c7e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Template Files">
+      <UniqueIdentifier>{df5ad836-e372-437b-a0e3-299d3675d6b4}</UniqueIdentifier>
+      <Extensions>in</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\microhttpd\base64.c">
@@ -101,5 +105,15 @@
     <ClInclude Include="..\..\src\include\autoinit_funcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="microhttpd_dll_res_vc.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="microhttpd_dll_res_vc.rc.in">
+      <Filter>Template Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

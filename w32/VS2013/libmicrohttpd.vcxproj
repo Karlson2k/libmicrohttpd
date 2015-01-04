@@ -65,6 +65,31 @@
     <ClInclude Include="..\..\src\microhttpd\tsearch.h" />
     <ClInclude Include="MHD_config.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="microhttpd_dll_res_vc.rc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">true</ExcludedFromBuild>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="microhttpd_dll_res_vc.rc.in">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command>PowerShell.exe -Version 3.0 -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "$(SolutionDir)gen_dll_res.ps1" -BasePath $(SolutionDir)</Command>
+      <Message>Generating .dll description resource</Message>
+      <Outputs>$(SolutionDir)microhttpd_dll_res_vc.rc</Outputs>
+      <AdditionalInputs>$(SolutionDir)gen_dll_res.ps1;$(SolutionDir).\..\..\configure.ac</AdditionalInputs>
+    </CustomBuild>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -156,6 +181,7 @@
     <OutDir>$(SolutionDir)\Output\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_d</TargetName>
+    <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
     <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">
@@ -163,7 +189,7 @@
     <OutDir>$(SolutionDir)\Output\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)-dll_d</TargetName>
-    <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
+    <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">
     <TargetName>$(ProjectName)_d</TargetName>
@@ -174,10 +200,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">
     <TargetName>$(ProjectName)-dll_d</TargetName>
-    <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
+    <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">
     <OutDir>$(SolutionDir)\Output\</OutDir>
@@ -189,9 +215,9 @@
     <OutDir>$(SolutionDir)\Output\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <CustomBuildAfterTargets>BuildLink</CustomBuildAfterTargets>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <TargetName>$(ProjectName)-dll</TargetName>
+    <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">
     <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
@@ -206,6 +232,7 @@
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <TargetName>$(ProjectName)-dll</TargetName>
+    <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">
     <ClCompile>
@@ -263,6 +290,9 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">
     <ClCompile>
@@ -320,6 +350,9 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">
     <ClCompile>
@@ -401,6 +434,9 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">
     <ClCompile>
@@ -482,6 +518,9 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
