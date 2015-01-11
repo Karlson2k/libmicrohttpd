@@ -1097,17 +1097,26 @@ the data being uploaded (excluding headers):
 @cindex POST method
 @cindex PUT method
 
-@itemize
-@item
-for a @code{POST} that fits into memory and that is encoded with a
-supported encoding, the @code{POST} data will @strong{NOT} be given in
-@var{upload_data} and is instead available as part of
-@code{MHD_get_connection_values()};
+@code{POST} data @strong{will} be made available
+incrementally in @var{upload_data}; even if @code{POST}
+data is available, the first time the callback is
+invoked there won't be upload data, as this is done
+just after MHD parses the headers.  If supported by
+the client and the HTTP version, the application can
+at this point queue an error response to possibly 
+avoid the upload entirely. If no response is generated,
+MHD will (if required) automatically send a 100 CONTINUE
+reply to the client.
 
-@item
-very large @code{POST} data @strong{will} be made available
-incrementally in @var{upload_data};
-@end itemize
+Afterwards, POST data will be passed to the callback
+to be processed incrementally by the application. The
+application may return @code{MHD_NO} to forcefully 
+terminate the TCP connection without generating a
+proper HTTP response. Once all of the upload data has
+been provided to the application, the application
+will be called again with 0 bytes of upload data.
+At this point, a response should be queued to complete
+the handling of the request.
 
 @item upload_data_size
 set initially to the size of the @var{upload_data} provided; this
