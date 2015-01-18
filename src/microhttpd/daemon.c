@@ -4154,7 +4154,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   /* now, collect threads from thread pool */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      while (NULL != (pos = daemon->connections_head))
+      for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
 	{
 	  if (0 != MHD_join_thread_ (pos->pid))
 	    MHD_PANIC ("Failed to join a thread\n");
@@ -4633,4 +4633,3 @@ void MHD_fini(void)
 _SET_INIT_AND_DEINIT_FUNCS(MHD_init, MHD_fini);
 
 /* end of daemon.c */
-

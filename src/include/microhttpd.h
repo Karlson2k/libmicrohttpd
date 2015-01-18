@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093900
+#define MHD_VERSION 0x00093901
 
 /**
  * MHD-internal return code for "YES".
@@ -170,7 +170,7 @@ typedef intptr_t ssize_t;
 #define _MHD_EXTERN extern
 #elif defined (_WIN32) && defined(MHD_W32DLL)
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
-#define _MHD_EXTERN __declspec(dllimport) 
+#define _MHD_EXTERN __declspec(dllimport)
 #else
 #define _MHD_EXTERN extern
 #endif

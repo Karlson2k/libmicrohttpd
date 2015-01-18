@@ -1,3 +1,7 @@
+Sun Jan 18 20:09:06 CET 2015
+	Fix potential infinite loop on shutdown in multi-threaded mode
+	under certain conditions. -CG
+
 Mon Dec 22 16:33:18 CET 2014
 	Releasing 0.9.39. -CG
 
