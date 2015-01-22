@@ -294,7 +294,7 @@ typedef SOCKET MHD_socket;
  * with the SHOUTcast "ICY" line instad of "HTTP".
  * @ingroup specialized
  */
-#define MHD_ICY_FLAG ((uint32_t)(1 << 31))
+#define MHD_ICY_FLAG ((uint32_t)(((uint32_t)1) << 31))
 
 /**
  * @defgroup headers HTTP headers
