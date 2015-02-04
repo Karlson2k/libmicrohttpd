@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_get.c
+ * @file test_get.c
  * @brief  Testcase for libmicrohttpd GET operations
  *         TODO: test parsing of query
  * @author Christian Grothoff
@@ -271,7 +271,7 @@ testExternalGet ()
   fd_set ws;
   fd_set es;
   MHD_socket max;
-  int running; 
+  int running;
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
@@ -461,41 +461,41 @@ testStopRace (int poll_flag)
     struct sockaddr_in sin;
     MHD_socket fd;
     struct MHD_Daemon *d;
-    
+
     d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG | poll_flag,
                          1081, NULL, NULL, &ahc_echo, "GET",
                          MHD_OPTION_CONNECTION_TIMEOUT, 5, MHD_OPTION_END);
     if (d == NULL)
        return 16;
-    
+
     fd = socket (PF_INET, SOCK_STREAM, 0);
     if (fd == MHD_INVALID_SOCKET)
     {
        fprintf(stderr, "socket error\n");
        return 256;
     }
-    
+
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_port = htons(1081);
     sin.sin_addr.s_addr = htonl(0x7f000001);
-    
+
     if (connect (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
        fprintf(stderr, "connect error\n");
        MHD_socket_close_ (fd);
        return 512;
     }
-    
+
     /*  printf("Waiting\n"); */
     /* Let the thread get going. */
     usleep(500000);
-    
+
     /* printf("Stopping daemon\n"); */
     MHD_stop_daemon (d);
- 
+
     MHD_socket_close_ (fd);
-    
+
     /* printf("good\n"); */
     return 0;
 }

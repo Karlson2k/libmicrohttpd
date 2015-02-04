@@ -741,7 +741,9 @@ build_header_response (struct MHD_Connection *connection)
              close the connection */
           /* 'close' header doesn't exist yet, see if we need to add one;
              if the client asked for a close, no need to start chunk'ing */
-          if (MHD_YES == keepalive_possible (connection))
+          if ( (MHD_YES == keepalive_possible (connection)) &&
+               (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
+                                         connection->version) ) )
             {
               have_encoding = MHD_get_response_header (connection->response,
                                                        MHD_HTTP_HEADER_TRANSFER_ENCODING);
@@ -762,7 +764,8 @@ build_header_response (struct MHD_Connection *connection)
             }
           else
             {
-              /* Keep alive not possible => set close header if not present */
+              /* Keep alive or chunking not possible
+                 => set close header if not present */
               if (NULL == response_has_close)
                 must_add_close = MHD_YES;
             }
@@ -782,8 +785,8 @@ build_header_response (struct MHD_Connection *connection)
       if ( (MHD_SIZE_UNKNOWN != connection->response->total_size) &&
            (NULL == have_content_length) &&
            ( (NULL == connection->method) ||
-             (!MHD_str_equal_caseless_ (connection->method,
-                               MHD_HTTP_METHOD_CONNECT)) ) )
+             (! MHD_str_equal_caseless_ (connection->method,
+                                         MHD_HTTP_METHOD_CONNECT)) ) )
         {
           /*
             Here we add a content-length if one is missing; however,

@@ -1,3 +1,8 @@
+Wed Feb  4 20:34:22 CET 2015
+	Fix issue where for HTTP/1.0-clients that set
+	Connection: Keep-Alive header a response of
+	indefinite size was generated with chunked encoding. -CG
+
 Sun Jan 18 20:09:06 CET 2015
 	Fix potential infinite loop on shutdown in multi-threaded mode
 	under certain conditions. -CG
