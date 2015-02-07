@@ -1,3 +1,4 @@
+# This Makefile.am is in the public domain
 SUBDIRS  = .
 
 AM_CFLAGS = -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"

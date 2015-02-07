@@ -1,3 +1,4 @@
+# This Makefile.am is in the public domain
 all:
 	@echo -e \
 "Generate documentation:\n" \

@@ -1,3 +1,4 @@
+# This Makefile.am is in the public domain
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = contrib src m4 .
 EXTRA_DIST = acinclude.m4 libmicrohttpd.pc.in libmicrospdy.pc.in  \

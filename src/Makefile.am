@@ -1,3 +1,4 @@
+# This Makefile.am is in the public domain
 if HAVE_CURL
 curltests = testcurl
 if HAVE_ZZUF

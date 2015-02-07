@@ -1,3 +1,4 @@
+# This Makefile.am is in the public domain
 man_MANS = libmicrohttpd.3
 
 SUBDIRS = . examples doxygen
