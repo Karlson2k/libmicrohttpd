@@ -1,6 +1,6 @@
 /*
  *  AutoinitFuncs: Automatic Initialization and Deinitialization Functions
- *  Copyright(C) 2014  Karlson2k (Evgeny Grin)
+ *  CopyrightCopyright (C) 2014  Karlson2k (Evgeny Grin)
  *
  *  This header is free software; you can redistribute it and / or
  *  modify it under the terms of the GNU Lesser General Public

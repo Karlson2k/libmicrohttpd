@@ -1,7 +1,7 @@
 /* DO NOT CHANGE THIS LINE */
 /*
      This file is part of libmicrohttpd
-     (C) 2007, 2009 Christian Grothoff
+     Copyright (C) 2007, 2009 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published

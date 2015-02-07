@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2007 Lymba
+     Copyright (C) 2007 Lymba
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     (C) 2015 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2015 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
