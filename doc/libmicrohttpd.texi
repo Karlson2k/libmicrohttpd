@@ -269,6 +269,33 @@ specifies path to libgnutls installation
 
 @end table
 
+@section Validity of pointers
+
+MHD will give applications access to its internal data structures
+via pointers via arguments and return values from its API.  This
+creates the question as to how long those pointers are assured to
+stay valid.
+
+Most MHD data structures are associated with the connection of an
+HTTP client.  Thus, pointers associated with a connection are
+typically valid until the connection is finished, at which point
+MHD will call the @code{MHD_RequestCompletedCallback} if one is
+registered.  Applications that have such a callback registered
+may assume that keys and values from the
+@code{MHD_KeyValueIterator}, return values from
+@code{MHD_lookup_connection_value} and the @code{url},
+@code{method} and @code{version} arguments to the
+@code{MHD_AccessHandlerCallback} will remain valid until the
+respective @code{MHD_RequestCompletedCallback} is invoked.
+
+In contrast, the @code{upload_data} argument of
+@code{MHD_RequestCompletedCallback} as well as all pointers
+from the @code{MHD_PostDataIterator} are only valid for the
+duration of the callback.
+
+Pointers returned from @code{MHD_get_response_header} are
+valid as long as the response itself is valid.
+
 
 @section Including the microhttpd.h header
 @cindex portability
