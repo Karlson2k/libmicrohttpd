@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093902
+#define MHD_VERSION 0x00093903
 
 /**
  * MHD-internal return code for "YES".
@@ -863,6 +863,14 @@ enum MHD_OPTION
    * This option must be followed by a `unsigned int` argument.
    */
   MHD_OPTION_LISTENING_ADDRESS_REUSE = 25,
+
+  /**
+   * Memory pointer for a password that decrypts the private key (key.pem)
+   * to be used by the HTTPS daemon. This option should be followed by a
+   * `const char *` argument.
+   * This should be used in conjunction with #MHD_OPTION_HTTPS_MEM_KEY.
+   */
+  MHD_OPTION_HTTPS_KEY_PASSWORD = 26
 };
 
 

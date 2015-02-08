@@ -508,6 +508,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 {
   gnutls_datum_t key;
   gnutls_datum_t cert;
+  int ret;
 
 #if GNUTLS_VERSION_MAJOR >= 3
   if (NULL != daemon->cert_callback)
@@ -545,9 +546,24 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      return gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
-						  &cert, &key,
-						  GNUTLS_X509_FMT_PEM);
+      if (NULL != daemon->https_key_password)
+        ret = gnutls_certificate_set_x509_key_mem2 (daemon->x509_cred,
+                                                    &cert, &key,
+                                                    GNUTLS_X509_FMT_PEM,
+                                                    daemon->https_key_password,
+                                                    0);
+
+      else
+        ret = gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
+                                                   &cert, &key,
+                                                   GNUTLS_X509_FMT_PEM);
+#if HAVE_MESSAGES
+      if (0 != ret)
+        MHD_DLOG (daemon,
+                  "GnuTLS failed to setup x509 certificate/key: %s\n",
+                  gnutls_strerror (ret));
+#endif
+      return ret;
     }
 #if GNUTLS_VERSION_MAJOR >= 3
   if (NULL != daemon->cert_callback)
@@ -3002,6 +3018,16 @@ parse_options_va (struct MHD_Daemon *daemon,
 		      opt);
 #endif
           break;
+        case MHD_OPTION_HTTPS_KEY_PASSWORD:
+	  if (0 != (daemon->options & MHD_USE_SSL))
+	    daemon->https_key_password = va_arg (ap, const char *);
+#if HAVE_MESSAGES
+	  else
+	    MHD_DLOG (daemon,
+		      "MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n",
+		      opt);
+#endif
+          break;
         case MHD_OPTION_HTTPS_MEM_CERT:
 	  if (0 != (daemon->options & MHD_USE_SSL))
 	    daemon->https_mem_cert = va_arg (ap, const char *);
@@ -3183,6 +3209,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		  /* all options taking one pointer */
 		case MHD_OPTION_SOCK_ADDR:
 		case MHD_OPTION_HTTPS_MEM_KEY:
+		case MHD_OPTION_HTTPS_KEY_PASSWORD:
 		case MHD_OPTION_HTTPS_MEM_CERT:
 		case MHD_OPTION_HTTPS_MEM_TRUST:
 		case MHD_OPTION_HTTPS_PRIORITIES:
@@ -4049,6 +4076,9 @@ MHD_start_daemon_va (unsigned int flags,
             }
         }
     }
+  /* API promises to never use the password after initialization,
+     so we additionally NULL it here to not deref a dangling pointer. */
+  daemon->https_key_password = NULL;
   return daemon;
 
 thread_failed:

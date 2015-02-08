@@ -1205,6 +1205,11 @@ struct MHD_Daemon
   const char *https_mem_cert;
 
   /**
+   * Pointer to 0-terminated HTTPS passphrase in memory.
+   */
+  const char *https_key_password;
+
+  /**
    * Pointer to our SSL/TLS certificate authority (in ASCII) in memory.
    */
   const char *https_mem_trust;

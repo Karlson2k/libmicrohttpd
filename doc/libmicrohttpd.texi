@@ -661,6 +661,19 @@ HTTPS daemon.  This option should be followed by an
 "const char*" argument.
 This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_CERT'.
 
+@item MHD_OPTION_HTTPS_KEY_PASSWORD
+@cindex SSL
+@cindex TLS
+Memory pointer to the password that decrypts the
+private key to be used by the HTTPS daemon.
+This option should be followed by an
+"const char*" argument.
+This should be used in conjunction with 'MHD_OPTION_HTTPS_MEM_KEY'.
+
+The password (or passphrase) is only used immediately during
+@code{MHD_start_daemon()}.  Thus, the application may want to
+erase it from memory afterwards for additional security.
+
 @item MHD_OPTION_HTTPS_MEM_CERT
 @cindex SSL
 @cindex TLS
@@ -1103,14 +1116,14 @@ data is available, the first time the callback is
 invoked there won't be upload data, as this is done
 just after MHD parses the headers.  If supported by
 the client and the HTTP version, the application can
-at this point queue an error response to possibly 
+at this point queue an error response to possibly
 avoid the upload entirely. If no response is generated,
 MHD will (if required) automatically send a 100 CONTINUE
 reply to the client.
 
 Afterwards, POST data will be passed to the callback
 to be processed incrementally by the application. The
-application may return @code{MHD_NO} to forcefully 
+application may return @code{MHD_NO} to forcefully
 terminate the TCP connection without generating a
 proper HTTP response. Once all of the upload data has
 been provided to the application, the application
