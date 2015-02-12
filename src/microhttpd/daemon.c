@@ -4076,9 +4076,12 @@ MHD_start_daemon_va (unsigned int flags,
             }
         }
     }
+#if HTTPS_SUPPORT
   /* API promises to never use the password after initialization,
      so we additionally NULL it here to not deref a dangling pointer. */
   daemon->https_key_password = NULL;
+#endif /* HTTPS_SUPPORT */
+
   return daemon;
 
 thread_failed:
