@@ -261,6 +261,10 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /F /I /Y $(IntermediateOutputPath)$(TargetName).pdb $(OutputPath)</Command>
+      <Message>Copy .pdb to output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">
     <ClCompile>
@@ -321,6 +325,10 @@
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
       <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
     </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /F /I /Y $(IntermediateOutputPath)$(TargetName).pdb $(OutputPath)</Command>
+      <Message>Copy .pdb to output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">
     <ClCompile>
