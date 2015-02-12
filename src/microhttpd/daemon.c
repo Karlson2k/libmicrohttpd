@@ -546,13 +546,22 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.data = (unsigned char *) daemon->https_mem_cert;
       cert.size = strlen (daemon->https_mem_cert);
 
-      if (NULL != daemon->https_key_password)
+      if (NULL != daemon->https_key_password) {
+#if GNUTLS_VERSION_MAJOR >= 3
         ret = gnutls_certificate_set_x509_key_mem2 (daemon->x509_cred,
                                                     &cert, &key,
                                                     GNUTLS_X509_FMT_PEM,
                                                     daemon->https_key_password,
                                                     0);
-
+#else
+#if HAVE_MESSAGES
+	MHD_DLOG (daemon,
+                  "Failed to setup x509 certificate/key: pre 3.X.X version " \
+		  "of GnuTLS does not support setting key password");
+#endif
+	return -1;
+#endif
+      }
       else
         ret = gnutls_certificate_set_x509_key_mem (daemon->x509_cred,
                                                    &cert, &key,
