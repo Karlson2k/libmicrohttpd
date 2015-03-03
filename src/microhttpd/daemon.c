@@ -3333,7 +3333,11 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
 
+#ifdef HAVE_EPOLL_CREATE1
   daemon->epoll_fd = epoll_create1 (EPOLL_CLOEXEC);
+#else  /* !HAVE_EPOLL_CREATE1 */
+  daemon->epoll_fd = epoll_create (MAX_EVENTS);
+#endif /* !HAVE_EPOLL_CREATE1 */
   if (-1 == daemon->epoll_fd)
     {
 #if HAVE_MESSAGES
@@ -3343,6 +3347,20 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
+#ifndef HAVE_EPOLL_CREATE1
+  else
+    {
+      int fdflags = fcntl (daemon->epoll_fd, F_GETFD);
+      if (0 > fdflags || 0 > fcntl (daemon->epoll_fd, F_SETFD, fdflags | FD_CLOEXEC))
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Failed to change flags on epoll fd: %s\n",
+                    MHD_socket_last_strerr_ ());
+#endif /* HAVE_MESSAGES */
+        }
+    }
+#endif /* !HAVE_EPOLL_CREATE1 */
   if (0 == EPOLL_CLOEXEC)
     make_nonblocking_noninheritable (daemon,
 				     daemon->epoll_fd);

@@ -293,6 +293,18 @@ if test "$enable_epoll" != "no"; then
   fi
 fi
 
+if test "x$enable_epoll" = "xyes"; then
+  AC_CACHE_CHECK([for epoll_create1()], [mhd_cv_have_epoll_create1], [
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[
+int fd;
+fd = epoll_create1(EPOLL_CLOEXEC);]])],
+      [mhd_cv_have_epoll_create1=yes],
+      [mhd_cv_have_epoll_create1=no])])
+  AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
+    AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])])
+fi
+
 if test "x$HAVE_POSIX_THREADS" = "xyes"; then
   # Check for pthread_setname_np()
   SAVE_LIBS="$LIBS"
