@@ -114,6 +114,7 @@ AC_CHECK_HEADER([windows.h],
 
 # for pkg-config
 MHD_LIBDEPS=""
+MHD_REQ_PRIVATE=''
 # Check system type
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
@@ -630,30 +631,28 @@ fi
 
 # gnutls
 GNUTLS_CPPFLAGS=""
-GNUTLS_CFLAGS=""
 GNUTLS_LDFLAGS=""
-GNUTLS_LIBS=""
 have_gnutls=no
 have_gnutls_sni=no
-AC_MSG_CHECKING(for gnutls)
-AC_ARG_WITH(gnutls,
-   [AC_HELP_STRING([--with-gnutls=PFX],[base of gnutls installation])],
-   [AC_MSG_RESULT([using prefix $with_gnutls])
+have_gnutls_pkgcfg=no
+AC_MSG_CHECKING([[how to find GnuTLS library]])
+AC_ARG_WITH([[gnutls]],
+   [AC_HELP_STRING([[--with-gnutls[=PFX]]],[use GnuTLS for HTTPS support, optional PFX overrides pkg-config data for GnuTLS headers (PFX/include) and libs (PFX/lib)])],
+   [
     case $with_gnutls in
       no)
+        AC_MSG_RESULT([[GnuTLS disabled]])
         ;;
       yes)
-        AC_CHECK_HEADERS([gnutls/gnutls.h],
-            [AC_CHECK_LIB([gnutls], [gnutls_priority_set], [
-              GNUTLS_LIBS="-lgnutls"
-              AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
-              have_gnutls=yes])])
+        AC_MSG_RESULT([[automatically, forced]])
         ;;
       *)
+        AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
         SAVE_LDFLAGS="$LDFLAGS"
         SAVE_CPPFLAGS="$CPPFLAGS"
         LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
+        have_gnutls_pkgcfg=no
           AC_CHECK_HEADERS([gnutls/gnutls.h],
             [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
               [
@@ -669,18 +668,78 @@ AC_ARG_WITH(gnutls,
         ;;
     esac
    ],
-   [AC_MSG_RESULT([--with-gnutls not specified])
-    AC_CHECK_HEADERS([gnutls/gnutls.h],
+   [AC_MSG_RESULT([[automatically]])
+   ])
+
+AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
+  [
+    PKG_CHECK_MODULES(GNUTLS, [[gnutls]], 
+      [
+       have_gnutls_pkgcfg='yes'
+       SAVE_CPPFLAGS="$CPPFLAGS"
+       SAVE_CFLAGS="$CFLAGS"
+       SAVE_LDFLAGS="$LDFLAGS"
+       SAVE_LIBS="$LIBS"
+       CPPFLAGS="$GNUTLS_CFLAGS $CPPFLAGS"
+       CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
+       LDFLAGS="$GNUTLS_LIBS $LDFLAGS"
+       LIBS="$LIBS $GNUTLS_LIBS"
+       AC_MSG_CHECKING([[whether GnuTLS is usable]])
+       AC_LINK_IFELSE([
+         AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
+                gnutls_session_t session;
+                gnutls_priority_t priorities;
+                gnutls_global_init();
+                gnutls_priority_init(&priorities, "NORMAL", NULL);
+                gnutls_init(&session, GNUTLS_SERVER);
+                gnutls_priority_set(session, priorities);
+          ]])],
+          [
+           AC_MSG_RESULT([[yes]])
+           have_gnutls=yes
+           GNUTLS_CPPLAGS="$GNUTLS_CFLAGS"
+           GNUTLS_LDFLAGS="$GNUTLS_LIBS"
+           AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
+           AC_LINK_IFELSE([
+             AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
+                    gnutls_datum_t data;
+                    gnutls_privkey_t key;
+                    gnutls_load_file("key.pem", &data);
+                    gnutls_privkey_import_x509_raw(key, &data, GNUTLS_X509_FMT_PEM, NULL, 0);
+                    gnutls_free(data.data);
+                  ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
+           AC_MSG_RESULT([[$have_gnutls_sni]])
+          ],
+          [
+           AC_MSG_RESULT([[no]])
+           have_gnutls=no
+          ])
+
+       AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])])
+       CPPFLAGS="$SAVE_CPPFLAGS"
+       CFLAGS="$SAVE_CFLAGS"
+       LDFLAGS="$SAVE_LDFLAGS"
+       LIBS="$SAVE_LIBS"
+      ], 
+      [
+       have_gnutls_pkgcfg='no'   
+       AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
             GNUTLS_LIBS="-lgnutls"
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
-          ])])])
+          ])])
+      ])
+  ])
+
+AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG_ERROR([[can't find usable libgnutls]])])
+
 AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
 AM_CONDITIONAL([HAVE_GNUTLS_SNI], [test "x$have_gnutls_sni" = "xyes"])
 
 AC_SUBST([GNUTLS_CPPFLAGS])
+AC_SUBST([GNUTLS_CFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
 
@@ -694,8 +753,8 @@ if test "x$enable_https" != "xno"
 then
   AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
           AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
-          MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $GNUTLS_CPPFLAGS $LIBGCRYPT_CFLAGS"
-          MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS $LIBGCRYPT_CFLAGS"
+          MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
+          MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
           MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
           MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
           enable_https=yes
@@ -773,6 +832,17 @@ AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
 
 # for pkg-config
+AS_IF([[test "x$enable_https" = "xyes" && test "x$have_gnutls_pkgcfg" = "xyes" ]], 
+ [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
+   MHD_REQ_PRIVATE='gnutls'
+   MHD_LIBDEPS_PKGCFG="${MHD_LIBDEPS//$GNUTLS_LIBS/}"
+ ],
+ [
+   MHD_REQ_PRIVATE=''
+   MHD_LIBDEPS_PKGCFG="$MHD_LIBDEPS"
+ ])
+AC_SUBST([MHD_REQ_PRIVATE])
+AC_SUBST([MHD_LIBDEPS_PKGCFG])
 AC_SUBST(MHD_LIBDEPS)
 
 AC_SUBST(CPPFLAGS)
