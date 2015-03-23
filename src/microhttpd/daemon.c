@@ -547,7 +547,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.size = strlen (daemon->https_mem_cert);
 
       if (NULL != daemon->https_key_password) {
-#if GNUTLS_VERSION_MAJOR >= 3
+#if GNUTLS_VERSION_NUMBER >= 0x030100
         ret = gnutls_certificate_set_x509_key_mem2 (daemon->x509_cred,
                                                     &cert, &key,
                                                     GNUTLS_X509_FMT_PEM,
