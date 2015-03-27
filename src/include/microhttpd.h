@@ -380,6 +380,7 @@ typedef SOCKET MHD_socket;
 #define MHD_HTTP_METHOD_OPTIONS "OPTIONS"
 #define MHD_HTTP_METHOD_POST "POST"
 #define MHD_HTTP_METHOD_PUT "PUT"
+#define MHD_HTTP_METHOD_PATCH "PATCH"
 #define MHD_HTTP_METHOD_TRACE "TRACE"
 
 /** @} */ /* end of group methods */
