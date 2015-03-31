@@ -631,6 +631,25 @@ pointer to a function of type @code{MHD_RequestCompletedCallback()}
 and second a pointer to a closure to pass to the request completed
 callback.  The second pointer maybe @code{NULL}.
 
+@item MHD_OPTION_NOTIFY_CONNECTION
+Register a function that should be called when the TCP connection to a
+client is opened or closed.  Note that
+@code{MHD_OPTION_NOTIFY_COMPLETED} and the @code{con_cls} argument to
+the @code{MHD_AccessHandlerCallback} are per HTTP request (and there
+can be multiple HTTP requests per TCP connection).  The registered
+callback is called twice per TCP connection, with
+@code{MHD_CONNECTION_NOTIFY_STARTED} and
+@code{MHD_CONNECTION_NOTIFY_CLOSED} respectively.  An additional
+argument can be used to store TCP connection specific information,
+which can be retrieved using @code{MHD_CONNECTION_INFO_SOCKET_CONTEXT}
+during the lifetime of the TCP connection.  The respective location is
+not the same as the HTTP-request-specific @code{con_cls} from the
+@code{MHD_AccessHandlerCallback}.
+
+This option should be followed by @strong{TWO} pointers.  First a
+pointer to a function of type @code{MHD_NotifyConnectionCallback()}
+and second a pointer to a closure to pass to the request completed
+callback.  The second pointer maybe @code{NULL}.
 
 @item MHD_OPTION_PER_IP_CONNECTION_LIMIT
 Limit on the number of (concurrent) connections made to the
@@ -2578,6 +2597,14 @@ after sending the HTTP header and clear it after finishing the footers
 automatically (if the platform supports it).  As the connection
 callbacks are invoked in between, those might be used to set different
 values for TCP-CORK and TCP-NODELAY in the meantime.
+
+@item MHD_CONNECTION_INFO_SOCKET_CONTEXT
+Returns the client-specific pointer to a @code{void *} that was
+(possibly) set during a @code{MHD_NotifyConnectionCallback} when the
+socket was first accepted.  Note that this is NOT the same as the
+@code{con_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
+@code{con_cls} is fresh for each HTTP request, while the
+@code{socket_context} is fresh for each socket.
 
 @end table
 @end deftp

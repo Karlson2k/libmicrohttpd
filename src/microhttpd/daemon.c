@@ -796,6 +796,7 @@ MHD_handle_connection (void *data)
   struct pollfd p[1];
 #endif
 
+
   timeout = con->daemon->connection_timeout;
   while ( (MHD_YES != con->daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
@@ -958,6 +959,13 @@ exit:
       MHD_destroy_response (con->response);
       con->response = NULL;
     }
+
+  if (NULL != con->daemon->notify_connection)
+    con->daemon->notify_connection (con->daemon->notify_connection_cls,
+                                    con,
+                                    &con->socket_context,
+                                    MHD_CONNECTION_NOTIFY_CLOSED);
+
   return (MHD_THRD_RTRN_TYPE_)0;
 }
 
@@ -1301,7 +1309,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
       errno = eno;
       return MHD_NO;
     }
-  memset (connection, 0, sizeof (struct MHD_Connection));
+  memset (connection,
+          0,
+          sizeof (struct MHD_Connection));
   connection->pool = MHD_pool_create (daemon->pool_size);
   if (NULL == connection->pool)
     {
@@ -1445,11 +1455,19 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	(MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 
+  if (NULL != daemon->notify_connection)
+    daemon->notify_connection (daemon->notify_connection_cls,
+                               connection,
+                               &connection->socket_context,
+                               MHD_CONNECTION_NOTIFY_STARTED);
+
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      res_thread_create = create_thread (&connection->pid, daemon,
-					 &MHD_handle_connection, connection);
+      res_thread_create = create_thread (&connection->pid,
+                                         daemon,
+					 &MHD_handle_connection,
+                                         connection);
       if (0 != res_thread_create)
         {
 	  eno = errno;
@@ -1508,6 +1526,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
   daemon->connections++;
   return MHD_YES;
  cleanup:
+  if (NULL != daemon->notify_connection)
+    daemon->notify_connection (daemon->notify_connection_cls,
+                               connection,
+                               &connection->socket_context,
+                               MHD_CONNECTION_NOTIFY_CLOSED);
   if (0 != MHD_socket_close_ (client_socket))
     MHD_PANIC ("close failed\n");
   MHD_ip_limit_del (daemon, addr, addrlen);
@@ -1921,12 +1944,15 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	}
       MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
-      if (pos->tls_session != NULL)
+      if (NULL != pos->tls_session)
 	gnutls_deinit (pos->tls_session);
 #endif
-      MHD_ip_limit_del (daemon,
-			(struct sockaddr *) pos->addr,
-			pos->addr_len);
+      if (NULL != daemon->notify_connection)
+        daemon->notify_connection (daemon->notify_connection_cls,
+                                   pos,
+                                   &pos->socket_context,
+                                   MHD_CONNECTION_NOTIFY_CLOSED);
+      MHD_ip_limit_del (daemon, pos->addr, pos->addr_len);
 #if EPOLL_SUPPORT
       if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
 	{
@@ -2993,6 +3019,11 @@ parse_options_va (struct MHD_Daemon *daemon,
             va_arg (ap, MHD_RequestCompletedCallback);
           daemon->notify_completed_cls = va_arg (ap, void *);
           break;
+        case MHD_OPTION_NOTIFY_CONNECTION:
+          daemon->notify_connection =
+            va_arg (ap, MHD_NotifyConnectionCallback);
+          daemon->notify_connection_cls = va_arg (ap, void *);
+          break;
         case MHD_OPTION_PER_IP_CONNECTION_LIMIT:
           daemon->per_ip_connection_limit = va_arg (ap, unsigned int);
           break;
@@ -3234,6 +3265,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		  break;
 		  /* all options taking two pointers */
 		case MHD_OPTION_NOTIFY_COMPLETED:
+		case MHD_OPTION_NOTIFY_CONNECTION:
 		case MHD_OPTION_URI_LOG_CALLBACK:
 		case MHD_OPTION_EXTERNAL_LOGGER:
 		case MHD_OPTION_UNESCAPE_CALLBACK:

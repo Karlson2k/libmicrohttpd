@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093903
+#define MHD_VERSION 0x00093904
 
 /**
  * MHD-internal return code for "YES".
@@ -871,7 +871,19 @@ enum MHD_OPTION
    * `const char *` argument.
    * This should be used in conjunction with #MHD_OPTION_HTTPS_MEM_KEY.
    */
-  MHD_OPTION_HTTPS_KEY_PASSWORD = 26
+  MHD_OPTION_HTTPS_KEY_PASSWORD = 26,
+
+  /**
+   * Register a function that should be called whenever a connection is
+   * started or closed.
+   *
+   * This option should be followed by TWO pointers.  First a pointer
+   * to a function of type #MHD_NotifyConnectionCallback and second a
+   * pointer to a closure to pass to the request completed callback.
+   * The second pointer maybe NULL.
+   */
+  MHD_OPTION_NOTIFY_CONNECTION = 27
+
 };
 
 
@@ -1006,6 +1018,29 @@ enum MHD_RequestTerminationCode
 
 
 /**
+ * The `enum MHD_ConnectionNotificationCode` specifies types
+ * of connection notifications.
+ * @ingroup request
+ */
+enum MHD_ConnectionNotificationCode
+{
+
+  /**
+   * A new connection has been started.
+   * @ingroup request
+   */
+  MHD_CONNECTION_NOTIFY_STARTED = 0,
+
+  /**
+   * A connection is closed.
+   * @ingroup request
+   */
+  MHD_CONNECTION_NOTIFY_CLOSED = 1
+
+};
+
+
+/**
  * Information about a connection.
  */
 union MHD_ConnectionInfo
@@ -1046,6 +1081,12 @@ union MHD_ConnectionInfo
    * daemons running).
    */
   struct MHD_Daemon *daemon;
+
+  /**
+   * Socket-specific client context.  Points to the same address as
+   * the "socket_context" of the #MHD_NotifyConnectionCallback.
+   */
+  void **socket_context;
 };
 
 
@@ -1104,7 +1145,17 @@ enum MHD_ConnectionInfoType
    * No extra arguments should be passed.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_CONNECTION_FD
+  MHD_CONNECTION_INFO_CONNECTION_FD,
+
+  /**
+   * Returns the client-specific pointer to a `void *` that was (possibly)
+   * set during a #MHD_NotifyConnectionCallback when the socket was
+   * first accepted.  Note that this is NOT the same as the "con_cls"
+   * argument of the #MHD_AccessHandlerCallback.  The "con_cls" is
+   * fresh for each HTTP request, while the "socket_context" is fresh
+   * for each socket.
+   */
+  MHD_CONNECTION_INFO_SOCKET_CONTEXT
 
 };
 
@@ -1242,6 +1293,31 @@ typedef void
                                  struct MHD_Connection *connection,
                                  void **con_cls,
                                  enum MHD_RequestTerminationCode toe);
+
+/**
+ * Signature of the callback used by MHD to notify the
+ * application about started/stopped connections
+ *
+ * @param cls client-defined closure
+ * @param connection connection handle
+ * @param socket_context socket-specific pointer where the
+ *                       client can associate some state specific
+ *                       to the TCP connection; note that this is
+ *                       different from the "con_cls" which is per
+ *                       HTTP request.  The client can initialize
+ *                       during #MHD_CONNECTION_NOTIFY_STARTED and
+ *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
+ *                       and access in the meantime using
+ *                       #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
+ * @param toe reason for connection notification
+ * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @ingroup request
+ */
+typedef void
+(*MHD_NotifyConnectionCallback) (void *cls,
+                                 struct MHD_Connection *connection,
+                                 void **socket_context,
+                                 enum MHD_ConnectionNotificationCode toe);
 
 
 /**
