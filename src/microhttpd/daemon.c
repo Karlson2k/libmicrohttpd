@@ -4634,6 +4634,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else
       return MHD_NO;
 #endif
+    case MHD_FEATURE_HTTPS_KEY_PASSWORD:
+#if HTTPS_SUPPORT && GNUTLS_VERSION_NUMBER >= 0x030100
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
     }
   return MHD_NO;
 }

@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093905
+#define MHD_VERSION 0x00093906
 
 /**
  * MHD-internal return code for "YES".
@@ -870,6 +870,7 @@ enum MHD_OPTION
    * to be used by the HTTPS daemon. This option should be followed by a
    * `const char *` argument.
    * This should be used in conjunction with #MHD_OPTION_HTTPS_MEM_KEY.
+   * @sa ::MHD_FEATURE_HTTPS_KEY_PASSWORD
    */
   MHD_OPTION_HTTPS_KEY_PASSWORD = 26,
 
@@ -2638,7 +2639,14 @@ enum MHD_FEATURE
    * #MHD_destroy_post_processor() can
    * be used.
    */
-  MHD_FEATURE_POSTPROCESSOR = 13
+  MHD_FEATURE_POSTPROCESSOR = 13,
+
+  /**
+  * Get whether password encrypted private key for HTTPS daemon is
+  * supported. If supported then option 
+  * ::MHD_OPTION_HTTPS_KEY_PASSWORD can be used.
+  */
+  MHD_FEATURE_HTTPS_KEY_PASSWORD = 14
 };
 
 
