@@ -1,3 +1,6 @@
+Fri Apr  3 12:55:31 CEST 2015
+	Update HTTPS testcases to avoid SSLv3, as SSLv3 is dead.
+
 Fri Apr  3 12:25:28 CEST 2015
 	Do not enforce FD_SETSIZE-limit on worker control
 	pipe when using MHD_USE_EPOLL_LINUX_ONLY (#3751). -MH/CG

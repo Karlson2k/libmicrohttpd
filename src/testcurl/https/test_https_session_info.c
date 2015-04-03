@@ -55,7 +55,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
       return MHD_YES;
     }
 
-  if (GNUTLS_SSL3 != 
+  if (GNUTLS_TLS1_1 != 
       (ret = MHD_get_connection_info
        (connection,
 	MHD_CONNECTION_INFO_PROTOCOL)->protocol))
@@ -122,7 +122,7 @@ test_query_session ()
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
   curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);

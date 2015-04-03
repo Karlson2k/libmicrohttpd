@@ -120,7 +120,7 @@ main (int argc, char *const *argv)
     }
   
   errorCount +=
-    test_concurent_daemon_pair (NULL, aes256_sha, CURL_SSLVERSION_SSLv3);
+    test_concurent_daemon_pair (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 
