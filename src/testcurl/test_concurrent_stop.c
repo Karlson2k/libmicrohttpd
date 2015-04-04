@@ -205,7 +205,6 @@ testMultithreadedPoolGet (int port, int poll_flag)
 }
 
 
-
 int
 main (int argc, char *const *argv)
 {

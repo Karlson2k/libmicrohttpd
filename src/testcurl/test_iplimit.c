@@ -131,9 +131,6 @@ testMultithreadedGet ()
       CURL *cenv[3];
       int i;
 
-      fprintf (stderr,
-               "Iteration %d\n",
-               k);
       success = 0;
       failure = 0;
       for (i = 0; i < 3; ++i)
@@ -225,9 +222,6 @@ testMultithreadedPoolGet ()
       CURL *cenv[3];
       int i;
 
-      fprintf (stderr,
-               "Iteration %d\n",
-               k);
       for (i = 0; i < 3; ++i)
         {
           CURL *c;
