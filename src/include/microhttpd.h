@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00093906
+#define MHD_VERSION 0x00093907
 
 /**
  * MHD-internal return code for "YES".
@@ -2643,7 +2643,7 @@ enum MHD_FEATURE
 
   /**
   * Get whether password encrypted private key for HTTPS daemon is
-  * supported. If supported then option 
+  * supported. If supported then option
   * ::MHD_OPTION_HTTPS_KEY_PASSWORD can be used.
   */
   MHD_FEATURE_HTTPS_KEY_PASSWORD = 14

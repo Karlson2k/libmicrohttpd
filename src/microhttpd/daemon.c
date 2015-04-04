@@ -4213,6 +4213,8 @@ close_connection (struct MHD_Connection *pos)
 
   MHD_connection_close (pos,
 			MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    return; /* must let thread to the rest */
   if (pos->connection_timeout == pos->daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
 		 daemon->normal_timeout_tail,
