@@ -796,7 +796,6 @@ MHD_handle_connection (void *data)
   struct pollfd p[1];
 #endif
 
-
   timeout = con->daemon->connection_timeout;
   while ( (MHD_YES != con->daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
@@ -831,19 +830,23 @@ MHD_handle_connection (void *data)
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
-	      if (MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
+	      if (MHD_YES !=
+                  add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      if (MHD_YES != add_to_fd_set (con->socket_fd, &ws, &max, FD_SETSIZE))
+	      if (MHD_YES !=
+                  add_to_fd_set (con->socket_fd, &ws, &max, FD_SETSIZE))
                 err_state = 1;
-	      if (con->read_buffer_size > con->read_buffer_offset &&
-	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
+	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
+                   (MHD_YES !=
+                    add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE)) )
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      if (con->read_buffer_size > con->read_buffer_offset &&
-	          MHD_YES != add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
+	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
+                   (MHD_YES !=
+                    add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE)) )
 	        err_state = 1;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
@@ -920,7 +923,8 @@ MHD_handle_connection (void *data)
 	      if (EINTR == MHD_socket_errno_)
 		continue;
 #if HAVE_MESSAGES
-	      MHD_DLOG (con->daemon, "Error during poll: `%s'\n",
+	      MHD_DLOG (con->daemon,
+                        "Error during poll: `%s'\n",
 			MHD_socket_last_strerr_ ());
 #endif
 	      break;
