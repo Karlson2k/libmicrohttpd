@@ -1183,9 +1183,9 @@ struct MHD_Daemon
   unsigned int per_ip_connection_limit;
 
   /**
-   * Daemon's options.
+   * Daemon's flags (bitfield).
    */
-  enum MHD_OPTION options;
+  enum MHD_FLAG options;
 
   /**
    * Listen port.

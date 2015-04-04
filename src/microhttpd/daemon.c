@@ -1884,6 +1884,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if HAVE_MESSAGES
       const int err = MHD_socket_errno_;
       /* This could be a common occurance with multiple worker threads */
+      if ( (EINVAL == err) &&
+           (MHD_INVALID_SOCKET == daemon->socket_fd) )
+        return MHD_NO; /* can happen during shutdown */
       if ((EAGAIN != err) && (EWOULDBLOCK != err))
         MHD_DLOG (daemon,
 		  "Error accepting connection: %s\n",
@@ -3514,7 +3517,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   daemon->socket_fd = MHD_INVALID_SOCKET;
   daemon->listening_address_reuse = 0;
-  daemon->options = (enum MHD_OPTION) flags;
+  daemon->options = flags;
 #if WINDOWS
   /* Winsock is broken with respect to 'shutdown';
      this disables us calling 'shutdown' on W32. */
