@@ -2224,9 +2224,13 @@ MHD_select (struct MHD_Daemon *daemon,
         return MHD_NO;
 
       /* If we're at the connection limit, no need to
-         accept new connections. */
-      if ( (daemon->connections == daemon->connection_limit) &&
-	   (MHD_INVALID_SOCKET != daemon->socket_fd) )
+         accept new connections; however, make sure
+         we do not miss the shutdown, so only do this
+         optimization if we have a shutdown signaling
+         pipe. */
+      if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+           (daemon->connections == daemon->connection_limit) &&
+           (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) )
         FD_CLR (daemon->socket_fd, &rs);
     }
   else
@@ -2672,7 +2676,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
 		      (daemon->connections < daemon->connection_limit) &&
 		      (series_length < 128) )
-		      series_length++;
+                series_length++;
 	    }
 	}
     }

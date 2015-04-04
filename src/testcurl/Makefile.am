@@ -30,6 +30,7 @@ check_PROGRAMS = \
   test_get_sendfile \
   test_urlparse \
   test_put \
+  test_concurrent_stop \
   test_process_headers \
   test_process_arguments \
   test_parse_cookies \
@@ -84,6 +85,12 @@ test_start_stop_SOURCES = \
   test_start_stop.c
 test_start_stop_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+test_concurrent_stop_SOURCES = \
+  test_concurrent_stop.c
+test_concurrent_stop_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+ @LIBCURL@
 
 test_options_SOURCES = \
   test_options.c
@@ -292,4 +299,3 @@ test_timeout_SOURCES = \
 test_timeout_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
-

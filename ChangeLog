@@ -1,3 +1,10 @@
+Sat Apr  4 17:48:13 CEST 2015
+	Fix issue in thread-pool mode where a MHD_stop_daemon()
+	might not reach threads that stopped listening because
+	we hit the maximum number of concurrent connections and
+	the option MHD_USE_PIPE_FOR_SHUTDOWN was also not used.
+	Testcase added as well. -CG
+
 Fri Apr  3 12:55:31 CEST 2015
 	Update HTTPS testcases to avoid SSLv3, as SSLv3 is dead.
 
