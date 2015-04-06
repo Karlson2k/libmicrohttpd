@@ -48,22 +48,34 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 {
   struct MHD_Response *response;
   int ret;
-  
+
   if (NULL == *ptr)
     {
       *ptr = &query_session_ahc;
       return MHD_YES;
     }
 
-  if (GNUTLS_TLS1_1 != 
+  if (GNUTLS_TLS1_1 !=
       (ret = MHD_get_connection_info
        (connection,
 	MHD_CONNECTION_INFO_PROTOCOL)->protocol))
     {
-      fprintf (stderr, "Error: requested protocol mismatch (wanted %d, got %d)\n",
-               GNUTLS_SSL3,
-	       ret);
-      return -1;
+      if (GNUTLS_TLS1_2 == ret)
+      {
+        /* as usual, TLS implementations sometimes don't
+           quite do what was asked, just mildly complain... */
+        fprintf (stderr,
+                 "Warning: requested TLS 1.1, got TLS 1.2\n");
+      }
+      else
+      {
+        /* really different version... */
+        fprintf (stderr,
+                 "Error: requested protocol mismatch (wanted %d, got %d)\n",
+                 GNUTLS_TLS1_1,
+                 ret);
+        return -1;
+      }
     }
 
   response = MHD_create_response_from_buffer (strlen (EMPTY_PAGE),

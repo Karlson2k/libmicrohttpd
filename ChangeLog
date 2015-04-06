@@ -1,3 +1,6 @@
+Tue Apr  7 00:12:36 CEST 2015
+	Releasing libmicrohttpd 0.9.40. -CG
+
 Sat Apr  4 18:28:24 CEST 2015
 	Fix potential deadlock issue in MHD_USE_THREAD_PER_CONNECTION
 	mode if shutdown is initiated while connections are active. -CG
