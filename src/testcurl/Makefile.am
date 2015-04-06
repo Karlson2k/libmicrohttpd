@@ -18,6 +18,7 @@ $(LIBCURL_CPPFLAGS)
 
 if !HAVE_W32
 PERF_GET_CONCURRENT=perf_get_concurrent
+TEST_CONCURRENT_STOP=test_concurrent_stop
 if HAVE_CURL_BINARY
 CURL_FORK_TEST = test_get_response_cleanup
 endif
@@ -30,7 +31,7 @@ check_PROGRAMS = \
   test_get_sendfile \
   test_urlparse \
   test_put \
-  test_concurrent_stop \
+  $(TEST_CONCURRENT_STOP) \
   test_process_headers \
   test_process_arguments \
   test_parse_cookies \
