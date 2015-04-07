@@ -1673,7 +1673,7 @@ do_read (struct MHD_Connection *connection)
 	  return MHD_NO;
       if (ECONNRESET == err)
         {
-           CONNECTION_CLOSE_ERROR(connection, NULL);
+           CONNECTION_CLOSE_ERROR (connection, NULL);
 	   return MHD_NO;
 	}
 #if HAVE_MESSAGES
