@@ -1,3 +1,7 @@
+Fri Apr 10 00:38:40 CEST 2015
+	Ensure fast termination in MHD_USE_THREAD_PER_CONNECTION
+	mode on W32 by using signal pipe. -CG
+
 Thu Apr  9 09:01:15 CEST 2015
 	Fixing issue with undrained signal pipe when using
 	MHD_USE_SELECT_INTERNALLY and MHD_USE_POLL in combination

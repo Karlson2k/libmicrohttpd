@@ -792,8 +792,18 @@ MHD_handle_connection (void *data)
   struct timeval *tvp;
   unsigned int timeout;
   time_t now;
+#if WINDOWS
+  MHD_pipe spipe = con->daemon->wpipe[0];
+  char tmp;
 #ifdef HAVE_POLL_H
-  struct pollfd p[1];
+  int extra_slot;
+#endif /* HAVE_POLL_H */
+#define EXTRA_SLOTS 1
+#else  /* !WINDOWS */
+#define EXTRA_SLOTS 0
+#endif /* !WINDOWS */
+#ifdef HAVE_POLL_H
+  struct pollfd p[1 + EXTRA_SLOTS];
 #endif
 
   timeout = con->daemon->connection_timeout;
@@ -856,6 +866,14 @@ MHD_handle_connection (void *data)
 	      /* how did we get here!? */
 	      goto exit;
 	    }
+#if WINDOWS
+          if (MHD_INVALID_PIPE_ != spipe)
+            {
+              if (MHD_YES !=
+                  add_to_fd_set (spipe, &rs, &max, FD_SETSIZE))
+                err_state = 1;
+            }
+#endif
             if (0 != err_state)
               {
 #if HAVE_MESSAGES
@@ -878,6 +896,12 @@ MHD_handle_connection (void *data)
 #endif
 	      break;
 	    }
+#if WINDOWS
+          /* drain signaling pipe */
+          if ( (MHD_INVALID_PIPE_ != spipe) &&
+               (FD_ISSET (spipe, &rs)) )
+            (void) MHD_pipe_read_ (spipe, &tmp, sizeof (tmp));
+#endif
 	  /* call appropriate connection handler if necessary */
 	  if ( (FD_ISSET (con->socket_fd, &rs))
 #if HTTPS_SUPPORT
@@ -917,7 +941,22 @@ MHD_handle_connection (void *data)
 	      /* how did we get here!? */
 	      goto exit;
 	    }
-	  if (poll (p, 1,
+#if WINDOWS
+          extra_slot = 0;
+          if (MHD_INVALID_PIPE != spipe)
+            {
+              p[1].events |= POLLIN;
+              p[1].fd = spipe;
+              p[1].revents = 0;
+              extra_slot = 1;
+            }
+#endif
+	  if (poll (p,
+#if WINDOWS
+                    1 + extra_slot,
+#else
+                    1,
+#endif
 		    (NULL == tvp) ? -1 : tv.tv_sec * 1000) < 0)
 	    {
 	      if (EINTR == MHD_socket_errno_)
@@ -929,6 +968,12 @@ MHD_handle_connection (void *data)
 #endif
 	      break;
 	    }
+#if WINDOWS
+          /* drain signaling pipe */
+          if ( (MHD_INVALID_PIPE_ != spipe) &&
+               (0 != (p[1].revents & (PLLERR | POLLHUP))) )
+            (void) MHD_pipe_read_ (spipe, &tmp, sizeof (tmp));
+#endif
 	  if ( (0 != (p[0].revents & POLLIN))
 #if HTTPS_SUPPORT
 	       || (MHD_YES == con->tls_read_ready)
@@ -4260,8 +4305,16 @@ close_all_connections (struct MHD_Daemon *daemon)
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
-    shutdown (pos->socket_fd,
-	      (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
+    {
+      shutdown (pos->socket_fd,
+                (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
+#if WINDOWS
+      if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+           (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
+           (1 != MHD_pipe_write_ (daemon->wpipe[1], "e", 1)) )
+        MHD_PANIC ("failed to signal shutdown via pipe");
+#endif
+    }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
