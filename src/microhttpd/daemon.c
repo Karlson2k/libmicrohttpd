@@ -2317,6 +2317,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     int timeout;
     unsigned int poll_server;
     int poll_listen;
+    int poll_pipe;
+    char tmp;
 
     memset (p, 0, sizeof (p));
     poll_server = 0;
@@ -2331,11 +2333,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	poll_listen = (int) poll_server;
 	poll_server++;
       }
+    poll_pipe = -1;
     if (MHD_INVALID_PIPE_ != daemon->wpipe[0])
       {
 	p[poll_server].fd = daemon->wpipe[0];
 	p[poll_server].events = POLLIN;
 	p[poll_server].revents = 0;
+        poll_pipe = (int) poll_server;
 	poll_server++;
       }
     if (may_block == MHD_NO)
@@ -2433,6 +2437,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
       (void) MHD_accept_connection (daemon);
+
+    /* handle pipe FD */
+    if ( (-1 != poll_pipe) &&
+         (0 != (p[poll_pipe].revents & POLLIN)) )
+      (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
   }
   return MHD_YES;
 }

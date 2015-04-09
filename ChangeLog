@@ -1,3 +1,8 @@
+Thu Apr  9 09:01:15 CEST 2015
+	Fixing issue with undrained signal pipe when using
+	MHD_USE_SELECT_INTERNALLY and MHD_USE_POLL in combination
+	with MHD_resume_connection(), causing 100% CPU usage. -DD
+
 Tue Apr  7 00:12:36 CEST 2015
 	Releasing libmicrohttpd 0.9.40. -CG
 
