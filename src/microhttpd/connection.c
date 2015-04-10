@@ -775,7 +775,7 @@ build_header_response (struct MHD_Connection *connection)
       if ( ( (NULL != client_requested_close) ||
              (MHD_YES == connection->read_closed) ) &&
            (NULL == response_has_close) &&
-           (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
+           (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
 
       /* check if we should add a 'content length' header */

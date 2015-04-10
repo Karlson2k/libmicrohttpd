@@ -1,3 +1,7 @@
+Fri Apr 10 22:02:27 CEST 2015
+	Fix logic to add "Connection: Close" that was broken in 0.9.38
+	when adding MHD_RF_HTTP_VERSION_1_0_ONLY. -CG
+
 Fri Apr 10 00:38:40 CEST 2015
 	Ensure fast termination in MHD_USE_THREAD_PER_CONNECTION
 	mode on W32 by using signal pipe. -CG
