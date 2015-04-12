@@ -1676,18 +1676,6 @@ do_read (struct MHD_Connection *connection)
            CONNECTION_CLOSE_ERROR (connection, NULL);
 	   return MHD_NO;
 	}
-#if HAVE_MESSAGES
-#if HTTPS_SUPPORT
-      if (0 != (connection->daemon->options & MHD_USE_SSL))
-	MHD_DLOG (connection->daemon,
-		  "Failed to receive data: %s\n",
-		  gnutls_strerror (bytes_read));
-      else
-#endif
-	MHD_DLOG (connection->daemon,
-		  "Failed to receive data: %s\n",
-                  MHD_socket_last_strerr_ ());
-#endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
     }
@@ -1730,17 +1718,6 @@ do_write (struct MHD_Connection *connection)
       const int err = MHD_socket_errno_;
       if ((EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err))
         return MHD_NO;
-#if HAVE_MESSAGES
-#if HTTPS_SUPPORT
-      if (0 != (connection->daemon->options & MHD_USE_SSL))
-	MHD_DLOG (connection->daemon,
-		  "Failed to send data: %s\n",
-		  gnutls_strerror ((int) ret));
-      else
-#endif
-	MHD_DLOG (connection->daemon,
-		  "Failed to send data: %s\n", MHD_socket_last_strerr_ ());
-#endif
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
     }
@@ -2686,16 +2663,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	}
       break;
     case MHD_EVENT_LOOP_INFO_WRITE:
-      if ( (connection->read_buffer_size > connection->read_buffer_offset) &&
-	   (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
-           (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
-	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
-	{
-	  EDLL_insert (daemon->eready_head,
-		       daemon->eready_tail,
-		       connection);
-	  connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-	}
       if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) &&
            (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
 	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )

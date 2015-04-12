@@ -48,8 +48,9 @@ if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
   post_example
 if HAVE_MAGIC
-bin_PROGRAMS = \
-  demo
+noinst_PROGRAMS += \
+  demo \
+  demo_https
 endif
 endif
 
@@ -84,6 +85,16 @@ demo_CFLAGS = \
 demo_CPPFLAGS = \
  $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 demo_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
+ $(PTHREAD_LIBS) -lmagic
+
+demo_https_SOURCES = \
+ demo_https.c
+demo_https_CFLAGS = \
+ $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+demo_https_CPPFLAGS = \
+ $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
+demo_https_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  $(PTHREAD_LIBS) -lmagic
 

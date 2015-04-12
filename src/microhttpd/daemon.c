@@ -2760,6 +2760,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	pos->write_handler (pos);
       pos->idle_handler (pos);
     }
+
   /* Finally, handle timed-out connections; we need to do this here
      as the epoll mechanism won't call the 'idle_handler' on everything,
      as the other event loops do.  As timeouts do not get an explicit
