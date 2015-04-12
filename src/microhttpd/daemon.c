@@ -2691,12 +2691,12 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	{
 	  if (NULL == events[i].data.ptr)
 	    continue; /* shutdown signal! */
-      if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-           (daemon->wpipe[0] == events[i].data.fd) )
-        {
-          (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
-          continue;
-        }
+          if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+               (daemon->wpipe[0] == events[i].data.fd) )
+            {
+              (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
+              continue;
+            }
 	  if (daemon != events[i].data.ptr)
 	    {
 	      /* this is an event relating to a 'normal' connection,
