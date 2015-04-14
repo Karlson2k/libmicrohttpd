@@ -1,3 +1,7 @@
+Wed Apr 15 00:30:34 CEST 2015
+	Fix looping issue when using MHD_USE_POLL_INTERNALLY
+	and a client times out. -LB
+
 Sun Apr 12 21:48:50 CEST 2015
 	Fix looping issue when combining MHD_USE_EPOLL_LINUX_ONLY
 	with HTTPS and slow clients. -CG

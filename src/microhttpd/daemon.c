@@ -2474,7 +2474,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	    pos->idle_handler (pos);
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
-	    /* should never happen */
+	    pos->idle_handler (pos);
 	    break;
 	  }
       }
