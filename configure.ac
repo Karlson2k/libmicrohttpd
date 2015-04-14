@@ -136,6 +136,8 @@ netbsd*)
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
+     AC_SEARCH_LIBS(gethostbyname, nsl)
+     AC_SEARCH_LIBS(socket, socket)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
