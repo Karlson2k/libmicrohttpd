@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_timeout.c
+ * @file test_timeout.c
  * @brief  Testcase for libmicrohttpd PUT operations
  * @author Matthias Wachs
  */
@@ -271,13 +271,13 @@ testWithTimeout ()
 }
 
 
-
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  oneone = NULL != strstr (argv[0], "11");
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 16;
   errorCount += testWithoutTimeout ();

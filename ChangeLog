@@ -1,3 +1,6 @@
+Wed Apr 15 03:16:18 CEST 2015
+	Fixing issue #3753 (testcase issue). -CG
+
 Wed Apr 15 00:30:34 CEST 2015
 	Fix looping issue when using MHD_USE_POLL_INTERNALLY
 	and a client times out. -LB

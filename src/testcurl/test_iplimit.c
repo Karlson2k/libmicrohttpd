@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_get.c
+ * @file test_iplimit.c
  * @brief  Testcase for libmicrohttpd GET operations
  *         TODO: test parsing of query
  * @author Christian Grothoff
@@ -300,7 +300,8 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  oneone = NULL != strstr (argv[0], "11");
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount |= testMultithreadedGet ();

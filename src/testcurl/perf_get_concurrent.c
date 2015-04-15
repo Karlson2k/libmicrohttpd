@@ -336,7 +336,8 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   int port = 1081;
 
-  oneone = NULL != strstr (argv[0], "11");
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   response = MHD_create_response_from_buffer (strlen ("/hello_world"),

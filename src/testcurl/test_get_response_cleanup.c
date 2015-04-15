@@ -290,7 +290,8 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  oneone = NULL != strstr (argv[0], "11");
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   errorCount += testInternalGet ();
   errorCount += testMultithreadedGet ();
   errorCount += testMultithreadedPoolGet ();

@@ -19,7 +19,7 @@
 */
 
 /**
- * @file daemontest_long_header.c
+ * @file test_long_header.c
  * @brief  Testcase for libmicrohttpd handling of very long headers
  * @author Christian Grothoff
  */
@@ -215,12 +215,14 @@ testLongHeaderGet ()
   return 0;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  oneone = NULL != strstr (argv[0], "11");
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testLongUrlGet ();
