@@ -2414,7 +2414,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	      p[poll_server+i].events |= POLLIN;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
-	    /* should never happen */
+	    timeout = 0; /* clean up "pos" immediately */
 	    break;
 	  }
 	i++;
