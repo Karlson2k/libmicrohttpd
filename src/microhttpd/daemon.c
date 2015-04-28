@@ -1864,7 +1864,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
  * @param addr IP address of the client
  * @param addrlen number of bytes in @a addr
  * @return #MHD_YES on success, #MHD_NO if this daemon could
- *        not handle the connection (i.e. `malloc()` failed, etc).
+ *        not handle the connection (i.e. malloc() failed, etc).
  *        The socket will be closed in any case; `errno` is
  *        set to indicate further details about the error.
  * @ingroup specialized
@@ -1890,11 +1890,11 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * accept policy callback.
  *
  * @param daemon handle with the listen socket
- * @return MHD_YES on success (connections denied by policy or due
+ * @return #MHD_YES on success (connections denied by policy or due
  *         to 'out of memory' and similar errors) are still considered
- *         successful as far as MHD_accept_connection is concerned);
- *         a return code of MHD_NO only refers to the actual
- *         'accept' system call.
+ *         successful as far as #MHD_accept_connection() is concerned);
+ *         a return code of #MHD_NO only refers to the actual
+ *         accept() system call.
  */
 static int
 MHD_accept_connection (struct MHD_Daemon *daemon)
@@ -2288,12 +2288,18 @@ MHD_select (struct MHD_Daemon *daemon,
   else
     {
       /* accept only, have one thread per connection */
-      if (MHD_INVALID_SOCKET != daemon->socket_fd &&
-          MHD_YES != add_to_fd_set(daemon->socket_fd, &rs, &max, FD_SETSIZE))
+      if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+           (MHD_YES != add_to_fd_set (daemon->socket_fd,
+                                      &rs,
+                                      &max,
+                                      FD_SETSIZE)) )
         return MHD_NO;
     }
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[0] &&
-      MHD_YES != add_to_fd_set(daemon->wpipe[0], &rs, &max, FD_SETSIZE))
+  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+       (MHD_YES != add_to_fd_set (daemon->wpipe[0],
+                                  &rs,
+                                  &max,
+                                  FD_SETSIZE)) )
     return MHD_NO;
 
   tv = NULL;
