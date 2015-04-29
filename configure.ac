@@ -22,15 +22,15 @@
 #
 AC_PREREQ([2.60])
 LT_PREREQ([2.4.0])
-AC_INIT([libmicrohttpd],[0.9.40],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd],[0.9.41],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=40
+LIB_VERSION_CURRENT=41
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=30
+LIB_VERSION_AGE=31
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -675,7 +675,7 @@ AC_ARG_WITH([[gnutls]],
 
 AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
   [
-    PKG_CHECK_MODULES(GNUTLS, [[gnutls]], 
+    PKG_CHECK_MODULES(GNUTLS, [[gnutls]],
       [
        have_gnutls_pkgcfg='yes'
        SAVE_CPPFLAGS="$CPPFLAGS"
@@ -722,9 +722,9 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        CFLAGS="$SAVE_CFLAGS"
        LDFLAGS="$SAVE_LDFLAGS"
        LIBS="$SAVE_LIBS"
-      ], 
+      ],
       [
-       have_gnutls_pkgcfg='no'   
+       have_gnutls_pkgcfg='no'
        AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
@@ -834,7 +834,7 @@ AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
 
 # for pkg-config
-AS_IF([[test "x$enable_https" = "xyes" && test "x$have_gnutls_pkgcfg" = "xyes" ]], 
+AS_IF([[test "x$enable_https" = "xyes" && test "x$have_gnutls_pkgcfg" = "xyes" ]],
  [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
    MHD_REQ_PRIVATE='gnutls'
    MHD_LIBDEPS_PKGCFG="${MHD_LIBDEPS//$GNUTLS_LIBS/}"

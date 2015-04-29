@@ -1,3 +1,6 @@
+Thu Apr 30 00:03::49 CEST 2015
+	Releasing libmicrohttpd 0.9.41. -CG
+
 Thu Apr 30 00:02:33 CEST 2015
 	Fix issue where resumed connections would not continue
 	unless other requests are active in certain
