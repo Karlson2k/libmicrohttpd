@@ -1726,17 +1726,19 @@ MHD_resume_connection (struct MHD_Connection *connection)
  * longer suspended back to the active state.
  *
  * @param daemon daemon context
+ * @return #MHD_YES if a connection was actually resumed
  */
-static void
+static int
 resume_suspended_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *next = NULL;
+  int ret;
 
+  ret = MHD_NO;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
-
   if (MHD_YES == daemon->resuming)
     next = daemon->suspended_connections_head;
 
@@ -1745,7 +1747,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       next = pos->next;
       if (MHD_NO == pos->resuming)
         continue;
-
+      ret = MHD_YES;
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
@@ -1781,6 +1783,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
+  return ret;
 }
 
 
@@ -2268,8 +2271,9 @@ MHD_select (struct MHD_Daemon *daemon,
   max = MHD_INVALID_SOCKET;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
-        resume_suspended_connections (daemon);
+      if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
+           (MHD_YES == resume_suspended_connections (daemon)) )
+        may_block = MHD_NO;
 
       /* single-threaded, go over everything */
       if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &max, FD_SETSIZE))
@@ -2354,8 +2358,9 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
 
-  if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
-    resume_suspended_connections (daemon);
+  if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
+       (MHD_YES == resume_suspended_connections (daemon)) )
+    may_block = MHD_NO;
 
   /* count number of connections and thus determine poll set size */
   num_connections = 0;
@@ -2750,8 +2755,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
-  if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
-    resume_suspended_connections (daemon);
+  if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
+       (MHD_YES == resume_suspended_connections (daemon)) )
+    may_block = MHD_NO;
 
   /* process events for connections */
   while (NULL != (pos = daemon->eready_tail))
