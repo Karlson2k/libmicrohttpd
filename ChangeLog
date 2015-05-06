@@ -1,3 +1,6 @@
+Wed May  6 18:07:38 CEST 2015
+	Fix #3784: actually implement MHD_CONNECTION_INFO_SOCKET_CONTEXT. -asherkin
+
 Thu Apr 30 00:03::49 CEST 2015
 	Releasing libmicrohttpd 0.9.41. -CG
 
