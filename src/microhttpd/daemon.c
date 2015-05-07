@@ -547,7 +547,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
       cert.size = strlen (daemon->https_mem_cert);
 
       if (NULL != daemon->https_key_password) {
-#if GNUTLS_VERSION_NUMBER >= 0x030100
+#if GNUTLS_VERSION_NUMBER >= 0x030111
         ret = gnutls_certificate_set_x509_key_mem2 (daemon->x509_cred,
                                                     &cert, &key,
                                                     GNUTLS_X509_FMT_PEM,
@@ -4745,7 +4745,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_HTTPS_KEY_PASSWORD:
-#if HTTPS_SUPPORT && GNUTLS_VERSION_NUMBER >= 0x030100
+#if HTTPS_SUPPORT && GNUTLS_VERSION_NUMBER >= 0x030111
       return MHD_YES;
 #else
       return MHD_NO;
