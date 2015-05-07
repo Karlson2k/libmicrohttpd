@@ -1,3 +1,6 @@
+Thu May  7 17:05:46 CEST 2015
+	Add support for poll() in W32. -EG
+
 Wed May  6 18:07:38 CEST 2015
 	Fix #3784: actually implement MHD_CONNECTION_INFO_SOCKET_CONTEXT. -asherkin
 
