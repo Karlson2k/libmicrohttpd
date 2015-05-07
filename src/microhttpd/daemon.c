@@ -943,7 +943,7 @@ MHD_handle_connection (void *data)
 	    }
 #if WINDOWS
           extra_slot = 0;
-          if (MHD_INVALID_PIPE != spipe)
+          if (MHD_INVALID_PIPE_ != spipe)
             {
               p[1].events |= POLLIN;
               p[1].fd = spipe;
@@ -971,7 +971,7 @@ MHD_handle_connection (void *data)
 #if WINDOWS
           /* drain signaling pipe */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
-               (0 != (p[1].revents & (PLLERR | POLLHUP))) )
+               (0 != (p[1].revents & (POLLERR | POLLHUP))) )
             (void) MHD_pipe_read_ (spipe, &tmp, sizeof (tmp));
 #endif
 	  if ( (0 != (p[0].revents & POLLIN))
