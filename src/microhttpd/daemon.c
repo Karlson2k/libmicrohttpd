@@ -951,7 +951,7 @@ MHD_handle_connection (void *data)
               extra_slot = 1;
             }
 #endif
-	  if (poll (p,
+	  if (MHD_sys_poll_ (p,
 #if WINDOWS
                     1 + extra_slot,
 #else
@@ -2445,7 +2445,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         free(p);
         return MHD_YES;
       }
-    if (poll (p, poll_server + num_connections, timeout) < 0)
+    if (MHD_sys_poll_(p, poll_server + num_connections, timeout) < 0)
       {
 	if (EINTR == MHD_socket_errno_)
       {
@@ -2565,7 +2565,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     timeout = -1;
   if (0 == poll_count)
     return MHD_YES;
-  if (poll (p, poll_count, timeout) < 0)
+  if (MHD_sys_poll_(p, poll_count, timeout) < 0)
     {
       if (EINTR == MHD_socket_errno_)
 	return MHD_YES;

@@ -124,6 +124,15 @@
 #define MHD_SYS_select_(n,r,w,e,t) select((int)0,(r),(w),(e),(t))
 #endif
 
+#if defined(HAVE_POLL)
+/* MHD_sys_poll_ is wrapper macro for system poll() function */
+#if !defined(MHD_WINSOCK_SOCKETS)
+#define MHD_sys_poll_ poll
+#else  /* MHD_WINSOCK_SOCKETS */
+#define MHD_sys_poll_ WSAPoll
+#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* HAVE_POLL */
+
 /* MHD_pipe_ create pipe (!MHD_DONT_USE_PIPES) /
  *           create two connected sockets (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
