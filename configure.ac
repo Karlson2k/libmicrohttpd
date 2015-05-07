@@ -347,6 +347,8 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
     #endif
    ])
 
+AC_CHECK_FUNCS([poll])
+
 # Check for pipe/socketpair signaling
 AC_MSG_CHECKING([[whether to enable signaling by socketpair]])
 

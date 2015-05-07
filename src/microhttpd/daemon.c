@@ -50,7 +50,7 @@
 #include <gcrypt.h>
 #endif
 
-#ifdef HAVE_POLL_H
+#if defined(HAVE_POLL_H) && defined(HAVE_POLL)
 #include <poll.h>
 #endif
 
@@ -795,14 +795,14 @@ MHD_handle_connection (void *data)
 #if WINDOWS
   MHD_pipe spipe = con->daemon->wpipe[0];
   char tmp;
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
   int extra_slot;
-#endif /* HAVE_POLL_H */
+#endif /* HAVE_POLL */
 #define EXTRA_SLOTS 1
 #else  /* !WINDOWS */
 #define EXTRA_SLOTS 0
 #endif /* !WINDOWS */
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
   struct pollfd p[1 + EXTRA_SLOTS];
 #endif
 
@@ -914,7 +914,7 @@ MHD_handle_connection (void *data)
 	  if (MHD_NO == con->idle_handler (con))
 	    goto exit;
 	}
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
       else
 	{
 	  /* use poll */
@@ -2341,7 +2341,7 @@ MHD_select (struct MHD_Daemon *daemon,
 }
 
 
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
 /**
  * Process all of our connections and possibly the server
  * socket using poll().
@@ -2598,7 +2598,7 @@ static int
 MHD_poll (struct MHD_Daemon *daemon,
 	  int may_block)
 {
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -3579,7 +3579,7 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 != (flags & MHD_USE_IPv6))
     return NULL;
 #endif
-#ifndef HAVE_POLL_H
+#ifndef HAVE_POLL
   if (0 != (flags & MHD_USE_POLL))
     return NULL;
 #endif
@@ -4697,7 +4697,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_POLL:
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
       return MHD_YES;
 #else
       return MHD_NO;
