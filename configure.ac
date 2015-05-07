@@ -276,6 +276,36 @@ AC_ARG_ENABLE([[examples]],
 test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
+AC_ARG_ENABLE([[poll]],
+  [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
+    [enable_poll=${enableval}],
+    [enable_poll='auto']
+  )
+
+if test "$enable_poll" != "no"; then
+  if test "$os_is_native_w32" != "yes"; then
+    AC_CHECK_HEADERS([poll.h],
+      [
+        AC_CHECK_FUNCS([poll], [have_poll='yes'], [have_poll='no'])
+      ])
+  else
+    AC_MSG_CHECKING([for WSAPoll()])
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([[#include <winsock2.h>]], [[
+WSAPOLLFD fda[2];
+WSAPoll(fda, 2, 0);]])], 
+        [
+          have_poll='yes'
+          AC_DEFINE([HAVE_POLL],[1])
+        ], [have_poll='no'])
+    AC_MSG_RESULT([$have_poll])
+  fi
+  if test "$enable_poll" = "yes" && test "$have_poll" != "yes"; then
+    AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])
+  fi
+  enable_poll="$have_poll"
+fi
+
 AC_ARG_ENABLE([[epoll]],
   [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
     [enable_epoll=${enableval}],
@@ -328,7 +358,7 @@ fi
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h poll.h search.h])
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h search.h])
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
@@ -347,7 +377,6 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
     #endif
    ])
 
-AC_CHECK_FUNCS([poll])
 
 # Check for pipe/socketpair signaling
 AC_MSG_CHECKING([[whether to enable signaling by socketpair]])
@@ -893,6 +922,7 @@ AC_MSG_NOTICE([Configuration Summary:
   Digest auth.:      ${enable_dauth}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${MSG_HTTPS}
+  poll support:      ${enable_poll=no}
   epoll support:     ${enable_epoll=no}
   build docs:        ${enable_doc}
   build examples:    ${enable_examples}
