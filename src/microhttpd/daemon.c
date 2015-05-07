@@ -2367,7 +2367,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     num_connections++;
   {
-    struct pollfd p[2 + num_connections];
     MHD_UNSIGNED_LONG_LONG ltimeout;
     unsigned int i;
     int timeout;
@@ -2375,8 +2374,19 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     int poll_listen;
     int poll_pipe;
     char tmp;
+    struct pollfd *p;
 
-    memset (p, 0, sizeof (p));
+    p = malloc(sizeof (struct pollfd) * (2 + num_connections));
+    if (NULL == p)
+      {
+#if HAVE_MESSAGES
+        MHD_DLOG(daemon,
+                 "Error allocating memory: %s\n",
+                 MHD_strerror_(errno));
+#endif
+        return MHD_NO;
+      }
+    memset (p, 0, sizeof (struct pollfd) * (2 + num_connections));
     poll_server = 0;
     poll_listen = -1;
     if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
@@ -2431,21 +2441,31 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	i++;
       }
     if (0 == poll_server + num_connections)
-      return MHD_YES;
+      {
+        free(p);
+        return MHD_YES;
+      }
     if (poll (p, poll_server + num_connections, timeout) < 0)
       {
 	if (EINTR == MHD_socket_errno_)
-	  return MHD_YES;
+      {
+        free(p);
+        return MHD_YES;
+      }
 #if HAVE_MESSAGES
 	MHD_DLOG (daemon,
 		  "poll failed: %s\n",
 		  MHD_socket_last_strerr_ ());
 #endif
+        free(p);
 	return MHD_NO;
       }
     /* handle shutdown */
     if (MHD_YES == daemon->shutdown)
-      return MHD_NO;
+      {
+        free(p);
+        return MHD_NO;
+      }
     i = 0;
     next = daemon->connections_head;
     while (NULL != (pos = next))
@@ -2498,6 +2518,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     if ( (-1 != poll_pipe) &&
          (0 != (p[poll_pipe].revents & POLLIN)) )
       (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
+
+    free(p);
   }
   return MHD_YES;
 }
