@@ -513,15 +513,17 @@ main (int argc, char *const *argv)
   errorCount += testInternalGet (port++, 0);
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);
-#ifndef WINDOWS
-  errorCount += testInternalGet (port++, MHD_USE_POLL);
-  errorCount += testMultithreadedGet (port++, MHD_USE_POLL);
-  errorCount += testMultithreadedPoolGet (port++, MHD_USE_POLL);
-#endif
-#if EPOLL_SUPPORT
-  errorCount += testInternalGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
-  errorCount += testMultithreadedPoolGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
-#endif
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
+    {
+      errorCount += testInternalGet(port++, MHD_USE_POLL);
+      errorCount += testMultithreadedGet(port++, MHD_USE_POLL);
+      errorCount += testMultithreadedPoolGet(port++, MHD_USE_POLL);
+    }
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
+    {
+      errorCount += testInternalGet(port++, MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testMultithreadedPoolGet(port++, MHD_USE_EPOLL_LINUX_ONLY);
+    }
   MHD_destroy_response (response);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

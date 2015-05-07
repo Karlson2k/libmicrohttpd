@@ -439,15 +439,17 @@ main (int argc, char *const *argv)
   errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, 0);
   errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, 0);
   errorCount += testExternalGet ();
-#ifndef WINDOWS
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_POLL);
-  errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, MHD_USE_POLL);
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_POLL);
-#endif
-#if EPOLL_SUPPORT
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL_LINUX_ONLY);
-  errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_EPOLL_LINUX_ONLY);
-#endif
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
+    {
+      errorCount += testGet(MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_POLL);
+      errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, MHD_USE_POLL);
+      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_POLL);
+    }
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
+    {
+      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_EPOLL_LINUX_ONLY);
+    }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

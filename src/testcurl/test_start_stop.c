@@ -112,15 +112,17 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedGet (0);
   errorCount += testMultithreadedPoolGet (0);
   errorCount += testExternalGet ();
-#ifndef WINDOWS
-  errorCount += testInternalGet (MHD_USE_POLL);
-  errorCount += testMultithreadedGet (MHD_USE_POLL);
-  errorCount += testMultithreadedPoolGet (MHD_USE_POLL);
-#endif
-#if EPOLL_SUPPORT
-  errorCount += testInternalGet (MHD_USE_EPOLL_LINUX_ONLY);
-  errorCount += testMultithreadedPoolGet (MHD_USE_EPOLL_LINUX_ONLY);
-#endif
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
+    {
+      errorCount += testInternalGet(MHD_USE_POLL);
+      errorCount += testMultithreadedGet(MHD_USE_POLL);
+      errorCount += testMultithreadedPoolGet(MHD_USE_POLL);
+    }
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
+    {
+      errorCount += testInternalGet(MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testMultithreadedPoolGet(MHD_USE_EPOLL_LINUX_ONLY);
+    }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   return errorCount != 0;       /* 0 == pass */
