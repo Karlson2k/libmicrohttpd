@@ -4265,7 +4265,7 @@ thread_failed:
      as though we had fully initialized our daemon, but
      with a smaller number of threads than had been
      requested. */
-  daemon->worker_pool_size = i - 1;
+  daemon->worker_pool_size = i;
   MHD_stop_daemon (daemon);
   return NULL;
 

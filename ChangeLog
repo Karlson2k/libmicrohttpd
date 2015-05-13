@@ -1,3 +1,8 @@
+Wed May 13 11:33:59 CEST 2015
+	Fix off-by-one in MHD_start_daemon_va() error handling logic
+	when initialization of threads for thread pool fails for some
+	reason. -CG/JC
+
 Thu May  7 17:05:46 CEST 2015
 	Add support for poll() in W32. -EG
 
