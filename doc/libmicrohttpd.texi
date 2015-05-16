@@ -186,7 +186,7 @@ three processes on the same machine).
 Not all combinations of thread modes and event loop styles are
 supported.  This is partially to keep the API simple, and partially
 because some combinations simply make no sense as others are strictly
-superior.  Note that the choice of style depends fist of all on the
+superior.  Note that the choice of style depends first of all on the
 application logic, and then on the performance requirements.
 Applications that perform a blocking operation while handling a
 request within the callbacks from MHD must use a thread per
