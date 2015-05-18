@@ -22,15 +22,15 @@
 #
 AC_PREREQ([2.60])
 LT_PREREQ([2.4.0])
-AC_INIT([libmicrohttpd],[0.9.41],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd],[0.9.42],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AH_TOP([#define _GNU_SOURCE  1])
 
-LIB_VERSION_CURRENT=41
+LIB_VERSION_CURRENT=42
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=31
+LIB_VERSION_AGE=32
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -293,7 +293,7 @@ if test "$enable_poll" != "no"; then
     AC_LINK_IFELSE([
       AC_LANG_PROGRAM([[#include <winsock2.h>]], [[
 WSAPOLLFD fda[2];
-WSAPoll(fda, 2, 0);]])], 
+WSAPoll(fda, 2, 0);]])],
         [
           have_poll='yes'
           AC_DEFINE([HAVE_POLL],[1])

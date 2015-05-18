@@ -1,3 +1,6 @@
+Wed May 13 11:49:09 CEST 2015
+	Releasing libmicrohttpd 0.9.42. -CG
+
 Wed May 13 11:33:59 CEST 2015
 	Fix off-by-one in MHD_start_daemon_va() error handling logic
 	when initialization of threads for thread pool fails for some
