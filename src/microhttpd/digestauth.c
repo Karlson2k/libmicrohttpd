@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2010, 2011, 2012, 2015 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -472,8 +472,8 @@ test_header (struct MHD_Connection *connection,
  *
  * @param connection connections with headers to compare against
  * @param args argument URI string (after "?" in URI)
- * @return MHD_YES if the arguments match,
- *         MHD_NO if not
+ * @return #MHD_YES if the arguments match,
+ *         #MHD_NO if not
  */
 static int
 check_argument_match (struct MHD_Connection *connection,
@@ -632,10 +632,83 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        header value. */
     return MHD_NO;
   }
+  /* 8 = 4 hexadecimal numbers for the timestamp */
+  nonce_time = strtoul (nonce + len - 8, (char **)NULL, 16);
+  t = (uint32_t) MHD_monotonic_time();
+  /*
+   * First level vetting for the nonce validity: if the timestamp
+   * attached to the nonce exceeds `nonce_timeout', then the nonce is
+   * invalid.
+   */
+  if ( (t > nonce_time + nonce_timeout) ||
+       (nonce_time + nonce_timeout < nonce_time) )
+    {
+      /* too old */
+      return MHD_INVALID_NONCE;
+    }
+
+  calculate_nonce (nonce_time,
+                   connection->method,
+                   connection->daemon->digest_auth_random,
+                   connection->daemon->digest_auth_rand_size,
+                   connection->url,
+                   realm,
+                   noncehashexp);
+  /*
+   * Second level vetting for the nonce validity
+   * if the timestamp attached to the nonce is valid
+   * and possibly fabricated (in case of an attack)
+   * the attacker must also know the random seed to be
+   * able to generate a "sane" nonce, which if he does
+   * not, the nonce fabrication process going to be
+   * very hard to achieve.
+   */
+
+  if (0 != strcmp (nonce, noncehashexp))
+    {
+      return MHD_INVALID_NONCE;
+    }
+  if ( (0 == lookup_sub_value (cnonce,
+                               sizeof (cnonce),
+                               header, "cnonce")) ||
+       (0 == lookup_sub_value (qop, sizeof (qop), header, "qop")) ||
+       ( (0 != strcmp (qop, "auth")) &&
+         (0 != strcmp (qop, "")) ) ||
+       (0 == lookup_sub_value (nc, sizeof (nc), header, "nc"))  ||
+       (0 == lookup_sub_value (response, sizeof (response), header, "response")) )
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+		"Authentication failed, invalid format.\n");
+#endif
+      return MHD_NO;
+    }
+  nci = strtoul (nc, &end, 16);
+  if ( ('\0' != *end) ||
+       ( (LONG_MAX == nci) &&
+         (ERANGE == errno) ) )
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+		"Authentication failed, invalid format.\n");
+#endif
+      return MHD_NO; /* invalid nonce format */
+    }
+  /*
+   * Checking if that combination of nonce and nc is sound
+   * and not a replay attack attempt. Also adds the nonce
+   * to the nonce-nc map if it does not exist there.
+   */
+
+  if (MHD_YES != check_nonce_nc (connection, nonce, nci))
+    {
+      return MHD_NO;
+    }
+
   {
     char *uri;
-    
-    uri = malloc(left + 1);
+
+    uri = malloc (left + 1);
     if (NULL == uri)
     {
 #if HAVE_MESSAGES
@@ -648,113 +721,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
                                left + 1,
                                header, "uri"))
     {
-      free(uri);
-      return MHD_NO;
-    }
-
-    /* 8 = 4 hexadecimal numbers for the timestamp */
-    nonce_time = strtoul (nonce + len - 8, (char **)NULL, 16);
-    t = (uint32_t) MHD_monotonic_time();
-    /*
-     * First level vetting for the nonce validity: if the timestamp
-     * attached to the nonce exceeds `nonce_timeout', then the nonce is
-     * invalid.
-     */
-    if ( (t > nonce_time + nonce_timeout) ||
-	 (nonce_time + nonce_timeout < nonce_time) )
-    { 
-      free(uri);
-      return MHD_INVALID_NONCE;
-    }
-    if (0 != strncmp (uri,
-		      connection->url,
-		      strlen (connection->url)))
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-		"Authentication failed, URI does not match.\n");
-#endif
-      free(uri);
-      return MHD_NO;
-    }
-    {
-      const char *args = strchr (uri, '?');
-
-      if (NULL == args)
-	args = "";
-      else
-	args++;
-      if (MHD_YES !=
-	  check_argument_match (connection,
-				args) )
-      {
-#if HAVE_MESSAGES
-	MHD_DLOG (connection->daemon,
-		  "Authentication failed, arguments do not match.\n");
-#endif
-       free(uri);
-       return MHD_NO;
-      }
-    }
-    calculate_nonce (nonce_time,
-		     connection->method,
-		     connection->daemon->digest_auth_random,
-		     connection->daemon->digest_auth_rand_size,
-		     connection->url,
-		     realm,
-		     noncehashexp);
-    /*
-     * Second level vetting for the nonce validity
-     * if the timestamp attached to the nonce is valid
-     * and possibly fabricated (in case of an attack)
-     * the attacker must also know the random seed to be
-     * able to generate a "sane" nonce, which if he does
-     * not, the nonce fabrication process going to be
-     * very hard to achieve.
-     */
-
-    if (0 != strcmp (nonce, noncehashexp))
-    {
-      free(uri);
-      return MHD_INVALID_NONCE;
-    }
-    if ( (0 == lookup_sub_value (cnonce,
-				 sizeof (cnonce),
-				 header, "cnonce")) ||
-	 (0 == lookup_sub_value (qop, sizeof (qop), header, "qop")) ||
-	 ( (0 != strcmp (qop, "auth")) &&
-	   (0 != strcmp (qop, "")) ) ||
-	 (0 == lookup_sub_value (nc, sizeof (nc), header, "nc"))  ||
-	 (0 == lookup_sub_value (response, sizeof (response), header, "response")) )
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-		"Authentication failed, invalid format.\n");
-#endif
-      free(uri);
-      return MHD_NO;
-    }
-    nci = strtoul (nc, &end, 16);
-    if ( ('\0' != *end) ||
-	 ( (LONG_MAX == nci) &&
-	   (ERANGE == errno) ) )
-    {
-#if HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-		"Authentication failed, invalid format.\n");
-#endif
-      free(uri);
-      return MHD_NO; /* invalid nonce format */
-    }
-    /*
-     * Checking if that combination of nonce and nc is sound
-     * and not a replay attack attempt. Also adds the nonce
-     * to the nonce-nc map if it does not exist there.
-     */
-
-    if (MHD_YES != check_nonce_nc (connection, nonce, nci))
-    {
-      free(uri);
+      free (uri);
       return MHD_NO;
     }
 
@@ -774,7 +741,43 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 			  uri,
 			  hentity,
 			  respexp);
-    free(uri);
+
+    /* Need to unescape URI before comparing with connection->url */
+    connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+                                           connection,
+                                           uri);
+    if (0 != strncmp (uri,
+		      connection->url,
+		      strlen (connection->url)))
+    {
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+		"Authentication failed, URI does not match.\n");
+#endif
+      free (uri);
+      return MHD_NO;
+    }
+
+    {
+      const char *args = strchr (uri, '?');
+
+      if (NULL == args)
+	args = "";
+      else
+	args++;
+      if (MHD_YES !=
+	  check_argument_match (connection,
+				args) )
+      {
+#if HAVE_MESSAGES
+	MHD_DLOG (connection->daemon,
+		  "Authentication failed, arguments do not match.\n");
+#endif
+       free (uri);
+       return MHD_NO;
+      }
+    }
+    free (uri);
     return (0 == strcmp(response, respexp))
       ? MHD_YES
       : MHD_NO;
@@ -835,7 +838,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 		   : "");
   {
     char *header;
-    
+
     header = malloc(hlen + 1);
     if (NULL == header)
     {

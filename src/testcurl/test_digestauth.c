@@ -73,7 +73,8 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size,
+          const char *upload_data,
+          size_t *upload_data_size,
           void **unused)
 {
   struct MHD_Response *response;
@@ -82,44 +83,47 @@ ahc_echo (void *cls,
   const char *realm = "test@example.com";
   int ret;
 
-  username = MHD_digest_auth_get_username(connection);
+  username = MHD_digest_auth_get_username (connection);
   if ( (username == NULL) ||
        (0 != strcmp (username, "testuser")) )
     {
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
-						 DENIED,
-						 MHD_RESPMEM_PERSISTENT);  
+      response = MHD_create_response_from_buffer (strlen (DENIED),
+                                                  DENIED,
+                                                  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 MY_OPAQUE,
 					 response,
-					 MHD_NO);    
-      MHD_destroy_response(response);  
+					 MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     }
   ret = MHD_digest_auth_check(connection, realm,
-			      username, 
-			      password, 
+			      username,
+			      password,
 			      300);
   free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     {
-      response = MHD_create_response_from_buffer(strlen (DENIED), 
+      response = MHD_create_response_from_buffer(strlen (DENIED),
 						 DENIED,
-						 MHD_RESPMEM_PERSISTENT);  
-      if (NULL == response) 
+						 MHD_RESPMEM_PERSISTENT);
+      if (NULL == response)
 	return MHD_NO;
       ret = MHD_queue_auth_fail_response(connection, realm,
 					 MY_OPAQUE,
 					 response,
-					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);  
-      MHD_destroy_response(response);  
+					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+      MHD_destroy_response(response);
       return ret;
     }
-  response = MHD_create_response_from_buffer(strlen(PAGE), PAGE,
-					     MHD_RESPMEM_PERSISTENT);
-  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);  
-  MHD_destroy_response(response);
+  response = MHD_create_response_from_buffer (strlen(PAGE),
+                                              PAGE,
+                                              MHD_RESPMEM_PERSISTENT);
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
+  MHD_destroy_response (response);
   return ret;
 }
 
@@ -144,24 +148,24 @@ testDigestAuth ()
   fd = open("/dev/urandom", O_RDONLY);
   if (-1 == fd)
     {
-	  fprintf(stderr, "Failed to open `%s': %s\n",
-	       "/dev/urandom",
-		   strerror(errno));
-	  return 1;
-	}
+      fprintf(stderr, "Failed to open `%s': %s\n",
+              "/dev/urandom",
+              strerror(errno));
+      return 1;
+    }
   while (off < 8)
-	{
-	  len = read(fd, rnd, 8);
-	  if (len == -1)
-	    {
-		  fprintf(stderr, "Failed to read `%s': %s\n",
-		       "/dev/urandom",
-			   strerror(errno));
-		  (void) close(fd);
-		  return 1;
-		}
-	  off += len;
-	}
+    {
+      len = read(fd, rnd, 8);
+      if (len == -1)
+        {
+          fprintf(stderr, "Failed to read `%s': %s\n",
+                  "/dev/urandom",
+                  strerror(errno));
+          (void) close(fd);
+          return 1;
+        }
+      off += len;
+    }
   (void) close(fd);
 #else
   {
@@ -193,7 +197,7 @@ testDigestAuth ()
   if (d == NULL)
     return 1;
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1337/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1337/bar%20 foo?a=bü%20");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
@@ -223,7 +227,6 @@ testDigestAuth ()
     return 8;
   return 0;
 }
-
 
 
 int
