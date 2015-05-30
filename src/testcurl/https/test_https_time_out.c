@@ -64,7 +64,7 @@ test_tls_session_time_out (gnutls_session_t session)
 
   gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) (intptr_t) sd);
 
-  ret = connect (sd, &sa, sizeof (struct sockaddr_in));
+  ret = connect (sd, (struct sockaddr *) &sa, sizeof (struct sockaddr_in));
 
   if (ret < 0)
     {
