@@ -73,7 +73,7 @@
 /**
  * Default connection limit.
  */
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
 #define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE - 4
 #else
 #define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE
@@ -1271,7 +1271,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
   if ( (client_socket >= FD_SETSIZE) &&
        (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) )
     {
@@ -1418,7 +1418,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
 	{
 	  /* make socket non-blocking */
-#if !defined(WINDOWS) || defined(CYGWIN)
+#if !defined(MHD_WINSOCK_SOCKETS)
 	  int flags = fcntl (connection->socket_fd, F_GETFL);
 	  if ( (-1 == flags) ||
 	       (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
@@ -1797,7 +1797,7 @@ static void
 make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 MHD_socket sock)
 {
-#ifdef WINDOWS
+#ifdef MHD_WINSOCK_SOCKETS
   DWORD dwFlags;
   unsigned long flags = 1;
 
@@ -3611,7 +3611,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->socket_fd = MHD_INVALID_SOCKET;
   daemon->listening_address_reuse = 0;
   daemon->options = flags;
-#if WINDOWS
+#if defined(MHD_WINSOCK_SOCKETS) || defined(CYGWIN)
   /* Winsock is broken with respect to 'shutdown';
      this disables us calling 'shutdown' on W32. */
   daemon->options |= MHD_USE_EPOLL_TURBO;
@@ -3650,7 +3650,7 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
        (1 == use_pipe) &&
        (daemon->wpipe[0] >= FD_SETSIZE) )
@@ -3934,7 +3934,7 @@ MHD_start_daemon_va (unsigned int flags,
 	     (http://msdn.microsoft.com/en-us/library/ms738574%28v=VS.85%29.aspx);
 	     and may also be missing on older POSIX systems; good luck if you have any of those,
 	     your IPv6 socket may then also bind against IPv4 anyway... */
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
 	  const int
 #else
 	  const char
@@ -4016,7 +4016,7 @@ MHD_start_daemon_va (unsigned int flags,
     {
       socket_fd = daemon->socket_fd;
     }
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
   if ( (socket_fd >= FD_SETSIZE) &&
        (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY)) ) )
     {
@@ -4121,7 +4121,7 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (daemon->worker_pool_size > 0) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
-#if !defined(WINDOWS) || defined(CYGWIN)
+#if !defined(MHD_WINSOCK_SOCKETS)
       int sk_flags;
 #else
       unsigned long sk_flags;
@@ -4140,7 +4140,7 @@ MHD_start_daemon_va (unsigned int flags,
       /* Accept must be non-blocking. Multiple children may wake up
        * to handle a new connection, but only one will win the race.
        * The others must immediately return. */
-#if !defined(WINDOWS) || defined(CYGWIN)
+#if !defined(MHD_WINSOCK_SOCKETS)
       sk_flags = fcntl (socket_fd, F_GETFL);
       if (sk_flags < 0)
         goto thread_failed;
@@ -4150,7 +4150,7 @@ MHD_start_daemon_va (unsigned int flags,
       sk_flags = 1;
       if (SOCKET_ERROR == ioctlsocket (socket_fd, FIONBIO, &sk_flags))
         goto thread_failed;
-#endif /* WINDOWS && !CYGWIN */
+#endif /* MHD_WINSOCK_SOCKETS */
 
       /* Allocate memory for pooled objects */
       daemon->worker_pool = malloc (sizeof (struct MHD_Daemon)
@@ -4182,7 +4182,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto thread_failed;
             }
-#ifndef WINDOWS
+#ifndef MHD_WINSOCK_SOCKETS
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
                (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
                (d->wpipe[0] >= FD_SETSIZE) )
@@ -4343,7 +4343,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     {
       shutdown (pos->socket_fd,
                 (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
-#if WINDOWS
+#if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
            (1 != MHD_pipe_write_ (daemon->wpipe[1], "e", 1)) )
