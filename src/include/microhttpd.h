@@ -2023,6 +2023,8 @@ MHD_create_response_from_buffer (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
+/* NOTE: this should be 'uint64_t' instead of 'size_t', but changing
+   this would break API compatibility. */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
 			     int fd);
@@ -2044,6 +2046,8 @@ MHD_create_response_from_fd (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
+/* NOTE: this should be 'uint64_t' instead of 'size_t', but changing
+   this would break API compatibility. */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
 				       int fd,
