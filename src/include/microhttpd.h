@@ -232,6 +232,8 @@ typedef SOCKET MHD_socket;
  */
 #define MHD_LONG_LONG long long
 #define MHD_UNSIGNED_LONG_LONG unsigned long long
+#else /* MHD_LONG_LONG */
+_MHD_DEPR_MACRO("Macro MHD_LONG_LONG is deprecated, use MHD_UNSIGNED_LONG_LONG")
 #endif
 /**
  * Format string for printing a variable of type #MHD_LONG_LONG.
@@ -243,6 +245,8 @@ typedef SOCKET MHD_socket;
  */
 #define MHD_LONG_LONG_PRINTF "ll"
 #define MHD_UNSIGNED_LONG_LONG_PRINTF "%llu"
+#else /* MHD_LONG_LONG_PRINTF */
+_MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG_LONG_PRINTF")
 #endif
 
 
@@ -281,7 +285,8 @@ typedef SOCKET MHD_socket;
 #define MHD_HTTP_METHOD_NOT_ALLOWED 405
 #define MHD_HTTP_NOT_ACCEPTABLE 406
 /** @deprecated */
-#define MHD_HTTP_METHOD_NOT_ACCEPTABLE 406
+#define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
+  _MHD_DEPR_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") 406
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
 #define MHD_HTTP_REQUEST_TIMEOUT 408
 #define MHD_HTTP_CONFLICT 409
