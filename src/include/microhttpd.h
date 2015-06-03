@@ -194,6 +194,34 @@ typedef SOCKET MHD_socket;
 #endif /* MHD_SOCKET_DEFINED */
 
 /**
+ * Define MHD_NO_DEPRECATION before including "microhttpd.h" to disable deprecation messages
+ */
+#ifdef MHD_NO_DEPRECATION
+#define _MHD_DEPR_MACRO(msg)
+#endif /* MHD_NO_DEPRECATION */
+
+#ifndef _MHD_DEPR_MACRO
+#if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1500
+/* Stringify macros */
+#define _MHD_INSTRMACRO(a) #a
+#define _MHD_STRMACRO(a) _MHD_INSTRMACRO(a)
+#define _MHD_DEPR_MACRO(msg) __pragma(message(__FILE__ "(" _MHD_STRMACRO(__LINE__)"): warning: " msg))
+#elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
+#define _MHD_GCC_PRAG(x) _Pragma (#x)
+#if __clang_major__+0 >= 5 || \
+  (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))) || \
+  __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
+#define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
+#else /* older clang or GCC */
+#define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
+#endif 
+/* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
+#else /* other compilers */
+#define _MHD_DEPR_MACRO(msg)
+#endif
+#endif /* _MHD_DEPR_MACRO */
+
+/**
  * Not all architectures and `printf()`'s support the `long long` type.
  * This gives the ability to replace `long long` with just a `long`,
  * standard `int` or a `short`.
