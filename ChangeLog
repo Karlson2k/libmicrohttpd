@@ -1,3 +1,7 @@
+Wed Jun 03 21:23:47 CEST 2015
+	Add deprecation compiler messages for deprecated functions 
+	and macros. -EG
+
 Fri May 29 12:23:01 CEST 2015
 	Fixing digest authentication when used in combination
 	with escaped characters in URLs. -CG/AW
