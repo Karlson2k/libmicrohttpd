@@ -24,6 +24,8 @@
  * @author Christian Grothoff
  */
 
+#define MHD_NO_DEPRECATION 1
+
 #include "internal.h"
 #include "response.h"
 

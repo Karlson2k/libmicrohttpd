@@ -2005,6 +2005,7 @@ MHD_create_response_from_callback (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
+_MHD_DEPR_FUNC("MHD_create_response_from_data() is deprecated, use MHD_create_response_from_buffer()") \
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
 			       void *data,
