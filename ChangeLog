@@ -1,3 +1,6 @@
+Thu Jun  4 13:37:05 CEST 2015
+	Fixing memory leak in digest authentication. -AW
+
 Wed Jun 03 21:23:47 CEST 2015
 	Add deprecation compiler messages for deprecated functions 
 	and macros. -EG

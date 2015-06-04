@@ -508,7 +508,10 @@ check_argument_match (struct MHD_Connection *connection,
 						 connection,
 						 argp);
 	  if (MHD_YES != test_header (connection, argp, NULL))
-	    return MHD_NO;
+      {
+        free(argb);
+        return MHD_NO;
+      }
 	  num_headers++;
 	  break;
 	}
@@ -527,10 +530,16 @@ check_argument_match (struct MHD_Connection *connection,
 					     connection,
 					     equals);
       if (! test_header (connection, argp, equals))
-	return MHD_NO;
+      {
+          free(argb);
+          return MHD_NO;
+      }
+      
       num_headers++;
       argp = amper;
     }
+    
+  free(argb);
 
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
