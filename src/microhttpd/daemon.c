@@ -1145,8 +1145,8 @@ send_param_adapter (struct MHD_Connection *connection,
   /* Handle broken kernel / libc, returning -1 but not setting errno;
      kill connection as that should be safe; reported on mailinglist here:
      http://lists.gnu.org/archive/html/libmicrohttpd/2014-10/msg00023.html */
-  if ( (-1 == ret) && (0 == errno) )
-    errno = ECONNRESET;
+  if ( (0 > ret) && (0 == MHD_socket_errno_) )
+    MHD_set_socket_errno_(ECONNRESET);
   return ret;
 }
 
