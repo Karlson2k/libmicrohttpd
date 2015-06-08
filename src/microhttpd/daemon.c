@@ -1107,15 +1107,15 @@ send_param_adapter (struct MHD_Connection *connection,
       /* can use sendfile */
       offset = (off_t) connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
-      if (left > SSIZE_MAX)
-	left = SSIZE_MAX; /* cap at return value limit */
-      if (-1 != (ret = sendfile (connection->socket_fd,
+      if (i > left)
+        i = left;
+      if (0 < (ret = sendfile (connection->socket_fd,
 				 fd,
 				 &offset,
-				 (size_t) left)))
+				 i)))
 	{
 #if EPOLL_SUPPORT
-	  if (ret < left)
+          if (requested_size > (size_t) ret)
 	    {
 	      /* partial write --- no longer write-ready */
 	      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
