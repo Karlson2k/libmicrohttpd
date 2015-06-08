@@ -1033,6 +1033,7 @@ recv_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
+  const size_t requested_size = i;
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
@@ -1040,9 +1041,17 @@ recv_param_adapter (struct MHD_Connection *connection,
       MHD_set_socket_errno_ (ENOTCONN);
       return -1;
     }
-  ret = recv (connection->socket_fd, other, i, MSG_NOSIGNAL);
+#ifdef MHD_POSIX_SOCKETS
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX; /* return value limit */
+#else  /* MHD_WINSOCK_SOCKETS */
+  if (i > INT_MAX)
+    i = INT_MAX; /* return value limit */
+#endif /* MHD_WINSOCK_SOCKETS */
+
+  ret = recv(connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (ret < (ssize_t) i)
+  if (0 > ret || requested_size > (size_t) ret)
     {
       /* partial read --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
@@ -1066,6 +1075,7 @@ send_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
+  const size_t requested_size = i;
 #if LINUX
   MHD_socket fd;
   off_t offset;
@@ -1078,6 +1088,14 @@ send_param_adapter (struct MHD_Connection *connection,
       MHD_set_socket_errno_ (ENOTCONN);
       return -1;
     }
+#ifdef MHD_POSIX_SOCKETS
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX; /* return value limit */
+#else  /* MHD_WINSOCK_SOCKETS */
+  if (i > INT_MAX)
+    i = INT_MAX; /* return value limit */
+#endif /* MHD_WINSOCK_SOCKETS */
+
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return send (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if LINUX
@@ -1118,7 +1136,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
   ret = send (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (ret < (ssize_t) i)
+  if (0 > ret || requested_size > (size_t) ret)
     {
       /* partial write --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
