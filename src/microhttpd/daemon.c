@@ -1102,7 +1102,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
        (NULL != connection->response) &&
-       (MHD_INVALID_SOCKET != (fd = connection->response->fd)) )
+       (-1 != (fd = connection->response->fd)) )
     {
       /* can use sendfile */
       offset = (off_t) connection->response_write_position + connection->response->fd_off;
