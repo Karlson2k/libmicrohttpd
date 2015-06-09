@@ -70,6 +70,9 @@
    don't. */
 #define HAVE_DECL_TCP_NOPUSH 0
 
+/* Define to 1 if you have the `_lseeki64' function. */
+#define HAVE___LSEEKI64 1
+
 
 /* *** Headers information *** */
 /* Not really important as not used by code currently */

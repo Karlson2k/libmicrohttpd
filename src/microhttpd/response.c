@@ -329,11 +329,16 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
   if (offset64 < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
+#if defined(HAVE___LSEEKI64)
+  if (_lseeki64 (response->fd, offset64, SEEK_SET) != offset64)
+    return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
+#else /* !HAVE___LSEEKI64 */
   if (sizeof(off_t) < sizeof(uint64_t) && offset64 > (uint64_t)INT32_MAX)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
   if (lseek (response->fd, (off_t)offset64, SEEK_SET) != (off_t)offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
+#endif
 
   n = read (response->fd, buf, max);
   if (0 == n)
