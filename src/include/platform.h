@@ -78,6 +78,10 @@
 #endif /* !WIN32_LEAN_AND_MEAN */
 #endif // _WIN32
 
+#if LINUX+0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && ! defined(_LARGEFILE64_SOURCE)
+#define _LARGEFILE64_SOURCE 1
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -200,6 +204,14 @@ typedef MHD_socket MHD_pipe;
 #if !defined(IPPROTO_IPV6) && defined(_MSC_FULL_VER) && _WIN32_WINNT >= 0x0501
 /* VC use IPPROTO_IPV6 as part of enum */
 #define IPPROTO_IPV6 IPPROTO_IPV6
+#endif
+
+#ifndef OFF_T_MAX
+#define OFF_T_MAX ((off_t) ~(((uint64_t) 1) << (8 * sizeof(off_t) - 1)))
+#endif
+
+#if defined(_LARGEFILE64_SOURCE) && !defined(OFF64_T_MAX)
+#define OFF64_T_MAX ((off64_t) ~(((uint64_t) 1) << (8 * sizeof(off64_t) - 1)))
 #endif
 
 #endif

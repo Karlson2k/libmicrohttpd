@@ -117,6 +117,10 @@
 #define EPOLL_CLOEXEC 0
 #endif
 
+#ifndef INT32_MAX
+#define INT32_MAX ((int32_t)0x7FFFFFFF)
+#endif /* !INT32_MAX */
+
 
 /**
  * Default implementation of the panic function,
@@ -1078,8 +1082,6 @@ send_param_adapter (struct MHD_Connection *connection,
   const size_t requested_size = i;
 #if LINUX
   MHD_socket fd;
-  off_t offset;
-  off_t left;
 #endif
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
@@ -1105,14 +1107,27 @@ send_param_adapter (struct MHD_Connection *connection,
        (-1 != (fd = connection->response->fd)) )
     {
       /* can use sendfile */
-      offset = (off_t) connection->response_write_position + connection->response->fd_off;
+      uint64_t left;
+#ifndef HAVE_SENDFILE64
+      uint64_t offsetu64;
+      off_t offset;
+#else  /* HAVE_SENDFILE64 */
+      uint64_t offsetu64;
+      off64_t offset;
+#endif /* HAVE_SENDFILE64 */
+      offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
       if (i > left)
         i = left;
-      if (0 < (ret = sendfile (connection->socket_fd,
-				 fd,
-				 &offset,
-				 i)))
+#ifndef HAVE_SENDFILE64
+      offset = (off_t) offsetu64;
+      if ( (offsetu64 <= (uint64_t)OFF_T_MAX) &&
+           0 < (ret = sendfile (connection->socket_fd, fd, &offset, i)))
+#else  /* HAVE_SENDFILE64 */
+      offset = (off64_t) offsetu64;
+      if ( (offsetu64 <= (uint64_t)OFF64_T_MAX) &&
+          0 < (ret = sendfile64 (connection->socket_fd, fd, &offset, i)))
+#endif /* HAVE_SENDFILE64 */
 	{
 #if EPOLL_SUPPORT
           if (requested_size > (size_t) ret)
