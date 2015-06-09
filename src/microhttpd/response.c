@@ -343,7 +343,18 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
 #endif
 
+#ifndef _WIN32
+  if (max > SSIZE_MAX)
+    max = SSIZE_MAX;
+
   n = read (response->fd, buf, max);
+#else  /* _WIN32 */
+  if (max > INT32_MAX)
+    max = INT32_MAX;
+
+  n = read (response->fd, buf, (unsigned int)max);
+#endif /* _WIN32 */
+
   if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0)
