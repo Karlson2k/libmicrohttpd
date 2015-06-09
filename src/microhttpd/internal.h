@@ -295,7 +295,7 @@ struct MHD_Response
   /**
    * Offset to start reading from when using @e fd.
    */
-  off_t fd_off;
+  uint64_t fd_off;
 
   /**
    * Number of bytes ready in @e data (buffer may be larger

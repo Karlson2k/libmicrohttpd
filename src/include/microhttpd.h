@@ -2076,11 +2076,27 @@ MHD_create_response_from_buffer (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-/* NOTE: this should be 'uint64_t' instead of 'size_t', but changing
-   this would break API compatibility. */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
-			     int fd);
+                               int fd);
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response;
+ *        sizes larger than 2 GiB may be not supported by OS or
+ *        MHD build
+ * @param fd file descriptor referring to a file on disk with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_fd64 (uint64_t size,
+                               int fd);
 
 
 /**
@@ -2099,12 +2115,33 @@ MHD_create_response_from_fd (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-/* NOTE: this should be 'uint64_t' instead of 'size_t', but changing
-   this would break API compatibility. */
+_MHD_DEPR_FUNC("Function MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
-				       int fd,
-				       off_t offset);
+                                       int fd,
+                                       off_t offset);
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response;
+ *        sizes larger than 2 GiB may be not supported by OS or
+ *        MHD build
+ * @param fd file descriptor referring to a file on disk with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
+ * @param offset offset to start reading from in the file;
+ *        reading file beyond 2 GiB may be not supported by OS or
+ *        MHD build
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_fd_at_offset64 (uint64_t size,
+                                         int fd,
+                                         uint64_t offset);
 
 
 #if 0
