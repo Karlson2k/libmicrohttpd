@@ -2087,7 +2087,7 @@ MHD_create_response_from_fd (size_t size,
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
@@ -2128,13 +2128,13 @@ MHD_create_response_from_fd_at_offset (size_t size,
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
  * @param offset offset to start reading from in the file;
  *        reading file beyond 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
@@ -2740,7 +2740,17 @@ enum MHD_FEATURE
   * supported. If supported then option
   * ::MHD_OPTION_HTTPS_KEY_PASSWORD can be used.
   */
-  MHD_FEATURE_HTTPS_KEY_PASSWORD = 14
+  MHD_FEATURE_HTTPS_KEY_PASSWORD = 14,
+
+  /**
+   * Get whether reading files beyond 2 GiB boundary is supported.
+   * If supported then #MHD_create_response_from_fd(), 
+   * #MHD_create_response_from_fd64 #MHD_create_response_from_fd_at_offset()
+   * and #MHD_create_response_from_fd_at_offset64() can be used with sizes and
+   * offsets larger than 2 GiB. If not supported value of size+offset is
+   * limited to 2 GiB.
+   */
+  MHD_FEATURE_LARGE_FILE = 15
 };
 
 

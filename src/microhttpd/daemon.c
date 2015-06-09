@@ -4768,6 +4768,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else
       return MHD_NO;
 #endif
+    case MHD_FEATURE_LARGE_FILE:
+#if defined(HAVE___LSEEKI64) || defined(HAVE_LSEEK64)
+      return MHD_YES;
+#else
+      return (sizeof(uint64_t) > sizeof(off_t)) ? MHD_NO : MHD_YES;
+#endif
     }
   return MHD_NO;
 }

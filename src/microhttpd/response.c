@@ -410,13 +410,13 @@ MHD_create_response_from_fd_at_offset (size_t size,
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
  * @param offset offset to start reading from in the file;
  *        reading file beyond 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
@@ -472,7 +472,7 @@ MHD_create_response_from_fd (size_t size,
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
- *        MHD build
+ *        MHD build; see ::MHD_FEATURE_LARGE_FILE
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
