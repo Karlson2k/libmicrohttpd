@@ -427,7 +427,15 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
 {
   struct MHD_Response *response;
 
-  response = MHD_create_response_from_callback (size,
+#if !defined(HAVE___LSEEKI64) && !defined(HAVE_LSEEK64)
+  if (sizeof(uint64_t) > sizeof(off_t) &&
+      (size > (uint64_t)INT32_MAX || offset > (uint64_t)INT32_MAX || (size + offset) >= (uint64_t)INT32_MAX))
+    return NULL;
+#endif
+  if ((int64_t)size < 0 || (int64_t)offset < 0 || (int64_t)(size + offset) < 0)
+    return NULL;
+
+  response = MHD_create_response_from_callback(size,
 						4 * 1024,
 						&file_reader,
 						NULL,
