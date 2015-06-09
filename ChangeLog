@@ -1,3 +1,7 @@
+Tue Jun 09 18:30:17 CEST 2015
+	Add new functions MHD_create_response_from_fd64() and
+	MHD_create_response_from_fd_at_offset64(). -EG
+
 Thu Jun  4 13:37:05 CEST 2015
 	Fixing memory leak in digest authentication. -AW
 

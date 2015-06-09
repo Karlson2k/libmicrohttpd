@@ -378,6 +378,7 @@ free_callback (void *cls)
   response->fd = -1;
 }
 
+#undef MHD_create_response_from_fd_at_offset
 
 /**
  * Create a response object.  The response object can be extended with
