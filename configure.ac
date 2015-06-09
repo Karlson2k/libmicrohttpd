@@ -608,7 +608,7 @@ AM_CONDITIONAL(HAVE_SPDYLAY, [test "x$have_spdylay" = "xyes"])
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-AC_CHECK_FUNCS([_lseeki64])
+AC_CHECK_FUNCS([_lseeki64 lseek64])
 
 # optional: have error messages ?
 AC_MSG_CHECKING(whether to generate error messages)
