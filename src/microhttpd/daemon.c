@@ -1037,7 +1037,9 @@ recv_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
+#if EPOLL_SUPPORT
   const size_t requested_size = i;
+#endif
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
@@ -1055,7 +1057,7 @@ recv_param_adapter (struct MHD_Connection *connection,
 
   ret = recv(connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (0 > ret || requested_size > (size_t) ret)
+  if ( (0 > ret) || (requested_size > (size_t) ret))
     {
       /* partial read --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
@@ -1079,7 +1081,9 @@ send_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
+#if EPOLL_SUPPORT
   const size_t requested_size = i;
+#endif
 #if LINUX
   MHD_socket fd;
 #endif
@@ -1151,7 +1155,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
   ret = send (connection->socket_fd, other, i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if (0 > ret || requested_size > (size_t) ret)
+  if ( (0 > ret) || (requested_size > (size_t) ret) )
     {
       /* partial write --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
