@@ -2061,7 +2061,10 @@ connection is suspended, MHD will not detect disconnects by the
 client.
 
 The only safe time to suspend a connection is from the
-@code{MHD_AccessHandlerCallback}.
+@code{MHD_AccessHandlerCallback} or from the respective
+@code{MHD_ContentReaderCallback} (but in this case the
+response object must not be shared among multiple
+connections).
 
 Finally, it is an API violation to call @code{MHD_stop_daemon} while
 having suspended connections (this will at least create memory and
