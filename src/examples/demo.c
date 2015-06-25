@@ -690,8 +690,9 @@ generate_page (void *cls,
       ssize_t got;
       const char *mime;
 
-      if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
-	return MHD_NO;  /* unexpected method (we're not polite...) */
+      if ( (0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+           (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)) )
+        return MHD_NO;  /* unexpected method (we're not polite...) */
       if ( (0 == stat (&url[1], &buf)) &&
 	   (NULL == strstr (&url[1], "..")) &&
 	   ('/' != url[1]))
@@ -783,7 +784,8 @@ generate_page (void *cls,
 	  return return_directory_response (connection);
 	}
     }
-  if (0 == strcmp (method, MHD_HTTP_METHOD_GET))
+  if ( (0 == strcmp (method, MHD_HTTP_METHOD_GET)) ||
+       (0 == strcmp (method, MHD_HTTP_METHOD_HEAD)) )
   {
     return return_directory_response (connection);
   }
