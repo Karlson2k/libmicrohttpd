@@ -679,7 +679,7 @@ struct MHD_Connection
   size_t write_buffer_size;
 
   /**
-   * Offset where we are with sending from write_buffer.
+   * Offset where we are with sending from @e write_buffer.
    */
   size_t write_buffer_send_offset;
 

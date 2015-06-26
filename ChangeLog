@@ -1,3 +1,9 @@
+Fri Jun 26 23:17:20 CEST 2015
+	Fix (automatic) handling of HEAD requests with
+	MHD_create_response_from_callback() and HTTP/1.1
+	connection keep-alives. Thanks to Cristian Klein
+	for reporting. -CG
+
 Tue Jun 09 18:30:17 CEST 2015
 	Add new functions MHD_create_response_from_fd64() and
 	MHD_create_response_from_fd_at_offset64(). -EG
@@ -6,7 +12,7 @@ Thu Jun  4 13:37:05 CEST 2015
 	Fixing memory leak in digest authentication. -AW
 
 Wed Jun 03 21:23:47 CEST 2015
-	Add deprecation compiler messages for deprecated functions 
+	Add deprecation compiler messages for deprecated functions
 	and macros. -EG
 
 Fri May 29 12:23:01 CEST 2015

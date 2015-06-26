@@ -337,7 +337,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
   response = connection->response;
   if (NULL == response->crc)
     return MHD_YES;
-  if (0 == response->total_size)
+  if ( (0 == response->total_size) ||
+       (connection->response_write_position == response->total_size) )
     return MHD_YES; /* 0-byte response is always ready */
   if ( (response->data_start <=
 	connection->response_write_position) &&
@@ -2127,41 +2128,45 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_NORMAL_BODY_READY:
           response = connection->response;
-          if (NULL != response->crc)
-            (void) MHD_mutex_lock_ (&response->mutex);
-          if (MHD_YES != try_ready_normal_body (connection))
-	    break;
-	  ret = connection->send_cls (connection,
-				      &response->data
-				      [connection->response_write_position
-				       - response->data_start],
-				      response->data_size -
-				      (connection->response_write_position
-				       - response->data_start));
-	  const int err = MHD_socket_errno_;
+          if (connection->response_write_position <
+              connection->response->total_size)
+          {
+            if (NULL != response->crc)
+              (void) MHD_mutex_lock_ (&response->mutex);
+            if (MHD_YES != try_ready_normal_body (connection))
+              break;
+            ret = connection->send_cls (connection,
+                                        &response->data
+                                        [connection->response_write_position
+                                         - response->data_start],
+                                        response->data_size -
+                                        (connection->response_write_position
+                                         - response->data_start));
+            const int err = MHD_socket_errno_;
 #if DEBUG_SEND_DATA
-          if (ret > 0)
-            fprintf (stderr,
-                     "Sent DATA response: `%.*s'\n",
-                     (int) ret,
-                     &response->data[connection->response_write_position -
-                                     response->data_start]);
+            if (ret > 0)
+              fprintf (stderr,
+                       "Sent DATA response: `%.*s'\n",
+                       (int) ret,
+                       &response->data[connection->response_write_position -
+                                       response->data_start]);
 #endif
-          if (NULL != response->crc)
-            (void) MHD_mutex_unlock_ (&response->mutex);
-          if (ret < 0)
-            {
-              if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
-                return MHD_YES;
+            if (NULL != response->crc)
+              (void) MHD_mutex_unlock_ (&response->mutex);
+            if (ret < 0)
+              {
+                if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
+                  return MHD_YES;
 #if HAVE_MESSAGES
-              MHD_DLOG (connection->daemon,
-                        "Failed to send data: %s\n",
-                        MHD_socket_last_strerr_ ());
+                MHD_DLOG (connection->daemon,
+                          "Failed to send data: %s\n",
+                          MHD_socket_last_strerr_ ());
 #endif
-	      CONNECTION_CLOSE_ERROR (connection, NULL);
-              return MHD_YES;
-            }
-          connection->response_write_position += ret;
+                CONNECTION_CLOSE_ERROR (connection, NULL);
+                return MHD_YES;
+              }
+            connection->response_write_position += ret;
+          }
           if (connection->response_write_position ==
               connection->response->total_size)
             connection->state = MHD_CONNECTION_FOOTERS_SENT; /* have no footers */
@@ -2523,7 +2528,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           if (NULL != connection->response->crc)
             (void) MHD_mutex_lock_ (&connection->response->mutex);
-          if (0 == connection->response->total_size)
+          if ( (0 == connection->response->total_size) ||
+               (connection->response_write_position ==
+                connection->response->total_size) )
             {
               if (NULL != connection->response->crc)
                 (void) MHD_mutex_unlock_ (&connection->response->mutex);
