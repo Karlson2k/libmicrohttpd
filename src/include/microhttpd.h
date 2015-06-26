@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094203
+#define MHD_VERSION 0x00094204
 
 /**
  * MHD-internal return code for "YES".
@@ -215,7 +215,7 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
 #else /* older clang or GCC */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
-#endif 
+#endif
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
 #else /* other compilers */
 #define _MHD_DEPR_MACRO(msg)
@@ -406,6 +406,7 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 #define MHD_HTTP_HEADER_WARNING "Warning"
 #define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN "Access-Control-Allow-Origin"
+#define MHD_HTTP_HEADER_CONTENT_DISPOSITION "Content-Disposition"
 
 /** @} */ /* end of group headers */
 
@@ -2121,7 +2122,7 @@ MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset);
 
-/* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset() 
+/* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset()
    to minimize possible problems with different off_t options */
 #define MHD_create_response_from_fd_at_offset(size,fd,offset) \
   _MHD_DEPR_MACRO("Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
@@ -2750,7 +2751,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether reading files beyond 2 GiB boundary is supported.
-   * If supported then #MHD_create_response_from_fd(), 
+   * If supported then #MHD_create_response_from_fd(),
    * #MHD_create_response_from_fd64 #MHD_create_response_from_fd_at_offset()
    * and #MHD_create_response_from_fd_at_offset64() can be used with sizes and
    * offsets larger than 2 GiB. If not supported value of size+offset is
