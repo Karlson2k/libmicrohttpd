@@ -16,7 +16,6 @@
      License along with this library; if not, write to the Free Software
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
 /**
  * @file fileserver_example.c
  * @brief minimal example for how to use libmicrohttpd to serve files
@@ -29,8 +28,12 @@
 
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
+
 static ssize_t
-file_reader (void *cls, uint64_t pos, char *buf, size_t max)
+file_reader (void *cls,
+             uint64_t pos,
+             char *buf,
+             size_t max)
 {
   FILE *file = cls;
 
@@ -38,12 +41,14 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
   return fread (buf, 1, max, file);
 }
 
+
 static void
 free_callback (void *cls)
 {
   FILE *file = cls;
   fclose (file);
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -60,7 +65,8 @@ ahc_echo (void *cls,
   FILE *file;
   struct stat buf;
 
-  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
+  if ( (0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+       (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)) )
     return MHD_NO;              /* unexpected method */
   if (&aptr != *ptr)
     {
@@ -73,7 +79,7 @@ ahc_echo (void *cls,
     file = fopen (&url[1], "rb");
   else
     file = NULL;
-  if (file == NULL)
+  if (NULL == file)
     {
       response = MHD_create_response_from_buffer (strlen (PAGE),
 						  (void *) PAGE,
@@ -87,7 +93,7 @@ ahc_echo (void *cls,
                                                     &file_reader,
                                                     file,
                                                     &free_callback);
-      if (response == NULL)
+      if (NULL == response)
 	{
 	  fclose (file);
 	  return MHD_NO;
@@ -97,6 +103,7 @@ ahc_echo (void *cls,
     }
   return ret;
 }
+
 
 int
 main (int argc, char *const *argv)
