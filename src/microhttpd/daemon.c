@@ -1019,7 +1019,7 @@ exit:
                                     &con->socket_context,
                                     MHD_CONNECTION_NOTIFY_CLOSED);
 
-  return (MHD_THRD_RTRN_TYPE_)0;
+  return (MHD_THRD_RTRN_TYPE_) 0;
 }
 
 
@@ -2039,6 +2039,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->tls_session)
 	gnutls_deinit (pos->tls_session);
 #endif
+      daemon->connections--;
       if (NULL != daemon->notify_connection)
         daemon->notify_connection (daemon->notify_connection_cls,
                                    pos,
@@ -2087,7 +2088,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
-      daemon->connections--;
     }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )

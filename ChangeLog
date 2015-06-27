@@ -1,3 +1,12 @@
+Sat Jun 27 22:16:27 CEST 2015
+	Make sure to decrement connection counter before
+	calling connection notifier so that
+	MHD_DAEMON_INFO_CURRENT_CONNECTIONS does not
+	present stale information (relevant if this is
+	used for termination detection of a daemon
+	stopped via MHD_quiesce_daemon()). Thanks to
+	Markus Doppelbauer for reporting. -CG
+
 Fri Jun 26 23:17:20 CEST 2015
 	Fix (automatic) handling of HEAD requests with
 	MHD_create_response_from_callback() and HTTP/1.1
