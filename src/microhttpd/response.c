@@ -28,7 +28,7 @@
 
 #include "internal.h"
 #include "response.h"
-#include <limits.h>
+#include "MHD_limits.h"
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -304,10 +304,6 @@ MHD_set_response_options (struct MHD_Response *response,
   return ret;
 }
 
-
-#ifndef INT32_MAX
-#define INT32_MAX ((int32_t)0x7FFFFFFF)
-#endif /* !INT32_MAX */
 
 /**
  * Given a file descriptor, read data from the file

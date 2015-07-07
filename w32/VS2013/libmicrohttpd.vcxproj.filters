@@ -105,6 +105,9 @@
     <ClInclude Include="..\..\src\include\autoinit_funcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\microhttpd\MHD_limits.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="microhttpd_dll_res_vc.rc">

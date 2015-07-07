@@ -206,12 +206,4 @@ typedef MHD_socket MHD_pipe;
 #define IPPROTO_IPV6 IPPROTO_IPV6
 #endif
 
-#ifndef OFF_T_MAX
-#define OFF_T_MAX ((off_t) ~(((uint64_t) 1) << (8 * sizeof(off_t) - 1)))
-#endif
-
-#if defined(_LARGEFILE64_SOURCE) && !defined(OFF64_T_MAX)
-#define OFF64_T_MAX ((off64_t) ~(((uint64_t) 1) << (8 * sizeof(off64_t) - 1)))
-#endif
-
 #endif

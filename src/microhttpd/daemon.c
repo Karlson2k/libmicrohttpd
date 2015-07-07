@@ -36,7 +36,7 @@
 #include "response.h"
 #include "connection.h"
 #include "memorypool.h"
-#include <limits.h>
+#include "MHD_limits.h"
 #include "autoinit_funcs.h"
 
 #if HAVE_SEARCH_H
@@ -116,10 +116,6 @@
 #ifndef EPOLL_CLOEXEC
 #define EPOLL_CLOEXEC 0
 #endif
-
-#ifndef INT32_MAX
-#define INT32_MAX ((int32_t)0x7FFFFFFF)
-#endif /* !INT32_MAX */
 
 
 /**
