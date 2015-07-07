@@ -24,7 +24,7 @@
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(MHD_WINSOCK_SOCKETS)
 /* override small default value */
 #define FD_SETSIZE 1024
 #define MHD_DEFAULT_FD_SETSIZE 64
