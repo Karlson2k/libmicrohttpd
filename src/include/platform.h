@@ -68,15 +68,15 @@
 #if defined(_WIN32)
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
-#else // _WIN32_WINNT
+#else /* _WIN32_WINNT */
 #if _WIN32_WINNT < 0x0501
 #error "Headers for Windows XP or later are required"
-#endif // _WIN32_WINNT < 0x0501
-#endif // _WIN32_WINNT
+#endif /* _WIN32_WINNT < 0x0501 */
+#endif /* _WIN32_WINNT */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
-#endif // _WIN32
+#endif /* _WIN32 */
 
 #if LINUX+0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && ! defined(_LARGEFILE64_SOURCE)
 #define _LARGEFILE64_SOURCE 1
@@ -98,7 +98,7 @@
 #undef HAVE_CONFIG_H
 #include <pthread.h>
 #define HAVE_CONFIG_H 1
-#endif // MHD_USE_POSIX_THREADS
+#endif /* MHD_USE_POSIX_THREADS */
 
 /* different OSes have fd_set in
    a broad range of header files;
@@ -171,7 +171,7 @@
 #if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
-#endif // !_SSIZE_T_DEFINED */
+#endif /* !_SSIZE_T_DEFINED */
 #ifndef MHD_SOCKET_DEFINED
 /**
  * MHD_socket is type for socket FDs

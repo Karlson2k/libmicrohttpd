@@ -640,10 +640,10 @@ add_to_fd_set (MHD_socket fd,
       else
         return MHD_NO;
     }
-#else  // ! MHD_WINSOCK_SOCKETS
+#else  /* ! MHD_WINSOCK_SOCKETS */
   if (fd >= fd_setsize)
     return MHD_NO;
-#endif // ! MHD_WINSOCK_SOCKETS
+#endif /* ! MHD_WINSOCK_SOCKETS */
   FD_SET (fd, set);
   if ( (NULL != max_fd) && (MHD_INVALID_SOCKET != fd) &&
        ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
@@ -4827,8 +4827,8 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
   gcry_w32_mutex_lock, gcry_w32_mutex_unlock,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-#endif // defined(MHD_W32_MUTEX_)
-#endif // HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600
+#endif /* defined(MHD_W32_MUTEX_) */
+#endif /* HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600 */
 
 
 /**
@@ -4855,7 +4855,7 @@ void MHD_init(void)
 #elif defined(MHD_W32_MUTEX_)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_w32))
     MHD_PANIC ("Failed to initialise multithreading in libgcrypt\n");
-#endif // defined(MHD_W32_MUTEX_)
+#endif /* defined(MHD_W32_MUTEX_) */
   gcry_check_version (NULL);
 #else
   if (NULL == gcry_check_version ("1.6.0"))

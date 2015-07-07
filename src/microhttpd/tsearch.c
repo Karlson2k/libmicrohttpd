@@ -13,7 +13,7 @@
 
 #ifndef _MSC_FULL_VER
 #include <sys/cdefs.h>
-#endif //! _MSC_FULL_VER
+#endif /*! _MSC_FULL_VER */
 #define _SEARCH_PRIVATE
 #include "tsearch.h"
 #include <stdlib.h>

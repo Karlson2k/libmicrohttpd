@@ -341,4 +341,4 @@ typedef pthread_mutex_t MHD_mutex_;
   ((NULL != (mutex)) ? (LeaveCriticalSection((mutex)), MHD_YES) : MHD_NO)
 #endif
 
-#endif // MHD_PLATFORM_INTERFACE_H
+#endif /* MHD_PLATFORM_INTERFACE_H */

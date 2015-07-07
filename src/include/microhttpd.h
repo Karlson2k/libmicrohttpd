@@ -113,7 +113,7 @@ extern "C"
 #if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
-#endif // !_SSIZE_T_DEFINED */
+#endif /* !_SSIZE_T_DEFINED */
 #else
 #include <unistd.h>
 #include <sys/time.h>

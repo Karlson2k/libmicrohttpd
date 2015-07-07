@@ -210,4 +210,4 @@ void W32_SetThreadName(const DWORD thread_id, const char *thread_name);
 #ifdef __cplusplus
 }
 #endif
-#endif //MHD_W32FUNCTIONS_H
+#endif /* MHD_W32FUNCTIONS_H */
