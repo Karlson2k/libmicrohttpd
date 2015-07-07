@@ -1112,11 +1112,10 @@ send_param_adapter (struct MHD_Connection *connection,
     {
       /* can use sendfile */
       uint64_t left;
-#ifndef HAVE_SENDFILE64
       uint64_t offsetu64;
+#ifndef HAVE_SENDFILE64
       off_t offset;
 #else  /* HAVE_SENDFILE64 */
-      uint64_t offsetu64;
       off64_t offset;
 #endif /* HAVE_SENDFILE64 */
       offsetu64 = connection->response_write_position + connection->response->fd_off;
