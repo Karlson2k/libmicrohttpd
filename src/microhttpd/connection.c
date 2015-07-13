@@ -2146,7 +2146,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if DEBUG_SEND_DATA
             if (ret > 0)
               fprintf (stderr,
-                       "Sent DATA response: `%.*s'\n",
+                       "Sent %d-byte DATA response: `%.*s'\n",
+                       (int) ret,
                        (int) ret,
                        &response->data[connection->response_write_position -
                                        response->data_start]);
