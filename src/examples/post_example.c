@@ -624,7 +624,7 @@ create_response (void *cls,
 					      (void *) METHOD_ERROR,
 					      MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection,
-			    MHD_HTTP_METHOD_NOT_ACCEPTABLE,
+			    MHD_HTTP_NOT_ACCEPTABLE,
 			    response);
   MHD_destroy_response (response);
   return ret;
@@ -747,4 +747,3 @@ main (int argc, char *const *argv)
   MHD_stop_daemon (d);
   return 0;
 }
-
