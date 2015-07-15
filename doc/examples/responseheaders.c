@@ -43,8 +43,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
         "<html><body>An internal server error has occured!\
                               </body></html>";
       response =
-	MHD_create_response_from_buffer (strlen (errorstr), 
-					 (void *) errorstr, 
+	MHD_create_response_from_buffer (strlen (errorstr),
+					 (void *) errorstr,
 					 MHD_RESPMEM_PERSISTENT);
       if (NULL != response)
         {
@@ -59,7 +59,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
         return MHD_NO;
     }
   response =
-    MHD_create_response_from_fd_at_offset (sbuf.st_size, fd, 0);
+    MHD_create_response_from_fd_at_offset64 (sbuf.st_size, fd, 0);
   MHD_add_response_header (response, "Content-Type", MIMETYPE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
