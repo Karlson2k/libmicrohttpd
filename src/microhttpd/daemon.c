@@ -1116,16 +1116,14 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif /* HAVE_SENDFILE64 */
       offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
-      if (i > left)
-        i = left;
 #ifndef HAVE_SENDFILE64
       offset = (off_t) offsetu64;
       if ( (offsetu64 <= (uint64_t)OFF_T_MAX) &&
-           0 < (ret = sendfile (connection->socket_fd, fd, &offset, i)))
+           0 < (ret = sendfile (connection->socket_fd, fd, &offset, left)))
 #else  /* HAVE_SENDFILE64 */
       offset = (off64_t) offsetu64;
       if ( (offsetu64 <= (uint64_t)OFF64_T_MAX) &&
-          0 < (ret = sendfile64 (connection->socket_fd, fd, &offset, i)))
+          0 < (ret = sendfile64 (connection->socket_fd, fd, &offset, left)))
 #endif /* HAVE_SENDFILE64 */
 	{
 #if EPOLL_SUPPORT
