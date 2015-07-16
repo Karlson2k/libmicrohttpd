@@ -424,6 +424,7 @@ main (int argc, char *const *argv)
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  errorCount += testInternalGet ();
   errorCount += testMultithreadedGet ();
   errorCount += testMultithreadedPoolGet ();
   errorCount += testExternalGet ();

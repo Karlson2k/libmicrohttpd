@@ -17,9 +17,8 @@
      Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
      Boston, MA 02110-1301, USA.
 */
-
 /**
- * @file daemontest_get_sendfile.c
+ * @file test_get_sendfile.c
  * @brief  Testcase for libmicrohttpd response from FD
  * @author Christian Grothoff
  */
@@ -49,7 +48,7 @@
 
 #define TESTSTR "This is the content of the test file we are sending using sendfile (if available)"
 
-char *sourcefile;
+static char *sourcefile;
 
 static int oneone;
 
@@ -59,6 +58,7 @@ struct CBC
   size_t pos;
   size_t size;
 };
+
 
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
@@ -162,6 +162,7 @@ testInternalGet ()
   return 0;
 }
 
+
 static int
 testMultithreadedGet ()
 {
@@ -210,6 +211,7 @@ testMultithreadedGet ()
     return 128;
   return 0;
 }
+
 
 static int
 testMultithreadedPoolGet ()
@@ -260,6 +262,7 @@ testMultithreadedPoolGet ()
     return 128;
   return 0;
 }
+
 
 static int
 testExternalGet ()
@@ -382,6 +385,7 @@ testExternalGet ()
     return 16384;
   return 0;
 }
+
 
 static int
 testUnknownPortGet ()
