@@ -301,7 +301,8 @@ connection_close_error (struct MHD_Connection *connection,
   if (NULL != emsg)
     MHD_DLOG (connection->daemon, emsg);
 #endif
-  MHD_connection_close (connection, MHD_REQUEST_TERMINATED_WITH_ERROR);
+  MHD_connection_close (connection, 
+			MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
 
@@ -368,7 +369,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
       if (NULL != response->crc)
         (void) MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
-	MHD_connection_close (connection, MHD_REQUEST_TERMINATED_COMPLETED_OK);
+	MHD_connection_close (connection, 
+			      MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
 	CONNECTION_CLOSE_ERROR (connection,
 				"Closing connection (stream error)\n");
@@ -2587,15 +2589,17 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	    daemon->notify_completed (daemon->notify_completed_cls,
 				      connection,
 				      &connection->client_context,
-						  MHD_REQUEST_TERMINATED_COMPLETED_OK);
+				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
             connection->client_aware = MHD_NO;
           }
           end =
-            MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
+            MHD_lookup_connection_value (connection, 
+					 MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_CONNECTION);
           if ( (MHD_YES == connection->read_closed) ||
                (client_close) ||
-               ((NULL != end) && (MHD_str_equal_caseless_ (end, "close"))) )
+               ( (NULL != end) && 
+		 (MHD_str_equal_caseless_ (end, "close")) ) )
             {
               connection->read_closed = MHD_YES;
               connection->read_buffer_offset = 0;
@@ -2651,7 +2655,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   if ( (0 != timeout) &&
        (timeout <= (MHD_monotonic_time() - connection->last_activity)) )
     {
-      MHD_connection_close (connection, MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+      MHD_connection_close (connection,
+			    MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       connection->in_idle = MHD_NO;
       return MHD_YES;
     }
