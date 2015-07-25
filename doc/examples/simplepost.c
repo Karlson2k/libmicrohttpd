@@ -31,7 +31,7 @@ struct connection_info_struct
 const char *askpage = "<html><body>\
                        What's your name, Sir?<br>\
                        <form action=\"/namepost\" method=\"post\">\
-                       <input name=\"name\" type=\"text\"\
+                       <input name=\"name\" type=\"text\">\
                        <input type=\"submit\" value=\" Send \"></form>\
                        </body></html>";
 
