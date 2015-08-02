@@ -21,7 +21,7 @@
  * @brief  daemon functionality
  * @author Andrey Uzunov
  */
- 
+
 #include "platform.h"
 #include "structures.h"
 #include "internal.h"
@@ -38,7 +38,7 @@
  * @param line line number with the problem
  * @param reason error message with details
  */
-static void 
+static void
 spdyf_panic_std (void *cls,
 	       const char *file,
 	       unsigned int line,
@@ -74,13 +74,13 @@ static void
 spdyf_cleanup_sessions (struct SPDY_Daemon *daemon)
 {
 	struct SPDY_Session *session;
-	
+
 	while (NULL != (session = daemon->cleanup_head))
 	{
 		DLL_remove (daemon->cleanup_head,
 			daemon->cleanup_tail,
 			session);
-			
+
 		SPDYF_session_destroy(session);
 	}
 }
@@ -95,23 +95,23 @@ static void
 spdyf_close_all_sessions (struct SPDY_Daemon *daemon)
 {
 	struct SPDY_Session *session;
-	
+
 	while (NULL != (session = daemon->sessions_head))
-	{	
+	{
 		//prepare GOAWAY frame
 		SPDYF_prepare_goaway(session, SPDY_GOAWAY_STATUS_OK, true);
 		//try to send the frame (it is best effort, so it will maybe sent)
 		SPDYF_session_write(session,true);
 		SPDYF_session_close(session);
 	}
-	
+
 	spdyf_cleanup_sessions(daemon);
 }
 
 
 /**
  * Parse a list of options given as varargs.
- * 
+ *
  * @param daemon the daemon to initialize
  * @param valist the options
  * @return SPDY_YES on success, SPDY_NO on error
@@ -130,7 +130,7 @@ spdyf_parse_options_va (struct SPDY_Daemon *daemon,
 			return SPDY_NO;
 		}
 		daemon->options |= opt;
-		
+
 		switch (opt)
 		{
 			case SPDY_DAEMON_OPTION_SESSION_TIMEOUT:
@@ -157,7 +157,7 @@ spdyf_parse_options_va (struct SPDY_Daemon *daemon,
 }
 
 
-void 
+void
 SPDY_set_panic_func (SPDY_PanicCallback cb,
 					void *cls)
 {
@@ -204,10 +204,10 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("parse");
 		goto free_and_fail;
 	}
-  
+
   if(0 == daemon->max_num_frames)
     daemon->max_num_frames = SPDYF_NUM_SENT_FRAMES_AT_ONCE;
-	
+
 	if(!port && NULL == daemon->address)
 	{
 		SPDYF_DEBUG("Port is 0");
@@ -215,10 +215,10 @@ SPDYF_start_daemon_va (uint16_t port,
 	}
   if(0 == daemon->io_subsystem)
     daemon->io_subsystem = SPDY_IO_SUBSYSTEM_OPENSSL;
-  
+
   if(SPDY_YES != SPDYF_io_set_daemon(daemon, daemon->io_subsystem))
 		goto free_and_fail;
-  
+
   if(SPDY_IO_SUBSYSTEM_RAW != daemon->io_subsystem)
   {
     if (NULL == certfile
@@ -234,7 +234,7 @@ SPDYF_start_daemon_va (uint16_t port,
       goto free_and_fail;
     }
   }
-  
+
 	daemon->new_session_cb = nscb;
 	daemon->session_closed_cb = sccb;
 	daemon->new_request_cb = nrcb;
@@ -252,11 +252,11 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("SPDY_DAEMON_FLAG_ONLY_IPV6 set but IPv4 address provided");
 		goto free_and_fail;
 	}
-  
+
   addrlen = sizeof (struct sockaddr_in6);
-    
+
 	if(NULL == daemon->address)
-	{		
+	{
 		if (NULL == (servaddr6 = malloc (addrlen)))
 		{
 			SPDYF_DEBUG("malloc");
@@ -268,7 +268,7 @@ SPDYF_start_daemon_va (uint16_t port,
 		servaddr6->sin6_port = htons (port);
 		daemon->address = (struct sockaddr *) servaddr6;
 	}
-	
+
   if(AF_INET6 == daemon->address->sa_family)
   {
     afamily = PF_INET6;
@@ -284,11 +284,11 @@ SPDYF_start_daemon_va (uint16_t port,
 		SPDYF_DEBUG("SPDY_DAEMON_FLAG_ONLY_IPV6 set but no support");
 		goto free_and_fail;
 	}
-	
+
   addrlen = sizeof (struct sockaddr_in);
-    
+
 	if(NULL == daemon->address)
-	{		
+	{
 		if (NULL == (servaddr4 = malloc (addrlen)))
 		{
 			SPDYF_DEBUG("malloc");
@@ -300,9 +300,9 @@ SPDYF_start_daemon_va (uint16_t port,
 		servaddr4->sin_port = htons (port);
 		daemon->address = (struct sockaddr *) servaddr4;
 	}
-	
+
 	afamily = PF_INET;
-#endif	
+#endif
 
 	daemon->socket_fd = socket (afamily, SOCK_STREAM, 0);
 	if (-1 == daemon->socket_fd)
@@ -317,7 +317,7 @@ SPDYF_start_daemon_va (uint16_t port,
 	{
 		SPDYF_DEBUG("WARNING: SO_REUSEADDR was not set for the server");
 	}
-	
+
 #if HAVE_INET6
 	if(daemon->flags & SPDY_DAEMON_FLAG_ONLY_IPV6)
 	{
@@ -329,7 +329,7 @@ SPDYF_start_daemon_va (uint16_t port,
 		}
 	}
 #endif
-	
+
 	if (-1 == bind (daemon->socket_fd, daemon->address, addrlen))
 	{
 		SPDYF_DEBUG("bind %i",errno);
@@ -353,8 +353,8 @@ SPDYF_start_daemon_va (uint16_t port,
 	//for GOTO
 	free_and_fail:
 	if(daemon->socket_fd > 0)
-		(void)close (daemon->socket_fd);
-		
+		(void)MHD_socket_close_ (daemon->socket_fd);
+
 	free(servaddr4);
 #if HAVE_INET6
 	free(servaddr6);
@@ -364,39 +364,39 @@ SPDYF_start_daemon_va (uint16_t port,
 	if(NULL != daemon->keyfile)
 		free(daemon->keyfile);
 	free (daemon);
-	
+
 	return NULL;
 }
 
 
-void 
+void
 SPDYF_stop_daemon (struct SPDY_Daemon *daemon)
 {
 	daemon->fio_deinit(daemon);
-	
+
 	shutdown (daemon->socket_fd, SHUT_RDWR);
 	spdyf_close_all_sessions (daemon);
-	(void)close (daemon->socket_fd);
-	
+	(void)MHD_socket_close_ (daemon->socket_fd);
+
 	if(!(SPDY_DAEMON_OPTION_SOCK_ADDR & daemon->options))
 		free(daemon->address);
-	
+
 	free(daemon->certfile);
 	free(daemon->keyfile);
-	
+
 	free(daemon);
 }
 
 
 int
-SPDYF_get_timeout (struct SPDY_Daemon *daemon, 
+SPDYF_get_timeout (struct SPDY_Daemon *daemon,
 		     unsigned long long *timeout)
 {
 	unsigned long long earliest_deadline = 0;
 	unsigned long long now;
 	struct SPDY_Session *pos;
 	bool have_timeout;
-	
+
 	if(0 == daemon->session_timeout)
 		return SPDY_NO;
 
@@ -409,21 +409,21 @@ SPDYF_get_timeout (struct SPDY_Daemon *daemon,
 			earliest_deadline = pos->last_activity + daemon->session_timeout;
 
 		have_timeout = true;
-		
+
 		if (SPDY_YES == pos->fio_is_pending(pos))
 		{
 			earliest_deadline = 0;
 			break;
 		}
 	}
-	
+
 	if (!have_timeout)
 		return SPDY_NO;
 	if (earliest_deadline <= now)
 		*timeout = 0;
 	else
 		*timeout = earliest_deadline - now;
-		
+
 	return SPDY_YES;
 }
 
@@ -431,7 +431,7 @@ SPDYF_get_timeout (struct SPDY_Daemon *daemon,
 int
 SPDYF_get_fdset (struct SPDY_Daemon *daemon,
 				fd_set *read_fd_set,
-				fd_set *write_fd_set, 
+				fd_set *write_fd_set,
 				fd_set *except_fd_set,
 				bool all)
 {
@@ -470,7 +470,7 @@ SPDYF_get_fdset (struct SPDY_Daemon *daemon,
 }
 
 
-void 
+void
 SPDYF_run (struct SPDY_Daemon *daemon)
 {
 	struct SPDY_Session *pos;
@@ -512,14 +512,14 @@ SPDYF_run (struct SPDY_Daemon *daemon)
 			if (FD_ISSET (ds, &rs) || pos->fio_is_pending(pos)){
 				SPDYF_session_read(pos);
 			}
-			
+
 			//do something with the data in read buffer
 			if(SPDY_NO == SPDYF_session_idle(pos))
 			{
 				//the session was closed, cannot write anymore
 				//continue;
 			}
-			
+
 			//write whatever has been put to the response queue
 			//during read or idle operation, something might be put
 			//on the response queue, thus call write operation
@@ -530,7 +530,7 @@ SPDYF_run (struct SPDY_Daemon *daemon)
 					//continue;
 				}
 			}
-			
+
 			/* the response queue has been flushed for half closed
 			 * connections, so let close them */
 			/*if(pos->read_closed)
@@ -539,6 +539,6 @@ SPDYF_run (struct SPDY_Daemon *daemon)
 			}*/
 		}
 	}
-	
+
 	spdyf_cleanup_sessions(daemon);
 }

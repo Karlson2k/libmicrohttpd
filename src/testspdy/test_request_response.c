@@ -17,7 +17,7 @@
 */
 
 /**
- * @file request_response.c
+ * @file test_request_response.c
  * @brief  tests receiving request and sending response. spdycli.c (spdylay)
  * 			code is reused here
  * @author Andrey Uzunov
@@ -525,7 +525,7 @@ static int connect_to(const char *host, uint16_t port)
     if(rv == 0) {
       break;
     }
-    close(fd);
+    MHD_socket_close_(fd);
     fd = -1;
   }
   freeaddrinfo(res);
@@ -714,7 +714,7 @@ static void fetch_uri(const struct URI *uri)
   SSL_free(ssl);
   SSL_CTX_free(ssl_ctx);
   shutdown(fd, SHUT_WR);
-  close(fd);
+  MHD_socket_close_(fd);
   request_free(&req);
 }
 

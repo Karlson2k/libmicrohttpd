@@ -1476,7 +1476,7 @@ SPDYF_session_accept(struct SPDY_Daemon *daemon)
 	free_and_fail:
 	/* something failed, so shutdown, close and free memory */
 	shutdown (new_socket_fd, SHUT_RDWR);
-	(void)close (new_socket_fd);
+	(void)MHD_socket_close_ (new_socket_fd);
 
 	if(NULL != session)
 	{
@@ -1577,7 +1577,7 @@ SPDYF_session_destroy(struct SPDY_Session *session)
 	struct SPDYF_Stream *stream;
 	struct SPDYF_Response_Queue *response_queue;
 
-	(void)close (session->socket_fd);
+	(void)MHD_socket_close_ (session->socket_fd);
 	SPDYF_zlib_deflate_end(&session->zlib_send_stream);
 	SPDYF_zlib_inflate_end(&session->zlib_recv_stream);
 

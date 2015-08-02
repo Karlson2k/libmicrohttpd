@@ -69,20 +69,20 @@ spdy_cb_data_source_read(spdylay_session *session, int32_t stream_id, uint8_t *b
   (void)session;
   (void)stream_id;
   (void)user_data;
-  
+
   ssize_t ret;
   assert(NULL != source);
   assert(NULL != source->ptr);
 	struct Proxy *proxy = (struct Proxy *)(source->ptr);
 	void *newbody;
-  
- 
+
+
   if(length < 1)
   {
     PRINT_INFO("spdy_cb_data_source_read: length is 0");
     return 0;
 	}
-  
+
 	if(!proxy->received_body_size)//nothing to write now
   {
     if(proxy->receiving_done)
@@ -93,7 +93,7 @@ spdy_cb_data_source_read(spdylay_session *session, int32_t stream_id, uint8_t *b
       PRINT_INFO("POST SPDYLAY_ERR_DEFERRED");
 		return SPDYLAY_ERR_DEFERRED;//TODO SPDYLAY_ERR_DEFERRED should be used
   }
-	
+
 	if(length >= proxy->received_body_size)
 	{
 		ret = proxy->received_body_size;
@@ -113,15 +113,15 @@ spdy_cb_data_source_read(spdylay_session *session, int32_t stream_id, uint8_t *b
 	free(proxy->received_body);
 	proxy->received_body = newbody;
 	proxy->received_body_size -= ret;
-  
+
   if(0 == proxy->received_body_size && proxy->receiving_done)
     {
       PRINT_INFO("POST spdy EOF");
     *eof = 1;
   }
-  
+
   PRINT_INFO2("given POST bytes to spdylay: %zd", ret);
-  
+
   return ret;
 }
 
@@ -141,13 +141,13 @@ spdy_cb_send(spdylay_session *session,
 {
   (void)session;
   (void)flags;
-  
+
   //PRINT_INFO("spdy_cb_send called");
   struct SPDY_Connection *connection;
   ssize_t rv;
   connection = (struct SPDY_Connection*)user_data;
   connection->want_io = IO_NONE;
-  
+
   if(glob_opt.ignore_rst_stream
     && 16 == length
     && 0x80 == data[0]
@@ -160,7 +160,7 @@ spdy_cb_send(spdylay_session *session,
     return 16;
   }
   glob_opt.ignore_rst_stream = false;
-  
+
   if(connection->is_tls)
   {
     ERR_clear_error();
@@ -178,14 +178,14 @@ spdy_cb_send(spdylay_session *session,
   }
   else
   {
-    rv = write(connection->fd, 
+    rv = write(connection->fd,
             data,
             length);
-            
+
     if (rv < 0)
     {
       switch(errno)
-      {				
+      {
         case EAGAIN:
   #if EAGAIN != EWOULDBLOCK
         case EWOULDBLOCK:
@@ -193,18 +193,18 @@ spdy_cb_send(spdylay_session *session,
           connection->want_io |= WANT_WRITE;
           rv = SPDYLAY_ERR_WOULDBLOCK;
           break;
-          
+
         default:
           rv = SPDYLAY_ERR_CALLBACK_FAILURE;
       }
     }
   }
-  
+
   PRINT_INFO2("%zd bytes written by spdy", rv);
-  
+
   if(rv > 0)
     UPDATE_STAT(glob_stat.spdy_bytes_sent, rv);
-  
+
   return rv;
 }
 
@@ -218,16 +218,16 @@ spdy_cb_send(spdylay_session *session,
 static ssize_t
 spdy_cb_recv(spdylay_session *session,
              uint8_t *buf,
-             size_t length, 
+             size_t length,
              int flags,
              void *user_data)
 {
   (void)session;
   (void)flags;
-  
+
   struct SPDY_Connection *connection;
   ssize_t rv;
-  
+
   connection = (struct SPDY_Connection*)user_data;
   //prevent monopolizing everything
   if(!(++connection->counter % 10)) return SPDYLAY_ERR_WOULDBLOCK;
@@ -251,14 +251,14 @@ spdy_cb_recv(spdylay_session *session,
   }
   else
   {
-    rv = read(connection->fd, 
+    rv = read(connection->fd,
             buf,
             length);
-            
+
     if (rv < 0)
     {
       switch(errno)
-      {				
+      {
         case EAGAIN:
   #if EAGAIN != EWOULDBLOCK
         case EWOULDBLOCK:
@@ -266,7 +266,7 @@ spdy_cb_recv(spdylay_session *session,
           connection->want_io |= WANT_READ;
           rv = SPDYLAY_ERR_WOULDBLOCK;
           break;
-          
+
         default:
           rv = SPDYLAY_ERR_CALLBACK_FAILURE;
       }
@@ -274,10 +274,10 @@ spdy_cb_recv(spdylay_session *session,
     else if(rv == 0)
       rv = SPDYLAY_ERR_EOF;
   }
-  
+
   if(rv > 0)
     UPDATE_STAT(glob_stat.spdy_bytes_received, rv);
-  
+
   return rv;
 }
 
@@ -289,10 +289,10 @@ spdy_cb_before_ctrl_send(spdylay_session *session,
                     void *user_data)
 {
   (void)user_data;
-  
+
   int32_t stream_id;
   struct Proxy *proxy;
-  
+
   switch(type) {
     case SPDYLAY_SYN_STREAM:
       stream_id = frame->syn_stream.stream_id;
@@ -324,7 +324,7 @@ spdy_cb_on_ctrl_recv(spdylay_session *session,
                     void *user_data)
 {
   (void)user_data;
-  
+
   char **nv;
   int32_t stream_id;
   struct Proxy * proxy;
@@ -371,7 +371,7 @@ spdy_cb_on_ctrl_recv(spdylay_session *session,
       return;
     break;
   }
-  
+
   glob_opt.spdy_data_received = true;
 }
 
@@ -390,16 +390,16 @@ spdy_cb_on_stream_close(spdylay_session *session,
 {
   (void)status_code;
   (void)user_data;
-  
+
   struct Proxy * proxy = spdylay_session_get_stream_user_data(session, stream_id);
-  
+
   assert(NULL != proxy);
-  
+
   --glob_opt.streams_opened;
   --proxy->spdy_connection->streams_opened;
   PRINT_INFO2("closing stream: str opened %i; remove proxy %i", glob_opt.streams_opened, proxy->id);
-   
-  DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy); 
+
+  DLL_remove(proxy->spdy_connection->proxies_head, proxy->spdy_connection->proxies_tail, proxy);
   if(proxy->http_active)
   {
     proxy->spdy_active = false;
@@ -425,16 +425,16 @@ spdy_cb_on_data_chunk_recv(spdylay_session *session,
 {
   (void)flags;
   (void)user_data;
-  
+
   struct Proxy *proxy;
   proxy = spdylay_session_get_stream_user_data(session, stream_id);
-  
+
   if(NULL == proxy)
   {
     PRINT_INFO("proxy in spdy_cb_on_data_chunk_recv is NULL)");
     return;
 	}
-  
+
   if(!copy_buffer(data, len, &proxy->http_body, &proxy->http_body_size))
   {
     //TODO handle it better?
@@ -469,7 +469,7 @@ spdy_cb_on_data_recv(spdylay_session *session,
 {
   (void)length;
   (void)user_data;
-  
+
 	if(flags & SPDYLAY_DATA_FLAG_FIN)
 	{
     struct Proxy *proxy;
@@ -514,10 +514,10 @@ spdy_cb_ssl_select_next_proto(SSL* ssl,
                                 void *arg)
 {
   (void)ssl;
-  
+
   int rv;
   uint16_t *spdy_proto_version;
-  
+
   /* spdylay_select_next_protocol() selects SPDY protocol version the
      Spdylay library supports. */
   rv = spdylay_select_next_protocol(out, outlen, in, inlen);
@@ -554,7 +554,7 @@ spdy_ssl_handshake(SSL *ssl,
                    int fd)
 {
   int rv;
-  
+
   if(SSL_set_fd(ssl, fd) == 0)
     spdy_dief("SSL_set_fd", ERR_error_string(ERR_get_error(), NULL));
 
@@ -562,7 +562,7 @@ spdy_ssl_handshake(SSL *ssl,
   rv = SSL_connect(ssl);
   if(rv <= 0)
     PRINT_INFO2("SSL_connect %s", ERR_error_string(ERR_get_error(), NULL));
-  
+
   return rv;
 }
 
@@ -580,7 +580,7 @@ spdy_socket_connect_to(const char *host,
   int rv;
   char service[NI_MAXSERV];
   struct addrinfo *res, *rp;
-  
+
   //TODO checks
   snprintf(service, sizeof(service), "%u", port);
   memset(&hints, 0, sizeof(struct addrinfo));
@@ -601,11 +601,11 @@ spdy_socket_connect_to(const char *host,
           errno == EINTR);
     if(rv == 0)
       break;
-    close(fd);
+    MHD_socket_close_ (fd);
     fd = -1;
   }
   freeaddrinfo(res);
-  
+
   return fd;
 }
 
@@ -615,14 +615,14 @@ spdy_socket_make_non_block(int fd)
 {
   int flags;
   int rv;
-  
+
   while((flags = fcntl(fd, F_GETFL, 0)) == -1 && errno == EINTR);
-  
+
   if(flags == -1)
     spdy_dief("fcntl", strerror(errno));
-    
+
   while((rv = fcntl(fd, F_SETFL, flags | O_NONBLOCK)) == -1 && errno == EINTR);
- 
+
   if(rv == -1)
     spdy_dief("fcntl", strerror(errno));
 }
@@ -636,7 +636,7 @@ spdy_socket_set_tcp_nodelay(int fd)
 {
   int val = 1;
   int rv;
-  
+
   rv = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, (socklen_t)sizeof(val));
   if(rv == -1)
     spdy_dief("setsockopt", strerror(errno));
@@ -669,14 +669,14 @@ spdy_ctl_poll(struct pollfd *pollfd,
  */
 bool
 spdy_ctl_select(fd_set * read_fd_set,
-                fd_set * write_fd_set, 
+                fd_set * write_fd_set,
                 fd_set * except_fd_set,
                 struct SPDY_Connection *connection)
 {
   (void)except_fd_set;
-  
+
   bool ret = false;
-  
+
   if(spdylay_session_want_read(connection->session) ||
      connection->want_io & WANT_READ)
   {
@@ -689,7 +689,7 @@ spdy_ctl_select(fd_set * read_fd_set,
     FD_SET(connection->fd, write_fd_set);
     ret = true;
   }
-  
+
   return ret;
 }
 
@@ -701,7 +701,7 @@ int
 spdy_exec_io(struct SPDY_Connection *connection)
 {
   int rv;
-  
+
   rv = spdylay_session_recv(connection->session);
   if(rv != 0)
   {
@@ -711,7 +711,7 @@ spdy_exec_io(struct SPDY_Connection *connection)
   rv = spdylay_session_send(connection->session);
   if(rv != 0)
     PRINT_INFO2("spdylay_session_send %i", rv);
-    
+
   return rv;
 }
 
@@ -740,14 +740,14 @@ spdy_connect(const struct URI *uri,
     PRINT_INFO("Could not open file descriptor");
     return NULL;
   }
-  
+
   if(is_tls)
   {
     ssl = SSL_new(glob_opt.ssl_ctx);
     if(ssl == NULL) {
       spdy_dief("SSL_new", ERR_error_string(ERR_get_error(), NULL));
     }
-    
+
     //TODO non-blocking
     /* To simplify the program, we perform SSL/TLS handshake in blocking
        I/O. */
@@ -767,7 +767,7 @@ spdy_connect(const struct URI *uri,
 
   if(NULL == (connection = au_malloc(sizeof(struct SPDY_Connection))))
     goto free_and_fail;
-  
+
   connection->is_tls = is_tls;
   connection->ssl = ssl;
   connection->want_io = IO_NONE;
@@ -784,11 +784,11 @@ spdy_connect(const struct URI *uri,
   if(rv != 0) {
     spdy_diec("spdylay_session_client_new", rv);
   }
-  
+
   connection->fd = fd;
 
 	return connection;
-  
+
 	//for GOTO
 	free_and_fail:
   if(NULL != connection)
@@ -796,15 +796,15 @@ spdy_connect(const struct URI *uri,
     free(connection->host);
     free(connection);
   }
-  
+
   if(is_tls)
     SSL_shutdown(ssl);
-    
-  close(fd);
-  
+
+  MHD_socket_close_ (fd);
+
   if(is_tls)
     SSL_free(ssl);
-  
+
   return NULL;
 }
 
@@ -814,7 +814,7 @@ spdy_free_connection(struct SPDY_Connection * connection)
 {
   struct Proxy *proxy;
   struct Proxy *proxy_next;
-  
+
   if(NULL != connection)
   {
     for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy_next)
@@ -847,7 +847,7 @@ spdy_request(const char **nv,
   uint16_t port;
   struct SPDY_Connection *connection;
   spdylay_data_provider post_data;
-  
+
   if(glob_opt.only_proxy)
   {
     connection = glob_opt.spdy_connection;
@@ -861,7 +861,7 @@ spdy_request(const char **nv,
         break;
       connection = connection->next;
     }
-  
+
     if(NULL == connection)
     {
       //connect to host
@@ -877,13 +877,13 @@ spdy_request(const char **nv,
         connection = glob_opt.spdy_connection;
     }
   }
-  
+
   if(NULL == connection)
   {
     PRINT_INFO("there is no proxy!");
     return -1;
   }
-  
+
   proxy->spdy_connection = connection;
   if(with_body)
   {
@@ -893,7 +893,7 @@ spdy_request(const char **nv,
   }
   else
     ret = spdylay_submit_request(connection->session, 0, nv, NULL, proxy);
-  
+
   if(ret != 0) {
     spdy_diec("spdylay_spdy_submit_request", ret);
   }
@@ -901,7 +901,7 @@ spdy_request(const char **nv,
   if(NULL != connection->proxies_head)
     PRINT_INFO2("before proxy %i", connection->proxies_head->id);
   DLL_insert(connection->proxies_head, connection->proxies_tail, proxy);
-  
+
   return ret;
 }
 
@@ -914,11 +914,11 @@ spdy_get_pollfdset(struct pollfd fds[],
 {
   struct SPDY_Connection *connection;
   struct Proxy *proxy;
-  
+
   *real_size = 0;
   if(max_size<1)
     return;
-    
+
   if(NULL != glob_opt.spdy_connection)
   {
     spdy_ctl_poll(&(fds[*real_size]), glob_opt.spdy_connection);
@@ -926,7 +926,7 @@ spdy_get_pollfdset(struct pollfd fds[],
     {
       //PRINT_INFO("TODO drop connection");
       glob_opt.streams_opened -= glob_opt.spdy_connection->streams_opened;
-      
+
       for(proxy = glob_opt.spdy_connection->proxies_head; NULL != proxy; proxy=proxy->next)
       {
         abort();
@@ -943,9 +943,9 @@ spdy_get_pollfdset(struct pollfd fds[],
       ++(*real_size);
     }
   }
-  
+
   connection = glob_opt.spdy_connections_head;
-  
+
   while(NULL != connection && *real_size < max_size)
   {
     assert(!glob_opt.only_proxy);
@@ -956,7 +956,7 @@ spdy_get_pollfdset(struct pollfd fds[],
       glob_opt.streams_opened -= connection->streams_opened;
       DLL_remove(glob_opt.spdy_connections_head, glob_opt.spdy_connections_tail, connection);
       glob_opt.total_spdy_connections--;
-      
+
       for(proxy = connection->proxies_head; NULL != proxy; proxy=proxy->next)
       {
         abort();
@@ -973,7 +973,7 @@ spdy_get_pollfdset(struct pollfd fds[],
     }
     connection = connection->next;
   }
-  
+
   //, "TODO max num of conn reached; close something"
   assert(NULL == connection);
 }
@@ -981,7 +981,7 @@ spdy_get_pollfdset(struct pollfd fds[],
 
 int
 spdy_get_selectfdset(fd_set * read_fd_set,
-                      fd_set * write_fd_set, 
+                      fd_set * write_fd_set,
                       fd_set * except_fd_set,
                       struct SPDY_Connection *connections[],
                       unsigned int max_size,
@@ -991,20 +991,20 @@ spdy_get_selectfdset(fd_set * read_fd_set,
   struct SPDY_Connection *next_connection;
   bool ret;
   int maxfd = 0;
-  
+
   *real_size = 0;
   if(max_size<1)
     return 0;
-    
+
   if(NULL != glob_opt.spdy_connection)
   {
     ret = spdy_ctl_select(read_fd_set,
-				 write_fd_set, 
+				 write_fd_set,
 				 except_fd_set, glob_opt.spdy_connection);
     if(!ret)
     {
       glob_opt.streams_opened -= glob_opt.spdy_connection->streams_opened;
-      
+
       PRINT_INFO("spdy_free_connection in spdy_get_selectfdset");
       spdy_free_connection(glob_opt.spdy_connection);
       glob_opt.spdy_connection = NULL;
@@ -1016,23 +1016,23 @@ spdy_get_selectfdset(fd_set * read_fd_set,
       if(maxfd < glob_opt.spdy_connection->fd) maxfd = glob_opt.spdy_connection->fd;
     }
   }
-  
+
   connection = glob_opt.spdy_connections_head;
-  
+
   while(NULL != connection && *real_size < max_size)
   {
     assert(!glob_opt.only_proxy);
     ret = spdy_ctl_select(read_fd_set,
-				 write_fd_set, 
+				 write_fd_set,
 				 except_fd_set, connection);
-         
+
     next_connection = connection->next;
     if(!ret)
     {
       glob_opt.streams_opened -= connection->streams_opened;
       DLL_remove(glob_opt.spdy_connections_head, glob_opt.spdy_connections_tail, connection);
       glob_opt.total_spdy_connections--;
-      
+
       PRINT_INFO("spdy_free_connection in spdy_get_selectfdset");
       spdy_free_connection(connection);
     }
@@ -1044,10 +1044,10 @@ spdy_get_selectfdset(fd_set * read_fd_set,
     }
     connection = next_connection;
   }
-  
+
   //, "TODO max num of conn reached; close something"
   assert(NULL == connection);
-  
+
   return maxfd;
 }
 
@@ -1060,7 +1060,7 @@ spdy_run(struct pollfd fds[],
   int i;
   int ret;
   struct Proxy *proxy;
-  
+
   for(i=0; i<size; ++i)
   {
     //  PRINT_INFO2("exec about to be called for %s", connections[i]->host);
@@ -1070,10 +1070,10 @@ spdy_run(struct pollfd fds[],
       //PRINT_INFO2("%i",ret);
       //if((spdy_pollfds[i].revents & POLLHUP) || (spdy_pollfds[0].revents & POLLERR))
       //  PRINT_INFO("SPDY SPDY_Connection error");
-      
+
       //TODO POLLRDHUP
       // always close on ret != 0?
-        
+
       if(0 != ret)
       {
         glob_opt.streams_opened -= connections[i]->streams_opened;
@@ -1106,14 +1106,14 @@ spdy_run(struct pollfd fds[],
 
 void
 spdy_run_select(fd_set * read_fd_set,
-                fd_set * write_fd_set, 
+                fd_set * write_fd_set,
                 fd_set * except_fd_set,
                 struct SPDY_Connection *connections[],
                 int size)
 {
   int i;
   int ret;
-  
+
   for(i=0; i<size; ++i)
   {
     //  PRINT_INFO2("exec about to be called for %s", connections[i]->host);
@@ -1121,7 +1121,7 @@ spdy_run_select(fd_set * read_fd_set,
     {
       //raise(SIGINT);
       ret = spdy_exec_io(connections[i]);
-        
+
       if(0 != ret)
       {
         glob_opt.streams_opened -= connections[i]->streams_opened;

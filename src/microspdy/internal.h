@@ -26,6 +26,7 @@
 #define INTERNAL_H_H
 
 #include "platform.h"
+#include "platform_interface.h"
 #include "microspdy.h"
 
 /**
@@ -63,7 +64,7 @@ extern void *spdyf_panic_cls;
 
 /**
  * Trigger 'panic' action based on fatal errors.
- * 
+ *
  * @param msg error message (const char *)
  */
 #define SPDYF_PANIC(msg) \
@@ -103,7 +104,7 @@ extern void *spdyf_panic_cls;
  *
  * @param n input value (int32_t)
  * @return converted value (uint32_t)
- */	
+ */
 #if HAVE_BIG_ENDIAN
 #define NTOH24(n) n
 #else

@@ -19,7 +19,7 @@
  */
 
 /**
- * @file mhds_get_test.c
+ * @file test_https_time_out.c
  * @brief: daemon TLS alert response test-case
  *
  * @author Sagie Amir
@@ -69,7 +69,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Error: %s\n", MHD_E_FAILED_TO_CONNECT);
-      close (sd);
+      MHD_socket_close_ (sd);
       return -1;
     }
 
@@ -77,7 +77,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Handshake failed\n");
-      close (sd);
+      MHD_socket_close_ (sd);
       return -1;
     }
 
@@ -88,11 +88,11 @@ test_tls_session_time_out (gnutls_session_t session)
   if (send (sd, "", 1, 0) == 0)
     {
       fprintf (stderr, "Connection failed to time-out\n");
-      close (sd);
+      MHD_socket_close_ (sd);
       return -1;
     }
 
-  close (sd);
+  MHD_socket_close_ (sd);
   return 0;
 }
 
@@ -123,7 +123,7 @@ main (int argc, char *const *argv)
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 
-  if (d == NULL)
+  if (NULL == d)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;

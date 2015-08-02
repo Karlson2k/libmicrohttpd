@@ -574,7 +574,7 @@ process_upload_data (void *cls,
 	       uc->filename,
 	       strerror (errno));
       uc->response = internal_error_response;
-      close (uc->fd);
+      (void) close (uc->fd);
       uc->fd = -1;
       if (NULL != uc->filename)
 	{

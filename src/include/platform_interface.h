@@ -31,8 +31,8 @@
 #include "w32functions.h"
 #endif
 
-/* ***************************** 
-     General function mapping 
+/* *****************************
+     General function mapping
    *****************************/
 #if !defined(_WIN32) || defined(__CYGWIN__)
 /**
@@ -80,15 +80,25 @@
 #endif
 
 
-
-/* MHD_socket_close_(fd) close any FDs (non-W32) / close only socket FDs (W32) */
+/**
+ * MHD_socket_close_(fd) close any FDs (non-W32) / close only socket
+ * FDs (W32).  Note that on HP-UNIX, this function may leak the FD if
+ * errno is set to EINTR.  Do not use HP-UNIX.
+ *
+ * @param fd descriptor to close
+ * @return 0 on success (error codes like EINTR and EIO are counted as success,
+ *           only EBADF counts as an error!)
+ */
 #if !defined(MHD_WINSOCK_SOCKETS)
-#define MHD_socket_close_(fd) close((fd))
+#define MHD_socket_close_(fd) (((0 != close(fd)) && (EBADF == errno)) ? -1 : 0)
 #else
 #define MHD_socket_close_(fd) closesocket((fd))
 #endif
 
-/* MHD_socket_errno_ is errno of last function (non-W32) / errno of last socket function (W32) */
+/**
+ * MHD_socket_errno_ is errno of last function (non-W32) / errno of
+ * last socket function (W32)
+ */
 #if !defined(MHD_WINSOCK_SOCKETS)
 #define MHD_socket_errno_ errno
 #else

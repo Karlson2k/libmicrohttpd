@@ -17,7 +17,7 @@
 */
 
 /**
- * @file request_response.c
+ * @file test_new_connection.c
  * @brief  tests new connection callback. spdycli.c
  * 			code is reused here
  * @author Andrey Uzunov
@@ -537,7 +537,7 @@ static int connect_to(const char *host, uint16_t port)
     if(rv == 0) {
       break;
     }
-    close(fd);
+    MHD_socket_close_(fd);
     fd = -1;
   }
   freeaddrinfo(res);
@@ -650,7 +650,8 @@ static void request_free(struct Request *req)
 /*
  * Fetches the resource denoted by |uri|.
  */
-static void fetch_uri(const struct URI *uri)
+static void
+fetch_uri(const struct URI *uri)
 {
   spdylay_session_callbacks callbacks;
   int fd;
@@ -726,11 +727,13 @@ static void fetch_uri(const struct URI *uri)
   SSL_free(ssl);
   SSL_CTX_free(ssl_ctx);
   shutdown(fd, SHUT_WR);
-  close(fd);
+  MHD_socket_close_ (fd);
   request_free(&req);
 }
 
-static int parse_uri(struct URI *res, const char *uri)
+
+static int
+parse_uri(struct URI *res, const char *uri)
 {
   /* We only interested in https */
   size_t len, i, offset;

@@ -188,8 +188,8 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
     }
 
 cleanup:
-  if (sd != -1)
-    close (sd);
+  if (-1 != sd)
+    MHD_socket_close_ (sd);
   gnutls_free (cbc.buf);
   return ret;
 }
@@ -206,7 +206,7 @@ main (int argc, char *const *argv)
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
 
-  const int ext_arr[] = { 
+  const int ext_arr[] = {
     GNUTLS_EXTENSION_SERVER_NAME,
     -1
   };

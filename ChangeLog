@@ -1,3 +1,7 @@
+Sun Aug  2 19:08:20 CEST 2015
+	Ignore close() errors on sockets except for EBADF,
+	fixes #3926. -CG
+
 Sat Jun 27 22:16:27 CEST 2015
 	Make sure to decrement connection counter before
 	calling connection notifier so that
