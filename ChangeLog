@@ -1,3 +1,9 @@
+Tue Aug  4 13:50:23 CEST 2015
+	Fix failure to properly clean up timed out connections
+	if running in external select mode without listen socket,
+	which caused busy waiting until new connections arrived.
+	(Fixes #3924, thanks to slimp for reporting and testcase). -CG
+
 Sun Aug  2 19:08:20 CEST 2015
 	Ignore close() errors on sockets except for EBADF,
 	fixes #3926. -CG

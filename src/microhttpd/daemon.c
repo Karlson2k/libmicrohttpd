@@ -2351,8 +2351,6 @@ MHD_select (struct MHD_Daemon *daemon,
       timeout.tv_sec = ltimeout / 1000;
       tv = &timeout;
     }
-  if (MHD_INVALID_SOCKET == max)
-    return MHD_YES;
   num_ready = MHD_SYS_select_ (max + 1, &rs, &ws, &es, tv);
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
