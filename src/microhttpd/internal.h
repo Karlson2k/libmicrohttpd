@@ -51,8 +51,8 @@
  */
 #define EXTRA_CHECKS MHD_NO
 
-#define MHD_MAX(a,b) ((a)<(b)) ? (b) : (a)
-#define MHD_MIN(a,b) ((a)<(b)) ? (a) : (b)
+#define MHD_MAX(a,b) (((a)<(b)) ? (b) : (a))
+#define MHD_MIN(a,b) (((a)<(b)) ? (a) : (b))
 
 
 /**
