@@ -78,6 +78,8 @@ extern void *mhd_panic_cls;
 /* If we have Clang or gcc >= 4.5, use __buildin_unreachable() */
 #if defined(__clang__) || (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
 #define BUILTIN_NOT_REACHED __builtin_unreachable()
+#elif defined(_MSC_FULL_VER)
+#define BUILTIN_NOT_REACHED __assume(0)
 #else
 #define BUILTIN_NOT_REACHED
 #endif
