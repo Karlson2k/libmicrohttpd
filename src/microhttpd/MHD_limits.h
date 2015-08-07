@@ -37,6 +37,10 @@
 #define INT32_MAX ((int32_t)0x7FFFFFFF)
 #endif /* !INT32_MAX */
 
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t) ~((size_t)0))
+#endif /* !SIZE_MAX */
+
 #ifndef OFF_T_MAX
 #define OFF_T_MAX ((off_t) ~(((uint64_t) 1) << (8 * sizeof(off_t) - 1)))
 #endif /* !OFF_T_MAX */

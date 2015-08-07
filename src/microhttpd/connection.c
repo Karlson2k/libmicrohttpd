@@ -2133,18 +2133,22 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (connection->response_write_position <
               connection->response->total_size)
           {
+            int err;
+            uint64_t data_write_offset;
             if (NULL != response->crc)
               (void) MHD_mutex_lock_ (&response->mutex);
             if (MHD_YES != try_ready_normal_body (connection))
               break;
+            data_write_offset = connection->response_write_position
+                                - response->data_start;
+            if (data_write_offset > (uint64_t)SIZE_MAX)
+              MHD_PANIC("Data offset exceeds limit");
             ret = connection->send_cls (connection,
                                         &response->data
-                                        [connection->response_write_position
-                                         - response->data_start],
+                                        [(size_t)data_write_offset],
                                         response->data_size -
-                                        (connection->response_write_position
-                                         - response->data_start));
-            const int err = MHD_socket_errno_;
+                                        (size_t)data_write_offset);
+            err = MHD_socket_errno_;
 #if DEBUG_SEND_DATA
             if (ret > 0)
               fprintf (stderr,
