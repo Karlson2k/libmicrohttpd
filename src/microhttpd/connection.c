@@ -1660,7 +1660,7 @@ process_request_body (struct MHD_Connection *connection)
 static int
 do_read (struct MHD_Connection *connection)
 {
-  int bytes_read;
+  ssize_t bytes_read;
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return MHD_NO;
