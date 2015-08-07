@@ -1594,7 +1594,7 @@ process_request_body (struct MHD_Connection *connection)
 	       (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) &&
 	       (connection->remaining_upload_size < available) )
 	    {
-              processed = connection->remaining_upload_size;
+              processed = (size_t)connection->remaining_upload_size;
 	    }
           else
 	    {
