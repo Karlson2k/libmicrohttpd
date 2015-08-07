@@ -406,7 +406,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   struct MHD_Response *response;
   size_t size;
   char cbuf[10];                /* 10: max strlen of "%x\r\n" */
-  size_t cblen;
+  int cblen;
 
   response = connection->response;
   if (0 == connection->write_buffer_size)
@@ -479,11 +479,11 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     }
   if (ret > 0xFFFFFF)
     ret = 0xFFFFFF;
-  MHD_snprintf_ (cbuf,
+  cblen = MHD_snprintf_(cbuf,
 	    sizeof (cbuf),
 	    "%X\r\n", (unsigned int) ret);
-  cblen = strlen (cbuf);
-  EXTRA_CHECK (cblen <= sizeof (cbuf));
+  EXTRA_CHECK(cblen > 0);
+  EXTRA_CHECK(cblen < sizeof(cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen], cbuf, cblen);
   memcpy (&connection->write_buffer[sizeof (cbuf) + ret], "\r\n", 2);
   connection->response_write_position += ret;
