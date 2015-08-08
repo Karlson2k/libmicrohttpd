@@ -429,7 +429,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
       connection->write_buffer = buf;
     }
 
-  if ( (response->data_start <=
+  if (0 == response->total_size)
+    ret = 0; /* response must be empty, don't bother calling crc */
+  else if ( (response->data_start <=
 	connection->response_write_position) &&
        (response->data_size + response->data_start >
 	connection->response_write_position) )
@@ -446,13 +448,10 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   else
     {
       /* buffer not in range, try to fill it */
-      if (0 == response->total_size)
-	ret = 0; /* response must be empty, don't bother calling crc */
-      else
-	ret = response->crc (response->crc_cls,
-			     connection->response_write_position,
-			     &connection->write_buffer[sizeof (cbuf)],
-			     connection->write_buffer_size - sizeof (cbuf) - 2);
+      ret = response->crc (response->crc_cls,
+                           connection->response_write_position,
+                           &connection->write_buffer[sizeof (cbuf)],
+                           connection->write_buffer_size - sizeof (cbuf) - 2);
     }
   if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
     {
