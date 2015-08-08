@@ -811,16 +811,6 @@ MHD_handle_connection (void *data)
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
       tvp = NULL;
-      if (timeout > 0)
-	{
-	  now = MHD_monotonic_time();
-	  if (now - con->last_activity > timeout)
-	    tv.tv_sec = 0;
-	  else
-	    tv.tv_sec = timeout - (now - con->last_activity);
-	  tv.tv_usec = 0;
-	  tvp = &tv;
-	}
 #if HTTPS_SUPPORT
       if (MHD_YES == con->tls_read_ready)
 	{
@@ -830,6 +820,16 @@ MHD_handle_connection (void *data)
 	  tvp = &tv;
 	}
 #endif
+      if (NULL == tvp && timeout > 0)
+	{
+	  now = MHD_monotonic_time();
+	  if (now - con->last_activity > timeout)
+	    tv.tv_sec = 0;
+	  else
+	    tv.tv_sec = timeout - (now - con->last_activity);
+	  tv.tv_usec = 0;
+	  tvp = &tv;
+	}
       if (0 == (con->daemon->options & MHD_USE_POLL))
 	{
 	  /* use select */
