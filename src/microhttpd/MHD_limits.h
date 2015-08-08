@@ -36,6 +36,10 @@
 #define LONG_MAX ((long) ~(((uint64_t) 1) << (8 * sizeof(long) - 1)))
 #endif /* !OFF_T_MAX */
 
+#ifndef ULLONG_MAX
+#define ((MHD_UNSIGNED_LONG_LONG) ~((MHD_UNSIGNED_LONG_LONG)0))
+#endif /* !ULLONG_MAX */
+
 #ifndef INT32_MAX
 #define INT32_MAX ((int32_t)0x7FFFFFFF)
 #endif /* !INT32_MAX */

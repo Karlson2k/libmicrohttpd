@@ -2179,7 +2179,13 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   if (earliest_deadline < now)
     *timeout = 0;
   else
-    *timeout = 1000 * (1 + earliest_deadline - now);
+    {
+      const time_t second_left = earliest_deadline - now;
+      if (second_left > ULLONG_MAX / 1000)
+        *timeout = ULLONG_MAX;
+      else
+        *timeout = 1000 * second_left;
+  }
   return MHD_YES;
 }
 
