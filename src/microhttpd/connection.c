@@ -411,7 +411,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   response = connection->response;
   if (0 == connection->write_buffer_size)
     {
-      size = connection->daemon->pool_size;
+      size = MHD_MIN(connection->daemon->pool_size, 2 * (0xFFFFFF + sizeof(cbuf) + 2));
       do
         {
           size /= 2;
@@ -433,17 +433,18 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     ret = 0; /* response must be empty, don't bother calling crc */
   else if ( (response->data_start <=
 	connection->response_write_position) &&
-       (response->data_size + response->data_start >
+       (response->data_start + response->data_size >
 	connection->response_write_position) )
     {
+      /* difference between response_write_position and data_start is less
+         than data_size which is size_t type, no need to check for overflow */
+      const size_t data_write_offset = (size_t)(connection->response_write_position - response->data_start);
       /* buffer already ready, use what is there for the chunk */
-      ret = response->data_size + response->data_start - connection->response_write_position;
-      if ( (ret > 0) &&
-           (((size_t) ret) > connection->write_buffer_size - sizeof (cbuf) - 2) )
+      ret = response->data_size - data_write_offset;
+      if ( ((size_t) ret) > connection->write_buffer_size - sizeof (cbuf) - 2 )
 	ret = connection->write_buffer_size - sizeof (cbuf) - 2;
       memcpy (&connection->write_buffer[sizeof (cbuf)],
-	      &response->data[connection->response_write_position - response->data_start],
-	      ret);
+              &response->data[data_write_offset], ret);
     }
   else
     {
