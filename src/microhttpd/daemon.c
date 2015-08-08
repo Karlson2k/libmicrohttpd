@@ -2364,7 +2364,10 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       /* ltimeout is in ms */
       timeout.tv_usec = (ltimeout % 1000) * 1000;
-      timeout.tv_sec = ltimeout / 1000;
+      if (ltimeout / 1000 > TIMEVAL_TV_SEC_MAX)
+        timeout.tv_sec = TIMEVAL_TV_SEC_MAX;
+      else
+        timeout.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE)(ltimeout / 1000);
       tv = &timeout;
     }
   num_ready = MHD_SYS_select_ (max + 1, &rs, &ws, &es, tv);
