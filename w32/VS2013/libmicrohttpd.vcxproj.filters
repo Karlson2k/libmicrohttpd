@@ -108,6 +108,9 @@
     <ClInclude Include="..\..\src\microhttpd\MHD_limits.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\microhttpd\MHD_byteorder.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="microhttpd_dll_res_vc.rc">
