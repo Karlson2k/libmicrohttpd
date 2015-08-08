@@ -32,6 +32,9 @@
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
+#ifndef LONG_MAX
+#define LONG_MAX ((long) ~(((uint64_t) 1) << (8 * sizeof(long) - 1)))
+#endif /* !OFF_T_MAX */
 
 #ifndef INT32_MAX
 #define INT32_MAX ((int32_t)0x7FFFFFFF)
@@ -49,5 +52,18 @@
 #define OFF64_T_MAX ((off64_t) ~(((uint64_t) 1) << (8 * sizeof(off64_t) - 1)))
 #endif /* _LARGEFILE64_SOURCE && !OFF64_T_MAX */
 
+#ifndef TIME_T_MAX
+/* Assume that time_t is signed type. */
+/* Even if time_t is unsigned, TIME_T_MAX will be safe limit */
+#define TIME_T_MAX ( (time_t) ~(((uint64_t) 1) << (8 * sizeof(time_t) - 1)) )
+#endif /* !TIME_T_MAX */
+
+#ifndef TIMEVAL_TV_SEC_MAX
+#ifndef _WIN32
+#define TIMEVAL_TV_SEC_MAX TIME_T_MAX
+#else  /* _WIN32 */
+#define TIMEVAL_TV_SEC_MAX LONG_MAX
+#endif /* _WIN32 */
+#endif /* !TIMEVAL_TV_SEC_MAX */
 
 #endif /* MHD_LIMITS_H */

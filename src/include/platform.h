@@ -189,6 +189,12 @@ typedef SOCKET MHD_socket;
 #define MHD_SOCKET_DEFINED 1
 #endif /* MHD_SOCKET_DEFINED */
 
+#ifndef _WIN32
+typedef time_t _MHD_TIMEVAL_TV_SEC_TYPE;
+#else  /* _WIN32 */
+typedef long _MHD_TIMEVAL_TV_SEC_TYPE;
+#endif /* _WIN32 */
+
 /* Force don't use pipes on W32 */
 #if defined(_WIN32) && !defined(MHD_DONT_USE_PIPES)
 #define MHD_DONT_USE_PIPES 1

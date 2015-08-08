@@ -825,8 +825,18 @@ MHD_handle_connection (void *data)
 	  now = MHD_monotonic_time();
 	  if (now - con->last_activity > timeout)
 	    tv.tv_sec = 0;
-	  else
-	    tv.tv_sec = timeout - (now - con->last_activity);
+          else
+            {
+              const time_t seconds_left = timeout - (now - con->last_activity);
+#ifndef _WIN32
+              tv.tv_sec = seconds_left;
+#else  /* _WIN32 */
+              if (seconds_left > TIMEVAL_TV_SEC_MAX)
+                tv.tv_sec = TIMEVAL_TV_SEC_MAX;
+              else
+                tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE)seconds_left;
+#endif /* _WIN32 */
+            }
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
