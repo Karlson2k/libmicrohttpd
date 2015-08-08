@@ -1061,7 +1061,7 @@ recv_param_adapter (struct MHD_Connection *connection,
     i = INT_MAX; /* return value limit */
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  ret = recv(connection->socket_fd, other, i, MSG_NOSIGNAL);
+  ret = (ssize_t)recv (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
   if ( (0 > ret) || (requested_size > (size_t) ret))
     {
@@ -1109,7 +1109,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif /* MHD_WINSOCK_SOCKETS */
 
   if (0 != (connection->daemon->options & MHD_USE_SSL))
-    return send (connection->socket_fd, other, i, MSG_NOSIGNAL);
+    return (ssize_t)send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
@@ -1156,7 +1156,7 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  ret = send (connection->socket_fd, other, i, MSG_NOSIGNAL);
+  ret = (ssize_t)send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
   if ( (0 > ret) || (requested_size > (size_t) ret) )
     {

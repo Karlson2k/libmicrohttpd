@@ -81,6 +81,16 @@
 
 
 /**
+ * _MHD_socket_funcs_size is type used to specify size for send and recv
+ * functions
+ */
+#if !defined(MHD_WINSOCK_SOCKETS)
+typedef size_t _MHD_socket_funcs_size;
+#else
+typedef int _MHD_socket_funcs_size;
+#endif
+
+/**
  * MHD_socket_close_(fd) close any FDs (non-W32) / close only socket
  * FDs (W32).  Note that on HP-UNIX, this function may leak the FD if
  * errno is set to EINTR.  Do not use HP-UNIX.
