@@ -64,11 +64,19 @@
 #include <sys/isa_defs.h>
 #endif
 
-#define _MHD_BIG_ENDIAN 4321
-#define _MHD_LITTLE_ENDIAN 1234
-#define _MHD_PDP_ENDIAN 2134
+#define _MHD_BIG_ENDIAN 1234
+#define _MHD_LITTLE_ENDIAN 4321
+#define _MHD_PDP_ENDIAN 2143
 
-#if defined(__BYTE_ORDER)
+#if defined(__BYTE_ORDER__)
+#if defined(__ORDER_BIG_ENDIAN__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define _MHD_BYTE_ORDER _MHD_BIG_ENDIAN
+#elif defined(__ORDER_LITTLE_ENDIAN__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define _MHD_BYTE_ORDER _MHD_LITTLE_ENDIAN
+#elif defined(__ORDER_PDP_ENDIAN__) && __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__
+#define _MHD_BYTE_ORDER _MHD_PDP_ENDIAN
+#endif /* __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__ */
+#elif defined(__BYTE_ORDER)
 #if defined(__BIG_ENDIAN) && __BYTE_ORDER == __BIG_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_BIG_ENDIAN
 #elif defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN
@@ -91,7 +99,7 @@
 #define _MHD_BYTE_ORDER _MHD_LITTLE_ENDIAN
 #elif defined(_PDP_ENDIAN) && _BYTE_ORDER == _PDP_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_PDP_ENDIAN
-#endif /* __BYTE_ORDER == _PDP_ENDIAN */
+#endif /* _BYTE_ORDER == _PDP_ENDIAN */
 #endif /* _BYTE_ORDER */
 
 #ifndef _MHD_BYTE_ORDER
