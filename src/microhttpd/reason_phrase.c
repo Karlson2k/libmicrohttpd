@@ -17,7 +17,6 @@
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-
 /**
  * @file reason_phrase.c
  * @brief  Tables of the string response phrases
@@ -25,7 +24,7 @@
  * @author Christian Grothoff (minor code clean up)
  */
 #include "platform.h"
-#include "reason_phrase.h"
+#include "microhttpd.h"
 
 #ifndef NULL
 #define NULL (void*)0

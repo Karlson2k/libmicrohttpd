@@ -58,7 +58,7 @@ endif
 
 libmicrohttpd_la_SOURCES = \
   connection.c connection.h \
-  reason_phrase.c reason_phrase.h \
+  reason_phrase.c \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \

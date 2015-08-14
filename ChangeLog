@@ -1,3 +1,6 @@
+Fri Aug 14 14:13:55 CEST 2015
+	Export MHD_get_reason_phrase_for() symbol. -CG
+
 Sat Aug  8 12:19:47 CEST 2015
 	Added checks for overflows and buffer overruns, fixed
 	possible buffer overrun.

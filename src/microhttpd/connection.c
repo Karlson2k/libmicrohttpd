@@ -30,7 +30,6 @@
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
-#include "reason_phrase.h"
 
 #if HAVE_NETINET_TCP_H
 /* for TCP_CORK */

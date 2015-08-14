@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094208
+#define MHD_VERSION 0x00094209
 
 /**
  * MHD-internal return code for "YES".
@@ -339,6 +339,16 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 #define MHD_HTTP_NOT_EXTENDED 510
 
 /** @} */ /* end of group httpcode */
+
+/**
+ * Returns the string reason phrase for a response code.
+ *
+ * If we don't have a string for a status code, we give the first
+ * message in that status code class.
+ */
+const char *
+MHD_get_reason_phrase_for (unsigned int code);
+
 
 /**
  * Flag to be or-ed with MHD_HTTP status code for

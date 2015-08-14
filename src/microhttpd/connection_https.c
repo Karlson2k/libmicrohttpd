@@ -30,7 +30,6 @@
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
-#include "reason_phrase.h"
 #include <gnutls/gnutls.h>
 
 
