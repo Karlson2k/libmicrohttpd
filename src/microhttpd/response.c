@@ -28,7 +28,7 @@
 
 #include "internal.h"
 #include "response.h"
-#include "MHD_limits.h"
+#include "mhd_limits.h"
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN

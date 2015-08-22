@@ -36,7 +36,7 @@
 #include "response.h"
 #include "connection.h"
 #include "memorypool.h"
-#include "MHD_limits.h"
+#include "mhd_limits.h"
 #include "autoinit_funcs.h"
 
 #if HAVE_SEARCH_H

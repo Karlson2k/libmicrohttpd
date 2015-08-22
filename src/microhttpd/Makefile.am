@@ -62,6 +62,7 @@ libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
+  mhd_limits.h mhd_byteorder.h \
   response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \

@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/MHD_limits.h
+ * @file microhttpd/mhd_limits.h
  * @brief  limits values definitions
  * @author Karlson2k (Evgeny Grin)
  */

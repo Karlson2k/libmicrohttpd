@@ -18,7 +18,7 @@
 /* Based on OpenBSD modifications */
 
 #include "md5.h"
-#include "MHD_byteorder.h"
+#include "mhd_byteorder.h"
 
 #define PUT_64BIT_LE(cp, value) do {					\
 	(cp)[7] = (uint8_t)((value) >> 56);				\

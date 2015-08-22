@@ -105,10 +105,10 @@
     <ClInclude Include="..\..\src\include\autoinit_funcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\microhttpd\MHD_limits.h">
+    <ClInclude Include="..\..\src\microhttpd\mhd_limits.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\microhttpd\MHD_byteorder.h">
+    <ClInclude Include="..\..\src\microhttpd\mhd_byteorder.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

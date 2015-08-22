@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/MHD_byteorder.h
+ * @file microhttpd/mhd_byteorder.h
  * @brief  macro definitions for host byte order
  * @author Karlson2k (Evgeny Grin)
  */
