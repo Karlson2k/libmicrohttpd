@@ -171,25 +171,4 @@ MHD_http_unescape (char *val)
 }
 
 
-/**
- * Equivalent to time(NULL) but tries to use some sort of monotonic
- * clock that isn't affected by someone setting the system real time
- * clock.
- *
- * @return 'current' time
- */
-time_t
-MHD_monotonic_time (void)
-{
-#ifdef HAVE_CLOCK_GETTIME
-#ifdef CLOCK_MONOTONIC
-  struct timespec ts;
-
-  if (0 == clock_gettime (CLOCK_MONOTONIC, &ts))
-    return ts.tv_sec;
-#endif
-#endif
-  return time (NULL);
-}
-
 /* end of internal.c */

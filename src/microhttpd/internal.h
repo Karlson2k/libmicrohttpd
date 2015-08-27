@@ -1439,17 +1439,6 @@ struct MHD_Daemon
 
 
 /**
- * Equivalent to `time(NULL)` but tries to use some sort of monotonic
- * clock that isn't affected by someone setting the system real time
- * clock.
- *
- * @return 'current' time
- */
-time_t
-MHD_monotonic_time(void);
-
-
-/**
  * Convert all occurences of '+' to ' '.
  *
  * @param arg string that is modified (in place), must be 0-terminated

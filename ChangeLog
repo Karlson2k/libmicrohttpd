@@ -1,3 +1,7 @@
+Thu Aug 27 09:38:44 CEST 2015
+	Reimplement monotonic clock functions for better
+	support various platforms. -EG
+
 Fri Aug 14 14:13:55 CEST 2015
 	Export MHD_get_reason_phrase_for() symbol. -CG
 

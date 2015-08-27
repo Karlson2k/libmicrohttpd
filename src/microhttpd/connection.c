@@ -30,6 +30,7 @@
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
+#include "mhd_mono_clock.h"
 
 #if HAVE_NETINET_TCP_H
 /* for TCP_CORK */
@@ -1970,7 +1971,7 @@ update_last_activity (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  connection->last_activity = MHD_monotonic_time();
+  connection->last_activity = MHD_monotonic_sec_counter();
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
 
@@ -2656,7 +2657,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   timeout = connection->connection_timeout;
   if ( (0 != timeout) &&
-       (timeout <= (MHD_monotonic_time() - connection->last_activity)) )
+       (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)) )
     {
       MHD_connection_close (connection,
 			    MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);

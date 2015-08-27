@@ -38,6 +38,7 @@
 #include "memorypool.h"
 #include "mhd_limits.h"
 #include "autoinit_funcs.h"
+#include "mhd_mono_clock.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>
@@ -822,7 +823,7 @@ MHD_handle_connection (void *data)
 #endif
       if (NULL == tvp && timeout > 0)
 	{
-	  now = MHD_monotonic_time();
+	  now = MHD_monotonic_sec_counter();
 	  if (now - con->last_activity > timeout)
 	    tv.tv_sec = 0;
           else
@@ -1440,7 +1441,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
   connection->daemon = daemon;
-  connection->last_activity = MHD_monotonic_time();
+  connection->last_activity = MHD_monotonic_sec_counter();
 
   /* set default connection handlers  */
   MHD_set_http_callbacks_ (connection);
@@ -2175,7 +2176,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
   if (MHD_NO == have_timeout)
     return MHD_NO;
-  now = MHD_monotonic_time();
+  now = MHD_monotonic_sec_counter();
   if (earliest_deadline < now)
     *timeout = 0;
   else
@@ -4878,6 +4879,7 @@ void MHD_init(void)
 #endif
   gnutls_global_init ();
 #endif
+  MHD_monotonic_sec_counter_init();
 }
 
 
@@ -4890,6 +4892,7 @@ void MHD_fini(void)
   if (mhd_winsock_inited_)
     WSACleanup();
 #endif
+  MHD_monotonic_sec_counter_finish();
 }
 
 _SET_INIT_AND_DEINIT_FUNCS(MHD_init, MHD_fini);

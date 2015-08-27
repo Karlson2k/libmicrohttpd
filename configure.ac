@@ -451,6 +451,40 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [
 				AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
 ])
 
+AC_MSG_CHECKING([[for clock_get_time]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+    [[
+      #include <mach/clock.h>
+      #include <mach/mach.h>
+    ]], 
+    [[
+      clock_serv_t cs;
+      mach_timespec_t mt;
+      host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
+      clock_get_time(cs, &mt);
+      mach_port_deallocate(mach_task_self(), cs);
+    ]])
+  ],
+  [
+    AC_DEFINE([HAVE_CLOCK_GET_TIME], [1], [Define to 1 if you have `clock_get_time', `host_get_clock_service' and `mach_port_deallocate' functions.])
+    AC_MSG_RESULT([[yes]])
+  ],
+  [AC_MSG_RESULT([[no]])
+  ])
+
+AC_MSG_CHECKING([[for gethrtime]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+    [[#include <sys/time.h>]], [[hrtime_t hrt = gethrtime(); ]])
+  ],
+  [
+    AC_DEFINE([HAVE_GETHRTIME], [1], [Define to 1 if you have `gethrtime' function.])
+    AC_MSG_RESULT([[yes]])
+  ],
+  [AC_MSG_RESULT([[no]])
+  ])
+
 # IPv6
 AC_MSG_CHECKING(for IPv6)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
