@@ -84,7 +84,9 @@ AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
 MHD_LIB_CPPFLAGS=""
 MHD_LIB_CFLAGS=""
 MHD_LIB_LDFLAGS=""
+# for pkg-config
 MHD_LIBDEPS=""
+MHD_REQ_PRIVATE=''
 
 AC_ARG_WITH([threads],
    [AC_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
@@ -112,9 +114,6 @@ AC_CHECK_HEADER([windows.h],
   ],
   [HAVE_W32_THREADS='no'])
 
-# for pkg-config
-MHD_LIBDEPS=""
-MHD_REQ_PRIVATE=''
 # Check system type
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
