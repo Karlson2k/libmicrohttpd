@@ -43,6 +43,7 @@ AC_SUBST(LIBSPDY_VERSION_REVISION)
 AC_SUBST(LIBSPDY_VERSION_AGE)
 
 
+AC_MSG_CHECKING([[whether z/OS special settings are required]])
 if test `uname -s` = "OS/390"
 then
 # configure binaries for z/OS
@@ -59,8 +60,11 @@ then
   then
     CXXCPP="c++ -E -+"
   fi
+  AC_MSG_RESULT([[yes]])
 #  _CCC_CCMODE=1
 #  _C89_CCMODE=1
+else
+  AC_MSG_RESULT([[no]])
 fi
 
 # Checks for programs.
@@ -115,45 +119,64 @@ AC_CHECK_HEADER([windows.h],
   [HAVE_W32_THREADS='no'])
 
 # Check system type
+AC_MSG_CHECKING([[for target host OS]])
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
+     mhd_host_os='Darwin'
+     AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
+     mhd_host_os='FreeBSD'
+     AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
+     mhd_host_os='OpenBSD'
+     AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
+     mhd_host_os='NetBSD'
+     AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 *solaris*)
      AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
+     mhd_host_os='Solaris'
+     AC_MSG_RESULT([[$mhd_host_os]])
      AC_SEARCH_LIBS(gethostbyname, nsl)
      AC_SEARCH_LIBS(socket, socket)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
+     mhd_host_os='ARM Linux'
+     AC_MSG_RESULT([[$mhd_host_os]])
      CFLAGS="-fPIC -pipe $CFLAGS"
      ;;
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
+     mhd_host_os='Linux'
+     AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 *cygwin*)
      AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
+     mhd_host_os='Windows (Cygwin)'
+     AC_MSG_RESULT([[$mhd_host_os]])
      os_is_windows=yes
      ;;
 *mingw*)
      AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
+     mhd_host_os='Windows (MinGW)'
+     AC_MSG_RESULT([[$mhd_host_os]])
      LIBS="$LIBS -lws2_32"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h],, AC_MSG_ERROR([[Winsock2 headers are required for W32]]))
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
@@ -173,8 +196,12 @@ netbsd*)
      ;;
 *openedition*)
      AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
+     mhd_host_os='OS/390'
+     AC_MSG_RESULT([[$mhd_host_os]])
     ;;
 *)
+     mhd_host_os='unrecognised OS'
+     AC_MSG_RESULT([[$mhd_host_os]])
      AC_MSG_WARN([Unrecognised OS $host_os])
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
 #    You might want to find out if your OS supports shutdown on listen sockets,
@@ -946,7 +973,8 @@ else
  MSG_CURL="yes"
 fi
 
-AC_MSG_NOTICE([Configuration Summary:
+AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
+  Cross-compiling:   ${cross_compiling}
   Operating System:  ${host_os}
   Threading lib:     ${USE_THREADS}
   libcurl (testing): ${MSG_CURL}
