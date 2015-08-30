@@ -487,9 +487,9 @@ production.
 @cindex FD_SETSIZE
 @cindex poll
 @cindex select
-Use poll instead of select. This allows sockets with descriptors
-@code{>= FD_SETSIZE}.  This option currently only works in conjunction
-with @code{MHD_USE_THREAD_PER_CONNECTION} or
+Use @code{poll()} instead of @code{select()}. This allows sockets with
+descriptors @code{>= FD_SETSIZE}.  This option currently only works in
+conjunction with @code{MHD_USE_THREAD_PER_CONNECTION} or
 @code{MHD_USE_INTERNAL_SELECT} (at this point).  If you specify
 @code{MHD_USE_POLL} and the local platform does not support it,
 @code{MHD_start_daemon} will return NULL.
@@ -498,15 +498,16 @@ with @code{MHD_USE_THREAD_PER_CONNECTION} or
 @cindex FD_SETSIZE
 @cindex epoll
 @cindex select
-Use epoll instead of poll or select. This allows sockets with
-descriptors @code{>= FD_SETSIZE}.  This option is only available on
-Linux systems and only works in conjunction with
+Use @code{epoll()} instead of @code{poll()} or @code{select()}. This
+allows sockets with descriptors @code{>= FD_SETSIZE}.  This option is
+only available on Linux systems and does not work in conjunction with
 @code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you specify
 @code{MHD_USE_EPOLL_LINUX_ONLY} and the local platform does not
-support it, @code{MHD_start_daemon} will return NULL.  Using epoll
-instead of select or poll can in some situations result in significantly
-higher performance as the system call has fundamentally lower complexity
-(O(1) for epoll vs. O(n) for select/poll where n is the number of
+support it, @code{MHD_start_daemon} will return NULL.  Using
+@code{epoll()} instead of @code{select()} or @code{poll()} can in some
+situations result in significantly higher performance as the system
+call has fundamentally lower complexity (O(1) for @code{epoll()}
+vs. O(n) for @code{select()}/@code{poll()} where n is the number of
 open connections).
 
 @item MHD_SUPPRESS_DATE_NO_CLOCK

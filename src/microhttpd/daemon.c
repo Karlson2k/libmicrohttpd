@@ -4237,7 +4237,7 @@ MHD_start_daemon_va (unsigned int flags,
             {
 #if HAVE_MESSAGES
               MHD_DLOG (daemon,
-                        "file descriptor for worker control pipe exceeds maximum value\n");
+                        "File descriptor for worker control pipe exceeds maximum value\n");
 #endif
               if (0 != MHD_pipe_close_ (d->wpipe[0]))
                 MHD_PANIC ("close failed\n");

@@ -1,3 +1,7 @@
+Sun Aug 30 14:53:51 CEST 2015
+	Correct documentation as to when MHD_USE_EPOLL_LINUX_ONLY
+	is allowed. -CG
+
 Thu Aug 27 09:38:44 CEST 2015
 	Reimplement monotonic clock functions for better
 	support various platforms.
