@@ -1,3 +1,8 @@
+Wed Sep  2 16:50:31 CEST 2015
+ 	Call resume_suspended_connections() when the user is running
+	its own mainloop and calls MHD_run_from_select() to support
+	resuming connections with external select. -FC
+	
 Sun Aug 30 14:53:51 CEST 2015
 	Correct documentation as to when MHD_USE_EPOLL_LINUX_ONLY
 	is allowed. -CG
