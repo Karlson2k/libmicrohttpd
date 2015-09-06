@@ -36,6 +36,12 @@
 #endif /* _WIN32 && MHD_W32_MUTEX_ */
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
+/* 32 bit value is 4 bytes */
+#define TIMESTAMP_BIN_SIZE 4
+#define TIMESTAMP_HEX_LEN (2 * TIMESTAMP_BIN_SIZE)
+
+/* Standard server nonce length, not including terminating null */
+#define NONCE_STD_LEN (HASH_MD5_HEX_LEN + TIMESTAMP_HEX_LEN)
 
 /**
  * Beginning string for any valid Digest authentication header.
@@ -76,9 +82,9 @@ cvthex (const unsigned char *bin,
   for (i = 0; i < len; ++i)
     {
       j = (bin[i] >> 4) & 0x0f;
-      hex[i * 2] = j <= 9 ? (j + '0') : (j + 'a' - 10);
+      hex[i * 2] = (char)((j <= 9) ? (j + '0') : (j - 10 + 'a'));
       j = bin[i] & 0x0f;
-      hex[i * 2 + 1] = j <= 9 ? (j + '0') : (j + 'a' - 10);
+      hex[i * 2 + 1] = (char)((j <= 9) ? (j + '0') : (j - 10 + 'a'));
     }
   hex[len * 2] = '\0';
 }
@@ -103,26 +109,26 @@ digest_calc_ha1 (const char *alg,
 		 const char *password,
 		 const char *nonce,
 		 const char *cnonce,
-		 char *sessionkey)
+		 char sessionkey[HASH_MD5_HEX_LEN + 1])
 {
   struct MD5Context md5;
   unsigned char ha1[MD5_DIGEST_SIZE];
 
   MD5Init (&md5);
-  MD5Update (&md5, username, strlen (username));
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, realm, strlen (realm));
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, password, strlen (password));
+  MD5Update (&md5, (const unsigned char*)username, strlen (username));
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)realm, strlen (realm));
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)password, strlen (password));
   MD5Final (ha1, &md5);
   if (MHD_str_equal_caseless_(alg, "md5-sess"))
     {
       MD5Init (&md5);
-      MD5Update (&md5, ha1, sizeof (ha1));
-      MD5Update (&md5, ":", 1);
-      MD5Update (&md5, nonce, strlen (nonce));
-      MD5Update (&md5, ":", 1);
-      MD5Update (&md5, cnonce, strlen (cnonce));
+      MD5Update (&md5, (const unsigned char*)ha1, sizeof (ha1));
+      MD5Update (&md5, (const unsigned char*)":", 1);
+      MD5Update (&md5, (const unsigned char*)nonce, strlen (nonce));
+      MD5Update (&md5, (const unsigned char*)":", 1);
+      MD5Update (&md5, (const unsigned char*)cnonce, strlen (cnonce));
       MD5Final (ha1, &md5);
     }
   cvthex (ha1, sizeof (ha1), sessionkey);
@@ -143,7 +149,7 @@ digest_calc_ha1 (const char *alg,
  * @param response request-digest or response-digest
  */
 static void
-digest_calc_response (const char *ha1,
+digest_calc_response (const char ha1[HASH_MD5_HEX_LEN + 1],
 		      const char *nonce,
 		      const char *noncecount,
 		      const char *cnonce,
@@ -151,7 +157,7 @@ digest_calc_response (const char *ha1,
 		      const char *method,
 		      const char *uri,
 		      const char *hentity,
-		      char *response)
+		      char response[HASH_MD5_HEX_LEN + 1])
 {
   struct MD5Context md5;
   unsigned char ha2[MD5_DIGEST_SIZE];
@@ -159,9 +165,9 @@ digest_calc_response (const char *ha1,
   char ha2hex[HASH_MD5_HEX_LEN + 1];
 
   MD5Init (&md5);
-  MD5Update (&md5, method, strlen(method));
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen(uri));
+  MD5Update (&md5, (const unsigned char*)method, strlen(method));
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)uri, strlen(uri));
 #if 0
   if (0 == strcasecmp(qop, "auth-int"))
     {
@@ -176,22 +182,22 @@ digest_calc_response (const char *ha1,
   cvthex (ha2, MD5_DIGEST_SIZE, ha2hex);
   MD5Init (&md5);
   /* calculate response */
-  MD5Update (&md5, ha1, HASH_MD5_HEX_LEN);
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, nonce, strlen(nonce));
-  MD5Update (&md5, ":", 1);
+  MD5Update (&md5, (const unsigned char*)ha1, HASH_MD5_HEX_LEN);
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)nonce, strlen(nonce));
+  MD5Update (&md5, (const unsigned char*)":", 1);
   if ('\0' != *qop)
     {
-      MD5Update (&md5, noncecount, strlen(noncecount));
-      MD5Update (&md5, ":", 1);
-      MD5Update (&md5, cnonce, strlen(cnonce));
-      MD5Update (&md5, ":", 1);
-      MD5Update (&md5, qop, strlen(qop));
-      MD5Update (&md5, ":", 1);
+      MD5Update (&md5, (const unsigned char*)noncecount, strlen(noncecount));
+      MD5Update (&md5, (const unsigned char*)":", 1);
+      MD5Update (&md5, (const unsigned char*)cnonce, strlen(cnonce));
+      MD5Update (&md5, (const unsigned char*)":", 1);
+      MD5Update (&md5, (const unsigned char*)qop, strlen(qop));
+      MD5Update (&md5, (const unsigned char*)":", 1);
     }
-  MD5Update (&md5, ha2hex, HASH_MD5_HEX_LEN);
+  MD5Update (&md5, (const unsigned char*)ha2hex, HASH_MD5_HEX_LEN);
   MD5Final (resphash, &md5);
-  cvthex (resphash, sizeof (resphash), response);
+  cvthex (resphash, sizeof(resphash), response);
 }
 
 
@@ -401,31 +407,31 @@ calculate_nonce (uint32_t nonce_time,
 		 size_t rnd_size,
 		 const char *uri,
 		 const char *realm,
-		 char *nonce)
+		 char nonce[NONCE_STD_LEN + 1])
 {
   struct MD5Context md5;
-  unsigned char timestamp[4];
+  unsigned char timestamp[TIMESTAMP_BIN_SIZE];
   unsigned char tmpnonce[MD5_DIGEST_SIZE];
-  char timestamphex[sizeof(timestamp) * 2 + 1];
+  char timestamphex[TIMESTAMP_HEX_LEN + 1];
 
   MD5Init (&md5);
-  timestamp[0] = (nonce_time & 0xff000000) >> 0x18;
-  timestamp[1] = (nonce_time & 0x00ff0000) >> 0x10;
-  timestamp[2] = (nonce_time & 0x0000ff00) >> 0x08;
-  timestamp[3] = (nonce_time & 0x000000ff);
-  MD5Update (&md5, timestamp, 4);
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, method, strlen (method));
-  MD5Update (&md5, ":", 1);
+  timestamp[0] = (unsigned char)((nonce_time & 0xff000000) >> 0x18);
+  timestamp[1] = (unsigned char)((nonce_time & 0x00ff0000) >> 0x10);
+  timestamp[2] = (unsigned char)((nonce_time & 0x0000ff00) >> 0x08);
+  timestamp[3] = (unsigned char)((nonce_time & 0x000000ff));
+  MD5Update (&md5, timestamp, sizeof(timestamp));
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)method, strlen (method));
+  MD5Update (&md5, (const unsigned char*)":", 1);
   if (rnd_size > 0)
-    MD5Update (&md5, rnd, rnd_size);
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, uri, strlen (uri));
-  MD5Update (&md5, ":", 1);
-  MD5Update (&md5, realm, strlen (realm));
+    MD5Update (&md5, (const unsigned char*)rnd, rnd_size);
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)uri, strlen (uri));
+  MD5Update (&md5, (const unsigned char*)":", 1);
+  MD5Update (&md5, (const unsigned char*)realm, strlen (realm));
   MD5Final (tmpnonce, &md5);
   cvthex (tmpnonce, sizeof (tmpnonce), nonce);
-  cvthex (timestamp, 4, timestamphex);
+  cvthex (timestamp, sizeof(timestamp), timestamphex);
   strncat (nonce, timestamphex, 8);
 }
 
@@ -586,7 +592,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
   const char *hentity = NULL; /* "auth-int" is not supported */
   char ha1[HASH_MD5_HEX_LEN + 1];
   char respexp[HASH_MD5_HEX_LEN + 1];
-  char noncehashexp[HASH_MD5_HEX_LEN + 9];
+  char noncehashexp[NONCE_STD_LEN + 1];
   uint32_t nonce_time;
   uint32_t t;
   size_t left; /* number of characters left in 'header' for 'uri' */
@@ -642,8 +648,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        header value. */
     return MHD_NO;
   }
-  /* 8 = 4 hexadecimal numbers for the timestamp */
-  nonce_time = strtoul (nonce + len - 8, (char **)NULL, 16);
+  nonce_time = strtoul (nonce + len - TIMESTAMP_HEX_LEN, (char **)NULL, 16);
   t = (uint32_t) MHD_monotonic_sec_counter();
   /*
    * First level vetting for the nonce validity: if the timestamp
@@ -818,7 +823,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 {
   int ret;
   size_t hlen;
-  char nonce[HASH_MD5_HEX_LEN + 9];
+  char nonce[NONCE_STD_LEN + 1];
 
   /* Generating the server nonce */
   calculate_nonce ((uint32_t) MHD_monotonic_sec_counter(),
