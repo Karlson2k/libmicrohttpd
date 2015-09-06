@@ -351,7 +351,7 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
   key = (struct MHD_IPCount *) node;
   /* Test if there is room for another connection; if so,
    * increment count */
-  result = (key->count < daemon->per_ip_connection_limit);
+  result = (key->count < daemon->per_ip_connection_limit) ? MHD_YES : MHD_NO;
   if (MHD_YES == result)
     ++key->count;
 
