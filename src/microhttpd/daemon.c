@@ -427,7 +427,7 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
 static ssize_t
 recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
 {
-  int res;
+  ssize_t res;
 
   if (MHD_YES == connection->tls_read_ready)
     {
@@ -452,7 +452,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       MHD_set_socket_errno_ (ECONNRESET);
       return res;
     }
-  if (res == i)
+  if ((size_t)res == i)
     {
       connection->tls_read_ready = MHD_YES;
       connection->daemon->num_tls_read_ready++;
@@ -642,7 +642,7 @@ add_to_fd_set (MHD_socket fd,
         return MHD_NO;
     }
 #else  /* ! MHD_WINSOCK_SOCKETS */
-  if (fd >= fd_setsize)
+  if (fd >= (MHD_socket)fd_setsize)
     return MHD_NO;
 #endif /* ! MHD_WINSOCK_SOCKETS */
   FD_SET (fd, set);
