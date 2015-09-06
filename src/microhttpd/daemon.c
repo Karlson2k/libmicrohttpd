@@ -3617,7 +3617,11 @@ MHD_start_daemon_va (unsigned int flags,
                      MHD_AccessHandlerCallback dh, void *dh_cls,
 		     va_list ap)
 {
+#if defined(MHD_POSIX_SOCKETS)
   const int on = 1;
+#elif defined(MHD_WINSOCK_SOCKETS)
+  const uint32_t on = 1;
+#endif /* MHD_WINSOCK_SOCKETS */
   struct MHD_Daemon *daemon;
   MHD_socket socket_fd;
   struct sockaddr_in servaddr4;
@@ -3992,12 +3996,12 @@ MHD_start_daemon_va (unsigned int flags,
 #ifndef MHD_WINSOCK_SOCKETS
 	  const int
 #else
-	  const char
+	  const uint32_t
 #endif
-            on = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
+            v6_only = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
 	  if (0 > setsockopt (socket_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,
-                              &on, sizeof (on)))
+                              &v6_only, sizeof (v6_only)))
       {
 #if HAVE_MESSAGES
             MHD_DLOG (daemon,
