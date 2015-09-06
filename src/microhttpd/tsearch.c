@@ -1,5 +1,3 @@
-/*	$NetBSD: tsearch.c,v 1.3 1999/09/16 11:45:37 lukem Exp $	*/
-
 /*
  * Tree search generalized from Knuth (6.2.2) Algorithm T just like
  * the AT&T man page says.
@@ -11,19 +9,20 @@
  * Totally public domain.
  */
 
-#ifndef _MSC_FULL_VER
-#include <sys/cdefs.h>
-#endif /*! _MSC_FULL_VER */
-#define _SEARCH_PRIVATE
 #include "tsearch.h"
 #include <stdlib.h>
 
+typedef	struct node {
+  const void   *key;
+  struct node  *llink, *rlink;
+} node_t;
+
+/*	$NetBSD: tsearch.c,v 1.5 2005/11/29 03:12:00 christos Exp $	*/
 /* find or insert datum into search tree */
 void *
-tsearch(vkey, vrootp, compar)
-	const void *vkey;		/* key to be located */
-	void **vrootp;			/* address of tree root */
-	int (*compar)(const void *, const void *);
+tsearch(const void *vkey,		/* key to be located */
+	void **vrootp,			/* address of tree root */
+	int (*compar)(const void *, const void *))
 {
 	node_t *q;
 	node_t **rootp = (node_t **)vrootp;
@@ -43,23 +42,22 @@ tsearch(vkey, vrootp, compar)
 	}
 
 	q = malloc(sizeof(node_t));		/* T5: key not found */
-	if (q != 0) {				/* make new node */
+	if (q) {				/* make new node */
 		*rootp = q;			/* link new node to old */
-		/* LINTED const castaway ok */
-		q->key = (void *)vkey;		/* initialize new node */
+		q->key = vkey;		/* initialize new node */
 		q->llink = q->rlink = NULL;
 	}
 	return q;
 }
 
-/* find a node, or return 0 */
+/*	$NetBSD: tfind.c,v 1.5 2005/03/23 08:16:53 kleink Exp $	*/
+/* find a node, or return NULL */
 void *
-tfind(vkey, vrootp, compar)
-	const void *vkey;		/* key to be found */
-	void * const *vrootp;		/* address of the tree root */
-	int (*compar)(const void *, const void *);
+tfind(const void *vkey,         /* key to be found */
+      void * const *vrootp,     /* address of the tree root */
+      int (*compar)(const void *, const void *))
 {
-	node_t **rootp = (node_t **)vrootp;
+	node_t * const *rootp = (node_t * const*)vrootp;
 
 	if (rootp == NULL)
 		return NULL;
@@ -76,6 +74,7 @@ tfind(vkey, vrootp, compar)
 	return NULL;
 }
 
+/*	$NetBSD: tdelete.c,v 1.2 1999/09/16 11:45:37 lukem Exp $	*/
 /*
  * delete node with given key
  *
