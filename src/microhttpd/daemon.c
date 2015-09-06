@@ -1120,6 +1120,7 @@ send_param_adapter (struct MHD_Connection *connection,
       /* can use sendfile */
       uint64_t left;
       uint64_t offsetu64;
+      int err;
 #ifndef HAVE_SENDFILE64
       off_t offset;
 #else  /* HAVE_SENDFILE64 */
@@ -1146,7 +1147,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
 	  return ret;
 	}
-      const int err = MHD_socket_errno_;
+      err = MHD_socket_errno_;
       if ( (EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err) )
 	return 0;
       if ( (EINVAL == err) || (EBADF == err) )
