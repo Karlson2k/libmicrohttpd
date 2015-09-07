@@ -73,7 +73,9 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CANONICAL_HOST
-AM_PROG_CC_C_O
+AC_PROG_CC_STDC
+AS_IF([[test -n "$ac_cv_prog_cc_stdc" && test "x$ac_cv_prog_cc_stdc" != "xno"]],
+      [[CFLAGS="$CFLAGS $ac_cv_prog_cc_stdc"]])
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
