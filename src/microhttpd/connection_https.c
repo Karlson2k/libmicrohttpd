@@ -27,6 +27,7 @@
  */
 
 #include "internal.h"
+#include "connection.h"
 #include "connection_https.h"
 #include "memorypool.h"
 #include "response.h"
