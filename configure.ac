@@ -93,7 +93,7 @@ MHD_LIBDEPS=""
 MHD_REQ_PRIVATE=''
 
 AC_ARG_WITH([threads],
-   [AC_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
+   [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
    [], [with_threads='auto'])
 test "x$with_threads" = "xwin32" && with_threads='w32'
 test "x$with_threads" = "xpthreads" && with_threads='posix'
@@ -731,7 +731,7 @@ have_gnutls_sni=no
 have_gnutls_pkgcfg=no
 AC_MSG_CHECKING([[how to find GnuTLS library]])
 AC_ARG_WITH([[gnutls]],
-   [AC_HELP_STRING([[--with-gnutls[=PFX]]],[use GnuTLS for HTTPS support, optional PFX overrides pkg-config data for GnuTLS headers (PFX/include) and libs (PFX/lib)])],
+   [AS_HELP_STRING([[--with-gnutls[=PFX]]],[use GnuTLS for HTTPS support, optional PFX overrides pkg-config data for GnuTLS headers (PFX/include) and libs (PFX/lib)])],
    [
     case $with_gnutls in
       no)
