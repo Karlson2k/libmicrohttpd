@@ -47,17 +47,17 @@ static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
 #endif /* HAVE_CLOCK_GETTIME */
 
 /* sync clocks; reduce chance of value wrap */
-static time_t mono_clock_start = 0;
-static time_t sys_clock_start = 0;
+static time_t mono_clock_start;
+static time_t sys_clock_start;
 #ifdef HAVE_GETHRTIME
-static hrtime_t hrtime_start = 0;
+static hrtime_t hrtime_start;
 #endif /* HAVE_GETHRTIME */
 #ifdef _WIN32
 #if _WIN32_WINNT >= 0x0600
-static uint64_t tick_start = 0;
+static uint64_t tick_start;
 #else  /* _WIN32_WINNT < 0x0600 */
-static int64_t perf_freq = 0;
-static int64_t perf_start = 0;
+static int64_t perf_freq;
+static int64_t perf_start;
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
 
@@ -87,7 +87,7 @@ enum _MHD_mono_clock_source
    * gethrtime() / 1000000000
    */
   _MHD_CLOCK_GETHRTIME,
-  
+
   /**
    * GetTickCount64() / 1000
    */
@@ -155,7 +155,7 @@ MHD_monotonic_sec_counter_init (void)
 #endif /* CLOCK_MONOTONIC_RAW */
 #ifdef CLOCK_BOOTTIME
   /* Linux-specific clock */
-  /* Count time in suspend so it's real monotonic on Linux, */ 
+  /* Count time in suspend so it's real monotonic on Linux, */
   /* but can be slower value-getting than other clocks */
   if (0 == clock_gettime(CLOCK_BOOTTIME, &ts))
     {
@@ -214,7 +214,7 @@ MHD_monotonic_sec_counter_init (void)
 #ifdef CLOCK_HIGHRES
   /* Solaris-specific monotonic high-resolution clock */
   /* Not preferred due to be potentially resource-hungry */
-  if (0 == clock_gettime(CLOCK_HIGHRES, &ts))
+  if (0 == clock_gettime (CLOCK_HIGHRES, &ts))
     {
       mono_clock_id = CLOCK_HIGHRES;
       mono_clock_start = ts.tv_sec;
@@ -237,16 +237,18 @@ MHD_monotonic_sec_counter_init (void)
     }
 
 #ifdef HAVE_CLOCK_GET_TIME
-  if (_MHD_CLOCK_GET_TIME != mono_clock_source &&
-      _MHD_INVALID_CLOCK_SERV != mono_clock_service)
+  if ( (_MHD_CLOCK_GET_TIME != mono_clock_source) &&
+       (_MHD_INVALID_CLOCK_SERV != mono_clock_service) )
     {
       /* clock service was initialised but clock_get_time failed */
-      mach_port_deallocate(mach_task_self(), mono_clock_service);
+      mach_port_deallocate (mach_task_self(), mono_clock_service);
       mono_clock_service = _MHD_INVALID_CLOCK_SERV;
     }
+#else
+  (void) mono_clock_source; /* avoid compiler warning */
 #endif /* HAVE_CLOCK_GET_TIME */
 
-  sys_clock_start = time(NULL);
+  sys_clock_start = time (NULL);
 }
 
 
@@ -254,7 +256,7 @@ MHD_monotonic_sec_counter_init (void)
  * Deinitialise monotonic seconds counter by freeing any allocated resources
  */
 void
-MHD_monotonic_sec_counter_finish(void)
+MHD_monotonic_sec_counter_finish (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
@@ -308,5 +310,5 @@ MHD_monotonic_sec_counter (void)
     return (time_t)(((uint64_t)(gethrtime() - hrtime_start)) / 1000000000);
 #endif /* HAVE_GETHRTIME */
 
-  return time(NULL) - sys_clock_start;
+  return time (NULL) - sys_clock_start;
 }
