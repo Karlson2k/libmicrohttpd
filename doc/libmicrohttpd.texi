@@ -542,6 +542,10 @@ use of this option is automatic (as in, you do not even have to
 specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In
 "external" select mode, this option is always simply ignored.
 
+Using this option also guarantees that MHD will not call
+@code{shutdown()} on the listen socket, which means a parent
+process can continue to use the socket.
+
 @item MHD_USE_SUSPEND_RESUME
 Enables using @code{MHD_suspend_connection} and
 @code{MHD_resume_connection}, as performing these calls requires some

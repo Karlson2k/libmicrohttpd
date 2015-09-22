@@ -2223,7 +2223,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_Connection *next;
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
- 
+
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_USE_SUSPEND_RESUME == (daemon->options & mask))
     resume_suspended_connections (daemon);
@@ -4500,7 +4500,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   else
     {
       /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
-      if (MHD_INVALID_SOCKET != fd)
+      if ( (MHD_INVALID_SOCKET != fd) &&
+           (0 == (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) )
 	(void) shutdown (fd, SHUT_RDWR);
     }
 #endif
