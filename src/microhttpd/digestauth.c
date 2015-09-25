@@ -493,12 +493,12 @@ check_argument_match (struct MHD_Connection *connection,
   char *amper;
   unsigned int num_headers;
 
-  argb = strdup(args);
+  argb = strdup (args);
   if (NULL == argb)
   {
 #if HAVE_MESSAGES
-    MHD_DLOG(connection->daemon,
-             "Failed to allocate memory for copy of URI arguments\n");
+    MHD_DLOG (connection->daemon,
+              "Failed to allocate memory for copy of URI arguments\n");
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
@@ -508,45 +508,93 @@ check_argument_match (struct MHD_Connection *connection,
 	  ('\0' != argp[0]) )
     {
       equals = strchr (argp, '=');
-      if (NULL == equals)
+      amper = strchr (argp, '&');
+      if (NULL == amper)
 	{
+	  /* last argument */
+	  if (NULL == equals)
+            {
+              /* last argument, without '=' */
+              MHD_unescape_plus (argp);
+              if (MHD_YES != test_header (connection,
+                                          argp,
+                                          NULL))
+                {
+                  free (argb);
+                  return MHD_NO;
+                }
+              num_headers++;
+              break;
+            }
+          /* got 'foo=bar' */
+          equals[0] = '\0';
+          equals++;
+          MHD_unescape_plus (argp);
 	  /* add with 'value' NULL */
 	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 						 connection,
 						 argp);
-	  if (MHD_YES != test_header (connection, argp, NULL))
-      {
-        free(argb);
-        return MHD_NO;
-      }
+          MHD_unescape_plus (equals);
+	  /* add with 'value' NULL */
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 equals);
+	  if (MHD_YES != test_header (connection,
+                                      argp,
+                                      equals))
+            {
+              free (argb);
+              return MHD_NO;
+            }
 	  num_headers++;
 	  break;
 	}
+      /* amper is non-NULL here */
+      amper[0] = '\0';
+      amper++;
+      if ( (NULL == equals) ||
+	   (equals >= amper) )
+	{
+	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
+          MHD_unescape_plus (argp);
+	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
+						 connection,
+						 argp);
+	  if (MHD_YES !=
+	      test_header (connection,
+                           argp,
+                           NULL))
+            {
+              free (argb);
+              return MHD_NO;
+            }
+	  /* continue with 'bar' */
+          num_headers++;
+	  args = amper;
+	  continue;
+	}
       equals[0] = '\0';
       equals++;
-      amper = strchr (equals, '&');
-      if (NULL != amper)
-	{
-	  amper[0] = '\0';
-	  amper++;
-	}
+      MHD_unescape_plus (argp);
       connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					     connection,
 					     argp);
+      MHD_unescape_plus (equals);
       connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
 					     connection,
 					     equals);
-      if (! test_header (connection, argp, equals))
-      {
-          free(argb);
+      if (MHD_YES !=
+          test_header (connection,
+                       argp,
+                       equals))
+        {
+          free (argb);
           return MHD_NO;
-      }
-      
+        }
       num_headers++;
       argp = amper;
     }
-    
-  free(argb);
+  free (argb);
 
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
@@ -556,7 +604,10 @@ check_argument_match (struct MHD_Connection *connection,
       num_headers--;
     }
   if (0 != num_headers)
-    return MHD_NO;
+    {
+      /* argument count mismatch */
+      return MHD_NO;
+    }
   return MHD_YES;
 }
 
@@ -623,9 +674,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
   {
     char r[MAX_REALM_LENGTH];
 
-    len = lookup_sub_value(r,
-			   sizeof (r),
-			   header, "realm");
+    len = lookup_sub_value (r,
+                            sizeof (r),
+                            header, "realm");
     if ( (0 == len) ||
 	 (0 != strcmp(realm, r)) )
       return MHD_NO;

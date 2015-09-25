@@ -1,3 +1,8 @@
+Fri Sep 25 09:49:10 CEST 2015
+	Fix digest authentication with URL arguments where
+	value-less keys are given before the last argument.
+	Thanks to MA for reporting. -CG
+
 Tue Sep 22 19:17:54 CEST 2015
 	Do not use shutdown() on listen socket if MHD_USE_PIPE_FOR_SHUTDOWN
 	is set. -CG

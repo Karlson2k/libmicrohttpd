@@ -1,5 +1,5 @@
 /*
-    This file is part of libmicrohttpd
+     This file is part of libmicrohttpd
      Copyright (C) 2007-2015 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
@@ -17,7 +17,6 @@
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-
 /**
  * @file connection.c
  * @brief  Methods for managing connections
@@ -301,7 +300,7 @@ connection_close_error (struct MHD_Connection *connection,
   if (NULL != emsg)
     MHD_DLOG (connection->daemon, emsg);
 #endif
-  MHD_connection_close (connection, 
+  MHD_connection_close (connection,
 			MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
@@ -369,7 +368,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
       if (NULL != response->crc)
         (void) MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
-	MHD_connection_close (connection, 
+	MHD_connection_close (connection,
 			      MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
 	CONNECTION_CLOSE_ERROR (connection,
@@ -1264,7 +1263,6 @@ parse_arguments (enum MHD_ValueKind kind,
 	  /* continue with 'bar' */
 	  args = amper;
 	  continue;
-
 	}
       /* equals and amper are non-NULL here, and equals < amper,
 	 so we got regular 'foo=value&bar...'-kind of argument */
@@ -2597,12 +2595,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             connection->client_aware = MHD_NO;
           }
           end =
-            MHD_lookup_connection_value (connection, 
+            MHD_lookup_connection_value (connection,
 					 MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_CONNECTION);
           if ( (MHD_YES == connection->read_closed) ||
                (client_close) ||
-               ( (NULL != end) && 
+               ( (NULL != end) &&
 		 (MHD_str_equal_caseless_ (end, "close")) ) )
             {
               connection->read_closed = MHD_YES;
