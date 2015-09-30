@@ -4001,7 +4001,7 @@ MHD_start_daemon_va (unsigned int flags,
             v6_only = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
 	  if (0 > setsockopt (socket_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,
-                              &v6_only, sizeof (v6_only)))
+                              (const void*)&v6_only, sizeof (v6_only)))
       {
 #if HAVE_MESSAGES
             MHD_DLOG (daemon,
