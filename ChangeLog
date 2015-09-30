@@ -1,3 +1,6 @@
+Wed Sep 30 21:05:38 CEST 2015
+	Various fixes for W32 VS project files. - EG
+
 Fri Sep 25 09:49:10 CEST 2015
 	Fix digest authentication with URL arguments where
 	value-less keys are given before the last argument.
