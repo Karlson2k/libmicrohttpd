@@ -40,8 +40,8 @@ Global
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-dll-xp|x64.Build.0 = Debug-dll-xp|x64
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|Win32.ActiveCfg = Debug-static|Win32
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|Win32.Build.0 = Debug-static|Win32
-		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|x64.ActiveCfg = Release-static|x64
-		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|x64.Build.0 = Release-static|x64
+		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|x64.ActiveCfg = Debug-static|x64
+		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static|x64.Build.0 = Debug-static|x64
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static-xp|Win32.ActiveCfg = Debug-static-xp|Win32
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static-xp|Win32.Build.0 = Debug-static-xp|Win32
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}.Debug-static-xp|x64.ActiveCfg = Debug-static-xp|x64
@@ -72,8 +72,8 @@ Global
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-dll-xp|x64.Build.0 = Debug-dll|x64
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|Win32.ActiveCfg = Debug-static|Win32
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|Win32.Build.0 = Debug-static|Win32
-		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|x64.ActiveCfg = Release-static|x64
-		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|x64.Build.0 = Release-static|x64
+		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|x64.ActiveCfg = Debug-static|x64
+		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static|x64.Build.0 = Debug-static|x64
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static-xp|Win32.ActiveCfg = Debug-static|Win32
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static-xp|Win32.Build.0 = Debug-static|Win32
 		{310F39BD-A2D6-44FF-8344-37ADD0524CBD}.Debug-static-xp|x64.ActiveCfg = Debug-static|x64

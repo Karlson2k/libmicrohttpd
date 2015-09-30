@@ -244,7 +244,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;BUILDING_MHD_LIB;MHD_W32LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;BUILDING_MHD_LIB;_UNICODE;UNICODE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <TreatSpecificWarningsAsErrors>4013</TreatSpecificWarningsAsErrors>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -273,7 +273,7 @@
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,6.00 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(PlatformToolset)'=='v120_xp'">
+  <ItemDefinitionGroup Condition="'$(PlatformToolset)'=='v120_xp' And '$(Platform)'=='Win32'">
     <ClCompile>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -286,9 +286,22 @@
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(PlatformToolset)'=='v120_xp' And '$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
+      <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+    <Lib>
+      <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
+      <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(ConfigurationType)'=='StaticLibrary'">
     <ClCompile>
-      <PreprocessorDefinitions>_LIB;BUILDING_MHD_LIB;MHD_W32LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;MHD_W32LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>Ws2_32.lib</AdditionalDependencies>
@@ -300,7 +313,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(ConfigurationType)'=='DynamicLibrary'">
     <ClCompile>
-      <PreprocessorDefinitions>_USRDLL;BUILDING_MHD_LIB;MHD_W32DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USRDLL;MHD_W32DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -312,7 +325,7 @@
       <SmallerTypeCheck>true</SmallerTypeCheck>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(UseDebugLibraries)'!='true'">
@@ -330,7 +343,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug-static'">
