@@ -81,9 +81,6 @@
     <ClInclude Include="..\..\src\microhttpd\memorypool.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\microhttpd\reason_phrase.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\microhttpd\response.h">
       <Filter>Source Files</Filter>
     </ClInclude>

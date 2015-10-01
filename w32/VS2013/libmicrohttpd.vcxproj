@@ -96,7 +96,6 @@
     <ClInclude Include="..\..\src\microhttpd\mhd_byteorder.h" />
     <ClInclude Include="..\..\src\microhttpd\mhd_limits.h" />
     <ClInclude Include="..\..\src\microhttpd\mhd_mono_clock.h" />
-    <ClInclude Include="..\..\src\microhttpd\reason_phrase.h" />
     <ClInclude Include="..\..\src\microhttpd\response.h" />
     <ClInclude Include="..\..\src\microhttpd\tsearch.h" />
     <ClInclude Include="MHD_config.h" />
@@ -262,28 +261,23 @@
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,6.00 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0' And '$(Platform)'=='Win32'">
+  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0'">
     <ClCompile>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
+    <Link Condition="'$(Platform)'=='Win32'">
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <Lib>
+    <Lib Condition="'$(Platform)'=='Win32'">
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0' And '$(Platform)'=='x64'">
-    <ClCompile>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <Link>
+    <Link Condition="'$(Platform)'=='x64'">
       <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <Lib>
+    <Lib Condition="'$(Platform)'=='x64'">
       <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -341,7 +335,7 @@
       <RuntimeLibrary Condition="'$(UseDebugLibraries)'!='true'">MultiThreaded</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup  Condition="'$(ConfigurationType)'=='DynamicLibrary'">
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)'=='DynamicLibrary'">
     <ClCompile>
       <RuntimeLibrary Condition="'$(UseDebugLibraries)'=='true'">MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(UseDebugLibraries)'!='true'">MultiThreadedDLL</RuntimeLibrary>
