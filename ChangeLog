@@ -1,3 +1,8 @@
+Mon Oct  5 11:53:52 CEST 2015
+	Deduplicate code between digestauth and connection
+	parsing logic for URI arguments, shared code moved
+	to new MHD_parse_arguments_ function in internal.c. -CG
+
 Thu Oct  1 21:22:05 CEST 2015
 	Releasing libmicrohttpd 0.9.44. -CG
 

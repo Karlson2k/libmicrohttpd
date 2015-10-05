@@ -1447,4 +1447,44 @@ void
 MHD_unescape_plus (char *arg);
 
 
+/**
+ * Callback invoked when iterating over @a key / @a value
+ * argument pairs during parsing.
+ *
+ * @param connection context of the iteration
+ * @param key 0-terminated key string, never NULL
+ * @param value 0-terminated value string, may be NULL
+ * @param kind origin of the key-value pair
+ * @return #MHD_YES on success (continue to iterate)
+ *         #MHD_NO to signal failure (and abort iteration)
+ */
+typedef int
+(*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
+			 const char *key,
+			 const char *value,
+			 enum MHD_ValueKind kind);
+
+
+/**
+ * Parse and unescape the arguments given by the client
+ * as part of the HTTP request URI.
+ *
+ * @param kind header kind to pass to @a cb
+ * @param connection connection to add headers to
+ * @param[in|out] args argument URI string (after "?" in URI),
+ *        clobbered in the process!
+ * @param cb function to call on each key-value pair found
+ * @param[out] num_headers set to the number of headers found
+ * @return #MHD_NO on failure (@a cb returned #MHD_NO), 
+ *         #MHD_YES for success (parsing succeeded, @a cb always 
+ *                               returned #MHD_YES)
+ */
+int
+MHD_parse_arguments_ (struct MHD_Connection *connection,
+		      enum MHD_ValueKind kind,
+		      char *args,
+		      MHD_ArgumentIterator_ cb,
+		      unsigned int *num_headers);
+
+
 #endif

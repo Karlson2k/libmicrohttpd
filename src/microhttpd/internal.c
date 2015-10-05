@@ -171,4 +171,116 @@ MHD_http_unescape (char *val)
 }
 
 
+/**
+ * Parse and unescape the arguments given by the client
+ * as part of the HTTP request URI.
+ *
+ * @param kind header kind to pass to @a cb
+ * @param connection connection to add headers to
+ * @param[in|out] args argument URI string (after "?" in URI),
+ *        clobbered in the process!
+ * @param cb function to call on each key-value pair found
+ * @param[out] num_headers set to the number of headers found
+ * @return #MHD_NO on failure (@a cb returned #MHD_NO), 
+ *         #MHD_YES for success (parsing succeeded, @a cb always 
+ *                               returned #MHD_YES)
+ */
+int
+MHD_parse_arguments_ (struct MHD_Connection *connection,
+		      enum MHD_ValueKind kind,
+		      char *args,
+		      MHD_ArgumentIterator_ cb,
+		      unsigned int *num_headers)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+  char *equals;
+  char *amper;
+
+  *num_headers = 0;
+  while ( (NULL != args) &&
+	  ('\0' != args[0]) )
+    {
+      equals = strchr (args, '=');
+      amper = strchr (args, '&');
+      if (NULL == amper)
+	{
+	  /* last argument */
+	  if (NULL == equals)
+	    {
+	      /* last argument, without '=' */
+              MHD_unescape_plus (args);
+	      daemon->unescape_callback (daemon->unescape_callback_cls,
+					 connection,
+					 args);
+	      if (MHD_YES != cb (connection,
+				 args,
+				 NULL,
+				 kind))
+		return MHD_NO;
+	      (*num_headers)++;
+	      break;
+	    }
+	  /* got 'foo=bar' */
+	  equals[0] = '\0';
+	  equals++;
+          MHD_unescape_plus (args);
+	  daemon->unescape_callback (daemon->unescape_callback_cls,
+				     connection,
+				     args);
+          MHD_unescape_plus (equals);
+	  daemon->unescape_callback (daemon->unescape_callback_cls,
+				     connection,
+				     equals);
+	  if (MHD_YES != cb (connection, 
+			     args,
+			     equals,
+			     kind))
+	    return MHD_NO;
+	  (*num_headers)++;
+	  break;
+	}
+      /* amper is non-NULL here */
+      amper[0] = '\0';
+      amper++;
+      if ( (NULL == equals) ||
+	   (equals >= amper) )
+	{
+	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
+          MHD_unescape_plus (args);
+	  daemon->unescape_callback (daemon->unescape_callback_cls,
+				     connection,
+				     args);
+	  if (MHD_YES != cb (connection,
+			     args,
+			     NULL,
+			     kind))
+	    return MHD_NO;
+	  /* continue with 'bar' */
+	  (*num_headers)++;
+	  args = amper;
+	  continue;
+	}
+      /* equals and amper are non-NULL here, and equals < amper,
+	 so we got regular 'foo=value&bar...'-kind of argument */
+      equals[0] = '\0';
+      equals++;
+      MHD_unescape_plus (args);
+      daemon->unescape_callback (daemon->unescape_callback_cls,
+				 connection,
+				 args);
+      MHD_unescape_plus (equals);
+      daemon->unescape_callback (daemon->unescape_callback_cls,
+				 connection,
+				 equals);
+      if (MHD_YES != cb (connection,
+			 args,
+			 equals, 
+			 kind))
+        return MHD_NO;
+      (*num_headers)++;
+      args = amper;
+    }
+  return MHD_YES;
+}
+
 /* end of internal.c */

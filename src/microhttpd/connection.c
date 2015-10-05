@@ -1176,17 +1176,22 @@ get_next_header_line (struct MHD_Connection *connection)
  */
 static int
 connection_add_header (struct MHD_Connection *connection,
-                       char *key, char *value, enum MHD_ValueKind kind)
+                       const char *key, 
+		       const char *value, 
+		       enum MHD_ValueKind kind)
 {
-  if (MHD_NO == MHD_set_connection_value (connection,
-					  kind,
-					  key, value))
+  if (MHD_NO == 
+      MHD_set_connection_value (connection,
+				kind,
+				key, 
+				value))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory to allocate header record!\n");
 #endif
-      transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+      transmit_error_response (connection, 
+			       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return MHD_NO;
     }
@@ -1195,98 +1200,9 @@ connection_add_header (struct MHD_Connection *connection,
 
 
 /**
- * Parse and unescape the arguments given by the client as part
- * of the HTTP request URI.
- *
- * @param kind header kind to use for adding to the connection
- * @param connection connection to add headers to
- * @param args argument URI string (after "?" in URI)
- * @return #MHD_NO on failure (out of memory), #MHD_YES for success
- */
-static int
-parse_arguments (enum MHD_ValueKind kind,
-                 struct MHD_Connection *connection,
-		 char *args)
-{
-  char *equals;
-  char *amper;
-
-  while (NULL != args)
-    {
-      equals = strchr (args, '=');
-      amper = strchr (args, '&');
-      if (NULL == amper)
-	{
-	  /* last argument */
-	  if (NULL == equals)
-	    {
-	      /* got 'foo', add key 'foo' with NULL for value */
-              MHD_unescape_plus (args);
-	      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						     connection,
-						     args);
-	      return connection_add_header (connection,
-					    args,
-					    NULL,
-					    kind);
-	    }
-	  /* got 'foo=bar' */
-	  equals[0] = '\0';
-	  equals++;
-          MHD_unescape_plus (args);
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 args);
-          MHD_unescape_plus (equals);
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 equals);
-	  return connection_add_header (connection, args, equals, kind);
-	}
-      /* amper is non-NULL here */
-      amper[0] = '\0';
-      amper++;
-      if ( (NULL == equals) ||
-	   (equals >= amper) )
-	{
-	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
-          MHD_unescape_plus (args);
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 args);
-	  if (MHD_NO ==
-	      connection_add_header (connection,
-				     args,
-				     NULL,
-				     kind))
-	    return MHD_NO;
-	  /* continue with 'bar' */
-	  args = amper;
-	  continue;
-	}
-      /* equals and amper are non-NULL here, and equals < amper,
-	 so we got regular 'foo=value&bar...'-kind of argument */
-      equals[0] = '\0';
-      equals++;
-      MHD_unescape_plus (args);
-      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-					     connection,
-					     args);
-      MHD_unescape_plus (equals);
-      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-					     connection,
-					     equals);
-      if (MHD_NO == connection_add_header (connection, args, equals, kind))
-        return MHD_NO;
-      args = amper;
-    }
-  return MHD_YES;
-}
-
-
-/**
  * Parse the cookie header (see RFC 2109).
  *
+ * @param connection connection to parse header of
  * @return #MHD_YES for success, #MHD_NO for failure (malformed, out of memory)
  */
 static int
@@ -1372,8 +1288,11 @@ parse_cookie_header (struct MHD_Connection *connection)
           equals[strlen (equals) - 1] = '\0';
           equals++;
         }
-      if (MHD_NO == connection_add_header (connection,
-                                           pos, equals, MHD_COOKIE_KIND))
+      if (MHD_NO == 
+	  connection_add_header (connection,
+				 pos,
+				 equals,
+				 MHD_COOKIE_KIND))
         return MHD_NO;
       pos = semicolon;
     }
@@ -1392,9 +1311,11 @@ static int
 parse_initial_message_line (struct MHD_Connection *connection,
                             char *line)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
   char *uri;
   char *http_version;
   char *args;
+  unsigned int unused_num_headers;
 
   if (NULL == (uri = strchr (line, ' ')))
     return MHD_NO;              /* serious error */
@@ -1409,21 +1330,26 @@ parse_initial_message_line (struct MHD_Connection *connection,
       http_version[0] = '\0';
       http_version++;
     }
-  if (NULL != connection->daemon->uri_log_callback)
+  if (NULL != daemon->uri_log_callback)
     connection->client_context
-      = connection->daemon->uri_log_callback (connection->daemon->uri_log_callback_cls,
-					      uri,
-					      connection);
+      = daemon->uri_log_callback (daemon->uri_log_callback_cls,
+				  uri,
+				  connection);
   args = strchr (uri, '?');
   if (NULL != args)
     {
       args[0] = '\0';
       args++;
-      parse_arguments (MHD_GET_ARGUMENT_KIND, connection, args);
+      /* note that this call clobbers 'args' */
+      MHD_parse_arguments_ (connection,
+			    MHD_GET_ARGUMENT_KIND, 
+			    args,
+			    &connection_add_header,
+			    &unused_num_headers);
     }
-  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-					 connection,
-					 uri);
+  daemon->unescape_callback (daemon->unescape_callback_cls,
+			     connection,
+			     uri);
   connection->url = uri;
   if (NULL == http_version)
     connection->version = "";
@@ -1858,7 +1784,9 @@ process_broken_line (struct MHD_Connection *connection,
     }
   EXTRA_CHECK ((NULL != last) && (NULL != connection->colon));
   if ((MHD_NO == connection_add_header (connection,
-                                        last, connection->colon, kind)))
+                                        last, 
+					connection->colon,
+					kind)))
     {
       transmit_error_response (connection, MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
                                REQUEST_TOO_BIG);

@@ -443,19 +443,21 @@ calculate_nonce (uint32_t nonce_time,
  * @param connection the connection
  * @param key the key
  * @param value the value, can be NULL
+ * @param kind type of the header
  * @return #MHD_YES if the key-value pair is in the headers,
  *         #MHD_NO if not
  */
 static int
 test_header (struct MHD_Connection *connection,
 	     const char *key,
-	     const char *value)
+	     const char *value,
+	     enum MHD_ValueKind kind)
 {
   struct MHD_HTTP_Header *pos;
 
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
     {
-      if (MHD_GET_ARGUMENT_KIND != pos->kind)
+      if (kind != pos->kind)
 	continue;
       if (0 != strcmp (key, pos->header))
 	continue;
@@ -488,114 +490,26 @@ check_argument_match (struct MHD_Connection *connection,
 {
   struct MHD_HTTP_Header *pos;
   char *argb;
-  char *argp;
-  char *equals;
-  char *amper;
   unsigned int num_headers;
+  int ret;
 
   argb = strdup (args);
   if (NULL == argb)
-  {
-#if HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              "Failed to allocate memory for copy of URI arguments\n");
-#endif /* HAVE_MESSAGES */
-    return MHD_NO;
-  }
-  num_headers = 0;
-  argp = argb;
-  while ( (NULL != argp) &&
-	  ('\0' != argp[0]) )
     {
-      equals = strchr (argp, '=');
-      amper = strchr (argp, '&');
-      if (NULL == amper)
-	{
-	  /* last argument */
-	  if (NULL == equals)
-            {
-              /* last argument, without '=' */
-              MHD_unescape_plus (argp);
-              if (MHD_YES != test_header (connection,
-                                          argp,
-                                          NULL))
-                {
-                  free (argb);
-                  return MHD_NO;
-                }
-              num_headers++;
-              break;
-            }
-          /* got 'foo=bar' */
-          equals[0] = '\0';
-          equals++;
-          MHD_unescape_plus (argp);
-	  /* add with 'value' NULL */
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 argp);
-          MHD_unescape_plus (equals);
-	  /* add with 'value' NULL */
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 equals);
-	  if (MHD_YES != test_header (connection,
-                                      argp,
-                                      equals))
-            {
-              free (argb);
-              return MHD_NO;
-            }
-	  num_headers++;
-	  break;
-	}
-      /* amper is non-NULL here */
-      amper[0] = '\0';
-      amper++;
-      if ( (NULL == equals) ||
-	   (equals >= amper) )
-	{
-	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
-          MHD_unescape_plus (argp);
-	  connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-						 connection,
-						 argp);
-	  if (MHD_YES !=
-	      test_header (connection,
-                           argp,
-                           NULL))
-            {
-              free (argb);
-              return MHD_NO;
-            }
-	  /* continue with 'bar' */
-          num_headers++;
-	  args = amper;
-	  continue;
-	}
-      equals[0] = '\0';
-      equals++;
-      MHD_unescape_plus (argp);
-      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-					     connection,
-					     argp);
-      MHD_unescape_plus (equals);
-      connection->daemon->unescape_callback (connection->daemon->unescape_callback_cls,
-					     connection,
-					     equals);
-      if (MHD_YES !=
-          test_header (connection,
-                       argp,
-                       equals))
-        {
-          free (argb);
-          return MHD_NO;
-        }
-      num_headers++;
-      argp = amper;
+#if HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+		"Failed to allocate memory for copy of URI arguments\n");
+#endif /* HAVE_MESSAGES */
+      return MHD_NO;
     }
+  ret = MHD_parse_arguments_ (connection,
+			      MHD_GET_ARGUMENT_KIND,
+			      argb,
+			      &test_header,
+			      &num_headers);
   free (argb);
-
+  if (MHD_YES != ret)
+    return MHD_NO;
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
     {
