@@ -68,13 +68,15 @@ copyBuffer (void *ptr,
   return size * nmemb;
 }
 
+
 static int
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size,
+          const char *upload_data,
+          size_t *upload_data_size,
           void **unused)
 {
   static int ptr;
@@ -166,7 +168,8 @@ join_gets (pid_t pid)
 
 
 static int
-testMultithreadedGet (int port, int poll_flag)
+testMultithreadedGet (int port,
+                      int poll_flag)
 {
   struct MHD_Daemon *d;
   pid_t p;
@@ -184,7 +187,8 @@ testMultithreadedGet (int port, int poll_flag)
 
 
 static int
-testMultithreadedPoolGet (int port, int poll_flag)
+testMultithreadedPoolGet (int port,
+                          int poll_flag)
 {
   struct MHD_Daemon *d;
   pid_t p;

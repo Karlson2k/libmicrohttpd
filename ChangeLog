@@ -1,3 +1,12 @@
+Sun Oct 25 15:29:23 CET 2015
+	Fixing transient resource leak affecting long-lived
+	connections with many keep-alives and HTTP request
+	pipelining under certain circumstances (which reduced
+	the receive window).
+	Fixed assertion failure triggered by a race in
+	thread-per-connection mode on shutdown in rare
+	circumstances. -CG
+
 Mon Oct  5 11:53:52 CEST 2015
 	Deduplicate code between digestauth and connection
 	parsing logic for URI arguments, shared code moved

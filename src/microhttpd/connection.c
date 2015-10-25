@@ -264,8 +264,8 @@ need_100_continue (struct MHD_Connection *connection)
  * @param termination_code termination reason to give
  */
 void
-MHD_connection_close (struct MHD_Connection *connection,
-                      enum MHD_RequestTerminationCode termination_code)
+MHD_connection_close_ (struct MHD_Connection *connection,
+                       enum MHD_RequestTerminationCode termination_code)
 {
   struct MHD_Daemon *daemon;
 
@@ -300,8 +300,8 @@ connection_close_error (struct MHD_Connection *connection,
   if (NULL != emsg)
     MHD_DLOG (connection->daemon, emsg);
 #endif
-  MHD_connection_close (connection,
-			MHD_REQUEST_TERMINATED_WITH_ERROR);
+  MHD_connection_close_ (connection,
+                         MHD_REQUEST_TERMINATED_WITH_ERROR);
 }
 
 
@@ -368,8 +368,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
       if (NULL != response->crc)
         (void) MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
-	MHD_connection_close (connection,
-			      MHD_REQUEST_TERMINATED_COMPLETED_OK);
+	MHD_connection_close_ (connection,
+                               MHD_REQUEST_TERMINATED_COMPLETED_OK);
       else
 	CONNECTION_CLOSE_ERROR (connection,
 				"Closing connection (stream error)\n");
@@ -1611,8 +1611,8 @@ do_read (struct MHD_Connection *connection)
       /* other side closed connection; RFC 2616, section 8.1.4 suggests
 	 we should then shutdown ourselves as well. */
       connection->read_closed = MHD_YES;
-      MHD_connection_close (connection,
-			    MHD_REQUEST_TERMINATED_CLIENT_ABORT);
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_CLIENT_ABORT);
       return MHD_YES;
     }
   connection->read_buffer_offset += bytes_read;
@@ -1959,8 +1959,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
           /* nothing to do but default action */
           if (MHD_YES == connection->read_closed)
             {
-	      MHD_connection_close (connection,
-				    MHD_REQUEST_TERMINATED_READ_ERROR);
+	      MHD_connection_close_ (connection,
+                                     MHD_REQUEST_TERMINATED_READ_ERROR);
               continue;
             }
           break;
@@ -2539,8 +2539,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               (MHD_NO == keepalive_possible (connection)))
             {
               /* have to close for some reason */
-              MHD_connection_close (connection,
-                                    MHD_REQUEST_TERMINATED_COMPLETED_OK);
+              MHD_connection_close_ (connection,
+                                     MHD_REQUEST_TERMINATED_COMPLETED_OK);
               MHD_pool_destroy (connection->pool);
               connection->pool = NULL;
               connection->read_buffer = NULL;
@@ -2555,7 +2555,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->read_buffer
                 = MHD_pool_reset (connection->pool,
                                   connection->read_buffer,
-                                  connection->read_buffer_size);
+                                  connection->read_buffer_offset);
             }
 	  connection->client_aware = MHD_NO;
           connection->client_context = NULL;
@@ -2585,8 +2585,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   if ( (0 != timeout) &&
        (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)) )
     {
-      MHD_connection_close (connection,
-			    MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
       connection->in_idle = MHD_NO;
       return MHD_YES;
     }

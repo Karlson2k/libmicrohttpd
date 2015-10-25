@@ -69,8 +69,8 @@ run_tls_handshake (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
 		"Error: received handshake message out of context\n");
 #endif
-      MHD_connection_close (connection,
-			    MHD_REQUEST_TERMINATED_WITH_ERROR);
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_WITH_ERROR);
       return MHD_YES;
     }
   return MHD_NO;
@@ -142,8 +142,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 #endif
   timeout = connection->connection_timeout;
   if ( (timeout != 0) && (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)))
-    MHD_connection_close (connection,
-			  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+    MHD_connection_close_ (connection,
+                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
   switch (connection->state)
     {
       /* on newly created connections we might reach here before any reply has been received */

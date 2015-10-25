@@ -135,7 +135,8 @@ mhd_panic_std (void *cls,
 	       const char *reason)
 {
 #if HAVE_MESSAGES
-  fprintf (stderr, "Fatal error in GNU libmicrohttpd %s:%u: %s\n",
+  fprintf (stderr,
+           "Fatal error in GNU libmicrohttpd %s:%u: %s\n",
 	   file, line, reason);
 #endif
   abort ();
@@ -994,7 +995,8 @@ MHD_handle_connection (void *data)
 	  if (0 != (p[0].revents & POLLOUT))
 	    con->write_handler (con);
 	  if (0 != (p[0].revents & (POLLERR | POLLHUP)))
-	    MHD_connection_close (con, MHD_REQUEST_TERMINATED_WITH_ERROR);
+	    MHD_connection_close_ (con,
+                                   MHD_REQUEST_TERMINATED_WITH_ERROR);
 	  if (MHD_NO == con->idle_handler (con))
 	    goto exit;
 	}
@@ -1009,8 +1011,8 @@ MHD_handle_connection (void *data)
 #endif
 #endif
       if (MHD_CONNECTION_CLOSED != con->state)
-	MHD_connection_close (con,
-			      MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+	MHD_connection_close_ (con,
+                               MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
       con->idle_handler (con);
     }
 exit:
@@ -4359,8 +4361,8 @@ close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
 
-  MHD_connection_close (pos,
-			MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+  MHD_connection_close_ (pos,
+                         MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return; /* must let thread to the rest */
   if (pos->connection_timeout == pos->daemon->connection_timeout)
@@ -4398,35 +4400,50 @@ close_all_connections (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
+  if (NULL != daemon->suspended_connections_head)
+    MHD_PANIC ("MHD_stop_daemon() called while we have suspended connections.\n");
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
       shutdown (pos->socket_fd,
-                (pos->read_closed == MHD_YES) ? SHUT_WR : SHUT_RDWR);
+                (MHD_YES == pos->read_closed) ? SHUT_WR : SHUT_RDWR);
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
            (1 != MHD_pipe_write_ (daemon->wpipe[1], "e", 1)) )
-        MHD_PANIC ("failed to signal shutdown via pipe");
+        MHD_PANIC ("Failed to signal shutdown via pipe");
 #endif
     }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 
-  /* now, collect threads from thread pool */
+  /* now, collect per-connection threads */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
-	{
-	  if (0 != MHD_join_thread_ (pos->pid))
-	    MHD_PANIC ("Failed to join a thread\n");
-	  pos->thread_joined = MHD_YES;
-	}
+      pos = daemon->connections_head;
+      while (NULL != pos)
+      {
+        if (MHD_YES != pos->thread_joined)
+          {
+            if (0 != MHD_join_thread_ (pos->pid))
+              MHD_PANIC ("Failed to join a thread\n");
+            pos->thread_joined = MHD_YES;
+            /* The thread may have concurrently modified the DLL,
+               need to restart from the beginning */
+            pos = daemon->connections_head;
+            continue;
+          }
+        pos = pos->next;
+      }
     }
-
   /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_head))
+  {
+    if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+         (MHD_YES != pos->thread_joined) )
+      MHD_PANIC ("Failed to join a thread\n");
     close_connection (pos);
+  }
   MHD_cleanup_connections (daemon);
 }
 
@@ -4478,7 +4495,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   /* Prepare workers for shutdown */
   if (NULL != daemon->worker_pool)
     {
-      /* MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
+      /* #MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
       for (i = 0; i < daemon->worker_pool_size; ++i)
 	{
 	  daemon->worker_pool[i].shutdown = MHD_YES;
@@ -4556,9 +4573,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   else
     {
       /* clean up master threads */
-      if ((0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
-	  ((0 != (daemon->options & MHD_USE_SELECT_INTERNALLY))
-	   && (0 == daemon->worker_pool_size)))
+      if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
+           ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) &&
+             (0 == daemon->worker_pool_size) ) )
 	{
 	  if (0 != MHD_join_thread_ (daemon->pid))
 	    {
@@ -4676,7 +4693,8 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  * @ingroup logging
  */
 void
-MHD_set_panic_func (MHD_PanicCallback cb, void *cls)
+MHD_set_panic_func (MHD_PanicCallback cb,
+                    void *cls)
 {
   mhd_panic = cb;
   mhd_panic_cls = cls;
@@ -4825,13 +4843,14 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #elif defined(MHD_W32_MUTEX_)
-static int gcry_w32_mutex_init (void **ppmtx)
+
+static int
+gcry_w32_mutex_init (void **ppmtx)
 {
   *ppmtx = malloc (sizeof (MHD_mutex_));
 
   if (NULL == *ppmtx)
     return ENOMEM;
-
   if (MHD_YES != MHD_mutex_create_ ((MHD_mutex_*)*ppmtx))
     {
       free (*ppmtx);
@@ -4841,13 +4860,30 @@ static int gcry_w32_mutex_init (void **ppmtx)
 
   return 0;
 }
-static int gcry_w32_mutex_destroy (void **ppmtx)
-  { int res = (MHD_YES == MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
-    free (*ppmtx); return res; }
-static int gcry_w32_mutex_lock (void **ppmtx)
-  { return (MHD_YES == MHD_mutex_lock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1; }
-static int gcry_w32_mutex_unlock (void **ppmtx)
-  { return (MHD_YES == MHD_mutex_unlock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1; }
+
+
+static int
+gcry_w32_mutex_destroy (void **ppmtx)
+{
+  int res = (MHD_YES == MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+  free (*ppmtx);
+  return res;
+}
+
+
+static int
+gcry_w32_mutex_lock (void **ppmtx)
+{
+  return (MHD_YES == MHD_mutex_lock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+}
+
+
+static int
+gcry_w32_mutex_unlock (void **ppmtx)
+{
+  return (MHD_YES == MHD_mutex_unlock_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+}
+
 
 static struct gcry_thread_cbs gcry_threads_w32 = {
   (GCRY_THREAD_OPTION_USER | (GCRY_THREAD_OPTION_VERSION << 8)),
@@ -4862,7 +4898,8 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 /**
  * Initialize do setup work.
  */
-void MHD_init(void)
+void
+MHD_init(void)
 {
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
@@ -4895,7 +4932,8 @@ void MHD_init(void)
 }
 
 
-void MHD_fini(void)
+void
+MHD_fini(void)
 {
 #if HTTPS_SUPPORT
   gnutls_global_deinit ();

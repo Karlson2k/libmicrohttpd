@@ -89,8 +89,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection);
  * @param termination_code termination reason to give
  */
 void
-MHD_connection_close (struct MHD_Connection *connection,
-		      enum MHD_RequestTerminationCode termination_code);
+MHD_connection_close_ (struct MHD_Connection *connection,
+                       enum MHD_RequestTerminationCode termination_code);
 
 
 #if EPOLL_SUPPORT
