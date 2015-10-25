@@ -116,7 +116,7 @@
  * Get all of the headers from the request.
  *
  * @param connection connection to get values from
- * @param kind types of values to iterate over
+ * @param kind types of values to iterate over, can be a bitmask
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
@@ -126,7 +126,8 @@
 int
 MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
-                           MHD_KeyValueIterator iterator, void *iterator_cls)
+                           MHD_KeyValueIterator iterator,
+                           void *iterator_cls)
 {
   int ret;
   struct MHD_HTTP_Header *pos;
@@ -138,9 +139,11 @@ MHD_get_connection_values (struct MHD_Connection *connection,
     if (0 != (pos->kind & kind))
       {
 	ret++;
-	if ((NULL != iterator) &&
-	    (MHD_YES != iterator (iterator_cls,
-				  kind, pos->header, pos->value)))
+	if ( (NULL != iterator) &&
+             (MHD_YES != iterator (iterator_cls,
+                                   pos->kind,
+                                   pos->header,
+                                   pos->value)) )
 	  return ret;
       }
   return ret;

@@ -1578,7 +1578,9 @@ right now).
 
 
 @deftypefun int MHD_get_connection_values (struct MHD_Connection *connection, enum MHD_ValueKind kind, MHD_KeyValueIterator iterator, void *iterator_cls)
-Get all the headers matching @var{kind} from the request.
+Get all the headers matching @var{kind} from the request.  The @var{kind}
+argument can be a bitmask, ORing the various header kinds that are
+requested.
 
 The @var{iterator} callback is invoked once for each header, with
 @var{iterator_cls} as first argument.  After version 0.9.19, the
@@ -1604,7 +1606,7 @@ would contain the string ``key''.
 @end deftypefun
 
 
-@deftypefun int MHD_set_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char * key, const char * value)
+@deftypefun int MHD_set_connection_value (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char *key, const char *value)
 This function can be used to append an entry to
 the list of HTTP headers of a connection (so that the
 @code{MHD_get_connection_values function} will return

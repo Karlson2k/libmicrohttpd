@@ -1,3 +1,7 @@
+Sun Oct 25 23:05:32 CET 2015
+	Return correct header kind in MHD_get_connection_values()
+	even if a bitmask is used for the "kind" argument. -FC/CG
+
 Sun Oct 25 15:29:23 CET 2015
 	Fixing transient resource leak affecting long-lived
 	connections with many keep-alives and HTTP request

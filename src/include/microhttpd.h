@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094402
+#define MHD_VERSION 0x00094403
 
 /**
  * MHD-internal return code for "YES".
@@ -1777,7 +1777,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
  * Get all of the headers from the request.
  *
  * @param connection connection to get values from
- * @param kind types of values to iterate over
+ * @param kind types of values to iterate over, can be a bitmask
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
@@ -1787,7 +1787,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 _MHD_EXTERN int
 MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
-                           MHD_KeyValueIterator iterator, void *iterator_cls);
+                           MHD_KeyValueIterator iterator,
+                           void *iterator_cls);
 
 
 /**
