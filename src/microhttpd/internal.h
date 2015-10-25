@@ -109,19 +109,19 @@ enum MHD_EpollState
   {
 
     /**
-     * The socket is not involved with a defined state in epoll right
+     * The socket is not involved with a defined state in epoll() right
      * now.
      */
     MHD_EPOLL_STATE_UNREADY = 0,
 
     /**
-     * epoll told us that data was ready for reading, and we did
+     * epoll() told us that data was ready for reading, and we did
      * not consume all of it yet.
      */
     MHD_EPOLL_STATE_READ_READY = 1,
 
     /**
-     * epoll told us that space was available for writing, and we did
+     * epoll() told us that space was available for writing, and we did
      * not consume all of it yet.
      */
     MHD_EPOLL_STATE_WRITE_READY = 2,
@@ -132,7 +132,7 @@ enum MHD_EpollState
     MHD_EPOLL_STATE_IN_EREADY_EDLL = 4,
 
     /**
-     * Is this connection currently in the 'epoll' set?
+     * Is this connection currently in the epoll() set?
      */
     MHD_EPOLL_STATE_IN_EPOLL_SET = 8,
 
@@ -201,7 +201,7 @@ struct MHD_NonceNc
 
 #if HAVE_MESSAGES
 /**
- * fprintf-like helper function for logging debug
+ * fprintf()-like helper function for logging debug
  * messages.
  */
 void
@@ -311,8 +311,8 @@ struct MHD_Response
   size_t data_buffer_size;
 
   /**
-   * Reference count for this response.  Free
-   * once the counter hits zero.
+   * Reference count for this response.  Free once the counter hits
+   * zero.
    */
   unsigned int reference_count;
 
@@ -332,16 +332,17 @@ struct MHD_Response
 /**
  * States in a state machine for a connection.
  *
- * Transitions are any-state to CLOSED, any state to state+1,
- * FOOTERS_SENT to INIT.  CLOSED is the terminal state and
- * INIT the initial state.
+ * The main transitions are any-state to #MHD_CONNECTION_CLOSED, any
+ * state to state+1, #MHD_CONNECTION_FOOTERS_SENT to
+ * #MHD_CONNECTION_INIT.  #MHD_CONNECTION_CLOSED is the terminal state
+ * and #MHD_CONNECTION_INIT the initial state.
  *
- * Note that transitions for *reading* happen only after
- * the input has been processed; transitions for
- * *writing* happen after the respective data has been
- * put into the write buffer (the write does not have
- * to be completed yet).  A transition to CLOSED or INIT
- * requires the write to be complete.
+ * Note that transitions for *reading* happen only after the input has
+ * been processed; transitions for *writing* happen after the
+ * respective data has been put into the write buffer (the write does
+ * not have to be completed yet).  A transition to
+ * #MHD_CONNECTION_CLOSED or #MHD_CONNECTION_INIT requires the write
+ * to be complete.
  */
 enum MHD_CONNECTION_STATE
 {
@@ -462,7 +463,7 @@ enum MHD_CONNECTION_STATE
   /**
    * The initial connection state for all secure connectoins
    * Handshake messages will be processed in this state & while
-   * in the 'MHD_TLS_HELLO_REQUEST' state
+   * in the #MHD_TLS_HELLO_REQUEST state
    */
   MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1
 
@@ -487,7 +488,7 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state);
  * @param conn the connection struct
  * @param write_to where to write received data
  * @param max_bytes maximum number of bytes to receive
- * @return number of bytes written to write_to
+ * @return number of bytes written to @a write_to
  */
 typedef ssize_t
 (*ReceiveCallback) (struct MHD_Connection *conn,
@@ -728,8 +729,8 @@ struct MHD_Connection
   unsigned int connection_timeout;
 
   /**
-   * Did we ever call the "default_handler" on this connection?
-   * (this flag will determine if we call the 'notify_completed'
+   * Did we ever call the "default_handler" on this connection?  (this
+   * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
    * handler when the connection closes down).
    */
   int client_aware;
@@ -755,7 +756,8 @@ struct MHD_Connection
   int thread_joined;
 
   /**
-   * Are we currently inside the "idle" handler (to avoid recursively invoking it).
+   * Are we currently inside the "idle" handler (to avoid recursively
+   * invoking it).
    */
   int in_idle;
 
@@ -783,7 +785,7 @@ struct MHD_Connection
   unsigned int responseCode;
 
   /**
-   * Set to MHD_YES if the response's content reader
+   * Set to #MHD_YES if the response's content reader
    * callback failed to provide data the last time
    * we tried to read from it.  In that case, the
    * write socket should be marked as unready until
@@ -793,10 +795,10 @@ struct MHD_Connection
 
   /**
    * Are we receiving with chunked encoding?  This will be set to
-   * MHD_YES after we parse the headers and are processing the body
+   * #MHD_YES after we parse the headers and are processing the body
    * with chunks.  After we are done with the body and we are
    * processing the footers; once the footers are also done, this will
-   * be set to MHD_NO again (before the final call to the handler).
+   * be set to #MHD_NO again (before the final call to the handler).
    */
   int have_chunked_upload;
 
@@ -882,8 +884,8 @@ struct MHD_Connection
  * @return new closure
  */
 typedef void *
-(*LogCallback)(void * cls,
-               const char * uri,
+(*LogCallback)(void *cls,
+               const char *uri,
                struct MHD_Connection *con);
 
 /**
@@ -972,8 +974,8 @@ struct MHD_Daemon
    * moved back to the tail of the list.
    *
    * All connections by default start in this list; if a custom
-   * timeout that does not match 'connection_timeout' is set, they
-   * are moved to the 'manual_timeout_head'-XDLL.
+   * timeout that does not match @e connection_timeout is set, they
+   * are moved to the @e manual_timeout_head-XDLL.
    */
   struct MHD_Connection *normal_timeout_head;
 
@@ -1014,7 +1016,7 @@ struct MHD_Daemon
   MHD_RequestCompletedCallback notify_completed;
 
   /**
-   * Closure argument to notify_completed.
+   * Closure argument to @e notify_completed.
    */
   void *notify_completed_cls;
 
@@ -1025,7 +1027,7 @@ struct MHD_Daemon
   MHD_NotifyConnectionCallback notify_connection;
 
   /**
-   * Closure argument to notify_connection.
+   * Closure argument to @e notify_connection.
    */
   void *notify_connection_cls;
 
@@ -1061,7 +1063,7 @@ struct MHD_Daemon
   void (*custom_error_log) (void *cls, const char *fmt, va_list va);
 
   /**
-   * Closure argument to custom_error_log.
+   * Closure argument to @e custom_error_log.
    */
   void *custom_error_log_cls;
 #endif
