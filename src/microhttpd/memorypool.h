@@ -62,7 +62,7 @@ MHD_pool_destroy (struct MemoryPool *pool);
  *
  * @param pool memory pool to use for the operation
  * @param size number of bytes to allocate
- * @param from_end allocate from end of pool (set to MHD_YES);
+ * @param from_end allocate from end of pool (set to #MHD_YES);
  *        use this for small, persistent allocations that
  *        will never be reallocated
  * @return NULL if the pool cannot support size more
