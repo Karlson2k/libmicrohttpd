@@ -1176,21 +1176,21 @@ get_next_header_line (struct MHD_Connection *connection)
  */
 static int
 connection_add_header (struct MHD_Connection *connection,
-                       const char *key, 
-		       const char *value, 
+                       const char *key,
+		       const char *value,
 		       enum MHD_ValueKind kind)
 {
-  if (MHD_NO == 
+  if (MHD_NO ==
       MHD_set_connection_value (connection,
 				kind,
-				key, 
+				key,
 				value))
     {
 #if HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory to allocate header record!\n");
 #endif
-      transmit_error_response (connection, 
+      transmit_error_response (connection,
 			       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return MHD_NO;
@@ -1288,7 +1288,7 @@ parse_cookie_header (struct MHD_Connection *connection)
           equals[strlen (equals) - 1] = '\0';
           equals++;
         }
-      if (MHD_NO == 
+      if (MHD_NO ==
 	  connection_add_header (connection,
 				 pos,
 				 equals,
@@ -1342,7 +1342,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
       args++;
       /* note that this call clobbers 'args' */
       MHD_parse_arguments_ (connection,
-			    MHD_GET_ARGUMENT_KIND, 
+			    MHD_GET_ARGUMENT_KIND,
 			    args,
 			    &connection_add_header,
 			    &unused_num_headers);
@@ -1784,7 +1784,7 @@ process_broken_line (struct MHD_Connection *connection,
     }
   EXTRA_CHECK ((NULL != last) && (NULL != connection->colon));
   if ((MHD_NO == connection_add_header (connection,
-                                        last, 
+                                        last,
 					connection->colon,
 					kind)))
     {
