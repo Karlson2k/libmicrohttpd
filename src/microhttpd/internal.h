@@ -676,7 +676,7 @@ struct MHD_Connection
   size_t read_buffer_offset;
 
   /**
-   * Size of write_buffer (in bytes).
+   * Size of @e write_buffer (in bytes).
    */
   size_t write_buffer_size;
 
