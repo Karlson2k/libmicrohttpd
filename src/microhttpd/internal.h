@@ -662,7 +662,7 @@ struct MHD_Connection
   MHD_thread_handle_ pid;
 
   /**
-   * Size of read_buffer (in bytes).  This value indicates
+   * Size of @e read_buffer (in bytes).  This value indicates
    * how many bytes we're willing to read into the buffer;
    * the real buffer is one byte longer to allow for
    * adding zero-termination (when needed).
@@ -671,7 +671,7 @@ struct MHD_Connection
 
   /**
    * Position where we currently append data in
-   * read_buffer (last valid position).
+   * @e read_buffer (last valid position).
    */
   size_t read_buffer_offset;
 
@@ -1475,8 +1475,8 @@ typedef int
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
  * @param[out] num_headers set to the number of headers found
- * @return #MHD_NO on failure (@a cb returned #MHD_NO), 
- *         #MHD_YES for success (parsing succeeded, @a cb always 
+ * @return #MHD_NO on failure (@a cb returned #MHD_NO),
+ *         #MHD_YES for success (parsing succeeded, @a cb always
  *                               returned #MHD_YES)
  */
 int
