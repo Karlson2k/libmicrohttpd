@@ -207,12 +207,14 @@ typedef SOCKET MHD_socket;
 #define _MHD_INSTRMACRO(a) #a
 #define _MHD_STRMACRO(a) _MHD_INSTRMACRO(a)
 #define _MHD_DEPR_MACRO(msg) __pragma(message(__FILE__ "(" _MHD_STRMACRO(__LINE__)"): warning: " msg))
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
 #define _MHD_GCC_PRAG(x) _Pragma (#x)
 #if __clang_major__+0 >= 5 || \
   (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))) || \
   __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #else /* older clang or GCC */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
 #endif
@@ -221,6 +223,11 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_MACRO(msg)
 #endif
 #endif /* _MHD_DEPR_MACRO */
+
+#ifndef _MHD_DEPR_IN_MACRO
+#define _MHD_NO_DEPR_IN_MACRO 1
+#define _MHD_DEPR_IN_MACRO(msg)
+#endif /* !_MHD_DEPR_IN_MACRO */
 
 #ifndef _MHD_DEPR_FUNC
 #if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1400
@@ -305,7 +312,7 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 #define MHD_HTTP_NOT_ACCEPTABLE 406
 /** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
-  _MHD_DEPR_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") 406
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") 406
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
 #define MHD_HTTP_REQUEST_TIMEOUT 408
 #define MHD_HTTP_CONFLICT 409
@@ -2134,11 +2141,13 @@ MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset);
 
+#ifndef _MHD_NO_DEPR_IN_MACRO 
 /* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset()
    to minimize possible problems with different off_t options */
 #define MHD_create_response_from_fd_at_offset(size,fd,offset) \
-  _MHD_DEPR_MACRO("Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
+  _MHD_DEPR_IN_MACRO("Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
   MHD_create_response_from_fd_at_offset64((size),(fd),(offset))
+#endif /* ! _MHD_NO_DEPR_IN_MACRO */
 
 
 /**
