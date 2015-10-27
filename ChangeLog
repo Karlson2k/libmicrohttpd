@@ -1,3 +1,7 @@
+Tue Oct 27 12:08:02 CET 2015
+	Rework deprecation maros: fix errors with old GCC versions,
+	improved support for old clang and new GCC. -EG
+
 Sun Oct 25 23:05:32 CET 2015
 	Return correct header kind in MHD_get_connection_values()
 	even if a bitmask is used for the "kind" argument. -FC/CG

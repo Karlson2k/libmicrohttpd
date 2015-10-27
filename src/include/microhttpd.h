@@ -217,6 +217,10 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #else /* older clang or GCC */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
+#if (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)) /* FIXME: earlier versions not tested */
+/* clang handles inline pragmas better than GCC */
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
+#endif /* clang >= 2.9 */
 #endif
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
 #else /* other compilers */
@@ -235,11 +239,11 @@ typedef SOCKET MHD_socket;
 #elif defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1310
 /* VS .NET 2003 deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
-#elif defined (__clang__) && \
-  (__clang_major__+0 >= 4 || (!defined(__apple_build_version__) && __clang_major__+0 >= 3))
+#elif (__GNUC__+0 >= 5) || (defined (__clang__) && \
+  (__clang_major__+0 >= 4 || (!defined(__apple_build_version__) && __clang_major__+0 >= 3)))
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated(msg)))
 #elif defined (__clang__) || __GNUC__+0 > 3 || (__GNUC__+0 == 3 && __GNUC_MINOR__+0 >= 1)
-/* GCC-style deprecation do not support custom messages */
+/* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
 #else /* other compilers */
