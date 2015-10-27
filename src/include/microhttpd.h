@@ -240,7 +240,7 @@ typedef SOCKET MHD_socket;
 /* VS .NET 2003 deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
 #elif (__GNUC__+0 >= 5) || (defined (__clang__) && \
-  (__clang_major__+0 >= 4 || (!defined(__apple_build_version__) && __clang_major__+0 >= 3)))
+  (__clang_major__+0 > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)))  /* FIXME: earlier versions not tested */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated(msg)))
 #elif defined (__clang__) || __GNUC__+0 > 3 || (__GNUC__+0 == 3 && __GNUC_MINOR__+0 >= 1)
 /* old GCC-style deprecation do not support custom messages */
