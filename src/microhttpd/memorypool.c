@@ -240,7 +240,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
     {
       /* fits */
       ret = &pool->memory[pool->pos];
-      memcpy (ret, old, old_size);
+      memmove (ret, old, old_size);
       pool->pos += asize;
       return ret;
     }
