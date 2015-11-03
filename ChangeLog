@@ -1,7 +1,9 @@
 Tue Nov  3 23:24:52 CET 2015
 	Undoing change from Sun Oct 25 15:29:23 CET 2015
 	as the original code was counter-intuitive but
-	correct, and the new code does break pipelining. -CG
+	correct, and the new code does break pipelining.
+	Ignore empty lines at the beginning of an HTTP
+	request (more tolerant implementation). -CG
 	Releasing libmicrohttpd 0.9.45. -CG
 
 Sat Oct 31 15:52:52 CET 2015

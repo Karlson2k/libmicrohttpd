@@ -2227,7 +2227,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         {
         case MHD_CONNECTION_INIT:
           line = get_next_header_line (connection);
-          if (NULL == line)
+          /* Check for empty string, as we might want
+             to tolerate 'spurious' empty lines; also
+             NULL means we didn't get a full line yet. */
+          if ( (NULL == line) ||
+               (0 == strlen (line) ) )
             {
               if (MHD_CONNECTION_INIT != connection->state)
                 continue;
