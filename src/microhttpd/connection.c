@@ -2555,10 +2555,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               /* can try to keep-alive */
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
+              /* read_buffer_size is correct here, as we want to
+                 preserve the entire read buffer allocation, even
+                 if in terms of the data we only care to preserve
+                 up to "read_buffer_offset" */
               connection->read_buffer
                 = MHD_pool_reset (connection->pool,
                                   connection->read_buffer,
-                                  connection->read_buffer_offset);
+                                  connection->read_buffer_size);
             }
 	  connection->client_aware = MHD_NO;
           connection->client_context = NULL;

@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094403
+#define MHD_VERSION 0x00094600
 
 /**
  * MHD-internal return code for "YES".
@@ -2145,7 +2145,7 @@ MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset);
 
-#ifndef _MHD_NO_DEPR_IN_MACRO 
+#ifndef _MHD_NO_DEPR_IN_MACRO
 /* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset()
    to minimize possible problems with different off_t options */
 #define MHD_create_response_from_fd_at_offset(size,fd,offset) \
