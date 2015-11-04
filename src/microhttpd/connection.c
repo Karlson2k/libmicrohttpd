@@ -666,7 +666,7 @@ build_header_response (struct MHD_Connection *connection)
   int must_add_content_length;
 
   EXTRA_CHECK (NULL != connection->version);
-  if (0 == strlen (connection->version))
+  if (0 == connection->version[0])
     {
       data = MHD_pool_allocate (connection->pool, 0, MHD_YES);
       connection->write_buffer = data;
@@ -1796,7 +1796,7 @@ process_broken_line (struct MHD_Connection *connection,
       return MHD_NO;
     }
   /* we still have the current line to deal with... */
-  if (0 != strlen (line))
+  if (0 != line[0])
     {
       if (MHD_NO == process_header_line (connection, line))
         {
@@ -2231,7 +2231,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
              to tolerate 'spurious' empty lines; also
              NULL means we didn't get a full line yet. */
           if ( (NULL == line) ||
-               (0 == strlen (line) ) )
+               (0 == line[0]) )
             {
               if (MHD_CONNECTION_INIT != connection->state)
                 continue;
@@ -2262,7 +2262,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 }
               break;
             }
-          if (strlen (line) == 0)
+          if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
               continue;
@@ -2293,7 +2293,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_NO ==
               process_broken_line (connection, line, MHD_HEADER_KIND))
             continue;
-          if (0 == strlen (line))
+          if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
               continue;
@@ -2370,7 +2370,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 }
               break;
             }
-          if (0 == strlen (line))
+          if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
               continue;
@@ -2401,7 +2401,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_NO ==
               process_broken_line (connection, line, MHD_FOOTER_KIND))
             continue;
-          if (0 == strlen (line))
+          if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
               continue;
