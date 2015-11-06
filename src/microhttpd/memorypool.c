@@ -219,7 +219,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   if ((pool->end < old_size) || (pool->end < asize))
     return NULL;                /* unsatisfiable or bogus request */
 
-  if ((pool->pos >= old_size) && (&pool->memory[pool->pos - old_size] == old))
+  if ( (pool->pos >= old_size) &&
+       (&pool->memory[pool->pos - old_size] == old) )
     {
       /* was the previous allocation - optimize! */
       if (pool->pos + asize - old_size <= pool->end)
@@ -251,32 +252,40 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
 /**
  * Clear all entries from the memory pool except
- * for @a keep of the given @a size.
+ * for @a keep of the given @a size. The pointer
+ * returned should be a buffer of @a new_size where
+ * the first @a copy_bytes are from @a keep.
  *
  * @param pool memory pool to use for the operation
  * @param keep pointer to the entry to keep (maybe NULL)
- * @param size how many bytes need to be kept at this address
+ * @param copy_bytes how many bytes need to be kept at this address
+ * @param new_size how many bytes should the allocation we return have?
+ *                 (should be larger or equal to @a copy_bytes)
  * @return addr new address of @a keep (if it had to change)
  */
 void *
 MHD_pool_reset (struct MemoryPool *pool,
 		void *keep,
-		size_t size)
+		size_t copy_bytes,
+                size_t new_size)
 {
   if (NULL != keep)
     {
       if (keep != pool->memory)
         {
-          memmove (pool->memory, keep, size);
+          memmove (pool->memory,
+                   keep,
+                   copy_bytes);
           keep = pool->memory;
         }
     }
   pool->end = pool->size;
-  memset (&pool->memory[size],
+  /* technically not needed, but safer to zero out */
+  memset (&pool->memory[copy_bytes],
 	  0,
-	  pool->size - size);
+	  pool->size - copy_bytes);
   if (NULL != keep)
-    pool->pos = ROUND_TO_ALIGN(size);
+    pool->pos = ROUND_TO_ALIGN (new_size);
   return keep;
 }
 

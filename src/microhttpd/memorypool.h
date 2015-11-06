@@ -99,16 +99,21 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
 /**
  * Clear all entries from the memory pool except
- * for "keep" of the given "size".
+ * for @a keep of the given @a copy_bytes.  The pointer
+ * returned should be a buffer of @a new_size where
+ * the first @a copy_bytes are from @a keep.
  *
  * @param pool memory pool to use for the operation
  * @param keep pointer to the entry to keep (maybe NULL)
- * @param size how many bytes need to be kept at this address
- * @return addr new address of "keep" (if it had to change)
+ * @param copy_bytes how many bytes need to be kept at this address
+ * @param new_size how many bytes should the allocation we return have?
+ *                 (should be larger or equal to @a copy_bytes)
+ * @return addr new address of @a keep (if it had to change)
  */
 void *
 MHD_pool_reset (struct MemoryPool *pool,
 		void *keep,
-		size_t size);
+		size_t copy_bytes,
+                size_t new_size);
 
 #endif
