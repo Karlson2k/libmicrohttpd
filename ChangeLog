@@ -7,7 +7,7 @@ Tue Nov  3 23:24:52 CET 2015
 	correct, and the new code does break pipelining.
 	Ignore empty lines at the beginning of an HTTP
 	request (more tolerant implementation). -CG
-	Releasing libmicrohttpd 0.9.45. -CG
+	Releasing libmicrohttpd 0.9.46. -CG
 
 Sat Oct 31 15:52:52 CET 2015
 	Releasing libmicrohttpd 0.9.45. -CG
