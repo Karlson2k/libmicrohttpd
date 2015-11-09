@@ -1,5 +1,6 @@
 Fri Nov  6 22:54:38 CET 2015
 	Fixing the buffer shrinkage issue, this time with test. -CG
+        Releasing libmicrohttpd 0.9.46. -CG
 
 Tue Nov  3 23:24:52 CET 2015
 	Undoing change from Sun Oct 25 15:29:23 CET 2015
@@ -7,7 +8,6 @@ Tue Nov  3 23:24:52 CET 2015
 	correct, and the new code does break pipelining.
 	Ignore empty lines at the beginning of an HTTP
 	request (more tolerant implementation). -CG
-	Releasing libmicrohttpd 0.9.46. -CG
 
 Sat Oct 31 15:52:52 CET 2015
 	Releasing libmicrohttpd 0.9.45. -CG
