@@ -4489,6 +4489,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   if (NULL == daemon)
     return;
+
+  if (0 != (MHD_USE_SUSPEND_RESUME & daemon->options))
+    resume_suspended_connections (daemon);
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
   daemon->socket_fd = MHD_INVALID_SOCKET;
