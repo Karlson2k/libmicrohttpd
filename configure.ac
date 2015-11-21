@@ -931,7 +931,7 @@ AC_SUBST(MHD_LIB_LDFLAGS)
 AS_IF([[test "x$enable_https" = "xyes" && test "x$have_gnutls_pkgcfg" = "xyes" ]],
  [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
    MHD_REQ_PRIVATE='gnutls'
-   MHD_LIBDEPS_PKGCFG="${MHD_LIBDEPS//$GNUTLS_LIBS/}"
+   MHD_LIBDEPS_PKGCFG=$(echo ${MHD_LIBDEPS} | sed "s/$GNUTLS_LIBS//")
  ],
  [
    MHD_REQ_PRIVATE=''
