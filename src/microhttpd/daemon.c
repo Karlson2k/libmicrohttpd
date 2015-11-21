@@ -3619,11 +3619,7 @@ MHD_start_daemon_va (unsigned int flags,
                      MHD_AccessHandlerCallback dh, void *dh_cls,
 		     va_list ap)
 {
-#if defined(MHD_POSIX_SOCKETS)
-  const int on = 1;
-#elif defined(MHD_WINSOCK_SOCKETS)
-  const uint32_t on = 1;
-#endif /* MHD_WINSOCK_SOCKETS */
+  const _MHD_SOCKOPT_BOOL_TYPE on = 1;
   struct MHD_Daemon *daemon;
   MHD_socket socket_fd;
   struct sockaddr_in servaddr4;
@@ -3995,12 +3991,8 @@ MHD_start_daemon_va (unsigned int flags,
 	     (http://msdn.microsoft.com/en-us/library/ms738574%28v=VS.85%29.aspx);
 	     and may also be missing on older POSIX systems; good luck if you have any of those,
 	     your IPv6 socket may then also bind against IPv4 anyway... */
-#ifndef MHD_WINSOCK_SOCKETS
-	  const int
-#else
-	  const uint32_t
-#endif
-            v6_only = (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
+	  const _MHD_SOCKOPT_BOOL_TYPE v6_only =
+            (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
 	  if (0 > setsockopt (socket_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,
                               (const void*)&v6_only, sizeof (v6_only)))

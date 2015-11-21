@@ -189,6 +189,15 @@ typedef SOCKET MHD_socket;
 #define MHD_SOCKET_DEFINED 1
 #endif /* MHD_SOCKET_DEFINED */
 
+/**
+ * _MHD_SOCKOPT_BOOL_TYPE is type for bool parameters for setsockopt()/getsockopt()
+ */
+#ifdef MHD_POSIX_SOCKETS
+typedef int _MHD_SOCKOPT_BOOL_TYPE;
+#else /* MHD_WINSOCK_SOCKETS */
+typedef BOOL _MHD_SOCKOPT_BOOL_TYPE;
+#endif /* MHD_WINSOCK_SOCKETS */
+
 #ifndef _WIN32
 typedef time_t _MHD_TIMEVAL_TV_SEC_TYPE;
 #else  /* _WIN32 */
