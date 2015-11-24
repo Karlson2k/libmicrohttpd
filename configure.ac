@@ -90,9 +90,10 @@ AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
 MHD_LIB_CPPFLAGS=""
 MHD_LIB_CFLAGS=""
 MHD_LIB_LDFLAGS=""
-# for pkg-config
 MHD_LIBDEPS=""
+# for pkg-config
 MHD_REQ_PRIVATE=''
+MHD_LIBDEPS_PKGCFG=''
 
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
@@ -257,6 +258,7 @@ if test "x$USE_THREADS" = "xposix"; then
   AC_DEFINE([MHD_USE_POSIX_THREADS],[1],[define to use pthreads])
   MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $PTHREAD_CFLAGS"
   MHD_LIBDEPS="$PTHREAD_LIBS $MHD_LIBDEPS"
+  MHD_LIBDEPS_PKGCFG="$PTHREAD_LIBS $MHD_LIBDEPS_PKGCFG"
 elif test "x$USE_THREADS" = "xw32"; then
   AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])
 fi
@@ -849,12 +851,21 @@ if test "x$enable_https" != "xno"
 then
   AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
           AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
+          enable_https=yes
+          MSG_HTTPS="yes (using libgnutls and libgcrypt)"
           MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
           MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
           MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
           MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
-          enable_https=yes
-          MSG_HTTPS="yes (using libgnutls and libgcrypt)"
+          AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
+            [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
+              MHD_REQ_PRIVATE='gnutls'
+              MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"
+            ],
+            [
+              MHD_REQ_PRIVATE=''
+              MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"
+          ])
         ], [
           AS_IF([test "x$have_gnutls" = "xyes"], [crypt_missing="libgrypt"],
                 [test "x$have_gcrypt" = "xyes"], [crypt_missing="libgnutls"],
@@ -926,20 +937,11 @@ AC_SUBST([CPU_COUNT])
 AC_SUBST(MHD_LIB_CPPFLAGS)
 AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
+AC_SUBST(MHD_LIBDEPS)
 
 # for pkg-config
-AS_IF([[test "x$enable_https" = "xyes" && test "x$have_gnutls_pkgcfg" = "xyes" ]],
- [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
-   MHD_REQ_PRIVATE='gnutls'
-   MHD_LIBDEPS_PKGCFG=$(echo ${MHD_LIBDEPS} | sed "s/$GNUTLS_LIBS//")
- ],
- [
-   MHD_REQ_PRIVATE=''
-   MHD_LIBDEPS_PKGCFG="$MHD_LIBDEPS"
- ])
 AC_SUBST([MHD_REQ_PRIVATE])
 AC_SUBST([MHD_LIBDEPS_PKGCFG])
-AC_SUBST(MHD_LIBDEPS)
 
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
