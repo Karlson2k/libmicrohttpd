@@ -2509,7 +2509,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #if HAVE_DECL_TCP_CORK
           /* done sending, uncork */
           {
-            const _MHD_SOCKOPT_BOOL_TYPE = 0;
+            const _MHD_SOCKOPT_BOOL_TYPE val = 0;
             setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val,
                         sizeof (val));
           }
