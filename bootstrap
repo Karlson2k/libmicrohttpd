@@ -1,3 +1,5 @@
 #!/bin/sh
+test -n "$BASH_SOURCE" && workdir="${BASH_SOURCE[0]%/*}" && test -n "$workdir" && cd "$workdir" || \
+workdir=`dirname "$0"` && test -n "$workdir" && cd "$workdir" || echo "Warning: can't get working directory" 1>&2
 aclocal -I m4 --install
 autoreconf -I m4 -f -i
