@@ -1,4 +1,3 @@
 #!/bin/sh
-aclocal -I m4
-automake
-autoreconf -f -i
+aclocal -I m4 --install
+autoreconf -I m4 -f -i
