@@ -2422,14 +2422,29 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
 
-#if HAVE_DECL_TCP_CORK
-          /* starting header send, set TCP cork */
-          {
+          /* starting send, prefer fill full buffer before sending */
+#if defined(TCP_CORK)
+          { /* Send only full packets */
             const _MHD_SOCKOPT_BOOL_TYPE val = 1;
             setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val,
                         sizeof (val));
           }
-#endif
+#elif defined(TCP_NODELAY) || defined(TCP_NOPUSH)
+#if defined(TCP_NOPUSH)
+          { /* Buffer data before sending */
+            const _MHD_SOCKOPT_BOOL_TYPE on_val = 1;
+            setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NOPUSH, (const void*)&on_val,
+                        sizeof (on_val));
+          }
+#endif /* TCP_NOPUSH */
+#if defined(TCP_NODELAY)
+          { /* Enable Nagle's algorithm, even if it was disabled somehow */
+            const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+            setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, (const void*)&off_val,
+                        sizeof (off_val));
+          }
+#endif /* TCP_NODELAY */
+#endif /* TCP_NODELAY || TCP_NOPUSH */
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
           /* no default action */
@@ -2506,14 +2521,35 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
-#if HAVE_DECL_TCP_CORK
-          /* done sending, uncork */
-          {
+          /* done sending, send last partial packet immediately if possible */
+#if defined(TCP_CORK)
+          { /* Flush buffered data, allow partial packets */
             const _MHD_SOCKOPT_BOOL_TYPE val = 0;
             setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &val,
                         sizeof (val));
           }
-#endif
+#elif defined(TCP_NODELAY) || defined(TCP_NOPUSH)
+#if defined(TCP_NODELAY)
+          { /* Disable Nagle's algorithm to push partial packet */
+            const _MHD_SOCKOPT_BOOL_TYPE on_val = 1;
+            setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, (const void*)&on_val,
+                        sizeof (on_val));
+          }
+#endif /* TCP_NODELAY */
+#if defined(TCP_NOPUSH)
+          { /* Send data without extra buffering, may flush pending data on some platforms */
+            const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+            setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NOPUSH, (const void*)&off_val,
+                        sizeof (off_val));
+          }
+#endif /* TCP_NOPUSH */
+          { /* force flush data with zero send otherwise Darwin and some BSD systems
+               will add 5 seconds delay */
+            const int dummy = 0;
+            (void)send (connection->socket_fd, (const void*)&dummy, 0, 0);
+          }
+#endif /* TCP_NODELAY || TCP_NOPUSH */
+
           end =
             MHD_get_response_header (connection->response,
 				     MHD_HTTP_HEADER_CONNECTION);
@@ -2557,6 +2593,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           else
             {
               /* can try to keep-alive */
+#if !defined(TCP_CORK) && defined(TCP_NODELAY)
+              /* Enable Nagle's algorithm */
+              const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+              setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, (const void*)&off_val,
+                            sizeof (off_val));
+#endif /* !TCP_CORK && TCP_NODELAY */
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
               /* Reset the read buffer to the starting size,

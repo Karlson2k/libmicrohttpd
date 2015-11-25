@@ -1,3 +1,7 @@
+Wed Nov 25 17:02:53 CET 2015
+    Remove 200ms delay observable with keep-alive on Darwin
+    and *BSD platfroms. -EG
+
 Tue Nov 10 15:25:48 CET 2015
 	Fix issue with shutdown if connection was resumed just
 	before shutdown. -FC

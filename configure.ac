@@ -544,9 +544,6 @@ have_inet6=no
 ])
 AC_MSG_RESULT($have_inet6)
 
-# TCP_CORK and TCP_NOPUSH
-AC_CHECK_DECLS([TCP_CORK, TCP_NOPUSH], [], [], [[#include <netinet/tcp.h>]])
-
 HIDDEN_VISIBILITY_CFLAGS=""
 case "$host" in
   *-*-mingw*)

@@ -62,14 +62,6 @@
    don't. */
 #define HAVE_DECL_SOCK_NONBLOCK 0
 
-/* Define to 1 if you have the declaration of `TCP_CORK', and to 0 if you
-   don't. */
-#define HAVE_DECL_TCP_CORK 0
-
-/* Define to 1 if you have the declaration of `TCP_NOPUSH', and to 0 if you
-   don't. */
-#define HAVE_DECL_TCP_NOPUSH 0
-
 /* Define to 1 if you have the `_lseeki64' function. */
 #define HAVE___LSEEKI64 1
 
