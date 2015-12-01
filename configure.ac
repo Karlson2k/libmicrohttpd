@@ -595,77 +595,6 @@ AC_CHECK_LIB([[magic]], [[magic_open]],
   AM_CONDITIONAL(HAVE_MAGIC, false))
 
 
-# optional: libmicrospdy support. Enabled by default if not on W32
-AC_ARG_ENABLE([spdy],
-		AS_HELP_STRING([--enable-spdy],
-			[enable build libmicrospdy (yes, no, auto) [auto]]),
-		[enable_spdy=${enableval}],
-		[ AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_spdy=no]) ])
-
-if test "$enable_spdy" != "no"
-then
-  AX_CHECK_OPENSSL([ have_openssl=yes ],[ have_openssl=no ])
-  if test "x$have_openssl" = "xyes"
-  then
-    # check OpenSSL headers
-    SAVE_CPP_FLAGS="$CPPFLAGS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-    AC_CHECK_HEADERS([openssl/evp.h openssl/rsa.h openssl/rand.h openssl/err.h openssl/sha.h openssl/pem.h openssl/engine.h], [ have_openssl=yes ],[ have_openssl=no ])
-    if test "x$have_openssl" = "xyes"
-    then
-      # check OpenSSL libs
-      SAVE_LIBS="$LIBS"
-      SAVE_LD_FLAGS="$LDFLAGS"
-      LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-      LIBS="$OPENSSL_LIBS $LIBS"
-      AC_CHECK_FUNC([SSL_CTX_set_next_protos_advertised_cb],
-        [
-          AC_CHECK_FUNC([SSL_library_init], [ have_openssl=yes ],[ have_openssl=no ])
-        ],[ have_openssl=no ])
-      LIBS="$SAVE_LIBS"
-      LDFLAGS="$SAVE_LD_FLAGS"
-    fi
-    CPPFLAGS="$SAVE_CPP_FLAGS"
-  fi
-  if test "x$have_openssl" = "xyes"
-  then
-    enable_spdy=yes
-  else
-    AS_IF([[test "x$enable_spdy" = "xyes" ]], [AC_MSG_ERROR([[libmicrospdy cannot be enabled without OpenSSL.]])])
-    have_openssl=no
-    enable_spdy=no
-  fi
-else
-  # OpenSSL is used only for libmicrospdy
-  have_openssl=no
-fi
-AM_CONDITIONAL([HAVE_OPENSSL], [test "x$have_openssl" = "xyes"])
-
-if test "$enable_spdy" = "yes"
-then
- AC_DEFINE([SPDY_SUPPORT],[1],[include libmicrospdy support])
-else
- AC_DEFINE([SPDY_SUPPORT],[0],[disable libmicrospdy support])
-fi
-AM_CONDITIONAL(ENABLE_SPDY, [test "x$enable_spdy" != "xno"])
-AC_MSG_CHECKING(whether we have OpenSSL and thus can support libmicrospdy)
-AC_MSG_RESULT($enable_spdy)
-
-# for pkg-config
-SPDY_LIBDEPS="$OPENSSL_LIBS"
-
-SPDY_LIB_LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-SPDY_LIB_CFLAGS="$CFLAGS"
-SPDY_LIB_CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-AC_SUBST(SPDY_LIB_LDFLAGS)
-AC_SUBST(SPDY_LIB_CFLAGS)
-AC_SUBST(SPDY_LIB_CPPFLAGS)
-# for pkg-config
-AC_SUBST(SPDY_LIBDEPS)
-
-AC_CHECK_HEADERS([spdylay/spdylay.h], [ have_spdylay="yes" ], [have_spdylay="no"])
-AM_CONDITIONAL(HAVE_SPDYLAY, [test "x$have_spdylay" = "xyes"])
-
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
@@ -946,7 +875,6 @@ AC_SUBST(LDFLAGS)
 
 AC_CONFIG_FILES([
 libmicrohttpd.pc
-libmicrospdy.pc
 w32/VS2013/microhttpd_dll_res_vc.rc
 Makefile
 contrib/Makefile
@@ -958,12 +886,9 @@ src/Makefile
 src/include/Makefile
 src/platform/Makefile
 src/microhttpd/Makefile
-src/microspdy/Makefile
-src/spdy2http/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
-src/testspdy/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 
@@ -989,8 +914,6 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   epoll support:     ${enable_epoll=no}
   build docs:        ${enable_doc}
   build examples:    ${enable_examples}
-  libmicrospdy:      ${enable_spdy}
-  spdylay (testing): ${have_spdylay}
 ])
 
 if test "x$enable_https" = "xyes"

@@ -8,9 +8,6 @@ EXTRA_DIST = acinclude.m4 libmicrohttpd.pc.in libmicrospdy.pc.in  \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc 
-if ENABLE_SPDY
-pkgconfig_DATA += libmicrospdy.pc
-endif
 
 if BUILD_DOC
 SUBDIRS += doc

@@ -1,3 +1,6 @@
+Tue Dec  1 14:05:13 CET 2015
+	SPDY is dead, killing experimental libmicrospdy. -CG
+
 Tue Dec  1 10:01:12 CET 2015
 	New logic for controlling socket buffer modes.
 	Eliminated delay before last packet in response and before
