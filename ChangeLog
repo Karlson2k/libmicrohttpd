@@ -1,3 +1,10 @@
+Tue Dec  1 10:01:12 CET 2015
+	New logic for controlling socket buffer modes.
+	Eliminated delay before last packet in response and before
+	"100 Continue" response on all platforms. Also response
+	header are pushed to client without waiting for response
+	body. -EG
+
 Wed Nov 25 17:02:53 CET 2015
     Remove 200ms delay observable with keep-alive on Darwin
     and *BSD platfroms. -EG
