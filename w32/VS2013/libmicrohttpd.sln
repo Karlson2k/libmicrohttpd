@@ -3,12 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmicrohttpd", "libmicrohttpd.vcxproj", "{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hellobrowser", "hellobrowser.vcxproj", "{310F39BD-A2D6-44FF-8344-37ADD0524CBD}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A} = {9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmicrohttpd", "libmicrohttpd.vcxproj", "{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
