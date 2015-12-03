@@ -73,11 +73,15 @@
 #endif
 
 /* Platform-independent snprintf name */
-#if !defined(_WIN32) || defined(__CYGWIN__)
+#if defined(HAVE_SNPRINTF)
 #define MHD_snprintf_ snprintf
-#else
+#else  /* ! HAVE_SNPRINTF */
+#if defined(_WIN32)
 #define MHD_snprintf_ W32_snprintf
-#endif
+#else  /* ! _WIN32*/
+#error Your platform does not support snprintf() and MHD does not know how to emulate it on your platform.
+#endif /* ! _WIN32*/
+#endif /* ! HAVE_SNPRINTF */
 
 
 /**

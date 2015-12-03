@@ -68,6 +68,11 @@
 /* Define to 1 if you have the `gmtime_s' function. */
 #define HAVE_GMTIME_S 1
 
+#if _MSC_VER >= 1900 /* snprintf() supported natively since VS2015 */
+/* Define to 1 if you have the `snprintf' function. */
+#define HAVE_SNPRINTF 1
+#endif
+
 
 /* *** Headers information *** */
 /* Not really important as not used by code currently */

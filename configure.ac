@@ -450,7 +450,7 @@ if test "x$enable_socketpair" = "xyes"; then
 	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
 fi
 
-AC_CHECK_FUNCS_ONCE([memmem accept4])
+AC_CHECK_FUNCS_ONCE([accept4 memmem snprintf])
 AC_MSG_CHECKING([[for gmtime_s]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
