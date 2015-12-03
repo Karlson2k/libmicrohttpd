@@ -32,7 +32,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\response.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
-    <ClInclude Include="MHD_config.h" />
+    <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">
