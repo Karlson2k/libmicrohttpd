@@ -450,18 +450,54 @@ if test "x$enable_socketpair" = "xyes"; then
 	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
 fi
 
-AC_CHECK_FUNCS_ONCE([accept4 memmem snprintf])
-AC_MSG_CHECKING([[for gmtime_s]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[ #include <time.h>]], [[struct tm now; time_t t; time (&t); gmtime_s (&now, &t)]])
-  ],
+AC_CHECK_FUNCS_ONCE([accept4 gmtime_r memmem snprintf])
+AC_CHECK_DECL([gmtime_s],
   [
-    AC_DEFINE([HAVE_GMTIME_S], [1], [Define to 1 if you have `gmtime_s' function (only for W32).])
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ])
+    AC_MSG_CHECKING([[whether gmtime_s is in C11 form]])
+    AC_LINK_IFELSE(
+        [ AC_LANG_PROGRAM(
+          [[ #define __STDC_WANT_LIB_EXT1__ 1
+             #include <time.h>
+             #ifdef __cplusplus
+             extern "C"
+             #endif
+             struct tm* gmtime_s(const time_t* time, struct tm* result);
+           ]], [[ 
+             struct tm res;
+             time_t t;
+             gmtime_s (&t, &res);
+          ]])
+        ],
+        [
+          AC_DEFINE([HAVE_C11_GMTIME_S], [1], [Define to 1 if you have the `gmtime_s' function in C11 form.])
+          AC_MSG_RESULT([[yes]])
+        ],
+        [
+          AC_MSG_RESULT([[no]])
+          AC_MSG_CHECKING([[whether gmtime_s is in W32 form]])
+          AC_LINK_IFELSE(
+            [ AC_LANG_PROGRAM(
+              [[ #include <time.h>
+                 #ifdef __cplusplus
+                 extern "C"
+                 #endif
+                 errno_t gmtime_s(struct tm* _tm, const time_t* time);
+              ]], [[ 
+                 struct tm res;
+                 time_t t;
+                 gmtime_s (&res, &t);
+              ]])
+            ],
+            [
+              AC_DEFINE([HAVE_W32_GMTIME_S], [1], [Define to 1 if you have the `gmtime_s' function in W32 form.])
+              AC_MSG_RESULT([[yes]])
+            ],
+            [AC_MSG_RESULT([[no]])
+            ])
+        ])
+  ], [], 
+  [[#define __STDC_WANT_LIB_EXT1__ 1
+    #include<time.h>]])
 
 
 AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],

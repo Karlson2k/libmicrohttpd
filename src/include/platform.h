@@ -81,6 +81,9 @@
 #if LINUX+0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && ! defined(_LARGEFILE64_SOURCE)
 #define _LARGEFILE64_SOURCE 1
 #endif
+#ifdef HAVE_C11_GMTIME_S
+#define __STDC_WANT_LIB_EXT1__ 1
+#endif /* HAVE_C11_GMTIME_S */
 
 #include <stdio.h>
 #include <stdlib.h>
