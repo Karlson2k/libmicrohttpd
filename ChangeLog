@@ -1,3 +1,8 @@
+Thu Dec  3 18:21:44 CET 2015
+	Reworked VS project files. Used x64 build tools by 
+	default, many optimizations, fixes.
+	Added project files for VS 2015. -EG
+
 Tue Dec  1 14:05:13 CET 2015
 	SPDY is dead, killing experimental libmicrospdy. -CG
 
