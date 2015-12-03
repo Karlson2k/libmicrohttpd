@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)..\common\vs_dirs.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug-dll-xp|Win32">
       <Configuration>Debug-dll-xp</Configuration>
@@ -67,74 +68,53 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\microhttpd\base64.c" />
-    <ClCompile Include="..\..\src\microhttpd\basicauth.c" />
-    <ClCompile Include="..\..\src\microhttpd\connection.c" />
-    <ClCompile Include="..\..\src\microhttpd\daemon.c" />
-    <ClCompile Include="..\..\src\microhttpd\digestauth.c" />
-    <ClCompile Include="..\..\src\microhttpd\internal.c" />
-    <ClCompile Include="..\..\src\microhttpd\md5.c" />
-    <ClCompile Include="..\..\src\microhttpd\memorypool.c" />
-    <ClCompile Include="..\..\src\microhttpd\mhd_mono_clock.c" />
-    <ClCompile Include="..\..\src\microhttpd\postprocessor.c" />
-    <ClCompile Include="..\..\src\microhttpd\reason_phrase.c" />
-    <ClCompile Include="..\..\src\microhttpd\response.c" />
-    <ClCompile Include="..\..\src\microhttpd\tsearch.c" />
-    <ClCompile Include="..\..\src\platform\w32functions.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\base64.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\basicauth.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\connection.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\daemon.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\digestauth.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\internal.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\md5.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\memorypool.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_mono_clock.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\postprocessor.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\reason_phrase.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\response.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\tsearch.c" />
+    <ClCompile Include="$(MhdSrc)platform\w32functions.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\include\autoinit_funcs.h" />
-    <ClInclude Include="..\..\src\include\microhttpd.h" />
-    <ClInclude Include="..\..\src\include\platform.h" />
-    <ClInclude Include="..\..\src\include\platform_interface.h" />
-    <ClInclude Include="..\..\src\include\w32functions.h" />
-    <ClInclude Include="..\..\src\microhttpd\base64.h" />
-    <ClInclude Include="..\..\src\microhttpd\connection.h" />
-    <ClInclude Include="..\..\src\microhttpd\internal.h" />
-    <ClInclude Include="..\..\src\microhttpd\md5.h" />
-    <ClInclude Include="..\..\src\microhttpd\memorypool.h" />
-    <ClInclude Include="..\..\src\microhttpd\mhd_byteorder.h" />
-    <ClInclude Include="..\..\src\microhttpd\mhd_limits.h" />
-    <ClInclude Include="..\..\src\microhttpd\mhd_mono_clock.h" />
-    <ClInclude Include="..\..\src\microhttpd\response.h" />
-    <ClInclude Include="..\..\src\microhttpd\tsearch.h" />
+    <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h" />
+    <ClInclude Include="$(MhdSrc)include\microhttpd.h" />
+    <ClInclude Include="$(MhdSrc)include\platform.h" />
+    <ClInclude Include="$(MhdSrc)include\platform_interface.h" />
+    <ClInclude Include="$(MhdSrc)include\w32functions.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\base64.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\connection.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\internal.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\md5.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\memorypool.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_byteorder.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_limits.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\response.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
     <ClInclude Include="MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="microhttpd_dll_res_vc.rc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static-xp|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static-xp|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static-xp|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static-xp|x64'">true</ExcludedFromBuild>
+    <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">
+      <ExcludedFromBuild Condition="'$(ConfigurationType)'=='StaticLibrary'">true</ExcludedFromBuild>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="microhttpd_dll_res_vc.rc.in">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static-xp|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static-xp|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-static-xp|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-static-xp|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll-xp|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-dll-xp|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll-xp|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-dll-xp|x64'">false</ExcludedFromBuild>
+    <CustomBuild Include="$(MhdW32Common)microhttpd_dll_res_vc.rc.in">
+      <ExcludedFromBuild Condition="'$(ConfigurationType)'=='StaticLibrary'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(ConfigurationType)'=='DynamicLibrary'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
-      <Command>PowerShell.exe -Version 3.0 -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "$(SolutionDir)gen_dll_res.ps1" -BasePath $(SolutionDir)</Command>
+      <Command>PowerShell.exe -Version 3.0 -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "$(MhdW32Common)gen_dll_res.ps1" -BasePath "$(MhdW32Common)\"</Command>
       <Message>Generating .dll description resource</Message>
-      <Outputs>$(SolutionDir)microhttpd_dll_res_vc.rc</Outputs>
-      <AdditionalInputs>$(SolutionDir)gen_dll_res.ps1;$(SolutionDir).\..\..\configure.ac</AdditionalInputs>
+      <Outputs>$(MhdW32Common)microhttpd_dll_res_vc.rc</Outputs>
+      <AdditionalInputs>$(MhdW32Common)gen_dll_res.ps1;$(MhdRoot)configure.ac</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -204,20 +184,20 @@
   <PropertyGroup Label="UserMacros">
     <!-- WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
          Only 0 and 1 are used currently -->
-    <TargetOSLevel Condition="'$(PlatformToolset)'=='v120_xp'">0</TargetOSLevel>
-    <TargetOSLevel Condition="'$(PlatformToolset)'!='v120_xp'">1</TargetOSLevel>
+    <TargetOSLevel Condition="'$(PlatformToolset)'=='v120_xp' Or '$(PlatformToolset)'=='v140_xp'">0</TargetOSLevel>
+    <TargetOSLevel Condition="'$(PlatformToolset)'!='v120_xp' And '$(PlatformToolset)'!='v140_xp'">1</TargetOSLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(MhdSrc)include;$(SolutionDir);$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>ResourceCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
-    <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)Output\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ConfigurationType)'=='StaticLibrary'">
     <TargetName Condition="'$(UseDebugLibraries)'=='true'">$(ProjectName)_d</TargetName>
@@ -243,9 +223,9 @@
     </Link>
     <CustomBuildStep>
       <Message>Copy headers to output</Message>
-      <Command>xcopy /F /I /Y $(SolutionDir)\..\..\src\include\microhttpd.h $(OutputPath)</Command>
+      <Command>xcopy /F /I /Y "$(MhdSrc)include\microhttpd.h" "$(OutputPath)"</Command>
       <Outputs>$(OutputPath)microhttpd.h;%(Outputs)</Outputs>
-      <Inputs>$(SolutionDir)\..\..\src\include\microhttpd.h</Inputs>
+      <Inputs>$(MhdSrc)include\microhttpd.h</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(TargetOSLevel)'&gt;'0'">
@@ -261,23 +241,28 @@
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,6.00 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0'">
+  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0' And '$(Platform)'=='Win32'">
     <ClCompile>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link Condition="'$(Platform)'=='Win32'">
+    <Link>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <Lib Condition="'$(Platform)'=='Win32'">
+    <Lib>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
-    <Link Condition="'$(Platform)'=='x64'">
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'=='0' And '$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
       <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <Lib Condition="'$(Platform)'=='x64'">
+    <Lib>
       <MinimumRequiredVersion>5.02</MinimumRequiredVersion>
       <AdditionalOptions>/SUBSYSTEM:WINDOWS,5.02 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -290,7 +275,7 @@
       <AdditionalDependencies>Ws2_32.lib</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /I /Y $(IntermediateOutputPath)$(TargetName).pdb $(OutputPath)</Command>
+      <Command>xcopy /F /I /Y "$(IntermediateOutputPath)$(TargetName).pdb" "$(OutputPath)"</Command>
       <Message>Copy .pdb to output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>

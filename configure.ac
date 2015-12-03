@@ -875,7 +875,7 @@ AC_SUBST(LDFLAGS)
 
 AC_CONFIG_FILES([
 libmicrohttpd.pc
-w32/VS2013/microhttpd_dll_res_vc.rc
+w32/common/microhttpd_dll_res_vc.rc
 Makefile
 contrib/Makefile
 doc/Makefile

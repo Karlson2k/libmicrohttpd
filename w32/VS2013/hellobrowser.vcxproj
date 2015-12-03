@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)..\common\vs_dirs.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug-dll|Win32">
       <Configuration>Debug-dll</Configuration>
@@ -35,7 +36,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\doc\examples\hellobrowser.c" />
+    <ClCompile Include="$(MhdRoot)doc\examples\hellobrowser.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{310F39BD-A2D6-44FF-8344-37ADD0524CBD}</ProjectGuid>
@@ -77,15 +78,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(SolutionDir)..\..\src\include;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(MhdSrc)include;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
-    <OutDir>$(SolutionDir)\Output\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)Output\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(UseDebugLibraries)'=='true'">
     <LinkIncremental>true</LinkIncremental>
