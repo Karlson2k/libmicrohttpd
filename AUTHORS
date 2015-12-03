@@ -1,6 +1,6 @@
 Primary developers:
 Christian Grothoff <christian@grothoff.org> (maintainer)
-Andrey Uzunov <andrey.uzunov@gmail.com> (maintainer for libmicrospdy)
+Andrey Uzunov <andrey.uzunov@gmail.com> (libmicrospdy experiment)
 Nils Durner <durner@gnunet.org> (W32 port)
 Sagie Amir (TLS/SSL support using GNUtls)
 Richard Alimi <rich@velvetsea.net> (performance)
