@@ -38,6 +38,11 @@
   <ItemGroup>
     <ClCompile Include="$(MhdRoot)doc\examples\hellobrowser.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="libmicrohttpd.vcxproj">
+      <Project>{9cfb0342-a9e7-483e-bee5-a1de22584c5a}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{310F39BD-A2D6-44FF-8344-37ADD0524CBD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -115,7 +120,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
   </ItemDefinitionGroup>
@@ -143,35 +147,23 @@
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>libmicrohttpd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <ProjectReference />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug-dll'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>libmicrohttpd-dll_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <ProjectReference />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release-static'">
     <ClCompile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>libmicrohttpd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release-dll'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>libmicrohttpd-dll.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
