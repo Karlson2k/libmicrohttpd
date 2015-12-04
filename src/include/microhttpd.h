@@ -203,21 +203,27 @@ typedef SOCKET MHD_socket;
 
 #ifndef _MHD_DEPR_MACRO
 #if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1500
+/* VS 2008 or later */
 /* Stringify macros */
 #define _MHD_INSTRMACRO(a) #a
 #define _MHD_STRMACRO(a) _MHD_INSTRMACRO(a)
+/* deprecation message */
 #define _MHD_DEPR_MACRO(msg) __pragma(message(__FILE__ "(" _MHD_STRMACRO(__LINE__)"): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
+/* clang or GCC since 3.0 */
 #define _MHD_GCC_PRAG(x) _Pragma (#x)
 #if __clang_major__+0 >= 5 || \
   (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))) || \
   __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
+/* clang >= 3.3 (or XCode's clang >= 5.0) or 
+   GCC >= 4.8 */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #else /* older clang or GCC */
+/* clang < 3.3, XCode's clang < 5.0, 3.0 <= GCC < 4.8 */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
-#if (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)) /* FIXME: earlier versions not tested */
+#if (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)) /* FIXME: clang >= 2.9, earlier versions not tested */
 /* clang handles inline pragmas better than GCC */
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #endif /* clang >= 2.9 */
@@ -235,14 +241,17 @@ typedef SOCKET MHD_socket;
 
 #ifndef _MHD_DEPR_FUNC
 #if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1400
+/* VS 2005 or later */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated(msg))
 #elif defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1310
 /* VS .NET 2003 deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
 #elif (__GNUC__+0 >= 5) || (defined (__clang__) && \
   (__clang_major__+0 > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)))  /* FIXME: earlier versions not tested */
+/* GCC >= 5.0 or clang >= 2.9 */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated(msg)))
 #elif defined (__clang__) || __GNUC__+0 > 3 || (__GNUC__+0 == 3 && __GNUC_MINOR__+0 >= 1)
+/* 3.1 <= GCC < 5.0 or clang < 2.9 */
 /* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
