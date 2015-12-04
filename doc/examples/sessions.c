@@ -722,7 +722,7 @@ main (int argc, char *const *argv)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  int max;
+  MHD_socket max;
   MHD_UNSIGNED_LONG_LONG mhd_timeout;
 
   if (argc != 2)
