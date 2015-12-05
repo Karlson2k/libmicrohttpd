@@ -23,10 +23,11 @@ noinst_PROGRAMS = \
  dual_stack_example \
  minimal_example_comet \
  querystring_example \
+ timeout \
  fileserver_example \
  fileserver_example_dirs \
  fileserver_example_external_select \
- refuse_post_example 
+ refuse_post_example
 
 
 if ENABLE_HTTPS
@@ -59,6 +60,11 @@ endif
 minimal_example_SOURCES = \
  minimal_example.c
 minimal_example_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+timeout_SOURCES = \
+ timeout.c
+timeout_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 chunked_example_SOURCES = \
@@ -156,5 +162,3 @@ https_fileserver_example_CPPFLAGS = \
  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 https_fileserver_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
-
-
