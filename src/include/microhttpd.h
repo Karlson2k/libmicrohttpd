@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094700
+#define MHD_VERSION 0x00094701
 
 /**
  * MHD-internal return code for "YES".
@@ -216,7 +216,7 @@ typedef SOCKET MHD_socket;
 #if __clang_major__+0 >= 5 || \
   (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))) || \
   __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
-/* clang >= 3.3 (or XCode's clang >= 5.0) or 
+/* clang >= 3.3 (or XCode's clang >= 5.0) or
    GCC >= 4.8 */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
