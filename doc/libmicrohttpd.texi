@@ -11,7 +11,7 @@ This manual is for GNU libmicrohttpd
 (version @value{VERSION}, @value{UPDATED}), a library for embedding
 an HTTP(S) server into C applications.
 
-Copyright @copyright{} 2007--2013 Christian Grothoff
+Copyright @copyright{} 2007--2015 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document

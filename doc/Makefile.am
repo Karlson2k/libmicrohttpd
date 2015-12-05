@@ -26,5 +26,8 @@ microhttpd_TEXINFOS = \
   lgpl.texi \
   ecos.texi
 
-EXTRA_DIST = $(man_MANS) $(microhttpd_TEXINFOS) performance_data.png performance_data.eps
-
+EXTRA_DIST = \
+  $(man_MANS) \
+  $(microhttpd_TEXINFOS) \
+  performance_data.png \
+  performance_data.eps
