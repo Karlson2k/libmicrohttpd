@@ -1,8 +1,12 @@
+Sat Dec  5 17:30:45 CET 2015
+	Close sockets more aggressively in multi-threaded
+	mode (possibly relevant for idle servers). -CG
+
 Fri Dec  4 13:53:05 CET 2015
 	Releasing libmicrohttpd 0.9.47. -CG
 
 Thu Dec  3 18:21:44 CET 2015
-	Reworked VS project files. Used x64 build tools by 
+	Reworked VS project files. Used x64 build tools by
 	default, many optimizations, fixes.
 	Added project files for VS 2015. -EG
 

@@ -1027,7 +1027,15 @@ exit:
                                     con,
                                     &con->socket_context,
                                     MHD_CONNECTION_NOTIFY_CLOSED);
-
+  if (MHD_INVALID_SOCKET != con->socket_fd)
+    {
+#ifdef WINDOWS
+      shutdown (con->socket_fd, SHUT_WR);
+#endif
+      if (0 != MHD_socket_close_ (con->socket_fd))
+        MHD_PANIC ("close failed\n");
+      con->socket_fd = MHD_INVALID_SOCKET;
+    }
   return (MHD_THRD_RTRN_TYPE_) 0;
 }
 
