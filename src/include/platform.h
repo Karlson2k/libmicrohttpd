@@ -57,6 +57,32 @@
 #endif
 #endif /* BUILDING_MHD_LIB */
 
+
+#ifdef FD_SETSIZE
+/* FD_SETSIZE defined in command line or in MHD_config.h */
+/* Some platforms (FreeBSD, Solaris, W32) allow to override
+   default FD_SETSIZE by defining it before including
+   headers. */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* Default FD_SETSIZE value for WinSock */
+#define MHD_SYS_DEFAULT_FD_SETSIZE 64
+#elif defined(__sun) && defined(_LP64)
+/* Default FD_SETSIZE value for 64bit Solaris since version 7
+   and SunOS since version 2.7 */
+#define MHD_SYS_DEFAULT_FD_SETSIZE 65536
+#else  /* all other platforms */
+/* Default FD_SETSIZE value for most platforms */
+#define MHD_SYS_DEFAULT_FD_SETSIZE 1024
+#endif /* all other platforms */
+#elif defined(_WIN32) && !defined(__CYGWIN__)
+/* Platform with WinSock and without overridden FD_SETSIZE */
+#define FD_SETSIZE 2048 /* Override default small value */
+#define MHD_SYS_DEFAULT_FD_SETSIZE 64
+#else
+/* Use system default value */
+#define MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
+#endif /* FD_SETSIZE */
+
 #define _XOPEN_SOURCE_EXTENDED  1
 #if OS390
 #define _OPEN_THREADS
@@ -154,6 +180,10 @@
 #include <arpa/inet.h>
 #endif
 
+#if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)
+/* Do not define __USE_W32_SOCKETS under Cygwin! */
+#error Cygwin with winsock fd_set is not supported
+#endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <ws2tcpip.h>
@@ -175,20 +205,21 @@
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
+
 #ifndef MHD_SOCKET_DEFINED
 /**
  * MHD_socket is type for socket FDs
  */
-#if !defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #define MHD_POSIX_SOCKETS 1
 typedef int MHD_socket;
 #define MHD_INVALID_SOCKET (-1)
-#else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#else  /* defined(_WIN32) && !defined(__CYGWIN__) */
 #define MHD_WINSOCK_SOCKETS 1
 #include <winsock2.h>
 typedef SOCKET MHD_socket;
 #define MHD_INVALID_SOCKET (INVALID_SOCKET)
-#endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 #define MHD_SOCKET_DEFINED 1
 #endif /* MHD_SOCKET_DEFINED */
 

@@ -24,13 +24,6 @@
  * @author Daniel Pittman
  * @author Christian Grothoff
  */
-#if defined(MHD_WINSOCK_SOCKETS)
-/* override small default value */
-#define FD_SETSIZE 1024
-#define MHD_DEFAULT_FD_SETSIZE 64
-#else
-#define MHD_DEFAULT_FD_SETSIZE FD_SETSIZE
-#endif
 #include "platform.h"
 #include "internal.h"
 #include "response.h"
@@ -75,7 +68,7 @@
  * Default connection limit.
  */
 #ifndef MHD_WINSOCK_SOCKETS
-#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE - 4
+#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 4)
 #else
 #define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE
 #endif
@@ -684,7 +677,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 {
   return MHD_get_fdset2(daemon, read_fd_set,
       write_fd_set, except_fd_set,
-      max_fd, MHD_DEFAULT_FD_SETSIZE);
+      max_fd, MHD_SYS_DEFAULT_FD_SETSIZE);
 }
 
 /**
