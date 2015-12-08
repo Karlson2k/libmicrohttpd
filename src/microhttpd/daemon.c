@@ -2423,7 +2423,7 @@ MHD_select (struct MHD_Daemon *daemon,
         timeout.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE)(ltimeout / 1000);
       tv = &timeout;
     }
-  num_ready = MHD_SYS_select_ (max + 1, &rs, &ws, &es, tv);
+  num_ready = MHD_SYS_select_ (maxsock + 1, &rs, &ws, &es, tv);
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
   if (num_ready < 0)
