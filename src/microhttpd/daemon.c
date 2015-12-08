@@ -71,10 +71,10 @@
 /**
  * Default connection limit.
  */
-#ifndef MHD_WINSOCK_SOCKETS
+#ifdef MHD_POSIX_SOCKETS
 #define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 4)
 #else
-#define MHD_MAX_CONNECTIONS_DEFAULT FD_SETSIZE
+#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 2)
 #endif
 
 /**
@@ -2338,7 +2338,12 @@ MHD_select (struct MHD_Daemon *daemon,
 
       /* single-threaded, go over everything */
       if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &max, FD_SETSIZE))
-        return MHD_NO;
+        {
+#if HAVE_MESSAGES
+        MHD_DLOG (daemon, "Could not obtain daemon fdsets");
+#endif
+          return MHD_NO;
+        }
 
       /* If we're at the connection limit, no need to
          accept new connections; however, make sure
@@ -2358,14 +2363,42 @@ MHD_select (struct MHD_Daemon *daemon,
                                       &rs,
                                       &max,
                                       FD_SETSIZE)) )
-        return MHD_NO;
+        {
+#if HAVE_MESSAGES
+          MHD_DLOG (daemon, "Could not add listen socket to fdset");
+#endif
+          return MHD_NO;
+        }
     }
   if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
        (MHD_YES != add_to_fd_set (daemon->wpipe[0],
                                   &rs,
                                   &max,
                                   FD_SETSIZE)) )
-    return MHD_NO;
+    {
+#if defined(MHD_WINSOCK_SOCKETS)
+      /* fdset limit reached, new connections
+         cannot be handled. Remove listen socket FD
+         from fdset and retry to add pipe FD. */
+      if (MHD_INVALID_SOCKET != daemon->socket_fd)
+        {
+          FD_CLR (daemon->socket_fd, &rs);
+          if (MHD_YES != add_to_fd_set (daemon->wpipe[0],
+                                        &rs,
+                                        &max,
+                                        FD_SETSIZE))
+            {
+#endif /* MHD_WINSOCK_SOCKETS */
+#if HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "Could not add control pipe FD to fdset");
+#endif
+              return MHD_NO;
+#if defined(MHD_WINSOCK_SOCKETS)
+            }
+        }
+#endif /* MHD_WINSOCK_SOCKETS */
+    }
 
   tv = NULL;
   if (MHD_NO == may_block)
