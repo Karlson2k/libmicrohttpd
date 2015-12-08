@@ -2322,6 +2322,7 @@ MHD_select (struct MHD_Daemon *daemon,
   struct timeval timeout;
   struct timeval *tv;
   MHD_UNSIGNED_LONG_LONG ltimeout;
+  int err_state;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -2331,6 +2332,7 @@ MHD_select (struct MHD_Daemon *daemon,
   FD_ZERO (&ws);
   FD_ZERO (&es);
   maxsock = MHD_INVALID_SOCKET;
+  err_state = MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
@@ -2343,7 +2345,7 @@ MHD_select (struct MHD_Daemon *daemon,
 #if HAVE_MESSAGES
         MHD_DLOG (daemon, "Could not obtain daemon fdsets");
 #endif
-          return MHD_NO;
+          err_state = MHD_YES;
         }
 
       /* If we're at the connection limit, no need to
@@ -2394,7 +2396,7 @@ MHD_select (struct MHD_Daemon *daemon,
               MHD_DLOG (daemon,
                         "Could not add control pipe FD to fdset");
 #endif
-              return MHD_NO;
+              err_state = MHD_YES;
 #if defined(MHD_WINSOCK_SOCKETS)
             }
         }
@@ -2402,6 +2404,8 @@ MHD_select (struct MHD_Daemon *daemon,
     }
 
   tv = NULL;
+  if (MHD_YES == err_state)
+    may_block = MHD_NO;
   if (MHD_NO == may_block)
     {
       timeout.tv_usec = 0;
@@ -2425,7 +2429,7 @@ MHD_select (struct MHD_Daemon *daemon,
   if (num_ready < 0)
     {
       if (EINTR == MHD_socket_errno_)
-        return MHD_YES;
+        return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
 #if HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "select failed: %s\n",
@@ -2433,7 +2437,9 @@ MHD_select (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-  return MHD_run_from_select (daemon, &rs, &ws, &es);
+  if (MHD_YES == MHD_run_from_select (daemon, &rs, &ws, &es))
+    return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
+  return MHD_NO;
 }
 
 
