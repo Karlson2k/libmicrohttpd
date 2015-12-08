@@ -787,7 +787,7 @@ MHD_handle_connection (void *data)
   int num_ready;
   fd_set rs;
   fd_set ws;
-  MHD_socket max;
+  MHD_socket maxsock;
   struct timeval tv;
   struct timeval *tvp;
   unsigned int timeout;
@@ -846,27 +846,27 @@ MHD_handle_connection (void *data)
 	  int err_state = 0;
 	  FD_ZERO (&rs);
 	  FD_ZERO (&ws);
-	  max = 0;
+	  maxsock = MHD_INVALID_SOCKET;
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
 	      if (MHD_YES !=
-                  add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE))
+                  add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE))
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
 	      if (MHD_YES !=
-                  add_to_fd_set (con->socket_fd, &ws, &max, FD_SETSIZE))
+                  add_to_fd_set (con->socket_fd, &ws, &maxsock, FD_SETSIZE))
                 err_state = 1;
 	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
                    (MHD_YES !=
-                    add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE)) )
+                    add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
 	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
                    (MHD_YES !=
-                    add_to_fd_set (con->socket_fd, &rs, &max, FD_SETSIZE)) )
+                    add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
 	        err_state = 1;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
@@ -880,7 +880,7 @@ MHD_handle_connection (void *data)
           if (MHD_INVALID_PIPE_ != spipe)
             {
               if (MHD_YES !=
-                  add_to_fd_set (spipe, &rs, &max, FD_SETSIZE))
+                  add_to_fd_set (spipe, &rs, &maxsock, FD_SETSIZE))
                 err_state = 1;
             }
 #endif
@@ -893,7 +893,7 @@ MHD_handle_connection (void *data)
                 goto exit;
               }
 
-	  num_ready = MHD_SYS_select_ (max + 1, &rs, &ws, NULL, tvp);
+	  num_ready = MHD_SYS_select_ (maxsock + 1, &rs, &ws, NULL, tvp);
 	  if (num_ready < 0)
 	    {
 	      if (EINTR == MHD_socket_errno_)
@@ -2318,7 +2318,7 @@ MHD_select (struct MHD_Daemon *daemon,
   fd_set rs;
   fd_set ws;
   fd_set es;
-  MHD_socket max;
+  MHD_socket maxsock;
   struct timeval timeout;
   struct timeval *tv;
   MHD_UNSIGNED_LONG_LONG ltimeout;
@@ -2330,7 +2330,7 @@ MHD_select (struct MHD_Daemon *daemon,
   FD_ZERO (&rs);
   FD_ZERO (&ws);
   FD_ZERO (&es);
-  max = MHD_INVALID_SOCKET;
+  maxsock = MHD_INVALID_SOCKET;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
@@ -2338,7 +2338,7 @@ MHD_select (struct MHD_Daemon *daemon,
         may_block = MHD_NO;
 
       /* single-threaded, go over everything */
-      if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &max, FD_SETSIZE))
+      if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &maxsock, FD_SETSIZE))
         {
 #if HAVE_MESSAGES
         MHD_DLOG (daemon, "Could not obtain daemon fdsets");
@@ -2362,7 +2362,7 @@ MHD_select (struct MHD_Daemon *daemon,
       if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
            (MHD_YES != add_to_fd_set (daemon->socket_fd,
                                       &rs,
-                                      &max,
+                                      &maxsock,
                                       FD_SETSIZE)) )
         {
 #if HAVE_MESSAGES
@@ -2374,7 +2374,7 @@ MHD_select (struct MHD_Daemon *daemon,
   if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
        (MHD_YES != add_to_fd_set (daemon->wpipe[0],
                                   &rs,
-                                  &max,
+                                  &maxsock,
                                   FD_SETSIZE)) )
     {
 #if defined(MHD_WINSOCK_SOCKETS)
@@ -2386,7 +2386,7 @@ MHD_select (struct MHD_Daemon *daemon,
           FD_CLR (daemon->socket_fd, &rs);
           if (MHD_YES != add_to_fd_set (daemon->wpipe[0],
                                         &rs,
-                                        &max,
+                                        &maxsock,
                                         FD_SETSIZE))
             {
 #endif /* MHD_WINSOCK_SOCKETS */
