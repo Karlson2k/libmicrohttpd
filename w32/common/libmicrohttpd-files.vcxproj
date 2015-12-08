@@ -14,6 +14,7 @@
     <ClCompile Include="$(MhdSrc)microhttpd\reason_phrase.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\response.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\tsearch.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\sysfdsetsize.c" />
     <ClCompile Include="$(MhdSrc)platform\w32functions.c" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +33,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\response.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>

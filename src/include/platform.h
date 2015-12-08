@@ -63,24 +63,14 @@
 /* Some platforms (FreeBSD, Solaris, W32) allow to override
    default FD_SETSIZE by defining it before including
    headers. */
-#if defined(_WIN32) && !defined(__CYGWIN__)
-/* Default FD_SETSIZE value for WinSock */
-#define MHD_SYS_DEFAULT_FD_SETSIZE 64
-#elif defined(__sun) && defined(_LP64)
-/* Default FD_SETSIZE value for 64bit Solaris since version 7
-   and SunOS since version 2.7 */
-#define MHD_SYS_DEFAULT_FD_SETSIZE 65536
-#else  /* all other platforms */
-/* Default FD_SETSIZE value for most platforms */
-#define MHD_SYS_DEFAULT_FD_SETSIZE 1024
-#endif /* all other platforms */
+#define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value()
 #elif defined(_WIN32) && !defined(__CYGWIN__)
 /* Platform with WinSock and without overridden FD_SETSIZE */
 #define FD_SETSIZE 2048 /* Override default small value */
-#define MHD_SYS_DEFAULT_FD_SETSIZE 64
-#else
-/* Use system default value */
-#define MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
+#define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value()
+#else /* !FD_SETSIZE && !WinSock*/
+#define _MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
+#define _MHD_FD_SETSIZE_IS_DEFAULT 1
 #endif /* FD_SETSIZE */
 
 #define _XOPEN_SOURCE_EXTENDED  1

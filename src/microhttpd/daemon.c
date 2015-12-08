@@ -52,6 +52,10 @@
 #include <sys/sendfile.h>
 #endif
 
+#ifndef _MHD_FD_SETSIZE_IS_DEFAULT
+#include "sysfdsetsize.h"
+#endif /* !_MHD_FD_SETSIZE_IS_DEFAULT */
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
@@ -677,7 +681,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 {
   return MHD_get_fdset2(daemon, read_fd_set,
       write_fd_set, except_fd_set,
-      max_fd, MHD_SYS_DEFAULT_FD_SETSIZE);
+      max_fd, _MHD_SYS_DEFAULT_FD_SETSIZE);
 }
 
 /**

@@ -23,6 +23,29 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)include\microhttpd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)include\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)include\platform_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)include\w32functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdW32Common)MHD_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClCompile Include="$(MhdSrc)platform\w32functions.c">
+      <Filter>Source Files\platform_interface</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="$(MhdSrc)microhttpd\base64.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -56,17 +79,12 @@
     <ClCompile Include="$(MhdSrc)microhttpd\response.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(MhdSrc)platform\w32functions.c">
-      <Filter>Source Files\platform_interface</Filter>
-    </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\tsearch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_mono_clock.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="$(MhdSrc)microhttpd\base64.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -85,26 +103,8 @@
     <ClInclude Include="$(MhdSrc)microhttpd\response.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\microhttpd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\platform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\platform_interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\w32functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdW32Common)MHD_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_limits.h">
       <Filter>Source Files</Filter>
@@ -115,6 +115,12 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClCompile Include="$(MhdSrc)microhttpd\sysfdsetsize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">
