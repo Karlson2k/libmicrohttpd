@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094701
+#define MHD_VERSION 0x00094703
 
 /**
  * MHD-internal return code for "YES".
@@ -967,8 +967,15 @@ enum MHD_OPTION
    * pointer to a closure to pass to the request completed callback.
    * The second pointer maybe NULL.
    */
-  MHD_OPTION_NOTIFY_CONNECTION = 27
+  MHD_OPTION_NOTIFY_CONNECTION = 27,
 
+  /**
+   * Allow to change maximum length of the queue of pending connections on
+   * listen socket. If not present than default platform-specific SOMAXCONN
+   * value is used. This option should be followed by an `unsigned int`
+   * argument.
+   */
+  MHD_OPTION_LISTEN_BACKLOG_SIZE = 28
 };
 
 

@@ -3397,6 +3397,9 @@ parse_options_va (struct MHD_Daemon *daemon,
 	case MHD_OPTION_LISTENING_ADDRESS_REUSE:
 	  daemon->listening_address_reuse = va_arg (ap, unsigned int) ? 1 : -1;
 	  break;
+	case MHD_OPTION_LISTEN_BACKLOG_SIZE:
+	  daemon->listen_backlog_size = va_arg (ap, unsigned int);
+	  break;
 	case MHD_OPTION_ARRAY:
 	  oa = va_arg (ap, struct MHD_OptionItem*);
 	  i = 0;
@@ -3423,6 +3426,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_THREAD_POOL_SIZE:
                 case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
 		case MHD_OPTION_LISTENING_ADDRESS_REUSE:
+		case MHD_OPTION_LISTEN_BACKLOG_SIZE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -3731,6 +3735,11 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->connection_timeout = 0;       /* no timeout */
   daemon->wpipe[0] = MHD_INVALID_PIPE_;
   daemon->wpipe[1] = MHD_INVALID_PIPE_;
+#ifdef SOMAXCONN
+  daemon->listen_backlog_size = SOMAXCONN;
+#else  /* !SOMAXCONN */
+  daemon->listen_backlog_size = 511; /* should be safe value */
+#endif /* !SOMAXCONN */
 #if HAVE_MESSAGES
   daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
   daemon->custom_error_log_cls = stderr;
@@ -4098,7 +4107,7 @@ MHD_start_daemon_va (unsigned int flags,
 	    }
 	}
 #endif
-      if (listen (socket_fd, 32) < 0)
+      if (listen (socket_fd, daemon->listen_backlog_size) < 0)
 	{
 #if HAVE_MESSAGES
           MHD_DLOG (daemon,

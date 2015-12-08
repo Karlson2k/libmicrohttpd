@@ -1301,6 +1301,11 @@ struct MHD_Daemon
    */
   unsigned int fastopen_queue_size;
 #endif
+
+  /**
+   * The size of queue for listen socket.
+   */
+  unsigned int listen_backlog_size;
 };
 
 
