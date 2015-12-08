@@ -714,6 +714,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                unsigned int fd_setsize)
 {
   struct MHD_Connection *pos;
+  int result = MHD_YES;
 
   if ( (NULL == daemon)
        || (NULL == read_fd_set)
@@ -733,7 +734,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 #endif
   if (MHD_INVALID_SOCKET != daemon->socket_fd &&
       MHD_YES != add_to_fd_set (daemon->socket_fd, read_fd_set, max_fd, fd_setsize))
-    return MHD_NO;
+    result = MHD_NO;
 
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
@@ -741,19 +742,19 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
 	  if (MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
-	    return MHD_NO;
+	    result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
 	  if (MHD_YES != add_to_fd_set (pos->socket_fd, write_fd_set, max_fd, fd_setsize))
-	    return MHD_NO;
+	    result = MHD_NO;
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
 	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
-            return MHD_NO;
+            result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
 	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
-            return MHD_NO;
+            result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
 	  /* this should never happen */
@@ -768,7 +769,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
               *max_fd);
 #endif
 #endif
-  return MHD_YES;
+  return result;
 }
 
 
