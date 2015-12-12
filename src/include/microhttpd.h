@@ -802,7 +802,7 @@ enum MHD_OPTION
   /**
    * Pass a listen socket for MHD to use (systemd-style).  If this
    * option is used, MHD will not open its own listen socket(s). The
-   * argument passed must be of type `int` and refer to an
+   * argument passed must be of type `MHD_socket` and refer to an
    * existing socket that has been bound to a port and is listening.
    */
   MHD_OPTION_LISTEN_SOCKET = 12,
