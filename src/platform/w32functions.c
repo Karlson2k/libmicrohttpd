@@ -590,8 +590,9 @@ int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2])
                       || WSAGetLastError() == WSAEWOULDBLOCK))
                 {
                   struct sockaddr_in accepted_from_addr;
+                  SOCKET server_s;
                   addr_len = c_addinlen;
-                  SOCKET server_s = accept(listen_s,
+                  server_s = accept(listen_s,
                       (struct sockaddr*) &accepted_from_addr, &addr_len);
                   if (INVALID_SOCKET != server_s)
                     {

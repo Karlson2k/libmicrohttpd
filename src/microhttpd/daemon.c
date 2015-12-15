@@ -4950,11 +4950,13 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 void
 MHD_init(void)
 {
+#ifdef _WIN32
+  WSADATA wsd;
+#endif /* _WIN32 */
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
 
 #ifdef _WIN32
-  WSADATA wsd;
   if (0 != WSAStartup(MAKEWORD(2, 2), &wsd))
     MHD_PANIC ("Failed to initialize winsock\n");
   mhd_winsock_inited_ = 1;
