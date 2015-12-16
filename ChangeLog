@@ -1,3 +1,19 @@
+Tue Dec  15 18:35:55 CET 2015
+	Improved compatibility with VS2010 and other older
+	compilers. -EG
+
+Tue Dec  8 21:48:44 CET 2015
+	Default backlog size for listen socket was changed from
+	32 to SOMAXCONN, added new option MHD_OPTION_LISTEN_BACKLOG_SIZE
+	to override default backlog size.
+	If not all connections can be handled by MHD_select() than
+	at least some of connections will be processed instead of
+	failing without any processing.
+	Fixed redefenition of FD_SETSIZE on W32 so select() will
+	work with 2000 connections instead of 64.
+	Better handled redefenition of FD_SETSIZE on all
+	platforms. -EG
+
 Sat Dec  5 17:30:45 CET 2015
 	Close sockets more aggressively in multi-threaded
 	mode (possibly relevant for idle servers). -CG
