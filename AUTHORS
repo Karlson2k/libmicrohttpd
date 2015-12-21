@@ -1,12 +1,12 @@
 Primary developers:
 Christian Grothoff <christian@grothoff.org> (maintainer)
+Evgeny Grin (Karlson2k) <k2k@narod.ru> (maintainer)
 Andrey Uzunov <andrey.uzunov@gmail.com> (libmicrospdy experiment)
 Nils Durner <durner@gnunet.org> (W32 port)
 Sagie Amir (TLS/SSL support using GNUtls)
 Richard Alimi <rich@velvetsea.net> (performance)
 Amr Ali <amr.ali.cc@gmail.com> (digest authentication)
 Matthieu Speder <mspeder@users.sourceforge.net> (basic authentication, client certificates)
-Evgeny Grin (Karlson2k) <k2k@narod.ru> (W32 port)
 
 Code contributions also came from:
 Chris GauthierDickey <chrisg@cs.du.edu>
