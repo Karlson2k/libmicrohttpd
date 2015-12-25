@@ -25,6 +25,11 @@
 
 #include "mhd_mono_clock.h"
 
+#if defined(_WIN32) && defined(HAVE_CLOCK_GETTIME)
+/* Prefer native clock source over wrappers */
+#undef HAVE_CLOCK_GETTIME
+#endif /* _WIN32 && HAVE_CLOCK_GETTIME */
+
 #ifdef HAVE_CLOCK_GET_TIME
 #include <mach/mach.h>
 /* for host_get_clock_service(), mach_host_self(), mach_task_self() */
