@@ -602,7 +602,7 @@ enum MHD_FLAG
    * Use `epoll()` instead of `select()` or `poll()` for the event loop.
    * This option is only available on Linux; using the option on
    * non-Linux systems will cause #MHD_start_daemon to fail.  Using
-   * this option is not supported with MHD_USE_THREAD_PER_CONNECTION.
+   * this option is not supported with #MHD_USE_THREAD_PER_CONNECTION.
    */
   MHD_USE_EPOLL_LINUX_ONLY = 512,
 
