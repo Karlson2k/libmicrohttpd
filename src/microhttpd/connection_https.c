@@ -65,7 +65,7 @@ run_tls_handshake (struct MHD_Connection *connection)
 	  return MHD_YES;
 	}
       /* handshake failed */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Error: received handshake message out of context\n");
 #endif

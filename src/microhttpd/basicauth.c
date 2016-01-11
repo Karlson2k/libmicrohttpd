@@ -59,7 +59,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
   header += strlen (_BASIC_BASE);
   if (NULL == (decode = BASE64Decode (header)))
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Error decoding basic authentication\n");
 #endif
@@ -68,7 +68,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
   /* Find user:password pattern */
   if (NULL == (separator = strchr (decode, ':')))
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG(connection->daemon,
 	       "Basic authentication doesn't contain ':' separator\n");
 #endif
@@ -86,7 +86,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
       *password = strdup (separator + 1);  
       if (NULL == *password)
 	{
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 	  MHD_DLOG(connection->daemon,
 		   "Failed to allocate memory for password\n");
 #endif
@@ -124,7 +124,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   header = (char*)malloc(hlen);
   if (NULL == header)
   {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
     MHD_DLOG(connection->daemon,
 		   "Failed to allocate memory for auth header\n");
 #endif /* HAVE_MESSAGES */

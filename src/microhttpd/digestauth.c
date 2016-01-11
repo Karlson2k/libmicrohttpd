@@ -344,7 +344,7 @@ check_nonce_nc (struct MHD_Connection *connection,
        (0 != strcmp(connection->daemon->nnc[off].nonce, nonce)) )
     {
       (void) MHD_mutex_unlock_ (&connection->daemon->nnc_lock);
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Stale nonce received.  If this happens a lot, you should probably increase the size of the nonce array.\n");
 #endif
@@ -496,7 +496,7 @@ check_argument_match (struct MHD_Connection *connection,
   argb = strdup (args);
   if (NULL == argb)
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Failed to allocate memory for copy of URI arguments\n");
 #endif /* HAVE_MESSAGES */
@@ -657,7 +657,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        (0 == lookup_sub_value (nc, sizeof (nc), header, "nc"))  ||
        (0 == lookup_sub_value (response, sizeof (response), header, "response")) )
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Authentication failed, invalid format.\n");
 #endif
@@ -668,7 +668,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        ( (LONG_MAX == nci) &&
          (ERANGE == errno) ) )
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Authentication failed, invalid format.\n");
 #endif
@@ -691,7 +691,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     uri = malloc (left + 1);
     if (NULL == uri)
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG(connection->daemon,
                "Failed to allocate memory for auth header processing\n");
 #endif /* HAVE_MESSAGES */
@@ -730,7 +730,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 		      connection->url,
 		      strlen (connection->url)))
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Authentication failed, URI does not match.\n");
 #endif
@@ -749,7 +749,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 	  check_argument_match (connection,
 				args) )
       {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 	MHD_DLOG (connection->daemon,
 		  "Authentication failed, arguments do not match.\n");
 #endif
@@ -800,7 +800,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 		   nonce);
   if (MHD_YES != check_nonce_nc (connection, nonce, 0))
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		"Could not register nonce (is the nonce array size zero?).\n");
 #endif
@@ -822,7 +822,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
     header = malloc(hlen + 1);
     if (NULL == header)
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG(connection->daemon,
                "Failed to allocate memory for auth response header\n");
 #endif /* HAVE_MESSAGES */

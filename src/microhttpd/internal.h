@@ -85,7 +85,7 @@ extern void *mhd_panic_cls;
 #endif
 
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 /**
  * Trigger 'panic' action based on fatal errors.
  *
@@ -199,7 +199,7 @@ struct MHD_NonceNc
 
 };
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 /**
  * fprintf()-like helper function for logging debug
  * messages.
@@ -475,7 +475,7 @@ enum MHD_CONNECTION_STATE
 #define DEBUG_STATES MHD_NO
 
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #if DEBUG_STATES
 const char *
 MHD_state_to_string (enum MHD_CONNECTION_STATE state);
@@ -1055,7 +1055,7 @@ struct MHD_Daemon
    */
   void *unescape_callback_cls;
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
   /**
    * Function for logging error messages (if we
    * support error reporting).

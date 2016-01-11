@@ -92,7 +92,7 @@ curl_check_version (const char *req_version)
   int rq_major, rq_minor, rq_micro;
 
   ver = curl_version ();
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
   fprintf (stderr, "curl version: %s\n", ver);
 #endif
   /*

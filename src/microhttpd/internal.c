@@ -26,7 +26,7 @@
 
 #include "internal.h"
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #if DEBUG_STATES
 /**
  * State to string dictionary.
@@ -85,7 +85,7 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
 #endif
 #endif
 
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 /**
  * fprintf-like helper function for logging debug
  * messages.

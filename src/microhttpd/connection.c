@@ -56,7 +56,7 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #define REQUEST_TOO_BIG "<html><head><title>Request too big</title></head><body>Your HTTP header was too big for the memory constraints of this webserver.</body></html>"
 #else
 #define REQUEST_TOO_BIG ""
@@ -69,7 +69,7 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #define REQUEST_LACKS_HOST "<html><head><title>&quot;Host:&quot; header required</title></head><body>In HTTP 1.1, requests must include a &quot;Host:&quot; header, and your HTTP 1.1 request lacked such a header.</body></html>"
 #else
 #define REQUEST_LACKS_HOST ""
@@ -82,7 +82,7 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #define REQUEST_MALFORMED "<html><head><title>Request malformed</title></head><body>Your HTTP request was syntactically incorrect.</body></html>"
 #else
 #define REQUEST_MALFORMED ""
@@ -94,7 +94,7 @@
  * Intentionally empty here to keep our memory footprint
  * minimal.
  */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #define INTERNAL_ERROR "<html><head><title>Internal server error</title></head><body>Some programmer needs to study the manual more carefully.</body></html>"
 #else
 #define INTERNAL_ERROR ""
@@ -503,7 +503,7 @@ static void
 connection_close_error (struct MHD_Connection *connection,
 			const char *emsg)
 {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
   if (NULL != emsg)
     MHD_DLOG (connection->daemon, emsg);
 #endif
@@ -516,7 +516,7 @@ connection_close_error (struct MHD_Connection *connection,
  * Macro to only include error message in call to
  * "connection_close_error" if we have HAVE_MESSAGES.
  */
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 #define CONNECTION_CLOSE_ERROR(c, emsg) connection_close_error (c, emsg)
 #else
 #define CONNECTION_CLOSE_ERROR(c, emsg) connection_close_error (c, NULL)
@@ -1054,7 +1054,7 @@ build_header_response (struct MHD_Connection *connection)
   data = MHD_pool_allocate (connection->pool, size + 1, MHD_NO);
   if (NULL == data)
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory for write!\n");
 #endif
@@ -1148,7 +1148,7 @@ transmit_error_response (struct MHD_Connection *connection,
     }
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   connection->read_closed = MHD_YES;
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             "Error %u (`%s') processing request, closing connection.\n",
             status_code, message);
@@ -1392,7 +1392,7 @@ connection_add_header (struct MHD_Connection *connection,
 				key,
 				value))
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory to allocate header record!\n");
 #endif
@@ -1432,7 +1432,7 @@ parse_cookie_header (struct MHD_Connection *connection)
   cpy = MHD_pool_allocate (connection->pool, strlen (hdr) + 1, MHD_YES);
   if (NULL == cpy)
     {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Not enough memory to parse cookies!\n");
 #endif
@@ -1754,7 +1754,7 @@ process_request_body (struct MHD_Connection *connection)
         }
       if (processed > used)
         mhd_panic (mhd_panic_cls, __FILE__, __LINE__
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 		   , "API violation"
 #else
 		   , NULL
@@ -2040,7 +2040,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       /* die, http 1.1 request without host and we are pedantic */
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
       connection->read_closed = MHD_YES;
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 "Received `%s' request without `%s' header.\n",
                 MHD_HTTP_VERSION_1_1, MHD_HTTP_HEADER_HOST);
@@ -2076,7 +2076,7 @@ parse_connection_headers (struct MHD_Connection *connection)
           if ( ('\0' != *end) ||
 	     ( (LONG_MAX == cval) && (errno == ERANGE) ) )
             {
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to parse `%s' header `%s', closing connection.\n",
                         MHD_HTTP_HEADER_CONTENT_LENGTH,
@@ -2229,7 +2229,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               const int err = MHD_socket_errno_;
               if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
                 break;
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to send data: %s\n",
                         MHD_socket_last_strerr_ ());
@@ -2296,7 +2296,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               {
                 if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
                   return MHD_YES;
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
                 MHD_DLOG (connection->daemon,
                           "Failed to send data: %s\n",
                           MHD_socket_last_strerr_ ());
@@ -2909,7 +2909,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 			  connection->socket_fd,
 			  &event))
 	{
-#if HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
 	  if (0 != (daemon->options & MHD_USE_DEBUG))
 	    MHD_DLOG (daemon,
 		      "Call to epoll_ctl failed: %s\n",

@@ -610,35 +610,30 @@ AC_FUNC_FSEEKO
 AC_CHECK_FUNCS([_lseeki64 lseek64 sendfile64])
 
 # optional: have error messages ?
-AC_MSG_CHECKING(whether to generate error messages)
+AC_MSG_CHECKING([[whether to generate error messages]])
 AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
                [disable MHD error messages])],
    [enable_messages=${enableval}],
    [enable_messages=yes])
-AC_MSG_RESULT($enable_messages)
-if test "$enable_messages" = "yes"
-then
- AC_DEFINE([HAVE_MESSAGES],[1],[Include error messages])
-else
- AC_DEFINE([HAVE_MESSAGES],[0],[Disable error messages])
-fi
+AS_IF([[test "x$enable_messages" = "xyes"]],
+  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for error messages.]) ],
+  [[ enable_messages=no ]])
+AC_MSG_RESULT([[$enable_messages]])
 
 
 # optional: have postprocessor?
-AC_MSG_CHECKING(whether to enable postprocessor)
+AC_MSG_CHECKING([[whether to enable postprocessor]])
 AC_ARG_ENABLE([postprocessor],
    [AS_HELP_STRING([--disable-postprocessor],
                [disable MHD PostProcessor functionality])],
    [enable_postprocessor=${enableval}],
    [enable_postprocessor=yes])
-test "x$enable_postprocessor" = "xno" || enable_postprocessor=yes
+AS_IF([[test "x$enable_postprocessor" != "xno"]],
+  [ enable_postprocessor=yes
+    AC_DEFINE([HAVE_POSTPROCESSOR],[1],[Define to 1 if libmicrohttpd is compiled with postprocessor support.]) ])
+AM_CONDITIONAL([HAVE_POSTPROCESSOR], [test "x$enable_postprocessor" != "xno"])
 AC_MSG_RESULT([[$enable_postprocessor]])
-AM_CONDITIONAL([HAVE_POSTPROCESSOR],test "x$enable_postprocessor" != "xno")
-if test "x$enable_postprocessor" != "xno"
-then
- AC_DEFINE([HAVE_POSTPROCESSOR],[1],[define to 1 if MHD was build with postprocessor.c])
-fi
 
 
 # optional: have zzuf, socat?
@@ -819,38 +814,30 @@ AC_MSG_RESULT([$MSG_HTTPS])
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
 # optional: HTTP Basic Auth support. Enabled by default
-AC_MSG_CHECKING(whether to support HTTP basic authentication)
+AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
 AC_ARG_ENABLE([bauth],
 		AS_HELP_STRING([--disable-bauth],
 			[disable HTTP basic Auth support]),
 		[enable_bauth=${enableval}],
 		[enable_bauth=yes])
-if test "x$enable_bauth" != "xno"
-then
- enable_bauth=yes
- AC_DEFINE([BAUTH_SUPPORT],[1],[include basic Auth support])
-else
- AC_DEFINE([BAUTH_SUPPORT],[0],[disable basic Auth support])
-fi
-AC_MSG_RESULT($enable_bauth)
-AM_CONDITIONAL(ENABLE_BAUTH, [test "x$enable_bauth" != "xno"])
+AS_IF([[test "x$enable_bauth" != "xno"]],
+  [ enable_bauth=yes
+    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with basic Auth support.]) ])
+AM_CONDITIONAL([ENABLE_BAUTH], [test "x$enable_bauth" != "xno"])
+AC_MSG_RESULT([[$enable_bauth]])
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING(whether to support HTTP digest authentication)
+AC_MSG_CHECKING([[whether to support HTTP digest authentication]])
 AC_ARG_ENABLE([dauth],
 		AS_HELP_STRING([--disable-dauth],
 			[disable HTTP basic and digest Auth support]),
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
-if test "x$enable_dauth" != "xno"
-then
- enable_dauth=yes
- AC_DEFINE([DAUTH_SUPPORT],[1],[include digest Auth support])
-else
- AC_DEFINE([DAUTH_SUPPORT],[0],[disable digest Auth support])
-fi
-AC_MSG_RESULT($enable_dauth)
-AM_CONDITIONAL(ENABLE_DAUTH, [test "x$enable_dauth" != "xno"])
+AS_IF([[test "x$enable_dauth" != "xno"]],
+  [ enable_dauth=yes
+    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with digest Auth support.]) ])
+AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
+AC_MSG_RESULT([[$enable_dauth]])
 
 
 
