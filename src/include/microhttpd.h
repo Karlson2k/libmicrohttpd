@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094800
+#define MHD_VERSION 0x00094801
 
 /**
  * MHD-internal return code for "YES".
@@ -366,7 +366,7 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
  * If we don't have a string for a status code, we give the first
  * message in that status code class.
  */
-const char *
+_MHD_EXTERN const char *
 MHD_get_reason_phrase_for (unsigned int code);
 
 

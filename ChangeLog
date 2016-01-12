@@ -1,3 +1,6 @@
+Tue Jan 12 16:10:09 CET 2016
+	Fixed declaraion of MHD_get_reason_phrase_for(). -EG
+
 Mon Jan 11 19:58:50 CET 2016
 	Configure.ac small fixes and refactoring. -EG
 
