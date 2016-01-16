@@ -24,6 +24,7 @@
  */
 
 #include "internal.h"
+#include "mhd_str.h"
 
 /**
  * Size of on-stack buffer that we use for un-escaping of the value.

@@ -30,6 +30,7 @@
 #include "memorypool.h"
 #include "response.h"
 #include "mhd_mono_clock.h"
+#include "mhd_str.h"
 
 #if HAVE_NETINET_TCP_H
 /* for TCP_CORK */

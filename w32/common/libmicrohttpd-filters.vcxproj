@@ -121,6 +121,12 @@
     <ClCompile Include="$(MhdSrc)microhttpd\sysfdsetsize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_str.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">

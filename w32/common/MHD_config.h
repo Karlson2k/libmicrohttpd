@@ -9,6 +9,16 @@
 /* Define if MS VC compiler is used */
 #define MSVC 1
 
+/* Define to type which will be used as boolean type. */
+#define _MHD_bool _Bool
+
+/* Define to 1 if your C compiler supports inline functions. */
+#define INLINE_FUNC 1
+
+/* Define to prefix which will be used with MHD inline functions. */
+#define _MHD_inline static __forceinline
+
+
 /* *** MHD configuration *** */
 /* Undef to disable feature */
 

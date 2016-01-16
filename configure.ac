@@ -86,6 +86,60 @@ MHD_LIBDEPS=""
 MHD_REQ_PRIVATE=''
 MHD_LIBDEPS_PKGCFG=''
 
+AC_CHECK_TYPE([_Bool],
+  [ AC_DEFINE([_MHD_bool],[_Bool],[Define to type which will be used as boolean type.]) ],
+  [
+    AC_CHECK_HEADER([stdbool.h], [ AC_DEFINE([HAVE_STDBOOL_H],[1],[Define to 1 if you have the <stdbool.h> header file and it's required for _MHD_bool.]) ])
+    AC_CHECK_TYPE([bool],
+      [ AC_DEFINE([_MHD_bool],[bool]) ],
+      [ AC_DEFINE([_MHD_bool],[int]) ],
+      [[
+        #ifdef HAVE_STDBOOL_H
+        #include <stdbool.h>
+        #endif
+      ]])
+  ])
+
+AC_MSG_CHECKING([[for function inline keywords suppoted by $CC]])
+save_CFLAGS="$CFLAGS"
+AX_APPEND_FLAG([[-Werror=attributes]])
+inln_prfx="none"
+# Prefer always inline functions
+for inln_prfx_chk in "inline __attribute__((always_inline))" __forceinline inline __inline__ __inline _inline _Inline; do
+  # Try to link to avoid "symbol undefined" problems at build time
+  AC_LINK_IFELSE(
+    [
+     AC_LANG_PROGRAM(
+       [[
+         #ifdef __cplusplus
+         choke me
+         #endif
+         #ifdef HAVE_STDBOOL_H
+         #include <stdbool.h>
+         #endif
+         static $inln_prfx_chk _MHD_bool cmpfn(int x, int y)
+         { return x > y; }
+         static $inln_prfx_chk int sumfn(int x, int y)
+         { return x + y; }
+       ]],[[
+       int a = 1, b = 100, c;
+       if (cmpfn(a, b))
+         c = sumfn(a, b);
+       else
+         c = 0 - sumfn(a, b);
+       ]])
+    ],
+    [[ inln_prfx="$inln_prfx_chk" ]])
+  test "x$inln_prfx" != "xnone" && break
+done
+AS_IF([[test "x$ac_cv_c_inline" != "xnone"]],
+      [
+       AC_DEFINE([INLINE_FUNC],[1],[Define to 1 if your C compiler supports inline functions.])
+       AC_DEFINE_UNQUOTED([_MHD_inline],[static $inln_prfx],[Define to prefix which will be used with MHD inline functions.])
+      ])
+AC_MSG_RESULT([[$inln_prfx]])
+CFLAGS="$save_CFLAGS"
+
 # Check system type
 AC_MSG_CHECKING([[for target host OS]])
 case "$host_os" in

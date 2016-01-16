@@ -65,6 +65,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_mono_clock.c mhd_mono_clock.h \
   mhd_limits.h mhd_byteorder.h \
   sysfdsetsize.c sysfdsetsize.h \
+  mhd_str.c mhd_str.h \
   response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \

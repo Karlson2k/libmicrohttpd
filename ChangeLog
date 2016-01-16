@@ -1,3 +1,8 @@
+Sat Jan 16 19:14:39 CET 2016
+	Use US-ASCII only (instead of user locale settings) when
+	performing caseless string comparison as required by
+	standard. -EG
+
 Tue Jan 12 16:10:09 CET 2016
 	Fixed declaraion of MHD_get_reason_phrase_for(). -EG
 
