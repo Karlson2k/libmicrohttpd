@@ -198,6 +198,9 @@ typedef SOCKET MHD_socket;
  */
 #ifdef MHD_NO_DEPRECATION
 #define _MHD_DEPR_MACRO(msg)
+#define _MHD_NO_DEPR_IN_MACRO 1
+#define _MHD_DEPR_IN_MACRO(msg)
+#define _MHD_NO_DEPR_FUNC 1
 #define _MHD_DEPR_FUNC(msg)
 #endif /* MHD_NO_DEPRECATION */
 
@@ -227,12 +230,14 @@ typedef SOCKET MHD_socket;
 /* clang handles inline pragmas better than GCC */
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #endif /* clang >= 2.9 */
-#endif
+#endif  /* older clang or GCC */
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
-#else /* other compilers */
+#endif /* clang || GCC >= 3.0 */
+#endif /* !_MHD_DEPR_MACRO */
+
+#ifndef _MHD_DEPR_MACRO
 #define _MHD_DEPR_MACRO(msg)
-#endif
-#endif /* _MHD_DEPR_MACRO */
+#endif /* !_MHD_DEPR_MACRO */
 
 #ifndef _MHD_DEPR_IN_MACRO
 #define _MHD_NO_DEPR_IN_MACRO 1
@@ -255,10 +260,13 @@ typedef SOCKET MHD_socket;
 /* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
-#else /* other compilers */
+#endif /* clang < 2.9 || GCC >= 3.1 */
+#endif /* !_MHD_DEPR_FUNC */
+
+#ifndef _MHD_DEPR_FUNC
+#define _MHD_NO_DEPR_FUNC 1
 #define _MHD_DEPR_FUNC(msg)
-#endif
-#endif /* _MHD_DEPR_FUNC */
+#endif /* !_MHD_DEPR_FUNC */
 
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
@@ -2161,13 +2169,13 @@ MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset);
 
-#ifndef _MHD_NO_DEPR_IN_MACRO
+#if !defined(_MHD_NO_DEPR_IN_MACRO) || defined(_MHD_NO_DEPR_FUNC)
 /* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset()
-   to minimize possible problems with different off_t options */
+   to minimize potential problems with different off_t sizes */
 #define MHD_create_response_from_fd_at_offset(size,fd,offset) \
   _MHD_DEPR_IN_MACRO("Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
   MHD_create_response_from_fd_at_offset64((size),(fd),(offset))
-#endif /* ! _MHD_NO_DEPR_IN_MACRO */
+#endif /* !_MHD_NO_DEPR_IN_MACRO || _MHD_NO_DEPR_FUNC */
 
 
 /**
