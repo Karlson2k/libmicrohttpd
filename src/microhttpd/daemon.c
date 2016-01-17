@@ -1878,12 +1878,13 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 #endif
   flags = fcntl (sock, F_GETFD);
   if ( ( (-1 == flags) ||
-	 ( (flags != (flags | FD_CLOEXEC)) &&
+	 ( (flags != (flags | nonblock | FD_CLOEXEC)) &&
 	   (0 != fcntl (sock, F_SETFD, flags | nonblock | FD_CLOEXEC)) ) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		"Failed to make socket non-inheritable: %s\n",
+		"Failed to make socket %snon-inheritable: %s\n",
+        ((nonblock) ? "non-blocking " : ""),
 		MHD_socket_last_strerr_ ());
 #endif
     }
