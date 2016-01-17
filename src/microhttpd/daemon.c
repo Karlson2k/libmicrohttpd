@@ -64,8 +64,8 @@
 #include <process.h>
 #endif
 
-#ifndef HAVE_ACCEPT4
-#define HAVE_ACCEPT4 0
+#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || (SOCK_CLOEXEC+0 != 0))
+#define USE_ACCEPT4 1
 #endif
 
 /**
@@ -1962,12 +1962,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   socklen_t addrlen;
   MHD_socket s;
   MHD_socket fd;
+#ifdef USE_ACCEPT4
   int nonblock;
 
-  addrlen = sizeof (addrstorage);
-  memset (addr, 0, sizeof (addrstorage));
-  if (MHD_INVALID_SOCKET == (fd = daemon->socket_fd))
-    return MHD_NO;
 #ifdef HAVE_SOCK_NONBLOCK
   nonblock = SOCK_NONBLOCK;
 #else
@@ -1977,11 +1974,17 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   if (0 == (daemon->options & MHD_USE_SSL))
     nonblock = 0;
 #endif
-#if HAVE_ACCEPT4
+#endif /* USE_ACCEPT4 */
+
+  addrlen = sizeof (addrstorage);
+  memset (addr, 0, sizeof (addrstorage));
+  if (MHD_INVALID_SOCKET == (fd = daemon->socket_fd))
+    return MHD_NO;
+#ifdef USE_ACCEPT4
   s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC | nonblock);
-#else
+#else  /* ! USE_ACCEPT4 */
   s = accept (fd, addr, &addrlen);
-#endif
+#endif /* ! USE_ACCEPT4 */
   if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
 #ifdef HAVE_MESSAGES
@@ -2003,7 +2006,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#if !defined(HAVE_ACCEPT4) || HAVE_ACCEPT4+0 == 0 || !defined(HAVE_SOCK_NONBLOCK) || SOCK_CLOEXEC+0 == 0
+#if !defined(USE_ACCEPT4) || !defined(HAVE_SOCK_NONBLOCK) || SOCK_CLOEXEC+0 == 0
   make_nonblocking_noninheritable (daemon, s);
 #endif
 #ifdef HAVE_MESSAGES
