@@ -1849,7 +1849,6 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 MHD_socket sock)
 {
 #ifdef MHD_WINSOCK_SOCKETS
-  DWORD dwFlags;
   unsigned long flags = 1;
 
   if (0 != ioctlsocket (sock, FIONBIO, &flags))
@@ -1860,9 +1859,7 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 		MHD_socket_last_strerr_ ());
 #endif
     }
-  if (!GetHandleInformation ((HANDLE) sock, &dwFlags) ||
-      ((dwFlags != (dwFlags & ~HANDLE_FLAG_INHERIT)) &&
-       !SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0)))
+  if (!SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
