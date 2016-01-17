@@ -1,3 +1,7 @@
+Sun Jan 17 11:18:55 CET 2016
+	Do no refuse to send response if sendfile() failed with
+	EINVAL (common error for files located on SMB/CIF). -EG
+
 Sat Jan 16 19:14:39 CET 2016
 	Use US-ASCII only (instead of user locale settings) when
 	performing caseless string comparison as required by

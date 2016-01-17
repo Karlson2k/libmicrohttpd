@@ -1158,9 +1158,10 @@ send_param_adapter (struct MHD_Connection *connection,
       err = MHD_socket_errno_;
       if ( (EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err) )
 	return 0;
-      if ( (EINVAL == err) || (EBADF == err) )
+      if (EBADF == err)
 	return -1;
-      /* None of the 'usual' sendfile errors occurred, so we should try
+      /* sendfile() failed with EINVAL if mmap()-like operations are not
+	 supported for FD or other 'unusual' errors occurred, so we should try
 	 to fall back to 'SEND'; see also this thread for info on
 	 odd libc/Linux behavior with sendfile:
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
