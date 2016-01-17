@@ -27,6 +27,7 @@
 #define MHD_STR_H 1
 
 #include <stdint.h>
+#include <stdlib.h>
 
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
