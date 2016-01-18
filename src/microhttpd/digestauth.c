@@ -303,7 +303,7 @@ lookup_sub_value (char *dest,
  * @param connection The MHD connection structure
  * @param nonce A pointer that referenced a zero-terminated array of nonce
  * @param nc The nonce counter, zero to add the nonce to the array
- * @return MHD_YES if successful, MHD_NO if invalid (or we have no NC array)
+ * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
 static int
 check_nonce_nc (struct MHD_Connection *connection,
@@ -314,6 +314,11 @@ check_nonce_nc (struct MHD_Connection *connection,
   uint32_t mod;
   const char *np;
 
+  if (MAX_NONCE_LENGTH <= strlen (nonce))
+    return MHD_NO; /* This should be impossible, but static analysis
+                      tools have a hard time with it *and* this also
+                      protects against unsafe modifications that may
+                      happen in the future... */
   mod = connection->daemon->nonce_nc_size;
   if (0 == mod)
     return MHD_NO; /* no array! */
@@ -335,8 +340,8 @@ check_nonce_nc (struct MHD_Connection *connection,
   (void) MHD_mutex_lock_ (&connection->daemon->nnc_lock);
   if (0 == nc)
     {
-      strcpy(connection->daemon->nnc[off].nonce,
-	     nonce);
+      strcpy (connection->daemon->nnc[off].nonce,
+              nonce);
       connection->daemon->nnc[off].nc = 0;
       (void) MHD_mutex_unlock_ (&connection->daemon->nnc_lock);
       return MHD_YES;
