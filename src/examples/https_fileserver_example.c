@@ -143,7 +143,10 @@ http_ahc (void *cls,
     {
       fd = fileno (file);
       if (-1 == fd)
-        return MHD_NO; /* internal error */
+        {
+          (void) fclose (file);
+          return MHD_NO; /* internal error */
+        }
       if ( (0 != fstat (fd, &buf)) ||
            (! S_ISREG (buf.st_mode)) )
         {
