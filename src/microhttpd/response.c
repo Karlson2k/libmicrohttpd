@@ -429,7 +429,9 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
       (size > (uint64_t)INT32_MAX || offset > (uint64_t)INT32_MAX || (size + offset) >= (uint64_t)INT32_MAX))
     return NULL;
 #endif
-  if ((int64_t)size < 0 || (int64_t)offset < 0 || (int64_t)(size + offset) < 0)
+  if ( ((int64_t)size < 0) ||
+       ((int64_t)offset < 0) ||
+       ((int64_t)(size + offset) < 0) )
     return NULL;
 
   response = MHD_create_response_from_callback (size,
@@ -477,8 +479,8 @@ MHD_create_response_from_fd (size_t size,
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
-MHD_create_response_from_fd64(uint64_t size,
-                              int fd)
+MHD_create_response_from_fd64 (uint64_t size,
+                               int fd)
 {
   return MHD_create_response_from_fd_at_offset64 (size, fd, 0);
 }
