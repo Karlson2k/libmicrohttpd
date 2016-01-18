@@ -71,14 +71,14 @@ ahc_echo (void *cls,
   if (fail)
   {
       response = MHD_create_response_from_buffer (strlen (DENIED),
-						  (void *) DENIED, 
+						  (void *) DENIED,
 						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_basic_auth_fail_response (connection,"TestRealm",response);
     }
   else
     {
       response = MHD_create_response_from_buffer (strlen (me),
-						  (void *) me, 
+						  (void *) me,
 						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     }
