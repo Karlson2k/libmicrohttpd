@@ -18,7 +18,7 @@
 */
 
 /**
- * @file fileserver_example.c
+ * @file fileserver_example_dirs.c
  * @brief example for how to use libmicrohttpd to serve files (with directory support)
  * @author Christian Grothoff
  */
@@ -30,6 +30,7 @@
 
 #define PAGE "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
+
 static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
@@ -39,12 +40,14 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
   return fread (buf, 1, max, file);
 }
 
+
 static void
 file_free_callback (void *cls)
 {
   FILE *file = cls;
   fclose (file);
 }
+
 
 static void
 dir_free_callback (void *cls)
@@ -53,6 +56,7 @@ dir_free_callback (void *cls)
   if (dir != NULL)
     closedir (dir);
 }
+
 
 static ssize_t
 dir_reader (void *cls, uint64_t pos, char *buf, size_t max)
@@ -88,6 +92,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   FILE *file;
+  int fd;
   DIR *dir;
   struct stat buf;
   char emsg[1024];
@@ -101,17 +106,31 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  if ( (0 == stat (&url[1], &buf)) &&
-       (S_ISREG (buf.st_mode)) )
-    file = fopen (&url[1], "rb");
-  else
-    file = NULL;
-  if (file == NULL)
+
+  file = fopen (&url[1], "rb");
+  if (NULL != file)
+    {
+      fd = fileno (file);
+      if (-1 == fd)
+        {
+          (void) fclose (file);
+          return MHD_NO; /* internal error */
+        }
+      if ( (0 != fstat (fd, &buf)) ||
+           (! S_ISREG (buf.st_mode)) )
+        {
+          /* not a regular file, refuse to serve */
+          fclose (file);
+          file = NULL;
+        }
+    }
+
+  if (NULL == file)
     {
       dir = opendir (".");
-      if (dir == NULL)
+      if (NULL == dir)
 	{
-	  /* most likely cause: more concurrent requests than  
+	  /* most likely cause: more concurrent requests than
 	     available file descriptors / 2 */
 	  snprintf (emsg,
 		    sizeof (emsg),
@@ -120,9 +139,11 @@ ahc_echo (void *cls,
 	  response = MHD_create_response_from_buffer (strlen (emsg),
 						      emsg,
 						      MHD_RESPMEM_MUST_COPY);
-	  if (response == NULL)
-	    return MHD_NO;	    
-	  ret = MHD_queue_response (connection, MHD_HTTP_SERVICE_UNAVAILABLE, response);
+	  if (NULL == response)
+	    return MHD_NO;
+	  ret = MHD_queue_response (connection,
+                                    MHD_HTTP_SERVICE_UNAVAILABLE,
+                                    response);
 	  MHD_destroy_response (response);
 	}
       else
@@ -132,7 +153,7 @@ ahc_echo (void *cls,
 							&dir_reader,
 							dir,
 							&dir_free_callback);
-	  if (response == NULL)
+	  if (NULL == response)
 	    {
 	      closedir (dir);
 	      return MHD_NO;
@@ -147,7 +168,7 @@ ahc_echo (void *cls,
                                                     &file_reader,
                                                     file,
                                                     &file_free_callback);
-      if (response == NULL)
+      if (NULL == response)
 	{
 	  fclose (file);
 	  return MHD_NO;
@@ -157,6 +178,7 @@ ahc_echo (void *cls,
     }
   return ret;
 }
+
 
 int
 main (int argc, char *const *argv)
@@ -171,7 +193,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
-  if (d == NULL)
+  if (NULL == d)
     return 1;
   (void) getc (stdin);
   MHD_stop_daemon (d);
