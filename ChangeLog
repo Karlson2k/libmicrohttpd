@@ -1,3 +1,7 @@
+Mon Jan 18 23:54:45 CET 2016
+	Cleaned up examples to avoid giving oversimplified code
+	that may lead to complications if adopted naively. -CG
+
 Sun Jan 17 11:18:55 CET 2016
 	Do no refuse to send response if sendfile() failed with
 	EINVAL (common error for files located on SMB/CIF). -EG
