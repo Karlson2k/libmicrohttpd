@@ -90,22 +90,29 @@ ahc_echo (void *cls,
   return ret;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
+  unsigned int port;
 
-  if (argc != 3)
+  if ( (argc != 2) ||
+       (1 != sscanf (argv[1], "%u", &port)) ||
+       (UINT16_MAX < port) )
     {
-      printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
+      fprintf (stderr,
+	       "%s PORT\n", argv[0]);
       return 1;
     }
+
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  sleep (atoi (argv[2]));
+  fprintf (stderr, "HTTP server running. Press ENTER to stop the server\n");
+  (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
 }

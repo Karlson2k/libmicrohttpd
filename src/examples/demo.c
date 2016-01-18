@@ -856,9 +856,9 @@ main (int argc, char *const *argv)
 	       "%s PORT\n", argv[0]);
       return 1;
     }
-  #ifndef MINGW
+#ifndef MINGW
   ignore_sigpipe ();
-  #endif
+#endif
   magic = magic_open (MAGIC_MIME_TYPE);
   (void) magic_load (magic, NULL);
 
