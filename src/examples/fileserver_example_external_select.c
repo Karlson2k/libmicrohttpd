@@ -38,12 +38,14 @@ file_reader (void *cls, uint64_t pos, char *buf, size_t max)
   return fread (buf, 1, max, file);
 }
 
+
 static void
 free_callback (void *cls)
 {
   FILE *file = cls;
   fclose (file);
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -58,6 +60,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   FILE *file;
+  int fd;
   struct stat buf;
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
@@ -69,12 +72,23 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  if ( (0 == stat (&url[1], &buf)) &&
-       (S_ISREG (buf.st_mode)) )
-    file = fopen (&url[1], "rb");
-  else
-    file = NULL;
-  if (file == NULL)
+
+  file = fopen (&url[1], "rb");
+  if (NULL != file)
+    {
+      fd = fileno (file);
+      if (-1 == fd)
+        return MHD_NO; /* internal error */
+      if ( (0 != fstat (fd, &buf)) ||
+           (! S_ISREG (buf.st_mode)) )
+        {
+          /* not a regular file, refuse to serve */
+          fclose (file);
+          file = NULL;
+        }
+    }
+
+  if (NULL == file)
     {
       response = MHD_create_response_from_buffer (strlen (PAGE),
 						  (void *) PAGE,
@@ -88,7 +102,7 @@ ahc_echo (void *cls,
                                                     &file_reader,
                                                     file,
                                                     &free_callback);
-      if (response == NULL)
+      if (NULL == response)
 	{
 	  fclose (file);
 	  return MHD_NO;
@@ -98,6 +112,7 @@ ahc_echo (void *cls,
     }
   return ret;
 }
+
 
 int
 main (int argc, char *const *argv)
