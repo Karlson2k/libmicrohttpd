@@ -699,8 +699,9 @@ generate_page (void *cls,
 	   ('/' != url[1]) )
         {
           fd = open (&url[1], O_RDONLY);
-          if ( (0 != fstat (fd, &buf)) ||
-               (! S_ISREG (buf.st_mode)) )
+          if ( (-1 != fd) &&
+               ( (0 != fstat (fd, &buf)) ||
+                 (! S_ISREG (buf.st_mode)) ) )
             {
               (void) close (fd);
               fd = -1;
