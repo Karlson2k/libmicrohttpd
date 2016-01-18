@@ -63,6 +63,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   FILE *file;
+  int fd;
   struct stat buf;
 
   if ( (0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
@@ -75,10 +76,23 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *ptr = NULL;                  /* reset when done */
-  if (0 == stat (&url[1], &buf))
-    file = fopen (&url[1], "rb");
-  else
-    file = NULL;
+  file = fopen (&url[1], "rb");
+  if (NULL != file)
+    {
+      fd = fileno (file);
+      if (-1 == fd)
+        {
+          (void) fclose (file);
+          return MHD_NO; /* internal error */
+        }
+      if ( (0 != fstat (fd, &buf)) ||
+           (! S_ISREG (buf.st_mode)) )
+        {
+          /* not a regular file, refuse to serve */
+          fclose (file);
+          file = NULL;
+        }
+    }
   if (NULL == file)
     {
       response = MHD_create_response_from_buffer (strlen (PAGE),

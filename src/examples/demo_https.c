@@ -668,7 +668,7 @@ return_directory_response (struct MHD_Connection *connection)
  * @param upload_data data from upload (PUT/POST)
  * @param upload_data_size number of bytes in "upload_data"
  * @param ptr our context
- * @return MHD_YES on success, MHD_NO to drop connection
+ * @return #MHD_YES on success, #MHD_NO to drop connection
  */
 static int
 generate_page (void *cls,
@@ -694,7 +694,6 @@ generate_page (void *cls,
       if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
 	return MHD_NO;  /* unexpected method (we're not polite...) */
       fd = -1;
-
       if ( (NULL == strstr (&url[1], "..")) &&
 	   ('/' != url[1]) )
         {
