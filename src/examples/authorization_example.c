@@ -82,6 +82,8 @@ ahc_echo (void *cls,
 						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     }
+  if (NULL != user)
+    free (user);
   if (NULL != pass)
     free (pass);
   MHD_destroy_response (response);
