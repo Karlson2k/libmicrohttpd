@@ -1460,38 +1460,32 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
     {
-      /* non-blocking sockets are required on most systems and for GNUtls;
-	 however, they somehow cause serious problems on CYGWIN (#1824);
-	 in turbo mode, we assume that non-blocking was already set
+      /* in turbo mode, we assume that non-blocking was already set
 	 by 'accept4' or whoever calls 'MHD_add_connection' */
-#ifdef CYGWIN
-      if (0 != (daemon->options & MHD_USE_SSL))
-#endif
-	{
-	  /* make socket non-blocking */
+
+      /* make socket non-blocking */
 #if !defined(MHD_WINSOCK_SOCKETS)
-	  int flags = fcntl (connection->socket_fd, F_GETFL);
-	  if ( (-1 == flags) ||
-	       (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
-	    {
+      int flags = fcntl (connection->socket_fd, F_GETFL);
+      if ( (-1 == flags) ||
+	    (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
+	{
 #ifdef HAVE_MESSAGES
-	      MHD_DLOG (daemon,
-			"Failed to make socket non-blocking: %s\n",
-			MHD_socket_last_strerr_ ());
-#endif
-	    }
-#else
-	  unsigned long flags = 1;
-	  if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
-	    {
-#ifdef HAVE_MESSAGES
-	      MHD_DLOG (daemon,
-			"Failed to make socket non-blocking: %s\n",
-			MHD_socket_last_strerr_ ());
-#endif
-	    }
+	  MHD_DLOG (daemon,
+		    "Failed to make socket non-blocking: %s\n",
+		    MHD_socket_last_strerr_ ());
 #endif
 	}
+#else
+      unsigned long flags = 1;
+      if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
+	{
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    "Failed to make socket non-blocking: %s\n",
+		    MHD_socket_last_strerr_ ());
+#endif
+	}
+#endif
     }
 
 #if HTTPS_SUPPORT
@@ -1869,22 +1863,15 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
     }
 #else
   int flags;
-  int nonblock;
 
-  nonblock = O_NONBLOCK;
-#ifdef CYGWIN
-  if (0 == (daemon->options & MHD_USE_SSL))
-    nonblock = 0;
-#endif
   flags = fcntl (sock, F_GETFD);
   if ( ( (-1 == flags) ||
-	 ( (flags != (flags | nonblock | FD_CLOEXEC)) &&
-	   (0 != fcntl (sock, F_SETFD, flags | nonblock | FD_CLOEXEC)) ) ) )
+	 ( (flags != (flags | O_NONBLOCK | FD_CLOEXEC)) &&
+	   (0 != fcntl (sock, F_SETFD, flags | O_NONBLOCK | FD_CLOEXEC)) ) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		"Failed to make socket %snon-inheritable: %s\n",
-        ((nonblock) ? "non-blocking " : ""),
+		"Failed to make socket non-blocking non-inheritable: %s\n",
 		MHD_socket_last_strerr_ ());
 #endif
     }
@@ -1961,16 +1948,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   MHD_socket s;
   MHD_socket fd;
 #ifdef USE_ACCEPT4
-  int nonblock;
-
 #ifdef HAVE_SOCK_NONBLOCK
-  nonblock = SOCK_NONBLOCK;
+  static const int nonblock = SOCK_NONBLOCK;
 #else
-  nonblock = 0;
-#endif
-#ifdef CYGWIN
-  if (0 == (daemon->options & MHD_USE_SSL))
-    nonblock = 0;
+  static const int nonblock = 0;
 #endif
 #endif /* USE_ACCEPT4 */
 
