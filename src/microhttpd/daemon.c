@@ -64,10 +64,6 @@
 #include <process.h>
 #endif
 
-#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || (SOCK_CLOEXEC+0 != 0))
-#define USE_ACCEPT4 1
-#endif
-
 /**
  * Default connection limit.
  */
@@ -115,6 +111,10 @@
 #define EPOLL_CLOEXEC 0
 #endif
 
+#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || (SOCK_CLOEXEC+0 != 0))
+#define USE_ACCEPT4 1
+#endif
+
 
 /**
  * Default implementation of the panic function,
@@ -156,6 +156,50 @@ void *mhd_panic_cls;
  */
 static int mhd_winsock_inited_ = 0;
 #endif
+
+
+/**
+ * Change socket options to be non-blocking.
+ *
+ * @param daemon daemon context
+ * @param sock socket to manipulate
+ * @return #MHD_YES if succeeded, #MHD_NO otherwise
+ */
+static int
+make_nonblocking (struct MHD_Daemon *daemon,
+                  MHD_socket sock)
+{
+#ifdef MHD_WINSOCK_SOCKETS
+  unsigned long flags = 1;
+
+  if (0 != ioctlsocket (sock, FIONBIO, &flags))
+    {
+ #ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to make socket non-blocking: %s\n",
+                MHD_socket_last_strerr_ ());
+ #endif
+      return MHD_NO;
+    }
+#else  /* MHD_POSIX_SOCKETS */
+  int flags;
+
+  flags = fcntl (sock, F_GETFD);
+  if ( ( (-1 == flags) ||
+	 ( (flags != (flags | O_NONBLOCK)) &&
+	   (0 != fcntl (sock, F_SETFD, flags | O_NONBLOCK)) ) ) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to make socket non-blocking: %s\n",
+                MHD_socket_last_strerr_ ());
+#endif
+      return MHD_NO;
+    }
+#endif /* MHD_POSIX_SOCKETS */
+  return MHD_YES;
+}
+
 
 /**
  * Trace up to and return master daemon. If the supplied daemon
@@ -1462,30 +1506,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     {
       /* in turbo mode, we assume that non-blocking was already set
 	 by 'accept4' or whoever calls 'MHD_add_connection' */
-
-      /* make socket non-blocking */
-#if !defined(MHD_WINSOCK_SOCKETS)
-      int flags = fcntl (connection->socket_fd, F_GETFL);
-      if ( (-1 == flags) ||
-	    (0 != fcntl (connection->socket_fd, F_SETFL, flags | O_NONBLOCK)) )
-	{
-#ifdef HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    "Failed to make socket non-blocking: %s\n",
-		    MHD_socket_last_strerr_ ());
-#endif
-	}
-#else
-      unsigned long flags = 1;
-      if (0 != ioctlsocket (connection->socket_fd, FIONBIO, &flags))
-	{
-#ifdef HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    "Failed to make socket non-blocking: %s\n",
-		    MHD_socket_last_strerr_ ());
-#endif
-	}
-#endif
+      make_nonblocking (daemon, connection->socket_fd);
     }
 
 #if HTTPS_SUPPORT
@@ -1833,6 +1854,47 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
 
 /**
+ * Change socket options to be non-inheritable.
+ *
+ * @param daemon daemon context
+ * @param sock socket to manipulate
+ * @return #MHD_YES if succeeded, #MHD_NO otherwise
+ */
+static int
+make_noninheritable (struct MHD_Daemon *daemon,
+                     MHD_socket sock)
+{
+#ifdef MHD_WINSOCK_SOCKETS
+  if (!SetHandleInformation ((HANDLE)sock, HANDLE_FLAG_INHERIT, 0))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to make socket non-inheritable: %u\n",
+                (unsigned int)GetLastError ());
+#endif
+      return MHD_NO;
+    }
+#else  /* MHD_POSIX_SOCKETS */
+  int flags;
+
+  flags = fcntl (sock, F_GETFD);
+  if ( ( (-1 == flags) ||
+	 ( (flags != (flags | FD_CLOEXEC)) &&
+	   (0 != fcntl (sock, F_SETFD, flags | FD_CLOEXEC)) ) ) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to make socket non-inheritable: %s\n",
+                MHD_socket_last_strerr_ ());
+#endif
+      return MHD_NO;
+    }
+#endif /* MHD_POSIX_SOCKETS */
+  return MHD_YES;
+}
+
+
+/**
  * Change socket options to be non-blocking, non-inheritable.
  *
  * @param daemon daemon context
@@ -1843,24 +1905,8 @@ make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 MHD_socket sock)
 {
 #ifdef MHD_WINSOCK_SOCKETS
-  unsigned long flags = 1;
-
-  if (0 != ioctlsocket (sock, FIONBIO, &flags))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		"Failed to make socket non-blocking: %s\n",
-		MHD_socket_last_strerr_ ());
-#endif
-    }
-  if (!SetHandleInformation ((HANDLE) sock, HANDLE_FLAG_INHERIT, 0))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		"Failed to make socket non-inheritable: %u\n",
-		(unsigned int) GetLastError ());
-#endif
-    }
+  (void)make_nonblocking (daemon, sock);
+  (void)make_noninheritable (daemon, sock);
 #else
   int flags;
 
@@ -1914,8 +1960,11 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		    const struct sockaddr *addr,
 		    socklen_t addrlen)
 {
-  make_nonblocking_noninheritable (daemon,
-				   client_socket);
+  /* internal_add_connection() assume that non-blocking is
+     already set in MHD_USE_EPOLL_TURBO mode */
+  if (0 != (daemon->options & MHD_USE_EPOLL_TURBO))
+    make_nonblocking_noninheritable (daemon,
+				     client_socket);
   return internal_add_connection (daemon,
 				  client_socket,
 				  addr, addrlen,
@@ -1985,8 +2034,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#if !defined(USE_ACCEPT4) || !defined(HAVE_SOCK_NONBLOCK) || SOCK_CLOEXEC+0 == 0
+#if !defined(USE_ACCEPT4)
   make_nonblocking_noninheritable (daemon, s);
+#elif !defined(HAVE_SOCK_NONBLOCK)
+  make_nonblocking (daemon, s);
+#elif SOCK_CLOEXEC+0 == 0
+  make_noninheritable (daemon, s);
 #endif
 #ifdef HAVE_MESSAGES
 #if DEBUG_CONNECT
@@ -3519,24 +3572,33 @@ parse_options_va (struct MHD_Daemon *daemon,
  * @param protocol desired protocol, 0 for default
  */
 static MHD_socket
-create_socket (struct MHD_Daemon *daemon,
-	       int domain, int type, int protocol)
+create_listen_socket (struct MHD_Daemon *daemon,
+	              int domain, int type, int protocol)
 {
-  int ctype = type | SOCK_CLOEXEC;
   MHD_socket fd;
+  int cloexec_set;
 
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
-  fd = socket (domain, ctype, protocol);
-  if ( (MHD_INVALID_SOCKET == fd) && (EINVAL == MHD_socket_errno_) && (0 != SOCK_CLOEXEC) )
-  {
-    ctype = type;
-    fd = socket(domain, type, protocol);
-  }
+#if defined(MHD_POSIX_SOCKETS) && SOCK_CLOEXEC+0 != 0
+  fd = socket (domain, type | SOCK_CLOEXEC, protocol);
+  cloexec_set = MHD_YES;
+#elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
+  fd = WSASocketW (domain, type, protocol, NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT);
+  cloexec_set = MHD_YES;
+#else  /* !SOCK_CLOEXEC */
+  fd = socket (domain, type, protocol);
+  cloexec_set = MHD_NO;
+#endif /* !SOCK_CLOEXEC */
+  if ( (MHD_INVALID_SOCKET == fd) && (MHD_NO != cloexec_set) )
+    {
+      fd = socket (domain, type, protocol);
+      cloexec_set = MHD_NO;
+    }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
-  if (type == ctype)
-    make_nonblocking_noninheritable (daemon, fd);
+  if (MHD_NO == cloexec_set)
+    make_noninheritable (daemon, fd);
   return fd;
 }
 
@@ -3568,23 +3630,10 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
-#ifndef HAVE_EPOLL_CREATE1
-  else
-    {
-      int fdflags = fcntl (daemon->epoll_fd, F_GETFD);
-      if (0 > fdflags || 0 > fcntl (daemon->epoll_fd, F_SETFD, fdflags | FD_CLOEXEC))
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    "Failed to change flags on epoll fd: %s\n",
-                    MHD_socket_last_strerr_ ());
-#endif /* HAVE_MESSAGES */
-        }
-    }
-#endif /* !HAVE_EPOLL_CREATE1 */
-  if (0 == EPOLL_CLOEXEC)
-    make_nonblocking_noninheritable (daemon,
-				     daemon->epoll_fd);
+#if !defined(HAVE_EPOLL_CREATE1) || EPOLL_CLOEXEC+0 == 0
+  make_noninheritable (daemon,
+                       daemon->epoll_fd);
+#endif /* !HAVE_EPOLL_CREATE1 || !EPOLL_CLOEXEC */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
@@ -3870,10 +3919,10 @@ MHD_start_daemon_va (unsigned int flags,
     {
       /* try to open listen socket */
       if (0 != (flags & MHD_USE_IPv6))
-	socket_fd = create_socket (daemon,
+	socket_fd = create_listen_socket (daemon,
 				   PF_INET6, SOCK_STREAM, 0);
       else
-	socket_fd = create_socket (daemon,
+	socket_fd = create_listen_socket (daemon,
 				   PF_INET, SOCK_STREAM, 0);
       if (MHD_INVALID_SOCKET == socket_fd)
 	{
@@ -4073,23 +4122,24 @@ MHD_start_daemon_va (unsigned int flags,
         }
       }
 #endif
-#if EPOLL_SUPPORT
-      if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY))
-	{
-	  int sk_flags = fcntl (socket_fd, F_GETFL);
-	  if (0 != fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK))
-	    {
+      if (MHD_NO == make_nonblocking (daemon, socket_fd))
+        {
 #ifdef HAVE_MESSAGES
-	      MHD_DLOG (daemon,
-			"Failed to make listen socket non-blocking: %s\n",
-			MHD_socket_last_strerr_ ());
-#endif
-	      if (0 != MHD_socket_close_ (socket_fd))
-		MHD_PANIC ("close failed\n");
-	      goto free_and_fail;
-	    }
-	}
-#endif
+          MHD_DLOG (daemon,
+		    "Failed to make listen socket non-blocking: %s\n",
+		    MHD_socket_last_strerr_ ());
+#endif /* HAVE_MESSAGES */
+          if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY) ||
+              daemon->worker_pool_size > 0)
+            {
+              /* Accept must be non-blocking. Multiple children may wake up
+               * to handle a new connection, but only one will win the race.
+               * The others must immediately return. */
+              if (0 != MHD_socket_close_ (socket_fd))
+                MHD_PANIC ("close failed\n");
+              goto free_and_fail;
+          }
+      }
       if (listen (socket_fd, daemon->listen_backlog_size) < 0)
 	{
 #ifdef HAVE_MESSAGES
@@ -4211,12 +4261,6 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (daemon->worker_pool_size > 0) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
-#if !defined(MHD_WINSOCK_SOCKETS)
-      int sk_flags;
-#else
-      unsigned long sk_flags;
-#endif
-
       /* Coarse-grained count of connections per thread (note error
        * due to integer division). Also keep track of how many
        * connections are leftover after an equal split. */
@@ -4226,21 +4270,6 @@ MHD_start_daemon_va (unsigned int flags,
                                     % daemon->worker_pool_size;
 
       i = 0; /* we need this in case fcntl or malloc fails */
-
-      /* Accept must be non-blocking. Multiple children may wake up
-       * to handle a new connection, but only one will win the race.
-       * The others must immediately return. */
-#if !defined(MHD_WINSOCK_SOCKETS)
-      sk_flags = fcntl (socket_fd, F_GETFL);
-      if (sk_flags < 0)
-        goto thread_failed;
-      if (0 != fcntl (socket_fd, F_SETFL, sk_flags | O_NONBLOCK))
-        goto thread_failed;
-#else
-      sk_flags = 1;
-      if (SOCKET_ERROR == ioctlsocket (socket_fd, FIONBIO, &sk_flags))
-        goto thread_failed;
-#endif /* MHD_WINSOCK_SOCKETS */
 
       /* Allocate memory for pooled objects */
       daemon->worker_pool = malloc (sizeof (struct MHD_Daemon)

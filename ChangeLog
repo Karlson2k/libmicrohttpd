@@ -1,3 +1,7 @@
+Tue Jan 19 20:59:59 CET 2016
+	Cleaned up and optimized with minor fixes code for
+	making sockets non-blocking non-inheritable. -EG
+
 Tue Jan 19 11:14:18 CET 2016
 	Removed workaround for Cygwin non-blocking sockets:
 	handling non-blocking sockets were fixed in Cygwin
