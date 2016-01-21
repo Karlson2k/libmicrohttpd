@@ -184,10 +184,10 @@ make_nonblocking (struct MHD_Daemon *daemon,
 #else  /* MHD_POSIX_SOCKETS */
   int flags;
 
-  flags = fcntl (sock, F_GETFD);
+  flags = fcntl (sock, F_GETFL);
   if ( ( (-1 == flags) ||
 	 ( (flags != (flags | O_NONBLOCK)) &&
-	   (0 != fcntl (sock, F_SETFD, flags | O_NONBLOCK)) ) ) )
+	   (0 != fcntl (sock, F_SETFL, flags | O_NONBLOCK)) ) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -1904,24 +1904,8 @@ static void
 make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 MHD_socket sock)
 {
-#ifdef MHD_WINSOCK_SOCKETS
   (void)make_nonblocking (daemon, sock);
   (void)make_noninheritable (daemon, sock);
-#else
-  int flags;
-
-  flags = fcntl (sock, F_GETFD);
-  if ( ( (-1 == flags) ||
-	 ( (flags != (flags | O_NONBLOCK | FD_CLOEXEC)) &&
-	   (0 != fcntl (sock, F_SETFD, flags | O_NONBLOCK | FD_CLOEXEC)) ) ) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		"Failed to make socket non-blocking non-inheritable: %s\n",
-		MHD_socket_last_strerr_ ());
-#endif
-    }
-#endif
 }
 
 
