@@ -103,17 +103,25 @@
 #endif
 #endif
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC 0
-#endif
+#ifdef SOCK_CLOEXEC
+#define MAYBE_SOCK_CLOEXEC SOCK_CLOEXEC
+#else  /* ! SOCK_CLOEXEC */
+#define MAYBE_SOCK_CLOEXEC 0
+#endif /* ! SOCK_CLOEXEC */
 
-#ifndef EPOLL_CLOEXEC
-#define EPOLL_CLOEXEC 0
-#endif
+#ifdef HAVE_SOCK_NONBLOCK
+#define MAYBE_SOCK_NONBLOCK SOCK_NONBLOCK
+#else  /* ! HAVE_SOCK_NONBLOCK */
+#define MAYBE_SOCK_NONBLOCK 0
+#endif /* ! HAVE_SOCK_NONBLOCK */
 
-#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || (SOCK_CLOEXEC+0 != 0))
+#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || defined(SOCK_CLOEXEC))
 #define USE_ACCEPT4 1
 #endif
+
+#if defined(HAVE_EPOLL_CREATE1) && defined(EPOLL_CLOEXEC)
+#define USE_EPOLL_CREATE1 1
+#endif /* HAVE_EPOLL_CREATE1 && EPOLL_CLOEXEC */
 
 
 /**
@@ -1980,20 +1988,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   socklen_t addrlen;
   MHD_socket s;
   MHD_socket fd;
-#ifdef USE_ACCEPT4
-#ifdef HAVE_SOCK_NONBLOCK
-  static const int nonblock = SOCK_NONBLOCK;
-#else
-  static const int nonblock = 0;
-#endif
-#endif /* USE_ACCEPT4 */
 
   addrlen = sizeof (addrstorage);
   memset (addr, 0, sizeof (addrstorage));
   if (MHD_INVALID_SOCKET == (fd = daemon->socket_fd))
     return MHD_NO;
 #ifdef USE_ACCEPT4
-  s = accept4 (fd, addr, &addrlen, SOCK_CLOEXEC | nonblock);
+  s = accept4 (fd, addr, &addrlen, MAYBE_SOCK_CLOEXEC | MAYBE_SOCK_NONBLOCK);
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd, addr, &addrlen);
 #endif /* ! USE_ACCEPT4 */
@@ -2022,7 +2023,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   make_nonblocking_noninheritable (daemon, s);
 #elif !defined(HAVE_SOCK_NONBLOCK)
   make_nonblocking (daemon, s);
-#elif SOCK_CLOEXEC+0 == 0
+#elif !defined(SOCK_CLOEXEC)
   make_noninheritable (daemon, s);
 #endif
 #ifdef HAVE_MESSAGES
@@ -3564,7 +3565,7 @@ create_listen_socket (struct MHD_Daemon *daemon,
 
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
-#if defined(MHD_POSIX_SOCKETS) && SOCK_CLOEXEC+0 != 0
+#if defined(MHD_POSIX_SOCKETS) && defined(SOCK_CLOEXEC)
   fd = socket (domain, type | SOCK_CLOEXEC, protocol);
   cloexec_set = MHD_YES;
 #elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
@@ -3600,11 +3601,11 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
 
-#ifdef HAVE_EPOLL_CREATE1
+#ifdef USE_EPOLL_CREATE1
   daemon->epoll_fd = epoll_create1 (EPOLL_CLOEXEC);
-#else  /* !HAVE_EPOLL_CREATE1 */
+#else  /* ! USE_EPOLL_CREATE1 */
   daemon->epoll_fd = epoll_create (MAX_EVENTS);
-#endif /* !HAVE_EPOLL_CREATE1 */
+#endif /* ! USE_EPOLL_CREATE1 */
   if (-1 == daemon->epoll_fd)
     {
 #ifdef HAVE_MESSAGES
@@ -3614,10 +3615,10 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
-#if !defined(HAVE_EPOLL_CREATE1) || EPOLL_CLOEXEC+0 == 0
+#if !defined(USE_EPOLL_CREATE1)
   make_noninheritable (daemon,
                        daemon->epoll_fd);
-#endif /* !HAVE_EPOLL_CREATE1 || !EPOLL_CLOEXEC */
+#endif /* ! USE_EPOLL_CREATE1 */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;

@@ -1,3 +1,11 @@
+Thu Jan 21 19:35:18 CET 2016
+	Fixed old bug with making sockets non-blocking on
+	various platforms so now sockets are really
+	non-blocking on all supported platforms.
+	Reworked and fixed code for using SOCK_CLOEXEC,
+	SOCK_NONBLOCK and EPOLL_CLOEXEC resulting in
+	fewer used system calls. -EG
+
 Tue Jan 19 20:59:59 CET 2016
 	Cleaned up and optimized with minor fixes code for
 	making sockets non-blocking non-inheritable. -EG
