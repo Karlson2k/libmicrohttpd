@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2008 Christian Grothoff
+     Copyright (C) 2008,2016 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -58,7 +58,6 @@ zzuf_socat_start ()
     "--ratio=0.0:0.75",
     "-n",
     "-A",
-    "--",
     "socat",
     "-lf",
     "/dev/null",
