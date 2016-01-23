@@ -411,6 +411,14 @@ testExternalGet ()
         c = setupCURL (&cbc);
         multi = curl_multi_init ();
         mret = curl_multi_add_handle (multi, c);
+        if (mret != CURLM_OK)
+        {
+          curl_multi_remove_handle (multi, c);
+          curl_multi_cleanup (multi);
+          curl_easy_cleanup (c);
+          MHD_stop_daemon (d);
+          return 32768;
+        }
       }
     }
   if (multi != NULL)
