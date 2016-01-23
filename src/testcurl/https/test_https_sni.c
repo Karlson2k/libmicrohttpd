@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2013 Christian Grothoff
+  Copyright (C) 2013, 2016 Christian Grothoff
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -271,12 +271,14 @@ main (int argc, char *const *argv)
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
-  error_count += do_get ("https://host1:4233/");
-  error_count += do_get ("https://host2:4233/");
+  if (0 != do_get ("https://host1:4233/"))
+    error_count++;
+  if (0 != do_get ("https://host2:4233/"))
+    error_count++;
 
   MHD_stop_daemon (d);
   curl_global_cleanup ();
-  return error_count != 0;
+  return (0 != error_count) ? 1 : 0;
 }
 
 
