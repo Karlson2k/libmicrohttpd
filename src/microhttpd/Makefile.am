@@ -140,6 +140,7 @@ endif
 
 
 check_PROGRAMS = \
+  test_shutdown_select \
   test_daemon
 
 if HAVE_POSTPROCESSOR
@@ -150,6 +151,11 @@ check_PROGRAMS += \
 endif
 
 TESTS = $(check_PROGRAMS)
+
+if !HAVE_LISTEN_SHUTDOWN
+XFAIL_TESTS = \
+  test_shutdown_select
+endif
 
 test_daemon_SOURCES = \
   test_daemon.c
@@ -178,3 +184,12 @@ test_postprocessor_large_CPPFLAGS = \
 test_postprocessor_large_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_W32_LIB)
+
+test_shutdown_select_SOURCES = \
+  test_shutdown_select.c
+if USE_POSIX_THREADS
+test_shutdown_select_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_select_LDADD = \
+  $(PTHREAD_LIBS)
+endif

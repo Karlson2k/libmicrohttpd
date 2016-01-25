@@ -1,3 +1,7 @@
+Mon Jan 25 13:45:50 CET 2016
+	Added check test for triggering select() on
+	listen socket. -EG
+
 Thu Jan 21 19:35:18 CET 2016
 	Fixed old bug with making sockets non-blocking on
 	various platforms so now sockets are really

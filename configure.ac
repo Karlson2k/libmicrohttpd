@@ -141,6 +141,7 @@ AC_MSG_RESULT([[$inln_prfx]])
 CFLAGS="$save_CFLAGS"
 
 # Check system type
+shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])
 case "$host_os" in
 *darwin* | *rhapsody* | *macosx*)
@@ -177,14 +178,14 @@ netbsd*)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
-     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
+     shutdown_trig_select='yes'
      mhd_host_os='ARM Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
      CFLAGS="-fPIC -pipe $CFLAGS"
      ;;
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
-     AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
+     shutdown_trig_select='yes'
      mhd_host_os='Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
@@ -232,6 +233,9 @@ netbsd*)
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
 ;;
 esac
+
+AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$shutdown_trig_select" = "xyes"])
+AS_IF([test "x$shutdown_trig_select" = "xyes"], [AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
