@@ -14,7 +14,7 @@ answer_to_connection(void *cls,
                      size_t *upload_data_size,
                      void **con_cls)
 {
-  const char *page = "<html><body>Hello world!</body></html>";
+  const char *page = "<html><body>Hello timeout!</body></html>";
   struct MHD_Response *response;
   int ret;
 
@@ -36,8 +36,7 @@ int main()
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon(// MHD_USE_SELECT_INTERNALLY |
-                            MHD_USE_THREAD_PER_CONNECTION, // if you comment this line, the problem dies
+  daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
                             PORT, NULL, NULL,
                             &answer_to_connection, NULL,
                             MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 3,
