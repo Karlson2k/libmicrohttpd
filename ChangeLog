@@ -1,3 +1,6 @@
+Sat Jan 30 15:49:07 CET 2016
+	Fix running select() with empty fdsets on W32. -EG
+
 Mon Jan 25 13:45:50 CET 2016
 	Added check test for triggering select() on
 	listen socket. -EG
