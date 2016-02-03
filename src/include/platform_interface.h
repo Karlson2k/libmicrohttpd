@@ -161,12 +161,12 @@ typedef int _MHD_socket_funcs_size;
 #define MHD_pipe_write_(fd, ptr, sz) send((fd), (const char*)(ptr), (sz), 0)
 #endif
 
-/* MHD_pipe_read_ read data from real pipe (!MHD_DONT_USE_PIPES) /
- *                read data from emulated pipe (MHD_DONT_USE_PIPES) */
+/* MHD_pipe_drain_ drain data from real pipe (!MHD_DONT_USE_PIPES) /
+ *                drain data from emulated pipe (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
-#define MHD_pipe_read_(fd, ptr, sz) read((fd), (void*)(ptr), (sz))
+#define MHD_pipe_drain_(fd) do { char tmp; while (0 < read((fd), &tmp, sizeof (tmp))) ; } while (0)
 #else
-#define MHD_pipe_read_(fd, ptr, sz) recv((fd), (char*)(ptr), (sz), 0)
+#define MHD_pipe_drain_(fd) do { char tmp; while (0 < recv((fd), &tmp, sizeof (tmp))) ; } while (0)
 #endif
 
 /* MHD_pipe_close_(fd) close any FDs (non-W32) /

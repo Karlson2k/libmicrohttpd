@@ -1,3 +1,6 @@
+Wed Feb  3 15:41:57 CET 2016
+	Make signal-pipe non-blocking and drain it. -CG
+
 Sat Jan 30 15:49:07 CET 2016
 	Fix running select() with empty fdsets on W32. -EG
 

@@ -962,7 +962,7 @@ MHD_handle_connection (void *data)
           /* drain signaling pipe */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
                (FD_ISSET (spipe, &rs)) )
-            (void) MHD_pipe_read_ (spipe, &tmp, sizeof (tmp));
+            MHD_pipe_drain_ (spipe);
 #endif
 	  /* call appropriate connection handler if necessary */
 	  if ( (FD_ISSET (con->socket_fd, &rs))
@@ -1034,7 +1034,7 @@ MHD_handle_connection (void *data)
           /* drain signaling pipe */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP))) )
-            (void) MHD_pipe_read_ (spipe, &tmp, sizeof (tmp));
+            MHD_pipe_drain_ (spipe);
 #endif
 	  if ( (0 != (p[0].revents & POLLIN))
 #if HTTPS_SUPPORT
@@ -2247,7 +2247,6 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 		     const fd_set *except_fd_set)
 {
   MHD_socket ds;
-  char tmp;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY |
@@ -2277,7 +2276,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   /* drain signaling pipe to avoid spinning select */
   if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
        (FD_ISSET (daemon->wpipe[0], read_fd_set)) )
-    (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
+    MHD_pipe_drain_ (daemon->wpipe[0]);
 
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -2496,7 +2495,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     unsigned int poll_server;
     int poll_listen;
     int poll_pipe;
-    char tmp;
     struct pollfd *p;
 
     p = malloc(sizeof (struct pollfd) * (2 + num_connections));
@@ -2640,7 +2638,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     /* handle pipe FD */
     if ( (-1 != poll_pipe) &&
          (0 != (p[poll_pipe].revents & POLLIN)) )
-      (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
+      MHD_pipe_drain_ (daemon->wpipe[0]);
 
     free(p);
   }
@@ -2768,7 +2766,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int num_events;
   unsigned int i;
   unsigned int series_length;
-  char tmp;
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -2850,7 +2847,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
           if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
                (daemon->wpipe[0] == events[i].data.fd) )
             {
-              (void) MHD_pipe_read_ (daemon->wpipe[0], &tmp, sizeof (tmp));
+              MHD_pipe_drain_ (daemon->wpipe[0]);
               continue;
             }
 	  if (daemon != events[i].data.ptr)
@@ -3778,6 +3775,8 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
+  make_nonblocking (daemon, daemon->wpipe[0]);
+  make_nonblocking (daemon, daemon->wpipe[1]);
 #ifndef MHD_WINSOCK_SOCKETS
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
        (1 == use_pipe) &&
