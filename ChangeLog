@@ -1,3 +1,7 @@
+Thu Feb  4 11:38:11 CET 2016
+	Added some buffer overrun protection.
+	Fixed handling of misformed URI with spaces. -EG
+
 Wed Feb  3 15:41:57 CET 2016
 	Make signal-pipe non-blocking and drain it. -CG
 

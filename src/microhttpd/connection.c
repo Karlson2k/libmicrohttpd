@@ -1328,10 +1328,13 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
  * return NULL.  Otherwise return a pointer to the line.
  *
  * @param connection connection we're processing
+ * @param[out] line_len pointer to variable that receive
+ *                      length of line or NULL
  * @return NULL if no full line is available
  */
 static char *
-get_next_header_line (struct MHD_Connection *connection)
+get_next_header_line (struct MHD_Connection *connection,
+                      size_t *line_len)
 {
   char *rbuf;
   size_t pos;
@@ -1357,8 +1360,13 @@ get_next_header_line (struct MHD_Connection *connection)
 				   : MHD_HTTP_REQUEST_URI_TOO_LONG,
 				   REQUEST_TOO_BIG);
 	}
+      if (line_len)
+        *line_len = 0;
       return NULL;
     }
+
+  if (line_len)
+    *line_len = pos;
   /* found, check if we have proper LFCR */
   if (('\r' == rbuf[pos]) && ('\n' == rbuf[pos + 1]))
     rbuf[pos++] = '\0';         /* skip both r and n */
@@ -1512,11 +1520,13 @@ parse_cookie_header (struct MHD_Connection *connection)
  *
  * @param connection the connection (updated)
  * @param line the first line
+ * @param line_len length of the first line
  * @return #MHD_YES if the line is ok, #MHD_NO if it is malformed
  */
 static int
 parse_initial_message_line (struct MHD_Connection *connection,
-                            char *line)
+                            char *line,
+                            size_t line_len)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   char *uri;
@@ -1524,25 +1534,48 @@ parse_initial_message_line (struct MHD_Connection *connection,
   char *args;
   unsigned int unused_num_headers;
 
-  if (NULL == (uri = strchr (line, ' ')))
+  if (NULL == (uri = memchr (line, ' ', line_len)))
     return MHD_NO;              /* serious error */
   uri[0] = '\0';
   connection->method = line;
   uri++;
-  while (' ' == uri[0])
+  /* Skip any spaces. Not required by standard but allow
+     to be more tolerant. */
+  while (' ' == uri[0] && (size_t)(uri - line) < line_len)
     uri++;
-  http_version = strchr (uri, ' ');
-  if (NULL != http_version)
+  if (uri - line == line_len)
     {
-      http_version[0] = '\0';
-      http_version++;
+      uri = "";
+      connection->version = "";
+      args = NULL;
+    }
+  else
+    {
+      /* Search from back to accept misformed URI with space */
+      http_version = line + line_len - 1;
+      /* Skip any trailing spaces */
+      while (' ' == http_version[0] && http_version > uri)
+        http_version--;
+      /* Find first space in reverse direction */
+      while (' ' != http_version[0] && http_version > uri)
+        http_version--;
+      if (http_version > uri)
+        {
+          http_version[0] = '\0';
+          connection->version = http_version + 1;
+          args = memchr(uri, '?', http_version - uri);
+        }
+      else
+        {
+          connection->version = "";
+          args = memchr(uri, '?', line_len - (uri - line));
+        }
     }
   if (NULL != daemon->uri_log_callback)
     connection->client_context
       = daemon->uri_log_callback (daemon->uri_log_callback_cls,
 				  uri,
 				  connection);
-  args = strchr (uri, '?');
   if (NULL != args)
     {
       args[0] = '\0';
@@ -1558,10 +1591,6 @@ parse_initial_message_line (struct MHD_Connection *connection,
 			     connection,
 			     uri);
   connection->url = uri;
-  if (NULL == http_version)
-    connection->version = "";
-  else
-    connection->version = http_version;
   return MHD_YES;
 }
 
@@ -2416,6 +2445,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   unsigned int timeout;
   const char *end;
   char *line;
+  size_t line_len;
   int client_close;
 
   connection->in_idle = MHD_YES;
@@ -2430,7 +2460,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       switch (connection->state)
         {
         case MHD_CONNECTION_INIT:
-          line = get_next_header_line (connection);
+          line = get_next_header_line (connection, &line_len);
           /* Check for empty string, as we might want
              to tolerate 'spurious' empty lines; also
              NULL means we didn't get a full line yet. */
@@ -2447,13 +2477,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 }
               break;
             }
-          if (MHD_NO == parse_initial_message_line (connection, line))
+          if (MHD_NO == parse_initial_message_line (connection, line, line_len))
             CONNECTION_CLOSE_ERROR (connection, NULL);
           else
             connection->state = MHD_CONNECTION_URL_RECEIVED;
           continue;
         case MHD_CONNECTION_URL_RECEIVED:
-          line = get_next_header_line (connection);
+          line = get_next_header_line (connection, NULL);
           if (NULL == line)
             {
               if (MHD_CONNECTION_URL_RECEIVED != connection->state)
@@ -2481,7 +2511,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->state = MHD_CONNECTION_HEADER_PART_RECEIVED;
           continue;
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
-          line = get_next_header_line (connection);
+          line = get_next_header_line (connection, NULL);
           if (NULL == line)
             {
               if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
@@ -2571,7 +2601,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           break;
         case MHD_CONNECTION_BODY_RECEIVED:
-          line = get_next_header_line (connection);
+          line = get_next_header_line (connection, NULL);
           if (NULL == line)
             {
               if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
@@ -2599,7 +2629,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
           continue;
         case MHD_CONNECTION_FOOTER_PART_RECEIVED:
-          line = get_next_header_line (connection);
+          line = get_next_header_line (connection, NULL);
           if (NULL == line)
             {
               if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
