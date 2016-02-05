@@ -62,8 +62,15 @@
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif /* HAVE_SYS_SELECT_H */
+#if defined(HAVE_POLL) && defined(HAVE_POLL_H)
+#include <poll.h>
+#endif /* HAVE_POLL && HAVE_POLL_H */
 #define sock_errno (errno)
 #endif /* MHD_POSIX_SOCKETS */
+
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif /* HAVE_STDBOOL_H */
 
 #ifndef SOMAXCONN
 #define SOMAXCONN 511
@@ -73,6 +80,33 @@
 #define SHUT_RDWR SD_BOTH
 #endif
 
+static _MHD_bool check_err;
+
+static _MHD_bool
+has_in_name(const char *prog_name, const char *marker)
+{
+  size_t name_pos;
+  size_t pos;
+
+  if (!prog_name || !marker)
+    return 0;
+
+  pos = 0;
+  name_pos = 0;
+  while (prog_name[pos])
+    {
+      if ('/' == prog_name[pos])
+        name_pos = pos + 1;
+#ifdef _WIN32
+      else if ('\\' == prog_name[pos])
+        name_pos = pos + 1;
+#endif /* _WIN32 */
+      pos++;
+    }
+  if (name_pos == pos)
+    return !0;
+  return strstr(prog_name + name_pos, marker) != NULL;
+}
 
 static MHD_socket
 start_socket_listen(int domain)
@@ -190,10 +224,29 @@ select_thread(void* data)
   timeout.tv_usec = 0;
   timeout.tv_sec = 7;
 
-  MHD_SYS_select_(listen_sock + 1, &rs, &ws, NULL, &timeout);
+  check_err = (0 > MHD_SYS_select_(listen_sock + 1, &rs, &ws, NULL, &timeout));
 
   return (MHD_THRD_RTRN_TYPE_)0;
 }
+
+
+#ifdef HAVE_POLL
+MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
+poll_thread(void* data)
+{
+  /* use poll() like in daemon.c */
+  struct pollfd p[1];
+  MHD_socket listen_sock = *((MHD_socket*)data);
+
+  p[0].fd = listen_sock;
+  p[0].events = POLLIN;
+  p[0].revents = 0;
+
+  check_err = (0 > MHD_sys_poll_ (p, 1, 7000));
+
+  return (MHD_THRD_RTRN_TYPE_)0;
+}
+#endif /* HAVE_POLL */
 
 
 static void
@@ -217,11 +270,27 @@ main (int argc, char *const *argv)
   int i;
   time_t start_t, end_t;
   int result = 0;
-
+  MHD_THRD_RTRN_TYPE_ (MHD_THRD_CALL_SPEC_ *test_func)(void* data);
 #ifdef MHD_WINSOCK_SOCKETS
   WORD ver_req;
   WSADATA wsa_data;
   int err;
+#endif /* MHD_WINSOCK_SOCKETS */
+  _MHD_bool test_poll;
+
+  test_poll = has_in_name(argv[0], "_poll");
+  if (!test_poll)
+    test_func = &select_thread;
+  else
+    {
+#ifndef HAVE_POLL
+      return 77;
+#else  /* ! HAVE_POLL */
+      test_func = &poll_thread;
+#endif /* ! HAVE_POLL */
+    }
+
+#ifdef MHD_WINSOCK_SOCKETS
   ver_req = MAKEWORD(2, 2);
 
   err = WSAStartup(ver_req, &wsa_data);
@@ -239,21 +308,22 @@ main (int argc, char *const *argv)
   for (i = 0; i < 5 && result == 0; i++)
     {
       MHD_thread_handle_ sel_thrd;
-       /* fprint f(stdout, "Creating, binding and listening socket...\n"); */
+      /* fprintf(stdout, "Creating, binding and listening socket...\n"); */
       MHD_socket listen_socket = start_socket_listen (AF_INET);
       if (MHD_INVALID_SOCKET == listen_socket)
         return 99;
 
+      check_err = !0;
       /* fprintf (stdout, "Starting select() thread...\n"); */
 #if defined(MHD_USE_POSIX_THREADS)
-      if (0 != pthread_create (&sel_thrd, NULL, &select_thread, &listen_socket))
+      if (0 != pthread_create (&sel_thrd, NULL, test_func, &listen_socket))
         {
           MHD_socket_close_ (listen_socket);
           fprintf (stderr, "Can't start thread\n");
           return 99;
         }
 #elif defined(MHD_USE_W32_THREADS)
-      sel_thrd = (HANDLE)_beginthreadex (NULL, 0, &select_thread, &listen_socket, 0, NULL);
+      sel_thrd = (HANDLE)_beginthreadex (NULL, 0, test_func, &listen_socket, 0, NULL);
       if (0 == (sel_thrd))
         {
           MHD_socket_close_ (listen_socket);
@@ -275,6 +345,12 @@ main (int argc, char *const *argv)
         {
           MHD_socket_close_(listen_socket);
           fprintf (stderr, "Can't join select() thread\n");
+          return 99;
+        }
+      if (check_err)
+        {
+          MHD_socket_close_(listen_socket);
+          fprintf (stderr, "Error in waiting thread\n");
           return 99;
         }
       end_t = time (NULL);
