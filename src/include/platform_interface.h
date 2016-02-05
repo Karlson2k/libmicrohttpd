@@ -166,7 +166,7 @@ typedef int _MHD_socket_funcs_size;
 #ifndef MHD_DONT_USE_PIPES
 #define MHD_pipe_drain_(fd) do { char tmp; while (0 < read((fd), &tmp, sizeof (tmp))) ; } while (0)
 #else
-#define MHD_pipe_drain_(fd) do { char tmp; while (0 < recv((fd), &tmp, sizeof (tmp))) ; } while (0)
+#define MHD_pipe_drain_(fd) do { char tmp; while (0 < recv((fd), &tmp, sizeof (tmp), 0)) ; } while (0)
 #endif
 
 /* MHD_pipe_close_(fd) close any FDs (non-W32) /
