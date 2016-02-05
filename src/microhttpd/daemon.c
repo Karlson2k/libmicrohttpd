@@ -3765,7 +3765,9 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   if (0 == (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     use_pipe = 0; /* useless if we are using 'external' select */
-  if ( (use_pipe) && (0 != MHD_pipe_ (daemon->wpipe)) )
+  if (use_pipe)
+  { 
+    if (0 != MHD_pipe_ (daemon->wpipe))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -3775,8 +3777,9 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-  make_nonblocking (daemon, daemon->wpipe[0]);
-  make_nonblocking (daemon, daemon->wpipe[1]);
+    make_nonblocking (daemon, daemon->wpipe[0]);
+    make_nonblocking (daemon, daemon->wpipe[1]);
+  }
 #ifndef MHD_WINSOCK_SOCKETS
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
        (1 == use_pipe) &&
