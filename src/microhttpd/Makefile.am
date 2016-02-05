@@ -199,8 +199,8 @@ endif
 test_shutdown_poll_SOURCES = \
   test_shutdown_select.c
 if USE_POSIX_THREADS
-test_shutdown_poll_CFLAGS = \
-  test_shutdown_select_CFLAGS
-test_shutdown_poll_LDADD = \
-  test_shutdown_select_LDADD
+test_shutdown_select_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_select_LDADD = \
+  $(PTHREAD_LIBS)
 endif
