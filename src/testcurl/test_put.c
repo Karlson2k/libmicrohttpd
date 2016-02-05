@@ -301,7 +301,12 @@ testExternalPut ()
   fd_set rs;
   fd_set ws;
   fd_set es;
-  MHD_socket max;
+  MHD_socket maxsock;
+#ifdef MHD_WINSOCK_SOCKETS
+  int maxposixs; /* Max socket number unused on W32 */
+#else  /* MHD_POSIX_SOCKETS */
+#define maxposixs maxsock
+#endif /* MHD_POSIX_SOCKETS */
   int running;
   struct CURLMsg *msg;
   time_t start;
@@ -357,12 +362,13 @@ testExternalPut ()
   start = time (NULL);
   while ((time (NULL) - start < 5) && (multi != NULL))
     {
-      max = 0;
+      maxsock = MHD_INVALID_SOCKET;
+      maxposixs = -1;
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
       curl_multi_perform (multi, &running);
-      mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
+      mret = curl_multi_fdset (multi, &rs, &ws, &es, &maxposixs);
       if (mret != CURLM_OK)
         {
           curl_multi_remove_handle (multi, c);
@@ -371,7 +377,7 @@ testExternalPut ()
           MHD_stop_daemon (d);
           return 2048;
         }
-      if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
+      if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxsock))
         {
           curl_multi_remove_handle (multi, c);
           curl_multi_cleanup (multi);
@@ -381,7 +387,7 @@ testExternalPut ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (max + 1, &rs, &ws, &es, &tv);
+      select (maxposixs + 1, &rs, &ws, &es, &tv);
       curl_multi_perform (multi, &running);
       if (running == 0)
         {

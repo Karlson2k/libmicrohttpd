@@ -93,7 +93,12 @@ main(int argc, char **argv)
   fd_set rs;
   fd_set ws;
   fd_set es;
-  MHD_socket max;
+  MHD_socket maxsock;
+#ifdef MHD_WINSOCK_SOCKETS
+  int maxposixs; /* Max socket number unused on W32 */
+#else  /* MHD_POSIX_SOCKETS */
+#define maxposixs maxsock
+#endif /* MHD_POSIX_SOCKETS */
   CURL *c;
   CURLM *multi;
   CURLMcode mret;
@@ -135,14 +140,15 @@ main(int argc, char **argv)
   extra = 10;
   while ( (c != NULL) || (--extra > 0) )
     {
-      max = MHD_INVALID_SOCKET;
+      maxsock = MHD_INVALID_SOCKET;
+      maxposixs = -1;
       FD_ZERO(&ws);
       FD_ZERO(&rs);
       FD_ZERO(&es);
       curl_multi_perform (multi, &running);
       if (NULL != multi)
 	{
-	  mret = curl_multi_fdset (multi, &rs, &ws, &es, &max);
+	  mret = curl_multi_fdset (multi, &rs, &ws, &es, &maxposixs);
 	  if (mret != CURLM_OK)
 	    {
 	      curl_multi_remove_handle (multi, c);
@@ -153,7 +159,7 @@ main(int argc, char **argv)
 	    }
 	}
       if (MHD_YES !=
-	  MHD_get_fdset(d, &rs, &ws, &es, &max))
+	  MHD_get_fdset(d, &rs, &ws, &es, &maxsock))
 	{
           curl_multi_remove_handle (multi, c);
           curl_multi_cleanup (multi);
@@ -163,7 +169,7 @@ main(int argc, char **argv)
 	}
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select(max + 1, &rs, &ws, &es, &tv);
+      select(maxposixs + 1, &rs, &ws, &es, &tv);
       if (NULL != multi)
 	{
 	  curl_multi_perform (multi, &running);
