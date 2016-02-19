@@ -20,7 +20,12 @@
 
 /**
  * @file microhttpd/test_shutdown_select.c
- * @brief  Test whether shutdown socket triggers select
+ * @brief  Test whether shutdown socket triggers select()/poll()
+ * @details On some platforms shutting down the socket in one thread
+ *          trigger select() or poll() waiting for this socket in
+ *          other thread. libmicrohttpd depend on this behavior on
+ *          those platforms. This program check whether select()
+ *          and poll() (if available) works as expected.
  * @author Karlson2k (Evgeny Grin)
  */
 
