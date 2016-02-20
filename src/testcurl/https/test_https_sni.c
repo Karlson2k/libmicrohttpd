@@ -256,7 +256,7 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return -1;
+      return 77;
     }
   load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
   load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
@@ -288,6 +288,6 @@ int main ()
 {
   fprintf (stderr,
            "SNI not supported by GnuTLS < 3.0\n");
-  return 0;
+  return 77;
 }
 #endif

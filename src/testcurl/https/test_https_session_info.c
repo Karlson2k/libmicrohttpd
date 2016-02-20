@@ -1,6 +1,6 @@
 /*
  This file is part of libmicrohttpd
- Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2007, 2016 Christian Grothoff
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -168,6 +168,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  const char *ssl_version;
 
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
@@ -178,6 +179,18 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error (code: %u)\n", errorCount);
       return -1;
     }
+
+  ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == ssl_version)
+  {
+    fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+    return 77;
+  }
+  if (0 != strncmp (ssl_version, "GnuTLS", 6))
+  {
+    fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
+    return 77;
+  }
 #if LIBCURL_VERSION_NUM >= 0x072200
   errorCount += test_query_session ();
 #endif

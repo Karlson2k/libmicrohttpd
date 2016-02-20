@@ -1,17 +1,17 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2007, 2010 Christian Grothoff
-  
+  Copyright (C) 2007, 2010, 2016 Christian Grothoff
+
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; either version 2, or (at your
   option) any later version.
-  
+
   libmicrohttpd is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with libmicrohttpd; see the file COPYING.  If not, write to the
   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
@@ -92,24 +92,24 @@ main (int argc, char *const *argv)
 #endif
  if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
-      return 0;
+      return 77;
     }
   ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
   if (NULL == ssl_version)
   {
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
-    return 0;
+    return 77;
   }
   if (0 != strncmp (ssl_version, "GnuTLS", 6))
   {
     fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
-    return 0;
+    return 77;
   }
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return 0; 
+      return 77;
     }
 
   const char *aes128_sha = "AES128-SHA";
@@ -119,9 +119,9 @@ main (int argc, char *const *argv)
       aes128_sha = "rsa_aes_128_sha";
       aes256_sha = "rsa_aes_256_sha";
     }
-  
 
-  if (0 != 
+
+  if (0 !=
     test_wrap ("TLS1.0-AES-SHA1",
 	       &test_https_transfer, NULL, daemon_flags,
 	       aes128_sha,
