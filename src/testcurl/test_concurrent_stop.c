@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2011, 2015 Christian Grothoff
+     Copyright (C) 2007, 2009, 2011, 2015, 2016 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -149,8 +149,12 @@ do_gets (int port)
 	  _exit (0);
 	}
     }
+  sleep (1);
   for (j=0;j<PAR;j++)
+  {
+    kill (par[j], SIGKILL);
     waitpid (par[j], NULL, 0);
+  }
   _exit (0);
 }
 
@@ -175,7 +179,10 @@ testMultithreadedGet (int port,
   pid_t p;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG  | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port,
+                        NULL, NULL,
+                        &ahc_echo, "GET",
+                        MHD_OPTION_END);
   if (d == NULL)
     return 16;
   p = do_gets (port);
