@@ -34,7 +34,10 @@
 #ifndef MHD_PLATFORM_H
 #define MHD_PLATFORM_H
 
+#ifndef HAVE_USED_MHD_CONFIG_H
+#define HAVE_USED_MHD_CONFIG_H
 #include "MHD_config.h"
+#endif
 
 #ifndef BUILDING_MHD_LIB
 #ifdef _MHD_EXTERN
@@ -43,7 +46,7 @@
 #if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
 #elif defined (_WIN32) && defined(MHD_W32DLL)
-#define _MHD_EXTERN __declspec(dllimport) 
+#define _MHD_EXTERN __declspec(dllimport)
 #else
 #define _MHD_EXTERN extern
 #endif
@@ -51,7 +54,7 @@
 #if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
 #elif defined (_WIN32) && defined(MHD_W32DLL)
-#define _MHD_EXTERN extern __declspec(dllexport) 
+#define _MHD_EXTERN extern __declspec(dllexport)
 #else
 #define _MHD_EXTERN extern
 #endif

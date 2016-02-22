@@ -148,12 +148,14 @@ case "$host_os" in
      AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
      mhd_host_os='Darwin'
+     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
+     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 openbsd*)
@@ -493,7 +495,7 @@ AC_CHECK_DECL([gmtime_s],
              extern "C"
              #endif
              struct tm* gmtime_s(const time_t* time, struct tm* result);
-           ]], [[ 
+           ]], [[
              struct tm res;
              time_t t;
              gmtime_s (&t, &res);
@@ -513,7 +515,7 @@ AC_CHECK_DECL([gmtime_s],
                  extern "C"
                  #endif
                  errno_t gmtime_s(struct tm* _tm, const time_t* time);
-              ]], [[ 
+              ]], [[
                  struct tm res;
                  time_t t;
                  gmtime_s (&res, &t);
@@ -526,7 +528,7 @@ AC_CHECK_DECL([gmtime_s],
             [AC_MSG_RESULT([[no]])
             ])
         ])
-  ], [], 
+  ], [],
   [[#define __STDC_WANT_LIB_EXT1__ 1
     #include<time.h>]])
 
