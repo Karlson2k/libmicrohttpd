@@ -153,12 +153,6 @@ endif
 
 TESTS = $(check_PROGRAMS)
 
-if !HAVE_LISTEN_SHUTDOWN
-XFAIL_TESTS = \
-  test_shutdown_select \
-  test_shutdown_poll
-endif
-
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
