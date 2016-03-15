@@ -1,3 +1,7 @@
+Tue Mar 15 20:29:34 CET 2016
+	Do not use eready DLL data structure unless
+	we are actually using epoll(). -DD/CG
+
 Fri Feb  5 20:43:11 CET 2016
 	Fixed testsuite compile warning on W32.
 	Added check test for triggering poll() on

@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2007-2014 Daniel Pittman and Christian Grothoff
+  Copyright (C) 2007-2016 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -2081,30 +2081,32 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                                    MHD_CONNECTION_NOTIFY_CLOSED);
       MHD_ip_limit_del (daemon, pos->addr, pos->addr_len);
 #if EPOLL_SUPPORT
-      if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-	{
-	  EDLL_remove (daemon->eready_head,
-		       daemon->eready_tail,
-		       pos);
-	  pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
-	}
-      if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
-	   (MHD_INVALID_SOCKET != daemon->epoll_fd) &&
-	   (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
-	{
-	  /* epoll documentation suggests that closing a FD
-	     automatically removes it from the epoll set; however,
-	     this is not true as if we fail to do manually remove it,
-	     we are still seeing an event for this fd in epoll,
-	     causing grief (use-after-free...) --- at least on my
-	     system. */
-	  if (0 != epoll_ctl (daemon->epoll_fd,
-			      EPOLL_CTL_DEL,
-			      pos->socket_fd,
-			      NULL))
-	    MHD_PANIC ("Failed to remove FD from epoll set\n");
-	  pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
-	}
+      if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
+        {
+          if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+            {
+              EDLL_remove (daemon->eready_head,
+                           daemon->eready_tail,
+                           pos);
+              pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+            }
+          if ( (MHD_INVALID_SOCKET != daemon->epoll_fd) &&
+               (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
+            {
+              /* epoll documentation suggests that closing a FD
+                 automatically removes it from the epoll set; however,
+                 this is not true as if we fail to do manually remove it,
+                 we are still seeing an event for this fd in epoll,
+                 causing grief (use-after-free...) --- at least on my
+                 system. */
+              if (0 != epoll_ctl (daemon->epoll_fd,
+                                  EPOLL_CTL_DEL,
+                                  pos->socket_fd,
+                                  NULL))
+                MHD_PANIC ("Failed to remove FD from epoll set\n");
+              pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
+            }
+        }
 #endif
       if (NULL != pos->response)
 	{
@@ -3766,7 +3768,7 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 == (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
     use_pipe = 0; /* useless if we are using 'external' select */
   if (use_pipe)
-  { 
+  {
     if (0 != MHD_pipe_ (daemon->wpipe))
     {
 #ifdef HAVE_MESSAGES

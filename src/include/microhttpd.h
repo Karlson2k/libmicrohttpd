@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00094802
+#define MHD_VERSION 0x00094803
 
 /**
  * MHD-internal return code for "YES".
