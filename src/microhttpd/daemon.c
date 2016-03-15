@@ -1283,7 +1283,8 @@ create_thread (MHD_thread_handle_ *thread,
   ret = pthread_create (thread, pattr,
 			start_routine, arg);
 #ifdef HAVE_PTHREAD_SETNAME_NP
-  (void) pthread_setname_np (*thread, "libmicrohttpd");
+  if (0 == ret)
+    (void) pthread_setname_np (*thread, "libmicrohttpd");
 #endif /* HAVE_PTHREAD_SETNAME_NP */
   if (0 != daemon->thread_stack_size)
     pthread_attr_destroy (&attr);

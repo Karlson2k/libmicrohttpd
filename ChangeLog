@@ -1,3 +1,6 @@
+Tue Mar 15 21:52:27 CET 2016
+	Do not crash if pthread_create() fails. -DD
+
 Tue Mar 15 20:29:34 CET 2016
 	Do not use eready DLL data structure unless
 	we are actually using epoll(). -DD/CG
