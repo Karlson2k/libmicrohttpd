@@ -1,13 +1,13 @@
 The most basic task for a HTTP server is to deliver a static text message to any client connecting to it.
 Given that this is also easy to implement, it is an excellent problem to start with.
 
-For now, the particular URI the client asks for shall have no effect on the message that will 
+For now, the particular URI the client asks for shall have no effect on the message that will
 be returned. In addition, the server shall end the connection after the message has been sent so that
 the client will know there is nothing more to expect.
 
 The C program @code{hellobrowser.c}, which is to be found in the examples section, does just that.
 If you are very eager, you can compile and start it right away but it is advisable to type the
-lines in by yourself as they will be discussed and explained in detail. 
+lines in by yourself as they will be discussed and explained in detail.
 
 After the necessary includes and the definition of the port which our server should listen on
 @verbatim
@@ -23,7 +23,7 @@ After the necessary includes and the definition of the port which our server sho
 @noindent
 the desired behaviour of our server when HTTP request arrive has to be implemented. We already have
 agreed that it should not care about the particular details of the request, such as who is requesting
-what. The server will respond merely with the same small HTML page to every request. 
+what. The server will respond merely with the same small HTML page to every request.
 
 The function we are going to write now will be called by @emph{GNU libmicrohttpd} every time an
 appropriate request comes in. While the name of this callback function is arbitrary, its parameter
@@ -39,10 +39,10 @@ daemon to sent the reply.
 
 Talking about the reply, it is defined as a string right after the function header
 @verbatim
-int answer_to_connection (void *cls, struct MHD_Connection *connection, 
-                          const char *url, 
-                          const char *method, const char *version, 
-                          const char *upload_data, 
+int answer_to_connection (void *cls, struct MHD_Connection *connection,
+                          const char *url,
+                          const char *method, const char *version,
+                          const char *upload_data,
                           size_t *upload_data_size, void **con_cls)
 {
   const char *page  = "<html><body>Hello, browser!</body></html>";
@@ -53,7 +53,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 HTTP is a rather strict protocol and the client would certainly consider it "inappropriate" if we
 just sent the answer string "as is". Instead, it has to be wrapped with additional information stored in so-called headers and footers.  Most of the work in this area is done by the library for us---we
 just have to ask. Our reply string packed in the necessary layers will be called a "response".
-To obtain such a response we hand our data (the reply--string) and its size over to the 
+To obtain such a response we hand our data (the reply--string) and its size over to the
 @code{MHD_create_response_from_buffer} function. The last two parameters basically tell @emph{MHD}
 that we do not want it to dispose the message data for us when it has been sent and there also needs
 no internal copy to be done because the @emph{constant} string won't change anyway.
@@ -68,11 +68,11 @@ no internal copy to be done because the @emph{constant} string won't change anyw
 @end verbatim
 
 @noindent
-Now that the the response has been laced up, it is ready for delivery and can be queued for sending. 
+Now that the the response has been laced up, it is ready for delivery and can be queued for sending.
 This is done by passing it to another @emph{GNU libmicrohttpd} function. As all our work was done in
 the scope of one function, the recipient is without doubt the one associated with the
-local variable @code{connection} and consequently this variable is given to the queue function. 
-Every HTTP response is accompanied by a status code, here "OK", so that the client knows 
+local variable @code{connection} and consequently this variable is given to the queue function.
+Every HTTP response is accompanied by a status code, here "OK", so that the client knows
 this response is the intended result of his request and not due to some error or malfunction.
 
 Finally, the packet is destroyed and the return value from the queue returned,
@@ -88,14 +88,14 @@ already being set at this point to either MHD_YES or MHD_NO in case of success o
 @end verbatim
 
 @noindent
-With the primary task of our server implemented, we can start the actual server daemon which will listen 
+With the primary task of our server implemented, we can start the actual server daemon which will listen
 on @code{PORT} for connections. This is done in the main function.
 @verbatim
 int main ()
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL, 
+  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
                              &answer_to_connection, NULL, MHD_OPTION_END);
   if (NULL == daemon) return 1;
 
@@ -121,7 +121,7 @@ main thread or else the program will terminate prematurely. We let it pause in a
 friendly manner by waiting for the enter key to be pressed. In the end, we stop the daemon so it can
 do its cleanup tasks.
 @verbatim
-  getchar (); 
+  getchar ();
 
   MHD_stop_daemon (daemon);
   return 0;
@@ -132,9 +132,9 @@ do its cleanup tasks.
 @noindent
 The first example is now complete.
 
-Compile it with 
+Compile it with
 @verbatim
-cc hellobrowser.c -o hellobrowser -I$PATH_TO_LIBMHD_INCLUDES 
+cc hellobrowser.c -o hellobrowser -I$PATH_TO_LIBMHD_INCLUDES
   -L$PATH_TO_LIBMHD_LIBS -lmicrohttpd
 @end verbatim
 with the two paths set accordingly and run it.
@@ -145,7 +145,7 @@ static HTML page it got from our minimal server.
 
 @heading Remarks
 To keep this first example as small as possible, some drastic shortcuts were taken and are to be
-discussed now. 
+discussed now.
 
 Firstly, there is no distinction made between the kinds of requests a client could send. We implied
 that the client sends a GET request, that means, that he actually asked for some data. Even when
@@ -168,16 +168,16 @@ Both of these issues you will find addressed in the official @code{minimal_examp
 the @code{src/examples} directory of the @emph{MHD} package.  The source code of this
 program should look very familiar to you by now and easy to understand.
 
-For our example, the @code{must_copy} and @code{must_free} parameter at the response construction
-function could be set to @code{MHD_NO}. In the usual case, responses cannot be sent immediately
+For our example, we create the response from a static (persistent) buffer in memory and thus pass @code{MHD_RESPMEM_PERSISTENT} to the response construction
+function. In the usual case, responses are not transmitted immediately
 after being queued. For example, there might be other data on the system that needs to be sent with
 a higher priority. Nevertheless, the queue function will return successfully---raising the problem
 that the data we have pointed to may be invalid by the time it is about being sent. This is not an
 issue here because we can expect the @code{page} string, which is a constant @emph{string literal}
-here, to be static. That means it will be present and unchanged for as long as the program runs. 
-For dynamic data, one could choose to either have @emph{MHD} free the memory @code{page} points 
-to itself when it is not longer needed or, alternatively, have the library to make and manage 
-its own copy of it.
+here, to be static. That means it will be present and unchanged for as long as the program runs.
+For dynamic data, one could choose to either have @emph{MHD} free the memory @code{page} points
+to itself when it is not longer needed (by passing @code{MHD_RESPMEM_MUST_FREE}) or, alternatively, have the library to make and manage
+its own copy of it (by passing @code{MHD_RESPMEM_MUST_COPY}).  Naturally, this last option is the most expensive.
 
 @heading Exercises
 @itemize @bullet
@@ -191,7 +191,7 @@ Host: itsme
 @end verbatim
 @noindent
 and see what the server returns to you.
-     
+
 
 @item
 Also, try other requests, like POST, and see how our server does not mind and why.
@@ -214,7 +214,7 @@ former static string.
 
 
 @item
-@emph{Demanding:} Write a separate function returning a string containing some useful information, 
+@emph{Demanding:} Write a separate function returning a string containing some useful information,
 for example, the time. Pass the function's address as the sixth parameter and evaluate this function
 on every request anew in @code{answer_to_connection}. Remember to free the memory of the string
 every time after satisfying the request.
