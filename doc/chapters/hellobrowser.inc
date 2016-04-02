@@ -108,11 +108,11 @@ producing the response for one connection, the other connections will be put on 
 example, where the reply is already known and therefore the request is served quickly, this poses no problem.
 
 We will allow all clients to connect regardless of their name or location, therefore we do not check
-them on connection and set the forth and fifth parameter to NULL.
+them on connection and set the third and fourth parameter to NULL.
 
-Parameter six is the address of the function we want to be called whenever a new connection has been
+Parameter five is the address of the function we want to be called whenever a new connection has been
 established. Our @code{answer_to_connection} knows best what the client wants and needs no additional
-information (which could be passed via the next parameter) so the next parameter is NULL. Likewise,
+information (which could be passed via the next parameter) so the next (sixth) parameter is NULL. Likewise,
 we do not need to pass extra options to the daemon so we just write the MHD_OPTION_END as the last parameter.
 
 As the server daemon runs in the background in its own thread, the execution flow in our main
