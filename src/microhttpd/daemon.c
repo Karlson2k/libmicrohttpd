@@ -846,7 +846,6 @@ MHD_handle_connection (void *data)
   time_t now;
 #if WINDOWS
   MHD_pipe spipe = con->daemon->wpipe[0];
-  char tmp;
 #ifdef HAVE_POLL
   int extra_slot;
 #endif /* HAVE_POLL */
