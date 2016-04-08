@@ -112,8 +112,8 @@ typedef int _MHD_socket_funcs_size;
  ( (!(r) || ((fd_set*)(r))->fd_count == 0) && \
    (!(w) || ((fd_set*)(w))->fd_count == 0) && \
    (!(e) || ((fd_set*)(e))->fd_count == 0) ) ? \
- ( (!(t)) ? (Sleep((t)->tv_sec * 1000 + (t)->tv_usec / 1000), 0) : 0 ) : \
- (select((int)0,(r),(w),(e),(t)))
+ ( (t) ? (Sleep((t)->tv_sec * 1000 + (t)->tv_usec / 1000), 0) : 0 ) : \
+   (select((int)0,(r),(w),(e),(t)))
 #endif
 
 #if defined(HAVE_POLL)
