@@ -822,6 +822,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 		   signal_stale
 		   ? ",stale=\"true\""
 		   : "");
+  if (hlen > 0)
   {
     char *header;
 
@@ -835,7 +836,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
 
-    MHD_snprintf_(header,
+    if (MHD_snprintf_(header,
 	      hlen + 1,
 	      "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
 	      realm,
@@ -843,16 +844,28 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 	      opaque,
 	      signal_stale
 	      ? ",stale=\"true\""
-	      : "");
-    ret = MHD_add_response_header(response,
+	      : "") == hlen)
+      ret = MHD_add_response_header(response,
 				  MHD_HTTP_HEADER_WWW_AUTHENTICATE,
 				  header);
+    else
+      ret = MHD_NO;
     free(header);
   }
+  else
+    ret = MHD_NO;
+
   if (MHD_YES == ret)
     ret = MHD_queue_response(connection,
 			     MHD_HTTP_UNAUTHORIZED,
 			     response);
+  else
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Failed to add Digest auth header\n");
+#endif /* HAVE_MESSAGES */
+    }
   return ret;
 }
 
