@@ -479,8 +479,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 
   daemon = connection->daemon;
   if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-    shutdown (connection->socket_fd,
-	      (MHD_YES == connection->read_closed) ? SHUT_WR : SHUT_RDWR);
+    shutdown (connection->socket_fd, SHUT_WR);
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   if ( (NULL != daemon->notify_completed) &&

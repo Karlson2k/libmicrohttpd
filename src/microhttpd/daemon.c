@@ -1078,9 +1078,7 @@ exit:
                                     MHD_CONNECTION_NOTIFY_CLOSED);
   if (MHD_INVALID_SOCKET != con->socket_fd)
     {
-#ifdef WINDOWS
       shutdown (con->socket_fd, SHUT_WR);
-#endif
       if (0 != MHD_socket_close_ (con->socket_fd))
         MHD_PANIC ("close failed\n");
       con->socket_fd = MHD_INVALID_SOCKET;
@@ -2115,9 +2113,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	}
       if (MHD_INVALID_SOCKET != pos->socket_fd)
 	{
-#ifdef WINDOWS
-	  shutdown (pos->socket_fd, SHUT_WR);
-#endif
 	  if (0 != MHD_socket_close_ (pos->socket_fd))
 	    MHD_PANIC ("close failed\n");
 	}
@@ -3733,11 +3728,6 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->socket_fd = MHD_INVALID_SOCKET;
   daemon->listening_address_reuse = 0;
   daemon->options = flags;
-#if defined(MHD_WINSOCK_SOCKETS) || defined(CYGWIN)
-  /* Winsock is broken with respect to 'shutdown';
-     this disables us calling 'shutdown' on W32. */
-  daemon->options |= MHD_USE_EPOLL_TURBO;
-#endif
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;
@@ -4451,8 +4441,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     MHD_PANIC ("MHD_stop_daemon() called while we have suspended connections.\n");
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
-      shutdown (pos->socket_fd,
-                (MHD_YES == pos->read_closed) ? SHUT_WR : SHUT_RDWR);
+      shutdown (pos->socket_fd, SHUT_RDWR);
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
