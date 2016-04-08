@@ -1028,6 +1028,7 @@ build_header_response (struct MHD_Connection *connection)
         must_add_keep_alive = MHD_YES;
       break;
     case MHD_CONNECTION_BODY_SENT:
+      response_has_keepalive = NULL;
       break;
     default:
       EXTRA_CHECK (0);
