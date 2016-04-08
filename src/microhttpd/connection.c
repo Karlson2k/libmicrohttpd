@@ -573,8 +573,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
-      if (NULL != response->crc)
-        (void) MHD_mutex_unlock_ (&response->mutex);
+      (void) MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close_ (connection,
                                MHD_REQUEST_TERMINATED_COMPLETED_OK);
@@ -588,8 +587,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
   if (0 == ret)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
-      if (NULL != response->crc)
-        (void) MHD_mutex_unlock_ (&response->mutex);
+      (void) MHD_mutex_unlock_ (&response->mutex);
       return MHD_NO;
     }
   return MHD_YES;
