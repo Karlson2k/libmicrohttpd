@@ -1,3 +1,6 @@
+Sat Apr 09 13:05:42 CET 2016
+	Releasing libmicrohttpd 0.9.49. -EG
+
 Fri Apr 08 18:32:17 CET 2016
 	Some minor internal fixes, addition error checking and
 	micro optimizations.
