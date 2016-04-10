@@ -1178,7 +1178,7 @@ transmit_error_response (struct MHD_Connection *connection,
  * perform other updates to the connection if needed to prepare for
  * the next round of the event loop.
  *
- * @param connection connetion to get poll set for
+ * @param connection connection to get poll set for
  */
 static void
 MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
@@ -1997,7 +1997,7 @@ process_broken_line (struct MHD_Connection *connection,
 	 memory; however, doing this right gets tricky if we have a
 	 value continued over multiple lines (in which case we need to
 	 record how often we have done this so we can check for
-	 adjaency); also, in the case where these are not adjacent
+	 adjacency); also, in the case where these are not adjacent
 	 (not sure how it can happen!), we would want to allocate from
 	 the end of the pool, so as to not destroy the read-buffer's
 	 ability to grow nicely. */

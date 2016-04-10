@@ -1451,7 +1451,7 @@ struct MHD_Daemon
 
 
 /**
- * Convert all occurences of '+' to ' '.
+ * Convert all occurrences of '+' to ' '.
  *
  * @param arg string that is modified (in place), must be 0-terminated
  */

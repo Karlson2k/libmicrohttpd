@@ -2150,7 +2150,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * @param timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
  *        not used (or no connections exist that would
- *        necessiate the use of a timeout right now).
+ *        necessitate the use of a timeout right now).
  * @ingroup event
  */
 int
@@ -2941,7 +2941,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
   /* Connections with the default timeout are sorted by prepending
      them to the head of the list whenever we touch the connection;
-     thus it sufficies to iterate from the tail until the first
+     thus it suffices to iterate from the tail until the first
      connection is NOT timed out */
   next = daemon->normal_timeout_tail;
   while (NULL != (pos = next))
