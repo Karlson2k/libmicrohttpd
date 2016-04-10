@@ -2132,22 +2132,19 @@ update_last_activity (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon = connection->daemon;
 
   connection->last_activity = MHD_monotonic_sec_counter();
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    return; /* each connection has personal timeout */
+
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
 
   /* move connection to head of timeout list (by remove + add operation) */
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");
   XDLL_remove (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
 	       connection);
   XDLL_insert (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
 	       connection);
-  if  ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	(MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
 
@@ -2397,17 +2394,22 @@ cleanup_connection (struct MHD_Connection *connection)
       MHD_destroy_response (connection->response);
       connection->response = NULL;
     }
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");
-  if (connection->connection_timeout == daemon->connection_timeout)
-    XDLL_remove (daemon->normal_timeout_head,
-		 daemon->normal_timeout_tail,
-		 connection);
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+      if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) 
+        MHD_PANIC ("Failed to acquire cleanup mutex\n");
+    }
   else
-    XDLL_remove (daemon->manual_timeout_head,
-		 daemon->manual_timeout_tail,
-		 connection);
+    {
+      if (connection->connection_timeout == daemon->connection_timeout)
+        XDLL_remove (daemon->normal_timeout_head,
+                     daemon->normal_timeout_tail,
+                     connection);
+      else
+        XDLL_remove (daemon->manual_timeout_head,
+                     daemon->manual_timeout_tail,
+                     connection);
+    }
   if (MHD_YES == connection->suspended)
     DLL_remove (daemon->suspended_connections_head,
                 daemon->suspended_connections_tail,
@@ -3040,37 +3042,33 @@ MHD_set_connection_option (struct MHD_Connection *connection,
   switch (option)
     {
     case MHD_CONNECTION_OPTION_TIMEOUT:
-      if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-	MHD_PANIC ("Failed to acquire cleanup mutex\n");
-      if (MHD_YES != connection->suspended)
+      if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+          (MHD_YES != connection->suspended) )
         {
           if (connection->connection_timeout == daemon->connection_timeout)
             XDLL_remove (daemon->normal_timeout_head,
-                         daemon->normal_timeout_tail,
-                         connection);
+                          daemon->normal_timeout_tail,
+                          connection);
           else
             XDLL_remove (daemon->manual_timeout_head,
-                         daemon->manual_timeout_tail,
-                         connection);
+                          daemon->manual_timeout_tail,
+                          connection);
         }
       va_start (ap, option);
       connection->connection_timeout = va_arg (ap, unsigned int);
       va_end (ap);
-      if (MHD_YES != connection->suspended)
+      if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+          (MHD_YES != connection->suspended) )
         {
           if (connection->connection_timeout == daemon->connection_timeout)
             XDLL_insert (daemon->normal_timeout_head,
-                         daemon->normal_timeout_tail,
-                         connection);
+                          daemon->normal_timeout_tail,
+                          connection);
           else
             XDLL_insert (daemon->manual_timeout_head,
-                         daemon->manual_timeout_tail,
-                         connection);
+                          daemon->manual_timeout_tail,
+                          connection);
         }
-      if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
-	MHD_PANIC ("Failed to release cleanup mutex\n");
       return MHD_YES;
     default:
       return MHD_NO;

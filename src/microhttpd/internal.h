@@ -976,12 +976,15 @@ struct MHD_Daemon
    * All connections by default start in this list; if a custom
    * timeout that does not match @e connection_timeout is set, they
    * are moved to the @e manual_timeout_head-XDLL.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode as each thread
+   * needs only one connection-specific timeout.
    */
   struct MHD_Connection *normal_timeout_head;
 
   /**
    * Tail of the XDLL of ALL connections with a default timeout,
    * sorted by timeout (earliest timeout at the tail).
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
    */
   struct MHD_Connection *normal_timeout_tail;
 
@@ -989,12 +992,14 @@ struct MHD_Daemon
    * Head of the XDLL of ALL connections with a non-default/custom
    * timeout, unsorted.  MHD will do a O(n) scan over this list to
    * determine the current timeout.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
    */
   struct MHD_Connection *manual_timeout_head;
 
   /**
    * Tail of the XDLL of ALL connections with a non-default/custom
    * timeout, unsorted.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
    */
   struct MHD_Connection *manual_timeout_tail;
 

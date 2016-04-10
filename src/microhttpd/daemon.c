@@ -842,7 +842,6 @@ MHD_handle_connection (void *data)
   MHD_socket maxsock;
   struct timeval tv;
   struct timeval *tvp;
-  unsigned int timeout;
   time_t now;
 #if WINDOWS
   MHD_pipe spipe = con->daemon->wpipe[0];
@@ -857,10 +856,10 @@ MHD_handle_connection (void *data)
   struct pollfd p[1 + EXTRA_SLOTS];
 #endif
 
-  timeout = con->daemon->connection_timeout;
   while ( (MHD_YES != con->daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
+      unsigned const int timeout = con->daemon->connection_timeout;
       tvp = NULL;
 #if HTTPS_SUPPORT
       if (MHD_YES == con->tls_read_ready)
@@ -1563,12 +1562,15 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
 #endif
 
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");
-  XDLL_insert (daemon->normal_timeout_head,
-	       daemon->normal_timeout_tail,
-	       connection);
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  {
+    if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
+      MHD_PANIC ("Failed to acquire cleanup mutex\n");
+  }
+  else
+   XDLL_insert (daemon->normal_timeout_head,
+                daemon->normal_timeout_tail,
+                connection);
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
@@ -1655,15 +1657,18 @@ internal_add_connection (struct MHD_Daemon *daemon,
   if (0 != MHD_socket_close_ (client_socket))
     MHD_PANIC ("close failed\n");
   MHD_ip_limit_del (daemon, addr, addrlen);
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  {
+    if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
+      MHD_PANIC ("Failed to acquire cleanup mutex\n");
+  }
+  else
+    XDLL_remove (daemon->normal_timeout_head,
+                 daemon->normal_timeout_tail,
+                 connection);
   DLL_remove (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
-  XDLL_remove (daemon->normal_timeout_head,
-	       daemon->normal_timeout_tail,
-	       connection);
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
@@ -1712,23 +1717,28 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   daemon = connection->daemon;
   if (MHD_USE_SUSPEND_RESUME != (daemon->options & MHD_USE_SUSPEND_RESUME))
     MHD_PANIC ("Cannot suspend connections without enabling MHD_USE_SUSPEND_RESUME!\n");
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC ("Failed to acquire cleanup mutex\n");
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+      if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
+        MHD_PANIC ("Failed to acquire cleanup mutex\n");
+    }
+  else
+    {
+      if (connection->connection_timeout == daemon->connection_timeout)
+        XDLL_remove (daemon->normal_timeout_head,
+                     daemon->normal_timeout_tail,
+                     connection);
+      else
+        XDLL_remove (daemon->manual_timeout_head,
+                     daemon->manual_timeout_tail,
+                     connection);
+    }
   DLL_remove (daemon->connections_head,
               daemon->connections_tail,
               connection);
   DLL_insert (daemon->suspended_connections_head,
               daemon->suspended_connections_tail,
               connection);
-  if (connection->connection_timeout == daemon->connection_timeout)
-    XDLL_remove (daemon->normal_timeout_head,
-                 daemon->normal_timeout_tail,
-                 connection);
-  else
-    XDLL_remove (daemon->manual_timeout_head,
-                 daemon->manual_timeout_tail,
-                 connection);
 #if EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
@@ -1826,14 +1836,17 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       DLL_insert (daemon->connections_head,
                   daemon->connections_tail,
                   pos);
-      if (pos->connection_timeout == daemon->connection_timeout)
-        XDLL_insert (daemon->normal_timeout_head,
-                     daemon->normal_timeout_tail,
-                     pos);
-      else
-        XDLL_insert (daemon->manual_timeout_head,
-                     daemon->manual_timeout_tail,
-                     pos);
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        {
+          if (pos->connection_timeout == daemon->connection_timeout)
+            XDLL_insert (daemon->normal_timeout_head,
+                         daemon->normal_timeout_tail,
+                         pos);
+          else
+            XDLL_insert (daemon->manual_timeout_head,
+                         daemon->manual_timeout_tail,
+                         pos);
+        }
 #if EPOLL_SUPPORT
       if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
         {
