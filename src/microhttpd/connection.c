@@ -3111,9 +3111,9 @@ MHD_queue_response (struct MHD_Connection *connection,
   if ( (MHD_CONNECTION_HEADERS_PROCESSED == connection->state) &&
        (NULL != connection->method) &&
        ( (MHD_str_equal_caseless_ (connection->method,
-			   MHD_HTTP_METHOD_POST)) ||
+                                   MHD_HTTP_METHOD_POST)) ||
 	 (MHD_str_equal_caseless_ (connection->method,
-			   MHD_HTTP_METHOD_PUT))) )
+                                   MHD_HTTP_METHOD_PUT))) )
     {
       /* response was queued "early", refuse to read body / footers or
          further requests! */
