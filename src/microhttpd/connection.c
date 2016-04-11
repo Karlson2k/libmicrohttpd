@@ -2100,10 +2100,11 @@ parse_connection_headers (struct MHD_Connection *connection)
 					  MHD_HTTP_HEADER_CONTENT_LENGTH);
       if (NULL != clen)
         {
-          cval = strtoul (clen, &end, 10);
-          if ( ('\0' != *end) ||
-	     ( (LONG_MAX == cval) && (errno == ERANGE) ) )
+          if (!MHD_str_to_uint64_ (clen, &connection->remaining_upload_size,
+                                   &end) ||
+              ('\0' != *end) )
             {
+              connection->remaining_upload_size = 0;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to parse `%s' header `%s', closing connection.\n",
@@ -2113,7 +2114,6 @@ parse_connection_headers (struct MHD_Connection *connection)
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return;
             }
-          connection->remaining_upload_size = cval;
         }
     }
 }
