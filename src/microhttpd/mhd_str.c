@@ -31,6 +31,8 @@
 #include <stdbool.h>
 #endif
 
+#include "mhd_limits.h"
+
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
  * standards. Not affected by current locale settings.
@@ -227,5 +229,107 @@ MHD_str_equal_caseless_n_ (const char * const str1, const char * const str2, siz
       if (c1 != c2 && toasciilower (c1) != toasciilower (c2))
         return 0;
     }
+  return !0;
+}
+
+/**
+ * Convert decimal US-ASCII digits in string to number in uint64_t.
+ * Conversion stopped at first non-digit character.
+ * @param str string to convert
+ * @param out_val pointer to uint64_t to store result of conversion
+ * @param next_char pointer to store pointer to character next to last
+ *                  converted digit, ignored if NULL
+ * @return non-zero if conversion succeed; zero if no digit is found,
+ *         value is larger then possible to store in uint64_t or
+ *         @a out_val or @a str is NULL
+ */
+int 
+MHD_str_to_uint64_ (const char * str, uint64_t * out_val, const char ** next_char)
+{
+  uint64_t res;
+  if (!str || !isasciidigit(str[0]))
+    {
+      if (next_char)
+        *next_char = str;
+      return 0;
+    }
+
+  res = 0;
+  do
+    {
+      const int digit = str[0] - '0';
+      if ( (res < (UINT64_MAX / 10)) ||
+           (res == (UINT64_MAX / 10) && digit <= (UINT64_MAX % 10)) )
+        {
+          res *= 10;
+          res += digit;
+        }
+      else
+        {
+          if (next_char)
+            *next_char = str;
+          return 0;
+        }
+      str++;
+    } while (isasciidigit (str[0]));
+
+  *out_val = res;
+  if (next_char)
+    *next_char = str;
+
+  return !0;
+}
+
+
+/**
+ * Convert not more then @a maxlen decimal US-ASCII digits in string to
+ * number in uint64_t.
+ * Conversion stopped at first non-digit character or after @a maxlen 
+ * digits.
+ * @param str string to convert
+ * @param out_val pointer to uint64_t to store result of conversion
+ * @param next_char pointer to store pointer to character next to last
+ *                  converted digit, ignored if NULL
+ * @return non-zero if conversion succeed; zero if no digit is found,
+ *         value is larger then possible to store in uint64_t or
+ *         @a out_val is NULL
+ */
+int
+MHD_str_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val,
+                      const char ** next_char)
+{
+  uint64_t res;
+  size_t i;
+  if (!str || !maxlen || !isasciidigit (str[0]))
+    {
+      if (next_char)
+        *next_char = str;
+      return 0;
+    }
+
+  res = 0;
+  i = 0;
+  do
+    {
+      const int digit = str[i] - '0';
+      if ( (res < (UINT64_MAX / 10)) ||
+           (res == (UINT64_MAX / 10) && digit <= (UINT64_MAX % 10)) )
+        {
+          res *= 10;
+          res += digit;
+        }
+      else
+        {
+          if (next_char)
+            *next_char = str + i;
+          return 0;
+        }
+      
+    } while(i < maxlen && isasciidigit(str[i]));
+
+  *out_val = res;
+  if (next_char)
+    *next_char = str + i;
+
   return !0;
 }
