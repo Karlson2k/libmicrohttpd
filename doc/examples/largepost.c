@@ -13,6 +13,17 @@
 #include <string.h>
 #include <microhttpd.h>
 
+#ifdef _MSC_VER
+#ifndef strcasecmp
+#define strcasecmp(a,b) _stricmp((a),(b))
+#endif /* !strcasecmp */
+#endif /* _MSC_VER */
+
+#if defined(_MSC_VER) && _MSC_VER+0 <= 1800
+/* Substitution is OK while return value is not used */
+#define snprintf _snprintf
+#endif
+
 #define PORT            8888
 #define POSTBUFFERSIZE  512
 #define MAXCLIENTS      2
