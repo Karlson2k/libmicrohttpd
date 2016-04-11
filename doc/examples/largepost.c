@@ -65,6 +65,8 @@ const char *servererrorpage =
   "<html><body>An internal server error has occured.</body></html>";
 const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
+const char const *postprocerror = 
+  "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 
 static int
@@ -241,9 +243,14 @@ answer_to_connection (void *cls,
 
       if (0 != *upload_data_size)
         {
-          MHD_post_process (con_info->postprocessor,
-                            upload_data,
-                            *upload_data_size);
+          if (MHD_post_process (con_info->postprocessor,
+                                upload_data,
+                                *upload_data_size) != MHD_YES)
+            {
+              return send_page (connection,
+                                postprocerror,
+                                MHD_HTTP_BAD_REQUEST);
+            }
           *upload_data_size = 0;
 
           return MHD_YES;
