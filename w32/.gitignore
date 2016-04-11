@@ -10,4 +10,5 @@
 *.tlog
 *.idb
 *.rc
+*.VC.db
 .vs
