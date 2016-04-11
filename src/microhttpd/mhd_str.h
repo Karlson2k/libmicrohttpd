@@ -52,7 +52,7 @@ MHD_str_equal_caseless_ (const char * str1,
  * first @a maxlen characters.
  * @param str1 first string to compare
  * @param str2 second string to compare
- * @patam maxlen maximum number of characters to compare
+ * @param maxlen maximum number of characters to compare
  * @return non-zero if two strings are equal, zero otherwise.
  */
 int
