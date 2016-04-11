@@ -65,7 +65,7 @@ const char *servererrorpage =
   "<html><body>An internal server error has occured.</body></html>";
 const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
-const char const *postprocerror = 
+const char* const postprocerror =
   "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 
