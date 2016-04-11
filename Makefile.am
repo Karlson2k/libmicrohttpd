@@ -8,9 +8,11 @@ W32COMMON = w32/common/gen_dll_res.ps1 w32/common/microhttpd_dll_res_vc.rc.in w3
   w32/common/apps-build-settings.vcxproj
 W32VS2013 = w32/VS2013/libmicrohttpd.vcxproj w32/VS2013/libmicrohttpd.vcxproj.filters \
   w32/VS2013/hellobrowser.vcxproj w32/VS2013/hellobrowser.vcxproj.filters \
+  w32/VS2013/simplepost.vcxproj \
   w32/VS2013/libmicrohttpd.sln 
 W32VS2015 = w32/VS2015/libmicrohttpd.vcxproj w32/VS2015/libmicrohttpd.vcxproj.filters \
   w32/VS2015/hellobrowser.vcxproj w32/VS2015/hellobrowser.vcxproj.filters \
+  w32/VS2015/simplepost.vcxproj \
   w32/VS2015/libmicrohttpd.sln 
 EXTRA_DIST = acinclude.m4 libmicrohttpd.pc.in \
   $(W32COMMON) $(W32VS2013) $(W32VS2015)
