@@ -437,3 +437,167 @@ MHD_strx_to_sizet_n_ (const char * str, size_t maxlen, size_t * out_val)
     *out_val = res;
   return i;
 }
+
+
+/**
+ * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
+ * Conversion stopped at first non-digit character.
+ * @param str string to convert
+ * @param out_val pointer to uint32_t to store result of conversion
+ * @return non-zero number of characters processed on succeed, 
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint32_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_uint32_ (const char * str, uint32_t * out_val)
+{
+  const char * const start = str;
+  uint32_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+
+  res = 0;
+  digit = toxdigitvalue (*str);
+  while (digit >= 0)
+    {
+      if ( (res < (UINT32_MAX / 16)) ||
+           (res == (UINT32_MAX / 16) && digit <= (UINT32_MAX % 16)) )
+        {
+          res *= 16;
+          res += digit;
+        }
+      else
+        return 0;
+      str++;
+      digit = toxdigitvalue (*str);
+    }
+
+  if (str - start > 0)
+    *out_val = res;
+  return str - start;
+}
+
+
+/**
+ * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
+ * to number in uint32_t.
+ * Conversion stopped at first non-digit character or after @a maxlen 
+ * digits.
+ * @param str string to convert
+ * @param maxlen maximum number of characters to process
+ * @param out_val pointer to uint32_t to store result of conversion
+ * @param next_char pointer to store pointer to character next to last
+ *                  converted digit, ignored if NULL
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint32_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_uint32_n_ (const char * str, size_t maxlen, uint32_t * out_val)
+{
+  size_t i;
+  uint32_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+  
+  res = 0;
+  i = 0;
+  while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
+    {
+      if ( (res > (UINT32_MAX / 16)) ||
+           (res == (UINT32_MAX / 16) && digit > (UINT32_MAX % 16)) )
+        return 0;
+
+      res *= 16;
+      res += digit;
+      i++;
+    }
+
+  if (i)
+    *out_val = res;
+  return i;
+}
+
+
+/**
+ * Convert hexadecimal US-ASCII digits in string to number in uint64_t.
+ * Conversion stopped at first non-digit character.
+ * @param str string to convert
+ * @param out_val pointer to uint64_t to store result of conversion
+ * @return non-zero number of characters processed on succeed, 
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint64_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_uint64_ (const char * str, uint64_t * out_val)
+{
+  const char * const start = str;
+  uint64_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+
+  res = 0;
+  digit = toxdigitvalue (*str);
+  while (digit >= 0)
+    {
+      if ( (res < (UINT64_MAX / 16)) ||
+           (res == (UINT64_MAX / 16) && digit <= (UINT64_MAX % 16)) )
+        {
+          res *= 16;
+          res += digit;
+        }
+      else
+        return 0;
+      str++;
+      digit = toxdigitvalue (*str);
+    }
+
+  if (str - start > 0)
+    *out_val = res;
+  return str - start;
+}
+
+
+/**
+ * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
+ * to number in uint64_t.
+ * Conversion stopped at first non-digit character or after @a maxlen 
+ * digits.
+ * @param str string to convert
+ * @param maxlen maximum number of characters to process
+ * @param out_val pointer to uint64_t to store result of conversion
+ * @param next_char pointer to store pointer to character next to last
+ *                  converted digit, ignored if NULL
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint64_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val)
+{
+  size_t i;
+  uint64_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+  
+  res = 0;
+  i = 0;
+  while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
+    {
+      if ( (res > (UINT64_MAX / 16)) ||
+           (res == (UINT64_MAX / 16) && digit > (UINT64_MAX % 16)) )
+        return 0;
+
+      res *= 16;
+      res += digit;
+      i++;
+    }
+
+  if (i)
+    *out_val = res;
+  return i;
+}
