@@ -84,6 +84,19 @@ isasciidigit (char c)
 }
 
 /**
+ * Check whether character is hexadecimal digit in US-ASCII
+ * @param c character to check
+ * @return non-zero if character is decimal digit, zero otherwise
+ */
+_MHD_inline _MHD_bool
+isasciixdigit (char c)
+{
+  return isasciidigit (c) ||
+         (c >= 'A' && c <= 'F') ||
+         (c >= 'a' && c <= 'f');
+}
+
+/**
  * Check whether character is decimal digit or letter in US-ASCII
  * @param c character to check
  * @return non-zero if character is decimal digit or letter, zero otherwise
@@ -122,6 +135,23 @@ toasciiupper (char c)
   return isasciilower (c) ? (c - 'a' + 'A') : c;
 }
 
+/**
+ * Convert US-ASCII hexadecimal digit to its value.
+ * @param c character to convert
+ * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
+ */
+_MHD_inline int
+toxdigitvalue (char c)
+{
+  if (isasciidigit (c))
+    return (unsigned char)(c - '0');
+  if (c >= 'A' && c <= 'F')
+    return (unsigned char)(c - 'A' + 10);
+  if (c >= 'a' && c <= 'f')
+    return (unsigned char)(c - 'a' + 10);
+
+  return -1;
+}
 #else  /* !INLINE_FUNC */
 
 /**
@@ -157,6 +187,16 @@ toasciiupper (char c)
 #define isasciidigit(c) (((char)(c)) >= '0' && ((char)(c)) <= '9')
 
 /**
+ * Check whether character is hexadecimal digit in US-ASCII
+ * @param c character to check
+ * @return boolean true if character is hexadecimal digit,
+ *         boolean false otherwise
+ */
+#define isasciixdigit(c) (isasciidigit((c)) || \
+                          (((char)(c)) >= 'A' && ((char)(c)) <= 'F') || \
+                          (((char)(c)) >= 'a' && ((char)(c)) <= 'f') )
+
+/**
  * Check whether character is decimal digit or letter in US-ASCII
  * @param c character to check
  * @return boolean true if character is decimal digit or letter,
@@ -183,6 +223,17 @@ toasciiupper (char c)
  * @return converted to upper case character
  */
 #define toasciiupper(c) ((isasciilower(c)) ? (((char)(c)) - 'a' + 'A') : ((char)(c)))
+
+/**
+ * Convert US-ASCII hexadecimal digit to its value.
+ * @param c character to convert
+ * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
+ */
+#define toxdigitvalue(c) ( isasciidigit(c) ? (int)(((char)(c)) - '0') : \
+                           ( (((char)(c)) >= 'A' && ((char)(c)) <= 'F') ? \
+                             (int)(((unsigned char)(c)) - 'A' + 10) : \
+                             ( (((char)(c)) >= 'a' && ((char)(c)) <= 'f') ? \
+                               (int)(((unsigned char)(c)) - 'a' + 10) : (int)(-1) )))
 #endif /* !INLINE_FUNC */
 
 /**
@@ -302,5 +353,87 @@ MHD_str_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val)
     } while(i < maxlen && isasciidigit(str[i]));
 
   *out_val= res;
+  return i;
+}
+
+
+/**
+ * Convert hexadecimal US-ASCII digits in string to number in size_t.
+ * Conversion stopped at first non-digit character.
+ * @param str string to convert
+ * @param out_val pointer to size_t to store result of conversion
+ * @return non-zero number of characters processed on succeed, 
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in size_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_sizet_ (const char * str, size_t * out_val)
+{
+  const char * const start = str;
+  size_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+
+  res = 0;
+  digit = toxdigitvalue (*str);
+  while (digit >= 0)
+    {
+      if ( (res < (SIZE_MAX / 16)) ||
+           (res == (SIZE_MAX / 16) && digit <= (SIZE_MAX % 16)) )
+        {
+          res *= 16;
+          res += digit;
+        }
+      else
+        return 0;
+      str++;
+      digit = toxdigitvalue (*str);
+    }
+
+  if (str - start > 0)
+    *out_val = res;
+  return str - start;
+}
+
+
+/**
+ * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
+ * to number in size_t.
+ * Conversion stopped at first non-digit character or after @a maxlen 
+ * digits.
+ * @param str string to convert
+ * @param maxlen maximum number of characters to process
+ * @param out_val pointer to size_t to store result of conversion
+ * @param next_char pointer to store pointer to character next to last
+ *                  converted digit, ignored if NULL
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in size_t or @a out_val is NULL
+ */
+size_t
+MHD_strx_to_sizet_n_ (const char * str, size_t maxlen, size_t * out_val)
+{
+  size_t i;
+  size_t res;
+  int digit;
+  if (!str || !out_val)
+    return 0;
+  
+  res = 0;
+  i = 0;
+  while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
+    {
+      if ( (res > (SIZE_MAX / 16)) ||
+           (res == (SIZE_MAX / 16) && digit > (SIZE_MAX % 16)) )
+        return 0;
+
+      res *= 16;
+      res += digit;
+      i++;
+    }
+
+  if (i)
+    *out_val = res;
   return i;
 }
