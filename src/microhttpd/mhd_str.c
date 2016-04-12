@@ -39,7 +39,7 @@
  */
 
 #ifdef INLINE_FUNC
- /**
+/**
  * Check whether character is lower case letter in US-ASCII
  * @param c character to check
  * @return non-zero if character is lower case letter, zero otherwise
@@ -99,7 +99,7 @@ isasciialmun (char c)
  * If character is upper case letter in US-ASCII than it's converted to lower
  * case analog. If character is NOT upper case letter than it's returned
  * unmodified.
- * @param c character to check
+ * @param c character to convert
  * @return converted to lower case character
  */
 _MHD_inline char
@@ -108,12 +108,12 @@ toasciilower (char c)
   return isasciiupper (c) ? (c - 'A' + 'a') : c;
 }
 
- /**
+/**
  * Convert US-ASCII character to upper case.
  * If character is lower case letter in US-ASCII than it's converted to upper
  * case analog. If character is NOT lower case letter than it's returned
  * unmodified.
- * @param c character to check
+ * @param c character to convert
  * @return converted to upper case character
  */
 _MHD_inline char
@@ -156,7 +156,7 @@ toasciiupper (char c)
  */
 #define isasciidigit(c) (((char)(c)) >= '0' && ((char)(c)) <= '9')
 
- /**
+/**
  * Check whether character is decimal digit or letter in US-ASCII
  * @param c character to check
  * @return boolean true if character is decimal digit or letter,
@@ -169,7 +169,7 @@ toasciiupper (char c)
  * If character is upper case letter in US-ASCII than it's converted to lower
  * case analog. If character is NOT upper case letter than it's returned
  * unmodified.
- * @param c character to check
+ * @param c character to convert
  * @return converted to lower case character
  */
 #define toasciilower(c) ((isasciiupper(c)) ? (((char)(c)) - 'A' + 'a') : ((char)(c)))
@@ -179,7 +179,7 @@ toasciiupper (char c)
  * If character is lower case letter in US-ASCII than it's converted to upper
  * case analog. If character is NOT lower case letter than it's returned
  * unmodified.
- * @param c character to check
+ * @param c character to convert
  * @return converted to upper case character
  */
 #define toasciiupper(c) ((isasciilower(c)) ? (((char)(c)) - 'a' + 'A') : ((char)(c)))
