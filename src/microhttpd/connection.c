@@ -1644,7 +1644,6 @@ process_request_body (struct MHD_Connection *connection)
   int instant_retry;
   int malformed;
   char *buffer_head;
-  char *end;
 
   if (NULL != connection->response)
     return;                     /* already queued a response */
@@ -1715,9 +1714,9 @@ process_request_body (struct MHD_Connection *connection)
               malformed = (i >= 6);
               if (!malformed)
                 {
-                  buffer_head[i] = '\0';
-		  connection->current_chunk_size = strtoul (buffer_head, &end, 16);
-                  malformed = ('\0' != *end);
+                  size_t num_dig = MHD_strx_to_sizet_n_ (buffer_head, i,
+                                                         &connection->current_chunk_size);
+                  malformed = (i != num_dig);
                 }
               if (malformed)
                 {
