@@ -597,13 +597,26 @@ testMultithreadedPostCancelPart(int flags)
   
   if (CURLE_HTTP_RETURNED_ERROR != (errornum = curl_easy_perform (c)))
     {
-      fprintf (stderr,
-               "flibbet curl_easy_perform didn't fail as expected: `%s' %d\n",
-               curl_easy_strerror (errornum), errornum);
+#ifdef _WIN32
+      if (0 != (flags & FLAG_SLOW_READ) && CURLE_RECV_ERROR == errornum)
+        {
+          fprintf (stderr, "Ignored curl_easy_perform expected failure on W32 with \"slow read\".\n");
+          result = 0;
+        }
+      else
+#else  /* ! _WIN32 */
+      if(1)
+#endif /* ! _WIN32 */
+        {
+          fprintf (stderr,
+                   "flibbet curl_easy_perform didn't fail as expected: `%s' %d\n",
+                   curl_easy_strerror (errornum), errornum);
+          result = 65536;
+        }
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
       curl_slist_free_all(headers);
-      return 65536;
+      return result;
     }
   
   if (CURLE_OK != (cc = curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code)))
