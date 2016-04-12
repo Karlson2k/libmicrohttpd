@@ -554,7 +554,6 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 {
   size_t len;
   const char *header;
-  char *end;
   char nonce[MAX_NONCE_LENGTH];
   char cnonce[MAX_NONCE_LENGTH];
   char qop[15]; /* auth,auth-int */
