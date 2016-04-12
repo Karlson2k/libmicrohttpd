@@ -668,7 +668,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        (0 == lookup_sub_value (qop, sizeof (qop), header, "qop")) ||
        ( (0 != strcmp (qop, "auth")) &&
          (0 != strcmp (qop, "")) ) ||
-       (0 == lookup_sub_value (nc, sizeof (nc), header, "nc"))  ||
+       (0 == (len = lookup_sub_value (nc, sizeof (nc), header, "nc")) )  ||
        (0 == lookup_sub_value (response, sizeof (response), header, "response")) )
     {
 #ifdef HAVE_MESSAGES
@@ -677,14 +677,11 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
-  nci = strtoul (nc, &end, 16);
-  if ( ('\0' != *end) ||
-       ( (LONG_MAX == nci) &&
-         (ERANGE == errno) ) )
+  if (len != MHD_strx_to_uint64_n_ (nc, len, &nci))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-		"Authentication failed, invalid format.\n");
+		"Authentication failed, invalid nc format.\n");
 #endif
       return MHD_NO; /* invalid nonce format */
     }
