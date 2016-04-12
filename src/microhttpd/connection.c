@@ -2051,10 +2051,9 @@ static void
 parse_connection_headers (struct MHD_Connection *connection)
 {
   const char *clen;
-  MHD_UNSIGNED_LONG_LONG cval;
   struct MHD_Response *response;
   const char *enc;
-  char *end;
+  const char *end;
 
   parse_cookie_header (connection);
   if ( (0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options)) &&
