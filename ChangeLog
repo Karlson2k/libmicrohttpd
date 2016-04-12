@@ -1,3 +1,17 @@
+Tue Apr 13 21:46:01 CET 2016
+	Removed unneeded locking for global timeout list in
+	MHD_USE_THREAD_PER_CONNECTION mode.
+	Added 'simplepost' and 'largepost' examples to VS projects.
+	Added strtoXX() locale-independent replacement functions.
+	Added more error checking and minor fixes in digest auth
+	functions - should improve security.
+	Ignored specific errors in 'test_post' test until libcurl
+	will implement workaround for WinSock bug.
+	Fixed handling of caller-supplied socket with
+	MHD_OPTION_LISTEN_SOCKET (regression in 0.9.49).
+	Minor fixes.
+	Various cosmetics and comments fixes. -EG
+
 Sat Apr 09 13:05:42 CET 2016
 	Releasing libmicrohttpd 0.9.49. -EG
 

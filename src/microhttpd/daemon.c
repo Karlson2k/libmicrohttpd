@@ -4114,24 +4114,6 @@ MHD_start_daemon_va (unsigned int flags,
         }
       }
 #endif
-      if (MHD_NO == make_nonblocking (daemon, socket_fd))
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-		    "Failed to make listen socket non-blocking: %s\n",
-		    MHD_socket_last_strerr_ ());
-#endif /* HAVE_MESSAGES */
-          if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY) ||
-              daemon->worker_pool_size > 0)
-            {
-              /* Accept must be non-blocking. Multiple children may wake up
-               * to handle a new connection, but only one will win the race.
-               * The others must immediately return. */
-              if (0 != MHD_socket_close_ (socket_fd))
-                MHD_PANIC ("close failed\n");
-              goto free_and_fail;
-          }
-      }
       if (listen (socket_fd, daemon->listen_backlog_size) < 0)
 	{
 #ifdef HAVE_MESSAGES
@@ -4147,6 +4129,20 @@ MHD_start_daemon_va (unsigned int flags,
   else
     {
       socket_fd = daemon->socket_fd;
+    }
+
+  if (MHD_NO == make_nonblocking (daemon, socket_fd))
+    {
+      if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY) ||
+          daemon->worker_pool_size > 0)
+        {
+           /* Accept must be non-blocking. Multiple children may wake up
+            * to handle a new connection, but only one will win the race.
+            * The others must immediately return. */
+          if (0 != MHD_socket_close_ (socket_fd))
+            MHD_PANIC ("close failed\n");
+          goto free_and_fail;
+        }
     }
 #ifndef MHD_WINSOCK_SOCKETS
   if ( (socket_fd >= FD_SETSIZE) &&
