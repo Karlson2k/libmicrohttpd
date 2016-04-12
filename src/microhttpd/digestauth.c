@@ -619,7 +619,15 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
        header value. */
     return MHD_NO;
   }
-  nonce_time = strtoul (nonce + len - TIMESTAMP_HEX_LEN, (char **)NULL, 16);
+  if (TIMESTAMP_HEX_LEN != MHD_strx_to_uint32_n_ (nonce + len - TIMESTAMP_HEX_LEN,
+                                                  TIMESTAMP_HEX_LEN, &nonce_time))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Authentication failed, invalid timestamp format.\n");
+#endif
+      return MHD_NO;
+    }
   t = (uint32_t) MHD_monotonic_sec_counter();
   /*
    * First level vetting for the nonce validity: if the timestamp
