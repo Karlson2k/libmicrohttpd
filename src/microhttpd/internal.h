@@ -190,7 +190,7 @@ struct MHD_NonceNc
    * Nonce counter, a value that increases for each subsequent
    * request for the same nonce.
    */
-  unsigned long int nc;
+  uint64_t nc;
 
   /**
    * Nonce value:
