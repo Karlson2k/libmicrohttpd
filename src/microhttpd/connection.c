@@ -2100,9 +2100,9 @@ parse_connection_headers (struct MHD_Connection *connection)
 					  MHD_HTTP_HEADER_CONTENT_LENGTH);
       if (NULL != clen)
         {
-          if (!MHD_str_to_uint64_ (clen, &connection->remaining_upload_size,
-                                   &end) ||
-              ('\0' != *end) )
+          end = clen + MHD_str_to_uint64_ (clen,
+                                           &connection->remaining_upload_size);
+          if ( (clen == end) || ('\0' != *end) )
             {
               connection->remaining_upload_size = 0;
 #ifdef HAVE_MESSAGES

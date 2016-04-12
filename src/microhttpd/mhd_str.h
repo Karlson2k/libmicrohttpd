@@ -65,16 +65,13 @@ MHD_str_equal_caseless_n_ (const char * const str1,
  * Conversion stopped at first non-digit character.
  * @param str string to convert
  * @param out_val pointer to uint64_t to store result of conversion
- * @param next_char pointer to store pointer to character next to last
- *                  converted digit, ignored if NULL
- * @return non-zero if conversion succeed; zero if no digit is found,
- *         value is larger then possible to store in uint64_t or
- *         @a out_val is NULL
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint64_t or @a out_val is NULL
  */
-int
+size_t
 MHD_str_to_uint64_ (const char * str,
-                    uint64_t * out_val,
-                    const char ** next_char);
+                    uint64_t * out_val);
 
 /**
  * Convert not more then @a maxlen decimal US-ASCII digits in string to
@@ -82,17 +79,15 @@ MHD_str_to_uint64_ (const char * str,
  * Conversion stopped at first non-digit character or after @a maxlen 
  * digits.
  * @param str string to convert
+ * @param maxlen maximum number of characters to process
  * @param out_val pointer to uint64_t to store result of conversion
- * @param next_char pointer to store pointer to character next to last
- *                  converted digit, ignored if NULL
- * @return non-zero if conversion succeed; zero if no digit is found,
- *         value is larger then possible to store in uint64_t or
- *         @a out_val is NULL
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint64_t or @a out_val is NULL
  */
-int
+size_t
 MHD_str_to_uint64_n_ (const char * str,
                       size_t maxlen,
-                      uint64_t * out_val,
-                      const char ** next_char);
+                      uint64_t * out_val);
 
 #endif /* MHD_STR_H */
