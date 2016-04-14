@@ -4402,6 +4402,12 @@ thread_failed:
   if (0 != (flags & MHD_USE_SSL))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
+  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+       (0 != MHD_pipe_close_ (daemon->wpipe[0])) )
+    MHD_PANIC ("close failed\n");
+  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
+       (0 != MHD_pipe_close_ (daemon->wpipe[1])) )
+    MHD_PANIC ("close failed\n");
   free (daemon);
   return NULL;
 }
