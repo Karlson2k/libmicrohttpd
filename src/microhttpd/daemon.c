@@ -4290,27 +4290,28 @@ MHD_start_daemon_va (unsigned int flags,
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
 
-          if ( (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
-               (0 != MHD_pipe_ (d->wpipe)) )
+          if (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME))
             {
+              if (0 != MHD_pipe_ (d->wpipe))
+                {
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        "Failed to create worker control pipe: %s\n",
-                        MHD_pipe_last_strerror_() );
+                  MHD_DLOG (daemon,
+                            "Failed to create worker control pipe: %s\n",
+                            MHD_pipe_last_strerror_() );
 #endif
-              goto thread_failed;
-            }
-          if (MHD_NO == make_nonblocking (d, d->wpipe[0]))
-            {
+                  goto thread_failed;
+                }
+              if (MHD_NO == make_nonblocking (d, d->wpipe[0]))
+                {
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        "Failed to make worker control pipe non_blocking: %s\n",
-                        MHD_pipe_last_strerror_() );
+                  MHD_DLOG (daemon,
+                            "Failed to make worker control pipe non_blocking: %s\n",
+                            MHD_pipe_last_strerror_() );
 #endif
-
-              goto thread_failed;
+                  goto thread_failed;
+                }
+              make_nonblocking (d, d->wpipe[1]);
             }
-          make_nonblocking (d, d->wpipe[1]);
 #ifndef MHD_WINSOCK_SOCKETS
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
                (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
