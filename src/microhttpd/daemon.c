@@ -3782,7 +3782,18 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    make_nonblocking (daemon, daemon->wpipe[0]);
+    if (MHD_NO == make_nonblocking (daemon, daemon->wpipe[0]))
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+		  "Failed to make control pipe non-blocking: %s\n",
+		  MHD_strerror_ (errno));
+#endif
+        MHD_pipe_close_ (daemon->wpipe[0]);
+        MHD_pipe_close_ (daemon->wpipe[1]);
+        free (daemon);
+        return NULL;
+      }
     make_nonblocking (daemon, daemon->wpipe[1]);
   }
 #ifndef MHD_WINSOCK_SOCKETS
