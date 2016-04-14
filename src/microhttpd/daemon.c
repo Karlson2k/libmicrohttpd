@@ -4289,6 +4289,17 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto thread_failed;
             }
+          if (MHD_NO == make_nonblocking (d, d->wpipe[0]))
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        "Failed to make worker control pipe non_blocking: %s\n",
+                        MHD_pipe_last_strerror_() );
+#endif
+
+              goto thread_failed;
+            }
+          make_nonblocking (d, d->wpipe[1]);
 #ifndef MHD_WINSOCK_SOCKETS
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
                (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
