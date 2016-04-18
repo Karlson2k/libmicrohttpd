@@ -957,7 +957,7 @@ MHD_handle_connection (void *data)
 	      break;
 	    }
 #if WINDOWS
-          /* drain signaling pipe */
+          /* drain signaling pipe before other processing */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
                (FD_ISSET (spipe, &rs)) )
             MHD_pipe_drain_ (spipe);
@@ -1029,7 +1029,7 @@ MHD_handle_connection (void *data)
 	      break;
 	    }
 #if WINDOWS
-          /* drain signaling pipe */
+          /* drain signaling pipe before other processing */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP))) )
             MHD_pipe_drain_ (spipe);
@@ -1821,9 +1821,11 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
-  if (MHD_YES == daemon->resuming)
+  if (MHD_NO != daemon->resuming)
     next = daemon->suspended_connections_head;
-
+ 
+  if (NULL != next)
+    daemon->resuming = MHD_NO;
   while (NULL != (pos = next))
     {
       next = pos->next;
@@ -1864,7 +1866,6 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       pos->suspended = MHD_NO;
       pos->resuming = MHD_NO;
     }
-  daemon->resuming = MHD_NO;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (MHD_YES != MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
@@ -2262,6 +2263,13 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
+  /* drain signaling pipe to avoid spinning select */
+  /* Do it before any other processing so new signals
+     will trigger select again and will be processed */
+  if ((MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+      (FD_ISSET (daemon->wpipe[0], read_fd_set)))
+    MHD_pipe_drain_ (daemon->wpipe[0]);
+
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_USE_SUSPEND_RESUME == (daemon->options & mask))
     resume_suspended_connections (daemon);
@@ -2283,10 +2291,6 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if ( (MHD_INVALID_SOCKET != (ds = daemon->socket_fd)) &&
        (FD_ISSET (ds, read_fd_set)) )
     (void) MHD_accept_connection (daemon);
-  /* drain signaling pipe to avoid spinning select */
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-       (FD_ISSET (daemon->wpipe[0], read_fd_set)) )
-    MHD_pipe_drain_ (daemon->wpipe[0]);
 
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -2591,6 +2595,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         free(p);
 	return MHD_NO;
       }
+    /* handle pipe FD */
+    /* do it before any other processing so
+       new signals will be processed in next loop */
+    if ( (-1 != poll_pipe) &&
+         (0 != (p[poll_pipe].revents & POLLIN)) )
+      MHD_pipe_drain_ (daemon->wpipe[0]);
+
     /* handle shutdown */
     if (MHD_YES == daemon->shutdown)
       {
@@ -2644,11 +2655,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
       (void) MHD_accept_connection (daemon);
-
-    /* handle pipe FD */
-    if ( (-1 != poll_pipe) &&
-         (0 != (p[poll_pipe].revents & POLLIN)) )
-      MHD_pipe_drain_ (daemon->wpipe[0]);
 
     free(p);
   }
@@ -2857,6 +2863,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
           if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
                (daemon->wpipe[0] == events[i].data.fd) )
             {
+              /* It's OK to drain pipe here as all external
+                 conditions will be processed later. */
               MHD_pipe_drain_ (daemon->wpipe[0]);
               continue;
             }

@@ -1,3 +1,7 @@
+Mon Apr 18 19:35:14 CET 2016
+	Fixed data races leading to inability in rare situations to
+	resume suspended connection. -EG
+
 Tue Apr 13 21:46:01 CET 2016
 	Removed unneeded locking for global timeout list in
 	MHD_USE_THREAD_PER_CONNECTION mode.
