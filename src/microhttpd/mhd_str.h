@@ -113,8 +113,6 @@ MHD_strx_to_sizet_ (const char * str,
  * @param str string to convert
  * @param maxlen maximum number of characters to process
  * @param out_val pointer to size_t to store result of conversion
- * @param next_char pointer to store pointer to character next to last
- *                  converted digit, ignored if NULL
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in size_t or @a out_val is NULL
@@ -147,8 +145,6 @@ MHD_strx_to_uint32_ (const char * str,
  * @param str string to convert
  * @param maxlen maximum number of characters to process
  * @param out_val pointer to uint32_t to store result of conversion
- * @param next_char pointer to store pointer to character next to last
- *                  converted digit, ignored if NULL
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint32_t or @a out_val is NULL
@@ -181,8 +177,6 @@ MHD_strx_to_uint64_ (const char * str,
  * @param str string to convert
  * @param maxlen maximum number of characters to process
  * @param out_val pointer to uint64_t to store result of conversion
- * @param next_char pointer to store pointer to character next to last
- *                  converted digit, ignored if NULL
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
