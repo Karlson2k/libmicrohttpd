@@ -598,8 +598,10 @@ testMultithreadedPostCancelPart(int flags)
   if (CURLE_HTTP_RETURNED_ERROR != (errornum = curl_easy_perform (c)))
     {
 #ifdef _WIN32
-      if (0 != (flags & FLAG_SLOW_READ) && CURLE_RECV_ERROR == errornum)
-        {
+      curl_version_info_data *curlverd = curl_version_info(CURLVERSION_NOW);
+      if (0 != (flags & FLAG_SLOW_READ) && CURLE_RECV_ERROR == errornum &&
+          (curlverd == NULL || curlverd->ares_num < 0x073100) )
+        { /* libcurl up to version 7.49.0 didn't have workaround for WinSock bug */
           fprintf (stderr, "Ignored curl_easy_perform expected failure on W32 with \"slow read\".\n");
           result = 0;
         }

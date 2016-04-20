@@ -1,3 +1,10 @@
+Wed Apr 20 18:12:30 CET 2016
+	Fixed macros in sysfdsetsize.c which could prevent compiling with
+	non-default FD_SETSIZE.
+	Fixed comments in mhd_str.c.
+	Updated test_post.c to not ignore specific error on W32 if libcurl
+	is built with workaround for WinSock bug. -EG
+
 Mon Apr 18 19:35:14 CET 2016
 	Fixed data races leading to inability in rare situations to
 	resume suspended connection. -EG
