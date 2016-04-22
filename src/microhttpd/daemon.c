@@ -4306,7 +4306,8 @@ MHD_start_daemon_va (unsigned int flags,
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
 
-          if (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME))
+          /* Always use individual control pipes */
+          if (1)
             {
               if (0 != MHD_pipe_ (d->wpipe))
                 {
@@ -4330,7 +4331,6 @@ MHD_start_daemon_va (unsigned int flags,
             }
 #ifndef MHD_WINSOCK_SOCKETS
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
-               (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
                (d->wpipe[0] >= FD_SETSIZE) )
             {
 #ifdef HAVE_MESSAGES
@@ -4650,7 +4650,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
 #endif
-          if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
+          /* Individual pipes are always used */
+          if (1)
             {
               if (MHD_INVALID_PIPE_ != daemon->worker_pool[i].wpipe[1])
                 {

@@ -1,3 +1,7 @@
+Fri Apr 22 14:29:28 CET 2016
+	Fixed race conditions when stopping quiesced daemon with thread
+	pool. -EG
+
 Wed Apr 20 18:12:30 CET 2016
 	Fixed macros in sysfdsetsize.c which could prevent compiling with
 	non-default FD_SETSIZE.
