@@ -152,7 +152,7 @@ ServeOneRequest(void *param)
     }
   MHD_stop_daemon (d);
   MHD_socket_close_(fd);
-  return NULL;
+  return done ? NULL : "Requests was not served by ServeOneRequest()";
 }
 
 
@@ -229,6 +229,14 @@ testGet (int type, int pool_count, int poll_flag)
   }
 
   fd = MHD_quiesce_daemon (d);
+  if (MHD_INVALID_SOCKET == fd)
+    {
+      fprintf (stderr,
+               "MHD_quiesce_daemon failed.\n");
+      curl_easy_cleanup (c);
+      MHD_stop_daemon (d);
+      return 2;
+    }
   if (0 != pthread_create(&thrd, NULL, &ServeOneRequest, (void*)(intptr_t) fd))
     {
       fprintf (stderr, "pthread_create failed\n");
@@ -411,8 +419,16 @@ testExternalGet ()
       if (i == 0) {
         /* quiesce the daemon on the 1st iteration, so the 2nd should fail */
         fd = MHD_quiesce_daemon(d);
-	if (MHD_INVALID_SOCKET == fd)
-	  abort ();
+        if (MHD_INVALID_SOCKET == fd)
+          {
+            fprintf (stderr,
+                     "MHD_quiesce_daemon failed.\n");
+            curl_multi_remove_handle (multi, c);
+            curl_multi_cleanup (multi);
+            curl_easy_cleanup (c);
+            MHD_stop_daemon (d);
+            return 2;
+          }
 	MHD_socket_close_ (fd);
         c = setupCURL (&cbc);
         multi = curl_multi_init ();
