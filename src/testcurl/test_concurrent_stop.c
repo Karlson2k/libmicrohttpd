@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 #include "gauger.h"
 
 #ifdef CPU_COUNT
@@ -100,74 +101,85 @@ ahc_echo (void *cls,
 }
 
 
-static pid_t
-do_gets (int port)
+static void *
+thread_gets (void *param)
 {
-  pid_t ret;
   CURL *c;
   CURLcode errornum;
   unsigned int i;
+  char * const url = (char*) param;
+
+  for (i=0;i<ROUNDS;i++)
+    {
+      c = curl_easy_init ();
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
+      /* NOTE: use of CONNECTTIMEOUT without also
+         setting NOSIGNAL results in really weird
+         crashes on my system! */
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      if (CURLE_OK != (errornum = curl_easy_perform (c)))
+        {
+          curl_easy_cleanup (c);
+          return NULL;
+        }
+      curl_easy_cleanup (c);
+    }
+
+  return NULL;
+}
+
+#ifndef SIGKILL
+#define SIGKILL SIGTERM
+#endif /* ! SIGKILL */
+
+static void *
+do_gets (void * param)
+{
   unsigned int j;
-  pid_t par[PAR];
+  pthread_t par[PAR];
   char url[64];
+  int port = (int)(intptr_t)param;
 
   sprintf(url, "http://127.0.0.1:%d/hello_world", port);
 
-  ret = fork ();
-  if (ret == -1) abort ();
-  if (ret != 0)
-    return ret;
   for (j=0;j<PAR;j++)
     {
-      par[j] = fork ();
-      if (par[j] == 0)
-	{
-	  for (i=0;i<ROUNDS;i++)
-	    {
-	      c = curl_easy_init ();
-	      curl_easy_setopt (c, CURLOPT_URL, url);
-	      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-	      curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
-	      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-	      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-	      if (oneone)
-		curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-	      else
-		curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-	      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-	      /* NOTE: use of CONNECTTIMEOUT without also
-		 setting NOSIGNAL results in really weird
-		 crashes on my system! */
-	      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-	      if (CURLE_OK != (errornum = curl_easy_perform (c)))
-		{
-		  curl_easy_cleanup (c);
-		  _exit (1);
-		}
-	      curl_easy_cleanup (c);
-	    }
-	  _exit (0);
-	}
+      if (0 != pthread_create(&par[j], NULL, &thread_gets, (void*)url))
+        {
+          for (j--; j >= 0; j--)
+            pthread_join(par[j], NULL);
+
+          fprintf(stderr, "pthread_create failed.\n");
+          _exit(99);
+        }
     }
-  sleep (1);
   for (j=0;j<PAR;j++)
-  {
-    kill (par[j], SIGKILL);
-    waitpid (par[j], NULL, 0);
-  }
-  _exit (0);
+    {
+      pthread_kill(par[j], SIGKILL);
+      pthread_join(par[j], NULL);
+    }
+  return NULL;
 }
 
 
-static void
-join_gets (pid_t pid)
+pthread_t start_gets(int port)
 {
-  int status;
-
-  status = 1;
-  waitpid (pid, &status, 0);
-  if (0 != status)
-    abort ();
+  pthread_t tid;
+  if (0 != pthread_create(&tid, NULL, &do_gets, (void*)(intptr_t)port))
+    {
+      fprintf(stderr, "pthread_create failed.\n");
+      _exit(99);
+    }
+  return tid;
 }
 
 
@@ -176,7 +188,7 @@ testMultithreadedGet (int port,
                       int poll_flag)
 {
   struct MHD_Daemon *d;
-  pid_t p;
+  pthread_t p;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG  | poll_flag,
                         port,
@@ -185,10 +197,10 @@ testMultithreadedGet (int port,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  p = do_gets (port);
+  p = start_gets (port);
   sleep (1);
   MHD_stop_daemon (d);
-  join_gets (p);
+  pthread_join (p, NULL);
   return 0;
 }
 
@@ -198,7 +210,7 @@ testMultithreadedPoolGet (int port,
                           int poll_flag)
 {
   struct MHD_Daemon *d;
-  pid_t p;
+  pthread_t p;
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         port,
@@ -208,10 +220,10 @@ testMultithreadedPoolGet (int port,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  p = do_gets (port);
+  p = start_gets (port);
   sleep (1);
   MHD_stop_daemon (d);
-  join_gets (p);
+  pthread_join (p, NULL);
   return 0;
 }
 
