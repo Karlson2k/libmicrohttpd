@@ -150,8 +150,13 @@ ServeOneRequest(void *param)
       MHD_SYS_select_ (max + 1, &rs, &ws, &es, &tv);
       MHD_run (d);
     }
+  fd = MHD_quiesce_daemon (d);
+  if (MHD_INVALID_SOCKET == fd)
+    {
+      MHD_stop_daemon (d);
+      return "MHD_quiesce_daemon() failed in ServeOneRequest()";
+    }
   MHD_stop_daemon (d);
-  MHD_socket_close_(fd);
   return done ? NULL : "Requests was not served by ServeOneRequest()";
 }
 
@@ -429,7 +434,6 @@ testExternalGet ()
             MHD_stop_daemon (d);
             return 2;
           }
-	MHD_socket_close_ (fd);
         c = setupCURL (&cbc);
         multi = curl_multi_init ();
         mret = curl_multi_add_handle (multi, c);
@@ -450,6 +454,7 @@ testExternalGet ()
       curl_multi_cleanup (multi);
     }
   MHD_stop_daemon (d);
+  MHD_socket_close_ (fd);
   if (cbc.pos != strlen ("/hello_world"))
     return 8192;
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))

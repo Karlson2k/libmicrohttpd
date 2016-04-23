@@ -1,3 +1,6 @@
+Sat Apr 23 16:06:30 CET 2016
+	Improved test_quiesce test. -EG
+
 Sat Apr 23 15:39:38 CET 2016
 	Notify other threads in MHD_quiesce_daemon() so listen socket FD
 	is removed from awaiting select() and poll(). -EG
