@@ -1,3 +1,7 @@
+Sat Apr 23 15:39:38 CET 2016
+	Notify other threads in MHD_quiesce_daemon() so listen socket FD
+	is removed from awaiting select() and poll(). -EG
+
 Sat Apr 23 14:17:15 CET 2016
 	Revert "shutdown trigger select" on Darwin. Fixed daemon shutdown
 	on Darwin without "MHD_USE_PIPE_FOR_SHUTDOWN" option. -EG

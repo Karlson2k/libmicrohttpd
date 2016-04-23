@@ -3105,9 +3105,9 @@ MHD_start_daemon (unsigned int flags,
  * clients to continue processing, but stops accepting new
  * connections.  Note that the caller is responsible for closing the
  * returned socket; however, if MHD is run using threads (anything but
- * external select mode), it must not be closed until AFTER
- * #MHD_stop_daemon has been called (as it is theoretically possible
- * that an existing thread is still using it).
+ * external select mode), socket will be removed from existing threads
+ * with some delay and it must not be closed while it's in use. To make
+ * sure that socket is not used anymore, call #MHD_stop_daemon.
  *
  * Note that some thread modes require the caller to have passed
  * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
@@ -3154,7 +3154,13 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 	      MHD_PANIC ("Failed to remove listen FD from epoll set\n");
 	    daemon->worker_pool[i].listen_socket_in_epoll = MHD_NO;
 	  }
+        else
 #endif
+        if (MHD_INVALID_PIPE_ != daemon->worker_pool[i].wpipe[1])
+          {
+            if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1], "q", 1))
+              MHD_PANIC ("failed to signal quiesce via pipe");
+          }
       }
   daemon->socket_fd = MHD_INVALID_SOCKET;
 #if EPOLL_SUPPORT
@@ -3169,7 +3175,14 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 	MHD_PANIC ("Failed to remove listen FD from epoll set\n");
       daemon->listen_socket_in_epoll = MHD_NO;
     }
+  else
 #endif
+  if (MHD_INVALID_PIPE_ != daemon->wpipe[1])
+    {
+      if (1 != MHD_pipe_write_ (daemon->wpipe[1], "q", 1))
+	MHD_PANIC ("failed to signal quiesce via pipe");
+    }
+
   return ret;
 }
 
