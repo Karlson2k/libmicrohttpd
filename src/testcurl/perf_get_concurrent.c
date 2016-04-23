@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 #include "gauger.h"
 
 #if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
@@ -158,74 +159,73 @@ ahc_echo (void *cls,
   return ret;
 }
 
-
-static pid_t
-do_gets (int port)
+static void *
+thread_gets (void *param)
 {
-  pid_t ret;
   CURL *c;
   CURLcode errornum;
   unsigned int i;
-  unsigned int j;
-  pid_t par[PAR];
-  char url[64];
+  char * const url = (char*) param;
 
-  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
-  
-  ret = fork ();
-  if (ret == -1) abort ();
-  if (ret != 0)
-    return ret;
-  for (j=0;j<PAR;j++)
+  for (i=0;i<ROUNDS;i++)
     {
-      par[j] = fork ();
-      if (par[j] == 0)
-	{
-	  for (i=0;i<ROUNDS;i++)
-	    {
-	      c = curl_easy_init ();
-	      curl_easy_setopt (c, CURLOPT_URL, url);
-	      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-	      curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
-	      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-	      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-	      if (oneone)
-		curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-	      else
-		curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-	      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-	      /* NOTE: use of CONNECTTIMEOUT without also
-		 setting NOSIGNAL results in really weird
-		 crashes on my system! */
-	      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-	      if (CURLE_OK != (errornum = curl_easy_perform (c)))
-		{
-		  fprintf (stderr,
-			   "curl_easy_perform failed: `%s'\n",
-			   curl_easy_strerror (errornum));
-		  curl_easy_cleanup (c);
-		  _exit (1);
-		}
-	      curl_easy_cleanup (c);
-	    }
-	  _exit (0);
-	}
+      c = curl_easy_init ();
+      curl_easy_setopt (c, CURLOPT_URL, url);
+      curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
+      curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
+      curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+      if (oneone)
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+      else
+        curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
+      /* NOTE: use of CONNECTTIMEOUT without also
+         setting NOSIGNAL results in really weird
+         crashes on my system! */
+      curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+      if (CURLE_OK != (errornum = curl_easy_perform (c)))
+        {
+          fprintf (stderr,
+                   "curl_easy_perform failed: `%s'\n",
+                   curl_easy_strerror (errornum));
+          curl_easy_cleanup (c);
+          return "curl error";
+        }
+      curl_easy_cleanup (c);
     }
-  for (j=0;j<PAR;j++)
-    waitpid (par[j], NULL, 0);
-  _exit (0);
+
+  return NULL;
 }
 
-
-static void 
-join_gets (pid_t pid)
+static void *
+do_gets (void * param)
 {
-  int status;
-  
-  status = 1;
-  waitpid (pid, &status, 0);
-  if (0 != status)
-    abort ();
+  unsigned int j;
+  pthread_t par[PAR];
+  char url[64];
+  int port = (int)(intptr_t)param;
+  char *err = NULL;
+
+  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
+
+  for (j=0;j<PAR;j++)
+    {
+      if (0 != pthread_create(&par[j], NULL, &thread_gets, (void*)url))
+        {
+          for (j--; j >= 0; j--)
+            pthread_join(par[j], NULL);
+          return "pthread_create error";
+        }
+    }
+  for (j=0;j<PAR;j++)
+    {
+      char *ret_val;
+      if (0 != pthread_join(par[j], (void**)&ret_val) ||
+          NULL != ret_val)
+        err = ret_val;
+    }
+  return err;
 }
 
 
@@ -233,15 +233,24 @@ static int
 testInternalGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
+  const char * const test_desc = poll_flag ? "internal poll" : "internal select";
+  const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
   start_timer ();
-  join_gets (do_gets (port));
-  stop (poll_flag ? "internal poll" : "internal select");
+  ret_val = do_gets ((void*)(intptr_t)port);
+  if (!ret_val)
+    stop (test_desc);
   MHD_stop_daemon (d);
+  if (ret_val)
+    {
+      fprintf (stderr,
+               "Error performing %s test: %s\n", test_desc, ret_val);
+      return 4;
+    }
   return 0;
 }
 
@@ -250,15 +259,24 @@ static int
 testMultithreadedGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
+  const char * const test_desc = poll_flag ? "thread with poll" : "thread with select";
+  const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG  | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
   start_timer ();
-  join_gets (do_gets (port));
-  stop (poll_flag ? "thread with poll" : "thread with select");
+  ret_val = do_gets ((void*)(intptr_t)port);
+  if (!ret_val)
+    stop (test_desc);
   MHD_stop_daemon (d);
+  if (ret_val)
+    {
+      fprintf (stderr,
+               "Error performing %s test: %s\n", test_desc, ret_val);
+      return 4;
+    }
   return 0;
 }
 
@@ -266,6 +284,8 @@ static int
 testMultithreadedPoolGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
+  const char * const test_desc = poll_flag ? "thread pool with poll" : "thread pool with select";
+  const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET",
@@ -273,9 +293,16 @@ testMultithreadedPoolGet (int port, int poll_flag)
   if (d == NULL)
     return 16;
   start_timer ();
-  join_gets (do_gets (port));
-  stop (poll_flag ? "thread pool with poll" : "thread pool with select");
+  ret_val = do_gets ((void*)(intptr_t)port);
+  if (!ret_val)
+    stop (test_desc);
   MHD_stop_daemon (d);
+  if (ret_val)
+    {
+      fprintf (stderr,
+               "Error performing %s test: %s\n", test_desc, ret_val);
+      return 4;
+    }
   return 0;
 }
 
@@ -283,7 +310,7 @@ static int
 testExternalGet (int port)
 {
   struct MHD_Daemon *d;
-  pid_t pid;
+  pthread_t pid;
   fd_set rs;
   fd_set ws;
   fd_set es;
@@ -291,14 +318,20 @@ testExternalGet (int port)
   struct timeval tv;
   MHD_UNSIGNED_LONG_LONG tt;
   int tret;
+  char *ret_val;
+  int ret = 0;
 
   d = MHD_start_daemon (MHD_USE_DEBUG,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
+  if (0 != pthread_create(&pid, NULL, &do_gets, (void*)(intptr_t)port))
+    {
+      MHD_stop_daemon(d);
+      return 512;
+    }
   start_timer ();
-  pid = do_gets (port);
-  while (0 == waitpid (pid, NULL, WNOHANG))
+  while (ESRCH != pthread_kill (pid, 0))
     {
       max = 0;
       FD_ZERO (&rs);
@@ -320,12 +353,23 @@ testExternalGet (int port)
 	  fprintf (stderr,
 		   "select failed: %s\n",
 		   strerror (errno));
+	  ret |= 1024;
 	  break;	      	  
 	}
-      MHD_run (d);
+      MHD_run_from_select(d, &rs, &ws, &es);
     }
+
   stop ("external select");
   MHD_stop_daemon (d);
+  if (0 != pthread_join(pid, (void**)&ret_val) ||
+      NULL != ret_val)
+    {
+      fprintf (stderr,
+               "%s\n", ret_val);
+      ret |= 8;
+    }
+  if (ret)
+    fprintf (stderr, "Error performing test.\n");
   return 0;
 }
 
