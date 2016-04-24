@@ -100,6 +100,16 @@ ahc_echo (void *cls,
   return ret;
 }
 
+static void
+clean_curl(void * param)
+{
+  if (param)
+    {
+      CURL * const c = *((CURL **)param);
+      if (c)
+        curl_easy_cleanup (c);
+    }
+}
 
 static void *
 thread_gets (void *param)
@@ -108,38 +118,45 @@ thread_gets (void *param)
   CURLcode errornum;
   unsigned int i;
   char * const url = (char*) param;
+  int pth_olst;
+  if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &pth_olst) ||
+      pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &pth_olst) )
+    {
+      fprintf(stderr,
+              "pthread_setcancelstate()/pthread_setcanceltype() failed.\n");
+      _exit(99);
+    }
 
   for (i=0;i<ROUNDS;i++)
     {
+      pthread_testcancel();
+      c = NULL;
+      pthread_cleanup_push(clean_curl, (void*)&c);
       c = curl_easy_init ();
+      pthread_testcancel();
       curl_easy_setopt (c, CURLOPT_URL, url);
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, NULL);
       curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-      curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
+      curl_easy_setopt (c, CURLOPT_TIMEOUT, 5L);
       if (oneone)
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
+      curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
       /* NOTE: use of CONNECTTIMEOUT without also
          setting NOSIGNAL results in really weird
          crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
-      if (CURLE_OK != (errornum = curl_easy_perform (c)))
-        {
-          curl_easy_cleanup (c);
-          return NULL;
-        }
-      curl_easy_cleanup (c);
+      pthread_testcancel();
+      errornum = curl_easy_perform (c);
+      pthread_cleanup_pop (1);
+      if (CURLE_OK != errornum)
+        return NULL;
     }
 
   return NULL;
 }
-
-#ifndef SIGKILL
-#define SIGKILL SIGTERM
-#endif /* ! SIGKILL */
 
 static void *
 do_gets (void * param)
@@ -155,16 +172,19 @@ do_gets (void * param)
     {
       if (0 != pthread_create(&par[j], NULL, &thread_gets, (void*)url))
         {
-          for (j--; j >= 0; j--)
-            pthread_join(par[j], NULL);
-
           fprintf(stderr, "pthread_create failed.\n");
+          for (j--; j >= 0; j--)
+            {
+              pthread_cancel(par[j]);
+              pthread_join(par[j], NULL);
+            }
           _exit(99);
         }
     }
+  sleep (1);
   for (j=0;j<PAR;j++)
     {
-      pthread_kill(par[j], SIGKILL);
+      pthread_cancel(par[j]);
       pthread_join(par[j], NULL);
     }
   return NULL;
