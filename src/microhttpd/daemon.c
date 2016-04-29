@@ -3598,6 +3598,9 @@ create_listen_socket (struct MHD_Daemon *daemon,
 {
   MHD_socket fd;
   int cloexec_set;
+#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+  static const int on_val = 1;
+#endif
 
   /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
    * implementations do not set ai_socktype, e.g. RHL6.2. */
@@ -3618,6 +3621,9 @@ create_listen_socket (struct MHD_Daemon *daemon,
     }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
+#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+  setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on_val, sizeof(on_val));
+#endif
   if (MHD_NO == cloexec_set)
     make_noninheritable (daemon, fd);
   return fd;
