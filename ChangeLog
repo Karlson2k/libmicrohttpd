@@ -1,3 +1,6 @@
+Sat Apr 30 10:22:37 CEST 2016
+	Added clarifications to manual based on questions on list. -CG
+
 Sat Apr 23 20:12:01 CET 2016
 	Tests perf_get_concurrent and test_concurrent_stop ported to use
 	pthread instead of fork(). Added more error detections. -EG

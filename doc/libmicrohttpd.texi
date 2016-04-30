@@ -100,13 +100,23 @@ library.
 
 The library is supposed to handle everything that it must handle
 (because the API would not allow clients to do this), such as basic
-connection management; however, detailed interpretations of headers ---
-such as range requests --- and HTTP methods are left to clients.  The
-library does understand @code{HEAD} and will only send the headers of
-the response and not the body, even if the client supplied a body.  The
-library also understands headers that control connection management
-(specifically, @code{Connection: close} and @code{Expect: 100 continue}
-are understood and handled automatically).
+connection management. However, detailed interpretations of headers,
+such as range requests, are left to the main application.  In
+particular, if an application developer wants to support range
+requests, he needs to explicitly indicate support in responses and
+also explicitly parse the range header and generate a response (for
+example, using the @code{MHD_create_response_from_fd_at_offset} call
+to serve ranges from a file).  MHD does understands headers that
+control connection management (specifically, @code{Connection: close}
+and @code{Expect: 100 continue} are understood and handled
+automatically).  @code{Connection: upgrade} is not yet supported.
+
+MHD also largely ignores the semantics of the different HTTP methods,
+so clients are left to handle those.  One exception is that MHD does
+understand @code{HEAD} and will only send the headers of the response
+and not the body, even if the client supplied a body.  (In fact,
+clients do need to construct a response with the correct length, even
+for @code{HEAD} request.)
 
 MHD understands @code{POST} data and is able to decode certain
 formats (at the moment only @code{application/x-www-form-urlencoded}
