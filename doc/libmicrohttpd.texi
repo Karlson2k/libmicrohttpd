@@ -520,6 +520,25 @@ call has fundamentally lower complexity (O(1) for @code{epoll()}
 vs. O(n) for @code{select()}/@code{poll()} where n is the number of
 open connections).
 
+@item MHD_USE_EPOLL_TURBO
+@cindex performance
+Enable optimizations to aggressively improve performance.  Note that
+the option is a slight misnomer, as these days it also enables optimziations
+that are unrelated to @code{MHD_USE_EPOLL_LINUX_ONLY}.  Hence it is OK to
+use this option with other event loops.
+
+Currently, the optimizations this option enables are based on
+opportunistic reads and writes.  Bascially, MHD will simply try to
+read or write or accept on a socket before checking that the socket is
+ready for IO using the event loop mechanism.  As the sockets are
+non-blocking, this may fail (at a loss of performance), but generally
+MHD does this in situations where the operation is likely to succeed,
+in which case performance is improved.  Setting the flag should generally
+be safe (even though the code is slightly more experimental).  You may
+want to benchmark your application to see if this makes any difference
+for you.
+
+
 @item MHD_SUPPRESS_DATE_NO_CLOCK
 @cindex date
 @cindex clock

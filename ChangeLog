@@ -1,3 +1,12 @@
+Mon May  2 06:08:26 CEST 2016
+	Adding logic to help address FE performance issue as
+	discussed on the mailinglist with subject
+        "single-threaded daemon, multiple pending requests, responses batched".
+	The new logic is only enabled when MHD_USE_EPOLL_TURBO is set.
+	Note that some additional refactoring was also done to clean up
+	the code and avoid code duplication, which may have actually fixed
+	an unrelated issue with HTTPS and a POLL-style event loop. -CG
+
 Sat Apr 30 10:22:37 CEST 2016
 	Added clarifications to manual based on questions on list. -CG
 

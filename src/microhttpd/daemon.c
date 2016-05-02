@@ -826,6 +826,62 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 
 
 /**
+ * Call the handlers for a connection in the
+ * appropriate order based on the readiness as
+ * detected by the event loop.
+ *
+ * @param con connection to handle
+ * @param read_ready set if the socket is ready for reading
+ * @param write_ready set if the socket is ready for writing
+ * @param force_close set if a hard error was detected on the socket;
+ *        if this information is not available, simply pass #MHD_NO
+ * @return #MHD_YES to continue normally,
+ *         #MHD_NO if a serious error was encountered and the
+ *         connection is to be closed.
+ */
+static int
+call_handlers (struct MHD_Connection *con,
+               int read_ready,
+               int write_ready,
+               int force_close)
+{
+  struct MHD_Daemon *daemon = con->daemon;
+  int had_response_before_idle;
+  int ret;
+
+#if HTTPS_SUPPORT
+  if (MHD_YES == con->tls_read_ready)
+    read_ready = MHD_YES;
+#endif
+  if (read_ready)
+    con->read_handler (con);
+  if (write_ready)
+    con->write_handler (con);
+  had_response_before_idle = (NULL != con->response);
+  if (force_close)
+    MHD_connection_close_ (con,
+                           MHD_REQUEST_TERMINATED_WITH_ERROR);
+  ret = con->idle_handler (con);
+  /* If we're in TURBO mode, and got a response object,
+     try opportunistically to just call write immediately.  */
+  if ( (! force_close) &&
+       (MHD_YES == ret) &&
+       (0 != (daemon->options & MHD_USE_EPOLL_TURBO)) &&
+       (NULL != con->response) &&
+       (MHD_NO == had_response_before_idle) )
+    {
+      /* first 'write' gets the header, then 'idle'
+         readies the body, then 2nd 'write' may send
+         the body. */
+      con->write_handler (con);
+      if (MHD_YES == (ret = con->idle_handler (con)))
+        con->write_handler (con);
+    }
+  return ret;
+}
+
+
+/**
  * Main function of the thread that handles an individual
  * connection when #MHD_USE_THREAD_PER_CONNECTION is set.
  *
@@ -962,17 +1018,12 @@ MHD_handle_connection (void *data)
                (FD_ISSET (spipe, &rs)) )
             MHD_pipe_drain_ (spipe);
 #endif
-	  /* call appropriate connection handler if necessary */
-	  if ( (FD_ISSET (con->socket_fd, &rs))
-#if HTTPS_SUPPORT
-	       || (MHD_YES == con->tls_read_ready)
-#endif
-	       )
-	    con->read_handler (con);
-	  if (FD_ISSET (con->socket_fd, &ws))
-	    con->write_handler (con);
-	  if (MHD_NO == con->idle_handler (con))
-	    goto exit;
+          if (MHD_NO ==
+              call_handlers (con,
+                             FD_ISSET (con->socket_fd, &rs),
+                             FD_ISSET (con->socket_fd, &ws),
+                             MHD_NO))
+            goto exit;
 	}
 #ifdef HAVE_POLL
       else
@@ -1034,19 +1085,12 @@ MHD_handle_connection (void *data)
                (0 != (p[1].revents & (POLLERR | POLLHUP))) )
             MHD_pipe_drain_ (spipe);
 #endif
-	  if ( (0 != (p[0].revents & POLLIN))
-#if HTTPS_SUPPORT
-	       || (MHD_YES == con->tls_read_ready)
-#endif
-	       )
-	    con->read_handler (con);
-	  if (0 != (p[0].revents & POLLOUT))
-	    con->write_handler (con);
-	  if (0 != (p[0].revents & (POLLERR | POLLHUP)))
-	    MHD_connection_close_ (con,
-                                   MHD_REQUEST_TERMINATED_WITH_ERROR);
-	  if (MHD_NO == con->idle_handler (con))
-	    goto exit;
+          if (MHD_NO ==
+              call_handlers (con,
+                             0 != (p[0].revents & POLLIN),
+                             0 != (p[0].revents & POLLOUT),
+                             0 != (p[0].revents & (POLLERR | POLLHUP))))
+            goto exit;
 	}
 #endif
     }
@@ -1823,7 +1867,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   if (MHD_NO != daemon->resuming)
     next = daemon->suspended_connections_head;
- 
+
   /* Clear the flag *only* if connections will be resumed otherwise
      it may accidentally clear flag that was set at the same time in
      other thread (just after 'if (MHD_NO != daemon->resuming)' in
@@ -2310,33 +2354,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
           ds = pos->socket_fd;
           if (MHD_INVALID_SOCKET == ds)
 	    continue;
-	  switch (pos->event_loop_info)
-	    {
-	    case MHD_EVENT_LOOP_INFO_READ:
-	      if ( (FD_ISSET (ds, read_fd_set))
-#if HTTPS_SUPPORT
-		   || (MHD_YES == pos->tls_read_ready)
-#endif
-		   )
-		pos->read_handler (pos);
-	      break;
-	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      if ( (FD_ISSET (ds, read_fd_set)) &&
-		   (pos->read_buffer_size > pos->read_buffer_offset) )
-		pos->read_handler (pos);
-	      if (FD_ISSET (ds, write_fd_set))
-		pos->write_handler (pos);
-	      break;
-	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      if ( (FD_ISSET (ds, read_fd_set)) &&
-		   (pos->read_buffer_size > pos->read_buffer_offset) )
-		pos->read_handler (pos);
-	      break;
-	    case MHD_EVENT_LOOP_INFO_CLEANUP:
-	      /* should never happen */
-	      break;
-	    }
-	  pos->idle_handler (pos);
+          call_handlers (pos,
+                         FD_ISSET (ds, read_fd_set),
+                         FD_ISSET (ds, write_fd_set),
+                         MHD_NO);
         }
     }
   MHD_cleanup_connections (daemon);
@@ -2621,43 +2642,15 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     while (NULL != (pos = next))
       {
 	next = pos->next;
-	switch (pos->event_loop_info)
-	  {
-	  case MHD_EVENT_LOOP_INFO_READ:
-	    /* first, sanity checks */
-	    if (i >= num_connections)
-	      break; /* connection list changed somehow, retry later ... */
-	    if (p[poll_server+i].fd != pos->socket_fd)
-	      break; /* fd mismatch, something else happened, retry later ... */
-	    /* normal handling */
-	    if (0 != (p[poll_server+i].revents & POLLIN))
-	      pos->read_handler (pos);
-	    pos->idle_handler (pos);
-	    i++;
-	    break;
-	  case MHD_EVENT_LOOP_INFO_WRITE:
-	    /* first, sanity checks */
-	    if (i >= num_connections)
-	      break; /* connection list changed somehow, retry later ... */
-	    if (p[poll_server+i].fd != pos->socket_fd)
-	      break; /* fd mismatch, something else happened, retry later ... */
-	    /* normal handling */
-	    if (0 != (p[poll_server+i].revents & POLLIN))
-	      pos->read_handler (pos);
-	    if (0 != (p[poll_server+i].revents & POLLOUT))
-	      pos->write_handler (pos);
-	    pos->idle_handler (pos);
-	    i++;
-	    break;
-	  case MHD_EVENT_LOOP_INFO_BLOCK:
-	    if (0 != (p[poll_server+i].revents & POLLIN))
-	      pos->read_handler (pos);
-	    pos->idle_handler (pos);
-	    break;
-	  case MHD_EVENT_LOOP_INFO_CLEANUP:
-	    pos->idle_handler (pos);
-	    break;
-	  }
+        /* first, sanity checks */
+        if (i >= num_connections)
+          continue; /* connection list changed somehow, retry later ... */
+        if (p[poll_server+i].fd != pos->socket_fd)
+          continue; /* fd mismatch, something else happened, retry later ... */
+        call_handlers (pos,
+                       0 != (p[poll_server+i].revents & POLLIN),
+                       0 != (p[poll_server+i].revents & POLLOUT),
+                       MHD_NO);
       }
     /* handle 'listen' FD */
     if ( (-1 != poll_listen) &&
@@ -2934,11 +2927,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
 		   daemon->eready_tail,
 		   pos);
       pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
-      if (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info)
-	pos->read_handler (pos);
-      if (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info)
-	pos->write_handler (pos);
-      pos->idle_handler (pos);
+      call_handlers (pos,
+                     MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info,
+                     MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info,
+                     MHD_NO);
     }
 
   /* Finally, handle timed-out connections; we need to do this here
