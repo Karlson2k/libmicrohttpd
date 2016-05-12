@@ -1144,9 +1144,6 @@ recv_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
-#if EPOLL_SUPPORT
-  const size_t requested_size = i;
-#endif
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
@@ -1162,11 +1159,14 @@ recv_param_adapter (struct MHD_Connection *connection,
     i = INT_MAX; /* return value limit */
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  ret = (ssize_t)recv (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
+  ret = (ssize_t) recv (connection->socket_fd,
+                        other,
+                        (_MHD_socket_funcs_size) i,
+                        MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if ( (0 > ret) || (requested_size > (size_t) ret))
+  if ( (0 > ret) && (EAGAIN == MHD_socket_errno_) )
     {
-      /* partial read --- no longer read-ready */
+      /* Got EAGAIN --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
     }
 #endif
@@ -1188,9 +1188,6 @@ send_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
-#if EPOLL_SUPPORT
-  const size_t requested_size = i;
-#endif
 #if LINUX
   MHD_socket fd;
 #endif
@@ -1210,7 +1207,10 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif /* MHD_WINSOCK_SOCKETS */
 
   if (0 != (connection->daemon->options & MHD_USE_SSL))
-    return (ssize_t)send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
+    return (ssize_t) send (connection->socket_fd,
+                           other,
+                           (_MHD_socket_funcs_size) i,
+                           MSG_NOSIGNAL);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
@@ -1228,6 +1228,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif /* HAVE_SENDFILE64 */
       offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
+      ret = 0;
 #ifndef HAVE_SENDFILE64
       offset = (off_t) offsetu64;
       if ( (offsetu64 <= (uint64_t) OFF_T_MAX) &&
@@ -1237,17 +1238,18 @@ send_param_adapter (struct MHD_Connection *connection,
       if ( (offsetu64 <= (uint64_t) OFF64_T_MAX) &&
 	   (0 < (ret = sendfile64 (connection->socket_fd, fd, &offset, left))) )
 #endif /* HAVE_SENDFILE64 */
-	{
-#if EPOLL_SUPPORT
-          if (requested_size > (size_t) ret)
-	    {
-	      /* partial write --- no longer write-ready */
-	      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-	    }
-#endif
-	  return ret;
-	}
+        {
+          /* write successful */
+          return ret;
+        }
       err = MHD_socket_errno_;
+#if EPOLL_SUPPORT
+      if ( (0 > ret) && (EAGAIN == err) )
+        {
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+        }
+#endif
       if ( (EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err) )
 	return 0;
       if (EBADF == err)
@@ -1259,11 +1261,11 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  ret = (ssize_t)send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
+  ret = (ssize_t) send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if ( (0 > ret) || (requested_size > (size_t) ret) )
+  if ( (0 > ret) || (EAGAIN == MHD_socket_errno_) )
     {
-      /* partial write --- no longer write-ready */
+      /* EAGAIN --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
     }
 #endif
@@ -1282,7 +1284,8 @@ send_param_adapter (struct MHD_Connection *connection,
  * @param cls closure argument for the function
  * @return termination code from the thread
  */
-typedef MHD_THRD_RTRN_TYPE_ (MHD_THRD_CALL_SPEC_ *ThreadStartRoutine)(void *cls);
+typedef MHD_THRD_RTRN_TYPE_
+(MHD_THRD_CALL_SPEC_ *ThreadStartRoutine)(void *cls);
 
 
 /**
