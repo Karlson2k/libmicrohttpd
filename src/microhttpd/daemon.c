@@ -1229,6 +1229,7 @@ send_param_adapter (struct MHD_Connection *connection,
       offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
       ret = 0;
+      MHD_set_socket_errno_(ENOMEM);
 #ifndef HAVE_SENDFILE64
       offset = (off_t) offsetu64;
       if ( (offsetu64 <= (uint64_t) OFF_T_MAX) &&
@@ -1263,7 +1264,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
   ret = (ssize_t) send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if ( (0 > ret) || (EAGAIN == MHD_socket_errno_) )
+  if ( (0 > ret) && (EAGAIN == MHD_socket_errno_) )
     {
       /* EAGAIN --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
