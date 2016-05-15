@@ -1,3 +1,7 @@
+Sun May 15 12:17:25 CEST 2016
+	Fix handling system or process resource limit exhaustion upon
+	accept(). -CG/CP
+
 Thu May 12 08:42:19 CEST 2016
 	Fix handling of partial writes in MHD_USE_EPOLL_LINUX_ONLY; only
 	consider sockets returning EAGAIN as unready. -CG/CP

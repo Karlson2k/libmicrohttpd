@@ -1164,6 +1164,15 @@ struct MHD_Daemon
    */
   int shutdown;
 
+  /**
+   * Did we hit some system or process-wide resource limit while
+   * trying to accept() the last time? If so, we don't accept new
+   * connections until we close an existing one.  This effectively
+   * temporarily lowers the "connection_limit" to the current
+   * number of connections.
+   */
+  int at_limit;
+
   /*
    * Do we need to process resuming connections?
    */

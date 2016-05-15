@@ -2085,6 +2085,28 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 	    MHD_PANIC ("close failed\n");
           /* just in case */
         }
+      if ( (EMFILE == err) ||
+           (ENFILE == err) ||
+           (ENOMEM == err) ||
+           (ENOBUFS == err) )
+        {
+          /* system/process out of resources */
+          if (0 == daemon->connections)
+            {
+              /* Not setting 'at_limit' flag, as there is no way it
+                 would ever be cleared.  Instead trying to produce
+                 bit fat ugly warning. */
+              MHD_DLOG (daemon,
+                        "Hit process or system resource limit at FIRST connection. This is really bad as there is no sane way to proceed. Will try busy waiting for system resources to become magically available.\n");
+            }
+          else
+            {
+              daemon->at_limit = MHD_YES;
+              MHD_DLOG (daemon,
+                        "Hit process or system resource limit at %u connections, temporarily suspending accept(). Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n",
+                        (unsigned int) daemon->connections);
+            }
+        }
       return MHD_NO;
     }
 #if !defined(USE_ACCEPT4)
@@ -2142,6 +2164,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	gnutls_deinit (pos->tls_session);
 #endif
       daemon->connections--;
+      daemon->at_limit = MHD_NO;
       if (NULL != daemon->notify_connection)
         daemon->notify_connection (daemon->notify_connection_cls,
                                    pos,
@@ -2420,9 +2443,10 @@ MHD_select (struct MHD_Daemon *daemon,
          we do not miss the shutdown, so only do this
          optimization if we have a shutdown signaling
          pipe. */
-      if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-           (daemon->connections == daemon->connection_limit) &&
-           (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) )
+      if ( ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+             (daemon->connections == daemon->connection_limit) &&
+             (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) ) ||
+           (MHD_YES == daemon->at_limit) )
         FD_CLR (daemon->socket_fd, &rs);
     }
   else
@@ -2558,7 +2582,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     poll_server = 0;
     poll_listen = -1;
     if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-	 (daemon->connections < daemon->connection_limit) )
+	 (daemon->connections < daemon->connection_limit) &&
+         (MHD_NO == daemon->at_limit) )
       {
 	/* only listen if we are not at the connection limit */
 	p[poll_server].fd = daemon->socket_fd;
@@ -2794,7 +2819,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
     return MHD_NO;
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (daemon->connections < daemon->connection_limit) &&
-       (MHD_NO == daemon->listen_socket_in_epoll) )
+       (MHD_NO == daemon->listen_socket_in_epoll) &&
+       (MHD_NO == daemon->at_limit) )
     {
       event.events = EPOLLIN;
       event.data.ptr = daemon;
@@ -2812,8 +2838,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->listen_socket_in_epoll = MHD_YES;
     }
-  if ( (MHD_YES == daemon->listen_socket_in_epoll) &&
-       (daemon->connections == daemon->connection_limit) )
+  if ( ( (MHD_YES == daemon->listen_socket_in_epoll) &&
+         (daemon->connections == daemon->connection_limit) ) ||
+       (MHD_YES == daemon->at_limit) )
     {
       /* we're at the connection limit, disable listen socket
 	 for event loop for now */
@@ -2912,7 +2939,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	      series_length = 0;
 	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
 		      (daemon->connections < daemon->connection_limit) &&
-		      (series_length < 128) )
+		      (series_length < 128) &&
+                      (MHD_NO == daemon->at_limit) )
                 series_length++;
 	    }
 	}
