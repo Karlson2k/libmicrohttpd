@@ -1,3 +1,7 @@
+Tue May 17 13:32:21 CEST 2016
+	Allow clients to determine whether a connection is suspended;
+	introduces MHD_CONNECTION_INFO_CONNECTION_SUSPENDED. -CG/FC
+
 Sun May 15 12:17:25 CEST 2016
 	Fix handling system or process resource limit exhaustion upon
 	accept(). -CG/CP

@@ -2119,6 +2119,10 @@ to resume a suspended connection at any time.  Calling this function
 on a connection that was not previously suspended will result in
 undefined behavior.
 
+You can check whether a connection is currently suspended using
+@code{MHD_get_connection_info} by querying for
+@code{MHD_CONNECTION_INFO_CONNECTION_SUSPENDED}.
+
 @table @var
 @item connection
 the connection to resume
@@ -2636,6 +2640,11 @@ after sending the HTTP header and clear it after finishing the footers
 automatically (if the platform supports it).  As the connection
 callbacks are invoked in between, those might be used to set different
 values for TCP-CORK and TCP-NODELAY in the meantime.
+
+@item MHD_CONNECTION_INFO_CONNECTION_SUSPENDED
+Returns pointer to an integer that is @code{MHD_YES} if the connection
+is currently suspended (and thus can be safely resumed) and
+@code{MHD_NO} otherwise.
 
 @item MHD_CONNECTION_INFO_SOCKET_CONTEXT
 Returns the client-specific pointer to a @code{void *} that was

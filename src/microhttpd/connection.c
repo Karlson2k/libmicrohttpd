@@ -3013,6 +3013,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return (const union MHD_ConnectionInfo *) &connection->socket_fd;
     case MHD_CONNECTION_INFO_SOCKET_CONTEXT:
       return (const union MHD_ConnectionInfo *) &connection->socket_context;
+    case MHD_CONNECTION_INFO_CONNECTION_SUSPENDED:
+      return (const union MHD_ConnectionInfo *) &connection->suspended;
     default:
       return NULL;
     };
