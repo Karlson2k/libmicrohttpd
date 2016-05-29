@@ -727,7 +727,7 @@ keepalive_possible (struct MHD_Connection *connection)
                                      MHD_HEADER_KIND,
                                      MHD_HTTP_HEADER_CONNECTION);
   if (MHD_str_equal_caseless_(connection->version,
-                       MHD_HTTP_VERSION_1_1))
+                              MHD_HTTP_VERSION_1_1))
   {
     if (NULL == end)
       return MHD_YES;
@@ -737,7 +737,7 @@ keepalive_possible (struct MHD_Connection *connection)
    return MHD_YES;
   }
   if (MHD_str_equal_caseless_(connection->version,
-                       MHD_HTTP_VERSION_1_0))
+                              MHD_HTTP_VERSION_1_0))
   {
     if (NULL == end)
       return MHD_NO;
@@ -2394,7 +2394,7 @@ cleanup_connection (struct MHD_Connection *connection)
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) 
+      if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
         MHD_PANIC ("Failed to acquire cleanup mutex\n");
     }
   else
