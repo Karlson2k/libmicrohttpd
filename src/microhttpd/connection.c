@@ -876,9 +876,9 @@ build_header_response (struct MHD_Connection *connection)
       connection->write_buffer_size = 0;
       return MHD_YES;
     }
+  rc = connection->responseCode & (~MHD_ICY_FLAG);
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
-      rc = connection->responseCode & (~MHD_ICY_FLAG);
       reason_phrase = MHD_get_reason_phrase_for (rc);
       sprintf (code,
                "%s %u %s\r\n",
@@ -988,7 +988,13 @@ build_header_response (struct MHD_Connection *connection)
       have_content_length = MHD_get_response_header (connection->response,
                                                      MHD_HTTP_HEADER_CONTENT_LENGTH);
 
+      /* MHD_HTTP_NO_CONTENT, MHD_HTTP_NOT_MODIFIED and 1xx-status
+         codes SHOULD NOT have a Content-Length according to spec;
+         also chunked encoding / unknown length or CONNECT... */
       if ( (MHD_SIZE_UNKNOWN != connection->response->total_size) &&
+           (MHD_HTTP_NO_CONTENT != rc) &&
+           (MHD_HTTP_NOT_MODIFIED != rc) &&
+           (MHD_HTTP_OK < rc) &&
            (NULL == have_content_length) &&
            ( (NULL == connection->method) ||
              (! MHD_str_equal_caseless_ (connection->method,
@@ -3101,11 +3107,15 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
-  if ( (NULL != connection->method) &&
-       (MHD_str_equal_caseless_ (connection->method, MHD_HTTP_METHOD_HEAD)) )
+  if ( ( (NULL != connection->method) &&
+         (MHD_str_equal_caseless_ (connection->method, MHD_HTTP_METHOD_HEAD)) ) ||
+       (MHD_HTTP_OK > status_code) ||
+       (MHD_HTTP_NO_CONTENT == status_code) ||
+       (MHD_HTTP_NOT_MODIFIED == status_code) )
     {
-      /* if this is a "HEAD" request, pretend that we
-         have already sent the full message body */
+      /* if this is a "HEAD" request, or a status code for
+         which a body is not allowed, pretend that we
+         have already sent the full message body. */
       connection->response_write_position = response->total_size;
     }
   if ( (MHD_CONNECTION_HEADERS_PROCESSED == connection->state) &&

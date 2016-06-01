@@ -1,3 +1,6 @@
+Wed Jun  1 21:59:34 CEST 2016
+	Do not send "Content-Length" header for 1xx/204/304 status codes. -CG
+
 Tue May 17 13:32:21 CEST 2016
 	Allow clients to determine whether a connection is suspended;
 	introduces MHD_CONNECTION_INFO_CONNECTION_SUSPENDED. -CG/FC
