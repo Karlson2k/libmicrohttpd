@@ -994,7 +994,7 @@ build_header_response (struct MHD_Connection *connection)
       if ( (MHD_SIZE_UNKNOWN != connection->response->total_size) &&
            (MHD_HTTP_NO_CONTENT != rc) &&
            (MHD_HTTP_NOT_MODIFIED != rc) &&
-           (MHD_HTTP_OK < rc) &&
+           (MHD_HTTP_OK <= rc) &&
            (NULL == have_content_length) &&
            ( (NULL == connection->method) ||
              (! MHD_str_equal_caseless_ (connection->method,
@@ -3108,7 +3108,8 @@ MHD_queue_response (struct MHD_Connection *connection,
   connection->response = response;
   connection->responseCode = status_code;
   if ( ( (NULL != connection->method) &&
-         (MHD_str_equal_caseless_ (connection->method, MHD_HTTP_METHOD_HEAD)) ) ||
+         (MHD_str_equal_caseless_ (connection->method,
+                                   MHD_HTTP_METHOD_HEAD)) ) ||
        (MHD_HTTP_OK > status_code) ||
        (MHD_HTTP_NO_CONTENT == status_code) ||
        (MHD_HTTP_NOT_MODIFIED == status_code) )
