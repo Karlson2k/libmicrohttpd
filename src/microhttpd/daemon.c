@@ -2443,10 +2443,10 @@ MHD_select (struct MHD_Daemon *daemon,
          we do not miss the shutdown, so only do this
          optimization if we have a shutdown signaling
          pipe. */
-      if ( ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-             (daemon->connections == daemon->connection_limit) &&
+      if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+           ( ( (daemon->connections == daemon->connection_limit) &&
              (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) ) ||
-           (MHD_YES == daemon->at_limit) )
+             (MHD_YES == daemon->at_limit) ) )
         FD_CLR (daemon->socket_fd, &rs);
     }
   else

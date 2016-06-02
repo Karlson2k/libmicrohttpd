@@ -750,7 +750,7 @@ keepalive_possible (struct MHD_Connection *connection)
 
 
 /**
- * Produce HTTP "Date:" header.
+ * Produce HTTP time stamp.
  *
  * @param date where to write the header, with
  *        at least 128 bytes available space.
@@ -788,14 +788,14 @@ get_date_string (char *date)
   now = *pNow;
 #endif
   sprintf (date,
-             "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
-             days[now.tm_wday % 7],
-             (unsigned int) now.tm_mday,
-             mons[now.tm_mon % 12],
-             (unsigned int) (1900 + now.tm_year),
-             (unsigned int) now.tm_hour,
-             (unsigned int) now.tm_min,
-             (unsigned int) now.tm_sec);
+           "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+           days[now.tm_wday % 7],
+           (unsigned int) now.tm_mday,
+           mons[now.tm_mon % 12],
+           (unsigned int) (1900 + now.tm_year),
+           (unsigned int) now.tm_hour,
+           (unsigned int) now.tm_min,
+           (unsigned int) now.tm_sec);
 }
 
 
