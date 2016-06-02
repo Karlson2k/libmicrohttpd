@@ -2068,12 +2068,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif /* ! USE_ACCEPT4 */
   if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
-#ifdef HAVE_MESSAGES
       const int err = MHD_socket_errno_;
       /* This could be a common occurance with multiple worker threads */
       if ( (EINVAL == err) &&
            (MHD_INVALID_SOCKET == daemon->socket_fd) )
         return MHD_NO; /* can happen during shutdown */
+#ifdef HAVE_MESSAGES
       if ((EAGAIN != err) && (EWOULDBLOCK != err))
         MHD_DLOG (daemon,
 		  "Error accepting connection: %s\n",
@@ -2093,18 +2093,22 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
           /* system/process out of resources */
           if (0 == daemon->connections)
             {
+#ifdef HAVE_MESSAGES
               /* Not setting 'at_limit' flag, as there is no way it
                  would ever be cleared.  Instead trying to produce
                  bit fat ugly warning. */
               MHD_DLOG (daemon,
                         "Hit process or system resource limit at FIRST connection. This is really bad as there is no sane way to proceed. Will try busy waiting for system resources to become magically available.\n");
+#endif
             }
           else
             {
               daemon->at_limit = MHD_YES;
+#ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         "Hit process or system resource limit at %u connections, temporarily suspending accept(). Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n",
                         (unsigned int) daemon->connections);
+#endif
             }
         }
       return MHD_NO;
