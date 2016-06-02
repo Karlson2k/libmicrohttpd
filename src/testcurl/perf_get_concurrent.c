@@ -201,7 +201,7 @@ thread_gets (void *param)
 static void *
 do_gets (void * param)
 {
-  unsigned int j;
+  int j;
   pthread_t par[PAR];
   char url[64];
   int port = (int)(intptr_t)param;
