@@ -3848,8 +3848,10 @@ MHD_start_daemon_va (unsigned int flags,
 		  "Failed to make control pipe non-blocking: %s\n",
 		  MHD_strerror_ (errno));
 #endif
-        MHD_pipe_close_ (daemon->wpipe[0]);
-        MHD_pipe_close_ (daemon->wpipe[1]);
+        if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
+          MHD_PANIC ("close failed\n");
+        if (0 != MHD_pipe_close_ (daemon->wpipe[1]))
+          MHD_PANIC ("close failed\n");
         free (daemon);
         return NULL;
       }
