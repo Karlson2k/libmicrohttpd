@@ -2542,6 +2542,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_CONNECTION_CLOSED == connection->state)
             continue;
           connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
+          if (MHD_YES == connection->suspended)
+            break;
           continue;
         case MHD_CONNECTION_HEADERS_PROCESSED:
           call_connection_handler (connection); /* first call */
@@ -2570,6 +2572,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           connection->state = (0 == connection->remaining_upload_size)
             ? MHD_CONNECTION_FOOTERS_RECEIVED : MHD_CONNECTION_CONTINUE_SENT;
+          if (MHD_YES == connection->suspended)
+            break;
           continue;
         case MHD_CONNECTION_CONTINUE_SENDING:
           if (connection->continue_message_write_offset ==
@@ -2601,6 +2605,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 connection->state = MHD_CONNECTION_BODY_RECEIVED;
               else
                 connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+              if (MHD_YES == connection->suspended)
+                break;
               continue;
             }
           break;
@@ -2621,6 +2627,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+              if (MHD_YES == connection->suspended)
+                break;
               continue;
             }
           if (MHD_NO == process_header_line (connection, line))
@@ -2652,6 +2660,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+              if (MHD_YES == connection->suspended)
+                break;
               continue;
             }
           continue;
