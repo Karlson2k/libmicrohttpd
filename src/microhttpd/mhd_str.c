@@ -271,7 +271,8 @@ MHD_str_equal_caseless_ (const char * str1, const char * str2)
 int
 MHD_str_equal_caseless_n_ (const char * const str1, const char * const str2, size_t maxlen)
 {
-  for (size_t i = 0; i < maxlen; ++i)
+  size_t i;
+  for (i = 0; i < maxlen; ++i)
     {
       const char c1 = str1[i];
       const char c2 = str2[i];

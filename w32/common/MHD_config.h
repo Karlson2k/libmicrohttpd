@@ -10,7 +10,11 @@
 #define MSVC 1
 
 /* Define to type which will be used as boolean type. */
+#if _MSC_VER+0 >= 1800
 #define _MHD_bool _Bool
+#else  /* before VS 2013 */
+#define _MHD_bool int
+#endif /* before VS 2013 */
 
 /* Define to 1 if your C compiler supports inline functions. */
 #define INLINE_FUNC 1
