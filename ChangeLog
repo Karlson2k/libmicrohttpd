@@ -1,3 +1,6 @@
+Sat Jun 25 13:49:31 CEST 2016
+	Use shutdown to trigger select on NetBSD. -EG
+
 Thu Jun  2 09:55:50 CEST 2016
 	Releasing libmicrohttpd 0.9.50. -CG
 

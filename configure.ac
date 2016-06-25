@@ -167,6 +167,7 @@ netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
      mhd_host_os='NetBSD'
+     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 *solaris*)
