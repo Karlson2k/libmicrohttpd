@@ -57,7 +57,8 @@ static const char *const three_hundred[] = {
   "Not Modified",
   "Use Proxy",
   "Switch Proxy",
-  "Temporary Redirect"
+  "Temporary Redirect",
+  "Permanent Redirect"
 };
 
 static const char *const four_hundred[] = {
