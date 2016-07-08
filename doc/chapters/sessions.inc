@@ -16,10 +16,14 @@ Since MHD parses the HTTP cookie header for us, looking up an existing cookie
 is straightforward:
 
 @verbatim
-FIXME.
+const char *value;
+
+value = MHD_lookup_connection_value (connection,
+                                     MHD_COOKIE_KIND,
+                                     "KEY");
 @end verbatim
 
-Here, FIXME is the name we chose for our session cookie.
+Here, "KEY" is the name we chose for our session cookie.
 
 
 @heading Setting the cookie header
@@ -29,14 +33,27 @@ cookies.  In order to generate a unique cookie, our example creates a random
 64-character text string to be used as the value of the cookie:
 
 @verbatim
-FIXME.
+char value[128];
+char raw_value[65];
+
+for (unsigned int i=0;i<sizeof (raw_value);i++)
+  raw_value = 'A' + (rand () % 26); /* bad PRNG! */
+raw_value[64] = '\0';
+snprintf (value, sizeof (value),
+          "%s=%s",
+          "KEY",
+          raw_value);
 @end verbatim
 
-Given this cookie value, we can then set the cookie header in our HTTP response 
+Given this cookie value, we can then set the cookie header in our HTTP response
 as follows:
 
 @verbatim
-FIXME.
+assert (MHD_YES ==
+        MHD_set_connection_value (connection,
+                                  MHD_HEADER_KIND,
+                                  MHD_HTTP_HEADER_SET_COOKIE,
+                                  value));
 @end verbatim
 
 
