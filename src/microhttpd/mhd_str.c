@@ -306,7 +306,7 @@ MHD_str_to_uint64_ (const char * str, uint64_t * out_val)
     {
       const int digit = (unsigned char)(*str) - '0';
       if ( (res > (UINT64_MAX / 10)) ||
-           (res == (UINT64_MAX / 10) && digit > (UINT64_MAX % 10)) )
+           (res == (UINT64_MAX / 10) && (uint64_t)digit > (UINT64_MAX % 10)) )
         return 0;
 
       res *= 10;
@@ -345,7 +345,7 @@ MHD_str_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val)
     {
       const int digit = (unsigned char)str[i] - '0';
       if ( (res > (UINT64_MAX / 10)) ||
-           (res == (UINT64_MAX / 10) && digit > (UINT64_MAX % 10)) )
+           (res == (UINT64_MAX / 10) && (uint64_t)digit > (UINT64_MAX % 10)) )
         return 0;
 
       res *= 10;
@@ -381,7 +381,7 @@ MHD_strx_to_sizet_ (const char * str, size_t * out_val)
   while (digit >= 0)
     {
       if ( (res < (SIZE_MAX / 16)) ||
-           (res == (SIZE_MAX / 16) && digit <= (SIZE_MAX % 16)) )
+           (res == (SIZE_MAX / 16) && (size_t)digit <= (SIZE_MAX % 16)) )
         {
           res *= 16;
           res += digit;
@@ -424,7 +424,7 @@ MHD_strx_to_sizet_n_ (const char * str, size_t maxlen, size_t * out_val)
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
     {
       if ( (res > (SIZE_MAX / 16)) ||
-           (res == (SIZE_MAX / 16) && digit > (SIZE_MAX % 16)) )
+           (res == (SIZE_MAX / 16) && (size_t)digit > (SIZE_MAX % 16)) )
         return 0;
 
       res *= 16;
@@ -461,7 +461,7 @@ MHD_strx_to_uint32_ (const char * str, uint32_t * out_val)
   while (digit >= 0)
     {
       if ( (res < (UINT32_MAX / 16)) ||
-           (res == (UINT32_MAX / 16) && digit <= (UINT32_MAX % 16)) )
+           (res == (UINT32_MAX / 16) && (uint32_t)digit <= (UINT32_MAX % 16)) )
         {
           res *= 16;
           res += digit;
@@ -504,7 +504,7 @@ MHD_strx_to_uint32_n_ (const char * str, size_t maxlen, uint32_t * out_val)
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
     {
       if ( (res > (UINT32_MAX / 16)) ||
-           (res == (UINT32_MAX / 16) && digit > (UINT32_MAX % 16)) )
+           (res == (UINT32_MAX / 16) && (uint32_t)digit > (UINT32_MAX % 16)) )
         return 0;
 
       res *= 16;
@@ -541,7 +541,7 @@ MHD_strx_to_uint64_ (const char * str, uint64_t * out_val)
   while (digit >= 0)
     {
       if ( (res < (UINT64_MAX / 16)) ||
-           (res == (UINT64_MAX / 16) && digit <= (UINT64_MAX % 16)) )
+           (res == (UINT64_MAX / 16) && (uint64_t)digit <= (UINT64_MAX % 16)) )
         {
           res *= 16;
           res += digit;
@@ -584,7 +584,7 @@ MHD_strx_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val)
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
     {
       if ( (res > (UINT64_MAX / 16)) ||
-           (res == (UINT64_MAX / 16) && digit > (UINT64_MAX % 16)) )
+           (res == (UINT64_MAX / 16) && (uint64_t)digit > (UINT64_MAX % 16)) )
         return 0;
 
       res *= 16;
