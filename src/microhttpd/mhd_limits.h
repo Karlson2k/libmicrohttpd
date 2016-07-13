@@ -37,7 +37,7 @@
 #endif /* !OFF_T_MAX */
 
 #ifndef ULLONG_MAX
-#define ((MHD_UNSIGNED_LONG_LONG) ~((MHD_UNSIGNED_LONG_LONG)0))
+#define ULLONG_MAX ((MHD_UNSIGNED_LONG_LONG) ~((MHD_UNSIGNED_LONG_LONG)0))
 #endif /* !ULLONG_MAX */
 
 #ifndef INT32_MAX
