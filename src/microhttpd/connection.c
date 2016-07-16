@@ -1794,7 +1794,19 @@ process_request_body (struct MHD_Connection *connection)
 #endif
 		   );
       if (0 != processed)
-        instant_retry = MHD_NO; /* client did not process everything */
+	{
+	  instant_retry = MHD_NO; /* client did not process everything */
+#ifdef HAVE_MESSAGES
+	  /* client did not process all POST data, complain if
+	     the setup was incorrect, which may prevent us from
+	     handling the rest of the request */
+	  if ( ( (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
+		 (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)) ) &&
+	       (MHD_NO == connection->suspended) )
+	    MHD_DLOG (connection->daemon,
+		      "WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n");
+	}
+#endif
       used -= processed;
       if (connection->have_chunked_upload == MHD_YES)
         connection->current_chunk_offset += used;

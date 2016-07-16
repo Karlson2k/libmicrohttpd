@@ -1,3 +1,8 @@
+Sat Jul 16 21:54:49 CEST 2016
+	Warn user if they sent connection into blocking
+	state by not processing all POST data, not suspending,
+	and not running in external select mode. -CG
+
 Fri Jul  8 21:35:07 CEST 2016
 	Fix FIXME in tutorial. -CG
 
