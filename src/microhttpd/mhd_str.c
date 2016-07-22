@@ -102,7 +102,7 @@ isasciixdigit (char c)
  * @return non-zero if character is decimal digit or letter, zero otherwise
  */
 _MHD_inline _MHD_bool
-isasciialmun (char c)
+isasciialnum (char c)
 {
   return isasciialpha (c) || isasciidigit (c);
 }
@@ -202,7 +202,7 @@ toxdigitvalue (char c)
  * @return boolean true if character is decimal digit or letter,
  *         boolean false otherwise
  */
-#define isasciialmun(c) (isasciialpha(c) || isasciidigit(c))
+#define isasciialnum(c) (isasciialpha(c) || isasciidigit(c))
 
 /**
  * Convert US-ASCII character to lower case.
