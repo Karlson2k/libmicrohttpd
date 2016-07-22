@@ -1805,8 +1805,8 @@ process_request_body (struct MHD_Connection *connection)
 	       (MHD_NO == connection->suspended) )
 	    MHD_DLOG (connection->daemon,
 		      "WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n");
-	}
 #endif
+	}
       used -= processed;
       if (connection->have_chunked_upload == MHD_YES)
         connection->current_chunk_offset += used;
