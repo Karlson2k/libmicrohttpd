@@ -1,3 +1,10 @@
+Sat Jul 23 20:45:51 CEST 2016
+	Added macro detection of speed/size compiler optimization.
+	Added different implementation of functions in mhd_str.c for
+	size optimization. Enabled automatically if compiler size
+	optimization is detected or MHD_FAVOR_SMALL_CODE is defined.
+	Added unit tests for all mhd_str.c functions. -EG
+
 Sat Jul 16 21:54:49 CEST 2016
 	Warn user if they sent connection into blocking
 	state by not processing all POST data, not suspending,
