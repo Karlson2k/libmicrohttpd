@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h" />
     <ClInclude Include="$(MhdSrc)include\microhttpd.h" />
+    <ClInclude Include="$(MhdSrc)include\mhd_options.h" />
     <ClInclude Include="$(MhdSrc)include\platform.h" />
     <ClInclude Include="$(MhdSrc)include\platform_interface.h" />
     <ClInclude Include="$(MhdSrc)include\w32functions.h" />

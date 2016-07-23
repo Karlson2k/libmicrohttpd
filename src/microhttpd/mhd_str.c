@@ -25,7 +25,7 @@
 
 #include "mhd_str.h"
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>

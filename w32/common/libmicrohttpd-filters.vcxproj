@@ -38,6 +38,9 @@
     <ClInclude Include="$(MhdSrc)include\w32functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)include\mhd_options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdW32Common)MHD_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
