@@ -93,4 +93,25 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 #endif /* HAVE_C11_GMTIME_S */
 
+#if defined(MHD_FAVOR_FAST_CODE) && defined(MHD_FAVOR_SMALL_CODE)
+#error MHD_FAVOR_FAST_CODE and MHD_FAVOR_SMALL_CODE are both defined. Cannot favor speed and size at the same time. 
+#endif /* MHD_FAVOR_FAST_CODE && MHD_FAVOR_SMALL_CODE */
+
+/* Define MHD_FAVOR_FAST_CODE to force fast code path or
+   define MHD_FAVOR_SMALL_CODE to choose compact code path */
+#if !defined(MHD_FAVOR_FAST_CODE) && !defined(MHD_FAVOR_SMALL_CODE)
+/* Try to detect user preferences */
+/* Defined by GCC and many compatible compilers */
+#ifdef __OPTIMIZE_SIZE__ 
+#define MHD_FAVOR_SMALL_CODE 1
+#elif __OPTIMIZE__
+#define MHD_FAVOR_FAST_CODE 1
+#endif /* __OPTIMIZE__ */
+#endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
+
+#if !defined(MHD_FAVOR_FAST_CODE) && !defined(MHD_FAVOR_SMALL_CODE)
+/* Use faster code by default */
+#define MHD_FAVOR_FAST_CODE 1
+#endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
+
 #endif /* MHD_OPTIONS_H */

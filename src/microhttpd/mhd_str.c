@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015, 2016 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -25,13 +25,24 @@
 
 #include "mhd_str.h"
 
-#include "mhd_options.h"
-
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif
 
 #include "mhd_limits.h"
+
+#ifdef MHD_FAVOR_SMALL_CODE
+#ifdef _MHD_inline
+#undef _MHD_inline
+#endif /* _MHD_inline */
+/* Do not force inlining and do not use macro functions, use normal static 
+   functions instead.
+   This may give more flexibility for size optimizations. */
+#define _MHD_inline static
+#ifndef INLINE_FUNC
+#define INLINE_FUNC 1
+#endif /* !INLINE_FUNC */
+#endif /* MHD_FAVOR_SMALL_CODE */
 
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
@@ -136,6 +147,20 @@ toasciiupper (char c)
 }
 
 /**
+ * Convert US-ASCII decimal digit to its value.
+ * @param c character to convert
+ * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
+ */
+_MHD_inline int
+todigitvalue (char c)
+{
+  if (isasciidigit (c))
+    return (unsigned char)(c - '0');
+
+  return -1;
+}
+
+/**
  * Convert US-ASCII hexadecimal digit to its value.
  * @param c character to convert
  * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
@@ -225,6 +250,13 @@ toxdigitvalue (char c)
 #define toasciiupper(c) ((isasciilower(c)) ? (((char)(c)) - 'a' + 'A') : ((char)(c)))
 
 /**
+ * Convert US-ASCII decimal digit to its value.
+ * @param c character to convert
+ * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
+ */
+#define todigitvalue(c) (isasciidigit(c) ? (int)(((char)(c)) - '0') : (int)(-1))
+
+/**
  * Convert US-ASCII hexadecimal digit to its value.
  * @param c character to convert
  * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
@@ -236,6 +268,7 @@ toxdigitvalue (char c)
                                (int)(((unsigned char)(c)) - 'a' + 10) : (int)(-1) )))
 #endif /* !INLINE_FUNC */
 
+#ifndef MHD_FAVOR_SMALL_CODE
 /**
  * Check two string for equality, ignoring case of US-ASCII letters.
  * @param str1 first string to compare
@@ -256,6 +289,7 @@ MHD_str_equal_caseless_ (const char * str1, const char * str2)
     }
   return 0 == (*str2);
 }
+#endif /* ! MHD_FAVOR_SMALL_CODE */
 
 
 /**
@@ -283,6 +317,9 @@ MHD_str_equal_caseless_n_ (const char * const str1, const char * const str2, siz
     }
   return !0;
 }
+
+#ifndef MHD_FAVOR_SMALL_CODE
+/* Use individual function for each case */
 
 /**
  * Convert decimal US-ASCII digits in string to number in uint64_t.
@@ -596,3 +633,63 @@ MHD_strx_to_uint64_n_ (const char * str, size_t maxlen, uint64_t * out_val)
     *out_val = res;
   return i;
 }
+
+#else  /* MHD_FAVOR_SMALL_CODE */
+
+/**
+ * Generic function for converting not more then @a maxlen
+ * hexadecimal or decimal US-ASCII digits in string to number.
+ * Conversion stopped at first non-digit character or after @a maxlen 
+ * digits.
+ * To be used only within macro.
+ * @param str the string to convert
+ * @param maxlen the maximum number of characters to process
+ * @param out_val the pointer to variable to store result of conversion
+ * @param val_size the size of variable pointed by @a out_val, in bytes, 4 or 8
+ * @param max_val the maximum decoded number
+ * @param base the numeric base, 10 or 16
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then @max_val, @val_size is not 16/32 or @a out_val is NULL
+ */
+size_t
+MHD_str_to_uvalue_n_ (const char * str, size_t maxlen,
+                      void * out_val, size_t val_size, uint64_t max_val, int base)
+{
+  size_t i;
+  uint64_t res;
+  int digit;
+  const uint64_t max_v_div_b = max_val / base;
+  const uint64_t max_v_mod_b = max_val % base;
+  /* 'digit->value' must be function, not macro */
+  int (*const dfunc)(char) = (base == 16) ?
+                              toxdigitvalue : todigitvalue;
+  if ( !str || !out_val ||
+       (base != 16 && base != 10) )
+    return 0;
+
+  res = 0;
+  i = 0;
+  while (maxlen > i && 0 <= (digit = dfunc (str[i])))
+    {
+      if ( ((max_v_div_b) < res) ||
+          ((max_v_div_b) == res && (max_v_mod_b) < (uint64_t)digit) )
+        return 0;
+
+      res *= base;
+      res += digit;
+      i++;
+    }
+
+  if (i)
+    {
+      if (8 == val_size)
+        *(uint64_t*)out_val = res;
+      else if (4 == val_size)
+        *(uint32_t*)out_val = (uint32_t)res;
+      else
+        return 0;
+    }
+  return i;
+}
+#endif /* MHD_FAVOR_SMALL_CODE */
