@@ -87,6 +87,11 @@
 #define HAVE_SNPRINTF 1
 #endif
 
+#if _MSC_VER >= 1800
+/* Define to 1 if you have the <inttypes.h> header file. */
+#define HAVE_INTTYPES_H 1
+#endif
+
 
 /* *** Headers information *** */
 /* Not really important as not used by code currently */
