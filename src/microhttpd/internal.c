@@ -25,6 +25,7 @@
  */
 
 #include "internal.h"
+#include "mhd_str.h"
 
 #ifdef HAVE_MESSAGES
 #if DEBUG_STATES
@@ -134,31 +135,22 @@ MHD_http_unescape (char *val)
   char *rpos = val;
   char *wpos = val;
   char *end;
-  unsigned int num;
   char buf3[3];
 
   while ('\0' != *rpos)
     {
+      uint32_t num;
       switch (*rpos)
 	{
 	case '%':
-          if ( ('\0' == rpos[1]) ||
-               ('\0' == rpos[2]) )
-          {
-            *wpos = '\0';
-            return wpos - val;
-          }
-	  buf3[0] = rpos[1];
-	  buf3[1] = rpos[2];
-	  buf3[2] = '\0';
-	  num = strtoul (buf3, &end, 16);
-	  if ('\0' == *end)
+          if (2 == MHD_strx_to_uint32_n_ (rpos + 1, 2, &num))
 	    {
 	      *wpos = (char)((unsigned char) num);
 	      wpos++;
 	      rpos += 3;
 	      break;
 	    }
+          /* TODO: add bad sequence handling */
 	  /* intentional fall through! */
 	default:
 	  *wpos = *rpos;
