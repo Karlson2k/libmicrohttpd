@@ -134,8 +134,6 @@ MHD_http_unescape (char *val)
 {
   char *rpos = val;
   char *wpos = val;
-  char *end;
-  char buf3[3];
 
   while ('\0' != *rpos)
     {
@@ -173,8 +171,8 @@ MHD_http_unescape (char *val)
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
  * @param[out] num_headers set to the number of headers found
- * @return #MHD_NO on failure (@a cb returned #MHD_NO), 
- *         #MHD_YES for success (parsing succeeded, @a cb always 
+ * @return #MHD_NO on failure (@a cb returned #MHD_NO),
+ *         #MHD_YES for success (parsing succeeded, @a cb always
  *                               returned #MHD_YES)
  */
 int
@@ -223,7 +221,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  daemon->unescape_callback (daemon->unescape_callback_cls,
 				     connection,
 				     equals);
-	  if (MHD_YES != cb (connection, 
+	  if (MHD_YES != cb (connection,
 			     args,
 			     equals,
 			     kind))
@@ -266,7 +264,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 				 equals);
       if (MHD_YES != cb (connection,
 			 args,
-			 equals, 
+			 equals,
 			 kind))
         return MHD_NO;
       (*num_headers)++;
