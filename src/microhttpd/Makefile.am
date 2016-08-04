@@ -141,8 +141,8 @@ endif
 
 
 check_PROGRAMS = \
-  unit_str_compare \
-  unit_str_to_value \
+  test_str_compare \
+  test_str_to_value \
   test_shutdown_select \
   test_shutdown_poll \
   test_daemon
@@ -208,8 +208,8 @@ test_shutdown_poll_LDADD = \
   $(PTHREAD_LIBS)
 endif
 
-unit_str_compare_SOURCES = \
-  unit_str_test.c test_helpers.h mhd_str.c
+test_str_compare_SOURCES = \
+  test_str.c test_helpers.h mhd_str.c
 
-unit_str_to_value_SOURCES = \
-  unit_str_test.c test_helpers.h mhd_str.c
+test_str_to_value_SOURCES = \
+  test_str.c test_helpers.h mhd_str.c
