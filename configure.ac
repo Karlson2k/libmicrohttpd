@@ -302,7 +302,11 @@ AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
 AC_MSG_RESULT([[$USE_THREADS]])
 
-if test "x$HAVE_POSIX_THREADS" = "xyes"; then
+AC_ARG_ENABLE([[thread-names]],
+   [AS_HELP_STRING([--disable-thread-names [auto] ],[do not set names on MHD generated threads])],
+   [], [enable_thread_names='auto'])
+
+if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; then
   # Check for pthread_setname_np()
   SAVE_LIBS="$LIBS"
   SAVE_CFLAGS="$CFLAGS"
@@ -362,6 +366,42 @@ if test "x$HAVE_POSIX_THREADS" = "xyes"; then
   CFLAGS="$SAVE_CFLAGS"
 fi
 
+AS_IF(
+  [[test "x$enable_thread_names" != "xno"]],
+  [
+    AC_MSG_CHECKING([[whether to enable thread names]])
+    AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM([], [[
+#ifdef MHD_NO_THREAD_NAMES
+#error Thread names are disabled.
+choke me
+#endif
+
+/* Keep in sync with mhd_threads.h */
+#if defined(MHD_USE_POSIX_THREADS) && (defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) )
+int a = 1;
+#elif defined(MHD_USE_W32_THREADS) && defined(_MSC_FULL_VER)
+int b = 2;
+#else
+#error No thread name function is available.
+choke me
+#endif
+       ]])
+     ], [
+       enable_thread_names='yes'
+     ], [
+       AS_IF([[test "x$enable_thread_names" = "xyes"]],
+         [
+           AC_MSG_RESULT([[no]])
+           AC_MSG_ERROR([[thread names was explicitly requested, but thread name function is not available]])
+         ])
+       enable_thread_names='no'
+     ])
+  AC_MSG_RESULT([[$enable_thread_names]])
+  ])
+
+AS_IF([[test "x$enable_thread_names" = "xno"]],
+  [AC_DEFINE([[MHD_NO_THREAD_NAMES]], [[1]], [Define to 1 to disable setting name on generated threads])])
 
 AM_CONDITIONAL(HAVE_W32, [test "x$os_is_native_w32" = "xyes"])
 w32_shared_lib_exp=no
@@ -1007,6 +1047,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${host_os}
   Threading lib:     ${USE_THREADS}
+  Use thread names:  ${enable_thread_names}
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}

@@ -21,6 +21,7 @@
  * @file microhttpd.h
  * @brief public interface to libmicrohttpd
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  * @author Chris GauthierDickey
  *
  * All symbols defined in this header start with MHD.  MHD is a small
@@ -130,7 +131,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095002
+#define MHD_VERSION 0x00095003
 
 /**
  * MHD-internal return code for "YES".
@@ -2817,7 +2818,12 @@ enum MHD_FEATURE
    * offsets larger than 2 GiB. If not supported value of size+offset is
    * limited to 2 GiB.
    */
-  MHD_FEATURE_LARGE_FILE = 15
+  MHD_FEATURE_LARGE_FILE = 15,
+
+  /**
+   * Get whether MHD set names on generated threads.
+   */
+  MHD_THREAD_NAMES = 16
 };
 
 

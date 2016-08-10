@@ -4905,6 +4905,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else
       return (sizeof(uint64_t) > sizeof(off_t)) ? MHD_NO : MHD_YES;
 #endif
+    case MHD_THREAD_NAMES:
+#if defined(MHD_USE_THREAD_NAME_)
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
     }
   return MHD_NO;
 }
