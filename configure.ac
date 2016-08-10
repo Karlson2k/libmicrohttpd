@@ -302,6 +302,66 @@ AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
 AC_MSG_RESULT([[$USE_THREADS]])
 
+if test "x$HAVE_POSIX_THREADS" = "xyes"; then
+  # Check for pthread_setname_np()
+  SAVE_LIBS="$LIBS"
+  SAVE_CFLAGS="$CFLAGS"
+  LIBS="$PTHREAD_LIBS $LIBS"
+  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  AC_CHECK_HEADERS([pthread_np.h])
+
+  AC_MSG_CHECKING([[for pthread_setname_np(3) in NetBSD or OSF1 form]])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[int res = pthread_setname_np(pthread_self(), "name", 0);]])],
+    [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_NETBSD]], [[1]], [Define if you have NetBSD form (or OSF1 form) of pthread_setname_np(3) function.])
+     AC_MSG_RESULT([[yes]])],
+    [AC_MSG_RESULT([[no]])
+
+     AC_MSG_CHECKING([[for pthread_setname_np(3) in GNU/Linux form]])
+     AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[int res = pthread_setname_np(pthread_self(), "name");]])],
+        [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_GNU]], [[1]], [Define if you have GNU/Linux form of pthread_setname_np(3) function.])
+         AC_MSG_RESULT([[yes]])],
+        [AC_MSG_RESULT([[no]])
+
+         AC_MSG_CHECKING([[for pthread_setname_np(3) in Darwin form]])
+         AC_LINK_IFELSE(
+           [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[int res = pthread_setname_np("name");]])],
+           [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_DARWIN]], [[1]], [Define if you have Darwin form of pthread_setname_np(3) function.])
+            AC_MSG_RESULT([[yes]])],
+           [AC_MSG_RESULT([[no]])
+
+            AC_MSG_CHECKING([[for pthread_setname_np(3) in FreeBSD form]])
+            AC_LINK_IFELSE(
+              [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[pthread_set_name_np(pthread_self(), "name");]])],
+              [AC_DEFINE([[HAVE_PTHREAD_SET_NAME_NP_FREEBSD]], [[1]], [Define if you have FreeBSD form of pthread_set_name_np(3) function.])
+               AC_MSG_RESULT([[yes]])],
+              [AC_MSG_RESULT([[no]])] ) ]) ]) ])
+
+  LIBS="$SAVE_LIBS"
+  CFLAGS="$SAVE_CFLAGS"
+fi
+
 
 AM_CONDITIONAL(HAVE_W32, [test "x$os_is_native_w32" = "xyes"])
 w32_shared_lib_exp=no
@@ -403,22 +463,6 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
       [mhd_cv_have_epoll_create1=no])])
   AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
     AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])])
-fi
-
-if test "x$HAVE_POSIX_THREADS" = "xyes"; then
-  # Check for pthread_setname_np()
-  SAVE_LIBS="$LIBS"
-  SAVE_CFLAGS="$CFLAGS"
-  LIBS="$PTHREAD_LIBS $LIBS"
-  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-  AC_MSG_CHECKING([[for pthread_setname_np]])
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[  pthread_setname_np(pthread_self(), "name")]])],
-    [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP]], [[1]], [Define if you have pthread_setname_np function.])
-     AC_MSG_RESULT([[yes]])],
-    [AC_MSG_RESULT([[no]])] )
-  LIBS="$SAVE_LIBS"
-  CFLAGS="$SAVE_CFLAGS"
 fi
 
 # Check for headers that are ALWAYS required

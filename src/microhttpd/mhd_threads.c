@@ -31,6 +31,9 @@
 #endif
 #ifdef MHD_USE_THREAD_NAME_
 #include <stdlib.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif /* HAVE_PTHREAD_NP_H */
 #endif /* MHD_USE_THREAD_NAME_ */
 #include <errno.h>
 
@@ -51,7 +54,8 @@ typedef DWORD MHD_thread_ID_;
 #else  /* MHD_USE_THREAD_NAME_ */
 
 #if defined(MHD_USE_POSIX_THREADS)
-#ifdef HAVE_PTHREAD_SETNAME_NP
+#if defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) \
+    || defined(HAVE_PTHREAD_SETNAME_NP_NETBSD)
 /**
  * Set thread name
  * @param thread_id ID of thread
@@ -63,8 +67,22 @@ static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thre
   if (NULL == thread_name)
     return 0;
 
+#if defined(HAVE_PTHREAD_SETNAME_NP_GNU)
   return !pthread_setname_np (thread_id, thread_name);
+#elif defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD)
+  /* FreeBSD and OpenBSD use different name and void return type */
+  pthread_set_name_np (thread_id, thread_name);
+  return !0;
+#elif defined(HAVE_PTHREAD_SETNAME_NP_NETBSD)
+  /* NetBSD use 3 arguments: second argument is string in printf-like format,
+   *                         third argument is single argument for printf;
+   * OSF1 use 3 arguments too, but last one always must be zero (NULL).
+   * MHD doesn't use '%' in thread names, so both form are used in same way.
+   */
+  return !pthread_setname_np (thread_id, thread_name, 0);
+#endif /* HAVE_PTHREAD_SETNAME_NP_NETBSD */
 }
+
 
 /**
  * Set current thread name
@@ -72,7 +90,15 @@ static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thre
  * @return non-zero on success, zero otherwise
  */
 #define MHD_set_cur_thread_name_(n) MHD_set_thread_name_(pthread_self(),(n))
-#endif /* HAVE_PTHREAD_SETNAME_NP */
+#elif defined(HAVE_PTHREAD_SETNAME_NP_DARWIN)
+
+/**
+ * Set current thread name
+ * @param n name to set
+ * @return non-zero on success, zero otherwise
+ */
+#define MHD_set_cur_thread_name_(n) (!(pthread_setname_np((n))))
+#endif /* HAVE_PTHREAD_SETNAME_NP_DARWIN */
 
 #elif defined(MHD_USE_W32_THREADS)
 #ifndef _MSC_FULL_VER
