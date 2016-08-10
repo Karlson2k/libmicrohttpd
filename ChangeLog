@@ -1,3 +1,9 @@
+Wed Aug 10 16:42:57 MSK 2016
+	Moved threads, locks and mutex abstraction to separate files,
+	some minor errors fixed, added support for thread name functions
+	on various platforms, added configure flag for disable thread
+	naming. -EG
+
 Sat Jul 23 20:45:51 CEST 2016
 	Added macro detection of speed/size compiler optimization.
 	Added different implementation of functions in mhd_str.c for
