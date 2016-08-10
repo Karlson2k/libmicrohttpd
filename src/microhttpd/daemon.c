@@ -25,6 +25,7 @@
  * @author Christian Grothoff
  */
 #include "platform.h"
+#include "mhd_threads.h"
 #include "internal.h"
 #include "response.h"
 #include "connection.h"
@@ -61,7 +62,6 @@
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
-#include <process.h>
 #endif
 
 /**
@@ -1280,81 +1280,6 @@ send_param_adapter (struct MHD_Connection *connection,
 
 
 /**
- * Signature of main function for a thread.
- *
- * @param cls closure argument for the function
- * @return termination code from the thread
- */
-typedef MHD_THRD_RTRN_TYPE_
-(MHD_THRD_CALL_SPEC_ *ThreadStartRoutine)(void *cls);
-
-
-/**
- * Create a thread and set the attributes according to our options.
- *
- * @param thread handle to initialize
- * @param daemon daemon with options
- * @param start_routine main function of thread
- * @param arg argument for start_routine
- * @return 0 on success
- */
-static int
-create_thread (MHD_thread_handle_ *thread,
-	       const struct MHD_Daemon *daemon,
-	       ThreadStartRoutine start_routine,
-	       void *arg)
-{
-#if defined(MHD_USE_POSIX_THREADS)
-  pthread_attr_t attr;
-  pthread_attr_t *pattr;
-  int ret;
-
-  if (0 != daemon->thread_stack_size)
-    {
-      if (0 != (ret = pthread_attr_init (&attr)))
-	goto ERR;
-      if (0 != (ret = pthread_attr_setstacksize (&attr, daemon->thread_stack_size)))
-	{
-	  pthread_attr_destroy (&attr);
-	  goto ERR;
-	}
-      pattr = &attr;
-    }
-  else
-    {
-      pattr = NULL;
-    }
-  ret = pthread_create (thread, pattr,
-			start_routine, arg);
-#ifdef HAVE_PTHREAD_SETNAME_NP
-  if (0 == ret)
-    (void) pthread_setname_np (*thread, "libmicrohttpd");
-#endif /* HAVE_PTHREAD_SETNAME_NP */
-  if (0 != daemon->thread_stack_size)
-    pthread_attr_destroy (&attr);
-  return ret;
- ERR:
-#ifdef HAVE_MESSAGES
-  MHD_DLOG (daemon,
-	    "Failed to set thread stack size\n");
-#endif
-  errno = EINVAL;
-  return ret;
-#elif defined(MHD_USE_W32_THREADS)
-  unsigned threadID;
-  *thread = (HANDLE)_beginthreadex(NULL, (unsigned)daemon->thread_stack_size, start_routine,
-                          arg, 0, &threadID);
-  if (NULL == (*thread))
-    return errno;
-
-  W32_SetThreadName(threadID, "libmicrohttpd");
-
-  return 0;
-#endif
-}
-
-
-/**
  * Add another client connection to the set of connections
  * managed by MHD.  This API is usually not needed (since
  * MHD will accept inbound connections on the server socket).
@@ -1388,7 +1313,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
 			 int external_add)
 {
   struct MHD_Connection *connection;
-  int res_thread_create;
   unsigned int i;
   int eno;
   struct MHD_Daemon *worker;
@@ -1635,17 +1559,17 @@ internal_add_connection (struct MHD_Daemon *daemon,
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      res_thread_create = create_thread (&connection->pid,
-                                         daemon,
-					 &MHD_handle_connection,
-                                         connection);
-      if (0 != res_thread_create)
+      if (!MHD_create_named_thread_(&connection->pid,
+                                    "MHD-connection",
+                                    daemon->thread_stack_size,
+                                    &MHD_handle_connection,
+                                    connection))
         {
 	  eno = errno;
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     "Failed to create a thread: %s\n",
-                    MHD_strerror_ (res_thread_create));
+                    MHD_strerror_ (eno));
 #endif
 	  goto cleanup;
         }
@@ -1723,9 +1647,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   MHD_pool_destroy (connection->pool);
   free (connection->addr);
   free (connection);
-#if EINVAL
   errno = eno;
-#endif
   return MHD_NO;
 }
 
@@ -2157,7 +2079,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) )
 	{
-	  if (0 != MHD_join_thread_ (pos->pid))
+	  if (!MHD_join_thread_ (pos->pid))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
@@ -3765,7 +3687,6 @@ MHD_start_daemon_va (unsigned int flags,
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   unsigned int i;
-  int res_thread_create;
   int use_pipe;
 
 #ifndef HAVE_INET6
@@ -4307,13 +4228,17 @@ MHD_start_daemon_va (unsigned int flags,
 	 ( (0 != (flags & MHD_USE_SELECT_INTERNALLY)) &&
 	   (0 == daemon->worker_pool_size)) ) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) &&
-       (0 != (res_thread_create =
-	      create_thread (&daemon->pid, daemon, &MHD_select_thread, daemon))))
+       (!MHD_create_named_thread_ (&daemon->pid,
+                                   (flags & MHD_USE_THREAD_PER_CONNECTION) ?
+                                       "MHD-listen" : "MHD-single",
+                                   daemon->thread_stack_size,
+                                   &MHD_select_thread,
+                                   daemon) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "Failed to create listen thread: %s\n",
-		MHD_strerror_ (res_thread_create));
+		MHD_strerror_ (errno));
 #endif
       (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
       (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
@@ -4416,13 +4341,16 @@ MHD_start_daemon_va (unsigned int flags,
             }
 
           /* Spawn the worker thread */
-          if (0 != (res_thread_create =
-		    create_thread (&d->pid, daemon, &MHD_select_thread, d)))
+          if (!MHD_create_named_thread_(&d->pid,
+                                        "MHD-worker",
+                                        daemon->thread_stack_size,
+                                        &MHD_select_thread,
+                                        d))
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         "Failed to create pool thread: %s\n",
-			MHD_strerror_ (res_thread_create));
+			MHD_strerror_ (errno));
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
@@ -4564,7 +4492,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       {
         if (MHD_YES != pos->thread_joined)
           {
-            if (0 != MHD_join_thread_ (pos->pid))
+            if (!MHD_join_thread_ (pos->pid))
               MHD_PANIC ("Failed to join a thread\n");
             pos->thread_joined = MHD_YES;
             /* The thread may have concurrently modified the DLL,
@@ -4690,7 +4618,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1], "e", 1))
 		MHD_PANIC ("failed to signal shutdown via pipe");
 	    }
-	  if (0 != MHD_join_thread_ (daemon->worker_pool[i].pid))
+	  if (!MHD_join_thread_ (daemon->worker_pool[i].pid))
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);
 	  (void) MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
@@ -4720,7 +4648,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
            ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) &&
              (0 == daemon->worker_pool_size) ) )
 	{
-	  if (0 != MHD_join_thread_ (daemon->pid))
+	  if (!MHD_join_thread_ (daemon->pid))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }

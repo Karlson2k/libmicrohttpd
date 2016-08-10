@@ -32,6 +32,14 @@
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
+#ifndef UINT_MAX
+#ifdef __UINT_MAX__
+#define UINT_MAX __UINT_MAX__
+#else  /* ! __UINT_MAX__ */
+#define UINT_MAX ((unsigned int) ~((unsigned int)0))
+#endif /* ! __UINT_MAX__ */
+#endif /* !UINT_MAX */
+
 #ifndef LONG_MAX
 #ifdef __LONG_MAX__
 #define LONG_MAX __LONG_MAX__

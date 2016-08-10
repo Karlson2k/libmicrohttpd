@@ -43,6 +43,7 @@
 /* for TCP_FASTOPEN */
 #include <netinet/tcp.h>
 #endif
+#include "mhd_threads.h"
 
 
 /**

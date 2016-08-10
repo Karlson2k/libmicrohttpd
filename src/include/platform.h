@@ -48,11 +48,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stddef.h>
-#ifdef MHD_USE_POSIX_THREADS
-#undef HAVE_CONFIG_H
-#include <pthread.h>
-#define HAVE_CONFIG_H 1
-#endif /* MHD_USE_POSIX_THREADS */
 
 /* different OSes have fd_set in
    a broad range of header files;

@@ -247,7 +247,11 @@ test "x$with_threads" = "xpthreads" && with_threads='posix'
 
 # Check for posix threads support, regardless of configure parameters as
 # posix threads are used in some tests even on W32.
-AX_PTHREAD([HAVE_POSIX_THREADS='yes'],[HAVE_POSIX_THREADS='no'])
+AX_PTHREAD(
+  [
+    HAVE_POSIX_THREADS='yes'
+    AC_DEFINE([[HAVE_PTHREAD_H]],[[1]],[Define to 1 if you have the <pthread.h> header file.])
+  ],[[HAVE_POSIX_THREADS='no']])
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$HAVE_POSIX_THREADS" = "xyes"])
 
 HAVE_W32_THREADS='no'
@@ -418,10 +422,10 @@ if test "x$HAVE_POSIX_THREADS" = "xyes"; then
 fi
 
 # Check for headers that are ALWAYS required
-AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h pthread.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
+AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h search.h endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h inttypes.h])
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h search.h endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h inttypes.h stddef.h])
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len],

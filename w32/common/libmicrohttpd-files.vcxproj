@@ -16,6 +16,7 @@
     <ClCompile Include="$(MhdSrc)microhttpd\tsearch.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\sysfdsetsize.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_str.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_threads.c" />
     <ClCompile Include="$(MhdSrc)platform\w32functions.c" />
   </ItemGroup>
   <ItemGroup>
@@ -37,6 +38,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_threads.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>

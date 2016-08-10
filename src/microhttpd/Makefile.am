@@ -67,6 +67,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_limits.h mhd_byteorder.h \
   sysfdsetsize.c sysfdsetsize.h \
   mhd_str.c mhd_str.h \
+  mhd_threads.c mhd_threads.h \
   response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
@@ -200,7 +201,7 @@ test_shutdown_select_LDADD = \
 endif
 
 test_shutdown_poll_SOURCES = \
-  test_shutdown_select.c
+  test_shutdown_select.c mhd_threads.h
 if USE_POSIX_THREADS
 test_shutdown_poll_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
