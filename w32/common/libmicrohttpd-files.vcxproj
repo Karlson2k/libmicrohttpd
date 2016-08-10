@@ -39,6 +39,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_threads.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>

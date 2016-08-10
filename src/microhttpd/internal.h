@@ -44,6 +44,7 @@
 #include <netinet/tcp.h>
 #endif
 #include "mhd_threads.h"
+#include "mhd_locks.h"
 
 
 /**

@@ -31,18 +31,12 @@
 #include "response.h"
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
+#include "mhd_locks.h"
 
 #if HAVE_NETINET_TCP_H
 /* for TCP_CORK */
 #include <netinet/tcp.h>
 #endif
-
-#if defined(_WIN32) && defined(MHD_W32_MUTEX_)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN 1
-#endif /* !WIN32_LEAN_AND_MEAN */
-#include <windows.h>
-#endif /* _WIN32 && MHD_W32_MUTEX_ */
 
 
 /**
@@ -2412,7 +2406,7 @@ cleanup_connection (struct MHD_Connection *connection)
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (MHD_YES != MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
+      if (!MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
         MHD_PANIC ("Failed to acquire cleanup mutex\n");
     }
   else
@@ -2441,7 +2435,7 @@ cleanup_connection (struct MHD_Connection *connection)
   connection->resuming = MHD_NO;
   connection->in_idle = MHD_NO;
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_YES != MHD_mutex_unlock_(&daemon->cleanup_connection_mutex)) )
+       (!MHD_mutex_unlock_(&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 

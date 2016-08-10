@@ -136,6 +136,9 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_threads.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">

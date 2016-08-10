@@ -257,7 +257,7 @@ MHD_create_response_from_callback (uint64_t size,
   response->fd = -1;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
-  if (MHD_YES != MHD_mutex_create_ (&response->mutex))
+  if (!MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
@@ -513,7 +513,7 @@ MHD_create_response_from_data (size_t size,
     return NULL;
   memset (response, 0, sizeof (struct MHD_Response));
   response->fd = -1;
-  if (MHD_YES != MHD_mutex_create_ (&response->mutex))
+  if (!MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
