@@ -84,12 +84,16 @@ static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thre
 }
 
 
+#ifndef __QNXNTO__
 /**
  * Set current thread name
  * @param n name to set
  * @return non-zero on success, zero otherwise
  */
 #define MHD_set_cur_thread_name_(n) MHD_set_thread_name_(pthread_self(),(n))
+#else  /* __QNXNTO__ */
+#define MHD_set_cur_thread_name_(n) MHD_set_thread_name_(0,(n))
+#endif /* __QNXNTO__ */
 #elif defined(HAVE_PTHREAD_SETNAME_NP_DARWIN)
 
 /**
