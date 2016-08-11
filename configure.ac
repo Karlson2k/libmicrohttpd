@@ -307,26 +307,41 @@ AC_ARG_ENABLE([[thread-names]],
    [], [enable_thread_names='auto'])
 
 if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; then
-  # Check for pthread_setname_np()
+  # Check for thread name function
+  HAVE_THREAD_NAME_FUNC="no"
   SAVE_LIBS="$LIBS"
   SAVE_CFLAGS="$CFLAGS"
   LIBS="$PTHREAD_LIBS $LIBS"
   CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
   AC_CHECK_HEADERS([pthread_np.h])
 
-  AC_MSG_CHECKING([[for pthread_setname_np(3) in NetBSD or OSF1 form]])
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([[
+  # If pthread_setname_np(3) is not declared, it's not possible to detect
+  # form of pthread_setname_np(3) due to C "feature" "implicit declaration".
+  AC_CHECK_DECL([[pthread_setname_np]],[],[],[[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]])
+
+  AS_IF([[test "x$ac_cv_have_decl_pthread_setname_np" = "xyes"]],
+    [AC_MSG_CHECKING([[for pthread_setname_np(3) in NetBSD or OSF1 form]])
+     AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[
 #include <pthread.h>
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
 ]], [[int res = pthread_setname_np(pthread_self(), "name", 0);]])],
-    [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_NETBSD]], [[1]], [Define if you have NetBSD form (or OSF1 form) of pthread_setname_np(3) function.])
-     AC_MSG_RESULT([[yes]])],
-    [AC_MSG_RESULT([[no]])
+        [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_NETBSD]], [[1]], [Define if you have NetBSD form (or OSF1 form) of pthread_setname_np(3) function.])
+         HAVE_THREAD_NAME_FUNC="yes"
+         AC_MSG_RESULT([[yes]])],
+        [AC_MSG_RESULT([[no]])]
+        )
+    ])
 
-     AC_MSG_CHECKING([[for pthread_setname_np(3) in GNU/Linux form]])
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes" && test "x$ac_cv_have_decl_pthread_setname_np" = "xyes"]],
+    [AC_MSG_CHECKING([[for pthread_setname_np(3) in GNU/Linux form]])
      AC_LINK_IFELSE(
        [AC_LANG_PROGRAM([[
 #include <pthread.h>
@@ -335,32 +350,53 @@ if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; the
 #endif
 ]], [[int res = pthread_setname_np(pthread_self(), "name");]])],
         [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_GNU]], [[1]], [Define if you have GNU/Linux form of pthread_setname_np(3) function.])
+         HAVE_THREAD_NAME_FUNC="yes"
          AC_MSG_RESULT([[yes]])],
-        [AC_MSG_RESULT([[no]])
+        [AC_MSG_RESULT([[no]])]
+        )
+    ])
 
-         AC_MSG_CHECKING([[for pthread_setname_np(3) in Darwin form]])
-         AC_LINK_IFELSE(
-           [AC_LANG_PROGRAM([[
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes" && test "x$ac_cv_have_decl_pthread_setname_np" = "xyes"]],
+    [AC_MSG_CHECKING([[for pthread_setname_np(3) in Darwin form]])
+     AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM([[
 #include <pthread.h>
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
 ]], [[int res = pthread_setname_np("name");]])],
-           [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_DARWIN]], [[1]], [Define if you have Darwin form of pthread_setname_np(3) function.])
-            AC_MSG_RESULT([[yes]])],
-           [AC_MSG_RESULT([[no]])
+        [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_DARWIN]], [[1]], [Define if you have Darwin form of pthread_setname_np(3) function.])
+         HAVE_THREAD_NAME_FUNC="yes"
+         AC_MSG_RESULT([[yes]])],
+        [AC_MSG_RESULT([[no]])]
+        )
+    ])
 
-            AC_MSG_CHECKING([[for pthread_setname_np(3) in FreeBSD form]])
-            AC_LINK_IFELSE(
-              [AC_LANG_PROGRAM([[
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes"]],
+    [
+     AC_CHECK_DECL([[pthread_setname_np]],
+       [
+        AC_MSG_CHECKING([[for pthread_set_name_np(3) in FreeBSD form]])
+        AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[
 #include <pthread.h>
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
 ]], [[pthread_set_name_np(pthread_self(), "name");]])],
-              [AC_DEFINE([[HAVE_PTHREAD_SET_NAME_NP_FREEBSD]], [[1]], [Define if you have FreeBSD form of pthread_set_name_np(3) function.])
-               AC_MSG_RESULT([[yes]])],
-              [AC_MSG_RESULT([[no]])] ) ]) ]) ])
+          [AC_DEFINE([[HAVE_PTHREAD_SET_NAME_NP_FREEBSD]], [[1]], [Define if you have FreeBSD form of pthread_set_name_np(3) function.])
+           HAVE_THREAD_NAME_FUNC="yes"
+           AC_MSG_RESULT([[yes]])],
+          [AC_MSG_RESULT([[no]])]
+          )
+       ],[],[[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+       ]]
+     )
+    ])
 
   LIBS="$SAVE_LIBS"
   CFLAGS="$SAVE_CFLAGS"
