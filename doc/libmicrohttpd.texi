@@ -626,6 +626,15 @@ maximum number of file descriptors supported by @code{select} minus
 four for @code{stdin}, @code{stdout}, @code{stderr} and the server
 socket).  In other words, the default is as large as possible.
 
+If the connection limit is reached, MHD's behavior depends a bit on
+other options.  If @code{MHD_USE_PIPE_FOR_SHUTDOWN} was given, MHD
+will stop accepting connections on the listen socket.  This will cause
+the operating system to queue connections (up to the @code{listen()}
+limit) above the connection limit.  Those connections will be held
+until MHD is done processing at least one of the active connections.
+If @code{MHD_USE_PIPE_FOR_SHUTDOWN} is not set, then MHD will continue
+to @code{accept()} and immediately @code{close()} these connections.
+
 Note that if you set a low connection limit, you can easily get into
 trouble with browsers doing request pipelining.  For example, if your
 connection limit is ``1'', a browser may open a first connection to

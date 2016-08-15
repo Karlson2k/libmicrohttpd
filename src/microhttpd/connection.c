@@ -483,6 +483,19 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 			      &connection->client_context,
 			      termination_code);
   connection->client_aware = MHD_NO;
+
+  /* if we were at the connection limit before and are in
+     thread-per-connection mode, signal the main thread
+     to resume accepting connections */
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
+       (1 != MHD_pipe_write_ (daemon->wpipe[1], "c", 1)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "failed to signal end of connection via pipe");
+#endif
+    }
 }
 
 
@@ -1527,6 +1540,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
                             size_t line_len)
 {
   struct MHD_Daemon *daemon = connection->daemon;
+  const char *curi;
   char *uri;
   char *http_version;
   char *args;
@@ -1539,16 +1553,19 @@ parse_initial_message_line (struct MHD_Connection *connection,
   uri++;
   /* Skip any spaces. Not required by standard but allow
      to be more tolerant. */
-  while (' ' == uri[0] && (size_t)(uri - line) < line_len)
+  while ( (' ' == uri[0]) &&
+          ( (size_t)(uri - line) < line_len) )
     uri++;
   if (uri - line == line_len)
     {
-      uri = "";
+      curi = "";
+      uri = NULL;
       connection->version = "";
       args = NULL;
     }
   else
     {
+      curi = uri;
       /* Search from back to accept misformed URI with space */
       http_version = line + line_len - 1;
       /* Skip any trailing spaces */
@@ -1572,7 +1589,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
   if (NULL != daemon->uri_log_callback)
     connection->client_context
       = daemon->uri_log_callback (daemon->uri_log_callback_cls,
-				  uri,
+				  curi,
 				  connection);
   if (NULL != args)
     {
@@ -1585,10 +1602,11 @@ parse_initial_message_line (struct MHD_Connection *connection,
 			    &connection_add_header,
 			    &unused_num_headers);
     }
-  daemon->unescape_callback (daemon->unescape_callback_cls,
-			     connection,
-			     uri);
-  connection->url = uri;
+  if (NULL != uri)
+    daemon->unescape_callback (daemon->unescape_callback_cls,
+                               connection,
+                               uri);
+  connection->url = curi;
   return MHD_YES;
 }
 

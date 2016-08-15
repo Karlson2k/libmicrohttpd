@@ -1,3 +1,14 @@
+Mon Aug 15 13:06:52 CEST 2016
+	Fixed possible crash due to write to read-only region of
+	memory given ill-formed HTTP request (write was otherwise
+	harmless, writing 0 to where there was already a 0).
+	Fixed issue with closed connection slots not immediately
+	being available again for new connections if we reached
+	our connection limit.
+	Avoid even accept()ing connections in certain thread modes
+	if we are at the connection limit and
+	MHD_USE_PIPE_FOR_SHUTDOWN is available.
+
 Wed Aug 10 16:42:57 MSK 2016
 	Moved threads, locks and mutex abstraction to separate files,
 	some minor errors fixed, added support for thread name functions

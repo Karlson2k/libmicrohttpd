@@ -1281,6 +1281,17 @@ send_param_adapter (struct MHD_Connection *connection,
 
 
 /**
+ * Free resources associated with all closed connections.
+ * (destroy responses, free buffers, etc.).  All closed
+ * connections are kept in the "cleanup" doubly-linked list.
+ *
+ * @param daemon daemon to clean up
+ */
+static void
+MHD_cleanup_connections (struct MHD_Daemon *daemon);
+
+
+/**
  * Add another client connection to the set of connections
  * managed by MHD.  This API is usually not needed (since
  * MHD will accept inbound connections on the server socket).
@@ -1371,6 +1382,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
             client_socket);
 #endif
 #endif
+  //if (daemon->connections == daemon->connection_limit)
+  // MHD_cleanup_connections (daemon); /* try to aggressively clean up to make room */
   if ( (daemon->connections == daemon->connection_limit) ||
        (MHD_NO == MHD_ip_limit_add (daemon, addr, addrlen)) )
     {
@@ -1537,7 +1550,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
-    if (!MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
+    if (! MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
       MHD_PANIC ("Failed to acquire cleanup mutex\n");
   }
   else
@@ -2070,7 +2083,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
 
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (!MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
+       (! MHD_mutex_lock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to acquire cleanup mutex\n");
   while (NULL != (pos = daemon->cleanup_head))
     {
@@ -2080,7 +2093,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) )
 	{
-	  if (!MHD_join_thread_ (pos->pid))
+	  if (! MHD_join_thread_ (pos->pid))
 	    {
 	      MHD_PANIC ("Failed to join a thread\n");
 	    }
@@ -2092,6 +2105,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #endif
       daemon->connections--;
       daemon->at_limit = MHD_NO;
+
+      /* clean up the connection */
       if (NULL != daemon->notify_connection)
         daemon->notify_connection (daemon->notify_connection_cls,
                                    pos,
@@ -2141,7 +2156,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       free (pos);
     }
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (!MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
+       (! MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex)) )
     MHD_PANIC ("Failed to release cleanup mutex\n");
 }
 
@@ -2364,17 +2379,6 @@ MHD_select (struct MHD_Daemon *daemon,
 #endif
           err_state = MHD_YES;
         }
-
-      /* If we're at the connection limit, no need to
-         accept new connections; however, make sure
-         we do not miss the shutdown, so only do this
-         optimization if we have a shutdown signaling
-         pipe. */
-      if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-           ( ( (daemon->connections == daemon->connection_limit) &&
-             (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) ) ||
-             (MHD_YES == daemon->at_limit) ) )
-        FD_CLR (daemon->socket_fd, &rs);
     }
   else
     {
@@ -2420,7 +2424,21 @@ MHD_select (struct MHD_Daemon *daemon,
         }
 #endif /* MHD_WINSOCK_SOCKETS */
     }
-
+  /* Stop listening if we are at the configured connection limit */
+  /* If we're at the connection limit, no point in really
+     accepting new connections; however, make sure we do not miss
+     the shutdown OR the termination of an existing connection; so
+     only do this optimization if we have a signaling pipe in
+     place. */
+  if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+       (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+       (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) &&
+       ( (daemon->connections == daemon->connection_limit) ||
+         (MHD_YES == daemon->at_limit) ) )
+    {
+      FD_CLR (daemon->socket_fd,
+              &rs);
+    }
   tv = NULL;
   if (MHD_YES == err_state)
     may_block = MHD_NO;
@@ -4185,7 +4203,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif
 
-  if (!MHD_mutex_init_ (&daemon->per_ip_connection_mutex))
+  if (! MHD_mutex_init_ (&daemon->per_ip_connection_mutex))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4196,7 +4214,7 @@ MHD_start_daemon_va (unsigned int flags,
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
-  if (!MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
+  if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4229,12 +4247,12 @@ MHD_start_daemon_va (unsigned int flags,
 	 ( (0 != (flags & MHD_USE_SELECT_INTERNALLY)) &&
 	   (0 == daemon->worker_pool_size)) ) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) &&
-       (!MHD_create_named_thread_ (&daemon->pid,
-                                   (flags & MHD_USE_THREAD_PER_CONNECTION) ?
-                                       "MHD-listen" : "MHD-single",
-                                   daemon->thread_stack_size,
-                                   &MHD_select_thread,
-                                   daemon) ) )
+       (! MHD_create_named_thread_ (&daemon->pid,
+                                    (flags & MHD_USE_THREAD_PER_CONNECTION) ?
+                                    "MHD-listen" : "MHD-single",
+                                    daemon->thread_stack_size,
+                                    &MHD_select_thread,
+                                    daemon) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4342,11 +4360,11 @@ MHD_start_daemon_va (unsigned int flags,
             }
 
           /* Spawn the worker thread */
-          if (!MHD_create_named_thread_(&d->pid,
-                                        "MHD-worker",
-                                        daemon->thread_stack_size,
-                                        &MHD_select_thread,
-                                        d))
+          if (! MHD_create_named_thread_(&d->pid,
+                                         "MHD-worker",
+                                         daemon->thread_stack_size,
+                                         &MHD_select_thread,
+                                         d))
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
