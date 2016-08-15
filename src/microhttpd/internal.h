@@ -613,7 +613,7 @@ struct MHD_Connection
    * Requested URL (everything after "GET" only).  Allocated
    * in pool.
    */
-  char *url;
+  const char *url;
 
   /**
    * HTTP version string (i.e. http/1.1).  Allocated
