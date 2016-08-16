@@ -1,3 +1,7 @@
+Tue Aug 16 15:14:30 MSK 2016
+	Minor improvement for monotonic clock.
+	Minor configure fix for non-bash shells. -EG
+
 Mon Aug 15 13:06:52 CEST 2016
 	Fixed possible crash due to write to read-only region of
 	memory given ill-formed HTTP request (write was otherwise

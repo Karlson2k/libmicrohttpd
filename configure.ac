@@ -1117,9 +1117,9 @@ else
 ])
 fi
 
-if test "x$enable_bauth" != "xyes" -o \
-        "x$enable_dauth" != "xyes" -o \
-        "x$enable_postprocessor" != "xyes"
+if test "x$enable_bauth" != "xyes" || \
+   test "x$enable_dauth" != "xyes" || \
+   test "x$enable_postprocessor" != "xyes"
 then
  AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])
 fi
