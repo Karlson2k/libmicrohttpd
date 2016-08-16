@@ -76,7 +76,9 @@ static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
 #endif /* HAVE_CLOCK_GETTIME */
 
 /* sync clocks; reduce chance of value wrap */
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_GET_TIME) || defined(HAVE_GETHRTIME)
 static time_t mono_clock_start;
+#endif /* HAVE_CLOCK_GETTIME || HAVE_CLOCK_GET_TIME || HAVE_GETHRTIME */
 static time_t sys_clock_start;
 #ifdef HAVE_GETHRTIME
 static hrtime_t hrtime_start;
