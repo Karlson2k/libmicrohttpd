@@ -30,6 +30,21 @@
 #undef HAVE_CLOCK_GETTIME
 #endif /* _WIN32 && HAVE_CLOCK_GETTIME */
 
+#ifdef HAVE_CLOCK_GETTIME
+#include <time.h>
+#endif /* HAVE_CLOCK_GETTIME */
+
+#ifdef HAVE_GETHRTIME
+#ifdef HAVE_SYS_TIME_H
+/* Solaris define gethrtime() in sys/time.h */
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+#ifdef HAVE_TIME_H
+/* HP-UX define gethrtime() in time.h */
+#include <time.h>
+#endif /* HAVE_TIME_H */
+#endif /* HAVE_GETHRTIME */
+
 #ifdef HAVE_CLOCK_GET_TIME
 #include <mach/mach.h>
 /* for host_get_clock_service(), mach_host_self(), mach_task_self() */
@@ -40,6 +55,15 @@
 
 static clock_serv_t mono_clock_service = _MHD_INVALID_CLOCK_SERV;
 #endif /* HAVE_CLOCK_GET_TIME */
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+/* Do not include unneeded parts of W32 headers. */
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <windows.h>
+#include <stdint.h>
+#endif /* _WIN32 */
 
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_REALTIME

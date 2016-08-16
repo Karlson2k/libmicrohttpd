@@ -25,7 +25,13 @@
 
 #ifndef MHD_MONO_CLOCK_H
 #define MHD_MONO_CLOCK_H 1
-#include "platform.h"
+#include "mhd_options.h"
+
+#if defined(HAVE_TIME_H)
+#include <time.h>
+#elif defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
 
 /**
  * Initialise monotonic seconds counter.
