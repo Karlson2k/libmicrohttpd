@@ -678,8 +678,8 @@ AC_MSG_CHECKING([[for clock_get_time]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
     [[
-      #include <mach/clock.h>
-      #include <mach/mach.h>
+#include <mach/clock.h>
+#include <mach/mach.h>
     ]],
     [[
       clock_serv_t cs;
@@ -699,7 +699,16 @@ AC_LINK_IFELSE(
 AC_MSG_CHECKING([[for gethrtime]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
-    [[#include <sys/time.h>]], [[hrtime_t hrt = gethrtime(); ]])
+    [[
+#ifdef HAVE_SYS_TIME_H
+/* Solaris define gethrtime() in sys/time.h */
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+#ifdef HAVE_TIME_H
+/* HP-UX define gethrtime() in time.h */
+#include <time.h>
+#endif /* HAVE_TIME_H */
+    ]], [[hrtime_t hrt = gethrtime(); ]])
   ],
   [
     AC_DEFINE([HAVE_GETHRTIME], [1], [Define to 1 if you have `gethrtime' function.])
