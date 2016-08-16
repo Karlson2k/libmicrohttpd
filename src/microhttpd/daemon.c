@@ -1382,8 +1382,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
             client_socket);
 #endif
 #endif
-  //if (daemon->connections == daemon->connection_limit)
-  // MHD_cleanup_connections (daemon); /* try to aggressively clean up to make room */
   if ( (daemon->connections == daemon->connection_limit) ||
        (MHD_NO == MHD_ip_limit_add (daemon, addr, addrlen)) )
     {
