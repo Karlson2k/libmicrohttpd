@@ -3778,7 +3778,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Failed to create control pipe: %s\n",
-		MHD_strerror_ (errno));
+		MHD_pipe_last_strerror_ ());
 #endif
       free (daemon);
       return NULL;
@@ -3788,7 +3788,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
 		  "Failed to make control pipe non-blocking: %s\n",
-		  MHD_strerror_ (errno));
+		  MHD_pipe_last_strerror_ ());
 #endif
         if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
           MHD_PANIC ("close failed\n");
