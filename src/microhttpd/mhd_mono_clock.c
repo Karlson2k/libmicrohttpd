@@ -36,11 +36,11 @@
 
 #ifdef HAVE_GETHRTIME
 #ifdef HAVE_SYS_TIME_H
-/* Solaris define gethrtime() in sys/time.h */
+/* Solaris defines gethrtime() in sys/time.h */
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
 #ifdef HAVE_TIME_H
-/* HP-UX define gethrtime() in time.h */
+/* HP-UX defines gethrtime() in time.h */
 #include <time.h>
 #endif /* HAVE_TIME_H */
 #endif /* HAVE_GETHRTIME */
