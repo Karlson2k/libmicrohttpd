@@ -1753,62 +1753,6 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
 
 /**
- * Change socket options to be non-inheritable.
- *
- * @param daemon daemon context
- * @param sock socket to manipulate
- * @return #MHD_YES if succeeded, #MHD_NO otherwise
- */
-static int
-make_noninheritable (struct MHD_Daemon *daemon,
-                     MHD_socket sock)
-{
-#ifdef MHD_WINSOCK_SOCKETS
-  if (!SetHandleInformation ((HANDLE)sock, HANDLE_FLAG_INHERIT, 0))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to make socket non-inheritable: %u\n",
-                (unsigned int)GetLastError ());
-#endif
-      return MHD_NO;
-    }
-#else  /* MHD_POSIX_SOCKETS */
-  int flags;
-
-  flags = fcntl (sock, F_GETFD);
-  if ( ( (-1 == flags) ||
-	 ( (flags != (flags | FD_CLOEXEC)) &&
-	   (0 != fcntl (sock, F_SETFD, flags | FD_CLOEXEC)) ) ) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to make socket non-inheritable: %s\n",
-                MHD_socket_last_strerr_ ());
-#endif
-      return MHD_NO;
-    }
-#endif /* MHD_POSIX_SOCKETS */
-  return MHD_YES;
-}
-
-
-/**
- * Change socket options to be non-blocking, non-inheritable.
- *
- * @param daemon daemon context
- * @param sock socket to manipulate
- */
-static void
-make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
-				 MHD_socket sock)
-{
-  (void)MHD_socket_nonblocking_(sock);
-  (void)make_noninheritable (daemon, sock);
-}
-
-
-/**
  * Add another client connection to the set of connections managed by
  * MHD.  This API is usually not needed (since MHD will accept inbound
  * connections on the server socket).  Use this API in special cases,
@@ -1846,8 +1790,23 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   /* internal_add_connection() assume that non-blocking is
      already set in MHD_USE_EPOLL_TURBO mode */
   if (0 != (daemon->options & MHD_USE_EPOLL_TURBO))
-    make_nonblocking_noninheritable (daemon,
-				     client_socket);
+    {
+      if (!MHD_socket_nonblocking_ (client_socket))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Failed to set nonblocking mode on new client socket: %s\n",
+                    MHD_socket_last_strerr_());
+#endif
+        }
+      if (!MHD_socket_noninheritable_ (client_socket))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Failed to set noninheritable mode on new client socket.\n");
+#endif
+        }
+    }
   return internal_add_connection (daemon,
 				  client_socket,
 				  addr, addrlen,
@@ -1935,9 +1894,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
         }
       return MHD_NO;
     }
-#if !defined(USE_ACCEPT4)
-  make_nonblocking_noninheritable (daemon, s);
-#elif !defined(HAVE_SOCK_NONBLOCK)
+#if !defined(USE_ACCEPT4) || !defined(HAVE_SOCK_NONBLOCK)
   if (!MHD_socket_nonblocking_ (s))
     {
 #ifdef HAVE_MESSAGES
@@ -1946,9 +1903,16 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                 MHD_socket_last_strerr_());
 #endif
     }
-#elif !defined(SOCK_CLOEXEC)
-  make_noninheritable (daemon, s);
+#endif /* !USE_ACCEPT4 || !HAVE_SOCK_NONBLOCK */
+#if !defined(USE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+  if (!MHD_socket_noninheritable_ (s))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to set noninheritable mode on incoming connection socket.\n");
 #endif
+    }
+#endif /* !USE_ACCEPT4 || !SOCK_CLOEXEC */
 #ifdef HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon,
@@ -3491,7 +3455,7 @@ create_listen_socket (struct MHD_Daemon *daemon,
   setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on_val, sizeof(on_val));
 #endif
   if (MHD_NO == cloexec_set)
-    make_noninheritable (daemon, fd);
+    MHD_socket_noninheritable_ (fd);
   return fd;
 }
 
@@ -3524,8 +3488,13 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
 #if !defined(USE_EPOLL_CREATE1)
-  make_noninheritable (daemon,
-                       daemon->epoll_fd);
+  if (!MHD_socket_noninheritable_ (daemon->epoll_fd))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to set noninheritable mode on epoll FD.\n");
+#endif
+    }
 #endif /* ! USE_EPOLL_CREATE1 */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */

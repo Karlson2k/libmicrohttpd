@@ -597,4 +597,15 @@ MHD_add_to_fd_set_ (MHD_socket fd,
 int
 MHD_socket_nonblocking_ (MHD_socket sock);
 
+
+/**
+ * Change socket options to be non-inheritable.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ * @warning Does not set socket error on W32.
+ */
+int
+MHD_socket_noninheritable_ (MHD_socket sock);
+
 #endif /* ! MHD_SOCKETS_H */

@@ -297,3 +297,31 @@ MHD_socket_nonblocking_ (MHD_socket sock)
 #endif /* MHD_WINSOCK_SOCKETS */
   return !0;
 }
+
+
+/**
+ * Change socket options to be non-inheritable.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ * @warning Does not set socket error on W32.
+ */
+int
+MHD_socket_noninheritable_ (MHD_socket sock)
+{
+#if defined(MHD_POSIX_SOCKETS)
+  int flags;
+
+  flags = fcntl (sock, F_GETFD);
+  if (-1 == flags)
+    return 0;
+
+  if ( ((flags | FD_CLOEXEC) != flags) &&
+       (0 != fcntl (sock, F_SETFD, flags | FD_CLOEXEC)) )
+    return 0;
+#elif defined(MHD_WINSOCK_SOCKETS)
+  if (!SetHandleInformation ((HANDLE)sock, HANDLE_FLAG_INHERIT, 0))
+    return 0;
+#endif /* MHD_WINSOCK_SOCKETS */
+  return !0;
+}
