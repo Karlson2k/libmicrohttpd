@@ -650,22 +650,12 @@ add_to_fd_set (MHD_socket fd,
 	       MHD_socket *max_fd,
 	       unsigned int fd_setsize)
 {
-  if (NULL == set)
+  if (NULL == set || MHD_INVALID_SOCKET == fd)
     return MHD_NO;
-#ifdef MHD_WINSOCK_SOCKETS
-  if (set->fd_count >= fd_setsize)
-    {
-      if (FD_ISSET(fd, set))
-        return MHD_YES;
-      else
-        return MHD_NO;
-    }
-#else  /* ! MHD_WINSOCK_SOCKETS */
-  if (fd >= (MHD_socket)fd_setsize)
+  if (!MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd, set, fd_setsize))
     return MHD_NO;
-#endif /* ! MHD_WINSOCK_SOCKETS */
-  FD_SET (fd, set);
-  if ( (NULL != max_fd) && (MHD_INVALID_SOCKET != fd) &&
+  MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd, set, fd_setsize);
+  if ( (NULL != max_fd) &&
        ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
     *max_fd = fd;
 
@@ -1325,15 +1315,14 @@ internal_add_connection (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-#ifndef MHD_WINSOCK_SOCKETS
-  if ( (client_socket >= FD_SETSIZE) &&
+  if ( (!MHD_SCKT_FD_FITS_FDSET_(client_socket, NULL)) &&
        (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		"Socket descriptor larger than FD_SETSIZE: %d > %d\n",
-		client_socket,
-		FD_SETSIZE);
+		(int)client_socket,
+		(int)FD_SETSIZE);
 #endif
       if (0 != MHD_socket_close_ (client_socket))
 	MHD_PANIC ("close failed\n");
@@ -1342,7 +1331,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-#endif
 
 
 #ifdef HAVE_MESSAGES
@@ -2267,7 +2255,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     {
       /* we're in epoll mode, the epoll FD stands for
 	 the entire event set! */
-      if (daemon->epoll_fd >= FD_SETSIZE)
+      if (!MHD_SCKT_FD_FITS_FDSET_(daemon->epoll_fd, NULL))
 	return MHD_NO; /* poll fd too big, fail hard */
       if (FD_ISSET (daemon->epoll_fd, read_fd_set))
 	return MHD_run (daemon);
@@ -3772,10 +3760,9 @@ MHD_start_daemon_va (unsigned int flags,
       }
     make_nonblocking (daemon, daemon->wpipe[1]);
   }
-#ifndef MHD_WINSOCK_SOCKETS
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
        (1 == use_pipe) &&
-       (daemon->wpipe[0] >= FD_SETSIZE) )
+       (!MHD_SCKT_FD_FITS_FDSET_(daemon->wpipe[0], NULL)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -3788,7 +3775,6 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-#endif
 #ifdef DAUTH_SUPPORT
   daemon->digest_auth_rand_size = 0;
   daemon->digest_auth_random = NULL;
@@ -4131,8 +4117,7 @@ MHD_start_daemon_va (unsigned int flags,
           goto free_and_fail;
         }
     }
-#ifndef MHD_WINSOCK_SOCKETS
-  if ( (socket_fd >= FD_SETSIZE) &&
+  if ( (!MHD_SCKT_FD_FITS_FDSET_(socket_fd, NULL)) &&
        (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY)) ) )
     {
 #ifdef HAVE_MESSAGES
@@ -4145,7 +4130,6 @@ MHD_start_daemon_va (unsigned int flags,
 	MHD_PANIC ("close failed\n");
       goto free_and_fail;
     }
-#endif
 
 #if EPOLL_SUPPORT
   if ( (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY)) &&
@@ -4293,9 +4277,8 @@ MHD_start_daemon_va (unsigned int flags,
                 }
               make_nonblocking (d, d->wpipe[1]);
             }
-#ifndef MHD_WINSOCK_SOCKETS
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
-               (d->wpipe[0] >= FD_SETSIZE) )
+               (!MHD_SCKT_FD_FITS_FDSET_(d->wpipe[0], NULL)) )
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
@@ -4307,7 +4290,6 @@ MHD_start_daemon_va (unsigned int flags,
                 MHD_PANIC ("close failed\n");
               goto thread_failed;
             }
-#endif
 
           /* Divide available connections evenly amongst the threads.
            * Thread indexes in [0, leftover_conns) each get one of the

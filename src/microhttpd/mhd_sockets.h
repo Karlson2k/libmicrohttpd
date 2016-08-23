@@ -204,6 +204,53 @@
 #  define MHD_socket_close_(fd) closesocket((fd))
 #endif
 
+/**
+ * Check whether FD can be added to fd_set with specified FD_SETSIZE.
+ * @param fd   the fd to check
+ * @param pset the pointer to fd_set to check or NULL to check
+ *             whether FD can be used with fd_sets.
+ * @param setsize the value of FD_SETSIZE.
+ * @return boolean true if FD can be added to fd_set,
+ *         boolean false otherwise.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) ((fd) < (setsize))
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) ( ((void*)(pset)==(void*)0) || \
+                                                             (((fd_set*)(pset))->fd_count < (setsize)) || \
+                                                             (FD_ISSET((fd),(pset))) )
+#endif
+
+/**
+ * Check whether FD can be added to fd_set with current FD_SETSIZE.
+ * @param fd   the fd to check
+ * @param pset the pointer to fd_set to check or NULL to check
+ *             whether FD can be used with fd_sets.
+ * @return boolean true if FD can be added to fd_set,
+ *         boolean false otherwise.
+ */
+#define MHD_SCKT_FD_FITS_FDSET_(fd,pset) MHD_SCKT_FD_FITS_FDSET_SETSIZE_((fd),(pset),FD_SETSIZE)
+
+/**
+ * Add FD to fd_set with specified FD_SETSIZE.
+ * @param fd   the fd to add
+ * @param pset the valid pointer to fd_set.
+ * @param setsize the value of FD_SETSIZE.
+ * @note  To work on W32 with value of FD_SETSIZE different from currently defined value,
+ *        system definition of FD_SET() is not used.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd,pset,setsize) FD_SET((fd),(pset))
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd,pset,setsize)                     \
+        do {                                                                     \
+           u_int _i_ = 0;                                                        \
+           fd_set* const _s_ = (fd_set*)(pset);                                  \
+           while((_i_ < _s_->fd_count) && ((fd) != _s_->fd_array[_i_])) {++_i_;} \
+           if ((_i_ == _s_->fd_count)) {_s_->fd_array[_s_->fd_count++] = (fd);}  \
+        } while(0)
+#endif
+
  /* MHD_SYS_select_ is wrapper macro for system select() function */
 #if !defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SYS_select_(n,r,w,e,t) select((n),(r),(w),(e),(t))
