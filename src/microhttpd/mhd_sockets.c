@@ -325,3 +325,59 @@ MHD_socket_noninheritable_ (MHD_socket sock)
 #endif /* MHD_WINSOCK_SOCKETS */
   return !0;
 }
+
+
+/**
+ * Create a listen socket, with noninheritable flag if possible.
+ *
+ * @param use_ipv6 if set to non-zero IPv6 is used
+ * @return created socket or MHD_INVALID_SOCKET in case of errors
+ */
+MHD_socket
+MHD_socket_create_listen_ (int use_ipv6)
+{
+  int domain;
+  MHD_socket fd;
+  int cloexec_set;
+#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+  static const int on_val = 1;
+#endif
+
+#ifdef HAVE_INET6
+  domain = (use_ipv6) ? PF_INET6 : PF_INET;
+#else  /* ! HAVE_INET6 */
+  if (use_ipv6)
+    return MHD_INVALID_SOCKET;
+  domain = PF_INET;
+#endif /* ! HAVE_INET6 */
+
+#if defined(MHD_POSIX_SOCKETS) && defined(SOCK_CLOEXEC)
+  fd = socket (domain, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  cloexec_set = !0;
+#elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
+  fd = WSASocketW (domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT);
+  cloexec_set = !0;
+#else  /* !SOCK_CLOEXEC */
+  fd = MHD_INVALID_SOCKET;
+#endif /* !SOCK_CLOEXEC */
+  if (MHD_INVALID_SOCKET == fd)
+    {
+      fd = socket (domain, SOCK_STREAM, 0);
+      cloexec_set = 0;
+    }
+  if (MHD_INVALID_SOCKET == fd)
+    return MHD_INVALID_SOCKET;
+#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+  if(0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on_val, sizeof(on_val)))
+    {
+      int err = MHD_socket_get_error_();
+      MHD_socket_close_(fd);
+      MHD_socket_fset_error_(err);
+      return MHD_INVALID_SOCKET;
+    }
+#endif
+  if (!cloexec_set)
+    (void)MHD_socket_noninheritable_(fd);
+
+  return fd;
+}

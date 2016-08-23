@@ -3414,52 +3414,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 }
 
 
-/**
- * Create a listen socket, if possible with SOCK_CLOEXEC flag set.
- *
- * @param daemon daemon for which we create the socket
- * @param domain socket domain (i.e. PF_INET)
- * @param type socket type (usually SOCK_STREAM)
- * @param protocol desired protocol, 0 for default
- */
-static MHD_socket
-create_listen_socket (struct MHD_Daemon *daemon,
-	              int domain, int type, int protocol)
-{
-  MHD_socket fd;
-  int cloexec_set;
-#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-  static const int on_val = 1;
-#endif
-
-  /* use SOCK_STREAM rather than ai_socktype: some getaddrinfo
-   * implementations do not set ai_socktype, e.g. RHL6.2. */
-#if defined(MHD_POSIX_SOCKETS) && defined(SOCK_CLOEXEC)
-  fd = socket (domain, type | SOCK_CLOEXEC, protocol);
-  cloexec_set = MHD_YES;
-#elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
-  fd = WSASocketW (domain, type, protocol, NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT);
-  cloexec_set = MHD_YES;
-#else  /* !SOCK_CLOEXEC */
-  fd = socket (domain, type, protocol);
-  cloexec_set = MHD_NO;
-#endif /* !SOCK_CLOEXEC */
-  if ( (MHD_INVALID_SOCKET == fd) && (MHD_NO != cloexec_set) )
-    {
-      fd = socket (domain, type, protocol);
-      cloexec_set = MHD_NO;
-    }
-  if (MHD_INVALID_SOCKET == fd)
-    return MHD_INVALID_SOCKET;
-#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-  setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on_val, sizeof(on_val));
-#endif
-  if (MHD_NO == cloexec_set)
-    MHD_socket_noninheritable_ (fd);
-  return fd;
-}
-
-
 #if EPOLL_SUPPORT
 /**
  * Setup epoll() FD for the daemon and initialize it to listen
@@ -3797,17 +3751,12 @@ MHD_start_daemon_va (unsigned int flags,
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
-      if (0 != (flags & MHD_USE_IPv6))
-	socket_fd = create_listen_socket (daemon,
-				   PF_INET6, SOCK_STREAM, 0);
-      else
-	socket_fd = create_listen_socket (daemon,
-				   PF_INET, SOCK_STREAM, 0);
+      socket_fd = MHD_socket_create_listen_(flags & MHD_USE_IPv6);
       if (MHD_INVALID_SOCKET == socket_fd)
 	{
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    "Call to socket failed: %s\n",
+                    "Failed to create socket for listening: %s\n",
                     MHD_socket_last_strerr_ ());
 #endif
 	  goto free_and_fail;

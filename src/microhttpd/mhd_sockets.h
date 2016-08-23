@@ -608,4 +608,14 @@ MHD_socket_nonblocking_ (MHD_socket sock);
 int
 MHD_socket_noninheritable_ (MHD_socket sock);
 
+
+/**
+ * Create a listen socket, with noninheritable flag if possible.
+ *
+ * @param use_ipv6 if set to non-zero IPv6 is used
+ * @return created socket or MHD_INVALID_SOCKET in case of errors
+ */
+MHD_socket
+MHD_socket_create_listen_ (int use_ipv6);
+
 #endif /* ! MHD_SOCKETS_H */
