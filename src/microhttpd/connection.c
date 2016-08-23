@@ -33,6 +33,7 @@
 #include "mhd_str.h"
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
+#include "mhd_compat.h"
 
 
 /**

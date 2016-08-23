@@ -5,10 +5,6 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
-if HAVE_W32
-MHD_W32_LIB = $(top_builddir)/src/platform/libplatform_interface.la
-endif
-
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
@@ -71,6 +67,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_locks.h \
   mhd_sockets.c mhd_sockets.h \
   mhd_itc.c mhd_itc.h \
+  mhd_compat.c mhd_compat.h \
   response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
@@ -82,9 +79,7 @@ libmicrohttpd_la_LDFLAGS = \
   $(W32_MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
-  $(MHD_W32_LIB) $(MHD_LIBDEPS)
-libmicrohttpd_la_DEPENDENCIES = \
-  $(MHD_W32_LIB)
+  $(MHD_LIBDEPS)
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc
@@ -172,12 +167,11 @@ test_daemon_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_SOURCES = \
-  test_postprocessor.c
+  test_postprocessor.c mhd_compat.c
 test_postprocessor_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_W32_LIB)
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
@@ -187,12 +181,11 @@ test_postprocessor_amp_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_large_SOURCES = \
-  test_postprocessor_large.c
+  test_postprocessor_large.c mhd_compat.c
 test_postprocessor_large_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(MHD_W32_LIB)
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c

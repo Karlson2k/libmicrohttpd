@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2014 Karlson2k (Evgeny Grin)
+  Copyright (C) 2014-2016 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -13,33 +13,36 @@
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
-  License along with this library.
-  If not, see <http://www.gnu.org/licenses/>.
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 */
 
 /**
- * @file include/platform_interface.h
- * @brief  internal platform abstraction functions
+ * @file microhttpd/mhd_compat.h
+ * @brief  Header for platform missing functions.
  * @author Karlson2k (Evgeny Grin)
+ *
+ * Provides compatibility for platforms with some missing
+ * functionality.
+ * Any functions can be implemented as macro on some platforms
+ * unless explicitly marked otherwise.
+ * Any function argument can be skipped in macro, so avoid
+ * variable modification in function parameters.
  */
 
-#ifndef MHD_PLATFORM_INTERFACE_H
-#define MHD_PLATFORM_INTERFACE_H
+#ifndef MHD_COMPAT_H
+#define MHD_COMPAT_H 1
 
-#include "platform.h"
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include "w32functions.h"
-#endif
-
-/* *****************************
-     General function mapping
-   *****************************/
+#include "mhd_options.h"
 
 /* Platform-independent snprintf name */
 #if defined(HAVE_SNPRINTF)
 #define MHD_snprintf_ snprintf
 #else  /* ! HAVE_SNPRINTF */
 #if defined(_WIN32)
+/* Emulate snprintf function on W32 */
+int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...);
 #define MHD_snprintf_ W32_snprintf
 #else  /* ! _WIN32*/
 #error Your platform does not support snprintf() and MHD does not know how to emulate it on your platform.
@@ -48,8 +51,17 @@
 
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #define MHD_random_() random()
-#else
+#else  /* _WIN32 && !__CYGWIN__ */
 #define MHD_random_() MHD_W32_random_()
-#endif
 
-#endif /* MHD_PLATFORM_INTERFACE_H */
+/**
+ * Generate 31-bit pseudo random number.
+ * Function initialize itself at first call to current time.
+ * @return 31-bit pseudo random number.
+ */
+int MHD_W32_random_(void);
+#endif /* _WIN32 && !__CYGWIN__ */
+
+
+
+#endif /* MHD_COMPAT_H */

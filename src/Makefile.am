@@ -8,7 +8,7 @@ endif
 endif
 endif
 
-SUBDIRS = include platform microhttpd $(curltests) $(zzuftests) .
+SUBDIRS = include microhttpd $(curltests) $(zzuftests) .
 
 if BUILD_EXAMPLES
 SUBDIRS += examples

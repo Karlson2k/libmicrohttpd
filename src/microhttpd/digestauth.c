@@ -28,6 +28,7 @@
 #include "md5.h"
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
+#include "mhd_compat.h"
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN

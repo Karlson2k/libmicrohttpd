@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2014 Karlson2k (Evgeny Grin)
+  Copyright (C) 2014-2016 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -13,27 +13,44 @@
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
-  License along with this library. 
-  If not, see <http://www.gnu.org/licenses/>.
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 */
 
 /**
- * @file platform/w32functions.h
- * @brief  internal functions for W32 systems
+ * @file microhttpd/mhd_compat.c
+ * @brief  Implementation of platform missing functions.
  * @author Karlson2k (Evgeny Grin)
  */
 
-#include "w32functions.h"
-#include <string.h>
+#include "mhd_compat.h"
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <stdint.h>
 #include <time.h>
+#ifndef HAVE_SNPRINTF
 #include <stdio.h>
 #include <stdarg.h>
+#endif  /* HAVE_SNPRINTF */
+#endif /* _WIN32  && !__CYGWIN__ */
 
+
+/**
+ * Dummy function to silent compiler warning on empty file
+ * @return zero
+ */
+static int
+static_dummy_func(void)
+{
+  return 0;
+}
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /**
  * Static variable used by pseudo random number generator
  */
 static int32_t rnd_val = 0;
+
 /**
  * Generate 31-bit pseudo random number.
  * Function initialize itself at first call to current time.
@@ -49,6 +66,8 @@ int MHD_W32_random_(void)
   return (int)rnd_val;
 }
 
+
+#ifndef HAVE_SNPRINTF
 /* Emulate snprintf function on W32 */
 int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...)
 {
@@ -72,3 +91,5 @@ int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ..
 
   return ret;
 }
+#endif  /* HAVE_SNPRINTF */
+#endif /* _WIN32  && !__CYGWIN__ */

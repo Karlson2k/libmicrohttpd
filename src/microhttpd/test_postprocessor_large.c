@@ -27,6 +27,7 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include "internal.h"
+#include "mhd_compat.h"
 
 #ifndef WINDOWS
 #include <unistd.h>

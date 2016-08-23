@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "mhd_compat.h"
 
 #ifndef WINDOWS
 #include <unistd.h>

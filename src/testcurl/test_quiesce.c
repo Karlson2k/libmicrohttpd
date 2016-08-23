@@ -25,7 +25,6 @@
 
 #include "MHD_config.h"
 #include "platform.h"
-#include "platform_interface.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>

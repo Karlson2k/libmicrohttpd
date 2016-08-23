@@ -152,14 +152,6 @@ test_get_sendfile_SOURCES = \
 test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
-test_get_sendfile_DEPENDENCIES =
-
-if HAVE_W32
-test_get_sendfile_LDADD += \
- $(top_builddir)/src/platform/libplatform_interface.la
-test_get_sendfile_DEPENDENCIES += \
- $(top_builddir)/src/platform/libplatform_interface.la
-endif
 
 test_urlparse_SOURCES = \
   test_urlparse.c
@@ -237,14 +229,6 @@ test_get_sendfile11_SOURCES = \
 test_get_sendfile11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
-test_get_sendfile11_DEPENDENCIES =
-
-if HAVE_W32
-test_get_sendfile11_LDADD += \
-  $(top_builddir)/src/platform/libplatform_interface.la
-test_get_sendfile11_DEPENDENCIES += \
-  $(top_builddir)/src/platform/libplatform_interface.la
-endif
 
 test_post11_SOURCES = \
   test_post.c

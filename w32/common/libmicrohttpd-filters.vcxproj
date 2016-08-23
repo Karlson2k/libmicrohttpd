@@ -13,10 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\platform_interface">
-      <UniqueIdentifier>{af799bf7-9787-4134-8e56-9e5aae50c7e3}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="Template Files">
       <UniqueIdentifier>{df5ad836-e372-437b-a0e3-299d3675d6b4}</UniqueIdentifier>
       <Extensions>in</Extensions>
@@ -32,21 +28,12 @@
     <ClInclude Include="$(MhdSrc)include\platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\platform_interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MhdSrc)include\w32functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="$(MhdSrc)include\mhd_options.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(MhdW32Common)MHD_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClCompile Include="$(MhdSrc)platform\w32functions.c">
-      <Filter>Source Files\platform_interface</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MhdSrc)microhttpd\base64.c">
@@ -149,6 +136,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_itc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_compat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

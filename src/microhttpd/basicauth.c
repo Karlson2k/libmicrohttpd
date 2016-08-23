@@ -26,6 +26,7 @@
 #include <limits.h>
 #include "internal.h"
 #include "base64.h"
+#include "mhd_compat.h"
 
 /**
  * Beginning string for any valid Basic authentication header.

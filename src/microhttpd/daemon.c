@@ -36,6 +36,7 @@
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc.h"
+#include "mhd_compat.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>

@@ -19,15 +19,13 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_threads.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_sockets.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_itc.c" />
-    <ClCompile Include="$(MhdSrc)platform\w32functions.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_compat.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h" />
     <ClInclude Include="$(MhdSrc)include\microhttpd.h" />
     <ClInclude Include="$(MhdSrc)include\mhd_options.h" />
     <ClInclude Include="$(MhdSrc)include\platform.h" />
-    <ClInclude Include="$(MhdSrc)include\platform_interface.h" />
-    <ClInclude Include="$(MhdSrc)include\w32functions.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\base64.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h" />
@@ -44,6 +42,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_sockets.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
