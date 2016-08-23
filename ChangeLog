@@ -1,3 +1,17 @@
+Tue Aug 23 22:54:07 MSK 2016
+	Internal refactoring: W32 compatibility layer was finally
+	replaced with several specialized abstraction layers for
+	sockets, control pipes (inter-thread communication) and
+	generic functions. Now all major platform functions
+	(including threads and mutex) are implemented in thin
+	abstraction layers.
+	Improved performance on W32 due to eliminating
+	translation of error to POSIX codes and using W32 codes
+	directly (through macros).
+	Improved error reporting on all platforms.
+	Improved error handling and reporting on Darwin.
+	Minor fixes. -EG
+
 Tue Aug 16 15:14:30 MSK 2016
 	Minor improvement for monotonic clock.
 	Minor configure fix for non-bash shells. -EG
