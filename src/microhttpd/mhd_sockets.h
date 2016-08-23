@@ -171,22 +171,22 @@
 
 
 /**
- * _MHD_SOCKOPT_BOOL_TYPE is type for bool parameters for setsockopt()/getsockopt()
+ * MHD_SCKT_OPT_BOOL_ is type for bool parameters for setsockopt()/getsockopt()
  */
 #ifdef MHD_POSIX_SOCKETS
-  typedef int _MHD_SOCKOPT_BOOL_TYPE;
+  typedef int MHD_SCKT_OPT_BOOL_;
 #else /* MHD_WINSOCK_SOCKETS */
-  typedef BOOL _MHD_SOCKOPT_BOOL_TYPE;
+  typedef BOOL MHD_SCKT_OPT_BOOL_;
 #endif /* MHD_WINSOCK_SOCKETS */
 
 /**
- * _MHD_socket_funcs_size is type used to specify size for send and recv
+ * MHD_SCKT_SEND_SIZE_ is type used to specify size for send and recv
  * functions
  */
 #if !defined(MHD_WINSOCK_SOCKETS)
-  typedef size_t _MHD_socket_funcs_size;
+  typedef size_t MHD_SCKT_SEND_SIZE_;
 #else
-  typedef int _MHD_socket_funcs_size;
+  typedef int MHD_SCKT_SEND_SIZE_;
 #endif
 
 /**

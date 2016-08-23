@@ -1131,7 +1131,7 @@ recv_param_adapter (struct MHD_Connection *connection,
 
   ret = (ssize_t) recv (connection->socket_fd,
                         other,
-                        (_MHD_socket_funcs_size) i,
+                        (MHD_SCKT_SEND_SIZE_) i,
                         MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
   if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
@@ -1180,7 +1180,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if (0 != (connection->daemon->options & MHD_USE_SSL))
     return (ssize_t) send (connection->socket_fd,
                            other,
-                           (_MHD_socket_funcs_size) i,
+                           (MHD_SCKT_SEND_SIZE_) i,
                            MSG_NOSIGNAL);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
@@ -1232,7 +1232,7 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  ret = (ssize_t) send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
+  ret = (ssize_t) send (connection->socket_fd, other, (MHD_SCKT_SEND_SIZE_)i, MSG_NOSIGNAL);
   err = MHD_socket_get_error_();
 #if EPOLL_SUPPORT
   if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
@@ -3667,7 +3667,7 @@ MHD_start_daemon_va (unsigned int flags,
                      MHD_AccessHandlerCallback dh, void *dh_cls,
 		     va_list ap)
 {
-  const _MHD_SOCKOPT_BOOL_TYPE on = 1;
+  const MHD_SCKT_OPT_BOOL_ on = 1;
   struct MHD_Daemon *daemon;
   MHD_socket socket_fd;
   struct sockaddr_in servaddr4;
@@ -4056,7 +4056,7 @@ MHD_start_daemon_va (unsigned int flags,
 	     (http://msdn.microsoft.com/en-us/library/ms738574%28v=VS.85%29.aspx);
 	     and may also be missing on older POSIX systems; good luck if you have any of those,
 	     your IPv6 socket may then also bind against IPv4 anyway... */
-	  const _MHD_SOCKOPT_BOOL_TYPE v6_only =
+	  const MHD_SCKT_OPT_BOOL_ v6_only =
             (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
 	  if (0 > setsockopt (socket_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,

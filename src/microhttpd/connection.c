@@ -146,9 +146,9 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
 {
   int res = MHD_NO;
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
-  const _MHD_SOCKOPT_BOOL_TYPE on_val = 1;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_NODELAY)
-  const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #endif /* TCP_NODELAY */
   if (!connection)
     return MHD_NO;
@@ -191,9 +191,9 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 {
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
   int res = MHD_YES;
-  const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #if defined(TCP_NODELAY)
-  const _MHD_SOCKOPT_BOOL_TYPE on_val = 1;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #endif /* TCP_NODELAY */
 #if !defined(TCP_CORK)
   const int dummy = 0;
@@ -237,9 +237,9 @@ socket_start_no_buffering (struct MHD_Connection *connection)
 {
 #if defined(TCP_NODELAY)
   int res = MHD_YES;
-  const _MHD_SOCKOPT_BOOL_TYPE on_val = 1;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
-  const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #endif /* TCP_CORK || TCP_NOPUSH */
   if (!connection)
     return MHD_NO;
@@ -276,9 +276,9 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
 {
 #if defined(TCP_NODELAY)
   int res = MHD_YES;
-  const _MHD_SOCKOPT_BOOL_TYPE off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #if defined(TCP_CORK)
-  _MHD_SOCKOPT_BOOL_TYPE cork_val = 0;
+  MHD_SCKT_OPT_BOOL_ cork_val = 0;
   socklen_t param_size = sizeof (cork_val);
 #endif /* TCP_CORK */
   if (!connection)
