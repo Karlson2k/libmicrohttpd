@@ -209,11 +209,12 @@
 #  define MHD_SYS_select_(n,r,w,e,t) select((n),(r),(w),(e),(t))
 #else
 #  define MHD_SYS_select_(n,r,w,e,t) \
-( (!(r) || ((fd_set*)(r))->fd_count == 0) && \
-  (!(w) || ((fd_set*)(w))->fd_count == 0) && \
-  (!(e) || ((fd_set*)(e))->fd_count == 0) ) ? \
-( (t) ? (Sleep((t)->tv_sec * 1000 + (t)->tv_usec / 1000), 0) : 0 ) : \
-  (select((int)0,(r),(w),(e),(t)))
+( ( (((void*)(r) == (void*)0) || ((fd_set*)(r))->fd_count == 0) &&  \
+    (((void*)(w) == (void*)0) || ((fd_set*)(w))->fd_count == 0) &&  \
+    (((void*)(e) == (void*)0) || ((fd_set*)(e))->fd_count == 0) ) ? \
+  ( ((void*)(t) == (void*)0) ?                                      \
+    (Sleep((t)->tv_sec * 1000 + (t)->tv_usec / 1000), 0) : 0 ) :    \
+  (select((int)0,(r),(w),(e),(t))) )
 #endif
 
 #if defined(HAVE_POLL)
