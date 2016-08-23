@@ -34,6 +34,7 @@
 #include "autoinit_funcs.h"
 #include "mhd_mono_clock.h"
 #include "mhd_locks.h"
+#include "mhd_sockets.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>
@@ -46,17 +47,9 @@
 #include <gcrypt.h>
 #endif
 
-#if defined(HAVE_POLL_H) && defined(HAVE_POLL)
-#include <poll.h>
-#endif
-
 #ifdef LINUX
 #include <sys/sendfile.h>
 #endif
-
-#ifndef _MHD_FD_SETSIZE_IS_DEFAULT
-#include "sysfdsetsize.h"
-#endif /* !_MHD_FD_SETSIZE_IS_DEFAULT */
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -79,13 +72,6 @@
  */
 #define MHD_POOL_SIZE_DEFAULT (32 * 1024)
 
-#ifdef TCP_FASTOPEN
-/**
- * Default TCP fastopen queue size.
- */
-#define MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT 10
-#endif
-
 /**
  * Print extra messages with reasons for closing
  * sockets? (only adds non-error messages).
@@ -103,26 +89,6 @@
 #define MSG_NOSIGNAL 0
 #endif
 #endif
-
-#ifdef SOCK_CLOEXEC
-#define MAYBE_SOCK_CLOEXEC SOCK_CLOEXEC
-#else  /* ! SOCK_CLOEXEC */
-#define MAYBE_SOCK_CLOEXEC 0
-#endif /* ! SOCK_CLOEXEC */
-
-#ifdef HAVE_SOCK_NONBLOCK
-#define MAYBE_SOCK_NONBLOCK SOCK_NONBLOCK
-#else  /* ! HAVE_SOCK_NONBLOCK */
-#define MAYBE_SOCK_NONBLOCK 0
-#endif /* ! HAVE_SOCK_NONBLOCK */
-
-#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || defined(SOCK_CLOEXEC))
-#define USE_ACCEPT4 1
-#endif
-
-#if defined(HAVE_EPOLL_CREATE1) && defined(EPOLL_CLOEXEC)
-#define USE_EPOLL_CREATE1 1
-#endif /* HAVE_EPOLL_CREATE1 && EPOLL_CLOEXEC */
 
 
 /**

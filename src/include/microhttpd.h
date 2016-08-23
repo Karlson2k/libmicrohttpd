@@ -60,14 +60,6 @@
  * thread-safe (with the exception of #MHD_set_connection_value,
  * which must only be used in a particular context).
  *
- * NEW: Before including "microhttpd.h" you should add the necessary
- * includes to define the `uint64_t`, `size_t`, `fd_set`, `socklen_t`
- * and `struct sockaddr` data types (which headers are needed may
- * depend on your platform; for possible suggestions consult
- * "platform.h" in the MHD distribution).  If you have done so, you
- * should also have a line with "#define MHD_PLATFORM_H" which will
- * prevent this header from trying (and, depending on your platform,
- * failing) to include the right headers.
  *
  * @defgroup event event-loop control
  * MHD API to start and stop the HTTP server and manage the event loop.
@@ -100,11 +92,14 @@ extern "C"
    hence works on any platform, we use "standard" includes here
    to build out-of-the-box for beginning users on common systems.
 
-   Once you have a proper build system and go for more exotic
-   platforms, you should define MHD_PLATFORM_H in some header that
-   you always include *before* "microhttpd.h".  Then the following
-   "standard" includes won't be used (which might be a good
-   idea, especially on platforms where they do not exist). */
+   If generic headers don't work on your platform, include headers
+   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
+   'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
+   'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
+   including "microhttpd.h". Then the following "standard"
+   includes won't be used (which might be a good idea, especially
+   on platforms where they do not exist).
+   */
 #ifndef MHD_PLATFORM_H
 #include <stdarg.h>
 #include <stdint.h>

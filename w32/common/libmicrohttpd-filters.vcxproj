@@ -139,6 +139,12 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_sockets.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_sockets.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(MhdW32Common)microhttpd_dll_res_vc.rc">

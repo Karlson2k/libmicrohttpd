@@ -28,6 +28,8 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include "tls_test_common.h"
+#include "mhd_sockets.h" /* only macros used */
+
 #define MAX_EXT_DATA_LENGTH 256
 
 extern const char srv_key_pem[];

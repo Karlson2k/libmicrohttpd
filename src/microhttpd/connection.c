@@ -32,11 +32,7 @@
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
 #include "mhd_locks.h"
-
-#if HAVE_NETINET_TCP_H
-/* for TCP_CORK */
-#include <netinet/tcp.h>
-#endif
+#include "mhd_sockets.h"
 
 
 /**

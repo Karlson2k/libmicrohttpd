@@ -55,13 +55,17 @@
    are available) */
 
 
-#ifdef OS_VXWORKS
-#include <sockLib.h>
-#include <netinet/in.h>
+#if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
 #include <stdarg.h>
 #include <sys/mman.h>
-#define RESTRICT __restrict__
-#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif /* HAVE_SOCKLIB_H */
+#ifdef HAVE_INETLIB_H
+#include <inetLib.h>
+#endif /* HAVE_INETLIB_H */
+#endif /* __VXWORKS__ */
+
 #if HAVE_MEMORY_H
 #include <memory.h>
 #endif
@@ -84,21 +88,20 @@
 #if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
-#if HAVE_NETDB_H
-#include <netdb.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
 #if HAVE_TIME_H
 #include <time.h>
 #endif
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef WIN32_LEAN_AND_MEAN
+/* Do not include unneeded parts of W32 headers. */
+#define WIN32_LEAN_AND_MEAN 1
+#endif /* !WIN32_LEAN_AND_MEAN */
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif /* _WIN32 && !__CYGWIN__ */
 
 #if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)
 /* Do not define __USE_W32_SOCKETS under Cygwin! */
@@ -106,19 +109,8 @@
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#include <ws2tcpip.h>
 #define sleep(seconds) ((SleepEx((seconds)*1000, 1)==0)?0:(seconds))
 #define usleep(useconds) ((SleepEx((useconds)/1000, 1)==0)?0:-1)
-#endif
-
-#if !defined(SHUT_WR) && defined(SD_SEND)
-#define SHUT_WR SD_SEND
-#endif
-#if !defined(SHUT_RD) && defined(SD_RECEIVE)
-#define SHUT_RD SD_RECEIVE
-#endif
-#if !defined(SHUT_RDWR) && defined(SD_BOTH)
-#define SHUT_RDWR SD_BOTH
 #endif
 
 #if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
@@ -126,38 +118,14 @@
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
 
-#ifndef MHD_SOCKET_DEFINED
-/**
- * MHD_socket is type for socket FDs
- */
-#if !defined(_WIN32) || defined(__CYGWIN__)
-#define MHD_POSIX_SOCKETS 1
-typedef int MHD_socket;
-#define MHD_INVALID_SOCKET (-1)
-#else  /* defined(_WIN32) && !defined(__CYGWIN__) */
-#define MHD_WINSOCK_SOCKETS 1
-#include <winsock2.h>
-typedef SOCKET MHD_socket;
-#define MHD_INVALID_SOCKET (INVALID_SOCKET)
-#endif /* defined(_WIN32) && !defined(__CYGWIN__) */
-#define MHD_SOCKET_DEFINED 1
-#endif /* MHD_SOCKET_DEFINED */
-
-/**
- * _MHD_SOCKOPT_BOOL_TYPE is type for bool parameters for setsockopt()/getsockopt()
- */
-#ifdef MHD_POSIX_SOCKETS
-typedef int _MHD_SOCKOPT_BOOL_TYPE;
-#else /* MHD_WINSOCK_SOCKETS */
-typedef BOOL _MHD_SOCKOPT_BOOL_TYPE;
-#endif /* MHD_WINSOCK_SOCKETS */
-
 #ifndef _WIN32
 typedef time_t _MHD_TIMEVAL_TV_SEC_TYPE;
 #else  /* _WIN32 */
 typedef long _MHD_TIMEVAL_TV_SEC_TYPE;
 #endif /* _WIN32 */
 
+/* TODO: remove include when pipes implementation is moved to other file */
+#include "../microhttpd/mhd_sockets.h"
 /* Force don't use pipes on W32 */
 #if defined(_WIN32) && !defined(MHD_DONT_USE_PIPES)
 #define MHD_DONT_USE_PIPES 1

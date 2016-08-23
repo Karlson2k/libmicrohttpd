@@ -33,6 +33,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include "mhd_sockets.h" /* only macros used */
 
 #ifndef WINDOWS
 #include <unistd.h>

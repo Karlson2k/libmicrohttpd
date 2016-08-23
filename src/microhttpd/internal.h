@@ -36,15 +36,9 @@
 #include <gnutls/abstract.h>
 #endif
 #endif
-#if EPOLL_SUPPORT
-#include <sys/epoll.h>
-#endif
-#if HAVE_NETINET_TCP_H
-/* for TCP_FASTOPEN */
-#include <netinet/tcp.h>
-#endif
 #include "mhd_threads.h"
 #include "mhd_locks.h"
+#include "mhd_sockets.h"
 
 
 /**

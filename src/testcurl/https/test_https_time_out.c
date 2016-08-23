@@ -30,6 +30,7 @@
 #include "internal.h"
 #include "tls_test_common.h"
 #include <gcrypt.h>
+#include "mhd_sockets.h" /* only macros used */
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

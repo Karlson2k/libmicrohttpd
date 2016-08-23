@@ -33,6 +33,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "mhd_sockets.h"
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -101,7 +102,7 @@ ahc_echo (void *cls,
     {
       fprintf (stderr, "Failed to open `%s': %s\n",
 	       sourcefile,
-	       MHD_strerror_ (errno));
+	       strerror (errno));
       exit (1);
     }
   response = MHD_create_response_from_fd (strlen (TESTSTR), fd);

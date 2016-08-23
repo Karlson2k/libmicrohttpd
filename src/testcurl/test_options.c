@@ -26,6 +26,7 @@
 
 #include "platform.h"
 #include "microhttpd.h"
+#include "mhd_sockets.h"
 
 #define MHD_E_MEM "Error: memory error\n"
 #define MHD_E_SERVER_INIT "Error: failed to start server\n"

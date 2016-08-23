@@ -48,16 +48,11 @@
    headers. */
 #ifdef FD_SETSIZE
 /* FD_SETSIZE defined in command line or in MHD_config.h */
-/* Use function to retrieve system default FD_SETSIZE value. */
-#define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value()
 #elif defined(_WIN32) && !defined(__CYGWIN__)
 /* Platform with WinSock and without overridden FD_SETSIZE */
 #define FD_SETSIZE 2048 /* Override default small value */
-/* Use function to retrieve system default FD_SETSIZE value. */
-#define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value()
 #else  /* !FD_SETSIZE && !WinSock*/
 /* System default value of FD_SETSIZE is used */
-#define _MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
 #define _MHD_FD_SETSIZE_IS_DEFAULT 1
 #endif /* !FD_SETSIZE && !WinSock*/
 
@@ -82,6 +77,10 @@
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
 #endif /* _WIN32 */
+
+#if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
+#define RESTRICT __restrict__
+#endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
 
 #if LINUX+0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && ! defined(_LARGEFILE64_SOURCE)
 /* On Linux, special macro is required to enable definitions of some xxx64 functions */

@@ -69,6 +69,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_str.c mhd_str.h \
   mhd_threads.c mhd_threads.h \
   mhd_locks.h \
+  mhd_sockets.c mhd_sockets.h \
   response.c response.h
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \

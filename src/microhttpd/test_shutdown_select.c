@@ -30,8 +30,8 @@
  */
 
 #include "MHD_config.h"
-#include "platform_interface.h"
 #include "platform.h"
+#include "mhd_sockets.h"
 #include <stdlib.h>
 #include <stdio.h>
 
