@@ -235,3 +235,32 @@ const char* MHD_W32_strerror_winsock_(int err)
 
 
 #endif /* MHD_WINSOCK_SOCKETS */
+
+
+/**
+ * Add @a fd to the @a set.  If @a fd is
+ * greater than @a max_fd, set @a max_fd to @a fd.
+ *
+ * @param fd file descriptor to add to the @a set
+ * @param set set to modify
+ * @param max_fd maximum value to potentially update
+ * @param fd_setsize value of FD_SETSIZE
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_add_to_fd_set_ (MHD_socket fd,
+                    fd_set *set,
+                    MHD_socket *max_fd,
+                    unsigned int fd_setsize)
+{
+  if (NULL == set || MHD_INVALID_SOCKET == fd)
+    return 0;
+  if (!MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd, set, fd_setsize))
+    return 0;
+  MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd, set, fd_setsize);
+  if ( (NULL != max_fd) &&
+       ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
+    *max_fd = fd;
+
+  return !0;
+}

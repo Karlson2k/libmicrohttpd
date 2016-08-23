@@ -569,4 +569,21 @@
 #  define MHD_socket_set_error_to_ENOMEM() MHD_socket_set_error_(MHD_SCKT_ENOMEM_)
 #endif
 
+/* Socket functions */
+
+/**
+ * Add @a fd to the @a set.  If @a fd is
+ * greater than @a max_fd, set @a max_fd to @a fd.
+ *
+ * @param fd file descriptor to add to the @a set
+ * @param set set to modify
+ * @param max_fd maximum value to potentially update
+ * @param fd_setsize value of FD_SETSIZE
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_add_to_fd_set_ (MHD_socket fd,
+                    fd_set *set,
+                    MHD_socket *max_fd,
+                    unsigned int fd_setsize);
 #endif /* ! MHD_SOCKETS_H */

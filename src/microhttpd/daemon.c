@@ -634,34 +634,6 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
 #endif
 
 
-/**
- * Add @a fd to the @a set.  If @a fd is
- * greater than @a max_fd, set @a max_fd to @a fd.
- *
- * @param fd file descriptor to add to the @a set
- * @param set set to modify
- * @param max_fd maximum value to potentially update
- * @param fd_setsize value of FD_SETSIZE
- * @return #MHD_YES on success, #MHD_NO otherwise
- */
-static int
-add_to_fd_set (MHD_socket fd,
-	       fd_set *set,
-	       MHD_socket *max_fd,
-	       unsigned int fd_setsize)
-{
-  if (NULL == set || MHD_INVALID_SOCKET == fd)
-    return MHD_NO;
-  if (!MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd, set, fd_setsize))
-    return MHD_NO;
-  MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd, set, fd_setsize);
-  if ( (NULL != max_fd) &&
-       ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
-    *max_fd = fd;
-
-  return MHD_YES;
-}
-
 #undef MHD_get_fdset
 
 /**
@@ -740,11 +712,11 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
       /* we're in epoll mode, use the epoll FD as a stand-in for
 	 the entire event set */
 
-      return add_to_fd_set (daemon->epoll_fd, read_fd_set, max_fd, fd_setsize);
+      return MHD_add_to_fd_set_ (daemon->epoll_fd, read_fd_set, max_fd, fd_setsize) ? MHD_YES : MHD_NO;
     }
 #endif
   if (MHD_INVALID_SOCKET != daemon->socket_fd &&
-      MHD_YES != add_to_fd_set (daemon->socket_fd, read_fd_set, max_fd, fd_setsize))
+      !MHD_add_to_fd_set_ (daemon->socket_fd, read_fd_set, max_fd, fd_setsize))
     result = MHD_NO;
 
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -752,19 +724,19 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
       switch (pos->event_loop_info)
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
-	  if (MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	  if (!MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
 	    result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
-	  if (MHD_YES != add_to_fd_set (pos->socket_fd, write_fd_set, max_fd, fd_setsize))
+	  if (!MHD_add_to_fd_set_ (pos->socket_fd, write_fd_set, max_fd, fd_setsize))
 	    result = MHD_NO;
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	      !MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
             result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
 	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      MHD_YES != add_to_fd_set (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	      !MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
             result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
@@ -915,23 +887,19 @@ MHD_handle_connection (void *data)
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
-	      if (MHD_YES !=
-                  add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE))
+	      if (!MHD_add_to_fd_set_ (con->socket_fd, &rs, &maxsock, FD_SETSIZE))
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      if (MHD_YES !=
-                  add_to_fd_set (con->socket_fd, &ws, &maxsock, FD_SETSIZE))
+	      if (!MHD_add_to_fd_set_ (con->socket_fd, &ws, &maxsock, FD_SETSIZE))
                 err_state = 1;
 	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
-                   (MHD_YES !=
-                    add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
+                   (!MHD_add_to_fd_set_ (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
 	        err_state = 1;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
 	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
-                   (MHD_YES !=
-                    add_to_fd_set (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
+                   (!MHD_add_to_fd_set_ (con->socket_fd, &rs, &maxsock, FD_SETSIZE)) )
 	        err_state = 1;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
@@ -944,8 +912,7 @@ MHD_handle_connection (void *data)
 #if WINDOWS
           if (MHD_INVALID_PIPE_ != spipe)
             {
-              if (MHD_YES !=
-                  add_to_fd_set (spipe, &rs, &maxsock, FD_SETSIZE))
+              if (!MHD_add_to_fd_set_ (spipe, &rs, &maxsock, FD_SETSIZE))
                 err_state = 1;
             }
 #endif
@@ -2339,10 +2306,10 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       /* accept only, have one thread per connection */
       if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-           (MHD_YES != add_to_fd_set (daemon->socket_fd,
-                                      &rs,
-                                      &maxsock,
-                                      FD_SETSIZE)) )
+           (!MHD_add_to_fd_set_ (daemon->socket_fd,
+                                 &rs,
+                                 &maxsock,
+                                 FD_SETSIZE)) )
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon, "Could not add listen socket to fdset");
@@ -2351,10 +2318,10 @@ MHD_select (struct MHD_Daemon *daemon,
         }
     }
   if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-       (MHD_YES != add_to_fd_set (daemon->wpipe[0],
-                                  &rs,
-                                  &maxsock,
-                                  FD_SETSIZE)) )
+       (!MHD_add_to_fd_set_ (daemon->wpipe[0],
+                             &rs,
+                             &maxsock,
+                             FD_SETSIZE)) )
     {
 #if defined(MHD_WINSOCK_SOCKETS)
       /* fdset limit reached, new connections
@@ -2363,10 +2330,10 @@ MHD_select (struct MHD_Daemon *daemon,
       if (MHD_INVALID_SOCKET != daemon->socket_fd)
         {
           FD_CLR (daemon->socket_fd, &rs);
-          if (MHD_YES != add_to_fd_set (daemon->wpipe[0],
-                                        &rs,
-                                        &maxsock,
-                                        FD_SETSIZE))
+          if (!MHD_add_to_fd_set_ (daemon->wpipe[0],
+                                   &rs,
+                                   &maxsock,
+                                   FD_SETSIZE))
             {
 #endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HAVE_MESSAGES
