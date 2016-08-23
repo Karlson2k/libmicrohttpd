@@ -26,6 +26,11 @@
 
 #include "mhd_itc.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#include <fcntl.h>
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /**
  * Create pair of mutually connected TCP/IP sockets on loopback address
@@ -106,3 +111,31 @@ int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2])
 }
 
 #endif /* _WIN32 && ! __CYGWIN__ */
+
+#ifndef MHD_DONT_USE_PIPES
+#if !defined(_WIN32) || defined(__CYGWIN__)
+
+
+/**
+ * Change itc FD options to be non-blocking.
+ *
+ * @param fd the FD to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_itc_nonblocking_ (MHD_pipe fd)
+{
+  int flags;
+
+  flags = fcntl (fd, F_GETFL);
+  if (-1 == flags)
+    return 0;
+
+  if ( ((flags | O_NONBLOCK) != flags) &&
+       (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
+    return 0;
+
+  return !0;
+}
+#endif /* _WIN32 && ! __CYGWIN__ */
+#endif /* ! MHD_DONT_USE_PIPES */

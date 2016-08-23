@@ -586,4 +586,15 @@ MHD_add_to_fd_set_ (MHD_socket fd,
                     fd_set *set,
                     MHD_socket *max_fd,
                     unsigned int fd_setsize);
+
+
+/**
+ * Change socket options to be non-blocking.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_socket_nonblocking_ (MHD_socket sock);
+
 #endif /* ! MHD_SOCKETS_H */

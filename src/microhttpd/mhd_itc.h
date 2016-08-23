@@ -114,5 +114,17 @@
 int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
 #endif /* _WIN32 && ! __CYGWIN__ */
 
+#ifndef MHD_DONT_USE_PIPES
+/**
+ * Change itc FD options to be non-blocking.
+ *
+ * @param fd the FD to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+   int
+   MHD_itc_nonblocking_ (MHD_pipe fd);
+#else
+#  define MHD_itc_nonblocking_(f) MHD_socket_nonblocking_((f))
+#endif
 
 #endif /* MHD_ITC_H */

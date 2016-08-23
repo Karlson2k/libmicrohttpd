@@ -136,49 +136,6 @@ static int mhd_winsock_inited_ = 0;
 
 
 /**
- * Change socket options to be non-blocking.
- *
- * @param daemon daemon context
- * @param sock socket to manipulate
- * @return #MHD_YES if succeeded, #MHD_NO otherwise
- */
-static int
-make_nonblocking (struct MHD_Daemon *daemon,
-                  MHD_socket sock)
-{
-#ifdef MHD_WINSOCK_SOCKETS
-  unsigned long flags = 1;
-
-  if (0 != ioctlsocket (sock, FIONBIO, &flags))
-    {
- #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to make socket non-blocking: %s\n",
-                MHD_socket_last_strerr_ ());
- #endif
-      return MHD_NO;
-    }
-#else  /* MHD_POSIX_SOCKETS */
-  int flags;
-
-  flags = fcntl (sock, F_GETFL);
-  if ( ( (-1 == flags) ||
-	 ( (flags != (flags | O_NONBLOCK)) &&
-	   (0 != fcntl (sock, F_SETFL, flags | O_NONBLOCK)) ) ) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to make socket non-blocking: %s\n",
-                MHD_socket_last_strerr_ ());
-#endif
-      return MHD_NO;
-    }
-#endif /* MHD_POSIX_SOCKETS */
-  return MHD_YES;
-}
-
-
-/**
  * Trace up to and return master daemon. If the supplied daemon
  * is a master, then return the daemon itself.
  *
@@ -1420,7 +1377,14 @@ internal_add_connection (struct MHD_Daemon *daemon,
     {
       /* in turbo mode, we assume that non-blocking was already set
 	 by 'accept4' or whoever calls 'MHD_add_connection' */
-      make_nonblocking (daemon, connection->socket_fd);
+      if (!MHD_socket_nonblocking_ (connection->socket_fd))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (connection->daemon,
+                    "Failed to set nonblocking mode on connection socket: %s\n",
+                    MHD_socket_last_strerr_());
+#endif
+        }
     }
 
 #if HTTPS_SUPPORT
@@ -1839,7 +1803,7 @@ static void
 make_nonblocking_noninheritable (struct MHD_Daemon *daemon,
 				 MHD_socket sock)
 {
-  (void)make_nonblocking (daemon, sock);
+  (void)MHD_socket_nonblocking_(sock);
   (void)make_noninheritable (daemon, sock);
 }
 
@@ -1974,7 +1938,14 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #if !defined(USE_ACCEPT4)
   make_nonblocking_noninheritable (daemon, s);
 #elif !defined(HAVE_SOCK_NONBLOCK)
-  make_nonblocking (daemon, s);
+  if (!MHD_socket_nonblocking_ (s))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to set nonblocking mode on incoming connection socket: %s\n",
+                MHD_socket_last_strerr_());
+#endif
+    }
 #elif !defined(SOCK_CLOEXEC)
   make_noninheritable (daemon, s);
 #endif
@@ -3711,11 +3682,11 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    if (MHD_NO == make_nonblocking (daemon, daemon->wpipe[0]))
+    if (!MHD_itc_nonblocking_(daemon->wpipe[0]))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-		  "Failed to make control pipe non-blocking: %s\n",
+		  "Failed to make read side of inter-thread control channel non-blocking: %s\n",
 		  MHD_pipe_last_strerror_ ());
 #endif
         if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
@@ -3725,7 +3696,14 @@ MHD_start_daemon_va (unsigned int flags,
         free (daemon);
         return NULL;
       }
-    make_nonblocking (daemon, daemon->wpipe[1]);
+    if (!MHD_itc_nonblocking_(daemon->wpipe[1]))
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  "Failed to make write side of inter-thread control channel non-blocking: %s\n",
+                  MHD_pipe_last_strerror_ ());
+#endif
+      }
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
        (1 == use_pipe) &&
@@ -4071,8 +4049,13 @@ MHD_start_daemon_va (unsigned int flags,
       socket_fd = daemon->socket_fd;
     }
 
-  if (MHD_NO == make_nonblocking (daemon, socket_fd))
+  if (!MHD_socket_nonblocking_ (socket_fd))
     {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to set nonblocking mode on listening socket: %s\n",
+                MHD_socket_last_strerr_());
+#endif
       if (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY) ||
           daemon->worker_pool_size > 0)
         {
@@ -4233,16 +4216,23 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
                   goto thread_failed;
                 }
-              if (MHD_NO == make_nonblocking (d, d->wpipe[0]))
+              if (!MHD_itc_nonblocking_(d->wpipe[0]))
                 {
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,
-                            "Failed to make worker control pipe non_blocking: %s\n",
-                            MHD_pipe_last_strerror_() );
+                            "Failed to make read side of worker inter-thread control channel non-blocking: %s\n",
+                            MHD_pipe_last_strerror_ ());
 #endif
                   goto thread_failed;
                 }
-              make_nonblocking (d, d->wpipe[1]);
+              if (!MHD_itc_nonblocking_(d->wpipe[1]))
+                {
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (daemon,
+                            "Failed to make write side of worker inter-thread control channel non-blocking: %s\n",
+                            MHD_pipe_last_strerror_ ());
+#endif
+                }
             }
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL_LINUX_ONLY))) &&
                (!MHD_SCKT_FD_FITS_FDSET_(d->wpipe[0], NULL)) )

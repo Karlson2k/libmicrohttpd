@@ -25,6 +25,10 @@
  */
 
 #include "mhd_sockets.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#include <fcntl.h>
 
 #ifdef MHD_WINSOCK_SOCKETS
 
@@ -262,5 +266,34 @@ MHD_add_to_fd_set_ (MHD_socket fd,
        ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
     *max_fd = fd;
 
+  return !0;
+}
+
+
+/**
+ * Change socket options to be non-blocking.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_socket_nonblocking_ (MHD_socket sock)
+{
+#if defined(MHD_POSIX_SOCKETS)
+  int flags;
+
+  flags = fcntl (sock, F_GETFL);
+  if (-1 == flags)
+    return 0;
+
+  if ( ((flags | O_NONBLOCK) != flags) &&
+       (0 != fcntl (sock, F_SETFL, flags | O_NONBLOCK)) )
+    return 0;
+#elif defined(MHD_WINSOCK_SOCKETS)
+  unsigned long flags = 1;
+
+  if (0 != ioctlsocket (sock, FIONBIO, &flags))
+    return 0;
+#endif /* MHD_WINSOCK_SOCKETS */
   return !0;
 }
