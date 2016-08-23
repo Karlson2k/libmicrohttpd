@@ -124,20 +124,6 @@ typedef time_t _MHD_TIMEVAL_TV_SEC_TYPE;
 typedef long _MHD_TIMEVAL_TV_SEC_TYPE;
 #endif /* _WIN32 */
 
-/* TODO: remove include when pipes implementation is moved to other file */
-#include "../microhttpd/mhd_sockets.h"
-/* Force don't use pipes on W32 */
-#if defined(_WIN32) && !defined(MHD_DONT_USE_PIPES)
-#define MHD_DONT_USE_PIPES 1
-#endif /* defined(_WIN32) && !defined(MHD_DONT_USE_PIPES) */
-
-/* MHD_pipe is type for pipe FDs*/
-#ifndef MHD_DONT_USE_PIPES
-typedef int MHD_pipe;
-#else /* ! MHD_DONT_USE_PIPES */
-typedef MHD_socket MHD_pipe;
-#endif /* ! MHD_DONT_USE_PIPES */
-
 #if !defined(IPPROTO_IPV6) && defined(_MSC_FULL_VER) && _WIN32_WINNT >= 0x0501
 /* VC use IPPROTO_IPV6 as part of enum */
 #define IPPROTO_IPV6 IPPROTO_IPV6

@@ -40,13 +40,6 @@ extern "C"
 #endif
 
 /**
- * Create pair of mutually connected TCP/IP sockets on loopback address
- * @param sockets_pair array to receive resulted sockets
- * @return zero on success, -1 otherwise
- */
-int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
-
-/**
  * Generate 31-bit pseudo random number.
  * Function initialize itself at first call to current time.
  * @return 31-bit pseudo random number.

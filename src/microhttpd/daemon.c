@@ -35,6 +35,7 @@
 #include "mhd_mono_clock.h"
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
+#include "mhd_itc.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>

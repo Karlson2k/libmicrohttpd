@@ -18,6 +18,7 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_str.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_threads.c" />
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_sockets.c" />
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_itc.c" />
     <ClCompile Include="$(MhdSrc)platform\w32functions.c" />
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +43,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_threads.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_sockets.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
