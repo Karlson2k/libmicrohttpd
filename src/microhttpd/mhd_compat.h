@@ -36,6 +36,12 @@
 
 #include "mhd_options.h"
 #include <stdlib.h>
+#ifdef HAVE_STRING_H /* for strerror() */
+#include <string.h>
+#endif /* HAVE_STRING_H */
+
+ /* MHD_strerror_ is strerror */
+#define MHD_strerror_(errnum) strerror((errnum))
 
 /* Platform-independent snprintf name */
 #if defined(HAVE_SNPRINTF)

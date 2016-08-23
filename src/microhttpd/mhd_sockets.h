@@ -204,38 +204,6 @@
 #  define MHD_socket_close_(fd) closesocket((fd))
 #endif
 
-/**
- * MHD_socket_errno_ is errno of last function (non-W32) / errno of
- * last socket function (W32)
- */
-#if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_socket_errno_ errno
-#else
-#  define MHD_socket_errno_ MHD_W32_errno_from_winsock_()
-#endif
-
- /* MHD_socket_last_strerr_ is description string of last errno (non-W32) /
-  *                            description string of last socket error (W32) */
-#if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_socket_last_strerr_() strerror(errno)
-#else
-#  define MHD_socket_last_strerr_() MHD_W32_strerror_last_winsock_()
-#endif
-
- /* MHD_strerror_ is strerror (both non-W32/W32) */
-#if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_strerror_(errnum) strerror((errnum))
-#else
-#  define MHD_strerror_(errnum) MHD_W32_strerror_((errnum))
-#endif
-
- /* MHD_set_socket_errno_ set errno to errnum (non-W32) / set socket last error to errnum (W32) */
-#if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_set_socket_errno_(errnum) errno=(errnum)
-#else
-#  define MHD_set_socket_errno_(errnum) MHD_W32_set_last_winsock_error_((errnum))
-#endif
-
  /* MHD_SYS_select_ is wrapper macro for system select() function */
 #if !defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SYS_select_(n,r,w,e,t) select((n),(r),(w),(e),(t))
@@ -257,150 +225,300 @@
 #  endif /* MHD_WINSOCK_SOCKETS */
 #endif /* HAVE_POLL */
 
+#define MHD_SCKT_MISSING_ERR_CODE_ 31450
+
+#if defined(MHD_POSIX_SOCKETS)
+#  if defined(EAGAIN)
+#    define MHD_SCKT_EAGAIN_      EAGAIN
+#  elif defined(EWOULDBLOCK)
+#    define MHD_SCKT_EAGAIN_      EWOULDBLOCK
+#  else  /* !EAGAIN && !EWOULDBLOCK */
+#    define MHD_SCKT_EAGAIN_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* !EAGAIN && !EWOULDBLOCK */
+#  if defined(EWOULDBLOCK)
+#    define MHD_SCKT_EWOULDBLOCK_ EWOULDBLOCK
+#  elif defined(EAGAIN)
+#    define MHD_SCKT_EWOULDBLOCK_ EAGAIN
+#  else  /* !EWOULDBLOCK && !EAGAIN */
+#    define MHD_SCKT_EWOULDBLOCK_ MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* !EWOULDBLOCK && !EAGAIN */
+#  ifdef EINTR
+#    define MHD_SCKT_EINTR_       EINTR
+#  else  /* ! EINTR */
+#    define MHD_SCKT_EINTR_       MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EINTR */
+#  ifdef ECONNRESET
+#    define MHD_SCKT_ECONNRESET_  ECONNRESET
+#  else  /* ! ECONNRESET */
+#    define MHD_SCKT_ECONNRESET_  MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ECONNRESET */
+#  ifdef ECONNABORTED
+#    define MHD_SCKT_ECONNABORTED_  ECONNABORTED
+#  else  /* ! ECONNABORTED */
+#    define MHD_SCKT_ECONNABORTED_  MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ECONNABORTED */
+#  ifdef ENOTCONN
+#    define MHD_SCKT_ENOTCONN_    ENOTCONN
+#  else  /* ! ENOTCONN */
+#    define MHD_SCKT_ENOTCONN_    MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOTCONN */
+#  ifdef EMFILE
+#    define MHD_SCKT_EMFILE_      EMFILE
+#  else  /* ! EMFILE */
+#    define MHD_SCKT_EMFILE_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EMFILE */
+#  ifdef ENFILE
+#    define MHD_SCKT_ENFILE_      ENFILE
+#  else  /* ! ENFILE */
+#    define MHD_SCKT_ENFILE_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENFILE */
+#  ifdef ENOMEM
+#    define MHD_SCKT_ENOMEM_      ENOMEM
+#  else  /* ! ENOMEM */
+#    define MHD_SCKT_ENOMEM_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOMEM */
+#  ifdef ENOBUFS
+#    define MHD_SCKT_ENOBUFS_     ENOBUFS
+#  else  /* ! ENOBUFS */
+#    define MHD_SCKT_ENOBUFS_     MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOBUFS */
+#  ifdef EBADF
+#    define MHD_SCKT_EBADF_       EBADF
+#  else  /* ! EBADF */
+#    define MHD_SCKT_EBADF_       MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EBADF */
+#  ifdef ENOTSOCK
+#    define MHD_SCKT_ENOTSOCK_    ENOTSOCK
+#  else  /* ! ENOTSOCK */
+#    define MHD_SCKT_ENOTSOCK_    MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOTSOCK */
+#  ifdef EINVAL
+#    define MHD_SCKT_EINVAL_      EINVAL
+#  else  /* ! EINVAL */
+#    define MHD_SCKT_EINVAL_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EINVAL */
+#  ifdef EFAULT
+#    define MHD_SCKT_EFAUL_       EFAULT
+#  else  /* ! EFAULT */
+#    define MHD_SCKT_EFAUL_       MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EFAULT */
+#  ifdef ENOSYS
+#    define MHD_SCKT_ENOSYS_      ENOSYS
+#  else  /* ! ENOSYS */
+#    define MHD_SCKT_ENOSYS_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOSYS */
+#  ifdef ENOTSUP
+#    define MHD_SCKT_ENOTSUP_     ENOTSUP
+#  else  /* ! ENOTSUP */
+#    define MHD_SCKT_ENOTSUP_     MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOTSUP */
+#  ifdef EOPNOTSUPP
+#    define MHD_SCKT_EOPNOTSUPP_  EOPNOTSUPP
+#  else  /* ! EOPNOTSUPP */
+#    define MHD_SCKT_EOPNOTSUPP_  MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EOPNOTSUPP */
+#  ifdef EACCES
+#    define MHD_SCKT_EACCESS_     EACCES
+#  else  /* ! EACCES */
+#    define MHD_SCKT_EACCESS_     MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EACCES */
+#  ifdef ENETDOWN
+#    define MHD_SCKT_ENETDOWN_    ENETDOWN
+#  else  /* ! ENETDOWN */
+#    define MHD_SCKT_ENETDOWN_    MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENETDOWN */
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_SCKT_EAGAIN_        WSAEWOULDBLOCK
+#  define MHD_SCKT_EWOULDBLOCK_   WSAEWOULDBLOCK
+#  define MHD_SCKT_EINTR_         WSAEINTR
+#  define MHD_SCKT_ECONNRESET_    WSAECONNRESET
+#  define MHD_SCKT_ECONNABORTED_  WSAECONNABORTED
+#  define MHD_SCKT_ENOTCONN_      WSAENOTCONN
+#  define MHD_SCKT_EMFILE_        WSAEMFILE
+#  define MHD_SCKT_ENFILE_        MHD_SCKT_MISSING_ERR_CODE_
+#  define MHD_SCKT_ENOMEM_        MHD_SCKT_MISSING_ERR_CODE_
+#  define MHD_SCKT_ENOBUFS_       WSAENOBUFS
+#  define MHD_SCKT_EBADF_         WSAEBADF
+#  define MHD_SCKT_ENOTSOCK_      WSAENOTSOCK
+#  define MHD_SCKT_EINVAL_        WSAEINVAL
+#  define MHD_SCKT_EFAUL_         WSAEFAULT
+#  define MHD_SCKT_ENOSYS_        MHD_SCKT_MISSING_ERR_CODE_
+#  define MHD_SCKT_ENOTSUP_       MHD_SCKT_MISSING_ERR_CODE_
+#  define MHD_SCKT_EOPNOTSUPP_    WSAEOPNOTSUPP
+#  define MHD_SCKT_EACCESS_       WSAEACCES
+#  define MHD_SCKT_ENETDOWN_      WSAENETDOWN
+#endif
+
+/**
+ * MHD_socket_error_ return system native error code for last socket error.
+ * @return system error code for last socket error.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_socket_get_error_() (errno)
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_socket_get_error_() WSAGetLastError()
+#endif
 
 #ifdef MHD_WINSOCK_SOCKETS
-
-/* POSIX-W32 compatibility functions and macros */
-
-#  define MHDW32ERRBASE 3300
-
-#  ifndef EWOULDBLOCK
-#    define EWOULDBLOCK (MHDW32ERRBASE+1)
-#  endif
-#  ifndef EINPROGRESS
-#    define EINPROGRESS (MHDW32ERRBASE+2)
-#  endif
-#  ifndef EALREADY
-#    define EALREADY (MHDW32ERRBASE+3)
-#  endif
-#  ifndef ENOTSOCK
-#    define ENOTSOCK (MHDW32ERRBASE+4)
-#  endif
-#  ifndef EDESTADDRREQ
-#    define EDESTADDRREQ (MHDW32ERRBASE+5)
-#  endif
-#  ifndef EMSGSIZE
-#    define EMSGSIZE (MHDW32ERRBASE+6)
-#  endif
-#  ifndef EPROTOTYPE
-#    define EPROTOTYPE (MHDW32ERRBASE+7)
-#  endif
-#  ifndef ENOPROTOOPT
-#    define ENOPROTOOPT (MHDW32ERRBASE+8)
-#  endif
-#  ifndef EPROTONOSUPPORT
-#    define EPROTONOSUPPORT (MHDW32ERRBASE+9)
-#  endif
-#  ifndef EOPNOTSUPP
-#    define EOPNOTSUPP (MHDW32ERRBASE+10)
-#  endif
-#  ifndef EAFNOSUPPORT
-#    define EAFNOSUPPORT (MHDW32ERRBASE+11)
-#  endif
-#  ifndef EADDRINUSE
-#    define EADDRINUSE (MHDW32ERRBASE+12)
-#  endif
-#  ifndef EADDRNOTAVAIL
-#    define EADDRNOTAVAIL (MHDW32ERRBASE+13)
-#  endif
-#  ifndef ENETDOWN
-#    define ENETDOWN (MHDW32ERRBASE+14)
-#  endif
-#  ifndef ENETUNREACH
-#    define ENETUNREACH (MHDW32ERRBASE+15)
-#  endif
-#  ifndef ENETRESET
-#    define ENETRESET (MHDW32ERRBASE+16)
-#  endif
-#  ifndef ECONNABORTED
-#    define ECONNABORTED (MHDW32ERRBASE+17)
-#  endif
-#  ifndef ECONNRESET
-#    define ECONNRESET (MHDW32ERRBASE+18)
-#  endif
-#  ifndef ENOBUFS
-#    define ENOBUFS (MHDW32ERRBASE+19)
-#  endif
-#  ifndef EISCONN
-#    define EISCONN (MHDW32ERRBASE+20)
-#  endif
-#  ifndef ENOTCONN
-#    define ENOTCONN (MHDW32ERRBASE+21)
-#  endif
-#  ifndef ETOOMANYREFS
-#    define ETOOMANYREFS (MHDW32ERRBASE+22)
-#  endif
-#  ifndef ECONNREFUSED
-#    define ECONNREFUSED (MHDW32ERRBASE+23)
-#  endif
-#  ifndef ELOOP
-#    define ELOOP (MHDW32ERRBASE+24)
-#  endif
-#  ifndef EHOSTDOWN
-#    define EHOSTDOWN (MHDW32ERRBASE+25)
-#  endif
-#  ifndef EHOSTUNREACH
-#    define EHOSTUNREACH (MHDW32ERRBASE+26)
-#  endif
-#  ifndef EPROCLIM
-#    define EPROCLIM (MHDW32ERRBASE+27)
-#  endif
-#  ifndef EUSERS
-#    define EUSERS (MHDW32ERRBASE+28)
-#  endif
-#  ifndef EDQUOT
-#    define EDQUOT (MHDW32ERRBASE+29)
-#  endif
-#  ifndef ESTALE
-#    define ESTALE (MHDW32ERRBASE+30)
-#  endif
-#  ifndef EREMOTE
-#    define EREMOTE (MHDW32ERRBASE+31)
-#  endif
-#  ifndef ESOCKTNOSUPPORT
-#    define ESOCKTNOSUPPORT (MHDW32ERRBASE+32)
-#  endif
-#  ifndef EPFNOSUPPORT
-#    define EPFNOSUPPORT (MHDW32ERRBASE+33)
-#  endif
-#  ifndef ESHUTDOWN
-#    define ESHUTDOWN (MHDW32ERRBASE+34)
-#  endif
-#  ifndef ENODATA
-#    define ENODATA (MHDW32ERRBASE+35)
-#  endif
-#  ifndef ETIMEDOUT
-#    define ETIMEDOUT (MHDW32ERRBASE+36)
-#  endif
+  /* POSIX-W32 sockets compatibility functions */
 
 /**
- * Return errno equivalent of last winsock error
- * @return errno equivalent of last winsock error
+ * Return pointer to string description of specified WinSock error
+ * @param err the WinSock error code.
+ * @return pointer to string description of specified WinSock error.
  */
-  int MHD_W32_errno_from_winsock_(void);
-
-/**
- * Return pointer to string description of errnum error
- * Works fine with both standard errno errnums
- * and errnums from MHD_W32_errno_from_winsock_
- * @param errnum the errno or value from MHD_W32_errno_from_winsock_()
- * @return pointer to string description of error
- */
-  const char* MHD_W32_strerror_(int errnum);
-
-/**
- * Return pointer to string description of last winsock error
- * @return pointer to string description of last winsock error
- */
-  const char* MHD_W32_strerror_last_winsock_(void);
-
-/**
- * Set last winsock error to equivalent of given errno value
- * @param errnum the errno value to set
- */
-  void MHD_W32_set_last_winsock_error_(int errnum);
-
-
+  const char* MHD_W32_strerror_winsock_(int err);
 #endif /* MHD_WINSOCK_SOCKETS */
+
+/* MHD_socket_last_strerr_ is description string of specified socket error code */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_socket_strerr_(err) strerror((err))
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_socket_strerr_(err) MHD_W32_strerror_winsock_((err))
+#endif
+
+/* MHD_socket_last_strerr_ is description string of last errno (non-W32) /
+ *                            description string of last socket error (W32) */
+#define MHD_socket_last_strerr_() MHD_socket_strerr_(MHD_socket_get_error_())
+
+/**
+ * MHD_socket_fset_error_() set socket system native error code.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_socket_fset_error_(err) (errno = (err))
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_socket_fset_error_(err) (WSASetLastError((err)))
+#endif
+
+/**
+ * MHD_socket_try_set_error_() set socket system native error code if
+ * specified code is defined on system.
+ * @return non-zero if specified @a err code is defined on system
+ *         and error was set;
+ *         zero if specified @a err code is not defined on system
+ *         and error was not set.
+ */
+#define MHD_socket_try_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ != (err)) ? \
+                                         (MHD_socket_fset_error_((err)), !0) : 0 )
+
+/**
+ * MHD_socket_set_error_() set socket system native error code to
+ * specified code or replacement code if specified code is not
+ * defined on system.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  if defined(ENOSYS)
+#    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
+                                         (errno = ENOSYS) : (errno = (err)) )
+#  elif defined(EOPNOTSUPP)
+#    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
+                                         (errno = EOPNOTSUPP) : (errno = (err)) )
+#  elif defined (EFAULT)
+#    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
+                                         (errno = EFAULT) : (errno = (err)) )
+#  elif defined (EINVAL)
+#    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
+                                         (errno = EINVAL) : (errno = (err)) )
+#  else  /* !EOPNOTSUPP && !EFAULT && !EINVAL */
+#    warning No suitable replacement for missing socket error code is found. Edit this file and add replacement code which is defined on system.
+#    define MHD_socket_set_error_(err) (errno = (err))
+#  endif /* !EOPNOTSUPP && !EFAULT && !EINVAL*/
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
+                                       (WSASetLastError((WSAEOPNOTSUPP))) : \
+                                       (WSASetLastError((err))) )
+#endif
+
+/**
+ * Check whether given socket error is equal to specified system
+ * native MHD_SCKT_E*_ code.
+ * If platform don't have specific error code, result is
+ * always boolean false.
+ * @return boolean true if @a code is real error code and
+ *         @a err equals to MHD_SCKT_E*_ @a code;
+ *         boolean false otherwise
+ */
+#define MHD_SCKT_ERR_IS_(err,code) ( (MHD_SCKT_MISSING_ERR_CODE_ != (code)) && \
+                                     ((code) == (err)) )
+
+/**
+ * Check whether last socket error is equal to specified system
+ * native MHD_SCKT_E*_ code.
+ * If platform don't have specific error code, result is
+ * always boolean false.
+ * @return boolean true if @a code is real error code and
+ *         last socket error equals to MHD_SCKT_E*_ @a code;
+ *         boolean false otherwise
+ */
+#define MHD_SCKT_LAST_ERR_IS_(code) MHD_SCKT_ERR_IS_(MHD_socket_get_error_() ,(code))
+
+/* Specific error code checks */
+
+/**
+ * Check whether given socket error is equal to system's
+ * socket error codes for EINTR.
+ * @return boolean true if @a err is equal to sockets' EINTR code;
+ *         boolean false otherwise.
+ */
+#define MHD_SCKT_ERR_IS_EINTR_(err) MHD_SCKT_ERR_IS_((err),MHD_SCKT_EINTR_)
+
+/**
+ * Check whether given socket error is equal to system's
+ * socket error codes for EAGAIN or EWOULDBLOCK.
+ * @return boolean true if @a err is equal to sockets' EAGAIN or EWOULDBLOCK codes;
+ *         boolean false otherwise.
+ */
+#if MHD_SCKT_EAGAIN_ == MHD_SCKT_EWOULDBLOCK_
+#  define MHD_SCKT_ERR_IS_EAGAIN_(err) MHD_SCKT_ERR_IS_((err),MHD_SCKT_EAGAIN_)
+#else  /* MHD_SCKT_EAGAIN_ != MHD_SCKT_EWOULDBLOCK_ */
+#  define MHD_SCKT_ERR_IS_EAGAIN_(err) ( MHD_SCKT_ERR_IS_((err),MHD_SCKT_EAGAIN_) || \
+                                         MHD_SCKT_ERR_IS_((err),MHD_SCKT_EWOULDBLOCK_) )
+#endif /* MHD_SCKT_EAGAIN_ != MHD_SCKT_EWOULDBLOCK_ */
+
+/**
+ * Check whether given socket error is any kind of "low resource" error.
+ * @return boolean true if @a err is any kind of "low resource" error,
+ *         boolean false otherwise.
+ */
+#define MHD_SCKT_ERR_IS_LOW_RESOURCES_(err) ( MHD_SCKT_ERR_IS_((err),MHD_SCKT_EMFILE_) || \
+                                              MHD_SCKT_ERR_IS_((err),MHD_SCKT_ENFILE_) || \
+                                              MHD_SCKT_ERR_IS_((err),MHD_SCKT_ENOMEM_) || \
+                                              MHD_SCKT_ERR_IS_((err),MHD_SCKT_ENOBUFS_) )
+
+/**
+ * Check whether is given socket error is type of "incoming connection
+ * was disconnected before 'accept()' is called".
+ * @return boolean true is @a err match described socket error code,
+ *         boolean false otherwise.
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define MHD_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT_(err) MHD_SCKT_ERR_IS_((err),MHD_SCKT_ECONNABORTED_)
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT_(err) MHD_SCKT_ERR_IS_((err),MHD_SCKT_ECONNRESET_)
+#endif
+
+/**
+ * Check whether is given socket error is type of "connection was terminated
+ * by remote side".
+ * @return boolean true is @a err match described socket error code,
+ *         boolean false otherwise.
+ */
+#define MHD_SCKT_ERR_IS_REMOTE_DISCNN_(err) ( MHD_SCKT_ERR_IS_((err),MHD_SCKT_ECONNRESET_) || \
+                                              MHD_SCKT_ERR_IS_((err),MHD_SCKT_ECONNABORTED_))
+
+/* Specific error code set */
+
+/**
+ * Set socket's error code to ENOMEM or equivalent if ENOMEM is not
+ * available on platform.
+ */
+#if MHD_SCKT_MISSING_ERR_CODE_ != MHD_SCKT_ENOMEM_
+#  define MHD_socket_set_error_to_ENOMEM() MHD_socket_set_error_(MHD_SCKT_ENOMEM_)
+#elif MHD_SCKT_MISSING_ERR_CODE_ != MHD_SCKT_ENOBUFS_
+#  define MHD_socket_set_error_to_ENOMEM() MHD_socket_set_error_(MHD_SCKT_ENOBUFS_)
+#else
+#  warning No suitable replacement for ENOMEM error codes is found. Edit this file and add replacement code which is defined on system.
+#  define MHD_socket_set_error_to_ENOMEM() MHD_socket_set_error_(MHD_SCKT_ENOMEM_)
+#endif
 
 #endif /* ! MHD_SOCKETS_H */

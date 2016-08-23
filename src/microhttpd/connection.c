@@ -1855,10 +1855,10 @@ do_read (struct MHD_Connection *connection)
                                      connection->read_buffer_offset);
   if (bytes_read < 0)
     {
-      const int err = MHD_socket_errno_;
-      if ((EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err))
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
 	  return MHD_NO;
-      if (ECONNRESET == err)
+      if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
         {
            CONNECTION_CLOSE_ERROR (connection, NULL);
 	   return MHD_NO;
@@ -1902,8 +1902,8 @@ do_write (struct MHD_Connection *connection)
 
   if (ret < 0)
     {
-      const int err = MHD_socket_errno_;
-      if ((EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err))
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
         return MHD_NO;
       CONNECTION_CLOSE_ERROR (connection, NULL);
       return MHD_YES;
@@ -2276,13 +2276,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       connection->continue_message_write_offset);
           if (ret < 0)
             {
-              const int err = MHD_socket_errno_;
-              if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
+              const int err = MHD_socket_get_error_ ();
+              if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
                 break;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
                         "Failed to send data: %s\n",
-                        MHD_socket_last_strerr_ ());
+                        MHD_socket_strerr_ (err));
 #endif
 	      CONNECTION_CLOSE_ERROR (connection, NULL);
               return MHD_YES;
@@ -2330,7 +2330,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         [(size_t)data_write_offset],
                                         response->data_size -
                                         (size_t)data_write_offset);
-            err = MHD_socket_errno_;
+            err = MHD_socket_get_error_ ();
 #if DEBUG_SEND_DATA
             if (ret > 0)
               fprintf (stderr,
@@ -2344,12 +2344,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               (void) MHD_mutex_unlock_ (&response->mutex);
             if (ret < 0)
               {
-                if ((err == EINTR) || (err == EAGAIN) || (EWOULDBLOCK == err))
+                if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
                   return MHD_YES;
 #ifdef HAVE_MESSAGES
                 MHD_DLOG (connection->daemon,
                           "Failed to send data: %s\n",
-                          MHD_socket_last_strerr_ ());
+                          MHD_socket_strerr_ (err));
 #endif
                 CONNECTION_CLOSE_ERROR (connection, NULL);
                 return MHD_YES;

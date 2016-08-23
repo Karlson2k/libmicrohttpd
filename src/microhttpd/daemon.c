@@ -457,7 +457,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      MHD_set_socket_errno_ (EINTR);
+      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #if EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
@@ -468,7 +468,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
 	 disrupted); set errno to something caller will interpret
 	 correctly as a hard error */
-      MHD_set_socket_errno_ (ECONNRESET);
+      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
       return res;
     }
   if ((size_t)res == i)
@@ -498,7 +498,7 @@ send_tls_adapter (struct MHD_Connection *connection,
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      MHD_set_socket_errno_ (EINTR);
+      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #if EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
@@ -510,7 +510,7 @@ send_tls_adapter (struct MHD_Connection *connection,
          really understand the error (not listed in GnuTLS
          documentation explicitly), we set 'errno' to something that
          will cause the connection to fail. */
-      MHD_set_socket_errno_ (ECONNRESET);
+      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
       return -1;
     }
   return res;
@@ -971,13 +971,14 @@ MHD_handle_connection (void *data)
 	  num_ready = MHD_SYS_select_ (maxsock + 1, &rs, &ws, NULL, tvp);
 	  if (num_ready < 0)
 	    {
-	      if (EINTR == MHD_socket_errno_)
+	      const int err = MHD_socket_get_error_();
+	      if (MHD_SCKT_ERR_IS_EINTR_(err))
 		continue;
 #ifdef HAVE_MESSAGES
 	      MHD_DLOG (con->daemon,
 			"Error during select (%d): `%s'\n",
-			MHD_socket_errno_,
-			MHD_socket_last_strerr_ ());
+			err,
+			MHD_socket_strerr_ (err));
 #endif
 	      break;
 	    }
@@ -1039,7 +1040,7 @@ MHD_handle_connection (void *data)
 #endif
 		    (NULL == tvp) ? -1 : tv.tv_sec * 1000) < 0)
 	    {
-	      if (EINTR == MHD_socket_errno_)
+	      if (MHD_SCKT_LAST_ERR_IS_(MHD_SCKT_EINTR_))
 		continue;
 #ifdef HAVE_MESSAGES
 	      MHD_DLOG (con->daemon,
@@ -1117,7 +1118,7 @@ recv_param_adapter (struct MHD_Connection *connection,
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      MHD_set_socket_errno_ (ENOTCONN);
+      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
       return -1;
     }
 #ifdef MHD_POSIX_SOCKETS
@@ -1133,7 +1134,7 @@ recv_param_adapter (struct MHD_Connection *connection,
                         (_MHD_socket_funcs_size) i,
                         MSG_NOSIGNAL);
 #if EPOLL_SUPPORT
-  if ( (0 > ret) && (EAGAIN == MHD_socket_errno_) )
+  if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
     {
       /* Got EAGAIN --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
@@ -1157,6 +1158,7 @@ send_param_adapter (struct MHD_Connection *connection,
 		    size_t i)
 {
   ssize_t ret;
+  int err;
 #if LINUX
   MHD_socket fd;
 #endif
@@ -1164,7 +1166,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      MHD_set_socket_errno_ (ENOTCONN);
+      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
       return -1;
     }
 #ifdef MHD_POSIX_SOCKETS
@@ -1189,7 +1191,6 @@ send_param_adapter (struct MHD_Connection *connection,
       /* can use sendfile */
       uint64_t left;
       uint64_t offsetu64;
-      int err;
 #ifndef HAVE_SENDFILE64
       off_t offset;
 #else  /* HAVE_SENDFILE64 */
@@ -1198,7 +1199,7 @@ send_param_adapter (struct MHD_Connection *connection,
       offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
       ret = 0;
-      MHD_set_socket_errno_(ENOMEM);
+      MHD_socket_set_error_to_ENOMEM ();
 #ifndef HAVE_SENDFILE64
       offset = (off_t) offsetu64;
       if ( (offsetu64 <= (uint64_t) OFF_T_MAX) &&
@@ -1212,17 +1213,17 @@ send_param_adapter (struct MHD_Connection *connection,
           /* write successful */
           return ret;
         }
-      err = MHD_socket_errno_;
+      err = MHD_socket_get_error_();
 #if EPOLL_SUPPORT
-      if ( (0 > ret) && (EAGAIN == err) )
+      if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
         {
           /* EAGAIN --- no longer write-ready */
           connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
         }
 #endif
-      if ( (EINTR == err) || (EAGAIN == err) || (EWOULDBLOCK == err) )
+      if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
 	return 0;
-      if (EBADF == err)
+      if (MHD_SCKT_ERR_IS_(err, MHD_SCKT_EBADF_))
 	return -1;
       /* sendfile() failed with EINVAL if mmap()-like operations are not
 	 supported for FD or other 'unusual' errors occurred, so we should try
@@ -1232,8 +1233,9 @@ send_param_adapter (struct MHD_Connection *connection,
     }
 #endif
   ret = (ssize_t) send (connection->socket_fd, other, (_MHD_socket_funcs_size)i, MSG_NOSIGNAL);
+  err = MHD_socket_get_error_();
 #if EPOLL_SUPPORT
-  if ( (0 > ret) && (EAGAIN == MHD_socket_errno_) )
+  if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
     {
       /* EAGAIN --- no longer write-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
@@ -1242,8 +1244,8 @@ send_param_adapter (struct MHD_Connection *connection,
   /* Handle broken kernel / libc, returning -1 but not setting errno;
      kill connection as that should be safe; reported on mailinglist here:
      http://lists.gnu.org/archive/html/libmicrohttpd/2014-10/msg00023.html */
-  if ( (0 > ret) && (0 == MHD_socket_errno_) )
-    MHD_set_socket_errno_(ECONNRESET);
+  if ( (0 > ret) && (0 == err) )
+    MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
   return ret;
 }
 
@@ -1970,16 +1972,18 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif /* ! USE_ACCEPT4 */
   if ((MHD_INVALID_SOCKET == s) || (addrlen <= 0))
     {
-      const int err = MHD_socket_errno_;
+      const int err = MHD_socket_get_error_ ();
       /* This could be a common occurance with multiple worker threads */
-      if ( (EINVAL == err) &&
+      if ( (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINVAL_)) &&
            (MHD_INVALID_SOCKET == daemon->socket_fd) )
         return MHD_NO; /* can happen during shutdown */
+      if (MHD_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT_(err))
+        return MHD_NO; /* do not print error if client just disconnected early */
 #ifdef HAVE_MESSAGES
-      if ((EAGAIN != err) && (EWOULDBLOCK != err))
+      if ( !MHD_SCKT_ERR_IS_EAGAIN_ (err) )
         MHD_DLOG (daemon,
 		  "Error accepting connection: %s\n",
-		  MHD_socket_last_strerr_ ());
+		  MHD_socket_strerr_(err));
 #endif
       if (MHD_INVALID_SOCKET != s)
         {
@@ -1987,10 +1991,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 	    MHD_PANIC ("close failed\n");
           /* just in case */
         }
-      if ( (EMFILE == err) ||
-           (ENFILE == err) ||
-           (ENOMEM == err) ||
-           (ENOBUFS == err) )
+      if ( MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err) )
         {
           /* system/process out of resources */
           if (0 == daemon->connections)
@@ -2430,12 +2431,13 @@ MHD_select (struct MHD_Daemon *daemon,
     return MHD_NO;
   if (num_ready < 0)
     {
-      if (EINTR == MHD_socket_errno_)
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EINTR_(err))
         return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "select failed: %s\n",
-                MHD_socket_last_strerr_ ());
+                MHD_socket_strerr_ (err));
 #endif
       return MHD_NO;
     }
@@ -2551,7 +2553,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       }
     if (MHD_sys_poll_(p, poll_server + num_connections, timeout) < 0)
       {
-	if (EINTR == MHD_socket_errno_)
+        const int err = MHD_socket_get_error_ ();
+	if (MHD_SCKT_ERR_IS_EINTR_ (err))
       {
         free(p);
         return MHD_YES;
@@ -2559,7 +2562,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
 	MHD_DLOG (daemon,
 		  "poll failed: %s\n",
-		  MHD_socket_last_strerr_ ());
+		  MHD_socket_strerr_ (err));
 #endif
         free(p);
 	return MHD_NO;
@@ -2645,12 +2648,13 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     return MHD_YES;
   if (MHD_sys_poll_(p, poll_count, timeout) < 0)
     {
-      if (EINTR == MHD_socket_errno_)
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
 	return MHD_YES;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 "poll failed: %s\n",
-                MHD_socket_last_strerr_ ());
+                MHD_socket_strerr_ (err));
 #endif
       return MHD_NO;
     }
@@ -2790,12 +2794,13 @@ MHD_epoll (struct MHD_Daemon *daemon,
 			       events, MAX_EVENTS, timeout_ms);
       if (-1 == num_events)
 	{
-	  if (EINTR == MHD_socket_errno_)
+          const int err = MHD_socket_get_error_ ();
+          if (MHD_SCKT_ERR_IS_EINTR_ (err))
 	    return MHD_YES;
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     "Call to epoll_wait failed: %s\n",
-                    MHD_socket_last_strerr_ ());
+                    MHD_socket_strerr_ (err));
 #endif
 	  return MHD_NO;
 	}
