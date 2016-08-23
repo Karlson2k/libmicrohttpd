@@ -46,26 +46,6 @@ static_dummy_func(void)
 }
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-/**
- * Static variable used by pseudo random number generator
- */
-static int32_t rnd_val = 0;
-
-/**
- * Generate 31-bit pseudo random number.
- * Function initialize itself at first call to current time.
- * @return 31-bit pseudo random number.
- */
-int MHD_W32_random_(void)
-{
-  if (0 == rnd_val)
-    rnd_val = (int32_t)time(NULL);
-  /* stolen from winsup\cygwin\random.cc */
-  rnd_val = (16807 * (rnd_val % 127773) - 2836 * (rnd_val / 127773))
-               & 0x7fffffff;
-  return (int)rnd_val;
-}
-
 
 #ifndef HAVE_SNPRINTF
 /* Emulate snprintf function on W32 */

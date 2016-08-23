@@ -35,6 +35,7 @@
 #define MHD_COMPAT_H 1
 
 #include "mhd_options.h"
+#include <stdlib.h>
 
 /* Platform-independent snprintf name */
 #if defined(HAVE_SNPRINTF)
@@ -49,19 +50,20 @@ int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ..
 #endif /* ! _WIN32*/
 #endif /* ! HAVE_SNPRINTF */
 
-#if !defined(_WIN32) || defined(__CYGWIN__)
-#define MHD_random_() random()
-#else  /* _WIN32 && !__CYGWIN__ */
-#define MHD_random_() MHD_W32_random_()
-
+#ifdef HAVE_RANDOM
 /**
- * Generate 31-bit pseudo random number.
- * Function initialize itself at first call to current time.
- * @return 31-bit pseudo random number.
+ * Generate pseudo random number at least 30-bit wide.
+ * @return pseudo random number at least 30-bit wide.
  */
-int MHD_W32_random_(void);
-#endif /* _WIN32 && !__CYGWIN__ */
-
-
+#define MHD_random_() random()
+#else  /* HAVE_RANDOM */
+#ifdef HAVE_RAND
+/**
+ * Generate pseudo random number at least 30-bit wide.
+ * @return pseudo random number at least 30-bit wide.
+ */
+#define MHD_random_() ( (((long)rand()) << 15) + (long)rand() )
+#endif /* HAVE_RAND */
+#endif /* HAVE_RANDOM */
 
 #endif /* MHD_COMPAT_H */
