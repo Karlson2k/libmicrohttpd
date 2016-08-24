@@ -143,7 +143,7 @@ choke me
     [[ inln_prfx="$inln_prfx_chk" ]])
   test "x$inln_prfx" != "xnone" && break
 done
-AS_IF([[test "x$ac_cv_c_inline" != "xnone"]],
+AS_IF([[test "x$inln_prfx" != "xnone"]],
       [
        AC_DEFINE([INLINE_FUNC],[1],[Define to 1 if your C compiler supports inline functions.])
        AC_DEFINE_UNQUOTED([_MHD_inline],[static $inln_prfx],[Define to prefix which will be used with MHD inline functions.])
