@@ -529,10 +529,9 @@ AC_ARG_ENABLE([[epoll]],
 if test "$enable_epoll" != "no"; then
   AX_HAVE_EPOLL
   if test "${ax_cv_have_epoll}" = "yes"; then
-    AC_DEFINE([EPOLL_SUPPORT],[1],[define to 1 to enable epoll support])
+    AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
     enable_epoll='yes'
   else
-    AC_DEFINE([EPOLL_SUPPORT],[0],[define to 0 to disable epoll support])
     if test "$enable_epoll" = "yes"; then
       AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])
     fi

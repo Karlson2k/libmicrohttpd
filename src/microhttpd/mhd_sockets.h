@@ -85,7 +85,7 @@
 #  ifdef HAVE_SYS_SELECT_H
 #    include <sys/select.h>
 #  endif
-#  if EPOLL_SUPPORT
+#  ifdef EPOLL_SUPPORT
 #    include <sys/epoll.h>
 #  endif
 #  ifdef HAVE_NETINET_TCP_H

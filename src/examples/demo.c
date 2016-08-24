@@ -884,7 +884,7 @@ main (int argc, char *const *argv)
   mark_as_html (internal_error_response);
   update_directory ();
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 			| MHD_USE_EPOLL_LINUX_ONLY
 #endif
 			,

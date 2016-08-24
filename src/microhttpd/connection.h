@@ -93,7 +93,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
                        enum MHD_RequestTerminationCode termination_code);
 
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 /**
  * Perform epoll processing, possibly moving the connection back into
  * the epoll set if needed.

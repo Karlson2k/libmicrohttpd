@@ -415,7 +415,7 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
        (GNUTLS_E_INTERRUPTED == res) )
     {
       MHD_socket_set_error_ (MHD_SCKT_EINTR_);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
       return -1;
@@ -456,7 +456,7 @@ send_tls_adapter (struct MHD_Connection *connection,
        (GNUTLS_E_INTERRUPTED == res) )
     {
       MHD_socket_set_error_ (MHD_SCKT_EINTR_);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
       return -1;
@@ -663,7 +663,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
        || (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
        || (0 != (daemon->options & MHD_USE_POLL)))
     return MHD_NO;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
       /* we're in epoll mode, use the epoll FD as a stand-in for
@@ -1047,7 +1047,7 @@ recv_param_adapter (struct MHD_Connection *connection,
                         other,
                         (MHD_SCKT_SEND_SIZE_) i,
                         MSG_NOSIGNAL);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
     {
       /* Got EAGAIN --- no longer read-ready */
@@ -1128,7 +1128,7 @@ send_param_adapter (struct MHD_Connection *connection,
           return ret;
         }
       err = MHD_socket_get_error_();
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
         {
           /* EAGAIN --- no longer write-ready */
@@ -1148,7 +1148,7 @@ send_param_adapter (struct MHD_Connection *connection,
 #endif
   ret = (ssize_t) send (connection->socket_fd, other, (MHD_SCKT_SEND_SIZE_)i, MSG_NOSIGNAL);
   err = MHD_socket_get_error_();
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
     {
       /* EAGAIN --- no longer write-ready */
@@ -1485,7 +1485,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		  "failed to signal new connection via pipe");
 #endif
       }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
       if (0 == (daemon->options & MHD_USE_EPOLL_TURBO))
@@ -1610,7 +1610,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   DLL_insert (daemon->suspended_connections_head,
               daemon->suspended_connections_tail,
               connection);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
       if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
@@ -1728,7 +1728,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                          daemon->manual_timeout_tail,
                          pos);
         }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
         {
           if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
@@ -1970,7 +1970,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                                    &pos->socket_context,
                                    MHD_CONNECTION_NOTIFY_CLOSED);
       MHD_ip_limit_del (daemon, pos->addr, pos->addr_len);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
         {
           if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
@@ -2152,7 +2152,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if (MHD_USE_SUSPEND_RESUME == (daemon->options & mask))
     resume_suspended_connections (daemon);
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
       /* we're in epoll mode, the epoll FD stands for
@@ -2583,7 +2583,7 @@ MHD_poll (struct MHD_Daemon *daemon,
 }
 
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 
 /**
  * How many events to we process at most per epoll() call?  Trade-off
@@ -2833,7 +2833,7 @@ MHD_run (struct MHD_Daemon *daemon)
     MHD_poll (daemon, MHD_NO);
     MHD_cleanup_connections (daemon);
   }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   else if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
   {
     MHD_epoll (daemon, MHD_NO);
@@ -2865,7 +2865,7 @@ MHD_select_thread (void *cls)
     {
       if (0 != (daemon->options & MHD_USE_POLL))
 	MHD_poll (daemon, MHD_YES);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       else if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
 	MHD_epoll (daemon, MHD_YES);
 #endif
@@ -2972,7 +2972,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     for (i = 0; i < daemon->worker_pool_size; i++)
       {
 	daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 	if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	     (-1 != daemon->worker_pool[i].epoll_fd) &&
 	     (MHD_YES == daemon->worker_pool[i].listen_socket_in_epoll) )
@@ -2993,7 +2993,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
           }
       }
   daemon->socket_fd = MHD_INVALID_SOCKET;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
        (MHD_YES == daemon->listen_socket_in_epoll) )
@@ -3414,7 +3414,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 }
 
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 /**
  * Setup epoll() FD for the daemon and initialize it to listen
  * on the listen FD.
@@ -3549,7 +3549,7 @@ MHD_start_daemon_va (unsigned int flags,
   if (NULL == (daemon = malloc (sizeof (struct MHD_Daemon))))
     return NULL;
   memset (daemon, 0, sizeof (struct MHD_Daemon));
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
 #endif
   /* try to open listen socket */
@@ -3999,7 +3999,7 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 != (flags & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (0 == daemon->worker_pool_size) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
@@ -4172,7 +4172,7 @@ MHD_start_daemon_va (unsigned int flags,
           d->connection_limit = conns_per_thread;
           if (i < leftover_conns)
             ++d->connection_limit;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 	  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	       (MHD_YES != setup_epoll_to_listen (d)) )
 	    goto thread_failed;
@@ -4242,7 +4242,7 @@ thread_failed:
  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
 #endif
@@ -4362,7 +4362,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 }
 
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 /**
  * Shutdown epoll()-event loop by adding 'wpipe' to its event set.
  *
@@ -4417,7 +4417,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	{
 	  daemon->worker_pool[i].shutdown = MHD_YES;
 	  daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 	  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
 	       (-1 != daemon->worker_pool[i].epoll_fd) &&
 	       (MHD_INVALID_SOCKET == fd) )
@@ -4439,7 +4439,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	(void) shutdown (fd, SHUT_RDWR);
     }
 #endif
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
        (MHD_INVALID_SOCKET == fd) )
@@ -4469,7 +4469,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      MHD_PANIC ("Failed to join a thread\n");
 	  close_all_connections (&daemon->worker_pool[i]);
 	  (void) MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 	  if ( (-1 != daemon->worker_pool[i].epoll_fd) &&
 	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
@@ -4520,7 +4520,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         gnutls_certificate_free_credentials (daemon->x509_cred);
     }
 #endif
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
        (-1 != daemon->epoll_fd) &&
        (0 != MHD_socket_close_ (daemon->epoll_fd)) )
@@ -4569,7 +4569,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
       return NULL; /* no longer supported */
     case MHD_DAEMON_INFO_LISTEN_FD:
       return (const union MHD_DaemonInfo *) &daemon->socket_fd;
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
     case MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY:
       return (const union MHD_DaemonInfo *) &daemon->epoll_fd;
 #endif
@@ -4699,7 +4699,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_EPOLL:
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       return MHD_YES;
 #else
       return MHD_NO;

@@ -512,7 +512,7 @@ typedef ssize_t
 struct MHD_Connection
 {
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   /**
    * Next pointer for the EDLL listing connections that are epoll-ready.
    */
@@ -757,7 +757,7 @@ struct MHD_Connection
    */
   int in_idle;
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   /**
    * What is the state of this socket in relation to epoll?
    */
@@ -949,7 +949,7 @@ struct MHD_Daemon
    */
   struct MHD_Connection *cleanup_tail;
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   /**
    * Head of EDLL of connections ready for processing (in epoll mode).
    */
@@ -1133,7 +1133,7 @@ struct MHD_Daemon
    */
   int listening_address_reuse;
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   /**
    * File descriptor associated with our epoll loop.
    */

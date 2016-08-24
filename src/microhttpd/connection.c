@@ -2894,7 +2894,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_YES;
     }
   MHD_connection_update_event_loop_info (connection);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
     {
       switch (connection->event_loop_info)
@@ -2945,7 +2945,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 }
 
 
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
 /**
  * Perform epoll() processing, possibly moving the connection back into
  * the epoll() set if needed.

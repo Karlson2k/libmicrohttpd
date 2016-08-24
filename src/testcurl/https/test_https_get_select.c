@@ -223,7 +223,7 @@ main (int argc, char *const *argv)
       fprintf (stderr, "Error: %s\n", strerror (errno));
       return -1;
     }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if (0 != (errorCount = testExternalGet (MHD_USE_EPOLL_LINUX_ONLY)))
     fprintf (stderr, "Fail: %d\n", errorCount);
 #endif
