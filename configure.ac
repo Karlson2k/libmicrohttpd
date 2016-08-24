@@ -94,9 +94,9 @@ AC_CHECK_TYPE([_Bool],
       [ AC_DEFINE([_MHD_bool],[bool]) ],
       [ AC_DEFINE([_MHD_bool],[int]) ],
       [[
-        #ifdef HAVE_STDBOOL_H
-        #include <stdbool.h>
-        #endif
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
       ]])
   ])
 
@@ -111,12 +111,13 @@ for inln_prfx_chk in "inline __attribute__((always_inline))" __forceinline inlin
     [
      AC_LANG_PROGRAM(
        [[
-         #ifdef __cplusplus
-         choke me
-         #endif
-         #ifdef HAVE_STDBOOL_H
-         #include <stdbool.h>
-         #endif
+#ifdef __cplusplus
+#error This test is only for C.
+choke me
+#endif
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
          static $inln_prfx_chk _MHD_bool cmpfn(int x, int y)
          { return x > y; }
          static $inln_prfx_chk int sumfn(int x, int y)
@@ -559,15 +560,15 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    ],
    [],
    [
-    #ifdef HAVE_SYS_TYPES_H
-      #include <sys/types.h>
-    #endif
-    #ifdef HAVE_SYS_SOCKET_H
-      #include <sys/socket.h>
-    #endif
-    #ifdef HAVE_NETINET_IN_H
-      #include <netinet/in.h>
-    #endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
    ])
 
 
@@ -585,12 +586,12 @@ AS_IF(
            [ AC_MSG_RESULT([[yes, forced on W32]]) ],
            [ AC_LINK_IFELSE(
              [ AC_LANG_PROGRAM([[
-				#ifdef HAVE_SYS_TYPES_H
-				#include <sys/types.h>
-				#endif
-				#ifdef HAVE_SYS_SOCKET_H
-				#include <sys/socket.h>
-				#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 				]],[[
 				  int sv[2];
 				  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return 1
@@ -619,11 +620,12 @@ AC_CHECK_DECL([gmtime_s],
     AC_MSG_CHECKING([[whether gmtime_s is in C11 form]])
     AC_LINK_IFELSE(
         [ AC_LANG_PROGRAM(
-          [[ #define __STDC_WANT_LIB_EXT1__ 1
-             #include <time.h>
-             #ifdef __cplusplus
-             extern "C"
-             #endif
+          [[
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+#endif
              struct tm* gmtime_s(const time_t* time, struct tm* result);
            ]], [[
              struct tm res;
@@ -640,11 +642,12 @@ AC_CHECK_DECL([gmtime_s],
           AC_MSG_CHECKING([[whether gmtime_s is in W32 form]])
           AC_LINK_IFELSE(
             [ AC_LANG_PROGRAM(
-              [[ #include <time.h>
-                 #ifdef __cplusplus
-                 extern "C"
-                 #endif
-                 errno_t gmtime_s(struct tm* _tm, const time_t* time);
+              [[
+#include <time.h>
+#ifdef __cplusplus
+extern "C"
+#endif
+errno_t gmtime_s(struct tm* _tm, const time_t* time);
               ]], [[
                  struct tm res;
                  time_t t;
@@ -660,19 +663,19 @@ AC_CHECK_DECL([gmtime_s],
         ])
   ], [],
   [[#define __STDC_WANT_LIB_EXT1__ 1
-    #include<time.h>]])
+#include <time.h>]])
 
 
 AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],
                    [
-                    #if defined HAVE_SYS_TYPES_H
-                    #  include <sys/types.h>
-                    #endif
-                    #if defined HAVE_SYS_SOCKET_H
-                    #  include <sys/socket.h>
-                    #elif defined HAVE_WINSOCK2_H
-                    #  include <winsock2.h>
-                    #endif
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#if defined(HAVE_SYS_SOCKET_H)
+#  include <sys/socket.h>
+#elif defined(HAVE_WINSOCK2_H)
+#  include <winsock2.h>
+#endif
                    ])
 
 
