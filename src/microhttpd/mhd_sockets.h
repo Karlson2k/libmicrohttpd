@@ -52,7 +52,7 @@
  * for socket function.
  */
 #if defined(MHD_POSIX_SOCKETS)
-#  if HAVE_SYS_SOCKET_H
+#  ifdef HAVE_SYS_SOCKET_H
 #    include <sys/socket.h>
 #  endif
 #  if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
@@ -67,28 +67,28 @@
 #  ifdef HAVE_NETINET_IN_H
 #    include <netinet/in.h>
 #  endif /* HAVE_NETINET_IN_H */
-#  if HAVE_ARPA_INET_H
+#  ifdef HAVE_ARPA_INET_H
 #    include <arpa/inet.h>
 #  endif
 #  ifdef HAVE_NET_IF_H
 #    include <net/if.h>
 #  endif
-#  if HAVE_SYS_TIME_H
+#  ifdef HAVE_SYS_TIME_H
 #    include <sys/time.h>
 #  endif
-#  if HAVE_TIME_H
+#  ifdef HAVE_TIME_H
 #    include <time.h>
 #  endif
-#  if HAVE_NETDB_H
+#  ifdef HAVE_NETDB_H
 #    include <netdb.h>
 #  endif
-#  if HAVE_SYS_SELECT_H
+#  ifdef HAVE_SYS_SELECT_H
 #    include <sys/select.h>
 #  endif
 #  if EPOLL_SUPPORT
 #    include <sys/epoll.h>
 #  endif
-#  if HAVE_NETINET_TCP_H
+#  ifdef HAVE_NETINET_TCP_H
      /* for TCP_FASTOPEN and TCP_CORK */
 #    include <netinet/tcp.h>
 #  endif
