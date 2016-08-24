@@ -100,13 +100,23 @@ AC_CHECK_TYPE([_Bool],
       ]])
   ])
 
+AX_CHECK_COMPILE_FLAG([[-Werror=attributes]], 
+                      [[errattr_CFLAGS="-Werror=attributes"]],
+                      [[errattr_CFLAGS=""]], [], [])
 AC_MSG_CHECKING([[for function inline keywords suppoted by $CC]])
 save_CFLAGS="$CFLAGS"
-AX_APPEND_FLAG([[-Werror=attributes]])
+CFLAGS="$CFLAGS $errattr_CFLAGS"
 inln_prfx="none"
 # Prefer always inline functions
-for inln_prfx_chk in "inline __attribute__((always_inline))" __forceinline inline __inline__ __inline _inline _Inline; do
+for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline; do
   # Try to link to avoid "symbol undefined" problems at build time
+  AS_IF([[test "x$inln_prfx_chk" = "xInlineWithAttr"]],
+    [
+     AS_IF([[test "x$errattr_CFLAGS" = "x"]],
+       [[ # Skip test with attribute as negative result can't be detected
+          inln_prfx_chk="__forceinline" # use next value
+       ]],[[inln_prfx_chk="inline __attribute__((always_inline))"]])
+    ])
   AC_LINK_IFELSE(
     [
      AC_LANG_PROGRAM(
