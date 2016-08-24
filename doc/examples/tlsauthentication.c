@@ -83,6 +83,7 @@ get_file_size (const char *filename)
     return 0;
 }
 
+
 static char *
 load_file (const char *filename)
 {
@@ -91,15 +92,15 @@ load_file (const char *filename)
   long size;
 
   size = get_file_size (filename);
-  if (size == 0)
+  if (0 == size)
     return NULL;
 
   fp = fopen (filename, "rb");
-  if (!fp)
+  if (! fp)
     return NULL;
 
   buffer = malloc (size + 1);
-  if (!buffer)
+  if (! buffer)
     {
       fclose (fp);
       return NULL;
@@ -116,6 +117,7 @@ load_file (const char *filename)
   return buffer;
 }
 
+
 static int
 ask_for_authentication (struct MHD_Connection *connection, const char *realm)
 {
@@ -124,7 +126,7 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
   char *headervalue;
   const char *strbase = "Basic realm=";
 
-  response = MHD_create_response_from_buffer (0, NULL, 
+  response = MHD_create_response_from_buffer (0, NULL,
 					      MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
@@ -198,7 +200,7 @@ secret_page (struct MHD_Connection *connection)
   const char *page = "<html><body>A secret.</body></html>";
 
   response =
-    MHD_create_response_from_buffer (strlen (page), (void *) page, 
+    MHD_create_response_from_buffer (strlen (page), (void *) page,
 				     MHD_RESPMEM_PERSISTENT);
   if (!response)
     return MHD_NO;
