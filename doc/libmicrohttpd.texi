@@ -168,9 +168,9 @@ thread-per-connection (MHD creates one listen thread and then one
 thread per accepted connection).
 
 These thread modes are then combined with the event loop styles.
-MHD support select, poll and epoll.  epoll is only available on
-Linux, poll may not be available on some platforms.  Note that
-it is possible to combine MHD using epoll with an external
+MHD support select, poll and epoll.  select is available on all
+platforms, epoll and poll may not be available on some platforms.
+Note that it is possible to combine MHD using epoll with an external
 select-based event loop.
 
 The default (if no other option is passed) is ``external select''.
@@ -203,8 +203,8 @@ request within the callbacks from MHD must use a thread per
 connection.  This is typically rather costly.  Applications that do
 not support threads or that must run on embedded devices without
 thread-support must use the external mode.  Using @code{epoll} is only
-supported on Linux, thus portable applications must at least have a
-fallback option available.  @ref{tbl:supported} lists the sane
+supported on some platform, thus portable applications must at least
+have a fallback option available.  @ref{tbl:supported} lists the sane
 combinations.
 
 @float Table,tbl:supported
@@ -265,7 +265,7 @@ do not include the post processor API (results in binary incompatibility)
 do not include the authentication APIs (results in binary incompatibility)
 
 @item ``--disable-epoll
-do not include epoll support, even on Linux (minimally smaller binary size, good for testing portability to non-Linux systems)
+do not include epoll support, even if it supported (minimally smaller binary size, good for portability testing)
 
 @item ``--enable-coverage''
 set flags for analysis of code-coverage with gcc/gcov (results in slow, large binaries)
@@ -504,15 +504,15 @@ conjunction with @code{MHD_USE_THREAD_PER_CONNECTION} or
 @code{MHD_USE_POLL} and the local platform does not support it,
 @code{MHD_start_daemon} will return NULL.
 
-@item MHD_USE_EPOLL_LINUX_ONLY
+@item MHD_USE_EPOLL
 @cindex FD_SETSIZE
 @cindex epoll
 @cindex select
 Use @code{epoll()} instead of @code{poll()} or @code{select()}. This
 allows sockets with descriptors @code{>= FD_SETSIZE}.  This option is
-only available on Linux systems and does not work in conjunction with
+only available on some systems and does not work in conjunction with
 @code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you specify
-@code{MHD_USE_EPOLL_LINUX_ONLY} and the local platform does not
+@code{MHD_USE_EPOLL} and the local platform does not
 support it, @code{MHD_start_daemon} will return NULL.  Using
 @code{epoll()} instead of @code{select()} or @code{poll()} can in some
 situations result in significantly higher performance as the system
@@ -524,7 +524,7 @@ open connections).
 @cindex performance
 Enable optimizations to aggressively improve performance.  Note that
 the option is a slight misnomer, as these days it also enables optimziations
-that are unrelated to @code{MHD_USE_EPOLL_LINUX_ONLY}.  Hence it is OK to
+that are unrelated to @code{MHD_USE_EPOLL}.  Hence it is OK to
 use this option with other event loops.
 
 Currently, the optimizations this option enables are based on
@@ -2550,7 +2550,7 @@ No extra arguments should be passed.
 Request the file-descriptor number that MHD is using for epoll.  If
 the build is not supporting epoll, NULL is returned; if we are using a
 thread pool or this daemon was not started with
-@code{MHD_USE_EPOLL_LINUX_ONLY}, (a pointer to) -1 is returned.  If we are
+@code{MHD_USE_EPOLL}, (a pointer to) -1 is returned.  If we are
 using @code{MHD_USE_SELECT_INTERNALLY} or are in 'external' select mode, the
 internal epoll FD is returned.  This function must be used in external
 select mode with epoll to obtain the FD to call epoll on.  No extra
@@ -2763,8 +2763,8 @@ MHD_USE_POLL can be used.
 
 @item MHD_FEATURE_EPOLL
 Get whether @code{epoll()} is supported. If supported then Flags
-MHD_USE_EPOLL_LINUX_ONLY and
-MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY can be used.
+MHD_USE_EPOLL and
+MHD_USE_EPOLL_INTERNALLY can be used.
 
 @item MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET
 Get whether shutdown on listen socket to signal other

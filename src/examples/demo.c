@@ -885,7 +885,7 @@ main (int argc, char *const *argv)
   update_directory ();
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG
 #ifdef EPOLL_SUPPORT
-			| MHD_USE_EPOLL_LINUX_ONLY
+			| MHD_USE_EPOLL
 #endif
 			,
                         port,

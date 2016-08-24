@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095008
+#define MHD_VERSION 0x00095009
 
 /**
  * MHD-internal return code for "YES".
@@ -577,7 +577,7 @@ enum MHD_FLAG
    * FD_SETSIZE`.  This option is not compatible with using an
    * 'external' `select()` mode (as there is no API to get the file
    * descriptors for the external select from MHD) and must also not
-   * be used in combination with #MHD_USE_EPOLL_LINUX_ONLY.
+   * be used in combination with #MHD_USE_EPOLL.
    */
   MHD_USE_POLL = 64,
 
@@ -605,18 +605,29 @@ enum MHD_FLAG
 
   /**
    * Use `epoll()` instead of `select()` or `poll()` for the event loop.
-   * This option is only available on Linux; using the option on
-   * non-Linux systems will cause #MHD_start_daemon to fail.  Using
+   * This option is only available on some systems; using the option on
+   * systems without epoll will cause #MHD_start_daemon to fail.  Using
    * this option is not supported with #MHD_USE_THREAD_PER_CONNECTION.
+   * @sa ::MHD_FEATURE_EPOLL
    */
-  MHD_USE_EPOLL_LINUX_ONLY = 512,
+  MHD_USE_EPOLL = 512,
+
+/** @deprecated */
+#define MHD_USE_EPOLL_LINUX_ONLY \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_LINUX_ONLY is deprecated, use MHD_USE_EPOLL") \
+  MHD_USE_EPOLL
 
   /**
    * Run using an internal thread (or thread pool) doing `epoll()`.
    * This option is only available on Linux; using the option on
    * non-Linux systems will cause #MHD_start_daemon to fail.
    */
-  MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL_LINUX_ONLY,
+  MHD_USE_EPOLL_INTERNALLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL,
+
+/** @deprecated */
+#define MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNALLY") \
+  MHD_USE_EPOLL_INTERNALLY
 
   /**
    * Force MHD to use a signal pipe to notify the event loop (of
@@ -644,7 +655,7 @@ enum MHD_FLAG
   /**
    * Enable `epoll()` turbo.  Disables certain calls to `shutdown()`
    * and enables aggressive non-blocking optimisitc reads.
-   * Most effects only happen with #MHD_USE_EPOLL_LINUX_ONLY.
+   * Most effects only happen with #MHD_USE_EPOLL.
    * Enalbed always on W32 as winsock does not properly behave
    * with `shutdown()` and this then fixes potential problems.
    */
@@ -2750,8 +2761,8 @@ enum MHD_FEATURE
 
   /**
    * Get whether `epoll()` is supported. If supported then Flags
-   * #MHD_USE_EPOLL_LINUX_ONLY and
-   * #MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY can be used.
+   * #MHD_USE_EPOLL and
+   * #MHD_USE_EPOLL_INTERNALLY can be used.
    */
   MHD_FEATURE_EPOLL = 7,
 

@@ -120,8 +120,8 @@ main (int argc, char *const *argv)
     }
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
     {
-      errorCount += testInternalGet(MHD_USE_EPOLL_LINUX_ONLY);
-      errorCount += testMultithreadedPoolGet(MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testInternalGet(MHD_USE_EPOLL);
+      errorCount += testMultithreadedPoolGet(MHD_USE_EPOLL);
     }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

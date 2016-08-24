@@ -227,7 +227,7 @@ testInternalGet (int port, int poll_flag)
       curl_easy_cleanup (c);
     }
   stop (poll_flag == MHD_USE_POLL ? "internal poll" :
-	poll_flag == MHD_USE_EPOLL_LINUX_ONLY ? "internal epoll" : "internal select");
+	poll_flag == MHD_USE_EPOLL ? "internal epoll" : "internal select");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 4;
@@ -287,7 +287,7 @@ testMultithreadedGet (int port, int poll_flag)
       curl_easy_cleanup (c);
     }
   stop ((poll_flag & MHD_USE_POLL) ? "thread with poll" :
-	(poll_flag & MHD_USE_EPOLL_LINUX_ONLY) ? "thread with epoll" : "thread with select");
+	(poll_flag & MHD_USE_EPOLL) ? "thread with epoll" : "thread with select");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 64;
@@ -347,7 +347,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
       curl_easy_cleanup (c);
     }
   stop (0 != (poll_flag & MHD_USE_POLL) ? "thread pool with poll" : 
-	0 != (poll_flag & MHD_USE_EPOLL_LINUX_ONLY) ? "thread pool with epoll" : "thread pool with select");
+	0 != (poll_flag & MHD_USE_EPOLL) ? "thread pool with epoll" : "thread pool with select");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
     return 64;
@@ -527,8 +527,8 @@ main (int argc, char *const *argv)
     }
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
     {
-      errorCount += testInternalGet(port++, MHD_USE_EPOLL_LINUX_ONLY);
-      errorCount += testMultithreadedPoolGet(port++, MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testInternalGet(port++, MHD_USE_EPOLL);
+      errorCount += testMultithreadedPoolGet(port++, MHD_USE_EPOLL);
     }
   MHD_destroy_response (response);
   if (errorCount != 0)

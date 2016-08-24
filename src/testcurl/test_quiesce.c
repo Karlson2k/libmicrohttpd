@@ -482,8 +482,8 @@ main (int argc, char *const *argv)
     }
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
     {
-      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL_LINUX_ONLY);
-      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, 0, MHD_USE_EPOLL);
+      errorCount += testGet (MHD_USE_SELECT_INTERNALLY, CPU_COUNT, MHD_USE_EPOLL);
     }
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);

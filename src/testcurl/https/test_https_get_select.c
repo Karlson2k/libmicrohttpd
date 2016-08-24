@@ -224,7 +224,7 @@ main (int argc, char *const *argv)
       return -1;
     }
 #ifdef EPOLL_SUPPORT
-  if (0 != (errorCount = testExternalGet (MHD_USE_EPOLL_LINUX_ONLY)))
+  if (0 != (errorCount = testExternalGet (MHD_USE_EPOLL)))
     fprintf (stderr, "Fail: %d\n", errorCount);
 #endif
   if (0 != (errorCount = testExternalGet (0)))

@@ -399,8 +399,8 @@ main (int argc, char *const *argv)
     }
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
     {
-      errorCount += testInternalGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
-      errorCount += testMultithreadedPoolGet (port++, MHD_USE_EPOLL_LINUX_ONLY);
+      errorCount += testInternalGet (port++, MHD_USE_EPOLL);
+      errorCount += testMultithreadedPoolGet (port++, MHD_USE_EPOLL);
     }
   MHD_destroy_response (response);
   if (errorCount != 0)

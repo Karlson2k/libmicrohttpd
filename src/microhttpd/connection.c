@@ -2895,7 +2895,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   MHD_connection_update_event_loop_info (connection);
 #ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY))
+  if (0 != (daemon->options & MHD_USE_EPOLL))
     {
       switch (connection->event_loop_info)
         {
@@ -2959,7 +2959,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  if ( (0 != (daemon->options & MHD_USE_EPOLL_LINUX_ONLY)) &&
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
        ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ||
