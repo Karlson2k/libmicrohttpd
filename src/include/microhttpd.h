@@ -2311,6 +2311,14 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
+ * @param extra_in if we happened to have read bytes after the
+ *                 HTTP header already (because the client sent
+ *                 more than the HTTP header of the request before
+ *                 we sent the upgrade response),
+ *                 these are the extra bytes already read from @a sock
+ *                 by MHD.  The application should treat these as if
+ *                 it had read them from @a sock.
+ * @param extra_in_size number of bytes in @a extra_in
  * @param sock socket to use for bi-directional communication
  *        with the client.  For HTTPS, this may not be a socket
  *        that is directly connected to the client and thus certain
@@ -2324,6 +2332,8 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
+                      const char *extra_in,
+                      size_t extra_in_size,
                       MHD_SOCKET sock,
                       struct MHD_UpgradeResponseHandle *urh);
 
@@ -2852,7 +2862,7 @@ enum MHD_FEATURE
  * @ingroup specialized
  */
 _MHD_EXTERN int
-MHD_is_feature_supported(enum MHD_FEATURE feature);
+MHD_is_feature_supported (enum MHD_FEATURE feature);
 
 
 #if 0                           /* keep Emacsens' auto-indent happy */

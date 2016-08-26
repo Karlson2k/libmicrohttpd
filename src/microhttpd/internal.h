@@ -102,68 +102,68 @@ extern void *mhd_panic_cls;
  * State of the socket with respect to epoll (bitmask).
  */
 enum MHD_EpollState
-  {
+{
 
-    /**
-     * The socket is not involved with a defined state in epoll() right
-     * now.
-     */
-    MHD_EPOLL_STATE_UNREADY = 0,
+  /**
+   * The socket is not involved with a defined state in epoll() right
+   * now.
+   */
+  MHD_EPOLL_STATE_UNREADY = 0,
 
-    /**
-     * epoll() told us that data was ready for reading, and we did
-     * not consume all of it yet.
-     */
-    MHD_EPOLL_STATE_READ_READY = 1,
+  /**
+   * epoll() told us that data was ready for reading, and we did
+   * not consume all of it yet.
+   */
+  MHD_EPOLL_STATE_READ_READY = 1,
 
-    /**
-     * epoll() told us that space was available for writing, and we did
-     * not consume all of it yet.
-     */
-    MHD_EPOLL_STATE_WRITE_READY = 2,
+  /**
+   * epoll() told us that space was available for writing, and we did
+   * not consume all of it yet.
+   */
+  MHD_EPOLL_STATE_WRITE_READY = 2,
 
-    /**
-     * Is this connection currently in the 'eready' EDLL?
-     */
-    MHD_EPOLL_STATE_IN_EREADY_EDLL = 4,
+  /**
+   * Is this connection currently in the 'eready' EDLL?
+   */
+  MHD_EPOLL_STATE_IN_EREADY_EDLL = 4,
 
-    /**
-     * Is this connection currently in the epoll() set?
-     */
-    MHD_EPOLL_STATE_IN_EPOLL_SET = 8,
+  /**
+   * Is this connection currently in the epoll() set?
+   */
+  MHD_EPOLL_STATE_IN_EPOLL_SET = 8,
 
-    /**
-     * Is this connection currently suspended?
-     */
-    MHD_EPOLL_STATE_SUSPENDED = 16
-  };
+  /**
+   * Is this connection currently suspended?
+   */
+  MHD_EPOLL_STATE_SUSPENDED = 16
+};
 
 
 /**
  * What is this connection waiting for?
  */
 enum MHD_ConnectionEventLoopInfo
-  {
-    /**
-     * We are waiting to be able to read.
-     */
-    MHD_EVENT_LOOP_INFO_READ = 0,
+{
+  /**
+   * We are waiting to be able to read.
+   */
+  MHD_EVENT_LOOP_INFO_READ = 0,
 
-    /**
-     * We are waiting to be able to write.
-     */
-    MHD_EVENT_LOOP_INFO_WRITE = 1,
+  /**
+   * We are waiting to be able to write.
+   */
+  MHD_EVENT_LOOP_INFO_WRITE = 1,
 
-    /**
-     * We are waiting for the application to provide data.
-     */
-    MHD_EVENT_LOOP_INFO_BLOCK = 2,
+  /**
+   * We are waiting for the application to provide data.
+   */
+  MHD_EVENT_LOOP_INFO_BLOCK = 2,
 
-    /**
-     * We are finished and are awaiting cleanup.
-     */
-    MHD_EVENT_LOOP_INFO_CLEANUP = 3
-  };
+  /**
+   * We are finished and are awaiting cleanup.
+   */
+  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+};
 
 
 /**
@@ -202,7 +202,8 @@ struct MHD_NonceNc
  */
 void
 MHD_DLOG (const struct MHD_Daemon *daemon,
-	  const char *format, ...);
+	  const char *format,
+          ...);
 #endif
 
 
@@ -272,6 +273,20 @@ struct MHD_Response
    * either user-specified callback or "&free".
    */
   MHD_ContentReaderFreeCallback crfc;
+
+#if 0
+  /**
+   * Application function to call once we are done sending the headers
+   * of the response; NULL unless this is a response created with
+   * #MHD_create_response_for_upgrade().
+   */
+  MHD_UpgradeHandler upgrade_handler;
+
+  /**
+   * Closure for @e uh.
+   */
+  void *upgrade_handler_cls;
+#endif
 
   /**
    * Mutex to synchronize access to @e data, @e size and
@@ -569,14 +584,12 @@ struct MHD_Connection
   struct MHD_Response *response;
 
   /**
-   * The memory pool is created whenever we first read
-   * from the TCP stream and destroyed at the end of
-   * each request (and re-created for the next request).
-   * In the meantime, this pointer is NULL.  The
-   * pool is used for all connection-related data
-   * except for the response (which maybe shared between
-   * connections) and the IP address (which persists
-   * across individual requests).
+   * The memory pool is created whenever we first read from the TCP
+   * stream and destroyed at the end of each request (and re-created
+   * for the next request).  In the meantime, this pointer is NULL.
+   * The pool is used for all connection-related data except for the
+   * response (which maybe shared between connections) and the IP
+   * address (which persists across individual requests).
    */
   struct MemoryPool *pool;
 
@@ -598,8 +611,7 @@ struct MHD_Connection
   void *socket_context;
 
   /**
-   * Request method.  Should be GET/POST/etc.  Allocated
-   * in pool.
+   * Request method.  Should be GET/POST/etc.  Allocated in pool.
    */
   char *method;
 
@@ -616,9 +628,8 @@ struct MHD_Connection
   char *version;
 
   /**
-   * Buffer for reading requests.   Allocated
-   * in pool.  Actually one byte larger than
-   * @e read_buffer_size (if non-NULL) to allow for
+   * Buffer for reading requests.  Allocated in pool.  Actually one
+   * byte larger than @e read_buffer_size (if non-NULL) to allow for
    * 0-termination.
    */
   char *read_buffer;

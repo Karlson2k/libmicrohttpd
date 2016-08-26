@@ -101,7 +101,8 @@ add_response_entry (struct MHD_Response *response,
  */
 int
 MHD_add_response_header (struct MHD_Response *response,
-                         const char *header, const char *content)
+                         const char *header,
+                         const char *content)
 {
   return add_response_entry (response,
 			     MHD_HEADER_KIND,
@@ -121,7 +122,8 @@ MHD_add_response_header (struct MHD_Response *response,
  */
 int
 MHD_add_response_footer (struct MHD_Response *response,
-                         const char *footer, const char *content)
+                         const char *footer,
+                         const char *content)
 {
   return add_response_entry (response,
 			     MHD_FOOTER_KIND,
@@ -184,7 +186,8 @@ MHD_del_response_header (struct MHD_Response *response,
  */
 int
 MHD_get_response_headers (struct MHD_Response *response,
-                          MHD_KeyValueIterator iterator, void *iterator_cls)
+                          MHD_KeyValueIterator iterator,
+                          void *iterator_cls)
 {
   struct MHD_HTTP_Header *pos;
   int numHeaders = 0;
@@ -316,7 +319,10 @@ MHD_set_response_options (struct MHD_Response *response,
  * @return number of bytes written
  */
 static ssize_t
-file_reader (void *cls, uint64_t pos, char *buf, size_t max)
+file_reader (void *cls,
+             uint64_t pos,
+             char *buf,
+             size_t max)
 {
   struct MHD_Response *response = cls;
   ssize_t n;
@@ -397,7 +403,9 @@ MHD_create_response_from_fd_at_offset (size_t size,
 				       int fd,
 				       off_t offset)
 {
-  return MHD_create_response_from_fd_at_offset64 (size, fd, offset);
+  return MHD_create_response_from_fd_at_offset64 (size,
+                                                  fd,
+                                                  offset);
 }
 
 
@@ -461,7 +469,9 @@ struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
 			     int fd)
 {
-  return MHD_create_response_from_fd_at_offset64 (size, fd, 0);
+  return MHD_create_response_from_fd_at_offset64 (size,
+                                                  fd,
+                                                  0);
 }
 
 
@@ -482,7 +492,9 @@ _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd64 (uint64_t size,
                                int fd)
 {
-  return MHD_create_response_from_fd_at_offset64 (size, fd, 0);
+  return MHD_create_response_from_fd_at_offset64 (size,
+                                                  fd,
+                                                  0);
 }
 
 
@@ -502,7 +514,9 @@ MHD_create_response_from_fd64 (uint64_t size,
  */
 struct MHD_Response *
 MHD_create_response_from_data (size_t size,
-                               void *data, int must_free, int must_copy)
+                               void *data,
+                               int must_free,
+                               int must_copy)
 {
   struct MHD_Response *response;
   void *tmp;
@@ -513,7 +527,7 @@ MHD_create_response_from_data (size_t size,
     return NULL;
   memset (response, 0, sizeof (struct MHD_Response));
   response->fd = -1;
-  if (!MHD_mutex_init_ (&response->mutex))
+  if (! MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
@@ -563,6 +577,208 @@ MHD_create_response_from_buffer (size_t size,
 }
 
 
+#if 0
+/**
+ * Handle given to the application to manage special
+ * actions relating to MHD responses that "upgrade"
+ * the HTTP protocol (i.e. to WebSockets).
+ */
+struct MHD_UpgradeResponseHandle
+{
+
+  /**
+   * The connection for which this is an upgrade handle.  Note that
+   * because a response may be shared over many connections, this may
+   * not be the only upgrade handle for the response of this connection.
+   */
+  struct MHD_Connection *connection;
+
+  /**
+   * The socket we gave to the application (r/w).
+   */
+  MHD_SOCKET app_sock;
+
+  /**
+   * If @a app_sock was a socketpair, our end of it, otherwise
+   * #MHD_INVALID_SOCKET; (r/w).
+   */
+  MHD_SOCKET mhd_sock;
+
+};
+
+
+/**
+ * This connection-specific callback is provided by MHD to
+ * applications (unusual) during the #MHD_UpgradeHandler.
+ * It allows applications to perform 'special' actions on
+ * the underlying socket from the upgrade.
+ *
+ * @param urh the handle identifying the connection to perform
+ *            the upgrade @a action on.
+ * @param action which action should be performed
+ * @param ... arguments to the action (depends on the action)
+ * @return #MHD_NO on error, #MHD_YES on success
+ */
+_MHD_EXTERN int
+MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
+                    enum MHD_UpgradeAction action,
+                    ...)
+{
+  switch (action)
+  {
+  case MHD_UPGRADE_ACTION_CLOSE:
+    /* Application is done with this connection, tear it down! */
+    if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
+         (0 != MHD_socket_close (urh->app_socket)) )
+      MHD_PANIC ("close failed\n");
+    if ( (MHD_INVALID_SOCKET != urh->mhd_socket) &&
+         (0 != MHD_socket_close (urh->mhd_socket)) )
+      MHD_PANIC ("close failed\n");
+    MHD_connection_resume (urh->connection);
+    MHD_connection_close_ (urh->connection,
+                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    free (urh);
+    return MHD_YES;
+  case MHD_UPGRADE_ACTION_CORK:
+    /* FIXME: not implemented */
+    return MHD_NO;
+  default:
+    /* we don't understand this one */
+    return MHD_NO;
+  }
+}
+
+
+/**
+ * We are done sending the header of a given response
+ * to the client.  Now it is time to perform the upgrade
+ * and hand over the connection to the application.
+ *
+ * @param response the response that was created for an upgrade
+ * @param connection the specific connection we are upgrading
+ * @return #MHD_YES on success, #MHD_NO on failure (will cause
+ *        connection to be closed)
+ */
+// FIXME: This function will need to be called at the right place(s)
+// in the connection processing (just after we are done sending the header)
+// (for responses that have the 'upgrade_header' callback set).
+int
+MHD_response_execute_upgrade_ (struct MHD_Response *response,
+                               struct MHD_Connection *connection)
+{
+  struct MHD_UpgradeResponseHandle *urh;
+  int sv[2];
+  size_t rbo;
+
+  urh = malloc (sizeof (struct MHD_UpgradeResponseHandle));
+  if (NULL == urh)
+    return MHD_NO;
+#if HTTPS_SUPPORT
+  if (0 != (connection->daemon->flags & MHD_USE_SSL) )
+  {
+    /* FIXME: this is non-portable for now; W32 port pending... */
+    if (0 != socketpair (AF_UNIX,
+                         SOCK_STREAM,
+                         0,
+                         sv))
+    {
+      free (urh);
+      return MHD_NO;
+    }
+    urh->app_socket = sv[0];
+    urh->mhd_socket = sv[1];
+    urh->connection = connection;
+    rbo = connection->read_buffer_offset;
+    connection->read_buffer_offset = 0;
+    response->upgrade_handler (response->upgrade_handler_cls,
+                               connection,
+                               connection->read_buffer,
+                               rbo,
+                               urh->app_sock,
+                               urh);
+    /* As far as MHD is concerned, this connection is
+       suspended; it will be resumed once we are done
+       in the #MHD_upgrade_action() function */
+    MHD_connection_suspend (connection);
+    /* FIXME: also need to start some processing logic in _all_ MHD
+       event loops for the sv traffic! (NOT IMPLEMENTED!!!) */
+    return MHD_YES;
+  }
+#endif
+  urh->app_socket = MHD_INVALID_SOCKET;
+  urh->mhd_socket = MHD_INVALID_SOCKET;
+  rbo = connection->read_buffer_offset;
+  connection->read_buffer_offset = 0;
+  response->upgrade_handler (response->upgrade_handler_cls,
+                             connection,
+                             connection->read_buffer,
+                             rbo,
+                             connection->socket_fd,
+                             urh);
+  /* As far as MHD is concerned, this connection is
+     suspended; it will be resumed once we are done
+     in the #MHD_upgrade_action() function */
+  MHD_connection_suspend (connection);
+  return MHD_YES;
+}
+
+
+/**
+ * Create a response object that can be used for 101 UPGRADE
+ * responses, for example to implement WebSockets.  After sending the
+ * response, control over the data stream is given to the callback (which
+ * can then, for example, start some bi-directional communication).
+ * If the response is queued for multiple connections, the callback
+ * will be called for each connection.  The callback
+ * will ONLY be called after the response header was successfully passed
+ * to the OS; if there are communication errors before, the usual MHD
+ * connection error handling code will be performed.
+ *
+ * Setting the correct HTTP code (i.e. MHD_HTTP_SWITCHING_PROTOCOLS)
+ * and setting correct HTTP headers for the upgrade must be done
+ * manually (this way, it is possible to implement most existing
+ * WebSocket versions using this API; in fact, this API might be useful
+ * for any protocol switch, not just WebSockets).  Note that
+ * draft-ietf-hybi-thewebsocketprotocol-00 cannot be implemented this
+ * way as the header "HTTP/1.1 101 WebSocket Protocol Handshake"
+ * cannot be generated; instead, MHD will always produce "HTTP/1.1 101
+ * Switching Protocols" (if the response code 101 is used).
+ *
+ * As usual, the response object can be extended with header
+ * information and then be used any number of times (as long as the
+ * header information is not connection-specific).
+ *
+ * @param upgrade_handler function to call with the 'upgraded' socket
+ * @param upgrade_handler_cls closure for @a upgrade_handler
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
+				 void *upgrade_handler_cls)
+{
+  struct MHD_Response *response;
+
+  if (NULL == upgrade_header)
+    return NULL; /* invalid request */
+  response = malloc (sizeof (struct MHD_Response));
+  if (NULL == response)
+    return NULL;
+  memset (response, 0, sizeof (struct MHD_Response));
+  if (! MHD_mutex_init_ (&response->mutex))
+    {
+      free (response);
+      return NULL;
+    }
+  urh->response = response;
+  response->upgrade_handler = upgrade_handler;
+  response->upgrade_handler_cls = upgrade_handler_cls;
+  response->total_size = MHD_SIZE_UNKNOWN;
+  response->reference_count = 1;
+  return response;
+}
+#endif
+
+
 /**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
@@ -601,6 +817,11 @@ MHD_destroy_response (struct MHD_Response *response)
 }
 
 
+/**
+ * Increments the reference counter for the @a response.
+ *
+ * @param response object to modify
+ */
 void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
