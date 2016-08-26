@@ -685,7 +685,10 @@ enum MHD_FLAG
  * @param ap arguments to @a fm
  * @ingroup logging
  */
-typedef void (*MHD_LogCallback)(void *cls, const char *fm, va_list ap);
+typedef void
+(*MHD_LogCallback)(void *cls,
+                   const char *fm,
+                   va_list ap);
 
 
 /**
@@ -2232,9 +2235,6 @@ enum MHD_UpgradeAction
    * Close the socket, the application is done with it.
    *
    * Takes no extra arguments.
-   *
-   * NOTE: it is unclear if we want to have this in the
-   * "final" API, this is all just ideas.
    */
   MHD_UPGRADE_ACTION_CLOSE = 0,
 
@@ -2245,11 +2245,19 @@ enum MHD_UpgradeAction
    * Takes no extra arguments.
    *
    * NOTE: it is unclear if we want to have this in the
-   * "final" API, this is all just ideas.
+   * "final" API, this is just an idea right now.
    */
   MHD_UPGRADE_ACTION_CORK
 
 };
+
+
+/**
+ * Handle given to the application to manage special
+ * actions relating to MHD responses that "upgrade"
+ * the HTTP protocol (i.e. to WebSockets).
+ */
+struct MHD_UpgradeResponseHandle;
 
 
 /**
@@ -2258,15 +2266,17 @@ enum MHD_UpgradeAction
  * It allows applications to perform 'special' actions on
  * the underlying socket from the upgrade.
  *
- * @param cls the closure (from `upgrade_action_cls`)
+ * @param urh the handle identifying the connection to perform
+ *            the upgrade @a action on.
  * @param action which action should be performed
  * @param ... arguments to the action (depends on the action)
  * @return #MHD_NO on error, #MHD_YES on success
  */
-typedef int
-(*MHD_UpgradeActionCallback)(void *cls,
-                             enum MHD_UpgradeAction action,
-                             ...);
+_MHD_EXTERN int
+MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
+                    enum MHD_UpgradeAction action,
+                    ...);
+
 
 /**
  * Function called after a protocol "upgrade" response was sent
@@ -2297,7 +2307,7 @@ typedef int
  * of this function should never block (as it will still be called
  * from within the main event loop).
  *
- * @param cls closure
+ * @param cls closure, whatever was given to #MHD_create_response_for_upgrade().
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
@@ -2307,18 +2317,15 @@ typedef int
  *        operations (TCP-specific setsockopt(), getsockopt(), etc.)
  *        may not work as expected (as the socket could be from a
  *        socketpair() or a TCP-loopback)
- * @param upgrade_action function that can be used to perform actions
- *        on the @a sock (like those that cannot be done explicitly).
- *        Applications must use this callback to perform the
+ * @param urh argument for #MHD_upgrade_action()s on this @a connection.
+ *        Applications must eventually use this callback to perform the
  *        close() action on the @a sock.
- * @param upgrade_action_cls closure that must be passed to @a upgrade_action
  */
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
                       MHD_SOCKET sock,
-                      MHD_UpgradeActionCallback upgrade_action,
-                      void *upgrade_action_cls);
+                      struct MHD_UpgradeResponseHandle *urh);
 
 
 /**
@@ -2350,7 +2357,7 @@ typedef void
  * @param upgrade_handler_cls closure for @a upgrade_handler
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 				 void *upgrade_handler_cls);
 #endif
