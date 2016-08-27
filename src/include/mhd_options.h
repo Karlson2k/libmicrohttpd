@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/mhd_options.h
+ * @file include/mhd_options.h
  * @brief  additional automatic macros for MHD_config.h
  * @author Karlson2k (Evgeny Grin)
  *
