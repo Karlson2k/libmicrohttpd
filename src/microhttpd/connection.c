@@ -2320,7 +2320,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             if (NULL != response->crc)
               (void) MHD_mutex_lock_ (&response->mutex);
             if (MHD_YES != try_ready_normal_body (connection))
+            {
+              if (NULL != response->crc)
+                (void) MHD_mutex_unlock_ (&response->mutex);
               break;
+            }
             data_write_offset = connection->response_write_position
                                 - response->data_start;
             if (data_write_offset > (uint64_t)SIZE_MAX)
