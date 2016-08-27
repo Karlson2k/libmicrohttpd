@@ -3164,6 +3164,24 @@ MHD_queue_response (struct MHD_Connection *connection,
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
 	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
     return MHD_NO;
+  if ( (MHD_HTTP_SWITCHING_PROTOCOLS != status_code) &&
+       (NULL != response->upgrade_handler) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Application used invalid status code for 'upgrade' response!\n");
+#endif
+      return MHD_NO;
+    }
+  if ( (NULL != response->upgrade_handler) &&
+       (0 == (connection->daemon->options & MHD_USE_SUSPEND_RESUME)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Application attempted 'upgrade' without setting MHD_USE_SUSPEND_RESUME!\n");
+#endif
+      return MHD_NO;
+    }
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;

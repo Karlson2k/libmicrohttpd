@@ -143,7 +143,8 @@ check_PROGRAMS = \
   test_str_to_value \
   test_shutdown_select \
   test_shutdown_poll \
-  test_daemon
+  test_daemon \
+  test_upgrade
 
 if HAVE_POSTPROCESSOR
 check_PROGRAMS += \
@@ -163,6 +164,11 @@ endif
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+test_upgrade_SOURCES = \
+  test_upgrade.c
+test_upgrade_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_SOURCES = \

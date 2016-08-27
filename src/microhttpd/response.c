@@ -669,6 +669,17 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   int sv[2];
   size_t rbo;
 
+  if (NULL ==
+      MHD_get_response_header (response,
+                               MHD_HTTP_HEADER_UPGRADE))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                "Invalid response for upgrade: application failed to set the 'Upgrade' header!\n");
+#endif
+      return MHD_NO;
+    }
+
   urh = malloc (sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
@@ -704,6 +715,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     return MHD_YES;
   }
 #endif
+  urh->connection = connection;
   urh->app_socket = MHD_INVALID_SOCKET;
   urh->mhd_socket = MHD_INVALID_SOCKET;
   rbo = connection->read_buffer_offset;
@@ -772,6 +784,14 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
   response->upgrade_handler_cls = upgrade_handler_cls;
   response->total_size = MHD_SIZE_UNKNOWN;
   response->reference_count = 1;
+  if (MHD_NO ==
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONNECTION,
+                               "Upgrade"))
+    {
+      MHD_destroy_response (response);
+      return NULL;
+    }
   return response;
 }
 

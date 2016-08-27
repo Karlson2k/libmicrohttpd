@@ -1,3 +1,7 @@
+Sat Aug 27 21:01:43 CEST 2016
+	Adding a few extra safety checks around HTTP "Upgrade"
+	(against wrong uses of API), and a testcase. -CG
+
 Sat Aug 27 20:07:53 CEST 2016
 	Adding completely *untested* logic for HTTP "Upgrade"
 	handling. -CG
