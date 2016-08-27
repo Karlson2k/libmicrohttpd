@@ -274,7 +274,6 @@ struct MHD_Response
    */
   MHD_ContentReaderFreeCallback crfc;
 
-#if 0
   /**
    * Application function to call once we are done sending the headers
    * of the response; NULL unless this is a response created with
@@ -286,7 +285,6 @@ struct MHD_Response
    * Closure for @e uh.
    */
   void *upgrade_handler_cls;
-#endif
 
   /**
    * Mutex to synchronize access to @e data, @e size and
@@ -476,7 +474,13 @@ enum MHD_CONNECTION_STATE
    * Handshake messages will be processed in this state & while
    * in the #MHD_TLS_HELLO_REQUEST state
    */
-  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1
+  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1,
+
+  /**
+   * Connection was "upgraded" and socket is now under the
+   * control of the application.
+   */
+  MHD_CONNECTION_UPGRADE = MHD_TLS_CONNECTION_INIT + 1
 
 };
 

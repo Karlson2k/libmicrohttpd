@@ -736,7 +736,8 @@ keepalive_possible (struct MHD_Connection *connection)
     if (NULL == end)
       return MHD_YES;
     if ( (MHD_str_equal_caseless_ (end, "close")) ||
-         (MHD_str_equal_caseless_ (end, "upgrade")) )
+         ( (MHD_str_equal_caseless_ (end, "upgrade")) &&
+           (NULL == connection->response->upgrade_handler) ) )
       return MHD_NO;
    return MHD_YES;
   }
@@ -2222,6 +2223,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CLOSED:
           return MHD_YES;
+        case MHD_CONNECTION_UPGRADE:
+          EXTRA_CHECK (0);
+          break;
         default:
           /* shrink read buffer to how much is actually used */
           MHD_pool_reallocate (connection->pool,
@@ -2305,7 +2309,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           do_write (connection);
 	  if (connection->state != MHD_CONNECTION_HEADERS_SENDING)
  	     break;
-          check_write_done (connection, MHD_CONNECTION_HEADERS_SENT);
+          check_write_done (connection,
+                            MHD_CONNECTION_HEADERS_SENT);
           break;
         case MHD_CONNECTION_HEADERS_SENT:
           EXTRA_CHECK (0);
@@ -2393,6 +2398,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
           return MHD_YES;
         case MHD_TLS_CONNECTION_INIT:
+          EXTRA_CHECK (0);
+          break;
+        case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
           break;
         default:
@@ -2586,9 +2594,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           if ( (NULL != connection->response) &&
 	       ( (MHD_str_equal_caseless_ (connection->method,
-				   MHD_HTTP_METHOD_POST)) ||
+                                           MHD_HTTP_METHOD_POST)) ||
 		 (MHD_str_equal_caseless_ (connection->method,
-				   MHD_HTTP_METHOD_PUT))) )
+                                           MHD_HTTP_METHOD_PUT))) )
             {
               /* we refused (no upload allowed!) */
               connection->remaining_upload_size = 0;
@@ -2722,6 +2730,21 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           else
             socket_start_normal_buffering (connection);
+          if (NULL != connection->response->upgrade_handler)
+            {
+              /* This connection is "upgraded".  Pass socket to application. */
+              if (MHD_YES !=
+                  MHD_response_execute_upgrade_ (connection->response,
+                                                 connection))
+                {
+                  /* upgrade failed, fail hard */
+                  CONNECTION_CLOSE_ERROR (connection,
+                                          NULL);
+                  continue;
+                }
+              connection->state = MHD_CONNECTION_UPGRADE;
+              continue;
+            }
 
           if (connection->have_chunked_upload)
             connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
@@ -2882,6 +2905,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
 	  cleanup_connection (connection);
 	  return MHD_NO;
+        case MHD_CONNECTION_UPGRADE:
+          return MHD_YES; /* keep open */
         default:
           EXTRA_CHECK (0);
           break;

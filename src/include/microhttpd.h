@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095100
+#define MHD_VERSION 0x00095101
 
 /**
  * MHD-internal return code for "YES".
@@ -2221,7 +2221,6 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
                                          uint64_t offset);
 
 
-#if 0
 /**
  * Enumeration for actions MHD should perform on the underlying socket
  * of the upgrade.  This API is not finalized, and in particular
@@ -2334,7 +2333,7 @@ typedef void
                       struct MHD_Connection *connection,
                       const char *extra_in,
                       size_t extra_in_size,
-                      MHD_SOCKET sock,
+                      MHD_socket sock,
                       struct MHD_UpgradeResponseHandle *urh);
 
 
@@ -2370,7 +2369,7 @@ typedef void
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 				 void *upgrade_handler_cls);
-#endif
+
 
 /**
  * Destroy a response object and associated resources.  Note that

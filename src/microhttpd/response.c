@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2010 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007, 2009, 2010, 2016 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,9 @@
 #include "internal.h"
 #include "response.h"
 #include "mhd_limits.h"
+#include "mhd_sockets.h"
+#include "mhd_itc.h"
+#include "connection.h"
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -577,7 +580,6 @@ MHD_create_response_from_buffer (size_t size,
 }
 
 
-#if 0
 /**
  * Handle given to the application to manage special
  * actions relating to MHD responses that "upgrade"
@@ -596,13 +598,13 @@ struct MHD_UpgradeResponseHandle
   /**
    * The socket we gave to the application (r/w).
    */
-  MHD_SOCKET app_sock;
+  MHD_socket app_socket;
 
   /**
    * If @a app_sock was a socketpair, our end of it, otherwise
    * #MHD_INVALID_SOCKET; (r/w).
    */
-  MHD_SOCKET mhd_sock;
+  MHD_socket mhd_socket;
 
 };
 
@@ -629,12 +631,12 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   case MHD_UPGRADE_ACTION_CLOSE:
     /* Application is done with this connection, tear it down! */
     if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
-         (0 != MHD_socket_close (urh->app_socket)) )
+         (0 != MHD_socket_close_ (urh->app_socket)) )
       MHD_PANIC ("close failed\n");
     if ( (MHD_INVALID_SOCKET != urh->mhd_socket) &&
-         (0 != MHD_socket_close (urh->mhd_socket)) )
+         (0 != MHD_socket_close_ (urh->mhd_socket)) )
       MHD_PANIC ("close failed\n");
-    MHD_connection_resume (urh->connection);
+    MHD_resume_connection (urh->connection);
     MHD_connection_close_ (urh->connection,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
     free (urh);
@@ -659,9 +661,6 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * @return #MHD_YES on success, #MHD_NO on failure (will cause
  *        connection to be closed)
  */
-// FIXME: This function will need to be called at the right place(s)
-// in the connection processing (just after we are done sending the header)
-// (for responses that have the 'upgrade_header' callback set).
 int
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection)
@@ -674,7 +673,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   if (NULL == urh)
     return MHD_NO;
 #if HTTPS_SUPPORT
-  if (0 != (connection->daemon->flags & MHD_USE_SSL) )
+  if (0 != (connection->daemon->options & MHD_USE_SSL) )
   {
     /* FIXME: this is non-portable for now; W32 port pending... */
     if (0 != socketpair (AF_UNIX,
@@ -694,12 +693,12 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                connection,
                                connection->read_buffer,
                                rbo,
-                               urh->app_sock,
+                               urh->app_socket,
                                urh);
     /* As far as MHD is concerned, this connection is
        suspended; it will be resumed once we are done
        in the #MHD_upgrade_action() function */
-    MHD_connection_suspend (connection);
+    MHD_suspend_connection (connection);
     /* FIXME: also need to start some processing logic in _all_ MHD
        event loops for the sv traffic! (NOT IMPLEMENTED!!!) */
     return MHD_YES;
@@ -718,7 +717,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   /* As far as MHD is concerned, this connection is
      suspended; it will be resumed once we are done
      in the #MHD_upgrade_action() function */
-  MHD_connection_suspend (connection);
+  MHD_suspend_connection (connection);
   return MHD_YES;
 }
 
@@ -758,7 +757,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 {
   struct MHD_Response *response;
 
-  if (NULL == upgrade_header)
+  if (NULL == upgrade_handler)
     return NULL; /* invalid request */
   response = malloc (sizeof (struct MHD_Response));
   if (NULL == response)
@@ -769,14 +768,12 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
       free (response);
       return NULL;
     }
-  urh->response = response;
   response->upgrade_handler = upgrade_handler;
   response->upgrade_handler_cls = upgrade_handler_cls;
   response->total_size = MHD_SIZE_UNKNOWN;
   response->reference_count = 1;
   return response;
 }
-#endif
 
 
 /**
