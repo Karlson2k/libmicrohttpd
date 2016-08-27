@@ -3,4 +3,4 @@ SUBDIRS = .
 
 include_HEADERS = microhttpd.h 
 
-EXTRA_DIST = platform.h autoinit_funcs.h
+EXTRA_DIST = platform.h autoinit_funcs.h mhd_options.h

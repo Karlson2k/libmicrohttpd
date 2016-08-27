@@ -22,15 +22,15 @@
 #
 AC_PREREQ([2.60])
 LT_PREREQ([2.4.0])
-AC_INIT([libmicrohttpd],[0.9.50],[libmicrohttpd@gnu.org])
+AC_INIT([libmicrohttpd],[0.9.51],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_DEFINE([[_GNU_SOURCE]], [[1]], [Enable GNU-specific header features])
 
-LIB_VERSION_CURRENT=50
+LIB_VERSION_CURRENT=51
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=38
+LIB_VERSION_AGE=39
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)

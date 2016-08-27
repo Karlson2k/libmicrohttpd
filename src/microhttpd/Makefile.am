@@ -58,7 +58,6 @@ libmicrohttpd_la_SOURCES = \
   daemon.c  \
   internal.c internal.h \
   memorypool.c memorypool.h \
-  mhd_options.h \
   mhd_mono_clock.c mhd_mono_clock.h \
   mhd_limits.h mhd_byteorder.h \
   sysfdsetsize.c sysfdsetsize.h \

@@ -1,3 +1,6 @@
+Sat Aug 27 18:20:38 CEST 2016
+	Releasing libmicrohttpd 0.9.51. -CG
+
 Tue Aug 23 22:54:07 MSK 2016
 	Internal refactoring: W32 compatibility layer was finally
 	replaced with several specialized abstraction layers for
@@ -25,7 +28,7 @@ Mon Aug 15 13:06:52 CEST 2016
 	our connection limit.
 	Avoid even accept()ing connections in certain thread modes
 	if we are at the connection limit and
-	MHD_USE_PIPE_FOR_SHUTDOWN is available.
+	MHD_USE_PIPE_FOR_SHUTDOWN is available. -CG
 
 Wed Aug 10 16:42:57 MSK 2016
 	Moved threads, locks and mutex abstraction to separate files,
