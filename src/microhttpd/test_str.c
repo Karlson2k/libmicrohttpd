@@ -1274,7 +1274,7 @@ int check_str_to_uint64_n_valid(void)
       set_test_locale(j); /* setlocale() can be slow! */
       for(i = 0; i < n_checks; i++)
         {
-          uint64_t rv;
+          uint64_t rv = 1235572; /* some random value */
           size_t rs = 0;
           size_t len;
           const struct str_with_value * const t = dstrs_w_values + i;
@@ -1288,7 +1288,6 @@ int check_str_to_uint64_n_valid(void)
             }
           for (len = t->num_of_digt; len <= t->str.len + 1 && !c_failed[i]; len++)
             {
-              rv = 1235572; /* some random value */
               rs = MHD_str_to_uint64_n_(t->str.str, len, &rv);
               if (rs != t->num_of_digt)
                 {
@@ -1750,7 +1749,7 @@ int check_strx_to_sizet_n_valid(void)
       set_test_locale(j); /* setlocale() can be slow! */
       for(i = 0; i < n_checks; i++)
         {
-          size_t rv;
+          size_t rv = 2352932; /* some random value */
           size_t rs = 0;
           size_t len;
           const struct str_with_value * const t = xdstrs_w_values + i;
@@ -1769,7 +1768,6 @@ int check_strx_to_sizet_n_valid(void)
             }
           for (len = t->num_of_digt; len <= t->str.len + 1 && !c_failed[i]; len++)
             {
-              rv = 2352932; /* some random value */
               rs = MHD_strx_to_sizet_n_(t->str.str, len, &rv);
               if (rs != t->num_of_digt)
                 {
@@ -2257,7 +2255,7 @@ int check_strx_to_uint32_n_valid(void)
       set_test_locale(j); /* setlocale() can be slow! */
       for(i = 0; i < n_checks; i++)
         {
-          uint32_t rv;
+          uint32_t rv = 2352932;  /* some random value */
           size_t rs = 0;
           size_t len;
           const struct str_with_value * const t = xdstrs_w_values + i;
@@ -2274,7 +2272,6 @@ int check_strx_to_uint32_n_valid(void)
             }
           for (len = t->num_of_digt; len <= t->str.len + 1 && !c_failed[i]; len++)
             {
-              rv = 2352932; /* some random value */
               rs = MHD_strx_to_uint32_n_(t->str.str, len, &rv);
               if (rs != t->num_of_digt)
                 {
@@ -2735,7 +2732,7 @@ int check_strx_to_uint64_n_valid(void)
       set_test_locale(j); /* setlocale() can be slow! */
       for(i = 0; i < n_checks; i++)
         {
-          uint64_t rv;
+          uint64_t rv = 2352932; /* some random value */
           size_t rs = 0;
           size_t len;
           const struct str_with_value * const t = xdstrs_w_values + i;
@@ -2749,7 +2746,6 @@ int check_strx_to_uint64_n_valid(void)
             }
           for (len = t->num_of_digt; len <= t->str.len + 1 && !c_failed[i]; len++)
             {
-              rv = 2352932; /* some random value */
               rs = MHD_strx_to_uint64_n_(t->str.str, len, &rv);
               if (rs != t->num_of_digt)
                 {
