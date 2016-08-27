@@ -11,7 +11,7 @@ This manual is for GNU libmicrohttpd
 (version @value{VERSION}, @value{UPDATED}), a library for embedding
 an HTTP(S) server into C applications.
 
-Copyright @copyright{} 2007--2015 Christian Grothoff
+Copyright @copyright{} 2007--2016 Christian Grothoff
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -1716,6 +1716,7 @@ response and we finally destroy it only when the daemon shuts down.
 * microhttpd-response headers:: Adding headers to a response.
 * microhttpd-response options:: Setting response options.
 * microhttpd-response inspect:: Inspecting a response object.
+* microhttpd-response upgrade:: Creating a response for protocol upgrades.
 @end menu
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2064,6 +2065,101 @@ Return @code{NULL} if header does not exist or @var{key} is @code{NULL}.
 
 We should not modify the value, unless we know what we are doing.
 @end deftypefun
+
+
+@c ------------------------------------------------------------
+@node microhttpd-response upgrade
+@section Creating a response for protocol upgrades
+@cindex WebSockets
+@cindex Upgrade
+@cindex HTTP2
+@cindex RFC2817
+
+With RFC 2817 a mechanism to switch protocols within HTTP was
+introduced.  Here, a client sends a request with a ``Connection:
+Upgrade'' header.  The server responds with a ``101 Switching
+Protocols'' response header, after which the two parties begin to
+speak a different (non-HTTP) protocol over the TCP connection.
+
+This mechanism is used for upgrading HTTP 1.1 connections to HTTP2 or
+HTTPS, as well as for implementing WebSockets.  Which protocol
+upgrade is performed is negotiated between server and client in
+additional headers, in particular the ``Upgrade'' header.
+
+MHD supports switching protocols using this mechanism only if the
+@code{MHD_USE_SUSPEND_RESUME} flag has been set when starting
+the daemon.  If this flag has been set, applications can upgrade
+a connection by queueing a response (using the
+@code{MHD_HTTP_SWITCHING_PROTOCOLS} status code) which must
+have been created with the following function:
+
+
+@deftypefun int MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler, void *upgrade_handler_cls)
+Create a response suitable for switching protocols.  Returns @code{MHD_YES} on success.  @code{upgrade_handler} must not be @code{NULL}.
+
+When creating this type of response, the ``Connection: Upgrade''
+header will be set automatically for you.  MHD requires that you
+additionally set a ``Upgrade:'' header.  The ``Upgrade'' header
+must simply exist, which value is used is up to the application.
+
+@end deftypefun
+
+The @code{upgrade_handler} argument to the above has the following type:
+
+
+@deftypefn {Function Pointer} void {*MHD_UpgradeHandler} (void *cls, struct MHD_Connection *connection, const char *extra_in, size_t extra_in_size, MHD_socket sock, struct MHD_UpgradeResponseHandle *urh)
+This function will be called once MHD has transmitted the header of the response to the connection that is being upgraded.  At this point, the application is expected to take over the socket @code{sock} and speak the non-HTTP protocol to which the connection was upgraded.  MHD will no longer use the socket; this includes handling timeouts.  The application must call @code{MHD_upgrade_action} with an upgrade action of @code{MHD_UPGRADE_ACTION_CLOSE} when it is done processing the connection to close the socket.  The application must not call @code{MHD_stop_daemon} on the respective daemon as long as it is still handling the connection.  The arguments given to the @code{upgrade_handler} have the following meaning:
+
+@table @var
+@item cls
+matches the @code{upgrade_handler_cls} that was given to @code{MHD_create_response_for_upgrade}
+@item connection
+identifies the connection that is being upgraded;
+
+@item con_cls
+last value left in `*con_cls` in the `MHD_AccessHandlerCallback`
+
+@item extra_in
+buffer of bytes MHD read ``by accident'' from the socket already.  This can happen if the client eagerly transmits more than just the HTTP request.   The application should treat these as if it had read them from the socket.
+
+@item extra_in_size
+number of bytes in @code{extra_in}
+
+@item sock
+the socket which the application can now use directly for some bi-directional communication with the client
+
+@item urh
+argument for calls to @code{MHD_upgrade_action}.  Applications must eventually use this function to perform the close() action on the socket.
+@end table
+
+@end deftypefn
+
+@deftypefun int MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh, enum MHD_UpgradeAction action, ...)
+Perform special operations related to upgraded connections.
+
+@table @var
+@item urh
+identifies the upgraded connection to perform an action on
+
+@item action
+specifies the action to perform; further arguments to the function depend on the specifics of the action.
+@end table
+
+@end deftypefun
+
+
+@deftp {Enumeration} MHD_UpgradeAction
+Set of actions to be performed on upgraded connections.  Passed as an argument to
+@code{MHD_upgrade_action()}.
+
+@table @code
+@item MHD_UPGRADE_ACTION_CLOSE
+Closes the connection.  Must be called once the application is done with the client.  Takes no additional arguments.
+
+@item MHD_UPGRADE_ACTION_CORK
+Uncork the TCP write buffer.  Not implemented.  Takes no additional arguments.
+@end table
+@end deftp
 
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

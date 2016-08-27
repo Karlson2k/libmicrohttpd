@@ -702,6 +702,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     connection->read_buffer_offset = 0;
     response->upgrade_handler (response->upgrade_handler_cls,
                                connection,
+                               connection->con_cls,
                                connection->read_buffer,
                                rbo,
                                urh->app_socket,

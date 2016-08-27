@@ -2310,6 +2310,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
+ * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -2331,6 +2332,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
+                      void *con_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket sock,

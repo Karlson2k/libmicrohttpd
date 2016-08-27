@@ -177,6 +177,7 @@ recv_all (MHD_socket sock,
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
+ * @param con_cls last value left in `*con_cls` in the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -192,12 +193,13 @@ recv_all (MHD_socket sock,
  *        may not work as expected (as the socket could be from a
  *        socketpair() or a TCP-loopback)
  * @param urh argument for #MHD_upgrade_action()s on this @a connection.
- *        Applications must eventually use this callback to perform the
+ *        Applications must eventually use this function to perform the
  *        close() action on the @a sock.
  */
 static void
 upgrade_cb (void *cls,
             struct MHD_Connection *connection,
+            void *con_cls,
             const char *extra_in,
             size_t extra_in_size,
             MHD_socket sock,
