@@ -888,6 +888,17 @@ struct MHD_Connection
 
 
 /**
+ * Buffer we use for upgrade response handling in the unlikely
+ * case where the memory pool was so small it had no buffer
+ * capacity left.  Note that we don't expect to _ever_ use this
+ * buffer, so it's mostly wasted memory (except that it allows
+ * us to handle a tricky error condition nicely). So no need to
+ * make this one big.  Applications that want to perform well
+ * should just pick an adequate size for the memory pools.
+ */
+#define RESERVE_EBUF_SIZE 8
+
+/**
  * Handle given to the application to manage special
  * actions relating to MHD responses that "upgrade"
  * the HTTP protocol (i.e. to WebSockets).
@@ -913,6 +924,40 @@ struct MHD_UpgradeResponseHandle
   struct MHD_UpgradeResponseHandle *prev;
 
   /**
+   * The buffer for receiving data from TLS to
+   * be passed to the application.  Contains @e in_buffer_size
+   * bytes. Do not free!
+   */
+  char *in_buffer;
+
+  /**
+   * The buffer for receiving data from the application to
+   * be passed to TLS.  Contains @e out_buffer_size
+   * bytes. Do not free!
+   */
+  char *out_buffer;
+
+  /**
+   * Size of the @e in_buffer
+   */
+  size_t in_buffer_size;
+
+  /**
+   * Size of the @e out_buffer
+   */
+  size_t out_buffer_size;
+
+  /**
+   * Number of bytes actually in use in the @e in_buffer
+   */
+  size_t in_buffer_off;
+
+  /**
+   * Number of bytes actually in use in the @e out_buffer
+   */
+  size_t out_buffer_off;
+
+  /**
    * The socket we gave to the application (r/w).
    */
   MHD_socket app_socket;
@@ -932,6 +977,12 @@ struct MHD_UpgradeResponseHandle
    * IO-state of the @e connection's socket.
    */
   enum MHD_EpollState celi_client;
+
+  /**
+   * Emergency IO buffer we use in case the memory pool has literally
+   * nothing left.
+   */
+  char e_buf[RESERVE_EBUF_SIZE];
 #endif
 
 };

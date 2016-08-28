@@ -70,7 +70,8 @@ MHD_pool_destroy (struct MemoryPool *pool);
  */
 void *
 MHD_pool_allocate (struct MemoryPool *pool,
-		   size_t size, int from_end);
+		   size_t size,
+                   int from_end);
 
 
 /**
@@ -95,6 +96,16 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 		     void *old,
 		     size_t old_size,
 		     size_t new_size);
+
+
+/**
+ * Check how much memory is left in the @a pool
+ *
+ * @param pool pool to check
+ * @return number of bytes still available in @a pool
+ */
+size_t
+MHD_pool_get_free (struct MemoryPool *pool);
 
 
 /**

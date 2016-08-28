@@ -32,6 +32,8 @@
 #include "mhd_sockets.h"
 #include "mhd_itc.h"
 #include "connection.h"
+#include "memorypool.h"
+
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -667,12 +669,19 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   urh = malloc (sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
+  memset (urh,
+          0,
+          sizeof (struct MHD_UpgradeResponseHandle));
   urh->connection = connection;
   rbo = connection->read_buffer_offset;
   connection->read_buffer_offset = 0;
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL) )
   {
+    struct MemoryPool *pool;
+    size_t avail;
+    char *buf;
+
     /* FIXME: this is non-portable for now; W32 port pending... */
     if (0 != socketpair (AF_UNIX,
                          SOCK_STREAM,
@@ -698,9 +707,34 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         free (urh);
         return MHD_NO;
       }
-
     urh->app_socket = sv[0];
     urh->mhd_socket = sv[1];
+    pool = connection->pool;
+    avail = MHD_pool_get_free (pool);
+    if (avail < 8)
+      {
+        /* connection's pool is totally at the limit,
+           use our 'emergency' buffer of #RESERVE_EBUF_SIZE bytes. */
+        avail = RESERVE_EBUF_SIZE;
+        buf = urh->e_buf;
+      }
+    else
+      {
+        /* Normal case: grab all remaining memory from the
+           connection's pool for the IO buffers; the connection
+           certainly won't need it anymore as we've upgraded
+           to another protocol. */
+        buf = MHD_pool_allocate (pool,
+                                 avail,
+                                 MHD_NO);
+      }
+    /* use half the buffer for inbound, half for outbound */
+    avail /= 2;
+    urh->in_buffer_size = avail;
+    urh->out_buffer_size = avail;
+    urh->in_buffer = buf;
+    urh->out_buffer = &buf[avail];
+    /* hand over internal socket to application */
     response->upgrade_handler (response->upgrade_handler_cls,
                                connection,
                                connection->client_context,
@@ -717,6 +751,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     /* FIXME: is it possible we did not fully drain the client
        socket yet and are thus read-ready already? This may
        matter if we are in epoll() edge triggered mode... */
+    /* Launch IO processing by the event loop */
+    /* FIXME: this will not work (yet) for thread-per-connection processing */
     DLL_insert (connection->daemon->urh_head,
                 connection->daemon->urh_tail,
                 urh);

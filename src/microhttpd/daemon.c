@@ -2174,22 +2174,15 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
-#if FIXME_BUFFERS
-  // FIXME: we need buffer/buffer_size/buffer_off for
-  // both directions to be somehow stored within urh.
-  // (Note that despite using the same variable names
-  // below, we need actually different buffers for each
-  // direction.)
-
-  /* handle reading from HTTPS client and writing to application */
+  /* handle reading from TLS client and writing to application */
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_client)) &&
-       (buffer_off < buffer_size) )
+       (urh->in_buffer_off < urh->in_buffer_size) )
     {
       ssize_t res;
 
-      res = gnutls_record_recv (uri->connection->tls_session,
-                                &buffer[buffer_off],
-                                buffer_size - buffer_off);
+      res = gnutls_record_recv (urh->connection->tls_session,
+                                &urh->in_buffer[urh->in_buffer_off],
+                                urh->in_buffer_size - urh->in_buffer_off);
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
@@ -2197,17 +2190,17 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else if (res > 0)
         {
-          buffer_off += res;
+          urh->in_buffer_off += res;
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd)) &&
-       (buffer_off > 0) )
+       (urh->in_buffer_off > 0) )
     {
       size_t res;
 
       res = write (urh->mhd_socket,
-                   buffer,
-                   buffer_off);
+                   urh->in_buffer,
+                   urh->in_buffer_off);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
@@ -2215,29 +2208,29 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else
         {
-          if (buffer_off != res)
+          if (urh->in_buffer_off != res)
             {
-              memmove (buffer,
-                       &buffer[res],
-                       buffer_off - res);
-              buffer_off -= res;
+              memmove (urh->in_buffer,
+                       &urh->in_buffer[res],
+                       urh->in_buffer_off - res);
+              urh->in_buffer_off -= res;
             }
           else
             {
-              buffer_off = 0;
+              urh->in_buffer_off = 0;
             }
         }
     }
 
   /* handle reading from application and writing to HTTPS client */
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
-       (buffer_off < buffer_size) )
+       (urh->out_buffer_off < urh->out_buffer_size) )
     {
       size_t res;
 
       res = read (urh->mhd_socket,
-                  &buffer[buffer_off],
-                  buffer_size - buffer_off);
+                  &urh->out_buffer[urh->out_buffer_off],
+                  urh->out_buffer_size - urh->out_buffer_off);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
@@ -2245,17 +2238,17 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else
         {
-          buffer_off += res;
+          urh->out_buffer_off += res;
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) &&
-       (buffer_off > 0) )
+       (urh->out_buffer_off > 0) )
     {
       ssize_t res;
 
-      res = gnutls_record_send (uri->connection->tls_session,
-                                buffer,
-                                buffer_off);
+      res = gnutls_record_send (urh->connection->tls_session,
+                                urh->out_buffer,
+                                urh->out_buffer_off);
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
@@ -2263,20 +2256,19 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else if (res > 0)
         {
-          if (buffer_off != res)
+          if (urh->out_buffer_off != res)
             {
-              memmove (buffer,
-                       &buffer[res],
-                       buffer_off - res);
-              buffer_off -= res;
+              memmove (urh->out_buffer,
+                       &urh->out_buffer[res],
+                       urh->out_buffer_off - res);
+              urh->out_buffer_off -= res;
             }
           else
             {
-              buffer_off = 0;
+              urh->out_buffer_off = 0;
             }
         }
     }
-#endif
 }
 #endif
 
