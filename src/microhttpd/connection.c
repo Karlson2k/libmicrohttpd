@@ -1834,8 +1834,8 @@ process_request_body (struct MHD_Connection *connection)
 
 
 /**
- * Try reading data from the socket into the
- * read buffer of the connection.
+ * Try reading data from the socket into the read buffer of the
+ * connection.
  *
  * @param connection connection we're processing
  * @return #MHD_YES if something changed,

@@ -123,7 +123,7 @@ mhd_panic_std (void *cls,
 MHD_PanicCallback mhd_panic;
 
 /**
- * Closure argument for "mhd_panic".
+ * Closure argument for #mhd_panic.
  */
 void *mhd_panic_cls;
 
@@ -401,7 +401,9 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
  * @return number of bytes actually received
  */
 static ssize_t
-recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
+recv_tls_adapter (struct MHD_Connection *connection,
+                  void *other,
+                  size_t i)
 {
   ssize_t res;
 
@@ -410,7 +412,9 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
       connection->daemon->num_tls_read_ready--;
       connection->tls_read_ready = MHD_NO;
     }
-  res = gnutls_record_recv (connection->tls_session, other, i);
+  res = gnutls_record_recv (connection->tls_session,
+                            other,
+                            i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -447,11 +451,14 @@ recv_tls_adapter (struct MHD_Connection *connection, void *other, size_t i)
  */
 static ssize_t
 send_tls_adapter (struct MHD_Connection *connection,
-                  const void *other, size_t i)
+                  const void *other,
+                  size_t i)
 {
   int res;
 
-  res = gnutls_record_send (connection->tls_session, other, i);
+  res = gnutls_record_send (connection->tls_session,
+                            other,
+                            i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -2157,6 +2164,123 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 }
 
 
+#if HTTPS_SUPPORT
+/**
+ * Performs bi-directional forwarding on upgraded HTTPS connections
+ * based on the readyness state stored in the @a urh handle.
+ *
+ * @param urh handle to process
+ */
+static void
+process_urh (struct MHD_UpgradeResponseHandle *urh)
+{
+#if FIXME_BUFFERS
+  // FIXME: we need buffer/buffer_size/buffer_off for
+  // both directions to be somehow stored within urh.
+  // (Note that despite using the same variable names
+  // below, we need actually different buffers for each
+  // direction.)
+
+  /* handle reading from HTTPS client and writing to application */
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_client)) &&
+       (buffer_off < buffer_size) )
+    {
+      ssize_t res;
+
+      res = gnutls_record_recv (uri->connection->tls_session,
+                                &buffer[buffer_off],
+                                buffer_size - buffer_off);
+      if ( (GNUTLS_E_AGAIN == res) ||
+           (GNUTLS_E_INTERRUPTED == res) )
+        {
+          urh->celi_client &= ~MHD_EPOLL_STATE_READ_READY;
+        }
+      else if (res > 0)
+        {
+          buffer_off += res;
+        }
+    }
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd)) &&
+       (buffer_off > 0) )
+    {
+      size_t res;
+
+      res = write (urh->mhd_socket,
+                   buffer,
+                   buffer_off);
+      if (-1 == res)
+        {
+          /* FIXME: differenciate by errno? */
+          urh->celi_mhd &= ~MHD_EPOLL_STATE_WRITE_READY;
+        }
+      else
+        {
+          if (buffer_off != res)
+            {
+              memmove (buffer,
+                       &buffer[res],
+                       buffer_off - res);
+              buffer_off -= res;
+            }
+          else
+            {
+              buffer_off = 0;
+            }
+        }
+    }
+
+  /* handle reading from application and writing to HTTPS client */
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
+       (buffer_off < buffer_size) )
+    {
+      size_t res;
+
+      res = read (urh->mhd_socket,
+                  &buffer[buffer_off],
+                  buffer_size - buffer_off);
+      if (-1 == res)
+        {
+          /* FIXME: differenciate by errno? */
+          urh->celi_mhd &= ~MHD_EPOLL_STATE_READ_READY;
+        }
+      else
+        {
+          buffer_off += res;
+        }
+    }
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) &&
+       (buffer_off > 0) )
+    {
+      ssize_t res;
+
+      res = gnutls_record_send (uri->connection->tls_session,
+                                buffer,
+                                buffer_off);
+      if ( (GNUTLS_E_AGAIN == res) ||
+           (GNUTLS_E_INTERRUPTED == res) )
+        {
+          urh->celi_client &= ~MHD_EPOLL_STATE_WRITE_READY;
+        }
+      else if (res > 0)
+        {
+          if (buffer_off != res)
+            {
+              memmove (buffer,
+                       &buffer[res],
+                       buffer_off - res);
+              buffer_off -= res;
+            }
+          else
+            {
+              buffer_off = 0;
+            }
+        }
+    }
+#endif
+}
+#endif
+
+
 /**
  * Run webserver operations. This method should be called by clients
  * in combination with #MHD_get_fdset if the client-controlled select
@@ -2185,7 +2309,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   MHD_socket ds;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
+#if HTTPS_SUPPORT
   struct MHD_UpgradeResponseHandle *urh;
+#endif
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
@@ -2239,8 +2365,17 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #if HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
     {
-      // if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
-      // (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) )
+      /* update urh state based on select() output */
+      if (FD_ISSET (urh->connection->socket_fd, read_fd_set))
+        urh->celi_client |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (urh->connection->socket_fd, write_fd_set))
+        urh->celi_client |= MHD_EPOLL_STATE_WRITE_READY;
+      if (FD_ISSET (urh->mhd_socket, read_fd_set))
+        urh->celi_mhd |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (urh->mhd_socket, write_fd_set))
+        urh->celi_mhd |= MHD_EPOLL_STATE_WRITE_READY;
+      /* call generic forwarding function for passing data */
+      process_urh (urh);
     }
 #endif
   MHD_cleanup_connections (daemon);
@@ -2298,10 +2433,10 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       /* accept only, have one thread per connection */
       if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-           (!MHD_add_to_fd_set_ (daemon->socket_fd,
-                                 &rs,
-                                 &maxsock,
-                                 FD_SETSIZE)) )
+           (! MHD_add_to_fd_set_ (daemon->socket_fd,
+                                  &rs,
+                                  &maxsock,
+                                  FD_SETSIZE)) )
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon, "Could not add listen socket to fdset");
@@ -2310,10 +2445,10 @@ MHD_select (struct MHD_Daemon *daemon,
         }
     }
   if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-       (!MHD_add_to_fd_set_ (daemon->wpipe[0],
-                             &rs,
-                             &maxsock,
-                             FD_SETSIZE)) )
+       (! MHD_add_to_fd_set_ (daemon->wpipe[0],
+                              &rs,
+                              &maxsock,
+                              FD_SETSIZE)) )
     {
 #if defined(MHD_WINSOCK_SOCKETS)
       /* fdset limit reached, new connections
@@ -2322,10 +2457,10 @@ MHD_select (struct MHD_Daemon *daemon,
       if (MHD_INVALID_SOCKET != daemon->socket_fd)
         {
           FD_CLR (daemon->socket_fd, &rs);
-          if (!MHD_add_to_fd_set_ (daemon->wpipe[0],
-                                   &rs,
-                                   &maxsock,
-                                   FD_SETSIZE))
+          if (! MHD_add_to_fd_set_ (daemon->wpipe[0],
+                                    &rs,
+                                    &maxsock,
+                                    FD_SETSIZE))
             {
 #endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HAVE_MESSAGES
@@ -2410,6 +2545,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   unsigned int num_connections;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
+#if HTTPS_SUPPORT
+  struct MHD_UpgradeResponseHandle *urh;
+  struct MHD_UpgradeResponseHandle *urhn;
+#endif
 
   if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
        (MHD_YES == resume_suspended_connections (daemon)) )
@@ -2419,6 +2558,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   num_connections = 0;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     num_connections++;
+#if HTTPS_SUPPORT
+  for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+    num_connections += 2;
+#endif
   {
     MHD_UNSIGNED_LONG_LONG ltimeout;
     unsigned int i;
@@ -2428,7 +2571,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     int poll_pipe;
     struct pollfd *p;
 
-    p = malloc(sizeof (struct pollfd) * (2 + num_connections));
+    p = malloc (sizeof (struct pollfd) * (2 + num_connections));
     if (NULL == p)
       {
 #ifdef HAVE_MESSAGES
@@ -2493,6 +2636,23 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	  }
 	i++;
       }
+#if HTTPS_SUPPORT
+    for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+      {
+        p[poll_server+i].fd = urh->connection->socket_fd;
+        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_client))
+          p[poll_server+i].events |= POLLIN;
+        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client))
+          p[poll_server+i].events |= POLLOUT;
+        i++;
+        p[poll_server+i].fd = urh->mhd_socket;
+        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd))
+          p[poll_server+i].events |= POLLIN;
+        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd))
+          p[poll_server+i].events |= POLLOUT;
+        i++;
+      }
+#endif
     if (0 == poll_server + num_connections)
       {
         free(p);
@@ -2542,6 +2702,33 @@ MHD_poll_all (struct MHD_Daemon *daemon,
                        0 != (p[poll_server+i].revents & POLLOUT),
                        MHD_NO);
       }
+#if HTTPS_SUPPORT
+    for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+      {
+        urhn = urh->next;
+        if (p[poll_server+i].fd != urh->connection->socket_fd)
+          continue; /* fd mismatch, something else happened, retry later ... */
+        if (0 != (p[poll_server+i].revents & POLLIN))
+          urh->celi_client |= MHD_EPOLL_STATE_READ_READY;
+        if (0 != (p[poll_server+i].revents & POLLOUT))
+          urh->celi_client |= MHD_EPOLL_STATE_WRITE_READY;
+        i++;
+        if (p[poll_server+i].fd != urh->mhd_socket)
+          {
+            /* fd mismatch, something else happened, retry later ... */
+            /* may still be able to do something based on updates
+               to socket_fd availability */
+            process_urh (urh);
+            continue;
+          }
+        if (0 != (p[poll_server+i].revents & POLLIN))
+          urh->celi_mhd |= MHD_EPOLL_STATE_READ_READY;
+        if (0 != (p[poll_server+i].revents & POLLOUT))
+          urh->celi_mhd |= MHD_EPOLL_STATE_WRITE_READY;
+        i++;
+        process_urh (urh);
+      }
+#endif
     /* handle 'listen' FD */
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
@@ -3081,9 +3268,10 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
  * @param format format string
  * @param va arguments to the format string (fprintf-style)
  */
-typedef void (*VfprintfFunctionPointerType)(void *cls,
-					    const char *format,
-					    va_list va);
+typedef void
+(*VfprintfFunctionPointerType)(void *cls,
+                               const char *format,
+                               va_list va);
 
 
 /**
@@ -3687,7 +3875,7 @@ MHD_start_daemon_va (unsigned int flags,
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
        (1 == use_pipe) &&
-       (!MHD_SCKT_FD_FITS_FDSET_(daemon->wpipe[0], NULL)) )
+       (! MHD_SCKT_FD_FITS_FDSET_(daemon->wpipe[0], NULL)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,

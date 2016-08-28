@@ -49,7 +49,7 @@ run_tls_handshake (struct MHD_Connection *connection)
   int ret;
 
   connection->last_activity = MHD_monotonic_sec_counter();
-  if (connection->state == MHD_TLS_CONNECTION_INIT)
+  if (MHD_TLS_CONNECTION_INIT == connection->state)
     {
       ret = gnutls_handshake (connection->tls_session);
       if (ret == GNUTLS_E_SUCCESS)
@@ -58,8 +58,8 @@ run_tls_handshake (struct MHD_Connection *connection)
 	  connection->state = MHD_CONNECTION_INIT;
 	  return MHD_YES;
 	}
-      if ( (ret == GNUTLS_E_AGAIN) ||
-	   (ret == GNUTLS_E_INTERRUPTED) )
+      if ( (GNUTLS_E_AGAIN == ret) ||
+	   (GNUTLS_E_INTERRUPTED == ret) )
 	{
 	  /* handshake not done */
 	  return MHD_YES;
@@ -141,7 +141,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
             MHD_state_to_string (connection->state));
 #endif
   timeout = connection->connection_timeout;
-  if ( (timeout != 0) && (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)))
+  if ( (timeout != 0) &&
+       (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)))
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
   switch (connection->state)
@@ -151,7 +152,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       break;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
-      gnutls_bye (connection->tls_session, GNUTLS_SHUT_RDWR);
+      gnutls_bye (connection->tls_session,
+                  GNUTLS_SHUT_RDWR);
       return MHD_connection_handle_idle (connection);
     default:
       if ( (0 != gnutls_record_check_pending (connection->tls_session)) &&
