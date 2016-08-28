@@ -894,7 +894,14 @@ struct MHD_Connection
  */
 struct MHD_UpgradeResponseHandle
 {
+  /**
+   * The connection for which this is an upgrade handle.  Note that
+   * because a response may be shared over many connections, this may
+   * not be the only upgrade handle for the response of this connection.
+   */
+  struct MHD_Connection *connection;
 
+#if HTTPS_SUPPORT
   /**
    * Kept in a DLL per daemon.
    */
@@ -904,13 +911,6 @@ struct MHD_UpgradeResponseHandle
    * Kept in a DLL per daemon.
    */
   struct MHD_UpgradeResponseHandle *prev;
-
-  /**
-   * The connection for which this is an upgrade handle.  Note that
-   * because a response may be shared over many connections, this may
-   * not be the only upgrade handle for the response of this connection.
-   */
-  struct MHD_Connection *connection;
 
   /**
    * The socket we gave to the application (r/w).
@@ -932,7 +932,7 @@ struct MHD_UpgradeResponseHandle
    * IO-state of the @e connection's socket.
    */
   enum MHD_EpollState celi_client;
-
+#endif
 
 };
 
@@ -1026,16 +1026,6 @@ struct MHD_Daemon
    */
   struct MHD_Connection *eready_tail;
 #endif
-
-  /**
-   * Head of DLL of upgrade response handles we are processing.
-   */
-  struct MHD_UpgradeResponseHandle *urh_head;
-
-  /**
-   * Tail of DLL of upgrade response handles we are processing.
-   */
-  struct MHD_UpgradeResponseHandle *urh_tail;
 
   /**
    * Head of the XDLL of ALL connections with a default ('normal')
@@ -1283,6 +1273,16 @@ struct MHD_Daemon
   uint16_t port;
 
 #if HTTPS_SUPPORT
+  /**
+   * Head of DLL of upgrade response handles we are processing.
+   */
+  struct MHD_UpgradeResponseHandle *urh_head;
+
+  /**
+   * Tail of DLL of upgrade response handles we are processing.
+   */
+  struct MHD_UpgradeResponseHandle *urh_tail;
+
   /**
    * Desired cipher algorithms.
    */

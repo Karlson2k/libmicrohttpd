@@ -603,6 +603,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   {
   case MHD_UPGRADE_ACTION_CLOSE:
     /* Application is done with this connection, tear it down! */
+#if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_SSL) )
       {
         DLL_remove (daemon->urh_head,
@@ -610,13 +611,14 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                     urh);
         /* FIXME: if running in epoll()-mode, do we have
            to remove any of the FDs from any epoll-sets here? */
+        if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
+             (0 != MHD_socket_close_ (urh->app_socket)) )
+          MHD_PANIC ("close failed\n");
+        if ( (MHD_INVALID_SOCKET != urh->mhd_socket) &&
+             (0 != MHD_socket_close_ (urh->mhd_socket)) )
+          MHD_PANIC ("close failed\n");
       }
-    if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
-         (0 != MHD_socket_close_ (urh->app_socket)) )
-      MHD_PANIC ("close failed\n");
-    if ( (MHD_INVALID_SOCKET != urh->mhd_socket) &&
-         (0 != MHD_socket_close_ (urh->mhd_socket)) )
-      MHD_PANIC ("close failed\n");
+#endif
     MHD_resume_connection (urh->connection);
     MHD_connection_close_ (urh->connection,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
@@ -665,6 +667,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   urh = malloc (sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
+  urh->connection = connection;
+  rbo = connection->read_buffer_offset;
+  connection->read_buffer_offset = 0;
 #if HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_SSL) )
   {
@@ -696,9 +701,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 
     urh->app_socket = sv[0];
     urh->mhd_socket = sv[1];
-    urh->connection = connection;
-    rbo = connection->read_buffer_offset;
-    connection->read_buffer_offset = 0;
     response->upgrade_handler (response->upgrade_handler_cls,
                                connection,
                                connection->client_context,
@@ -720,12 +722,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                 urh);
     return MHD_YES;
   }
-#endif
-  urh->connection = connection;
   urh->app_socket = MHD_INVALID_SOCKET;
   urh->mhd_socket = MHD_INVALID_SOCKET;
-  rbo = connection->read_buffer_offset;
-  connection->read_buffer_offset = 0;
+#endif
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,
                              connection->client_context,

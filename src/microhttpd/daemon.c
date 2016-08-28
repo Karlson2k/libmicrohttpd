@@ -2185,6 +2185,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   MHD_socket ds;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
+  struct MHD_UpgradeResponseHandle *urh;
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
@@ -2204,7 +2205,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     {
       /* we're in epoll mode, the epoll FD stands for
 	 the entire event set! */
-      if (!MHD_SCKT_FD_FITS_FDSET_(daemon->epoll_fd, NULL))
+      if (! MHD_SCKT_FD_FITS_FDSET_(daemon->epoll_fd, NULL))
 	return MHD_NO; /* poll fd too big, fail hard */
       if (FD_ISSET (daemon->epoll_fd, read_fd_set))
 	return MHD_run (daemon);
@@ -2233,6 +2234,15 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                          MHD_NO);
         }
     }
+
+  /* handle upgraded HTTPS connections */
+#if HTTPS_SUPPORT
+  for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+    {
+      // if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
+      // (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) )
+    }
+#endif
   MHD_cleanup_connections (daemon);
   return MHD_YES;
 }
