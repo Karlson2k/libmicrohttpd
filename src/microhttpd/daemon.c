@@ -626,10 +626,14 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 	       fd_set *except_fd_set,
 	       MHD_socket *max_fd)
 {
-  return MHD_get_fdset2(daemon, read_fd_set,
-      write_fd_set, except_fd_set,
-      max_fd, _MHD_SYS_DEFAULT_FD_SETSIZE);
+  return MHD_get_fdset2 (daemon,
+                         read_fd_set,
+                         write_fd_set,
+                         except_fd_set,
+                         max_fd,
+                         _MHD_SYS_DEFAULT_FD_SETSIZE);
 }
+
 
 /**
  * Obtain the `select()` sets for this daemon.
@@ -729,25 +733,25 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
     }
   for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
     {
-      if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
-           (! MHD_add_to_fd_set_ (urh->mhd_socket,
+      if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
+           (! MHD_add_to_fd_set_ (urh->mhd.socket,
                                   read_fd_set,
                                   max_fd,
                                   fd_setsize)) )
         result = MHD_NO;
-      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd)) &&
-           (! MHD_add_to_fd_set_ (urh->mhd_socket,
+      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+           (! MHD_add_to_fd_set_ (urh->mhd.socket,
                                   write_fd_set,
                                   max_fd,
                                   fd_setsize)) )
         result = MHD_NO;
-      if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_client)) &&
+      if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
            (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                                   read_fd_set,
                                   max_fd,
                                   fd_setsize)) )
         result = MHD_NO;
-      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) &&
+      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
            (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                                   write_fd_set,
                                   max_fd,
@@ -2175,7 +2179,7 @@ static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
   /* handle reading from TLS client and writing to application */
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_client)) &&
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
        (urh->in_buffer_off < urh->in_buffer_size) )
     {
       ssize_t res;
@@ -2186,25 +2190,25 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
-          urh->celi_client &= ~MHD_EPOLL_STATE_READ_READY;
+          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
       else if (res > 0)
         {
           urh->in_buffer_off += res;
         }
     }
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd)) &&
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
        (urh->in_buffer_off > 0) )
     {
       size_t res;
 
-      res = write (urh->mhd_socket,
+      res = write (urh->mhd.socket,
                    urh->in_buffer,
                    urh->in_buffer_off);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
-          urh->celi_mhd &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
         }
       else
         {
@@ -2223,25 +2227,25 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
 
   /* handle reading from application and writing to HTTPS client */
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
        (urh->out_buffer_off < urh->out_buffer_size) )
     {
       size_t res;
 
-      res = read (urh->mhd_socket,
+      res = read (urh->mhd.socket,
                   &urh->out_buffer[urh->out_buffer_off],
                   urh->out_buffer_size - urh->out_buffer_off);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
-          urh->celi_mhd &= ~MHD_EPOLL_STATE_READ_READY;
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
       else
         {
           urh->out_buffer_off += res;
         }
     }
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) &&
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
        (urh->out_buffer_off > 0) )
     {
       ssize_t res;
@@ -2252,7 +2256,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
-          urh->celi_client &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
         }
       else if (res > 0)
         {
@@ -2359,13 +2363,13 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     {
       /* update urh state based on select() output */
       if (FD_ISSET (urh->connection->socket_fd, read_fd_set))
-        urh->celi_client |= MHD_EPOLL_STATE_READ_READY;
+        urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
       if (FD_ISSET (urh->connection->socket_fd, write_fd_set))
-        urh->celi_client |= MHD_EPOLL_STATE_WRITE_READY;
-      if (FD_ISSET (urh->mhd_socket, read_fd_set))
-        urh->celi_mhd |= MHD_EPOLL_STATE_READ_READY;
-      if (FD_ISSET (urh->mhd_socket, write_fd_set))
-        urh->celi_mhd |= MHD_EPOLL_STATE_WRITE_READY;
+        urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
+      if (FD_ISSET (urh->mhd.socket, read_fd_set))
+        urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (urh->mhd.socket, write_fd_set))
+        urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
       /* call generic forwarding function for passing data */
       process_urh (urh);
     }
@@ -2632,15 +2636,15 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
-        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_client))
+        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->app.celi))
           p[poll_server+i].events |= POLLIN;
-        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client))
+        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
           p[poll_server+i].events |= POLLOUT;
         i++;
-        p[poll_server+i].fd = urh->mhd_socket;
-        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd))
+        p[poll_server+i].fd = urh->mhd.socket;
+        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi))
           p[poll_server+i].events |= POLLIN;
-        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd))
+        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
           p[poll_server+i].events |= POLLOUT;
         i++;
       }
@@ -2701,11 +2705,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         if (p[poll_server+i].fd != urh->connection->socket_fd)
           continue; /* fd mismatch, something else happened, retry later ... */
         if (0 != (p[poll_server+i].revents & POLLIN))
-          urh->celi_client |= MHD_EPOLL_STATE_READ_READY;
+          urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
         if (0 != (p[poll_server+i].revents & POLLOUT))
-          urh->celi_client |= MHD_EPOLL_STATE_WRITE_READY;
+          urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
         i++;
-        if (p[poll_server+i].fd != urh->mhd_socket)
+        if (p[poll_server+i].fd != urh->mhd.socket)
           {
             /* fd mismatch, something else happened, retry later ... */
             /* may still be able to do something based on updates
@@ -2714,9 +2718,9 @@ MHD_poll_all (struct MHD_Daemon *daemon,
             continue;
           }
         if (0 != (p[poll_server+i].revents & POLLIN))
-          urh->celi_mhd |= MHD_EPOLL_STATE_READ_READY;
+          urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
         if (0 != (p[poll_server+i].revents & POLLOUT))
-          urh->celi_mhd |= MHD_EPOLL_STATE_WRITE_READY;
+          urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
         i++;
         process_urh (urh);
       }
@@ -2832,6 +2836,136 @@ MHD_poll (struct MHD_Daemon *daemon,
 #define MAX_EVENTS 128
 
 
+#if HTTPS_SUPPORT
+
+/**
+ * Do epoll()-based processing for TLS connections that have been
+ * upgraded.  This requires a separate epoll() invocation as we
+ * cannot use the `struct MHD_Connection` data structures for
+ * the `union epoll_data` in this case.
+ */
+static int
+run_epoll_for_upgrade (struct MHD_Daemon *daemon)
+{
+  struct epoll_event events[MAX_EVENTS];
+  int num_events;
+  unsigned int i;
+
+  num_events = MAX_EVENTS;
+  while (MAX_EVENTS == num_events)
+    {
+      /* update event masks */
+      num_events = epoll_wait (daemon->epoll_upgrade_fd,
+			       events,
+                               MAX_EVENTS,
+                               0);
+      if (-1 == num_events)
+	{
+          const int err = MHD_socket_get_error_ ();
+          if (MHD_SCKT_ERR_IS_EINTR_ (err))
+	    return MHD_YES;
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Call to epoll_wait failed: %s\n",
+                    MHD_socket_strerr_ (err));
+#endif
+	  return MHD_NO;
+	}
+      for (i=0;i<(unsigned int) num_events;i++)
+	{
+          struct UpgradeEpollHandle *ueh = events[i].data.ptr;
+          struct MHD_UpgradeResponseHandle *urh = ueh->urh;
+          struct epoll_event event;
+          int fd;
+
+          /* Update our state based on what is ready according to epoll() */
+          if (0 != (events[i].events & EPOLLIN))
+            ueh->celi |= MHD_EPOLL_STATE_READ_READY;
+          if (0 != (events[i].events & EPOLLOUT))
+            ueh->celi |= MHD_EPOLL_STATE_WRITE_READY;
+
+          /* shuffle data based on buffers and FD readyness */
+          process_urh (urh);
+
+          /* if we drained the IO buffer, re-add to epoll() to wait for more! */
+          if (0 == (ueh->celi & MHD_EPOLL_STATE_READ_READY))
+            {
+              event.events = EPOLLIN;
+              event.data.ptr = ueh;
+              fd = (ueh == &urh->mhd) ? ueh->socket : urh->connection->socket_fd;
+              if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                  EPOLL_CTL_ADD,
+                                  fd,
+                                  &event))
+                {
+                  MHD_socket myfd;
+
+                  /* Handle error by closing OUR socket; with some
+                     luck, this should tricker the application to fail
+                     to read, and then the application should close
+                     the connection completely. */
+
+                  /* epoll documentation suggests that closing a FD
+                     automatically removes it from the epoll set;
+                     however, this is not true as if we fail to do
+                     manually remove it, we are still seeing an event
+                     for this fd in epoll, causing grief
+                     (use-after-free...) --- at least on my system. */
+                  myfd = urh->mhd.socket;
+                  if ( (fd != myfd) &&
+                       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                        EPOLL_CTL_DEL,
+                                        urh->mhd.socket,
+                                        NULL)) )
+                       MHD_PANIC ("Failed to remove FD from epoll set\n");
+                  urh->mhd.socket = MHD_INVALID_SOCKET;
+                  MHD_socket_close_ (myfd);
+                  continue;
+                }
+            }
+          if (0 == (ueh->celi & MHD_EPOLL_STATE_WRITE_READY))
+            {
+              event.events = EPOLLOUT;
+              event.data.ptr = ueh;
+              fd = (ueh == &ueh->urh->mhd) ? ueh->socket : ueh->urh->connection->socket_fd;
+              if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                  EPOLL_CTL_ADD,
+                                  fd,
+                                  &event))
+                {
+                  MHD_socket myfd;
+
+                  /* Handle error by closing OUR socket; with some
+                     luck, this should tricker the application to fail
+                     to read, and then the application should close
+                     the connection completely. */
+
+                  /* epoll documentation suggests that closing a FD
+                     automatically removes it from the epoll set;
+                     however, this is not true as if we fail to do
+                     manually remove it, we are still seeing an event
+                     for this fd in epoll, causing grief
+                     (use-after-free...) --- at least on my system. */
+                  myfd = urh->mhd.socket;
+                  if ( (fd != myfd) &&
+                       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                        EPOLL_CTL_DEL,
+                                        urh->mhd.socket,
+                                        NULL)) )
+                       MHD_PANIC ("Failed to remove FD from epoll set\n");
+
+                  urh->mhd.socket = MHD_INVALID_SOCKET;
+                  MHD_socket_close_ (myfd);
+                  continue;
+                }
+            }
+        }
+    }
+  return MHD_YES;
+}
+#endif
+
+
 /**
  * Do epoll()-based processing (this function is allowed to
  * block if @a may_block is set to #MHD_YES).
@@ -2844,6 +2978,9 @@ static int
 MHD_epoll (struct MHD_Daemon *daemon,
 	   int may_block)
 {
+#if HTTPS_SUPPORT
+  static const char *upgrade_marker = "upgrade_ptr";
+#endif
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
   struct epoll_event events[MAX_EVENTS];
@@ -2879,6 +3016,27 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->listen_socket_in_epoll = MHD_YES;
     }
+#if HTTPS_SUPPORT
+  if ( (MHD_NO == daemon->upgrade_fd_in_epoll) &&
+       (MHD_INVALID_SOCKET != daemon->epoll_upgrade_fd) )
+    {
+      event.events = EPOLLIN | EPOLLOUT;
+      event.data.ptr = (void *) upgrade_marker;
+      if (0 != epoll_ctl (daemon->epoll_fd,
+			  EPOLL_CTL_ADD,
+			  daemon->epoll_upgrade_fd,
+			  &event))
+	{
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Call to epoll_ctl failed: %s\n",
+                    MHD_socket_last_strerr_ ());
+#endif
+	  return MHD_NO;
+	}
+      daemon->upgrade_fd_in_epoll = MHD_YES;
+    }
+#endif
   if ( ( (MHD_YES == daemon->listen_socket_in_epoll) &&
          (daemon->connections == daemon->connection_limit) ) ||
        (MHD_YES == daemon->at_limit) )
@@ -2917,7 +3075,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
     {
       /* update event masks */
       num_events = epoll_wait (daemon->epoll_fd,
-			       events, MAX_EVENTS, timeout_ms);
+			       events,
+                               MAX_EVENTS,
+                               timeout_ms);
       if (-1 == num_events)
 	{
           const int err = MHD_socket_get_error_ ();
@@ -2932,8 +3092,25 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       for (i=0;i<(unsigned int) num_events;i++)
 	{
+          /* First, check for the values of `ptr` that would indicate
+             that this event is not about a normal connection. */
 	  if (NULL == events[i].data.ptr)
 	    continue; /* shutdown signal! */
+#if HTTPS_SUPPORT
+          if (upgrade_marker == events[i].data.ptr)
+            {
+              /* activity on an upgraded connection, we process
+                 those in a separate epoll() */
+              daemon->upgrade_fd_in_epoll = MHD_NO;
+              run_epoll_for_upgrade (daemon);
+              continue;
+            }
+#endif
+          /* UGH: we're storing pointers and fds in the same union
+             here; incredibly ugly and somewhat risky, even though a
+             pointer with the same numeric value as the wpipe[0] can
+             be expected to be rare... FIXME (a construction similar
+             to what we did with the `upgrade_marker` should do) */
           if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
                (daemon->wpipe[0] == events[i].data.fd) )
             {
@@ -2942,39 +3119,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
               MHD_pipe_drain_ (daemon->wpipe[0]);
               continue;
             }
-	  if (daemon != events[i].data.ptr)
-	    {
-	      /* this is an event relating to a 'normal' connection,
-		 remember the event and if appropriate mark the
-		 connection as 'eready'. */
-	      pos = events[i].data.ptr;
-	      if (0 != (events[i].events & EPOLLIN))
-		{
-		  pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
-		  if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
-			 (pos->read_buffer_size > pos->read_buffer_offset) ) &&
-		       (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
-		    {
-		      EDLL_insert (daemon->eready_head,
-				   daemon->eready_tail,
-				   pos);
-		      pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-		    }
-		}
-	      if (0 != (events[i].events & EPOLLOUT))
-		{
-		  pos->epoll_state |= MHD_EPOLL_STATE_WRITE_READY;
-		  if ( (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
-		       (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
-		    {
-		      EDLL_insert (daemon->eready_head,
-				   daemon->eready_tail,
-				   pos);
-		      pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-		    }
-		}
-	    }
-	  else /* must be listen socket */
+	  if (daemon == events[i].data.ptr)
 	    {
 	      /* run 'accept' until it fails or we are not allowed to take
 		 on more connections */
@@ -2984,8 +3129,39 @@ MHD_epoll (struct MHD_Daemon *daemon,
 		      (series_length < 128) &&
                       (MHD_NO == daemon->at_limit) )
                 series_length++;
+              continue;
 	    }
-	}
+          /* this is an event relating to a 'normal' connection,
+             remember the event and if appropriate mark the
+             connection as 'eready'. */
+          pos = events[i].data.ptr;
+          /* normal processing: update read/write data */
+          if (0 != (events[i].events & EPOLLIN))
+            {
+              pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
+              if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
+                     (pos->read_buffer_size > pos->read_buffer_offset) ) &&
+                   (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+                {
+                  EDLL_insert (daemon->eready_head,
+                               daemon->eready_tail,
+                               pos);
+                  pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+                }
+            }
+          if (0 != (events[i].events & EPOLLOUT))
+            {
+              pos->epoll_state |= MHD_EPOLL_STATE_WRITE_READY;
+              if ( (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
+                   (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+                {
+                  EDLL_insert (daemon->eready_head,
+                               daemon->eready_tail,
+                               pos);
+                  pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+                }
+            }
+        }
     }
 
   /* we handle resumes here because we may have ready connections
@@ -3426,8 +3602,8 @@ parse_options_va (struct MHD_Daemon *daemon,
               if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
                 {
 #ifdef HAVE_MESSAGES
-                  MHD_DLOG(daemon,
-                           "Error initializing DH parameters\n");
+                  MHD_DLOG (daemon,
+                            "Error initializing DH parameters\n");
 #endif
                   return MHD_NO;
                 }
@@ -3437,8 +3613,8 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                  GNUTLS_X509_FMT_PEM) < 0)
                 {
 #ifdef HAVE_MESSAGES
-                  MHD_DLOG(daemon,
-                           "Bad Diffie-Hellman parameters format\n");
+                  MHD_DLOG (daemon,
+                            "Bad Diffie-Hellman parameters format\n");
 #endif
                   gnutls_dh_params_deinit (daemon->https_mem_dhparams);
                   return MHD_NO;
@@ -3652,6 +3828,38 @@ parse_options_va (struct MHD_Daemon *daemon,
 
 
 #ifdef EPOLL_SUPPORT
+static int
+setup_epoll_fd (struct MHD_Daemon *daemon)
+{
+  int fd;
+
+#ifdef USE_EPOLL_CREATE1
+  fd = epoll_create1 (EPOLL_CLOEXEC);
+#else  /* ! USE_EPOLL_CREATE1 */
+  fd = epoll_create (MAX_EVENTS);
+#endif /* ! USE_EPOLL_CREATE1 */
+  if (MHD_INVALID_SOCKET == fd)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Call to epoll_create1 failed: %s\n",
+                MHD_socket_last_strerr_ ());
+#endif
+      return MHD_INVALID_SOCKET;
+    }
+#if !defined(USE_EPOLL_CREATE1)
+  if (! MHD_socket_noninheritable_ (fd))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Failed to set noninheritable mode on epoll FD.\n");
+#endif
+    }
+#endif /* ! USE_EPOLL_CREATE1 */
+  return fd;
+}
+
+
 /**
  * Setup epoll() FD for the daemon and initialize it to listen
  * on the listen FD.
@@ -3664,29 +3872,17 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
 
-#ifdef USE_EPOLL_CREATE1
-  daemon->epoll_fd = epoll_create1 (EPOLL_CLOEXEC);
-#else  /* ! USE_EPOLL_CREATE1 */
-  daemon->epoll_fd = epoll_create (MAX_EVENTS);
-#endif /* ! USE_EPOLL_CREATE1 */
-  if (-1 == daemon->epoll_fd)
+  daemon->epoll_fd = setup_epoll_fd (daemon);
+  if (MHD_INVALID_SOCKET == daemon->epoll_fd)
+    return MHD_NO;
+#if HTTPS_SUPPORT
+  if (MHD_USE_TLS_EPOLL_UPGRADE == (MHD_USE_TLS_EPOLL_UPGRADE & daemon->options))
     {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Call to epoll_create1 failed: %s\n",
-                MHD_socket_last_strerr_ ());
-#endif
-      return MHD_NO;
+       daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
+       if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
+         return MHD_NO;
     }
-#if !defined(USE_EPOLL_CREATE1)
-  if (!MHD_socket_noninheritable_ (daemon->epoll_fd))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                "Failed to set noninheritable mode on epoll FD.\n");
 #endif
-    }
-#endif /* ! USE_EPOLL_CREATE1 */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
@@ -3788,6 +3984,9 @@ MHD_start_daemon_va (unsigned int flags,
   memset (daemon, 0, sizeof (struct MHD_Daemon));
 #ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
+#if HTTPS_SUPPORT
+  daemon->epoll_upgrade_fd = -1;
+#endif
 #endif
   /* try to open listen socket */
 #if HTTPS_SUPPORT
@@ -3842,7 +4041,7 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    if (!MHD_itc_nonblocking_(daemon->wpipe[0]))
+    if (! MHD_itc_nonblocking_(daemon->wpipe[0]))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -4482,6 +4681,10 @@ thread_failed:
 #ifdef EPOLL_SUPPORT
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
+#if HTTPS_SUPPORT
+  if (-1 != daemon->epoll_upgrade_fd)
+    close (daemon->epoll_upgrade_fd);
+#endif
 #endif
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
@@ -4710,6 +4913,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  if ( (-1 != daemon->worker_pool[i].epoll_fd) &&
 	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_fd)) )
 	    MHD_PANIC ("close failed\n");
+#if HTTPS_SUPPORT
+	  if ( (-1 != daemon->worker_pool[i].epoll_upgrade_fd) &&
+	       (0 != MHD_socket_close_ (daemon->worker_pool[i].epoll_upgrade_fd)) )
+	    MHD_PANIC ("close failed\n");
+#endif
 #endif
           /* Individual pipes are always used */
           if (1)
@@ -4762,6 +4970,12 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
        (-1 != daemon->epoll_fd) &&
        (0 != MHD_socket_close_ (daemon->epoll_fd)) )
     MHD_PANIC ("close failed\n");
+#if HTTPS_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+       (-1 != daemon->epoll_upgrade_fd) &&
+       (0 != MHD_socket_close_ (daemon->epoll_upgrade_fd)) )
+    MHD_PANIC ("close failed\n");
+#endif
 #endif
 
 #ifdef DAUTH_SUPPORT

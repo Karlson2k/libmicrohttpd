@@ -599,7 +599,8 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                     enum MHD_UpgradeAction action,
                     ...)
 {
-  struct MHD_Daemon *daemon = urh->connection->daemon;
+  struct MHD_Connection *connection = urh->connection;
+  struct MHD_Daemon *daemon = connection->daemon;
 
   switch (action)
   {
@@ -611,18 +612,46 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
         DLL_remove (daemon->urh_head,
                     daemon->urh_tail,
                     urh);
-        /* FIXME: if running in epoll()-mode, do we have
-           to remove any of the FDs from any epoll-sets here? */
-        if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
-             (0 != MHD_socket_close_ (urh->app_socket)) )
-          MHD_PANIC ("close failed\n");
-        if ( (MHD_INVALID_SOCKET != urh->mhd_socket) &&
-             (0 != MHD_socket_close_ (urh->mhd_socket)) )
-          MHD_PANIC ("close failed\n");
+        if (0 != (daemon->options & MHD_USE_EPOLL))
+          {
+            /* epoll documentation suggests that closing a FD
+               automatically removes it from the epoll set; however,
+               this is not true as if we fail to do manually remove it,
+               we are still seeing an event for this fd in epoll,
+               causing grief (use-after-free...) --- at least on my
+               system. */
+            if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                EPOLL_CTL_DEL,
+                                connection->socket_fd,
+                                NULL))
+              MHD_PANIC ("Failed to remove FD from epoll set\n");
+          }
+        if (MHD_INVALID_SOCKET != urh->app.socket)
+          {
+            if (0 != MHD_socket_close_ (urh->app.socket))
+              MHD_PANIC ("close failed\n");
+          }
+        if (MHD_INVALID_SOCKET != urh->mhd.socket)
+          {
+            /* epoll documentation suggests that closing a FD
+               automatically removes it from the epoll set; however,
+               this is not true as if we fail to do manually remove it,
+               we are still seeing an event for this fd in epoll,
+               causing grief (use-after-free...) --- at least on my
+               system. */
+            if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+                 (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                  EPOLL_CTL_DEL,
+                                  urh->mhd.socket,
+                                  NULL)) )
+              MHD_PANIC ("Failed to remove FD from epoll set\n");
+            if (0 != MHD_socket_close_ (urh->mhd.socket))
+              MHD_PANIC ("close failed\n");
+          }
       }
 #endif
-    MHD_resume_connection (urh->connection);
-    MHD_connection_close_ (urh->connection,
+    MHD_resume_connection (connection);
+    MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
     free (urh);
     return MHD_YES;
@@ -691,6 +720,15 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       free (urh);
       return MHD_NO;
     }
+    if ( (! MHD_itc_nonblocking_(sv[0])) ||
+         (! MHD_itc_nonblocking_(sv[1])) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+		  "Failed to make read side of inter-thread control channel non-blocking: %s\n",
+		  MHD_pipe_last_strerror_ ());
+#endif
+      }
     if ( (! MHD_SCKT_FD_FITS_FDSET_(sv[1], NULL)) &&
          (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
       {
@@ -707,8 +745,12 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         free (urh);
         return MHD_NO;
       }
-    urh->app_socket = sv[0];
-    urh->mhd_socket = sv[1];
+    urh->app.socket = sv[0];
+    urh->app.urh = urh;
+    urh->app.celi = MHD_EPOLL_STATE_UNREADY;
+    urh->mhd.socket = sv[1];
+    urh->mhd.urh = urh;
+    urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
     pool = connection->pool;
     avail = MHD_pool_get_free (pool);
     if (avail < 8)
@@ -740,26 +782,80 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                connection->client_context,
                                connection->read_buffer,
                                rbo,
-                               urh->app_socket,
+                               urh->app.socket,
                                urh);
     /* As far as MHD is concerned, this connection is
        suspended; it will be resumed once we are done
        in the #MHD_upgrade_action() function */
     MHD_suspend_connection (connection);
-    urh->celi_mhd = MHD_EPOLL_STATE_UNREADY;
-    urh->celi_client = MHD_EPOLL_STATE_UNREADY;
-    /* FIXME: is it possible we did not fully drain the client
-       socket yet and are thus read-ready already? This may
-       matter if we are in epoll() edge triggered mode... */
+
     /* Launch IO processing by the event loop */
-    /* FIXME: this will not work (yet) for thread-per-connection processing */
-    DLL_insert (connection->daemon->urh_head,
-                connection->daemon->urh_tail,
+    if (0 != (daemon->options & MHD_USE_EPOLL))
+      {
+        /* We're running with epoll(), need to add the sockets
+           to the event set of the daemon's `epoll_upgrade_fd` */
+        struct epoll_event event;
+
+        EXTRA_CHECK (MHD_SOCKET_INVALID != daemon->epoll_upgrade_fd);
+        /* First, add network socket */
+        event.events = EPOLLIN | EPOLLOUT;
+        event.data.ptr = &urh->app;
+        if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                            EPOLL_CTL_ADD,
+                            connection->socket_fd,
+                            &event))
+	{
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Call to epoll_ctl failed: %s\n",
+                    MHD_socket_last_strerr_ ());
+#endif
+          if (0 != MHD_socket_close_ (sv[0]))
+            MHD_PANIC ("close failed\n");
+          if (0 != MHD_socket_close_ (sv[1]))
+            MHD_PANIC ("close failed\n");
+          free (urh);
+          return MHD_NO;
+	}
+
+        /* Second, add our end of the UNIX socketpair() */
+        event.events = EPOLLIN | EPOLLOUT;
+        event.data.ptr = &urh->mhd;
+        if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                            EPOLL_CTL_ADD,
+                            urh->mhd.socket,
+                            &event))
+	{
+          event.events = EPOLLIN | EPOLLOUT;
+          event.data.ptr = &urh->app;
+          if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                              EPOLL_CTL_DEL,
+                              connection->socket_fd,
+                              &event))
+            MHD_PANIC ("Error cleaning up while handling epoll error");
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Call to epoll_ctl failed: %s\n",
+                    MHD_socket_last_strerr_ ());
+#endif
+          if (0 != MHD_socket_close_ (sv[0]))
+            MHD_PANIC ("close failed\n");
+          if (0 != MHD_socket_close_ (sv[1]))
+            MHD_PANIC ("close failed\n");
+          free (urh);
+          return MHD_NO;
+	}
+      }
+
+    /* This takes care of most event loops: simply add to DLL */
+    DLL_insert (daemon->urh_head,
+                daemon->urh_tail,
                 urh);
+    /* FIXME: None of the above will not work (yet) for thread-per-connection processing */
     return MHD_YES;
   }
-  urh->app_socket = MHD_INVALID_SOCKET;
-  urh->mhd_socket = MHD_INVALID_SOCKET;
+  urh->app.socket = MHD_INVALID_SOCKET;
+  urh->mhd.socket = MHD_INVALID_SOCKET;
 #endif
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,

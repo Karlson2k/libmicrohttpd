@@ -3158,6 +3158,8 @@ MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
+
   if ( (NULL == connection) ||
        (NULL == response) ||
        (NULL != connection->response) ||
@@ -3168,17 +3170,28 @@ MHD_queue_response (struct MHD_Connection *connection,
        (NULL != response->upgrade_handler) )
     {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
+      MHD_DLOG (daemon,
                 "Application used invalid status code for 'upgrade' response!\n");
 #endif
       return MHD_NO;
     }
   if ( (NULL != response->upgrade_handler) &&
-       (0 == (connection->daemon->options & MHD_USE_SUSPEND_RESUME)) )
+       (0 == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
+      MHD_DLOG (daemon,
                 "Application attempted 'upgrade' without setting MHD_USE_SUSPEND_RESUME!\n");
+#endif
+      return MHD_NO;
+    }
+  if ( (NULL != response->upgrade_handler) &&
+       (0 != (MHD_USE_EPOLL & daemon->options)) &&
+       (0 != (MHD_USE_TLS & daemon->options)) &&
+       (MHD_USE_TLS_EPOLL_UPGRADE != (MHD_USE_TLS_EPOLL_UPGRADE & daemon->options)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                "Application attempted 'upgrade' HTTPS connection in epoll mode without setting MHD_USE_HTTPS_EPOLL_UPGRADE!\n");
 #endif
       return MHD_NO;
     }

@@ -899,6 +899,45 @@ struct MHD_Connection
 #define RESERVE_EBUF_SIZE 8
 
 /**
+ * Context we pass to epoll() for each of the two sockets
+ * of a `struct MHD_UpgradeResponseHandle`.  We need to do
+ * this so we can distinguish the two sockets when epoll()
+ * gives us event notifications.
+ */
+struct UpgradeEpollHandle
+{
+  /**
+   * Reference to the overall response handle this struct is
+   * included within.
+   */
+  struct MHD_UpgradeResponseHandle *urh;
+
+  /**
+   * The socket this event is kind-of about.  Note that this is NOT
+   * necessarily the socket we are polling on, as for when we read
+   * from TLS, we epoll() on the connection's socket
+   * (`urh->connection->socket_fd`), while this then the application's
+   * socket (where the application will read from).  Nevertheless, for
+   * the application to read, we need to first read from TLS, hence
+   * the two are related.
+   *
+   * Similarly, for writing to TLS, this epoll() will be on the
+   * connection's `socket_fd`, and this will merely be the FD which
+   * the applicatio would write to.  Hence this struct must always be
+   * interpreted based on which field in `struct
+   * MHD_UpgradeResponseHandle` it is (`app` or `mhd`).
+   */
+  MHD_socket socket;
+
+  /**
+   * IO-state of the @e socket (or the connection's `socket_fd`).
+   */
+  enum MHD_EpollState celi;
+
+};
+
+
+/**
  * Handle given to the application to manage special
  * actions relating to MHD responses that "upgrade"
  * the HTTP protocol (i.e. to WebSockets).
@@ -960,23 +999,13 @@ struct MHD_UpgradeResponseHandle
   /**
    * The socket we gave to the application (r/w).
    */
-  MHD_socket app_socket;
+  struct UpgradeEpollHandle app;
 
   /**
    * If @a app_sock was a socketpair, our end of it, otherwise
    * #MHD_INVALID_SOCKET; (r/w).
    */
-  MHD_socket mhd_socket;
-
-  /**
-   * IO-state of the @e mhd_socket.
-   */
-  enum MHD_EpollState celi_mhd;
-
-  /**
-   * IO-state of the @e connection's socket.
-   */
-  enum MHD_EpollState celi_client;
+  struct UpgradeEpollHandle mhd;
 
   /**
    * Emergency IO buffer we use in case the memory pool has literally
@@ -1257,10 +1286,25 @@ struct MHD_Daemon
   int epoll_fd;
 
   /**
-   * MHD_YES if the listen socket is in the 'epoll' set,
-   * MHD_NO if not.
+   * #MHD_YES if the listen socket is in the 'epoll' set,
+   * #MHD_NO if not.
    */
   int listen_socket_in_epoll;
+
+#if HTTPS_SUPPORT
+  /**
+   * File descriptor associated with the #run_epoll_for_upgrade() loop.
+   * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
+   */
+  int epoll_upgrade_fd;
+
+  /**
+   * #MHD_YES if @e epoll_upgrade_fd is in the 'epoll' set,
+   * #MHD_NO if not.
+   */
+  int upgrade_fd_in_epoll;
+#endif
+
 #endif
 
   /**

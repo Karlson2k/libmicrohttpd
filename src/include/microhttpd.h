@@ -538,9 +538,14 @@ enum MHD_FLAG
   MHD_USE_DEBUG = 1,
 
   /**
-   * Run in HTTPS mode.
+   * Run in HTTPS mode.  Same as #MHD_USE_TLS, just using the historic name.
    */
   MHD_USE_SSL = 2,
+
+  /**
+   * Run in HTTPS mode.  The modern protocol is called TLS.
+   */
+  MHD_USE_TLS = 2,
 
   /**
    * Run using one thread per connection.
@@ -672,7 +677,17 @@ enum MHD_FLAG
    * kernel >= 3.6.  On other systems, using this option cases #MHD_start_daemon
    * to fail.
    */
-  MHD_USE_TCP_FASTOPEN = 16384
+  MHD_USE_TCP_FASTOPEN = 16384,
+
+  /**
+   * You need to set this option if you want to use epoll() in
+   * combination with HTTPS connections and switching protocols via
+   * connection upgrades (via #MHD_create_response_for_upgrade()).
+   * This flag is required as under these circumstances we need to
+   * open up an extra file descriptor, which we do not want to do
+   * unless necessary.
+   */
+  MHD_USE_TLS_EPOLL_UPGRADE = 32768 | MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL | MHD_USE_TLS
 
 };
 
