@@ -581,35 +581,6 @@ MHD_create_response_from_buffer (size_t size,
 
 
 /**
- * Handle given to the application to manage special
- * actions relating to MHD responses that "upgrade"
- * the HTTP protocol (i.e. to WebSockets).
- */
-struct MHD_UpgradeResponseHandle
-{
-
-  /**
-   * The connection for which this is an upgrade handle.  Note that
-   * because a response may be shared over many connections, this may
-   * not be the only upgrade handle for the response of this connection.
-   */
-  struct MHD_Connection *connection;
-
-  /**
-   * The socket we gave to the application (r/w).
-   */
-  MHD_socket app_socket;
-
-  /**
-   * If @a app_sock was a socketpair, our end of it, otherwise
-   * #MHD_INVALID_SOCKET; (r/w).
-   */
-  MHD_socket mhd_socket;
-
-};
-
-
-/**
  * This connection-specific callback is provided by MHD to
  * applications (unusual) during the #MHD_UpgradeHandler.
  * It allows applications to perform 'special' actions on
@@ -702,7 +673,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     connection->read_buffer_offset = 0;
     response->upgrade_handler (response->upgrade_handler_cls,
                                connection,
-                               connection->con_cls,
+                               connection->client_context,
                                connection->read_buffer,
                                rbo,
                                urh->app_socket,
@@ -723,6 +694,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   connection->read_buffer_offset = 0;
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,
+                             connection->client_context,
                              connection->read_buffer,
                              rbo,
                              connection->socket_fd,

@@ -147,22 +147,22 @@ enum MHD_ConnectionEventLoopInfo
   /**
    * We are waiting to be able to read.
    */
-  MHD_EVENT_LOOP_INFO_READ = 0,
+  MHD_EVENT_LOOP_INFO_READ = 1,
 
   /**
    * We are waiting to be able to write.
    */
-  MHD_EVENT_LOOP_INFO_WRITE = 1,
+  MHD_EVENT_LOOP_INFO_WRITE = 2,
 
   /**
    * We are waiting for the application to provide data.
    */
-  MHD_EVENT_LOOP_INFO_BLOCK = 2,
+  MHD_EVENT_LOOP_INFO_BLOCK = 4,
 
   /**
    * We are finished and are awaiting cleanup.
    */
-  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+  MHD_EVENT_LOOP_INFO_CLEANUP = 8
 };
 
 
@@ -885,6 +885,56 @@ struct MHD_Connection
    */
   int resuming;
 };
+
+
+/**
+ * Handle given to the application to manage special
+ * actions relating to MHD responses that "upgrade"
+ * the HTTP protocol (i.e. to WebSockets).
+ */
+struct MHD_UpgradeResponseHandle
+{
+
+  /**
+   * Kept in a DLL per daemon.
+   */
+  struct MHD_UpgradeResponseHandle *next;
+
+  /**
+   * Kept in a DLL per daemon.
+   */
+  struct MHD_UpgradeResponseHandle *prev;
+
+  /**
+   * The connection for which this is an upgrade handle.  Note that
+   * because a response may be shared over many connections, this may
+   * not be the only upgrade handle for the response of this connection.
+   */
+  struct MHD_Connection *connection;
+
+  /**
+   * The socket we gave to the application (r/w).
+   */
+  MHD_socket app_socket;
+
+  /**
+   * IO-state of the @e app_socket.
+   */
+  enum MHD_ConnectionEventLoopInfo celi_app;
+
+  /**
+   * If @a app_sock was a socketpair, our end of it, otherwise
+   * #MHD_INVALID_SOCKET; (r/w).
+   */
+  MHD_socket mhd_socket;
+
+  /**
+   * IO-state of the @e mhd_socket.
+   */
+  enum MHD_ConnectionEventLoopInfo celi_mhd;
+
+};
+
 
 /**
  * Signature of function called to log URI accesses.
