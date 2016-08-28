@@ -654,14 +654,15 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                unsigned int fd_setsize)
 {
   struct MHD_Connection *pos;
+  struct MHD_UpgradeResponseHandle *urh;
   int result = MHD_YES;
 
-  if ( (NULL == daemon)
-       || (NULL == read_fd_set)
-       || (NULL == write_fd_set)
-       || (MHD_YES == daemon->shutdown)
-       || (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-       || (0 != (daemon->options & MHD_USE_POLL)))
+  if ( (NULL == daemon) ||
+       (NULL == read_fd_set) ||
+       (NULL == write_fd_set) ||
+       (MHD_YES == daemon->shutdown) ||
+       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
+       (0 != (daemon->options & MHD_USE_POLL)))
     return MHD_NO;
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
@@ -669,11 +670,17 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
       /* we're in epoll mode, use the epoll FD as a stand-in for
 	 the entire event set */
 
-      return MHD_add_to_fd_set_ (daemon->epoll_fd, read_fd_set, max_fd, fd_setsize) ? MHD_YES : MHD_NO;
+      return MHD_add_to_fd_set_ (daemon->epoll_fd,
+                                 read_fd_set,
+                                 max_fd,
+                                 fd_setsize) ? MHD_YES : MHD_NO;
     }
 #endif
-  if (MHD_INVALID_SOCKET != daemon->socket_fd &&
-      !MHD_add_to_fd_set_ (daemon->socket_fd, read_fd_set, max_fd, fd_setsize))
+  if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
+       (! MHD_add_to_fd_set_ (daemon->socket_fd,
+                              read_fd_set,
+                              max_fd,
+                              fd_setsize)) )
     result = MHD_NO;
 
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -681,25 +688,64 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
       switch (pos->event_loop_info)
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
-	  if (!MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	  if (! MHD_add_to_fd_set_ (pos->socket_fd,
+                                    read_fd_set,
+                                    max_fd,
+                                    fd_setsize))
 	    result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
-	  if (!MHD_add_to_fd_set_ (pos->socket_fd, write_fd_set, max_fd, fd_setsize))
+	  if (! MHD_add_to_fd_set_ (pos->socket_fd,
+                                    write_fd_set,
+                                    max_fd,
+                                    fd_setsize))
 	    result = MHD_NO;
-	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      !MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	  if ( (pos->read_buffer_size > pos->read_buffer_offset) &&
+	      ! MHD_add_to_fd_set_ (pos->socket_fd,
+                                    read_fd_set,
+                                    max_fd,
+                                    fd_setsize))
             result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
-	  if (pos->read_buffer_size > pos->read_buffer_offset &&
-	      !MHD_add_to_fd_set_ (pos->socket_fd, read_fd_set, max_fd, fd_setsize))
+	  if ( (pos->read_buffer_size > pos->read_buffer_offset) &&
+	      ! MHD_add_to_fd_set_ (pos->socket_fd,
+                                    read_fd_set,
+                                    max_fd,
+                                    fd_setsize))
             result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_CLEANUP:
 	  /* this should never happen */
 	  break;
 	}
+    }
+  for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+    {
+      if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->celi_mhd)) &&
+           (! MHD_add_to_fd_set_ (urh->mhd_socket,
+                                  read_fd_set,
+                                  max_fd,
+                                  fd_setsize)) )
+        result = MHD_NO;
+      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_mhd)) &&
+           (! MHD_add_to_fd_set_ (urh->mhd_socket,
+                                  write_fd_set,
+                                  max_fd,
+                                  fd_setsize)) )
+        result = MHD_NO;
+      if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->celi_client)) &&
+           (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
+                                  read_fd_set,
+                                  max_fd,
+                                  fd_setsize)) )
+        result = MHD_NO;
+      if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->celi_client)) &&
+           (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
+                                  write_fd_set,
+                                  max_fd,
+                                  fd_setsize)) )
+        result = MHD_NO;
     }
 #if DEBUG_CONNECT
 #ifdef HAVE_MESSAGES
@@ -714,9 +760,8 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 
 
 /**
- * Call the handlers for a connection in the
- * appropriate order based on the readiness as
- * detected by the event loop.
+ * Call the handlers for a connection in the appropriate order based
+ * on the readiness as detected by the event loop.
  *
  * @param con connection to handle
  * @param read_ready set if the socket is ready for reading
@@ -1239,7 +1284,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-  if ( (!MHD_SCKT_FD_FITS_FDSET_(client_socket, NULL)) &&
+  if ( (! MHD_SCKT_FD_FITS_FDSET_(client_socket, NULL)) &&
        (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
     {
 #ifdef HAVE_MESSAGES
@@ -1791,7 +1836,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
      already set in MHD_USE_EPOLL_TURBO mode */
   if (0 != (daemon->options & MHD_USE_EPOLL_TURBO))
     {
-      if (!MHD_socket_nonblocking_ (client_socket))
+      if (! MHD_socket_nonblocking_ (client_socket))
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
@@ -1799,7 +1844,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                     MHD_socket_last_strerr_());
 #endif
         }
-      if (!MHD_socket_noninheritable_ (client_socket))
+      if (! MHD_socket_noninheritable_ (client_socket))
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
@@ -1858,7 +1903,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       if (MHD_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT_(err))
         return MHD_NO; /* do not print error if client just disconnected early */
 #ifdef HAVE_MESSAGES
-      if ( !MHD_SCKT_ERR_IS_EAGAIN_ (err) )
+      if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) )
         MHD_DLOG (daemon,
 		  "Error accepting connection: %s\n",
 		  MHD_socket_strerr_(err));
@@ -1895,7 +1940,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       return MHD_NO;
     }
 #if !defined(USE_ACCEPT4) || !defined(HAVE_SOCK_NONBLOCK)
-  if (!MHD_socket_nonblocking_ (s))
+  if (! MHD_socket_nonblocking_ (s))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -1905,7 +1950,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
 #endif /* !USE_ACCEPT4 || !HAVE_SOCK_NONBLOCK */
 #if !defined(USE_ACCEPT4) || !defined(SOCK_CLOEXEC)
-  if (!MHD_socket_noninheritable_ (s))
+  if (! MHD_socket_noninheritable_ (s))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -1920,8 +1965,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
             s);
 #endif
 #endif
-  (void) internal_add_connection (daemon, s,
-				  addr, addrlen,
+  (void) internal_add_connection (daemon,
+                                  s,
+				  addr,
+                                  addrlen,
 				  MHD_NO);
   return MHD_YES;
 }

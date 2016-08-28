@@ -147,22 +147,22 @@ enum MHD_ConnectionEventLoopInfo
   /**
    * We are waiting to be able to read.
    */
-  MHD_EVENT_LOOP_INFO_READ = 1,
+  MHD_EVENT_LOOP_INFO_READ = 0,
 
   /**
    * We are waiting to be able to write.
    */
-  MHD_EVENT_LOOP_INFO_WRITE = 2,
+  MHD_EVENT_LOOP_INFO_WRITE = 1,
 
   /**
    * We are waiting for the application to provide data.
    */
-  MHD_EVENT_LOOP_INFO_BLOCK = 4,
+  MHD_EVENT_LOOP_INFO_BLOCK = 2,
 
   /**
    * We are finished and are awaiting cleanup.
    */
-  MHD_EVENT_LOOP_INFO_CLEANUP = 8
+  MHD_EVENT_LOOP_INFO_CLEANUP = 3
 };
 
 
@@ -918,11 +918,6 @@ struct MHD_UpgradeResponseHandle
   MHD_socket app_socket;
 
   /**
-   * IO-state of the @e app_socket.
-   */
-  enum MHD_ConnectionEventLoopInfo celi_app;
-
-  /**
    * If @a app_sock was a socketpair, our end of it, otherwise
    * #MHD_INVALID_SOCKET; (r/w).
    */
@@ -931,7 +926,13 @@ struct MHD_UpgradeResponseHandle
   /**
    * IO-state of the @e mhd_socket.
    */
-  enum MHD_ConnectionEventLoopInfo celi_mhd;
+  enum MHD_EpollState celi_mhd;
+
+  /**
+   * IO-state of the @e connection's socket.
+   */
+  enum MHD_EpollState celi_client;
+
 
 };
 
@@ -1025,6 +1026,16 @@ struct MHD_Daemon
    */
   struct MHD_Connection *eready_tail;
 #endif
+
+  /**
+   * Head of DLL of upgrade response handles we are processing.
+   */
+  struct MHD_UpgradeResponseHandle *urh_head;
+
+  /**
+   * Tail of DLL of upgrade response handles we are processing.
+   */
+  struct MHD_UpgradeResponseHandle *urh_tail;
 
   /**
    * Head of the XDLL of ALL connections with a default ('normal')

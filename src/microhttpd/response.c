@@ -597,10 +597,20 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                     enum MHD_UpgradeAction action,
                     ...)
 {
+  struct MHD_Daemon *daemon = urh->connection->daemon;
+
   switch (action)
   {
   case MHD_UPGRADE_ACTION_CLOSE:
     /* Application is done with this connection, tear it down! */
+    if (0 != (daemon->options & MHD_USE_SSL) )
+      {
+        DLL_remove (daemon->urh_head,
+                    daemon->urh_tail,
+                    urh);
+        /* FIXME: if running in epoll()-mode, do we have
+           to remove any of the FDs from any epoll-sets here? */
+      }
     if ( (MHD_INVALID_SOCKET != urh->app_socket) &&
          (0 != MHD_socket_close_ (urh->app_socket)) )
       MHD_PANIC ("close failed\n");
@@ -636,6 +646,7 @@ int
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_UpgradeResponseHandle *urh;
   int sv[2];
   size_t rbo;
@@ -645,7 +656,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                MHD_HTTP_HEADER_UPGRADE))
     {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
+      MHD_DLOG (daemon,
                 "Invalid response for upgrade: application failed to set the 'Upgrade' header!\n");
 #endif
       return MHD_NO;
@@ -655,7 +666,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   if (NULL == urh)
     return MHD_NO;
 #if HTTPS_SUPPORT
-  if (0 != (connection->daemon->options & MHD_USE_SSL) )
+  if (0 != (daemon->options & MHD_USE_SSL) )
   {
     /* FIXME: this is non-portable for now; W32 port pending... */
     if (0 != socketpair (AF_UNIX,
@@ -666,6 +677,23 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       free (urh);
       return MHD_NO;
     }
+    if ( (! MHD_SCKT_FD_FITS_FDSET_(sv[1], NULL)) &&
+         (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  "Socketpair descriptor larger than FD_SETSIZE: %d > %d\n",
+                  (int) sv[1],
+                  (int) FD_SETSIZE);
+#endif
+        if (0 != MHD_socket_close_ (sv[0]))
+          MHD_PANIC ("close failed\n");
+        if (0 != MHD_socket_close_ (sv[1]))
+          MHD_PANIC ("close failed\n");
+        free (urh);
+        return MHD_NO;
+      }
+
     urh->app_socket = sv[0];
     urh->mhd_socket = sv[1];
     urh->connection = connection;
@@ -682,8 +710,14 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
        suspended; it will be resumed once we are done
        in the #MHD_upgrade_action() function */
     MHD_suspend_connection (connection);
-    /* FIXME: also need to start some processing logic in _all_ MHD
-       event loops for the sv traffic! (NOT IMPLEMENTED!!!) */
+    urh->celi_mhd = MHD_EPOLL_STATE_UNREADY;
+    urh->celi_client = MHD_EPOLL_STATE_UNREADY;
+    /* FIXME: is it possible we did not fully drain the client
+       socket yet and are thus read-ready already? This may
+       matter if we are in epoll() edge triggered mode... */
+    DLL_insert (connection->daemon->urh_head,
+                connection->daemon->urh_tail,
+                urh);
     return MHD_YES;
   }
 #endif
