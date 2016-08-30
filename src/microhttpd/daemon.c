@@ -4031,7 +4031,7 @@ MHD_start_daemon_va (unsigned int flags,
     use_pipe = 0; /* useless if we are using 'external' select */
   if (use_pipe)
   {
-    if (0 != MHD_pipe_ (daemon->wpipe))
+    if (!MHD_pipe_ (daemon->wpipe))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4561,7 +4561,7 @@ MHD_start_daemon_va (unsigned int flags,
           /* Always use individual control pipes */
           if (1)
             {
-              if (0 != MHD_pipe_ (d->wpipe))
+              if (!MHD_pipe_ (d->wpipe))
                 {
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,

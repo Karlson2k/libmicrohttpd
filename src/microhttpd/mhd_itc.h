@@ -57,13 +57,9 @@
 /* MHD_pipe_ create pipe (!MHD_DONT_USE_PIPES) /
  *           create two connected sockets (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_(fdarr) pipe((fdarr))
+#  define MHD_pipe_(fdarr) (!pipe((fdarr)))
 #else /* MHD_DONT_USE_PIPES */
-#  if !defined(_WIN32) || defined(__CYGWIN__)
-#    define MHD_pipe_(fdarr) socketpair(AF_LOCAL, SOCK_STREAM, 0, (fdarr))
-#  else /* !defined(_WIN32) || defined(__CYGWIN__) */
-#    define MHD_pipe_(fdarr) MHD_W32_pair_of_sockets_((fdarr))
-#  endif /* !defined(_WIN32) || defined(__CYGWIN__) */
+#  define MHD_pipe_(fdarr) MHD_socket_pair_((fdarr))
 #endif /* MHD_DONT_USE_PIPES */
 
 /* MHD_pipe_last_strerror_ is description string of last errno (!MHD_DONT_USE_PIPES) /
@@ -104,15 +100,6 @@
 #else
 #  define MHD_INVALID_PIPE_ MHD_INVALID_SOCKET
 #endif
-
-#if defined(_WIN32) && !defined(__CYGWIN__)
-/**
- * Create pair of mutually connected TCP/IP sockets on loopback address
- * @param sockets_pair array to receive resulted sockets
- * @return zero on success, -1 otherwise
- */
-int MHD_W32_pair_of_sockets_(SOCKET sockets_pair[2]);
-#endif /* _WIN32 && ! __CYGWIN__ */
 
 #ifndef MHD_DONT_USE_PIPES
 /**

@@ -571,6 +571,21 @@
 
 /* Socket functions */
 
+#if defined(MHD_POSIX_SOCKETS) && defined(AF_LOCAL)
+#  define MHD_socket_pair_(fdarr) (!socketpair(AF_LOCAL, SOCK_STREAM, 0, (fdarr)))
+#elif defined(MHD_POSIX_SOCKETS) && defined(AF_UNIX)
+#  define MHD_socket_pair_(fdarr) (!socketpair(AF_UNIX, SOCK_STREAM, 0, (fdarr)))
+#elif defined(MHD_WINSOCK_SOCKETS)
+   /**
+    * Create pair of mutually connected TCP/IP sockets on loopback address
+    * @param sockets_pair array to receive resulted sockets
+    * @return non-zero if succeeded, zero otherwise
+    */
+   int MHD_W32_socket_pair_(SOCKET sockets_pair[2]);
+
+#  define MHD_socket_pair_(fdarr) MHD_W32_pair_of_sockets_((fdarr))
+#endif
+
 /**
  * Add @a fd to the @a set.  If @a fd is
  * greater than @a max_fd, set @a max_fd to @a fd.
