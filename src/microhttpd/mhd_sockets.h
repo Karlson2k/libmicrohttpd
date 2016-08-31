@@ -52,6 +52,9 @@
  * for socket function.
  */
 #if defined(MHD_POSIX_SOCKETS)
+#  ifdef HAVE_SYS_TYPES_H
+#    include <sys/types.h> /* required on old platforms */
+#  endif
 #  ifdef HAVE_SYS_SOCKET_H
 #    include <sys/socket.h>
 #  endif
@@ -95,9 +98,6 @@
 #  ifdef HAVE_STRING_H
 #    include <string.h> /* for strerror() */
 #  endif
-#  if defined(HAVE_SYS_TYPES_H)
-#    include <sys/types.h> /* required on old platforms */
-#  endif /* (!HAVE_SYS_SOCKET_H || !HAVE_SYS_SOCKET_H) && HAVE_SYS_TYPES_H */
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1
