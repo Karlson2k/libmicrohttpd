@@ -1217,7 +1217,7 @@ union MHD_ConnectionInfo
    * Socket-specific client context.  Points to the same address as
    * the "socket_context" of the #MHD_NotifyConnectionCallback.
    */
-  void *socket_context;
+  void **socket_context;
 };
 
 
