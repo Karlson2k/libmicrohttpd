@@ -16,7 +16,6 @@
      License along with this library; if not, write to the Free Software
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
 /**
  * @file response.c
  * @brief  Methods for managing response objects
@@ -34,6 +33,7 @@
 #include "connection.h"
 #include "memorypool.h"
 
+#include <sys/ioctl.h>
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -202,7 +202,9 @@ MHD_get_response_headers (struct MHD_Response *response,
       numHeaders++;
       if ((NULL != iterator) &&
           (MHD_YES != iterator (iterator_cls,
-                                pos->kind, pos->header, pos->value)))
+                                pos->kind,
+                                pos->header,
+                                pos->value)))
         break;
     }
   return numHeaders;
@@ -337,16 +339,23 @@ file_reader (void *cls,
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
 #if defined(HAVE_LSEEK64)
-  if (lseek64 (response->fd, offset64, SEEK_SET) != offset64)
+  if (lseek64 (response->fd,
+               offset64,
+               SEEK_SET) != offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
 #elif defined(HAVE___LSEEKI64)
-  if (_lseeki64 (response->fd, offset64, SEEK_SET) != offset64)
+  if (_lseeki64 (response->fd,
+                 offset64,
+                 SEEK_SET) != offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
 #else /* !HAVE___LSEEKI64 */
-  if (sizeof(off_t) < sizeof(uint64_t) && offset64 > (uint64_t)INT32_MAX)
+  if ( (sizeof(off_t) < sizeof (uint64_t)) &&
+       (offset64 > (uint64_t)INT32_MAX) )
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
-  if (lseek (response->fd, (off_t)offset64, SEEK_SET) != (off_t)offset64)
+  if (lseek (response->fd,
+             (off_t) offset64,
+             SEEK_SET) != (off_t) offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
 #endif
 
@@ -354,12 +363,16 @@ file_reader (void *cls,
   if (max > SSIZE_MAX)
     max = SSIZE_MAX;
 
-  n = read (response->fd, buf, max);
+  n = read (response->fd,
+            buf,
+            max);
 #else  /* _WIN32 */
   if (max > INT32_MAX)
     max = INT32_MAX;
 
-  n = read (response->fd, buf, (unsigned int)max);
+  n = read (response->fd,
+            buf,
+            (unsigned int)max);
 #endif /* _WIN32 */
 
   if (0 == n)
@@ -438,8 +451,10 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
   struct MHD_Response *response;
 
 #if !defined(HAVE___LSEEKI64) && !defined(HAVE_LSEEK64)
-  if (sizeof(uint64_t) > sizeof(off_t) &&
-      (size > (uint64_t)INT32_MAX || offset > (uint64_t)INT32_MAX || (size + offset) >= (uint64_t)INT32_MAX))
+  if ( (sizeof(uint64_t) > sizeof(off_t)) &&
+       ( (size > (uint64_t)INT32_MAX) ||
+         (offset > (uint64_t)INT32_MAX) ||
+         ((size + offset) >= (uint64_t)INT32_MAX) ) )
     return NULL;
 #endif
   if ( ((int64_t)size < 0) ||
@@ -530,7 +545,9 @@ MHD_create_response_from_data (size_t size,
     return NULL;
   if (NULL == (response = malloc (sizeof (struct MHD_Response))))
     return NULL;
-  memset (response, 0, sizeof (struct MHD_Response));
+  memset (response,
+          0,
+          sizeof (struct MHD_Response));
   response->fd = -1;
   if (! MHD_mutex_init_ (&response->mutex))
     {
@@ -675,8 +692,30 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     /* FIXME: not implemented */
     return MHD_NO;
   case MHD_UPGRADE_ACTION_FLUSH:
-    /* FIXME: not implemented */
-    return MHD_NO;
+#if HTTPS_SUPPORT
+    if (0 != (daemon->options & MHD_USE_SSL))
+      {
+        int avail;
+
+        /* First, check that our pipe is empty, to be sure we do
+           have it all in the buffer. */
+        if ( (0 ==
+#if WINDOWS
+              ioctlsocket
+#else
+              ioctl
+#endif
+              (urh->mhd.socket,
+               FIONREAD,
+               &avail)) &&
+             (0 != avail) )
+          return MHD_NO;
+        /* then, refuse 'flush' unless our buffer is empty */
+        if (0 != urh->out_buffer_off)
+          return MHD_NO;
+      }
+#endif
+    return MHD_YES;
   default:
     /* we don't understand this one */
     return MHD_NO;

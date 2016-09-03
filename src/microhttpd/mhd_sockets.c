@@ -337,16 +337,21 @@ MHD_add_to_fd_set_ (MHD_socket fd,
                     MHD_socket *max_fd,
                     unsigned int fd_setsize)
 {
-  if (NULL == set || MHD_INVALID_SOCKET == fd)
+  if ( (NULL == set) ||
+       (MHD_INVALID_SOCKET == fd) )
     return 0;
-  if (!MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd, set, fd_setsize))
+  if (! MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (fd,
+                                         set,
+                                         fd_setsize))
     return 0;
-  MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd, set, fd_setsize);
+  MHD_SCKT_ADD_FD_TO_FDSET_SETSIZE_(fd,
+                                    set,
+                                    fd_setsize);
   if ( (NULL != max_fd) &&
-       ((fd > *max_fd) || (MHD_INVALID_SOCKET == *max_fd)) )
+       ( (fd > *max_fd) ||
+         (MHD_INVALID_SOCKET == *max_fd) ) )
     *max_fd = fd;
-
-  return !0;
+  return ! 0;
 }
 
 

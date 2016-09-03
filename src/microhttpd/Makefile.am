@@ -146,6 +146,10 @@ check_PROGRAMS = \
   test_daemon \
   test_upgrade
 
+if ENABLE_HTTPS
+  check_PROGRAMS += test_upgrade_ssl
+endif
+
 if HAVE_POSTPROCESSOR
 check_PROGRAMS += \
   test_postprocessor \
@@ -169,6 +173,11 @@ test_daemon_LDADD = \
 test_upgrade_SOURCES = \
   test_upgrade.c
 test_upgrade_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+test_upgrade_ssl_SOURCES = \
+  test_upgrade_ssl.c
+test_upgrade_ssl_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_SOURCES = \

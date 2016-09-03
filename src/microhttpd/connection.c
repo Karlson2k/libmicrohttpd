@@ -2354,7 +2354,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               (void) MHD_mutex_unlock_ (&response->mutex);
             if (ret < 0)
               {
-                if (MHD_SCKT_ERR_IS_EINTR_ (err) || MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+                    MHD_SCKT_ERR_IS_EAGAIN_ (err))
                   return MHD_YES;
 #ifdef HAVE_MESSAGES
                 MHD_DLOG (connection->daemon,
@@ -2515,13 +2516,17 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 }
               break;
             }
-          if (MHD_NO == parse_initial_message_line (connection, line, line_len))
-            CONNECTION_CLOSE_ERROR (connection, NULL);
+          if (MHD_NO == parse_initial_message_line (connection,
+                                                    line,
+                                                    line_len))
+            CONNECTION_CLOSE_ERROR (connection,
+                                    NULL);
           else
             connection->state = MHD_CONNECTION_URL_RECEIVED;
           continue;
         case MHD_CONNECTION_URL_RECEIVED:
-          line = get_next_header_line (connection, NULL);
+          line = get_next_header_line (connection,
+                                       NULL);
           if (NULL == line)
             {
               if (MHD_CONNECTION_URL_RECEIVED != connection->state)
@@ -2539,7 +2544,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
               continue;
             }
-          if (MHD_NO == process_header_line (connection, line))
+          if (MHD_NO == process_header_line (connection,
+                                             line))
             {
               transmit_error_response (connection,
                                        MHD_HTTP_BAD_REQUEST,
@@ -2645,7 +2651,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           break;
         case MHD_CONNECTION_BODY_RECEIVED:
-          line = get_next_header_line (connection, NULL);
+          line = get_next_header_line (connection,
+                                       NULL);
           if (NULL == line)
             {
               if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
@@ -2689,7 +2696,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               break;
             }
           if (MHD_NO ==
-              process_broken_line (connection, line, MHD_FOOTER_KIND))
+              process_broken_line (connection,
+                                   line,
+                                   MHD_FOOTER_KIND))
             continue;
           if (0 == line[0])
             {
@@ -3057,17 +3066,17 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     {
 #if HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
-      if (connection->tls_session == NULL)
+      if (NULL == connection->tls_session)
 	return NULL;
       connection->cipher = gnutls_cipher_get (connection->tls_session);
       return (const union MHD_ConnectionInfo *) &connection->cipher;
     case MHD_CONNECTION_INFO_PROTOCOL:
-      if (connection->tls_session == NULL)
+      if (NULL == connection->tls_session)
 	return NULL;
       connection->protocol = gnutls_protocol_get_version (connection->tls_session);
       return (const union MHD_ConnectionInfo *) &connection->protocol;
     case MHD_CONNECTION_INFO_GNUTLS_SESSION:
-      if (connection->tls_session == NULL)
+      if (NULL == connection->tls_session)
 	return NULL;
       return (const union MHD_ConnectionInfo *) &connection->tls_session;
 #endif

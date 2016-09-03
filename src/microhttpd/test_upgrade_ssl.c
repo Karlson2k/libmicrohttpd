@@ -19,7 +19,7 @@
 */
 
 /**
- * @file test_upgrade.c
+ * @file test_upgrade_ssl.c
  * @brief  Testcase for libmicrohttpd upgrading a connection
  * @author Christian Grothoff
  */
@@ -35,9 +35,92 @@
 #endif
 
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <pthread.h>
 #include "mhd_sockets.h"
+
+#include "../testcurl/https/tls_test_keys.h"
+
+
+/**
+ * Thread we use to run the interaction with the upgraded socket.
+ */
+static pthread_t pt;
+
+/**
+ * Will be set to the upgraded socket.
+ */
+static MHD_socket usock;
+
+/**
+ * Fork child that connects via OpenSSL to our @a port.  Allows us to
+ * talk to our port over a socket in @a sp without having to worry
+ * about TLS.
+ *
+ * @param location where the socket is returned
+ * @return -1 on error, otherwise PID of SSL child process
+ */
+static pid_t
+openssl_connect (int *sock,
+                 uint16_t port)
+{
+  pid_t chld;
+  int sp[2];
+  char destination[30];
+
+  if (0 != socketpair (AF_UNIX,
+                       SOCK_STREAM,
+                       0,
+                       sp))
+    return -1;
+  chld = fork ();
+  if (0 != chld)
+    {
+      *sock = sp[1];
+      MHD_socket_close_ (sp[0]);
+      return chld;
+    }
+  MHD_socket_close_ (sp[1]);
+  (void) close (0);
+  (void) close (1);
+  dup2 (sp[0], 0);
+  dup2 (sp[0], 1);
+  close (sp[0]);
+  sprintf (destination,
+           "localhost:%u",
+           (unsigned int) port);
+  execlp ("openssl",
+          "openssl",
+          "s_client",
+          "-connect",
+          destination,
+          "-verify",
+          "0",
+          // "-quiet",
+          (char *) NULL);
+  _exit (1);
+}
+
+
+/**
+ * Change itc FD options to be non-blocking.
+ *
+ * @param fd the FD to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+static void
+make_blocking (MHD_socket fd)
+{
+  int flags;
+
+  flags = fcntl (fd, F_GETFL);
+  if (-1 == flags)
+    return;
+  if ((flags & ~O_NONBLOCK) != flags)
+    fcntl (fd, F_SETFL, flags & ~O_NONBLOCK);
+}
 
 
 static void
@@ -47,6 +130,7 @@ send_all (MHD_socket sock,
   size_t len = strlen (text);
   ssize_t ret;
 
+  make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
       ret = write (sock,
@@ -77,6 +161,7 @@ recv_hdr (MHD_socket sock)
   char c;
   ssize_t ret;
 
+  make_blocking (sock);
   next = '\r';
   i = 0;
   while (i < 4)
@@ -84,6 +169,8 @@ recv_hdr (MHD_socket sock)
       ret = read (sock,
                   &c,
                   1);
+      if (0 == ret)
+        abort (); /* this is fatal */
       if (-1 == ret)
         {
           if (EAGAIN == errno)
@@ -124,11 +211,14 @@ recv_all (MHD_socket sock,
   char buf[len];
   ssize_t ret;
 
+  make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
       ret = read (sock,
                   &buf[off],
                   len - off);
+      if (0 == ret)
+        abort (); /* this is fatal */
       if (-1 == ret)
         {
           if (EAGAIN == errno)
@@ -141,6 +231,43 @@ recv_all (MHD_socket sock,
     }
   if (0 != strncmp (text, buf, len))
     abort();
+}
+
+
+/**
+ * Main function for the thread that runs the interaction with
+ * the upgraded socket.
+ *
+ * @param cls the handle for the upgrade
+ */
+static void *
+run_usock (void *cls)
+{
+  struct MHD_UpgradeResponseHandle *urh = cls;
+
+  fprintf (stderr,
+           "Sending `Hello'\n");
+  send_all (usock,
+            "Hello");
+  fprintf (stderr,
+           "Receiving `World'\n");
+  recv_all (usock,
+            "World");
+  fprintf (stderr,
+           "Sending `Finished'\n");
+  send_all (usock,
+            "Finished");
+  fprintf (stderr,
+           "Closing socket\n");
+  while (MHD_NO ==
+         MHD_upgrade_action (urh,
+                             MHD_UPGRADE_ACTION_FLUSH))
+    usleep (1000);
+  MHD_upgrade_action (urh,
+                      MHD_UPGRADE_ACTION_CLOSE);
+  fprintf (stderr,
+           "Thread terminating\n");
+  return NULL;
 }
 
 
@@ -205,11 +332,13 @@ upgrade_cb (void *cls,
             MHD_socket sock,
             struct MHD_UpgradeResponseHandle *urh)
 {
-  send_all (sock, "Hello");
-  recv_all (sock, "World");
-  send_all (sock, "Finished");
-  MHD_upgrade_action (urh,
-                      MHD_UPGRADE_ACTION_CLOSE);
+  usock = sock;
+  if (0 != extra_in_size)
+    abort ();
+  pthread_create (&pt,
+                  NULL,
+                  &run_usock,
+                  urh);
 }
 
 
@@ -283,35 +412,44 @@ test_upgrade_internal_select ()
 {
   struct MHD_Daemon *d;
   MHD_socket sock;
-  struct sockaddr_in sa;
+  pid_t pid;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME,
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME | MHD_USE_TLS,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
                         MHD_OPTION_END);
   if (NULL == d)
     return 2;
-  sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (MHD_INVALID_SOCKET == sock)
-    abort ();
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons (1080);
-  sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-  if (0 != connect (sock,
-                    (struct sockaddr *) &sa,
-                    sizeof (sa)))
-    abort ();
+  if (-1 == (pid = openssl_connect (&sock, 1080)))
+    {
+      MHD_stop_daemon (d);
+      return 4;
+    }
+
   send_all (sock,
             "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
   recv_all (sock,
             "Hello");
+  fprintf (stderr,
+           "Received `Hello'\n");
   send_all (sock,
             "World");
+  fprintf (stderr,
+           "Sent `World'\n");
   recv_all (sock,
             "Finished");
+  fprintf (stderr,
+           "Received `Finished'\n");
   MHD_socket_close_ (sock);
+  pthread_join (pt,
+                NULL);
+  fprintf (stderr,
+           "Joined helper thread\n");
+  waitpid (pid, NULL, 0);
   MHD_stop_daemon (d);
   return 0;
 }
@@ -323,6 +461,8 @@ main (int argc,
 {
   int errorCount = 0;
 
+  if (0 != system ("openssl version 1> /dev/null"))
+    return 77; /* openssl not available, can't run the test */
   errorCount += test_upgrade_internal_select ();
   if (errorCount != 0)
     fprintf (stderr,

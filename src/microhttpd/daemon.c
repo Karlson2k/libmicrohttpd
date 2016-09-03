@@ -659,19 +659,19 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+  if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               ws,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
+  if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               rs,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
+  if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               ws,
                               max_fd,
@@ -2639,10 +2639,17 @@ MHD_select (struct MHD_Daemon *daemon,
         may_block = MHD_NO;
 
       /* single-threaded, go over everything */
-      if (MHD_NO == MHD_get_fdset2 (daemon, &rs, &ws, &es, &maxsock, FD_SETSIZE))
+      if (MHD_NO ==
+          MHD_get_fdset2 (daemon,
+                          &rs,
+                          &ws,
+                          &es,
+                          &maxsock,
+                          FD_SETSIZE))
         {
 #ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon, "Could not obtain daemon fdsets");
+        MHD_DLOG (daemon,
+                  "Could not obtain daemon fdsets");
 #endif
           err_state = MHD_YES;
         }
@@ -2657,7 +2664,8 @@ MHD_select (struct MHD_Daemon *daemon,
                                   FD_SETSIZE)) )
         {
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon, "Could not add listen socket to fdset");
+          MHD_DLOG (daemon,
+                    "Could not add listen socket to fdset");
 #endif
           return MHD_NO;
         }
@@ -2726,7 +2734,11 @@ MHD_select (struct MHD_Daemon *daemon,
         timeout.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE)(ltimeout / 1000);
       tv = &timeout;
     }
-  num_ready = MHD_SYS_select_ (maxsock + 1, &rs, &ws, &es, tv);
+  num_ready = MHD_SYS_select_ (maxsock + 1,
+                               &rs,
+                               &ws,
+                               &es,
+                               tv);
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
   if (num_ready < 0)
