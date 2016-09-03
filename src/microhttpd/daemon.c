@@ -833,7 +833,7 @@ call_handlers (struct MHD_Connection *con,
  * @return always 0
  */
 static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
-MHD_handle_connection (void *data)
+thread_main_handle_connection (void *data)
 {
   struct MHD_Connection *con = data;
   int num_ready;
@@ -1516,11 +1516,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
   /* attempt to create handler thread */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (!MHD_create_named_thread_(&connection->pid,
-                                    "MHD-connection",
-                                    daemon->thread_stack_size,
-                                    &MHD_handle_connection,
-                                    connection))
+      if (! MHD_create_named_thread_(&connection->pid,
+                                     "MHD-connection",
+                                     daemon->thread_stack_size,
+                                     &thread_main_handle_connection,
+                                     connection))
         {
 	  eno = errno;
 #ifdef HAVE_MESSAGES
