@@ -413,7 +413,8 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  */
 const char *
 MHD_lookup_connection_value (struct MHD_Connection *connection,
-                             enum MHD_ValueKind kind, const char *key)
+                             enum MHD_ValueKind kind,
+                             const char *key)
 {
   struct MHD_HTTP_Header *pos;
 
@@ -2772,7 +2773,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               /* Buffering for flushable socket was already enabled*/
               if (MHD_NO == socket_flush_possible (connection))
                 socket_start_no_buffering (connection);
-
               break;
             }
           /* not ready, no socket action */

@@ -605,7 +605,23 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   switch (action)
   {
   case MHD_UPGRADE_ACTION_CLOSE:
+    /* transition to special 'closed' state for start of cleanup */
+    connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
     /* Application is done with this connection, tear it down! */
+    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+      {
+        if (0 == (daemon->options & MHD_USE_SSL) )
+          {
+            /* just need to signal the thread that we are done */
+            MHD_semaphore_up (connection->upgrade_sem);
+          }
+        else
+          {
+            /* signal thread by shutdown() of 'app' socket */
+            shutdown (urh->app.socket, SHUT_RDWR);
+          }
+        return MHD_YES;
+      }
 #if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_SSL) )
       {
@@ -656,6 +672,9 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     free (urh);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK:
+    /* FIXME: not implemented */
+    return MHD_NO;
+  case MHD_UPGRADE_ACTION_FLUSH:
     /* FIXME: not implemented */
     return MHD_NO;
   default:
@@ -784,11 +803,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                rbo,
                                urh->app.socket,
                                urh);
-    /* As far as MHD is concerned, this connection is
-       suspended; it will be resumed once we are done
-       in the #MHD_upgrade_action() function */
-    MHD_suspend_connection (connection);
-
     /* Launch IO processing by the event loop */
     if (0 != (daemon->options & MHD_USE_EPOLL))
       {
@@ -846,12 +860,25 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
           return MHD_NO;
 	}
       }
-
-    /* This takes care of most event loops: simply add to DLL */
-    DLL_insert (daemon->urh_head,
-                daemon->urh_tail,
-                urh);
-    /* FIXME: None of the above will not work (yet) for thread-per-connection processing */
+    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+      {
+        /* As far as MHD's event loops are concerned, this connection
+           is suspended; it will be resumed once we are done in the
+           #MHD_upgrade_action() function */
+        MHD_suspend_connection (connection);
+        /* This takes care of further processing for most event loops:
+           simply add to DLL for bi-direcitonal processing */
+        DLL_insert (daemon->urh_head,
+                    daemon->urh_tail,
+                    urh);
+      }
+    else
+      {
+        /* Our caller will set 'connection->state' to
+           MHD_CONNECTION_UPGRADE, thereby triggering the main method
+           of the thread to switch to bi-directional forwarding. */
+        connection->urh = urh;
+      }
     return MHD_YES;
   }
   urh->app.socket = MHD_INVALID_SOCKET;
@@ -864,10 +891,31 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                              rbo,
                              connection->socket_fd,
                              urh);
-  /* As far as MHD is concerned, this connection is
-     suspended; it will be resumed once we are done
-     in the #MHD_upgrade_action() function */
-  MHD_suspend_connection (connection);
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+    {
+      /* Need to give the thread something to block on... */
+      connection->upgrade_sem = MHD_semaphore_create (0);
+      if (NULL == connection->upgrade_sem)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    "Failed to create semaphore for upgrade handling\n");
+#endif
+          MHD_connection_close_ (connection,
+                                 MHD_REQUEST_TERMINATED_WITH_ERROR);
+          return MHD_NO;
+        }
+      /* Our caller will set 'connection->state' to
+         MHD_CONNECTION_UPGRADE, thereby triggering the
+         main method of the thread to block on the semaphore. */
+    }
+  else
+    {
+      /* As far as MHD's event loops are concerned, this connection is
+         suspended; it will be resumed once we are done in the
+         #MHD_upgrade_action() function */
+      MHD_suspend_connection (connection);
+    }
   return MHD_YES;
 }
 

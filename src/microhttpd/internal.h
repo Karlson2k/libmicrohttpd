@@ -480,7 +480,14 @@ enum MHD_CONNECTION_STATE
    * Connection was "upgraded" and socket is now under the
    * control of the application.
    */
-  MHD_CONNECTION_UPGRADE = MHD_TLS_CONNECTION_INIT + 1
+  MHD_CONNECTION_UPGRADE = MHD_TLS_CONNECTION_INIT + 1,
+
+  /**
+   * Connection was "upgraded" and subsequently closed
+   * by the application.  We now need to do our own
+   * internal cleanup.
+   */
+  MHD_CONNECTION_UPGRADE_CLOSED = MHD_TLS_CONNECTION_INIT + 1
 
 };
 
@@ -853,6 +860,23 @@ struct MHD_Connection
   TransmitCallback send_cls;
 
 #if HTTPS_SUPPORT
+  /**
+   * If this connection was upgraded and if we are using
+   * #MHD_USE_THREAD_PER_CONNECTION, this points to the
+   * upgrade response details such that the
+   * #thread_main_connection_upgrade()-logic can perform
+   * the bi-directional forwarding.
+   */
+  struct MHD_UpgradeResponseHandle *urh;
+
+  /**
+   * If this connection was upgraded and if we are using
+   * #MHD_USE_THREAD_PER_CONNECTION without encryption,
+   * this points to the semaphore we use to signal termination
+   * to the thread handling the connection.
+   */
+  struct MHD_Semaphore *upgrade_sem;
+
   /**
    * State required for HTTPS/SSL/TLS support.
    */

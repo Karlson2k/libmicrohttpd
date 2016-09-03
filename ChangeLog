@@ -1,3 +1,7 @@
+Sat Sep  3 11:56:20 CEST 2016
+	Adding logic for handling HTTP "Upgrade" in thread-per-connection
+	mode. Also still untested. -CG
+
 Sat Aug 27 21:01:43 CEST 2016
 	Adding a few extra safety checks around HTTP "Upgrade"
 	(against wrong uses of API), and a testcase. -CG

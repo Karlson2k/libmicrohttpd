@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006-2015 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006-2016 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -2261,7 +2261,19 @@ enum MHD_UpgradeAction
    * NOTE: it is unclear if we want to have this in the
    * "final" API, this is just an idea right now.
    */
-  MHD_UPGRADE_ACTION_CORK
+  MHD_UPGRADE_ACTION_CORK,
+
+  /**
+   * Try to "flush" our write buffer (to the network), returning
+   * #MHD_YES on success (buffer is empty) and #MHD_NO on failure
+   * (unsent bytes remain in buffers).  This option is useful if
+   * the application wants to make sure that all data has been sent,
+   * which may be a good idea before closing the socket.
+   *
+   * NOTE: it is unclear if we want to have this in the
+   * "final" API, this is just an idea right now.
+   */
+  MHD_UPGRADE_ACTION_FLUSH
 
 };
 
