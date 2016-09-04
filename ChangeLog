@@ -1,3 +1,6 @@
+Sun Sep  4 18:16:32 CEST 2016
+	Fixing potential memory leak (#4634). -CG
+
 Sun Sep  4 17:25:45 CEST 2016
 	Tests for "Upgrade" logic are now in place and passing.
 	However, still need to make sure code is portable. -CG
