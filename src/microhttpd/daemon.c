@@ -653,25 +653,29 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
               MHD_socket *max_fd,
               unsigned int fd_setsize)
 {
-  if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
+  if ( (urh->out_buffer_off < urh->out_buffer_size) &&
+       (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               rs,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
   if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+       (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               ws,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
+  if ( (urh->in_buffer_off < urh->in_buffer_size) &&
+       (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               rs,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
   if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
+       (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               ws,
                               max_fd,
@@ -966,6 +970,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           urh->in_buffer_off += res;
         }
+      if (0 == res)
+        {
+          /* connection was shut down, signal by shrinking buffer,
+             which will eventually ensure this FD is no longer listed. */
+          urh->in_buffer_size = urh->in_buffer_off;
+        }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
        (urh->in_buffer_off > 0) )
@@ -977,8 +987,18 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                    urh->in_buffer_off);
       if (-1 == res)
         {
-          /* FIXME: differenciate by errno? */
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          int err = MHD_socket_get_error_ ();
+
+          if ( (MHD_SCKT_ERR_IS_EINTR_ (err)) ||
+               (MHD_SCKT_ERR_IS_EAGAIN_ (err)) )
+            urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          else
+            {
+              /* persistent / unrecoverable error, treat as
+                 if connection was shut down */
+              urh->in_buffer_size = 0;
+              urh->in_buffer_off = 0;
+            }
         }
       else
         {
@@ -1014,6 +1034,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           urh->out_buffer_off += res;
         }
+      if (0 == res)
+        {
+          /* connection was shut down, signal by shrinking buffer,
+             which will eventually ensure this FD is no longer listed. */
+          urh->out_buffer_size = urh->out_buffer_off;
+        }
       fin_read = (0 == res);
     }
   else
@@ -1045,6 +1071,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               urh->out_buffer_off = 0;
             }
         }
+      else
+        {
+          /* persistent / unrecoverable error, treat as
+             if connection was shut down */
+          urh->out_buffer_size = 0;
+          urh->out_buffer_off = 0;
+        }
     }
   if ( (fin_read) &&
        (0 == urh->out_buffer_off) &&
@@ -1064,20 +1097,10 @@ static void
 thread_main_connection_upgrade (struct MHD_Connection *con)
 {
   struct MHD_Daemon *daemon = con->daemon;
+  struct MHD_UpgradeResponseHandle *urh = con->urh;
 
-  if (0 == (daemon->options & MHD_USE_SSL))
-    {
-      /* Here, we need to block until the application
-         signals us that it is done with the socket */
-      MHD_semaphore_down (con->upgrade_sem);
-      MHD_semaphore_destroy (con->upgrade_sem);
-      con->upgrade_sem = NULL;
-      return;
-    }
 #if HTTPS_SUPPORT
   {
-    struct MHD_UpgradeResponseHandle *urh = con->urh;
-
     /* Here, we need to bi-directionally forward
        until the application tells us that it is done
        with the socket; */
@@ -1108,11 +1131,14 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 #endif
                 break;
               }
-            num_ready = MHD_SYS_select_ (max_fd + 1,
-                                         &rs,
-                                         &ws,
-                                         NULL,
-                                         NULL);
+            if (MHD_INVALID_SOCKET != max_fd)
+              num_ready = MHD_SYS_select_ (max_fd + 1,
+                                           &rs,
+                                           &ws,
+                                           NULL,
+                                           NULL);
+            else
+              num_ready = 0;
             if (num_ready < 0)
               {
                 const int err = MHD_socket_get_error_();
@@ -1131,31 +1157,37 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
                             &rs,
                             &ws);
             process_urh (urh);
+            if ( (0 == urh->out_buffer_size) &&
+                 (0 == urh->in_buffer_size) )
+              break; /* connections died, we have no more purpose here */
           }
       }
 #ifdef HAVE_POLL
     else
       {
         /* use poll() */
-        struct pollfd p[2];
         const unsigned int timeout = UINT_MAX;
 
-        p[0].fd = urh->connection->socket_fd;
-        p[1].fd = urh->mhd.socket;
         while (MHD_CONNECTION_UPGRADE == con->state)
           {
-            if (0 == (MHD_EPOLL_STATE_READ_READY & urh->app.celi))
+            struct pollfd p[2];
+
+            memset (p, 0, sizeof (struct pollfd) * 2);
+            p[0].fd = urh->connection->socket_fd;
+            p[1].fd = urh->mhd.socket;
+            if (urh->in_buffer_off < urh->in_buffer_size)
               p[0].events |= POLLIN;
             if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
               p[0].events |= POLLOUT;
-            if (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi))
+            if (urh->out_buffer_off < urh->out_buffer_size)
               p[1].events |= POLLIN;
             if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
               p[1].events |= POLLOUT;
 
-            if (MHD_sys_poll_ (p,
-                               2,
-                               timeout) < 0)
+            if ( (0 != (p[0].events | p[1].events)) &&
+                 (MHD_sys_poll_ (p,
+                                 2,
+                                 timeout) < 0) )
               {
                 const int err = MHD_socket_get_error_ ();
 
@@ -1177,6 +1209,9 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             if (0 != (p[1].revents & POLLOUT))
               urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
             process_urh (urh);
+            if ( (0 == urh->out_buffer_size) &&
+                 (0 == urh->in_buffer_size) )
+              break; /* connections died, we have no more purpose here */
           }
       }
     /* end POLL */
@@ -1187,6 +1222,13 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   MHD_PANIC ("This should not be possible\n");
 #endif
   }
+
+  /* Here, we need to block until the application
+     signals us that it is done with the socket */
+  MHD_semaphore_down (con->upgrade_sem);
+  MHD_semaphore_destroy (con->upgrade_sem);
+  con->upgrade_sem = NULL;
+  free (urh);
 }
 
 
@@ -2598,6 +2640,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_Connection *next;
 #if HTTPS_SUPPORT
   struct MHD_UpgradeResponseHandle *urh;
+  struct MHD_UpgradeResponseHandle *urhn;
 #endif
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
@@ -2650,8 +2693,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 
   /* handle upgraded HTTPS connections */
 #if HTTPS_SUPPORT
-  for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
+      urhn = urh->next;
       /* update urh state based on select() output */
       urh_from_fdset (urh,
                       read_fd_set,
@@ -2934,13 +2978,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
-        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->app.celi))
+        if (urh->in_buffer_off < urh->in_buffer_size)
           p[poll_server+i].events |= POLLIN;
         if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
           p[poll_server+i].events |= POLLOUT;
         i++;
         p[poll_server+i].fd = urh->mhd.socket;
-        if (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi))
+        if (urh->out_buffer_off < urh->out_buffer_size)
           p[poll_server+i].events |= POLLIN;
         if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
           p[poll_server+i].events |= POLLOUT;
@@ -2952,7 +2996,9 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         free(p);
         return MHD_YES;
       }
-    if (MHD_sys_poll_(p, poll_server + num_connections, timeout) < 0)
+    if (MHD_sys_poll_(p,
+                      poll_server + num_connections,
+                      timeout) < 0)
       {
         const int err = MHD_socket_get_error_ ();
 	if (MHD_SCKT_ERR_IS_EINTR_ (err))
@@ -2988,17 +3034,20 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	next = pos->next;
         /* first, sanity checks */
         if (i >= num_connections)
-          continue; /* connection list changed somehow, retry later ... */
+          break; /* connection list changed somehow, retry later ... */
         if (p[poll_server+i].fd != pos->socket_fd)
           continue; /* fd mismatch, something else happened, retry later ... */
         call_handlers (pos,
                        0 != (p[poll_server+i].revents & POLLIN),
                        0 != (p[poll_server+i].revents & POLLOUT),
                        MHD_NO);
+        i++;
       }
 #if HTTPS_SUPPORT
     for (urh = daemon->urh_head; NULL != urh; urh = urhn)
       {
+        if (i >= num_connections)
+          break; /* connection list changed somehow, retry later ... */
         urhn = urh->next;
         if (p[poll_server+i].fd != urh->connection->socket_fd)
           continue; /* fd mismatch, something else happened, retry later ... */
@@ -3148,6 +3197,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
   struct epoll_event events[MAX_EVENTS];
   int num_events;
   unsigned int i;
+  unsigned int j;
 
   num_events = MAX_EVENTS;
   while (MAX_EVENTS == num_events)
@@ -3172,7 +3222,34 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
       for (i=0;i<(unsigned int) num_events;i++)
 	{
           struct UpgradeEpollHandle *ueh = events[i].data.ptr;
-          struct MHD_UpgradeResponseHandle *urh = ueh->urh;
+          struct MHD_UpgradeResponseHandle *urh;
+
+          if (NULL == ueh)
+            continue; /* was killed, see below */
+          urh = ueh->urh;
+
+          /* In case we get two events for the same upgrade handle,
+             squash them together (otherwise the first one may
+             cause us to free the 'urh', and the second one then
+             causes a use-after-free).  */
+          for (j=i+1;j< (unsigned int) num_events;j++)
+            {
+              struct UpgradeEpollHandle *uehj = events[j].data.ptr;
+              struct MHD_UpgradeResponseHandle *urhj;
+
+              if (NULL == uehj)
+                continue; /* was killed, see below */
+              urhj = uehj->urh;
+
+              if (urh == urhj) /* yep, indeed the same! */
+                {
+                  if (0 != (events[j].events & EPOLLIN))
+                    uehj->celi |= MHD_EPOLL_STATE_READ_READY;
+                  if (0 != (events[j].events & EPOLLOUT))
+                    uehj->celi |= MHD_EPOLL_STATE_WRITE_READY;
+                }
+              events[j].data.ptr = NULL; /* kill this one */
+            }
 
           /* Update our state based on what is ready according to epoll() */
           if (0 != (events[i].events & EPOLLIN))

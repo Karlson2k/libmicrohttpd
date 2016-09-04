@@ -859,7 +859,6 @@ struct MHD_Connection
    */
   TransmitCallback send_cls;
 
-#if HTTPS_SUPPORT
   /**
    * If this connection was upgraded and if we are using
    * #MHD_USE_THREAD_PER_CONNECTION, this points to the
@@ -869,6 +868,7 @@ struct MHD_Connection
    */
   struct MHD_UpgradeResponseHandle *urh;
 
+#if HTTPS_SUPPORT
   /**
    * If this connection was upgraded and if we are using
    * #MHD_USE_THREAD_PER_CONNECTION without encryption,

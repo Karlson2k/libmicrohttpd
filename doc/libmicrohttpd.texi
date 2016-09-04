@@ -161,7 +161,7 @@ Examples based on reports we've received from developers include:
 @cindex select
 
 MHD supports four basic thread modes and up to three event loop
-styes.
+styles.
 
 The four basic thread modes are external (MHD creates no threads,
 event loop is fully managed by the application), internal (MHD creates

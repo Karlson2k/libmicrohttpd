@@ -627,19 +627,16 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     /* Application is done with this connection, tear it down! */
     if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
       {
-        if (0 == (daemon->options & MHD_USE_SSL) )
-          {
-            /* just need to signal the thread that we are done */
-            MHD_semaphore_up (connection->upgrade_sem);
-          }
 #if HTTPS_SUPPORT
-        else
+        if (0 != (daemon->options & MHD_USE_SSL) )
           {
-            /* signal thread by shutdown() of 'app' socket */
+            /* signal thread that app is done by shutdown() of 'app' socket */
             shutdown (urh->app.socket,
                       SHUT_RDWR);
           }
 #endif
+        /* need to signal the thread that we are done */
+        MHD_semaphore_up (connection->upgrade_sem);
         return MHD_YES;
       }
 #if HTTPS_SUPPORT
@@ -755,6 +752,12 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
     pool = connection->pool;
     avail = MHD_pool_get_free (pool);
+    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+      {
+        /* Need to give the thread something to block on... */
+        connection->upgrade_sem = MHD_semaphore_create (0);
+      }
+
     if (avail < 8)
       {
         /* connection's pool is totally at the limit,
@@ -871,7 +874,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     {
       /* Need to give the thread something to block on... */
       connection->upgrade_sem = MHD_semaphore_create (0);
-      if (NULL == connection->upgrade_sem)
+      connection->urh = urh;
+        if (NULL == connection->upgrade_sem)
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
