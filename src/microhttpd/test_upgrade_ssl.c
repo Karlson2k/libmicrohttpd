@@ -55,6 +55,11 @@ static pthread_t pt;
 static MHD_socket usock;
 
 /**
+ * Thread we use to run the interaction with the upgraded socket.
+ */
+static pthread_t pt_client;
+
+/**
  * Fork child that connects via OpenSSL to our @a port.  Allows us to
  * talk to our port over a socket in @a sp without having to worry
  * about TLS.
@@ -257,6 +262,31 @@ run_usock (void *cls)
 
 
 /**
+ * Main function for the thread that runs the client-side of the
+ * interaction with the upgraded socket.
+ *
+ * @param cls the client socket
+ */
+static void *
+run_usock_client (void *cls)
+{
+  MHD_socket *sock = cls;
+
+  send_all (*sock,
+            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
+  recv_hdr (*sock);
+  recv_all (*sock,
+            "Hello");
+  send_all (*sock,
+            "World");
+  recv_all (*sock,
+            "Finished");
+  MHD_socket_close_ (*sock);
+  return NULL;
+}
+
+
+/**
  * Function called after a protocol "upgrade" response was sent
  * successfully and the socket should now be controlled by some
  * protocol other than HTTP.
@@ -418,19 +448,18 @@ test_upgrade_internal (int flags,
       return 4;
     }
 
-  send_all (sock,
-            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
-  recv_hdr (sock);
-  recv_all (sock,
-            "Hello");
-  send_all (sock,
-            "World");
-  recv_all (sock,
-            "Finished");
-  MHD_socket_close_ (sock);
+  pthread_create (&pt_client,
+                  NULL,
+                  &run_usock_client,
+                  &sock);
+
+  pthread_join (pt_client,
+                NULL);
   pthread_join (pt,
                 NULL);
-  waitpid (pid, NULL, 0);
+  waitpid (pid,
+           NULL,
+           0);
   MHD_stop_daemon (d);
   return 0;
 }

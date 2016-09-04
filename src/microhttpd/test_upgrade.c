@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -40,6 +41,41 @@
 #include "mhd_sockets.h"
 
 
+/**
+ * Thread we use to run the interaction with the upgraded socket.
+ */
+static pthread_t pt;
+
+/**
+ * Will be set to the upgraded socket.
+ */
+static MHD_socket usock;
+
+/**
+ * Thread we use to run the interaction with the upgraded socket.
+ */
+static pthread_t pt_client;
+
+
+/**
+ * Change itc FD options to be non-blocking.
+ *
+ * @param fd the FD to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+static void
+make_blocking (MHD_socket fd)
+{
+  int flags;
+
+  flags = fcntl (fd, F_GETFL);
+  if (-1 == flags)
+    return;
+  if ((flags & ~O_NONBLOCK) != flags)
+    fcntl (fd, F_SETFL, flags & ~O_NONBLOCK);
+}
+
+
 static void
 send_all (MHD_socket sock,
           const char *text)
@@ -47,6 +83,7 @@ send_all (MHD_socket sock,
   size_t len = strlen (text);
   ssize_t ret;
 
+  make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
       ret = write (sock,
@@ -77,6 +114,7 @@ recv_hdr (MHD_socket sock)
   char c;
   ssize_t ret;
 
+  make_blocking (sock);
   next = '\r';
   i = 0;
   while (i < 4)
@@ -124,6 +162,7 @@ recv_all (MHD_socket sock,
   char buf[len];
   ssize_t ret;
 
+  make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
       ret = read (sock,
@@ -141,6 +180,54 @@ recv_all (MHD_socket sock,
     }
   if (0 != strncmp (text, buf, len))
     abort();
+}
+
+
+/**
+ * Main function for the thread that runs the interaction with
+ * the upgraded socket.
+ *
+ * @param cls the handle for the upgrade
+ */
+static void *
+run_usock (void *cls)
+{
+  struct MHD_UpgradeResponseHandle *urh = cls;
+
+  send_all (usock,
+            "Hello");
+  recv_all (usock,
+            "World");
+  send_all (usock,
+            "Finished");
+  MHD_upgrade_action (urh,
+                      MHD_UPGRADE_ACTION_CLOSE);
+  return NULL;
+}
+
+
+/**
+ * Main function for the thread that runs the client-side of the
+ * interaction with the upgraded socket.
+ *
+ * @param cls the client socket
+ */
+static void *
+run_usock_client (void *cls)
+{
+  MHD_socket *sock = cls;
+
+  send_all (*sock,
+            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
+  recv_hdr (*sock);
+  recv_all (*sock,
+            "Hello");
+  send_all (*sock,
+            "World");
+  recv_all (*sock,
+            "Finished");
+  MHD_socket_close_ (*sock);
+  return NULL;
 }
 
 
@@ -205,11 +292,13 @@ upgrade_cb (void *cls,
             MHD_socket sock,
             struct MHD_UpgradeResponseHandle *urh)
 {
-  send_all (sock, "Hello");
-  recv_all (sock, "World");
-  send_all (sock, "Finished");
-  MHD_upgrade_action (urh,
-                      MHD_UPGRADE_ACTION_CLOSE);
+  usock = sock;
+  if (0 != extra_in_size)
+    abort ();
+  pthread_create (&pt,
+                  NULL,
+                  &run_usock,
+                  urh);
 }
 
 
@@ -306,16 +395,15 @@ test_upgrade_internal (int flags,
                     (struct sockaddr *) &sa,
                     sizeof (sa)))
     abort ();
-  send_all (sock,
-            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
-  recv_hdr (sock);
-  recv_all (sock,
-            "Hello");
-  send_all (sock,
-            "World");
-  recv_all (sock,
-            "Finished");
-  MHD_socket_close_ (sock);
+  pthread_create (&pt_client,
+                  NULL,
+                  &run_usock_client,
+                  &sock);
+
+  pthread_join (pt_client,
+                NULL);
+  pthread_join (pt,
+                NULL);
   MHD_stop_daemon (d);
   return 0;
 }
