@@ -1586,10 +1586,13 @@ parse_initial_message_line (struct MHD_Connection *connection,
         }
     }
   if (NULL != daemon->uri_log_callback)
-    connection->client_context
-      = daemon->uri_log_callback (daemon->uri_log_callback_cls,
-				  curi,
-				  connection);
+    {
+      connection->client_context
+        = daemon->uri_log_callback (daemon->uri_log_callback_cls,
+  				    curi,
+				     connection);
+      connection->client_aware = MHD_YES;
+    }
   if (NULL != args)
     {
       args[0] = '\0';
