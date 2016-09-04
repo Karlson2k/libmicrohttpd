@@ -3173,8 +3173,6 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 	{
           struct UpgradeEpollHandle *ueh = events[i].data.ptr;
           struct MHD_UpgradeResponseHandle *urh = ueh->urh;
-          struct epoll_event event;
-          int fd;
 
           /* Update our state based on what is ready according to epoll() */
           if (0 != (events[i].events & EPOLLIN))
@@ -3184,79 +3182,6 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 
           /* shuffle data based on buffers and FD readyness */
           process_urh (urh);
-
-          /* if we drained the IO buffer, re-add to epoll() to wait for more! */
-          if (0 == (ueh->celi & MHD_EPOLL_STATE_READ_READY))
-            {
-              event.events = EPOLLIN;
-              event.data.ptr = ueh;
-              fd = (ueh == &urh->mhd) ? ueh->socket : urh->connection->socket_fd;
-              if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                  EPOLL_CTL_ADD,
-                                  fd,
-                                  &event))
-                {
-                  MHD_socket myfd;
-
-                  /* Handle error by closing OUR socket; with some
-                     luck, this should tricker the application to fail
-                     to read, and then the application should close
-                     the connection completely. */
-
-                  /* epoll documentation suggests that closing a FD
-                     automatically removes it from the epoll set;
-                     however, this is not true as if we fail to do
-                     manually remove it, we are still seeing an event
-                     for this fd in epoll, causing grief
-                     (use-after-free...) --- at least on my system. */
-                  myfd = urh->mhd.socket;
-                  if ( (fd != myfd) &&
-                       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                        EPOLL_CTL_DEL,
-                                        urh->mhd.socket,
-                                        NULL)) )
-                       MHD_PANIC ("Failed to remove FD from epoll set\n");
-                  urh->mhd.socket = MHD_INVALID_SOCKET;
-                  MHD_socket_close_ (myfd);
-                  continue;
-                }
-            }
-          if (0 == (ueh->celi & MHD_EPOLL_STATE_WRITE_READY))
-            {
-              event.events = EPOLLOUT;
-              event.data.ptr = ueh;
-              fd = (ueh == &ueh->urh->mhd) ? ueh->socket : ueh->urh->connection->socket_fd;
-              if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                  EPOLL_CTL_ADD,
-                                  fd,
-                                  &event))
-                {
-                  MHD_socket myfd;
-
-                  /* Handle error by closing OUR socket; with some
-                     luck, this should tricker the application to fail
-                     to read, and then the application should close
-                     the connection completely. */
-
-                  /* epoll documentation suggests that closing a FD
-                     automatically removes it from the epoll set;
-                     however, this is not true as if we fail to do
-                     manually remove it, we are still seeing an event
-                     for this fd in epoll, causing grief
-                     (use-after-free...) --- at least on my system. */
-                  myfd = urh->mhd.socket;
-                  if ( (fd != myfd) &&
-                       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                        EPOLL_CTL_DEL,
-                                        urh->mhd.socket,
-                                        NULL)) )
-                       MHD_PANIC ("Failed to remove FD from epoll set\n");
-
-                  urh->mhd.socket = MHD_INVALID_SOCKET;
-                  MHD_socket_close_ (myfd);
-                  continue;
-                }
-            }
         }
     }
   return MHD_YES;
@@ -3399,7 +3324,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
             {
               /* activity on an upgraded connection, we process
                  those in a separate epoll() */
-              daemon->upgrade_fd_in_epoll = MHD_NO;
               run_epoll_for_upgrade (daemon);
               continue;
             }
@@ -4977,6 +4901,15 @@ thread_failed:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
 #ifdef EPOLL_SUPPORT
+  if (MHD_YES == daemon->upgrade_fd_in_epoll)
+    {
+      if (0 != epoll_ctl (daemon->epoll_fd,
+			  EPOLL_CTL_DEL,
+			  daemon->epoll_upgrade_fd,
+			  NULL))
+	MHD_PANIC ("Failed to remove FD from epoll set\n");
+      daemon->upgrade_fd_in_epoll = MHD_NO;
+    }
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
 #if HTTPS_SUPPORT

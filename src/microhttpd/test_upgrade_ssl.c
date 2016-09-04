@@ -393,13 +393,13 @@ ahc_upgrade (void *cls,
 
 
 static int
-test_upgrade_internal_select ()
+test_upgrade_internal (int flags)
 {
   struct MHD_Daemon *d;
   MHD_socket sock;
   pid_t pid;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME | MHD_USE_TLS,
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME | MHD_USE_TLS,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
@@ -440,7 +440,14 @@ main (int argc,
 
   if (0 != system ("openssl version 1> /dev/null"))
     return 77; /* openssl not available, can't run the test */
-  errorCount += test_upgrade_internal_select ();
+  errorCount += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY);
+#ifdef HAVE_POLL
+  errorCount += test_upgrade_internal (MHD_USE_POLL_INTERNALLY);
+#endif
+#ifdef EPOLL_SUPPORT
+  errorCount += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY |
+                                       MHD_USE_TLS_EPOLL_UPGRADE);
+#endif
   if (errorCount != 0)
     fprintf (stderr,
              "Error (code: %u)\n",
