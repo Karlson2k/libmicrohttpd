@@ -2250,30 +2250,7 @@ enum MHD_UpgradeAction
    *
    * Takes no extra arguments.
    */
-  MHD_UPGRADE_ACTION_CLOSE = 0,
-
-  /**
-   * Uncork the TCP write buffer (that is, tell the OS to transmit all
-   * bytes in the buffer now, and to not use TCP-CORKing).
-   *
-   * Takes no extra arguments.
-   *
-   * NOTE: it is unclear if we want to have this in the
-   * "final" API, this is just an idea right now.
-   */
-  MHD_UPGRADE_ACTION_CORK,
-
-  /**
-   * Try to "flush" our write buffer (to the network), returning
-   * #MHD_YES on success (buffer is empty) and #MHD_NO on failure
-   * (unsent bytes remain in buffers).  This option is useful if
-   * the application wants to make sure that all data has been sent,
-   * which may be a good idea before closing the socket.
-   *
-   * NOTE: it is unclear if we want to have this in the
-   * "final" API, this is just an idea right now.
-   */
-  MHD_UPGRADE_ACTION_FLUSH
+  MHD_UPGRADE_ACTION_CLOSE = 0
 
 };
 

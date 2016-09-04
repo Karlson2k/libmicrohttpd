@@ -259,10 +259,6 @@ run_usock (void *cls)
             "Finished");
   fprintf (stderr,
            "Closing socket\n");
-  while (MHD_NO ==
-         MHD_upgrade_action (urh,
-                             MHD_UPGRADE_ACTION_FLUSH))
-    usleep (1000);
   MHD_upgrade_action (urh,
                       MHD_UPGRADE_ACTION_CLOSE);
   fprintf (stderr,

@@ -883,6 +883,61 @@ call_handlers (struct MHD_Connection *con,
 
 #if HTTPS_SUPPORT
 /**
+ * This function finishes the process of closing the
+ * connection associated with the @a urh.  It should
+ * be called if the `was_closed` flag is set and the
+ * buffer has been drained.
+ *
+ * @param urh handle to the upgraded response we are finished with
+ */
+static void
+finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
+{
+  struct MHD_Connection *connection = urh->connection;
+  struct MHD_Daemon *daemon = connection->daemon;
+
+  DLL_remove (daemon->urh_head,
+              daemon->urh_tail,
+              urh);
+  if (0 != (daemon->options & MHD_USE_EPOLL))
+    {
+      /* epoll documentation suggests that closing a FD
+         automatically removes it from the epoll set; however,
+         this is not true as if we fail to do manually remove it,
+         we are still seeing an event for this fd in epoll,
+         causing grief (use-after-free...) --- at least on my
+         system. */
+      if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                          EPOLL_CTL_DEL,
+                          connection->socket_fd,
+                          NULL))
+        MHD_PANIC ("Failed to remove FD from epoll set\n");
+    }
+  if (MHD_INVALID_SOCKET != urh->mhd.socket)
+    {
+      /* epoll documentation suggests that closing a FD
+         automatically removes it from the epoll set; however,
+         this is not true as if we fail to do manually remove it,
+         we are still seeing an event for this fd in epoll,
+         causing grief (use-after-free...) --- at least on my
+         system. */
+      if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+           (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                            EPOLL_CTL_DEL,
+                            urh->mhd.socket,
+                            NULL)) )
+        MHD_PANIC ("Failed to remove FD from epoll set\n");
+      if (0 != MHD_socket_close_ (urh->mhd.socket))
+        MHD_PANIC ("close failed\n");
+    }
+  MHD_resume_connection (connection);
+  MHD_connection_close_ (connection,
+                         MHD_REQUEST_TERMINATED_COMPLETED_OK);
+  free (urh);
+}
+
+
+/**
  * Performs bi-directional forwarding on upgraded HTTPS connections
  * based on the readyness state stored in the @a urh handle.
  *
@@ -891,6 +946,8 @@ call_handlers (struct MHD_Connection *con,
 static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
+  int fin_read;
+
   /* handle reading from TLS client and writing to application */
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
        (urh->in_buffer_off < urh->in_buffer_size) )
@@ -957,7 +1014,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           urh->out_buffer_off += res;
         }
+      fin_read = (0 == res);
     }
+  else
+    fin_read = 0;
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
        (urh->out_buffer_off > 0) )
     {
@@ -986,6 +1046,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
             }
         }
     }
+  if ( (fin_read) &&
+       (0 == urh->out_buffer_off) &&
+       (MHD_YES == urh->was_closed) )
+    finish_upgrade_close (urh);
 }
 #endif
 

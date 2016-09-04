@@ -632,89 +632,33 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
             /* just need to signal the thread that we are done */
             MHD_semaphore_up (connection->upgrade_sem);
           }
+#if HTTPS_SUPPORT
         else
           {
             /* signal thread by shutdown() of 'app' socket */
-            shutdown (urh->app.socket, SHUT_RDWR);
+            shutdown (urh->app.socket,
+                      SHUT_RDWR);
           }
+#endif
         return MHD_YES;
       }
 #if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_SSL) )
       {
-        DLL_remove (daemon->urh_head,
-                    daemon->urh_tail,
-                    urh);
-        if (0 != (daemon->options & MHD_USE_EPOLL))
-          {
-            /* epoll documentation suggests that closing a FD
-               automatically removes it from the epoll set; however,
-               this is not true as if we fail to do manually remove it,
-               we are still seeing an event for this fd in epoll,
-               causing grief (use-after-free...) --- at least on my
-               system. */
-            if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                EPOLL_CTL_DEL,
-                                connection->socket_fd,
-                                NULL))
-              MHD_PANIC ("Failed to remove FD from epoll set\n");
-          }
+        urh->was_closed = MHD_YES;
         if (MHD_INVALID_SOCKET != urh->app.socket)
           {
             if (0 != MHD_socket_close_ (urh->app.socket))
               MHD_PANIC ("close failed\n");
+            urh->app.socket = MHD_INVALID_SOCKET;
           }
-        if (MHD_INVALID_SOCKET != urh->mhd.socket)
-          {
-            /* epoll documentation suggests that closing a FD
-               automatically removes it from the epoll set; however,
-               this is not true as if we fail to do manually remove it,
-               we are still seeing an event for this fd in epoll,
-               causing grief (use-after-free...) --- at least on my
-               system. */
-            if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-                 (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                  EPOLL_CTL_DEL,
-                                  urh->mhd.socket,
-                                  NULL)) )
-              MHD_PANIC ("Failed to remove FD from epoll set\n");
-            if (0 != MHD_socket_close_ (urh->mhd.socket))
-              MHD_PANIC ("close failed\n");
-          }
+        return MHD_YES;
       }
 #endif
     MHD_resume_connection (connection);
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
     free (urh);
-    return MHD_YES;
-  case MHD_UPGRADE_ACTION_CORK:
-    /* FIXME: not implemented */
-    return MHD_NO;
-  case MHD_UPGRADE_ACTION_FLUSH:
-#if HTTPS_SUPPORT
-    if (0 != (daemon->options & MHD_USE_SSL))
-      {
-        int avail;
-
-        /* First, check that our pipe is empty, to be sure we do
-           have it all in the buffer. */
-        if ( (0 ==
-#if WINDOWS
-              ioctlsocket
-#else
-              ioctl
-#endif
-              (urh->mhd.socket,
-               FIONREAD,
-               &avail)) &&
-             (0 != avail) )
-          return MHD_NO;
-        /* then, refuse 'flush' unless our buffer is empty */
-        if (0 != urh->out_buffer_off)
-          return MHD_NO;
-      }
-#endif
     return MHD_YES;
   default:
     /* we don't understand this one */

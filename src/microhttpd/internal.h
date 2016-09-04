@@ -1036,6 +1036,13 @@ struct MHD_UpgradeResponseHandle
    * nothing left.
    */
   char e_buf[RESERVE_EBUF_SIZE];
+
+  /**
+   * Set to #MHD_YES after the application closed the socket
+   * via #MHD_UPGRADE_ACTION_CLOSE.
+   */
+  int was_closed;
+
 #endif
 
 };
