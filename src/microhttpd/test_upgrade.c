@@ -279,7 +279,8 @@ ahc_upgrade (void *cls,
 
 
 static int
-test_upgrade_internal (int flags)
+test_upgrade_internal (int flags,
+                       unsigned int pool)
 {
   struct MHD_Daemon *d;
   MHD_socket sock;
@@ -289,6 +290,7 @@ test_upgrade_internal (int flags)
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
+                        MHD_OPTION_THREAD_POOL_SIZE, pool,
                         MHD_OPTION_END);
   if (NULL == d)
     return 2;
@@ -323,12 +325,21 @@ main (int argc,
 {
   int error_count = 0;
 
-  error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY);
+  error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY,
+                                        1);
+  error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY,
+                                        2);
 #ifdef HAVE_POLL
-  error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY);
+  error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY,
+                                        1);
+  error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY,
+                                        2);
 #endif
 #ifdef EPOLL_SUPPORT
-  error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY);
+  error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY,
+                                        1);
+  error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY,
+                                        2);
 #endif
   if (error_count != 0)
     fprintf (stderr,
