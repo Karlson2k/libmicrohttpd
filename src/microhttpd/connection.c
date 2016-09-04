@@ -3178,6 +3178,7 @@ MHD_queue_response (struct MHD_Connection *connection,
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
 	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
     return MHD_NO;
+  daemon = connection->daemon;
   if ( (MHD_HTTP_SWITCHING_PROTOCOLS != status_code) &&
        (NULL != response->upgrade_handler) )
     {
@@ -3187,7 +3188,6 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
-  daemon = connection->daemon;
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
