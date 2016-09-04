@@ -8,6 +8,8 @@ AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 lib_LTLIBRARIES = \
   libmicrohttpd.la
 
+EXTRA_DIST = test_upgrade_common.c
+
 noinst_DATA =
 MOSTLYCLEANFILES =
 
