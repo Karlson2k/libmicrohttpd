@@ -413,7 +413,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
 static void
 run_mhd_poll_loop (struct MHD_Daemon *daemon)
 {
-  abort (); // not implemented
+  abort (); /* currently not implementable with existing MHD API */
 }
 
 
@@ -426,7 +426,32 @@ run_mhd_poll_loop (struct MHD_Daemon *daemon)
 static void
 run_mhd_epoll_loop (struct MHD_Daemon *daemon)
 {
-  abort (); // not implemented
+  const union MHD_DaemonInfo *di;
+  MHD_socket ep;
+  fd_set rs;
+  MHD_UNSIGNED_LONG_LONG to;
+  struct timeval tv;
+
+  di = MHD_get_daemon_info (daemon,
+                            MHD_DAEMON_INFO_EPOLL_FD);
+  ep = di->listen_fd;
+  while (! done)
+    {
+      FD_ZERO (&rs);
+      to = 1000;
+
+      FD_SET (ep, &rs);
+      MHD_get_timeout (daemon,
+                       &to);
+      tv.tv_sec = to / 1000;
+      tv.tv_usec = 1000 * (to % 1000);
+      select (ep + 1,
+              &rs,
+              NULL,
+              NULL,
+              &tv);
+      MHD_run (daemon);
+    }
 }
 
 

@@ -1323,6 +1323,7 @@ enum MHD_DaemonInfoType
    * No extra arguments should be passed.
    */
   MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
+  MHD_DAEMON_INFO_EPOLL_FD = MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
 
   /**
    * Request the number of current connections handled by the daemon.
@@ -2695,7 +2696,7 @@ union MHD_DaemonInfo
   size_t mac_key_size;
 
   /**
-   * Listen socket file descriptor, for #MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
+   * Socket, returned for #MHD_DAEMON_INFO_EPOLL_FD
    * and #MHD_DAEMON_INFO_LISTEN_FD.
    */
   MHD_socket listen_fd;

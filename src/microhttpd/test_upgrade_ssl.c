@@ -108,6 +108,7 @@ test_upgrade (int flags,
   MHD_socket sock;
   pid_t pid;
 
+  done = 0;
   if (0 == (flags & MHD_USE_THREAD_PER_CONNECTION))
     flags |= MHD_USE_SUSPEND_RESUME;
   d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_TLS,
@@ -160,6 +161,10 @@ main (int argc,
   /* try external select */
   error_count += test_upgrade (0,
                                0);
+#ifdef EPOLL_SUPPORT
+  error_count += test_upgrade (MHD_USE_TLS_EPOLL_UPGRADE,
+                               0);
+#endif
 
   /* Test thread-per-connection */
   error_count += test_upgrade (MHD_USE_THREAD_PER_CONNECTION,

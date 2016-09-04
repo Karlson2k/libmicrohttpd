@@ -56,6 +56,7 @@ test_upgrade (int flags,
   MHD_socket sock;
   struct sockaddr_in sa;
 
+  done = 0;
   if (0 == (flags & MHD_USE_THREAD_PER_CONNECTION))
     flags |= MHD_USE_SUSPEND_RESUME;
   d = MHD_start_daemon (flags | MHD_USE_DEBUG,
@@ -101,6 +102,10 @@ main (int argc,
   /* try external select */
   error_count += test_upgrade (0,
                                0);
+#ifdef EPOLL_SUPPORT
+  error_count += test_upgrade (MHD_USE_EPOLL,
+                               0);
+#endif
 
   /* Test thread-per-connection */
   error_count += test_upgrade (MHD_USE_THREAD_PER_CONNECTION,
@@ -125,7 +130,6 @@ main (int argc,
   error_count += test_upgrade (MHD_USE_EPOLL_INTERNALLY,
                                2);
 #endif
-
   /* report result */
   if (0 != error_count)
     fprintf (stderr,
