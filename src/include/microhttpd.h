@@ -1998,6 +1998,12 @@ MHD_suspend_connection (struct MHD_Connection *connection);
  * function on a connection that was not previously suspended will
  * result in undefined behavior.
  *
+ * If you are using this function in ``external'' select mode, you must
+ * make sure to run #MHD_run() afterwards (before again calling
+ * #MHD_get_fdset(), as otherwise the change may not be reflected in
+ * the set returned by #MHD_get_fdset() and you may end up with a
+ * connection that is stuck until the next network activity.
+ *
  * @param connection the connection to resume
  */
 _MHD_EXTERN void
