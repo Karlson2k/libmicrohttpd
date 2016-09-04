@@ -867,13 +867,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   urh->app.socket = MHD_INVALID_SOCKET;
   urh->mhd.socket = MHD_INVALID_SOCKET;
 #endif
-  response->upgrade_handler (response->upgrade_handler_cls,
-                             connection,
-                             connection->client_context,
-                             connection->read_buffer,
-                             rbo,
-                             connection->socket_fd,
-                             urh);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
     {
       /* Need to give the thread something to block on... */
@@ -899,6 +892,13 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
          #MHD_upgrade_action() function */
       MHD_suspend_connection (connection);
     }
+  response->upgrade_handler (response->upgrade_handler_cls,
+                             connection,
+                             connection->client_context,
+                             connection->read_buffer,
+                             rbo,
+                             connection->socket_fd,
+                             urh);
   return MHD_YES;
 }
 

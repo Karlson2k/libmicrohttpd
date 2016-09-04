@@ -88,7 +88,7 @@ MHD_semaphore_create (unsigned int init)
 void
 MHD_semaphore_down (struct MHD_Semaphore *sem)
 {
-  if (! pthread_mutex_lock (&sem->mutex))
+  if (0 != pthread_mutex_lock (&sem->mutex))
     MHD_PANIC ("pthread_mutex_lock for semaphore failed\n");
   while (0 == sem->counter)
     {
@@ -97,7 +97,7 @@ MHD_semaphore_down (struct MHD_Semaphore *sem)
         MHD_PANIC ("pthread_cond_wait failed\n");
     }
   sem->counter--;
-  if (! pthread_mutex_unlock (&sem->mutex))
+  if (0 != pthread_mutex_unlock (&sem->mutex))
     MHD_PANIC ("pthread_mutex_unlock for semaphore failed\n");
 }
 
@@ -110,11 +110,11 @@ MHD_semaphore_down (struct MHD_Semaphore *sem)
 void
 MHD_semaphore_up (struct MHD_Semaphore *sem)
 {
-  if (! pthread_mutex_lock (&sem->mutex))
+  if (0 != pthread_mutex_lock (&sem->mutex))
     MHD_PANIC ("pthread_mutex_lock for semaphore failed\n");
   sem->counter++;
   pthread_cond_signal (&sem->cv);
-  if (! pthread_mutex_unlock (&sem->mutex))
+  if (0 != pthread_mutex_unlock (&sem->mutex))
     MHD_PANIC ("pthread_mutex_unlock for semaphore failed\n");
 }
 

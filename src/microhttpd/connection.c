@@ -3185,6 +3185,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
   if ( (NULL != response->upgrade_handler) &&
+       (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
 #ifdef HAVE_MESSAGES

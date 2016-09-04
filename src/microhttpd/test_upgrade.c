@@ -286,7 +286,9 @@ test_upgrade_internal (int flags,
   MHD_socket sock;
   struct sockaddr_in sa;
 
-  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME,
+  if (0 == (flags & MHD_USE_THREAD_PER_CONNECTION))
+    flags |= MHD_USE_SUSPEND_RESUME;
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
@@ -325,19 +327,23 @@ main (int argc,
 {
   int error_count = 0;
 
+  error_count += test_upgrade_internal (MHD_USE_THREAD_PER_CONNECTION,
+                                        0);
+  error_count += test_upgrade_internal (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
+                                        0);
   error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY,
-                                        1);
+                                        0);
   error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY,
                                         2);
 #ifdef HAVE_POLL
   error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY,
-                                        1);
+                                        0);
   error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY,
                                         2);
 #endif
 #ifdef EPOLL_SUPPORT
   error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY,
-                                        1);
+                                        0);
   error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY,
                                         2);
 #endif
