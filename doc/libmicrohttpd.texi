@@ -109,9 +109,12 @@ example, using the @code{MHD_create_response_from_fd_at_offset} call
 to serve ranges from a file).  MHD does understands headers that
 control connection management (specifically, @code{Connection: close}
 and @code{Expect: 100 continue} are understood and handled
-automatically).  @code{Connection: upgrade} is not yet supported.
+automatically).  @code{Connection: upgrade} is supported by passing
+control over the socket (or something that behaves like the real
+socket in the case of TLS) to the application (after sending the
+desired HTTP response header).
 
-MHD also largely ignores the semantics of the different HTTP methods,
+MHD largely ignores the semantics of the different HTTP methods,
 so clients are left to handle those.  One exception is that MHD does
 understand @code{HEAD} and will only send the headers of the response
 and not the body, even if the client supplied a body.  (In fact,
@@ -2169,8 +2172,6 @@ Set of actions to be performed on upgraded connections.  Passed as an argument t
 @item MHD_UPGRADE_ACTION_CLOSE
 Closes the connection.  Must be called once the application is done with the client.  Takes no additional arguments.
 
-@item MHD_UPGRADE_ACTION_CORK
-Uncork the TCP write buffer.  Not implemented.  Takes no additional arguments.
 @end table
 @end deftp
 
