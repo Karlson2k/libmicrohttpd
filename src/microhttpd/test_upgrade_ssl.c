@@ -98,7 +98,6 @@ openssl_connect (int *sock,
           destination,
           "-verify",
           "0",
-          // "-quiet",
           (char *) NULL);
   _exit (1);
 }
@@ -427,9 +426,7 @@ test_upgrade_internal_select ()
   MHD_socket_close_ (sock);
   pthread_join (pt,
                 NULL);
-  waitpid (pid,
-           NULL,
-           0);
+  waitpid (pid, NULL, 0);
   MHD_stop_daemon (d);
   return 0;
 }
