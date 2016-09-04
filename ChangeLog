@@ -1,3 +1,7 @@
+Sun Sep  4 17:25:45 CEST 2016
+	Tests for "Upgrade" logic are now in place and passing.
+	However, still need to make sure code is portable. -CG
+
 Sat Sep  3 11:56:20 CEST 2016
 	Adding logic for handling HTTP "Upgrade" in thread-per-connection
 	mode. Also still untested. -CG
