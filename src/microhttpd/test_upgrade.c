@@ -279,13 +279,13 @@ ahc_upgrade (void *cls,
 
 
 static int
-test_upgrade_internal_select ()
+test_upgrade_internal (int flags)
 {
   struct MHD_Daemon *d;
   MHD_socket sock;
   struct sockaddr_in sa;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME,
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
@@ -321,12 +321,18 @@ int
 main (int argc,
       char *const *argv)
 {
-  int errorCount = 0;
+  int error_count = 0;
 
-  errorCount += test_upgrade_internal_select ();
-  if (errorCount != 0)
+  error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY);
+#ifdef HAVE_POLL
+  error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY);
+#endif
+#ifdef EPOLL_SUPPORT
+  error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY);
+#endif
+  if (error_count != 0)
     fprintf (stderr,
              "Error (code: %u)\n",
-             errorCount);
-  return errorCount != 0;       /* 0 == pass */
+             error_count);
+  return error_count != 0;       /* 0 == pass */
 }

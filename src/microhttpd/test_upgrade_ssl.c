@@ -436,21 +436,21 @@ int
 main (int argc,
       char *const *argv)
 {
-  int errorCount = 0;
+  int error_count = 0;
 
   if (0 != system ("openssl version 1> /dev/null"))
     return 77; /* openssl not available, can't run the test */
-  errorCount += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY);
+  error_count += test_upgrade_internal (MHD_USE_SELECT_INTERNALLY);
 #ifdef HAVE_POLL
-  errorCount += test_upgrade_internal (MHD_USE_POLL_INTERNALLY);
+  error_count += test_upgrade_internal (MHD_USE_POLL_INTERNALLY);
 #endif
 #ifdef EPOLL_SUPPORT
-  errorCount += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY |
+  error_count += test_upgrade_internal (MHD_USE_EPOLL_INTERNALLY |
                                        MHD_USE_TLS_EPOLL_UPGRADE);
 #endif
-  if (errorCount != 0)
+  if (error_count != 0)
     fprintf (stderr,
              "Error (code: %u)\n",
-             errorCount);
-  return errorCount != 0;       /* 0 == pass */
+             error_count);
+  return error_count != 0;       /* 0 == pass */
 }
