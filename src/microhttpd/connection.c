@@ -3170,7 +3170,7 @@ MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *daemon;
 
   if ( (NULL == connection) ||
        (NULL == response) ||
@@ -3187,6 +3187,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
+  daemon = connection->daemon;
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
