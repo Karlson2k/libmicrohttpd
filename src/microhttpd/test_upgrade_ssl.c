@@ -245,24 +245,14 @@ run_usock (void *cls)
 {
   struct MHD_UpgradeResponseHandle *urh = cls;
 
-  fprintf (stderr,
-           "Sending `Hello'\n");
   send_all (usock,
             "Hello");
-  fprintf (stderr,
-           "Receiving `World'\n");
   recv_all (usock,
             "World");
-  fprintf (stderr,
-           "Sending `Finished'\n");
   send_all (usock,
             "Finished");
-  fprintf (stderr,
-           "Closing socket\n");
   MHD_upgrade_action (urh,
                       MHD_UPGRADE_ACTION_CLOSE);
-  fprintf (stderr,
-           "Thread terminating\n");
   return NULL;
 }
 
@@ -430,22 +420,16 @@ test_upgrade_internal_select ()
   recv_hdr (sock);
   recv_all (sock,
             "Hello");
-  fprintf (stderr,
-           "Received `Hello'\n");
   send_all (sock,
             "World");
-  fprintf (stderr,
-           "Sent `World'\n");
   recv_all (sock,
             "Finished");
-  fprintf (stderr,
-           "Received `Finished'\n");
   MHD_socket_close_ (sock);
   pthread_join (pt,
                 NULL);
-  fprintf (stderr,
-           "Joined helper thread\n");
-  waitpid (pid, NULL, 0);
+  waitpid (pid,
+           NULL,
+           0);
   MHD_stop_daemon (d);
   return 0;
 }
