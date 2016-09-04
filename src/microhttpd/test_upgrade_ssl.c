@@ -78,7 +78,7 @@ openssl_connect (int *sock,
   (void) close (1);
   dup2 (sp[0], 0);
   dup2 (sp[0], 1);
-  close (sp[0]);
+  MHD_socket_close_ (sp[0]);
   sprintf (destination,
            "localhost:%u",
            (unsigned int) port);

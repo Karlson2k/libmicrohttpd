@@ -60,7 +60,8 @@ make_blocking (MHD_socket fd)
   if (-1 == flags)
     return;
   if ((flags & ~O_NONBLOCK) != flags)
-    fcntl (fd, F_SETFL, flags & ~O_NONBLOCK);
+    if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
+      abort ();
 }
 
 
