@@ -226,8 +226,7 @@ struct MHD_HTTP_Header
   struct MHD_HTTP_Header *next;
 
   /**
-   * The name of the header (key), without
-   * the colon.
+   * The name of the header (key), without the colon.
    */
   char *header;
 
@@ -237,8 +236,8 @@ struct MHD_HTTP_Header
   char *value;
 
   /**
-   * Type of the header (where in the HTTP
-   * protocol is this header from).
+   * Type of the header (where in the HTTP protocol is this header
+   * from).
    */
   enum MHD_ValueKind kind;
 
