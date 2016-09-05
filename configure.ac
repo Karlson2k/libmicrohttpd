@@ -35,6 +35,9 @@ AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
 
+# check for gettext
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19.8])
 
 AC_MSG_CHECKING([[whether z/OS special settings are required]])
 if test `uname -s` = "OS/390"
@@ -100,7 +103,7 @@ AC_CHECK_TYPE([_Bool],
       ]])
   ])
 
-AX_CHECK_COMPILE_FLAG([[-Werror=attributes]], 
+AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
                       [[errattr_CFLAGS="-Werror=attributes"]],
                       [[errattr_CFLAGS=""]], [], [])
 AC_MSG_CHECKING([[for function inline keywords suppoted by $CC]])
@@ -1089,6 +1092,7 @@ doc/Makefile
 doc/doxygen/Makefile
 doc/examples/Makefile
 m4/Makefile
+po/Makefile.in
 src/Makefile
 src/include/Makefile
 src/microhttpd/Makefile

@@ -45,14 +45,14 @@
  */
 char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
-				      char** password) 
+				      char** password)
 {
   const char *header;
   char *decode;
   const char *separator;
   char *user;
-  
-  if ( (NULL == (header = MHD_lookup_connection_value (connection, 
+
+  if ( (NULL == (header = MHD_lookup_connection_value (connection,
 						       MHD_HEADER_KIND,
 						       MHD_HTTP_HEADER_AUTHORIZATION))) ||
        (0 != strncmp (header, _BASIC_BASE, strlen(_BASIC_BASE))) )
@@ -62,7 +62,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-		"Error decoding basic authentication\n");
+		_("Error decoding basic authentication\n"));
 #endif
       return NULL;
     }
@@ -82,9 +82,9 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
       return NULL;
     }
   user[separator - decode] = '\0'; /* cut off at ':' */
-  if (NULL != password) 
+  if (NULL != password)
     {
-      *password = strdup (separator + 1);  
+      *password = strdup (separator + 1);
       if (NULL == *password)
 	{
 #ifdef HAVE_MESSAGES
@@ -113,16 +113,16 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int 
+int
 MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
-				    const char *realm, 
-				    struct MHD_Response *response) 
+				    const char *realm,
+				    struct MHD_Response *response)
 {
   int ret;
   int res;
   size_t hlen = strlen(realm) + strlen("Basic realm=\"\"") + 1;
   char *header;
-  
+
   header = (char*)malloc(hlen);
   if (NULL == header)
   {
@@ -132,9 +132,9 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-  res = MHD_snprintf_ (header, 
-                       hlen, 
-                       "Basic realm=\"%s\"", 
+  res = MHD_snprintf_ (header,
+                       hlen,
+                       "Basic realm=\"%s\"",
                        realm);
   if (res > 0 && (size_t)res < hlen)
     ret = MHD_add_response_header (response,
@@ -145,8 +145,8 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 
   free(header);
   if (MHD_YES == ret)
-    ret = MHD_queue_response (connection, 
-			      MHD_HTTP_UNAUTHORIZED, 
+    ret = MHD_queue_response (connection,
+			      MHD_HTTP_UNAUTHORIZED,
 			      response);
   else
     {

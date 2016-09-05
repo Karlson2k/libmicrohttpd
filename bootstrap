@@ -4,3 +4,4 @@ if ! test -n "$BASH_SOURCE" || ! workdir="${BASH_SOURCE[0]%/*}" || ! test -n "$w
 fi
 aclocal -I m4 --install
 autoreconf -I m4 -f -i
+contrib/pogen.sh
