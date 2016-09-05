@@ -55,7 +55,9 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
   if ( (NULL == (header = MHD_lookup_connection_value (connection,
 						       MHD_HEADER_KIND,
 						       MHD_HTTP_HEADER_AUTHORIZATION))) ||
-       (0 != strncmp (header, _BASIC_BASE, strlen(_BASIC_BASE))) )
+       (0 != strncmp (header,
+                      _BASIC_BASE,
+                      strlen (_BASIC_BASE))) )
     return NULL;
   header += strlen (_BASIC_BASE);
   if (NULL == (decode = BASE64Decode (header)))
@@ -67,11 +69,12 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
       return NULL;
     }
   /* Find user:password pattern */
-  if (NULL == (separator = strchr (decode, ':')))
+  if (NULL == (separator = strchr (decode,
+                                   ':')))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG(connection->daemon,
-	       "Basic authentication doesn't contain ':' separator\n");
+	       _("Basic authentication doesn't contain ':' separator\n"));
 #endif
       free (decode);
       return NULL;
@@ -89,7 +92,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 	{
 #ifdef HAVE_MESSAGES
 	  MHD_DLOG(connection->daemon,
-		   "Failed to allocate memory for password\n");
+		   _("Failed to allocate memory for password\n"));
 #endif
 	  free (decode);
 	  free (user);
@@ -123,7 +126,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   size_t hlen = strlen(realm) + strlen("Basic realm=\"\"") + 1;
   char *header;
 
-  header = (char*)malloc(hlen);
+  header = (char *) malloc(hlen);
   if (NULL == header)
   {
 #ifdef HAVE_MESSAGES
@@ -152,7 +155,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-                "Failed to add Basic auth header\n");
+                _("Failed to add Basic auth header\n"));
 #endif /* HAVE_MESSAGES */
     }
   return ret;
