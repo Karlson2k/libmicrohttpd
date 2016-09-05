@@ -680,7 +680,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_UpgradeResponseHandle *urh;
-  int sv[2];
   size_t rbo;
 
   if (NULL ==
@@ -709,6 +708,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     struct MemoryPool *pool;
     size_t avail;
     char *buf;
+    int sv[2];
 
     /* FIXME: this is non-portable for now; W32 port pending... */
     if (0 != socketpair (AF_UNIX,

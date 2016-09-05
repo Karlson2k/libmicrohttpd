@@ -875,7 +875,6 @@ struct MHD_Connection
    */
   struct MHD_UpgradeResponseHandle *urh;
 
-#if HTTPS_SUPPORT
   /**
    * If this connection was upgraded and if we are using
    * #MHD_USE_THREAD_PER_CONNECTION without encryption,
@@ -883,6 +882,8 @@ struct MHD_Connection
    * to the thread handling the connection.
    */
   struct MHD_Semaphore *upgrade_sem;
+
+#if HTTPS_SUPPORT
 
   /**
    * State required for HTTPS/SSL/TLS support.

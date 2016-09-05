@@ -635,6 +635,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 }
 
 
+#if HTTPS_SUPPORT
 /**
  * Obtain the select() file descriptor sets for the
  * given @a urh.
@@ -710,6 +711,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
                 ws))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
 }
+#endif
 
 
 /**
@@ -742,7 +744,6 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                unsigned int fd_setsize)
 {
   struct MHD_Connection *pos;
-  struct MHD_UpgradeResponseHandle *urh;
   int result = MHD_YES;
 
   if ( (NULL == daemon) ||
@@ -808,16 +809,22 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 	  break;
 	}
     }
-  for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
-    {
-      if (MHD_NO ==
-          urh_to_fdset (urh,
-                        read_fd_set,
-                        write_fd_set,
-                        max_fd,
-                        fd_setsize))
-        result = MHD_NO;
-    }
+#if HTTPS_SUPPORT
+  {
+    struct MHD_UpgradeResponseHandle *urh;
+
+    for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+      {
+        if (MHD_NO ==
+            urh_to_fdset (urh,
+                          read_fd_set,
+                          write_fd_set,
+                          max_fd,
+                          fd_setsize))
+          result = MHD_NO;
+      }
+  }
+#endif
 #if DEBUG_CONNECT
 #ifdef HAVE_MESSAGES
   if (NULL != max_fd)
@@ -1096,132 +1103,127 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 static void
 thread_main_connection_upgrade (struct MHD_Connection *con)
 {
-  struct MHD_Daemon *daemon = con->daemon;
   struct MHD_UpgradeResponseHandle *urh = con->urh;
-
 #if HTTPS_SUPPORT
-  {
-    /* Here, we need to bi-directionally forward
-       until the application tells us that it is done
-       with the socket; */
-    if (0 == (daemon->options & MHD_USE_POLL))
-      {
-        while (MHD_CONNECTION_UPGRADE == con->state)
-          {
-            /* use select */
-            fd_set rs;
-            fd_set ws;
-            MHD_socket max_fd;
-            int num_ready;
-            int result;
+  struct MHD_Daemon *daemon = con->daemon;
 
-            FD_ZERO (&rs);
-            FD_ZERO (&ws);
-            max_fd = MHD_INVALID_SOCKET;
-            result = urh_to_fdset (urh,
-                                   &rs,
-                                   &ws,
-                                   &max_fd,
-                                   FD_SETSIZE);
-            if (MHD_NO == result)
-              {
-#ifdef HAVE_MESSAGES
-                MHD_DLOG (con->daemon,
-                          "Error preparing select\n");
-#endif
-                break;
-              }
-            if (MHD_INVALID_SOCKET != max_fd)
-              num_ready = MHD_SYS_select_ (max_fd + 1,
-                                           &rs,
-                                           &ws,
-                                           NULL,
-                                           NULL);
-            else
-              num_ready = 0;
-            if (num_ready < 0)
-              {
-                const int err = MHD_socket_get_error_();
+  /* Here, we need to bi-directionally forward
+     until the application tells us that it is done
+     with the socket; */
+  if (0 == (daemon->options & MHD_USE_POLL))
+    {
+      while (MHD_CONNECTION_UPGRADE == con->state)
+        {
+          /* use select */
+          fd_set rs;
+          fd_set ws;
+          MHD_socket max_fd;
+          int num_ready;
+          int result;
 
-                if (MHD_SCKT_ERR_IS_EINTR_(err))
-                  continue;
+          FD_ZERO (&rs);
+          FD_ZERO (&ws);
+          max_fd = MHD_INVALID_SOCKET;
+          result = urh_to_fdset (urh,
+                                 &rs,
+                                 &ws,
+                                 &max_fd,
+                                 FD_SETSIZE);
+          if (MHD_NO == result)
+            {
 #ifdef HAVE_MESSAGES
-                MHD_DLOG (con->daemon,
-                          "Error during select (%d): `%s'\n",
-                          err,
-                          MHD_socket_strerr_ (err));
+              MHD_DLOG (con->daemon,
+                        "Error preparing select\n");
 #endif
-                break;
-              }
-            urh_from_fdset (urh,
-                            &rs,
-                            &ws);
-            process_urh (urh);
-            if ( (0 == urh->out_buffer_size) &&
-                 (0 == urh->in_buffer_size) )
-              break; /* connections died, we have no more purpose here */
-          }
-      }
+              break;
+            }
+          if (MHD_INVALID_SOCKET != max_fd)
+            num_ready = MHD_SYS_select_ (max_fd + 1,
+                                         &rs,
+                                         &ws,
+                                         NULL,
+                                         NULL);
+          else
+            num_ready = 0;
+          if (num_ready < 0)
+            {
+              const int err = MHD_socket_get_error_();
+
+              if (MHD_SCKT_ERR_IS_EINTR_(err))
+                continue;
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (con->daemon,
+                        "Error during select (%d): `%s'\n",
+                        err,
+                        MHD_socket_strerr_ (err));
+#endif
+              break;
+            }
+          urh_from_fdset (urh,
+                          &rs,
+                          &ws);
+          process_urh (urh);
+          if ( (0 == urh->out_buffer_size) &&
+               (0 == urh->in_buffer_size) )
+            break; /* connections died, we have no more purpose here */
+        }
+    }
 #ifdef HAVE_POLL
-    else
-      {
-        /* use poll() */
-        const unsigned int timeout = UINT_MAX;
+  else
+    {
+      /* use poll() */
+      const unsigned int timeout = UINT_MAX;
 
-        while (MHD_CONNECTION_UPGRADE == con->state)
-          {
-            struct pollfd p[2];
+      while (MHD_CONNECTION_UPGRADE == con->state)
+        {
+          struct pollfd p[2];
 
-            memset (p, 0, sizeof (struct pollfd) * 2);
-            p[0].fd = urh->connection->socket_fd;
-            p[1].fd = urh->mhd.socket;
-            if (urh->in_buffer_off < urh->in_buffer_size)
-              p[0].events |= POLLIN;
-            if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
-              p[0].events |= POLLOUT;
-            if (urh->out_buffer_off < urh->out_buffer_size)
-              p[1].events |= POLLIN;
-            if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
-              p[1].events |= POLLOUT;
+          memset (p, 0, sizeof (struct pollfd) * 2);
+          p[0].fd = urh->connection->socket_fd;
+          p[1].fd = urh->mhd.socket;
+          if (urh->in_buffer_off < urh->in_buffer_size)
+            p[0].events |= POLLIN;
+          if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
+            p[0].events |= POLLOUT;
+          if (urh->out_buffer_off < urh->out_buffer_size)
+            p[1].events |= POLLIN;
+          if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
+            p[1].events |= POLLOUT;
 
-            if ( (0 != (p[0].events | p[1].events)) &&
-                 (MHD_sys_poll_ (p,
-                                 2,
-                                 timeout) < 0) )
-              {
-                const int err = MHD_socket_get_error_ ();
+          if ( (0 != (p[0].events | p[1].events)) &&
+               (MHD_sys_poll_ (p,
+                               2,
+                               timeout) < 0) )
+            {
+              const int err = MHD_socket_get_error_ ();
 
-                if (MHD_SCKT_ERR_IS_EINTR_ (err))
-                  continue;
+              if (MHD_SCKT_ERR_IS_EINTR_ (err))
+                continue;
 #ifdef HAVE_MESSAGES
-                MHD_DLOG (con->daemon,
-                          "Error during poll: `%s'\n",
-                          MHD_socket_strerr_ (err));
+              MHD_DLOG (con->daemon,
+                        "Error during poll: `%s'\n",
+                        MHD_socket_strerr_ (err));
 #endif
-                break;
-              }
-            if (0 != (p[0].revents & POLLIN))
-              urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-            if (0 != (p[0].revents & POLLOUT))
-              urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-            if (0 != (p[1].revents & POLLIN))
-              urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-            if (0 != (p[1].revents & POLLOUT))
-              urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-            process_urh (urh);
-            if ( (0 == urh->out_buffer_size) &&
-                 (0 == urh->in_buffer_size) )
-              break; /* connections died, we have no more purpose here */
-          }
-      }
-    /* end POLL */
+              break;
+            }
+          if (0 != (p[0].revents & POLLIN))
+            urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
+          if (0 != (p[0].revents & POLLOUT))
+            urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
+          if (0 != (p[1].revents & POLLIN))
+            urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+          if (0 != (p[1].revents & POLLOUT))
+            urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+          process_urh (urh);
+          if ( (0 == urh->out_buffer_size) &&
+               (0 == urh->in_buffer_size) )
+            break; /* connections died, we have no more purpose here */
+        }
+    }
+  /* end POLL */
 #endif
-    /* end HTTPS */
-#else
-    /* HTTPS option set, but compiled without HTTPS */
-  MHD_PANIC ("This should not be possible\n");
+  /* end HTTPS */
 #endif
-  }
 
   /* Here, we need to block until the application
      signals us that it is done with the socket */
@@ -4977,6 +4979,7 @@ thread_failed:
  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
+#if HTTPS_SUPPORT
 #ifdef EPOLL_SUPPORT
   if (MHD_YES == daemon->upgrade_fd_in_epoll)
     {
@@ -4987,6 +4990,7 @@ thread_failed:
 	MHD_PANIC ("Failed to remove FD from epoll set\n");
       daemon->upgrade_fd_in_epoll = MHD_NO;
     }
+#endif
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
 #if HTTPS_SUPPORT

@@ -67,7 +67,7 @@ run_tls_handshake (struct MHD_Connection *connection)
       /* handshake failed */
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-		"Error: received handshake message out of context\n");
+		_("Error: received handshake message out of context\n"));
 #endif
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_WITH_ERROR);
@@ -136,7 +136,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
 
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
-            "%s: state: %s\n",
+            _("In function %s handling connection at state: %s\n"),
             __FUNCTION__,
             MHD_state_to_string (connection->state));
 #endif

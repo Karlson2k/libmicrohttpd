@@ -3327,7 +3327,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Application used invalid status code for 'upgrade' response!\n");
+                _("Application used invalid status code for 'upgrade' response!\n"));
 #endif
       return MHD_NO;
     }
@@ -3337,7 +3337,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Application attempted 'upgrade' without setting MHD_USE_SUSPEND_RESUME!\n");
+                _("Application attempted 'upgrade' without setting MHD_USE_SUSPEND_RESUME!\n"));
 #endif
       return MHD_NO;
     }
@@ -3348,7 +3348,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Application attempted 'upgrade' HTTPS connection in epoll mode without setting MHD_USE_HTTPS_EPOLL_UPGRADE!\n");
+                _("Application attempted 'upgrade' HTTPS connection in epoll mode without setting MHD_USE_HTTPS_EPOLL_UPGRADE!\n"));
 #endif
       return MHD_NO;
     }
