@@ -68,8 +68,13 @@ libmicrohttpd_la_SOURCES = \
   mhd_locks.h mhd_sem.c \
   mhd_sockets.c mhd_sockets.h \
   mhd_itc.c mhd_itc.h \
-  mhd_compat.c mhd_compat.h \
+  mhd_compat.h \
   response.c response.h
+if HAVE_W32
+libmicrohttpd_la_SOURCES += \
+  mhd_compat.c
+endif
+
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1

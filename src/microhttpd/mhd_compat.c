@@ -35,21 +35,15 @@
 #endif /* _WIN32  && !__CYGWIN__ */
 
 
-/**
- * Dummy function to silent compiler warning on empty file
- * @return zero
- */
-static int
-static_dummy_func(void)
-{
-  return 0;
-}
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 #ifndef HAVE_SNPRINTF
 /* Emulate snprintf function on W32 */
-int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ...)
+int
+W32_snprintf(char *__restrict s,
+             size_t n,
+             const char *__restrict format,
+             ...)
 {
   int ret;
   va_list args;
