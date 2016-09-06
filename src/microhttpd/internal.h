@@ -197,6 +197,12 @@ struct MHD_NonceNc
   uint64_t nc;
 
   /**
+   * Bitmask over the nc-64 previous nonce values.  Used to
+   * allow out-of-order nonces.
+   */
+  uint64_t nmask;
+
+  /**
    * Nonce value:
    */
   char nonce[MAX_NONCE_LENGTH];
@@ -1499,7 +1505,7 @@ struct MHD_Daemon
   struct MHD_NonceNc *nnc;
 
   /**
-   * A rw-lock for synchronizing access to `nnc'.
+   * A rw-lock for synchronizing access to @e nnc.
    */
   MHD_mutex_ nnc_lock;
 

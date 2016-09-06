@@ -1,3 +1,6 @@
+Tue Sep  6 23:39:56 CEST 2016
+	Allow out-of-order nonces for digest authentication (#4636). -CG
+
 Tue Sep  6 21:29:09 CEST 2016
 	Martin was right, "socket_context" should be "void *"
 	in `union MHD_ConnectionInfo`.  -MS
