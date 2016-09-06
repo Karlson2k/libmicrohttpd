@@ -1,3 +1,6 @@
+Wed Sep  7 00:28:59 CEST 2016
+	Adding remaining "_"-markups for i18n (#4614). -CG
+
 Tue Sep  6 23:39:56 CEST 2016
 	Allow out-of-order nonces for digest authentication (#4636). -CG
 

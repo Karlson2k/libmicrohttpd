@@ -46,12 +46,15 @@ MHD_itc_nonblocking_ (MHD_pipe fd)
 {
   int flags;
 
-  flags = fcntl (fd, F_GETFL);
+  flags = fcntl (fd,
+                 F_GETFL);
   if (-1 == flags)
     return 0;
 
   if ( ((flags | O_NONBLOCK) != flags) &&
-       (0 != fcntl (fd, F_SETFL, flags | O_NONBLOCK)) )
+       (0 != fcntl (fd,
+                    F_SETFL,
+                    flags | O_NONBLOCK)) )
     return 0;
 
   return !0;

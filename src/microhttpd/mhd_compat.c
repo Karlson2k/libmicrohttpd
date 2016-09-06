@@ -40,30 +40,41 @@
 #ifndef HAVE_SNPRINTF
 /* Emulate snprintf function on W32 */
 int
-W32_snprintf(char *__restrict s,
-             size_t n,
-             const char *__restrict format,
-             ...)
+W32_snprintf (char *__restrict s,
+              size_t n,
+              const char *__restrict format,
+              ...)
 {
   int ret;
   va_list args;
-  if (0 != n && NULL != s )
+
+  if ( (0 != n) &&
+       (NULL != s) )
   {
-    va_start(args, format);
-    ret = _vsnprintf(s, n, format, args);
-    va_end(args);
+    va_start (args,
+              format);
+    ret = _vsnprintf (s,
+                      n,
+                      format,
+                      args);
+    va_end (args);
     if ((int)n == ret)
       s[n - 1] = 0;
     if (ret >= 0)
       return ret;
   }
-  va_start(args, format);
-  ret = _vscprintf(format, args);
+  va_start(args,
+           format);
+  ret = _vscprintf (format,
+                    args);
   va_end(args);
-  if (0 <= ret && 0 != n && NULL == s)
+  if ( (0 <= ret) &&
+       (0 != n) &&
+       (NULL == s) )
     return -1;
 
   return ret;
 }
+
 #endif  /* HAVE_SNPRINTF */
 #endif /* _WIN32  && !__CYGWIN__ */

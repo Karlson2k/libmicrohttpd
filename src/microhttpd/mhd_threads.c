@@ -56,13 +56,17 @@ typedef DWORD MHD_thread_ID_;
 #if defined(MHD_USE_POSIX_THREADS)
 #if defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) \
     || defined(HAVE_PTHREAD_SETNAME_NP_NETBSD)
+
 /**
  * Set thread name
+ *
  * @param thread_id ID of thread
  * @param thread_name name to set
  * @return non-zero on success, zero otherwise
  */
-static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thread_name)
+static int
+MHD_set_thread_name_(const MHD_thread_ID_ thread_id,
+                     const char *thread_name)
 {
   if (NULL == thread_name)
     return 0;
@@ -110,11 +114,14 @@ static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thre
 #else  /* _MSC_FULL_VER */
 /**
  * Set thread name
+ *
  * @param thread_id ID of thread, -1 for current thread
  * @param thread_name name to set
  * @return non-zero on success, zero otherwise
  */
-static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thread_name)
+static int
+MHD_set_thread_name_(const MHD_thread_ID_ thread_id,
+                     const char *thread_name)
 {
   static const DWORD VC_SETNAME_EXC = 0x406D1388;
 #pragma pack(push,8)
@@ -137,7 +144,10 @@ static int MHD_set_thread_name_(const MHD_thread_ID_ thread_id, const char *thre
 
   __try
   { /* This exception is intercepted by debugger */
-    RaiseException(VC_SETNAME_EXC, 0, sizeof(thread_info) / sizeof(ULONG_PTR), (ULONG_PTR*)&thread_info);
+    RaiseException (VC_SETNAME_EXC,
+                    0,
+                    sizeof (thread_info) / sizeof(ULONG_PTR),
+                    (ULONG_PTR *) &thread_info);
   }
   __except (EXCEPTION_EXECUTE_HANDLER)
   {}
@@ -182,15 +192,21 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
       res = pthread_attr_init (&attr);
       if (0 == res)
         {
-          res = pthread_attr_setstacksize (&attr, stack_size);
+          res = pthread_attr_setstacksize (&attr,
+                                           stack_size);
           if (0 == res)
-              res = pthread_create (thread, &attr,
-                                    start_routine, arg);
+              res = pthread_create (thread,
+                                    &attr,
+                                    start_routine,
+                                    arg);
           pthread_attr_destroy (&attr);
         }
     }
   else
-    res = pthread_create (thread, NULL, start_routine, arg);
+    res = pthread_create (thread,
+                          NULL,
+                          start_routine,
+                          arg);
 
   if (0 != res)
     errno = res;
@@ -205,8 +221,12 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
     }
 #endif /* SIZE_MAX != UINT_MAX */
 
-  *thread = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size, start_routine,
-                          arg, 0, NULL);
+  *thread = (HANDLE) _beginthreadex (NULL,
+                                     (unsigned int) stack_size,
+                                     start_routine,
+                                     arg,
+                                     0,
+                                     NULL);
   if ((MHD_thread_handle_)-1 == (*thread))
     return 0;
 
@@ -234,6 +254,7 @@ struct MHD_named_helper_param_
   const char *name;
 };
 
+
 static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 named_thread_starter (void *data)
 {
@@ -245,7 +266,7 @@ named_thread_starter (void *data)
   if (NULL == data)
     return (MHD_THRD_RTRN_TYPE_)0;
 
-  MHD_set_cur_thread_name_(param->name);
+  MHD_set_cur_thread_name_ (param->name);
 
   arg = param->arg;
   thr_func = param->start_routine;
@@ -253,7 +274,6 @@ named_thread_starter (void *data)
 
   return thr_func(arg);
 }
-
 
 
 /**
@@ -273,7 +293,7 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
                           MHD_THREAD_START_ROUTINE_ start_routine,
                           void *arg)
 {
-  struct MHD_named_helper_param_ * param;
+  struct MHD_named_helper_param_ *param;
 
   if (NULL == thread_name)
     {
@@ -281,7 +301,7 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
       return 0;
     }
 
-  param = malloc(sizeof(struct MHD_named_helper_param_));
+  param = malloc (sizeof (struct MHD_named_helper_param_));
   if (NULL == param)
     return 0;
 
@@ -292,9 +312,12 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
   /* Set thread name in thread itself to avoid problems with
    * threads which terminated before name is set in other thread.
    */
-  if (!MHD_create_thread_(thread, stack_size, &named_thread_starter, (void*)param))
+  if (! MHD_create_thread_(thread,
+                           stack_size,
+                           &named_thread_starter,
+                           (void*)param))
     {
-      free(param);
+      free (param);
       return 0;
     }
 

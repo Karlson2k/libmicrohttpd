@@ -243,12 +243,14 @@ const char* MHD_W32_strerror_winsock_(int err)
  * @param sockets_pair array to receive resulted sockets
  * @return non-zero if succeeded, zero otherwise
  */
-int MHD_W32_socket_pair_(SOCKET sockets_pair[2])
+int
+MHD_W32_socket_pair_(SOCKET sockets_pair[2])
 {
   int i;
-  if (!sockets_pair)
+
+  if (! sockets_pair)
     {
-      WSASetLastError(WSAEFAULT);
+      WSASetLastError (WSAEFAULT);
       return 0;
     }
 
@@ -261,52 +263,86 @@ int MHD_W32_socket_pair_(SOCKET sockets_pair[2])
       int addr_len = c_addinlen;
       int opt = 1;
 
-      listen_s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+      listen_s = socket (AF_INET,
+                         SOCK_STREAM,
+                         IPPROTO_TCP);
       if (INVALID_SOCKET == listen_s)
         break; /* can't create even single socket */
 
       listen_addr.sin_family = AF_INET;
       listen_addr.sin_port = 0; /* same as htons(0) */
       listen_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-      if (0 == bind(listen_s, (struct sockaddr*) &listen_addr, c_addinlen)
-          && 0 == listen(listen_s, 1)
-          && 0 == getsockname(listen_s, (struct sockaddr*) &listen_addr,
-                  &addr_len))
+      if ( (0 == bind (listen_s,
+                       (struct sockaddr*) &listen_addr,
+                       c_addinlen) &&
+            (0 == listen (listen_s,
+                          1) )
+            (0 == getsockname (listen_s,
+                               (struct sockaddr*) &listen_addr,
+                               &addr_len))) )
         {
-          SOCKET client_s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-          if (INVALID_SOCKET != client_s)
+          SOCKET client_s = socket(AF_INET,
+                                   SOCK_STREAM,
+                                   IPPROTO_TCP);
+          struct sockaddr_in accepted_from_addr;
+          struct sockaddr_in client_addr;
+          SOCKET server_s;
+
+          if (INVALID_SOCKET == client_s)
             {
-              if (0 == ioctlsocket(client_s, FIONBIO, (u_long*) &opt)
-                  && (0 == connect(client_s, (struct sockaddr*) &listen_addr, c_addinlen)
-                      || WSAGetLastError() == WSAEWOULDBLOCK))
-                {
-                  struct sockaddr_in accepted_from_addr;
-                  SOCKET server_s;
-                  addr_len = c_addinlen;
-                  server_s = accept(listen_s,
-                      (struct sockaddr*) &accepted_from_addr, &addr_len);
-                  if (INVALID_SOCKET != server_s)
-                    {
-                      struct sockaddr_in client_addr;
-                      addr_len = c_addinlen;
-                      opt = 0;
-                      if (0 == getsockname(client_s, (struct sockaddr*) &client_addr, &addr_len)
-                          && accepted_from_addr.sin_family == client_addr.sin_family
-                          && accepted_from_addr.sin_port == client_addr.sin_port
-                          && accepted_from_addr.sin_addr.s_addr == client_addr.sin_addr.s_addr
-                          && 0 == ioctlsocket(client_s, FIONBIO, (u_long*) &opt)
-                          && 0 == ioctlsocket(server_s, FIONBIO, (u_long*) &opt))
-                        {
-                          closesocket(listen_s);
-                          sockets_pair[0] = client_s;
-                          sockets_pair[1] = server_s;
-                          return !0;
-                        }
-                      closesocket(server_s);
-                    }
-                }
-              closesocket(client_s);
+              /* try again */
+              closesocket (listen_s);
+              continue;
             }
+
+          if ( (0 != ioctlsocket (client_s,
+                                  FIONBIO,
+                                  (u_long*) &opt)) ||
+               ( (0 != connect (client_s,
+                                (struct sockaddr*) &listen_addr,
+                                c_addinlen)) &&
+                 (WSAGetLastError() != WSAEWOULDBLOCK)) )
+            {
+              /* try again */
+              closesocket (listen_s);
+              closesocket (client_s);
+              continue;
+            }
+
+          addr_len = c_addinlen;
+          server_s = accept (listen_s,
+                             (struct sockaddr*) &accepted_from_addr,
+                             &addr_len);
+          if (INVALID_SOCKET == server_s)
+            {
+              /* try again */
+              closesocket (listen_s);
+              closesocket (client_s);
+              continue;
+            }
+
+          addr_len = c_addinlen;
+          opt = 0;
+          if ( (0 == getsockname (client_s,
+                                  (struct sockaddr*) &client_addr,
+                                  &addr_len)) &&
+               (accepted_from_addr.sin_family == client_addr.sin_family) &&
+               (accepted_from_addr.sin_port == client_addr.sin_port) &&
+               (accepted_from_addr.sin_addr.s_addr == client_addr.sin_addr.s_addr) &&
+               (0 == ioctlsocket(client_s,
+                                 FIONBIO,
+                                 (u_long*) &opt)) &&
+               (0 == ioctlsocket(server_s,
+                                 FIONBIO,
+                                 (u_long*) &opt)) )
+            {
+              closesocket (listen_s);
+              sockets_pair[0] = client_s;
+              sockets_pair[1] = server_s;
+              return !0;
+            }
+          closesocket (server_s);
+          closesocket (client_s);
         }
       closesocket(listen_s);
     }
@@ -367,17 +403,22 @@ MHD_socket_nonblocking_ (MHD_socket sock)
 #if defined(MHD_POSIX_SOCKETS)
   int flags;
 
-  flags = fcntl (sock, F_GETFL);
+  flags = fcntl (sock,
+                 F_GETFL);
   if (-1 == flags)
     return 0;
 
   if ( ((flags | O_NONBLOCK) != flags) &&
-       (0 != fcntl (sock, F_SETFL, flags | O_NONBLOCK)) )
+       (0 != fcntl (sock,
+                    F_SETFL,
+                    flags | O_NONBLOCK)) )
     return 0;
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 1;
 
-  if (0 != ioctlsocket (sock, FIONBIO, &flags))
+  if (0 != ioctlsocket (sock,
+                        FIONBIO,
+                        &flags))
     return 0;
 #endif /* MHD_WINSOCK_SOCKETS */
   return !0;
@@ -397,15 +438,20 @@ MHD_socket_noninheritable_ (MHD_socket sock)
 #if defined(MHD_POSIX_SOCKETS)
   int flags;
 
-  flags = fcntl (sock, F_GETFD);
+  flags = fcntl (sock,
+                 F_GETFD);
   if (-1 == flags)
     return 0;
 
   if ( ((flags | FD_CLOEXEC) != flags) &&
-       (0 != fcntl (sock, F_SETFD, flags | FD_CLOEXEC)) )
+       (0 != fcntl (sock,
+                    F_SETFD,
+                    flags | FD_CLOEXEC)) )
     return 0;
 #elif defined(MHD_WINSOCK_SOCKETS)
-  if (!SetHandleInformation ((HANDLE)sock, HANDLE_FLAG_INHERIT, 0))
+  if (! SetHandleInformation ((HANDLE)sock,
+                              HANDLE_FLAG_INHERIT,
+                              0))
     return 0;
 #endif /* MHD_WINSOCK_SOCKETS */
   return !0;
@@ -437,32 +483,45 @@ MHD_socket_create_listen_ (int use_ipv6)
 #endif /* ! HAVE_INET6 */
 
 #if defined(MHD_POSIX_SOCKETS) && defined(SOCK_CLOEXEC)
-  fd = socket (domain, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  fd = socket (domain,
+               SOCK_STREAM | SOCK_CLOEXEC,
+               0);
   cloexec_set = !0;
 #elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
-  fd = WSASocketW (domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT);
+  fd = WSASocketW (domain,
+                   SOCK_STREAM,
+                   0,
+                   NULL,
+                   0,
+                   WSA_FLAG_NO_HANDLE_INHERIT);
   cloexec_set = !0;
 #else  /* !SOCK_CLOEXEC */
   fd = MHD_INVALID_SOCKET;
 #endif /* !SOCK_CLOEXEC */
   if (MHD_INVALID_SOCKET == fd)
     {
-      fd = socket (domain, SOCK_STREAM, 0);
+      fd = socket (domain,
+                   SOCK_STREAM,
+                   0);
       cloexec_set = 0;
     }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
 #if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-  if(0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on_val, sizeof(on_val)))
+  if(0 != setsockopt(fd,
+                     SOL_SOCKET,
+                     SO_NOSIGPIPE,
+                     &on_val,
+                     sizeof (on_val)))
     {
-      int err = MHD_socket_get_error_();
-      MHD_socket_close_(fd);
-      MHD_socket_fset_error_(err);
+      int err = MHD_socket_get_error_ ();
+      MHD_socket_close_ (fd);
+      MHD_socket_fset_error_ (err);
       return MHD_INVALID_SOCKET;
     }
 #endif
-  if (!cloexec_set)
-    (void)MHD_socket_noninheritable_(fd);
+  if (! cloexec_set)
+    (void) MHD_socket_noninheritable_ (fd);
 
   return fd;
 }

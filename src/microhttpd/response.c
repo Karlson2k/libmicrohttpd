@@ -154,14 +154,17 @@ MHD_del_response_header (struct MHD_Response *response,
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
 
-  if ( (NULL == header) || (NULL == content) )
+  if ( (NULL == header) ||
+  (NULL == content) )
     return MHD_NO;
   prev = NULL;
   pos = response->first_header;
   while (pos != NULL)
     {
-      if ((0 == strcmp (header, pos->header)) &&
-          (0 == strcmp (content, pos->value)))
+      if ((0 == strcmp (header,
+                        pos->header)) &&
+          (0 == strcmp (content,
+                        pos->value)))
         {
           free (pos->header);
           free (pos->value);
@@ -228,7 +231,8 @@ MHD_get_response_header (struct MHD_Response *response,
   if (NULL == key)
     return NULL;
   for (pos = response->first_header; NULL != pos; pos = pos->next)
-    if (0 == strcmp (key, pos->header))
+    if (0 == strcmp (key,
+                     pos->header))
       return pos->value;
   return NULL;
 }
@@ -263,11 +267,13 @@ MHD_create_response_from_callback (uint64_t size,
     return NULL;
   if (NULL == (response = malloc (sizeof (struct MHD_Response) + block_size)))
     return NULL;
-  memset (response, 0, sizeof (struct MHD_Response));
+  memset (response,
+          0,
+          sizeof (struct MHD_Response));
   response->fd = -1;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
-  if (!MHD_mutex_init_ (&response->mutex))
+  if (! MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
@@ -372,7 +378,7 @@ file_reader (void *cls,
 
   n = read (response->fd,
             buf,
-            (unsigned int)max);
+            (unsigned int) max);
 #endif /* _WIN32 */
 
   if (0 == n)
@@ -646,7 +652,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
         if (MHD_INVALID_SOCKET != urh->app.socket)
           {
             if (0 != MHD_socket_close_ (urh->app.socket))
-              MHD_PANIC ("close failed\n");
+              MHD_PANIC (_("close failed\n"));
             urh->app.socket = MHD_INVALID_SOCKET;
           }
         return MHD_YES;
@@ -688,7 +694,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Invalid response for upgrade: application failed to set the 'Upgrade' header!\n");
+                _("Invalid response for upgrade: application failed to set the 'Upgrade' header!\n"));
 #endif
       return MHD_NO;
     }
@@ -720,7 +726,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-		  "Failed to make read side of inter-thread control channel non-blocking: %s\n",
+		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
 		  MHD_pipe_last_strerror_ ());
 #endif
       }
@@ -729,14 +735,14 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  "Socketpair descriptor larger than FD_SETSIZE: %d > %d\n",
+                  _("Socketpair descriptor larger than FD_SETSIZE: %d > %d\n"),
                   (int) sv[1],
                   (int) FD_SETSIZE);
 #endif
         if (0 != MHD_socket_close_ (sv[0]))
-          MHD_PANIC ("close failed\n");
+          MHD_PANIC (_("close failed\n"));
         if (0 != MHD_socket_close_ (sv[1]))
-          MHD_PANIC ("close failed\n");
+          MHD_PANIC (_("close failed\n"));
         free (urh);
         return MHD_NO;
       }
@@ -803,13 +809,13 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 	{
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    "Call to epoll_ctl failed: %s\n",
+                    _("Call to epoll_ctl failed: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
           if (0 != MHD_socket_close_ (sv[0]))
-            MHD_PANIC ("close failed\n");
+            MHD_PANIC (_("close failed\n"));
           if (0 != MHD_socket_close_ (sv[1]))
-            MHD_PANIC ("close failed\n");
+            MHD_PANIC (_("close failed\n"));
           free (urh);
           return MHD_NO;
 	}
@@ -828,16 +834,16 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                               EPOLL_CTL_DEL,
                               connection->socket_fd,
                               &event))
-            MHD_PANIC ("Error cleaning up while handling epoll error");
+            MHD_PANIC (_("Error cleaning up while handling epoll error"));
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    "Call to epoll_ctl failed: %s\n",
+                    _("Call to epoll_ctl failed: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
           if (0 != MHD_socket_close_ (sv[0]))
-            MHD_PANIC ("close failed\n");
+            MHD_PANIC (_("close failed\n"));
           if (0 != MHD_socket_close_ (sv[1]))
-            MHD_PANIC ("close failed\n");
+            MHD_PANIC (_("close failed\n"));
           free (urh);
           return MHD_NO;
 	}
@@ -875,7 +881,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    "Failed to create semaphore for upgrade handling\n");
+                    _("Failed to create semaphore for upgrade handling\n"));
 #endif
           MHD_connection_close_ (connection,
                                  MHD_REQUEST_TERMINATED_WITH_ERROR);
@@ -989,7 +995,7 @@ MHD_destroy_response (struct MHD_Response *response)
     }
   (void) MHD_mutex_unlock_ (&response->mutex);
   (void) MHD_mutex_destroy_ (&response->mutex);
-  if (response->crfc != NULL)
+  if (NULL != response->crfc)
     response->crfc (response->crc_cls);
   while (NULL != response->first_header)
     {

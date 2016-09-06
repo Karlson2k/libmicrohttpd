@@ -30,7 +30,9 @@
 #define NULL (void*)0
 #endif
 
-static const char *invalid_hundred[] = { NULL };
+static const char *invalid_hundred[] = {
+  NULL
+};
 
 static const char *const one_hundred[] = {
   "Continue",
