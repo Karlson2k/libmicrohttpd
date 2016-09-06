@@ -710,11 +710,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     char *buf;
     int sv[2];
 
-    /* FIXME: this is non-portable for now; W32 port pending... */
-    if (0 != socketpair (AF_UNIX,
-                         SOCK_STREAM,
-                         0,
-                         sv))
+    if (! MHD_socket_pair_ (sv))
     {
       free (urh);
       return MHD_NO;
