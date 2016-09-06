@@ -1486,7 +1486,7 @@ thread_main_handle_connection (void *data)
 #if WINDOWS
           /* drain signaling pipe before other processing */
           if ( (MHD_INVALID_PIPE_ != spipe) &&
-               (0 != (p[1].revents & (POLLERR | POLLHUP))) )
+               (0 != (p[1].revents & (POLLERR | POLLHUP | POLLIN))) )
             MHD_pipe_drain_ (spipe);
 #endif
           if (MHD_NO ==
