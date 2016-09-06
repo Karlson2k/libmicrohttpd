@@ -3205,7 +3205,8 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
  */
 const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection *connection,
-                         enum MHD_ConnectionInfoType info_type, ...)
+                         enum MHD_ConnectionInfoType info_type,
+                         ...)
 {
   switch (info_type)
     {

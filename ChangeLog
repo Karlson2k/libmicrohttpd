@@ -1,6 +1,6 @@
-2016-09-05  gettextize  <bug-gnu-gettext@gnu.org>
-
-	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.19.8.
+Tue Sep  6 21:29:09 CEST 2016
+	Martin was right, "socket_context" should be "void *"
+	in `union MHD_ConnectionInfo`.  -MS
 
 Sun Sep  4 18:16:32 CEST 2016
 	Fixing potential memory leak (#4634). -CG

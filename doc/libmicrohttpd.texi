@@ -2725,13 +2725,16 @@ connection is desired.
 
 @item MHD_CONNECTION_INFO_CIPHER_ALGO
 What cipher algorithm is being used (HTTPS connections only).
-Takes no extra arguments.
 @code{NULL} is returned for non-HTTPS connections.
 
+Takes no extra arguments.
+
 @item MHD_CONNECTION_INFO_PROTOCOL,
-Takes no extra arguments.   Allows finding out the TLS/SSL protocol used
+Allows finding out the TLS/SSL protocol used
 (HTTPS connections only).
 @code{NULL} is returned for non-HTTPS connections.
+
+Takes no extra arguments.
 
 @item MHD_CONNECTION_INFO_CLIENT_ADDRESS
 Returns information about the address of the client.  Returns
@@ -2739,11 +2742,15 @@ essentially a @code{struct sockaddr **} (since the API returns
 a @code{union MHD_ConnectionInfo *} and that union contains
 a @code{struct sockaddr *}).
 
+Takes no extra arguments.
+
 @item MHD_CONNECTION_INFO_GNUTLS_SESSION,
 Takes no extra arguments.  Allows access to the underlying GNUtls session,
 including access to the underlying GNUtls client certificate
 (HTTPS connections only).  Takes no extra arguments.
 @code{NULL} is returned for non-HTTPS connections.
+
+Takes no extra arguments.
 
 @item MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT,
 Dysfunctional (never implemented, deprecated).  Use
@@ -2753,6 +2760,8 @@ and then call @code{gnutls_certificate_get_peers()}.
 @item MHD_CONNECTION_INFO_DAEMON
 Returns information about @code{struct MHD_Daemon} which manages
 this connection.
+
+Takes no extra arguments.
 
 @item MHD_CONNECTION_INFO_CONNECTION_FD
 Returns the file descriptor (usually a TCP socket) associated with
@@ -2766,10 +2775,14 @@ automatically (if the platform supports it).  As the connection
 callbacks are invoked in between, those might be used to set different
 values for TCP-CORK and TCP-NODELAY in the meantime.
 
+Takes no extra arguments.
+
 @item MHD_CONNECTION_INFO_CONNECTION_SUSPENDED
 Returns pointer to an integer that is @code{MHD_YES} if the connection
 is currently suspended (and thus can be safely resumed) and
 @code{MHD_NO} otherwise.
+
+Takes no extra arguments.
 
 @item MHD_CONNECTION_INFO_SOCKET_CONTEXT
 Returns the client-specific pointer to a @code{void *} that was
@@ -2778,6 +2791,8 @@ socket was first accepted.  Note that this is NOT the same as the
 @code{con_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
 @code{con_cls} is fresh for each HTTP request, while the
 @code{socket_context} is fresh for each socket.
+
+Takes no extra arguments.
 
 @end table
 @end deftp
