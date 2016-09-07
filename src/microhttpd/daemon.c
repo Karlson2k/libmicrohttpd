@@ -933,6 +933,7 @@ finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
   DLL_remove (daemon->urh_head,
               daemon->urh_tail,
               urh);
+#if EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
       /* epoll documentation suggests that closing a FD
@@ -947,6 +948,7 @@ finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
                           NULL))
         MHD_PANIC (_("Failed to remove FD from epoll set\n"));
     }
+#endif
   if (MHD_INVALID_SOCKET != urh->mhd.socket)
     {
       /* epoll documentation suggests that closing a FD
@@ -955,12 +957,14 @@ finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
          we are still seeing an event for this fd in epoll,
          causing grief (use-after-free...) --- at least on my
          system. */
+#if EPOLL_SUPPORT
       if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
            (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                             EPOLL_CTL_DEL,
                             urh->mhd.socket,
                             NULL)) )
         MHD_PANIC (_("Failed to remove FD from epoll set\n"));
+#endif
       if (0 != MHD_socket_close_ (urh->mhd.socket))
         MHD_PANIC (_("close failed\n"));
     }
@@ -1574,7 +1578,8 @@ recv_param_adapter (struct MHD_Connection *connection,
                         (MHD_SCKT_SEND_SIZE_) i,
                         MSG_NOSIGNAL);
 #ifdef EPOLL_SUPPORT
-  if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
+  if ( (0 > ret) &&
+       (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
     {
       /* Got EAGAIN --- no longer read-ready */
       connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
@@ -5154,12 +5159,12 @@ thread_failed:
 	MHD_PANIC (_("Failed to remove FD from epoll set\n"));
       daemon->upgrade_fd_in_epoll = MHD_NO;
     }
-#endif
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
 #if HTTPS_SUPPORT
   if (-1 != daemon->epoll_upgrade_fd)
     close (daemon->epoll_upgrade_fd);
+#endif
 #endif
 #endif
 #ifdef DAUTH_SUPPORT
