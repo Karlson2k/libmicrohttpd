@@ -3187,12 +3187,14 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   int timeout;
   unsigned int poll_count;
   int poll_listen;
+  int poll_pipe;
 
   memset (&p,
           0,
           sizeof (p));
   poll_count = 0;
   poll_listen = -1;
+  poll_pipe = -1;
   if (MHD_INVALID_SOCKET != daemon->socket_fd)
     {
       p[poll_count].fd = daemon->socket_fd;
@@ -3206,6 +3208,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       p[poll_count].fd = daemon->wpipe[0];
       p[poll_count].events = POLLIN;
       p[poll_count].revents = 0;
+      poll_pipe = poll_count;
       poll_count++;
     }
   if (MHD_NO == may_block)
@@ -3229,6 +3232,10 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
+  if ( (-1 != poll_pipe) &&
+       (0 != (p[poll_pipe].revents & POLLIN)) )
+    MHD_pipe_drain_ (daemon->wpipe[0]);
+
   /* handle shutdown */
   if (MHD_YES == daemon->shutdown)
     return MHD_NO;
