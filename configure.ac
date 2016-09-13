@@ -26,7 +26,6 @@ AC_INIT([libmicrohttpd],[0.9.51],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_DEFINE([[_GNU_SOURCE]], [[1]], [Enable GNU-specific header features])
 
 LIB_VERSION_CURRENT=51
 LIB_VERSION_REVISION=0
@@ -70,6 +69,7 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CANONICAL_HOST
 AC_PROG_CC_STDC
+MHD_SYS_EXT
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 

@@ -56,7 +56,6 @@
 #define _MHD_FD_SETSIZE_IS_DEFAULT 1
 #endif /* !FD_SETSIZE && !WinSock*/
 
-#define _XOPEN_SOURCE_EXTENDED  1
 #if OS390
 #define _OPEN_THREADS
 #define _OPEN_SYS_SOCK_IPV6
