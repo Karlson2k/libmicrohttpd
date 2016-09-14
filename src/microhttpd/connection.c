@@ -2876,14 +2876,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_HEADERS_SENT:
           /* Some clients may take some actions right after header receive */
           if (MHD_NO != socket_flush_possible (connection))
-            {
-              socket_start_no_buffering_flush (connection);
-              socket_start_extra_buffering (connection);
-            }
-          else
-            socket_start_normal_buffering (connection);
+            socket_start_no_buffering_flush (connection);
+
           if (NULL != connection->response->upgrade_handler)
             {
+              socket_start_normal_buffering (connection);
               /* This connection is "upgraded".  Pass socket to application. */
               if (MHD_YES !=
                   MHD_response_execute_upgrade_ (connection->response,
@@ -2897,6 +2894,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_UPGRADE;
               continue;
             }
+          if (MHD_NO != socket_flush_possible (connection))
+            socket_start_extra_buffering (connection);
+          else
+            socket_start_normal_buffering (connection);
 
           if (connection->have_chunked_upload)
             connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
