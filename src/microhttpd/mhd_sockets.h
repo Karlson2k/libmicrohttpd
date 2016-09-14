@@ -584,7 +584,7 @@
     */
    int MHD_W32_socket_pair_(SOCKET sockets_pair[2]);
 
-#  define MHD_socket_pair_(fdarr) MHD_W32_pair_of_sockets_((fdarr))
+#  define MHD_socket_pair_(fdarr) MHD_W32_socket_pair_((fdarr))
 #endif
 
 /**
