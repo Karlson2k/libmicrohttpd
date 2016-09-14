@@ -276,7 +276,7 @@ MHD_W32_socket_pair_(SOCKET sockets_pair[2])
                        (struct sockaddr*) &listen_addr,
                        c_addinlen) &&
             (0 == listen (listen_s,
-                          1) )
+                          1) ) &&
             (0 == getsockname (listen_s,
                                (struct sockaddr*) &listen_addr,
                                &addr_len))) )
