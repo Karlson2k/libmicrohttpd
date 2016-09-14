@@ -558,7 +558,8 @@ fi
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h netdb.h netinet/in.h netinet/tcp.h time.h sys/socket.h sys/mman.h arpa/inet.h sys/select.h search.h \
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h search.h sys/ioctl.h \
+  sys/socket.h sys/select.h netdb.h netinet/in.h netinet/ip.h netinet/tcp.h arpa/inet.h \
   endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h \
   inttypes.h stddef.h unistd.h \
   sockLib.h inetLib.h net/if.h])

@@ -35,10 +35,10 @@
 #include <unistd.h>
 #endif
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include "mhd_sockets.h"
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
 #include "test_upgrade_common.c"
 
 

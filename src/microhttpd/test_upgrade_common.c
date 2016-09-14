@@ -46,14 +46,15 @@ static pthread_t pt_client;
 static int done;
 
 /**
- * Change itc FD options to be non-blocking.
+ * Change socket to non-blocking.
  *
- * @param fd the FD to manipulate
+ * @param fd the socket to manipulate
  * @return non-zero if succeeded, zero otherwise
  */
 static void
 make_blocking (MHD_socket fd)
 {
+#if defined(MHD_POSIX_SOCKETS)
   int flags;
 
   flags = fcntl (fd, F_GETFL);
@@ -62,6 +63,12 @@ make_blocking (MHD_socket fd)
   if ((flags & ~O_NONBLOCK) != flags)
     if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
       abort ();
+#elif defined(MHD_WINSOCK_SOCKETS)
+  unsigned long flags = 1;
+
+  ioctlsocket (fd, FIONBIO, &flags);
+#endif /* MHD_WINSOCK_SOCKETS */
+
 }
 
 

@@ -34,11 +34,11 @@
 #include <unistd.h>
 #endif
 
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include <pthread.h>
+#include "mhd_sockets.h"
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
 #include "mhd_sockets.h"
 #include "test_upgrade_common.c"
 

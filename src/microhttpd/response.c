@@ -25,6 +25,11 @@
 
 #define MHD_NO_DEPRECATION 1
 
+#include "mhd_options.h"
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif /* HAVE_SYS_IOCTL_H */
+
 #include "internal.h"
 #include "response.h"
 #include "mhd_limits.h"
@@ -33,7 +38,6 @@
 #include "connection.h"
 #include "memorypool.h"
 
-#include <sys/ioctl.h>
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -714,7 +718,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     struct MemoryPool *pool;
     size_t avail;
     char *buf;
-    int sv[2];
+    MHD_socket sv[2];
 
     if (! MHD_socket_pair_ (sv))
     {
