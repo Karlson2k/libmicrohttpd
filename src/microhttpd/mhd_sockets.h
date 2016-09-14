@@ -259,8 +259,9 @@
 ( ( (((void*)(r) == (void*)0) || ((fd_set*)(r))->fd_count == 0) &&  \
     (((void*)(w) == (void*)0) || ((fd_set*)(w))->fd_count == 0) &&  \
     (((void*)(e) == (void*)0) || ((fd_set*)(e))->fd_count == 0) ) ? \
-  ( ((void*)(t) == (void*)0) ?                                      \
-    (Sleep((t)->tv_sec * 1000 + (t)->tv_usec / 1000), 0) : 0 ) :    \
+  ( ((void*)(t) == (void*)0) ? 0 :                                  \
+    (Sleep(((struct timeval*)(t))->tv_sec * 1000 +                  \
+           ((struct timeval*)(t))->tv_usec / 1000), 0) ) :          \
   (select((int)0,(r),(w),(e),(t))) )
 #endif
 
