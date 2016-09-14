@@ -791,6 +791,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                rbo,
                                urh->app.socket,
                                urh);
+#ifdef EPOLL_SUPPORT
     /* Launch IO processing by the event loop */
     if (0 != (daemon->options & MHD_USE_EPOLL))
       {
@@ -848,6 +849,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
           return MHD_NO;
 	}
       }
+#endif /* EPOLL_SUPPORT */
     if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
       {
         /* As far as MHD's event loops are concerned, this connection
