@@ -721,13 +721,13 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       free (urh);
       return MHD_NO;
     }
-    if ( (! MHD_itc_nonblocking_(sv[0])) ||
-         (! MHD_itc_nonblocking_(sv[1])) )
+    if ( (! MHD_socket_nonblocking_(sv[0])) ||
+         (! MHD_socket_nonblocking_(sv[1])) )
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
-		  MHD_pipe_last_strerror_ ());
+		  _("Failed to make loopback sockets non-blocking: %s\n"),
+		  MHD_socket_last_strerr_ ());
 #endif
       }
     if ( (! MHD_SCKT_FD_FITS_FDSET_(sv[1], NULL)) &&
