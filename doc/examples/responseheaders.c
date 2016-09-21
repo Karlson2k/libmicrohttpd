@@ -36,12 +36,12 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if ( (-1 == (fd = open (FILENAME, O_RDONLY))) ||
        (0 != fstat (fd, &sbuf)) )
     {
-      /* error accessing file */
-      if (fd != -1)
-	(void) close (fd);
       const char *errorstr =
         "<html><body>An internal server error has occured!\
                               </body></html>";
+      /* error accessing file */
+      if (fd != -1)
+	(void) close (fd);
       response =
 	MHD_create_response_from_buffer (strlen (errorstr),
 					 (void *) errorstr,
