@@ -1,7 +1,11 @@
 # This Makefile.am is in the public domain
 man_MANS = libmicrohttpd.3
 
-SUBDIRS = . examples doxygen
+SUBDIRS = . doxygen
+
+if BUILD_EXAMPLES
+SUBDIRS += examples
+endif
 
 DISTCLEANFILES = \
   libmicrohttpd.cps \
