@@ -38,25 +38,29 @@
 /**
  * Change itc FD options to be non-blocking.
  *
- * @param fd the FD to manipulate
+ * @param pip the pipe to manipulate
  * @return non-zero if succeeded, zero otherwise
  */
 int
-MHD_itc_nonblocking_ (MHD_pipe fd)
+MHD_itc_nonblocking_ (struct MHD_Pipe pip)
 {
-  int flags;
+  unsigned int i;
 
-  flags = fcntl (fd,
-                 F_GETFL);
-  if (-1 == flags)
-    return 0;
+  for (i=0;i<2;i++)
+  {
+    int flags;
 
-  if ( ((flags | O_NONBLOCK) != flags) &&
-       (0 != fcntl (fd,
-                    F_SETFL,
-                    flags | O_NONBLOCK)) )
-    return 0;
+    flags = fcntl (pip.fd[i],
+                   F_GETFL);
+    if (-1 == flags)
+      return 0;
 
+    if ( ((flags | O_NONBLOCK) != flags) &&
+         (0 != fcntl (pip.fd[i],
+                      F_SETFL,
+                      flags | O_NONBLOCK)) )
+      return 0;
+  }
   return !0;
 }
 #endif /* _WIN32 && ! __CYGWIN__ */

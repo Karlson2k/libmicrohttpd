@@ -1352,7 +1352,7 @@ struct MHD_Daemon
    * MHD can be build with usage of socketpair instead of
    * pipe (forced on W32).
    */
-  MHD_pipe wpipe[2];
+  struct MHD_Pipe wpipe;
 
   /**
    * Are we shutting down?

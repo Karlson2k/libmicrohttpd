@@ -1276,7 +1276,6 @@ thread_main_handle_connection (void *data)
   struct timeval *tvp;
   time_t now;
 #if WINDOWS
-  MHD_pipe spipe = daemon->wpipe[0];
 #ifdef HAVE_POLL
   int extra_slot;
 #endif /* HAVE_POLL */
@@ -1371,9 +1370,9 @@ thread_main_handle_connection (void *data)
 	      goto exit;
 	    }
 #if WINDOWS
-          if (MHD_INVALID_PIPE_ != spipe)
+          if (! MHD_INVALID_PIPE_(deamon->wpipe) )
             {
-              if (! MHD_add_to_fd_set_ (spipe,
+              if (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_ (daemon->wpipe),
                                         &rs,
                                         &maxsock,
                                         FD_SETSIZE))
@@ -1410,10 +1409,10 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           /* drain signaling pipe before other processing */
-          if ( (MHD_INVALID_PIPE_ != spipe) &&
-               (FD_ISSET (spipe,
+          if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+               (FD_ISSET (MHD_pipe_get_read_fd_ (daemon->wpipe),
                           &rs)) )
-            MHD_pipe_drain_ (spipe);
+            MHD_pipe_drain_ (daemon->wpipe);
 #endif
           if (MHD_NO ==
               call_handlers (con,
@@ -1455,10 +1454,10 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           extra_slot = 0;
-          if (MHD_INVALID_PIPE_ != spipe)
+          if (! MHD_INVALID_PIPE_(daemon->wpipe))
             {
               p[1].events |= POLLIN;
-              p[1].fd = spipe;
+              p[1].fd = MHD_pipe_get_read_fd_ (daemon->wpipe);
               p[1].revents = 0;
               extra_slot = 1;
             }
@@ -1482,9 +1481,9 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           /* drain signaling pipe before other processing */
-          if ( (MHD_INVALID_PIPE_ != spipe) &&
+          if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP | POLLIN))) )
-            MHD_pipe_drain_ (spipe);
+            MHD_pipe_drain_ (daemon->wpipe);
 #endif
           if (MHD_NO ==
               call_handlers (con,
@@ -2025,8 +2024,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
   else
     if ( (MHD_YES == external_add) &&
-	 (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
-	 (1 != MHD_pipe_write_ (daemon->wpipe[1],
+	 (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+	 (1 != MHD_pipe_write_ (daemon->wpipe,
                                 "n",
                                 1)) )
       {
@@ -2208,8 +2207,8 @@ MHD_resume_connection (struct MHD_Connection *connection)
     MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
   connection->resuming = MHD_YES;
   daemon->resuming = MHD_YES;
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
-       (1 != MHD_pipe_write_ (daemon->wpipe[1], "r", 1)) )
+  if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+       (1 != MHD_pipe_write_ (daemon->wpipe, "r", 1)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -2703,10 +2702,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   /* drain signaling pipe to avoid spinning select */
   /* Do it before any other processing so new signals
      will trigger select again and will be processed */
-  if ((MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-      (FD_ISSET (daemon->wpipe[0],
-                 read_fd_set)))
-    MHD_pipe_drain_ (daemon->wpipe[0]);
+  if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+       (FD_ISSET (MHD_pipe_get_read_fd_ (daemon->wpipe),
+                  read_fd_set)) )
+    MHD_pipe_drain_ (daemon->wpipe);
 
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_USE_SUSPEND_RESUME == (daemon->options & mask))
@@ -2839,8 +2838,8 @@ MHD_select (struct MHD_Daemon *daemon,
           return MHD_NO;
         }
     }
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-       (! MHD_add_to_fd_set_ (daemon->wpipe[0],
+  if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+       (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_ (daemon->wpipe),
                               &rs,
                               &maxsock,
                               FD_SETSIZE)) )
@@ -2876,7 +2875,7 @@ MHD_select (struct MHD_Daemon *daemon,
      only do this optimization if we have a signaling pipe in
      place. */
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-       (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+       (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
        (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) &&
        ( (daemon->connections == daemon->connection_limit) ||
          (MHD_YES == daemon->at_limit) ) )
@@ -3001,9 +3000,9 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	poll_server++;
       }
     poll_pipe = -1;
-    if (MHD_INVALID_PIPE_ != daemon->wpipe[0])
+    if (! MHD_INVALID_PIPE_(daemon->wpipe))
       {
-	p[poll_server].fd = daemon->wpipe[0];
+	p[poll_server].fd = MHD_pipe_get_read_fd_ (daemon->wpipe);
 	p[poll_server].events = POLLIN;
 	p[poll_server].revents = 0;
         poll_pipe = (int) poll_server;
@@ -3087,7 +3086,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
        new signals will be processed in next loop */
     if ( (-1 != poll_pipe) &&
          (0 != (p[poll_pipe].revents & POLLIN)) )
-      MHD_pipe_drain_ (daemon->wpipe[0]);
+      MHD_pipe_drain_ (daemon->wpipe);
 
     /* handle shutdown */
     if (MHD_YES == daemon->shutdown)
@@ -3182,9 +3181,9 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       poll_listen = poll_count;
       poll_count++;
     }
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[0])
+  if (! MHD_INVALID_PIPE_(daemon->wpipe))
     {
-      p[poll_count].fd = daemon->wpipe[0];
+      p[poll_count].fd = MHD_pipe_get_read_fd_ (daemon->wpipe);
       p[poll_count].events = POLLIN;
       p[poll_count].revents = 0;
       poll_pipe = poll_count;
@@ -3213,7 +3212,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     }
   if ( (-1 != poll_pipe) &&
        (0 != (p[poll_pipe].revents & POLLIN)) )
-    MHD_pipe_drain_ (daemon->wpipe[0]);
+    MHD_pipe_drain_ (daemon->wpipe);
 
   /* handle shutdown */
   if (MHD_YES == daemon->shutdown)
@@ -3488,15 +3487,15 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
           /* UGH: we're storing pointers and fds in the same union
              here; incredibly ugly and somewhat risky, even though a
-             pointer with the same numeric value as the wpipe[0] can
+             pointer with the same numeric value as the wpipe.fd[0] can
              be expected to be rare... FIXME (a construction similar
              to what we did with the `upgrade_marker` should do) */
-          if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-               (daemon->wpipe[0] == events[i].data.fd) )
+          if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+               (MHD_pipe_get_read_fd_ (daemon->wpipe) == events[i].data.fd) )
             {
               /* It's OK to drain pipe here as all external
                  conditions will be processed later. */
-              MHD_pipe_drain_ (daemon->wpipe[0]);
+              MHD_pipe_drain_ (daemon->wpipe);
               continue;
             }
 	  if (daemon == events[i].data.ptr)
@@ -3759,7 +3758,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   ret = daemon->socket_fd;
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
-  if ( (MHD_INVALID_PIPE_ == daemon->wpipe[1]) &&
+  if ( (MHD_INVALID_PIPE_(daemon->wpipe)) &&
        (0 != (daemon->options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION))) )
     {
 #ifdef HAVE_MESSAGES
@@ -3787,9 +3786,9 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 	  }
         else
 #endif
-        if (MHD_INVALID_PIPE_ != daemon->worker_pool[i].wpipe[1])
+        if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].wpipe))
           {
-            if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1],
+            if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe,
                                       "q",
                                       1))
               MHD_PANIC (_("Failed to signal quiesce via pipe"));
@@ -3810,9 +3809,9 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     }
   else
 #endif
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[1])
+    if (! MHD_INVALID_PIPE_(daemon->wpipe))
     {
-      if (1 != MHD_pipe_write_ (daemon->wpipe[1],
+      if (1 != MHD_pipe_write_ (daemon->wpipe,
                                 "q",
                                 1))
 	MHD_PANIC (_("failed to signal quiesce via pipe"));
@@ -4325,15 +4324,15 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
+  if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
        (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
       event.events = EPOLLIN | EPOLLET;
       event.data.ptr = NULL;
-      event.data.fd = daemon->wpipe[0];
+      event.data.fd = MHD_pipe_get_read_fd_ (daemon->wpipe);
       if (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_ADD,
-                          daemon->wpipe[0],
+                          MHD_pipe_get_read_fd_ (daemon->wpipe),
                           &event))
         {
 #ifdef HAVE_MESSAGES
@@ -4440,8 +4439,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->pool_increment = MHD_BUF_INC_SIZE;
   daemon->unescape_callback = &unescape_wrapper;
   daemon->connection_timeout = 0;       /* no timeout */
-  daemon->wpipe[0] = MHD_INVALID_PIPE_;
-  daemon->wpipe[1] = MHD_INVALID_PIPE_;
+  MHD_make_invalid_pipe_ (daemon->wpipe);
 #ifdef SOMAXCONN
   daemon->listen_backlog_size = SOMAXCONN;
 #else  /* !SOMAXCONN */
@@ -4470,42 +4468,28 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    if (! MHD_itc_nonblocking_(daemon->wpipe[0]))
+    if (! MHD_itc_nonblocking_ (daemon->wpipe))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
 		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
 		  MHD_pipe_last_strerror_ ());
 #endif
-        if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
-          MHD_PANIC (_("close failed\n"));
-        if (0 != MHD_pipe_close_ (daemon->wpipe[1]))
-          MHD_PANIC (_("close failed\n"));
+        MHD_pipe_close_ (daemon->wpipe);
         free (daemon);
         return NULL;
-      }
-    if (!MHD_itc_nonblocking_(daemon->wpipe[1]))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _("Failed to make write side of inter-thread control channel non-blocking: %s\n"),
-                  MHD_pipe_last_strerror_ ());
-#endif
       }
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
        (1 == use_pipe) &&
-       (! MHD_SCKT_FD_FITS_FDSET_(daemon->wpipe[0],
+       (! MHD_SCKT_FD_FITS_FDSET_(MHD_pipe_get_read_fd_ (daemon->wpipe),
                                   NULL)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		_("file descriptor for control pipe exceeds maximum value\n"));
 #endif
-      if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
-	MHD_PANIC (_("close failed\n"));
-      if (0 != MHD_pipe_close_ (daemon->wpipe[1]))
-	MHD_PANIC (_("close failed\n"));
+      MHD_pipe_close_ (daemon->wpipe);
       free (daemon);
       return NULL;
     }
@@ -5005,7 +4989,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
                   goto thread_failed;
                 }
-              if (! MHD_itc_nonblocking_(d->wpipe[0]))
+              if (! MHD_itc_nonblocking_(d->wpipe))
                 {
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,
@@ -5014,27 +4998,16 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
                   goto thread_failed;
                 }
-              if (! MHD_itc_nonblocking_(d->wpipe[1]))
-                {
-#ifdef HAVE_MESSAGES
-                  MHD_DLOG (daemon,
-                            _("Failed to make write side of worker inter-thread control channel non-blocking: %s\n"),
-                            MHD_pipe_last_strerror_ ());
-#endif
-                }
             }
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-               (! MHD_SCKT_FD_FITS_FDSET_(d->wpipe[0],
+               (! MHD_SCKT_FD_FITS_FDSET_(MHD_pipe_get_read_fd_ (daemon->wpipe),
                                           NULL)) )
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         _("File descriptor for worker control pipe exceeds maximum value\n"));
 #endif
-              if (0 != MHD_pipe_close_ (d->wpipe[0]))
-                MHD_PANIC (_("close failed\n"));
-              if (0 != MHD_pipe_close_ (d->wpipe[1]))
-                MHD_PANIC (_("close failed\n"));
+              MHD_pipe_close_ (d->wpipe);
               goto thread_failed;
             }
 
@@ -5140,12 +5113,8 @@ thread_failed:
   if (0 != (flags & MHD_USE_SSL))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[0]) &&
-       (0 != MHD_pipe_close_ (daemon->wpipe[0])) )
-    MHD_PANIC (_("close failed\n"));
-  if ( (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
-       (0 != MHD_pipe_close_ (daemon->wpipe[1])) )
-    MHD_PANIC (_("close failed\n"));
+  if (! MHD_INVALID_PIPE_(daemon->wpipe))
+    MHD_pipe_close_ (daemon->wpipe);
   free (daemon);
   return NULL;
 }
@@ -5212,8 +5181,8 @@ close_all_connections (struct MHD_Daemon *daemon)
       shutdown (pos->socket_fd, SHUT_RDWR);
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-           (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
-           (1 != MHD_pipe_write_ (daemon->wpipe[1], "e", 1)) )
+           (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
+           (1 != MHD_pipe_write_ (daemon->wpipe, "e", 1)) )
         MHD_PANIC (_("Failed to signal shutdown via pipe"));
 #endif
     }
@@ -5253,7 +5222,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 
 #ifdef EPOLL_SUPPORT
 /**
- * Shutdown epoll()-event loop by adding 'wpipe' to its event set.
+ * Shutdown epoll()-event loop by adding write end of 'wpipe' to its event set.
  *
  * @param daemon daemon of which the epoll() instance must be signalled
  */
@@ -5262,7 +5231,7 @@ epoll_shutdown (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
 
-  if (MHD_INVALID_PIPE_ == daemon->wpipe[1])
+  if (MHD_INVALID_PIPE_(daemon->wpipe))
     {
       /* wpipe was required in this mode, how could this happen? */
       MHD_PANIC (_("Internal error\n"));
@@ -5271,7 +5240,7 @@ epoll_shutdown (struct MHD_Daemon *daemon)
   event.data.ptr = NULL;
   if (0 != epoll_ctl (daemon->epoll_fd,
 		      EPOLL_CTL_ADD,
-		      daemon->wpipe[1],
+		      MHD_pipe_get_write_fd_ (daemon->wpipe),
 		      &event))
     MHD_PANIC (_("Failed to add wpipe to epoll set to signal termination\n"));
 }
@@ -5314,9 +5283,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
 	}
     }
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[1])
+  if (! MHD_INVALID_PIPE_(daemon->wpipe))
     {
-      if (1 != MHD_pipe_write_ (daemon->wpipe[1], "e", 1))
+      if (1 != MHD_pipe_write_ (daemon->wpipe, "e", 1))
 	MHD_PANIC (_("Failed to signal shutdown via pipe"));
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
@@ -5350,9 +5319,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       /* MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
       for (i = 0; i < daemon->worker_pool_size; ++i)
 	{
-	  if (MHD_INVALID_PIPE_ != daemon->worker_pool[i].wpipe[1])
+	  if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].wpipe))
 	    {
-	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe[1],
+	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].wpipe,
                                         "e",
                                         1))
 		MHD_PANIC (_("Failed to signal shutdown via pipe."));
@@ -5372,12 +5341,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           /* Individual pipes are always used */
           if (1)
             {
-              if (MHD_INVALID_PIPE_ != daemon->worker_pool[i].wpipe[1])
+              if (! MHD_INVALID_PIPE_ (daemon->worker_pool[i].wpipe) )
                 {
-	           if (0 != MHD_pipe_close_ (daemon->worker_pool[i].wpipe[0]))
-	             MHD_PANIC (_("close failed\n"));
-	           if (0 != MHD_pipe_close_ (daemon->worker_pool[i].wpipe[1]))
-	             MHD_PANIC (_("close failed\n"));
+                  MHD_pipe_close_ (daemon->worker_pool[i].wpipe);
                 }
 	    }
 	}
@@ -5432,13 +5398,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
   MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
 
-  if (MHD_INVALID_PIPE_ != daemon->wpipe[1])
-    {
-      if (0 != MHD_pipe_close_ (daemon->wpipe[0]))
-	MHD_PANIC (_("close failed\n"));
-      if (0 != MHD_pipe_close_ (daemon->wpipe[1]))
-	MHD_PANIC (_("close failed\n"));
-    }
+  if (! MHD_INVALID_PIPE_(daemon->wpipe))
+    MHD_pipe_close_ (daemon->wpipe);
   free (daemon);
 }
 

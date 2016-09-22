@@ -47,19 +47,25 @@
 #  include "mhd_sockets.h"
 #endif /* MHD_DONT_USE_PIPES */
 
-/* MHD_pipe is type for pipe FDs*/
+/**
+ * Data type for a MHD pipe.
+ */
+struct MHD_Pipe
+{
 #ifndef MHD_DONT_USE_PIPES
-  typedef int MHD_pipe;
+  int fd[2];
 #else /* ! MHD_DONT_USE_PIPES */
-  typedef MHD_socket MHD_pipe;
+  MHD_socket fd[2];
 #endif /* ! MHD_DONT_USE_PIPES */
+};
+
 
 /* MHD_pipe_ create pipe (!MHD_DONT_USE_PIPES) /
  *           create two connected sockets (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_(fdarr) (!pipe((fdarr)))
+#  define MHD_pipe_(pip) (!pipe((pip.fd)))
 #else /* MHD_DONT_USE_PIPES */
-#  define MHD_pipe_(fdarr) MHD_socket_pair_((fdarr))
+#  define MHD_pipe_(pip) MHD_socket_pair_((pip.fd))
 #endif /* MHD_DONT_USE_PIPES */
 
 /* MHD_pipe_last_strerror_ is description string of last errno (!MHD_DONT_USE_PIPES) /
@@ -73,33 +79,60 @@
 /* MHD_pipe_write_ write data to real pipe (!MHD_DONT_USE_PIPES) /
  *                 write data to emulated pipe (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_write_(fd, ptr, sz) write((fd), (const void*)(ptr), (sz))
+#  define MHD_pipe_write_(pip, ptr, sz) write((pip.fd[1]), (const void*)(ptr), (sz))
 #else
-#  define MHD_pipe_write_(fd, ptr, sz) send((fd), (const char*)(ptr), (sz), 0)
+#  define MHD_pipe_write_(pip, ptr, sz) send((pip.fd[1]), (const char*)(ptr), (sz), 0)
 #endif
+
+
+#ifndef MHD_DONT_USE_PIPES
+#  define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
+#else
+#  define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
+#endif
+
+
+#ifndef MHD_DONT_USE_PIPES
+#  define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
+#else
+#  define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
+#endif
+
+
 
 /* MHD_pipe_drain_ drain data from real pipe (!MHD_DONT_USE_PIPES) /
  *                drain data from emulated pipe (MHD_DONT_USE_PIPES) */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_drain_(fd) do { long tmp; while (0 < read((fd), (void*)&tmp, sizeof (tmp))) ; } while (0)
+#  define MHD_pipe_drain_(pip) do { long tmp; while (0 < read((pip.fd[0]), (void*)&tmp, sizeof (tmp))) ; } while (0)
 #else
-#  define MHD_pipe_drain_(fd) do { long tmp; while (0 < recv((fd), (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
+#  define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip.fd[0]), (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
 #endif
 
 /* MHD_pipe_close_(fd) close any FDs (non-W32) /
  *                     close emulated pipe FDs (W32) */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_close_(fd) close((fd))
+#  define MHD_pipe_close_(pip) do { close(pip.fd[0]); close(pip.fd[1]); } while (0)
 #else
-#  define MHD_pipe_close_(fd) MHD_socket_close_((fd))
+#  define MHD_pipe_close_(fd) do { MHD_socket_close_(pip.fd[0]); MHD_socket_close_(pip.fd[1]); } while (0)
 #endif
 
 /* MHD_INVALID_PIPE_ is a value of bad pipe FD */
 #ifndef MHD_DONT_USE_PIPES
-#  define MHD_INVALID_PIPE_ (-1)
+#  define MHD_INVALID_PIPE_(pip)  (-1 == pip.fd[0])
 #else
-#  define MHD_INVALID_PIPE_ MHD_INVALID_SOCKET
+#  define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == pip.fd[0])
 #endif
+
+#ifndef MHD_DONT_USE_PIPES
+#define MHD_make_invalid_pipe_(pip) do { \
+    pip.fd[0] = pip.fd[1] = -1; \
+  } while (0)
+#else
+#define MHD_make_invalid_pipe_(pip) do { \
+    pip.fd[0] = pip.fd[1] = MHD_INVALID_SOCKET; \
+  } while (0)
+#endif
+
 
 #ifndef MHD_DONT_USE_PIPES
 /**
@@ -108,10 +141,10 @@
  * @param fd the FD to manipulate
  * @return non-zero if succeeded, zero otherwise
  */
-   int
-   MHD_itc_nonblocking_ (MHD_pipe fd);
+int
+MHD_itc_nonblocking_ (struct MHD_Pipe fd);
 #else
-#  define MHD_itc_nonblocking_(f) MHD_socket_nonblocking_((f))
+#  define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip.fd[0])) && MHD_socket_nonblocking_((pip.fd[1])))
 #endif
 
 #endif /* MHD_ITC_H */

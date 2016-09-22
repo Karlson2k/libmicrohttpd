@@ -520,8 +520,8 @@ MHD_connection_close_ (struct MHD_Connection *connection,
      thread-per-connection mode, signal the main thread
      to resume accepting connections */
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (MHD_INVALID_PIPE_ != daemon->wpipe[1]) &&
-       (1 != MHD_pipe_write_ (daemon->wpipe[1],
+       (! MHD_INVALID_PIPE_ (daemon->wpipe)) &&
+       (1 != MHD_pipe_write_ (daemon->wpipe,
                               "c",
                               1)) )
     {
