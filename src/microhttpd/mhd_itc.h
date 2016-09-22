@@ -39,102 +39,70 @@
 #define MHD_DONT_USE_PIPES 1
 #endif /* defined(_WIN32) && !defined(MHD_DONT_USE_PIPES) */
 
+
 #ifndef MHD_DONT_USE_PIPES
+
+/* **************** STANDARD UNIX PIPE implementation ********** */
+
 #  ifdef HAVE_STRING_H
 #    include <string.h> /* for strerror() */
 #  endif
-#else
-#  include "mhd_sockets.h"
-#endif /* MHD_DONT_USE_PIPES */
 
 /**
  * Data type for a MHD pipe.
  */
 struct MHD_Pipe
 {
-#ifndef MHD_DONT_USE_PIPES
   int fd[2];
-#else /* ! MHD_DONT_USE_PIPES */
-  MHD_socket fd[2];
-#endif /* ! MHD_DONT_USE_PIPES */
 };
 
+/**
+ * create pipe
+ */
+#define MHD_pipe_(pip) (!pipe((pip.fd)))
 
-/* MHD_pipe_ create pipe (!MHD_DONT_USE_PIPES) /
- *           create two connected sockets (MHD_DONT_USE_PIPES) */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_(pip) (!pipe((pip.fd)))
-#else /* MHD_DONT_USE_PIPES */
-#  define MHD_pipe_(pip) MHD_socket_pair_((pip.fd))
-#endif /* MHD_DONT_USE_PIPES */
+/***
+ * Get description string of last errno for pipe operations.
+ */
+#define MHD_pipe_last_strerror_() strerror(errno)
 
-/* MHD_pipe_last_strerror_ is description string of last errno (!MHD_DONT_USE_PIPES) /
- *                            description string of last pipe error (MHD_DONT_USE_PIPES) */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_last_strerror_() strerror(errno)
-#else
-#  define MHD_pipe_last_strerror_() MHD_socket_last_strerr_()
-#endif
+/**
+ * write data to real pipe
+ */
+#define MHD_pipe_write_(pip, ptr, sz) write((pip.fd[1]), (const void*)(ptr), (sz))
 
-/* MHD_pipe_write_ write data to real pipe (!MHD_DONT_USE_PIPES) /
- *                 write data to emulated pipe (MHD_DONT_USE_PIPES) */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_write_(pip, ptr, sz) write((pip.fd[1]), (const void*)(ptr), (sz))
-#else
-#  define MHD_pipe_write_(pip, ptr, sz) send((pip.fd[1]), (const char*)(ptr), (sz), 0)
-#endif
+#define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
 
+#define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
 
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
-#else
-#  define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
-#endif
+/**
+ * drain data from real pipe
+ */
+#define MHD_pipe_drain_(pip) do { \
+   long tmp; \
+   while (0 < read((pip.fd[0]), (void*)&tmp, sizeof (tmp))) ; \
+ } while (0)
 
+/**
+ * Close any FDs of the pipe (non-W32)
+ */
+#define MHD_pipe_close_(pip) do { \
+  close (pip.fd[0]); \
+  close (pip.fd[1]); \
+  } while (0)
 
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
-#else
-#  define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
-#endif
+/**
+ * Check if we have an uninitialized pipe
+ */
+#define MHD_INVALID_PIPE_(pip)  (-1 == pip.fd[0])
 
-
-
-/* MHD_pipe_drain_ drain data from real pipe (!MHD_DONT_USE_PIPES) /
- *                drain data from emulated pipe (MHD_DONT_USE_PIPES) */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_drain_(pip) do { long tmp; while (0 < read((pip.fd[0]), (void*)&tmp, sizeof (tmp))) ; } while (0)
-#else
-#  define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip.fd[0]), (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
-#endif
-
-/* MHD_pipe_close_(fd) close any FDs (non-W32) /
- *                     close emulated pipe FDs (W32) */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_pipe_close_(pip) do { close(pip.fd[0]); close(pip.fd[1]); } while (0)
-#else
-#  define MHD_pipe_close_(fd) do { MHD_socket_close_(pip.fd[0]); MHD_socket_close_(pip.fd[1]); } while (0)
-#endif
-
-/* MHD_INVALID_PIPE_ is a value of bad pipe FD */
-#ifndef MHD_DONT_USE_PIPES
-#  define MHD_INVALID_PIPE_(pip)  (-1 == pip.fd[0])
-#else
-#  define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == pip.fd[0])
-#endif
-
-#ifndef MHD_DONT_USE_PIPES
+/**
+ * Setup uninitialized @a pip data structure.
+ */
 #define MHD_make_invalid_pipe_(pip) do { \
     pip.fd[0] = pip.fd[1] = -1; \
   } while (0)
-#else
-#define MHD_make_invalid_pipe_(pip) do { \
-    pip.fd[0] = pip.fd[1] = MHD_INVALID_SOCKET; \
-  } while (0)
-#endif
 
-
-#ifndef MHD_DONT_USE_PIPES
 /**
  * Change itc FD options to be non-blocking.
  *
@@ -143,8 +111,77 @@ struct MHD_Pipe
  */
 int
 MHD_itc_nonblocking_ (struct MHD_Pipe fd);
-#else
-#  define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip.fd[0])) && MHD_socket_nonblocking_((pip.fd[1])))
-#endif
+
+
+/* **************** END OF STANDARD UNIX PIPE implementation ********** */
+
+#else /* MHD_DONT_USE_PIPES */
+
+/* **************** PIPE EMULATION by socket pairs ********** */
+
+#include "mhd_sockets.h"
+
+/**
+ * Data type for a MHD pipe.
+ */
+struct MHD_Pipe
+{
+  MHD_socket fd[2];
+};
+
+
+/**
+ * Create two connected sockets to emulate a pipe.
+ */
+#define MHD_pipe_(pip) MHD_socket_pair_((pip.fd))
+
+/**
+ * Get description string of last pipe error
+ */
+#define MHD_pipe_last_strerror_() MHD_socket_last_strerr_()
+
+/**
+ * Write data to emulated pipe
+ */
+#define MHD_pipe_write_(pip, ptr, sz) send((pip.fd[1]), (const char*)(ptr), (sz), 0)
+
+#define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
+
+#define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
+
+/**
+ * Drain data from emulated pipe
+ */
+#define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip.fd[0]), (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
+
+
+/**
+ * Close emulated pipe FDs
+ */
+#define MHD_pipe_close_(fd) do { \
+   MHD_socket_close_(pip.fd[0]); \
+   MHD_socket_close_(pip.fd[1]); \
+} while (0)
+
+/**
+ * Check for uninitialized pipe @a pip
+ */
+#define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == pip.fd[0])
+
+/**
+ * Setup uninitialized @a pip data structure.
+ */
+#define MHD_make_invalid_pipe_(pip) do { \
+    pip.fd[0] = pip.fd[1] = MHD_INVALID_SOCKET; \
+  } while (0)
+
+
+#define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip.fd[0])) && MHD_socket_nonblocking_((pip.fd[1])))
+
+/* **************** END OF PIPE EMULATION by socket pairs ********** */
+
+#endif /* MHD_DONT_USE_PIPES */
+
+
 
 #endif /* MHD_ITC_H */
