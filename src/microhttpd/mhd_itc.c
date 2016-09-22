@@ -19,9 +19,10 @@
 */
 
 /**
- * @file microhttpd/mhd_sockets.c
+ * @file microhttpd/mhd_itc.c
  * @brief  Implementation of inter-thread communication functions
  * @author Karlson2k (Evgeny Grin)
+ * @author Christian Grothoff
  */
 
 #include "mhd_itc.h"
