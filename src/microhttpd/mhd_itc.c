@@ -25,11 +25,30 @@
  */
 
 #include "mhd_itc.h"
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 #include <fcntl.h>
+#include "internal.h"
+
+
+#ifdef HAVE_SYS_EVENTFD_H
+
+int
+MHD_pipe_write_ (struct MHD_Pipe pip,
+                 const void *ptr,
+                 size_t sz)
+{
+  uint64_t val = 1;
+  if (sizeof (val) !=
+      write (pip.event_fd,
+             &val,
+             sizeof (val)))
+    MHD_PANIC (_("Failed to write to eventfd\n"));
+  return sz;
+}
+
+#else
 
 #ifndef MHD_DONT_USE_PIPES
 #if !defined(_WIN32) || defined(__CYGWIN__)
@@ -65,3 +84,4 @@ MHD_itc_nonblocking_ (struct MHD_Pipe pip)
 }
 #endif /* _WIN32 && ! __CYGWIN__ */
 #endif /* ! MHD_DONT_USE_PIPES */
+#endif /* ! HAVE_SYS_EVENTFD_H */

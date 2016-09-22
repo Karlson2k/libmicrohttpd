@@ -19,9 +19,10 @@
 */
 
 /**
- * @file microhttpd/mhd_sockets.c
- * @brief  Header for platform-independent inter-thread communication
+ * @file microhttpd/mhd_itc.h
+ * @brief  Header for platform-independent inter-thread signaling via pipes
  * @author Karlson2k (Evgeny Grin)
+ * @author Christian Grothoff
  *
  * Provides basic abstraction for inter-thread communication.
  * Any functions can be implemented as macro on some platforms
@@ -29,16 +30,94 @@
  * Any function argument can be skipped in macro, so avoid
  * variable modification in function parameters.
  */
-
 #ifndef MHD_ITC_H
 #define MHD_ITC_H 1
 #include "mhd_options.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#include <fcntl.h>
+
+#ifdef HAVE_SYS_EVENTFD_H
+
+#include <sys/eventfd.h>
+/* **************** Optimized eventfd PIPE implementation ********** */
+
+/**
+ * Data type for a MHD pipe.
+ */
+struct MHD_Pipe
+{
+  int event_fd;
+};
+
+/**
+ * create pipe
+ */
+#define MHD_pipe_(pip) ((-1 == (pip.event_fd = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
+
+/***
+ * Get description string of last errno for pipe operations.
+ */
+#define MHD_pipe_last_strerror_() strerror(errno)
+
+/**
+ * write data to real pipe
+ */
+int
+MHD_pipe_write_ (struct MHD_Pipe pip,
+                 const void *ptr,
+                 size_t sz);
+
+#define MHD_pipe_get_read_fd_(pip) (pip.event_fd)
+
+#define MHD_pipe_get_write_fd_(pip) (pip.event_fd)
+
+/**
+ * drain data from real pipe
+ */
+#define MHD_pipe_drain_(pip) do { \
+   uint64_t tmp; \
+   read (pip.event_fd, &tmp, sizeof (tmp)); \
+ } while (0)
+
+/**
+ * Close any FDs of the pipe (non-W32)
+ */
+#define MHD_pipe_close_(pip) do { \
+  close (pip.event_fd); \
+  } while (0)
+
+/**
+ * Check if we have an uninitialized pipe
+ */
+#define MHD_INVALID_PIPE_(pip)  (-1 == pip.event_fd)
+
+/**
+ * Setup uninitialized @a pip data structure.
+ */
+#define MHD_make_invalid_pipe_(pip) do { \
+    pip.event_fd = -1;        \
+  } while (0)
+
+
+/**
+ * Change itc FD options to be non-blocking.  As we already did this
+ * on eventfd creation, this always succeeds.
+ *
+ * @param fd the FD to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+#define MHD_itc_nonblocking_(pip) (!0)
+
+
+#else
 
 /* Force don't use pipes on W32 */
 #if defined(_WIN32) && !defined(MHD_DONT_USE_PIPES)
 #define MHD_DONT_USE_PIPES 1
 #endif /* defined(_WIN32) && !defined(MHD_DONT_USE_PIPES) */
-
 
 #ifndef MHD_DONT_USE_PIPES
 
@@ -70,6 +149,7 @@ struct MHD_Pipe
  * write data to real pipe
  */
 #define MHD_pipe_write_(pip, ptr, sz) write((pip.fd[1]), (const void*)(ptr), (sz))
+
 
 #define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
 
@@ -182,6 +262,6 @@ struct MHD_Pipe
 
 #endif /* MHD_DONT_USE_PIPES */
 
-
+#endif /* HAVE_SYS_EVENTFD_H */
 
 #endif /* MHD_ITC_H */

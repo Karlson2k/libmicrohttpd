@@ -1,3 +1,7 @@
+Thu Sep 22 17:51:04 CEST 2016
+	Implementing support for eventfd() instead of pipe() for
+	signaling (on platforms that support it); fixing #3557. -CG
+
 Thu Sep 22 11:03:43 CEST 2016
 	Simplify internal error handling logic by folding it into the
 	MHD_socket_close_, MHD_mutex_lock_, MHD_mutex_unlock_ and
