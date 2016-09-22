@@ -1,3 +1,8 @@
+Thu Sep 22 11:03:43 CEST 2016
+	Simplify internal error handling logic by folding it into the
+	MHD_socket_close_, MHD_mutex_lock_, MHD_mutex_unlock_ and
+	MHD_mutex_destroy_ functions. -CG
+
 Tue Sep 13 22:20:26 MSK 2016
 	Added autoconf macro to enable maximum platform
 	features. Fixed compiling on Solaris. -EG

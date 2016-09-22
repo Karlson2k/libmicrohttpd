@@ -89,16 +89,16 @@ void
 MHD_semaphore_down (struct MHD_Semaphore *sem)
 {
   if (0 != pthread_mutex_lock (&sem->mutex))
-    MHD_PANIC ("pthread_mutex_lock for semaphore failed\n");
+    MHD_PANIC (_("Failed to lock mutex\n"));
   while (0 == sem->counter)
     {
       if (0 != pthread_cond_wait (&sem->cv,
                                   &sem->mutex))
-        MHD_PANIC ("pthread_cond_wait failed\n");
+        MHD_PANIC (_("pthread_cond_wait failed\n"));
     }
   sem->counter--;
   if (0 != pthread_mutex_unlock (&sem->mutex))
-    MHD_PANIC ("pthread_mutex_unlock for semaphore failed\n");
+    MHD_PANIC (_("Failed to unlock mutex\n"));
 }
 
 
@@ -111,11 +111,11 @@ void
 MHD_semaphore_up (struct MHD_Semaphore *sem)
 {
   if (0 != pthread_mutex_lock (&sem->mutex))
-    MHD_PANIC ("pthread_mutex_lock for semaphore failed\n");
+    MHD_PANIC (_("Failed to lock mutex\n"));
   sem->counter++;
   pthread_cond_signal (&sem->cv);
   if (0 != pthread_mutex_unlock (&sem->mutex))
-    MHD_PANIC ("pthread_mutex_unlock for semaphore failed\n");
+    MHD_PANIC (_("Failed to unlock mutex\n"));
 }
 
 
@@ -128,9 +128,9 @@ void
 MHD_semaphore_destroy (struct MHD_Semaphore *sem)
 {
   if (0 != pthread_cond_destroy (&sem->cv))
-    MHD_PANIC ("pthread_cond_destroy failed\n");
+    MHD_PANIC (_("pthread_cond_destroy failed\n"));
   if (0 != pthread_mutex_destroy (&sem->mutex))
-    MHD_PANIC ("pthread_mutex_destroy failed\n");
+    MHD_PANIC (_("Failed to destroy mutex\n"));
   free (sem);
 }
 

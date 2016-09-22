@@ -32,6 +32,16 @@
 #include <gcrypt.h>
 #include "mhd_sockets.h" /* only macros used */
 
+#undef MHD_PANIC
+
+
+void
+MHD_PANIC (char *msg)
+{
+  fprintf (stderr, "%s", msg);
+  abort ();
+}
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1

@@ -408,7 +408,7 @@ check_nonce_nc (struct MHD_Connection *connection,
    * then only increase the nonce counter by one.
    */
   nn = &daemon->nnc[off];
-  (void) MHD_mutex_lock_ (&daemon->nnc_lock);
+  MHD_mutex_lock_ (&daemon->nnc_lock);
   if (0 == nc)
     {
       /* Fresh nonce, reinitialize array */
@@ -416,7 +416,7 @@ check_nonce_nc (struct MHD_Connection *connection,
               nonce);
       nn->nc = 0;
       nn->nmask = 0;
-      (void) MHD_mutex_unlock_ (&daemon->nnc_lock);
+      MHD_mutex_unlock_ (&daemon->nnc_lock);
       return MHD_YES;
     }
   /* Note that we use 64 here, as we do not store the
@@ -428,7 +428,7 @@ check_nonce_nc (struct MHD_Connection *connection,
     {
       /* Out-of-order nonce, but within 64-bit bitmask, set bit */
       nn->nmask |= (1LLU < (nn->nc - nc - 1));
-      (void) MHD_mutex_unlock_ (&daemon->nnc_lock);
+      MHD_mutex_unlock_ (&daemon->nnc_lock);
       return MHD_YES;
     }
 
@@ -437,7 +437,7 @@ check_nonce_nc (struct MHD_Connection *connection,
                      nonce)) )
     {
       /* Nonce does not match, fail */
-      (void) MHD_mutex_unlock_ (&daemon->nnc_lock);
+      MHD_mutex_unlock_ (&daemon->nnc_lock);
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		_("Stale nonce received.  If this happens a lot, you should probably increase the size of the nonce array.\n"));
@@ -450,7 +450,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   else
     nn->nmask = 0; /* big jump, unset all bits in the mask */
   nn->nc = nc;
-  (void) MHD_mutex_unlock_ (&daemon->nnc_lock);
+  MHD_mutex_unlock_ (&daemon->nnc_lock);
   return MHD_YES;
 }
 

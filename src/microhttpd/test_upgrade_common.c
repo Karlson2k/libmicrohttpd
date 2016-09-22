@@ -45,6 +45,15 @@ static pthread_t pt_client;
  */
 static int done;
 
+
+void
+MHD_PANIC (char *msg)
+{
+  fprintf (stderr, "%s", msg);
+  abort ();
+}
+
+
 /**
  * Change socket to non-blocking.
  *

@@ -80,16 +80,19 @@
 /**
  * Destroy previously initialised mutex.
  * @param pmutex pointer to mutex
- * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_destroy_(pmutex) (!(pthread_mutex_destroy((pmutex))))
+#define MHD_mutex_destroy_(pmutex) do { \
+  if ( (0 != pthread_mutex_destroy((pmutex))) && \
+       (EAGAIN != errno) && \
+       (EINPROGRESS != errno) )  \
+    MHD_PANIC (_("Failed to destroy mutex\n")); \
+  } while (0)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Destroy previously initialised mutex.
  * @param pmutex pointer to mutex
- * @return Always nonzero
  */
-#define MHD_mutex_destroy_(pmutex) (DeleteCriticalSection((pmutex)), !0)
+#define MHD_mutex_destroy_(pmutex) DeleteCriticalSection((pmutex))
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -98,38 +101,19 @@
  * If mutex was already locked by other thread, function
  * blocks until mutex becomes available.
  * @param pmutex pointer to mutex
- * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_lock_(pmutex) (!(pthread_mutex_lock((pmutex))))
+#define MHD_mutex_lock_(pmutex) do { \
+  if (0 != pthread_mutex_lock((pmutex)))   \
+    MHD_PANIC (_("Failed to lock mutex\n")); \
+  } while (0)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Acquire lock on previously initialised mutex.
  * If mutex was already locked by other thread, function
  * blocks until mutex becomes available.
  * @param pmutex pointer to mutex
- * @return Always nonzero
  */
-#define MHD_mutex_lock_(pmutex) (EnterCriticalSection((pmutex)), !0)
-#endif
-
-#if defined(MHD_PTHREAD_MUTEX_)
-/**
- * Try to acquire lock on previously initialised mutex.
- * Function returns immediately.
- * @param pmutex pointer to mutex
- * @return nonzero if mutex is locked, zero if
- *         mutex was not locked.
- */
-#define MHD_mutex_trylock_(pmutex) (!(pthread_mutex_trylock((pmutex))))
-#elif defined(MHD_W32_MUTEX_)
-/**
- * Try to acquire lock on previously initialised mutex.
- * Function returns immediately.
- * @param pmutex pointer to mutex
- * @return nonzero if mutex is locked, zero if
- *         mutex was not locked.
- */
-#define MHD_mutex_trylock_(pmutex) (TryEnterCriticalSection((pmutex))))
+#define MHD_mutex_lock_(pmutex) EnterCriticalSection((pmutex))
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -138,14 +122,17 @@
  * @param pmutex pointer to mutex
  * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_unlock_(pmutex) (!(pthread_mutex_unlock((pmutex))))
+#define MHD_mutex_unlock_(pmutex) do { \
+    if (0 != pthread_mutex_unlock((pmutex)))   \
+    MHD_PANIC (_("Failed to unlock mutex\n")); \
+  } while (0)
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Unlock previously initialised and locked mutex.
  * @param pmutex pointer to mutex
  * @return Always nonzero
  */
-#define MHD_mutex_unlock_(pmutex) (LeaveCriticalSection((pmutex)), !0)
+#define MHD_mutex_unlock_(pmutex) LeaveCriticalSection((pmutex))
 #endif
 
 

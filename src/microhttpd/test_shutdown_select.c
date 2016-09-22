@@ -89,6 +89,15 @@
 
 static _MHD_bool check_err;
 
+
+void
+MHD_PANIC (char *msg)
+{
+  fprintf (stderr, "%s", msg);
+  abort ();
+}
+
+
 static _MHD_bool
 has_in_name(const char *prog_name, const char *marker)
 {

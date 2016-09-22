@@ -614,7 +614,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
-      (void) MHD_mutex_unlock_ (&response->mutex);
+      MHD_mutex_unlock_ (&response->mutex);
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close_ (connection,
                                MHD_REQUEST_TERMINATED_COMPLETED_OK);
@@ -628,7 +628,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
   if (0 == ret)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
-      (void) MHD_mutex_unlock_ (&response->mutex);
+      MHD_mutex_unlock_ (&response->mutex);
       return MHD_NO;
     }
   return MHD_YES;
@@ -2457,13 +2457,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             uint64_t data_write_offset;
 
             if (NULL != response->crc)
-              (void) MHD_mutex_lock_ (&response->mutex);
+              MHD_mutex_lock_ (&response->mutex);
             if (MHD_YES != try_ready_normal_body (connection))
-            {
-              if (NULL != response->crc)
-                (void) MHD_mutex_unlock_ (&response->mutex);
-              break;
-            }
+              {
+                if (NULL != response->crc)
+                  MHD_mutex_unlock_ (&response->mutex);
+                break;
+              }
             data_write_offset = connection->response_write_position
                                 - response->data_start;
             if (data_write_offset > (uint64_t)SIZE_MAX)
@@ -2484,7 +2484,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                        response->data_start]);
 #endif
             if (NULL != response->crc)
-              (void) MHD_mutex_unlock_ (&response->mutex);
+              MHD_mutex_unlock_ (&response->mutex);
             if (ret < 0)
               {
                 if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
@@ -2570,8 +2570,7 @@ cleanup_connection (struct MHD_Connection *connection)
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (! MHD_mutex_lock_ (&daemon->cleanup_connection_mutex))
-        MHD_PANIC (_("Failed to acquire cleanup mutex\n"));
+      MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
     }
   else
     {
@@ -2598,9 +2597,8 @@ cleanup_connection (struct MHD_Connection *connection)
   connection->suspended = MHD_NO;
   connection->resuming = MHD_NO;
   connection->in_idle = MHD_NO;
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (! MHD_mutex_unlock_(&daemon->cleanup_connection_mutex)) )
-    MHD_PANIC (_("Failed to release cleanup mutex\n"));
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    MHD_mutex_unlock_(&daemon->cleanup_connection_mutex);
 }
 
 
@@ -2909,18 +2907,18 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            (void) MHD_mutex_lock_ (&connection->response->mutex);
+            MHD_mutex_lock_ (&connection->response->mutex);
           if (0 == connection->response->total_size)
             {
               if (NULL != connection->response->crc)
-                (void) MHD_mutex_unlock_ (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
 	      if (NULL != connection->response->crc)
-	        (void) MHD_mutex_unlock_ (&connection->response->mutex);
+	        MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               /* Buffering for flushable socket was already enabled*/
               if (MHD_NO == socket_flush_possible (connection))
@@ -2934,20 +2932,20 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
           if (NULL != connection->response->crc)
-            (void) MHD_mutex_lock_ (&connection->response->mutex);
+            MHD_mutex_lock_ (&connection->response->mutex);
           if ( (0 == connection->response->total_size) ||
                (connection->response_write_position ==
                 connection->response->total_size) )
             {
               if (NULL != connection->response->crc)
-                (void) MHD_mutex_unlock_ (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_chunked_body (connection))
             {
               if (NULL != connection->response->crc)
-                (void) MHD_mutex_unlock_ (&connection->response->mutex);
+                MHD_mutex_unlock_ (&connection->response->mutex);
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               /* Buffering for flushable socket was already enabled */
               if (MHD_NO == socket_flush_possible (connection))
@@ -2956,7 +2954,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
           if (NULL != connection->response->crc)
-            (void) MHD_mutex_unlock_ (&connection->response->mutex);
+            MHD_mutex_unlock_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
           if (MHD_NO == build_header_response (connection))

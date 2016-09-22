@@ -35,19 +35,12 @@
 #include <gnutls/abstract.h>
 #endif
 #endif
+
 #include "mhd_threads.h"
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc.h"
 
-
-/**
- * Macro to make it easy to mark text for translation. Note that
- * we do not actually call gettext() in MHD, but we do make it
- * easy to create a ".po" file so that applications that do want
- * to translate error messages can do so.
- */
-#define _(String) String
 
 /**
  * Should we perform additional sanity checks at runtime (on our internal

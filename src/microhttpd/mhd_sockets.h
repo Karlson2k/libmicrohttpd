@@ -195,13 +195,18 @@
  * errno is set to EINTR.  Do not use HP-UNIX.
  *
  * @param fd descriptor to close
- * @return 0 on success (error codes like EINTR and EIO are counted as success,
- *           only EBADF counts as an error!)
  */
 #if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_socket_close_(fd) (((0 != close(fd)) && (EBADF == errno)) ? -1 : 0)
+#  define MHD_socket_close_(fd) do { \
+  if ( (0 != close((fd))) && \
+       (EBADF == errno) ) \
+    MHD_PANIC (_("close failed\n")); \
+  } while (0)
 #else
-#  define MHD_socket_close_(fd) closesocket((fd))
+#  define MHD_socket_close_(fd) do { \
+  if (0 != closesocket((fd)) ) \
+    MHD_PANIC (_("close failed\n")); \
+  } while (0)
 #endif
 
 /**

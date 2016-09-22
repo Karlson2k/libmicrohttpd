@@ -34,6 +34,14 @@
 #include <pthread.h>
 #include "mhd_sockets.h" /* only macros used */
 
+void
+MHD_PANIC (char *msg)
+{
+  fprintf (stderr, "%s", msg);
+  abort ();
+}
+
+
 #ifndef WINDOWS
 #include <unistd.h>
 #include <sys/socket.h>
