@@ -71,7 +71,7 @@ completed_cb (void *cls,
   struct MHD_PostProcessor *pp = *con_cls;
 
   if (NULL != pp)
-    MHD_destroy_post_processor (pp);   
+    MHD_destroy_post_processor (pp);
   *con_cls = NULL;
 }
 
@@ -171,8 +171,8 @@ testInternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-                        1080, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1080, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -225,8 +225,8 @@ testMultithreadedPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                        1081, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1081, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -281,7 +281,7 @@ testMultithreadedPoolPost ()
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1081, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -349,8 +349,8 @@ testExternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_DEBUG,
-                        1082, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1082, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -417,7 +417,11 @@ testExternalPost ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (maxposixs + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
@@ -437,8 +441,7 @@ testExternalPost ()
               c = NULL;
               multi = NULL;
             }
-        }
-      MHD_run (d);
+        }      MHD_run (d);
     }
   if (multi != NULL)
     {
@@ -471,14 +474,14 @@ ahc_cancel (void *cls,
     {
       fprintf (stderr,
 	       "Unexpected method `%s'\n", method);
-      return MHD_NO; 
+      return MHD_NO;
     }
 
   if (*unused == NULL)
     {
       *unused = "wibble";
       /* We don't want the body. Send a 500. */
-      response = MHD_create_response_from_buffer (0, NULL, 
+      response = MHD_create_response_from_buffer (0, NULL,
 						  MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response(connection, 500, response);
       if (ret != MHD_YES)
@@ -488,7 +491,7 @@ ahc_cancel (void *cls,
     }
   else
     {
-      fprintf(stderr, 
+      fprintf(stderr,
 	      "In ahc_cancel again. This should not happen.\n");
       return MHD_NO;
     }
@@ -502,24 +505,24 @@ struct CRBC
 };
 
 
-static size_t 
+static size_t
 readBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 {
   struct CRBC *data = opaque;
   size_t required = size * nmemb;
   size_t left = data->size - data->pos;
-  
+
   if (required > left)
     required = left;
-  
+
   memcpy(p, data->buffer + data->pos, required);
   data->pos += required;
-  
+
   return required/size;
 }
 
 
-static size_t 
+static size_t
 slowReadBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 {
   sleep(1);
@@ -557,7 +560,7 @@ testMultithreadedPostCancelPart(int flags)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                        1081, NULL, NULL, &ahc_cancel, NULL, 
+                        1081, NULL, NULL, &ahc_cancel, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 32768;
@@ -565,7 +568,7 @@ testMultithreadedPostCancelPart(int flags)
   crbc.buffer = "Test content";
   crbc.size = strlen(crbc.buffer);
   crbc.pos = 0;
-  
+
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/hello_world");
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -594,7 +597,7 @@ testMultithreadedPostCancelPart(int flags)
   if (flags & FLAG_EXPECT_CONTINUE)
       headers = curl_slist_append(headers, "Expect: 100-Continue");
   curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
-  
+
   if (CURLE_HTTP_RETURNED_ERROR != (errornum = curl_easy_perform (c)))
     {
 #ifdef _WIN32
@@ -620,19 +623,19 @@ testMultithreadedPostCancelPart(int flags)
       curl_slist_free_all(headers);
       return result;
     }
-  
+
   if (CURLE_OK != (cc = curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code)))
     {
       fprintf(stderr, "curl_easy_getinfo failed: '%s'\n", curl_easy_strerror(errornum));
       result = 65536;
     }
-  
+
   if (!result && (response_code != 500))
     {
       fprintf(stderr, "Unexpected response code: %ld\n", response_code);
       result = 131072;
     }
-  
+
   if (!result && (cbc.pos != 0))
     result = 262144;
 
@@ -649,7 +652,7 @@ testMultithreadedPostCancel()
   int result = 0;
   int flags;
   for(flags = 0; flags < FLAG_COUNT; ++flags)
-    result |= testMultithreadedPostCancelPart(flags);  
+    result |= testMultithreadedPostCancelPart(flags);
   return result;
 }
 
