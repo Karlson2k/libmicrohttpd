@@ -21,9 +21,9 @@ answer_to_connection(void *cls,
   response = MHD_create_response_from_buffer (strlen(page),
                                               (void *) page,
                                               MHD_RESPMEM_PERSISTENT);
-  MHD_add_response_header(response,
-                          MHD_HTTP_HEADER_CONTENT_TYPE,
-                          "text/html");
+  MHD_add_response_header (response,
+                           MHD_HTTP_HEADER_CONTENT_TYPE,
+                           "text/html");
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -32,15 +32,18 @@ answer_to_connection(void *cls,
 }
 
 
-int main()
+int
+main (int argc,
+      char **argv)
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
-                            PORT, NULL, NULL,
-                            &answer_to_connection, NULL,
-                            MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 3,
-                            MHD_OPTION_END);
+  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION,
+                             PORT,
+                             NULL, NULL,
+                             &answer_to_connection, NULL,
+                             MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 3,
+                             MHD_OPTION_END);
   if (NULL == daemon)
     return 1;
   getchar();

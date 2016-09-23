@@ -184,8 +184,8 @@ testInternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
-                        1080, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1080, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -240,8 +240,8 @@ testMultithreadedPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
-                        1081, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1081, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -298,7 +298,7 @@ testMultithreadedPoolPost ()
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1081, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -368,8 +368,8 @@ testExternalPost ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_DEBUG,
-                        1082, NULL, NULL, &ahc_echo, NULL, 
-			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,			
+                        1082, NULL, NULL, &ahc_echo, NULL,
+			MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
 			MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -439,7 +439,11 @@ testExternalPost ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (maxposixs + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
@@ -452,7 +456,8 @@ testExternalPost ()
                 printf ("%s failed at %s:%d: `%s'\n",
                         "curl_multi_perform",
                         __FILE__,
-                        __LINE__, curl_easy_strerror (msg->data.result));
+                        __LINE__,
+                        curl_easy_strerror (msg->data.result));
               curl_multi_remove_handle (multi, c);
               curl_multi_cleanup (multi);
               curl_easy_cleanup (c);

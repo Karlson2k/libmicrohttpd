@@ -159,7 +159,11 @@ main (int argc, char *const *argv)
               tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000LL)) * 1000LL;
             }
         }
-      select (max + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       MHD_run (d);
     }
   MHD_stop_daemon (d);

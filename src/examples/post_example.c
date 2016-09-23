@@ -741,7 +741,11 @@ main (int argc, char *const *argv)
 	}
       else
 	tvp = NULL;
-      select (max + 1, &rs, &ws, &es, tvp);
+      if (-1 == select (max + 1, &rs, &ws, &es, tvp))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       MHD_run (d);
     }
   MHD_stop_daemon (d);

@@ -397,7 +397,11 @@ testExternalPut ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (maxposixs + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
@@ -410,7 +414,8 @@ testExternalPut ()
                 printf ("%s failed at %s:%d: `%s'\n",
                         "curl_multi_perform",
                         __FILE__,
-                        __LINE__, curl_easy_strerror (msg->data.result));
+                        __LINE__,
+                        curl_easy_strerror (msg->data.result));
               curl_multi_remove_handle (multi, c);
               curl_multi_cleanup (multi);
               curl_easy_cleanup (c);

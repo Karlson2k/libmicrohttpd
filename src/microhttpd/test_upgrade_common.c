@@ -301,10 +301,11 @@ upgrade_cb (void *cls,
   usock = sock;
   if (0 != extra_in_size)
     abort ();
-  pthread_create (&pt,
-                  NULL,
-                  &run_usock,
-                  urh);
+  if (0 != pthread_create (&pt,
+                           NULL,
+                           &run_usock,
+                           urh))
+    abort ();
 }
 
 

@@ -77,10 +77,11 @@ test_upgrade (int flags,
                     (struct sockaddr *) &sa,
                     sizeof (sa)))
     abort ();
-  pthread_create (&pt_client,
-                  NULL,
-                  &run_usock_client,
-                  &sock);
+  if (0 !- pthread_create (&pt_client,
+                           NULL,
+                           &run_usock_client,
+                           &sock))
+    abort ();
   if (0 == (flags & (MHD_USE_SELECT_INTERNALLY |
                      MHD_USE_THREAD_PER_CONNECTION)) )
     run_mhd_loop (d, flags);
