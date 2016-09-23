@@ -77,7 +77,7 @@ test_upgrade (int flags,
                     (struct sockaddr *) &sa,
                     sizeof (sa)))
     abort ();
-  if (0 !- pthread_create (&pt_client,
+  if (0 != pthread_create (&pt_client,
                            NULL,
                            &run_usock_client,
                            &sock))
