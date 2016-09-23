@@ -28,7 +28,7 @@
  *        so the performance scores calculated with this code
  *        should NOT be used to compare with other HTTP servers
  *        (since MHD is actually better); only the relative
- *        scores between MHD versions are meaningful.  
+ *        scores between MHD versions are meaningful.
  *        Furthermore, this code ONLY tests MHD processing
  *        a single request at a time.  This is again
  *        not universally meaningful (i.e. when comparing
@@ -80,11 +80,11 @@ static unsigned long long start_time;
 
 
 /**
- * Get the current timestamp 
+ * Get the current timestamp
  *
  * @return current time in ms
  */
-static unsigned long long 
+static unsigned long long
 now ()
 {
   struct timeval tv;
@@ -98,7 +98,7 @@ now ()
 /**
  * Start the timer.
  */
-static void 
+static void
 start_timer()
 {
   start_time = now ();
@@ -110,7 +110,7 @@ start_timer()
  *
  * @param desc description of the threading mode we used
  */
-static void 
+static void
 stop (const char *desc)
 {
   double rps = ((double) (ROUNDS * 1000)) / ((double) (now() - start_time));
@@ -136,8 +136,8 @@ struct CBC
 
 
 static size_t
-copyBuffer (void *ptr, 
-	    size_t size, size_t nmemb, 
+copyBuffer (void *ptr,
+	    size_t size, size_t nmemb,
 	    void *ctx)
 {
   struct CBC *cbc = ctx;
@@ -346,7 +346,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
 	}
       curl_easy_cleanup (c);
     }
-  stop (0 != (poll_flag & MHD_USE_POLL) ? "thread pool with poll" : 
+  stop (0 != (poll_flag & MHD_USE_POLL) ? "thread pool with poll" :
 	0 != (poll_flag & MHD_USE_EPOLL) ? "thread pool with epoll" : "thread pool with select");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
@@ -451,7 +451,11 @@ testExternalGet (int port)
 	    }
 	  tv.tv_sec = 0;
 	  tv.tv_usec = 1000;
-	  select (maxposixs + 1, &rs, &ws, &es, &tv);
+	  if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+            {
+              if (EINTR != errno)
+                abort ();
+            }
 	  curl_multi_perform (multi, &running);
 	  if (running == 0)
 	    {

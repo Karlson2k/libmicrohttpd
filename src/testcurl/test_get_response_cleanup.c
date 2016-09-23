@@ -71,10 +71,10 @@ fork_curl (const char *url)
   if (ret != 0)
     return ret;
   execlp ("curl", "curl", "-s", "-N", "-o", "/dev/null", "-GET", url, NULL);
-  fprintf (stderr, 
+  fprintf (stderr,
 	   "Failed to exec curl: %s\n",
 	   strerror (errno));
-  _exit (-1);  
+  _exit (-1);
 }
 
 static void
@@ -130,7 +130,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *unused = NULL;
-  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN, 
+  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
 						32 * 1024,
 						&push_callback,
 						&ok,
@@ -241,7 +241,7 @@ testExternalGet ()
   if (d == NULL)
     return 256;
   curl = fork_curl ("http://127.0.0.1:1082/");
-  
+
   start = time (NULL);
   while ((time (NULL) - start < 2))
     {
@@ -256,7 +256,11 @@ testExternalGet ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (max + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       MHD_run (d);
     }
   kill_curl (curl);
@@ -274,7 +278,11 @@ testExternalGet ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (max + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       MHD_run (d);
     }
   // fprintf (stderr, "Stopping daemon!\n");

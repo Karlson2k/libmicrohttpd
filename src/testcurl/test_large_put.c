@@ -130,7 +130,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   response = MHD_create_response_from_buffer (strlen (url),
-					      (void *) url, 
+					      (void *) url,
 					      MHD_RESPMEM_MUST_COPY);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
@@ -154,7 +154,7 @@ testInternalPut ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                         1080,
-                        NULL, NULL, &ahc_echo, &done_flag, 
+                        NULL, NULL, &ahc_echo, &done_flag,
 			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
 			MHD_OPTION_END);
   if (d == NULL)
@@ -212,7 +212,7 @@ testMultithreadedPut ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         1081,
-                        NULL, NULL, &ahc_echo, &done_flag, 
+                        NULL, NULL, &ahc_echo, &done_flag,
 			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
 			MHD_OPTION_END);
   if (d == NULL)
@@ -419,7 +419,11 @@ testExternalPut ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (maxposixs + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
