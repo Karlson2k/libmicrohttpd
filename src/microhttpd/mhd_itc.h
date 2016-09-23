@@ -86,7 +86,9 @@ MHD_pipe_write_ (struct MHD_Pipe pip,
  * Close any FDs of the pipe (non-W32)
  */
 #define MHD_pipe_close_(pip) do { \
-  close (pip.event_fd); \
+    if ( (0 != close (pip.event_fd)) && \
+         (EBADF == errno) )             \
+      MHD_PANIC (_("close failed"));    \
   } while (0)
 
 /**
@@ -167,8 +169,12 @@ struct MHD_Pipe
  * Close any FDs of the pipe (non-W32)
  */
 #define MHD_pipe_close_(pip) do { \
-  close (pip.fd[0]); \
-  close (pip.fd[1]); \
+    if ( (0 != close (pip.fd[0])) && \
+         (EBADF == errno) )             \
+      MHD_PANIC (_("close failed"));    \
+    if ( (0 != close (pip.fd[1])) && \
+         (EBADF == errno) )             \
+      MHD_PANIC (_("close failed"));    \
   } while (0)
 
 /**
@@ -239,8 +245,8 @@ struct MHD_Pipe
  * Close emulated pipe FDs
  */
 #define MHD_pipe_close_(fd) do { \
-   MHD_socket_close_(pip.fd[0]); \
-   MHD_socket_close_(pip.fd[1]); \
+   MHD_socket_close_ (pip.fd[0]); \
+   MHD_socket_close_ (pip.fd[1]); \
 } while (0)
 
 /**
