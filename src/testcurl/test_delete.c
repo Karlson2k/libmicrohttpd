@@ -444,12 +444,9 @@ main (int argc, char *const *argv)
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  if (0)
-    {
-      errorCount += testInternalDelete ();
-      errorCount += testMultithreadedDelete ();
-      errorCount += testMultithreadedPoolDelete ();
-    }
+  errorCount += testInternalDelete ();
+  errorCount += testMultithreadedDelete ();
+  errorCount += testMultithreadedPoolDelete ();
   errorCount += testExternalDelete ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
