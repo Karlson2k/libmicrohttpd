@@ -96,7 +96,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
 
-  if (0 != strcmp (me, method))
+  if (0 != strcasecmp (me, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *unused)
     {
@@ -532,7 +532,7 @@ ahc_empty (void *cls,
   struct MHD_Response *response;
   int ret;
 
-  if (0 != strcmp ("GET", method))
+  if (0 != strcasecmp ("GET", method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *unused)
     {

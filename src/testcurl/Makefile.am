@@ -28,6 +28,7 @@ check_PROGRAMS = \
   test_get \
   test_get_sendfile \
   test_urlparse \
+  test_delete \
   test_put \
   test_process_headers \
   test_process_arguments \
@@ -203,6 +204,12 @@ test_postform_LDADD = \
 test_post_loop_SOURCES = \
   test_post_loop.c
 test_post_loop_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_delete_SOURCES = \
+  test_delete.c
+test_delete_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 

@@ -91,7 +91,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
 
-  if (0 != strcmp ("PUT", method))
+  if (0 != strcasecmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
     {
