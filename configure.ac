@@ -92,7 +92,7 @@ MHD_LIBDEPS_PKGCFG=''
 AC_CHECK_TYPE([_Bool],
   [ AC_DEFINE([_MHD_bool],[_Bool],[Define to type which will be used as boolean type.]) ],
   [
-    AC_CHECK_HEADER([stdbool.h], [ AC_DEFINE([HAVE_STDBOOL_H],[1],[Define to 1 if you have the <stdbool.h> header file and it's required for _MHD_bool.]) ])
+    AC_CHECK_HEADER([stdbool.h], [ AC_DEFINE([HAVE_STDBOOL_H],[1],[Define to 1 if you have the <stdbool.h> header file and it's required for _MHD_bool.]) ], [], [AC_INCLUDES_DEFAULT])
     AC_CHECK_TYPE([bool],
       [ AC_DEFINE([_MHD_bool],[bool]) ],
       [ AC_DEFINE([_MHD_bool],[int]) ],
@@ -217,7 +217,7 @@ netbsd*)
      mhd_host_os='Windows (MinGW)'
      AC_MSG_RESULT([[$mhd_host_os]])
      LIBS="$LIBS -lws2_32"
-     AC_CHECK_HEADERS([winsock2.h ws2tcpip.h],, AC_MSG_ERROR([[Winsock2 headers are required for W32]]))
+     AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [[mslibcheck=`lib 2>&1`
         if [[ $mslibcheck = "Microsoft (R) Library Manager"* ]]; then
@@ -327,7 +327,7 @@ if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; the
   SAVE_CFLAGS="$CFLAGS"
   LIBS="$PTHREAD_LIBS $LIBS"
   CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-  AC_CHECK_HEADERS([pthread_np.h])
+  AC_CHECK_HEADERS([pthread_np.h],[],[],[AC_INCLUDES_DEFAULT])
 
   # If pthread_setname_np(3) is not declared, it's not possible to detect
   # form of pthread_setname_np(3) due to C "feature" "implicit declaration".
@@ -504,7 +504,7 @@ if test "$enable_poll" != "no"; then
     AC_CHECK_HEADERS([poll.h],
       [
         AC_CHECK_FUNCS([poll], [have_poll='yes'], [have_poll='no'])
-      ])
+      ], [], [AC_INCLUDES_DEFAULT])
   else
     AC_MSG_CHECKING([for WSAPoll()])
     AC_LINK_IFELSE([
@@ -555,14 +555,14 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
 fi
 
 # Check for headers that are ALWAYS required
-AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h],,AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files]))
+AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h], [], [AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for optional headers
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h search.h sys/ioctl.h \
   sys/socket.h sys/select.h netdb.h netinet/in.h netinet/ip.h netinet/tcp.h arpa/inet.h \
   endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h \
   inttypes.h stddef.h unistd.h \
-  sockLib.h inetLib.h net/if.h sys/eventfd.h])
+  sockLib.h inetLib.h net/if.h sys/eventfd.h], [], [], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 # Check for generic functions
@@ -813,10 +813,11 @@ fi
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 AC_CHECK_LIB([[magic]], [[magic_open]],
-  [AC_CHECK_HEADERS([magic.h],
-   AM_CONDITIONAL(HAVE_MAGIC, true),
-   AM_CONDITIONAL(HAVE_MAGIC, false))],
-  AM_CONDITIONAL(HAVE_MAGIC, false))
+  [AC_CHECK_HEADERS([magic.h], [
+     AM_CONDITIONAL(HAVE_MAGIC, true),
+     AM_CONDITIONAL(HAVE_MAGIC, false)]
+     ,[] ,[AC_INCLUDES_DEFAULT])
+  ], [AM_CONDITIONAL(HAVE_MAGIC, false)])
 
 
 # large file support (> 4 GB)
@@ -867,7 +868,7 @@ then
   # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
   SAVE_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
-  AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no])
+  AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
   CFLAGS="$SAVE_CFLAGS"
   CPPFLAGS="$SAVE_CPPFLAGS"
 fi
@@ -904,7 +905,7 @@ AC_ARG_WITH([[gnutls]],
                 GNUTLS_LIBS="-lgnutls"
                 AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
                 have_gnutls=yes
-              ])])
+              ])], [], [AC_INCLUDES_DEFAULT])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
         LDFLAGS="$SAVE_LDFLAGS"
         CPPFLAGS="$SAVE_CPPFLAGS"
@@ -972,7 +973,7 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             GNUTLS_LIBS="-lgnutls"
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
-          ])])
+          ])], [], [AC_INCLUDES_DEFAULT])
       ])
   ])
 
