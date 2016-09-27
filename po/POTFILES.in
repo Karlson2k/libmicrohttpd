@@ -40,8 +40,8 @@ src/microhttpd/tsearch.c
 src/testcurl/curl_version_check.c
 src/testcurl/https/tls_test_common.c
 src/testzzuf/socat.c
+src/include/mhd_options.h
 src/include/microhttpd.h
-src/microhttpd/internal.h
 src/microhttpd/mhd_compat.h
 src/microhttpd/mhd_itc.h
 src/microhttpd/mhd_locks.h
