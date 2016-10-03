@@ -1133,7 +1133,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   /* Here, we need to bi-directionally forward
      until the application tells us that it is done
      with the socket; */
-  if (0 == (daemon->options & MHD_USE_POLL))
+  if ( (0 != (daemon->options & MHD_USE_SSL)) &&
+      (0 == (daemon->options & MHD_USE_POLL)))
     {
       while (MHD_CONNECTION_UPGRADE == con->state)
         {
@@ -1192,7 +1193,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
         }
     }
 #ifdef HAVE_POLL
-  else
+  else if (0 != (daemon->options & MHD_USE_SSL))
     {
       /* use poll() */
       const unsigned int timeout = UINT_MAX;
