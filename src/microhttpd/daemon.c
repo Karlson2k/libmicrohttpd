@@ -1370,7 +1370,7 @@ thread_main_handle_connection (void *data)
 	      goto exit;
 	    }
 #if WINDOWS
-          if (! MHD_INVALID_PIPE_(deamon->wpipe) )
+          if (! MHD_INVALID_PIPE_(daemon->wpipe) )
             {
               if (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_ (daemon->wpipe),
                                         &rs,
@@ -2852,7 +2852,7 @@ MHD_select (struct MHD_Daemon *daemon,
         {
           FD_CLR (daemon->socket_fd,
                   &rs);
-          if (! MHD_add_to_fd_set_ (daemon->wpipe[0],
+          if (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_(daemon->wpipe),
                                     &rs,
                                     &maxsock,
                                     FD_SETSIZE))
