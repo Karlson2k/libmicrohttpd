@@ -715,17 +715,20 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
                 const fd_set *rs,
                 const fd_set *ws)
 {
-  if (FD_ISSET (urh->connection->socket_fd,
-                rs))
+  const MHD_socket mhd_sckt = urh->mhd.socket;
+  const MHD_socket conn_sckt = urh->connection->socket_fd;
+
+  if ((MHD_INVALID_SOCKET != conn_sckt) &&
+      FD_ISSET (conn_sckt, rs))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-  if (FD_ISSET (urh->connection->socket_fd,
-                ws))
+  if ((MHD_INVALID_SOCKET != conn_sckt) &&
+      FD_ISSET (conn_sckt, ws))
     urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-  if (FD_ISSET (urh->mhd.socket,
-                rs))
+  if ((MHD_INVALID_SOCKET != mhd_sckt) &&
+      FD_ISSET (mhd_sckt, rs))
     urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-  if (FD_ISSET (urh->mhd.socket,
-                ws))
+  if ((MHD_INVALID_SOCKET != mhd_sckt) &&
+      FD_ISSET (mhd_sckt, ws))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
 }
 #endif
