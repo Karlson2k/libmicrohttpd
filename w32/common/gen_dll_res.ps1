@@ -8,7 +8,7 @@ Remove-Variable MHD_ver,MHD_ver_major,MHD_ver_minor,MHD_ver_patchlev -ErrorActio
 Write-Output "Processing: ${BasePath}..\..\configure.ac"
 foreach($line in Get-Content "${BasePath}..\..\configure.ac")
 {
-    if ($line -match '^AC_INIT\(\[libmicrohttpd\],\[((\d+).(\d+).(\d+))\]') 
+    if ($line -match '^AC_INIT\(\[(?:GNU )?libmicrohttpd\],\[((\d+).(\d+).(\d+))\]') 
     {
         [string]$MHD_ver = $Matches[1].ToString()
         [string]$MHD_ver_major = $Matches[2].ToString()

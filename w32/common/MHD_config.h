@@ -60,18 +60,11 @@
 #define HAVE_POLL 1
 #endif /* _WIN32_WINNT >= 0x0600 */
 
-/* define to 0 to disable epoll support */
-#define EPOLL_SUPPORT 0
-
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #define HAVE_WS2TCPIP_H 1
-
-/* Define to 1 if you have the declaration of `SOCK_NONBLOCK', and to 0 if you
-   don't. */
-#define HAVE_DECL_SOCK_NONBLOCK 0
 
 /* Define to 1 if you have the `_lseeki64' function. */
 #define HAVE___LSEEKI64 1
@@ -113,9 +106,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#define HAVE_PTHREAD_H 0
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
