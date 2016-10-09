@@ -2460,8 +2460,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               MHD_mutex_lock_ (&response->mutex);
             if (MHD_YES != try_ready_normal_body (connection))
               {
-                if (NULL != response->crc)
-                  MHD_mutex_unlock_ (&response->mutex);
+                /* mutex was already unlocked by try_ready_normal_body */
                 break;
               }
             data_write_offset = connection->response_write_position
@@ -2925,6 +2924,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 socket_start_no_buffering (connection);
               break;
             }
+          /* mutex was already unlocked by "try_ready_normal_body */
           /* not ready, no socket action */
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
@@ -2950,7 +2950,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               /* Buffering for flushable socket was already enabled */
               if (MHD_NO == socket_flush_possible (connection))
                 socket_start_no_buffering (connection);
-
               continue;
             }
           if (NULL != connection->response->crc)

@@ -82,9 +82,8 @@
  * @param pmutex pointer to mutex
  */
 #define MHD_mutex_destroy_(pmutex) do { \
-  if ( (0 != pthread_mutex_destroy((pmutex))) && \
-       (EAGAIN != errno) && \
-       (EINPROGRESS != errno) )  \
+  errno = 0; \
+  if (0 != pthread_mutex_destroy((pmutex))) \
     MHD_PANIC (_("Failed to destroy mutex\n")); \
   } while (0)
 #elif defined(MHD_W32_MUTEX_)
