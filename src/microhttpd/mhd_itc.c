@@ -33,24 +33,6 @@
 #include "internal.h"
 
 
-#ifdef _MHD_ITC_EVENTFD
-
-int
-MHD_pipe_write_ (MHD_itc_ pip,
-                 const void *ptr,
-                 size_t sz)
-{
-  uint64_t val = 1;
-  if (sizeof (val) !=
-      write (pip,
-             &val,
-             sizeof (val)))
-    MHD_PANIC (_("Failed to write to eventfd\n"));
-  return sz;
-}
-
-#endif /* _MHD_ITC_EVENTFD */
-
 #if defined(_MHD_ITC_PIPE)
 #if !defined(_WIN32) || defined(__CYGWIN__)
 

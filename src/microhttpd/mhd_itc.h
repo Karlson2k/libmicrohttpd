@@ -32,27 +32,22 @@
  */
 #ifndef MHD_ITC_H
 #define MHD_ITC_H 1
-#include "mhd_options.h"
+#include "mhd_itc_types.h"
 
-/* Force socketpair on native W32 */
-#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(_MHD_ITC_SOCKETPAIR)
-#error _MHD_ITC_SOCKETPAIR is not defined on naitive W32 platform
-#endif /* _WIN32 && !__CYGWIN__ && !_MHD_ITC_SOCKETPAIR */
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 #include <fcntl.h>
 
 #if defined(_MHD_ITC_EVENTFD)
-#include <sys/eventfd.h>
 
 /* **************** Optimized GNU/Linux ITC implementation by eventfd ********** */
+#include <sys/eventfd.h>
+#include <stdint.h>      /* for uint64_t */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>      /* for read(), write(), errno */
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_STRING_H
+#include <string.h> /* for strerror() */
+#endif
 
-/**
- * Data type for a MHD ITC.
- */
-typedef int MHD_itc_;
 
 /**
  * Initialise ITC by generating eventFD
@@ -67,12 +62,18 @@ typedef int MHD_itc_;
 #define MHD_itc_last_strerror_() strerror(errno)
 
 /**
- * write data to real pipe
+ * Internal static const helper for MHD_itc_activate_()
  */
-int
-MHD_pipe_write_ (MHD_itc_ pip,
-                 const void *ptr,
-                 size_t sz);
+static const uint64_t _MHD_itc_wr_data = 1;
+
+/**
+ * Activate signal on @a itc
+ * @param itc the itc to use
+ * @param str ignored
+ * @return non-zero if succeeded, zero otherwise
+ */
+#define MHD_itc_activate_(itc, str) \
+  ((write((itc), (const void*)&_MHD_itc_wr_data, 8) > 0) || (EAGAIN == errno))
 
 #define MHD_pipe_get_read_fd_(pip) (pip)
 
@@ -122,18 +123,13 @@ MHD_pipe_write_ (MHD_itc_ pip,
 
 /* **************** Standard UNIX ITC implementation by pipe ********** */
 
-#  ifdef HAVE_STRING_H
-#    include <string.h> /* for strerror() */
-#  endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>      /* for read(), write(), errno */
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_STRING_H
+#include <string.h> /* for strerror() */
+#endif
 
-/**
- * Data type for a MHD ITC.
- */
-struct MHD_Itc
-{
-  int fd[2];
-};
-typedef struct MHD_Itc MHD_itc_;
 
 /**
  * Initialise ITC by generating pipe
@@ -148,9 +144,13 @@ typedef struct MHD_Itc MHD_itc_;
 #define MHD_itc_last_strerror_() strerror(errno)
 
 /**
- * write data to real pipe
+ * Activate signal on @a itc
+ * @param itc the itc to use
+ * @param str one-symbol string, useful only for strace debug
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_write_(pip, ptr, sz) write((pip).fd[1], (const void*)(ptr), (sz))
+#define MHD_itc_activate_(itc, str) \
+  ((write((itc).fd[1], (const void*)(str), 1) > 0) || (EAGAIN == errno))
 
 
 #define MHD_pipe_get_read_fd_(pip) ((pip).fd[0])
@@ -205,14 +205,6 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
 
 #include "mhd_sockets.h"
 
-/**
- * Data type for a MHD pipe.
- */
-struct MHD_Itc
-{
-  MHD_socket sk[2];
-};
-typedef struct MHD_Itc MHD_itc_;
 
 /**
  * Initialise ITC by generating socketpair
@@ -227,9 +219,14 @@ typedef struct MHD_Itc MHD_itc_;
 #define MHD_itc_last_strerror_() MHD_socket_last_strerr_()
 
 /**
- * Write data to emulated pipe
+ * Activate signal on @a itc
+ * @param itc the itc to use
+ * @param str one-symbol string, useful only for strace debug
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_write_(pip, ptr, sz) send((pip).sk[1], (const char*)(ptr), (sz), 0)
+#define MHD_itc_activate_(itc, str) \
+  ((send((itc).sk[1], (const char*)(str), 1, 0) > 0) || \
+   (MHD_SCKT_ERR_IS_EAGAIN_(MHD_socket_get_error_())))
 
 #define MHD_pipe_get_read_fd_(pip) ((pip).sk[0])
 

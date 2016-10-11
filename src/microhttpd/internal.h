@@ -62,7 +62,7 @@
 #include "mhd_threads.h"
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
-#include "mhd_itc.h"
+#include "mhd_itc_types.h"
 
 
 /**

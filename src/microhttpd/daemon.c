@@ -2029,9 +2029,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   else
     if ( (MHD_YES == external_add) &&
 	 (! MHD_INVALID_PIPE_(daemon->itc)) &&
-	 (1 != MHD_pipe_write_ (daemon->itc,
-                                "n",
-                                1)) )
+	 (! MHD_itc_activate_ (daemon->itc, "n")) )
       {
 #ifdef HAVE_MESSAGES
 	MHD_DLOG (daemon,
@@ -2212,7 +2210,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
   connection->resuming = MHD_YES;
   daemon->resuming = MHD_YES;
   if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
-       (1 != MHD_pipe_write_ (daemon->itc, "r", 1)) )
+       (! MHD_itc_activate_ (daemon->itc, "r")) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -3792,9 +3790,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #endif
         if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].itc))
           {
-            if (1 != MHD_pipe_write_ (daemon->worker_pool[i].itc,
-                                      "q",
-                                      1))
+            if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
               MHD_PANIC (_("Failed to signal quiesce via pipe"));
           }
       }
@@ -3815,9 +3811,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #endif
     if (! MHD_INVALID_PIPE_(daemon->itc))
     {
-      if (1 != MHD_pipe_write_ (daemon->itc,
-                                "q",
-                                1))
+      if (! MHD_itc_activate_ (daemon->itc, "q"))
 	MHD_PANIC (_("failed to signal quiesce via pipe"));
     }
 
@@ -5186,7 +5180,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (! MHD_INVALID_PIPE_(daemon->itc)) &&
-           (1 != MHD_pipe_write_ (daemon->itc, "e", 1)) )
+           (! MHD_itc_activate_ (daemon->itc, "e")) )
         MHD_PANIC (_("Failed to signal shutdown via pipe"));
 #endif
     }
@@ -5289,7 +5283,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   if (! MHD_INVALID_PIPE_(daemon->itc))
     {
-      if (1 != MHD_pipe_write_ (daemon->itc, "e", 1))
+      if (! MHD_itc_activate_ (daemon->itc, "e"))
 	MHD_PANIC (_("Failed to signal shutdown via pipe"));
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
@@ -5325,9 +5319,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	{
 	  if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].itc))
 	    {
-	      if (1 != MHD_pipe_write_ (daemon->worker_pool[i].itc,
-                                        "e",
-                                        1))
+	      if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
 		MHD_PANIC (_("Failed to signal shutdown via pipe."));
 	    }
 	  if (!MHD_join_thread_ (daemon->worker_pool[i].pid))

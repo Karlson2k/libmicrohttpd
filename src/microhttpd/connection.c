@@ -34,6 +34,7 @@
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
+#include "mhd_itc.h"
 
 
 /**
@@ -521,9 +522,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
      to resume accepting connections */
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
        (! MHD_INVALID_PIPE_ (daemon->itc)) &&
-       (1 != MHD_pipe_write_ (daemon->itc,
-                              "c",
-                              1)) )
+       (! MHD_itc_activate_ (daemon->itc, "c")) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,

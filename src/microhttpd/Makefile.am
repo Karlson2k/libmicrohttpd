@@ -67,7 +67,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_threads.c mhd_threads.h \
   mhd_locks.h mhd_sem.c \
   mhd_sockets.c mhd_sockets.h \
-  mhd_itc.c mhd_itc.h \
+  mhd_itc.c mhd_itc.h mhd_itc_types.h \
   mhd_compat.h \
   response.c response.h
 if HAVE_W32

@@ -42,6 +42,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_sockets.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc_types.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>

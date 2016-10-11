@@ -132,6 +132,9 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_sockets.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc_types.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h">
       <Filter>Source Files</Filter>
     </ClInclude>
