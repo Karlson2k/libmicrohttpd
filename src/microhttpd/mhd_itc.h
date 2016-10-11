@@ -210,7 +210,7 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
  */
 struct MHD_Itc
 {
-  MHD_socket fd[2];
+  MHD_socket sk[2];
 };
 typedef struct MHD_Itc MHD_itc_;
 
@@ -219,7 +219,7 @@ typedef struct MHD_Itc MHD_itc_;
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) MHD_socket_pair_((itc).fd)
+#define MHD_itc_init_(itc) MHD_socket_pair_((itc).sk)
 
 /**
  * Get description string of last pipe error
@@ -229,40 +229,40 @@ typedef struct MHD_Itc MHD_itc_;
 /**
  * Write data to emulated pipe
  */
-#define MHD_pipe_write_(pip, ptr, sz) send((pip.fd[1]), (const char*)(ptr), (sz), 0)
+#define MHD_pipe_write_(pip, ptr, sz) send((pip).sk[1], (const char*)(ptr), (sz), 0)
 
-#define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
+#define MHD_pipe_get_read_fd_(pip) ((pip).sk[0])
 
-#define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
+#define MHD_pipe_get_write_fd_(pip) ((pip).sk[1])
 
 /**
  * Drain data from emulated pipe
  */
-#define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip.fd[0]), (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
+#define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip).sk[0], (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
 
 
 /**
  * Close emulated pipe FDs
  */
 #define MHD_pipe_close_(pip) do { \
-   MHD_socket_close_chk_ ((pip).fd[0]); \
-   MHD_socket_close_chk_ ((pip).fd[1]); \
+   MHD_socket_close_chk_ ((pip).sk[0]); \
+   MHD_socket_close_chk_ ((pip).sk[1]); \
 } while (0)
 
 /**
  * Check for uninitialized pipe @a pip
  */
-#define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == pip.fd[0])
+#define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == (pip).sk[0])
 
 /**
  * Setup uninitialized @a pip data structure.
  */
 #define MHD_make_invalid_pipe_(pip) do { \
-    pip.fd[0] = pip.fd[1] = MHD_INVALID_SOCKET; \
+    pip.sk[0] = pip.sk[1] = MHD_INVALID_SOCKET; \
   } while (0)
 
 
-#define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip.fd[0])) && MHD_socket_nonblocking_((pip.fd[1])))
+#define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip).sk[0]) && MHD_socket_nonblocking_((pip).sk[1]))
 
 #endif /* _MHD_ITC_SOCKETPAIR */
 
