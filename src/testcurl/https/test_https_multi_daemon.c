@@ -50,7 +50,7 @@ test_concurent_daemon_pair (void *cls,
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
 
-  d1 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+  d1 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS |
                          MHD_USE_DEBUG, DEAMON_TEST_PORT,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -63,7 +63,7 @@ test_concurent_daemon_pair (void *cls,
       return -1;
     }
 
-  d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+  d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS |
                          MHD_USE_DEBUG, DEAMON_TEST_PORT + 1,
                          NULL, NULL, &http_ahc, NULL,
                          MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,

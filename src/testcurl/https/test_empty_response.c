@@ -80,7 +80,7 @@ testInternalSelectGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_SSL | MHD_USE_SELECT_INTERNALLY,
+  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_TLS | MHD_USE_SELECT_INTERNALLY,
                         1082, NULL, NULL, &ahc_echo, "GET", 
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,

@@ -2757,7 +2757,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether HTTPS is supported.  If supported then flag
-   * #MHD_USE_SSL and options #MHD_OPTION_HTTPS_MEM_KEY,
+   * #MHD_USE_TLS and options #MHD_OPTION_HTTPS_MEM_KEY,
    * #MHD_OPTION_HTTPS_MEM_CERT, #MHD_OPTION_HTTPS_MEM_TRUST,
    * #MHD_OPTION_HTTPS_MEM_DHPARAMS, #MHD_OPTION_HTTPS_CRED_TYPE,
    * #MHD_OPTION_HTTPS_PRIORITIES can be used.

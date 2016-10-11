@@ -638,7 +638,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
       {
 #if HTTPS_SUPPORT
-        if (0 != (daemon->options & MHD_USE_SSL) )
+        if (0 != (daemon->options & MHD_USE_TLS) )
           {
             /* signal thread that app is done by shutdown() of 'app' socket */
             shutdown (urh->app.socket,
@@ -650,7 +650,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
         return MHD_YES;
       }
 #if HTTPS_SUPPORT
-    if (0 != (daemon->options & MHD_USE_SSL) )
+    if (0 != (daemon->options & MHD_USE_TLS) )
       {
         urh->was_closed = MHD_YES;
         if (MHD_INVALID_SOCKET != urh->app.socket)
@@ -712,7 +712,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   rbo = connection->read_buffer_offset;
   connection->read_buffer_offset = 0;
 #if HTTPS_SUPPORT
-  if (0 != (daemon->options & MHD_USE_SSL) )
+  if (0 != (daemon->options & MHD_USE_TLS) )
   {
     struct MemoryPool *pool;
     size_t avail;

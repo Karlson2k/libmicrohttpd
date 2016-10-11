@@ -192,7 +192,7 @@ main (int argc, char *const *argv)
       /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
       TLS_daemon =
         MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG |
-                          MHD_USE_SSL, atoi (argv[1]), NULL, NULL, &http_ahc,
+                          MHD_USE_TLS, atoi (argv[1]), NULL, NULL, &http_ahc,
                           NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
                           MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                           MHD_OPTION_HTTPS_MEM_CERT, cert_pem,

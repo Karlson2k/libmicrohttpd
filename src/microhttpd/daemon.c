@@ -1133,7 +1133,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   /* Here, we need to bi-directionally forward
      until the application tells us that it is done
      with the socket; */
-  if ( (0 != (daemon->options & MHD_USE_SSL)) &&
+  if ( (0 != (daemon->options & MHD_USE_TLS)) &&
       (0 == (daemon->options & MHD_USE_POLL)))
     {
       while (MHD_CONNECTION_UPGRADE == con->state)
@@ -1193,7 +1193,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
         }
     }
 #ifdef HAVE_POLL
-  else if (0 != (daemon->options & MHD_USE_SSL))
+  else if (0 != (daemon->options & MHD_USE_TLS))
     {
       /* use poll() */
       const unsigned int timeout = UINT_MAX;
@@ -1619,7 +1619,7 @@ send_param_adapter (struct MHD_Connection *connection,
     i = INT_MAX; /* return value limit */
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  if (0 != (connection->daemon->options & MHD_USE_SSL))
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
     return (ssize_t) send (connection->socket_fd,
                            other,
                            (MHD_SCKT_SEND_SIZE_) i,
@@ -1939,7 +1939,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
 
 #if HTTPS_SUPPORT
-  if (0 != (daemon->options & MHD_USE_SSL))
+  if (0 != (daemon->options & MHD_USE_TLS))
     {
       connection->recv_cls = &recv_tls_adapter;
       connection->send_cls = &send_tls_adapter;
@@ -2628,7 +2628,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
-	  if (  (0 != (daemon->options & MHD_USE_SSL)) &&
+	  if (  (0 != (daemon->options & MHD_USE_TLS)) &&
 		(0 != gnutls_record_check_pending (pos->tls_session)) )
 	    earliest_deadline = 0;
 #endif
@@ -2644,7 +2644,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	   (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	earliest_deadline = pos->last_activity + pos->connection_timeout;
 #if HTTPS_SUPPORT
-      if (  (0 != (daemon->options & MHD_USE_SSL)) &&
+      if (  (0 != (daemon->options & MHD_USE_TLS)) &&
 	    (0 != gnutls_record_check_pending (pos->tls_session)) )
 	earliest_deadline = 0;
 #endif
@@ -3955,46 +3955,46 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #if HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_MEM_KEY:
-	  if (0 != (daemon->options & MHD_USE_SSL))
+	  if (0 != (daemon->options & MHD_USE_TLS))
 	    daemon->https_mem_key = va_arg (ap,
                                             const char *);
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
-		      _("MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n"),
+		      _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
 		      opt);
 #endif
           break;
         case MHD_OPTION_HTTPS_KEY_PASSWORD:
-	  if (0 != (daemon->options & MHD_USE_SSL))
+	  if (0 != (daemon->options & MHD_USE_TLS))
 	    daemon->https_key_password = va_arg (ap,
                                                  const char *);
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
-		      _("MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n"),
+		      _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
 		      opt);
 #endif
           break;
         case MHD_OPTION_HTTPS_MEM_CERT:
-	  if (0 != (daemon->options & MHD_USE_SSL))
+	  if (0 != (daemon->options & MHD_USE_TLS))
 	    daemon->https_mem_cert = va_arg (ap,
                                              const char *);
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
-		      _("MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n"),
+		      _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
 		      opt);
 #endif
           break;
         case MHD_OPTION_HTTPS_MEM_TRUST:
-	  if (0 != (daemon->options & MHD_USE_SSL))
+	  if (0 != (daemon->options & MHD_USE_TLS))
 	    daemon->https_mem_trust = va_arg (ap,
                                               const char *);
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
-		      _("MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n"),
+		      _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
 		      opt);
 #endif
           break;
@@ -4003,7 +4003,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                                   int);
 	  break;
         case MHD_OPTION_HTTPS_MEM_DHPARAMS:
-          if (0 != (daemon->options & MHD_USE_SSL))
+          if (0 != (daemon->options & MHD_USE_TLS))
             {
               const char *arg = va_arg (ap,
                                         const char *);
@@ -4036,14 +4036,14 @@ parse_options_va (struct MHD_Daemon *daemon,
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
-                        _("MHD HTTPS option %d passed to MHD but MHD_USE_SSL not set\n"),
+                        _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
                         opt);
 #endif
               return MHD_NO;
             }
           break;
         case MHD_OPTION_HTTPS_PRIORITIES:
-	  if (0 != (daemon->options & MHD_USE_SSL))
+	  if (0 != (daemon->options & MHD_USE_TLS))
 	    {
 	      gnutls_priority_deinit (daemon->priority_cache);
 	      ret = gnutls_priority_init (&daemon->priority_cache,
@@ -4070,7 +4070,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           return MHD_NO;
 #else
-          if (0 != (daemon->options & MHD_USE_SSL))
+          if (0 != (daemon->options & MHD_USE_TLS))
             daemon->cert_callback = va_arg (ap,
                                             gnutls_certificate_retrieve_function2 *);
           break;
@@ -4396,7 +4396,7 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 #endif
 #if ! HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_TLS))
     return NULL;
 #endif
 #ifndef TCP_FASTOPEN
@@ -4418,7 +4418,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   /* try to open listen socket */
 #if HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_TLS))
     {
       gnutls_priority_init (&daemon->priority_cache,
 			    "NORMAL",
@@ -4488,7 +4488,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->nonce_nc_size = 4; /* tiny */
 #endif
 #if HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_TLS))
     {
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
@@ -4500,7 +4500,7 @@ MHD_start_daemon_va (unsigned int flags,
                                    ap))
     {
 #if HTTPS_SUPPORT
-      if ( (0 != (flags & MHD_USE_SSL)) &&
+      if ( (0 != (flags & MHD_USE_TLS)) &&
 	   (NULL != daemon->priority_cache) )
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif
@@ -4518,7 +4518,7 @@ MHD_start_daemon_va (unsigned int flags,
 		    _("Specified value for NC_SIZE too large\n"));
 #endif
 #if HTTPS_SUPPORT
-	  if (0 != (flags & MHD_USE_SSL))
+	  if (0 != (flags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
 	  free (daemon);
@@ -4533,7 +4533,7 @@ MHD_start_daemon_va (unsigned int flags,
 		    MHD_strerror_ (errno));
 #endif
 #if HTTPS_SUPPORT
-	  if (0 != (flags & MHD_USE_SSL))
+	  if (0 != (flags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif
 	  free (daemon);
@@ -4548,7 +4548,7 @@ MHD_start_daemon_va (unsigned int flags,
 		_("MHD failed to initialize nonce-nc mutex\n"));
 #endif
 #if HTTPS_SUPPORT
-      if (0 != (flags & MHD_USE_SSL))
+      if (0 != (flags & MHD_USE_TLS))
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif
       free (daemon->nnc);
@@ -4897,7 +4897,7 @@ MHD_start_daemon_va (unsigned int flags,
 
 #if HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if ( (0 != (flags & MHD_USE_SSL)) &&
+  if ( (0 != (flags & MHD_USE_TLS)) &&
        (0 != MHD_TLS_init (daemon)) )
     {
 #ifdef HAVE_MESSAGES
@@ -5090,7 +5090,7 @@ thread_failed:
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
 #if HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_SSL))
+  if (0 != (flags & MHD_USE_TLS))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
   if (MHD_ITC_IS_VALID_(daemon->itc))
@@ -5351,7 +5351,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       gnutls_dh_params_deinit (daemon->https_mem_dhparams);
       daemon->have_dhparams = MHD_NO;
     }
-  if (0 != (daemon->options & MHD_USE_SSL))
+  if (0 != (daemon->options & MHD_USE_TLS))
     {
       gnutls_priority_deinit (daemon->priority_cache);
       if (daemon->x509_cred)

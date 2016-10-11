@@ -107,7 +107,7 @@ test_query_session ()
   gen_test_file_url (url, DEAMON_TEST_PORT);
 
   /* setup test */
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_SSL |
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS |
                         MHD_USE_DEBUG, DEAMON_TEST_PORT,
                         NULL, NULL, &query_session_ahc, NULL,
 			MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:+ARCFOUR-128",

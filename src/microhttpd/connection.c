@@ -595,7 +595,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     return MHD_YES; /* response already ready */
 #if LINUX
   if ( (MHD_INVALID_SOCKET != response->fd) &&
-       (0 == (connection->daemon->options & MHD_USE_SSL)) )
+       (0 == (connection->daemon->options & MHD_USE_TLS)) )
     {
       /* will use sendfile, no need to bother response crc */
       return MHD_YES;
