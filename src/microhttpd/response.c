@@ -719,6 +719,13 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     char *buf;
     MHD_socket sv[2];
 
+#ifdef MHD_socket_pair_nblk_
+    if (! MHD_socket_pair_nblk_ (sv))
+    {
+      free (urh);
+      return MHD_NO;
+    }
+#else  /* !MHD_socket_pair_nblk_ */
     if (! MHD_socket_pair_ (sv))
     {
       free (urh);
@@ -733,6 +740,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 		  MHD_socket_last_strerr_ ());
 #endif
       }
+#endif /* !MHD_socket_pair_nblk_ */
     if ( (! MHD_SCKT_FD_FITS_FDSET_(sv[1], NULL)) &&
          (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
       {
