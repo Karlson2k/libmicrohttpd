@@ -4467,7 +4467,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		_("Failed to create control pipe: %s\n"),
-		MHD_pipe_last_strerror_ ());
+		MHD_itc_last_strerror_ ());
 #endif
       free (daemon);
       return NULL;
@@ -4477,7 +4477,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
 		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
-		  MHD_pipe_last_strerror_ ());
+		  MHD_itc_last_strerror_ ());
 #endif
         MHD_pipe_close_ (daemon->itc);
         free (daemon);
@@ -4989,7 +4989,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,
                             _("Failed to create worker control pipe: %s\n"),
-                            MHD_pipe_last_strerror_() );
+                            MHD_itc_last_strerror_() );
 #endif
                   goto thread_failed;
                 }
@@ -4998,7 +4998,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,
                             _("Failed to make read side of worker inter-thread control channel non-blocking: %s\n"),
-                            MHD_pipe_last_strerror_ ());
+                            MHD_itc_last_strerror_ ());
 #endif
                   goto thread_failed;
                 }

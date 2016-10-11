@@ -61,10 +61,10 @@ typedef int MHD_itc_;
  */
 #define MHD_itc_init_(itc) (-1 != ((itc) = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
 
-/***
- * Get description string of last errno for pipe operations.
+/**
+ * Get description string of last errno for itc operations.
  */
-#define MHD_pipe_last_strerror_() strerror(errno)
+#define MHD_itc_last_strerror_() strerror(errno)
 
 /**
  * write data to real pipe
@@ -142,10 +142,10 @@ typedef struct MHD_Itc MHD_itc_;
  */
 #define MHD_itc_init_(itc) (!pipe((itc).fd))
 
-/***
- * Get description string of last errno for pipe operations.
+/**
+ * Get description string of last errno for itc operations.
  */
-#define MHD_pipe_last_strerror_() strerror(errno)
+#define MHD_itc_last_strerror_() strerror(errno)
 
 /**
  * write data to real pipe
@@ -222,9 +222,9 @@ typedef struct MHD_Itc MHD_itc_;
 #define MHD_itc_init_(itc) MHD_socket_pair_((itc).sk)
 
 /**
- * Get description string of last pipe error
+ * Get description string of last error for itc operations.
  */
-#define MHD_pipe_last_strerror_() MHD_socket_last_strerr_()
+#define MHD_itc_last_strerror_() MHD_socket_last_strerr_()
 
 /**
  * Write data to emulated pipe
