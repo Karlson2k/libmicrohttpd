@@ -75,9 +75,19 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_itc_activate_(itc, str) \
   ((write((itc), (const void*)&_MHD_itc_wr_data, 8) > 0) || (EAGAIN == errno))
 
-#define MHD_pipe_get_read_fd_(pip) (pip)
+/**
+ * Return read FD of @a itc which can be used for poll(), select() etc.
+ * @param itc the itc to get FD
+ * @return FD of read side
+ */
+#define MHD_itc_r_fd_(itc) ((int)(itc))
 
-#define MHD_pipe_get_write_fd_(pip) (pip)
+/**
+ * Return write FD of @a itc
+ * @param itc the itc to get FD
+ * @return FD of write side
+ */
+#define MHD_itc_w_fd_(itc) ((int)(itc))
 
 /**
  * drain data from real pipe
@@ -153,9 +163,19 @@ static const uint64_t _MHD_itc_wr_data = 1;
   ((write((itc).fd[1], (const void*)(str), 1) > 0) || (EAGAIN == errno))
 
 
-#define MHD_pipe_get_read_fd_(pip) ((pip).fd[0])
+/**
+ * Return read FD of @a itc which can be used for poll(), select() etc.
+ * @param itc the itc to get FD
+ * @return FD of read side
+ */
+#define MHD_itc_r_fd_(itc) ((itc).fd[0])
 
-#define MHD_pipe_get_write_fd_(pip) ((pip).fd[1])
+/**
+ * Return write FD of @a itc
+ * @param itc the itc to get FD
+ * @return FD of write side
+ */
+#define MHD_itc_w_fd_(itc) ((itc).fd[1])
 
 /**
  * drain data from real pipe
@@ -228,9 +248,19 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
   ((send((itc).sk[1], (const char*)(str), 1, 0) > 0) || \
    (MHD_SCKT_ERR_IS_EAGAIN_(MHD_socket_get_error_())))
 
-#define MHD_pipe_get_read_fd_(pip) ((pip).sk[0])
+/**
+ * Return read FD of @a itc which can be used for poll(), select() etc.
+ * @param itc the itc to get FD
+ * @return FD of read side
+ */
+#define MHD_itc_r_fd_(itc) ((itc).sk[0])
 
-#define MHD_pipe_get_write_fd_(pip) ((pip).sk[1])
+/**
+ * Return write FD of @a itc
+ * @param itc the itc to get FD
+ * @return FD of write side
+ */
+#define MHD_itc_w_fd_(itc) ((itc).sk[1])
 
 /**
  * Drain data from emulated pipe

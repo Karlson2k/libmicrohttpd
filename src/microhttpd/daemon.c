@@ -1376,7 +1376,7 @@ thread_main_handle_connection (void *data)
 #if WINDOWS
           if (! MHD_INVALID_PIPE_(daemon->itc) )
             {
-              if (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_ (daemon->itc),
+              if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                                         &rs,
                                         &maxsock,
                                         FD_SETSIZE))
@@ -1414,7 +1414,7 @@ thread_main_handle_connection (void *data)
 #if WINDOWS
           /* drain signaling pipe before other processing */
           if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
-               (FD_ISSET (MHD_pipe_get_read_fd_ (daemon->itc),
+               (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                           &rs)) )
             MHD_pipe_drain_ (daemon->itc);
 #endif
@@ -1461,7 +1461,7 @@ thread_main_handle_connection (void *data)
           if (! MHD_INVALID_PIPE_(daemon->itc))
             {
               p[1].events |= POLLIN;
-              p[1].fd = MHD_pipe_get_read_fd_ (daemon->itc);
+              p[1].fd = MHD_itc_r_fd_ (daemon->itc);
               p[1].revents = 0;
               extra_slot = 1;
             }
@@ -2705,7 +2705,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   /* Do it before any other processing so new signals
      will trigger select again and will be processed */
   if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
-       (FD_ISSET (MHD_pipe_get_read_fd_ (daemon->itc),
+       (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
     MHD_pipe_drain_ (daemon->itc);
 
@@ -2841,7 +2841,7 @@ MHD_select (struct MHD_Daemon *daemon,
         }
     }
   if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
-       (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_ (daemon->itc),
+       (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                               &rs,
                               &maxsock,
                               FD_SETSIZE)) )
@@ -2854,7 +2854,7 @@ MHD_select (struct MHD_Daemon *daemon,
         {
           FD_CLR (daemon->socket_fd,
                   &rs);
-          if (! MHD_add_to_fd_set_ (MHD_pipe_get_read_fd_(daemon->itc),
+          if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_(daemon->itc),
                                     &rs,
                                     &maxsock,
                                     FD_SETSIZE))
@@ -3004,7 +3004,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     poll_pipe = -1;
     if (! MHD_INVALID_PIPE_(daemon->itc))
       {
-	p[poll_server].fd = MHD_pipe_get_read_fd_ (daemon->itc);
+	p[poll_server].fd = MHD_itc_r_fd_ (daemon->itc);
 	p[poll_server].events = POLLIN;
 	p[poll_server].revents = 0;
         poll_pipe = (int) poll_server;
@@ -3185,7 +3185,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     }
   if (! MHD_INVALID_PIPE_(daemon->itc))
     {
-      p[poll_count].fd = MHD_pipe_get_read_fd_ (daemon->itc);
+      p[poll_count].fd = MHD_itc_r_fd_ (daemon->itc);
       p[poll_count].events = POLLIN;
       p[poll_count].revents = 0;
       poll_pipe = poll_count;
@@ -3493,7 +3493,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
              be expected to be rare... FIXME (a construction similar
              to what we did with the `upgrade_marker` should do) */
           if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
-               (MHD_pipe_get_read_fd_ (daemon->itc) == events[i].data.fd) )
+               (MHD_itc_r_fd_ (daemon->itc) == events[i].data.fd) )
             {
               /* It's OK to drain pipe here as all external
                  conditions will be processed later. */
@@ -4327,10 +4327,10 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
     {
       event.events = EPOLLIN | EPOLLET;
       event.data.ptr = NULL;
-      event.data.fd = MHD_pipe_get_read_fd_ (daemon->itc);
+      event.data.fd = MHD_itc_r_fd_ (daemon->itc);
       if (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_ADD,
-                          MHD_pipe_get_read_fd_ (daemon->itc),
+                          MHD_itc_r_fd_ (daemon->itc),
                           &event))
         {
 #ifdef HAVE_MESSAGES
@@ -4480,7 +4480,7 @@ MHD_start_daemon_va (unsigned int flags,
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
        (1 == use_pipe) &&
-       (! MHD_SCKT_FD_FITS_FDSET_(MHD_pipe_get_read_fd_ (daemon->itc),
+       (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
                                   NULL)) )
     {
 #ifdef HAVE_MESSAGES
@@ -4998,7 +4998,7 @@ MHD_start_daemon_va (unsigned int flags,
                 }
             }
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-               (! MHD_SCKT_FD_FITS_FDSET_(MHD_pipe_get_read_fd_ (daemon->itc),
+               (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
                                           NULL)) )
             {
 #ifdef HAVE_MESSAGES
@@ -5238,7 +5238,7 @@ epoll_shutdown (struct MHD_Daemon *daemon)
   event.data.ptr = NULL;
   if (0 != epoll_ctl (daemon->epoll_fd,
 		      EPOLL_CTL_ADD,
-		      MHD_pipe_get_write_fd_ (daemon->itc),
+		      MHD_itc_w_fd_ (daemon->itc),
 		      &event))
     MHD_PANIC (_("Failed to add wpipe to epoll set to signal termination\n"));
 }
