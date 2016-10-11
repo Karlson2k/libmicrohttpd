@@ -33,7 +33,7 @@
 #include "internal.h"
 
 
-#ifdef HAVE_SYS_EVENTFD_H
+#ifdef _MHD_ITC_EVENTFD
 
 int
 MHD_pipe_write_ (struct MHD_Pipe pip,
@@ -49,9 +49,9 @@ MHD_pipe_write_ (struct MHD_Pipe pip,
   return sz;
 }
 
-#else
+#endif /* _MHD_ITC_EVENTFD */
 
-#ifndef MHD_DONT_USE_PIPES
+#if defined(_MHD_ITC_PIPE)
 #if !defined(_WIN32) || defined(__CYGWIN__)
 
 
@@ -83,6 +83,5 @@ MHD_itc_nonblocking_ (struct MHD_Pipe pip)
   }
   return !0;
 }
-#endif /* _WIN32 && ! __CYGWIN__ */
-#endif /* ! MHD_DONT_USE_PIPES */
-#endif /* ! HAVE_SYS_EVENTFD_H */
+#endif /* !_WIN32 || __CYGWIN__ */
+#endif /* _MHD_ITC_EVENTFD ||  _MHD_ITC_PIPE */

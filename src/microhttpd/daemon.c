@@ -5576,7 +5576,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_SOCKETPAIR:
-#ifdef MHD_DONT_USE_PIPES
+#ifdef _MHD_ITC_SOCKETPAIR
       return MHD_YES;
 #else
       return MHD_NO;

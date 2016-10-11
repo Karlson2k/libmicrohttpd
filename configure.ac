@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 #
 #
-AC_PREREQ([2.60])
+AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
 AC_INIT([GNU Libmicrohttpd],[0.9.51],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
@@ -562,7 +562,7 @@ AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h search.h sy
   sys/socket.h sys/select.h netdb.h netinet/in.h netinet/ip.h netinet/tcp.h arpa/inet.h \
   endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h \
   inttypes.h stddef.h unistd.h \
-  sockLib.h inetLib.h net/if.h sys/eventfd.h], [], [], [AC_INCLUDES_DEFAULT])
+  sockLib.h inetLib.h net/if.h], [], [], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
 
 # Check for generic functions
@@ -585,47 +585,112 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
    ])
 
 
-# Check for pipe/socketpair signaling
-AC_MSG_CHECKING([[whether to enable signaling by socketpair]])
+# Check for inter-thread signaling type
+AC_ARG_ENABLE([[itc]],
+  [AS_HELP_STRING([[--enable-itc=TYPE]], [use TYPE of inter-thread communication (pipe, socketpair, eventfd) [auto]])], [],
+  [[enable_itc='auto']]
+)
 
-AC_ARG_ENABLE([[socketpair]],
-	[AS_HELP_STRING([[--enable-socketpair[=ARG]]], [disable internal singalling by pipes and use socket pair instead (yes, no, try) [no]])], ,
-	[AS_IF([[test "x$os_is_windows" = "xyes"]], [enable_socketpair=yes], [enable_socketpair=no])]
-  )
+AS_CASE([[$enable_itc]],
+  [[pipe]], [[:]],
+  [[socketpair]], [[:]],
+  [[eventfd]], [[:]],
+  [[auto]], [AS_VAR_IF([[os_is_windows]], [["yes"]], [[enable_itc='socketpair']])],
+  [[eventFD]], [[enable_itc='eventfd']],
+  [[socket]], [[enable_itc='socketpair']],
+  [[no]], [AC_MSG_ERROR([[inter-thread communication cannot be disabled]])],
+    [AC_MSG_ERROR([[unrecognized type "$enable_itc" of inter-thread communication specified by "--enable-itc=$enable_itc"]])]
+)
+# AS_UNSET([[use_itc]])
 
-AS_IF(
-       [[test "x$enable_socketpair" != "xno"]],
-         [AS_IF([[test "x$os_is_windows" = "xyes"]],
-           [ AC_MSG_RESULT([[yes, forced on W32]]) ],
-           [ AC_LINK_IFELSE(
-             [ AC_LANG_PROGRAM([[
+AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
+  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
+    AC_CHECK_HEADERS([[sys/eventfd.h]], [], [], [AC_INCLUDES_DEFAULT])
+    AS_VAR_IF([[ac_cv_header_sys_eventfd_h]], [["yes"]], [
+      AC_CACHE_CHECK([whether eventfd(2) is usable], [[mhd_cv_eventfd_usable]], [
+        AC_LINK_IFELSE([
+          AC_LANG_PROGRAM([[
+#include <sys/eventfd.h>
+          ]], [[int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)
+          ]])
+        ], [[mhd_cv_eventfd_usable='yes']], [[mhd_cv_eventfd_usable='no']])
+      ])
+    ])
+  ])
+  AS_VAR_IF([[mhd_cv_eventfd_usable]], [["yes"]], [
+    use_itc='eventfd'
+    enable_itc="$use_itc"
+    AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
+  ], [
+    AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
+  ])
+])
+
+AS_IF([[test "x$enable_itc" = "xpipe" || test "x$enable_itc" = "xauto"]], [
+  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
+    AC_CACHE_CHECK([[whether pipe(3) is usable]], [[mhd_cv_pipe_usable]], [
+      AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+AC_INCLUDES_DEFAULT
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+        ], [[
+          int arr[2];
+          int res;
+          res = pipe(arr)
+        ]])
+      ], [[mhd_cv_pipe_usable='yes']], [[mhd_cv_pipe_usable='no']])
+    ])
+  ])
+  AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
+    use_itc='pipe'
+    enable_itc="$use_itc"
+    AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
+  ], [
+    AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
+  ])
+])
+
+AS_IF([[test "x$enable_itc" = "xsocketpair" || test "x$enable_itc" = "xauto"]], [
+  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [[mhd_cv_socketpair_usable='yes']], [
+    AC_CACHE_CHECK([[whether socketpair(3) is usable]], [[mhd_cv_socketpair_usable]], [
+      AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+AC_INCLUDES_DEFAULT
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-				]],[[
-				  int sv[2];
-				  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return 1
-				]])
-             ],
-             [ AC_MSG_RESULT([[yes, socketpair in available]]) ],
-             [ AC_MSG_RESULT([[no, socketpair in not available]])
-              AS_IF([[test "x$enable_socketpair" = "xyes"]], [ AC_MSG_ERROR([[socketpair signalling cannot be enabled.]]) ])
-             ]
-             )
-           ]
-          )
-         ],
-       [
-        AC_MSG_RESULT([[no]])
-        AS_IF([[test "x$os_is_windows" = "xyes"]], [ AC_MSG_ERROR([[socketpair must be enabled on W32]]) ])
-       ]
-     )
-if test "x$enable_socketpair" = "xyes"; then
-	AC_DEFINE([[MHD_DONT_USE_PIPES]], [[1]], [Define to use pair of sockets instead of pipes for signaling])
-fi
+        ], [[
+          int arr[2];
+          int res;
+#if defined(AF_LOCAL)
+          res = socketpair(AF_LOCAL, SOCK_STREAM, 0, arr);
+#elif defined(AF_UNIX)
+          res = socketpair(AF_UNIX, SOCK_STREAM, 0, arr);
+#else
+#error AF_LOCAL and AF_UNIX are both undefined
+          choke me now;
+#endif
+          if (res != 0) return 1
+        ]])
+      ], [[mhd_cv_socketpair_usable='yes']], [[mhd_cv_socketpair_usable='no']])
+    ])
+  ])
+  AS_VAR_IF([[mhd_cv_socketpair_usable]], [["yes"]], [
+    use_itc='socketpair'
+    enable_itc="$use_itc"
+    AC_DEFINE([[_MHD_ITC_SOCKETPAIR]], [[1]], [Define to use socketpair for inter-thread communication])
+  ], [
+    AS_VAR_IF([[enable_itc]], [["socketpair"]], [AC_MSG_ERROR([[socketpair(3) is not usable, consider using other type of inter-thread communication]])])
+  ])
+])
+
+AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find useable type of inter-thread communication]])])
+
 
 AC_CHECK_FUNCS_ONCE([accept4 gmtime_r memmem snprintf])
 AC_CHECK_DECL([gmtime_s],
@@ -1116,6 +1181,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Operating System:  ${host_os}
   Threading lib:     ${USE_THREADS}
   Use thread names:  ${enable_thread_names}
+  Inter-thread comm: ${use_itc}
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
   Messages:          ${enable_messages}

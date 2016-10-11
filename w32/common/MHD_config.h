@@ -44,8 +44,8 @@
 /* Provides IPv6 headers */
 #define HAVE_INET6 1
 
-/* Define to use pair of sockets instead of pipes for signaling */
-#define MHD_DONT_USE_PIPES 1
+/* Define to use socketpair for inter-thread communication */
+#define _MHD_ITC_SOCKETPAIR 1
 
 /* define to use W32 threads */
 #define MHD_USE_W32_THREADS 1
