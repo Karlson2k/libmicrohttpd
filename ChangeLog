@@ -1,3 +1,12 @@
+Tue Oct 11 18:14:40 MSK 2016
+	Code internal refactoring: 'pipes' renamed to 'inter-thread
+	communication (channels)/ITCs', as code can use different types
+	of communications.
+	Optimizations: ITCs now always created in non-blocking mode.
+	Added configure parameter to choose ITC type.
+	Updated documentation and comments.
+	Minor errors fixed (related to heady load). -EG
+
 Thu Sep 22 17:51:04 CEST 2016
 	Implementing support for eventfd() instead of pipe() for
 	signaling (on platforms that support it); fixing #3557. -CG
