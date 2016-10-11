@@ -36,6 +36,15 @@
 
 #include <fcntl.h>
 
+#ifndef MHD_PANIC
+#  include <stdio.h>
+#  include <stdlib.h>
+/* Simple implementation of MHD_PANIC, to be used outside lib */
+#  define MHD_PANIC(msg) do { fprintf (stderr,           \
+     "Abnormal termination at %d line in file %s: %s\n", \
+     (int)__LINE__, __FILE__, msg); abort();} while(0)
+#endif /* ! MHD_PANIC */
+
 #if defined(_MHD_ITC_EVENTFD)
 
 /* **************** Optimized GNU/Linux ITC implementation by eventfd ********** */
@@ -99,13 +108,11 @@ static const uint64_t _MHD_itc_wr_data = 1;
        (void)__r; } while(0)
 
 /**
- * Close any FDs of the pipe (non-W32)
+ * Destroy previously initialised ITC
+ * @param itc the itc to destroy
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_close_(pip) do { \
-    if ( (0 != close (pip)) && \
-         (EBADF == errno) )             \
-      MHD_PANIC (_("close failed"));    \
-  } while (0)
+#define MHD_itc_destroy_(itc) ((0 != close (itc)) || (EBADF != errno))
 
 /**
  * Check if we have an uninitialized pipe
@@ -188,16 +195,14 @@ static const uint64_t _MHD_itc_wr_data = 1;
     {} } while(0)
 
 /**
- * Close any FDs of the pipe (non-W32)
+ * Destroy previously initialised ITC
+ * @param itc the itc to destroy
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_close_(pip) do { \
-    if ( (0 != close ((pip).fd[0])) && \
-         (EBADF == errno) )             \
-      MHD_PANIC (_("close failed"));    \
-    if ( (0 != close ((pip).fd[1])) && \
-         (EBADF == errno) )             \
-      MHD_PANIC (_("close failed"));    \
-  } while (0)
+#define MHD_itc_destroy_(itc)      \
+  ( (0 == close ((itc).fd[0])) ?   \
+      (0 == close ((itc).fd[1])) : \
+      ((close ((itc).fd[1])), 0) )
 
 /**
  * Check if we have an uninitialized pipe
@@ -276,12 +281,14 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
     {} } while(0)
 
 /**
- * Close emulated pipe FDs
+ * Destroy previously initialised ITC
+ * @param itc the itc to destroy
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_close_(pip) do { \
-   MHD_socket_close_chk_ ((pip).sk[0]); \
-   MHD_socket_close_chk_ ((pip).sk[1]); \
-} while (0)
+#define MHD_itc_destroy_(itc)          \
+  ( MHD_socket_close_((itc).sk[0]) ?   \
+      MHD_socket_close_((itc).sk[1]) : \
+      ((void)MHD_socket_close_((itc).sk[1]), 0) )
 
 /**
  * Check for uninitialized pipe @a pip
@@ -299,5 +306,15 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
 #define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip).sk[0]) && MHD_socket_nonblocking_((pip).sk[1]))
 
 #endif /* _MHD_ITC_SOCKETPAIR */
+
+/**
+ * Destroy previously initialised ITC and abort execution
+ * if error is detected.
+ * @param itc the itc to destroy
+ */
+#define MHD_itc_destroy_chk_(itc) do {          \
+    if (!MHD_itc_destroy_(itc))                 \
+      MHD_PANIC(_("Failed to destroy ITC.\n")); \
+  } while(0)
 
 #endif /* MHD_ITC_H */

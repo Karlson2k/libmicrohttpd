@@ -4473,7 +4473,7 @@ MHD_start_daemon_va (unsigned int flags,
 		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
 		  MHD_itc_last_strerror_ ());
 #endif
-        MHD_pipe_close_ (daemon->itc);
+        MHD_itc_destroy_chk_ (daemon->itc);
         free (daemon);
         return NULL;
       }
@@ -4487,7 +4487,7 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
 		_("file descriptor for control pipe exceeds maximum value\n"));
 #endif
-      MHD_pipe_close_ (daemon->itc);
+      MHD_itc_destroy_chk_ (daemon->itc);
       free (daemon);
       return NULL;
     }
@@ -5005,7 +5005,7 @@ MHD_start_daemon_va (unsigned int flags,
               MHD_DLOG (daemon,
                         _("File descriptor for worker control pipe exceeds maximum value\n"));
 #endif
-              MHD_pipe_close_ (d->itc);
+              MHD_itc_destroy_chk_ (d->itc);
               goto thread_failed;
             }
 
@@ -5112,7 +5112,7 @@ thread_failed:
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
   if (! MHD_INVALID_PIPE_(daemon->itc))
-    MHD_pipe_close_ (daemon->itc);
+    MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
   return NULL;
 }
@@ -5339,7 +5339,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
             {
               if (! MHD_INVALID_PIPE_ (daemon->worker_pool[i].itc) )
                 {
-                  MHD_pipe_close_ (daemon->worker_pool[i].itc);
+                  MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
                 }
 	    }
 	}
@@ -5395,7 +5395,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 
   if (! MHD_INVALID_PIPE_(daemon->itc))
-    MHD_pipe_close_ (daemon->itc);
+    MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
 }
 
