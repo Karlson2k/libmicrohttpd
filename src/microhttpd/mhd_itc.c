@@ -36,13 +36,13 @@
 #ifdef _MHD_ITC_EVENTFD
 
 int
-MHD_pipe_write_ (struct MHD_Pipe pip,
+MHD_pipe_write_ (MHD_itc_ pip,
                  const void *ptr,
                  size_t sz)
 {
   uint64_t val = 1;
   if (sizeof (val) !=
-      write (pip.event_fd,
+      write (pip,
              &val,
              sizeof (val)))
     MHD_PANIC (_("Failed to write to eventfd\n"));
@@ -62,7 +62,7 @@ MHD_pipe_write_ (struct MHD_Pipe pip,
  * @return non-zero if succeeded, zero otherwise
  */
 int
-MHD_itc_nonblocking_ (struct MHD_Pipe pip)
+MHD_itc_nonblocking_ (MHD_itc_ itc)
 {
   unsigned int i;
 
@@ -70,7 +70,7 @@ MHD_itc_nonblocking_ (struct MHD_Pipe pip)
   {
     int flags;
 
-    flags = fcntl (pip.fd[i],
+    flags = fcntl (itc.fd[i],
                    F_GETFL);
     if (-1 == flags)
       return 0;

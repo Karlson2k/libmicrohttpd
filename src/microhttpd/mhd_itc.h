@@ -20,7 +20,7 @@
 
 /**
  * @file microhttpd/mhd_itc.h
- * @brief  Header for platform-independent inter-thread signaling via pipes
+ * @brief  Header for platform-independent inter-thread communication
  * @author Karlson2k (Evgeny Grin)
  * @author Christian Grothoff
  *
@@ -47,20 +47,17 @@
 #if defined(_MHD_ITC_EVENTFD)
 #include <sys/eventfd.h>
 
-/* **************** Optimized eventfd PIPE implementation ********** */
+/* **************** Optimized GNU/Linux ITC implementation by eventfd ********** */
 
 /**
- * Data type for a MHD pipe.
+ * Data type for a MHD ITC.
  */
-struct MHD_Pipe
-{
-  int event_fd;
-};
+typedef int MHD_itc_;
 
 /**
  * create pipe
  */
-#define MHD_pipe_(pip) ((-1 == (pip.event_fd = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
+#define MHD_pipe_(itc) ((-1 == (itc = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
 
 /***
  * Get description string of last errno for pipe operations.
@@ -71,27 +68,27 @@ struct MHD_Pipe
  * write data to real pipe
  */
 int
-MHD_pipe_write_ (struct MHD_Pipe pip,
+MHD_pipe_write_ (MHD_itc_ pip,
                  const void *ptr,
                  size_t sz);
 
-#define MHD_pipe_get_read_fd_(pip) (pip.event_fd)
+#define MHD_pipe_get_read_fd_(pip) (pip)
 
-#define MHD_pipe_get_write_fd_(pip) (pip.event_fd)
+#define MHD_pipe_get_write_fd_(pip) (pip)
 
 /**
  * drain data from real pipe
  */
 #define MHD_pipe_drain_(pip) do { \
    uint64_t tmp; \
-   read (pip.event_fd, &tmp, sizeof (tmp)); \
+   read (pip, &tmp, sizeof (tmp)); \
  } while (0)
 
 /**
  * Close any FDs of the pipe (non-W32)
  */
 #define MHD_pipe_close_(pip) do { \
-    if ( (0 != close (pip.event_fd)) && \
+    if ( (0 != close (pip)) && \
          (EBADF == errno) )             \
       MHD_PANIC (_("close failed"));    \
   } while (0)
@@ -99,13 +96,13 @@ MHD_pipe_write_ (struct MHD_Pipe pip,
 /**
  * Check if we have an uninitialized pipe
  */
-#define MHD_INVALID_PIPE_(pip)  (-1 == pip.event_fd)
+#define MHD_INVALID_PIPE_(pip)  (-1 == pip)
 
 /**
  * Setup uninitialized @a pip data structure.
  */
 #define MHD_make_invalid_pipe_(pip) do { \
-    pip.event_fd = -1;        \
+    pip = -1;        \
   } while (0)
 
 
@@ -121,24 +118,25 @@ MHD_pipe_write_ (struct MHD_Pipe pip,
 
 #elif defined(_MHD_ITC_PIPE)
 
-/* **************** STANDARD UNIX PIPE implementation ********** */
+/* **************** Standard UNIX ITC implementation by pipe ********** */
 
 #  ifdef HAVE_STRING_H
 #    include <string.h> /* for strerror() */
 #  endif
 
 /**
- * Data type for a MHD pipe.
+ * Data type for a MHD ITC.
  */
-struct MHD_Pipe
+struct MHD_Itc
 {
   int fd[2];
 };
+typedef struct MHD_Itc MHD_itc_;
 
 /**
  * create pipe
  */
-#define MHD_pipe_(pip) (!pipe((pip.fd)))
+#define MHD_pipe_(pip) (!pipe((pip).fd))
 
 /***
  * Get description string of last errno for pipe operations.
@@ -148,29 +146,29 @@ struct MHD_Pipe
 /**
  * write data to real pipe
  */
-#define MHD_pipe_write_(pip, ptr, sz) write((pip.fd[1]), (const void*)(ptr), (sz))
+#define MHD_pipe_write_(pip, ptr, sz) write((pip).fd[1], (const void*)(ptr), (sz))
 
 
-#define MHD_pipe_get_read_fd_(pip) (pip.fd[0])
+#define MHD_pipe_get_read_fd_(pip) ((pip).fd[0])
 
-#define MHD_pipe_get_write_fd_(pip) (pip.fd[1])
+#define MHD_pipe_get_write_fd_(pip) ((pip).fd[1])
 
 /**
  * drain data from real pipe
  */
 #define MHD_pipe_drain_(pip) do { \
    long tmp; \
-   while (0 < read((pip.fd[0]), (void*)&tmp, sizeof (tmp))) ; \
+   while (0 < read((pip).fd[0], (void*)&tmp, sizeof (tmp))) ; \
  } while (0)
 
 /**
  * Close any FDs of the pipe (non-W32)
  */
 #define MHD_pipe_close_(pip) do { \
-    if ( (0 != close (pip.fd[0])) && \
+    if ( (0 != close ((pip).fd[0])) && \
          (EBADF == errno) )             \
       MHD_PANIC (_("close failed"));    \
-    if ( (0 != close (pip.fd[1])) && \
+    if ( (0 != close ((pip).fd[1])) && \
          (EBADF == errno) )             \
       MHD_PANIC (_("close failed"));    \
   } while (0)
@@ -178,13 +176,13 @@ struct MHD_Pipe
 /**
  * Check if we have an uninitialized pipe
  */
-#define MHD_INVALID_PIPE_(pip)  (-1 == pip.fd[0])
+#define MHD_INVALID_PIPE_(pip)  (-1 == (pip).fd[0])
 
 /**
  * Setup uninitialized @a pip data structure.
  */
 #define MHD_make_invalid_pipe_(pip) do { \
-    pip.fd[0] = pip.fd[1] = -1; \
+    (pip).fd[0] = (pip).fd[1] = -1; \
   } while (0)
 
 /**
@@ -194,25 +192,23 @@ struct MHD_Pipe
  * @return non-zero if succeeded, zero otherwise
  */
 int
-MHD_itc_nonblocking_ (struct MHD_Pipe fd);
+MHD_itc_nonblocking_ (MHD_itc_ itc);
 
-
-/* **************** END OF STANDARD UNIX PIPE implementation ********** */
 
 #elif defined(_MHD_ITC_SOCKETPAIR)
 
-/* **************** PIPE EMULATION by socket pairs ********** */
+/* **************** ITC implementation by socket pair ********** */
 
 #include "mhd_sockets.h"
 
 /**
  * Data type for a MHD pipe.
  */
-struct MHD_Pipe
+struct MHD_Itc
 {
   MHD_socket fd[2];
 };
-
+typedef struct MHD_Itc MHD_itc_;
 
 /**
  * Create two connected sockets to emulate a pipe.
@@ -261,8 +257,6 @@ struct MHD_Pipe
 
 
 #define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip.fd[0])) && MHD_socket_nonblocking_((pip.fd[1])))
-
-/* **************** END OF PIPE EMULATION by socket pairs ********** */
 
 #endif /* _MHD_ITC_SOCKETPAIR */
 
