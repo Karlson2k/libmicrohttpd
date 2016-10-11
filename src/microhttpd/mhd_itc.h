@@ -131,20 +131,14 @@ static const uint64_t _MHD_itc_wr_data = 1;
  */
 #define MHD_itc_set_invalid_(itc) ((itc) = -1)
 
-/**
- * Change itc FD options to be non-blocking.  As we already did this
- * on eventfd creation, this always succeeds.
- *
- * @param fd the FD to manipulate
- * @return non-zero if succeeded, zero otherwise
- */
-#define MHD_itc_nonblocking_(pip) (!0)
-
 
 #elif defined(_MHD_ITC_PIPE)
 
 /* **************** Standard UNIX ITC implementation by pipe ********** */
 
+#if defined(HAVE_PIPE2_FUNC) && defined(HAVE_FCNTL_H)
+#  include <fcntl.h>     /* for O_CLOEXEC, O_NONBLOCK */
+#endif /* HAVE_PIPE2_FUNC && HAVE_FCNTL_H */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>      /* for read(), write(), errno */
 #endif /* HAVE_UNISTD_H */
@@ -158,7 +152,16 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) (!pipe((itc).fd))
+#ifdef HAVE_PIPE2_FUNC
+#  define MHD_itc_init_(itc) (!pipe2((itc).fd, O_CLOEXEC | O_NONBLOCK))
+#else  /* ! HAVE_PIPE2_FUNC */
+#  define MHD_itc_init_(itc)              \
+     ( (!pipe((itc).fd)) ?                \
+         (MHD_itc_nonblocking_((itc)) ?   \
+           (!0) :                         \
+           (MHD_itc_destroy_((itc)), 0) ) \
+         : (0) )
+#endif /* ! HAVE_PIPE2_FUNC */
 
 /**
  * Get description string of last errno for itc operations.
@@ -225,14 +228,16 @@ static const uint64_t _MHD_itc_wr_data = 1;
  */
 #define MHD_itc_set_invalid_(itc) ((itc).fd[0] = (itc).fd[1] = -1)
 
-/**
- * Change itc FD options to be non-blocking.
- *
- * @param fd the FD to manipulate
- * @return non-zero if succeeded, zero otherwise
- */
-int
-MHD_itc_nonblocking_ (MHD_itc_ itc);
+#ifndef HAVE_PIPE2_FUNC
+  /**
+   * Change itc FD options to be non-blocking.
+   *
+   * @param fd the FD to manipulate
+   * @return non-zero if succeeded, zero otherwise
+   */
+  int
+  MHD_itc_nonblocking_ (MHD_itc_ itc);
+#endif /* ! HAVE_PIPE2_FUNC */
 
 
 #elif defined(_MHD_ITC_SOCKETPAIR)
@@ -247,7 +252,16 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) MHD_socket_pair_((itc).sk)
+#ifdef MHD_socket_pair_nblk_
+#  define MHD_itc_init_(itc) MHD_socket_pair_nblk_((itc).sk)
+#else  /* ! MHD_socket_pair_nblk_ */
+#  define MHD_itc_init_(itc)            \
+     (MHD_socket_pair_((itc).sk) ?      \
+       (MHD_itc_nonblocking_((itc)) ?   \
+         (!0) :                         \
+         (MHD_itc_destroy_((itc)), 0) ) \
+       : (0))
+#endif /* ! MHD_socket_pair_nblk_ */
 
 /**
  * Get description string of last error for itc operations.
@@ -317,8 +331,9 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
  */
 #define MHD_itc_set_invalid_(itc) ((itc).sk[0] = (itc).sk[1] = MHD_INVALID_SOCKET)
 
-
-#define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip).sk[0]) && MHD_socket_nonblocking_((pip).sk[1]))
+#ifndef MHD_socket_pair_nblk_
+#  define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip).sk[0]) && MHD_socket_nonblocking_((pip).sk[1]))
+#endif /* ! MHD_socket_pair_nblk_ */
 
 #endif /* _MHD_ITC_SOCKETPAIR */
 

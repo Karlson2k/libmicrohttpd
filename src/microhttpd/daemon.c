@@ -4466,17 +4466,6 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    if (! MHD_itc_nonblocking_ (daemon->itc))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-		  _("Failed to make read side of inter-thread control channel non-blocking: %s\n"),
-		  MHD_itc_last_strerror_ ());
-#endif
-        MHD_itc_destroy_chk_ (daemon->itc);
-        free (daemon);
-        return NULL;
-      }
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
        (1 == use_pipe) &&
@@ -4984,15 +4973,6 @@ MHD_start_daemon_va (unsigned int flags,
                   MHD_DLOG (daemon,
                             _("Failed to create worker control pipe: %s\n"),
                             MHD_itc_last_strerror_() );
-#endif
-                  goto thread_failed;
-                }
-              if (! MHD_itc_nonblocking_(d->itc))
-                {
-#ifdef HAVE_MESSAGES
-                  MHD_DLOG (daemon,
-                            _("Failed to make read side of worker inter-thread control channel non-blocking: %s\n"),
-                            MHD_itc_last_strerror_ ());
 #endif
                   goto thread_failed;
                 }

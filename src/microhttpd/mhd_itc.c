@@ -36,7 +36,7 @@
 #if defined(_MHD_ITC_PIPE)
 #if !defined(_WIN32) || defined(__CYGWIN__)
 
-
+#ifndef HAVE_PIPE2_FUNC
 /**
  * Change itc FD options to be non-blocking.
  *
@@ -65,5 +65,6 @@ MHD_itc_nonblocking_ (MHD_itc_ itc)
   }
   return !0;
 }
+#endif /* ! HAVE_PIPE2_FUNC */
 #endif /* !_WIN32 || __CYGWIN__ */
 #endif /* _MHD_ITC_EVENTFD ||  _MHD_ITC_PIPE */
