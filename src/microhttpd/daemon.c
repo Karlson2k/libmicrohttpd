@@ -4437,7 +4437,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->pool_increment = MHD_BUF_INC_SIZE;
   daemon->unescape_callback = &unescape_wrapper;
   daemon->connection_timeout = 0;       /* no timeout */
-  MHD_make_invalid_pipe_ (daemon->itc);
+  MHD_itc_set_invalid_ (daemon->itc);
 #ifdef SOMAXCONN
   daemon->listen_backlog_size = SOMAXCONN;
 #else  /* !SOMAXCONN */

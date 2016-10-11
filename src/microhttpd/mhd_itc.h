@@ -126,12 +126,10 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_ITC_IS_VALID_(itc)  (-1 != (itc))
 
 /**
- * Setup uninitialized @a pip data structure.
+ * Set @a itc to invalid value.
+ * @param itc the itc to set
  */
-#define MHD_make_invalid_pipe_(pip) do { \
-    pip = -1;        \
-  } while (0)
-
+#define MHD_itc_set_invalid_(itc) ((itc) = -1)
 
 /**
  * Change itc FD options to be non-blocking.  As we already did this
@@ -222,11 +220,10 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_ITC_IS_VALID_(itc)  (-1 != (itc).fd[0])
 
 /**
- * Setup uninitialized @a pip data structure.
+ * Set @a itc to invalid value.
+ * @param itc the itc to set
  */
-#define MHD_make_invalid_pipe_(pip) do { \
-    (pip).fd[0] = (pip).fd[1] = -1; \
-  } while (0)
+#define MHD_itc_set_invalid_(itc) ((itc).fd[0] = (itc).fd[1] = -1)
 
 /**
  * Change itc FD options to be non-blocking.
@@ -315,11 +312,10 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
 #define MHD_ITC_IS_VALID_(itc)  (MHD_INVALID_SOCKET != (itc).sk[0])
 
 /**
- * Setup uninitialized @a pip data structure.
+ * Set @a itc to invalid value.
+ * @param itc the itc to set
  */
-#define MHD_make_invalid_pipe_(pip) do { \
-    pip.sk[0] = pip.sk[1] = MHD_INVALID_SOCKET; \
-  } while (0)
+#define MHD_itc_set_invalid_(itc) ((itc).sk[0] = (itc).sk[1] = MHD_INVALID_SOCKET)
 
 
 #define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_((pip).sk[0]) && MHD_socket_nonblocking_((pip).sk[1]))
