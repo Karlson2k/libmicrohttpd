@@ -635,22 +635,24 @@ enum MHD_FLAG
   MHD_USE_EPOLL_INTERNALLY
 
   /**
-   * Force MHD to use a signal pipe to notify the event loop (of
-   * threads) of our shutdown.  This is required if an appliction uses
-   * #MHD_USE_SELECT_INTERNALLY or #MHD_USE_THREAD_PER_CONNECTION and
-   * then performs #MHD_quiesce_daemon (which eliminates our ability
-   * to signal termination via the listen socket).  In these modes,
-   * #MHD_quiesce_daemon will fail if this option was not set.  Also,
-   * use of this option is automatic (as in, you do not even have to
-   * specify it), if #MHD_USE_NO_LISTEN_SOCKET is specified.  In
-   * "external" `select()` mode, this option is always simply ignored.
-   * MHD can be build for use a pair of sockets instead of a pipe.
-   * Pair of sockets is forced on W32.
-   *
-   * You must also use this option if you use internal select mode
-   * or a thread pool in conjunction with #MHD_add_connection.
+   * Use inter-thread communication channel.
+   * #MHD_USE_ITC can be used with internal select/poll/other
+   * or #MHD_USE_THREAD_PER_CONNECTION and is ignored with any
+   * "external" mode.
+   * It's required for use of #MHD_quiesce_daemon
+   * or #MHD_add_connection.
+   * This option is enforced by #MHD_USE_SUSPEND_RESUME or
+   * #MHD_USE_NO_LISTEN_SOCKET.
+   * #MHD_USE_ITC is always used automatically on platforms
+   * where select()/poll()/other ignore shutdown of listen
+   * socket.
    */
-  MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
+  MHD_USE_ITC = 1024,
+
+/** @deprecated */
+#define MHD_USE_PIPE_FOR_SHUTDOWN \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_PIPE_FOR_SHUTDOWN is deprecated, use MHD_USE_ITC") \
+  MHD_USE_ITC
 
   /**
    * Use a single socket for IPv4 and IPv6.
@@ -668,9 +670,9 @@ enum MHD_FLAG
 
   /**
    * Enable suspend/resume functions, which also implies setting up
-   * pipes to signal resume.
+   * ITC to signal resume.
    */
-  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_PIPE_FOR_SHUTDOWN,
+  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
 
   /**
    * Enable TCP_FASTOPEN option.  This option is only available on Linux with a
@@ -1634,7 +1636,7 @@ MHD_start_daemon (unsigned int flags,
  * that an existing thread is still using it).
  *
  * Note that some thread modes require the caller to have passed
- * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
+ * #MHD_USE_ITC when using this API.  If this daemon is
  * in one of those modes and this option was not given to
  * #MHD_start_daemon, this function will return #MHD_INVALID_SOCKET.
  *
@@ -1666,7 +1668,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  *
  * If you use this API in conjunction with a internal select or a
  * thread pool, you must set the option
- * #MHD_USE_PIPE_FOR_SHUTDOWN to ensure that the freshly added
+ * #MHD_USE_ITC to ensure that the freshly added
  * connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
@@ -1968,7 +1970,7 @@ MHD_queue_response (struct MHD_Connection *connection,
  * thread-per-connection!) for a while.
  *
  * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_PIPE_FOR_SHUTDOWN to
+ * thread pool, you must set the option #MHD_USE_ITC to
  * ensure that a resumed connection is immediately processed by MHD.
  *
  * Suspended connections continue to count against the total number of
@@ -2798,7 +2800,7 @@ enum MHD_FEATURE
   /**
    * Get whether shutdown on listen socket to signal other
    * threads is supported. If not supported flag
-   * #MHD_USE_PIPE_FOR_SHUTDOWN is automatically forced.
+   * #MHD_USE_ITC is automatically forced.
    */
   MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET = 8,
 

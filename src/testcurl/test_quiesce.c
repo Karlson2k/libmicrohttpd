@@ -204,12 +204,12 @@ testGet (int type, int pool_count, int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   if (pool_count > 0) {
-    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_PIPE_FOR_SHUTDOWN | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_ITC | poll_flag,
                           11080, NULL, NULL, &ahc_echo, "GET",
                           MHD_OPTION_THREAD_POOL_SIZE, pool_count, MHD_OPTION_END);
 
   } else {
-    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_PIPE_FOR_SHUTDOWN | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_DEBUG | MHD_USE_ITC | poll_flag,
                           11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   }
   if (d == NULL)

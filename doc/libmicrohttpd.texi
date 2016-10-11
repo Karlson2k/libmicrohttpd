@@ -562,7 +562,7 @@ connect HTTP clients to the HTTP server.  This option is incompatible
 with using a thread pool; if it is used,
 @code{MHD_OPTION_THREAD_POOL_SIZE} is ignored.
 
-@item MHD_USE_PIPE_FOR_SHUTDOWN
+@item MHD_USE_ITC
 @cindex quiesce
 Force MHD to use a signal pipe to notify the event loop (of threads)
 of our shutdown.  This is required if an appliction uses
@@ -643,12 +643,12 @@ four for @code{stdin}, @code{stdout}, @code{stderr} and the server
 socket).  In other words, the default is as large as possible.
 
 If the connection limit is reached, MHD's behavior depends a bit on
-other options.  If @code{MHD_USE_PIPE_FOR_SHUTDOWN} was given, MHD
+other options.  If @code{MHD_USE_ITC} was given, MHD
 will stop accepting connections on the listen socket.  This will cause
 the operating system to queue connections (up to the @code{listen()}
 limit) above the connection limit.  Those connections will be held
 until MHD is done processing at least one of the active connections.
-If @code{MHD_USE_PIPE_FOR_SHUTDOWN} is not set, then MHD will continue
+If @code{MHD_USE_ITC} is not set, then MHD will continue
 to @code{accept()} and immediately @code{close()} these connections.
 
 Note that if you set a low connection limit, you can easily get into
@@ -1548,7 +1548,7 @@ server is behind NAT and needs to connect out to the
 HTTP client, or if you are building a proxy.
 
 If you use this API in conjunction with a internal select or a thread
-pool, you must set the option @code{MHD_USE_PIPE_FOR_SHUTDOWN} to
+pool, you must set the option @code{MHD_USE_ITC} to
 ensure that the freshly added connection is immediately processed by
 MHD.
 
@@ -2900,7 +2900,7 @@ MHD_USE_EPOLL_INTERNALLY can be used.
 @item MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET
 Get whether shutdown on listen socket to signal other
 threads is supported. If not supported flag
-MHD_USE_PIPE_FOR_SHUTDOWN is automatically forced.
+MHD_USE_ITC is automatically forced.
 
 @item MHD_FEATURE_SOCKETPAIR
 Get whether a @code{socketpair()} is used internally instead of

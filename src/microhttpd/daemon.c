@@ -2112,7 +2112,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
  * thread-per-connection!) for a while.
  *
  * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_PIPE_FOR_SHUTDOWN to
+ * thread pool, you must set the option #MHD_USE_ITC to
  * ensure that a resumed connection is immediately processed by MHD.
  *
  * Suspended connections continue to count against the total number of
@@ -2307,7 +2307,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
  *
  * If you use this API in conjunction with a internal select or a
  * thread pool, you must set the option
- * #MHD_USE_PIPE_FOR_SHUTDOWN to ensure that the freshly added
+ * #MHD_USE_ITC to ensure that the freshly added
  * connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
@@ -2878,7 +2878,7 @@ MHD_select (struct MHD_Daemon *daemon,
      place. */
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (MHD_ITC_IS_VALID_(daemon->itc)) &&
-       (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) &&
+       (0 != (daemon->options & MHD_USE_ITC)) &&
        ( (daemon->connections == daemon->connection_limit) ||
          (MHD_YES == daemon->at_limit) ) )
     {
@@ -3742,7 +3742,7 @@ MHD_start_daemon (unsigned int flags,
  * sure that socket is not used anymore, call #MHD_stop_daemon.
  *
  * Note that some thread modes require the caller to have passed
- * #MHD_USE_PIPE_FOR_SHUTDOWN when using this API.  If this daemon is
+ * #MHD_USE_ITC when using this API.  If this daemon is
  * in one of those modes and this option was not given to
  * #MHD_start_daemon, this function will return #MHD_INVALID_SOCKET.
  *
@@ -3765,7 +3765,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		"Using MHD_quiesce_daemon in this mode requires MHD_USE_PIPE_FOR_SHUTDOWN\n");
+		"Using MHD_quiesce_daemon in this mode requires MHD_USE_ITC\n");
 #endif
       return MHD_INVALID_SOCKET;
     }
@@ -4448,7 +4448,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log_cls = stderr;
 #endif
 #ifdef HAVE_LISTEN_SHUTDOWN
-  use_pipe = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_PIPE_FOR_SHUTDOWN)));
+  use_pipe = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
 #else
   use_pipe = 1; /* yes, must use pipe to signal shutdown */
 #endif
@@ -5271,7 +5271,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     {
       /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
       if ( (MHD_INVALID_SOCKET != fd) &&
-           (0 == (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) )
+           (0 == (daemon->options & MHD_USE_ITC)) )
 	(void) shutdown (fd,
                          SHUT_RDWR);
     }
