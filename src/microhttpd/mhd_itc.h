@@ -59,7 +59,7 @@ typedef int MHD_itc_;
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) ((-1 == ((itc) = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
+#define MHD_itc_init_(itc) (-1 != ((itc) = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
 
 /***
  * Get description string of last errno for pipe operations.
