@@ -1416,7 +1416,7 @@ thread_main_handle_connection (void *data)
           if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
                (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                           &rs)) )
-            MHD_pipe_drain_ (daemon->itc);
+            MHD_itc_clear_ (daemon->itc);
 #endif
           if (MHD_NO ==
               call_handlers (con,
@@ -1487,7 +1487,7 @@ thread_main_handle_connection (void *data)
           /* drain signaling pipe before other processing */
           if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP | POLLIN))) )
-            MHD_pipe_drain_ (daemon->itc);
+            MHD_itc_clear_ (daemon->itc);
 #endif
           if (MHD_NO ==
               call_handlers (con,
@@ -2707,7 +2707,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
-    MHD_pipe_drain_ (daemon->itc);
+    MHD_itc_clear_ (daemon->itc);
 
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_USE_SUSPEND_RESUME == (daemon->options & mask))
@@ -3088,7 +3088,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
        new signals will be processed in next loop */
     if ( (-1 != poll_pipe) &&
          (0 != (p[poll_pipe].revents & POLLIN)) )
-      MHD_pipe_drain_ (daemon->itc);
+      MHD_itc_clear_ (daemon->itc);
 
     /* handle shutdown */
     if (MHD_YES == daemon->shutdown)
@@ -3214,7 +3214,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     }
   if ( (-1 != poll_pipe) &&
        (0 != (p[poll_pipe].revents & POLLIN)) )
-    MHD_pipe_drain_ (daemon->itc);
+    MHD_itc_clear_ (daemon->itc);
 
   /* handle shutdown */
   if (MHD_YES == daemon->shutdown)
@@ -3497,7 +3497,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
             {
               /* It's OK to drain pipe here as all external
                  conditions will be processed later. */
-              MHD_pipe_drain_ (daemon->itc);
+              MHD_itc_clear_ (daemon->itc);
               continue;
             }
 	  if (daemon == events[i].data.ptr)

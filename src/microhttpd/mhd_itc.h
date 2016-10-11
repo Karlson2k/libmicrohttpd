@@ -90,12 +90,13 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_itc_w_fd_(itc) ((int)(itc))
 
 /**
- * drain data from real pipe
+ * Clear signaled state on @a itc
+ * @param itc the itc to clear
  */
-#define MHD_pipe_drain_(pip) do { \
-   uint64_t tmp; \
-   read (pip, &tmp, sizeof (tmp)); \
- } while (0)
+#define MHD_itc_clear_(itc)                  \
+  do { uint64_t __b; int __r;                \
+       __r = read((itc), &__b, sizeof(__b)); \
+       (void)__r; } while(0)
 
 /**
  * Close any FDs of the pipe (non-W32)
@@ -178,12 +179,13 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_itc_w_fd_(itc) ((itc).fd[1])
 
 /**
- * drain data from real pipe
+ * Clear signaled state on @a itc
+ * @param itc the itc to clear
  */
-#define MHD_pipe_drain_(pip) do { \
-   long tmp; \
-   while (0 < read((pip).fd[0], (void*)&tmp, sizeof (tmp))) ; \
- } while (0)
+#define MHD_itc_clear_(itc) do                      \
+  { long __b;                                       \
+    while(0 < read((itc).fd[0], &__b, sizeof(__b))) \
+    {} } while(0)
 
 /**
  * Close any FDs of the pipe (non-W32)
@@ -263,10 +265,15 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
 #define MHD_itc_w_fd_(itc) ((itc).sk[1])
 
 /**
- * Drain data from emulated pipe
+ * Clear signaled state on @a itc
+ * @param itc the itc to clear
  */
-#define MHD_pipe_drain_(pip) do { long tmp; while (0 < recv((pip).sk[0], (void*)&tmp, sizeof (tmp), 0)) ; } while (0)
-
+#define MHD_itc_clear_(itc) do      \
+  { long __b;                       \
+    while(0 < recv((itc).sk[0],     \
+                   (char*)&__b,     \
+                   sizeof(__b), 0)) \
+    {} } while(0)
 
 /**
  * Close emulated pipe FDs
