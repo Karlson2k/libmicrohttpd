@@ -55,9 +55,11 @@
 typedef int MHD_itc_;
 
 /**
- * create pipe
+ * Initialise ITC by generating eventFD
+ * @param itc the itc to initialise
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_(itc) ((-1 == (itc = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
+#define MHD_itc_init_(itc) ((-1 == ((itc) = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK))) ? 0 : !0)
 
 /***
  * Get description string of last errno for pipe operations.
@@ -134,9 +136,11 @@ struct MHD_Itc
 typedef struct MHD_Itc MHD_itc_;
 
 /**
- * create pipe
+ * Initialise ITC by generating pipe
+ * @param itc the itc to initialise
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_(pip) (!pipe((pip).fd))
+#define MHD_itc_init_(itc) (!pipe((itc).fd))
 
 /***
  * Get description string of last errno for pipe operations.
@@ -211,9 +215,11 @@ struct MHD_Itc
 typedef struct MHD_Itc MHD_itc_;
 
 /**
- * Create two connected sockets to emulate a pipe.
+ * Initialise ITC by generating socketpair
+ * @param itc the itc to initialise
+ * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_pipe_(pip) MHD_socket_pair_((pip.fd))
+#define MHD_itc_init_(itc) MHD_socket_pair_((itc).fd)
 
 /**
  * Get description string of last pipe error
