@@ -594,17 +594,26 @@
 
 #if defined(MHD_POSIX_SOCKETS) && defined(AF_LOCAL)
 #  define MHD_socket_pair_(fdarr) (!socketpair(AF_LOCAL, SOCK_STREAM, 0, (fdarr)))
+#  if defined(HAVE_SOCK_NONBLOCK)
+#    define MHD_socket_pair_nblk_(fdarr) (!socketpair(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, (fdarr)))
+#  endif /* HAVE_SOCK_NONBLOCK*/
 #elif defined(MHD_POSIX_SOCKETS) && defined(AF_UNIX)
 #  define MHD_socket_pair_(fdarr) (!socketpair(AF_UNIX, SOCK_STREAM, 0, (fdarr)))
+#  if defined(HAVE_SOCK_NONBLOCK)
+#    define MHD_socket_pair_nblk_(fdarr) (!socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, (fdarr)))
+#  endif /* HAVE_SOCK_NONBLOCK*/
 #elif defined(MHD_WINSOCK_SOCKETS)
    /**
     * Create pair of mutually connected TCP/IP sockets on loopback address
     * @param sockets_pair array to receive resulted sockets
+    * @param non_blk if set to non-zero value, sockets created in non-blocking mode
+    *                otherwise sockets will be in blocking mode
     * @return non-zero if succeeded, zero otherwise
     */
-   int MHD_W32_socket_pair_(SOCKET sockets_pair[2]);
+   int MHD_W32_socket_pair_(SOCKET sockets_pair[2], int non_blk);
 
-#  define MHD_socket_pair_(fdarr) MHD_W32_socket_pair_((fdarr))
+#  define MHD_socket_pair_(fdarr) MHD_W32_socket_pair_((fdarr), 0)
+#  define MHD_socket_pair_nblk_(fdarr) MHD_W32_socket_pair_((fdarr), 1)
 #endif
 
 /**

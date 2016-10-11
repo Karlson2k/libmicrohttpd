@@ -241,10 +241,12 @@ const char* MHD_W32_strerror_winsock_(int err)
 /**
  * Create pair of mutually connected TCP/IP sockets on loopback address
  * @param sockets_pair array to receive resulted sockets
+ * @param non_blk if set to non-zero value, sockets created in non-blocking mode
+ *                otherwise sockets will be in blocking mode
  * @return non-zero if succeeded, zero otherwise
  */
 int
-MHD_W32_socket_pair_(SOCKET sockets_pair[2])
+MHD_W32_socket_pair_(SOCKET sockets_pair[2], int non_blk)
 {
   int i;
 
@@ -261,7 +263,8 @@ MHD_W32_socket_pair_(SOCKET sockets_pair[2])
       SOCKET listen_s;
       static const int c_addinlen = sizeof(struct sockaddr_in); /* help compiler to optimize */
       int addr_len = c_addinlen;
-      int opt = 1;
+      unsigned long on_val = 1;
+      unsigned long off_val = 0;
 
       listen_s = socket (AF_INET,
                          SOCK_STREAM,
@@ -297,7 +300,7 @@ MHD_W32_socket_pair_(SOCKET sockets_pair[2])
 
           if ( (0 != ioctlsocket (client_s,
                                   FIONBIO,
-                                  (u_long*) &opt)) ||
+                                  &on_val)) ||
                ( (0 != connect (client_s,
                                 (struct sockaddr*) &listen_addr,
                                 c_addinlen)) &&
@@ -322,23 +325,23 @@ MHD_W32_socket_pair_(SOCKET sockets_pair[2])
             }
 
           addr_len = c_addinlen;
-          opt = 0;
           if ( (0 == getsockname (client_s,
                                   (struct sockaddr*) &client_addr,
                                   &addr_len)) &&
                (accepted_from_addr.sin_family == client_addr.sin_family) &&
                (accepted_from_addr.sin_port == client_addr.sin_port) &&
                (accepted_from_addr.sin_addr.s_addr == client_addr.sin_addr.s_addr) &&
-               (0 == ioctlsocket(client_s,
-                                 FIONBIO,
-                                 (u_long*) &opt)) &&
-               (0 == ioctlsocket(server_s,
-                                 FIONBIO,
-                                 (u_long*) &opt)) )
+               ( (0 != non_blk) ?
+                    (0 == ioctlsocket(server_s,
+                                      FIONBIO,
+                                      &on_val)) :
+                    (0 == ioctlsocket(client_s,
+                                      FIONBIO,
+                                      &off_val)) ) )
             {
               closesocket (listen_s);
-              sockets_pair[0] = client_s;
-              sockets_pair[1] = server_s;
+              sockets_pair[0] = server_s;
+              sockets_pair[1] = client_s;
               return !0;
             }
           closesocket (server_s);
