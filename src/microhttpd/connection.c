@@ -526,7 +526,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _("Failed to signal end of connection via pipe"));
+                _("Failed to signal end of connection via inter-thread communication channel"));
 #endif
     }
 }

@@ -564,8 +564,9 @@ with using a thread pool; if it is used,
 
 @item MHD_USE_ITC
 @cindex quiesce
-Force MHD to use a signal pipe to notify the event loop (of threads)
-of our shutdown.  This is required if an appliction uses
+Force MHD to use a signal inter-thread communication channel to notify
+the event loop (of threads) of our shutdown and other events.
+This is required if an appliction uses
 @code{MHD_USE_INTERNAL_SELECT} or @code{MHD_USE_THREAD_PER_CONNECTION}
 and then performs @code{MHD_quiesce_daemon} (which eliminates our
 ability to signal termination via the listen socket).  In these modes,
@@ -581,8 +582,8 @@ process can continue to use the socket.
 @item MHD_USE_SUSPEND_RESUME
 Enables using @code{MHD_suspend_connection} and
 @code{MHD_resume_connection}, as performing these calls requires some
-additional pipes to be created, and code not using these calls should
-not pay the cost.
+additional inter-thred communication channels to be created, and code
+not using these calls should not pay the cost.
 
 @item MHD_USE_TCP_FASTOPEN
 @cindex listen

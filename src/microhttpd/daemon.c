@@ -1412,7 +1412,8 @@ thread_main_handle_connection (void *data)
 	      break;
 	    }
 #if WINDOWS
-          /* drain signaling pipe before other processing */
+          /* Clear ITC before other processing so additional
+           * signals will trigger select() again */
           if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                           &rs)) )
@@ -1484,7 +1485,8 @@ thread_main_handle_connection (void *data)
 	      break;
 	    }
 #if WINDOWS
-          /* drain signaling pipe before other processing */
+          /* Clear ITC before other processing so additional
+           * signals will trigger poll() again */
           if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP | POLLIN))) )
             MHD_itc_clear_ (daemon->itc);
@@ -2033,7 +2035,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       {
 #ifdef HAVE_MESSAGES
 	MHD_DLOG (daemon,
-		  _("Failed to signal new connection via pipe."));
+		  _("Failed to signal new connection via inter-thread communication channel."));
 #endif
       }
 #ifdef EPOLL_SUPPORT
@@ -2214,7 +2216,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _("Failed to signal resume via pipe."));
+                _("Failed to signal resume via inter-thread communication channel."));
 #endif
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -2701,7 +2703,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
-  /* drain signaling pipe to avoid spinning select */
+  /* Clear ITC to avoid spinning select */
   /* Do it before any other processing so new signals
      will trigger select again and will be processed */
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
@@ -2849,7 +2851,7 @@ MHD_select (struct MHD_Daemon *daemon,
 #if defined(MHD_WINSOCK_SOCKETS)
       /* fdset limit reached, new connections
          cannot be handled. Remove listen socket FD
-         from fdset and retry to add pipe FD. */
+         from fdset and retry to add ITC FD. */
       if (MHD_INVALID_SOCKET != daemon->socket_fd)
         {
           FD_CLR (daemon->socket_fd,
@@ -2862,7 +2864,7 @@ MHD_select (struct MHD_Daemon *daemon,
 #endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
-                        _("Could not add control pipe FD to fdset"));
+                        _("Could not add control inter-thread communication channel FD to fdset"));
 #endif
               err_state = MHD_YES;
 #if defined(MHD_WINSOCK_SOCKETS)
@@ -2874,7 +2876,7 @@ MHD_select (struct MHD_Daemon *daemon,
   /* If we're at the connection limit, no point in really
      accepting new connections; however, make sure we do not miss
      the shutdown OR the termination of an existing connection; so
-     only do this optimization if we have a signaling pipe in
+     only do this optimization if we have a signaling ITC in
      place. */
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (MHD_ITC_IS_VALID_(daemon->itc)) &&
@@ -2972,7 +2974,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     int timeout;
     unsigned int poll_server;
     int poll_listen;
-    int poll_pipe;
+    int poll_itc_idx;
     struct pollfd *p;
 
     p = malloc (sizeof (struct pollfd) * (2 + num_connections));
@@ -3001,13 +3003,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	poll_listen = (int) poll_server;
 	poll_server++;
       }
-    poll_pipe = -1;
+    poll_itc_idx = -1;
     if (MHD_ITC_IS_VALID_(daemon->itc))
       {
 	p[poll_server].fd = MHD_itc_r_fd_ (daemon->itc);
 	p[poll_server].events = POLLIN;
 	p[poll_server].revents = 0;
-        poll_pipe = (int) poll_server;
+        poll_itc_idx = (int) poll_server;
 	poll_server++;
       }
     if (may_block == MHD_NO)
@@ -3083,11 +3085,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         free(p);
 	return MHD_NO;
       }
-    /* handle pipe FD */
+    /* handle ITC FD */
     /* do it before any other processing so
        new signals will be processed in next loop */
-    if ( (-1 != poll_pipe) &&
-         (0 != (p[poll_pipe].revents & POLLIN)) )
+    if ( (-1 != poll_itc_idx) &&
+         (0 != (p[poll_itc_idx].revents & POLLIN)) )
       MHD_itc_clear_ (daemon->itc);
 
     /* handle shutdown */
@@ -3167,14 +3169,14 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   int timeout;
   unsigned int poll_count;
   int poll_listen;
-  int poll_pipe;
+  int poll_itc_idx;
 
   memset (&p,
           0,
           sizeof (p));
   poll_count = 0;
   poll_listen = -1;
-  poll_pipe = -1;
+  poll_itc_idx = -1;
   if (MHD_INVALID_SOCKET != daemon->socket_fd)
     {
       p[poll_count].fd = daemon->socket_fd;
@@ -3188,7 +3190,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       p[poll_count].fd = MHD_itc_r_fd_ (daemon->itc);
       p[poll_count].events = POLLIN;
       p[poll_count].revents = 0;
-      poll_pipe = poll_count;
+      poll_itc_idx = poll_count;
       poll_count++;
     }
   if (MHD_NO == may_block)
@@ -3212,8 +3214,8 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-  if ( (-1 != poll_pipe) &&
-       (0 != (p[poll_pipe].revents & POLLIN)) )
+  if ( (-1 != poll_itc_idx) &&
+       (0 != (p[poll_itc_idx].revents & POLLIN)) )
     MHD_itc_clear_ (daemon->itc);
 
   /* handle shutdown */
@@ -3495,7 +3497,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
           if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (MHD_itc_r_fd_ (daemon->itc) == events[i].data.fd) )
             {
-              /* It's OK to drain pipe here as all external
+              /* It's OK to clear ITC here as all external
                  conditions will be processed later. */
               MHD_itc_clear_ (daemon->itc);
               continue;
@@ -3791,7 +3793,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
         if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
           {
             if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
-              MHD_PANIC (_("Failed to signal quiesce via pipe"));
+              MHD_PANIC (_("Failed to signal quiesce via inter-thread communication channel"));
           }
       }
   daemon->socket_fd = MHD_INVALID_SOCKET;
@@ -3812,7 +3814,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       if (! MHD_itc_activate_ (daemon->itc, "q"))
-	MHD_PANIC (_("failed to signal quiesce via pipe"));
+	MHD_PANIC (_("failed to signal quiesce via inter-thread communication channel"));
     }
 
   return ret;
@@ -4383,7 +4385,7 @@ MHD_start_daemon_va (unsigned int flags,
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   unsigned int i;
-  int use_pipe;
+  int use_itc;
 
 #ifndef HAVE_INET6
   if (0 != (flags & MHD_USE_IPv6))
@@ -4448,19 +4450,19 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log_cls = stderr;
 #endif
 #ifdef HAVE_LISTEN_SHUTDOWN
-  use_pipe = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
+  use_itc = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
 #else
-  use_pipe = 1; /* yes, must use pipe to signal shutdown */
+  use_itc = 1; /* yes, must use ITC to signal thread */
 #endif
   if (0 == (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
-    use_pipe = 0; /* useless if we are using 'external' select */
-  if (use_pipe)
+    use_itc = 0; /* useless if we are using 'external' select */
+  if (use_itc)
   {
     if (! MHD_itc_init_ (daemon->itc))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		_("Failed to create control pipe: %s\n"),
+		_("Failed to create inter-thread communication channel: %s\n"),
 		MHD_itc_last_strerror_ ());
 #endif
       free (daemon);
@@ -4468,13 +4470,13 @@ MHD_start_daemon_va (unsigned int flags,
     }
   }
   if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-       (1 == use_pipe) &&
+       (1 == use_itc) &&
        (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
                                   NULL)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		_("file descriptor for control pipe exceeds maximum value\n"));
+		_("file descriptor for inter-thread communication channel exceeds maximum value\n"));
 #endif
       MHD_itc_destroy_chk_ (daemon->itc);
       free (daemon);
@@ -4964,14 +4966,14 @@ MHD_start_daemon_va (unsigned int flags,
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
 
-          /* Always use individual control pipes */
+          /* Always use individual control ITCs */
           if (1)
             {
               if (! MHD_itc_init_ (d->itc))
                 {
 #ifdef HAVE_MESSAGES
                   MHD_DLOG (daemon,
-                            _("Failed to create worker control pipe: %s\n"),
+                            _("Failed to create worker inter-thread communication channel: %s\n"),
                             MHD_itc_last_strerror_() );
 #endif
                   goto thread_failed;
@@ -4983,7 +4985,7 @@ MHD_start_daemon_va (unsigned int flags,
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
-                        _("File descriptor for worker control pipe exceeds maximum value\n"));
+                        _("File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
 #endif
               MHD_itc_destroy_chk_ (d->itc);
               goto thread_failed;
@@ -5161,7 +5163,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (MHD_ITC_IS_VALID_(daemon->itc)) &&
            (! MHD_itc_activate_ (daemon->itc, "e")) )
-        MHD_PANIC (_("Failed to signal shutdown via pipe"));
+        MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
 #endif
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -5220,7 +5222,7 @@ epoll_shutdown (struct MHD_Daemon *daemon)
 		      EPOLL_CTL_ADD,
 		      MHD_itc_w_fd_ (daemon->itc),
 		      &event))
-    MHD_PANIC (_("Failed to add wpipe to epoll set to signal termination\n"));
+    MHD_PANIC (_("Failed to add inter-thread communication channel FD to epoll set to signal termination\n"));
 }
 #endif
 
@@ -5264,7 +5266,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       if (! MHD_itc_activate_ (daemon->itc, "e"))
-	MHD_PANIC (_("Failed to signal shutdown via pipe"));
+	MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
   else
@@ -5300,7 +5302,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
 	    {
 	      if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
-		MHD_PANIC (_("Failed to signal shutdown via pipe."));
+		MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel."));
 	    }
 	  if (!MHD_join_thread_ (daemon->worker_pool[i].pid))
             MHD_PANIC (_("Failed to join a thread\n"));
@@ -5314,7 +5316,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
             MHD_socket_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
 #endif
 #endif
-          /* Individual pipes are always used */
+          /* Individual ITCs are always used */
           if (1)
             {
               if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
