@@ -568,7 +568,7 @@ MHD_create_response_from_data (size_t size,
     {
       if (NULL == (tmp = malloc (size)))
         {
-          MHD_mutex_destroy_ (&response->mutex);
+          MHD_mutex_destroy_chk_ (&response->mutex);
           free (response);
           return NULL;
         }
@@ -655,7 +655,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
         urh->was_closed = MHD_YES;
         if (MHD_INVALID_SOCKET != urh->app.socket)
           {
-            MHD_socket_close_ (urh->app.socket);
+            MHD_socket_close_chk_ (urh->app.socket);
             urh->app.socket = MHD_INVALID_SOCKET;
           }
         return MHD_YES;
@@ -742,8 +742,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                   (int) sv[1],
                   (int) FD_SETSIZE);
 #endif
-        MHD_socket_close_ (sv[0]);
-        MHD_socket_close_ (sv[1]);
+        MHD_socket_close_chk_ (sv[0]);
+        MHD_socket_close_chk_ (sv[1]);
         free (urh);
         return MHD_NO;
       }
@@ -814,8 +814,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                     _("Call to epoll_ctl failed: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
-          MHD_socket_close_ (sv[0]);
-          MHD_socket_close_ (sv[1]);
+          MHD_socket_close_chk_ (sv[0]);
+          MHD_socket_close_chk_ (sv[1]);
           free (urh);
           return MHD_NO;
 	}
@@ -840,8 +840,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                     _("Call to epoll_ctl failed: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
-          MHD_socket_close_ (sv[0]);
-          MHD_socket_close_ (sv[1]);
+          MHD_socket_close_chk_ (sv[0]);
+          MHD_socket_close_chk_ (sv[1]);
           free (urh);
           return MHD_NO;
 	}
@@ -986,14 +986,14 @@ MHD_destroy_response (struct MHD_Response *response)
 
   if (NULL == response)
     return;
-  MHD_mutex_lock_ (&response->mutex);
+  MHD_mutex_lock_chk_ (&response->mutex);
   if (0 != --(response->reference_count))
     {
-      MHD_mutex_unlock_ (&response->mutex);
+      MHD_mutex_unlock_chk_ (&response->mutex);
       return;
     }
-  MHD_mutex_unlock_ (&response->mutex);
-  MHD_mutex_destroy_ (&response->mutex);
+  MHD_mutex_unlock_chk_ (&response->mutex);
+  MHD_mutex_destroy_chk_ (&response->mutex);
   if (NULL != response->crfc)
     response->crfc (response->crc_cls);
   while (NULL != response->first_header)
@@ -1016,9 +1016,9 @@ MHD_destroy_response (struct MHD_Response *response)
 void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
-  MHD_mutex_lock_ (&response->mutex);
+  MHD_mutex_lock_chk_ (&response->mutex);
   (response->reference_count)++;
-  MHD_mutex_unlock_ (&response->mutex);
+  MHD_mutex_unlock_chk_ (&response->mutex);
 }
 
 

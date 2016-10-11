@@ -90,14 +90,6 @@
 static _MHD_bool check_err;
 
 
-void
-MHD_PANIC (char *msg)
-{
-  fprintf (stderr, "%s", msg);
-  abort ();
-}
-
-
 static _MHD_bool
 has_in_name(const char *prog_name, const char *marker)
 {
@@ -189,7 +181,7 @@ start_socket_listen(int domain)
     {
       fprintf (stderr, "Failed to bind socket: %u\n",
                (unsigned)sock_errno);
-      MHD_socket_close_ (fd);
+      MHD_socket_close_chk_ (fd);
       return MHD_INVALID_SOCKET;
     }
 
@@ -198,7 +190,7 @@ start_socket_listen(int domain)
     {
       fprintf (stderr, "Failed to make socket non-blocking: %u\n",
                (unsigned)sock_errno);
-      MHD_socket_close_ (fd);
+      MHD_socket_close_chk_ (fd);
       return MHD_INVALID_SOCKET;
     }
 #else  /* MHD_POSIX_SOCKETS */
@@ -209,7 +201,7 @@ start_socket_listen(int domain)
     {
       fprintf (stderr, "Failed to make socket non-blocking: %s\n",
               MHD_socket_last_strerr_ ());
-      MHD_socket_close_ (fd);
+      MHD_socket_close_chk_ (fd);
       return MHD_INVALID_SOCKET;
     }
 #endif /* MHD_POSIX_SOCKETS */
@@ -218,7 +210,7 @@ start_socket_listen(int domain)
     {
       fprintf (stderr, "Failed to listen on socket: %u\n",
                (unsigned)sock_errno);
-      MHD_socket_close_ (fd);
+      MHD_socket_close_chk_ (fd);
       return MHD_INVALID_SOCKET;
     }
 
@@ -334,7 +326,7 @@ main (int argc, char *const *argv)
 #if defined(MHD_USE_POSIX_THREADS)
       if (0 != pthread_create (&sel_thrd, NULL, test_func, &listen_socket))
         {
-          MHD_socket_close_ (listen_socket);
+          MHD_socket_close_chk_ (listen_socket);
           fprintf (stderr, "Can't start thread\n");
           return 99;
         }
@@ -342,7 +334,7 @@ main (int argc, char *const *argv)
       sel_thrd = (HANDLE)_beginthreadex (NULL, 0, test_func, &listen_socket, 0, NULL);
       if (0 == (sel_thrd))
         {
-          MHD_socket_close_ (listen_socket);
+          MHD_socket_close_chk_ (listen_socket);
           fprintf (stderr, "Can't start select() thread\n");
           return 99;
         }
@@ -359,23 +351,23 @@ main (int argc, char *const *argv)
       /* fprintf (stdout, "Waiting for thread to finish...\n"); */
       if (!MHD_join_thread_(sel_thrd))
         {
-          MHD_socket_close_(listen_socket);
+          MHD_socket_close_chk_(listen_socket);
           fprintf (stderr, "Can't join select() thread\n");
           return 99;
         }
       if (check_err)
         {
-          MHD_socket_close_(listen_socket);
+          MHD_socket_close_chk_(listen_socket);
           fprintf (stderr, "Error in waiting thread\n");
           return 99;
         }
       end_t = time (NULL);
       /* fprintf (stdout, "Thread finished.\n"); */
-      MHD_socket_close_(listen_socket);
+      MHD_socket_close_chk_(listen_socket);
 
       if (start_t == (time_t)-1 || end_t == (time_t)-1)
         {
-          MHD_socket_close_(listen_socket);
+          MHD_socket_close_chk_(listen_socket);
           fprintf (stderr, "Can't get current time\n");
           return 99;
         }

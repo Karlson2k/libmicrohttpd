@@ -195,7 +195,7 @@ struct MHD_IPCount
 static void
 MHD_ip_count_lock (struct MHD_Daemon *daemon)
 {
-  MHD_mutex_lock_(&daemon->per_ip_connection_mutex);
+  MHD_mutex_lock_chk_(&daemon->per_ip_connection_mutex);
 }
 
 
@@ -207,7 +207,7 @@ MHD_ip_count_lock (struct MHD_Daemon *daemon)
 static void
 MHD_ip_count_unlock (struct MHD_Daemon *daemon)
 {
-  MHD_mutex_unlock_(&daemon->per_ip_connection_mutex);
+  MHD_mutex_unlock_chk_(&daemon->per_ip_connection_mutex);
 }
 
 
@@ -962,7 +962,7 @@ finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
                             NULL)) )
         MHD_PANIC (_("Failed to remove FD from epoll set\n"));
 #endif
-      MHD_socket_close_ (urh->mhd.socket);
+      MHD_socket_close_chk_ (urh->mhd.socket);
     }
   MHD_resume_connection (connection);
   MHD_connection_close_ (connection,
@@ -1532,7 +1532,7 @@ exit:
     {
       shutdown (con->socket_fd,
                 SHUT_WR);
-      MHD_socket_close_ (con->socket_fd);
+      MHD_socket_close_chk_ (con->socket_fd);
       con->socket_fd = MHD_INVALID_SOCKET;
     }
   return (MHD_THRD_RTRN_TYPE_) 0;
@@ -1771,7 +1771,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                             external_add);
         }
       /* all pools are at their connection limit, must refuse */
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
 #if ENFILE
       errno = ENFILE;
 #endif
@@ -1788,7 +1788,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		(int) client_socket,
 		(int) FD_SETSIZE);
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
 #if EINVAL
       errno = EINVAL;
 #endif
@@ -1813,7 +1813,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon,
                 _("Server reached connection limit. Closing inbound connection.\n"));
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
 #if ENFILE
       errno = ENFILE;
 #endif
@@ -1832,7 +1832,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                 _("Connection rejected by application. Closing connection.\n"));
 #endif
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
@@ -1862,7 +1862,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		"Error allocating memory: %s\n",
 		MHD_strerror_ (errno));
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
@@ -1880,7 +1880,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		_("Error allocating memory: %s\n"),
 		MHD_strerror_ (errno));
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
@@ -1900,7 +1900,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		_("Error allocating memory: %s\n"),
 		MHD_strerror_ (errno));
 #endif
-      MHD_socket_close_ (client_socket);
+      MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
@@ -1961,7 +1961,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                     _("Failed to setup TLS credentials: unknown credential type %d\n"),
                     daemon->cred_type);
 #endif
-          MHD_socket_close_ (client_socket);
+          MHD_socket_close_chk_ (client_socket);
           MHD_ip_limit_del (daemon,
                             addr,
                             addrlen);
@@ -1988,7 +1988,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
-    MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   }
   else
   {
@@ -2000,7 +2000,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	      daemon->connections_tail,
 	      connection);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
   if (NULL != daemon->notify_connection)
     daemon->notify_connection (daemon->notify_connection_cls,
@@ -2080,13 +2080,13 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                connection,
                                &connection->socket_context,
                                MHD_CONNECTION_NOTIFY_CLOSED);
-  MHD_socket_close_ (client_socket);
+  MHD_socket_close_chk_ (client_socket);
   MHD_ip_limit_del (daemon,
                     addr,
                     addrlen);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
     }
   else
     {
@@ -2098,7 +2098,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	      daemon->connections_tail,
 	      connection);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   MHD_pool_destroy (connection->pool);
   free (connection->addr);
   free (connection);
@@ -2144,7 +2144,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
     MHD_PANIC (_("Cannot suspend connections without enabling MHD_USE_SUSPEND_RESUME!\n"));
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
     }
   else
     {
@@ -2187,7 +2187,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 #endif
   connection->suspended = MHD_YES;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
@@ -2208,7 +2208,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
   if (MHD_USE_SUSPEND_RESUME != (daemon->options & MHD_USE_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot resume connections without enabling MHD_USE_SUSPEND_RESUME!\n"));
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   connection->resuming = MHD_YES;
   daemon->resuming = MHD_YES;
   if ( (! MHD_INVALID_PIPE_(daemon->wpipe)) &&
@@ -2220,7 +2220,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
 #endif
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
@@ -2240,7 +2240,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
   ret = MHD_NO;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   if (MHD_NO != daemon->resuming)
     next = daemon->suspended_connections_head;
 
@@ -2295,7 +2295,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       pos->resuming = MHD_NO;
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   return ret;
 }
 
@@ -2424,7 +2424,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
       if (MHD_INVALID_SOCKET != s)
         {
-          MHD_socket_close_ (s);
+          MHD_socket_close_chk_ (s);
         }
       if ( MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err) )
         {
@@ -2499,7 +2499,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   while (NULL != (pos = daemon->cleanup_head))
     {
       DLL_remove (daemon->cleanup_head,
@@ -2565,14 +2565,14 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	}
       if (MHD_INVALID_SOCKET != pos->socket_fd)
 	{
-	  MHD_socket_close_ (pos->socket_fd);
+	  MHD_socket_close_chk_ (pos->socket_fd);
 	}
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
@@ -4791,7 +4791,7 @@ MHD_start_daemon_va (unsigned int flags,
                     (unsigned int) port,
                     MHD_socket_last_strerr_ ());
 #endif
-	  MHD_socket_close_ (socket_fd);
+	  MHD_socket_close_chk_ (socket_fd);
 	  goto free_and_fail;
 	}
 #ifdef TCP_FASTOPEN
@@ -4821,7 +4821,7 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Failed to listen for connections: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
-	  MHD_socket_close_ (socket_fd);
+	  MHD_socket_close_chk_ (socket_fd);
 	  goto free_and_fail;
 	}
     }
@@ -4843,7 +4843,7 @@ MHD_start_daemon_va (unsigned int flags,
            /* Accept must be non-blocking. Multiple children may wake up
             * to handle a new connection, but only one will win the race.
             * The others must immediately return. */
-          MHD_socket_close_ (socket_fd);
+          MHD_socket_close_chk_ (socket_fd);
           goto free_and_fail;
         }
     }
@@ -4857,7 +4857,7 @@ MHD_start_daemon_va (unsigned int flags,
                 socket_fd,
                 FD_SETSIZE);
 #endif
-      MHD_socket_close_ (socket_fd);
+      MHD_socket_close_chk_ (socket_fd);
       goto free_and_fail;
     }
 
@@ -4895,7 +4895,7 @@ MHD_start_daemon_va (unsigned int flags,
                 _("MHD failed to initialize IP connection limit mutex\n"));
 #endif
       if (MHD_INVALID_SOCKET != socket_fd)
-        MHD_socket_close_ (socket_fd);
+        MHD_socket_close_chk_ (socket_fd);
       goto free_and_fail;
     }
   if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
@@ -4904,9 +4904,9 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
                 _("MHD failed to initialize IP connection limit mutex\n"));
 #endif
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
       if (MHD_INVALID_SOCKET != socket_fd)
-        MHD_socket_close_ (socket_fd);
+        MHD_socket_close_chk_ (socket_fd);
       goto free_and_fail;
     }
 
@@ -4920,9 +4920,9 @@ MHD_start_daemon_va (unsigned int flags,
 		_("Failed to initialize TLS support\n"));
 #endif
       if (MHD_INVALID_SOCKET != socket_fd)
-        MHD_socket_close_ (socket_fd);
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+        MHD_socket_close_chk_ (socket_fd);
+      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       goto free_and_fail;
     }
 #endif
@@ -4942,10 +4942,10 @@ MHD_start_daemon_va (unsigned int flags,
                 _("Failed to create listen thread: %s\n"),
 		MHD_strerror_ (errno));
 #endif
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       if (MHD_INVALID_SOCKET != socket_fd)
-        MHD_socket_close_ (socket_fd);
+        MHD_socket_close_chk_ (socket_fd);
       goto free_and_fail;
     }
   if ( (daemon->worker_pool_size > 0) &&
@@ -5050,7 +5050,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               /* Free memory for this worker; cleanup below handles
                * all previously-created workers. */
-              MHD_mutex_destroy_ (&d->cleanup_connection_mutex);
+              MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
               goto thread_failed;
             }
         }
@@ -5071,9 +5071,9 @@ thread_failed:
   if (0 == i)
     {
       if (MHD_INVALID_SOCKET != socket_fd)
-        MHD_socket_close_ (socket_fd);
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+        MHD_socket_close_chk_ (socket_fd);
+      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       if (NULL != daemon->worker_pool)
         free (daemon->worker_pool);
       goto free_and_fail;
@@ -5111,7 +5111,7 @@ thread_failed:
 #endif
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
-  MHD_mutex_destroy_ (&daemon->nnc_lock);
+  MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
 #if HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_SSL))
@@ -5177,7 +5177,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   /* first, make sure all threads are aware of shutdown; need to
      traverse DLLs in peace... */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   if (NULL != daemon->suspended_connections_head)
     MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -5191,7 +5191,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #endif
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
   /* now, collect per-connection threads */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -5333,13 +5333,13 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  if (!MHD_join_thread_ (daemon->worker_pool[i].pid))
             MHD_PANIC (_("Failed to join a thread\n"));
 	  close_all_connections (&daemon->worker_pool[i]);
-	  MHD_mutex_destroy_ (&daemon->worker_pool[i].cleanup_connection_mutex);
+	  MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
 #ifdef EPOLL_SUPPORT
 	  if (-1 != daemon->worker_pool[i].epoll_fd)
-            MHD_socket_close_ (daemon->worker_pool[i].epoll_fd);
+            MHD_socket_close_chk_ (daemon->worker_pool[i].epoll_fd);
 #if HTTPS_SUPPORT
 	  if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
-            MHD_socket_close_ (daemon->worker_pool[i].epoll_upgrade_fd);
+            MHD_socket_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
 #endif
 #endif
           /* Individual pipes are always used */
@@ -5368,7 +5368,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     }
   close_all_connections (daemon);
   if (MHD_INVALID_SOCKET != fd)
-    MHD_socket_close_ (fd);
+    MHD_socket_close_chk_ (fd);
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
@@ -5387,20 +5387,20 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_fd) )
-    MHD_socket_close_ (daemon->epoll_fd);
+    MHD_socket_close_chk_ (daemon->epoll_fd);
 #if HTTPS_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_upgrade_fd) )
-    MHD_socket_close_ (daemon->epoll_upgrade_fd);
+    MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
 #endif
 #endif
 
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
-  MHD_mutex_destroy_ (&daemon->nnc_lock);
+  MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
-  MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
-  MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+  MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 
   if (! MHD_INVALID_PIPE_(daemon->wpipe))
     MHD_pipe_close_ (daemon->wpipe);
@@ -5654,7 +5654,7 @@ gcry_w32_mutex_init (void **ppmtx)
 static int
 gcry_w32_mutex_destroy (void **ppmtx)
 {
-  int res = (MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+  int res = (MHD_mutex_destroy_chk_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
   free (*ppmtx);
   return res;
 }
@@ -5663,7 +5663,7 @@ gcry_w32_mutex_destroy (void **ppmtx)
 static int
 gcry_w32_mutex_lock (void **ppmtx)
 {
-  MHD_mutex_lock_ ((MHD_mutex_*)*ppmtx);
+  MHD_mutex_lock_chk_ ((MHD_mutex_*)*ppmtx);
   return 0;
 }
 
@@ -5671,7 +5671,7 @@ gcry_w32_mutex_lock (void **ppmtx)
 static int
 gcry_w32_mutex_unlock (void **ppmtx)
 {
-  MHD_mutex_unlock_ ((MHD_mutex_*)*ppmtx);
+  MHD_mutex_unlock_chk_ ((MHD_mutex_*)*ppmtx);
   return 0;
 }
 

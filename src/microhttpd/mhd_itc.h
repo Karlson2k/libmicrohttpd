@@ -245,8 +245,8 @@ struct MHD_Pipe
  * Close emulated pipe FDs
  */
 #define MHD_pipe_close_(pip) do { \
-   MHD_socket_close_ ((pip).fd[0]); \
-   MHD_socket_close_ ((pip).fd[1]); \
+   MHD_socket_close_chk_ ((pip).fd[0]); \
+   MHD_socket_close_chk_ ((pip).fd[1]); \
 } while (0)
 
 /**

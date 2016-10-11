@@ -34,13 +34,6 @@
 #include <pthread.h>
 #include "mhd_sockets.h" /* only macros used */
 
-void
-MHD_PANIC (char *msg)
-{
-  fprintf (stderr, "%s", msg);
-  abort ();
-}
-
 
 #ifndef WINDOWS
 #include <unistd.h>
@@ -150,7 +143,7 @@ ServeOneRequest(void *param)
       if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
         {
           MHD_stop_daemon (d);
-          MHD_socket_close_(fd);
+          MHD_socket_close_chk_(fd);
           return "MHD_get_fdset() failed";
         }
       tv.tv_sec = 0;
@@ -293,7 +286,7 @@ testGet (int type, int pool_count, int poll_flag)
       fprintf(stderr, "%s\n", cbc.buf);
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
-      MHD_socket_close_(fd);
+      MHD_socket_close_chk_(fd);
       return 4;
     }
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
@@ -301,7 +294,7 @@ testGet (int type, int pool_count, int poll_flag)
       fprintf(stderr, "%s\n", cbc.buf);
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
-      MHD_socket_close_(fd);
+      MHD_socket_close_chk_(fd);
       return 8;
     }
 
@@ -313,12 +306,12 @@ testGet (int type, int pool_count, int poll_flag)
       fprintf (stderr, "curl_easy_perform should fail\n");
       curl_easy_cleanup (c);
       MHD_stop_daemon (d);
-      MHD_socket_close_(fd);
+      MHD_socket_close_chk_(fd);
       return 2;
     }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-  MHD_socket_close_(fd);
+  MHD_socket_close_chk_(fd);
 
   return 0;
 }
@@ -478,7 +471,7 @@ testExternalGet ()
       curl_multi_cleanup (multi);
     }
   MHD_stop_daemon (d);
-  MHD_socket_close_ (fd);
+  MHD_socket_close_chk_ (fd);
   if (cbc.pos != strlen ("/hello_world"))
     return 8192;
   if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))

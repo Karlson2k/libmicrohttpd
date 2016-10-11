@@ -27,20 +27,10 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-#include "internal.h"
 #include "tls_test_common.h"
 #include <gcrypt.h>
 #include "mhd_sockets.h" /* only macros used */
 
-#undef MHD_PANIC
-
-
-void
-MHD_PANIC (char *msg)
-{
-  fprintf (stderr, "%s", msg);
-  abort ();
-}
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -80,7 +70,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Error: %s\n", MHD_E_FAILED_TO_CONNECT);
-      MHD_socket_close_ (sd);
+      MHD_socket_close_chk_ (sd);
       return -1;
     }
 
@@ -88,7 +78,7 @@ test_tls_session_time_out (gnutls_session_t session)
   if (ret < 0)
     {
       fprintf (stderr, "Handshake failed\n");
-      MHD_socket_close_ (sd);
+      MHD_socket_close_chk_ (sd);
       return -1;
     }
 
@@ -99,11 +89,11 @@ test_tls_session_time_out (gnutls_session_t session)
   if (send (sd, "", 1, 0) == 0)
     {
       fprintf (stderr, "Connection failed to time-out\n");
-      MHD_socket_close_ (sd);
+      MHD_socket_close_chk_ (sd);
       return -1;
     }
 
-  MHD_socket_close_ (sd);
+  MHD_socket_close_chk_ (sd);
   return 0;
 }
 

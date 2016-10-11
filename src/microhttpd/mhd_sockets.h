@@ -117,6 +117,15 @@
 #  define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value()
 #endif /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
 
+#ifndef MHD_PANIC
+#  include <stdio.h>
+#  include <stdlib.h>
+/* Simple implementation of MHD_PANIC, to be used outside lib */
+#  define MHD_PANIC(msg) do { fprintf (stderr,           \
+     "Abnormal termination at %d line in file %s: %s\n", \
+     (int)__LINE__, __FILE__, msg); abort();} while(0)
+#endif /* ! MHD_PANIC */
+
 #ifndef MHD_SOCKET_DEFINED
 /**
  * MHD_socket is type for socket FDs
@@ -195,19 +204,25 @@
  * errno is set to EINTR.  Do not use HP-UNIX.
  *
  * @param fd descriptor to close
+ * @return boolean true on success (error codes like EINTR and EIO are
+ *         counted as success, only EBADF counts as an error!),
+ *         boolean false otherwise.
  */
 #if !defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_socket_close_(fd) do { \
-  if ( (0 != close((fd))) && \
-       (EBADF == errno) ) \
-    MHD_PANIC (_("close failed\n")); \
-  } while (0)
+#  define MHD_socket_close_(fd) ((0 == close((fd))) || (EBADF != errno))
 #else
-#  define MHD_socket_close_(fd) do { \
-  if (0 != closesocket((fd)) ) \
-    MHD_PANIC (_("close failed\n")); \
-  } while (0)
+#  define MHD_socket_close_(fd) (0 == closesocket((fd)))
 #endif
+
+/**
+ * MHD_socket_close_chk_(fd) close socket and abort execution
+ * if error is detected.
+ * @param fd socket to close
+ */
+#define MHD_socket_close_chk_(fd) do {        \
+    if (!MHD_socket_close_(fd))               \
+      MHD_PANIC(_("Close socket failed.\n")); \
+  } while(0)
 
 /**
  * Check whether FD can be added to fd_set with specified FD_SETSIZE.

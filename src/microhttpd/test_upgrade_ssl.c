@@ -72,15 +72,15 @@ openssl_connect (int *sock,
   if (0 != chld)
     {
       *sock = sp[1];
-      MHD_socket_close_ (sp[0]);
+      MHD_socket_close_chk_ (sp[0]);
       return chld;
     }
-  MHD_socket_close_ (sp[1]);
+  MHD_socket_close_chk_ (sp[1]);
   (void) close (0);
   (void) close (1);
   dup2 (sp[0], 0);
   dup2 (sp[0], 1);
-  MHD_socket_close_ (sp[0]);
+  MHD_socket_close_chk_ (sp[0]);
   sprintf (destination,
            "localhost:%u",
            (unsigned int) port);

@@ -54,6 +54,15 @@
 #  error No base mutex API is available.
 #endif
 
+#ifndef MHD_PANIC
+#  include <stdio.h>
+#  include <stdlib.h>
+/* Simple implementation of MHD_PANIC, to be used outside lib */
+#  define MHD_PANIC(msg) do { fprintf (stderr,           \
+     "Abnormal termination at %d line in file %s: %s\n", \
+     (int)__LINE__, __FILE__, msg); abort();} while(0)
+#endif /* ! MHD_PANIC */
+
 #if defined(MHD_PTHREAD_MUTEX_)
   typedef pthread_mutex_t MHD_mutex_;
 #elif defined(MHD_W32_MUTEX_)
@@ -80,19 +89,28 @@
 /**
  * Destroy previously initialised mutex.
  * @param pmutex pointer to mutex
+ * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_destroy_(pmutex) do { \
-  errno = 0; \
-  if (0 != pthread_mutex_destroy((pmutex))) \
-    MHD_PANIC (_("Failed to destroy mutex\n")); \
-  } while (0)
+#define MHD_mutex_destroy_(pmutex) (!(pthread_mutex_destroy((pmutex))))
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Destroy previously initialised mutex.
  * @param pmutex pointer to mutex
+ * @return Always nonzero
  */
-#define MHD_mutex_destroy_(pmutex) DeleteCriticalSection((pmutex))
+#define MHD_mutex_destroy_(pmutex) (DeleteCriticalSection((pmutex)), !0)
 #endif
+
+/**
+ * Destroy previously initialised mutex and abort execution
+ * if error is detected.
+ * @param pmutex pointer to mutex
+ */
+#define MHD_mutex_destroy_chk_(pmutex) do {       \
+    if (!MHD_mutex_destroy_(pmutex))              \
+      MHD_PANIC(_("Failed to destroy mutex.\n")); \
+  } while(0)
+
 
 #if defined(MHD_PTHREAD_MUTEX_)
 /**
@@ -100,20 +118,31 @@
  * If mutex was already locked by other thread, function
  * blocks until mutex becomes available.
  * @param pmutex pointer to mutex
+ * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_lock_(pmutex) do { \
-  if (0 != pthread_mutex_lock((pmutex)))   \
-    MHD_PANIC (_("Failed to lock mutex\n")); \
-  } while (0)
+#define MHD_mutex_lock_(pmutex) (!(pthread_mutex_lock((pmutex))))
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Acquire lock on previously initialised mutex.
  * If mutex was already locked by other thread, function
  * blocks until mutex becomes available.
  * @param pmutex pointer to mutex
+ * @return Always nonzero
  */
-#define MHD_mutex_lock_(pmutex) EnterCriticalSection((pmutex))
+#define MHD_mutex_lock_(pmutex) (EnterCriticalSection((pmutex)), !0)
 #endif
+
+/**
+ * Acquire lock on previously initialised mutex.
+ * If mutex was already locked by other thread, function
+ * blocks until mutex becomes available.
+ * If error is detected, execution will be aborted.
+ * @param pmutex pointer to mutex
+ */
+#define MHD_mutex_lock_chk_(pmutex) do {       \
+    if (!MHD_mutex_lock_(pmutex))              \
+      MHD_PANIC(_("Failed to lock mutex.\n")); \
+  } while(0)
 
 #if defined(MHD_PTHREAD_MUTEX_)
 /**
@@ -121,19 +150,25 @@
  * @param pmutex pointer to mutex
  * @return nonzero on success, zero otherwise
  */
-#define MHD_mutex_unlock_(pmutex) do { \
-    if (0 != pthread_mutex_unlock((pmutex)))   \
-    MHD_PANIC (_("Failed to unlock mutex\n")); \
-  } while (0)
+#define MHD_mutex_unlock_(pmutex) (!(pthread_mutex_unlock((pmutex))))
 #elif defined(MHD_W32_MUTEX_)
 /**
  * Unlock previously initialised and locked mutex.
  * @param pmutex pointer to mutex
  * @return Always nonzero
  */
-#define MHD_mutex_unlock_(pmutex) LeaveCriticalSection((pmutex))
+#define MHD_mutex_unlock_(pmutex) (LeaveCriticalSection((pmutex)), !0)
 #endif
 
+/**
+ * Unlock previously initialised and locked mutex.
+ * If error is detected, execution will be aborted.
+ * @param pmutex pointer to mutex
+ */
+#define MHD_mutex_unlock_chk_(pmutex) do {       \
+    if (!MHD_mutex_unlock_(pmutex))              \
+      MHD_PANIC(_("Failed to unlock mutex.\n")); \
+  } while(0)
 
 /**
  * A semaphore.

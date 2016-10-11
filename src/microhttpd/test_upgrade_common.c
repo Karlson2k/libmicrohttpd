@@ -46,13 +46,6 @@ static pthread_t pt_client;
 static int done;
 
 
-void
-MHD_PANIC (char *msg)
-{
-  fprintf (stderr, "%s", msg);
-  abort ();
-}
-
 
 /**
  * Change socket to non-blocking.
@@ -231,7 +224,7 @@ run_usock_client (void *cls)
             "World");
   recv_all (*sock,
             "Finished");
-  MHD_socket_close_ (*sock);
+  MHD_socket_close_chk_ (*sock);
   done = 1;
   return NULL;
 }

@@ -35,6 +35,29 @@
 #include <gnutls/abstract.h>
 #endif
 #endif
+#include "mhd_options.h"
+
+
+#ifdef MHD_PANIC
+/* Override any defined MHD_PANIC macro with proper one */
+#undef MHD_PANIC
+#endif /* MHD_PANIC */
+
+#ifdef HAVE_MESSAGES
+/**
+ * Trigger 'panic' action based on fatal errors.
+ *
+ * @param msg error message (const char *)
+ */
+#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg); BUILTIN_NOT_REACHED; } while (0)
+#else
+/**
+ * Trigger 'panic' action based on fatal errors.
+ *
+ * @param msg error message (const char *)
+ */
+#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL); BUILTIN_NOT_REACHED; } while (0)
+#endif
 
 #include "mhd_threads.h"
 #include "mhd_locks.h"
@@ -79,23 +102,6 @@ extern void *mhd_panic_cls;
 #define BUILTIN_NOT_REACHED __assume(0)
 #else
 #define BUILTIN_NOT_REACHED
-#endif
-
-
-#ifdef HAVE_MESSAGES
-/**
- * Trigger 'panic' action based on fatal errors.
- *
- * @param msg error message (const char *)
- */
-#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, msg); BUILTIN_NOT_REACHED; } while (0)
-#else
-/**
- * Trigger 'panic' action based on fatal errors.
- *
- * @param msg error message (const char *)
- */
-#define MHD_PANIC(msg) do { mhd_panic (mhd_panic_cls, __FILE__, __LINE__, NULL); BUILTIN_NOT_REACHED; } while (0)
 #endif
 
 

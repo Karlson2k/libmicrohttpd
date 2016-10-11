@@ -191,7 +191,7 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
 
 cleanup:
   if (-1 != sd)
-    MHD_socket_close_ (sd);
+    MHD_socket_close_chk_ (sd);
   gnutls_free (cbc.buf);
   return ret;
 }

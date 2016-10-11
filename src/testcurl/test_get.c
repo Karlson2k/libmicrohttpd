@@ -34,13 +34,6 @@
 #include <time.h>
 #include "mhd_sockets.h" /* only macros used */
 
-void
-MHD_PANIC (char *msg)
-{
-  fprintf (stderr, "%s", msg);
-  abort ();
-}
-
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -501,7 +494,7 @@ testStopRace (int poll_flag)
     if (connect (fd, (struct sockaddr *)(&sin), sizeof(sin)) < 0)
     {
        fprintf(stderr, "connect error\n");
-       MHD_socket_close_ (fd);
+       MHD_socket_close_chk_ (fd);
        return 512;
     }
 
@@ -512,7 +505,7 @@ testStopRace (int poll_flag)
     /* printf("Stopping daemon\n"); */
     MHD_stop_daemon (d);
 
-    MHD_socket_close_ (fd);
+    MHD_socket_close_chk_ (fd);
 
     /* printf("good\n"); */
     return 0;
