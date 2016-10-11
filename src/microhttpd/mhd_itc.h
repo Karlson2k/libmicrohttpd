@@ -115,9 +115,15 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #define MHD_itc_destroy_(itc) ((0 != close (itc)) || (EBADF != errno))
 
 /**
- * Check if we have an uninitialized pipe
+ * Check whether ITC has valid value.
+ *
+ * Macro check whether @a itc value is valid (allowed),
+ * macro does not check whether @a itc was really initialised.
+ * @param itc the itc to check
+ * @return boolean true if @a itc has valid value,
+ *         boolean false otherwise.
  */
-#define MHD_INVALID_PIPE_(pip)  (-1 == pip)
+#define MHD_ITC_IS_VALID_(itc)  (-1 != (itc))
 
 /**
  * Setup uninitialized @a pip data structure.
@@ -205,9 +211,15 @@ static const uint64_t _MHD_itc_wr_data = 1;
       ((close ((itc).fd[1])), 0) )
 
 /**
- * Check if we have an uninitialized pipe
+ * Check whether ITC has valid value.
+ *
+ * Macro check whether @a itc value is valid (allowed),
+ * macro does not check whether @a itc was really initialised.
+ * @param itc the itc to check
+ * @return boolean true if @a itc has valid value,
+ *         boolean false otherwise.
  */
-#define MHD_INVALID_PIPE_(pip)  (-1 == (pip).fd[0])
+#define MHD_ITC_IS_VALID_(itc)  (-1 != (itc).fd[0])
 
 /**
  * Setup uninitialized @a pip data structure.
@@ -290,10 +302,17 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
       MHD_socket_close_((itc).sk[1]) : \
       ((void)MHD_socket_close_((itc).sk[1]), 0) )
 
+
 /**
- * Check for uninitialized pipe @a pip
+ * Check whether ITC has valid value.
+ *
+ * Macro check whether @a itc value is valid (allowed),
+ * macro does not check whether @a itc was really initialised.
+ * @param itc the itc to check
+ * @return boolean true if @a itc has valid value,
+ *         boolean false otherwise.
  */
-#define MHD_INVALID_PIPE_(pip)  (MHD_INVALID_SOCKET == (pip).sk[0])
+#define MHD_ITC_IS_VALID_(itc)  (MHD_INVALID_SOCKET != (itc).sk[0])
 
 /**
  * Setup uninitialized @a pip data structure.
@@ -316,5 +335,16 @@ MHD_itc_nonblocking_ (MHD_itc_ itc);
     if (!MHD_itc_destroy_(itc))                 \
       MHD_PANIC(_("Failed to destroy ITC.\n")); \
   } while(0)
+
+/**
+ * Check whether ITC has invalid value.
+ *
+ * Macro check whether @a itc value is invalid,
+ * macro does not check whether @a itc was destroyed.
+ * @param itc the itc to check
+ * @return boolean true if @a itc has invalid value,
+ *         boolean false otherwise.
+ */
+#define MHD_ITC_IS_INVALID_(itc)  (! MHD_ITC_IS_VALID_(itc))
 
 #endif /* MHD_ITC_H */

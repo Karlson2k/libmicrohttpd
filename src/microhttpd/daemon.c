@@ -1374,7 +1374,7 @@ thread_main_handle_connection (void *data)
 	      goto exit;
 	    }
 #if WINDOWS
-          if (! MHD_INVALID_PIPE_(daemon->itc) )
+          if (MHD_ITC_IS_VALID_(daemon->itc) )
             {
               if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                                         &rs,
@@ -1413,7 +1413,7 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           /* drain signaling pipe before other processing */
-          if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+          if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                           &rs)) )
             MHD_itc_clear_ (daemon->itc);
@@ -1458,7 +1458,7 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           extra_slot = 0;
-          if (! MHD_INVALID_PIPE_(daemon->itc))
+          if (MHD_ITC_IS_VALID_(daemon->itc))
             {
               p[1].events |= POLLIN;
               p[1].fd = MHD_itc_r_fd_ (daemon->itc);
@@ -1485,7 +1485,7 @@ thread_main_handle_connection (void *data)
 	    }
 #if WINDOWS
           /* drain signaling pipe before other processing */
-          if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+          if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (0 != (p[1].revents & (POLLERR | POLLHUP | POLLIN))) )
             MHD_itc_clear_ (daemon->itc);
 #endif
@@ -2028,7 +2028,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
   else
     if ( (MHD_YES == external_add) &&
-	 (! MHD_INVALID_PIPE_(daemon->itc)) &&
+	 (MHD_ITC_IS_VALID_(daemon->itc)) &&
 	 (! MHD_itc_activate_ (daemon->itc, "n")) )
       {
 #ifdef HAVE_MESSAGES
@@ -2209,7 +2209,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   connection->resuming = MHD_YES;
   daemon->resuming = MHD_YES;
-  if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "r")) )
     {
 #ifdef HAVE_MESSAGES
@@ -2704,7 +2704,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   /* drain signaling pipe to avoid spinning select */
   /* Do it before any other processing so new signals
      will trigger select again and will be processed */
-  if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
@@ -2840,7 +2840,7 @@ MHD_select (struct MHD_Daemon *daemon,
           return MHD_NO;
         }
     }
-  if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                               &rs,
                               &maxsock,
@@ -2877,7 +2877,7 @@ MHD_select (struct MHD_Daemon *daemon,
      only do this optimization if we have a signaling pipe in
      place. */
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
-       (! MHD_INVALID_PIPE_(daemon->itc)) &&
+       (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (0 != (daemon->options & MHD_USE_PIPE_FOR_SHUTDOWN)) &&
        ( (daemon->connections == daemon->connection_limit) ||
          (MHD_YES == daemon->at_limit) ) )
@@ -3002,7 +3002,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	poll_server++;
       }
     poll_pipe = -1;
-    if (! MHD_INVALID_PIPE_(daemon->itc))
+    if (MHD_ITC_IS_VALID_(daemon->itc))
       {
 	p[poll_server].fd = MHD_itc_r_fd_ (daemon->itc);
 	p[poll_server].events = POLLIN;
@@ -3183,7 +3183,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       poll_listen = poll_count;
       poll_count++;
     }
-  if (! MHD_INVALID_PIPE_(daemon->itc))
+  if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       p[poll_count].fd = MHD_itc_r_fd_ (daemon->itc);
       p[poll_count].events = POLLIN;
@@ -3492,7 +3492,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
              pointer with the same numeric value as the itc.fd[0] can
              be expected to be rare... FIXME (a construction similar
              to what we did with the `upgrade_marker` should do) */
-          if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+          if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
                (MHD_itc_r_fd_ (daemon->itc) == events[i].data.fd) )
             {
               /* It's OK to drain pipe here as all external
@@ -3760,7 +3760,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   ret = daemon->socket_fd;
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
-  if ( (MHD_INVALID_PIPE_(daemon->itc)) &&
+  if ( (MHD_ITC_IS_INVALID_(daemon->itc)) &&
        (0 != (daemon->options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION))) )
     {
 #ifdef HAVE_MESSAGES
@@ -3788,7 +3788,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 	  }
         else
 #endif
-        if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].itc))
+        if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
           {
             if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
               MHD_PANIC (_("Failed to signal quiesce via pipe"));
@@ -3809,7 +3809,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     }
   else
 #endif
-    if (! MHD_INVALID_PIPE_(daemon->itc))
+    if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       if (! MHD_itc_activate_ (daemon->itc, "q"))
 	MHD_PANIC (_("failed to signal quiesce via pipe"));
@@ -4322,7 +4322,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
-  if ( (! MHD_INVALID_PIPE_(daemon->itc)) &&
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
       event.events = EPOLLIN | EPOLLET;
@@ -5111,7 +5111,7 @@ thread_failed:
   if (0 != (flags & MHD_USE_SSL))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif
-  if (! MHD_INVALID_PIPE_(daemon->itc))
+  if (MHD_ITC_IS_VALID_(daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
   return NULL;
@@ -5179,7 +5179,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       shutdown (pos->socket_fd, SHUT_RDWR);
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-           (! MHD_INVALID_PIPE_(daemon->itc)) &&
+           (MHD_ITC_IS_VALID_(daemon->itc)) &&
            (! MHD_itc_activate_ (daemon->itc, "e")) )
         MHD_PANIC (_("Failed to signal shutdown via pipe"));
 #endif
@@ -5229,7 +5229,7 @@ epoll_shutdown (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
 
-  if (MHD_INVALID_PIPE_(daemon->itc))
+  if (MHD_ITC_IS_INVALID_(daemon->itc))
     {
       /* itc was required in this mode, how could this happen? */
       MHD_PANIC (_("Internal error\n"));
@@ -5281,7 +5281,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
 	}
     }
-  if (! MHD_INVALID_PIPE_(daemon->itc))
+  if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       if (! MHD_itc_activate_ (daemon->itc, "e"))
 	MHD_PANIC (_("Failed to signal shutdown via pipe"));
@@ -5317,7 +5317,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       /* MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
       for (i = 0; i < daemon->worker_pool_size; ++i)
 	{
-	  if (! MHD_INVALID_PIPE_(daemon->worker_pool[i].itc))
+	  if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
 	    {
 	      if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
 		MHD_PANIC (_("Failed to signal shutdown via pipe."));
@@ -5337,7 +5337,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           /* Individual pipes are always used */
           if (1)
             {
-              if (! MHD_INVALID_PIPE_ (daemon->worker_pool[i].itc) )
+              if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
                 {
                   MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
                 }
@@ -5394,7 +5394,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
   MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 
-  if (! MHD_INVALID_PIPE_(daemon->itc))
+  if (MHD_ITC_IS_VALID_(daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
 }

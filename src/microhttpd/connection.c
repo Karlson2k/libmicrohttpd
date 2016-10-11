@@ -521,7 +521,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
      thread-per-connection mode, signal the main thread
      to resume accepting connections */
   if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (! MHD_INVALID_PIPE_ (daemon->itc)) &&
+       (MHD_ITC_IS_VALID_ (daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "c")) )
     {
 #ifdef HAVE_MESSAGES
