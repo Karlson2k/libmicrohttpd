@@ -1,3 +1,6 @@
+Wed Oct 12 14:26:20 CEST 2016
+	Migrated repository from Subversion to Git. -CG
+
 Tue Oct 11 18:09:56 CEST 2016
 	Deprecated MHD_USE_SSL, use MHD_USE_TLS instead. -CG
 
