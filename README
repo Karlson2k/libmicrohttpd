@@ -58,8 +58,7 @@ Development Status
 ==================
 
 This is a beta release for libmicrohttpd.  Before declaring the
-library stable, we should implement support for HTTP "Upgrade" 
-requests and have testcases for the following features:
+library stable, we should have testcases for the following features:
 
 - HTTP/1.1 pipelining (need to figure out how to ensure curl pipelines 
   -- and it seems libcurl has issues with pipelining, 
