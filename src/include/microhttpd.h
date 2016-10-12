@@ -541,11 +541,15 @@ enum MHD_FLAG
    * Run in HTTPS mode.  The modern protocol is called TLS.
    */
   MHD_USE_TLS = 2,
+  MHD_USE_SSL = 2,
 
+#if 0
+  /* let's do this later once versions that define MHD_USE_TLS a more widely deployed. */
   /** @deprecated */
 #define MHD_USE_SSL \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_SSL is deprecated, use MHD_USE_TLS") \
   MHD_USE_TLS
+#endif
 
   /**
    * Run using one thread per connection.
