@@ -2,3 +2,5 @@
 *.o
 *.lo
 *.la
+*.log
+*.trs
