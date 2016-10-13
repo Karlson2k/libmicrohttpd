@@ -42,23 +42,22 @@
 /**
  * Data type for a MHD ITC.
  */
-typedef int MHD_itc_;
+struct MHD_itc_
+{
+  int fd;
+};
 
 #elif defined(_MHD_ITC_PIPE)
 /* **************** Standard UNIX ITC implementation by pipe ********** */
 
 /**
- * Base data type for a MHD ITC.
+ * Data type for a MHD ITC.
  */
-struct MHD_Itc
+struct MHD_itc_
 {
   int fd[2];
 };
 
-/**
- * Data type for a MHD ITC.
- */
-typedef struct MHD_Itc MHD_itc_;
 
 #elif defined(_MHD_ITC_SOCKETPAIR)
 /* **************** ITC implementation by socket pair ********** */
@@ -66,17 +65,12 @@ typedef struct MHD_Itc MHD_itc_;
 #include "mhd_sockets.h"
 
 /**
- * Base data type for a MHD ITC.
+ * Data type for a MHD ITC.
  */
-struct MHD_Itc
+struct MHD_itc_
 {
   MHD_socket sk[2];
 };
-
-/**
- * Data type for a MHD ITC.
- */
-typedef struct MHD_Itc MHD_itc_;
 
 #endif /* _MHD_ITC_SOCKETPAIR */
 

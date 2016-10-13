@@ -1354,7 +1354,7 @@ struct MHD_Daemon
   /**
    * Inter-thread communication channel.
    */
-  MHD_itc_ itc;
+  struct MHD_itc_ itc;
 
   /**
    * Are we shutting down?

@@ -63,7 +63,7 @@
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) (-1 != ((itc) = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
+#define MHD_itc_init_(itc) (-1 != ((itc).fd = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
 
 /**
  * Get description string of last errno for itc operations.
@@ -82,21 +82,21 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @return non-zero if succeeded, zero otherwise
  */
 #define MHD_itc_activate_(itc, str) \
-  ((write((itc), (const void*)&_MHD_itc_wr_data, 8) > 0) || (EAGAIN == errno))
+  ((write((itc).fd, (const void*)&_MHD_itc_wr_data, 8) > 0) || (EAGAIN == errno))
 
 /**
  * Return read FD of @a itc which can be used for poll(), select() etc.
  * @param itc the itc to get FD
  * @return FD of read side
  */
-#define MHD_itc_r_fd_(itc) ((int)(itc))
+#define MHD_itc_r_fd_(itc) ((itc).fd)
 
 /**
  * Return write FD of @a itc
  * @param itc the itc to get FD
  * @return FD of write side
  */
-#define MHD_itc_w_fd_(itc) ((int)(itc))
+#define MHD_itc_w_fd_(itc) ((itc).fd)
 
 /**
  * Clear signaled state on @a itc
@@ -104,7 +104,7 @@ static const uint64_t _MHD_itc_wr_data = 1;
  */
 #define MHD_itc_clear_(itc)                  \
   do { uint64_t __b; int __r;                \
-       __r = read((itc), &__b, sizeof(__b)); \
+       __r = read((itc).fd, &__b, sizeof(__b)); \
        (void)__r; } while(0)
 
 /**
@@ -112,7 +112,7 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @param itc the itc to destroy
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_destroy_(itc) ((0 != close (itc)) || (EBADF != errno))
+#define MHD_itc_destroy_(itc) ((0 != close ((itc).fd)) || (EBADF != errno))
 
 /**
  * Check whether ITC has valid value.
@@ -123,13 +123,13 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @return boolean true if @a itc has valid value,
  *         boolean false otherwise.
  */
-#define MHD_ITC_IS_VALID_(itc)  (-1 != (itc))
+#define MHD_ITC_IS_VALID_(itc)  (-1 != ((itc).fd))
 
 /**
  * Set @a itc to invalid value.
  * @param itc the itc to set
  */
-#define MHD_itc_set_invalid_(itc) ((itc) = -1)
+#define MHD_itc_set_invalid_(itc) ((itc).fd = -1)
 
 
 #elif defined(_MHD_ITC_PIPE)
@@ -236,7 +236,7 @@ static const uint64_t _MHD_itc_wr_data = 1;
    * @return non-zero if succeeded, zero otherwise
    */
   int
-  MHD_itc_nonblocking_ (MHD_itc_ itc);
+  MHD_itc_nonblocking_ (struct MHD_itc_ itc);
 #endif /* ! HAVE_PIPE2_FUNC */
 
 

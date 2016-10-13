@@ -44,7 +44,7 @@
  * @return non-zero if succeeded, zero otherwise
  */
 int
-MHD_itc_nonblocking_ (MHD_itc_ itc)
+MHD_itc_nonblocking_ (struct MHD_itc_ itc)
 {
   unsigned int i;
 
