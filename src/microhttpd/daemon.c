@@ -5407,7 +5407,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
     case MHD_DAEMON_INFO_LISTEN_FD:
       return (const union MHD_DaemonInfo *) &daemon->socket_fd;
 #ifdef EPOLL_SUPPORT
-    case MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY:
+    case MHD_DAEMON_INFO_EPOLL_FD:
       return (const union MHD_DaemonInfo *) &daemon->epoll_fd;
 #endif
     case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:

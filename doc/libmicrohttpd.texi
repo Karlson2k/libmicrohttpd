@@ -2662,7 +2662,7 @@ was specified and a client needs to learn what port
 is actually being used by MHD.
 No extra arguments should be passed.
 
-@item MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY
+@item MHD_DAEMON_INFO_EPOLL_FD
 @cindex epoll
 Request the file-descriptor number that MHD is using for epoll.  If
 the build is not supporting epoll, NULL is returned; if we are using a
