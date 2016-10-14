@@ -2505,6 +2505,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       DLL_remove (daemon->cleanup_head,
 		  daemon->cleanup_tail,
 		  pos);
+
+      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) )
 	{
@@ -2570,6 +2574,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
+
+      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
