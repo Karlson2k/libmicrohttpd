@@ -2540,7 +2540,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                            pos);
               pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
             }
-          if ( (MHD_INVALID_SOCKET != daemon->epoll_fd) &&
+          if ( (-1 != daemon->epoll_fd) &&
                (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
             {
               /* epoll documentation suggests that closing a FD
@@ -3402,7 +3402,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
 #if HTTPS_SUPPORT
   if ( (MHD_NO == daemon->upgrade_fd_in_epoll) &&
-       (MHD_INVALID_SOCKET != daemon->epoll_upgrade_fd) )
+       (-1 != daemon->epoll_upgrade_fd) )
     {
       event.events = EPOLLIN | EPOLLOUT;
       event.data.ptr = (void *) upgrade_marker;
@@ -4298,7 +4298,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   struct epoll_event event;
 
   daemon->epoll_fd = setup_epoll_fd (daemon);
-  if (MHD_INVALID_SOCKET == daemon->epoll_fd)
+  if (-1 == daemon->epoll_fd)
     return MHD_NO;
 #if HTTPS_SUPPORT
   if (MHD_USE_TLS_EPOLL_UPGRADE == (MHD_USE_TLS_EPOLL_UPGRADE & daemon->options))
@@ -5310,10 +5310,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
 #ifdef EPOLL_SUPPORT
 	  if (-1 != daemon->worker_pool[i].epoll_fd)
-            MHD_socket_close_chk_ (daemon->worker_pool[i].epoll_fd);
+	    MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_fd);
 #if HTTPS_SUPPORT
 	  if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
-            MHD_socket_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
+	    MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
 #endif
 #endif
           /* Individual ITCs are always used */

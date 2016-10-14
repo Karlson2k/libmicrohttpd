@@ -808,7 +808,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
            to the event set of the daemon's `epoll_upgrade_fd` */
         struct epoll_event event;
 
-        EXTRA_CHECK (MHD_SOCKET_INVALID != daemon->epoll_upgrade_fd);
+        EXTRA_CHECK (-1 != daemon->epoll_upgrade_fd);
         /* First, add network socket */
         event.events = EPOLLIN | EPOLLOUT;
         event.data.ptr = &urh->app;
