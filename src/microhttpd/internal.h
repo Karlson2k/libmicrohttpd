@@ -1059,14 +1059,13 @@ struct MHD_UpgradeResponseHandle
    */
   char e_buf[RESERVE_EBUF_SIZE];
 
+#endif /* HTTPS_SUPPORT */
+
   /**
-   * Set to #MHD_YES after the application closed the socket
-   * via #MHD_UPGRADE_ACTION_CLOSE.
+   * Set to #MHD_YES after the application finished with the socket
+   * by #MHD_UPGRADE_ACTION_CLOSE.
    */
   int was_closed;
-
-#endif
-
 };
 
 
@@ -1723,5 +1722,14 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 		      MHD_ArgumentIterator_ cb,
 		      unsigned int *num_headers);
 
+
+/**
+ * Finally cleanup upgrade-related resources. It should
+ * be called when TLS buffers have been drained and
+ * application signaled MHD by #MHD_UPGRADE_ACTION_CLOSE.
+ * @param connection handle to the upgraded connection to clean
+ */
+void
+cleanup_upgraded_connection (struct MHD_Connection *connection);
 
 #endif

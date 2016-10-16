@@ -647,24 +647,20 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 #endif
         /* need to signal the thread that we are done */
         MHD_semaphore_up (connection->upgrade_sem);
+        /* connection and urh cleanup will be done in connection's thread */
         return MHD_YES;
       }
 #if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
       {
         urh->was_closed = MHD_YES;
-        if (MHD_INVALID_SOCKET != urh->app.socket)
-          {
-            MHD_socket_close_chk_ (urh->app.socket);
-            urh->app.socket = MHD_INVALID_SOCKET;
-          }
+        /* connection and urh cleanup will be done as soon as outgoing
+         * data will be sent and 'was_closed' is detected */
         return MHD_YES;
       }
 #endif
-    MHD_resume_connection (connection);
-    MHD_connection_close_ (connection,
-                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
-    free (urh);
+    /* 'upgraded' resources are not needed anymore - cleanup now */
+    cleanup_upgraded_connection (connection);
     return MHD_YES;
   default:
     /* we don't understand this one */

@@ -912,65 +912,80 @@ call_handlers (struct MHD_Connection *con,
 }
 
 
-#if HTTPS_SUPPORT
 /**
- * This function finishes the process of closing the
- * connection associated with the @a urh.  It should
- * be called if the `was_closed` flag is set and the
- * buffer has been drained.
- *
- * @param urh handle to the upgraded response we are finished with
+ * Finally cleanup upgrade-related resources. It should
+ * be called when TLS buffers have been drained and
+ * application signaled MHD by #MHD_UPGRADE_ACTION_CLOSE.
+ * @param connection handle to the upgraded connection to clean
  */
-static void
-finish_upgrade_close (struct MHD_UpgradeResponseHandle *urh)
+void
+cleanup_upgraded_connection (struct MHD_Connection *connection)
 {
-  struct MHD_Connection *connection = urh->connection;
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *daemon;
+  struct MHD_UpgradeResponseHandle *urh;
+  if (NULL == connection)
+    return;
+  daemon = connection->daemon;
+  urh = connection->urh;
+  if (NULL == urh)
+    return;
 
-  DLL_remove (daemon->urh_head,
-              daemon->urh_tail,
-              urh);
-#if EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+#if HTTPS_SUPPORT
+  if (0 != (daemon->options && MHD_USE_TLS))
     {
-      /* epoll documentation suggests that closing a FD
-         automatically removes it from the epoll set; however,
-         this is not true as if we fail to do manually remove it,
-         we are still seeing an event for this fd in epoll,
-         causing grief (use-after-free...) --- at least on my
-         system. */
-      if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                          EPOLL_CTL_DEL,
-                          connection->socket_fd,
-                          NULL))
-        MHD_PANIC (_("Failed to remove FD from epoll set\n"));
-    }
-#endif
-  if (MHD_INVALID_SOCKET != urh->mhd.socket)
-    {
-      /* epoll documentation suggests that closing a FD
-         automatically removes it from the epoll set; however,
-         this is not true as if we fail to do manually remove it,
-         we are still seeing an event for this fd in epoll,
-         causing grief (use-after-free...) --- at least on my
-         system. */
+      if (0 == (daemon->options && MHD_USE_THREAD_PER_CONNECTION))
+        DLL_remove (daemon->urh_head,
+                    daemon->urh_tail,
+                    urh);
 #if EPOLL_SUPPORT
-      if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-           (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                            EPOLL_CTL_DEL,
-                            urh->mhd.socket,
-                            NULL)) )
-        MHD_PANIC (_("Failed to remove FD from epoll set\n"));
-#endif
-      MHD_socket_close_chk_ (urh->mhd.socket);
+      if (0 != (daemon->options & MHD_USE_EPOLL))
+        {
+          /* epoll documentation suggests that closing a FD
+             automatically removes it from the epoll set; however,
+             this is not true as if we fail to do manually remove it,
+             we are still seeing an event for this fd in epoll,
+             causing grief (use-after-free...) --- at least on my
+             system. */
+          if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                              EPOLL_CTL_DEL,
+                              connection->socket_fd,
+                              NULL))
+            MHD_PANIC (_("Failed to remove FD from epoll set\n"));
+        }
+#endif /* EPOLL_SUPPORT */
+      if (MHD_INVALID_SOCKET != urh->mhd.socket)
+        {
+          /* epoll documentation suggests that closing a FD
+             automatically removes it from the epoll set; however,
+             this is not true as if we fail to do manually remove it,
+             we are still seeing an event for this fd in epoll,
+             causing grief (use-after-free...) --- at least on my
+             system. */
+#if EPOLL_SUPPORT
+          if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+               (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                                EPOLL_CTL_DEL,
+                                urh->mhd.socket,
+                                NULL)) )
+            MHD_PANIC (_("Failed to remove FD from epoll set\n"));
+#endif /* EPOLL_SUPPORT */
+          MHD_socket_close_chk_ (urh->mhd.socket);
+        }
+      if (MHD_INVALID_SOCKET != urh->app.socket)
+        MHD_socket_close_chk_ (urh->app.socket);
     }
-  MHD_resume_connection (connection);
+#endif /* HTTPS_SUPPORT */
+  if (0 == (daemon->options && MHD_USE_THREAD_PER_CONNECTION))
+    MHD_resume_connection (connection);
+
   MHD_connection_close_ (connection,
                          MHD_REQUEST_TERMINATED_COMPLETED_OK);
+  connection->urh = NULL;
   free (urh);
 }
 
 
+#if HTTPS_SUPPORT
 /**
  * Performs bi-directional forwarding on upgraded HTTPS connections
  * based on the readyness state stored in the @a urh handle.
@@ -1109,10 +1124,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->out_buffer_off = 0;
         }
     }
-  if ( (fin_read) &&
-       (0 == urh->out_buffer_off) &&
-       (MHD_YES == urh->was_closed) )
-    finish_upgrade_close (urh);
 }
 #endif
 
@@ -1256,7 +1267,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   MHD_semaphore_down (con->upgrade_sem);
   MHD_semaphore_destroy (con->upgrade_sem);
   con->upgrade_sem = NULL;
-  free (urh);
+  cleanup_upgraded_connection(con);
 }
 
 
@@ -2773,6 +2784,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                       write_fd_set);
       /* call generic forwarding function for passing data */
       process_urh (urh);
+      /* cleanup connection if it was closed and all data was sent */
+      if (MHD_YES == urh->was_closed && 0 == urh->out_buffer_off)
+        cleanup_upgraded_connection (urh->connection);
     }
 #endif
   MHD_cleanup_connections (daemon);
