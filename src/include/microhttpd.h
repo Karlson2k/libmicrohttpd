@@ -2341,10 +2341,13 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  *        that is directly connected to the client and thus certain
  *        operations (TCP-specific setsockopt(), getsockopt(), etc.)
  *        may not work as expected (as the socket could be from a
- *        socketpair() or a TCP-loopback)
+ *        socketpair() or a TCP-loopback).  The application is expected
+ *        to perform read()/recv() and write()/send() calls on the socket.
+ *        The application may also call shutdown(), but must not call
+ *        close() directly.
  * @param urh argument for #MHD_upgrade_action()s on this @a connection.
- *        Applications must eventually use this callback to perform the
- *        close() action on the @a sock.
+ *        Applications must eventually use this callback to (indirectly)
+ *        perform the close() action on the @a sock.
  */
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
@@ -2381,7 +2384,7 @@ typedef void
  * information and then be used any number of times (as long as the
  * header information is not connection-specific).
  *
- * @param upgrade_handler function to call with the 'upgraded' socket
+ * @param upgrade_handler function to call with the "upgraded" socket
  * @param upgrade_handler_cls closure for @a upgrade_handler
  * @return NULL on error (i.e. invalid arguments, out of memory)
  */

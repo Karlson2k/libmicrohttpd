@@ -2116,8 +2116,9 @@ Create a response suitable for switching protocols.  Returns @code{MHD_YES} on s
 
 When creating this type of response, the ``Connection: Upgrade''
 header will be set automatically for you.  MHD requires that you
-additionally set a ``Upgrade:'' header.  The ``Upgrade'' header
-must simply exist, which value is used is up to the application.
+additionally set an ``Upgrade:'' header.  The ``Upgrade'' header
+must simply exist, the specific value is completely up to the
+application.
 
 @end deftypefun
 
@@ -2143,10 +2144,10 @@ buffer of bytes MHD read ``by accident'' from the socket already.  This can happ
 number of bytes in @code{extra_in}
 
 @item sock
-the socket which the application can now use directly for some bi-directional communication with the client
+the socket which the application can now use directly for some bi-directional communication with the client. The application can henceforth use @code{recv()} and @code{send()} or @code{read()} and @code{write()} system calls on the socket.  However, @code{ioctl()} and @code{setsockopt()} functions will not work as expected when using HTTPS.  Such operations may be supported in the future via @code{MHD_upgrade_action}.   Most importantly, the application must never call @code{close()} on this socket.  Closing the socket must be done using @code{MHD_upgrade_action}.  However, while close is forbidden, the application may call @code{shutdown()} on the socket.
 
 @item urh
-argument for calls to @code{MHD_upgrade_action}.  Applications must eventually use this function to perform the close() action on the socket.
+argument for calls to @code{MHD_upgrade_action}.  Applications must eventually use this function to perform the @code{close()} action on the socket.
 @end table
 
 @end deftypefn
