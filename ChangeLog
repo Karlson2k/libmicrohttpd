@@ -1,3 +1,7 @@
+Mon Oct 17 19:08:18 CEST 2016
+	Fixed misc. issues relating to upgrade.
+	Releasing experimental 0.9.52. -CG
+
 Wed Oct 12 14:26:20 CEST 2016
 	Migrated repository from Subversion to Git. -CG
 
