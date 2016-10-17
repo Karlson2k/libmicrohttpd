@@ -193,7 +193,6 @@ main (int argc,
                                MHD_USE_TLS_EPOLL_UPGRADE,
                                2);
 #endif
-
   /* report result */
   if (0 != error_count)
     fprintf (stderr,

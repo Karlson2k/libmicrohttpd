@@ -882,10 +882,10 @@ struct MHD_Connection
 
   /**
    * If this connection was upgraded and if we are using
-   * #MHD_USE_THREAD_PER_CONNECTION, this points to the
-   * upgrade response details such that the
-   * #thread_main_connection_upgrade()-logic can perform
-   * the bi-directional forwarding.
+   * #MHD_USE_THREAD_PER_CONNECTION or #MHD_USE_TLS, this points to
+   * the upgrade response details such that the
+   * #thread_main_connection_upgrade()-logic can perform the
+   * bi-directional forwarding.
    */
   struct MHD_UpgradeResponseHandle *urh;
 

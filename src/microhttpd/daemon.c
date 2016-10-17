@@ -764,6 +764,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                unsigned int fd_setsize)
 {
   struct MHD_Connection *pos;
+  struct MHD_Connection *posn;
   int result = MHD_YES;
 
   if ( (NULL == daemon) ||
@@ -792,8 +793,10 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                               fd_setsize)) )
     result = MHD_NO;
 
-  for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
+  for (pos = daemon->connections_head; NULL != pos; pos = posn)
     {
+      posn = pos->next;
+
       switch (pos->event_loop_info)
 	{
 	case MHD_EVENT_LOOP_INFO_READ:
@@ -971,9 +974,23 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
     }
 #endif /* HTTPS_SUPPORT */
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_resume_connection (connection);
-  MHD_connection_close_ (connection,
-                         MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    {
+      /* resuming the connection will indirectly close it */
+      MHD_resume_connection (connection);
+#if HTTPS_SUPPORT
+      if (0 != (daemon->options & MHD_USE_TLS))
+        {
+          gnutls_bye (connection->tls_session,
+                      GNUTLS_SHUT_RDWR);
+        }
+#endif
+    }
+  else
+    {
+      /* the thread would no longer close it */
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    }
 
   connection->urh = NULL;
   if (NULL != urh)
@@ -987,10 +1004,8 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
  * based on the readyness state stored in the @a urh handle.
  *
  * @param urh handle to process
- * @return #MHD_YES if we are done reading from the socket,
- *         #MHD_NO if there might be more data to be read
  */
-static int
+static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
   int fin_read;
@@ -1122,7 +1137,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->out_buffer_off = 0;
         }
     }
-  return fin_read;
+  /* cleanup connection if it was closed and all data was sent */
+  if ( (MHD_YES == urh->was_closed) &&
+       (0 == urh->out_buffer_off) &&
+       (MHD_YES == fin_read) )
+    {
+      MHD_cleanup_upgraded_connection_ (urh->connection);
+    }
 }
 #endif
 
@@ -2520,13 +2541,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
         MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (MHD_NO == pos->thread_joined) )
-	{
-	  if (! MHD_join_thread_ (pos->pid))
-	    {
-	      MHD_PANIC (_("Failed to join a thread\n"));
-	    }
-	}
+	   (MHD_NO == pos->thread_joined) &&
+           (! MHD_join_thread_ (pos->pid)) )
+        MHD_PANIC (_("Failed to join a thread\n"));
       MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
       if (NULL != pos->tls_session)
@@ -2578,9 +2595,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	  pos->response = NULL;
 	}
       if (MHD_INVALID_SOCKET != pos->socket_fd)
-	{
-	  MHD_socket_close_chk_ (pos->socket_fd);
-	}
+        MHD_socket_close_chk_ (pos->socket_fd);
       if (NULL != pos->addr)
 	free (pos->addr);
       free (pos);
@@ -2776,20 +2791,13 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #if HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
-      int fin_read;
-
       urhn = urh->next;
       /* update urh state based on select() output */
       urh_from_fdset (urh,
                       read_fd_set,
                       write_fd_set);
       /* call generic forwarding function for passing data */
-      fin_read = process_urh (urh);
-      /* cleanup connection if it was closed and all data was sent */
-      if ( (MHD_YES == urh->was_closed) &&
-           (0 == urh->out_buffer_off) &&
-           (MHD_YES == fin_read) )
-        MHD_cleanup_upgraded_connection_ (urh->connection);
+      process_urh (urh);
     }
 #endif
   MHD_cleanup_connections (daemon);
@@ -5262,10 +5270,26 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
   MHD_socket fd;
   unsigned int i;
+#if HTTPS_SUPPORT
+  struct MHD_UpgradeResponseHandle *urh;
+  struct MHD_UpgradeResponseHandle *urhn;
+#endif
 
   if (NULL == daemon)
     return;
 
+  /* give upgraded HTTPS connections a chance to finish */
+#if HTTPS_SUPPORT
+  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+    {
+      urhn = urh->next;
+      /* call generic forwarding function for passing data
+         with chance to detect that application is done;
+         fake read readyness just to be sure. */
+      urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+      process_urh (urh);
+    }
+#endif
   if (0 != (MHD_USE_SUSPEND_RESUME & daemon->options))
     resume_suspended_connections (daemon);
   daemon->shutdown = MHD_YES;

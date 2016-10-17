@@ -634,17 +634,17 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   case MHD_UPGRADE_ACTION_CLOSE:
     /* transition to special 'closed' state for start of cleanup */
     connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
+#if HTTPS_SUPPORT
+    if (0 != (daemon->options & MHD_USE_TLS) )
+      {
+        /* signal that app is done by shutdown() of 'app' socket */
+        shutdown (urh->app.socket,
+                  SHUT_RDWR);
+      }
+#endif
     /* Application is done with this connection, tear it down! */
     if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
       {
-#if HTTPS_SUPPORT
-        if (0 != (daemon->options & MHD_USE_TLS) )
-          {
-            /* signal thread that app is done by shutdown() of 'app' socket */
-            shutdown (urh->app.socket,
-                      SHUT_RDWR);
-          }
-#endif
         /* need to signal the thread that we are done */
         MHD_semaphore_up (connection->upgrade_sem);
         /* connection and urh cleanup will be done in connection's thread */
@@ -670,9 +670,9 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 
 
 /**
- * We are done sending the header of a given response
- * to the client.  Now it is time to perform the upgrade
- * and hand over the connection to the application.
+ * We are done sending the header of a given response to the client.
+ * Now it is time to perform the upgrade and hand over the connection
+ * to the application.
  *
  * @param response the response that was created for an upgrade
  * @param connection the specific connection we are upgrading
@@ -717,16 +717,16 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 
 #ifdef MHD_socket_pair_nblk_
     if (! MHD_socket_pair_nblk_ (sv))
-    {
-      free (urh);
-      return MHD_NO;
-    }
+      {
+        free (urh);
+        return MHD_NO;
+      }
 #else  /* !MHD_socket_pair_nblk_ */
     if (! MHD_socket_pair_ (sv))
-    {
-      free (urh);
-      return MHD_NO;
-    }
+      {
+        free (urh);
+        return MHD_NO;
+      }
     if ( (! MHD_socket_nonblocking_(sv[0])) ||
          (! MHD_socket_nonblocking_(sv[1])) )
       {
@@ -737,7 +737,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif
       }
 #endif /* !MHD_socket_pair_nblk_ */
-    if ( (! MHD_SCKT_FD_FITS_FDSET_(sv[1], NULL)) &&
+    if ( (! MHD_SCKT_FD_FITS_FDSET_ (sv[1],
+                                     NULL)) &&
          (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
       {
 #ifdef HAVE_MESSAGES
@@ -862,6 +863,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         DLL_insert (daemon->urh_head,
                     daemon->urh_tail,
                     urh);
+        /* Keep reference for later removal from the DLL */
+        connection->urh = urh;
       }
     else
       {
