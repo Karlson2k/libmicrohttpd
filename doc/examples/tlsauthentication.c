@@ -246,6 +246,10 @@ main ()
   if ((key_pem == NULL) || (cert_pem == NULL))
     {
       printf ("The key/certificate files could not be read.\n");
+      if (NULL != key_pem)
+        free (key_pem);
+      if (NULL != cert_pem)
+        free (cert_pem);
       return 1;
     }
 

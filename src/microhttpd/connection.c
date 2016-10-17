@@ -977,6 +977,7 @@ build_header_response (struct MHD_Connection *connection)
   must_add_chunked_encoding = MHD_NO;
   must_add_keep_alive = MHD_NO;
   must_add_content_length = MHD_NO;
+  response_has_keepalive = NULL;
   switch (connection->state)
     {
     case MHD_CONNECTION_FOOTERS_RECEIVED:

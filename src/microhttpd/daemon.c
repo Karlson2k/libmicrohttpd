@@ -3584,9 +3584,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
-  if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
-       (MHD_YES == resume_suspended_connections (daemon)) )
-    may_block = MHD_NO;
+  if (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME))
+    (void) resume_suspended_connections (daemon);
 
   /* process events for connections */
   while (NULL != (pos = daemon->eready_tail))
