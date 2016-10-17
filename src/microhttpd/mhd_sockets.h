@@ -261,6 +261,17 @@
 
 
 /**
+ * MHD_recv_ is wrapper for system's recv()
+ * @param s the socket to use
+ * @param b the buffer for data to receive
+ * @param l the length of @a b
+ * @return ssize_t type value
+ */
+#define MHD_recv_(s,b,l) \
+  ((ssize_t)recv((s),(void*)(b),((MHD_SCKT_SEND_SIZE_)l), 0))
+
+
+/**
  * Check whether FD can be added to fd_set with specified FD_SETSIZE.
  * @param fd   the fd to check
  * @param pset the pointer to fd_set to check or NULL to check

@@ -1072,11 +1072,11 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
        (urh->out_buffer_off < urh->out_buffer_size) )
     {
-      size_t res;
+      ssize_t res;
 
-      res = read (urh->mhd.socket,
-                  &urh->out_buffer[urh->out_buffer_off],
-                  urh->out_buffer_size - urh->out_buffer_off);
+      res = MHD_recv_ (urh->mhd.socket,
+                       &urh->out_buffer[urh->out_buffer_off],
+                       urh->out_buffer_size - urh->out_buffer_off);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
@@ -1598,10 +1598,9 @@ recv_param_adapter (struct MHD_Connection *connection,
     i = INT_MAX; /* return value limit */
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  ret = (ssize_t) recv (connection->socket_fd,
-                        other,
-                        (MHD_SCKT_SEND_SIZE_) i,
-                        0);
+  ret = MHD_recv_ (connection->socket_fd,
+                   other,
+                   i);
 #ifdef EPOLL_SUPPORT
   if ( (0 > ret) &&
        (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
