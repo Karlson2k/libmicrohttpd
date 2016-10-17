@@ -104,8 +104,6 @@ main (int argc,
   int error_count = 0;
 
   /* try external select */
-#if 0
-
   error_count += test_upgrade (0,
                                0);
 #ifdef EPOLL_SUPPORT
@@ -122,9 +120,6 @@ main (int argc,
   /* Test different event loops, with and without thread pool */
   error_count += test_upgrade (MHD_USE_SELECT_INTERNALLY,
                                0);
-
-#endif
-
   error_count += test_upgrade (MHD_USE_SELECT_INTERNALLY,
                                2);
 #ifdef HAVE_POLL

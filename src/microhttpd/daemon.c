@@ -1281,13 +1281,6 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 #endif
   /* end HTTPS */
 #endif
-
-  /* Here, we need to block until the application
-     signals us that it is done with the socket */
-  MHD_semaphore_down (con->upgrade_sem);
-  MHD_semaphore_destroy (con->upgrade_sem);
-  con->upgrade_sem = NULL;
-  MHD_cleanup_upgraded_connection_ (con);
 }
 
 
@@ -1533,7 +1526,22 @@ thread_main_handle_connection (void *data)
       if (MHD_CONNECTION_UPGRADE == con->state)
         {
           thread_main_connection_upgrade (con);
-          break;
+#if HTTPS_SUPPORT
+          if (0 != (daemon->options & MHD_USE_TLS) )
+            break;
+#endif
+
+          /* skip usual clean up EXCEPT for the completion
+             notification (which must be done in this thread)! */
+          if ( (NULL != daemon->notify_completed) &&
+               (MHD_YES == con->client_aware) )
+            daemon->notify_completed (daemon->notify_completed_cls,
+                                      con,
+                                      &con->client_context,
+                                      MHD_REQUEST_TERMINATED_COMPLETED_OK);
+          con->client_aware = MHD_NO;
+
+          return (MHD_THRD_RTRN_TYPE_) 0;
         }
     }
   if (MHD_CONNECTION_IN_CLEANUP != con->state)

@@ -642,14 +642,6 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                   SHUT_RDWR);
       }
 #endif
-    /* Application is done with this connection, tear it down! */
-    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
-      {
-        /* need to signal the thread that we are done */
-        MHD_semaphore_up (connection->upgrade_sem);
-        /* connection and urh cleanup will be done in connection's thread */
-        return MHD_YES;
-      }
 #if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
       {
@@ -659,6 +651,39 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
         return MHD_YES;
       }
 #endif
+    /* Application is done with this connection, tear it down! */
+    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+      {
+        /* need to finish connection clean up */
+        MHD_cleanup_upgraded_connection_ (connection);
+        if (MHD_CONNECTION_IN_CLEANUP != connection->state)
+          {
+#if DEBUG_CLOSE
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (connection->daemon,
+                      _("Processing thread terminating. Closing connection\n"));
+#endif
+#endif
+            if (MHD_CONNECTION_CLOSED != connection->state)
+              MHD_connection_close_ (connection,
+                                     MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+            connection->idle_handler (connection);
+          }
+        if (NULL != connection->response)
+          {
+            MHD_destroy_response (connection->response);
+            connection->response = NULL;
+          }
+
+        if (MHD_INVALID_SOCKET != connection->socket_fd)
+          {
+            shutdown (connection->socket_fd,
+                      SHUT_WR);
+            MHD_socket_close_chk_ (connection->socket_fd);
+            connection->socket_fd = MHD_INVALID_SOCKET;
+          }
+        return MHD_YES;
+      }
     /* 'upgraded' resources are not needed anymore - cleanup now */
     MHD_cleanup_upgraded_connection_ (connection);
     return MHD_YES;
