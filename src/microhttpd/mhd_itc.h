@@ -274,8 +274,8 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @param str one-symbol string, useful only for strace debug
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_activate_(itc, str) \
-  ((send((itc).sk[1], (const char*)(str), 1, 0) > 0) || \
+#define MHD_itc_activate_(itc, str)          \
+  ((MHD_send_((itc).sk[1], (str), 1) > 0) || \
    (MHD_SCKT_ERR_IS_EAGAIN_(MHD_socket_get_error_())))
 
 /**

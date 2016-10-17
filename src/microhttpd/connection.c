@@ -269,10 +269,9 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
   /* Force flush data with zero send otherwise Darwin and some BSD systems
      will add 5 seconds delay. Not required with TCP_CORK as switching off
      TCP_CORK always flushes socket buffer. */
-  res &= (0 <= send (connection->socket_fd,
-                     (const void *) &dummy,
-                     0,
-                     0))
+  res &= (0 <= MHD_send_ (connection->socket_fd,
+                          &dummy,
+                          0))
     ? MHD_YES : MHD_NO;
 #endif /* TCP_NOPUSH && !TCP_CORK*/
   return res;

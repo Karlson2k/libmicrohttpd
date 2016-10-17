@@ -86,12 +86,6 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
-#ifndef LINUX
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
-#endif
-
 
 /**
  * Default implementation of the panic function,
@@ -1038,11 +1032,11 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
        (urh->in_buffer_off > 0) )
     {
-      size_t res;
+      ssize_t res;
 
-      res = write (urh->mhd.socket,
-                   urh->in_buffer,
-                   urh->in_buffer_off);
+      res = MHD_send_ (urh->mhd.socket,
+                       urh->in_buffer,
+                       urh->in_buffer_off);
       if (-1 == res)
         {
           int err = MHD_socket_get_error_ ();
@@ -1645,19 +1639,13 @@ send_param_adapter (struct MHD_Connection *connection,
       MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
       return -1;
     }
-#ifdef MHD_POSIX_SOCKETS
-  if (i > SSIZE_MAX)
-    i = SSIZE_MAX; /* return value limit */
-#else  /* MHD_WINSOCK_SOCKETS */
-  if (i > INT_MAX)
-    i = INT_MAX; /* return value limit */
-#endif /* MHD_WINSOCK_SOCKETS */
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
   if (0 != (connection->daemon->options & MHD_USE_TLS))
-    return (ssize_t) send (connection->socket_fd,
-                           other,
-                           (MHD_SCKT_SEND_SIZE_) i,
-                           MSG_NOSIGNAL);
+    return MHD_send_ (connection->socket_fd,
+                      other,
+                      i);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
@@ -1716,10 +1704,9 @@ send_param_adapter (struct MHD_Connection *connection,
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
     }
 #endif
-  ret = (ssize_t) send (connection->socket_fd,
-                        other,
-                        (MHD_SCKT_SEND_SIZE_) i,
-                        MSG_NOSIGNAL);
+  ret = MHD_send_ (connection->socket_fd,
+                   other,
+                   i);
   err = MHD_socket_get_error_();
 #ifdef EPOLL_SUPPORT
   if ( (0 > ret) &&

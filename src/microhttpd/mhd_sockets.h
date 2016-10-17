@@ -110,6 +110,15 @@
 #  include <poll.h>
 #endif
 
+#include <stddef.h>
+#if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
+#  include <stdint.h>
+#  define _SSIZE_T_DEFINED
+   typedef intptr_t ssize_t;
+#endif /* !_SSIZE_T_DEFINED */
+
+#include "mhd_limits.h"
+
 #ifdef _MHD_FD_SETSIZE_IS_DEFAULT
 #  define _MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
 #else  /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
@@ -152,6 +161,12 @@
 #else  /* ! HAVE_SOCK_NONBLOCK */
 #  define MAYBE_SOCK_NONBLOCK 0
 #endif /* ! HAVE_SOCK_NONBLOCK */
+
+#ifdef MSG_NOSIGNAL
+#  define MAYBE_MSG_NOSIGNAL MSG_NOSIGNAL
+#else  /* ! MSG_NOSIGNAL */
+#  define MAYBE_MSG_NOSIGNAL 0
+#endif /* ! MSG_NOSIGNAL */
 
 #if !defined(SHUT_WR) && defined(SD_SEND)
 #  define SHUT_WR SD_SEND
@@ -199,6 +214,15 @@
 #endif
 
 /**
+ * MHD_SCKT_SEND_MAX_SIZE_ is maximum send()/recv() size value.
+ */
+#if !defined(MHD_WINSOCK_SOCKETS)
+#  define MHD_SCKT_SEND_MAX_SIZE_ SSIZE_MAX
+#else
+#  define MHD_SCKT_SEND_MAX_SIZE_ INT_MAX
+#endif
+
+/**
  * MHD_socket_close_(fd) close any FDs (non-W32) / close only socket
  * FDs (W32).  Note that on HP-UNIX, this function may leak the FD if
  * errno is set to EINTR.  Do not use HP-UNIX.
@@ -223,6 +247,18 @@
     if (!MHD_socket_close_(fd))               \
       MHD_PANIC(_("Close socket failed.\n")); \
   } while(0)
+
+
+/**
+ * MHD_send_ is wrapper for system's send()
+ * @param s the socket to use
+ * @param b the buffer with data to send
+ * @param l the length of data in @a b
+ * @return ssize_t type value
+ */
+#define MHD_send_(s,b,l) \
+  ((ssize_t)send((s),(const void*)(b),((MHD_SCKT_SEND_SIZE_)l), MAYBE_MSG_NOSIGNAL))
+
 
 /**
  * Check whether FD can be added to fd_set with specified FD_SETSIZE.
