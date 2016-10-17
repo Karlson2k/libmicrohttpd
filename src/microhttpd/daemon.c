@@ -1607,7 +1607,7 @@ recv_param_adapter (struct MHD_Connection *connection,
   ret = (ssize_t) recv (connection->socket_fd,
                         other,
                         (MHD_SCKT_SEND_SIZE_) i,
-                        MSG_NOSIGNAL);
+                        0);
 #ifdef EPOLL_SUPPORT
   if ( (0 > ret) &&
        (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
