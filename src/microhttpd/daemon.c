@@ -1028,11 +1028,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           urh->in_buffer_off += res;
         }
-      if (0 == res)
+      else if (0 >= res)
         {
-          /* connection was shut down, signal by shrinking buffer,
-             which will eventually ensure this FD is no longer listed. */
-          urh->in_buffer_size = urh->in_buffer_off;
+          /* Connection was shut down or got unrecoverable error.
+           * signal by shrinking buffer so no more attempts will be
+           * performed to receive data. */
+          urh->in_buffer_size = 0;
+          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
@@ -1055,12 +1057,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           if ( (MHD_SCKT_ERR_IS_EINTR_ (err)) ||
                (MHD_SCKT_ERR_IS_EAGAIN_ (err)) )
             urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-          else
+          else if (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err))
             {
               /* persistent / unrecoverable error, treat as
-                 if connection was shut down */
+                 if connection was shut down.
+                 Do not try to receive to 'in_buffer' and
+                 discard any unsent data. */
               urh->in_buffer_size = 0;
               urh->in_buffer_off = 0;
+              urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+              urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
             }
         }
       else
@@ -1095,8 +1101,18 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                        buf_size);
       if (-1 == res)
         {
-          /* FIXME: differenciate by errno? */
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          int err = MHD_socket_get_error_ ();
+
+          if ( (MHD_SCKT_ERR_IS_EINTR_ (err)) ||
+               (MHD_SCKT_ERR_IS_EAGAIN_ (err)) )
+            urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          else if (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err))
+            {
+              /* persistent / unrecoverable error, treat as
+                 if connection was shut down */
+              urh->out_buffer_size = 0;
+              urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+            }
         }
       else
         {
@@ -1104,9 +1120,11 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       if (0 == res)
         {
-          /* connection was shut down, signal by shrinking buffer,
-             which will eventually ensure this FD is no longer listed. */
-          urh->out_buffer_size = urh->out_buffer_off;
+          /* Connection was shut down or got unrecoverable error.
+           * signal by shrinking buffer so no more attempts will be
+           * performed to receive data. */
+          urh->out_buffer_size = 0;
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
         }
       fin_read = (0 == res);
     }
@@ -1147,9 +1165,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else
         {
           /* persistent / unrecoverable error, treat as
-             if connection was shut down */
+             if connection was shut down.
+             Do not try to receive to 'out_buffer' and
+             discard any unsent data. */
           urh->out_buffer_size = 0;
           urh->out_buffer_off = 0;
+          urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
   /* cleanup connection if it was closed and all data was sent */
@@ -1233,8 +1255,10 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
                           &rs,
                           &ws);
           process_urh (urh);
-          if ( (0 == urh->out_buffer_size) &&
-               (0 == urh->in_buffer_size) )
+          if ( (0 == urh->in_buffer_size) &&
+               (0 == urh->out_buffer_size) &&
+               (0 == urh->in_buffer_used) &&
+               (0 == urh->out_buffer_used) )
             break; /* connections died, we have no more purpose here */
         }
     }
@@ -1287,8 +1311,10 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
           if (0 != (p[1].revents & POLLOUT))
             urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
           process_urh (urh);
-          if ( (0 == urh->out_buffer_size) &&
-               (0 == urh->in_buffer_size) )
+          if ( (0 == urh->in_buffer_size) &&
+               (0 == urh->out_buffer_size) &&
+               (0 == urh->in_buffer_used) &&
+               (0 == urh->out_buffer_used) )
             break; /* connections died, we have no more purpose here */
         }
     }
