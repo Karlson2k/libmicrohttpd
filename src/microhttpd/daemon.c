@@ -923,7 +923,8 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
 #if HTTPS_SUPPORT
-  if (0 != (daemon->options & MHD_USE_TLS))
+  if ( (NULL != urh) &&
+       (0 != (daemon->options & MHD_USE_TLS)) )
     {
       if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
         DLL_remove (daemon->urh_head,
