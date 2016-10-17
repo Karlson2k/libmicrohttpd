@@ -46,6 +46,88 @@ static pthread_t pt_client;
 static int done;
 
 
+static void
+notify_completed_cb (void *cls,
+                     struct MHD_Connection *connection,
+                     void **con_cls,
+                     enum MHD_RequestTerminationCode toe)
+{
+  if ( (toe != MHD_REQUEST_TERMINATED_COMPLETED_OK) &&
+       (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
+       (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
+    abort ();
+  if (((long) *con_cls) != (long) pthread_self ())
+    abort ();
+  *con_cls = NULL;
+}
+
+
+/**
+ * Logging callback.
+ *
+ * @param cls logging closure (NULL)
+ * @param uri access URI
+ * @param connection connection handle
+ * @return #TEST_PTR
+ */
+static void *
+log_cb (void *cls,
+        const char *uri,
+        struct MHD_Connection *connection)
+{
+  if (0 != strcmp (uri,
+                   "/"))
+    abort ();
+  return (void *) (long) pthread_self ();
+}
+
+
+/**
+ * Function to check that MHD properly notifies about starting
+ * and stopping.
+ *
+ * @param cls client-defined closure
+ * @param connection connection handle
+ * @param socket_context socket-specific pointer where the
+ *                       client can associate some state specific
+ *                       to the TCP connection; note that this is
+ *                       different from the "con_cls" which is per
+ *                       HTTP request.  The client can initialize
+ *                       during #MHD_CONNECTION_NOTIFY_STARTED and
+ *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
+ *                       and access in the meantime using
+ *                       #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
+ * @param toe reason for connection notification
+ * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @ingroup request
+ */
+static void
+notify_connection_cb (void *cls,
+                      struct MHD_Connection *connection,
+                      void **socket_context,
+                      enum MHD_ConnectionNotificationCode toe)
+{
+  static int started;
+
+  switch (toe)
+  {
+  case MHD_CONNECTION_NOTIFY_STARTED:
+    if (MHD_NO != started)
+      abort ();
+    started = MHD_YES;
+    *socket_context = &started;
+    break;
+  case MHD_CONNECTION_NOTIFY_CLOSED:
+    if (MHD_YES != started)
+      abort ();
+    if (&started != *socket_context)
+      abort ();
+    *socket_context = NULL;
+    started = MHD_NO;
+    break;
+  }
+}
+
 
 /**
  * Change socket to non-blocking.
@@ -354,6 +436,8 @@ ahc_upgrade (void *cls,
   struct MHD_Response *resp;
   int ret;
 
+  if (((long) *con_cls) != (long) pthread_self ())
+    abort ();
   resp = MHD_create_response_for_upgrade (&upgrade_cb,
                                           NULL);
   MHD_add_response_header (resp,

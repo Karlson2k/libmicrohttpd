@@ -63,6 +63,9 @@ test_upgrade (int flags,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
+                        MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                        MHD_OPTION_NOTIFY_COMPLETED, &notify_completed_cb, NULL,
+                        MHD_OPTION_NOTIFY_CONNECTION, &notify_connection_cb, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, pool,
                         MHD_OPTION_END);
   if (NULL == d)
@@ -101,6 +104,8 @@ main (int argc,
   int error_count = 0;
 
   /* try external select */
+#if 0
+
   error_count += test_upgrade (0,
                                0);
 #ifdef EPOLL_SUPPORT
@@ -117,6 +122,9 @@ main (int argc,
   /* Test different event loops, with and without thread pool */
   error_count += test_upgrade (MHD_USE_SELECT_INTERNALLY,
                                0);
+
+#endif
+
   error_count += test_upgrade (MHD_USE_SELECT_INTERNALLY,
                                2);
 #ifdef HAVE_POLL

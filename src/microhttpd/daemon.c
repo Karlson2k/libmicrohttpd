@@ -3672,6 +3672,39 @@ MHD_run (struct MHD_Daemon *daemon)
 
 
 /**
+ * Close the given connection, remove it from all of its
+ * DLLs and move it into the cleanup queue.
+ *
+ * @param pos connection to move to cleanup
+ */
+static void
+close_connection (struct MHD_Connection *pos)
+{
+  struct MHD_Daemon *daemon = pos->daemon;
+
+  MHD_connection_close_ (pos,
+                         MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    return; /* must let thread to the rest */
+  if (pos->connection_timeout == pos->daemon->connection_timeout)
+    XDLL_remove (daemon->normal_timeout_head,
+		 daemon->normal_timeout_tail,
+		 pos);
+  else
+    XDLL_remove (daemon->manual_timeout_head,
+		 daemon->manual_timeout_tail,
+		 pos);
+  DLL_remove (daemon->connections_head,
+	      daemon->connections_tail,
+	      pos);
+  pos->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+  DLL_insert (daemon->cleanup_head,
+	      daemon->cleanup_tail,
+	      pos);
+}
+
+
+/**
  * Thread that runs the select loop until the daemon
  * is explicitly shut down.
  *
@@ -3682,6 +3715,7 @@ static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_select_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
+  struct MHD_Connection *pos;
 
   while (MHD_YES != daemon->shutdown)
     {
@@ -3694,6 +3728,17 @@ MHD_select_thread (void *cls)
       else
 	MHD_select (daemon, MHD_YES);
       MHD_cleanup_connections (daemon);
+    }
+
+  /* give resumed formerly suspended connections a chance to
+     be included in the cleanup */
+  resume_suspended_connections (daemon);
+  /* run clean up in this thread as well */
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    {
+      /* We did everything in this thread, so also the clean up */
+      while (NULL != (pos = daemon->connections_head))
+        close_connection (pos);
     }
   return (MHD_THRD_RTRN_TYPE_)0;
 }
@@ -5040,11 +5085,11 @@ MHD_start_daemon_va (unsigned int flags,
             }
 
           /* Spawn the worker thread */
-          if (! MHD_create_named_thread_(&d->pid,
-                                         "MHD-worker",
-                                         daemon->thread_stack_size,
-                                         &MHD_select_thread,
-                                         d))
+          if (! MHD_create_named_thread_ (&d->pid,
+                                          "MHD-worker",
+                                          daemon->thread_stack_size,
+                                          &MHD_select_thread,
+                                          d))
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
@@ -5124,39 +5169,6 @@ thread_failed:
     MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
   return NULL;
-}
-
-
-/**
- * Close the given connection, remove it from all of its
- * DLLs and move it into the cleanup queue.
- *
- * @param pos connection to move to cleanup
- */
-static void
-close_connection (struct MHD_Connection *pos)
-{
-  struct MHD_Daemon *daemon = pos->daemon;
-
-  MHD_connection_close_ (pos,
-                         MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    return; /* must let thread to the rest */
-  if (pos->connection_timeout == pos->daemon->connection_timeout)
-    XDLL_remove (daemon->normal_timeout_head,
-		 daemon->normal_timeout_tail,
-		 pos);
-  else
-    XDLL_remove (daemon->manual_timeout_head,
-		 daemon->manual_timeout_tail,
-		 pos);
-  DLL_remove (daemon->connections_head,
-	      daemon->connections_tail,
-	      pos);
-  pos->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
-  DLL_insert (daemon->cleanup_head,
-	      daemon->cleanup_tail,
-	      pos);
 }
 
 
@@ -5347,7 +5359,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	      if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
 		MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel."));
 	    }
-	  if (!MHD_join_thread_ (daemon->worker_pool[i].pid))
+	  if (! MHD_join_thread_ (daemon->worker_pool[i].pid))
             MHD_PANIC (_("Failed to join a thread\n"));
 	  close_all_connections (&daemon->worker_pool[i]);
 	  MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
@@ -5377,7 +5389,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
            ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) &&
              (0 == daemon->worker_pool_size) ) )
 	{
-	  if (!MHD_join_thread_ (daemon->pid))
+	  if (! MHD_join_thread_ (daemon->pid))
 	    {
 	      MHD_PANIC (_("Failed to join a thread\n"));
 	    }
