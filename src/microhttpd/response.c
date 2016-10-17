@@ -785,12 +785,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
     pool = connection->pool;
     avail = MHD_pool_get_free (pool);
-    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
-      {
-        /* Need to give the thread something to block on... */
-        connection->upgrade_sem = MHD_semaphore_create (0);
-      }
-
     if (avail < 8)
       {
         /* connection's pool is totally at the limit,
@@ -905,22 +899,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
     {
-      /* Need to give the thread something to block on... */
-      connection->upgrade_sem = MHD_semaphore_create (0);
       connection->urh = urh;
-        if (NULL == connection->upgrade_sem)
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _("Failed to create semaphore for upgrade handling\n"));
-#endif
-          MHD_connection_close_ (connection,
-                                 MHD_REQUEST_TERMINATED_WITH_ERROR);
-          return MHD_NO;
-        }
-      /* Our caller will set 'connection->state' to
-         MHD_CONNECTION_UPGRADE, thereby triggering the
-         main method of the thread to block on the semaphore. */
     }
   else
     {

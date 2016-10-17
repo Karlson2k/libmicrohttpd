@@ -889,14 +889,6 @@ struct MHD_Connection
    */
   struct MHD_UpgradeResponseHandle *urh;
 
-  /**
-   * If this connection was upgraded and if we are using
-   * #MHD_USE_THREAD_PER_CONNECTION without encryption,
-   * this points to the semaphore we use to signal termination
-   * to the thread handling the connection.
-   */
-  struct MHD_Semaphore *upgrade_sem;
-
 #if HTTPS_SUPPORT
 
   /**

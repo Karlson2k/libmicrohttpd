@@ -24,7 +24,7 @@
  * @author Karlson2k (Evgeny Grin)
  * @author Christian Grothoff
  *
- * Provides basic abstraction for locks/mutex and semaphores.
+ * Provides basic abstraction for locks/mutex.
  * Any functions can be implemented as macro on some platforms
  * unless explicitly marked otherwise.
  * Any function argument can be skipped in macro, so avoid
@@ -169,48 +169,6 @@
     if (!MHD_mutex_unlock_(pmutex))              \
       MHD_PANIC(_("Failed to unlock mutex.\n")); \
   } while(0)
-
-/**
- * A semaphore.
- */
-struct MHD_Semaphore;
-
-
-/**
- * Create a semaphore with an initial counter of @a init
- *
- * @param init initial counter
- * @return the semaphore, NULL on error
- */
-struct MHD_Semaphore *
-MHD_semaphore_create (unsigned int init);
-
-
-/**
- * Count down the semaphore, block if necessary.
- *
- * @param sem semaphore to count down.
- */
-void
-MHD_semaphore_down (struct MHD_Semaphore *sem);
-
-
-/**
- * Increment the semaphore.
- *
- * @param sem semaphore to increment.
- */
-void
-MHD_semaphore_up (struct MHD_Semaphore *sem);
-
-
-/**
- * Destroys the semaphore.
- *
- * @param sem semaphore to destroy.
- */
-void
-MHD_semaphore_destroy (struct MHD_Semaphore *sem);
 
 
 #endif /* ! MHD_LOCKS_H */
