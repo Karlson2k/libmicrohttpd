@@ -422,7 +422,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
     }
   res = gnutls_record_recv (connection->tls_session,
                             other,
-                            i);
+                            (i > SSIZE_MAX) ? SSIZE_MAX : i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -466,7 +466,7 @@ send_tls_adapter (struct MHD_Connection *connection,
 
   res = gnutls_record_send (connection->tls_session,
                             other,
-                            i);
+                            (i > SSIZE_MAX) ? SSIZE_MAX : i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -1009,10 +1009,15 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
        (urh->in_buffer_off < urh->in_buffer_size) )
     {
       ssize_t res;
+      size_t rcv_size;
+
+      rcv_size = urh->in_buffer_size - urh->in_buffer_off;
+      if (rcv_size > SSIZE_MAX)
+        rcv_size = SSIZE_MAX;
 
       res = gnutls_record_recv (urh->connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_off],
-                                urh->in_buffer_size - urh->in_buffer_off);
+                                rcv_size);
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
@@ -1033,10 +1038,15 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
        (urh->in_buffer_off > 0) )
     {
       ssize_t res;
+      size_t snd_size;
+
+      snd_size = urh->in_buffer_off;
+      if (snd_size > MHD_SCKT_SEND_MAX_SIZE_)
+        snd_size = MHD_SCKT_SEND_MAX_SIZE_;
 
       res = MHD_send_ (urh->mhd.socket,
                        urh->in_buffer,
-                       urh->in_buffer_off);
+                       snd_size);
       if (-1 == res)
         {
           int err = MHD_socket_get_error_ ();
@@ -1073,10 +1083,15 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
        (urh->out_buffer_off < urh->out_buffer_size) )
     {
       ssize_t res;
+      size_t rcv_size;
+
+      rcv_size = urh->out_buffer_size - urh->out_buffer_off;
+      if (rcv_size > MHD_SCKT_SEND_MAX_SIZE_)
+        rcv_size = MHD_SCKT_SEND_MAX_SIZE_;
 
       res = MHD_recv_ (urh->mhd.socket,
                        &urh->out_buffer[urh->out_buffer_off],
-                       urh->out_buffer_size - urh->out_buffer_off);
+                       rcv_size);
       if (-1 == res)
         {
           /* FIXME: differenciate by errno? */
@@ -1100,10 +1115,15 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
        (urh->out_buffer_off > 0) )
     {
       ssize_t res;
+      size_t snd_size;
+
+      snd_size = urh->out_buffer_off;
+      if (snd_size > SSIZE_MAX)
+        snd_size = SSIZE_MAX;
 
       res = gnutls_record_send (urh->connection->tls_session,
                                 urh->out_buffer,
-                                urh->out_buffer_off);
+                                snd_size);
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
         {
@@ -1590,13 +1610,8 @@ recv_param_adapter (struct MHD_Connection *connection,
       MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
       return -1;
     }
-#ifdef MHD_POSIX_SOCKETS
-  if (i > SSIZE_MAX)
-    i = SSIZE_MAX; /* return value limit */
-#else  /* MHD_WINSOCK_SOCKETS */
-  if (i > INT_MAX)
-    i = INT_MAX; /* return value limit */
-#endif /* MHD_WINSOCK_SOCKETS */
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
   ret = MHD_recv_ (connection->socket_fd,
                    other,
