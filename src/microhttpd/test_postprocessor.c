@@ -169,9 +169,9 @@ test_multipart_garbage ()
   xdata[1] = 'x';
   xdata[2] = '\r';
   memcpy (&xdata[3], FORM_DATA, size);
-  size += 3;
 
   size = strlen (FORM_DATA);
+  size += 3;
   for (splitpoint = 1; splitpoint < size; splitpoint++)
   {
     want_off = FORM_START;

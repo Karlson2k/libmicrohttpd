@@ -116,7 +116,10 @@ test_query_session ()
                         MHD_OPTION_END);
 
   if (d == NULL)
-    return 2;
+    {
+      free (cbc.buf);
+      return 2;
+    }
 
   const char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)

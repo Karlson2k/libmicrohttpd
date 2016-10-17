@@ -205,10 +205,7 @@ recv_hdr (MHD_socket sock)
       if (-1 == ret)
         {
           if (EAGAIN == errno)
-            {
-              ret = 0;
-              continue;
-            }
+            continue;
           abort ();
         }
       if (0 == ret)

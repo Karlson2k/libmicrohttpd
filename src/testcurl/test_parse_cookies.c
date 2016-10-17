@@ -81,7 +81,6 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   *unused = NULL;
-  ret = 0;
 
   hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name1");
   if ((hdr == NULL) || (0 != strcmp (hdr, "var1")))
