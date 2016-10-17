@@ -923,16 +923,12 @@ void
 MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
-  struct MHD_UpgradeResponseHandle *urh;
-
-  urh = connection->urh;
-  if (NULL == urh)
-    return;
+  struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
 #if HTTPS_SUPPORT
-  if (0 != (daemon->options && MHD_USE_TLS))
+  if (0 != (daemon->options & MHD_USE_TLS))
     {
-      if (0 == (daemon->options && MHD_USE_THREAD_PER_CONNECTION))
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
         DLL_remove (daemon->urh_head,
                     daemon->urh_tail,
                     urh);
@@ -974,13 +970,14 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
         MHD_socket_close_chk_ (urh->app.socket);
     }
 #endif /* HTTPS_SUPPORT */
-  if (0 == (daemon->options && MHD_USE_THREAD_PER_CONNECTION))
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     MHD_resume_connection (connection);
-
   MHD_connection_close_ (connection,
                          MHD_REQUEST_TERMINATED_COMPLETED_OK);
+
   connection->urh = NULL;
-  free (urh);
+  if (NULL != urh)
+    free (urh);
 }
 
 
@@ -990,8 +987,10 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
  * based on the readyness state stored in the @a urh handle.
  *
  * @param urh handle to process
+ * @return #MHD_YES if we are done reading from the socket,
+ *         #MHD_NO if there might be more data to be read
  */
-static void
+static int
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
   int fin_read;
@@ -1123,6 +1122,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->out_buffer_off = 0;
         }
     }
+  return fin_read;
 }
 #endif
 
@@ -2776,16 +2776,19 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #if HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
+      int fin_read;
+
       urhn = urh->next;
       /* update urh state based on select() output */
       urh_from_fdset (urh,
                       read_fd_set,
                       write_fd_set);
       /* call generic forwarding function for passing data */
-      process_urh (urh);
+      fin_read = process_urh (urh);
       /* cleanup connection if it was closed and all data was sent */
       if ( (MHD_YES == urh->was_closed) &&
-           (0 == urh->out_buffer_off) )
+           (0 == urh->out_buffer_off) &&
+           (MHD_YES == fin_read) )
         MHD_cleanup_upgraded_connection_ (urh->connection);
     }
 #endif
