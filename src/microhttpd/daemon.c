@@ -1556,11 +1556,6 @@ exit:
       con->response = NULL;
     }
 
-  if (NULL != daemon->notify_connection)
-    con->daemon->notify_connection (daemon->notify_connection_cls,
-                                    con,
-                                    &con->socket_context,
-                                    MHD_CONNECTION_NOTIFY_CLOSED);
   if (MHD_INVALID_SOCKET != con->socket_fd)
     {
       shutdown (con->socket_fd,
