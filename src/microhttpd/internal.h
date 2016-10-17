@@ -1727,9 +1727,10 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
  * Finally cleanup upgrade-related resources. It should
  * be called when TLS buffers have been drained and
  * application signaled MHD by #MHD_UPGRADE_ACTION_CLOSE.
+ *
  * @param connection handle to the upgraded connection to clean
  */
 void
-cleanup_upgraded_connection (struct MHD_Connection *connection);
+MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection);
 
 #endif

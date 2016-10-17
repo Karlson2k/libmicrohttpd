@@ -916,16 +916,15 @@ call_handlers (struct MHD_Connection *con,
  * Finally cleanup upgrade-related resources. It should
  * be called when TLS buffers have been drained and
  * application signaled MHD by #MHD_UPGRADE_ACTION_CLOSE.
+ *
  * @param connection handle to the upgraded connection to clean
  */
 void
-cleanup_upgraded_connection (struct MHD_Connection *connection)
+MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon;
+  struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_UpgradeResponseHandle *urh;
-  if (NULL == connection)
-    return;
-  daemon = connection->daemon;
+
   urh = connection->urh;
   if (NULL == urh)
     return;
@@ -1267,7 +1266,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   MHD_semaphore_down (con->upgrade_sem);
   MHD_semaphore_destroy (con->upgrade_sem);
   con->upgrade_sem = NULL;
-  cleanup_upgraded_connection(con);
+  MHD_cleanup_upgraded_connection_ (con);
 }
 
 
@@ -2785,8 +2784,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
       /* call generic forwarding function for passing data */
       process_urh (urh);
       /* cleanup connection if it was closed and all data was sent */
-      if (MHD_YES == urh->was_closed && 0 == urh->out_buffer_off)
-        cleanup_upgraded_connection (urh->connection);
+      if ( (MHD_YES == urh->was_closed) &&
+           (0 == urh->out_buffer_off) )
+        MHD_cleanup_upgraded_connection_ (urh->connection);
     }
 #endif
   MHD_cleanup_connections (daemon);

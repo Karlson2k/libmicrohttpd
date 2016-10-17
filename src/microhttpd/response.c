@@ -660,7 +660,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
       }
 #endif
     /* 'upgraded' resources are not needed anymore - cleanup now */
-    cleanup_upgraded_connection (connection);
+    MHD_cleanup_upgraded_connection_ (connection);
     return MHD_YES;
   default:
     /* we don't understand this one */
