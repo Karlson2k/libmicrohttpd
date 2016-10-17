@@ -2299,25 +2299,14 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * successfully and the socket should now be controlled by some
  * protocol other than HTTP.
  *
- * Any data received on the socket will be made available in
- * 'data_in'.  The function should update 'data_in_size' to
- * reflect the number of bytes consumed from 'data_in' (the remaining
- * bytes will be made available in the next call to the handler).
+ * Any data already received on the socket will be made available in
+ * @e extra_in.  This can happen if the application sent extra data
+ * before MHD send the upgrade response.  The application should
+ * treat data from @a extra_in as if it had read it from the socket.
  *
- * Any data that should be transmitted on the socket should be
- * stored in 'data_out'.  '*data_out_size' is initially set to
- * the available buffer space in 'data_out'.  It should be set to
- * the number of bytes stored in 'data_out' (which can be zero).
- *
- * The return value is a BITMASK that indicates how the function
- * intends to interact with the event loop.  It can request to be
- * notified for reading, writing, request to UNCORK the send buffer
- * (which MHD is allowed to ignore, if it is not possible to uncork on
- * the local platform), to wait for the 'external' select loop to
- * trigger another round.  It is also possible to specify "no events"
- * to terminate the connection; in this case, the
- * #MHD_RequestCompletedCallback will be called and all resources of
- * the connection will be released.
+ * Note that the application must not close() @a sock directly,
+ * but instead use #MHD_upgrade_action() for special operations
+ * on @a sock.
  *
  * Except when in 'thread-per-connection' mode, implementations
  * of this function should never block (as it will still be called
