@@ -665,7 +665,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
               MHD_socket *max_fd,
               unsigned int fd_setsize)
 {
-  if ( (urh->out_buffer_off < urh->out_buffer_size) &&
+  if ( (urh->out_buffer_used < urh->out_buffer_size) &&
        (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               rs,
@@ -679,7 +679,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (urh->in_buffer_off < urh->in_buffer_size) &&
+  if ( (urh->in_buffer_used < urh->in_buffer_size) &&
        (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               rs,
@@ -1008,7 +1008,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       /* Application was closed connections: no more data
        * can be forwarded to application socket. */
       urh->in_buffer_size = 0;
-      urh->in_buffer_off = 0;
+      urh->in_buffer_used = 0;
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       /* Reading from remote client is not required anymore. */
       urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
@@ -1016,17 +1016,17 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 
   /* handle reading from TLS client and writing to application */
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
-       (urh->in_buffer_off < urh->in_buffer_size) )
+       (urh->in_buffer_used < urh->in_buffer_size) )
     {
       ssize_t res;
       size_t buf_size;
 
-      buf_size = urh->in_buffer_size - urh->in_buffer_off;
+      buf_size = urh->in_buffer_size - urh->in_buffer_used;
       if (buf_size > SSIZE_MAX)
         buf_size = SSIZE_MAX;
 
       res = gnutls_record_recv (urh->connection->tls_session,
-                                &urh->in_buffer[urh->in_buffer_off],
+                                &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
       if ( (GNUTLS_E_AGAIN == res) ||
            (GNUTLS_E_INTERRUPTED == res) )
@@ -1035,7 +1035,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else if (res > 0)
         {
-          urh->in_buffer_off += res;
+          urh->in_buffer_used += res;
         }
       else if (0 >= res)
         {
@@ -1047,12 +1047,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
-       (urh->in_buffer_off > 0) )
+       (urh->in_buffer_used > 0) )
     {
       ssize_t res;
       size_t data_size;
 
-      data_size = urh->in_buffer_off;
+      data_size = urh->in_buffer_used;
       if (data_size > MHD_SCKT_SEND_MAX_SIZE_)
         data_size = MHD_SCKT_SEND_MAX_SIZE_;
 
@@ -1073,23 +1073,23 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                  Do not try to receive to 'in_buffer' and
                  discard any unsent data. */
               urh->in_buffer_size = 0;
-              urh->in_buffer_off = 0;
+              urh->in_buffer_used = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
               urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
             }
         }
       else
         {
-          if (urh->in_buffer_off != res)
+          if (urh->in_buffer_used != res)
             {
               memmove (urh->in_buffer,
                        &urh->in_buffer[res],
-                       urh->in_buffer_off - res);
-              urh->in_buffer_off -= res;
+                       urh->in_buffer_used - res);
+              urh->in_buffer_used -= res;
             }
           else
             {
-              urh->in_buffer_off = 0;
+              urh->in_buffer_used = 0;
             }
         }
     }
@@ -1097,7 +1097,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   /* handle reading from application and writing to HTTPS client */
   if ( ((0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) ||
         (MHD_NO != urh->was_closed)) &&
-       (urh->out_buffer_off < urh->out_buffer_size) )
+       (urh->out_buffer_used < urh->out_buffer_size) )
     {
       /* If application signaled MHD about socket closure then
        * check for any pending data even if socket is not marked
@@ -1107,12 +1107,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       ssize_t res;
       size_t buf_size;
 
-      buf_size = urh->out_buffer_size - urh->out_buffer_off;
+      buf_size = urh->out_buffer_size - urh->out_buffer_used;
       if (buf_size > MHD_SCKT_SEND_MAX_SIZE_)
         buf_size = MHD_SCKT_SEND_MAX_SIZE_;
 
       res = MHD_recv_ (urh->mhd.socket,
-                       &urh->out_buffer[urh->out_buffer_off],
+                       &urh->out_buffer[urh->out_buffer_used],
                        buf_size);
       if (-1 == res)
         {
@@ -1140,7 +1140,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else
         {
-          urh->out_buffer_off += res;
+          urh->out_buffer_used += res;
         }
       if (0 == res)
         {
@@ -1152,12 +1152,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
-       (urh->out_buffer_off > 0) )
+       (urh->out_buffer_used > 0) )
     {
       ssize_t res;
       size_t data_size;
 
-      data_size = urh->out_buffer_off;
+      data_size = urh->out_buffer_used;
       if (data_size > SSIZE_MAX)
         data_size = SSIZE_MAX;
 
@@ -1171,16 +1171,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
       else if (res > 0)
         {
-          if (urh->out_buffer_off != res)
+          if (urh->out_buffer_used != res)
             {
               memmove (urh->out_buffer,
                        &urh->out_buffer[res],
-                       urh->out_buffer_off - res);
-              urh->out_buffer_off -= res;
+                       urh->out_buffer_used - res);
+              urh->out_buffer_used -= res;
             }
           else
             {
-              urh->out_buffer_off = 0;
+              urh->out_buffer_used = 0;
             }
         }
       else
@@ -1190,7 +1190,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
              Do not try to receive to 'out_buffer' and
              discard any unsent data. */
           urh->out_buffer_size = 0;
-          urh->out_buffer_off = 0;
+          urh->out_buffer_used = 0;
           urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
@@ -1198,7 +1198,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   /* cleanup connection if it was closed and all data was sent */
   if ( (MHD_NO != urh->was_closed) &&
        (0 == urh->out_buffer_size) &&
-       (0 == urh->out_buffer_off) )
+       (0 == urh->out_buffer_used) )
     {
       MHD_cleanup_upgraded_connection_ (urh->connection);
     }
@@ -1298,11 +1298,11 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
                   sizeof (struct pollfd) * 2);
           p[0].fd = urh->connection->socket_fd;
           p[1].fd = urh->mhd.socket;
-          if (urh->in_buffer_off < urh->in_buffer_size)
+          if (urh->in_buffer_used < urh->in_buffer_size)
             p[0].events |= POLLIN;
           if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
             p[0].events |= POLLOUT;
-          if (urh->out_buffer_off < urh->out_buffer_size)
+          if (urh->out_buffer_used < urh->out_buffer_size)
             p[1].events |= POLLIN;
           if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
             p[1].events |= POLLOUT;
@@ -3136,13 +3136,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
-        if (urh->in_buffer_off < urh->in_buffer_size)
+        if (urh->in_buffer_used < urh->in_buffer_size)
           p[poll_server+i].events |= POLLIN;
         if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
           p[poll_server+i].events |= POLLOUT;
         i++;
         p[poll_server+i].fd = urh->mhd.socket;
-        if (urh->out_buffer_off < urh->out_buffer_size)
+        if (urh->out_buffer_used < urh->out_buffer_size)
           p[poll_server+i].events |= POLLIN;
         if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
           p[poll_server+i].events |= POLLOUT;

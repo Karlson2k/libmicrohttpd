@@ -1027,12 +1027,12 @@ struct MHD_UpgradeResponseHandle
   /**
    * Number of bytes actually in use in the @e in_buffer
    */
-  size_t in_buffer_off;
+  size_t in_buffer_used;
 
   /**
    * Number of bytes actually in use in the @e out_buffer
    */
-  size_t out_buffer_off;
+  size_t out_buffer_used;
 
   /**
    * The socket we gave to the application (r/w).
