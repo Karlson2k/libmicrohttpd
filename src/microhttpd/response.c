@@ -821,7 +821,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
     pool = connection->pool;
     avail = MHD_pool_get_free (pool);
-    if (avail < 8)
+    if (avail < RESERVE_EBUF_SIZE)
       {
         /* connection's pool is totally at the limit,
            use our 'emergency' buffer of #RESERVE_EBUF_SIZE bytes. */
@@ -839,11 +839,10 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                  MHD_NO);
       }
     /* use half the buffer for inbound, half for outbound */
-    avail /= 2;
-    urh->in_buffer_size = avail;
-    urh->out_buffer_size = avail;
+    urh->in_buffer_size = avail / 2;
+    urh->out_buffer_size = avail - urh->in_buffer_size;
     urh->in_buffer = buf;
-    urh->out_buffer = &buf[avail];
+    urh->out_buffer = &buf[urh->in_buffer_size];
     /* hand over internal socket to application */
     response->upgrade_handler (response->upgrade_handler_cls,
                                connection,
