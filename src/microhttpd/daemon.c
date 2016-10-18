@@ -1007,6 +1007,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
       /* Application was closed connections: no more data
        * can be forwarded to application socket. */
+      if (0 < urh->in_buffer_used)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (urh->connection->daemon,
+                    _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                        " bytes of data received from remote side: application shut down socket\n"),
+                    (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used);
+#endif
+
+        }
       urh->in_buffer_size = 0;
       urh->in_buffer_used = 0;
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
@@ -1072,6 +1082,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                  if connection was shut down.
                  Do not try to receive to 'in_buffer' and
                  discard any unsent data. */
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (urh->connection->daemon,
+                        _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                            " bytes of data received from remote side: %s\n"),
+                        (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
+                        MHD_socket_strerr_ (err));
+#endif
               urh->in_buffer_size = 0;
               urh->in_buffer_used = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
@@ -1189,6 +1206,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
              if connection was shut down.
              Do not try to receive to 'out_buffer' and
              discard any unsent data. */
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (urh->connection->daemon,
+                    _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                        " bytes of data received from application: %s\n"),
+                    (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
+                    gnutls_strerror(res));
+#endif
           urh->out_buffer_size = 0;
           urh->out_buffer_used = 0;
           urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
