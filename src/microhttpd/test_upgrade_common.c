@@ -315,25 +315,14 @@ run_usock_client (void *cls)
  * successfully and the socket should now be controlled by some
  * protocol other than HTTP.
  *
- * Any data received on the socket will be made available in
- * 'data_in'.  The function should update 'data_in_size' to
- * reflect the number of bytes consumed from 'data_in' (the remaining
- * bytes will be made available in the next call to the handler).
+ * Any data already received on the socket will be made available in
+ * @e extra_in.  This can happen if the application sent extra data
+ * before MHD send the upgrade response.  The application should
+ * treat data from @a extra_in as if it had read it from the socket.
  *
- * Any data that should be transmitted on the socket should be
- * stored in 'data_out'.  '*data_out_size' is initially set to
- * the available buffer space in 'data_out'.  It should be set to
- * the number of bytes stored in 'data_out' (which can be zero).
- *
- * The return value is a BITMASK that indicates how the function
- * intends to interact with the event loop.  It can request to be
- * notified for reading, writing, request to UNCORK the send buffer
- * (which MHD is allowed to ignore, if it is not possible to uncork on
- * the local platform), to wait for the 'external' select loop to
- * trigger another round.  It is also possible to specify "no events"
- * to terminate the connection; in this case, the
- * #MHD_RequestCompletedCallback will be called and all resources of
- * the connection will be released.
+ * Note that the application must not close() @a sock directly,
+ * but instead use #MHD_upgrade_action() for special operations
+ * on @a sock.
  *
  * Except when in 'thread-per-connection' mode, implementations
  * of this function should never block (as it will still be called
@@ -343,7 +332,7 @@ run_usock_client (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `*con_cls` in the `MHD_AccessHandlerCallback`
+ * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -357,10 +346,13 @@ run_usock_client (void *cls)
  *        that is directly connected to the client and thus certain
  *        operations (TCP-specific setsockopt(), getsockopt(), etc.)
  *        may not work as expected (as the socket could be from a
- *        socketpair() or a TCP-loopback)
+ *        socketpair() or a TCP-loopback).  The application is expected
+ *        to perform read()/recv() and write()/send() calls on the socket.
+ *        The application may also call shutdown(), but must not call
+ *        close() directly.
  * @param urh argument for #MHD_upgrade_action()s on this @a connection.
- *        Applications must eventually use this function to perform the
- *        close() action on the @a sock.
+ *        Applications must eventually use this callback to (indirectly)
+ *        perform the close() action on the @a sock.
  */
 static void
 upgrade_cb (void *cls,
@@ -453,7 +445,6 @@ ahc_upgrade (void *cls,
  * Run the MHD external event loop using select.
  *
  * @param daemon daemon to run it for
- * @param flags the flags the daemon was started with
  */
 static void
 run_mhd_select_loop (struct MHD_Daemon *daemon)
@@ -504,7 +495,6 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
  * Run the MHD external event loop using select.
  *
  * @param daemon daemon to run it for
- * @param flags the flags the daemon was started with
  */
 static void
 run_mhd_poll_loop (struct MHD_Daemon *daemon)
@@ -517,7 +507,6 @@ run_mhd_poll_loop (struct MHD_Daemon *daemon)
  * Run the MHD external event loop using select.
  *
  * @param daemon daemon to run it for
- * @param flags the flags the daemon was started with
  */
 static void
 run_mhd_epoll_loop (struct MHD_Daemon *daemon)
@@ -557,7 +546,6 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
  * Run the MHD external event loop using select.
  *
  * @param daemon daemon to run it for
- * @param flags the flags the daemon was started with
  */
 static void
 run_mhd_loop (struct MHD_Daemon *daemon,
