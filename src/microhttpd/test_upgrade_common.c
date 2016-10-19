@@ -170,9 +170,9 @@ send_all (MHD_socket sock,
       ret = MHD_send_ (sock,
                        &text[off],
                        len - off);
-      if (-1 == ret)
+      if (0 > ret)
         {
-          if (EAGAIN == errno)
+          if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
             {
               ret = 0;
               continue;
@@ -203,9 +203,9 @@ recv_hdr (MHD_socket sock)
       ret = MHD_recv_ (sock,
                        &c,
                        1);
-      if (-1 == ret)
+      if (0 > ret)
         {
-          if (EAGAIN == errno)
+          if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
             continue;
           abort ();
         }
@@ -246,9 +246,9 @@ recv_all (MHD_socket sock,
       ret = MHD_recv_ (sock,
                        &buf[off],
                        len - off);
-      if (-1 == ret)
+      if (0 > ret)
         {
-          if (EAGAIN == errno)
+          if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
             {
               ret = 0;
               continue;
