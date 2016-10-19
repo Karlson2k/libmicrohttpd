@@ -1003,6 +1003,11 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
+  if (MHD_NO != urh->connection->daemon->shutdown)
+    {
+      /* Daemon shutting down, application will not receive any more data. */
+      urh->was_closed = MHD_YES;
+    }
   if (MHD_NO != urh->was_closed)
     {
       /* Application was closed connections: no more data
@@ -1219,6 +1224,25 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
+
+  if ( (MHD_NO != urh->connection->daemon->shutdown) &&
+       ((0 != urh->out_buffer_size) ||
+        (0 != urh->out_buffer_used)) )
+    {
+      /* Daemon shutting down, discard any remaining forward data. */
+#ifdef HAVE_MESSAGES
+      if (0 < urh->out_buffer_used)
+        MHD_DLOG (urh->connection->daemon,
+                  _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                      " bytes of data received from application: daemon shut down\n"),
+                  (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used);
+#endif
+      urh->out_buffer_size = 0;
+      urh->out_buffer_used = 0;
+      urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+      urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+    }
+
   /* cleanup connection if it was closed and all data was sent */
   if ( (MHD_NO != urh->was_closed) &&
        (0 == urh->out_buffer_size) &&
