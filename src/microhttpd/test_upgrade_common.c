@@ -24,6 +24,7 @@
  * @author Christian Grothoff
  */
 
+#include "mhd_sockets.h"
 
 /**
  * Thread we use to run the interaction with the upgraded socket.
@@ -166,9 +167,9 @@ send_all (MHD_socket sock,
   make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
-      ret = write (sock,
-                   &text[off],
-                   len - off);
+      ret = MHD_send_ (sock,
+                       &text[off],
+                       len - off);
       if (-1 == ret)
         {
           if (EAGAIN == errno)
@@ -199,9 +200,9 @@ recv_hdr (MHD_socket sock)
   i = 0;
   while (i < 4)
     {
-      ret = read (sock,
-                  &c,
-                  1);
+      ret = MHD_recv_ (sock,
+                       &c,
+                       1);
       if (-1 == ret)
         {
           if (EAGAIN == errno)
@@ -242,9 +243,9 @@ recv_all (MHD_socket sock,
   make_blocking (sock);
   for (size_t off = 0; off < len; off += ret)
     {
-      ret = read (sock,
-                  &buf[off],
-                  len - off);
+      ret = MHD_recv_ (sock,
+                       &buf[off],
+                       len - off);
       if (-1 == ret)
         {
           if (EAGAIN == errno)
