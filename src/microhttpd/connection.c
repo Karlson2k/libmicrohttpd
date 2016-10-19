@@ -2354,6 +2354,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
           break;
+        case MHD_CONNECTION_UPGRADE_CLOSED:
+          break;
         default:
           /* shrink read buffer to how much is actually used */
           MHD_pool_reallocate (connection->pool,
@@ -2537,6 +2539,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
+          break;
+        case MHD_CONNECTION_UPGRADE_CLOSED:
           break;
         default:
           EXTRA_CHECK (0);
@@ -3057,6 +3061,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  cleanup_connection (connection);
 	  return MHD_NO;
         case MHD_CONNECTION_UPGRADE:
+        case MHD_CONNECTION_UPGRADE_CLOSED:
           return MHD_YES; /* keep open */
         default:
           EXTRA_CHECK (0);

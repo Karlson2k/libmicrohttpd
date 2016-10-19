@@ -508,7 +508,7 @@ enum MHD_CONNECTION_STATE
    * by the application.  We now need to do our own
    * internal cleanup.
    */
-  MHD_CONNECTION_UPGRADE_CLOSED = MHD_TLS_CONNECTION_INIT + 1
+  MHD_CONNECTION_UPGRADE_CLOSED = MHD_CONNECTION_UPGRADE + 1
 
 };
 
