@@ -482,6 +482,8 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
         abort ();
       (void) MHD_get_timeout (daemon,
                               &to);
+      if (1000 < to)
+        to = 1000;
       tv.tv_sec = to / 1000;
       tv.tv_usec = 1000 * (to % 1000);
       if (0 > MHD_SYS_select_ (max_fd + 1,
@@ -537,6 +539,8 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
       FD_SET (ep, &rs);
       (void) MHD_get_timeout (daemon,
                               &to);
+      if (1000 < to)
+        to = 1000;
       tv.tv_sec = to / 1000;
       tv.tv_usec = 1000 * (to % 1000);
       select (ep + 1,
