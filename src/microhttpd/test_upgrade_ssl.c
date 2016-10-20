@@ -47,6 +47,15 @@
 #include "../testcurl/https/tls_test_keys.h"
 
 
+enum tls_cli_tool
+{
+  TLS_CLI_NO_TOOL = 0,
+  TLS_CLI_GNUTLS,
+  TLS_CLI_OPENSSL
+};
+
+enum tls_cli_tool use_tool;
+
 /**
  * Fork child that connects via OpenSSL to our @a port.  Allows us to
  * talk to our port over a socket in @a sp without having to worry
@@ -81,17 +90,35 @@ openssl_connect (int *sock,
   dup2 (sp[0], 0);
   dup2 (sp[0], 1);
   MHD_socket_close_chk_ (sp[0]);
-  sprintf (destination,
-           "localhost:%u",
-           (unsigned int) port);
-  execlp ("openssl",
-          "openssl",
-          "s_client",
-          "-connect",
-          destination,
-          "-verify",
-          "0",
-          (char *) NULL);
+  if (TLS_CLI_GNUTLS == use_tool)
+    {
+      snprintf (destination,
+		sizeof(destination),
+	        "%u",
+	        (unsigned int) port);
+      execlp ("gnutls-cli",
+	      "gnutls-cli",
+	      "--insecure",
+	      "-p",
+	      destination,
+	      "localhost",
+	      (char *) NULL);
+    }
+  else if (TLS_CLI_OPENSSL == use_tool)
+    {
+      snprintf (destination,
+		sizeof(destination),
+	        "localhost:%u",
+	        (unsigned int) port);
+      execlp ("openssl",
+	      "openssl",
+	      "s_client",
+	      "-connect",
+	      destination,
+	      "-verify",
+	      "0",
+	      (char *) NULL);
+    }
   _exit (1);
 }
 
@@ -160,8 +187,13 @@ main (int argc,
 {
   int error_count = 0;
 
-  if (0 != system ("openssl version 1> /dev/null"))
-    return 77; /* openssl not available, can't run the test */
+  use_tool = TLS_CLI_NO_TOOL;
+  if (0 == system ("gnutls-cli --version 1> /dev/null"))
+    use_tool = TLS_CLI_GNUTLS;
+  else if (0 != system ("openssl version 1> /dev/null"))
+    use_tool = TLS_CLI_OPENSSL;
+  else
+    return 77; /* not possible to test */
 
   /* try external select */
   error_count += test_upgrade (0,
