@@ -38,6 +38,10 @@
 #include "mhd_itc.h"
 #include "mhd_compat.h"
 
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+
 #if HAVE_SEARCH_H
 #include <search.h>
 #else
@@ -1425,11 +1429,82 @@ thread_main_handle_connection (void *data)
   struct pollfd p[1 + EXTRA_SLOTS];
 #endif
 #undef EXTRA_SLOTS
+#ifdef HAVE_POLL
+  const _MHD_bool use_poll = (0 != (daemon->options & MHD_USE_POLL));
+#else  /* ! HAVE_POLL */
+  const _MHD_bool use_poll = 0;
+#endif /* ! HAVE_POLL */
+  _MHD_bool was_suspended;
 
+  was_suspended = 0;
   while ( (MHD_YES != daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
       const unsigned int timeout = daemon->connection_timeout;
+      _MHD_bool was_suspended = 0;
+
+      if (MHD_NO != con->suspended)
+        {
+          /* Connection was suspended, wait for resume. */
+          was_suspended = !0;
+          if (!use_poll)
+            {
+              FD_ZERO (&rs);
+              if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
+                                        &rs,
+                                        NULL,
+                                        FD_SETSIZE))
+                {
+  #ifdef HAVE_MESSAGES
+                  MHD_DLOG (con->daemon,
+                            _("Failed to add FD to fd_set\n"));
+  #endif
+                  goto exit;
+                }
+              if (0 > MHD_SYS_select_ (MHD_itc_r_fd_ (daemon->itc) + 1,
+                                       &rs, NULL, NULL, NULL))
+                {
+                  const int err = MHD_socket_get_error_();
+
+                  if (MHD_SCKT_ERR_IS_EINTR_(err))
+                    continue;
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (con->daemon,
+                            _("Error during select (%d): `%s'\n"),
+                            err,
+                            MHD_socket_strerr_ (err));
+#endif
+                  break;
+                }
+            }
+#ifdef HAVE_POLL
+          else /* use_poll */
+            {
+              p[0].events = POLLIN;
+              p[0].fd = MHD_itc_r_fd_ (daemon->itc);
+              p[0].revents = 0;
+              if (0 > MHD_sys_poll_ (p, 1, -1))
+                {
+                  if (MHD_SCKT_LAST_ERR_IS_(MHD_SCKT_EINTR_))
+                    continue;
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (con->daemon,
+                            _("Error during poll: `%s'\n"),
+                            MHD_socket_last_strerr_ ());
+#endif
+                  break;
+                }
+            }
+#endif /* HAVE_POLL */
+          MHD_itc_clear_ (daemon->itc);
+          continue; /* Check again for resume. */
+        } /* End of "suspended" branch. */
+
+      if ( was_suspended && (0 != con->connection_timeout) )
+        {
+          con->last_activity = MHD_monotonic_sec_counter(); /* Reset timeout timer. */
+          was_suspended = 0;
+        }
 
       tvp = NULL;
 #if HTTPS_SUPPORT
@@ -2429,7 +2504,17 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       pos->resuming = MHD_NO;
     }
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+    {
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+      if (MHD_NO != ret)
+        { /* Wake up suspended connections. */
+          if ( !MHD_itc_activate_(daemon->itc, "w"))
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _("Failed to signal resume of connection via inter-thread communication channel."));
+#endif
+        }
+    }
   return ret;
 }
 
@@ -4746,16 +4831,6 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		_("MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n"));
-#endif
-      goto free_and_fail;
-    }
-
-  if ( (MHD_USE_SUSPEND_RESUME == (flags & MHD_USE_SUSPEND_RESUME)) &&
-       (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Combining MHD_USE_THREAD_PER_CONNECTION and MHD_USE_SUSPEND_RESUME is not supported.\n"));
 #endif
       goto free_and_fail;
     }
