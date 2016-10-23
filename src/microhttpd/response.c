@@ -742,6 +742,10 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     size_t avail;
     char *buf;
     MHD_socket sv[2];
+#if defined(MHD_socket_nosignal_)
+    int res1;
+    int res2;
+#endif /* MHD_socket_nosignal_ */
 
 #ifdef MHD_socket_pair_nblk_
     if (! MHD_socket_pair_nblk_ (sv))
@@ -765,6 +769,27 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif
       }
 #endif /* !MHD_socket_pair_nblk_ */
+#ifdef MHD_socket_nosignal_
+    res1 = MHD_socket_nosignal_(sv[0]);
+    res2 = MHD_socket_nosignal_(sv[1]);
+    if ( (! res1) || (! res2) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _("Failed to set SO_NOSIGPIPE on loopback sockets.\n"));
+#endif
+#ifndef MSG_NOSIGNAL
+        if (!res2)
+          {
+            /* Socketpair cannot be used. */
+            MHD_socket_close_chk_ (sv[0]);
+            MHD_socket_close_chk_ (sv[1]);
+            free (urh);
+            return MHD_NO;
+          }
+#endif /* ! MSG_NOSIGNAL */
+      }
+#endif /* MHD_socket_nosignal_ */
     if ( (! MHD_SCKT_FD_FITS_FDSET_ (sv[1],
                                      NULL)) &&
          (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
