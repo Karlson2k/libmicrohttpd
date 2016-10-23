@@ -473,9 +473,6 @@ MHD_socket_create_listen_ (int use_ipv6)
   int domain;
   MHD_socket fd;
   int cloexec_set;
-#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-  static const int on_val = 1;
-#endif
 
 #ifdef HAVE_INET6
   domain = (use_ipv6) ? PF_INET6 : PF_INET;
@@ -510,19 +507,15 @@ MHD_socket_create_listen_ (int use_ipv6)
     }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
-#if defined(OSX) && defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-  if(0 != setsockopt(fd,
-                     SOL_SOCKET,
-                     SO_NOSIGPIPE,
-                     &on_val,
-                     sizeof (on_val)))
+#ifdef MHD_socket_nosignal_
+  if(! MHD_socket_nosignal_(fd))
     {
-      int err = MHD_socket_get_error_ ();
+      const int err = MHD_socket_get_error_ ();
       MHD_socket_close_ (fd);
       MHD_socket_fset_error_ (err);
       return MHD_INVALID_SOCKET;
     }
-#endif
+#endif /* MHD_socket_nosignal_ */
   if (! cloexec_set)
     (void) MHD_socket_noninheritable_ (fd);
 

@@ -702,6 +702,18 @@ int
 MHD_socket_noninheritable_ (MHD_socket sock);
 
 
+#if defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+   static const int _MHD_socket_int_one = 1;
+/**
+ * Change socket options to no signal on remote disconnect.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+#  define MHD_socket_nosignal_(sock) \
+    (!setsockopt((sock),SOL_SOCKET,SO_NOSIGPIPE,&_MHD_socket_int_one,sizeof(_MHD_socket_int_one)))
+#endif /* SOL_SOCKET && SO_NOSIGPIPE */
+
 /**
  * Create a listen socket, with noninheritable flag if possible.
  *

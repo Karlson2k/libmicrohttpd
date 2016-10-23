@@ -1789,9 +1789,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
   unsigned int i;
   int eno;
   struct MHD_Daemon *worker;
-#if OSX
-  static int on = 1;
-#endif
 
   if (NULL != daemon->worker_pool)
     {
@@ -1832,6 +1829,24 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
+
+#ifdef MHD_socket_nosignal_
+  if (! MHD_socket_nosignal_ (client_socket))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to set SO_NOSIGPIPE on accepted socket: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
+#ifndef MSG_NOSIGNAL
+      /* Cannot use socket as it can produce SIGPIPE. */
+#ifdef ENOTSOCK
+      errno = ENOTSOCK;
+#endif /* ENOTSOCK */
+      return MHD_NO;
+#endif /* ! MSG_NOSIGNAL */
+    }
+#endif /* MHD_socket_nosignal_ */
 
 
 #ifdef HAVE_MESSAGES
@@ -1879,18 +1894,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-
-#if OSX
-#ifdef SOL_SOCKET
-#ifdef SO_NOSIGPIPE
-  setsockopt (client_socket,
-	      SOL_SOCKET,
-              SO_NOSIGPIPE,
-	      &on,
-              sizeof (on));
-#endif
-#endif
-#endif
 
   if (NULL == (connection = malloc (sizeof (struct MHD_Connection))))
     {
