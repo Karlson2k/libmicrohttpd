@@ -3691,10 +3691,12 @@ close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
 
-  MHD_connection_close_ (pos,
-                         MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+  pos->state = MHD_CONNECTION_CLOSED;
+  pos->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return; /* must let thread to the rest */
+  MHD_connection_close_ (pos,
+                         MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
   if (pos->connection_timeout == pos->daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
 		 daemon->normal_timeout_tail,
@@ -3706,7 +3708,6 @@ close_connection (struct MHD_Connection *pos)
   DLL_remove (daemon->connections_head,
 	      daemon->connections_tail,
 	      pos);
-  pos->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   DLL_insert (daemon->cleanup_head,
 	      daemon->cleanup_tail,
 	      pos);
