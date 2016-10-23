@@ -3683,6 +3683,8 @@ MHD_run (struct MHD_Daemon *daemon)
 /**
  * Close the given connection, remove it from all of its
  * DLLs and move it into the cleanup queue.
+ * @remark To be called only from thread that
+ * process daemon's select()/poll()/etc.
  *
  * @param pos connection to move to cleanup
  */

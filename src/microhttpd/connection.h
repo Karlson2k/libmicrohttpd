@@ -72,6 +72,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection);
  * has to happen even if the socket cannot be read or written to.  All
  * implementations (multithreaded, external select, internal select)
  * call this function.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response.
  *
  * @param connection connection to handle
  * @return MHD_YES if we should continue to process the
@@ -84,6 +86,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection);
 /**
  * Close the given connection and give the
  * specified termination code to the user.
+ * @remark To be called only from thread that
+ * process connection's recv(), send() and response.
  *
  * @param connection connection to close
  * @param termination_code termination reason to give

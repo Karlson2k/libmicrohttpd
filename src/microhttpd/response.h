@@ -40,15 +40,15 @@ MHD_increment_response_rc (struct MHD_Response *response);
  * We are done sending the header of a given response
  * to the client.  Now it is time to perform the upgrade
  * and hand over the connection to the application.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response. Must be called right after sending
+ * response headers.
  *
  * @param response the response that was created for an upgrade
  * @param connection the specific connection we are upgrading
  * @return #MHD_YES on success, #MHD_NO on failure (will cause
  *        connection to be closed)
  */
-// FIXME: This function will need to be called at the right place(s)
-// in the connection processing (just after we are done sending the header)
-// (for responses that have the 'upgrade_header' callback set).
 int
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection);

@@ -698,6 +698,9 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * We are done sending the header of a given response to the client.
  * Now it is time to perform the upgrade and hand over the connection
  * to the application.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response. Must be called right after sending
+ * response headers.
  *
  * @param response the response that was created for an upgrade
  * @param connection the specific connection we are upgrading

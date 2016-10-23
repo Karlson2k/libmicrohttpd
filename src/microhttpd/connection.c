@@ -492,6 +492,8 @@ need_100_continue (struct MHD_Connection *connection)
 /**
  * Close the given connection and give the
  * specified termination code to the user.
+ * @remark To be called only from thread that
+ * process connection's recv(), send() and response.
  *
  * @param connection connection to close
  * @param termination_code termination reason to give
@@ -2563,6 +2565,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 /**
  * Clean up the state of the given connection and move it into the
  * clean up queue for final disposal.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response.
  *
  * @param connection handle for the connection to clean up
  */
@@ -2613,6 +2617,8 @@ cleanup_connection (struct MHD_Connection *connection)
 /**
  * This function was created to handle per-connection processing that
  * has to happen even if the socket cannot be read or written to.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response.
  *
  * @param connection connection to handle
  * @return #MHD_YES if we should continue to process the
