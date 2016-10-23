@@ -501,6 +501,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
                        enum MHD_RequestTerminationCode termination_code)
 {
   struct MHD_Daemon *daemon;
+  struct MHD_Response * const resp = connection->response;
 
   daemon = connection->daemon;
   if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
@@ -508,6 +509,11 @@ MHD_connection_close_ (struct MHD_Connection *connection,
               SHUT_WR);
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+  if (NULL != resp)
+    {
+      connection->response = NULL;
+      MHD_destroy_response (resp);
+    }
   if ( (NULL != daemon->notify_completed) &&
        (MHD_YES == connection->client_aware) )
     daemon->notify_completed (daemon->notify_completed_cls,
@@ -2892,6 +2898,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                   continue;
                 }
               connection->state = MHD_CONNECTION_UPGRADE;
+              /* Response is not required anymore for this conectnion. */
+              if (NULL != connection->response)
+                {
+                  struct MHD_Response * const resp_clr = connection->response;
+                  connection->response = NULL;
+                  MHD_destroy_response (resp_clr);
+                }
               continue;
             }
           if (MHD_NO != socket_flush_possible (connection))
