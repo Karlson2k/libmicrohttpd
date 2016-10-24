@@ -85,6 +85,16 @@ MHD_connection_handle_idle (struct MHD_Connection *connection);
 
 
 /**
+ * Mark connection as "closed".
+ * @remark To be called from any thread.
+ *
+ * @param connection connection to close
+ */
+void
+MHD_connection_mark_closed_ (struct MHD_Connection *connection);
+
+
+/**
  * Close the given connection and give the
  * specified termination code to the user.
  * @remark To be called only from thread that

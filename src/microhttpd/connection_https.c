@@ -152,8 +152,6 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
       break;
       /* close connection if necessary */
     case MHD_CONNECTION_CLOSED:
-      gnutls_bye (connection->tls_session,
-                  GNUTLS_SHUT_RDWR);
       return MHD_connection_handle_idle (connection);
     default:
       if ( (0 != gnutls_record_check_pending (connection->tls_session)) &&
@@ -181,6 +179,24 @@ MHD_set_https_callbacks (struct MHD_Connection *connection)
   connection->read_handler = &MHD_tls_connection_handle_read;
   connection->write_handler = &MHD_tls_connection_handle_write;
   connection->idle_handler = &MHD_tls_connection_handle_idle;
+}
+
+
+/**
+ * Initiate shutdown of TLS layer of connection.
+ *
+ * @param connection to use
+ * @return #MHD_YES if succeed, #MHD_NO otherwise.
+ */
+int
+MHD_tls_connection_shutdown (struct MHD_Connection *connection)
+{
+  if (MHD_NO != connection->tls_closed)
+    return MHD_NO;
+
+  connection->tls_closed = MHD_YES;
+  return (GNUTLS_E_SUCCESS == gnutls_bye(connection->tls_session, GNUTLS_SHUT_WR)) ?
+      MHD_YES : MHD_NO;
 }
 
 /* end of connection_https.c */

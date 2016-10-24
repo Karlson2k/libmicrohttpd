@@ -36,6 +36,9 @@
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
 #include "mhd_itc.h"
+#ifdef HTTPS_SUPPORT
+#include "connection_https.h"
+#endif /* HTTPS_SUPPORT */
 
 
 /**
@@ -491,6 +494,41 @@ need_100_continue (struct MHD_Connection *connection)
 
 
 /**
+ * Mark connection as "closed".
+ * @remark To be called from any thread.
+ *
+ * @param connection connection to close
+ */
+void
+MHD_connection_mark_closed_ (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon * const daemon = connection->daemon;
+
+  connection->state = MHD_CONNECTION_CLOSED;
+  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+  if (0 == (daemon->options & MHD_USE_EPOLL_TURBO))
+    {
+#ifdef HTTPS_SUPPORT
+      /* For TLS connection use shutdown of TLS layer
+       * and do not shutdown TCP socket. This give more
+       * chances to send TLS closure data to remote side.
+       * Closure of TLS layer will be interpreted by
+       * remote side as end of transmission. */
+      if (0 != (daemon->options & MHD_USE_TLS))
+        {
+          if (MHD_NO == MHD_tls_connection_shutdown(connection))
+            shutdown (connection->socket_fd,
+                      SHUT_WR);
+        }
+      else /* Combined with next 'shutdown()'. */
+#endif /* HTTPS_SUPPORT */
+      shutdown (connection->socket_fd,
+                SHUT_WR);
+    }
+}
+
+
+/**
  * Close the given connection and give the
  * specified termination code to the user.
  * @remark To be called only from thread that
@@ -507,11 +545,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   struct MHD_Response * const resp = connection->response;
 
   daemon = connection->daemon;
-  if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
-    shutdown (connection->socket_fd,
-              SHUT_WR);
-  connection->state = MHD_CONNECTION_CLOSED;
-  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+  MHD_connection_mark_closed_ (connection);
   if (NULL != resp)
     {
       connection->response = NULL;

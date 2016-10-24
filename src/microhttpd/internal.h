@@ -911,6 +911,11 @@ struct MHD_Connection
    * even though the socket is not?
    */
   int tls_read_ready;
+
+  /**
+   * TLS layer was shut down?
+   */
+  int tls_closed;
 #endif
 
   /**

@@ -3569,7 +3569,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
           struct MHD_UpgradeResponseHandle * const urh = ueh->urh;
 
           /* Each MHD_UpgradeResponseHandle can be processed two times:
-           * one for TLS data and one for socketpair data.
+           * one time for TLS data and one time for socketpair data.
            * If forwarding was finished on first time, second time must
            * be skipped as urh must not be used anymore. */
           if (MHD_NO != urh->clean_ready)
@@ -3915,10 +3915,11 @@ close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
 
-  pos->state = MHD_CONNECTION_CLOSED;
-  pos->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    return; /* must let thread to the rest */
+    {
+      MHD_connection_mark_closed_ (pos);
+      return; /* must let thread to do the rest */
+    }
   MHD_connection_close_ (pos,
                          MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
   if (pos->connection_timeout == pos->daemon->connection_timeout)
