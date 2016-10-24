@@ -843,14 +843,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     urh->out_buffer_size = avail - urh->in_buffer_size;
     urh->in_buffer = buf;
     urh->out_buffer = &buf[urh->in_buffer_size];
-    /* hand over internal socket to application */
-    response->upgrade_handler (response->upgrade_handler_cls,
-                               connection,
-                               connection->client_context,
-                               connection->read_buffer,
-                               rbo,
-                               urh->app.socket,
-                               urh);
 #ifdef EPOLL_SUPPORT
     /* Launch IO processing by the event loop */
     if (0 != (daemon->options & MHD_USE_EPOLL))
@@ -908,10 +900,6 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif /* EPOLL_SUPPORT */
     if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
       {
-        /* As far as MHD's event loops are concerned, this connection
-           is suspended; it will be resumed once we are done in the
-           #MHD_upgrade_action() function */
-        MHD_suspend_connection (connection);
         /* This takes care of further processing for most event loops:
            simply add to DLL for bi-direcitonal processing */
         DLL_insert (daemon->urh_head,
@@ -920,20 +908,18 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         /* Keep reference for later removal from the DLL */
         connection->urh = urh;
       }
-    else
-      {
-        /* Our caller will set 'connection->state' to
-           MHD_CONNECTION_UPGRADE, thereby triggering the main method
-           of the thread to switch to bi-directional forwarding. */
-        connection->urh = urh;
-      }
-    return MHD_YES;
   }
-  urh->app.socket = MHD_INVALID_SOCKET;
-  urh->mhd.socket = MHD_INVALID_SOCKET;
+  else
+    {
+      urh->app.socket = MHD_INVALID_SOCKET;
+      urh->mhd.socket = MHD_INVALID_SOCKET;
+    }
 #endif
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
     {
+      /* Our caller will set 'connection->state' to
+         MHD_CONNECTION_UPGRADE, thereby triggering the main method
+         of the thread to switch to bi-directional forwarding or exit. */
       connection->urh = urh;
     }
   else
@@ -943,12 +929,14 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
          #MHD_upgrade_action() function */
       MHD_suspend_connection (connection);
     }
+  /* hand over socket to application */
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,
                              connection->client_context,
                              connection->read_buffer,
                              rbo,
-                             connection->socket_fd,
+                             (0 == (daemon->options & MHD_USE_TLS) ) ?
+                             connection->socket_fd : urh->app.socket,
                              urh);
   return MHD_YES;
 }
