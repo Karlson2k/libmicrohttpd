@@ -1710,14 +1710,8 @@ thread_main_handle_connection (void *data)
 #endif
       if (MHD_CONNECTION_UPGRADE == con->state)
         {
-          thread_main_connection_upgrade (con);
-#if HTTPS_SUPPORT
-          if (0 != (daemon->options & MHD_USE_TLS) )
-            break;
-#endif
-
-          /* skip usual clean up EXCEPT for the completion
-             notification (which must be done in this thread)! */
+          /* Normal HTTP processing is finished,
+           * notify application. */
           if ( (NULL != daemon->notify_completed) &&
                (MHD_YES == con->client_aware) )
             daemon->notify_completed (daemon->notify_completed_cls,
@@ -1726,6 +1720,14 @@ thread_main_handle_connection (void *data)
                                       MHD_REQUEST_TERMINATED_COMPLETED_OK);
           con->client_aware = MHD_NO;
 
+          thread_main_connection_upgrade (con);
+#if HTTPS_SUPPORT
+          if (0 != (daemon->options & MHD_USE_TLS) )
+            break;
+#endif
+
+          /* skip usual clean up EXCEPT for the completion
+             notification (which must be done in this thread)! */
           return (MHD_THRD_RTRN_TYPE_) 0;
         }
     }
