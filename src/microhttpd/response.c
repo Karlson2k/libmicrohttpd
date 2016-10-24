@@ -21,6 +21,7 @@
  * @brief  Methods for managing response objects
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #define MHD_NO_DEPRECATION 1
@@ -626,66 +627,41 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                     enum MHD_UpgradeAction action,
                     ...)
 {
-  struct MHD_Connection *connection = urh->connection;
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Connection *connection;
+  struct MHD_Daemon *daemon;
+  if (NULL == urh)
+    return MHD_NO;
+  connection = urh->connection;
+
+  /* Precaution checks on external data. */
+  if (NULL == connection)
+    return MHD_NO;
+  daemon = connection->daemon;
+  if (NULL == daemon)
+    return MHD_NO;
 
   switch (action)
   {
   case MHD_UPGRADE_ACTION_CLOSE:
+    if (MHD_YES == urh->was_closed)
+      return MHD_NO; /* Already closed. */
+
     /* transition to special 'closed' state for start of cleanup */
+    urh->was_closed = MHD_YES;
     connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
+    /* As soon as connection will be marked with BOTH
+     * 'urh->was_closed' AND 'urh->clean_ready', it will
+     * be moved to cleanup list by MHD_resume_connection(). */
+    MHD_resume_connection (connection);
 #if HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
       {
         /* signal that app is done by shutdown() of 'app' socket */
+        /* Application will not use anyway this socket after this command. */
         shutdown (urh->app.socket,
                   SHUT_RDWR);
       }
-#endif
-#if HTTPS_SUPPORT
-    if (0 != (daemon->options & MHD_USE_TLS) )
-      {
-        urh->was_closed = MHD_YES;
-        /* connection and urh cleanup will be done as soon as outgoing
-         * data will be sent and 'was_closed' is detected */
-        return MHD_YES;
-      }
-#endif
-    /* Application is done with this connection, tear it down! */
-    if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
-      {
-        /* need to finish connection clean up */
-        MHD_cleanup_upgraded_connection_ (connection);
-        if (MHD_CONNECTION_IN_CLEANUP != connection->state)
-          {
-#if DEBUG_CLOSE
-#ifdef HAVE_MESSAGES
-            MHD_DLOG (connection->daemon,
-                      _("Processing thread terminating. Closing connection\n"));
-#endif
-#endif
-            if (MHD_CONNECTION_CLOSED != connection->state)
-              MHD_connection_close_ (connection,
-                                     MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
-            connection->idle_handler (connection);
-          }
-        if (NULL != connection->response)
-          {
-            MHD_destroy_response (connection->response);
-            connection->response = NULL;
-          }
-
-        if (MHD_INVALID_SOCKET != connection->socket_fd)
-          {
-            shutdown (connection->socket_fd,
-                      SHUT_WR);
-            MHD_socket_close_chk_ (connection->socket_fd);
-            connection->socket_fd = MHD_INVALID_SOCKET;
-          }
-        return MHD_YES;
-      }
-    /* 'upgraded' resources are not needed anymore - cleanup now */
-    MHD_cleanup_upgraded_connection_ (connection);
+#endif /* HTTPS_SUPPORT */
     return MHD_YES;
   default:
     /* we don't understand this one */
@@ -905,30 +881,25 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
         DLL_insert (daemon->urh_head,
                     daemon->urh_tail,
                     urh);
-        /* Keep reference for later removal from the DLL */
-        connection->urh = urh;
       }
+    /* In thread-per-connection mode, thread will switch to forwarding once
+     * connection.urh is not NULL and connection.state == MHD_CONNECTION_UPGRADE.
+     */
   }
   else
     {
       urh->app.socket = MHD_INVALID_SOCKET;
       urh->mhd.socket = MHD_INVALID_SOCKET;
+      /* Non-TLS connection do not hold any additional resources. */
+      urh->clean_ready = MHD_YES;
     }
 #endif
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
-    {
-      /* Our caller will set 'connection->state' to
-         MHD_CONNECTION_UPGRADE, thereby triggering the main method
-         of the thread to switch to bi-directional forwarding or exit. */
-      connection->urh = urh;
-    }
-  else
-    {
-      /* As far as MHD's event loops are concerned, this connection is
-         suspended; it will be resumed once we are done in the
-         #MHD_upgrade_action() function */
-      MHD_suspend_connection (connection);
-    }
+  connection->urh = urh;
+  /* As far as MHD's event loops are concerned, this connection is
+     suspended; it will be resumed once application is done by the
+     #MHD_upgrade_action() function */
+  MHD_suspend_connection (connection);
+
   /* hand over socket to application */
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,

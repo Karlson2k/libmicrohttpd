@@ -1056,8 +1056,37 @@ struct MHD_UpgradeResponseHandle
   /**
    * Set to #MHD_YES after the application finished with the socket
    * by #MHD_UPGRADE_ACTION_CLOSE.
+   *
+   * When BOTH @e was_closed (changed by command from application)
+   * AND @e clean_ready (changed internally by MHD) are set to
+   * #MHD_YES, function #MHD_resume_connection() will move this
+   * connection to cleanup list.
+   * @remark This flag could be changed from any thread.
    */
   int was_closed;
+
+  /**
+   * Set to #MHD_YES if connection is ready for cleanup.
+   *
+   * In TLS mode functions #MHD_connection_finish_forward_() must
+   * be called before setting this flag to #MHD_YES.
+   *
+   * In thread-per-connection mode #MHD_YES in this flag means
+   * that connection's thread exited or about to exit and will
+   * not use MHD_Connection::urh data anymore.
+   *
+   * In any mode #MHD_YES in this flag also means that
+   * MHD_Connection::urh data will not be used for socketpair
+   * forwarding and forwarding itself is finished.
+   *
+   * When BOTH @e was_closed (changed by command from application)
+   * AND @e clean_ready (changed internally by MHD) are set to
+   * #MHD_YES, function #MHD_resume_connection() will move this
+   * connection to cleanup list.
+   * @remark This flag could be changed from thread that process
+   * connection's recv(), send() and response.
+   */
+  int clean_ready;
 };
 
 
@@ -1410,11 +1439,15 @@ struct MHD_Daemon
 #if HTTPS_SUPPORT
   /**
    * Head of DLL of upgrade response handles we are processing.
+   * Used for upgraded TLS connections when thread-per-connection
+   * is not used.
    */
   struct MHD_UpgradeResponseHandle *urh_head;
 
   /**
    * Tail of DLL of upgrade response handles we are processing.
+   * Used for upgraded TLS connections when thread-per-connection
+   * is not used.
    */
   struct MHD_UpgradeResponseHandle *urh_tail;
 

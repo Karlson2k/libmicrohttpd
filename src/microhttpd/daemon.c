@@ -23,6 +23,7 @@
  * @brief  A minimal-HTTP server library
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include "mhd_threads.h"
@@ -688,6 +689,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               fd_setsize)) )
     return MHD_NO;
   if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+       (MHD_NO == urh->was_closed) &&
        (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               ws,
@@ -695,6 +697,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               fd_setsize)) )
     return MHD_NO;
   if ( (urh->in_buffer_used < urh->in_buffer_size) &&
+       (MHD_NO == urh->was_closed) &&
        (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               rs,
@@ -934,73 +937,19 @@ call_handlers (struct MHD_Connection *con,
 void
 MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
-#if HTTPS_SUPPORT
-  if ( (NULL != urh) &&
-       (0 != (daemon->options & MHD_USE_TLS)) )
-    {
-      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-        DLL_remove (daemon->urh_head,
-                    daemon->urh_tail,
-                    urh);
-#if EPOLL_SUPPORT
-      if (0 != (daemon->options & MHD_USE_EPOLL))
-        {
-          /* epoll documentation suggests that closing a FD
-             automatically removes it from the epoll set; however,
-             this is not true as if we fail to do manually remove it,
-             we are still seeing an event for this fd in epoll,
-             causing grief (use-after-free...) --- at least on my
-             system. */
-          if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                              EPOLL_CTL_DEL,
-                              connection->socket_fd,
-                              NULL))
-            MHD_PANIC (_("Failed to remove FD from epoll set\n"));
-        }
-#endif /* EPOLL_SUPPORT */
-      if (MHD_INVALID_SOCKET != urh->mhd.socket)
-        {
-          /* epoll documentation suggests that closing a FD
-             automatically removes it from the epoll set; however,
-             this is not true as if we fail to do manually remove it,
-             we are still seeing an event for this fd in epoll,
-             causing grief (use-after-free...) --- at least on my
-             system. */
-#if EPOLL_SUPPORT
-          if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-               (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                                EPOLL_CTL_DEL,
-                                urh->mhd.socket,
-                                NULL)) )
-            MHD_PANIC (_("Failed to remove FD from epoll set\n"));
-#endif /* EPOLL_SUPPORT */
-          MHD_socket_close_chk_ (urh->mhd.socket);
-        }
-      if (MHD_INVALID_SOCKET != urh->app.socket)
-        MHD_socket_close_chk_ (urh->app.socket);
-    }
-#endif /* HTTPS_SUPPORT */
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* resuming the connection will indirectly close it */
-      MHD_resume_connection (connection);
-#if HTTPS_SUPPORT
-      if (0 != (daemon->options & MHD_USE_TLS))
-        {
-          gnutls_bye (connection->tls_session,
-                      GNUTLS_SHUT_RDWR);
-        }
-#endif
-    }
-  else
-    {
-      /* the thread would no longer close it */
-      MHD_connection_close_ (connection,
-                             MHD_REQUEST_TERMINATED_COMPLETED_OK);
-    }
+  /* Signal remote client the end of TLS connection by
+   * gracefully closing TLS session. */
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
+    gnutls_bye (connection->tls_session,
+                GNUTLS_SHUT_WR);
+
+  if (MHD_INVALID_SOCKET != urh->mhd.socket)
+    MHD_socket_close_chk_ (urh->mhd.socket);
+
+  if (MHD_INVALID_SOCKET != urh->app.socket)
+    MHD_socket_close_chk_ (urh->app.socket);
 
   connection->urh = NULL;
   if (NULL != urh)
@@ -1259,14 +1208,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
     }
-
-  /* cleanup connection if it was closed and all data was sent */
-  if ( (MHD_NO != urh->was_closed) &&
-       (0 == urh->out_buffer_size) &&
-       (0 == urh->out_buffer_used) )
-    {
-      MHD_cleanup_upgraded_connection_ (urh->connection);
-    }
 }
 #endif
 
@@ -1292,7 +1233,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   if ( (0 != (daemon->options & MHD_USE_TLS)) &&
       (0 == (daemon->options & MHD_USE_POLL)))
     {
-      while (MHD_CONNECTION_UPGRADE == con->state)
+      while ( (MHD_CONNECTION_UPGRADE == con->state) ||
+              (0 != urh->out_buffer_used) )
         {
           /* use select */
           fd_set rs;
@@ -1356,7 +1298,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       /* use poll() */
       const unsigned int timeout = UINT_MAX;
 
-      while (MHD_CONNECTION_UPGRADE == con->state)
+      while ( (MHD_CONNECTION_UPGRADE == con->state) ||
+              (0 != urh->out_buffer_used) )
         {
           struct pollfd p[2];
 
@@ -1410,6 +1353,10 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 #endif
   /* end HTTPS */
 #endif
+  /* TLS forwarding was finished. Cleanup socketpair. */
+  MHD_connection_finish_forward_ (con);
+  /* Do not set 'urh->clean_ready' yet as 'urh' will be used
+   * in connection thread for a little while. */
 }
 
 
@@ -1456,7 +1403,7 @@ thread_main_handle_connection (void *data)
       const unsigned int timeout = daemon->connection_timeout;
       _MHD_bool was_suspended = 0;
 
-      if (MHD_NO != con->suspended)
+      if (MHD_NO != con->suspended && NULL == con->urh)
         {
           /* Connection was suspended, wait for resume. */
           was_suspended = !0;
@@ -1721,7 +1668,11 @@ thread_main_handle_connection (void *data)
             goto exit;
 	}
 #endif
-      if (MHD_CONNECTION_UPGRADE == con->state)
+      /* Check for 'MHD_CONNECTION_UPGRADE_CLOSED' too:
+       * application can finish with "upgraded" connection
+       * before this thread process it for the first time. */
+      if ( (MHD_CONNECTION_UPGRADE == con->state) ||
+           (MHD_CONNECTION_UPGRADE_CLOSED == con->state) )
         {
           /* Normal HTTP processing is finished,
            * notify application. */
@@ -1734,13 +1685,17 @@ thread_main_handle_connection (void *data)
           con->client_aware = MHD_NO;
 
           thread_main_connection_upgrade (con);
-#if HTTPS_SUPPORT
-          if (0 != (daemon->options & MHD_USE_TLS) )
-            break;
-#endif
+          /* MHD_connection_finish_forward_() was called by thread_main_connection_upgrade(). */
 
-          /* skip usual clean up EXCEPT for the completion
-             notification (which must be done in this thread)! */
+          /* "Upgraded" data will not be used in this thread from this point. */
+          con->urh->clean_ready = MHD_YES;
+          /* If 'urh->was_closed' set to MHD_YES, connection will be
+           * moved immediately to cleanup list. Otherwise connection
+           * will stay in suspended list until 'urh' will be marked
+           * with 'was_closed' by application. */
+          MHD_resume_connection(con);
+
+          /* skip usual clean up  */
           return (MHD_THRD_RTRN_TYPE_) 0;
         }
     }
@@ -2459,6 +2414,8 @@ MHD_resume_connection (struct MHD_Connection *connection)
 /**
  * Run through the suspended connections and move any that are no
  * longer suspended back to the active state.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  *
  * @param daemon daemon context
  * @return #MHD_YES if a connection was actually resumed
@@ -2490,40 +2447,55 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   while (NULL != (pos = next))
     {
       next = pos->next;
-      if (MHD_NO == pos->resuming)
+      if ( (MHD_NO == pos->resuming) ||
+           ((NULL != pos->urh) &&
+            ((MHD_NO == pos->urh->was_closed) || (MHD_NO == pos->urh->clean_ready))) )
         continue;
       ret = MHD_YES;
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
-      DLL_insert (daemon->connections_head,
-                  daemon->connections_tail,
-                  pos);
-      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      if (NULL == pos->urh)
         {
-          if (pos->connection_timeout == daemon->connection_timeout)
-            XDLL_insert (daemon->normal_timeout_head,
-                         daemon->normal_timeout_tail,
-                         pos);
-          else
-            XDLL_insert (daemon->manual_timeout_head,
-                         daemon->manual_timeout_tail,
-                         pos);
-        }
+          DLL_insert (daemon->connections_head,
+                      daemon->connections_tail,
+                      pos);
+          if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+            {
+              if (pos->connection_timeout == daemon->connection_timeout)
+                XDLL_insert (daemon->normal_timeout_head,
+                             daemon->normal_timeout_tail,
+                             pos);
+              else
+                XDLL_insert (daemon->manual_timeout_head,
+                             daemon->manual_timeout_tail,
+                             pos);
+            }
 #ifdef EPOLL_SUPPORT
-      if (0 != (daemon->options & MHD_USE_EPOLL))
-        {
-          if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-            MHD_PANIC ("Resumed connection was already in EREADY set\n");
-          /* we always mark resumed connections as ready, as we
-             might have missed the edge poll event during suspension */
-          EDLL_insert (daemon->eready_head,
-                       daemon->eready_tail,
-                       pos);
-          pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-          pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
-        }
+          if (0 != (daemon->options & MHD_USE_EPOLL))
+            {
+              if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+                MHD_PANIC ("Resumed connection was already in EREADY set\n");
+              /* we always mark resumed connections as ready, as we
+                 might have missed the edge poll event during suspension */
+              EDLL_insert (daemon->eready_head,
+                           daemon->eready_tail,
+                           pos);
+              pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+              pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
+            }
 #endif
+        }
+      else
+        {
+          /* Data forwarding was finished (for TLS connections) AND
+           * application was closed upgraded connection.
+           * Insert connection into cleanup list. */
+          DLL_insert (daemon->cleanup_head,
+                      daemon->cleanup_tail,
+                      pos);
+
+        }
       pos->suspended = MHD_NO;
       pos->resuming = MHD_NO;
     }
@@ -2735,6 +2707,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
  * Free resources associated with all closed connections.
  * (destroy responses, free buffers, etc.).  All closed
  * connections are kept in the "cleanup" doubly-linked list.
+ * @remark To be called only from thread that
+ * process daemon's select()/poll()/etc.
  *
  * @param daemon daemon to clean up
  */
@@ -2758,6 +2732,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	   (MHD_NO == pos->thread_joined) &&
            (! MHD_join_thread_ (pos->pid)) )
         MHD_PANIC (_("Failed to join a thread\n"));
+      if (NULL != pos->urh)
+        MHD_cleanup_upgraded_connection_ (pos);
       MHD_pool_destroy (pos->pool);
 #if HTTPS_SUPPORT
       if (NULL != pos->tls_session)
@@ -3014,6 +2990,17 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                       write_fd_set);
       /* call generic forwarding function for passing data */
       process_urh (urh);
+      /* Finished forwarding? */
+      if ( (0 == urh->in_buffer_size) &&
+           (0 == urh->out_buffer_size) &&
+           (0 == urh->in_buffer_used) &&
+           (0 == urh->out_buffer_used) )
+        {
+          MHD_connection_finish_forward_ (urh->connection);
+          urh->clean_ready = MHD_YES;
+          /* Resuming will move connection to cleanup list. */
+          MHD_resume_connection(urh->connection);
+        }
     }
 #endif
   MHD_cleanup_connections (daemon);
@@ -3367,28 +3354,45 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       {
         if (i >= num_connections)
           break; /* connection list changed somehow, retry later ... */
+
+        /* Get next connection here as connection can be removed
+         * from 'daemon->urh_head' list. */
         urhn = urh->next;
-        if (p[poll_server+i].fd != urh->connection->socket_fd)
-          continue; /* fd mismatch, something else happened, retry later ... */
-        if (0 != (p[poll_server+i].revents & POLLIN))
-          urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-        if (0 != (p[poll_server+i].revents & POLLOUT))
-          urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-        i++;
-        if (p[poll_server+i].fd != urh->mhd.socket)
+        /* Check for fd mismatch. FIXME: required for safety? */
+        if (p[poll_server+i].fd == urh->connection->socket_fd)
           {
-            /* fd mismatch, something else happened, retry later ... */
-            /* may still be able to do something based on updates
-               to socket_fd availability */
-            process_urh (urh);
-            continue;
+            if (0 != (p[poll_server+i].revents & POLLIN))
+              urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
+            if (0 != (p[poll_server+i].revents & POLLOUT))
+              urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
           }
-        if (0 != (p[poll_server+i].revents & POLLIN))
-          urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-        if (0 != (p[poll_server+i].revents & POLLOUT))
-          urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+        i++;
+        /* Check for fd mismatch. FIXME: required for safety? */
+        if (p[poll_server+i].fd == urh->mhd.socket)
+          {
+            if (0 != (p[poll_server+i].revents & POLLIN))
+              urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+            if (0 != (p[poll_server+i].revents & POLLOUT))
+              urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+          }
         i++;
         process_urh (urh);
+        /* Finished forwarding? */
+        if ( (0 == urh->in_buffer_size) &&
+             (0 == urh->out_buffer_size) &&
+             (0 == urh->in_buffer_used) &&
+             (0 == urh->out_buffer_used) )
+          {
+            /* MHD_connection_finish_forward_() will remove connection from
+             * 'daemon->urh_head' list. */
+            MHD_connection_finish_forward_ (urh->connection);
+            urh->clean_ready = MHD_YES;
+            /* If 'urh->was_closed' set to MHD_YES, connection will be
+             * moved immediately to cleanup list. Otherwise connection
+             * will stay in suspended list until 'urh' will be marked
+             * with 'was_closed' by application. */
+            MHD_resume_connection(urh->connection);
+          }
       }
 #endif
     /* handle 'listen' FD */
@@ -3530,12 +3534,11 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 {
   struct epoll_event events[MAX_EVENTS];
   int num_events;
-  unsigned int i;
-  unsigned int j;
 
   num_events = MAX_EVENTS;
   while (MAX_EVENTS == num_events)
     {
+      unsigned int i;
       /* update event masks */
       num_events = epoll_wait (daemon->epoll_upgrade_fd,
 			       events,
@@ -3555,35 +3558,8 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 	}
       for (i=0;i<(unsigned int) num_events;i++)
 	{
-          struct UpgradeEpollHandle *ueh = events[i].data.ptr;
-          struct MHD_UpgradeResponseHandle *urh;
-
-          if (NULL == ueh)
-            continue; /* was killed, see below */
-          urh = ueh->urh;
-
-          /* In case we get two events for the same upgrade handle,
-             squash them together (otherwise the first one may
-             cause us to free the 'urh', and the second one then
-             causes a use-after-free).  */
-          for (j=i+1;j< (unsigned int) num_events;j++)
-            {
-              struct UpgradeEpollHandle *uehj = events[j].data.ptr;
-              struct MHD_UpgradeResponseHandle *urhj;
-
-              if (NULL == uehj)
-                continue; /* was killed, see below */
-              urhj = uehj->urh;
-
-              if (urh == urhj) /* yep, indeed the same! */
-                {
-                  if (0 != (events[j].events & EPOLLIN))
-                    uehj->celi |= MHD_EPOLL_STATE_READ_READY;
-                  if (0 != (events[j].events & EPOLLOUT))
-                    uehj->celi |= MHD_EPOLL_STATE_WRITE_READY;
-                }
-              events[j].data.ptr = NULL; /* kill this one */
-            }
+          struct UpgradeEpollHandle * const ueh = events[i].data.ptr;
+          struct MHD_UpgradeResponseHandle * const urh = ueh->urh;
 
           /* Update our state based on what is ready according to epoll() */
           if (0 != (events[i].events & EPOLLIN))
@@ -3591,8 +3567,21 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
           if (0 != (events[i].events & EPOLLOUT))
             ueh->celi |= MHD_EPOLL_STATE_WRITE_READY;
 
-          /* shuffle data based on buffers and FD readyness */
           process_urh (urh);
+          /* Finished forwarding? */
+          if ( (0 == urh->in_buffer_size) &&
+               (0 == urh->out_buffer_size) &&
+               (0 == urh->in_buffer_used) &&
+               (0 == urh->out_buffer_used) )
+            {
+              MHD_connection_finish_forward_ (urh->connection);
+              urh->clean_ready = MHD_YES;
+              /* If 'urh->was_closed' set to MHD_YES, connection will be
+               * moved immediately to cleanup list. Otherwise connection
+               * will stay in suspended list until 'urh' will be marked
+               * with 'was_closed' by application. */
+              MHD_resume_connection(urh->connection);
+            }
         }
     }
   return MHD_YES;
@@ -5403,18 +5392,23 @@ close_all_connections (struct MHD_Daemon *daemon)
 #ifdef HTTPS_SUPPORT
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
+  const _MHD_bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
+  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
 #endif /* HTTPS_SUPPORT */
 
+#ifdef HTTPS_SUPPORT
   /* give upgraded HTTPS connections a chance to finish */
-#if HTTPS_SUPPORT
+  /* 'daemon->urh_head' is not used in thread-per-connection mode. */
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
       urhn = urh->next;
       /* call generic forwarding function for passing data
-         with chance to detect that application is done;
-         fake read readyness just to be sure. */
-      urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+         with chance to detect that application is done. */
       process_urh (urh);
+      MHD_connection_finish_forward_ (urh->connection);
+      urh->clean_ready = MHD_YES;
+      /* Resuming will move connection to cleanup list. */
+      MHD_resume_connection(urh->connection);
     }
 #endif
 
@@ -5431,6 +5425,23 @@ close_all_connections (struct MHD_Daemon *daemon)
      traverse DLLs in peace... */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#ifdef HTTPS_SUPPORT
+  if (used_tls && used_thr_p_c)
+    {
+      struct MHD_Connection * susp;
+
+      susp = daemon->suspended_connections_head;
+      while (NULL != susp)
+        {
+          if (NULL == susp->urh) /* "Upgraded" connection? */
+            MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
+          else if (MHD_NO == susp->urh->clean_ready)
+            shutdown (urh->app.socket, SHUT_RDWR); /* Wake thread by shutdown of app socket. */
+          susp = susp->next;
+        }
+    }
+  else /* This 'else' is combined with next 'if'. */
+#endif /* HTTPS_SUPPORT */
   if (NULL != daemon->suspended_connections_head)
     MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
@@ -5465,6 +5476,17 @@ close_all_connections (struct MHD_Daemon *daemon)
         pos = pos->next;
       }
     }
+
+#ifdef HTTPS_SUPPORT
+  /* Finished threads with "upgraded" connections need to be moved
+   * to cleanup list by resume_suspended_connections(). */
+  if (used_tls && used_thr_p_c)
+    {
+      daemon->resuming = MHD_YES; /* Force check for pending resume. */
+      resume_suspended_connections (daemon);
+    }
+#endif /* HTTPS_SUPPORT */
+
   /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_head))
   {

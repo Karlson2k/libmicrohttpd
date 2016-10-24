@@ -60,9 +60,8 @@ test_upgrade (int flags,
   struct sockaddr_in sa;
 
   done = 0;
-  if (0 == (flags & MHD_USE_THREAD_PER_CONNECTION))
-    flags |= MHD_USE_SUSPEND_RESUME;
-  d = MHD_start_daemon (flags | MHD_USE_DEBUG,
+
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,

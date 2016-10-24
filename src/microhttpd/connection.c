@@ -22,6 +22,7 @@
  * @brief  Methods for managing connections
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "internal.h"
@@ -523,6 +524,63 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 			      &connection->client_context,
 			      termination_code);
   connection->client_aware = MHD_NO;
+}
+
+
+/**
+ * Stop TLS forwarding on upgraded connection and
+ * reflect remote disconnect state to socketpair.
+ * @remark In thread-per-connection mode this function
+ * can be called from any thread, in other modes this
+ * function must be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param connection the upgraded connection
+ */
+void
+MHD_connection_finish_forward_ (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_UpgradeResponseHandle *urh = connection->urh;
+
+  if (0 == (daemon->options & MHD_USE_TLS))
+    return; /* Nothing to do with non-TLS connection. */
+
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    DLL_remove (daemon->urh_head,
+                daemon->urh_tail,
+                urh);
+#if EPOLL_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                        EPOLL_CTL_DEL,
+                        connection->socket_fd,
+                        NULL)) )
+    {
+      MHD_PANIC (_("Failed to remove FD from epoll set\n"));
+    }
+#endif /* EPOLL_SUPPORT */
+  if (MHD_INVALID_SOCKET != urh->mhd.socket)
+    {
+#if EPOLL_SUPPORT
+      if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+           (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                            EPOLL_CTL_DEL,
+                            urh->mhd.socket,
+                            NULL)) )
+        {
+          MHD_PANIC (_("Failed to remove FD from epoll set\n"));
+        }
+#endif /* EPOLL_SUPPORT */
+      /* Reflect remote disconnect to application by breaking
+       * socketpair connection. */
+      shutdown (urh->mhd.socket, SHUT_RDWR);
+    }
+  /* Socketpair sockets will remain open as they will be
+   * used with MHD_UPGRADE_ACTION_CLOSE. They will be
+   * closed by MHD_cleanup_upgraded_connection_() during
+   * connection's final cleanup.
+   */
 }
 
 
@@ -3080,8 +3138,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  cleanup_connection (connection);
 	  return MHD_NO;
         case MHD_CONNECTION_UPGRADE:
-        case MHD_CONNECTION_UPGRADE_CLOSED:
           return MHD_YES; /* keep open */
+        case MHD_CONNECTION_UPGRADE_CLOSED:
+          return MHD_YES; /* "Upgraded" connection should be closed in special way. */
         default:
           EXTRA_CHECK (0);
           break;

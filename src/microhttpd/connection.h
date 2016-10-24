@@ -22,6 +22,7 @@
  * @brief  Methods for managing connections
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef CONNECTION_H
@@ -95,6 +96,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection);
 void
 MHD_connection_close_ (struct MHD_Connection *connection,
                        enum MHD_RequestTerminationCode termination_code);
+
+
+/**
+ * Stop TLS forwarding on upgraded connection and
+ * reflect remote disconnect state to socketpair.
+ * @param connection the upgraded connection
+ */
+void
+MHD_connection_finish_forward_ (struct MHD_Connection *connection);
 
 
 #ifdef EPOLL_SUPPORT
