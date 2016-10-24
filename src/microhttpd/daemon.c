@@ -2422,6 +2422,8 @@ MHD_resume_connection (struct MHD_Connection *connection)
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   connection->resuming = MHD_YES;
   daemon->resuming = MHD_YES;
+  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "r")) )
     {
@@ -2430,8 +2432,6 @@ MHD_resume_connection (struct MHD_Connection *connection)
                 _("Failed to signal resume via inter-thread communication channel."));
 #endif
     }
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
