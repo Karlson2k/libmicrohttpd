@@ -90,6 +90,17 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
+/* Forward declarations. */
+/**
+ * Close all connections for the daemon.
+ * Must only be called when MHD_Daemon::shutdown was set to MHD_YES.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param daemon daemon to close down
+ */
+static void
+close_all_connections (struct MHD_Daemon *daemon);
 
 /**
  * Default implementation of the panic function,
@@ -5510,104 +5521,100 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
   if (0 != (MHD_USE_SUSPEND_RESUME & daemon->options))
     resume_suspended_connections (daemon);
+
   daemon->shutdown = MHD_YES;
   fd = daemon->socket_fd;
   daemon->socket_fd = MHD_INVALID_SOCKET;
-  /* Prepare workers for shutdown */
-  if (NULL != daemon->worker_pool)
-    {
-      /* #MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
-      for (i = 0; i < daemon->worker_pool_size; ++i)
-	{
-	  daemon->worker_pool[i].shutdown = MHD_YES;
-	  daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
-#ifdef EPOLL_SUPPORT
-	  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-	       (-1 != daemon->worker_pool[i].epoll_fd) &&
-	       (MHD_INVALID_SOCKET == fd) )
-	    epoll_shutdown (&daemon->worker_pool[i]);
-#endif
-	}
-    }
-  if (MHD_ITC_IS_VALID_(daemon->itc))
-    {
-      if (! MHD_itc_activate_ (daemon->itc, "e"))
-	MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
-    }
-#ifdef HAVE_LISTEN_SHUTDOWN
-  else
-    {
-      /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
-      if ( (MHD_INVALID_SOCKET != fd) &&
-           (0 == (daemon->options & MHD_USE_ITC)) )
-	(void) shutdown (fd,
-                         SHUT_RDWR);
-    }
-#endif
-#ifdef EPOLL_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (-1 != daemon->epoll_fd) &&
-       (MHD_INVALID_SOCKET == fd) )
-    epoll_shutdown (daemon);
-#endif
 
-#if DEBUG_CLOSE
-#ifdef HAVE_MESSAGES
-  MHD_DLOG (daemon,
-            _("MHD listen socket shutdown\n"));
-#endif
-#endif
-
-
-  /* Signal workers to stop and clean them up */
-  if (NULL != daemon->worker_pool)
+  if ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) ||
+       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
     {
-      /* MHD_USE_NO_LISTEN_SOCKET disables thread pools, hence we need to check */
-      for (i = 0; i < daemon->worker_pool_size; ++i)
-	{
-	  if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
-	    {
-	      if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
-		MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel."));
-	    }
-	  if (! MHD_join_thread_ (daemon->worker_pool[i].pid))
-            MHD_PANIC (_("Failed to join a thread\n"));
-	  MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
-#ifdef EPOLL_SUPPORT
-	  if (-1 != daemon->worker_pool[i].epoll_fd)
-	    MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_fd);
-#if HTTPS_SUPPORT
-	  if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
-	    MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
-#endif
-#endif
-          /* Individual ITCs are always used */
-          if (1)
+      /* Separate thread(s) is used for select()/poll()/etc. */
+      if (NULL != daemon->worker_pool)
+        {
+          /* Pool of workers is used.  */
+          /* Initiate shutdown process in wokers. */
+          for (i = 0; i < daemon->worker_pool_size; ++i)
             {
-              if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
+              daemon->worker_pool[i].shutdown = MHD_YES;
+              daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
+              if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
                 {
-                  MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
+                  if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
+                    MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel."));
                 }
-	    }
-	}
-      free (daemon->worker_pool);
+#ifdef HAVE_LISTEN_SHUTDOWN
+              else if (MHD_INVALID_SOCKET != fd)
+                {
+                  /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
+                  /* No problem if shutdown will be called several times for the same socket. */
+                    (void) shutdown (fd, SHUT_RDWR);
+                }
+#endif
+            }
+          /* Start harvesting. */
+          for (i = 0; i < daemon->worker_pool_size; ++i)
+            {
+              if (! MHD_join_thread_ (daemon->worker_pool[i].pid))
+                MHD_PANIC (_("Failed to join a thread\n"));
+#ifdef EPOLL_SUPPORT
+              if (-1 != daemon->worker_pool[i].epoll_fd)
+                MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_fd);
+#if HTTPS_SUPPORT
+              if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
+                MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
+#endif
+#endif
+              if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
+                MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
+              MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
+            }
+          free (daemon->worker_pool);
+        }
+      else
+        {
+          /* Single internal thread is used for select()/poll()/etc. */
+          if (MHD_ITC_IS_VALID_(daemon->itc))
+            {
+              if (! MHD_itc_activate_ (daemon->itc, "e"))
+                MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
+            }
+#ifdef HAVE_LISTEN_SHUTDOWN
+          else
+            {
+              /* fd might be MHD_INVALID_SOCKET here due to 'MHD_quiesce_daemon' */
+              if (MHD_INVALID_SOCKET != fd)
+                (void) shutdown (fd, SHUT_RDWR);
+            }
+#endif
+          if (! MHD_join_thread_ (daemon->pid))
+            {
+              MHD_PANIC (_("Failed to join a thread\n"));
+            }
+        }
     }
   else
     {
-      /* clean up master threads */
-      if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
-           ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) &&
-             (0 == daemon->worker_pool_size) ) )
-	{
-	  if (! MHD_join_thread_ (daemon->pid))
-	    {
-	      MHD_PANIC (_("Failed to join a thread\n"));
-	    }
-	}
+      /* Internal threads are not used for select()/poll()/etc. */
+      close_all_connections (daemon);
     }
-  close_all_connections (daemon);
+
   if (MHD_INVALID_SOCKET != fd)
     MHD_socket_close_chk_ (fd);
+
+  if (MHD_ITC_IS_VALID_ (daemon->itc))
+    MHD_itc_destroy_chk_ (daemon->itc);
+
+#ifdef EPOLL_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+       (-1 != daemon->epoll_fd) )
+    MHD_socket_close_chk_ (daemon->epoll_fd);
+#if HTTPS_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+       (-1 != daemon->epoll_upgrade_fd) )
+    MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
+#endif
+#endif
 
   /* TLS clean up */
 #if HTTPS_SUPPORT
@@ -5623,16 +5630,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         gnutls_certificate_free_credentials (daemon->x509_cred);
     }
 #endif
-#ifdef EPOLL_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (-1 != daemon->epoll_fd) )
-    MHD_socket_close_chk_ (daemon->epoll_fd);
-#if HTTPS_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (-1 != daemon->epoll_upgrade_fd) )
-    MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
-#endif
-#endif
 
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
@@ -5641,8 +5638,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
   MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 
-  if (MHD_ITC_IS_VALID_(daemon->itc))
-    MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
 }
 
