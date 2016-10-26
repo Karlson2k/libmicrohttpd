@@ -3944,16 +3944,11 @@ MHD_select_thread (void *cls)
       MHD_cleanup_connections (daemon);
     }
 
-  /* give resumed formerly suspended connections a chance to
-     be included in the cleanup */
-  resume_suspended_connections (daemon);
-  /* run clean up in this thread as well */
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* We did everything in this thread, so also the clean up */
-      while (NULL != (pos = daemon->connections_head))
-        close_connection (pos);
-    }
+  /* Resume any pending for resume connections, join
+   * all connection's threads (if any) and finally cleanup
+   * everything. */
+  close_all_connections (daemon);
+
   return (MHD_THRD_RTRN_TYPE_)0;
 }
 
@@ -5379,9 +5374,8 @@ thread_failed:
 
 
 /**
- * Close all connections for the daemon; must only be called after
- * all of the threads have been joined and there is no more concurrent
- * activity on the connection lists.
+ * Close all connections for the daemon.
+ * Must only be called when MHD_Daemon::shutdown was set to MHD_YES.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -5396,7 +5390,11 @@ close_all_connections (struct MHD_Daemon *daemon)
      running into the check for there not being any suspended
      connections left in case of a tight race with a recently
      resumed connection. */
-  resume_suspended_connections (daemon);
+  if (0 != (MHD_USE_SUSPEND_RESUME & daemon->options))
+    {
+      daemon->resuming = MHD_YES; /* Force check for pending resume. */
+      resume_suspended_connections (daemon);
+    }
   /* first, make sure all threads are aware of shutdown; need to
      traverse DLLs in peace... */
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -5569,7 +5567,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	    }
 	  if (! MHD_join_thread_ (daemon->worker_pool[i].pid))
             MHD_PANIC (_("Failed to join a thread\n"));
-	  close_all_connections (&daemon->worker_pool[i]);
 	  MHD_mutex_destroy_chk_ (&daemon->worker_pool[i].cleanup_connection_mutex);
 #ifdef EPOLL_SUPPORT
 	  if (-1 != daemon->worker_pool[i].epoll_fd)
