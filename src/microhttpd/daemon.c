@@ -1001,6 +1001,8 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 /**
  * Performs bi-directional forwarding on upgraded HTTPS connections
  * based on the readyness state stored in the @a urh handle.
+ * @remark To be called only from thread that process
+ * connection's recv(), send() and response.
  *
  * @param urh handle to process
  */
@@ -1261,6 +1263,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 /**
  * Main function of the thread that handles an individual connection
  * after it was "upgraded" when #MHD_USE_THREAD_PER_CONNECTION is set.
+ * @remark To be called only from thread that process
+ * connection's recv(), send() and response.
  *
  * @param con the connection this thread will handle
  */
@@ -1938,6 +1942,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  *
  * Per-IP connection limits are ignored when using this API.
  *
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).
@@ -2343,6 +2350,10 @@ internal_add_connection (struct MHD_Daemon *daemon,
  * socket leaks or lead to undefined behavior).  You must explicitly
  * resume all connections before stopping the daemon.
  *
+ * @remark In thread-per-connection mode: can be called from any thread,
+ * in any other mode: to be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
  * @param connection the connection to suspend
  */
 void
@@ -2588,6 +2599,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * Accept an incoming connection and create the MHD_Connection object for
  * it.  This function also enforces policy by way of checking with the
  * accept policy callback.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  *
  * @param daemon handle with the listen socket
  * @return #MHD_YES on success (connections denied by policy or due
@@ -2804,6 +2817,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * `select()` or `poll()` should at most block, not the timeout value set
  * for connections.  This function MUST NOT be called if MHD is
  * running with #MHD_USE_THREAD_PER_CONNECTION.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
@@ -3496,6 +3511,8 @@ MHD_poll (struct MHD_Daemon *daemon,
  * upgraded.  This requires a separate epoll() invocation as we
  * cannot use the `struct MHD_Connection` data structures for
  * the `union epoll_data` in this case.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  */
 static int
 run_epoll_for_upgrade (struct MHD_Daemon *daemon)
@@ -4557,6 +4574,8 @@ setup_epoll_fd (struct MHD_Daemon *daemon)
 /**
  * Setup epoll() FD for the daemon and initialize it to listen
  * on the listen FD.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to initialize for epoll()
  * @return #MHD_YES on success, #MHD_NO on failure
@@ -5363,6 +5382,8 @@ thread_failed:
  * Close all connections for the daemon; must only be called after
  * all of the threads have been joined and there is no more concurrent
  * activity on the connection lists.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to close down
  */
