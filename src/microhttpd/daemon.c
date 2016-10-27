@@ -4610,7 +4610,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) )
     {
-      event.events = EPOLLIN | EPOLLET;
+      event.events = EPOLLIN;
       event.data.ptr = NULL;
       event.data.fd = MHD_itc_r_fd_ (daemon->itc);
       if (0 != epoll_ctl (daemon->epoll_fd,
