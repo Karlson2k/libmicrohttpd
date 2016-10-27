@@ -3613,6 +3613,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int num_events;
   unsigned int i;
   unsigned int series_length;
+#if HTTPS_SUPPORT
+   _MHD_bool run_upgraded = 0;
+#endif
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -3724,7 +3727,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
             {
               /* activity on an upgraded connection, we process
                  those in a separate epoll() */
-              run_epoll_for_upgrade (daemon);
+              run_upgraded = !0;
               continue;
             }
 #endif
@@ -3785,6 +3788,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
             }
         }
     }
+
+  if (run_upgraded)
+    run_epoll_for_upgrade (daemon);
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
