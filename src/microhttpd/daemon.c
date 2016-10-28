@@ -5403,6 +5403,23 @@ static void
 close_all_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
+#ifdef HTTPS_SUPPORT
+  struct MHD_UpgradeResponseHandle *urh;
+  struct MHD_UpgradeResponseHandle *urhn;
+#endif /* HTTPS_SUPPORT */
+
+  /* give upgraded HTTPS connections a chance to finish */
+#if HTTPS_SUPPORT
+  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+    {
+      urhn = urh->next;
+      /* call generic forwarding function for passing data
+         with chance to detect that application is done;
+         fake read readyness just to be sure. */
+      urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+      process_urh (urh);
+    }
+#endif
 
   /* Give suspended connections a chance to resume to avoid
      running into the check for there not being any suspended
@@ -5501,26 +5518,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
   MHD_socket fd;
   unsigned int i;
-#if HTTPS_SUPPORT
-  struct MHD_UpgradeResponseHandle *urh;
-  struct MHD_UpgradeResponseHandle *urhn;
-#endif
 
   if (NULL == daemon)
     return;
 
-  /* give upgraded HTTPS connections a chance to finish */
-#if HTTPS_SUPPORT
-  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
-    {
-      urhn = urh->next;
-      /* call generic forwarding function for passing data
-         with chance to detect that application is done;
-         fake read readyness just to be sure. */
-      urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-      process_urh (urh);
-    }
-#endif
   if (0 != (MHD_USE_SUSPEND_RESUME & daemon->options))
     resume_suspended_connections (daemon);
 
