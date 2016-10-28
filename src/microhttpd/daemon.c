@@ -1770,8 +1770,9 @@ exit:
     {
       shutdown (con->socket_fd,
                 SHUT_WR);
-      MHD_socket_close_chk_ (con->socket_fd);
-      con->socket_fd = MHD_INVALID_SOCKET;
+      /* 'socket_fd' can be used in other thread to signal shutdown.
+       * To avoid data races, do not close socket here. Daemon will
+       * use more connections only after cleanup anyway. */
     }
   return (MHD_THRD_RTRN_TYPE_) 0;
 }
