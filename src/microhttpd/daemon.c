@@ -1449,9 +1449,7 @@ thread_main_handle_connection (void *data)
 #else  /* ! HAVE_POLL */
   const _MHD_bool use_poll = 0;
 #endif /* ! HAVE_POLL */
-  _MHD_bool was_suspended;
 
-  was_suspended = 0;
   while ( (MHD_YES != daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
@@ -3948,7 +3946,6 @@ static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_select_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
-  struct MHD_Connection *pos;
 
   while (MHD_YES != daemon->shutdown)
     {
