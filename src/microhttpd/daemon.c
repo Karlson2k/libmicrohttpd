@@ -972,6 +972,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   if (MHD_NO != urh->connection->daemon->shutdown)
     {
       /* Daemon shutting down, application will not receive any more data. */
+#ifdef HAVE_MESSAGES
+      if (MHD_NO == urh->was_closed)
+        {
+          MHD_DLOG (urh->connection->daemon,
+                    _("Initiated daemon shutdown while \"upgraded\" connection was not closed.\n"));
+        }
+#endif
       urh->was_closed = MHD_YES;
     }
   if (MHD_NO != urh->was_closed)
