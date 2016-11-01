@@ -3568,6 +3568,13 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
           struct UpgradeEpollHandle * const ueh = events[i].data.ptr;
           struct MHD_UpgradeResponseHandle * const urh = ueh->urh;
 
+          /* Each MHD_UpgradeResponseHandle can be processed two times:
+           * one for TLS data and one for socketpair data.
+           * If forwarding was finished on first time, second time must
+           * be skipped as urh must not be used anymore. */
+          if (MHD_NO != urh->clean_ready)
+            continue;
+
           /* Update our state based on what is ready according to epoll() */
           if (0 != (events[i].events & EPOLLIN))
             ueh->celi |= MHD_EPOLL_STATE_READ_READY;
