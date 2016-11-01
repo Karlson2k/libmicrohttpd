@@ -157,9 +157,9 @@ main (int argc,
                       2);
   error_count += res;
   if (res)
-    fprintf (stderr, "FAILED: Upgrade with internal select, return code %d.\n", res);
+    fprintf (stderr, "FAILED: Upgrade with internal select with thread pool, return code %d.\n", res);
   else if (verbose)
-    printf ("PASSED: Upgrade with internal select.\n");
+    printf ("PASSED: Upgrade with internal select with thread pool.\n");
 #ifdef HAVE_POLL
   res = test_upgrade (MHD_USE_POLL_INTERNALLY,
                       0);
