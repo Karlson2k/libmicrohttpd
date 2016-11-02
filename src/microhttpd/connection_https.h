@@ -28,7 +28,7 @@
 
 #include "internal.h"
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 /**
  * Set connection callback function to be used through out
  * the processing of this secure connection.

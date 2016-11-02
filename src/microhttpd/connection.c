@@ -1364,14 +1364,14 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 #endif
       switch (connection->state)
         {
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 	case MHD_TLS_CONNECTION_INIT:
 	  if (0 == gnutls_record_get_direction (connection->tls_session))
             connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
 	  else
             connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
 	  break;
-#endif
+#endif /* HTTPS_SUPPORT */
         case MHD_CONNECTION_INIT:
         case MHD_CONNECTION_URL_RECEIVED:
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
@@ -3324,7 +3324,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
 {
   switch (info_type)
     {
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
     case MHD_CONNECTION_INFO_CIPHER_ALGO:
       if (NULL == connection->tls_session)
 	return NULL;
@@ -3339,7 +3339,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       if (NULL == connection->tls_session)
 	return NULL;
       return (const union MHD_ConnectionInfo *) &connection->tls_session;
-#endif
+#endif /* HTTPS_SUPPORT */
     case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
       return (const union MHD_ConnectionInfo *) &connection->addr;
     case MHD_CONNECTION_INFO_DAEMON:

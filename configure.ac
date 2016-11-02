@@ -1080,7 +1080,7 @@ AC_ARG_ENABLE([https],
 if test "x$enable_https" != "xno"
 then
   AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
-          AC_DEFINE([HTTPS_SUPPORT],[1],[include HTTPS support])
+          AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
           enable_https=yes
           MSG_HTTPS="yes (using libgnutls and libgcrypt)"
           MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
@@ -1101,12 +1101,10 @@ then
                 [test "x$have_gcrypt" = "xyes"], [crypt_missing="libgnutls"],
                                                  [crypt_missing="libgrypt and libgnutls"])
           AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
-          AC_DEFINE([HTTPS_SUPPORT],[0],[no libgcrypt or libgnutls])
           enable_https=no
           MSG_HTTPS="no (lacking $crypt_missing)"
         ])
 else
-  AC_DEFINE([HTTPS_SUPPORT],[0],[disable HTTPS support])
   MSG_HTTPS="no (disabled)"
 fi
 AC_MSG_RESULT([$MSG_HTTPS])

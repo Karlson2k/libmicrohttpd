@@ -29,12 +29,12 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 #include <gnutls/gnutls.h>
 #if GNUTLS_VERSION_MAJOR >= 3
 #include <gnutls/abstract.h>
 #endif
-#endif
+#endif /* HTTPS_SUPPORT */
 #include "mhd_options.h"
 
 
@@ -889,7 +889,7 @@ struct MHD_Connection
    */
   struct MHD_UpgradeResponseHandle *urh;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 
   /**
    * State required for HTTPS/SSL/TLS support.
@@ -916,7 +916,7 @@ struct MHD_Connection
    * TLS layer was shut down?
    */
   int tls_closed;
-#endif
+#endif /* HTTPS_SUPPORT */
 
   /**
    * Is the connection suspended?
@@ -994,7 +994,7 @@ struct MHD_UpgradeResponseHandle
    */
   struct MHD_Connection *connection;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /**
    * Kept in a DLL per daemon.
    */
@@ -1369,7 +1369,7 @@ struct MHD_Daemon
    */
   int listen_socket_in_epoll;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /**
    * File descriptor associated with the #run_epoll_for_upgrade() loop.
    * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
@@ -1381,7 +1381,7 @@ struct MHD_Daemon
    * #MHD_NO if not.
    */
   int upgrade_fd_in_epoll;
-#endif
+#endif /* HTTPS_SUPPORT */
 
 #endif
 
@@ -1441,7 +1441,7 @@ struct MHD_Daemon
    */
   uint16_t port;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /**
    * Head of DLL of upgrade response handles we are processing.
    * Used for upgraded TLS connections when thread-per-connection
@@ -1523,7 +1523,7 @@ struct MHD_Daemon
    */
   unsigned int num_tls_read_ready;
 
-#endif
+#endif /* HTTPS_SUPPORT */
 
 #ifdef DAUTH_SUPPORT
 

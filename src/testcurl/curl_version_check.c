@@ -67,13 +67,13 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
   return s;
 }
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 int
 curl_uses_nss_ssl()
 {
   return (strstr(curl_version(), " NSS/") != NULL) ? 0 : -1;
 }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 /*
  * check local libcurl version matches required version
@@ -83,10 +83,10 @@ curl_check_version (const char *req_version)
 {
   const char *ver;
   const char *curl_ver;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   const char *ssl_ver;
   const char *req_ssl_ver;
-#endif
+#endif /* HTTPS_SUPPORT */
 
   int loc_major, loc_minor, loc_micro;
   int rq_major, rq_minor, rq_micro;
@@ -127,7 +127,7 @@ curl_check_version (const char *req_version)
    * enforce required gnutls/openssl version.
    * TODO use curl version string to assert use of gnutls
    */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   ssl_ver = strchr (curl_ver, ' ');
   if (ssl_ver == NULL)
     return -1;
@@ -171,6 +171,6 @@ curl_check_version (const char *req_version)
                req_ssl_ver);
       return -1;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   return 0;
 }

@@ -49,10 +49,10 @@
 #include "tsearch.h"
 #endif
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 #include "connection_https.h"
 #include <gcrypt.h>
-#endif
+#endif /* HTTPS_SUPPORT */
 
 #ifdef LINUX
 #include <sys/sendfile.h>
@@ -415,7 +415,7 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
 }
 
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 /**
  * Callback for receiving data from the socket.
  *
@@ -622,7 +622,7 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
       return -1;
     }
 }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 
 #undef MHD_get_fdset
@@ -662,7 +662,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 }
 
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 /**
  * Obtain the select() file descriptor sets for the
  * given @a urh.
@@ -743,7 +743,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
       FD_ISSET (mhd_sckt, ws))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
 }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 
 /**
@@ -844,7 +844,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 	  break;
 	}
     }
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   {
     struct MHD_UpgradeResponseHandle *urh;
 
@@ -867,7 +867,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
               _("Maximum socket in select set: %d\n"),
               *max_fd);
 #endif
-#endif
+#endif /* HTTPS_SUPPORT */
   return result;
 }
 
@@ -895,10 +895,10 @@ call_handlers (struct MHD_Connection *con,
   int had_response_before_idle;
   int ret;
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (MHD_YES == con->tls_read_ready)
     read_ready = MHD_YES;
-#endif
+#endif /* HTTPS_SUPPORT */
   if (read_ready)
     con->read_handler (con);
   if (write_ready)
@@ -957,7 +957,7 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 }
 
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 /**
  * Performs bi-directional forwarding on upgraded HTTPS connections
  * based on the readyness state stored in the @a urh handle.
@@ -1216,7 +1216,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
     }
 }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 
 /**
@@ -1231,7 +1231,7 @@ static void
 thread_main_connection_upgrade (struct MHD_Connection *con)
 {
   struct MHD_UpgradeResponseHandle *urh = con->urh;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   struct MHD_Daemon *daemon = con->daemon;
 
   /* Here, we need to bi-directionally forward
@@ -1359,7 +1359,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   /* end POLL */
 #endif
   /* end HTTPS */
-#endif
+#endif /* HTTPS_SUPPORT */
   /* TLS forwarding was finished. Cleanup socketpair. */
   MHD_connection_finish_forward_ (con);
   /* Do not set 'urh->clean_ready' yet as 'urh' will be used
@@ -1474,7 +1474,7 @@ thread_main_handle_connection (void *data)
         }
 
       tvp = NULL;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       if (MHD_YES == con->tls_read_ready)
 	{
 	  /* do not block (more data may be inside of TLS buffers waiting for us) */
@@ -1482,7 +1482,7 @@ thread_main_handle_connection (void *data)
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
-#endif
+#endif /* HTTPS_SUPPORT */
       if ( (NULL == tvp) &&
            (timeout > 0) )
 	{
@@ -2128,7 +2128,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
         }
     }
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_TLS))
     {
       connection->recv_cls = &recv_tls_adapter;
@@ -2176,7 +2176,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  gnutls_certificate_server_set_request (connection->tls_session,
 						 GNUTLS_CERT_REQUEST);
     }
-#endif
+#endif /* HTTPS_SUPPORT */
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
@@ -2742,10 +2742,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->urh)
         MHD_cleanup_upgraded_connection_ (pos);
       MHD_pool_destroy (pos->pool);
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       if (NULL != pos->tls_session)
 	gnutls_deinit (pos->tls_session);
-#endif
+#endif /* HTTPS_SUPPORT */
       daemon->connections--;
       daemon->at_limit = MHD_NO;
 
@@ -2839,7 +2839,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != daemon->num_tls_read_ready)
     {
       /* if there is any TLS connection with data ready for
@@ -2847,7 +2847,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       *timeout = 0;
       return MHD_YES;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
 
   have_timeout = MHD_NO;
   earliest_deadline = 0; /* avoid compiler warnings */
@@ -2858,11 +2858,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	  if ( (! have_timeout) ||
 	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 	  if (  (0 != (daemon->options & MHD_USE_TLS)) &&
 		(0 != gnutls_record_check_pending (pos->tls_session)) )
 	    earliest_deadline = 0;
-#endif
+#endif /* HTTPS_SUPPORT */
 	  have_timeout = MHD_YES;
 	}
     }
@@ -2874,11 +2874,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       if ( (! have_timeout) ||
 	   (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	earliest_deadline = pos->last_activity + pos->connection_timeout;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       if (  (0 != (daemon->options & MHD_USE_TLS)) &&
 	    (0 != gnutls_record_check_pending (pos->tls_session)) )
 	earliest_deadline = 0;
-#endif
+#endif /* HTTPS_SUPPORT */
       have_timeout = MHD_YES;
     }
 
@@ -2927,10 +2927,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   MHD_socket ds;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
-#endif
+#endif /* HTTPS_SUPPORT */
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
@@ -2987,7 +2987,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     }
 
   /* handle upgraded HTTPS connections */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
       urhn = urh->next;
@@ -3009,7 +3009,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
           MHD_resume_connection(urh->connection);
         }
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   MHD_cleanup_connections (daemon);
   return MHD_YES;
 }
@@ -3193,10 +3193,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   unsigned int num_connections;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
-#endif
+#endif /* HTTPS_SUPPORT */
 
   if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
        (MHD_YES == resume_suspended_connections (daemon)) )
@@ -3206,10 +3206,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   num_connections = 0;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     num_connections++;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
     num_connections += 2;
-#endif
+#endif /* HTTPS_SUPPORT */
   {
     MHD_UNSIGNED_LONG_LONG ltimeout;
     unsigned int i;
@@ -3287,7 +3287,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	  }
 	i++;
       }
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
     for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
@@ -3303,7 +3303,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
           p[poll_server+i].events |= POLLOUT;
         i++;
       }
-#endif
+#endif /* HTTPS_SUPPORT */
     if (0 == poll_server + num_connections)
       {
         free(p);
@@ -3356,7 +3356,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
                        MHD_NO);
         i++;
       }
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
     for (urh = daemon->urh_head; NULL != urh; urh = urhn)
       {
         if (i >= num_connections)
@@ -3401,7 +3401,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
             MHD_resume_connection(urh->connection);
           }
       }
-#endif
+#endif /* HTTPS_SUPPORT */
     /* handle 'listen' FD */
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
@@ -3526,7 +3526,7 @@ MHD_poll (struct MHD_Daemon *daemon,
 #define MAX_EVENTS 128
 
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 
 /**
  * Do epoll()-based processing for TLS connections that have been
@@ -3600,7 +3600,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
     }
   return MHD_YES;
 }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 
 /**
@@ -3615,9 +3615,9 @@ static int
 MHD_epoll (struct MHD_Daemon *daemon,
 	   int may_block)
 {
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   static const char *upgrade_marker = "upgrade_ptr";
-#endif
+#endif /* HTTPS_SUPPORT */
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
   struct epoll_event events[MAX_EVENTS];
@@ -3627,9 +3627,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int num_events;
   unsigned int i;
   unsigned int series_length;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
    _MHD_bool run_upgraded = 0;
-#endif
+#endif /* HTTPS_SUPPORT */
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -3656,7 +3656,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->listen_socket_in_epoll = MHD_YES;
     }
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if ( (MHD_NO == daemon->upgrade_fd_in_epoll) &&
        (-1 != daemon->epoll_upgrade_fd) )
     {
@@ -3676,7 +3676,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->upgrade_fd_in_epoll = MHD_YES;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   if ( ( (MHD_YES == daemon->listen_socket_in_epoll) &&
          (daemon->connections == daemon->connection_limit) ) ||
        (MHD_YES == daemon->at_limit) )
@@ -3736,7 +3736,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
              that this event is not about a normal connection. */
 	  if (NULL == events[i].data.ptr)
 	    continue; /* shutdown signal! */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
           if (upgrade_marker == events[i].data.ptr)
             {
               /* activity on an upgraded connection, we process
@@ -3744,7 +3744,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
               run_upgraded = !0;
               continue;
             }
-#endif
+#endif /* HTTPS_SUPPORT */
           /* UGH: we're storing pointers and fds in the same union
              here; incredibly ugly and somewhat risky, even though a
              pointer with the same numeric value as the itc.fd[0] can
@@ -4190,10 +4190,10 @@ parse_options_va (struct MHD_Daemon *daemon,
   enum MHD_OPTION opt;
   struct MHD_OptionItem *oa;
   unsigned int i;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   int ret;
   const char *pstr;
-#endif
+#endif /* HTTPS_SUPPORT */
 
   while (MHD_OPTION_END != (opt = (enum MHD_OPTION) va_arg (ap, int)))
     {
@@ -4254,7 +4254,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 	      return MHD_NO;
 	    }
           break;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_MEM_KEY:
 	  if (0 != (daemon->options & MHD_USE_TLS))
 	    daemon->https_mem_key = va_arg (ap,
@@ -4376,7 +4376,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                             gnutls_certificate_retrieve_function2 *);
           break;
 #endif
-#endif
+#endif /* HTTPS_SUPPORT */
 #ifdef DAUTH_SUPPORT
 	case MHD_OPTION_DIGEST_AUTH_RANDOM:
 	  daemon->digest_auth_rand_size = va_arg (ap,
@@ -4603,14 +4603,14 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   daemon->epoll_fd = setup_epoll_fd (daemon);
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (MHD_ALLOW_UPGRADE & daemon->options))
     {
        daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
        if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
          return MHD_NO;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
@@ -4697,10 +4697,10 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 != (flags & MHD_USE_POLL))
     return NULL;
 #endif
-#if ! HTTPS_SUPPORT
+#ifndef HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_TLS))
     return NULL;
-#endif
+#endif /* ! HTTPS_SUPPORT */
 #ifndef TCP_FASTOPEN
   if (0 != (flags & MHD_USE_TCP_FASTOPEN))
     return NULL;
@@ -4714,19 +4714,19 @@ MHD_start_daemon_va (unsigned int flags,
           sizeof (struct MHD_Daemon));
 #ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   daemon->epoll_upgrade_fd = -1;
-#endif
+#endif /* HTTPS_SUPPORT */
 #endif
   /* try to open listen socket */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_TLS))
     {
       gnutls_priority_init (&daemon->priority_cache,
 			    "NORMAL",
 			    NULL);
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   daemon->socket_fd = MHD_INVALID_SOCKET;
   daemon->listening_address_reuse = 0;
   daemon->options = flags;
@@ -4794,23 +4794,23 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->digest_auth_random = NULL;
   daemon->nonce_nc_size = 4; /* tiny */
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_TLS))
     {
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 
   if (MHD_YES != parse_options_va (daemon,
                                    &servaddr,
                                    ap))
     {
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       if ( (0 != (flags & MHD_USE_TLS)) &&
 	   (NULL != daemon->priority_cache) )
 	gnutls_priority_deinit (daemon->priority_cache);
-#endif
+#endif /* HTTPS_SUPPORT */
       free (daemon);
       return NULL;
     }
@@ -4824,10 +4824,10 @@ MHD_start_daemon_va (unsigned int flags,
 	  MHD_DLOG (daemon,
 		    _("Specified value for NC_SIZE too large\n"));
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 	  if (0 != (flags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
-#endif
+#endif /* HTTPS_SUPPORT */
 	  free (daemon);
 	  return NULL;
 	}
@@ -4839,10 +4839,10 @@ MHD_start_daemon_va (unsigned int flags,
 		    _("Failed to allocate memory for nonce-nc map: %s\n"),
 		    MHD_strerror_ (errno));
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 	  if (0 != (flags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
-#endif
+#endif /* HTTPS_SUPPORT */
 	  free (daemon);
 	  return NULL;
 	}
@@ -4854,10 +4854,10 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_DLOG (daemon,
 		_("MHD failed to initialize nonce-nc mutex\n"));
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       if (0 != (flags & MHD_USE_TLS))
 	gnutls_priority_deinit (daemon->priority_cache);
-#endif
+#endif /* HTTPS_SUPPORT */
       free (daemon->nnc);
       free (daemon);
       return NULL;
@@ -5192,7 +5192,7 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
   if ( (0 != (flags & MHD_USE_TLS)) &&
        (0 != MHD_TLS_init (daemon)) )
@@ -5207,7 +5207,7 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       goto free_and_fail;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   if ( ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) ||
 	 ( (0 != (flags & MHD_USE_SELECT_INTERNALLY)) &&
 	   (0 == daemon->worker_pool_size)) ) &&
@@ -5328,7 +5328,7 @@ MHD_start_daemon_va (unsigned int flags,
             }
         }
     }
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   /* API promises to never use the password after initialization,
      so we additionally NULL it here to not deref a dangling pointer. */
   daemon->https_key_password = NULL;
@@ -5363,7 +5363,7 @@ thread_failed:
  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 #ifdef EPOLL_SUPPORT
   if (MHD_YES == daemon->upgrade_fd_in_epoll)
     {
@@ -5376,20 +5376,20 @@ thread_failed:
     }
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (-1 != daemon->epoll_upgrade_fd)
     close (daemon->epoll_upgrade_fd);
+#endif /* HTTPS_SUPPORT */
 #endif
-#endif
-#endif
+#endif  /* HTTPS_SUPPORT */
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_TLS))
     gnutls_priority_deinit (daemon->priority_cache);
-#endif
+#endif /* HTTPS_SUPPORT */
   if (MHD_ITC_IS_VALID_(daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
   free (daemon);
@@ -5602,10 +5602,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifdef EPOLL_SUPPORT
               if (-1 != daemon->worker_pool[i].epoll_fd)
                 MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_fd);
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
               if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
                 MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
-#endif
+#endif /* HTTPS_SUPPORT */
 #endif
               if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
                 MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
@@ -5651,15 +5651,15 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_fd) )
     MHD_socket_close_chk_ (daemon->epoll_fd);
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_upgrade_fd) )
     MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
-#endif
+#endif /* HTTPS_SUPPORT */
 #endif
 
   /* TLS clean up */
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (MHD_YES == daemon->have_dhparams)
     {
       gnutls_dh_params_deinit (daemon->https_mem_dhparams);
@@ -5671,7 +5671,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       if (daemon->x509_cred)
         gnutls_certificate_free_credentials (daemon->x509_cred);
     }
-#endif
+#endif /* HTTPS_SUPPORT */
 
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
@@ -5810,17 +5810,17 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_SSL:
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
       return MHD_YES;
-#else
+#else  /* ! HTTPS_SUPPORT */
       return MHD_NO;
-#endif
+#endif  /* ! HTTPS_SUPPORT */
     case MHD_FEATURE_HTTPS_CERT_CALLBACK:
-#if HTTPS_SUPPORT && GNUTLS_VERSION_MAJOR >= 3
+#if defined(HTTPS_SUPPORT) && GNUTLS_VERSION_MAJOR >= 3
       return MHD_YES;
-#else
+#else  /* !HTTPS_SUPPORT || GNUTLS_VERSION_MAJOR < 3 */
       return MHD_NO;
-#endif
+#endif /* !HTTPS_SUPPORT || GNUTLS_VERSION_MAJOR < 3 */
     case MHD_FEATURE_IPv6:
 #ifdef HAVE_INET6
       return MHD_YES;
@@ -5882,11 +5882,11 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif
     case MHD_FEATURE_HTTPS_KEY_PASSWORD:
-#if HTTPS_SUPPORT && GNUTLS_VERSION_NUMBER >= 0x030111
+#if defined(HTTPS_SUPPORT) && GNUTLS_VERSION_NUMBER >= 0x030111
       return MHD_YES;
-#else
+#else  /* !HTTPS_SUPPORT || GNUTLS_VERSION_NUMBER < 0x030111 */
       return MHD_NO;
-#endif
+#endif /* !HTTPS_SUPPORT || GNUTLS_VERSION_NUMBER < 0x030111 */
     case MHD_FEATURE_LARGE_FILE:
 #if defined(HAVE___LSEEKI64) || defined(HAVE_LSEEK64)
       return MHD_YES;
@@ -5904,7 +5904,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 }
 
 
-#if HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600
+#if defined(HTTPS_SUPPORT) && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #elif defined(MHD_W32_MUTEX_)
@@ -5981,7 +5981,7 @@ MHD_init(void)
   if (2 != LOBYTE(wsd.wVersion) && 2 != HIBYTE(wsd.wVersion))
     MHD_PANIC (_("Winsock version 2.2 is not available\n"));
 #endif
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
 #if GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
@@ -5998,7 +5998,7 @@ MHD_init(void)
     MHD_PANIC (_("libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer\n"));
 #endif
   gnutls_global_init ();
-#endif
+#endif /* HTTPS_SUPPORT */
   MHD_monotonic_sec_counter_init();
 }
 
@@ -6006,9 +6006,9 @@ MHD_init(void)
 void
 MHD_fini(void)
 {
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   gnutls_global_deinit ();
-#endif
+#endif /* HTTPS_SUPPORT */
 #ifdef _WIN32
   if (mhd_winsock_inited_)
     WSACleanup();

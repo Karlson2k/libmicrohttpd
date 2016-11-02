@@ -653,7 +653,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
      * 'urh->was_closed' AND 'urh->clean_ready', it will
      * be moved to cleanup list by MHD_resume_connection(). */
     MHD_resume_connection (connection);
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
       {
         /* signal that app is done by shutdown() of 'app' socket */
@@ -714,7 +714,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   urh->connection = connection;
   rbo = connection->read_buffer_offset;
   connection->read_buffer_offset = 0;
-#if HTTPS_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_TLS) )
   {
     struct MemoryPool *pool;
@@ -896,7 +896,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       /* Non-TLS connection do not hold any additional resources. */
       urh->clean_ready = MHD_YES;
     }
-#endif
+#endif /* HTTPS_SUPPORT */
   connection->urh = urh;
   /* As far as MHD's event loops are concerned, this connection is
      suspended; it will be resumed once application is done by the
