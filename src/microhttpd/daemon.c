@@ -5417,8 +5417,8 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
   const _MHD_bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
-  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
 #endif /* HTTPS_SUPPORT */
+  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
   const _MHD_bool upg_allowed = (0 != (daemon->options & MHD_ALLOW_UPGRADE));
 
 #ifdef HTTPS_SUPPORT
