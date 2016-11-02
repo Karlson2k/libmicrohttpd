@@ -5363,8 +5363,8 @@ thread_failed:
  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
-#ifdef HTTPS_SUPPORT
 #ifdef EPOLL_SUPPORT
+#ifdef HTTPS_SUPPORT
   if (MHD_YES == daemon->upgrade_fd_in_epoll)
     {
       if (0 != epoll_ctl (daemon->epoll_fd,
@@ -5374,14 +5374,14 @@ thread_failed:
 	MHD_PANIC (_("Failed to remove FD from epoll set\n"));
       daemon->upgrade_fd_in_epoll = MHD_NO;
     }
+#endif /* HTTPS_SUPPORT */
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
 #ifdef HTTPS_SUPPORT
   if (-1 != daemon->epoll_upgrade_fd)
     close (daemon->epoll_upgrade_fd);
 #endif /* HTTPS_SUPPORT */
-#endif
-#endif  /* HTTPS_SUPPORT */
+#endif /* EPOLL_SUPPORT */
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
