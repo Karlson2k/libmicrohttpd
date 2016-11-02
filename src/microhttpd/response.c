@@ -691,6 +691,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   struct MHD_UpgradeResponseHandle *urh;
   size_t rbo;
 
+  if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
+    return MHD_NO;
+
   if (NULL ==
       MHD_get_response_header (response,
                                MHD_HTTP_HEADER_UPGRADE))

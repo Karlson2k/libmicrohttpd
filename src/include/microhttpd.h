@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095204
+#define MHD_VERSION 0x00095205
 
 /**
  * MHD-internal return code for "YES".
@@ -686,14 +686,11 @@ enum MHD_FLAG
   MHD_USE_TCP_FASTOPEN = 16384,
 
   /**
-   * You need to set this option if you want to use epoll() in
-   * combination with HTTPS connections and switching protocols via
-   * connection upgrades (via #MHD_create_response_for_upgrade()).
-   * This flag is required as under these circumstances we need to
-   * open up an extra file descriptor, which we do not want to do
-   * unless necessary.
+   * You need to set this option if you want to use HTTP "Upgrade".
+   * "Upgrade" may require usage of additional internal resources,
+   * which we do not want to use unless necessary.
    */
-  MHD_USE_TLS_EPOLL_UPGRADE = 32768 | MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL | MHD_USE_TLS
+  MHD_ALLOW_UPGRADE = 32768
 
 };
 

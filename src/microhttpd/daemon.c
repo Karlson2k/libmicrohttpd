@@ -4604,7 +4604,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
 #if HTTPS_SUPPORT
-  if (MHD_USE_TLS_EPOLL_UPGRADE == (MHD_USE_TLS_EPOLL_UPGRADE & daemon->options))
+  if (0 != (MHD_ALLOW_UPGRADE & daemon->options))
     {
        daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
        if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
@@ -4751,6 +4751,11 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
   daemon->custom_error_log_cls = stderr;
 #endif
+  if (0 != (daemon->options & MHD_ALLOW_UPGRADE))
+    {
+      daemon->options |= MHD_USE_SUSPEND_RESUME;
+      flags |= MHD_USE_SUSPEND_RESUME;
+    }
 #ifdef HAVE_LISTEN_SHUTDOWN
   use_itc = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
 #else

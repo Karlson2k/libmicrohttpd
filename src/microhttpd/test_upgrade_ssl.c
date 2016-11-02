@@ -139,7 +139,7 @@ test_upgrade (int flags,
 
   done = 0;
 
-  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_SUSPEND_RESUME |MHD_USE_TLS,
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_ALLOW_UPGRADE | MHD_USE_TLS,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
@@ -198,7 +198,7 @@ main (int argc,
   error_count += test_upgrade (0,
                                0);
 #ifdef EPOLL_SUPPORT
-  error_count += test_upgrade (MHD_USE_TLS_EPOLL_UPGRADE,
+  error_count += test_upgrade (MHD_USE_EPOLL | MHD_USE_TLS,
                                0);
 #endif
 
@@ -221,10 +221,10 @@ main (int argc,
 #endif
 #ifdef EPOLL_SUPPORT
   error_count += test_upgrade (MHD_USE_EPOLL_INTERNALLY |
-                               MHD_USE_TLS_EPOLL_UPGRADE,
+                               MHD_USE_TLS,
                                0);
   error_count += test_upgrade (MHD_USE_EPOLL_INTERNALLY |
-                               MHD_USE_TLS_EPOLL_UPGRADE,
+                               MHD_USE_TLS,
                                2);
 #endif
   /* report result */
