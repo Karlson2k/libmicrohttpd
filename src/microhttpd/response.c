@@ -896,7 +896,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       /* Non-TLS connection do not hold any additional resources. */
       urh->clean_ready = MHD_YES;
     }
-#endif /* HTTPS_SUPPORT */
+#else  /* ! HTTPS_SUPPORT */
+  urh->clean_ready = MHD_YES;
+#endif /* ! HTTPS_SUPPORT */
   connection->urh = urh;
   /* As far as MHD's event loops are concerned, this connection is
      suspended; it will be resumed once application is done by the
@@ -909,8 +911,12 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                              connection->client_context,
                              connection->read_buffer,
                              rbo,
+#ifdef HTTPS_SUPPORT
                              (0 == (daemon->options & MHD_USE_TLS) ) ?
                              connection->socket_fd : urh->app.socket,
+#else  /* ! HTTPS_SUPPORT */
+                             connection->socket_fd,
+#endif /* ! HTTPS_SUPPORT */
                              urh);
   return MHD_YES;
 }

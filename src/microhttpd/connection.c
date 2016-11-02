@@ -561,6 +561,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 }
 
 
+#ifdef HTTPS_SUPPORT
 /**
  * Stop TLS forwarding on upgraded connection and
  * reflect remote disconnect state to socketpair.
@@ -616,6 +617,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
    * connection's final cleanup.
    */
 }
+#endif /* HTTPS_SUPPORT */
 
 
 /**

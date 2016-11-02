@@ -939,6 +939,7 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
+#ifdef HTTPS_SUPPORT
   /* Signal remote client the end of TLS connection by
    * gracefully closing TLS session. */
   if (0 != (connection->daemon->options & MHD_USE_TLS))
@@ -950,6 +951,7 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 
   if (MHD_INVALID_SOCKET != urh->app.socket)
     MHD_socket_close_chk_ (urh->app.socket);
+#endif /* HTTPS_SUPPORT */
 
   connection->urh = NULL;
   if (NULL != urh)
@@ -1230,8 +1232,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 static void
 thread_main_connection_upgrade (struct MHD_Connection *con)
 {
-  struct MHD_UpgradeResponseHandle *urh = con->urh;
 #ifdef HTTPS_SUPPORT
+  struct MHD_UpgradeResponseHandle *urh = con->urh;
   struct MHD_Daemon *daemon = con->daemon;
 
   /* Here, we need to bi-directionally forward
@@ -3803,8 +3805,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
         }
     }
 
+#ifdef HTTPS_SUPPORT
   if (run_upgraded)
     run_epoll_for_upgrade (daemon);
+#endif /* HTTPS_SUPPORT */
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
