@@ -295,6 +295,7 @@ struct MHD_Response
    */
   MHD_ContentReaderFreeCallback crfc;
 
+#ifdef UPGRADE_SUPPORT
   /**
    * Application function to call once we are done sending the headers
    * of the response; NULL unless this is a response created with
@@ -306,6 +307,7 @@ struct MHD_Response
    * Closure for @e uh.
    */
   void *upgrade_handler_cls;
+#endif /* UPGRADE_SUPPORT */
 
   /**
    * Mutex to synchronize access to @e data, @e size and
@@ -497,6 +499,7 @@ enum MHD_CONNECTION_STATE
    */
   MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1,
 
+#ifdef UPGRADE_SUPPORT
   /**
    * Connection was "upgraded" and socket is now under the
    * control of the application.
@@ -509,6 +512,7 @@ enum MHD_CONNECTION_STATE
    * internal cleanup.
    */
   MHD_CONNECTION_UPGRADE_CLOSED = MHD_CONNECTION_UPGRADE + 1
+#endif /* UPGRADE_SUPPORT */
 
 };
 
@@ -880,6 +884,7 @@ struct MHD_Connection
    */
   TransmitCallback send_cls;
 
+#ifdef UPGRADE_SUPPORT
   /**
    * If this connection was upgraded and if we are using
    * #MHD_USE_THREAD_PER_CONNECTION or #MHD_USE_TLS, this points to
@@ -888,6 +893,7 @@ struct MHD_Connection
    * bi-directional forwarding.
    */
   struct MHD_UpgradeResponseHandle *urh;
+#endif /* UPGRADE_SUPPORT */
 
 #ifdef HTTPS_SUPPORT
 
@@ -930,6 +936,7 @@ struct MHD_Connection
 };
 
 
+#ifdef UPGRADE_SUPPORT
 /**
  * Buffer we use for upgrade response handling in the unlikely
  * case where the memory pool was so small it had no buffer
@@ -1093,6 +1100,7 @@ struct MHD_UpgradeResponseHandle
    */
   int clean_ready;
 };
+#endif /* UPGRADE_SUPPORT */
 
 
 /**
@@ -1369,7 +1377,7 @@ struct MHD_Daemon
    */
   int listen_socket_in_epoll;
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /**
    * File descriptor associated with the #run_epoll_for_upgrade() loop.
    * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
@@ -1381,7 +1389,7 @@ struct MHD_Daemon
    * #MHD_NO if not.
    */
   int upgrade_fd_in_epoll;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 #endif
 
@@ -1442,6 +1450,7 @@ struct MHD_Daemon
   uint16_t port;
 
 #ifdef HTTPS_SUPPORT
+#ifdef UPGRADE_SUPPORT
   /**
    * Head of DLL of upgrade response handles we are processing.
    * Used for upgraded TLS connections when thread-per-connection
@@ -1455,6 +1464,7 @@ struct MHD_Daemon
    * is not used.
    */
   struct MHD_UpgradeResponseHandle *urh_tail;
+#endif /* UPGRADE_SUPPORT */
 
   /**
    * Desired cipher algorithms.
@@ -1753,6 +1763,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 		      unsigned int *num_headers);
 
 
+#ifdef UPGRADE_SUPPORT
 /**
  * Finally cleanup upgrade-related resources. It should
  * be called when TLS buffers have been drained and
@@ -1762,5 +1773,6 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
  */
 void
 MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection);
+#endif /* UPGRADE_SUPPORT */
 
 #endif

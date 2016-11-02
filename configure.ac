@@ -1137,6 +1137,19 @@ AS_IF([[test "x$enable_dauth" != "xno"]],
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
+# optional: HTTP "Upgrade" support. Enabled by default
+AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
+AC_ARG_ENABLE([[httpupgrade]],
+    AS_HELP_STRING([[--disable-httpupgrade]],
+      [disable HTTP "Upgrade" support]),
+    [AS_VAR_IF([[enable_httpupgrade]],[["no"]],[],[[enable_httpupgrade='yes']])],
+    [[enable_httpupgrade='yes']])
+AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
+  [
+   AC_DEFINE([[UPGRADE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
+AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
+AC_MSG_RESULT([[$enable_httpupgrade]])
+
 
 
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
@@ -1204,6 +1217,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
+  HTTP "Upgrade":    ${enable_httpupgrade}
   Postproc:          ${enable_postprocessor}
   HTTPS support:     ${MSG_HTTPS}
   poll support:      ${enable_poll=no}
@@ -1225,6 +1239,7 @@ fi
 
 if test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
+   test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"
 then
  AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])

@@ -662,7 +662,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
 }
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Obtain the select() file descriptor sets for the
  * given @a urh.
@@ -743,7 +743,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
       FD_ISSET (mhd_sckt, ws))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
 }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 
 /**
@@ -844,7 +844,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 	  break;
 	}
     }
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   {
     struct MHD_UpgradeResponseHandle *urh;
 
@@ -867,7 +867,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
               _("Maximum socket in select set: %d\n"),
               *max_fd);
 #endif
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   return result;
 }
 
@@ -927,6 +927,7 @@ call_handlers (struct MHD_Connection *con,
 }
 
 
+#ifdef UPGRADE_SUPPORT
 /**
  * Finally cleanup upgrade-related resources. It should
  * be called when TLS buffers have been drained and
@@ -957,9 +958,9 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
   if (NULL != urh)
     free (urh);
 }
+#endif /* UPGRADE_SUPPORT */
 
-
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Performs bi-directional forwarding on upgraded HTTPS connections
  * based on the readyness state stored in the @a urh handle.
@@ -1218,9 +1219,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
     }
 }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT  && UPGRADE_SUPPORT */
 
 
+#ifdef UPGRADE_SUPPORT
 /**
  * Main function of the thread that handles an individual connection
  * after it was "upgraded" when #MHD_USE_THREAD_PER_CONNECTION is set.
@@ -1367,6 +1369,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   /* Do not set 'urh->clean_ready' yet as 'urh' will be used
    * in connection thread for a little while. */
 }
+#endif /* UPGRADE_SUPPORT */
 
 
 /**
@@ -1411,8 +1414,13 @@ thread_main_handle_connection (void *data)
     {
       const unsigned int timeout = daemon->connection_timeout;
       _MHD_bool was_suspended = 0;
+#ifdef UPGRADE_SUPPORT
+      struct MHD_UpgradeResponseHandle * const urh = con->urh;
+#else  /* ! UPGRADE_SUPPORT */
+      static const void * const urh = NULL;
+#endif /* ! UPGRADE_SUPPORT */
 
-      if (MHD_NO != con->suspended && NULL == con->urh)
+      if (MHD_NO != con->suspended && NULL == urh)
         {
           /* Connection was suspended, wait for resume. */
           was_suspended = !0;
@@ -1677,6 +1685,7 @@ thread_main_handle_connection (void *data)
             goto exit;
 	}
 #endif
+#ifdef UPGRADE_SUPPORT
       /* Check for 'MHD_CONNECTION_UPGRADE_CLOSED' too:
        * application can finish with "upgraded" connection
        * before this thread process it for the first time. */
@@ -1707,6 +1716,7 @@ thread_main_handle_connection (void *data)
           /* skip usual clean up  */
           return (MHD_THRD_RTRN_TYPE_) 0;
         }
+#endif /* UPGRADE_SUPPORT */
     }
   if (MHD_CONNECTION_IN_CLEANUP != con->state)
     {
@@ -2455,16 +2465,24 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     daemon->resuming = MHD_NO;
   while (NULL != (pos = next))
     {
+#ifdef UPGRADE_SUPPORT
+      struct MHD_UpgradeResponseHandle * const urh = pos->urh;
+#else  /* ! UPGRADE_SUPPORT */
+      static const void * const urh = NULL;
+#endif /* ! UPGRADE_SUPPORT */
       next = pos->next;
-      if ( (MHD_NO == pos->resuming) ||
-           ((NULL != pos->urh) &&
-            ((MHD_NO == pos->urh->was_closed) || (MHD_NO == pos->urh->clean_ready))) )
+      if ( (MHD_NO == pos->resuming)
+#ifdef UPGRADE_SUPPORT
+          || ((NULL != urh) &&
+              ((MHD_NO == urh->was_closed) || (MHD_NO == urh->clean_ready)))
+#endif /* UPGRADE_SUPPORT */
+         )
         continue;
       ret = MHD_YES;
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
-      if (NULL == pos->urh)
+      if (NULL == urh)
         {
           DLL_insert (daemon->connections_head,
                       daemon->connections_tail,
@@ -2495,6 +2513,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
             }
 #endif
         }
+#ifdef UPGRADE_SUPPORT
       else
         {
           /* Data forwarding was finished (for TLS connections) AND
@@ -2505,6 +2524,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                       pos);
 
         }
+#endif /* UPGRADE_SUPPORT */
       pos->suspended = MHD_NO;
       pos->resuming = MHD_NO;
     }
@@ -2741,8 +2761,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	   (MHD_NO == pos->thread_joined) &&
            (! MHD_join_thread_ (pos->pid)) )
         MHD_PANIC (_("Failed to join a thread\n"));
+#ifdef UPGRADE_SUPPORT
       if (NULL != pos->urh)
         MHD_cleanup_upgraded_connection_ (pos);
+#endif /* UPGRADE_SUPPORT */
       MHD_pool_destroy (pos->pool);
 #ifdef HTTPS_SUPPORT
       if (NULL != pos->tls_session)
@@ -2929,10 +2951,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   MHD_socket ds;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   unsigned int mask = MHD_USE_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
     MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
 
@@ -2988,8 +3010,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
         }
     }
 
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /* handle upgraded HTTPS connections */
-#ifdef HTTPS_SUPPORT
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
     {
       urhn = urh->next;
@@ -3011,7 +3033,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
           MHD_resume_connection(urh->connection);
         }
     }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   MHD_cleanup_connections (daemon);
   return MHD_YES;
 }
@@ -3195,10 +3217,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   unsigned int num_connections;
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   if ( (MHD_USE_SUSPEND_RESUME == (daemon->options & MHD_USE_SUSPEND_RESUME)) &&
        (MHD_YES == resume_suspended_connections (daemon)) )
@@ -3208,10 +3230,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   num_connections = 0;
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     num_connections++;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
     num_connections += 2;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   {
     MHD_UNSIGNED_LONG_LONG ltimeout;
     unsigned int i;
@@ -3289,7 +3311,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	  }
 	i++;
       }
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
     for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
@@ -3305,7 +3327,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
           p[poll_server+i].events |= POLLOUT;
         i++;
       }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
     if (0 == poll_server + num_connections)
       {
         free(p);
@@ -3358,7 +3380,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
                        MHD_NO);
         i++;
       }
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
     for (urh = daemon->urh_head; NULL != urh; urh = urhn)
       {
         if (i >= num_connections)
@@ -3403,7 +3425,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
             MHD_resume_connection(urh->connection);
           }
       }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
     /* handle 'listen' FD */
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
@@ -3528,7 +3550,7 @@ MHD_poll (struct MHD_Daemon *daemon,
 #define MAX_EVENTS 128
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 
 /**
  * Do epoll()-based processing for TLS connections that have been
@@ -3602,7 +3624,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
     }
   return MHD_YES;
 }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 
 /**
@@ -3617,9 +3639,9 @@ static int
 MHD_epoll (struct MHD_Daemon *daemon,
 	   int may_block)
 {
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   static const char *upgrade_marker = "upgrade_ptr";
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
   struct epoll_event events[MAX_EVENTS];
@@ -3629,9 +3651,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int num_events;
   unsigned int i;
   unsigned int series_length;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
    _MHD_bool run_upgraded = 0;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -3658,7 +3680,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->listen_socket_in_epoll = MHD_YES;
     }
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if ( (MHD_NO == daemon->upgrade_fd_in_epoll) &&
        (-1 != daemon->epoll_upgrade_fd) )
     {
@@ -3678,7 +3700,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	}
       daemon->upgrade_fd_in_epoll = MHD_YES;
     }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if ( ( (MHD_YES == daemon->listen_socket_in_epoll) &&
          (daemon->connections == daemon->connection_limit) ) ||
        (MHD_YES == daemon->at_limit) )
@@ -3738,7 +3760,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
              that this event is not about a normal connection. */
 	  if (NULL == events[i].data.ptr)
 	    continue; /* shutdown signal! */
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
           if (upgrade_marker == events[i].data.ptr)
             {
               /* activity on an upgraded connection, we process
@@ -3746,7 +3768,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
               run_upgraded = !0;
               continue;
             }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
           /* UGH: we're storing pointers and fds in the same union
              here; incredibly ugly and somewhat risky, even though a
              pointer with the same numeric value as the itc.fd[0] can
@@ -3805,10 +3827,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
         }
     }
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (run_upgraded)
     run_epoll_for_upgrade (daemon);
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
@@ -4607,14 +4629,14 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   daemon->epoll_fd = setup_epoll_fd (daemon);
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (0 != (MHD_ALLOW_UPGRADE & daemon->options))
     {
        daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
        if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
          return MHD_NO;
     }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if (MHD_INVALID_SOCKET == daemon->socket_fd)
     return MHD_YES; /* non-listening daemon */
   event.events = EPOLLIN;
@@ -4709,6 +4731,14 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 != (flags & MHD_USE_TCP_FASTOPEN))
     return NULL;
 #endif
+  if (0 != (flags & MHD_ALLOW_UPGRADE))
+    {
+#ifdef UPGRADE_SUPPORT
+      flags |= MHD_USE_SUSPEND_RESUME;
+#else  /* ! UPGRADE_SUPPORT */
+      return NULL;
+#endif /* ! UPGRADE_SUPPORT */
+    }
   if (NULL == dh)
     return NULL;
   if (NULL == (daemon = malloc (sizeof (struct MHD_Daemon))))
@@ -4718,9 +4748,9 @@ MHD_start_daemon_va (unsigned int flags,
           sizeof (struct MHD_Daemon));
 #ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   daemon->epoll_upgrade_fd = -1;
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif
   /* try to open listen socket */
 #ifdef HTTPS_SUPPORT
@@ -4755,11 +4785,6 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
   daemon->custom_error_log_cls = stderr;
 #endif
-  if (0 != (daemon->options & MHD_ALLOW_UPGRADE))
-    {
-      daemon->options |= MHD_USE_SUSPEND_RESUME;
-      flags |= MHD_USE_SUSPEND_RESUME;
-    }
 #ifdef HAVE_LISTEN_SHUTDOWN
   use_itc = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
 #else
@@ -5368,7 +5393,7 @@ thread_failed:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
 #ifdef EPOLL_SUPPORT
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (MHD_YES == daemon->upgrade_fd_in_epoll)
     {
       if (0 != epoll_ctl (daemon->epoll_fd,
@@ -5378,13 +5403,13 @@ thread_failed:
 	MHD_PANIC (_("Failed to remove FD from epoll set\n"));
       daemon->upgrade_fd_in_epoll = MHD_NO;
     }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if (-1 != daemon->epoll_fd)
     close (daemon->epoll_fd);
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (-1 != daemon->epoll_upgrade_fd)
     close (daemon->epoll_upgrade_fd);
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif /* EPOLL_SUPPORT */
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
@@ -5413,15 +5438,17 @@ static void
 close_all_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-#ifdef HTTPS_SUPPORT
+  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
   const _MHD_bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
-#endif /* HTTPS_SUPPORT */
-  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
+#ifdef UPGRADE_SUPPORT
   const _MHD_bool upg_allowed = (0 != (daemon->options & MHD_ALLOW_UPGRADE));
+#endif /* UPGRADE_SUPPORT */
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
   for (urh = daemon->urh_head; NULL != urh; urh = urhn)
@@ -5435,7 +5462,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       /* Resuming will move connection to cleanup list. */
       MHD_resume_connection(urh->connection);
     }
-#endif
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   /* Give suspended connections a chance to resume to avoid
      running into the check for there not being any suspended
@@ -5450,6 +5477,7 @@ close_all_connections (struct MHD_Daemon *daemon)
      traverse DLLs in peace... */
   if (used_thr_p_c)
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#ifdef UPGRADE_SUPPORT
   if (upg_allowed)
     {
       struct MHD_Connection * susp;
@@ -5483,7 +5511,9 @@ close_all_connections (struct MHD_Daemon *daemon)
           susp = susp->next;
         }
     }
-  else if (NULL != daemon->suspended_connections_head)
+  else /* This 'else' is combined with next 'if' */
+#endif /* UPGRADE_SUPPORT */
+  if (NULL != daemon->suspended_connections_head)
     MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
@@ -5518,6 +5548,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       }
     }
 
+#ifdef UPGRADE_SUPPORT
   /* Finished threads with "upgraded" connections need to be moved
    * to cleanup list by resume_suspended_connections(). */
   /* "Upgraded" connections that were not closed explicitly by
@@ -5527,6 +5558,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       daemon->resuming = MHD_YES; /* Force check for pending resume. */
       resume_suspended_connections (daemon);
     }
+#endif /* UPGRADE_SUPPORT */
 
   /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_head))
@@ -5623,10 +5655,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #ifdef EPOLL_SUPPORT
               if (-1 != daemon->worker_pool[i].epoll_fd)
                 MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_fd);
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
               if (-1 != daemon->worker_pool[i].epoll_upgrade_fd)
                 MHD_fd_close_chk_ (daemon->worker_pool[i].epoll_upgrade_fd);
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif
               if (MHD_ITC_IS_VALID_ (daemon->worker_pool[i].itc) )
                 MHD_itc_destroy_chk_ (daemon->worker_pool[i].itc);
@@ -5672,11 +5704,11 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_fd) )
     MHD_socket_close_chk_ (daemon->epoll_fd);
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_upgrade_fd) )
     MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif
 
   /* TLS clean up */

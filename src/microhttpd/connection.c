@@ -561,7 +561,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 }
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Stop TLS forwarding on upgraded connection and
  * reflect remote disconnect state to socketpair.
@@ -617,7 +617,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
    * connection's final cleanup.
    */
 }
-#endif /* HTTPS_SUPPORT */
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT*/
 
 
 /**
@@ -871,13 +871,17 @@ keepalive_possible (struct MHD_Connection *connection)
   {
     if (NULL == end)
       return MHD_YES;
-    if ( (MHD_str_equal_caseless_ (end,
-                                   "close")) ||
-         ( (MHD_str_equal_caseless_ (end,
-                                     "upgrade")) &&
-           (NULL == connection->response->upgrade_handler) ) )
+    if (MHD_str_equal_caseless_ (end,
+                                 "close"))
       return MHD_NO;
-   return MHD_YES;
+#ifdef UPGRADE_SUPPORT
+    if ( (MHD_str_equal_caseless_ (end,
+                                   "upgrade")) &&
+         (NULL == connection->response->upgrade_handler) )
+      return MHD_NO;
+#endif /* UPGRADE_SUPPORT */
+
+    return MHD_YES;
   }
   if (MHD_str_equal_caseless_(connection->version,
                               MHD_HTTP_VERSION_1_0))
@@ -2440,11 +2444,13 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CLOSED:
           return MHD_YES;
+#ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_UPGRADE_CLOSED:
           break;
+#endif /* UPGRADE_SUPPORT */
         default:
           /* shrink read buffer to how much is actually used */
           MHD_pool_reallocate (connection->pool,
@@ -2626,11 +2632,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_TLS_CONNECTION_INIT:
           EXTRA_CHECK (0);
           break;
+#ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_UPGRADE_CLOSED:
           break;
+#endif /* UPGRADE_SUPPORT */
         default:
           EXTRA_CHECK (0);
 	  CONNECTION_CLOSE_ERROR (connection,
@@ -2984,6 +2992,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_NO != socket_flush_possible (connection))
             socket_start_no_buffering_flush (connection);
 
+#ifdef UPGRADE_SUPPORT
           if (NULL != connection->response->upgrade_handler)
             {
               socket_start_normal_buffering (connection);
@@ -3007,6 +3016,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 }
               continue;
             }
+#endif /* UPGRADE_SUPPORT */
           if (MHD_NO != socket_flush_possible (connection))
             socket_start_extra_buffering (connection);
           else
@@ -3173,11 +3183,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
 	  cleanup_connection (connection);
 	  return MHD_NO;
-        case MHD_CONNECTION_UPGRADE:
+#ifdef UPGRADE_SUPPORT
+	case MHD_CONNECTION_UPGRADE:
           return MHD_YES; /* keep open */
         case MHD_CONNECTION_UPGRADE_CLOSED:
           return MHD_YES; /* "Upgraded" connection should be closed in special way. */
-        default:
+#endif /* UPGRADE_SUPPORT */
+       default:
           EXTRA_CHECK (0);
           break;
         }
@@ -3430,7 +3442,9 @@ MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)
 {
+#ifdef UPGRADE_SUPPORT
   struct MHD_Daemon *daemon;
+#endif /* UPGRADE_SUPPORT */
 
   if ( (NULL == connection) ||
        (NULL == response) ||
@@ -3438,6 +3452,7 @@ MHD_queue_response (struct MHD_Connection *connection,
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
 	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
     return MHD_NO;
+#ifdef UPGRADE_SUPPORT
   daemon = connection->daemon;
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
@@ -3457,6 +3472,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
+#endif /* UPGRADE_SUPPORT */
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;

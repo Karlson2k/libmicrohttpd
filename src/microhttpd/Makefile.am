@@ -150,11 +150,13 @@ check_PROGRAMS = \
   test_str_to_value \
   test_shutdown_select \
   test_shutdown_poll \
-  test_daemon \
-  test_upgrade
+  test_daemon
 
+if ENABLE_UPGRADE
+  check_PROGRAMS += test_upgrade
 if ENABLE_HTTPS
   check_PROGRAMS += test_upgrade_ssl
+endif
 endif
 
 if HAVE_POSTPROCESSOR

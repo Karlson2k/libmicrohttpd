@@ -610,6 +610,7 @@ MHD_create_response_from_buffer (size_t size,
 }
 
 
+#ifdef UPGRADE_SUPPORT
 /**
  * This connection-specific callback is provided by MHD to
  * applications (unusual) during the #MHD_UpgradeHandler.
@@ -982,6 +983,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
     }
   return response;
 }
+#endif /* UPGRADE_SUPPORT */
 
 
 /**

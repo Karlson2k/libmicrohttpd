@@ -38,6 +38,8 @@
 /* Enable error messages */
 #define HAVE_MESSAGES 1
 
+/* Enable HTTP Upgrade support. */
+#define UPGRADE_SUPPORT 1
 
 /* *** OS features *** */
 
