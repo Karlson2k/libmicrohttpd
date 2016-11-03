@@ -2853,7 +2853,15 @@ enum MHD_FEATURE
   /**
    * Get whether MHD set names on generated threads.
    */
-  MHD_THREAD_NAMES = 16
+  MHD_FEATURE_THREAD_NAMES = 16,
+  MHD_THREAD_NAMES = 16,
+
+  /**
+   * Get whether HTTP "Upgrade" is supported.
+   * If supported then #MHD_ALLOW_UPGRADE, #MHD_upgrade_action() and
+   * #MHD_create_response_for_upgrade() can be used.
+   */
+  MHD_FEATURE_UPGRADE = 17
 };
 
 
