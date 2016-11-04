@@ -3010,7 +3010,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               /* Response is not required anymore for this conectnion. */
               if (NULL != connection->response)
                 {
-                  struct MHD_Response * const resp_clr = connection->response;
+                  struct MHD_Response *resp_clr = connection->response;
+
                   connection->response = NULL;
                   MHD_destroy_response (resp_clr);
                 }
