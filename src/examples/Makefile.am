@@ -20,6 +20,7 @@ noinst_PROGRAMS = \
  benchmark_https \
  chunked_example \
  minimal_example \
+ upgrade_example \
  dual_stack_example \
  minimal_example_comet \
  querystring_example \
@@ -60,6 +61,11 @@ endif
 minimal_example_SOURCES = \
  minimal_example.c
 minimal_example_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+upgrade_example_SOURCES = \
+ upgrade_example.c
+upgrade_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 timeout_SOURCES = \

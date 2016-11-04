@@ -131,7 +131,7 @@ notify_connection_cb (void *cls,
 
 
 /**
- * Change socket to non-blocking.
+ * Change socket to blocking.
  *
  * @param fd the socket to manipulate
  * @return non-zero if succeeded, zero otherwise
