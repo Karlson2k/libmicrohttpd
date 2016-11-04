@@ -2455,12 +2455,11 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   int ret;
 
   ret = MHD_NO;
-  if (MHD_NO == daemon->resuming)
-    return ret;
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
-  next = daemon->suspended_connections_head;
+  if (MHD_NO != daemon->resuming)
+    next = daemon->suspended_connections_head;
   /* Clear the flag *only* if connections will be resumed otherwise
      it may accidentally clear flag that was set at the same time in
      other thread (just after 'if (MHD_NO != daemon->resuming)' in
