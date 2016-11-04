@@ -91,10 +91,10 @@
  */
 #define DEBUG_CONNECT MHD_NO
 
-/* Forward declarations. */
+
 /**
  * Close all connections for the daemon.
- * Must only be called when MHD_Daemon::shutdown was set to MHD_YES.
+ * Must only be called when MHD_Daemon::shutdown was set to #MHD_YES.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -102,6 +102,7 @@
  */
 static void
 close_all_connections (struct MHD_Daemon *daemon);
+
 
 /**
  * Default implementation of the panic function,
@@ -3661,7 +3662,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   unsigned int i;
   unsigned int series_length;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-   _MHD_bool run_upgraded = 0;
+  int run_upgraded = MHD_NO;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   if (-1 == daemon->epoll_fd)
@@ -3774,7 +3775,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
             {
               /* activity on an upgraded connection, we process
                  those in a separate epoll() */
-              run_upgraded = !0;
+              run_upgraded = MHD_YES;
               continue;
             }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
@@ -3837,7 +3838,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if (run_upgraded)
+  if (MHD_YES == run_upgraded)
     run_epoll_for_upgrade (daemon);
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
@@ -5437,7 +5438,7 @@ thread_failed:
 
 /**
  * Close all connections for the daemon.
- * Must only be called when MHD_Daemon::shutdown was set to MHD_YES.
+ * Must only be called when MHD_Daemon::shutdown was set to #MHD_YES.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -5526,7 +5527,8 @@ close_all_connections (struct MHD_Daemon *daemon)
     MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
   for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
     {
-      shutdown (pos->socket_fd, SHUT_RDWR);
+      shutdown (pos->socket_fd,
+                SHUT_RDWR);
 #if MHD_WINSOCK_SOCKETS
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
            (MHD_ITC_IS_VALID_(daemon->itc)) &&
