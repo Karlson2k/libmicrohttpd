@@ -541,10 +541,9 @@ void
 MHD_connection_close_ (struct MHD_Connection *connection,
                        enum MHD_RequestTerminationCode termination_code)
 {
-  struct MHD_Daemon *daemon;
-  struct MHD_Response * const resp = connection->response;
+  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Response *resp = connection->response;
 
-  daemon = connection->daemon;
   MHD_connection_mark_closed_ (connection);
   if (NULL != resp)
     {
