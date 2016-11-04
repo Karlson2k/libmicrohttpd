@@ -189,7 +189,7 @@ main (int argc,
   use_tool = TLS_CLI_NO_TOOL;
   if (0 == system ("gnutls-cli --version 1> /dev/null"))
     use_tool = TLS_CLI_GNUTLS;
-  else if (0 != system ("openssl version 1> /dev/null"))
+  else if (0 == system ("openssl version 1> /dev/null"))
     use_tool = TLS_CLI_OPENSSL;
   else
     return 77; /* not possible to test */
