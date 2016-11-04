@@ -690,7 +690,7 @@ enum MHD_FLAG
    * "Upgrade" may require usage of additional internal resources,
    * which we do not want to use unless necessary.
    */
-  MHD_ALLOW_UPGRADE = 32768
+  MHD_USE_UPGRADE = 32768
 
 };
 
@@ -2859,7 +2859,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether HTTP "Upgrade" is supported.
-   * If supported then #MHD_ALLOW_UPGRADE, #MHD_upgrade_action() and
+   * If supported then #MHD_USE_UPGRADE, #MHD_upgrade_action() and
    * #MHD_create_response_for_upgrade() can be used.
    */
   MHD_FEATURE_UPGRADE = 17

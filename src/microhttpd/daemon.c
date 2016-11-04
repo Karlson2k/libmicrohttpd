@@ -4639,7 +4639,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if (0 != (MHD_ALLOW_UPGRADE & daemon->options))
+  if (0 != (MHD_USE_UPGRADE & daemon->options))
     {
        daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
        if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
@@ -4740,7 +4740,7 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 != (flags & MHD_USE_TCP_FASTOPEN))
     return NULL;
 #endif
-  if (0 != (flags & MHD_ALLOW_UPGRADE))
+  if (0 != (flags & MHD_USE_UPGRADE))
     {
 #ifdef UPGRADE_SUPPORT
       flags |= MHD_USE_SUSPEND_RESUME;
@@ -5449,7 +5449,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
 #ifdef UPGRADE_SUPPORT
-  const _MHD_bool upg_allowed = (0 != (daemon->options & MHD_ALLOW_UPGRADE));
+  const _MHD_bool upg_allowed = (0 != (daemon->options & MHD_USE_UPGRADE));
 #endif /* UPGRADE_SUPPORT */
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;

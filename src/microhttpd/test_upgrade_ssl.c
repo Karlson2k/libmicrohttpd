@@ -139,7 +139,7 @@ test_upgrade (int flags,
 
   done = 0;
 
-  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_ALLOW_UPGRADE | MHD_USE_TLS,
+  d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_UPGRADE | MHD_USE_TLS,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,

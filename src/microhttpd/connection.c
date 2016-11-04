@@ -3455,11 +3455,11 @@ MHD_queue_response (struct MHD_Connection *connection,
 #ifdef UPGRADE_SUPPORT
   daemon = connection->daemon;
   if ( (NULL != response->upgrade_handler) &&
-       (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
+       (0 == (daemon->options & MHD_USE_UPGRADE)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _("Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
+                _("Attempted 'upgrade' connection on daemon without MHD_USE_UPGRADE option!\n"));
 #endif
       return MHD_NO;
     }
