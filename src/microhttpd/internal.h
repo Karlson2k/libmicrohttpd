@@ -1015,34 +1015,38 @@ struct MHD_UpgradeResponseHandle
   /**
    * The buffer for receiving data from TLS to
    * be passed to the application.  Contains @e in_buffer_size
-   * bytes. Do not free!
+   * bytes (unless @e in_buffer_size is zero). Do not free!
    */
   char *in_buffer;
 
   /**
    * The buffer for receiving data from the application to
    * be passed to TLS.  Contains @e out_buffer_size
-   * bytes. Do not free!
+   * bytes (unless @e out_buffer_size is zero). Do not free!
    */
   char *out_buffer;
 
   /**
-   * Size of the @e in_buffer
+   * Size of the @e in_buffer. 0 if the connection went down for reading.
    */
   size_t in_buffer_size;
 
   /**
-   * Size of the @e out_buffer
+   * Size of the @e out_buffer. 0 if the connection went down for writing.
    */
   size_t out_buffer_size;
 
   /**
-   * Number of bytes actually in use in the @e in_buffer
+   * Number of bytes actually in use in the @e in_buffer.  Can be larger
+   * than @e in_buffer_size if and only if @a in_buffer_size is zero and
+   * we still have bytes to process in the buffer.
    */
   size_t in_buffer_used;
 
   /**
-   * Number of bytes actually in use in the @e out_buffer
+   * Number of bytes actually in use in the @e out_buffer. Can be larger
+   * than @e out_buffer_size if and only if @a out_buffer_size is zero and
+   * we still have bytes to process in the buffer.
    */
   size_t out_buffer_used;
 

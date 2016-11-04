@@ -5495,8 +5495,11 @@ close_all_connections (struct MHD_Daemon *daemon)
           if (NULL == susp->urh) /* "Upgraded" connection? */
             MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
 #ifdef HTTPS_SUPPORT
-          else if (used_tls && used_thr_p_c && MHD_NO == susp->urh->clean_ready)
-            shutdown (urh->app.socket, SHUT_RDWR); /* Wake thread by shutdown of app socket. */
+          else if (used_tls &&
+                   used_thr_p_c &&
+                   (MHD_NO == susp->urh->clean_ready) )
+            shutdown (urh->app.socket,
+                      SHUT_RDWR); /* Wake thread by shutdown of app socket. */
 #endif /* HTTPS_SUPPORT */
           else
             {
@@ -5508,7 +5511,7 @@ close_all_connections (struct MHD_Daemon *daemon)
               susp->urh->was_closed = MHD_YES;
               /* If thread-per-connection is used, connection's thread
                * may still processing "upgrade" (exiting). */
-              if (!used_thr_p_c)
+              if (! used_thr_p_c)
                 MHD_connection_finish_forward_ (susp);
               /* Do not use MHD_resume_connection() as mutex is
                * already locked. */
