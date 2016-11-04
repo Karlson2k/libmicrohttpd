@@ -591,18 +591,12 @@ Enable TCP_FASTOPEN on the listen socket.  TCP_FASTOPEN is currently
 supported on Linux >= 3.6.  On other systems using this option with
 cause @code{MHD_start_daemon} to fail.
 
-@item MHD_USE_TLS_EPOLL_UPGRADE
-@cindex epoll
+@item MHD_ALLOW_UPGRADE
 @cindex upgrade
-@cindex https
-@cindex tls
-This option must be set if you want to use @code{epoll()} in
-combination with a server offering TLS and then upgrade connections
+This option must be set if you want to upgrade connections
 (via ``101 Switching Protocols'' responses).  This requires MHD to
-open up and process an extra socket, and hence we require this
-special flag in case this is really needed.   Note that using
-this option automatically implies @code{MHD_USE_EPOLL},
-@code{MHD_USE_TLS} and @code{MHD_USE_SUSPEND_RESUME}.
+allocate additional resources, and hence we require this
+special flag so we only use the resources that are really needed.
 
 @end table
 @end deftp
