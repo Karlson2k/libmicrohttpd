@@ -502,7 +502,7 @@ need_100_continue (struct MHD_Connection *connection)
 void
 MHD_connection_mark_closed_ (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon * const daemon = connection->daemon;
+  const struct MHD_Daemon *daemon = connection->daemon;
 
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
