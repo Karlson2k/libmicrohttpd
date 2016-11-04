@@ -186,7 +186,7 @@ main()
   if (0 != system ("wget --server-response -q -O - 127.0.0.1:8000"))
     {
       MHD_stop_daemon (daemon);
-      return EXIT_SUCCESS;
+      return 77; /* skipped */
     }
   // wait for a request
   while (0 == request_counter)
