@@ -52,6 +52,7 @@ check_PROGRAMS = \
 if HAVE_POSIX_THREADS
 check_PROGRAMS += \
   test_quiesce \
+  test_quiesce_stream \
   test_concurrent_stop \
   perf_get_concurrent
 endif
@@ -111,6 +112,14 @@ test_quiesce_SOURCES = \
 test_quiesce_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_quiesce_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS) @LIBCURL@
+
+test_quiesce_stream_SOURCES = \
+  test_quiesce_stream.c
+test_quiesce_stream_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_quiesce_stream_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS) @LIBCURL@
 
