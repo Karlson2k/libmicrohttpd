@@ -1173,6 +1173,48 @@ AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
 AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
 
+# Check for fork() and waitpid(). They are used for tests.
+AC_MSG_CHECKING([[for fork()]])
+AC_LINK_IFELSE(
+  [
+   AC_LANG_PROGRAM(
+     [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+     ]], [[
+  pid_t p = fork ();
+  if (0 == p)
+    return 1;
+     ]])
+  ], [
+   AC_DEFINE([[HAVE_FORK]], [[1]], [Define to 1 if you have the usable `fork' function.])
+   AC_MSG_RESULT([[yes]])
+
+   AC_MSG_CHECKING([[for waitpid()]])
+   AC_LINK_IFELSE(
+     [
+      AC_LANG_PROGRAM(
+        [[
+#include <sys/wait.h>
+        ]], [[
+     pid_t p = fork ();
+     if (0 == p)
+       return 1;
+     waitpid (p, (void*)0, 0)
+        ]])
+     ], [
+      AC_DEFINE([[HAVE_WAITPID]], [[1]], [Define to 1 if you have the usable `waitpid' function.])
+      AC_MSG_RESULT([[yes]])
+    ],[
+       AC_MSG_RESULT([[no]])
+    ])
+],[
+   AC_MSG_RESULT([[no]])
+])
 
 
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"

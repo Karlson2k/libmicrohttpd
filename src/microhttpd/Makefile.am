@@ -152,10 +152,12 @@ check_PROGRAMS = \
   test_shutdown_poll \
   test_daemon
 
+if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
   check_PROGRAMS += test_upgrade
 if ENABLE_HTTPS
-  check_PROGRAMS += test_upgrade_ssl
+  check_PROGRAMS += test_upgrade_tls
+endif
 endif
 endif
 
@@ -180,14 +182,28 @@ test_daemon_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_upgrade_SOURCES = \
-  test_upgrade.c
+  test_upgrade.c test_helpers.h mhd_sockets.h
+test_upgrade_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+test_upgrade_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_upgrade_LDFLAGS = \
+  $(GNUTLS_LDFLAGS)
 test_upgrade_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS)
 
-test_upgrade_ssl_SOURCES = \
-  test_upgrade_ssl.c
-test_upgrade_ssl_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+test_upgrade_tls_SOURCES = \
+  test_upgrade.c test_helpers.h mhd_sockets.h
+test_upgrade_tls_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+test_upgrade_tls_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_upgrade_tls_LDFLAGS = \
+  $(GNUTLS_LDFLAGS)
+test_upgrade_tls_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS)
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
