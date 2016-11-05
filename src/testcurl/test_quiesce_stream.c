@@ -162,18 +162,18 @@ http_AccessHandlerCallback (void *cls,
 int
 main()
 {
-  // Panic callback
+  /* Panic callback */
   MHD_set_panic_func (&http_PanicCallback,
                       NULL);
 
-  // Flags
+  /* Flags */
   unsigned int daemon_flags
     = MHD_USE_SELECT_INTERNALLY
     | MHD_USE_EPOLL
     | MHD_USE_SUSPEND_RESUME
     | MHD_USE_PIPE_FOR_SHUTDOWN;
 
-  // Create daemon
+  /* Create daemon */
   struct MHD_Daemon *daemon = MHD_start_daemon (daemon_flags,
                                                 8000,
                                                 NULL,
@@ -188,7 +188,7 @@ main()
       MHD_stop_daemon (daemon);
       return 77; /* skipped */
     }
-  // wait for a request
+  /* wait for a request */
   while (0 == request_counter)
     sleep (1);
 
