@@ -39,10 +39,6 @@
 #include "mhd_itc.h"
 #include "mhd_compat.h"
 
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-
 #if HAVE_SEARCH_H
 #include <search.h>
 #else
@@ -5447,14 +5443,14 @@ static void
 close_all_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  const _MHD_bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+  const bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
 #ifdef UPGRADE_SUPPORT
-  const _MHD_bool upg_allowed = (0 != (daemon->options & MHD_USE_UPGRADE));
+  const bool upg_allowed = (0 != (daemon->options & MHD_USE_UPGRADE));
 #endif /* UPGRADE_SUPPORT */
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
-  const _MHD_bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
+  const bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
 
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */

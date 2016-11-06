@@ -56,7 +56,7 @@
  * @param c character to check
  * @return non-zero if character is lower case letter, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciilower (char c)
 {
   return (c >= 'a') && (c <= 'z');
@@ -69,7 +69,7 @@ isasciilower (char c)
  * @param c character to check
  * @return non-zero if character is upper case letter, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciiupper (char c)
 {
   return (c >= 'A') && (c <= 'Z');
@@ -82,7 +82,7 @@ isasciiupper (char c)
  * @param c character to check
  * @return non-zero if character is letter in US-ASCII, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciialpha (char c)
 {
   return isasciilower (c) || isasciiupper (c);
@@ -95,7 +95,7 @@ isasciialpha (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciidigit (char c)
 {
   return (c >= '0') && (c <= '9');
@@ -108,7 +108,7 @@ isasciidigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciixdigit (char c)
 {
   return isasciidigit (c) ||
@@ -123,7 +123,7 @@ isasciixdigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit or letter, zero otherwise
  */
-_MHD_inline _MHD_bool
+_MHD_inline bool
 isasciialnum (char c)
 {
   return isasciialpha (c) || isasciidigit (c);

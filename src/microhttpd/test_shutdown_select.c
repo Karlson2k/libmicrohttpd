@@ -87,10 +87,10 @@
 #define SHUT_RDWR SD_BOTH
 #endif
 
-static _MHD_bool check_err;
+static bool check_err;
 
 
-static _MHD_bool
+static bool
 has_in_name(const char *prog_name, const char *marker)
 {
   size_t name_pos;
@@ -284,7 +284,7 @@ main (int argc, char *const *argv)
   WSADATA wsa_data;
   int err;
 #endif /* MHD_WINSOCK_SOCKETS */
-  _MHD_bool test_poll;
+  bool test_poll;
 
   test_poll = has_in_name(argv[0], "_poll");
   if (!test_poll)

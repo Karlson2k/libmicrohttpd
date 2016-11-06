@@ -27,6 +27,7 @@
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
+#include "mhd_options.h"
 #include "platform.h"
 #include "microhttpd.h"
 #ifdef HTTPS_SUPPORT
@@ -35,7 +36,10 @@
 #include <gnutls/abstract.h>
 #endif
 #endif /* HTTPS_SUPPORT */
-#include "mhd_options.h"
+
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
 
 
 #ifdef MHD_PANIC
