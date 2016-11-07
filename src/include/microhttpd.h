@@ -672,8 +672,6 @@ enum MHD_FLAG
    * Enable `epoll()` turbo.  Disables certain calls to `shutdown()`
    * and enables aggressive non-blocking optimisitc reads.
    * Most effects only happen with #MHD_USE_EPOLL.
-   * Enalbed always on W32 as winsock does not properly behave
-   * with `shutdown()` and this then fixes potential problems.
    */
   MHD_USE_EPOLL_TURBO = 4096,
 
@@ -687,7 +685,6 @@ enum MHD_FLAG
 #define MHD_USE_SUSPEND_RESUME \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_SUSPEND_RESUME is deprecated, use MHD_ALLOW_SUSPEND_RESUME instead") \
   MHD_ALLOW_SUSPEND_RESUME
-
 
   /**
    * Enable TCP_FASTOPEN option.  This option is only available on Linux with a
