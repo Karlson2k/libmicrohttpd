@@ -503,7 +503,7 @@ production.
 @cindex select
 Use @code{poll()} instead of @code{select()}. This allows sockets with
 descriptors @code{>= FD_SETSIZE}.  This option currently only works in
-conjunction with @code{MHD_USE_INTERNAL_SELECT} (at this point).
+conjunction with @code{MHD_USE_INTERNAL_POLLING_THREAD} (at this point).
 If you specify @code{MHD_USE_POLL} and the local platform does not
 support it, @code{MHD_start_daemon} will return NULL.
 
@@ -567,7 +567,7 @@ with using a thread pool; if it is used,
 Force MHD to use a signal inter-thread communication channel to notify
 the event loop (of threads) of our shutdown and other events.
 This is required if an appliction uses
-@code{MHD_USE_INTERNAL_SELECT} or @code{MHD_USE_THREAD_PER_CONNECTION}
+@code{MHD_USE_INTERNAL_POLLING_THREAD} or @code{MHD_USE_THREAD_PER_CONNECTION}
 and then performs @code{MHD_quiesce_daemon} (which eliminates our
 ability to signal termination via the listen socket).  In these modes,
 @code{MHD_quiesce_daemon} will fail if this option was not set.  Also,
@@ -1603,7 +1603,7 @@ set for connections.  This function must not be called if the
 @code{MHD_USE_THREAD_PER_CONNECTION} mode is in use (since then it is
 not meaningful to ask for a timeout, after all, there is concurrenct
 activity).  The function must also not be called by user-code if
-@code{MHD_USE_INTERNAL_SELECT} is in use.  In the latter case, the
+@code{MHD_USE_INTERNAL_POLLING_THREAD} is in use.  In the latter case, the
 behavior is undefined.
 
 @table @var
