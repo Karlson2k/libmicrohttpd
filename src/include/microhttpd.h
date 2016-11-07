@@ -1995,9 +1995,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 
 /**
  * Suspend handling of network data for a given connection.  This can
- * be used to dequeue a connection from MHD's event loop (external
- * select, internal select or thread pool; not applicable to
- * thread-per-connection!) for a while.
+ * be used to dequeue a connection from MHD's event loop for a while.
  *
  * If you use this API in conjunction with a internal select or a
  * thread pool, you must set the option #MHD_USE_ITC to

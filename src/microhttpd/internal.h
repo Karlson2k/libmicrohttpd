@@ -890,8 +890,7 @@ struct MHD_Connection
 
 #ifdef UPGRADE_SUPPORT
   /**
-   * If this connection was upgraded and if we are using
-   * #MHD_USE_THREAD_PER_CONNECTION or #MHD_USE_TLS, this points to
+   * If this connection was upgraded, this points to
    * the upgrade response details such that the
    * #thread_main_connection_upgrade()-logic can perform the
    * bi-directional forwarding.
