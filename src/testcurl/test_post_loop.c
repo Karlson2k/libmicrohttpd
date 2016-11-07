@@ -183,7 +183,7 @@ testMultithreadedPost ()
 
   cbc.buf = buf;
   cbc.size = 2048;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
                         1081, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;

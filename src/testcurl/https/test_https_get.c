@@ -46,7 +46,7 @@ test_cipher_option (FILE * test_fd,
 
   int ret;
   struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS |
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
                         MHD_USE_DEBUG, 4233,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -75,7 +75,7 @@ test_secure_get (FILE * test_fd,
   int ret;
   struct MHD_Daemon *d;
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS |
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
                         MHD_USE_DEBUG, 4233,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,

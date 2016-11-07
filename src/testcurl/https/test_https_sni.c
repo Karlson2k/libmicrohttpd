@@ -260,7 +260,7 @@ main (int argc, char *const *argv)
     }
   load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
   load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG,
                         4233,
                         NULL, NULL,
                         &http_ahc, NULL,

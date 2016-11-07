@@ -171,7 +171,7 @@ testMultithreadedGet ()
   struct MHD_Daemon *d;
   pid_t curl;
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
                         1081, NULL, NULL, &ahc_echo, "GET",
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 2,
 			MHD_OPTION_END);
