@@ -1173,6 +1173,20 @@ AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
 AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
 
+AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
+  [
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+       ]],[[void * ptr = calloc(1, 2)]])
+     ],
+     [[mhd_cv_have_func_calloc='yes']],
+     [[mhd_cv_have_func_calloc='no']]
+   )
+  ]
+)
+AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
+  [AC_DEFINE([[HAVE_CALLOC]], [[1]], [Define to 1 if you have the usable `calloc' function.])])
+
 # Check for fork() and waitpid(). They are used for tests.
 AC_MSG_CHECKING([[for fork()]])
 AC_LINK_IFELSE(

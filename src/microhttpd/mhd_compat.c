@@ -34,6 +34,9 @@
 #endif  /* HAVE_SNPRINTF */
 #endif /* _WIN32  && !__CYGWIN__ */
 
+#ifndef HAVE_CALLOC
+#include <string.h> /* for memset() */
+#endif /* ! HAVE_CALLOC */
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
@@ -78,3 +81,34 @@ W32_snprintf (char *__restrict s,
 
 #endif  /* HAVE_SNPRINTF */
 #endif /* _WIN32  && !__CYGWIN__ */
+
+#ifndef HAVE_CALLOC
+
+#ifdef __has_builtin
+#  if __has_builtin(__builtin_mul_overflow)
+#    define MHD_HAVE_NUL_OVERFLOW 1
+#  endif
+#elif __GNUC__+0 >= 5
+#  define MHD_HAVE_NUL_OVERFLOW 1
+#endif /* __GNUC__ >= 5 */
+
+
+void *MHD_calloc_(size_t nelem, size_t elsize)
+{
+  size_t alloc_size;
+  void *ptr;
+#ifdef MHD_HAVE_NUL_OVERFLOW
+  if (__builtin_mul_overflow(nelem, elsize, &alloc_size) || 0 == alloc_size)
+    return NULL;
+#else  /* ! MHD_HAVE_NUL_OVERFLOW */
+  alloc_size = nelem * elsize;
+  if (0 == alloc_size || elsize != alloc_size / nelem)
+    return NULL;
+#endif /* ! MHD_HAVE_NUL_OVERFLOW */
+  ptr = malloc (alloc_size);
+  if (NULL == ptr)
+    return NULL;
+  memset(ptr, 0, alloc_size);
+  return ptr;
+}
+#endif /* ! HAVE_CALLOC */

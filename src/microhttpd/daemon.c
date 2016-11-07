@@ -2062,7 +2062,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-  if (NULL == (connection = malloc (sizeof (struct MHD_Connection))))
+  if (NULL == (connection = MHD_calloc_ (1, sizeof (struct MHD_Connection))))
     {
       eno = errno;
 #ifdef HAVE_MESSAGES
@@ -2077,9 +2077,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
       errno = eno;
       return MHD_NO;
     }
-  memset (connection,
-          0,
-          sizeof (struct MHD_Connection));
   connection->pool = MHD_pool_create (daemon->pool_size);
   if (NULL == connection->pool)
     {
@@ -3248,7 +3245,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     int poll_itc_idx;
     struct pollfd *p;
 
-    p = malloc (sizeof (struct pollfd) * (2 + num_connections));
+    p = MHD_calloc_ ((2 + num_connections), sizeof (struct pollfd));
     if (NULL == p)
       {
 #ifdef HAVE_MESSAGES
@@ -3258,9 +3255,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 #endif
         return MHD_NO;
       }
-    memset (p,
-            0,
-            sizeof (struct pollfd) * (2 + num_connections));
     poll_server = 0;
     poll_listen = -1;
     if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
@@ -4746,11 +4740,8 @@ MHD_start_daemon_va (unsigned int flags,
     }
   if (NULL == dh)
     return NULL;
-  if (NULL == (daemon = malloc (sizeof (struct MHD_Daemon))))
+  if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
     return NULL;
-  memset (daemon,
-          0,
-          sizeof (struct MHD_Daemon));
 #ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)

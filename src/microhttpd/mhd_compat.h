@@ -72,4 +72,16 @@ int W32_snprintf(char *__restrict s, size_t n, const char *__restrict format, ..
 #endif /* HAVE_RAND */
 #endif /* HAVE_RANDOM */
 
+#ifdef HAVE_CALLOC
+/**
+ * MHD_calloc_ is platform-independent calloc()
+ */
+#define MHD_calloc_(n,s) calloc((n),(s))
+#else  /* ! HAVE_CALLOC */
+/**
+ * MHD_calloc_ is platform-independent calloc()
+ */
+void *MHD_calloc_(size_t nelem, size_t elsize);
+#endif /* ! HAVE_CALLOC */
+
 #endif /* MHD_COMPAT_H */

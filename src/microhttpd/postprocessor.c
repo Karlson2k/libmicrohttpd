@@ -25,6 +25,7 @@
 
 #include "internal.h"
 #include "mhd_str.h"
+#include "mhd_compat.h"
 
 /**
  * Size of on-stack buffer that we use for un-escaping of the value.
@@ -325,11 +326,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   buffer_size += 4; /* round up to get nice block sizes despite boundary search */
 
   /* add +1 to ensure we ALWAYS have a zero-termination at the end */
-  if (NULL == (ret = malloc (sizeof (struct MHD_PostProcessor) + buffer_size + 1)))
+  if (NULL == (ret = MHD_calloc_ (1, sizeof (struct MHD_PostProcessor) + buffer_size + 1)))
     return NULL;
-  memset (ret,
-          0,
-          sizeof (struct MHD_PostProcessor) + buffer_size + 1);
   ret->connection = connection;
   ret->ikvi = iter;
   ret->cls = iter_cls;

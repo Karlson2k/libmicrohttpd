@@ -38,6 +38,7 @@
 #include "mhd_itc.h"
 #include "connection.h"
 #include "memorypool.h"
+#include "mhd_compat.h"
 
 
 #if defined(_WIN32) && defined(MHD_W32_MUTEX_)
@@ -270,11 +271,8 @@ MHD_create_response_from_callback (uint64_t size,
 
   if ((NULL == crc) || (0 == block_size))
     return NULL;
-  if (NULL == (response = malloc (sizeof (struct MHD_Response) + block_size)))
+  if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response) + block_size)))
     return NULL;
-  memset (response,
-          0,
-          sizeof (struct MHD_Response));
   response->fd = -1;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
@@ -554,11 +552,8 @@ MHD_create_response_from_data (size_t size,
 
   if ((NULL == data) && (size > 0))
     return NULL;
-  if (NULL == (response = malloc (sizeof (struct MHD_Response))))
+  if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
     return NULL;
-  memset (response,
-          0,
-          sizeof (struct MHD_Response));
   response->fd = -1;
   if (! MHD_mutex_init_ (&response->mutex))
     {
@@ -706,12 +701,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       return MHD_NO;
     }
 
-  urh = malloc (sizeof (struct MHD_UpgradeResponseHandle));
+  urh = MHD_calloc_ (1, sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
-  memset (urh,
-          0,
-          sizeof (struct MHD_UpgradeResponseHandle));
   urh->connection = connection;
   rbo = connection->read_buffer_offset;
   connection->read_buffer_offset = 0;
@@ -960,10 +952,9 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 
   if (NULL == upgrade_handler)
     return NULL; /* invalid request */
-  response = malloc (sizeof (struct MHD_Response));
+  response = MHD_calloc_ (1, sizeof (struct MHD_Response));
   if (NULL == response)
     return NULL;
-  memset (response, 0, sizeof (struct MHD_Response));
   if (! MHD_mutex_init_ (&response->mutex))
     {
       free (response);
