@@ -254,7 +254,7 @@ main ()
     }
 
   daemon =
-    MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_TLS, PORT, NULL,
+    MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS, PORT, NULL,
                       NULL, &answer_to_connection, NULL,
                       MHD_OPTION_HTTPS_MEM_KEY, key_pem,
                       MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);

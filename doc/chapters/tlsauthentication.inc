@@ -68,7 +68,7 @@ main ()
 and then we point the @emph{MHD} daemon to it upon initalization.
 @verbatim
 
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_SSL,
   	   		     PORT, NULL, NULL,
                              &answer_to_connection, NULL,
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
@@ -138,7 +138,7 @@ To do this, you will need to link your application against @emph{gnutls}.
 Next, when you start the MHD daemon, you must specify the root CA that you're
 willing to trust:
 @verbatim
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_SSL,
   	   		     PORT, NULL, NULL,
                              &answer_to_connection, NULL,
                              MHD_OPTION_HTTPS_MEM_KEY, key_pem,
@@ -326,7 +326,7 @@ of one domain is that you need to provide a callback instead of the key
 and certificate.  For example, when you start the MHD daemon, you could
 do this:
 @verbatim
-  daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL,
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_SSL,
   	   		     PORT, NULL, NULL,
                              &answer_to_connection, NULL,
                              MHD_OPTION_HTTPS_CERT_CALLBACK, &sni_callback,

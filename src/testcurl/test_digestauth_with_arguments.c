@@ -184,7 +184,7 @@ testDigestAuth ()
       return 1;
   }
 #endif
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
                         1337, NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
 			MHD_OPTION_NONCE_NC_SIZE, 300,

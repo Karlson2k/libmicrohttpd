@@ -1064,7 +1064,7 @@ test_upgrade (int flags,
                            &run_usock_client,
                            &sock))
     abort ();
-  if (0 == (flags & (MHD_USE_SELECT_INTERNALLY |
+  if (0 == (flags & (MHD_USE_INTERNAL_POLLING_THREAD |
                      MHD_USE_THREAD_PER_CONNECTION)) )
     run_mhd_loop (d, flags);
   pthread_join (pt_client,
@@ -1176,14 +1176,14 @@ main (int argc,
 #endif /* HAVE_POLL */
 
   /* Test different event loops, with and without thread pool */
-  res = test_upgrade (MHD_USE_SELECT_INTERNALLY,
+  res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD,
                       0);
   error_count += res;
   if (res)
     fprintf (stderr, "FAILED: Upgrade with internal select, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal select.\n");
-  res = test_upgrade (MHD_USE_SELECT_INTERNALLY,
+  res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD,
                       2);
   error_count += res;
   if (res)
@@ -1191,14 +1191,14 @@ main (int argc,
   else if (verbose)
     printf ("PASSED: Upgrade with internal select with thread pool.\n");
 #ifdef HAVE_POLL
-  res = test_upgrade (MHD_USE_POLL_INTERNALLY,
+  res = test_upgrade (MHD_USE_POLL_INTERNAL_THREAD,
                       0);
   error_count += res;
   if (res)
     fprintf (stderr, "FAILED: Upgrade with internal poll, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal poll.\n");
-  res = test_upgrade (MHD_USE_POLL_INTERNALLY,
+  res = test_upgrade (MHD_USE_POLL_INTERNAL_THREAD,
                       2);
   if (res)
     fprintf (stderr, "FAILED: Upgrade with internal poll with thread pool, return code %d.\n", res);
@@ -1206,13 +1206,13 @@ main (int argc,
     printf ("PASSED: Upgrade with internal poll with thread pool.\n");
 #endif
 #ifdef EPOLL_SUPPORT
-  res = test_upgrade (MHD_USE_EPOLL_INTERNALLY,
+  res = test_upgrade (MHD_USE_EPOLL_INTERNAL_THREAD,
                       0);
   if (res)
     fprintf (stderr, "FAILED: Upgrade with internal epoll, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal epoll.\n");
-  res = test_upgrade (MHD_USE_EPOLL_INTERNALLY,
+  res = test_upgrade (MHD_USE_EPOLL_INTERNAL_THREAD,
                       2);
   if (res)
     fprintf (stderr, "FAILED: Upgrade with internal epoll, return code %d.\n", res);

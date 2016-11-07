@@ -168,7 +168,7 @@ main()
 
   /* Flags */
   unsigned int daemon_flags
-    = MHD_USE_SELECT_INTERNALLY
+    = MHD_USE_INTERNAL_POLLING_THREAD
     | MHD_USE_EPOLL
     | MHD_ALLOW_SUSPEND_RESUME
     | MHD_USE_ITC;

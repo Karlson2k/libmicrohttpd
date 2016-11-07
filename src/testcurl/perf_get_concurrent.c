@@ -236,7 +236,7 @@ testInternalGet (int port, int poll_flag)
   const char * const test_desc = poll_flag ? "internal poll" : "internal select";
   const char * ret_val;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG  | poll_flag,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG  | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -287,7 +287,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
   const char * const test_desc = poll_flag ? "thread pool with poll" : "thread pool with select";
   const char * ret_val;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)

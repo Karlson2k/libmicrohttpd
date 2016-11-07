@@ -75,7 +75,7 @@ testStartStop ()
 {
   struct MHD_Daemon *d;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
                         1080,
                         &apc_nothing,
                         NULL, &ahc_nothing, NULL, MHD_OPTION_END);
@@ -124,7 +124,7 @@ static int
 testThread ()
 {
   struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_SELECT_INTERNALLY,
+  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_INTERNAL_POLLING_THREAD,
                         1082,
                         &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
