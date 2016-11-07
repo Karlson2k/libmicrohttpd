@@ -522,7 +522,7 @@ struct MHD_PostProcessor;
  *
  * Starting the daemon may also fail if a particular option is not
  * implemented or not supported on the target platform (i.e. no
- * support for SSL, threads or IPv6).
+ * support for TLS, epoll or IPv6).
  */
 enum MHD_FLAG
 {
