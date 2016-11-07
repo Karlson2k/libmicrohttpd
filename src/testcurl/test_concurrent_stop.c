@@ -232,7 +232,7 @@ testMultithreadedPoolGet (int port,
   struct MHD_Daemon *d;
   pthread_t p;
 
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | poll_flag,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG | poll_flag,
                         port,
                         NULL, NULL,
                         &ahc_echo, "GET",

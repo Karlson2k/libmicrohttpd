@@ -1411,7 +1411,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
             {
               if ((MHD_YES != try_grow_read_buffer (connection)) &&
                   (0 != (connection->daemon->options &
-                         (MHD_USE_SELECT_INTERNALLY |
+                         (MHD_USE_INTERNAL_POLLING_THREAD |
                           MHD_USE_THREAD_PER_CONNECTION))))
                 {
                   /* failed to grow the read buffer, and the
@@ -2009,7 +2009,7 @@ process_request_body (struct MHD_Connection *connection)
 	     the setup was incorrect, which may prevent us from
 	     handling the rest of the request */
 	  if ( ( (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
-		 (0 != (connection->daemon->options & MHD_USE_SELECT_INTERNALLY)) ) &&
+		 (0 != (connection->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ) &&
 	       (MHD_NO == connection->suspended) )
 	    MHD_DLOG (connection->daemon,
 		      _("WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n"));

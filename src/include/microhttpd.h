@@ -517,7 +517,7 @@ struct MHD_PostProcessor;
  * @brief Flags for the `struct MHD_Daemon`.
  *
  * Note that if neither #MHD_USE_THREAD_PER_CONNECTION nor
- * #MHD_USE_SELECT_INTERNALLY is used, the client wants control over
+ * #MHD_USE_INTERNAL_POLLING_THREAD is used, the client wants control over
  * the process and will call the appropriate microhttpd callbacks.
  *
  * Starting the daemon may also fail if a particular option is not
@@ -557,9 +557,16 @@ enum MHD_FLAG
   MHD_USE_THREAD_PER_CONNECTION = 4,
 
   /**
-   * Run using an internal thread (or thread pool) doing `select()`.
+   * Run using an internal thread (or thread pool) for sockets sending
+   * and receiving and data processing.
    */
+  MHD_USE_INTERNAL_POLLING_THREAD = 8,
+
+  /** @deprecated */
   MHD_USE_SELECT_INTERNALLY = 8,
+#define MHD_USE_SELECT_INTERNALLY \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_SELECT_INTERNALLY is deprecated, use MHD_USE_INTERNAL_POLLING_THREAD instead") \
+  MHD_USE_INTERNAL_POLLING_THREAD
 
   /**
    * Run using the IPv6 protocol (otherwise, MHD will just support
@@ -584,16 +591,24 @@ enum MHD_FLAG
   /**
    * Use `poll()` instead of `select()`. This allows sockets with `fd >=
    * FD_SETSIZE`.  This option is not compatible with using an
-   * 'external' `select()` mode (as there is no API to get the file
-   * descriptors for the external select from MHD) and must also not
+   * 'external' polling mode (as there is no API to get the file
+   * descriptors for the external poll() from MHD) and must also not
    * be used in combination with #MHD_USE_EPOLL.
+   * @sa ::MHD_FEATURE_POLL, #MHD_USE_POLL_INTERNAL_THREAD
    */
   MHD_USE_POLL = 64,
 
   /**
    * Run using an internal thread (or thread pool) doing `poll()`.
+   * @sa ::MHD_FEATURE_POLL, #MHD_USE_POLL, #MHD_USE_INTERNAL_POLLING_THREAD
    */
-  MHD_USE_POLL_INTERNALLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL,
+  MHD_USE_POLL_INTERNAL_THREAD = MHD_USE_POLL | MHD_USE_INTERNAL_POLLING_THREAD,
+
+  /** @deprecated */
+  MHD_USE_POLL_INTERNALLY = MHD_USE_POLL | MHD_USE_INTERNAL_POLLING_THREAD,
+#define MHD_USE_POLL_INTERNALLY \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_POLL_INTERNALLY is deprecated, use MHD_USE_POLL_INTERNAL_THREAD instead") \
+  MHD_USE_POLL_INTERNAL_THREAD
 
   /**
    * Suppress (automatically) adding the 'Date:' header to HTTP responses.
@@ -633,15 +648,21 @@ enum MHD_FLAG
 
   /**
    * Run using an internal thread (or thread pool) doing `epoll()`.
-   * This option is only available on Linux; using the option on
-   * non-Linux systems will cause #MHD_start_daemon to fail.
+   * This option is only available on certain platforms; using the option on
+   * platform without `epoll` support will cause #MHD_start_daemon to fail.
+   * @sa ::MHD_FEATURE_EPOLL, #MHD_USE_EPOLL, #MHD_USE_INTERNAL_POLLING_THREAD
    */
-  MHD_USE_EPOLL_INTERNALLY = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL,
+  MHD_USE_EPOLL_INTERNAL_THREAD = MHD_USE_EPOLL | MHD_USE_INTERNAL_POLLING_THREAD,
 
 /** @deprecated */
+  MHD_USE_EPOLL_INTERNALLY = MHD_USE_EPOLL | MHD_USE_INTERNAL_POLLING_THREAD,
+#define MHD_USE_EPOLL_INTERNALLY \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
+  MHD_USE_EPOLL_INTERNAL_THREAD
+/** @deprecated */
 #define MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY \
-  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNALLY") \
-  MHD_USE_EPOLL_INTERNALLY
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
+  MHD_USE_EPOLL_INTERNAL_THREAD
 
   /**
    * Use inter-thread communication channel.
@@ -869,7 +890,7 @@ enum MHD_OPTION
    * Number (`unsigned int`) of threads in thread pool. Enable
    * thread pooling by setting this value to to something
    * greater than 1. Currently, thread model must be
-   * #MHD_USE_SELECT_INTERNALLY if thread pooling is enabled
+   * #MHD_USE_INTERNAL_POLLING_THREAD if thread pooling is enabled
    * (#MHD_start_daemon returns NULL for an unsupported thread
    * model).
    */
@@ -2795,7 +2816,7 @@ enum MHD_FEATURE
   /**
    * Get whether `epoll()` is supported. If supported then Flags
    * #MHD_USE_EPOLL and
-   * #MHD_USE_EPOLL_INTERNALLY can be used.
+   * #MHD_USE_EPOLL_INTERNAL_THREAD can be used.
    */
   MHD_FEATURE_EPOLL = 7,
 

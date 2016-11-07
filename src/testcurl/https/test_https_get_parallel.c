@@ -151,7 +151,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("single threaded daemon, single client, epoll", &test_single_client,
                NULL,
-               MHD_USE_SELECT_INTERNALLY | MHD_USE_TLS | MHD_USE_DEBUG | MHD_USE_EPOLL,
+               MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG | MHD_USE_EPOLL,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
@@ -159,7 +159,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("single threaded daemon, single client", &test_single_client,
                NULL,
-               MHD_USE_SELECT_INTERNALLY | MHD_USE_TLS | MHD_USE_DEBUG,
+               MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
@@ -167,7 +167,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("single threaded daemon, parallel clients, epoll",
                &test_parallel_clients, NULL,
-               MHD_USE_SELECT_INTERNALLY | MHD_USE_TLS | MHD_USE_DEBUG | MHD_USE_EPOLL,
+               MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG | MHD_USE_EPOLL,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
@@ -175,7 +175,7 @@ main (int argc, char *const *argv)
   errorCount +=
     test_wrap ("single threaded daemon, parallel clients",
                &test_parallel_clients, NULL,
-               MHD_USE_SELECT_INTERNALLY | MHD_USE_TLS | MHD_USE_DEBUG,
+               MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);

@@ -2957,8 +2957,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  unsigned int mask = MHD_ALLOW_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNALLY |
-    MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION;
+  unsigned int mask = MHD_ALLOW_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNAL_THREAD |
+    MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL_INTERNAL_THREAD | MHD_USE_THREAD_PER_CONNECTION;
 
   /* Clear ITC to avoid spinning select */
   /* Do it before any other processing so new signals
@@ -3904,7 +3904,7 @@ MHD_run (struct MHD_Daemon *daemon)
 {
   if ( (MHD_YES == daemon->shutdown) ||
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
-       (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) )
+       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
     return MHD_NO;
   if (0 != (daemon->options & MHD_USE_POLL))
   {
@@ -4089,7 +4089,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
   if ( (MHD_ITC_IS_INVALID_(daemon->itc)) &&
-       (0 != (daemon->options & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION))) )
+       (0 != (daemon->options & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION))) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4786,7 +4786,7 @@ MHD_start_daemon_va (unsigned int flags,
 #else
   use_itc = 1; /* yes, must use ITC to signal thread */
 #endif
-  if (0 == (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
+  if (0 == (flags & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION)))
     use_itc = 0; /* useless if we are using 'external' select */
   if (use_itc)
   {
@@ -4890,18 +4890,18 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 
   /* Thread pooling currently works only with internal select thread model */
-  if ( (0 == (flags & MHD_USE_SELECT_INTERNALLY)) &&
+  if ( (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (daemon->worker_pool_size > 0) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		_("MHD thread pooling only works with MHD_USE_SELECT_INTERNALLY\n"));
+		_("MHD thread pooling only works with MHD_USE_INTERNAL_POLLING_THREAD\n"));
 #endif
       goto free_and_fail;
     }
 
 #ifdef __SYMBIAN32__
-  if (0 != (flags & (MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION)))
+  if (0 != (flags & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION)))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5234,7 +5234,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif /* HTTPS_SUPPORT */
   if ( ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) ||
-	 ( (0 != (flags & MHD_USE_SELECT_INTERNALLY)) &&
+	 ( (0 != (flags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
 	   (0 == daemon->worker_pool_size)) ) &&
        (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) &&
        (! MHD_create_named_thread_ (&daemon->pid,
@@ -5282,7 +5282,7 @@ MHD_start_daemon_va (unsigned int flags,
 
           memcpy (d, daemon, sizeof (struct MHD_Daemon));
           /* Adjust pooling params for worker daemons; note that memcpy()
-             has already copied MHD_USE_SELECT_INTERNALLY thread model into
+             has already copied MHD_USE_INTERNAL_POLLING_THREAD thread model into
              the worker threads. */
           d->master = daemon;
           d->worker_pool_size = 0;
@@ -5365,7 +5365,7 @@ thread_failed:
   /* If no worker threads created, then shut down normally. Calling
      MHD_stop_daemon (as we do below) doesn't work here since it
      assumes a 0-sized thread pool means we had been in the default
-     MHD_USE_SELECT_INTERNALLY mode. */
+     MHD_USE_INTERNAL_POLLING_THREAD mode. */
   if (0 == i)
     {
       if (MHD_INVALID_SOCKET != socket_fd)
@@ -5619,7 +5619,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   fd = daemon->socket_fd;
   daemon->socket_fd = MHD_INVALID_SOCKET;
 
-  if ( (0 != (daemon->options & MHD_USE_SELECT_INTERNALLY)) ||
+  if ( (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ||
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
     {
       /* Separate thread(s) is used for select()/poll()/etc. */

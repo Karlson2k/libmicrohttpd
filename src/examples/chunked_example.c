@@ -78,8 +78,8 @@ main (int argc, char *const *argv)
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-  d = MHD_start_daemon (// MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG | MHD_USE_POLL,
-			MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+  d = MHD_start_daemon (// MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG | MHD_USE_POLL,
+			MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG | MHD_USE_POLL,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
                         atoi (argv[1]),
