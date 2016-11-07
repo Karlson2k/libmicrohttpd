@@ -74,6 +74,9 @@
 /* Define to 1 if you have the `gmtime_s' function in W32 form. */
 #define HAVE_W32_GMTIME_S 1
 
+/* Define to 1 if you have the usable `calloc' function. */
+#define HAVE_CALLOC 1
+
 #if _MSC_VER >= 1900 /* snprintf() supported natively since VS2015 */
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
