@@ -170,8 +170,8 @@ main()
   unsigned int daemon_flags
     = MHD_USE_SELECT_INTERNALLY
     | MHD_USE_EPOLL
-    | MHD_USE_SUSPEND_RESUME
-    | MHD_USE_PIPE_FOR_SHUTDOWN;
+    | MHD_ALLOW_SUSPEND_RESUME
+    | MHD_USE_ITC;
 
   /* Create daemon */
   struct MHD_Daemon *daemon = MHD_start_daemon (daemon_flags,

@@ -134,7 +134,7 @@ main (int argc, char *const *argv)
 				  MHD_HTTP_HEADER_CONNECTION,
 				  "close");
 #endif
-  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_SUPPRESS_DATE_NO_CLOCK
+  d = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SUPPRESS_DATE_NO_CLOCK
 #ifdef EPOLL_SUPPORT
 			| MHD_USE_EPOLL | MHD_USE_EPOLL_TURBO
 #endif

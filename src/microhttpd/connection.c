@@ -1046,7 +1046,7 @@ build_header_response (struct MHD_Connection *connection)
       /* estimate size */
       size = off + 2;           /* +2 for extra "\r\n" at the end */
       kind = MHD_HEADER_KIND;
-      if ( (0 == (connection->daemon->options & MHD_SUPPRESS_DATE_NO_CLOCK)) &&
+      if ( (0 == (connection->daemon->options & MHD_USE_SUPPRESS_DATE_NO_CLOCK)) &&
 	   (NULL == MHD_get_response_header (connection->response,
 					     MHD_HTTP_HEADER_DATE)) )
         get_date_string (date);
@@ -3455,11 +3455,11 @@ MHD_queue_response (struct MHD_Connection *connection,
 #ifdef UPGRADE_SUPPORT
   daemon = connection->daemon;
   if ( (NULL != response->upgrade_handler) &&
-       (0 == (daemon->options & MHD_USE_UPGRADE)) )
+       (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _("Attempted 'upgrade' connection on daemon without MHD_USE_UPGRADE option!\n"));
+                _("Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
 #endif
       return MHD_NO;
     }

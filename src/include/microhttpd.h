@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095205
+#define MHD_VERSION 0x00095206
 
 /**
  * MHD-internal return code for "YES".
@@ -601,7 +601,12 @@ enum MHD_FLAG
    * and that DO provide other mechanisms for cache control.  See also
    * RFC 2616, section 14.18 (exception 3).
    */
-  MHD_SUPPRESS_DATE_NO_CLOCK = 128,
+  MHD_USE_SUPPRESS_DATE_NO_CLOCK = 128,
+
+/** @deprecated */
+#define MHD_SUPPRESS_DATE_NO_CLOCK \
+  _MHD_DEPR_IN_MACRO("Value MHD_SUPPRESS_DATE_NO_CLOCK is deprecated, use MHD_USE_SUPPRESS_DATE_NO_CLOCK instead") \
+  MHD_USE_SUPPRESS_DATE_NO_CLOCK
 
   /**
    * Run without a listen socket.  This option only makes sense if
@@ -645,7 +650,7 @@ enum MHD_FLAG
    * "external" mode.
    * It's required for use of #MHD_quiesce_daemon
    * or #MHD_add_connection.
-   * This option is enforced by #MHD_USE_SUSPEND_RESUME or
+   * This option is enforced by #MHD_ALLOW_SUSPEND_RESUME or
    * #MHD_USE_NO_LISTEN_SOCKET.
    * #MHD_USE_ITC is always used automatically on platforms
    * where select()/poll()/other ignore shutdown of listen
@@ -676,7 +681,13 @@ enum MHD_FLAG
    * Enable suspend/resume functions, which also implies setting up
    * ITC to signal resume.
    */
-  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
+  MHD_ALLOW_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
+
+/** @deprecated */
+#define MHD_USE_SUSPEND_RESUME \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_SUSPEND_RESUME is deprecated, use MHD_ALLOW_SUSPEND_RESUME instead") \
+  MHD_ALLOW_SUSPEND_RESUME
+
 
   /**
    * Enable TCP_FASTOPEN option.  This option is only available on Linux with a
@@ -690,7 +701,7 @@ enum MHD_FLAG
    * "Upgrade" may require usage of additional internal resources,
    * which we do not want to use unless necessary.
    */
-  MHD_USE_UPGRADE = 32768
+  MHD_ALLOW_UPGRADE = 32768
 
 };
 
@@ -2859,7 +2870,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether HTTP "Upgrade" is supported.
-   * If supported then #MHD_USE_UPGRADE, #MHD_upgrade_action() and
+   * If supported then #MHD_ALLOW_UPGRADE, #MHD_upgrade_action() and
    * #MHD_create_response_for_upgrade() can be used.
    */
   MHD_FEATURE_UPGRADE = 17

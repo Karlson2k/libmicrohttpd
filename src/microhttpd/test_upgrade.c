@@ -1004,7 +1004,7 @@ test_upgrade (int flags,
   done = 0;
 
   if (!test_tls)
-    d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_UPGRADE,
+    d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_ALLOW_UPGRADE,
                         1080,
                         NULL, NULL,
                         &ahc_upgrade, NULL,
@@ -1015,7 +1015,7 @@ test_upgrade (int flags,
                         MHD_OPTION_END);
 #ifdef HTTPS_SUPPORT
   else
-    d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_USE_UPGRADE | MHD_USE_TLS,
+    d = MHD_start_daemon (flags | MHD_USE_DEBUG | MHD_ALLOW_UPGRADE | MHD_USE_TLS,
                           1080,
                           NULL, NULL,
                           &ahc_upgrade, NULL,

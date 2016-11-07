@@ -542,7 +542,7 @@ want to benchmark your application to see if this makes any difference
 for you.
 
 
-@item MHD_SUPPRESS_DATE_NO_CLOCK
+@item MHD_USE_SUPPRESS_DATE_NO_CLOCK
 @cindex date
 @cindex clock
 @cindex embedded systems
@@ -579,7 +579,7 @@ Using this option also guarantees that MHD will not call
 @code{shutdown()} on the listen socket, which means a parent
 process can continue to use the socket.
 
-@item MHD_USE_SUSPEND_RESUME
+@item MHD_ALLOW_SUSPEND_RESUME
 Enables using @code{MHD_suspend_connection} and
 @code{MHD_resume_connection}, as performing these calls requires some
 additional inter-thred communication channels to be created, and code
@@ -591,7 +591,7 @@ Enable TCP_FASTOPEN on the listen socket.  TCP_FASTOPEN is currently
 supported on Linux >= 3.6.  On other systems using this option with
 cause @code{MHD_start_daemon} to fail.
 
-@item MHD_USE_UPGRADE
+@item MHD_ALLOW_UPGRADE
 @cindex upgrade
 This option must be set if you want to upgrade connections
 (via ``101 Switching Protocols'' responses).  This requires MHD to
@@ -2098,7 +2098,7 @@ upgrade is performed is negotiated between server and client in
 additional headers, in particular the ``Upgrade'' header.
 
 MHD supports switching protocols using this mechanism only if the
-@code{MHD_USE_SUSPEND_RESUME} flag has been set when starting
+@code{MHD_ALLOW_SUSPEND_RESUME} flag has been set when starting
 the daemon.  If this flag has been set, applications can upgrade
 a connection by queueing a response (using the
 @code{MHD_HTTP_SWITCHING_PROTOCOLS} status code) which must
@@ -2201,7 +2201,7 @@ select, internal select or thread pool; not applicable to
 thread-per-connection!) for a while.
 
 If you use this API in conjunction with a internal select or a
-thread pool, you must set the option @code{MHD_USE_SUSPEND_RESUME} to
+thread pool, you must set the option @code{MHD_ALLOW_SUSPEND_RESUME} to
 ensure that a resumed connection is immediately processed by MHD.
 
 Suspended connections continue to count against the total number of
