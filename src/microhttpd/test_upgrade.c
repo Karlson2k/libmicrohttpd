@@ -470,8 +470,9 @@ notify_completed_cb (void *cls,
        (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
        (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
     abort ();
-  if (((long) *con_cls) != (long) pthread_self ())
+  if (! pthread_equal (**((pthread_t**)con_cls), pthread_self ()))
     abort ();
+  free (*con_cls);
   *con_cls = NULL;
 }
 
@@ -489,10 +490,15 @@ log_cb (void *cls,
         const char *uri,
         struct MHD_Connection *connection)
 {
+  pthread_t* ppth;
   if (0 != strcmp (uri,
                    "/"))
     abort ();
-  return (void *) (long) pthread_self ();
+  ppth = (pthread_t*) malloc (sizeof(pthread_t));
+  if (NULL == ppth)
+    abort();
+  *ppth = pthread_self ();
+  return (void *) ppth;
 }
 
 
@@ -839,7 +845,9 @@ ahc_upgrade (void *cls,
   struct MHD_Response *resp;
   int ret;
 
-  if (((long) *con_cls) != (long) pthread_self ())
+  if (NULL == *con_cls)
+    abort ();
+  if (! pthread_equal (**((pthread_t**)con_cls), pthread_self ()))
     abort ();
   resp = MHD_create_response_for_upgrade (&upgrade_cb,
                                           NULL);
