@@ -488,13 +488,13 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testGet (MHD_USE_INTERNAL_POLLING_THREAD, 0, 0);
-  errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, 0);
+  errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD, 0, 0);
   errorCount += testGet (MHD_USE_INTERNAL_POLLING_THREAD, CPU_COUNT, 0);
   errorCount += testExternalGet ();
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
     {
       errorCount += testGet(MHD_USE_INTERNAL_POLLING_THREAD, 0, MHD_USE_POLL);
-      errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION, 0, MHD_USE_POLL);
+      errorCount += testGet (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD, 0, MHD_USE_POLL);
       errorCount += testGet (MHD_USE_INTERNAL_POLLING_THREAD, CPU_COUNT, MHD_USE_POLL);
     }
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))

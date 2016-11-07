@@ -83,7 +83,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   const char *ssl_version;
   int daemon_flags =
-    MHD_USE_THREAD_PER_CONNECTION | MHD_USE_TLS | MHD_USE_DEBUG;
+    MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_DEBUG;
 
   gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);

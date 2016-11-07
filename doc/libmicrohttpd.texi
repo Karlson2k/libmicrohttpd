@@ -435,9 +435,10 @@ compiler).
 @deftp {Enumeration} MHD_FLAG
 Options for the MHD daemon.
 
-Note that if neither @code{MHD_USE_THREAD_PER_CONNECTION} nor
-@code{MHD_USE_INTERNAL_POLLING_THREAD} is used, the client wants control over
-the process and will call the appropriate microhttpd callbacks.
+Note that MHD will run automatically in background thread(s) only
+if @code{MHD_USE_INTERNAL_POLLING_THREAD} is used. Otherwise caller
+(application) must use @code{MHD_run} or @code{MHD_run_from_select}
+to have MHD processed network connections and data.
 
 Starting the daemon may also fail if a particular option is not
 implemented or not supported on the target platform (i.e. no support for
@@ -502,10 +503,9 @@ production.
 @cindex select
 Use @code{poll()} instead of @code{select()}. This allows sockets with
 descriptors @code{>= FD_SETSIZE}.  This option currently only works in
-conjunction with @code{MHD_USE_THREAD_PER_CONNECTION} or
-@code{MHD_USE_INTERNAL_POLLING_THREAD} (at this point).  If you specify
-@code{MHD_USE_POLL} and the local platform does not support it,
-@code{MHD_start_daemon} will return NULL.
+conjunction with @code{MHD_USE_INTERNAL_POLLING_THREAD} (at this point).
+If you specify @code{MHD_USE_POLL} and the local platform does not
+support it, @code{MHD_start_daemon} will return NULL.
 
 @item MHD_USE_EPOLL
 @cindex FD_SETSIZE
@@ -566,10 +566,10 @@ with using a thread pool; if it is used,
 @cindex quiesce
 Force MHD to use a signal inter-thread communication channel to notify
 the event loop (of threads) of our shutdown and other events.
-This is required if an appliction uses
-@code{MHD_USE_INTERNAL_POLLING_THREAD} or @code{MHD_USE_THREAD_PER_CONNECTION}
-and then performs @code{MHD_quiesce_daemon} (which eliminates our
-ability to signal termination via the listen socket).  In these modes,
+This is required if an application uses
+@code{MHD_USE_INTERNAL_POLLING_THREAD} and then performs
+@code{MHD_quiesce_daemon} (which eliminates our ability to signal
+termination via the listen socket).  In these modes,
 @code{MHD_quiesce_daemon} will fail if this option was not set.  Also,
 use of this option is automatic (as in, you do not even have to
 specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In

@@ -516,9 +516,10 @@ struct MHD_PostProcessor;
 /**
  * @brief Flags for the `struct MHD_Daemon`.
  *
- * Note that if neither #MHD_USE_THREAD_PER_CONNECTION nor
- * #MHD_USE_INTERNAL_POLLING_THREAD is used, the client wants control over
- * the process and will call the appropriate microhttpd callbacks.
+ * Note that MHD will run automatically in background thread(s) only
+ * if #MHD_USE_INTERNAL_POLLING_THREAD is used. Otherwise caller (application)
+ * must use #MHD_run() or #MHD_run_from_select() to have MHD processed
+ * network connections and data.
  *
  * Starting the daemon may also fail if a particular option is not
  * implemented or not supported on the target platform (i.e. no
@@ -553,12 +554,18 @@ enum MHD_FLAG
 
   /**
    * Run using one thread per connection.
+   * Must be used only with #MHD_USE_INTERNAL_POLLING_THREAD.
    */
   MHD_USE_THREAD_PER_CONNECTION = 4,
 
   /**
    * Run using an internal thread (or thread pool) for sockets sending
-   * and receiving and data processing.
+   * and receiving and data processing. Without this flag MHD will not
+   * run automatically in background thread(s).
+   * If this flag is set, #MHD_run() and #MHD_run_from_select() couldn't
+   * be used.
+   * This flag is set explicitly by #MHD_USE_POLL_INTERNAL_THREAD and
+   * by #MHD_USE_EPOLL_INTERNAL_THREAD.
    */
   MHD_USE_INTERNAL_POLLING_THREAD = 8,
 
@@ -666,9 +673,8 @@ enum MHD_FLAG
 
   /**
    * Use inter-thread communication channel.
-   * #MHD_USE_ITC can be used with internal select/poll/other
-   * or #MHD_USE_THREAD_PER_CONNECTION and is ignored with any
-   * "external" mode.
+   * #MHD_USE_ITC can be used with #MHD_USE_INTERNAL_POLLING_THREAD
+   * and is ignored with any "external" mode.
    * It's required for use of #MHD_quiesce_daemon
    * or #MHD_add_connection.
    * This option is enforced by #MHD_ALLOW_SUSPEND_RESUME or
@@ -1832,10 +1838,10 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * This function is a convenience method, which is useful if the
  * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
  * with this function, MHD will internally do the appropriate `select()`
- * call itself again.  While it is always safe to call #MHD_run (in
- * external select mode), you should call #MHD_run_from_select if
- * performance is important (as it saves an expensive call to
- * `select()`).
+ * call itself again.  While it is always safe to call #MHD_run (if
+ * ::MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
+ * #MHD_run_from_select if performance is important (as it saves an
+ * expensive call to `select()`).
  *
  * @param daemon daemon to run
  * @return #MHD_YES on success, #MHD_NO if this

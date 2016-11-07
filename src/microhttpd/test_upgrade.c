@@ -1064,8 +1064,7 @@ test_upgrade (int flags,
                            &run_usock_client,
                            &sock))
     abort ();
-  if (0 == (flags & (MHD_USE_INTERNAL_POLLING_THREAD |
-                     MHD_USE_THREAD_PER_CONNECTION)) )
+  if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
     run_mhd_loop (d, flags);
   pthread_join (pt_client,
                 NULL);
@@ -1158,7 +1157,7 @@ main (int argc,
 #endif
 
   /* Test thread-per-connection */
-  res = test_upgrade (MHD_USE_THREAD_PER_CONNECTION,
+  res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION,
                       0);
   error_count += res;
   if (res)
@@ -1166,7 +1165,7 @@ main (int argc,
   else if (verbose)
     printf ("PASSED: Upgrade with thread per connection.\n");
 #ifdef HAVE_POLL
-  res = test_upgrade (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
+  res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
                       0);
   error_count += res;
   if (res)
