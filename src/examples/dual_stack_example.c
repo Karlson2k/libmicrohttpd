@@ -68,7 +68,7 @@ main (int argc, char *const *argv)
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG | MHD_USE_DUAL_STACK,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_DUAL_STACK,
 			atoi (argv[1]),
 			NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,

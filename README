@@ -16,7 +16,7 @@ If you are using Subversion, run "autoreconf -fi" to create configure.
 In order to run the testcases, you need a recent version of libcurl.
 libcurl is not required if you just want to install the library.
 
-Especially for development, do use the MHD_USE_DEBUG option to get
+Especially for development, do use the MHD_USE_ERROR_LOG option to get
 error messages.
 
 

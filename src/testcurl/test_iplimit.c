@@ -117,7 +117,7 @@ testMultithreadedGet ()
   if (!oneone)
     return 0;
 
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL,
                         &ahc_echo, "GET",
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, 2,
@@ -208,7 +208,7 @@ testMultithreadedPoolGet ()
   if (!oneone)
     return 0;
 
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, 2,
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,

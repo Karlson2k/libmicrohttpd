@@ -135,7 +135,7 @@ main (int argc, char *const *argv)
       printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
       return 1;
     }
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)

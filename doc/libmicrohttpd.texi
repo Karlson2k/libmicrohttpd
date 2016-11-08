@@ -882,7 +882,7 @@ and the second a pointer of type 'void*' which will
 be passed as the "arg" argument to "fun".
 
 Note that MHD will not generate any log messages without
-the MHD_USE_DEBUG flag set and if MHD was compiled
+the MHD_USE_ERROR_LOG flag set and if MHD was compiled
 with the "--disable-messages" flag.
 
 @item MHD_OPTION_THREAD_POOL_SIZE

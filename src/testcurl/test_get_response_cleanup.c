@@ -150,7 +150,7 @@ testInternalGet ()
   pid_t curl;
 
   ok = 1;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -171,7 +171,7 @@ testMultithreadedGet ()
   struct MHD_Daemon *d;
   pid_t curl;
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 2,
 			MHD_OPTION_END);
@@ -207,7 +207,7 @@ testMultithreadedPoolGet ()
   struct MHD_Daemon *d;
   pid_t curl;
 
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
@@ -236,7 +236,7 @@ testExternalGet ()
   struct timeval tv;
   pid_t curl;
 
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;

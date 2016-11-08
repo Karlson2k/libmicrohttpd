@@ -275,7 +275,7 @@ main (int argc,
       printf ("%s PORT\n", argv[0]);
       return 1;
     }
-  d = MHD_start_daemon (MHD_ALLOW_UPGRADE | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_ALLOW_UPGRADE | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
                         NULL, NULL,
                         &ahc_echo, NULL,

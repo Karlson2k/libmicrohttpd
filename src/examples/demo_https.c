@@ -932,7 +932,7 @@ main (int argc, char *const *argv)
 							     MHD_RESPMEM_PERSISTENT);
   mark_as_html (internal_error_response);
   update_directory ();
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG | MHD_USE_TLS
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_TLS
 #ifdef EPOLL_SUPPORT
 			| MHD_USE_EPOLL
 #endif

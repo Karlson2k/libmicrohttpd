@@ -533,6 +533,13 @@ enum MHD_FLAG
   MHD_NO_FLAG = 0,
 
   /**
+   * Print errors messages to custom error logger or to `stderr` if
+   * custom error logger is not set.
+   * @sa ::MHD_OPTION_EXTERNAL_LOGGER
+   */
+  MHD_USE_ERROR_LOG = 1,
+
+  /**
    * Run in debug mode.  If this flag is used, the library should
    * print error messages and warnings to `stderr`.
    */

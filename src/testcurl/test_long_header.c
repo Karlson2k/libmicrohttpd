@@ -101,7 +101,7 @@ testLongUrlGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_DEBUG */ ,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */ ,
                         1080,
                         &apc_all,
                         NULL,
@@ -172,7 +172,7 @@ testLongHeaderGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_DEBUG */ ,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */ ,
                         1080,
                         &apc_all,
                         NULL,

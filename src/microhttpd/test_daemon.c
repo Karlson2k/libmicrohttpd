@@ -40,7 +40,7 @@ testStartError ()
 {
   struct MHD_Daemon *d;
 
-  d = MHD_start_daemon (MHD_USE_DEBUG, 0, NULL, NULL, NULL, NULL);
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0, NULL, NULL, NULL, NULL);
   if (d != NULL)
     return 1;
   return 0;
@@ -75,7 +75,7 @@ testStartStop ()
 {
   struct MHD_Daemon *d;
 
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1080,
                         &apc_nothing,
                         NULL, &ahc_nothing, NULL, MHD_OPTION_END);
@@ -93,7 +93,7 @@ testExternalRun ()
   MHD_socket maxfd;
   int i;
 
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1081,
                         &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
@@ -124,7 +124,7 @@ static int
 testThread ()
 {
   struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_INTERNAL_POLLING_THREAD,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_INTERNAL_POLLING_THREAD,
                         1082,
                         &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
@@ -140,7 +140,7 @@ static int
 testMultithread ()
 {
   struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_THREAD_PER_CONNECTION,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION,
                         1083,
                         &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 

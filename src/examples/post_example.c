@@ -715,7 +715,7 @@ main (int argc, char *const *argv)
     }
   /* initialize PRNG */
   srand ((unsigned int) time (NULL));
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
                         NULL, NULL,
 			&create_response, NULL,

@@ -123,7 +123,7 @@ main (int argc, char *const *argv)
       off += len;
     }
   (void) close(fd);
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
                         NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof(rnd), rnd,

@@ -90,7 +90,7 @@ test_ip_addr_option ()
   daemon_ip_addr6.sin6_addr = in6addr_loopback;
 #endif
 
-  d = MHD_start_daemon (MHD_USE_DEBUG, 4233,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 4233,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
                         &daemon_ip_addr, MHD_OPTION_END);
 
@@ -100,7 +100,7 @@ test_ip_addr_option ()
   MHD_stop_daemon (d);
 
 #if HAVE_INET6
-  d = MHD_start_daemon (MHD_USE_DEBUG | MHD_USE_IPv6, 4233,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_IPv6, 4233,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_SOCK_ADDR,
                         &daemon_ip_addr6, MHD_OPTION_END);
 

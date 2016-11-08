@@ -50,7 +50,7 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_DEBUG, DEAMON_TEST_PORT,
+                        MHD_USE_ERROR_LOG, DEAMON_TEST_PORT,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,

@@ -125,7 +125,7 @@ testInternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -175,7 +175,7 @@ testMultithreadedGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -225,7 +225,7 @@ testMultithreadedPoolGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
@@ -291,7 +291,7 @@ testExternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -417,7 +417,7 @@ testUnknownPortGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_END);

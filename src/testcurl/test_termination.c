@@ -91,7 +91,7 @@ main ()
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_DEBUG,
+  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                              PORT,
                              NULL,
                              NULL, connection_handler, NULL, MHD_OPTION_END);

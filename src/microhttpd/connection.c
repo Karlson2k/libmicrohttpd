@@ -3290,7 +3290,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 			  &event))
 	{
 #ifdef HAVE_MESSAGES
-	  if (0 != (daemon->options & MHD_USE_DEBUG))
+	  if (0 != (daemon->options & MHD_USE_ERROR_LOG))
 	    MHD_DLOG (daemon,
 		      _("Call to epoll_ctl failed: %s\n"),
 		      MHD_socket_last_strerr_ ());

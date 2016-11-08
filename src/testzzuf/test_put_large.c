@@ -142,7 +142,7 @@ testInternalPut ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_DEBUG */ ,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */ ,
                         11080,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
@@ -194,7 +194,7 @@ testMultithreadedPut ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_DEBUG */ ,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */ ,
                         11080,
                         NULL, NULL, &ahc_echo, &done_flag, MHD_OPTION_END);
   if (d == NULL)
@@ -257,7 +257,7 @@ testExternalPut ()
   cbc.size = 2048;
   cbc.pos = 0;
   multi = NULL;
-  d = MHD_start_daemon (MHD_NO_FLAG /* | MHD_USE_DEBUG */,
+  d = MHD_start_daemon (MHD_NO_FLAG /* | MHD_USE_ERROR_LOG */,
                         11080,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,

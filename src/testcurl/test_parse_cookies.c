@@ -131,7 +131,7 @@ testExternalGet ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_DEBUG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         21080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
