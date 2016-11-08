@@ -542,11 +542,11 @@ enum MHD_FLAG
    * Run in HTTPS mode.  The modern protocol is called TLS.
    */
   MHD_USE_TLS = 2,
-  MHD_USE_SSL = 2,
 
+  /** @deprecated */
+  MHD_USE_SSL = 2,
 #if 0
   /* let's do this later once versions that define MHD_USE_TLS a more widely deployed. */
-  /** @deprecated */
 #define MHD_USE_SSL \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_SSL is deprecated, use MHD_USE_TLS") \
   MHD_USE_TLS
@@ -571,9 +571,11 @@ enum MHD_FLAG
 
   /** @deprecated */
   MHD_USE_SELECT_INTERNALLY = 8,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_SELECT_INTERNALLY \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_SELECT_INTERNALLY is deprecated, use MHD_USE_INTERNAL_POLLING_THREAD instead") \
   MHD_USE_INTERNAL_POLLING_THREAD
+#endif /* 0 */
 
   /**
    * Run using the IPv6 protocol (otherwise, MHD will just support
@@ -613,9 +615,11 @@ enum MHD_FLAG
 
   /** @deprecated */
   MHD_USE_POLL_INTERNALLY = MHD_USE_POLL | MHD_USE_INTERNAL_POLLING_THREAD,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_POLL_INTERNALLY \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_POLL_INTERNALLY is deprecated, use MHD_USE_POLL_INTERNAL_THREAD instead") \
   MHD_USE_POLL_INTERNAL_THREAD
+#endif /* 0 */
 
   /**
    * Suppress (automatically) adding the 'Date:' header to HTTP responses.
@@ -625,10 +629,13 @@ enum MHD_FLAG
    */
   MHD_USE_SUPPRESS_DATE_NO_CLOCK = 128,
 
-/** @deprecated */
+  /** @deprecated */
+  MHD_SUPPRESS_DATE_NO_CLOCK = 128,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_SUPPRESS_DATE_NO_CLOCK \
   _MHD_DEPR_IN_MACRO("Value MHD_SUPPRESS_DATE_NO_CLOCK is deprecated, use MHD_USE_SUPPRESS_DATE_NO_CLOCK instead") \
   MHD_USE_SUPPRESS_DATE_NO_CLOCK
+#endif /* 0 */
 
   /**
    * Run without a listen socket.  This option only makes sense if
@@ -648,10 +655,13 @@ enum MHD_FLAG
    */
   MHD_USE_EPOLL = 512,
 
-/** @deprecated */
+  /** @deprecated */
+  MHD_USE_EPOLL_LINUX_ONLY = 512,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_EPOLL_LINUX_ONLY \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_LINUX_ONLY is deprecated, use MHD_USE_EPOLL") \
   MHD_USE_EPOLL
+#endif /* 0 */
 
   /**
    * Run using an internal thread (or thread pool) doing `epoll()`.
@@ -661,15 +671,19 @@ enum MHD_FLAG
    */
   MHD_USE_EPOLL_INTERNAL_THREAD = MHD_USE_EPOLL | MHD_USE_INTERNAL_POLLING_THREAD,
 
-/** @deprecated */
+  /** @deprecated */
   MHD_USE_EPOLL_INTERNALLY = MHD_USE_EPOLL | MHD_USE_INTERNAL_POLLING_THREAD,
+  /** @deprecated */
+  MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY = MHD_USE_EPOLL | MHD_USE_INTERNAL_POLLING_THREAD,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_EPOLL_INTERNALLY \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
   MHD_USE_EPOLL_INTERNAL_THREAD
-/** @deprecated */
+  /** @deprecated */
 #define MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
   MHD_USE_EPOLL_INTERNAL_THREAD
+#endif /* 0 */
 
   /**
    * Use inter-thread communication channel.
@@ -685,10 +699,13 @@ enum MHD_FLAG
    */
   MHD_USE_ITC = 1024,
 
-/** @deprecated */
+  /** @deprecated */
+  MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_PIPE_FOR_SHUTDOWN \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_PIPE_FOR_SHUTDOWN is deprecated, use MHD_USE_ITC") \
   MHD_USE_ITC
+#endif /* 0 */
 
   /**
    * Use a single socket for IPv4 and IPv6.
@@ -708,10 +725,13 @@ enum MHD_FLAG
    */
   MHD_ALLOW_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
 
-/** @deprecated */
+  /** @deprecated */
+  MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
+#if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_SUSPEND_RESUME \
   _MHD_DEPR_IN_MACRO("Value MHD_USE_SUSPEND_RESUME is deprecated, use MHD_ALLOW_SUSPEND_RESUME instead") \
   MHD_ALLOW_SUSPEND_RESUME
+#endif /* 0 */
 
   /**
    * Enable TCP_FASTOPEN option.  This option is only available on Linux with a
