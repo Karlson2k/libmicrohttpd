@@ -38,7 +38,7 @@ main (int argc,
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION,
+  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD,
                              PORT,
                              NULL, NULL,
                              &answer_to_connection, NULL,
