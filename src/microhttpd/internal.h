@@ -790,6 +790,11 @@ struct MHD_Connection
   MHD_socket socket_fd;
 
   /**
+   * Non-zero if #socket_fd is non-blocking, zero otherwise.
+   */
+  bool sk_nonblck;
+
+  /**
    * Has this socket been closed for reading (i.e.  other side closed
    * the connection)?  If so, we must completely close the connection
    * once we are done sending our response (and stop trying to read

@@ -1940,6 +1940,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  * @param addrlen number of bytes in @a addr
  * @param external_add perform additional operations needed due
  *        to the application calling us directly
+ * @param non_blck indicate that socket in non-blocking mode
  * @return #MHD_YES on success, #MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in any case; 'errno' is
@@ -1950,7 +1951,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 			 MHD_socket client_socket,
 			 const struct sockaddr *addr,
 			 socklen_t addrlen,
-			 int external_add)
+			 int external_add,
+			 bool non_blck)
 {
   struct MHD_Connection *connection;
   unsigned int i;
@@ -1970,7 +1972,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                             client_socket,
                                             addr,
                                             addrlen,
-                                            external_add);
+                                            external_add,
+                                            non_blck);
         }
       /* all pools are at their connection limit, must refuse */
       MHD_socket_close_chk_ (client_socket);
@@ -2119,6 +2122,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
           addrlen);
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
+  connection->sk_nonblck = non_blck;
   connection->daemon = daemon;
   connection->last_activity = MHD_monotonic_sec_counter();
 
@@ -2581,31 +2585,33 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 		    const struct sockaddr *addr,
 		    socklen_t addrlen)
 {
-  /* internal_add_connection() assume that non-blocking is
-     already set in MHD_USE_EPOLL_TURBO mode */
-  if (0 != (daemon->options & MHD_USE_EPOLL_TURBO))
+  bool sk_nonbl;
+  if (! MHD_socket_nonblocking_ (client_socket))
     {
-      if (! MHD_socket_nonblocking_ (client_socket))
-        {
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _("Failed to set nonblocking mode on new client socket: %s\n"),
-                    MHD_socket_last_strerr_());
+      MHD_DLOG (daemon,
+                _("Failed to set nonblocking mode on new client socket: %s\n"),
+                MHD_socket_last_strerr_());
 #endif
-        }
-      if (! MHD_socket_noninheritable_ (client_socket))
-        {
+      sk_nonbl = 0;
+    }
+  else
+    sk_nonbl = !0;
+
+  if ( (0 != (daemon->options & MHD_USE_EPOLL_TURBO)) &&
+       (! MHD_socket_noninheritable_ (client_socket)) )
+    {
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _("Failed to set noninheritable mode on new client socket.\n"));
+      MHD_DLOG (daemon,
+                _("Failed to set noninheritable mode on new client socket.\n"));
 #endif
-        }
     }
   return internal_add_connection (daemon,
 				  client_socket,
 				  addr,
                                   addrlen,
-				  MHD_YES);
+				  MHD_YES,
+				  sk_nonbl);
 }
 
 
@@ -2635,6 +2641,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   socklen_t addrlen;
   MHD_socket s;
   MHD_socket fd;
+  bool sk_nonbl;
 
   addrlen = sizeof (addrstorage);
   memset (addr,
@@ -2647,10 +2654,12 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                addr,
                &addrlen,
                MAYBE_SOCK_CLOEXEC | MAYBE_SOCK_NONBLOCK);
+  sk_nonbl = (MAYBE_SOCK_NONBLOCK != 0);
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd,
               addr,
               &addrlen);
+  sk_nonbl = 0;
 #endif /* ! USE_ACCEPT4 */
   if ( (MHD_INVALID_SOCKET == s) ||
        (addrlen <= 0) )
@@ -2708,6 +2717,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                 MHD_socket_last_strerr_());
 #endif
     }
+  else
+    sk_nonbl = !0;
 #endif /* !USE_ACCEPT4 || !HAVE_SOCK_NONBLOCK */
 #if !defined(USE_ACCEPT4) || !defined(SOCK_CLOEXEC)
   if (! MHD_socket_noninheritable_ (s))
@@ -2729,7 +2740,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                   s,
 				  addr,
                                   addrlen,
-				  MHD_NO);
+				  MHD_NO,
+                                  sk_nonbl);
   return MHD_YES;
 }
 
