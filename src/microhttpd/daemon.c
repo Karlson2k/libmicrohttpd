@@ -889,8 +889,9 @@ call_handlers (struct MHD_Connection *con,
                int force_close)
 {
   struct MHD_Daemon *daemon = con->daemon;
-  int had_response_before_idle;
   int ret;
+  /* Initial state of connection. */
+  bool was_initing = (con->state == MHD_CONNECTION_INIT);
 
 #ifdef HTTPS_SUPPORT
   if (MHD_YES == con->tls_read_ready)
@@ -900,25 +901,37 @@ call_handlers (struct MHD_Connection *con,
     con->read_handler (con);
   if (write_ready)
     con->write_handler (con);
-  had_response_before_idle = (NULL != con->response);
   if (force_close)
     MHD_connection_close_ (con,
                            MHD_REQUEST_TERMINATED_WITH_ERROR);
   ret = con->idle_handler (con);
-  /* If we're in TURBO mode, and got a response object,
-     try opportunistically to just call write immediately.  */
-  if ( (! force_close) &&
-       (MHD_YES == ret) &&
-       (0 != (daemon->options & MHD_USE_EPOLL_TURBO)) &&
-       (NULL != con->response) &&
-       (MHD_NO == had_response_before_idle) )
+
+  /* Fast track for fast connections. */
+  /* If full request was read by single read_handler() invocation
+     and headers were completely prepared by single idle_handler()
+     then try not to wait for next sockets polling and send response
+     immediately.
+     As writeability of socket was not checked and it may have
+     some data pending in system buffers, use this optimization
+     only for non-blocking sockets. */
+  if ( (MHD_NO != ret) &&
+       (was_initing) &&
+       (MHD_CONNECTION_HEADERS_SENDING == con->state) &&
+       (con->sk_nonblck) )
     {
-      /* first 'write' gets the header, then 'idle'
-         readies the body, then 2nd 'write' may send
-         the body. */
       con->write_handler (con);
-      if (MHD_YES == (ret = con->idle_handler (con)))
-        con->write_handler (con);
+      /* If all headers were sent by single write_handler() - continue. */
+      if (MHD_CONNECTION_HEADERS_SENT == con->state)
+        {
+          ret = con->idle_handler (con);
+          if ( (MHD_NO != ret) &&
+               ( (MHD_CONNECTION_NORMAL_BODY_READY == con->state) ||
+                 (MHD_CONNECTION_CHUNKED_BODY_READY == con->state) ) )
+            {
+              con->write_handler (con);
+              ret = con->idle_handler (con);
+          }
+        }
     }
   return ret;
 }
@@ -2126,28 +2139,16 @@ internal_add_connection (struct MHD_Daemon *daemon,
   connection->daemon = daemon;
   connection->last_activity = MHD_monotonic_sec_counter();
 
-  /* set default connection handlers  */
-  MHD_set_http_callbacks_ (connection);
-  connection->recv_cls = &recv_param_adapter;
-  connection->send_cls = &send_param_adapter;
-
-  if (0 == (connection->daemon->options & MHD_USE_EPOLL_TURBO))
+  if (0 == (daemon->options & MHD_USE_TLS))
     {
-      /* in turbo mode, we assume that non-blocking was already set
-	 by 'accept4' or whoever calls 'MHD_add_connection' */
-      if (! MHD_socket_nonblocking_ (connection->socket_fd))
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (connection->daemon,
-                    _("Failed to set nonblocking mode on connection socket: %s\n"),
-                    MHD_socket_last_strerr_());
-#endif
-        }
+      /* set default connection handlers  */
+      MHD_set_http_callbacks_ (connection);
+      connection->recv_cls = &recv_param_adapter;
+      connection->send_cls = &send_param_adapter;
     }
-
-#ifdef HTTPS_SUPPORT
-  if (0 != (daemon->options & MHD_USE_TLS))
+  else
     {
+#ifdef HTTPS_SUPPORT
       connection->recv_cls = &recv_tls_adapter;
       connection->send_cls = &send_tls_adapter;
       connection->state = MHD_TLS_CONNECTION_INIT;
@@ -2192,8 +2193,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
       if (daemon->https_mem_trust)
 	  gnutls_certificate_server_set_request (connection->tls_session,
 						 GNUTLS_CERT_REQUEST);
+#else  /* ! HTTPS_SUPPORT */
+      goto cleanup;
+#endif /* ! HTTPS_SUPPORT */
     }
-#endif /* HTTPS_SUPPORT */
+
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
