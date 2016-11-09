@@ -139,6 +139,10 @@
 /* Define to 1 if you have the <stddef.h> header file. */
 #define HAVE_STDDEF_H 1
 
+/* Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines
+'bool' type. */
+#define HAVE_STDBOOL_H 1
+
 
 /* *** Other useful staff *** */
 
