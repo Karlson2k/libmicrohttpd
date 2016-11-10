@@ -4736,6 +4736,10 @@ MHD_start_daemon_va (unsigned int flags,
   if (0 != (flags & MHD_USE_POLL))
     return NULL;
 #endif
+#ifndef EPOLL_SUPPORT
+  if (0 != (flags & MHD_USE_EPOLL))
+    return NULL;
+#endif /* ! EPOLL_SUPPORT */
 #ifndef HTTPS_SUPPORT
   if (0 != (flags & MHD_USE_TLS))
     return NULL;
@@ -4754,6 +4758,13 @@ MHD_start_daemon_va (unsigned int flags,
     }
   if (NULL == dh)
     return NULL;
+
+  /* Check for invalid combinations of flags. */
+  if ( ((0 != (flags & MHD_USE_POLL)) && (0 != (flags & MHD_USE_EPOLL))) ||
+       ((0 != (flags & MHD_USE_EPOLL)) && (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))) ||
+       ((0 != (flags & MHD_USE_POLL)) && (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD))) )
+    return NULL;
+
   if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
     return NULL;
 #ifdef EPOLL_SUPPORT
@@ -5210,16 +5221,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (MHD_YES != setup_epoll_to_listen (daemon))
 	goto free_and_fail;
     }
-#else
-  if (0 != (flags & MHD_USE_EPOLL))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		_("epoll is not supported on this platform by this build.\n"));
-#endif
-      goto free_and_fail;
-    }
-#endif
+#endif /* EPOLL_SUPPORT */
 
   if (! MHD_mutex_init_ (&daemon->per_ip_connection_mutex))
     {
