@@ -411,7 +411,7 @@ if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; the
 
   AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes"]],
     [
-     AC_CHECK_DECL([[pthread_setname_np]],
+     AC_CHECK_DECL([[pthread_set_name_np]],
        [
         AC_MSG_CHECKING([[for pthread_set_name_np(3) in FreeBSD form]])
         AC_LINK_IFELSE(
