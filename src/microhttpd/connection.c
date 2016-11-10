@@ -2663,6 +2663,10 @@ cleanup_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
+  if (connection->in_cleanup)
+    return; /* Prevent double cleanup. */
+
+  connection->in_cleanup = !0;
   if (NULL != connection->response)
     {
       MHD_destroy_response (connection->response);

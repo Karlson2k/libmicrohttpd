@@ -808,6 +808,12 @@ struct MHD_Connection
    */
   int in_idle;
 
+  /**
+   * Are we currently inside the "idle" handler (to avoid recursively
+   * invoking it).
+   */
+  bool in_cleanup;
+
 #ifdef EPOLL_SUPPORT
   /**
    * What is the state of this socket in relation to epoll?
