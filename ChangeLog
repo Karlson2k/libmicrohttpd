@@ -1,3 +1,43 @@
+Thu Nov 10 17:49:56 MSK 2016
+	Ported "upgrade" tests to W32 and other platforms, used
+	"gnutls-cli" instead of "openssl" in tests, minor bugs
+	fixed, added verbose reporting if requested.
+	"Upgrade" processing - changed internal handling logic, improved
+	and refactored, bugs fixed, fixed sigpipe on Darwin, added
+	printing error to log, fixed compilation without HTTPS.
+	Added 'configure' parameter "--disable-httpupgrade" for building
+	minimal-sized MHD versions.
+	Added feature check "MHD_FEATURE_UPGRADE".
+	Responses destroyed (freed) earlier if possible.
+	Added many remarks in code comments about thread safety.
+	Some data races and other multithread-related issues are fixed,
+	including usage of closed sockets (may resulted in accidental closing
+	of wrong socket).
+	SO_NOSIGPIPE is used on all platform which support it, not only
+	on Darwin.
+	Added support for suspending connections in thread-per-connection
+	mode (itself almost useless, mostly to unify modes support).
+	Fixed Inter-Thread Communication channel usage in epoll modes.
+	Reworked daemon cleanups and handling MHD_stop_daemon(): resources
+	are freed only by specific threads, data races and other fixes.
+	Started usage of C99 standard 'bool' where supported with
+	fallback to 'int'.
+	Renamed many MHD flags. Now they are self-explainable and more
+	obvious, like MHD_USE_INTERNAL_POLLING_THREAD instead of
+	MHD_USE_SELECT_INTERNALLY. Old flag names are supported for
+	backward compatibility.
+	Improved processing of "fast" connections: now full sequence
+	"read request - send reply headers - send reply body" is processed
+	after single select()/poll(). If connection is slow, request is huge
+	or response in not immediately ready - connection will be processed
+	in "traditional" way.
+	Added usage of "calloc()" where supported.
+	Minor documentation fixes.
+	Minor improvements and fixes. -EG
+	"Upgrade" test fixes.
+	Documentation updated.
+	Added HTTP "Upgrade" example. -CG
+
 Mon Oct 17 19:08:18 CEST 2016
 	Fixed misc. issues relating to upgrade.
 	Releasing experimental 0.9.52. -CG
