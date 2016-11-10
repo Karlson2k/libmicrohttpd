@@ -233,7 +233,8 @@ static int
 testInternalGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = poll_flag ? "internal poll" : "internal select";
+  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread with poll()" :
+                                  (poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll" : "internal thread with select()");
   const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG  | poll_flag,
@@ -259,7 +260,9 @@ static int
 testMultithreadedGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = poll_flag ? "thread with poll" : "thread with select";
+  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread with poll() and thread per connection" :
+                                  (poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll and thread per connection"
+                                      : "internal thread with select() and thread per connection");
   const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG  | poll_flag,
@@ -284,7 +287,8 @@ static int
 testMultithreadedPoolGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = poll_flag ? "thread pool with poll" : "thread pool with select";
+  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread pool with poll()" :
+                                  (poll_flag & MHD_USE_EPOLL) ? "internal thread poll with epoll" : "internal thread pool with select()");
   const char * ret_val;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | poll_flag,
