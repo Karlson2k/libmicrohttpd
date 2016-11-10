@@ -506,7 +506,7 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
 
   connection->state = MHD_CONNECTION_CLOSED;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
-  if (0 == (daemon->options & MHD_USE_EPOLL_TURBO))
+  if (0 == (daemon->options & MHD_USE_TURBO))
     {
 #ifdef HTTPS_SUPPORT
       /* For TLS connection use shutdown of TLS layer

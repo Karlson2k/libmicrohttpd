@@ -720,11 +720,20 @@ enum MHD_FLAG
   MHD_USE_DUAL_STACK = MHD_USE_IPv6 | 2048,
 
   /**
-   * Enable `epoll()` turbo.  Disables certain calls to `shutdown()`
-   * and enables aggressive non-blocking optimisitc reads.
+   * Enable `turbo`.  Disables certain calls to `shutdown()`,
+   * enables aggressive non-blocking optimistic reads and
+   * other potentially unsafe optimizations.
    * Most effects only happen with #MHD_USE_EPOLL.
    */
+  MHD_USE_TURBO = 4096,
+
+  /** @deprecated */
   MHD_USE_EPOLL_TURBO = 4096,
+#if 0 /* Will be marked for real deprecation later. */
+#define MHD_USE_EPOLL_TURBO \
+  _MHD_DEPR_IN_MACRO("Value MHD_USE_EPOLL_TURBO is deprecated, use MHD_USE_TURBO") \
+  MHD_USE_TURBO
+#endif /* 0 */
 
   /**
    * Enable suspend/resume functions, which also implies setting up

@@ -136,7 +136,7 @@ main (int argc, char *const *argv)
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_SUPPRESS_DATE_NO_CLOCK
 #ifdef EPOLL_SUPPORT
-			| MHD_USE_EPOLL | MHD_USE_EPOLL_TURBO
+			| MHD_USE_EPOLL | MHD_USE_TURBO
 #endif
 			,
                         atoi (argv[1]),

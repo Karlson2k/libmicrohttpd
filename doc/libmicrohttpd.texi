@@ -523,12 +523,9 @@ call has fundamentally lower complexity (O(1) for @code{epoll()}
 vs. O(n) for @code{select()}/@code{poll()} where n is the number of
 open connections).
 
-@item MHD_USE_EPOLL_TURBO
+@item MHD_USE_TURBO
 @cindex performance
-Enable optimizations to aggressively improve performance.  Note that
-the option is a slight misnomer, as these days it also enables optimziations
-that are unrelated to @code{MHD_USE_EPOLL}.  Hence it is OK to
-use this option with other event loops.
+Enable optimizations to aggressively improve performance.
 
 Currently, the optimizations this option enables are based on
 opportunistic reads and writes.  Bascially, MHD will simply try to

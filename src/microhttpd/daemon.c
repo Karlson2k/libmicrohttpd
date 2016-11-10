@@ -2252,7 +2252,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
-      if (0 == (daemon->options & MHD_USE_EPOLL_TURBO))
+      if (0 == (daemon->options & MHD_USE_TURBO))
 	{
 	  struct epoll_event event;
 
@@ -2602,7 +2602,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   else
     sk_nonbl = !0;
 
-  if ( (0 != (daemon->options & MHD_USE_EPOLL_TURBO)) &&
+  if ( (0 != (daemon->options & MHD_USE_TURBO)) &&
        (! MHD_socket_noninheritable_ (client_socket)) )
     {
 #ifdef HAVE_MESSAGES

@@ -182,7 +182,7 @@ main (int argc, char *const *argv)
 					      MHD_RESPMEM_PERSISTENT);
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
 #ifdef EPOLL_SUPPORT
-			| MHD_USE_EPOLL | MHD_USE_EPOLL_TURBO
+			| MHD_USE_EPOLL | MHD_USE_TURBO
 #endif
 			,
                         atoi (argv[1]),
