@@ -888,7 +888,6 @@ call_handlers (struct MHD_Connection *con,
                int write_ready,
                int force_close)
 {
-  struct MHD_Daemon *daemon = con->daemon;
   int ret;
   /* Initial state of connection. */
   bool was_initing = (con->state == MHD_CONNECTION_INIT);
