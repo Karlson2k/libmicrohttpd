@@ -4762,8 +4762,42 @@ MHD_start_daemon_va (unsigned int flags,
   /* Check for invalid combinations of flags. */
   if ( ((0 != (flags & MHD_USE_POLL)) && (0 != (flags & MHD_USE_EPOLL))) ||
        ((0 != (flags & MHD_USE_EPOLL)) && (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))) ||
-       ((0 != (flags & MHD_USE_POLL)) && (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD))) )
+       ((0 != (flags & MHD_USE_POLL)) && (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD))) ||
+       ((0 != (flags & MHD_USE_AUTO)) && (0 != (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))) )
     return NULL;
+
+  if (0 != (flags & MHD_USE_AUTO))
+    {
+      if (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))
+        {
+          /* Thread per connection with internal polling thread. */
+#ifdef HAVE_POLL
+          flags |= MHD_USE_POLL;
+#else  /* ! HAVE_POLL */
+          /* use select() - do not modify flags */
+#endif /* ! HAVE_POLL */
+        }
+      else if (0 != (flags & MHD_USE_INTERNAL_POLLING_THREAD))
+        {
+          /* Internal polling thread. */
+#if defined(EPOLL_SUPPORT)
+          flags |= MHD_USE_EPOLL;
+#elif defined(HAVE_POLL)
+          flags |= MHD_USE_POLL;
+#else  /* !HAVE_POLL && !EPOLL_SUPPORT */
+          /* use select() - do not modify flags */
+#endif /* !HAVE_POLL && !EPOLL_SUPPORT */
+        }
+      else
+        {
+          /* Internal threads are not used - "external" polling mode. */
+#if defined(EPOLL_SUPPORT)
+          flags |= MHD_USE_EPOLL;
+#else  /* ! EPOLL_SUPPORT */
+          /* use select() - do not modify flags */
+#endif /* ! EPOLL_SUPPORT */
+        }
+    }
 
   if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
     return NULL;

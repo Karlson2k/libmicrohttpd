@@ -1146,6 +1146,16 @@ main (int argc,
     fprintf (stderr, "FAILED: Upgrade with external select, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with external select.\n");
+
+  /* Try external auto */
+  res = test_upgrade (MHD_USE_AUTO,
+                      0);
+  error_count += res;
+  if (res)
+    fprintf (stderr, "FAILED: Upgrade with external 'auto', return code %d.\n", res);
+  else if (verbose)
+    printf ("PASSED: Upgrade with external 'auto'.\n");
+
 #ifdef EPOLL_SUPPORT
   res = test_upgrade (MHD_USE_EPOLL,
                       0);
@@ -1164,6 +1174,14 @@ main (int argc,
     fprintf (stderr, "FAILED: Upgrade with thread per connection, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with thread per connection.\n");
+
+  res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION,
+                      0);
+  error_count += res;
+  if (res)
+    fprintf (stderr, "FAILED: Upgrade with thread per connection and 'auto', return code %d.\n", res);
+  else if (verbose)
+    printf ("PASSED: Upgrade with thread per connection and 'auto'.\n");
 #ifdef HAVE_POLL
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
                       0);
@@ -1189,6 +1207,20 @@ main (int argc,
     fprintf (stderr, "FAILED: Upgrade with internal select with thread pool, return code %d.\n", res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal select with thread pool.\n");
+  res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
+                      0);
+  error_count += res;
+  if (res)
+    fprintf (stderr, "FAILED: Upgrade with internal 'auto' return code %d.\n", res);
+  else if (verbose)
+    printf ("PASSED: Upgrade with internal 'auto'.\n");
+  res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
+                      2);
+  error_count += res;
+  if (res)
+    fprintf (stderr, "FAILED: Upgrade with internal 'auto' with thread pool, return code %d.\n", res);
+  else if (verbose)
+    printf ("PASSED: Upgrade with internal 'auto' with thread pool.\n");
 #ifdef HAVE_POLL
   res = test_upgrade (MHD_USE_POLL_INTERNAL_THREAD,
                       0);

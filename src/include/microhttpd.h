@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095207
+#define MHD_VERSION 0x00095208
 
 /**
  * MHD-internal return code for "YES".
@@ -761,7 +761,28 @@ enum MHD_FLAG
    * "Upgrade" may require usage of additional internal resources,
    * which we do not want to use unless necessary.
    */
-  MHD_ALLOW_UPGRADE = 32768
+  MHD_ALLOW_UPGRADE = 32768,
+
+  /**
+   * Automatically use best available polling function.
+   * Choice of polling function is also depend on other daemon options.
+   * If #MHD_USE_INTERNAL_POLLING_THREAD is specified then epoll, poll() or
+   * select() will be used (listed in decreasing preference order, first
+   * function available on system will be used).
+   * If #MHD_USE_THREAD_PER_CONNECTION is specified then poll() or select()
+   * will be used.
+   * If those flags are not specified then epoll or select() will be
+   * used (as the only suitable for MHD_get_fdset())
+   */
+  MHD_USE_AUTO = 65536,
+
+  /**
+   * Run using an internal thread (or thread pool) with best available on
+   * system polling function.
+   * This is combination of #MHD_USE_AUTO and #MHD_USE_INTERNAL_POLLING_THREAD
+   * flags.
+   */
+  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
 
 };
 

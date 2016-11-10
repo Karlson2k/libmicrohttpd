@@ -233,7 +233,8 @@ static int
 testInternalGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread with poll()" :
+  const char * const test_desc = ((poll_flag & MHD_USE_AUTO) ? "internal thread with 'auto'" :
+                                  (poll_flag & MHD_USE_POLL) ? "internal thread with poll()" :
                                   (poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll" : "internal thread with select()");
   const char * ret_val;
 
@@ -260,7 +261,8 @@ static int
 testMultithreadedGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread with poll() and thread per connection" :
+  const char * const test_desc = ((poll_flag & MHD_USE_AUTO) ? "internal thread with 'auto' and thread per connection" :
+                                  (poll_flag & MHD_USE_POLL) ? "internal thread with poll() and thread per connection" :
                                   (poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll and thread per connection"
                                       : "internal thread with select() and thread per connection");
   const char * ret_val;
@@ -287,7 +289,8 @@ static int
 testMultithreadedPoolGet (int port, int poll_flag)
 {
   struct MHD_Daemon *d;
-  const char * const test_desc = ((poll_flag & MHD_USE_POLL) ? "internal thread pool with poll()" :
+  const char * const test_desc = ((poll_flag & MHD_USE_AUTO) ? "internal thread pool with 'auto'" :
+                                  (poll_flag & MHD_USE_POLL) ? "internal thread pool with poll()" :
                                   (poll_flag & MHD_USE_EPOLL) ? "internal thread poll with epoll" : "internal thread pool with select()");
   const char * ret_val;
 
@@ -395,6 +398,9 @@ main (int argc, char *const *argv)
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);
   errorCount += testExternalGet (port++);
+  errorCount += testInternalGet (port++, MHD_USE_AUTO);
+  errorCount += testMultithreadedGet (port++, MHD_USE_AUTO);
+  errorCount += testMultithreadedPoolGet (port++, MHD_USE_AUTO);
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
     {
       errorCount += testInternalGet (port++, MHD_USE_POLL);

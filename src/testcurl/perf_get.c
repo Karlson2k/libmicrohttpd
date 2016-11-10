@@ -226,7 +226,8 @@ testInternalGet (int port, int poll_flag)
 	}
       curl_easy_cleanup (c);
     }
-  stop (poll_flag == MHD_USE_POLL ? "internal thread with poll()" :
+  stop (poll_flag == MHD_USE_AUTO ? "internal thread with 'auto'" :
+        poll_flag == MHD_USE_POLL ? "internal thread with poll()" :
 	poll_flag == MHD_USE_EPOLL ? "internal thread with epoll" : "internal thread with select()");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
@@ -286,7 +287,8 @@ testMultithreadedGet (int port, int poll_flag)
 	}
       curl_easy_cleanup (c);
     }
-  stop ((poll_flag & MHD_USE_POLL) ? "internal thread with poll() and thread per connection" :
+  stop ((poll_flag & MHD_USE_AUTO) ? "internal thread with 'auto' and thread per connection" :
+        (poll_flag & MHD_USE_POLL) ? "internal thread with poll() and thread per connection" :
 	(poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll and thread per connection" :
 	    "internal thread with select() and thread per connection");
   MHD_stop_daemon (d);
@@ -347,7 +349,8 @@ testMultithreadedPoolGet (int port, int poll_flag)
 	}
       curl_easy_cleanup (c);
     }
-  stop (0 != (poll_flag & MHD_USE_POLL) ? "internal thread pool with poll()" :
+  stop (0 != (poll_flag & MHD_USE_AUTO) ? "internal thread pool with 'auto'" :
+        0 != (poll_flag & MHD_USE_POLL) ? "internal thread pool with poll()" :
 	0 != (poll_flag & MHD_USE_EPOLL) ? "internal thread pool with epoll" : "internal thread pool with select()");
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
@@ -521,6 +524,9 @@ main (int argc, char *const *argv)
 					      "/hello_world",
 					      MHD_RESPMEM_MUST_COPY);
   errorCount += testExternalGet (port++);
+  errorCount += testInternalGet (port++, MHD_USE_AUTO);
+  errorCount += testMultithreadedGet (port++, MHD_USE_AUTO);
+  errorCount += testMultithreadedPoolGet (port++, MHD_USE_AUTO);
   errorCount += testInternalGet (port++, 0);
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);

@@ -1,3 +1,10 @@
+Thu Nov 10 21:50:35 MSK 2016
+	Added rejection in MHD_start_daemon() of invalid combinations
+	of daemon flags.
+	Added MHD_USE_AUTO and MHD_USE_AUTO_INTERNAL_THREAD for
+	automatic selection of polling function depending on
+	platform capabilities and requested mode. -EG
+
 Thu Nov 10 17:49:56 MSK 2016
 	Ported "upgrade" tests to W32 and other platforms, used
 	"gnutls-cli" instead of "openssl" in tests, minor bugs
