@@ -1,3 +1,8 @@
+Thu Nov 11 20:49:23 MSK 2016
+	Added support for various forms of
+	pthread_attr_setname_np() so thread names will be set
+	more efficiently on certain platforms (Solaris, NetBSD etc.) -EG
+
 Thu Nov 10 21:50:35 MSK 2016
 	Added rejection in MHD_start_daemon() of invalid combinations
 	of daemon flags.

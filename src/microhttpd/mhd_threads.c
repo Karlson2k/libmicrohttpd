@@ -54,6 +54,10 @@ typedef DWORD MHD_thread_ID_;
 #else  /* MHD_USE_THREAD_NAME_ */
 
 #if defined(MHD_USE_POSIX_THREADS)
+#if defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI)
+#  define MHD_USE_THREAD_ATTR_SETNAME 1
+#endif /* HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD || HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI */
+
 #if defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) \
     || defined(HAVE_PTHREAD_SETNAME_NP_NETBSD)
 
@@ -237,6 +241,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
 
 #ifdef MHD_USE_THREAD_NAME_
 
+#ifndef MHD_USE_THREAD_ATTR_SETNAME
 struct MHD_named_helper_param_
 {
   /**
@@ -275,6 +280,7 @@ named_thread_starter (void *data)
 
   return thr_func(arg);
 }
+#endif /* ! MHD_USE_THREAD_ATTR_SETNAME */
 
 
 /**
@@ -294,6 +300,40 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
                           MHD_THREAD_START_ROUTINE_ start_routine,
                           void *arg)
 {
+#if defined(MHD_USE_THREAD_ATTR_SETNAME)
+  int res;
+  pthread_attr_t attr;
+
+  res = pthread_attr_init (&attr);
+  if (0 == res)
+    {
+#if defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD)
+  /* NetBSD use 3 arguments: second argument is string in printf-like format,
+   *                         third argument is single argument for printf;
+   * OSF1 use 3 arguments too, but last one always must be zero (NULL).
+   * MHD doesn't use '%' in thread names, so both form are used in same way.
+   */
+      res = pthread_attr_setname_np (&attr, thread_name, 0);
+#elif defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI)
+      res = pthread_attr_setname_np (&attr, thread_name);
+#else
+#error No pthread_attr_setname_np() function.
+#endif
+      if (res == 0 && 0 != stack_size)
+        res = pthread_attr_setstacksize (&attr,
+                                         stack_size);
+      if (0 == res)
+          res = pthread_create (thread,
+                                &attr,
+                                start_routine,
+                                arg);
+      pthread_attr_destroy (&attr);
+    }
+  if (0 != res)
+    errno = res;
+
+  return !res;
+#else  /* ! MHD_USE_THREAD_ATTR_SETNAME */
   struct MHD_named_helper_param_ *param;
 
   if (NULL == thread_name)
@@ -323,6 +363,7 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
     }
 
   return !0;
+#endif /* ! MHD_USE_THREAD_ATTR_SETNAME */
 }
 
 #endif /* MHD_USE_THREAD_NAME_ */
