@@ -352,16 +352,72 @@ if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; the
   CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
   AC_CHECK_HEADERS([pthread_np.h],[],[],[AC_INCLUDES_DEFAULT])
 
-  # If pthread_setname_np(3) is not declared, it's not possible to detect
-  # form of pthread_setname_np(3) due to C "feature" "implicit declaration".
-  AC_CHECK_DECL([[pthread_setname_np]],[],[],[[
+  # Try to find how to set thread name by thread attributes.
+  # If pthread_attr_setname_np(3) is not declared, it's not possible to detect
+  # form of pthread_attr_setname_np(3) due to C "feature" "implicit declaration".
+  AC_CHECK_DECL([[pthread_attr_setname_np]],[],[],[[
 #include <pthread.h>
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
 ]])
 
-  AS_IF([[test "x$ac_cv_have_decl_pthread_setname_np" = "xyes"]],
+  AS_IF([[test "x$ac_cv_have_decl_pthread_attr_setname_np" = "xyes"]],
+    [AC_MSG_CHECKING([[for pthread_attr_setname_np(3) in NetBSD or OSF1 form]])
+     AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[
+      pthread_attr_t thr_attr;
+      pthread_attr_init(&thr_attr);
+      pthread_attr_setname_np(&thr_attr, "name", 0);
+      pthread_attr_destroy(&thr_attr);
+        ]])],
+        [AC_DEFINE([[HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD]], [[1]], [Define if you have NetBSD form (or OSF1 form) of pthread_attr_setname_np(3) function.])
+         HAVE_THREAD_NAME_FUNC="yes"
+         AC_MSG_RESULT([[yes]])],
+        [AC_MSG_RESULT([[no]])]
+        )
+    ])
+
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes" && test "x$ac_cv_have_decl_pthread_attr_setname_np" = "xyes"]],
+    [AC_MSG_CHECKING([[for pthread_attr_setname_np(3) in IBM i form]])
+     AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+]], [[
+      pthread_attr_t thr_attr;
+      pthread_attr_init(&thr_attr);
+      pthread_attr_setname_np(&thr_attr, "name");
+      pthread_attr_destroy(&thr_attr);
+        ]])],
+        [AC_DEFINE([[HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI]], [[1]], [Define if you have IBM i form of pthread_attr_setname_np(3) function.])
+         HAVE_THREAD_NAME_FUNC="yes"
+         AC_MSG_RESULT([[yes]])],
+        [AC_MSG_RESULT([[no]])]
+        )
+    ])
+
+  # Try to find how to set thread name for started thread - less convinent
+  # than setting name by attributes.
+  # If pthread_setname_np(3) is not declared, it's not possible to detect
+  # form of pthread_setname_np(3) due to C "feature" "implicit declaration".
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes"]],
+    [AC_CHECK_DECL([[pthread_setname_np]],[],[],[[
+#include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+       ]])
+    ])
+
+  AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes" && test "x$ac_cv_have_decl_pthread_setname_np" = "xyes"]],
     [AC_MSG_CHECKING([[for pthread_setname_np(3) in NetBSD or OSF1 form]])
      AC_LINK_IFELSE(
       [AC_LANG_PROGRAM([[
@@ -451,7 +507,9 @@ choke me
 #endif
 
 /* Keep in sync with mhd_threads.h */
-#if defined(MHD_USE_POSIX_THREADS) && (defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) )
+#if defined(MHD_USE_POSIX_THREADS) && (defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI) || \
+    defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || \
+    defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) )
 int a = 1;
 #elif defined(MHD_USE_W32_THREADS) && defined(_MSC_FULL_VER)
 int b = 2;
