@@ -96,6 +96,7 @@ MHD_set_thread_name_(const MHD_thread_ID_ thread_id,
  */
 #define MHD_set_cur_thread_name_(n) MHD_set_thread_name_(pthread_self(),(n))
 #else  /* __QNXNTO__ */
+/* Special case for QNX Neutrino - using zero for thread ID sets name faster. */
 #define MHD_set_cur_thread_name_(n) MHD_set_thread_name_(0,(n))
 #endif /* __QNXNTO__ */
 #elif defined(HAVE_PTHREAD_SETNAME_NP_DARWIN)
