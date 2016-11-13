@@ -1,3 +1,12 @@
+Sun Nov 13 19:16:38 CET 2016
+	Fixed a few race issues on suspend-resume in cases where the
+	application uses threads even though MHD did not (or at least
+	had no internal need for locking). Also fixed DLL handling of
+	the timeout list, avoiding manipulating it for suspended
+	connections.  Finally, eliminated calling application logic
+	on suspended connections (which before could happen under
+	certain circumstances).
+
 Thu Nov 11 20:49:23 MSK 2016
 	Added support for various forms of
 	pthread_attr_setname_np() so thread names will be set
