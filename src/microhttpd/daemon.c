@@ -1422,18 +1422,18 @@ thread_main_handle_connection (void *data)
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
       const unsigned int timeout = daemon->connection_timeout;
-      int was_suspended = MHD_NO;
+      bool was_suspended = false;
 #ifdef UPGRADE_SUPPORT
       struct MHD_UpgradeResponseHandle * const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
       static const void * const urh = NULL;
 #endif /* ! UPGRADE_SUPPORT */
 
-      if ( (MHD_NO != con->suspended) &&
+      if ( (con->suspended) &&
            (NULL == urh) )
         {
           /* Connection was suspended, wait for resume. */
-          was_suspended = MHD_YES;
+          was_suspended = true;
           if (! use_poll)
             {
               FD_ZERO (&rs);
@@ -1492,11 +1492,11 @@ thread_main_handle_connection (void *data)
           continue; /* Check again for resume. */
         } /* End of "suspended" branch. */
 
-      if ( (MHD_YES == was_suspended) &&
+      if ( (was_suspended) &&
            (0 != con->connection_timeout) )
         {
           con->last_activity = MHD_monotonic_sec_counter(); /* Reset timeout timer. */
-          was_suspended = MHD_NO;
+          was_suspended = false;
         }
 
       tvp = NULL;
@@ -2198,21 +2198,17 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
 
 
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  }
-  else
-  {
-   XDLL_insert (daemon->normal_timeout_head,
-                daemon->normal_timeout_tail,
-                connection);
+    XDLL_insert (daemon->normal_timeout_head,
+                 daemon->normal_timeout_tail,
+                 connection);
   }
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
   if (NULL != daemon->notify_connection)
     daemon->notify_connection (daemon->notify_connection_cls,
@@ -2294,11 +2290,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
   MHD_ip_limit_del (daemon,
                     addr,
                     addrlen);
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-    }
-  else
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       XDLL_remove (daemon->normal_timeout_head,
                    daemon->normal_timeout_tail,
@@ -2307,8 +2300,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   DLL_remove (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   MHD_pool_destroy (connection->pool);
   free (connection->addr);
   free (connection);
@@ -2356,11 +2348,8 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   daemon = connection->daemon;
   if (MHD_ALLOW_SUSPEND_RESUME != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-    }
-  else
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if (connection->connection_timeout == daemon->connection_timeout)
         XDLL_remove (daemon->normal_timeout_head,
@@ -2399,9 +2388,8 @@ MHD_suspend_connection (struct MHD_Connection *connection)
       connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
     }
 #endif
-  connection->suspended = MHD_YES;
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  connection->suspended = true;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
@@ -2421,12 +2409,10 @@ MHD_resume_connection (struct MHD_Connection *connection)
   daemon = connection->daemon;
   if (MHD_ALLOW_SUSPEND_RESUME != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  connection->resuming = MHD_YES;
-  daemon->resuming = MHD_YES;
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  connection->resuming = true;
+  daemon->resuming = true;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "r")) )
     {
@@ -2455,10 +2441,9 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   int ret;
 
   ret = MHD_NO;
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
-  if (MHD_NO != daemon->resuming)
+  if (daemon->resuming)
     next = daemon->suspended_connections_head;
   /* Clear the flag *only* if connections will be resumed otherwise
      it may accidentally clear flag that was set at the same time in
@@ -2469,7 +2454,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
      function at this time so clearing flag at end will clear it without
      actually resuming of new connection. */
   if (NULL != next)
-    daemon->resuming = MHD_NO;
+    daemon->resuming = false;
   while (NULL != (pos = next))
     {
 #ifdef UPGRADE_SUPPORT
@@ -2478,7 +2463,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       static const void * const urh = NULL;
 #endif /* ! UPGRADE_SUPPORT */
       next = pos->next;
-      if ( (MHD_NO == pos->resuming)
+      if ( (! pos->resuming)
 #ifdef UPGRADE_SUPPORT
           || ( (NULL != urh) &&
                ( (MHD_NO == urh->was_closed) ||
@@ -2533,21 +2518,19 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
         }
 #endif /* UPGRADE_SUPPORT */
-      pos->suspended = MHD_NO;
-      pos->resuming = MHD_NO;
+      pos->suspended = false;
+      pos->resuming = false;
     }
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-      if (MHD_NO != ret)
-        { /* Wake up suspended connections. */
-          if (! MHD_itc_activate_(daemon->itc,
-                                  "w"))
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (MHD_NO != ret) )
+    { /* Wake up suspended connections. */
+      if (! MHD_itc_activate_(daemon->itc,
+                              "w"))
 #ifdef HAVE_MESSAGES
-            MHD_DLOG (daemon,
-                      _("Failed to signal resume of connection via inter-thread communication channel."));
+        MHD_DLOG (daemon,
+                  _("Failed to signal resume of connection via inter-thread communication channel."));
 #endif
-        }
     }
   return ret;
 }
@@ -2763,16 +2746,13 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
 
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   while (NULL != (pos = daemon->cleanup_head))
     {
       DLL_remove (daemon->cleanup_head,
 		  daemon->cleanup_tail,
 		  pos);
-
-      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-        MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (MHD_NO == pos->thread_joined) &&
@@ -2838,11 +2818,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	free (pos->addr);
       free (pos);
 
-      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-        MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
     }
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 
@@ -5525,13 +5503,12 @@ close_all_connections (struct MHD_Daemon *daemon)
      resumed connection. */
   if (0 != (MHD_ALLOW_SUSPEND_RESUME & daemon->options))
     {
-      daemon->resuming = MHD_YES; /* Force check for pending resume. */
+      daemon->resuming = true; /* Force check for pending resume. */
       resume_suspended_connections (daemon);
     }
   /* first, make sure all threads are aware of shutdown; need to
      traverse DLLs in peace... */
-  if (used_thr_p_c)
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #ifdef UPGRADE_SUPPORT
   if (upg_allowed)
     {
@@ -5563,8 +5540,8 @@ close_all_connections (struct MHD_Daemon *daemon)
                 MHD_connection_finish_forward_ (susp);
               /* Do not use MHD_resume_connection() as mutex is
                * already locked. */
-              susp->resuming = MHD_YES;
-              daemon->resuming = MHD_YES;
+              susp->resuming = true;
+              daemon->resuming = true;
             }
           susp = susp->next;
         }
@@ -5584,8 +5561,7 @@ close_all_connections (struct MHD_Daemon *daemon)
         MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
 #endif
     }
-  if (used_thr_p_c)
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
   /* now, collect per-connection threads */
   if (used_thr_p_c)
@@ -5614,7 +5590,7 @@ close_all_connections (struct MHD_Daemon *daemon)
    * application should be moved to cleanup list too. */
   if (upg_allowed)
     {
-      daemon->resuming = MHD_YES; /* Force check for pending resume. */
+      daemon->resuming = true; /* Force check for pending resume. */
       resume_suspended_connections (daemon);
     }
 #endif /* UPGRADE_SUPPORT */

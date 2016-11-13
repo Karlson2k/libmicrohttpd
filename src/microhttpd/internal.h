@@ -811,7 +811,7 @@ struct MHD_Connection
    * Are we currently inside the "idle" handler (to avoid recursively
    * invoking it).
    */
-  int in_idle;
+  bool in_idle;
 
   /**
    * Are we currently inside the "idle" handler (to avoid recursively
@@ -941,12 +941,12 @@ struct MHD_Connection
   /**
    * Is the connection suspended?
    */
-  int suspended;
+  bool suspended;
 
   /**
    * Is the connection wanting to resume?
    */
-  int resuming;
+  bool resuming;
 };
 
 
@@ -1433,7 +1433,7 @@ struct MHD_Daemon
   /*
    * Do we need to process resuming connections?
    */
-  int resuming;
+  bool resuming;
 
   /**
    * Number of active parallel connections.

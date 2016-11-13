@@ -2010,7 +2010,7 @@ process_request_body (struct MHD_Connection *connection)
 	     handling the rest of the request */
 	  if ( ( (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
 		 (0 != (connection->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ) &&
-	       (MHD_NO == connection->suspended) )
+	       (! connection->suspended) )
 	    MHD_DLOG (connection->daemon,
 		      _("WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n"));
 #endif
@@ -2666,17 +2666,14 @@ cleanup_connection (struct MHD_Connection *connection)
   if (connection->in_cleanup)
     return; /* Prevent double cleanup. */
 
-  connection->in_cleanup = !0;
+  connection->in_cleanup = true;
   if (NULL != connection->response)
     {
       MHD_destroy_response (connection->response);
       connection->response = NULL;
     }
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-    }
-  else
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if (connection->connection_timeout == daemon->connection_timeout)
         XDLL_remove (daemon->normal_timeout_head,
@@ -2687,7 +2684,7 @@ cleanup_connection (struct MHD_Connection *connection)
                      daemon->manual_timeout_tail,
                      connection);
     }
-  if (MHD_YES == connection->suspended)
+  if (connection->suspended)
     DLL_remove (daemon->suspended_connections_head,
                 daemon->suspended_connections_tail,
                 connection);
@@ -2698,12 +2695,12 @@ cleanup_connection (struct MHD_Connection *connection)
   DLL_insert (daemon->cleanup_head,
 	      daemon->cleanup_tail,
 	      connection);
-  connection->suspended = MHD_NO;
-  connection->resuming = MHD_NO;
-  connection->in_idle = MHD_NO;
+  connection->suspended = false;
+  connection->resuming = false;
+  connection->in_idle = false;
+  MHD_mutex_unlock_chk_(&daemon->cleanup_connection_mutex);
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      MHD_mutex_unlock_chk_(&daemon->cleanup_connection_mutex);
       /* if we were at the connection limit before and are in
          thread-per-connection mode, signal the main thread
          to resume accepting connections */
@@ -2739,7 +2736,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   size_t line_len;
   int client_close;
 
-  connection->in_idle = MHD_YES;
+  connection->in_idle = true;
   while (1)
     {
 #if DEBUG_STATES
@@ -2839,7 +2836,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (MHD_CONNECTION_CLOSED == connection->state)
             continue;
           connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
-          if (MHD_YES == connection->suspended)
+          if (connection->suspended)
             break;
           continue;
         case MHD_CONNECTION_HEADERS_PROCESSED:
@@ -2869,7 +2866,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           connection->state = (0 == connection->remaining_upload_size)
             ? MHD_CONNECTION_FOOTERS_RECEIVED : MHD_CONNECTION_CONTINUE_SENT;
-          if (MHD_YES == connection->suspended)
+          if (connection->suspended)
             break;
           continue;
         case MHD_CONNECTION_CONTINUE_SENDING:
@@ -2902,7 +2899,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 connection->state = MHD_CONNECTION_BODY_RECEIVED;
               else
                 connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-              if (MHD_YES == connection->suspended)
+              if (connection->suspended)
                 break;
               continue;
             }
@@ -2925,7 +2922,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-              if (MHD_YES == connection->suspended)
+              if (connection->suspended)
                 break;
               continue;
             }
@@ -2962,7 +2959,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-              if (MHD_YES == connection->suspended)
+              if (connection->suspended)
                 break;
               continue;
             }
@@ -3205,7 +3202,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     {
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-      connection->in_idle = MHD_NO;
+      connection->in_idle = false;
       return MHD_YES;
     }
   MHD_connection_update_event_loop_info (connection);
@@ -3305,7 +3302,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 	}
       connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
     }
-  connection->in_idle = MHD_NO;
+  connection->in_idle = false;
   return MHD_YES;
 }
 #endif
@@ -3396,7 +3393,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     {
     case MHD_CONNECTION_OPTION_TIMEOUT:
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-          (MHD_YES != connection->suspended) )
+          (! connection->suspended) )
         {
           if (connection->connection_timeout == daemon->connection_timeout)
             XDLL_remove (daemon->normal_timeout_head,
@@ -3412,7 +3409,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
                                                unsigned int);
       va_end (ap);
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-          (MHD_YES != connection->suspended) )
+          (! connection->suspended) )
         {
           if (connection->connection_timeout == daemon->connection_timeout)
             XDLL_insert (daemon->normal_timeout_head,
@@ -3504,7 +3501,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       connection->read_closed = MHD_YES;
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     }
-  if (MHD_NO == connection->in_idle)
+  if (! connection->in_idle)
     (void) MHD_connection_handle_idle (connection);
   return MHD_YES;
 }
