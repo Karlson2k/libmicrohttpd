@@ -2343,12 +2343,18 @@ internal_add_connection (struct MHD_Daemon *daemon,
 void
 MHD_suspend_connection (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon;
+  struct MHD_Daemon *daemon = connection->daemon;
 
-  daemon = connection->daemon;
   if (MHD_ALLOW_SUSPEND_RESUME != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (connection->resuming)
+    {
+      /* suspending again while we didn't even complete resuming yet */
+      connection->resuming = false;
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+      return;
+    }
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       if (connection->connection_timeout == daemon->connection_timeout)
@@ -2363,9 +2369,11 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   DLL_remove (daemon->connections_head,
               daemon->connections_tail,
               connection);
+  EXTRA_CHECK (! connection->suspended);
   DLL_insert (daemon->suspended_connections_head,
               daemon->suspended_connections_tail,
               connection);
+  connection->suspended = true;
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
@@ -2388,7 +2396,6 @@ MHD_suspend_connection (struct MHD_Connection *connection)
       connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
     }
 #endif
-  connection->suspended = true;
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
@@ -2447,8 +2454,11 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     next = daemon->suspended_connections_head;
   /* Clear the flag *only* if connections will be resumed otherwise
      it may accidentally clear flag that was set at the same time in
-     other thread (just after 'if (MHD_NO != daemon->resuming)' in
+     another thread (just after 'if (MHD_NO != daemon->resuming)' in
      this thread).
+
+     FIXME: is this not prevented by the lock!?
+
      Clear flag *before* resuming connections otherwise new connection can
      be set to "resuming" in other thread, but missed resuming in this
      function at this time so clearing flag at end will clear it without
@@ -2472,9 +2482,11 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
          )
         continue;
       ret = MHD_YES;
+      EXTRA_CHECK (pos->suspended);
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
+      pos->suspended = false;
       if (NULL == urh)
         {
           DLL_insert (daemon->connections_head,
@@ -2518,7 +2530,6 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
         }
 #endif /* UPGRADE_SUPPORT */
-      pos->suspended = false;
       pos->resuming = false;
     }
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);

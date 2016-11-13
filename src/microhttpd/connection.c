@@ -2379,6 +2379,8 @@ update_last_activity (struct MHD_Connection *connection)
   connection->last_activity = MHD_monotonic_sec_counter();
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return; /* each connection has personal timeout */
+  if (connection->suspended)
+    return; /* not timeouts for suspended connections */
 
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
@@ -2541,7 +2543,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                             MHD_CONNECTION_HEADERS_SENT);
           break;
         case MHD_CONNECTION_HEADERS_SENT:
-          EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_NORMAL_BODY_READY:
           response = connection->response;
@@ -2663,9 +2664,11 @@ cleanup_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
+  /* FIXME: when can this flag ever be needed? Sounds like we should
+     avoid this happening in the first place. Also, could there then
+     not be a race in this case? */
   if (connection->in_cleanup)
     return; /* Prevent double cleanup. */
-
   connection->in_cleanup = true;
   if (NULL != connection->response)
     {
@@ -2685,17 +2688,21 @@ cleanup_connection (struct MHD_Connection *connection)
                      connection);
     }
   if (connection->suspended)
-    DLL_remove (daemon->suspended_connections_head,
-                daemon->suspended_connections_tail,
-                connection);
+    {
+      DLL_remove (daemon->suspended_connections_head,
+                  daemon->suspended_connections_tail,
+                  connection);
+      connection->suspended = false;
+    }
   else
-    DLL_remove (daemon->connections_head,
-                daemon->connections_tail,
-                connection);
+    {
+      DLL_remove (daemon->connections_head,
+                  daemon->connections_tail,
+                  connection);
+    }
   DLL_insert (daemon->cleanup_head,
 	      daemon->cleanup_tail,
 	      connection);
-  connection->suspended = false;
   connection->resuming = false;
   connection->in_idle = false;
   MHD_mutex_unlock_chk_(&daemon->cleanup_connection_mutex);
@@ -2739,6 +2746,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   connection->in_idle = true;
   while (1)
     {
+      if (connection->suspended)
+        {
+          connection->in_idle = false;
+          return MHD_YES;
+        }
 #if DEBUG_STATES
       MHD_DLOG (daemon,
                 _("In function %s handling connection at state: %s\n"),
