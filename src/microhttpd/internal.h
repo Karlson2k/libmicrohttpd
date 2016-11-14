@@ -1379,7 +1379,8 @@ struct MHD_Daemon
    * The semantics is the following:
    * 0: ignore (user did not ask for neither allow/disallow, use SO_REUSEADDR)
    * >0: allow (use SO_REUSEPORT on most platforms, SO_REUSEADDR on Windows)
-   * <0: disallow (mostly no action, SO_EXCLUSIVEADDRUSE on Windows)
+   * <0: disallow (mostly no action, SO_EXCLUSIVEADDRUSE on Windows or SO_EXCLBIND
+   *     on Solaris)
    */
   int listening_address_reuse;
 

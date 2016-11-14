@@ -5063,13 +5063,20 @@ MHD_start_daemon_va (unsigned int flags,
         {
           /* User requested to disallow reusing listening address:port.
            * Do nothing except for Windows where SO_EXCLUSIVEADDRUSE
-           * is used. Fail if it does not exist or setsockopt fails.
+           * is used and Solaris with SO_EXCLBIND.
+           * Fail if MHD was compiled for W32 without SO_EXCLUSIVEADDRUSE
+           * or setsockopt fails.
            */
-#ifdef _WIN32
+#if (defined(_WIN32) && defined(SO_EXCLUSIVEADDRUSE)) || \
+    (defined(__sun) && defined(SO_EXCLBIND))
 #ifdef SO_EXCLUSIVEADDRUSE
           if (0 > setsockopt (socket_fd,
                               SOL_SOCKET,
+#ifdef SO_EXCLUSIVEADDRUSE
                               SO_EXCLUSIVEADDRUSE,
+#else  /* SO_EXCLBIND */
+                              SO_EXCLBIND,
+#endif /* SO_EXCLBIND */
                               (void *) &on,
                               sizeof (on)))
             {
@@ -5080,7 +5087,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto free_and_fail;
             }
-#else /* SO_EXCLUSIVEADDRUSE not defined on W32? */
+#elif defined(_WIN32) /* SO_EXCLUSIVEADDRUSE not defined on W32? */
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _("Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined\n"));
