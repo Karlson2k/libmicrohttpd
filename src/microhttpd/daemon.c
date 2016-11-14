@@ -1744,7 +1744,9 @@ thread_main_handle_connection (void *data)
 #endif
       if (MHD_CONNECTION_CLOSED != con->state)
 	MHD_connection_close_ (con,
-                               MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+                               (MHD_NO == daemon->shutdown) ?
+                                 MHD_REQUEST_TERMINATED_WITH_ERROR :
+                                 MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
       con->idle_handler (con);
     }
 exit:
