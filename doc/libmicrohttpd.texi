@@ -977,9 +977,8 @@ the address:port of the listening socket (using @code{SO_REUSEPORT} on most
 platforms, and @code{SO_REUSEADDR} on Windows).  If a false (zero) parameter is
 given, disallow reusing the the address:port of the listening socket (this
 usually requires no special action, but @code{SO_EXCLUSIVEADDRUSE} is needed on
-Windows).  If this option is not present, default behaviour is undefined
-(currently, @code{SO_REUSEADDR} is used on all platforms, which disallows
-address:port reusing with the exception of Windows).
+Windows).  If this option is not present @code{SO_REUSEADDR} is used on all
+platforms except Windows so reusing of address:port is disallowed.
 
 @end table
 @end deftp
