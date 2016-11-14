@@ -4990,8 +4990,11 @@ MHD_start_daemon_va (unsigned int flags,
       /* Apply the socket options according to listening_address_reuse. */
       if (0 == daemon->listening_address_reuse)
         {
-          /* No user requirement, use "traditional" default SO_REUSEADDR,
-           and do not fail if it doesn't work */
+#ifndef _WIN32
+          /* No user requirement, use "traditional" default SO_REUSEADDR
+           * on non-W32 platforms, and do not fail if it doesn't work.
+           * Don't use it on W32, because on W32 it will allow multiple
+           * bind to the same address:port, like SO_REUSEPORT on others. */
           if (0 > setsockopt (socket_fd,
                               SOL_SOCKET,
                               SO_REUSEADDR,
@@ -5003,6 +5006,7 @@ MHD_start_daemon_va (unsigned int flags,
                       MHD_socket_last_strerr_ ());
 #endif
           }
+#endif /* ! _WIN32 */
         }
       else if (daemon->listening_address_reuse > 0)
         {
