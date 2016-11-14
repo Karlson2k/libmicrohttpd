@@ -5012,36 +5012,18 @@ MHD_start_daemon_va (unsigned int flags,
         {
           /* User requested to allow reusing listening address:port.
            * Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
-           * Fail if SO_REUSEPORT does not exist or setsockopt fails.
+           * Fail if SO_REUSEPORT is not defined or setsockopt fails.
            */
-#ifdef _WIN32
           /* SO_REUSEADDR on W32 has the same semantics
              as SO_REUSEPORT on BSD/Linux */
+#if defined(_WIN32) || defined(SO_REUSEPORT)
           if (0 > setsockopt (socket_fd,
                               SOL_SOCKET,
-                              SO_REUSEADDR,
-                              (void*)&on, sizeof (on)))
-            {
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        "setsockopt failed: %s\n",
-                        MHD_socket_last_strerr_ ());
-#endif
-              goto free_and_fail;
-            }
-#else
-#ifndef SO_REUSEPORT
-#ifdef LINUX
-/* Supported since Linux 3.9, but often not present (or commented out)
-   in the headers at this time; but 15 is reserved for this and
-   thus should be safe to use. */
-#define SO_REUSEPORT 15
-#endif
-#endif
-#ifdef SO_REUSEPORT
-          if (0 > setsockopt (socket_fd,
-                              SOL_SOCKET,
+#ifndef _WIN32
                               SO_REUSEPORT,
+#else  /* _WIN32 */
+                              SO_REUSEADDR,
+#endif /* _WIN32 */
                               (void *) &on,
                               sizeof (on)))
             {
@@ -5052,7 +5034,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto free_and_fail;
             }
-#else
+#else  /* !_WIN32 && !SO_REUSEPORT */
           /* we're supposed to allow address:port re-use, but
              on this platform we cannot; fail hard */
 #ifdef HAVE_MESSAGES
@@ -5060,8 +5042,7 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Cannot allow listening address reuse: SO_REUSEPORT not defined\n"));
 #endif
           goto free_and_fail;
-#endif
-#endif
+#endif /* !_WIN32 && !SO_REUSEPORT */
         }
       else /* if (daemon->listening_address_reuse < 0) */
         {
