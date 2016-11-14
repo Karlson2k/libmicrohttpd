@@ -930,7 +930,7 @@ struct MHD_Connection
    * Could it be that we are ready to read due to TLS buffers
    * even though the socket is not?
    */
-  int tls_read_ready;
+  bool tls_read_ready;
 
   /**
    * TLS layer was shut down?

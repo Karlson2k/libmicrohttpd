@@ -428,10 +428,10 @@ recv_tls_adapter (struct MHD_Connection *connection,
 {
   ssize_t res;
 
-  if (MHD_YES == connection->tls_read_ready)
+  if (connection->tls_read_ready)
     {
       connection->daemon->num_tls_read_ready--;
-      connection->tls_read_ready = MHD_NO;
+      connection->tls_read_ready = 0;
     }
   res = gnutls_record_recv (connection->tls_session,
                             other,
@@ -455,7 +455,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
     }
   if ((size_t)res == i)
     {
-      connection->tls_read_ready = MHD_YES;
+      connection->tls_read_ready = !0;
       connection->daemon->num_tls_read_ready++;
     }
   return res;
@@ -893,7 +893,7 @@ call_handlers (struct MHD_Connection *con,
   bool was_initing = (con->state == MHD_CONNECTION_INIT);
 
 #ifdef HTTPS_SUPPORT
-  if (MHD_YES == con->tls_read_ready)
+  if (con->tls_read_ready)
     read_ready = MHD_YES;
 #endif /* HTTPS_SUPPORT */
   if (read_ready)
@@ -1501,7 +1501,7 @@ thread_main_handle_connection (void *data)
 
       tvp = NULL;
 #ifdef HTTPS_SUPPORT
-      if (MHD_YES == con->tls_read_ready)
+      if (con->tls_read_ready)
 	{
 	  /* do not block (more data may be inside of TLS buffers waiting for us) */
 	  tv.tv_sec = 0;
