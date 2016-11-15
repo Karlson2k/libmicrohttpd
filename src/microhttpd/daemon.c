@@ -1125,7 +1125,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           if (MHD_NO != urh->was_closed)
             {
-              /* Connection was shuted down or all data received and
+              /* Connection was shut down or all data received and
                * application will not forward any more data. */
               urh->out_buffer_size = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
