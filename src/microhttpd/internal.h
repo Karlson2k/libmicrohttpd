@@ -1553,6 +1553,12 @@ struct MHD_Daemon
    */
   unsigned int num_tls_read_ready;
 
+  /**
+   * Indicate that some TLS connection(s) have received data pending in
+   * TLS buffers.
+   */
+  bool has_tls_recv_ready;
+
 #endif /* HTTPS_SUPPORT */
 
 #ifdef DAUTH_SUPPORT

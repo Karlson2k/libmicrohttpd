@@ -1,3 +1,7 @@
+Tue Nov 15 19:08:43 MSK 2016
+	Fixed forwarding "upgraded" TLS connections for
+	chunks sizes larger than buffer size. -EG
+
 Mon Nov 14 22:18:30 MSK 2016
 	Fixed unintentional usage of SO_REUSEADDR on W32.
 	Added support for SO_EXCLBIND on Solaris.

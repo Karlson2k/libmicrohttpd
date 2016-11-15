@@ -1012,10 +1012,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       /* Reading from remote client is not required anymore. */
       urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+      urh->connection->tls_read_ready = 0;
     }
 
   /* handle reading from TLS client and writing to application */
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) &&
+  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
+         (urh->connection->tls_read_ready) ) &&
        (urh->in_buffer_used < urh->in_buffer_size) )
     {
       ssize_t res;
@@ -1025,6 +1027,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (buf_size > SSIZE_MAX)
         buf_size = SSIZE_MAX;
 
+      urh->connection->tls_read_ready = 0;
       res = gnutls_record_recv (urh->connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
@@ -1036,6 +1039,11 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else if (res > 0)
         {
           urh->in_buffer_used += res;
+          if (0 < gnutls_record_check_pending (urh->connection->tls_session))
+            {
+              urh->connection->tls_read_ready = !0;
+              urh->connection->daemon->has_tls_recv_ready = !0;
+            }
         }
       else if (0 >= res)
         {
@@ -1083,6 +1091,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               urh->in_buffer_used = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
               urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+              urh->connection->tls_read_ready = 0;
             }
         }
       else
@@ -2872,7 +2881,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
     }
 
 #ifdef HTTPS_SUPPORT
-  if (0 != daemon->num_tls_read_ready)
+  if (0 != daemon->num_tls_read_ready || daemon->has_tls_recv_ready)
     {
       /* if there is any TLS connection with data ready for
 	 reading, we must not block in the event loop */
@@ -2973,6 +2982,14 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
+
+#ifdef HTTPS_SUPPORT
+    /* Reset TLS read-ready.
+     * New value will be set by read handlers. */
+    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+         (0 != (daemon->options & MHD_USE_TLS)) )
+      daemon->has_tls_recv_ready = 0;
+#endif /* HTTPS_SUPPORT */
 
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & mask))
@@ -3362,6 +3379,14 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     if ( (-1 != poll_itc_idx) &&
          (0 != (p[poll_itc_idx].revents & POLLIN)) )
       MHD_itc_clear_ (daemon->itc);
+
+#ifdef HTTPS_SUPPORT
+    /* Reset TLS read-ready.
+     * New value will be set by read handlers. */
+    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+         (0 != (daemon->options & MHD_USE_TLS)) )
+      daemon->has_tls_recv_ready = 0;
+#endif /* HTTPS_SUPPORT */
 
     /* handle shutdown */
     if (MHD_YES == daemon->shutdown)
@@ -3759,6 +3784,12 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
 	  return MHD_NO;
 	}
+#ifdef HTTPS_SUPPORT
+    /* Reset TLS read-ready.
+     * New value will be set by read handlers. */
+    if ( 0 != (daemon->options & MHD_USE_TLS) )
+      daemon->has_tls_recv_ready = 0;
+#endif /* HTTPS_SUPPORT */
       for (i=0;i<(unsigned int) num_events;i++)
 	{
           /* First, check for the values of `ptr` that would indicate
