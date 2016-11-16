@@ -2664,9 +2664,6 @@ cleanup_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  /* FIXME: when can this flag ever be needed? Sounds like we should
-     avoid this happening in the first place. Also, could there then
-     not be a race in this case? */
   if (connection->in_cleanup)
     return; /* Prevent double cleanup. */
   connection->in_cleanup = true;
