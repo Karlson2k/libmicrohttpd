@@ -126,6 +126,63 @@ AC_CHECK_HEADER([stdbool.h],
   [AC_INCLUDES_DEFAULT]
 )
 
+AC_CACHE_CHECK([[whether "true" is defined or builtin]], [[mhd_cv_macro_true_defined]],
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM(
+        [[
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+        ]], [[
+#if defined(true)
+    /* dummy */
+#else
+    (void)true;
+#endif
+        ]])
+     ], [[mhd_cv_macro_true_defined='yes']], [[mhd_cv_macro_true_defined='no']])
+  ])
+AS_VAR_IF([[mhd_cv_macro_true_defined]], [["yes"]], [[:]],
+  [AC_DEFINE([[true]],[[(!0)]], [Define to value interpreted by compiler as boolean "true", if "true" is not defined by system headers.])])
+
+AC_CACHE_CHECK([[whether "false" is defined or builtin]], [[mhd_cv_macro_false_defined]],
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM(
+        [[
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+        ]], [[
+#if !defined(false)
+    (void)false;
+#else
+    /* dummy */
+#endif
+        ]])
+     ], [[mhd_cv_macro_false_defined='yes']], [[mhd_cv_macro_false_defined='no']])
+  ])
+AS_VAR_IF([[mhd_cv_macro_false_defined]], [["yes"]], [[:]],
+  [AC_DEFINE([[false]],[[0]], [Define to value interpreted by compiler as boolean "false", if "false" is not defined by system headers.])])
+
+AC_CACHE_CHECK([[whether "true" and "false" could be used]], [[mhd_cv_macro_true_false_valid]],
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM(
+        [[
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+        ]], [[
+          int var1[true ? 1 : -1] = { 1 };
+          int var2[false ? -1 : 1] = { 2 };
+          if (var1[0] == var2[0])
+            return 1;
+        ]])
+     ], [[mhd_cv_macro_true_false_valid='yes']], [[mhd_cv_macro_true_false_valid='no']])
+  ])
+AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
+  [AC_MSG_ERROR([[Value of "true" or value of "false" is not valid. Check config.log for details.]])])
+
+
 AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
                       [[errattr_CFLAGS="-Werror=attributes"]],
                       [[errattr_CFLAGS=""]], [], [])
