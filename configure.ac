@@ -174,7 +174,9 @@ AC_CACHE_CHECK([[whether "true" and "false" could be used]], [[mhd_cv_macro_true
         ]], [[
           int var1[true ? 1 : -1] = { 1 };
           int var2[false ? -1 : 1] = { 2 };
-          if (var1[0] == var2[0])
+          int var3[!true ? -1 : 1] = { 3 };
+          int var4[!false ? 1 : -1] = { 4 };
+          if (var1[0] == var2[0] || var3[0] == var4[0])
             return 1;
         ]])
      ], [[mhd_cv_macro_true_false_valid='yes']], [[mhd_cv_macro_true_false_valid='no']])
