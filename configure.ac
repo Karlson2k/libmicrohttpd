@@ -34,10 +34,6 @@ AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
 
-# check for gettext
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19.8])
-
 AC_MSG_CHECKING([[whether z/OS special settings are required]])
 if test `uname -s` = "OS/390"
 then
@@ -1376,16 +1372,20 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(LDFLAGS)
 
+# Used for 'po' directory staff
+AC_SUBST([ac_configure_args])
+AC_SUBST([EMPTY_VAR], [[]])
+
 AC_CONFIG_FILES([
 libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
+po/configure.acT:po/configure.ac.in
 Makefile
 contrib/Makefile
 doc/Makefile
 doc/doxygen/Makefile
 doc/examples/Makefile
 m4/Makefile
-po/Makefile.in
 src/Makefile
 src/include/Makefile
 src/microhttpd/Makefile
