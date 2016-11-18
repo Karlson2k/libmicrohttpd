@@ -2514,7 +2514,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 break;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
-                        _("Failed to send data: %s\n"),
+                        _("Failed to send data in request for %s: %s\n"),
+                        connection->url,
                         MHD_socket_strerr_ (err));
 #endif
 	      CONNECTION_CLOSE_ERROR (connection,
