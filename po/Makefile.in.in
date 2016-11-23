@@ -391,12 +391,13 @@ clean: mostlyclean
 # Modified to fit MHD needs
 distclean: clean
 	rm -f Makefile Makefile.in POTFILES *.mo
-	rm -f config.status config.cache config.log configure.lineno config.status.lineno
+	rm -f config.status config.cache config.log configure.lineno config.status.lineno stamp-po
 
+# Modified to fit MHD needs
 maintainer-clean: distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
-	rm -f stamp-po $(GMOFILES)
+	rm -f $(GMOFILES)
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
