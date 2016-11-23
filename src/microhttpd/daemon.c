@@ -5041,8 +5041,23 @@ MHD_start_daemon_va (unsigned int flags,
         }
       else if (daemon->listening_address_reuse > 0)
         {
-          /* User requested to allow reusing listening address:port.
-           * Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
+          /* User requested to allow reusing listening address:port. */
+#ifndef _WIN32
+          /* Use SO_REUSEADDR on non-W32 platforms, and do not fail if
+           * it doesn't work. */
+          if (0 > setsockopt (socket_fd,
+                              SOL_SOCKET,
+                              SO_REUSEADDR,
+                              (void*)&on, sizeof (on)))
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("setsockopt failed: %s\n"),
+                        MHD_socket_last_strerr_ ());
+#endif
+            }
+#endif /* ! _WIN32 */
+          /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
            * Fail if SO_REUSEPORT is not defined or setsockopt fails.
            */
           /* SO_REUSEADDR on W32 has the same semantics
