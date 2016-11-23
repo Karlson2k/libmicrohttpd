@@ -53,7 +53,10 @@ po-files-pre-distdir: update-POTFILES.in renew-po-configure.ac
 # Clean in po directory only if po/Makefile was generated to avoid
 # useless generation of po/Makefile only for 'clean' target
 clean-local:
-	@ if test -f po/Makefile; then $(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) clean || exit 1; fi;
+	@ if test -f po/Makefile; then \
+	    $(MAKE) $(AM_MAKEFLAGS) po/Makefile && \
+	    $(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) clean || exit 1; \
+	  fi;
 
 po/Makefile: $(srcdir_po)/Makefile.in.in $(srcdir_po)/Makevars $(srcdir_po)/POTFILES.in po/config.status
 	@$(am__cd) po && @SHELL@ ./config.status ./Makefile.in po-directories
