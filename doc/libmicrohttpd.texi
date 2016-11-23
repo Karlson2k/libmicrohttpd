@@ -163,18 +163,18 @@ Examples based on reports we've received from developers include:
 MHD supports four basic thread modes and up to three event loop
 styles.
 
-The four basic thread modes are external (MHD creates no threads,
-event loop is fully managed by the application), internal (MHD creates
-one thread for all connections), thread pool (MHD creates a thread
-pool which is used to process all connections) and
-thread-per-connection (MHD creates one listen thread and then one
-thread per accepted connection).
+The four basic thread modes are external sockets polling (MHD creates
+no threads, event loop is fully managed by the application), internal
+polling (MHD creates one thread for all connections), polling in
+thread pool (MHD creates a thread pool which is used to process all
+connections) and thread-per-connection (MHD creates one thread for
+listen sockets and then one thread per accepted connection).
 
-These thread modes are then combined with the event loop styles.
-MHD support select, poll and epoll.  select is available on all
-platforms, epoll and poll may not be available on some platforms.
-Note that it is possible to combine MHD using epoll with an external
-select-based event loop.
+These thread modes are then combined with the evet loop styles
+(polling function type).  MHD support select, poll and epoll. select
+is available on all platforms, epoll and poll may not be available on
+some platforms.  Note that it is possible to combine MHD using epoll
+with an external select-based event loop.
 
 The default (if no other option is passed) is ``external select''.
 The highest performance can typically be obtained with a thread pool
@@ -267,7 +267,10 @@ do not include the post processor API (results in binary incompatibility)
 @item ``--disable-dauth''
 do not include the authentication APIs (results in binary incompatibility)
 
-@item ``--disable-epoll
+@item ``--disable-httpupgrade''
+do not build code for HTTP ``Upgrade'' (smaller binary size, binary incompatible library)
+
+@item ``--disable-epoll''
 do not include epoll support, even if it supported (minimally smaller binary size, good for portability testing)
 
 @item ``--enable-coverage''
@@ -334,17 +337,18 @@ causing problems when porting to other platforms).
 
 @section SIGPIPE
 @cindex signals
-MHD does not install a signal handler for SIGPIPE.  On platforms
-where this is possible (such as GNU/Linux), it disables SIGPIPE for
-its I/O operations (by passing MSG_NOSIGNAL).  On other platforms,
-SIGPIPE signals may be generated from network operations by
-MHD and will cause the process to die unless the developer
-explicitly installs a signal handler for SIGPIPE.
+MHD does not install a signal handler for SIGPIPE.  On platforms where
+this is possible (such as GNU/Linux), it disables SIGPIPE for its I/O
+operations (by passing MSG_NOSIGNAL or similar).  On other platforms,
+SIGPIPE signals may be generated from network operations by MHD and
+will cause the process to die unless the developer explicitly installs
+a signal handler for SIGPIPE.
 
 Hence portable code using MHD must install a SIGPIPE handler or
-explicitly block the SIGPIPE signal.  MHD does not do so in order
-to avoid messing with other parts of the application that may
-need to handle SIGPIPE in a particular way.  You can make your application handle SIGPIPE by calling the following function in @code{main}:
+explicitly block the SIGPIPE signal.  MHD does not do so in order to
+avoid messing with other parts of the application that may need to
+handle SIGPIPE in a particular way.  You can make your application
+handle SIGPIPE by calling the following function in @code{main}:
 
 @verbatim
 static void
@@ -435,34 +439,36 @@ compiler).
 @deftp {Enumeration} MHD_FLAG
 Options for the MHD daemon.
 
-Note that MHD will run automatically in background thread(s) only
-if @code{MHD_USE_INTERNAL_POLLING_THREAD} is used. Otherwise caller
-(application) must use @code{MHD_run} or @code{MHD_run_from_select}
-to have MHD processed network connections and data.
+Note that MHD will run automatically in background thread(s) only if
+@code{MHD_USE_INTERNAL_POLLING_THREAD} is used. Otherwise caller
+(application) must use @code{MHD_run} or @code{MHD_run_from_select} to
+have MHD processed network connections and data.
 
 Starting the daemon may also fail if a particular option is not
-implemented or not supported on the target platform (i.e. no support for
-@acronym{SSL}, threads or IPv6).  SSL support generally depends on
-options given during MHD compilation.  Threaded operations
-(including @code{MHD_USE_INTERNAL_POLLING_THREAD}) are not supported on
-Symbian.
+implemented or not supported on the target platform (i.e. no support
+for @acronym{TLS}, threads or IPv6). TLS support generally depends on
+options given during MHD compilation. Threaded operations (including
+@code{MHD_USE_INTERNAL_POLLING_THREAD}) are not supported on Symbian.
 
 @table @code
 @item MHD_NO_FLAG
 No options selected.
 
+@item MHD_USE_ERROR_LOG
+If this flag is used, the library should print error messages and
+warnings to stderr (or to custom error printer if it's specified by
+options).  Note that for this run-time option to have any effect, MHD
+needs to be compiled with messages enabled. This is done by default
+except you ran configure with the @code{--disable-messages} flag set.
+
 @item MHD_USE_DEBUG
 @cindex debugging
-Run in debug mode.  If this flag is used, the library should print error
-messages and warnings to stderr.  Note that for this
-run-time option to have any effect, MHD needs to be
-compiled with messages enabled. This is done by default except you ran
-configure with the @code{--disable-messages} flag set.
+Currently the same as @code{MHD_USE_ERROR_LOG}.
 
-@item MHD_USE_SSL
+@item MHD_USE_TLS
 @cindex TLS
 @cindex SSL
-Run in HTTPS-mode.  If you specify @code{MHD_USE_SSL} and MHD was
+Run in HTTPS-mode.  If you specify @code{MHD_USE_TLS} and MHD was
 compiled without SSL support, @code{MHD_start_daemon} will return
 NULL.
 
@@ -515,13 +521,13 @@ Use @code{epoll()} instead of @code{poll()} or @code{select()}. This
 allows sockets with descriptors @code{>= FD_SETSIZE}.  This option is
 only available on some systems and does not work in conjunction with
 @code{MHD_USE_THREAD_PER_CONNECTION} (at this point).  If you specify
-@code{MHD_USE_EPOLL} and the local platform does not
-support it, @code{MHD_start_daemon} will return NULL.  Using
-@code{epoll()} instead of @code{select()} or @code{poll()} can in some
-situations result in significantly higher performance as the system
-call has fundamentally lower complexity (O(1) for @code{epoll()}
-vs. O(n) for @code{select()}/@code{poll()} where n is the number of
-open connections).
+@code{MHD_USE_EPOLL} and the local platform does not support it,
+@code{MHD_start_daemon} will return NULL.  Using @code{epoll()}
+instead of @code{select()} or @code{poll()} can in some situations
+result in significantly higher performance as the system call has
+fundamentally lower complexity (O(1) for @code{epoll()} vs. O(n) for
+@code{select()}/@code{poll()} where n is the number of open
+connections).
 
 @item MHD_USE_TURBO
 @cindex performance
@@ -559,14 +565,14 @@ connect HTTP clients to the HTTP server.  This option is incompatible
 with using a thread pool; if it is used,
 @code{MHD_OPTION_THREAD_POOL_SIZE} is ignored.
 
+
 @item MHD_USE_ITC
 @cindex quiesce
 Force MHD to use a signal inter-thread communication channel to notify
-the event loop (of threads) of our shutdown and other events.
-This is required if an application uses
-@code{MHD_USE_INTERNAL_POLLING_THREAD} and then performs
-@code{MHD_quiesce_daemon} (which eliminates our ability to signal
-termination via the listen socket).  In these modes,
+the event loop (of threads) of our shutdown and other events.  This is
+required if an application uses @code{MHD_USE_INTERNAL_POLLING_THREAD}
+and then performs @code{MHD_quiesce_daemon} (which eliminates our
+ability to signal termination via the listen socket).  In these modes,
 @code{MHD_quiesce_daemon} will fail if this option was not set.  Also,
 use of this option is automatic (as in, you do not even have to
 specify it), if @code{MHD_USE_NO_LISTEN_SOCKET} is specified.  In
@@ -588,12 +594,21 @@ Enable TCP_FASTOPEN on the listen socket.  TCP_FASTOPEN is currently
 supported on Linux >= 3.6.  On other systems using this option with
 cause @code{MHD_start_daemon} to fail.
 
+
 @item MHD_ALLOW_UPGRADE
 @cindex upgrade
 This option must be set if you want to upgrade connections
 (via ``101 Switching Protocols'' responses).  This requires MHD to
 allocate additional resources, and hence we require this
 special flag so we only use the resources that are really needed.
+
+
+@item MHD_USE_AUTO
+Automatically select best event loop style (polling function)
+depending on requested mode by other MHD flags and functions available
+on platform.  If application doesn't have requirements for any
+specific polling function, it's recommended to use this flag.  This
+flag is very convenient for multiplatform applications.
 
 @end table
 @end deftp
