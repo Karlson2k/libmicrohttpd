@@ -22,6 +22,7 @@ srcdir = @srcdir@
 top_po_srcdir = @top_srcdir@
 top_srcdir = @top_srcdir@/..
 top_po_builddir = $(top_builddir)/po
+# See '$(POTFILES):' rule
 VPATH = @srcdir@:@srcdir@/po
 
 prefix = @prefix@
@@ -400,6 +401,11 @@ maintainer-clean: distclean
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 # Added for MHD
+# If source path is in absolute form, POTFILES generated with correct path,
+# but if source path in relative form (forced by 'configure' for inplace builds)
+# then POTFILES is generated with extra '..' ('po-directories' in config.status
+# think that '.' is subdirectory and add additional '..' to path to source files)
+# This rule create additional 'po' subdirectory which is included in VPATH.
 $(POTFILES):
 	@ case "$(srcdir)" in \
 	  /* ) : ;; \
