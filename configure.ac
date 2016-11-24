@@ -1302,6 +1302,7 @@ AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
 
 # Check for fork() and waitpid(). They are used for tests.
 AC_MSG_CHECKING([[for fork()]])
+mhd_have_fork_waitpid='no'
 AC_LINK_IFELSE(
   [
    AC_LANG_PROGRAM(
@@ -1336,6 +1337,7 @@ AC_LINK_IFELSE(
      ], [
       AC_DEFINE([[HAVE_WAITPID]], [[1]], [Define to 1 if you have the usable `waitpid' function.])
       AC_MSG_RESULT([[yes]])
+      mhd_have_fork_waitpid='yes'
     ],[
        AC_MSG_RESULT([[no]])
     ])
@@ -1343,6 +1345,7 @@ AC_LINK_IFELSE(
    AC_MSG_RESULT([[no]])
 ])
 
+AM_CONDITIONAL([HAVE_FORK_WAITPID], [test "x$mhd_have_fork_waitpid" = "xyes"])
 
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 

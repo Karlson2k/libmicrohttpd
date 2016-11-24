@@ -16,12 +16,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/include \
 $(LIBCURL_CPPFLAGS)
 
-if !HAVE_W32
-if HAVE_CURL_BINARY
-CURL_FORK_TEST = test_get_response_cleanup
-endif
-endif
-
 if HAVE_CURL
 check_PROGRAMS = \
   test_start_stop \
@@ -46,15 +40,23 @@ check_PROGRAMS = \
   test_termination \
   test_timeout \
   test_callback \
-  $(CURL_FORK_TEST) \
   perf_get
+
+if HAVE_FORK_WAITPID
+if HAVE_CURL_BINARY
+check_PROGRAMS += test_get_response_cleanup
+endif
+endif
 
 if HAVE_POSIX_THREADS
 check_PROGRAMS += \
   test_quiesce \
-  test_quiesce_stream \
   test_concurrent_stop \
   perf_get_concurrent
+
+if HAVE_CURL_BINARY
+check_PROGRAMS += test_quiesce_stream
+endif
 endif
 
 if HAVE_POSTPROCESSOR

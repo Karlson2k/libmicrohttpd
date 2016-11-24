@@ -23,15 +23,19 @@
  * @author Markus Doppelbauer
  * @author Christian Grothoff
  */
+#include "mhd_options.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <pthread.h>
 #include <microhttpd.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#define sleep(s) (Sleep((s)*1000), 0)
+#endif /* _WIN32 */
 
 
 static volatile unsigned int request_counter;
@@ -171,7 +175,7 @@ main()
   /* Flags */
   unsigned int daemon_flags
     = MHD_USE_INTERNAL_POLLING_THREAD
-    | MHD_USE_EPOLL
+    | MHD_USE_AUTO
     | MHD_ALLOW_SUSPEND_RESUME
     | MHD_USE_ITC;
 
@@ -184,11 +188,11 @@ main()
                                                 NULL,
                                                 MHD_OPTION_END);
   if (NULL == daemon)
-    return EXIT_FAILURE;
-  if (0 != system ("wget --server-response -q -O - 127.0.0.1:8000"))
+    return 1;
+  if (0 != system ("curl -s http://127.0.0.1:8000"))
     {
       MHD_stop_daemon (daemon);
-      return 77; /* skipped */
+      return 1;
     }
   /* wait for a request */
   while (0 == request_counter)
@@ -205,5 +209,5 @@ main()
            "stopping daemon\n");
   MHD_stop_daemon (daemon);
 
-  return EXIT_SUCCESS;
+  return 0;
 }
