@@ -180,7 +180,7 @@ test_upgrade_SOURCES = \
 test_upgrade_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 test_upgrade_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(GNUTLS_CFLAGS)
 test_upgrade_LDFLAGS = \
   $(GNUTLS_LDFLAGS)
 test_upgrade_LDADD = \
@@ -192,7 +192,7 @@ test_upgrade_tls_SOURCES = \
 test_upgrade_tls_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
 test_upgrade_tls_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(GNUTLS_CFLAGS)
 test_upgrade_tls_LDFLAGS = \
   $(GNUTLS_LDFLAGS)
 test_upgrade_tls_LDADD = \
