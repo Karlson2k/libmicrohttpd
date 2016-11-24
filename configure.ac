@@ -1032,13 +1032,12 @@ then
 fi
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
-AC_CHECK_LIB([[magic]], [[magic_open]],
-  [AC_CHECK_HEADERS([magic.h], [
-     AM_CONDITIONAL(HAVE_MAGIC, true),
-     AM_CONDITIONAL(HAVE_MAGIC, false)]
-     ,[] ,[AC_INCLUDES_DEFAULT])
-  ], [AM_CONDITIONAL(HAVE_MAGIC, false)])
+mhd_have_magic_open='no'
+AC_CHECK_HEADERS([[magic.h]],
+  [ AC_CHECK_LIB([[magic]], [[magic_open]], [[mhd_have_magic_open='yes']]) ],[],
+  [AC_INCLUDES_DEFAULT])
 
+AM_CONDITIONAL([HAVE_MAGIC], [[test "x$mhd_have_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
