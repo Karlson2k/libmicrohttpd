@@ -2463,19 +2463,10 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
   if (daemon->resuming)
     next = daemon->suspended_connections_head;
-  /* Clear the flag *only* if connections will be resumed otherwise
-     it may accidentally clear flag that was set at the same time in
-     another thread (just after 'if (MHD_NO != daemon->resuming)' in
-     this thread).
 
-     FIXME: is this not prevented by the lock!?
+  EXTRA_CHECK(NULL != next);
+  daemon->resuming = false;
 
-     Clear flag *before* resuming connections otherwise new connection can
-     be set to "resuming" in other thread, but missed resuming in this
-     function at this time so clearing flag at end will clear it without
-     actually resuming of new connection. */
-  if (NULL != next)
-    daemon->resuming = false;
   while (NULL != (pos = next))
     {
 #ifdef UPGRADE_SUPPORT
