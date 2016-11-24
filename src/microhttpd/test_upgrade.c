@@ -238,7 +238,11 @@ static wr_socket wr_create_tls_sckt(void)
                 {
                   if (GNUTLS_E_SUCCESS == gnutls_credentials_set (s->tls_s, GNUTLS_CRD_CERTIFICATE, s->tls_crd))
                     {
-                      gnutls_transport_set_int (s->tls_s, (int )(s->fd));
+#if GNUTLS_VERSION_NUMBER+0 >= 0x030109
+                      gnutls_transport_set_int (s->tls_s, (int)(s->fd));
+#else  /* GnuTLS before 3.1.9 */
+                      gnutls_transport_set_ptr (s->tls_s, (gnutls_transport_ptr_t)(intptr_t)(s->fd));
+#endif /* GnuTLS before 3.1.9 */
                       return s;
                     }
                   gnutls_certificate_free_credentials (s->tls_crd);
