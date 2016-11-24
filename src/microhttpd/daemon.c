@@ -5383,7 +5383,7 @@ MHD_start_daemon_va (unsigned int flags,
                 }
             }
           if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-               (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
+               (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
                                           NULL)) )
             {
 #ifdef HAVE_MESSAGES
