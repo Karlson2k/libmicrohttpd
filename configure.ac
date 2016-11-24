@@ -253,6 +253,7 @@ openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
      mhd_host_os='OpenBSD'
+     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 netbsd*)
