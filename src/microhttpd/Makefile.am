@@ -203,6 +203,8 @@ test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+test_postprocessor_CFLAGS = \
+  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
 test_postprocessor_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
@@ -210,6 +212,8 @@ test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
 test_postprocessor_amp_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+test_postprocessor_amp_CFLAGS = \
+  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
 test_postprocessor_amp_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
@@ -217,6 +221,8 @@ test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
 test_postprocessor_large_CPPFLAGS = \
   $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+test_postprocessor_large_CFLAGS = \
+  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
 test_postprocessor_large_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
