@@ -96,7 +96,8 @@ int main()
   (void) strnlen;
 #endif
 
-#ifndef __NetBSD__
+#if !defined(__NetBSD__) && !defined(__OpenBSD__)
+/* NetBSD and OpenBSD didn't implement wcsnlen() for some reason. */
 #ifndef wcsnlen
   (void) wcsnlen;
 #endif
