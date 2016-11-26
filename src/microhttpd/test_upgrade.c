@@ -25,6 +25,7 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_options.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -34,7 +35,6 @@
 #ifndef WINDOWS
 #include <unistd.h>
 #endif
-#include "mhd_options.h"
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
