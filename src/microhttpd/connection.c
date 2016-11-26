@@ -681,8 +681,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
 	connection->response_write_position) )
     return MHD_YES; /* response already ready */
 #if LINUX
-  if ( (MHD_INVALID_SOCKET != response->fd) &&
-       (0 == (connection->daemon->options & MHD_USE_TLS)) )
+  if (MHD_resp_sender_sendfile == connection->resp_sender)
     {
       /* will use sendfile, no need to bother response crc */
       return MHD_YES;
@@ -3488,6 +3487,14 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
+#if LINUX
+  if ( (response->fd == -1) ||
+       (0 != (connection->daemon->options & MHD_USE_TLS)) )
+    connection->resp_sender = MHD_resp_sender_std;
+  else
+    connection->resp_sender = MHD_resp_sender_sendfile;
+#endif /* LINUX */
+
   if ( ( (NULL != connection->method) &&
          (MHD_str_equal_caseless_ (connection->method,
                                    MHD_HTTP_METHOD_HEAD)) ) ||

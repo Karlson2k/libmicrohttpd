@@ -752,6 +752,14 @@ struct MHD_Connection
    */
   uint64_t response_write_position;
 
+#if LINUX
+  enum MHD_resp_sender_
+  {
+    MHD_resp_sender_std = 0,
+    MHD_resp_sender_sendfile
+  } resp_sender;
+#endif /* LINUX */
+
   /**
    * Position in the 100 CONTINUE message that
    * we need to send when receiving http 1.1 requests.

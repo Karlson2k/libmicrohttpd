@@ -1852,7 +1852,7 @@ send_param_adapter (struct MHD_Connection *connection,
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
        (NULL != connection->response) &&
-       (-1 != (fd = connection->response->fd)) )
+       (MHD_resp_sender_sendfile == connection->resp_sender) )
     {
       /* can use sendfile */
       uint64_t left;
@@ -1904,6 +1904,7 @@ send_param_adapter (struct MHD_Connection *connection,
 	 to fall back to 'SEND'; see also this thread for info on
 	 odd libc/Linux behavior with sendfile:
 	 http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+      connection->resp_sender = MHD_resp_sender_std;
     }
 #endif
   ret = MHD_send_ (connection->socket_fd,
