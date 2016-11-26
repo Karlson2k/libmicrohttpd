@@ -23,10 +23,10 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_options.h"
 #include <stdio.h>
 #include <locale.h>
 #include <string.h>
-#include "mhd_options.h"
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #else  /* ! HAVE_INTTYPES_H */
