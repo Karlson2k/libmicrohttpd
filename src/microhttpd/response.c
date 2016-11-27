@@ -30,6 +30,9 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif /* HAVE_SYS_IOCTL_H */
+#ifdef _WIN32
+#include <windows.h>
+#endif /* _WIN32 */
 
 #include "internal.h"
 #include "response.h"
@@ -341,23 +344,35 @@ file_reader (void *cls,
              size_t max)
 {
   struct MHD_Response *response = cls;
+#ifndef _WIN32
   ssize_t n;
+#else  /* _WIN32 */
+  const HANDLE fh = (HANDLE) _get_osfhandle (response->fd);
+#endif /* _WIN32 */
   const int64_t offset64 = (int64_t)(pos + response->fd_off);
 
   if (offset64 < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
+#ifndef _WIN32
+  if (max > SSIZE_MAX)
+    max = SSIZE_MAX; /* Clamp to maximum return value. */
+
+#if defined(HAVE_PREAD64)
+  n = pread64(response->fd, buf, max, offset64);
+#elif defined(HAVE_PREAD)
+  if ( (sizeof(off_t) < sizeof (uint64_t)) &&
+       (offset64 > (uint64_t)INT32_MAX) )
+    return MHD_CONTENT_READER_END_WITH_ERROR; /* Read at required position is not possible. */
+
+  n = pread(response->fd, buf, max, (off_t) offset64);
+#else  /* ! HAVE_PREAD */
 #if defined(HAVE_LSEEK64)
   if (lseek64 (response->fd,
                offset64,
                SEEK_SET) != offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
-#elif defined(HAVE___LSEEKI64)
-  if (_lseeki64 (response->fd,
-                 offset64,
-                 SEEK_SET) != offset64)
-    return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
-#else /* !HAVE___LSEEKI64 */
+#else  /* ! HAVE_LSEEK64 */
   if ( (sizeof(off_t) < sizeof (uint64_t)) &&
        (offset64 > (uint64_t)INT32_MAX) )
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
@@ -366,29 +381,38 @@ file_reader (void *cls,
              (off_t) offset64,
              SEEK_SET) != (off_t) offset64)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* can't seek to required position */
-#endif
-
-#ifndef _WIN32
-  if (max > SSIZE_MAX)
-    max = SSIZE_MAX;
-
+#endif /* ! HAVE_LSEEK64 */
   n = read (response->fd,
             buf,
             max);
-#else  /* _WIN32 */
-  if (max > INT32_MAX)
-    max = INT32_MAX;
 
-  n = read (response->fd,
-            buf,
-            (unsigned int) max);
-#endif /* _WIN32 */
-
+#endif /* ! HAVE_PREAD */
   if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   return n;
+#else /* _WIN32 */
+  if (INVALID_HANDLE_VALUE == fh)
+    return MHD_CONTENT_READER_END_WITH_ERROR; /* Value of 'response->fd' is not valid. */
+  else
+    {
+      OVERLAPPED f_ol = {}; /* Initialize to zero. */
+      ULARGE_INTEGER pos_uli;
+      DWORD toRead = (max > INT32_MAX) ? INT32_MAX : (DWORD) max;
+      DWORD resRead;
+
+      pos_uli.QuadPart = (uint64_t) offset64; /* Simple transformation 64bit -> 2x32bit. */
+      f_ol.Offset = pos_uli.LowPart;
+      f_ol.OffsetHigh = pos_uli.HighPart;
+      f_ol.hEvent = 0; /* Actually NOP, as already set to zero by init. */
+      if (! ReadFile(fh, (void*)buf, toRead, &resRead, &f_ol))
+        return MHD_CONTENT_READER_END_WITH_ERROR; /* Read error. */
+      if (0 == resRead)
+        return MHD_CONTENT_READER_END_OF_STREAM;
+      return (ssize_t) resRead;
+    }
+#endif /* _WIN32 */
 }
 
 
