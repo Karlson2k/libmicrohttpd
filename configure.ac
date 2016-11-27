@@ -1043,7 +1043,7 @@ AM_CONDITIONAL([HAVE_MAGIC], [[test "x$mhd_have_magic_open" = "xyes"]])
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-AC_CHECK_FUNCS([_lseeki64 lseek64 sendfile64])
+AC_CHECK_FUNCS([lseek64 sendfile64 pread64 pread])
 
 # optional: have error messages ?
 AC_MSG_CHECKING([[whether to generate error messages]])

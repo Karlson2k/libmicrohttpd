@@ -6018,7 +6018,11 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
       return MHD_NO;
 #endif /* !HTTPS_SUPPORT || GNUTLS_VERSION_NUMBER < 0x030111 */
     case MHD_FEATURE_LARGE_FILE:
-#if defined(HAVE___LSEEKI64) || defined(HAVE_LSEEK64)
+#if defined(HAVE_PREAD64) || defined(_WIN32)
+      return MHD_YES;
+#elif defined(HAVE_PREAD)
+      return (sizeof(uint64_t) > sizeof(off_t)) ? MHD_NO : MHD_YES;
+#elif defined(HAVE_LSEEK64)
       return MHD_YES;
 #else
       return (sizeof(uint64_t) > sizeof(off_t)) ? MHD_NO : MHD_YES;
@@ -6031,6 +6035,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #endif
     case MHD_FEATURE_UPGRADE:
 #if defined(UPGRADE_SUPPORT)
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_RESPONSES_SHARED_FD:
+#if defined(HAVE_PREAD64) || defined(HAVE_PREAD) || defined(_WIN32)
       return MHD_YES;
 #else
       return MHD_NO;
