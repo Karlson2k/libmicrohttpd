@@ -40,7 +40,7 @@
 /**
  * Change itc FD options to be non-blocking.
  *
- * @param pip the pipe to manipulate
+ * @param itc the inter-thread communication primitive to manipulate
  * @return non-zero if succeeded, zero otherwise
  */
 int
