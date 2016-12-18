@@ -685,7 +685,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+  if ( (0 != urh->in_buffer_used) &&
        (MHD_NO == urh->was_closed) &&
        (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
@@ -701,7 +701,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               max_fd,
                               fd_setsize)) )
     return MHD_NO;
-  if ( (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
+  if ( (0 != urh->out_buffer_used) &&
        (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               ws,
@@ -1339,11 +1339,11 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
           p[1].fd = urh->mhd.socket;
           if (urh->in_buffer_used < urh->in_buffer_size)
             p[0].events |= POLLIN;
-          if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
+          if (0 != urh->out_buffer_used)
             p[0].events |= POLLOUT;
           if (urh->out_buffer_used < urh->out_buffer_size)
             p[1].events |= POLLIN;
-          if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
+          if (0 != urh->in_buffer_used)
             p[1].events |= POLLOUT;
 
           if ( (0 != (p[0].events | p[1].events)) &&
@@ -3333,13 +3333,13 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         p[poll_server+i].fd = urh->connection->socket_fd;
         if (urh->in_buffer_used < urh->in_buffer_size)
           p[poll_server+i].events |= POLLIN;
-        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi))
+        if (0 != urh->out_buffer_used)
           p[poll_server+i].events |= POLLOUT;
         i++;
         p[poll_server+i].fd = urh->mhd.socket;
         if (urh->out_buffer_used < urh->out_buffer_size)
           p[poll_server+i].events |= POLLIN;
-        if (0 == (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi))
+        if (0 != urh->in_buffer_used)
           p[poll_server+i].events |= POLLOUT;
         i++;
       }
