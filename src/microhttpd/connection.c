@@ -3111,6 +3111,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
+	  if (MHD_HTTP_PROCESSING == connection->response->status_code)
+	  {
+	    /* After this type of response, we allow sending another! */
+	    connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
+	    MHD_destroy_response (connection->response);
+	    connection->response = NULL;
+	    /* FIXME: maybe partially reset memory pool? */
+	    continue;
+	  }
           if (MHD_NO != socket_flush_possible (connection))
             socket_start_no_buffering_flush (connection);
           else

@@ -2541,10 +2541,12 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     { /* Wake up suspended connections. */
       if (! MHD_itc_activate_(daemon->itc,
                               "w"))
+	{
 #ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _("Failed to signal resume of connection via inter-thread communication channel."));
+	  MHD_DLOG (daemon,
+		    _("Failed to signal resume of connection via inter-thread communication channel."));
 #endif
+	}
     }
   return ret;
 }
