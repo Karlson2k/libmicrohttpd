@@ -3111,7 +3111,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
-	  if (MHD_HTTP_PROCESSING == connection->response->status_code)
+	  if (MHD_HTTP_PROCESSING == connection->responseCode)
 	  {
 	    /* After this type of response, we allow sending another! */
 	    connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
