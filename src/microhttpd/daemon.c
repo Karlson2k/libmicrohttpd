@@ -431,7 +431,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
   if (connection->tls_read_ready)
     {
       connection->daemon->num_tls_read_ready--;
-      connection->tls_read_ready = 0;
+      connection->tls_read_ready = false;
     }
   res = gnutls_record_recv (connection->tls_session,
                             other,
@@ -455,7 +455,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
     }
   if ((size_t)res == i)
     {
-      connection->tls_read_ready = !0;
+      connection->tls_read_ready = true;
       connection->daemon->num_tls_read_ready++;
     }
   return res;
@@ -1012,7 +1012,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       /* Reading from remote client is not required anymore. */
       urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-      urh->connection->tls_read_ready = 0;
+      urh->connection->tls_read_ready = false;
     }
 
   /* handle reading from TLS client and writing to application */
@@ -1027,7 +1027,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (buf_size > SSIZE_MAX)
         buf_size = SSIZE_MAX;
 
-      urh->connection->tls_read_ready = 0;
+      urh->connection->tls_read_ready = false;
       res = gnutls_record_recv (urh->connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
@@ -1041,8 +1041,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->in_buffer_used += res;
           if (0 < gnutls_record_check_pending (urh->connection->tls_session))
             {
-              urh->connection->tls_read_ready = !0;
-              urh->connection->daemon->has_tls_recv_ready = !0;
+              urh->connection->tls_read_ready = true;
+              urh->connection->daemon->has_tls_recv_ready = true;
             }
         }
       else if (0 >= res)
@@ -1091,7 +1091,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               urh->in_buffer_used = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
               urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              urh->connection->tls_read_ready = 0;
+              urh->connection->tls_read_ready = false;
             }
         }
       else
