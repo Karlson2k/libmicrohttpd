@@ -1289,11 +1289,23 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
               break;
             }
           if (MHD_INVALID_SOCKET != max_fd)
-            num_ready = MHD_SYS_select_ (max_fd + 1,
-                                         &rs,
-                                         &ws,
-                                         NULL,
-                                         NULL);
+            {
+              struct timeval* tvp;
+              struct timeval tv;
+              if (con->tls_read_ready)
+                { /* No need to wait if incoming data is already pending in TLS buffers. */
+                  tv.tv_sec = 0;
+                  tv.tv_usec = 0;
+                  tvp = &tv;
+                }
+              else
+                tvp = NULL;
+              num_ready = MHD_SYS_select_ (max_fd + 1,
+                                           &rs,
+                                           &ws,
+                                           NULL,
+                                           tvp);
+            }
           else
             num_ready = 0;
           if (num_ready < 0)
@@ -1325,12 +1337,12 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   else if (0 != (daemon->options & MHD_USE_TLS))
     {
       /* use poll() */
-      const unsigned int timeout = UINT_MAX;
 
       while ( (MHD_CONNECTION_UPGRADE == con->state) ||
               (0 != urh->out_buffer_used) )
         {
           struct pollfd p[2];
+          unsigned int timeout;
 
           memset (p,
                   0,
@@ -1345,6 +1357,11 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             p[1].events |= POLLIN;
           if (0 != urh->in_buffer_used)
             p[1].events |= POLLOUT;
+
+          if (con->tls_read_ready)
+            timeout = 0; /* No need to wait if incoming data is already pending in TLS buffers. */
+          else
+            timeout = UINT_MAX;
 
           if ( (0 != (p[0].events | p[1].events)) &&
                (MHD_sys_poll_ (p,
