@@ -1288,6 +1288,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 #endif
               break;
             }
+          /* FIXME: does this check really needed? */
           if (MHD_INVALID_SOCKET != max_fd)
             {
               struct timeval* tvp;
@@ -1363,6 +1364,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
           else
             timeout = UINT_MAX;
 
+          /* FIXME: does this check really needed? */
           if ( (0 != (p[0].events | p[1].events)) &&
                (MHD_sys_poll_ (p,
                                2,
