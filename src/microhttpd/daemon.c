@@ -3837,6 +3837,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	      /* run 'accept' until it fails or we are not allowed to take
 		 on more connections */
 	      series_length = 0;
+	      /* FIXME: If more than 128 connections are pending, the rest
+	       * of them will not trigger next epoll_wait()? */
 	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
 		      (daemon->connections < daemon->connection_limit) &&
 		      (series_length < 128) &&
