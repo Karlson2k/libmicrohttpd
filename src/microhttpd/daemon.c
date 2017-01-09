@@ -3773,6 +3773,13 @@ MHD_epoll (struct MHD_Daemon *daemon,
   else
     timeout_ms = 0;
 
+#ifdef HTTPS_SUPPORT
+  /* Reset TLS read-ready.
+   * New value will be set by read handlers. */
+  if ( 0 != (daemon->options & MHD_USE_TLS) )
+    daemon->has_tls_recv_ready = false;
+#endif /* HTTPS_SUPPORT */
+
   /* drain 'epoll' event queue; need to iterate as we get at most
      MAX_EVENTS in one system call here; in practice this should
      pretty much mean only one round, but better an extra loop here
@@ -3797,12 +3804,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
 	  return MHD_NO;
 	}
-#ifdef HTTPS_SUPPORT
-    /* Reset TLS read-ready.
-     * New value will be set by read handlers. */
-    if ( 0 != (daemon->options & MHD_USE_TLS) )
-      daemon->has_tls_recv_ready = 0;
-#endif /* HTTPS_SUPPORT */
       for (i=0;i<(unsigned int) num_events;i++)
 	{
           /* First, check for the values of `ptr` that would indicate
