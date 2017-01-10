@@ -141,7 +141,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalPut ()
+testPutInternalThread ()
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -199,7 +199,7 @@ testInternalPut ()
 }
 
 static int
-testMultithreadedPut ()
+testPutThreadPerConn ()
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -260,7 +260,7 @@ testMultithreadedPut ()
 }
 
 static int
-testMultithreadedPoolPut ()
+testPutThreadPool ()
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -322,7 +322,7 @@ testMultithreadedPoolPut ()
 }
 
 static int
-testExternalPut ()
+testPutExternal ()
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -479,10 +479,10 @@ main (int argc, char *const *argv)
   if (NULL == put_buffer)
     return 99;
   memset (put_buffer, 1, PUT_SIZE);
-  errorCount += testInternalPut ();
-  errorCount += testMultithreadedPut ();
-  errorCount += testMultithreadedPoolPut ();
-  errorCount += testExternalPut ();
+  errorCount += testPutInternalThread ();
+  errorCount += testPutThreadPerConn ();
+  errorCount += testPutThreadPool ();
+  errorCount += testPutExternal ();
   free (put_buffer);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
