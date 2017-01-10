@@ -36,6 +36,8 @@
 #include <unistd.h>
 #endif
 
+#include "test_helpers.h"
+
 #if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
 #undef CPU_COUNT
 #endif
@@ -470,12 +472,12 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
-    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  oneone = has_in_name(argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
-    return 2;
+    return 99;
   put_buffer = malloc (PUT_SIZE);
-  if (NULL == put_buffer) return 1;
+  if (NULL == put_buffer)
+    return 99;
   memset (put_buffer, 1, PUT_SIZE);
   errorCount += testInternalPut ();
   errorCount += testMultithreadedPut ();
@@ -485,5 +487,5 @@ main (int argc, char *const *argv)
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
-  return errorCount != 0;       /* 0 == pass */
+  return (errorCount == 0) ? 0 : 1;
 }
