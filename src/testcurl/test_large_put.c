@@ -70,10 +70,13 @@ struct CBC
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
-  unsigned int *pos = ptr;
-  unsigned int wrt;
+  size_t *pos = (size_t *)ptr;
+  size_t wrt;
 
   wrt = size * nmemb;
+  /* Check for overflow. */
+  if (wrt / size != nmemb)
+    return 0;
   if (wrt > PUT_SIZE - (*pos))
     wrt = PUT_SIZE - (*pos);
   memcpy (stream, &put_buffer[*pos], wrt);
@@ -146,7 +149,7 @@ testPutInternalThread ()
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
@@ -204,7 +207,7 @@ testPutThreadPerConn ()
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
@@ -265,7 +268,7 @@ testPutThreadPool ()
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
@@ -342,7 +345,7 @@ testPutExternal ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   char buf[2048];
 
