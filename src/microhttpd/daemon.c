@@ -1850,9 +1850,6 @@ send_param_adapter (struct MHD_Connection *connection,
 {
   ssize_t ret;
   int err;
-#if LINUX
-  MHD_socket fd;
-#endif
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
@@ -1874,6 +1871,7 @@ send_param_adapter (struct MHD_Connection *connection,
        (MHD_resp_sender_sendfile == connection->resp_sender) )
     {
       /* can use sendfile */
+      MHD_socket fd = connection->response->fd;
       uint64_t left;
       uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
@@ -2719,7 +2717,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
             }
           else
             {
-              daemon->at_limit = MHD_YES;
+              daemon->at_limit = true;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         _("Hit process or system resource limit at %u connections, temporarily suspending accept(). Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n"),
@@ -2803,7 +2801,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 	gnutls_deinit (pos->tls_session);
 #endif /* HTTPS_SUPPORT */
       daemon->connections--;
-      daemon->at_limit = MHD_NO;
+      daemon->at_limit = false;
 
       /* clean up the connection */
       if (NULL != daemon->notify_connection)
@@ -3186,7 +3184,7 @@ MHD_select (struct MHD_Daemon *daemon,
        (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (0 != (daemon->options & MHD_USE_ITC)) &&
        ( (daemon->connections == daemon->connection_limit) ||
-         (MHD_YES == daemon->at_limit) ) )
+         (daemon->at_limit) ) )
     {
       FD_CLR (daemon->socket_fd,
               &rs);
@@ -3295,7 +3293,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     poll_listen = -1;
     if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
 	 (daemon->connections < daemon->connection_limit) &&
-         (MHD_NO == daemon->at_limit) )
+         (! daemon->at_limit) )
       {
 	/* only listen if we are not at the connection limit */
 	p[poll_server].fd = daemon->socket_fd;
@@ -3705,7 +3703,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (daemon->connections < daemon->connection_limit) &&
        (MHD_NO == daemon->listen_socket_in_epoll) &&
-       (MHD_NO == daemon->at_limit) )
+       (! daemon->at_limit) )
     {
       event.events = EPOLLIN;
       event.data.ptr = daemon;
@@ -3746,7 +3744,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if ( ( (MHD_YES == daemon->listen_socket_in_epoll) &&
          (daemon->connections == daemon->connection_limit) ) ||
-       (MHD_YES == daemon->at_limit) )
+       (daemon->at_limit) )
     {
       /* we're at the connection limit, disable listen socket
 	 for event loop for now */
@@ -3832,18 +3830,26 @@ MHD_epoll (struct MHD_Daemon *daemon,
               MHD_itc_clear_ (daemon->itc);
               continue;
             }
-	  if (daemon == events[i].data.ptr)
+	  if ( (daemon == events[i].data.ptr) ||
+               (daemon->accept_pending) )
 	    {
 	      /* run 'accept' until it fails or we are not allowed to take
 		 on more connections */
 	      series_length = 0;
-	      /* FIXME: If more than 128 connections are pending, the rest
-	       * of them will not trigger next epoll_wait()? */
-	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
-		      (daemon->connections < daemon->connection_limit) &&
-		      (series_length < 128) &&
-                      (MHD_NO == daemon->at_limit) )
-                series_length++;
+	      while (MHD_YES == MHD_accept_connection (daemon))
+              {
+                if ( (daemon->connections < daemon->connection_limit) &&
+                     (series_length < 128) &&
+                     (! daemon->at_limit) )
+                  series_length++;
+                else
+                {
+                  /* Use the 'accept_pending' flag to remember that we stopped
+                     for resource limits, not because we drained accept() */
+                  daemon->accept_pending = true;
+                  break;
+                }
+              }
               continue;
 	    }
           /* this is an event relating to a 'normal' connection,

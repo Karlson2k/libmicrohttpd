@@ -798,7 +798,7 @@ struct MHD_Connection
   MHD_socket socket_fd;
 
   /**
-   * Non-zero if #socket_fd is non-blocking, zero otherwise.
+   * true if #socket_fd is non-blocking, false otherwise.
    */
   bool sk_nonblck;
 
@@ -1405,6 +1405,13 @@ struct MHD_Daemon
    */
   int listen_socket_in_epoll;
 
+  /**
+   * true if we have more incoming connections to be accepted from
+   * the last event-loop iteration (and might not be triggered for
+   * those explicitly anymore), false if we drained the queue.
+   */
+  bool accept_pending;
+
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /**
    * File descriptor associated with the #run_epoll_for_upgrade() loop.
@@ -1438,7 +1445,7 @@ struct MHD_Daemon
    * temporarily lowers the "connection_limit" to the current
    * number of connections.
    */
-  int at_limit;
+  bool at_limit;
 
   /*
    * Do we need to process resuming connections?
