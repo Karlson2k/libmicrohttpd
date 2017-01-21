@@ -1405,13 +1405,6 @@ struct MHD_Daemon
    */
   int listen_socket_in_epoll;
 
-  /**
-   * true if we have more incoming connections to be accepted from
-   * the last event-loop iteration (and might not be triggered for
-   * those explicitly anymore), false if we drained the queue.
-   */
-  bool accept_pending;
-
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /**
    * File descriptor associated with the #run_epoll_for_upgrade() loop.

@@ -3691,7 +3691,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
   MHD_UNSIGNED_LONG_LONG timeout_ll;
   int num_events;
   unsigned int i;
-  unsigned int series_length;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   int run_upgraded = MHD_NO;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
@@ -3830,26 +3829,18 @@ MHD_epoll (struct MHD_Daemon *daemon,
               MHD_itc_clear_ (daemon->itc);
               continue;
             }
-	  if ( (daemon == events[i].data.ptr) ||
-               (daemon->accept_pending) )
+	  if (daemon == events[i].data.ptr)
 	    {
-	      /* run 'accept' until it fails or we are not allowed to take
-		 on more connections */
-	      series_length = 0;
-	      while (MHD_YES == MHD_accept_connection (daemon))
-              {
-                if ( (daemon->connections < daemon->connection_limit) &&
-                     (series_length < 128) &&
-                     (! daemon->at_limit) )
-                  series_length++;
-                else
-                {
-                  /* Use the 'accept_pending' flag to remember that we stopped
-                     for resource limits, not because we drained accept() */
-                  daemon->accept_pending = true;
-                  break;
-                }
-              }
+	      unsigned int series_length = 0;
+              /* Run 'accept' until it fails or daemon at limit of connections.
+               * Do not accept more then 10 connections at once. The rest will
+               * be accepted on next turn (level trigger is used for listen
+               * socket). */
+	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
+                      (series_length < 10) &&
+                      (daemon->connections < daemon->connection_limit) &&
+                      (! daemon->at_limit) )
+                series_length++;
               continue;
 	    }
           /* this is an event relating to a 'normal' connection,
