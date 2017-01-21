@@ -1871,7 +1871,7 @@ send_param_adapter (struct MHD_Connection *connection,
        (MHD_resp_sender_sendfile == connection->resp_sender) )
     {
       /* can use sendfile */
-      MHD_socket fd = connection->response->fd;
+      int file_fd = connection->response->fd;
       uint64_t left;
       uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
@@ -1887,14 +1887,14 @@ send_param_adapter (struct MHD_Connection *connection,
       offset = (off_t) offsetu64;
       if ( (offsetu64 <= (uint64_t) OFF_T_MAX) &&
            (0 < (ret = sendfile (connection->socket_fd,
-                                 fd,
+                                 file_fd,
                                  &offset,
                                  left))) )
 #else  /* HAVE_SENDFILE64 */
       offset = (off64_t) offsetu64;
       if ( (offsetu64 <= (uint64_t) OFF64_T_MAX) &&
 	   (0 < (ret = sendfile64 (connection->socket_fd,
-                                   fd,
+	                           file_fd,
                                    &offset,
                                    left))) )
 #endif /* HAVE_SENDFILE64 */
