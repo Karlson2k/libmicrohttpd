@@ -173,7 +173,7 @@ ahc_echo (void *cls,
 
 
 static int
-testPutInternalThread ()
+testPutInternalThread (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -186,7 +186,7 @@ testPutInternalThread ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | add_flag,
                         1080,
                         NULL, NULL, &ahc_echo, &done_flag,
 			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
@@ -231,7 +231,7 @@ testPutInternalThread ()
 }
 
 static int
-testPutThreadPerConn ()
+testPutThreadPerConn (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -244,7 +244,8 @@ testPutThreadPerConn ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD |
+                          MHD_USE_ERROR_LOG | add_flag,
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
@@ -292,7 +293,7 @@ testPutThreadPerConn ()
 }
 
 static int
-testPutThreadPool ()
+testPutThreadPool (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -305,7 +306,7 @@ testPutThreadPool ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | add_flag,
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
@@ -354,7 +355,7 @@ testPutThreadPool ()
 }
 
 static int
-testPutExternal ()
+testPutExternal (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -513,15 +514,15 @@ main (int argc, char *const *argv)
   put_buffer = alloc_init (PUT_SIZE);
   if (NULL == put_buffer)
     return 99;
-  lastErr = testPutInternalThread ();
+  lastErr = testPutInternalThread (0);
   if (verbose && 0 != lastErr)
     fprintf (stderr, "Error during testing with internal thread with select().\n");
   errorCount += lastErr;
-  lastErr = testPutThreadPerConn ();
+  lastErr = testPutThreadPerConn (0);
   if (verbose && 0 != lastErr)
     fprintf (stderr, "Error during testing with internal thread per connection with select().\n");
   errorCount += lastErr;
-  lastErr = testPutThreadPool ();
+  lastErr = testPutThreadPool (0);
   if (verbose && 0 != lastErr)
     fprintf (stderr, "Error during testing with thread pool per connection with select().\n");
   errorCount += lastErr;
@@ -529,6 +530,32 @@ main (int argc, char *const *argv)
   if (verbose && 0 != lastErr)
     fprintf (stderr, "Error during testing with external select().\n");
   errorCount += lastErr;
+  if (MHD_is_feature_supported(MHD_FEATURE_POLL))
+    {
+      lastErr = testPutInternalThread (MHD_USE_POLL);
+      if (verbose && 0 != lastErr)
+        fprintf (stderr, "Error during testing with internal thread with poll().\n");
+      errorCount += lastErr;
+      lastErr = testPutThreadPerConn (MHD_USE_POLL);
+      if (verbose && 0 != lastErr)
+        fprintf (stderr, "Error during testing with internal thread per connection with poll().\n");
+      errorCount += lastErr;
+      lastErr = testPutThreadPool (MHD_USE_POLL);
+      if (verbose && 0 != lastErr)
+        fprintf (stderr, "Error during testing with thread pool per connection with poll().\n");
+      errorCount += lastErr;
+    }
+  if (MHD_is_feature_supported(MHD_FEATURE_EPOLL))
+    {
+      lastErr = testPutInternalThread (MHD_USE_EPOLL);
+      if (verbose && 0 != lastErr)
+        fprintf (stderr, "Error during testing with internal thread with epoll.\n");
+      errorCount += lastErr;
+      lastErr = testPutThreadPool (MHD_USE_EPOLL);
+      if (verbose && 0 != lastErr)
+        fprintf (stderr, "Error during testing with thread pool per connection with epoll.\n");
+      errorCount += lastErr;
+    }
   free (put_buffer);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
