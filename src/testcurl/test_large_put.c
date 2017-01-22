@@ -47,6 +47,7 @@
 
 static int oneone;
 static int incr_read; /* Use incremental read */
+static int verbose; /* Be verbose */
 
 #define PUT_SIZE (256 * 1024)
 
@@ -502,21 +503,37 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  unsigned int lastErr;
 
   oneone = has_in_name(argv[0], "11");
   incr_read = has_in_name(argv[0], "_inc");
+  verbose = has_param(argc, argv, "-v");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 99;
   put_buffer = alloc_init (PUT_SIZE);
   if (NULL == put_buffer)
     return 99;
-  errorCount += testPutInternalThread ();
-  errorCount += testPutThreadPerConn ();
-  errorCount += testPutThreadPool ();
-  errorCount += testPutExternal ();
+  lastErr = testPutInternalThread ();
+  if (verbose && 0 != lastErr)
+    fprintf (stderr, "Error during testing with internal thread with select().\n");
+  errorCount += lastErr;
+  lastErr = testPutThreadPerConn ();
+  if (verbose && 0 != lastErr)
+    fprintf (stderr, "Error during testing with internal thread per connection with select().\n");
+  errorCount += lastErr;
+  lastErr = testPutThreadPool ();
+  if (verbose && 0 != lastErr)
+    fprintf (stderr, "Error during testing with thread pool per connection with select().\n");
+  errorCount += lastErr;
+  lastErr = testPutExternal ();
+  if (verbose && 0 != lastErr)
+    fprintf (stderr, "Error during testing with external select().\n");
+  errorCount += lastErr;
   free (put_buffer);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
+  else if (verbose)
+    printf ("All checks passed successfully.\n");
   curl_global_cleanup ();
   return (errorCount == 0) ? 0 : 1;
 }
