@@ -59,6 +59,31 @@ struct CBC
   size_t size;
 };
 
+char*
+alloc_init(size_t buf_size)
+{
+  static const char template[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz";
+  static const size_t templ_size = sizeof(template) / sizeof(char) - 1;
+  char *buf;
+  char *fill_ptr;
+  size_t to_fill;
+
+  buf = malloc(buf_size);
+  if (NULL == buf)
+    return NULL;
+
+  fill_ptr = buf;
+  to_fill = buf_size;
+  while (to_fill > 0)
+    {
+      const size_t to_copy = to_fill > templ_size ? templ_size : to_fill;
+      memcpy (fill_ptr, template, to_copy);
+      fill_ptr += to_copy;
+      to_fill -= to_copy;
+    }
+  return buf;
+}
+
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
@@ -482,10 +507,9 @@ main (int argc, char *const *argv)
   incr_read = has_in_name(argv[0], "_inc");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 99;
-  put_buffer = malloc (PUT_SIZE);
+  put_buffer = alloc_init (PUT_SIZE);
   if (NULL == put_buffer)
     return 99;
-  memset (put_buffer, 1, PUT_SIZE);
   errorCount += testPutInternalThread ();
   errorCount += testPutThreadPerConn ();
   errorCount += testPutThreadPool ();
