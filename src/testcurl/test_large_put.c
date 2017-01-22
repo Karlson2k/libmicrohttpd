@@ -189,7 +189,7 @@ testPutInternalThread ()
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1080,
                         NULL, NULL, &ahc_echo, &done_flag,
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -247,7 +247,7 @@ testPutThreadPerConn ()
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag,
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+                        MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -309,7 +309,7 @@ testPutThreadPool ()
                         1081,
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (1024*1024),
+                        MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -385,8 +385,8 @@ testPutExternal ()
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1082,
                         NULL, NULL, &ahc_echo, &done_flag,
-                        MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        (size_t) (PUT_SIZE * 4), MHD_OPTION_END);
+                        MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   c = curl_easy_init ();

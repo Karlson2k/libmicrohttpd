@@ -32,6 +32,7 @@ check_PROGRAMS = \
   test_get_sendfile11 \
   test_put11 \
   test_large_put11 \
+  test_large_put_inc11 \
   test_long_header \
   test_long_header11 \
   test_get_chunked \
@@ -281,6 +282,12 @@ test_large_put_LDADD = \
 test_large_put11_SOURCES = \
   test_large_put.c
 test_large_put11_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_large_put_inc11_SOURCES = \
+  test_large_put.c
+test_large_put_inc11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
