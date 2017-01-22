@@ -46,16 +46,8 @@
 #endif
 
 static int oneone;
+static int incr_read; /* Use incremental read */
 
-/**
- * Do not make this much larger since we will hit the
- * MHD default buffer limit and the test code is not
- * written for incremental upload processing...
- * (larger values will likely cause MHD to generate
- * an internal server error -- which would be avoided
- * by writing the putBuffer method in a more general
- * fashion).
- */
 #define PUT_SIZE (256 * 1024)
 
 static char *put_buffer;
@@ -103,35 +95,46 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **pparam)
 {
   int *done = cls;
   struct MHD_Response *response;
   int ret;
+  static size_t processed;
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
     {
-      if (*upload_data_size != PUT_SIZE)
+      size_t *pproc;
+      if (NULL == *pparam)
         {
-#if 0
-          fprintf (stderr,
-                   "Waiting for more data (%u/%u)...\n",
-                   *upload_data_size, PUT_SIZE);
-#endif
-          return MHD_YES;       /* not yet ready */
+          processed = 0;
+          *pparam = &processed; /* Safe as long as only one parallel request served. */
         }
-      if (0 == memcmp (upload_data, put_buffer, PUT_SIZE))
+      pproc = (size_t*) *pparam;
+
+      if (0 == *upload_data_size)
+        return MHD_YES; /* No data to process. */
+
+      if (*pproc + *upload_data_size > PUT_SIZE)
         {
-          *upload_data_size = 0;
-        }
-      else
-        {
-          printf ("Invalid upload data!\n");
+          fprintf (stderr, "Incoming data larger than expected.\n");
           return MHD_NO;
         }
-      *done = 1;
+      if ( (!incr_read) && (*upload_data_size != PUT_SIZE) )
+        return MHD_YES; /* Wait until whole request is received. */
+
+      if (0 != memcmp(upload_data, put_buffer + (*pproc), *upload_data_size))
+        {
+          fprintf (stderr, "Incoming data does not match sent data.\n");
+          return MHD_NO;
+        }
+      *pproc += *upload_data_size;
+      *upload_data_size = 0; /* Current block of data is fully processed. */
+
+      if (PUT_SIZE == *pproc)
+        *done = 1; /* Whole request is processed. */
       return MHD_YES;
     }
   response = MHD_create_response_from_buffer (strlen (url),
@@ -476,6 +479,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
 
   oneone = has_in_name(argv[0], "11");
+  incr_read = has_in_name(argv[0], "_inc");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 99;
   put_buffer = malloc (PUT_SIZE);
