@@ -246,7 +246,7 @@ freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
-     shutdown_trig_select='yes'
+     shutdown_trig_select='no'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 openbsd*)
