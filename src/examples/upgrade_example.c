@@ -68,9 +68,10 @@ send_all (MHD_socket sock,
           size_t len)
 {
   ssize_t ret;
+  size_t off;
 
   make_blocking (sock);
-  for (size_t off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += ret)
     {
       ret = send (sock,
                   &buf[off],
