@@ -3227,52 +3227,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   MHD_connection_update_event_loop_info (connection);
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
-    {
-      switch (connection->event_loop_info)
-        {
-        case MHD_EVENT_LOOP_INFO_READ:
-          if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) &&
-               (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
-               (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
-            {
-              EDLL_insert (daemon->eready_head,
-                           daemon->eready_tail,
-                           connection);
-              connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-            }
-          break;
-        case MHD_EVENT_LOOP_INFO_WRITE:
-          if ( (0 != (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) &&
-               (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
-               (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)) )
-            {
-              EDLL_insert (daemon->eready_head,
-                           daemon->eready_tail,
-                           connection);
-              connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-            }
-          break;
-        case MHD_EVENT_LOOP_INFO_BLOCK:
-          /* we should look at this connection again in the next iteration
-             of the event loop, as we're waiting on the application */
-          if ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) &&
-                (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED))) )
-            {
-              EDLL_insert (daemon->eready_head,
-                           daemon->eready_tail,
-                           connection);
-              connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
-            }
-          break;
-        case MHD_EVENT_LOOP_INFO_CLEANUP:
-          /* This connection is finished, nothing left to do */
-          break;
-        }
-    }
-  return MHD_connection_epoll_update_ (connection);
-#else
+    return MHD_connection_epoll_update_ (connection);
+#endif /* EPOLL_SUPPORT */
   return MHD_YES;
-#endif
 }
 
 

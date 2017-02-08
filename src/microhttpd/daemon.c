@@ -2900,6 +2900,15 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       return MHD_YES;
     }
 #endif /* HTTPS_SUPPORT */
+#ifdef EPOLL_SUPPORT
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+       (NULL != daemon->eready_head) )
+    {
+	  /* Some connection(s) already have some data pending. */
+      *timeout = 0;
+      return MHD_YES;
+    }
+#endif /* EPOLL_SUPPORT */
 
   have_timeout = MHD_NO;
   earliest_deadline = 0; /* avoid compiler warnings */
@@ -3685,6 +3694,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   struct MHD_Connection *pos;
   struct MHD_Connection *next;
+  struct MHD_Connection *prev;
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event event;
   int timeout_ms;
@@ -3887,16 +3897,31 @@ MHD_epoll (struct MHD_Daemon *daemon,
     (void) resume_suspended_connections (daemon);
 
   /* process events for connections */
-  while (NULL != (pos = daemon->eready_tail))
+  prev = daemon->eready_tail;
+  while (NULL != (pos = prev))
     {
-      EDLL_remove (daemon->eready_head,
-		   daemon->eready_tail,
-		   pos);
-      pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+	  prev = pos->prevE;
+	  /* FIXME: use (0 != pos->epoll_state & MHD_EPOLL_STATE_READ_READY) ? MHD_YES : MHD_NO
+	   * and (0 != pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY) ? MHD_YES : MHD_NO */
       call_handlers (pos,
-                     MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info,
-                     MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info,
+                     (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ? MHD_YES : MHD_NO,
+                     (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) ? MHD_YES : MHD_NO,
                      MHD_NO);
+      if (MHD_EPOLL_STATE_IN_EREADY_EDLL ==
+            (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
+        {
+          if ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info &&
+                  0 == (pos->epoll_state & MHD_EPOLL_STATE_READ_READY) ) ||
+               (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info &&
+                 0 == (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY) ) ||
+               MHD_EVENT_LOOP_INFO_CLEANUP == pos->event_loop_info)
+            {
+              EDLL_remove (daemon->eready_head,
+                           daemon->eready_tail,
+                           pos);
+              pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+            }
+        }
     }
 
   /* Finally, handle timed-out connections; we need to do this here

@@ -884,16 +884,19 @@ struct MHD_Connection
 
   /**
    * Handler used for processing read connection operations
+   * @sa #MHD_connection_handle_read, #MHD_tls_connection_handle_read
    */
   int (*read_handler) (struct MHD_Connection *connection);
 
   /**
    * Handler used for processing write connection operations
+   * @sa #MHD_connection_handle_write, #MHD_tls_connection_handle_write
    */
   int (*write_handler) (struct MHD_Connection *connection);
 
   /**
    * Handler used for processing idle connection operations
+   * @sa #MHD_connection_handle_idle, #MHD_tls_connection_handle_idle
    */
   int (*idle_handler) (struct MHD_Connection *connection);
 
