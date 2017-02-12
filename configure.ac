@@ -1161,7 +1161,7 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
           [
            AC_MSG_RESULT([[yes]])
            have_gnutls=yes
-           GNUTLS_CPPLAGS="$GNUTLS_CFLAGS"
+           GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
            GNUTLS_LDFLAGS="$GNUTLS_LIBS"
            AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
            AC_LINK_IFELSE([
