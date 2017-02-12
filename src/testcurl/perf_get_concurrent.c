@@ -75,6 +75,11 @@ static struct MHD_Response *response;
  */
 static unsigned long long start_time;
 
+/**
+ * Set to 1 if the worker threads are done.
+ */
+static volatile int signal_done;
+
 
 /**
  * Get the current timestamp 
@@ -132,6 +137,7 @@ copyBuffer (void *ptr,
   return size * nmemb;
 }
 
+
 static int
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
@@ -158,6 +164,7 @@ ahc_echo (void *cls,
     abort ();
   return ret;
 }
+
 
 static void *
 thread_gets (void *param)
@@ -198,6 +205,7 @@ thread_gets (void *param)
   return NULL;
 }
 
+
 static void *
 do_gets (void * param)
 {
@@ -225,6 +233,7 @@ do_gets (void * param)
           NULL != ret_val)
         err = ret_val;
     }
+  signal_done = 1;
   return err;
 }
 
@@ -285,6 +294,7 @@ testMultithreadedGet (int port, int poll_flag)
   return 0;
 }
 
+
 static int
 testMultithreadedPoolGet (int port, int poll_flag)
 {
@@ -313,6 +323,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
   return 0;
 }
 
+
 static int
 testExternalGet (int port)
 {
@@ -332,19 +343,15 @@ testExternalGet (int port)
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
-  if (0 != pthread_create(&pid, NULL, &do_gets, (void*)(intptr_t)port))
+  if (0 != pthread_create (&pid, NULL,
+			   &do_gets, (void*)(intptr_t)port))
     {
       MHD_stop_daemon(d);
       return 512;
     }
   start_timer ();
-  /* detach so that pthread_kill detection works on Solaris (#4884) */
-  if (0 != pthread_detach(pid))
-   {
-     MHD_stop_daemon(d);
-     return 512;
-   }
- while (ESRCH != pthread_kill (pid, 0))
+
+  while (0 == signal_done)
     {
       max = 0;
       FD_ZERO (&rs);
