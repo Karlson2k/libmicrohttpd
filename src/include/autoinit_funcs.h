@@ -67,7 +67,7 @@
 */
 #define AUTOINIT_FUNCS_VERSION 0x01000001
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__SUNPRO_C)
 #/* if possible - check for supported attribute */
 #ifdef __has_attribute
 #if !__has_attribute(constructor) || !__has_attribute(destructor)
@@ -76,7 +76,7 @@
 #endif /* __has_attribute */
 #endif /* __GNUC__ */
 
-#if defined(__GNUC__) && !defined(_GNUC_ATTR_CONSTR_NOT_SUPPORTED)
+#if (defined(__GNUC__) || defined(__SUNPRO_C)) && !defined(_GNUC_ATTR_CONSTR_NOT_SUPPORTED)
 
 #define GNUC_SET_INIT_AND_DEINIT(FI,FD) \
   void __attribute__ ((constructor)) _GNUC_init_helper_##FI(void) \
