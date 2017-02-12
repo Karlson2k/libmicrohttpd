@@ -338,7 +338,13 @@ testExternalGet (int port)
       return 512;
     }
   start_timer ();
-  while (ESRCH != pthread_kill (pid, 0))
+  /* detach so that pthread_kill detection works on Solaris (#4884) */
+  if (0 != pthread_detach(pid))
+   {
+     MHD_stop_daemon(d);
+     return 512;
+   }
+ while (ESRCH != pthread_kill (pid, 0))
     {
       max = 0;
       FD_ZERO (&rs);
