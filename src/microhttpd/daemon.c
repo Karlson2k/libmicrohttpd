@@ -2998,7 +2998,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   unsigned int mask = MHD_ALLOW_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNAL_THREAD |
-    MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL_INTERNAL_THREAD | MHD_USE_THREAD_PER_CONNECTION;
+    MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL_INTERNAL_THREAD;
 
   /* Clear ITC to avoid spinning select */
   /* Do it before any other processing so new signals
