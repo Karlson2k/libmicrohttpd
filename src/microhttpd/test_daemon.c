@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007 Christian Grothoff
+     Copyright (C) 2007, 2017 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -41,22 +41,33 @@ testStartError ()
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0, NULL, NULL, NULL, NULL);
-  if (d != NULL)
+  if (NULL != d)
+  {
+    fprintf (stderr,
+             "Succeeded at binding to port 0?\n");
     return 1;
+  }
   return 0;
 }
 
+
 static int
-apc_nothing (void *cls, const struct sockaddr *addr, socklen_t addrlen)
+apc_nothing (void *cls,
+             const struct sockaddr *addr,
+             socklen_t addrlen)
 {
   return MHD_NO;
 }
 
+
 static int
-apc_all (void *cls, const struct sockaddr *addr, socklen_t addrlen)
+apc_all (void *cls,
+         const struct sockaddr *addr,
+         socklen_t addrlen)
 {
   return MHD_YES;
 }
+
 
 static int
 ahc_nothing (void *cls,
@@ -70,6 +81,7 @@ ahc_nothing (void *cls,
   return MHD_NO;
 }
 
+
 static int
 testStartStop ()
 {
@@ -77,13 +89,20 @@ testStartStop ()
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1080,
-                        &apc_nothing,
-                        NULL, &ahc_nothing, NULL, MHD_OPTION_END);
-  if (d == NULL)
-    return 2;
+                        &apc_nothing, NULL,
+                        &ahc_nothing, NULL,
+                        MHD_OPTION_END);
+  if (NULL == d)
+  {
+    fprintf (stderr,
+             "Failed to start daemon on port %u\n",
+             1080);
+    exit (77);
+  }
   MHD_stop_daemon (d);
   return 0;
 }
+
 
 static int
 testExternalRun ()
@@ -95,23 +114,34 @@ testExternalRun ()
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1081,
-                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
+                        &apc_all, NULL,
+                        &ahc_nothing, NULL,
+                        MHD_OPTION_END);
 
-  if (d == NULL)
-    return 4;
+  if (NULL == d)
+  {
+    fprintf (stderr,
+             "Failed to start daemon on port %u\n",
+             1081);
+    exit (77);
+  }
   i = 0;
   while (i < 15)
     {
       maxfd = 0;
       FD_ZERO (&rs);
       if (MHD_YES != MHD_get_fdset (d, &rs, &rs, &rs, &maxfd))
-	{
-	  MHD_stop_daemon (d);
-	  return 256;
-	}
+        {
+          MHD_stop_daemon (d);
+          fprintf (stderr,
+                   "Failed in MHD_get_fdset()\n");
+          return 256;
+        }
       if (MHD_run (d) == MHD_NO)
         {
           MHD_stop_daemon (d);
+          fprintf (stderr,
+                   "Failed in MHD_run()\n");
           return 8;
         }
       i++;
@@ -120,48 +150,79 @@ testExternalRun ()
   return 0;
 }
 
+
 static int
 testThread ()
 {
   struct MHD_Daemon *d;
+
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_INTERNAL_POLLING_THREAD,
                         1082,
-                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
+                        &apc_all, NULL,
+                        &ahc_nothing, NULL,
+                        MHD_OPTION_END);
 
-  if (d == NULL)
-    return 16;
+  if (NULL == d)
+  {
+    fprintf (stderr,
+             "Failed to start daemon on port %u\n",
+             1082);
+    exit (77);
+  }
   if (MHD_run (d) != MHD_NO)
-    return 32;
+    {
+      fprintf (stderr,
+               "Failed in MHD_run()\n");
+      return 32;
+    }
   MHD_stop_daemon (d);
   return 0;
 }
+
 
 static int
 testMultithread ()
 {
   struct MHD_Daemon *d;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION,
-                        1083,
-                        &apc_all, NULL, &ahc_nothing, NULL, MHD_OPTION_END);
 
-  if (d == NULL)
-    return 64;
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION,
+                        1083,
+                        &apc_all, NULL,
+                        &ahc_nothing, NULL,
+                        MHD_OPTION_END);
+
+  if (NULL == d)
+  {
+    fprintf (stderr,
+             "Failed to start daemon on port %u\n",
+             1083);
+    exit (77);
+  }
   if (MHD_run (d) != MHD_NO)
-    return 128;
+    {
+      fprintf (stderr,
+               "Failed in MHD_run()\n");
+      return 128;
+    }
   MHD_stop_daemon (d);
   return 0;
 }
 
+
 int
-main (int argc, char *const *argv)
+main (int argc,
+      char *const *argv)
 {
   int errorCount = 0;
+
   errorCount += testStartError ();
   errorCount += testStartStop ();
   errorCount += testExternalRun ();
   errorCount += testThread ();
   errorCount += testMultithread ();
-  if (errorCount != 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
-  return errorCount != 0;       /* 0 == pass */
+  if (0 != errorCount)
+    fprintf (stderr,
+             "Error (code: %u)\n",
+             errorCount);
+  return 0 != errorCount;       /* 0 == pass */
 }
