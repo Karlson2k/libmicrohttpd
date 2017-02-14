@@ -5743,7 +5743,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   daemon->shutdown = true;
   fd = daemon->socket_fd;
-  daemon->socket_fd = MHD_INVALID_SOCKET;
 
   if (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
     {
@@ -5755,7 +5754,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           for (i = 0; i < daemon->worker_pool_size; ++i)
             {
               daemon->worker_pool[i].shutdown = true;
-              daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
               if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
                 {
                   if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "e"))
