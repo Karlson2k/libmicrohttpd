@@ -132,7 +132,7 @@ gnutlscli_connect (int *sock,
               "-connect",
               destination,
               "-verify",
-              "0",
+              "1",
               (char *) NULL);
     }
   _exit (1);
@@ -396,39 +396,12 @@ static ssize_t wr_recv(wr_socket s, void *buf, size_t len)
 
 
 /**
- * Perform shutdown of TCP socket for plain sockets or
- * shutdown of TLS layer for TLS sockets.
- * @param s the socket to shutdown
- * @param how SHUT_WR or SHUT_RDWR
- * @return zero on succeed, -1 otherwise
- */
-static int wr_shutdown(wr_socket s, int how)
-{
-  if (wr_plain == s->t)
-    return shutdown (s->fd, how);
-#ifdef HTTPS_SUPPORT
-  if (wr_tls == s->t)
-    {
-      ssize_t ret;
-      if (SHUT_WR == how)
-        ret = gnutls_bye (s->tls_s, GNUTLS_SHUT_WR);
-      else
-        ret = gnutls_bye (s->tls_s, GNUTLS_SHUT_RDWR);
-
-      if (GNUTLS_E_SUCCESS == ret)
-        return 0;
-    }
-#endif /* HTTPS_SUPPORT */
-  return -1;
-}
-
-
-/**
  * Close socket and release allocated resourced
  * @param s the socket to close
  * @return zero on succeed, -1 otherwise
  */
-static int wr_close(wr_socket s)
+static int
+wr_close(wr_socket s)
 {
   int ret = (MHD_socket_close_(s->fd)) ? 0 : -1;
 #ifdef HTTPS_SUPPORT
@@ -1130,12 +1103,13 @@ main (int argc,
               abort ();
           }
         }
-      if (TLS_LIB_GNUTLS == use_tls_tool && GNUTLS_E_SUCCESS != gnutls_global_init())
+      if ( (TLS_LIB_GNUTLS == use_tls_tool) &&
+           (GNUTLS_E_SUCCESS != gnutls_global_init()) )
         abort ();
 
 #else  /* ! HTTPS_SUPPORT */
       fprintf (stderr, "HTTPS support was disabled by configure.\n");
-      return 99;
+      return 77;
 #endif /* ! HTTPS_SUPPORT */
     }
 
@@ -1260,7 +1234,7 @@ main (int argc,
              "Error (code: %u)\n",
              error_count);
 #ifdef HTTPS_SUPPORT
-  if (test_tls && TLS_LIB_GNUTLS == use_tls_tool)
+  if (test_tls && (TLS_LIB_GNUTLS == use_tls_tool))
     gnutls_global_deinit();
 #endif /* HTTPS_SUPPORT */
   return error_count != 0;       /* 0 == pass */
