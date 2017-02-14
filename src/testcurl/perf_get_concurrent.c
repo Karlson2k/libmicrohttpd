@@ -28,7 +28,7 @@
  *        so the performance scores calculated with this code
  *        should NOT be used to compare with other HTTP servers
  *        (since MHD is actually better); only the relative
- *        scores between MHD versions are meaningful.  
+ *        scores between MHD versions are meaningful.
  * @author Christian Grothoff
  */
 
@@ -82,11 +82,11 @@ static volatile int signal_done;
 
 
 /**
- * Get the current timestamp 
+ * Get the current timestamp
  *
  * @return current time in ms
  */
-static unsigned long long 
+static unsigned long long
 now ()
 {
   struct timeval tv;
@@ -100,7 +100,7 @@ now ()
 /**
  * Start the timer.
  */
-static void 
+static void
 start_timer()
 {
   start_time = now ();
@@ -112,7 +112,7 @@ start_timer()
  *
  * @param desc description of the threading mode we used
  */
-static void 
+static void
 stop (const char *desc)
 {
   double rps = ((double) (PAR * ROUNDS * 1000)) / ((double) (now() - start_time));
@@ -130,8 +130,8 @@ stop (const char *desc)
 
 
 static size_t
-copyBuffer (void *ptr, 
-	    size_t size, size_t nmemb, 
+copyBuffer (void *ptr,
+	    size_t size, size_t nmemb,
 	    void *ctx)
 {
   return size * nmemb;
@@ -247,6 +247,7 @@ testInternalGet (int port, int poll_flag)
                                   (poll_flag & MHD_USE_EPOLL) ? "internal thread with epoll" : "internal thread with select()");
   const char * ret_val;
 
+  signal_done = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG  | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
@@ -276,6 +277,7 @@ testMultithreadedGet (int port, int poll_flag)
                                       : "internal thread with select() and thread per connection");
   const char * ret_val;
 
+  signal_done = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG  | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
@@ -304,6 +306,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
                                   (poll_flag & MHD_USE_EPOLL) ? "internal thread poll with epoll" : "internal thread pool with select()");
   const char * ret_val;
 
+  signal_done = 0 ;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | poll_flag,
                         port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
@@ -339,6 +342,7 @@ testExternalGet (int port)
   char *ret_val;
   int ret = 0;
 
+  signal_done = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
@@ -374,7 +378,7 @@ testExternalGet (int port)
 		   "select failed: %s\n",
 		   strerror (errno));
 	  ret |= 1024;
-	  break;	      	  
+	  break;
 	}
       MHD_run_from_select(d, &rs, &ws, &es);
     }
