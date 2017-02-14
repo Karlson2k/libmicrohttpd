@@ -779,7 +779,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   if ( (NULL == daemon) ||
        (NULL == read_fd_set) ||
        (NULL == write_fd_set) ||
-       (MHD_YES == daemon->shutdown) ||
+       (daemon->shutdown) ||
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
        (0 != (daemon->options & MHD_USE_POLL)))
     return MHD_NO;
@@ -981,7 +981,7 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
-  if (MHD_NO != urh->connection->daemon->shutdown)
+  if (urh->connection->daemon->shutdown)
     {
       /* Daemon shutting down, application will not receive any more data. */
 #ifdef HAVE_MESSAGES
@@ -1219,9 +1219,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
     }
 
-  if ( (MHD_NO != urh->connection->daemon->shutdown) &&
-       ((0 != urh->out_buffer_size) ||
-        (0 != urh->out_buffer_used)) )
+  if ( (urh->connection->daemon->shutdown) &&
+       ( (0 != urh->out_buffer_size) ||
+         (0 != urh->out_buffer_used) ) )
     {
       /* Daemon shutting down, discard any remaining forward data. */
 #ifdef HAVE_MESSAGES
@@ -1446,7 +1446,7 @@ thread_main_handle_connection (void *data)
   const int use_poll = MHD_NO;
 #endif /* ! HAVE_POLL */
 
-  while ( (MHD_YES != daemon->shutdown) &&
+  while ( (! daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
       const unsigned int timeout = daemon->connection_timeout;
@@ -1772,9 +1772,9 @@ thread_main_handle_connection (void *data)
 #endif
       if (MHD_CONNECTION_CLOSED != con->state)
 	MHD_connection_close_ (con,
-                               (MHD_NO == daemon->shutdown) ?
-                                 MHD_REQUEST_TERMINATED_WITH_ERROR :
-                                 MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+                               (daemon->shutdown) ?
+                               MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
+                               MHD_REQUEST_TERMINATED_WITH_ERROR);
       con->idle_handler (con);
     }
 exit:
@@ -3108,7 +3108,7 @@ MHD_select (struct MHD_Daemon *daemon,
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-  if (MHD_YES == daemon->shutdown)
+  if (daemon->shutdown)
     return MHD_NO;
   FD_ZERO (&rs);
   FD_ZERO (&ws);
@@ -3223,7 +3223,7 @@ MHD_select (struct MHD_Daemon *daemon,
                                &ws,
                                &es,
                                tv);
-  if (MHD_YES == daemon->shutdown)
+  if (daemon->shutdown)
     return MHD_NO;
   if (num_ready < 0)
     {
@@ -3409,7 +3409,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT */
 
     /* handle shutdown */
-    if (MHD_YES == daemon->shutdown)
+    if (daemon->shutdown)
       {
         free(p);
         return MHD_NO;
@@ -3552,7 +3552,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     MHD_itc_clear_ (daemon->itc);
 
   /* handle shutdown */
-  if (MHD_YES == daemon->shutdown)
+  if (daemon->shutdown)
     return MHD_NO;
   if ( (-1 != poll_listen) &&
        (0 != (p[poll_listen].revents & POLLIN)) )
@@ -3574,7 +3574,7 @@ MHD_poll (struct MHD_Daemon *daemon,
 	  int may_block)
 {
 #ifdef HAVE_POLL
-  if (MHD_YES == daemon->shutdown)
+  if (daemon->shutdown)
     return MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return MHD_poll_all (daemon,
@@ -3707,7 +3707,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
-  if (MHD_YES == daemon->shutdown)
+  if (daemon->shutdown)
     return MHD_NO;
   if ( (MHD_INVALID_SOCKET != daemon->socket_fd) &&
        (daemon->connections < daemon->connection_limit) &&
@@ -3977,7 +3977,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 int
 MHD_run (struct MHD_Daemon *daemon)
 {
-  if ( (MHD_YES == daemon->shutdown) ||
+  if ( (daemon->shutdown) ||
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
     return MHD_NO;
   if (0 != (daemon->options & MHD_USE_POLL))
@@ -4050,7 +4050,7 @@ MHD_select_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
 
-  while (MHD_YES != daemon->shutdown)
+  while (! daemon->shutdown)
     {
       if (0 != (daemon->options & MHD_USE_POLL))
 	MHD_poll (daemon, MHD_YES);
@@ -5741,7 +5741,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (0 != (MHD_ALLOW_SUSPEND_RESUME & daemon->options))
     resume_suspended_connections (daemon);
 
-  daemon->shutdown = MHD_YES;
+  daemon->shutdown = true;
   fd = daemon->socket_fd;
   daemon->socket_fd = MHD_INVALID_SOCKET;
 
@@ -5754,7 +5754,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           /* Initiate shutdown process in wokers. */
           for (i = 0; i < daemon->worker_pool_size; ++i)
             {
-              daemon->worker_pool[i].shutdown = MHD_YES;
+              daemon->worker_pool[i].shutdown = true;
               daemon->worker_pool[i].socket_fd = MHD_INVALID_SOCKET;
               if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
                 {

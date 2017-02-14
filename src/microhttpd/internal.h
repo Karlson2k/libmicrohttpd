@@ -1432,7 +1432,7 @@ struct MHD_Daemon
   /**
    * Are we shutting down?
    */
-  int shutdown;
+  volatile bool shutdown;
 
   /**
    * Did we hit some system or process-wide resource limit while
