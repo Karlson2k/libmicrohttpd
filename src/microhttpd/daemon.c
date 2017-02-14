@@ -5552,7 +5552,7 @@ thread_failed:
 
 /**
  * Close all connections for the daemon.
- * Must only be called when MHD_Daemon::shutdown was set to #MHD_YES.
+ * Must only be called when MHD_Daemon::shutdown was set to true.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -5650,7 +5650,6 @@ close_all_connections (struct MHD_Daemon *daemon)
         MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
 #endif
     }
-  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
   /* now, collect per-connection threads */
   if (used_thr_p_c)
@@ -5660,8 +5659,10 @@ close_all_connections (struct MHD_Daemon *daemon)
       {
         if (! pos->thread_joined)
           {
+            MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
             if (! MHD_join_thread_ (pos->pid))
               MHD_PANIC (_("Failed to join a thread\n"));
+            MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
             pos->thread_joined = true;
             /* The thread may have concurrently modified the DLL,
                need to restart from the beginning */
@@ -5671,6 +5672,7 @@ close_all_connections (struct MHD_Daemon *daemon)
         pos = pos->next;
       }
     }
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
 #ifdef UPGRADE_SUPPORT
   /* Finished threads with "upgraded" connections need to be moved
