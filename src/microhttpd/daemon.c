@@ -5696,33 +5696,6 @@ close_all_connections (struct MHD_Daemon *daemon)
 }
 
 
-#ifdef EPOLL_SUPPORT
-/**
- * Shutdown epoll()-event loop by adding write end of 'itc' to its event set.
- *
- * @param daemon daemon of which the epoll() instance must be signalled
- */
-static void
-epoll_shutdown (struct MHD_Daemon *daemon)
-{
-  struct epoll_event event;
-
-  if (MHD_ITC_IS_INVALID_(daemon->itc))
-    {
-      /* itc was required in this mode, how could this happen? */
-      MHD_PANIC (_("Internal error\n"));
-    }
-  event.events = EPOLLOUT;
-  event.data.ptr = NULL;
-  if (0 != epoll_ctl (daemon->epoll_fd,
-		      EPOLL_CTL_ADD,
-		      MHD_itc_w_fd_ (daemon->itc),
-		      &event))
-    MHD_PANIC (_("Failed to add inter-thread communication channel FD to epoll set to signal termination\n"));
-}
-#endif
-
-
 /**
  * Shutdown an HTTP daemon.
  *

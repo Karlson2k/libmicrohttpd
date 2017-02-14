@@ -1104,7 +1104,7 @@ struct MHD_UpgradeResponseHandle
    * connection to cleanup list.
    * @remark This flag could be changed from any thread.
    */
-  bool was_closed;
+  volatile bool was_closed;
 
   /**
    * Set to #MHD_YES if connection is ready for cleanup.

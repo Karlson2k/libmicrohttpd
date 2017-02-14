@@ -667,13 +667,6 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
       return MHD_NO; /* Already closed. */
 
     /* transition to special 'closed' state for start of cleanup */
-    urh->was_closed = true;
-    EXTRA_CHECK (MHD_CONNECTION_UPGRADE == connection->state);
-    connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
-    /* As soon as connection will be marked with BOTH
-     * 'urh->was_closed' AND 'urh->clean_ready', it will
-     * be moved to cleanup list by MHD_resume_connection(). */
-    MHD_resume_connection (connection);
 #ifdef HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
       {
@@ -683,6 +676,13 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                   SHUT_RDWR);
       }
 #endif /* HTTPS_SUPPORT */
+    urh->was_closed = true;
+    EXTRA_CHECK (MHD_CONNECTION_UPGRADE == connection->state);
+    connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
+    /* As soon as connection will be marked with BOTH
+     * 'urh->was_closed' AND 'urh->clean_ready', it will
+     * be moved to cleanup list by MHD_resume_connection(). */
+    MHD_resume_connection (connection);
     return MHD_YES;
   default:
     /* we don't understand this one */
