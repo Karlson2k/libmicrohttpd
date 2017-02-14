@@ -461,7 +461,7 @@ static pthread_t pt_client;
 /**
  * Flag set to 1 once the test is finished.
  */
-static int done;
+static volatile bool done;
 
 
 static void
@@ -728,7 +728,7 @@ run_usock_client (void *cls)
   recv_all (*sock,
             "Finished");
   wr_close (*sock);
-  done = 1;
+  done = true;
   return NULL;
 }
 
@@ -1005,7 +1005,7 @@ test_upgrade (int flags,
   pid_t pid = -1;
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
 
-  done = 0;
+  done = false;
 
   if (!test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,

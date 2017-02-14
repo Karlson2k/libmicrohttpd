@@ -686,7 +686,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               fd_setsize)) )
     return MHD_NO;
   if ( (0 != urh->in_buffer_used) &&
-       (MHD_NO == urh->was_closed) &&
+       (! urh->was_closed) &&
        (MHD_INVALID_SOCKET != urh->mhd.socket) &&
        (! MHD_add_to_fd_set_ (urh->mhd.socket,
                               ws,
@@ -694,7 +694,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                               fd_setsize)) )
     return MHD_NO;
   if ( (urh->in_buffer_used < urh->in_buffer_size) &&
-       (MHD_NO == urh->was_closed) &&
+       (! urh->was_closed) &&
        (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
        (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
                               rs,
@@ -985,15 +985,15 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
       /* Daemon shutting down, application will not receive any more data. */
 #ifdef HAVE_MESSAGES
-      if (MHD_NO == urh->was_closed)
+      if (! urh->was_closed)
         {
           MHD_DLOG (urh->connection->daemon,
                     _("Initiated daemon shutdown while \"upgraded\" connection was not closed.\n"));
         }
 #endif
-      urh->was_closed = MHD_YES;
+      urh->was_closed = true;
     }
-  if (MHD_NO != urh->was_closed)
+  if (urh->was_closed)
     {
       /* Application was closed connections: no more data
        * can be forwarded to application socket. */
@@ -1111,8 +1111,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
 
   /* handle reading from application and writing to HTTPS client */
-  if ( ((0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) ||
-        (MHD_NO != urh->was_closed)) &&
+  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) ||
+         (urh->was_closed) ) &&
        (urh->out_buffer_used < urh->out_buffer_size) )
     {
       /* If application signaled MHD about socket closure then
@@ -1132,7 +1132,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                        buf_size);
       if (-1 == res)
         {
-          if (MHD_NO != urh->was_closed)
+          if (urh->was_closed)
             {
               /* Connection was shut down or all data received and
                * application will not forward any more data. */
@@ -1751,7 +1751,7 @@ thread_main_handle_connection (void *data)
 
           /* "Upgraded" data will not be used in this thread from this point. */
           con->urh->clean_ready = MHD_YES;
-          /* If 'urh->was_closed' set to MHD_YES, connection will be
+          /* If 'urh->was_closed' set to true, connection will be
            * moved immediately to cleanup list. Otherwise connection
            * will stay in suspended list until 'urh' will be marked
            * with 'was_closed' by application. */
@@ -2496,7 +2496,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       if ( (! pos->resuming)
 #ifdef UPGRADE_SUPPORT
           || ( (NULL != urh) &&
-               ( (MHD_NO == urh->was_closed) ||
+               ( (! urh->was_closed) ||
                  (MHD_NO == urh->clean_ready) ) )
 #endif /* UPGRADE_SUPPORT */
          )
@@ -3468,7 +3468,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
              * 'daemon->urh_head' list. */
             MHD_connection_finish_forward_ (urh->connection);
             urh->clean_ready = MHD_YES;
-            /* If 'urh->was_closed' set to MHD_YES, connection will be
+            /* If 'urh->was_closed' set to true, connection will be
              * moved immediately to cleanup list. Otherwise connection
              * will stay in suspended list until 'urh' will be marked
              * with 'was_closed' by application. */
@@ -3664,7 +3664,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
             {
               MHD_connection_finish_forward_ (urh->connection);
               urh->clean_ready = MHD_YES;
-              /* If 'urh->was_closed' set to MHD_YES, connection will be
+              /* If 'urh->was_closed' set to true, connection will be
                * moved immediately to cleanup list. Otherwise connection
                * will stay in suspended list until 'urh' will be marked
                * with 'was_closed' by application. */
@@ -5618,11 +5618,11 @@ close_all_connections (struct MHD_Daemon *daemon)
           else
             {
 #ifdef HAVE_MESSAGES
-              if (MHD_NO == susp->urh->was_closed)
+              if (! susp->urh->was_closed)
                 MHD_DLOG (daemon,
                           _("Initiated daemon shutdown while \"upgraded\" connection was not closed.\n"));
 #endif
-              susp->urh->was_closed = MHD_YES;
+              susp->urh->was_closed = true;
               /* If thread-per-connection is used, connection's thread
                * may still processing "upgrade" (exiting). */
               if (! used_thr_p_c)

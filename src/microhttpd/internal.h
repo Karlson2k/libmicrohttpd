@@ -1095,7 +1095,7 @@ struct MHD_UpgradeResponseHandle
 #endif /* HTTPS_SUPPORT */
 
   /**
-   * Set to #MHD_YES after the application finished with the socket
+   * Set to true after the application finished with the socket
    * by #MHD_UPGRADE_ACTION_CLOSE.
    *
    * When BOTH @e was_closed (changed by command from application)
@@ -1104,7 +1104,7 @@ struct MHD_UpgradeResponseHandle
    * connection to cleanup list.
    * @remark This flag could be changed from any thread.
    */
-  int was_closed;
+  bool was_closed;
 
   /**
    * Set to #MHD_YES if connection is ready for cleanup.

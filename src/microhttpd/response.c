@@ -648,6 +648,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 {
   struct MHD_Connection *connection;
   struct MHD_Daemon *daemon;
+
   if (NULL == urh)
     return MHD_NO;
   connection = urh->connection;
@@ -662,11 +663,11 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   switch (action)
   {
   case MHD_UPGRADE_ACTION_CLOSE:
-    if (MHD_YES == urh->was_closed)
+    if (urh->was_closed)
       return MHD_NO; /* Already closed. */
 
     /* transition to special 'closed' state for start of cleanup */
-    urh->was_closed = MHD_YES;
+    urh->was_closed = true;
     connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
     /* As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
