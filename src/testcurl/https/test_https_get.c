@@ -43,9 +43,9 @@ test_cipher_option (FILE * test_fd,
 		    const char *cipher_suite,
 		    int proto_version)
 {
-
   int ret;
   struct MHD_Daemon *d;
+
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
                         MHD_USE_ERROR_LOG, 4233,
                         NULL, NULL, &http_ahc, NULL,

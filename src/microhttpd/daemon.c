@@ -2788,7 +2788,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-	   (MHD_NO == pos->thread_joined) &&
+	   (! pos->thread_joined) &&
            (! MHD_join_thread_ (pos->pid)) )
         MHD_PANIC (_("Failed to join a thread\n"));
 #ifdef UPGRADE_SUPPORT
@@ -5658,11 +5658,11 @@ close_all_connections (struct MHD_Daemon *daemon)
       pos = daemon->connections_head;
       while (NULL != pos)
       {
-        if (MHD_YES != pos->thread_joined)
+        if (! pos->thread_joined)
           {
             if (! MHD_join_thread_ (pos->pid))
               MHD_PANIC (_("Failed to join a thread\n"));
-            pos->thread_joined = MHD_YES;
+            pos->thread_joined = true;
             /* The thread may have concurrently modified the DLL,
                need to restart from the beginning */
             pos = daemon->connections_head;
@@ -5688,7 +5688,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   while (NULL != (pos = daemon->connections_head))
   {
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (MHD_YES != pos->thread_joined) )
+         (! pos->thread_joined) )
       MHD_PANIC (_("Failed to join a thread\n"));
     close_connection (pos);
   }

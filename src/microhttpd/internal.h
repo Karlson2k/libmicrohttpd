@@ -811,9 +811,9 @@ struct MHD_Connection
   int read_closed;
 
   /**
-   * Set to #MHD_YES if the thread has been joined.
+   * Set to `true` if the thread has been joined.
    */
-  int thread_joined;
+  bool thread_joined;
 
   /**
    * Are we currently inside the "idle" handler (to avoid recursively
