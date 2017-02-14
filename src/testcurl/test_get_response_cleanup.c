@@ -77,6 +77,7 @@ fork_curl (const char *url)
   _exit (-1);
 }
 
+
 static void
 kill_curl (pid_t pid)
 {
@@ -96,6 +97,7 @@ push_callback (void *cls, uint64_t pos, char *buf, size_t max)
   buf[0] = 'd';
   return 1;
 }
+
 
 static void
 push_free_callback (void *cls)
@@ -165,19 +167,20 @@ testInternalGet ()
   return 0;
 }
 
+
 static int
 testMultithreadedGet ()
 {
   struct MHD_Daemon *d;
   pid_t curl;
 
+  ok = 1;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 2,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  ok = 1;
   //fprintf (stderr, "Forking cURL!\n");
   curl = fork_curl ("http://127.0.0.1:1081/");
   sleep (1);
@@ -201,18 +204,19 @@ testMultithreadedGet ()
   return 0;
 }
 
+
 static int
 testMultithreadedPoolGet ()
 {
   struct MHD_Daemon *d;
   pid_t curl;
 
+  ok = 1;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         1081, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 64;
-  ok = 1;
   curl = fork_curl ("http://127.0.0.1:1081/");
   sleep (1);
   kill_curl (curl);
@@ -223,6 +227,7 @@ testMultithreadedPoolGet ()
     return 128;
   return 0;
 }
+
 
 static int
 testExternalGet ()
@@ -236,6 +241,7 @@ testExternalGet ()
   struct timeval tv;
   pid_t curl;
 
+  ok = 1;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)

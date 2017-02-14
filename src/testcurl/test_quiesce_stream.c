@@ -61,7 +61,7 @@ resume_connection (void *arg)
 {
   struct MHD_Connection *connection = arg;
 
-  fprintf (stderr, "Calling resume\n");
+  /* fprintf (stderr, "Calling resume\n"); */
   MHD_resume_connection (connection);
   return NULL;
 }
@@ -72,7 +72,7 @@ suspend_connection (struct MHD_Connection *connection)
 {
   pthread_t thread_id;
 
-  fprintf (stderr, "Calling suspend\n");
+  /* fprintf (stderr, "Calling suspend\n"); */
   MHD_suspend_connection (connection);
   int status = pthread_create (&thread_id,
                                NULL,
