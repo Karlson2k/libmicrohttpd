@@ -1394,10 +1394,10 @@ struct MHD_Daemon
   int epoll_fd;
 
   /**
-   * #MHD_YES if the listen socket is in the 'epoll' set,
-   * #MHD_NO if not.
+   * true if the listen socket is in the 'epoll' set,
+   * false if not.
    */
-  int listen_socket_in_epoll;
+  bool listen_socket_in_epoll;
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /**

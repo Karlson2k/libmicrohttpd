@@ -3727,7 +3727,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
        (! daemon->was_quiesced) &&
        (daemon->connections < daemon->connection_limit) &&
-       (MHD_NO == daemon->listen_socket_in_epoll) &&
+       (! daemon->listen_socket_in_epoll) &&
        (! daemon->at_limit) )
     {
       event.events = EPOLLIN;
@@ -3744,17 +3744,17 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
 	  return MHD_NO;
 	}
-      daemon->listen_socket_in_epoll = MHD_YES;
+      daemon->listen_socket_in_epoll = true;
     }
   if ( (daemon->was_quiesced) &&
-       (MHD_YES == daemon->listen_socket_in_epoll) )
+       (daemon->listen_socket_in_epoll) )
   {
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_DEL,
                         ls,
                         NULL))
       MHD_PANIC ("Failed to remove listen FD from epoll set\n");
-    daemon->listen_socket_in_epoll = MHD_NO;
+    daemon->listen_socket_in_epoll = false;
   }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
@@ -3778,7 +3778,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
       daemon->upgrade_fd_in_epoll = MHD_YES;
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  if ( (MHD_YES == daemon->listen_socket_in_epoll) &&
+  if ( (daemon->listen_socket_in_epoll) &&
        ( (daemon->connections == daemon->connection_limit) ||
          (daemon->at_limit) ||
          (daemon->was_quiesced) ) )
@@ -3790,7 +3790,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 			  ls,
 			  NULL))
 	MHD_PANIC (_("Failed to remove listen FD from epoll set\n"));
-      daemon->listen_socket_in_epoll = MHD_NO;
+      daemon->listen_socket_in_epoll = false;
     }
   if (MHD_YES == may_block)
     {
@@ -4207,14 +4207,14 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #ifdef EPOLL_SUPPORT
 	if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
 	     (-1 != daemon->worker_pool[i].epoll_fd) &&
-	     (MHD_YES == daemon->worker_pool[i].listen_socket_in_epoll) )
+	     (daemon->worker_pool[i].listen_socket_in_epoll) )
 	  {
 	    if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
 				EPOLL_CTL_DEL,
 				ret,
 				NULL))
 	      MHD_PANIC (_("Failed to remove listen FD from epoll set\n"));
-	    daemon->worker_pool[i].listen_socket_in_epoll = MHD_NO;
+	    daemon->worker_pool[i].listen_socket_in_epoll = false;
 	  }
         else
 #endif
@@ -4228,14 +4228,14 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (-1 != daemon->epoll_fd) &&
-       (MHD_YES == daemon->listen_socket_in_epoll) )
+       (daemon->listen_socket_in_epoll) )
     {
       if (0 != epoll_ctl (daemon->epoll_fd,
 			  EPOLL_CTL_DEL,
 			  ret,
 			  NULL))
 	MHD_PANIC ("Failed to remove listen FD from epoll set\n");
-      daemon->listen_socket_in_epoll = MHD_NO;
+      daemon->listen_socket_in_epoll = false;
     }
 #endif
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
@@ -4752,6 +4752,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 #endif
       return MHD_NO;
     }
+  daemon->listen_socket_in_epoll = true;
   if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       event.events = EPOLLIN;
@@ -4770,7 +4771,6 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
           return MHD_NO;
         }
     }
-  daemon->listen_socket_in_epoll = MHD_YES;
   return MHD_YES;
 }
 #endif
