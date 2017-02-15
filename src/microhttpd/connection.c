@@ -1091,7 +1091,7 @@ build_header_response (struct MHD_Connection *connection)
         client_requested_close = NULL;
 
       /* now analyze chunked encoding situation */
-      connection->have_chunked_upload = MHD_NO;
+      connection->have_chunked_upload = false;
 
       if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
            (NULL == response_has_close) &&
@@ -1111,7 +1111,7 @@ build_header_response (struct MHD_Connection *connection)
               if (NULL == have_encoding)
                 {
                   must_add_chunked_encoding = MHD_YES;
-                  connection->have_chunked_upload = MHD_YES;
+                  connection->have_chunked_upload = true;
                 }
               else if (MHD_str_equal_caseless_ (have_encoding,
                                                 "identity"))
@@ -1121,7 +1121,7 @@ build_header_response (struct MHD_Connection *connection)
                 }
               else
                 {
-                  connection->have_chunked_upload = MHD_YES;
+                  connection->have_chunked_upload = true;
                 }
             }
           else
@@ -1858,7 +1858,7 @@ process_request_body (struct MHD_Connection *connection)
   do
     {
       instant_retry = MHD_NO;
-      if ( (MHD_YES == connection->have_chunked_upload) &&
+      if ( (connection->have_chunked_upload) &&
            (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) )
         {
           if ( (connection->current_chunk_offset == connection->current_chunk_size) &&
@@ -2015,7 +2015,7 @@ process_request_body (struct MHD_Connection *connection)
 #endif
 	}
       used -= processed;
-      if (MHD_YES == connection->have_chunked_upload)
+      if (connection->have_chunked_upload)
         connection->current_chunk_offset += used;
       /* dh left "processed" bytes in buffer for next time... */
       buffer_head += used;
@@ -2335,7 +2335,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
       if (MHD_str_equal_caseless_(enc,
                                   "chunked"))
-        connection->have_chunked_upload = MHD_YES;
+        connection->have_chunked_upload = true;
     }
   else
     {
@@ -2904,8 +2904,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                  (0 == connection->read_buffer_offset) &&
                  (connection->read_closed) ) )
             {
-              if ((MHD_YES == connection->have_chunked_upload) &&
-                  (! connection->read_closed))
+              if ( (connection->have_chunked_upload) &&
+                   (! connection->read_closed) )
                 connection->state = MHD_CONNECTION_BODY_RECEIVED;
               else
                 connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
@@ -3098,7 +3098,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 				      _("Closing connection (failed to create response header)\n"));
               continue;
             }
-          if ( (MHD_NO == connection->have_chunked_upload) ||
+          if ( (! connection->have_chunked_upload) ||
                (connection->write_buffer_send_offset ==
                 connection->write_buffer_append_offset) )
             connection->state = MHD_CONNECTION_FOOTERS_SENT;
@@ -3190,7 +3190,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->headers_received = NULL;
 	  connection->headers_received_tail = NULL;
           connection->response_write_position = 0;
-          connection->have_chunked_upload = MHD_NO;
+          connection->have_chunked_upload = false;
           connection->method = NULL;
           connection->url = NULL;
           connection->write_buffer = NULL;

@@ -857,7 +857,7 @@ struct MHD_Connection
    * processing the footers; once the footers are also done, this will
    * be set to #MHD_NO again (before the final call to the handler).
    */
-  int have_chunked_upload;
+  bool have_chunked_upload;
 
   /**
    * If we are receiving with chunked encoding, where are we right
