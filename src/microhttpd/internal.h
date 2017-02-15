@@ -1550,9 +1550,9 @@ struct MHD_Daemon
   gnutls_dh_params_t https_mem_dhparams;
 
   /**
-   * #MHD_YES if we have initialized @e https_mem_dhparams.
+   * true if we have initialized @e https_mem_dhparams.
    */
-  int have_dhparams;
+  bool have_dhparams;
 
   /**
    * For how many connections do we have 'tls_read_ready' set to MHD_YES?

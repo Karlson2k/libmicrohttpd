@@ -538,7 +538,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 	}
     }
 
-  if (MHD_YES == daemon->have_dhparams)
+  if (daemon->have_dhparams)
     {
       gnutls_certificate_set_dh_params (daemon->x509_cred,
                                         daemon->https_mem_dhparams);
@@ -4454,7 +4454,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                   gnutls_dh_params_deinit (daemon->https_mem_dhparams);
                   return MHD_NO;
                 }
-              daemon->have_dhparams = MHD_YES;
+              daemon->have_dhparams = true;
             }
           else
             {
@@ -5839,10 +5839,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   /* TLS clean up */
 #ifdef HTTPS_SUPPORT
-  if (MHD_YES == daemon->have_dhparams)
+  if (daemon->have_dhparams)
     {
       gnutls_dh_params_deinit (daemon->https_mem_dhparams);
-      daemon->have_dhparams = MHD_NO;
+      daemon->have_dhparams = false;
     }
   if (0 != (daemon->options & MHD_USE_TLS))
     {
