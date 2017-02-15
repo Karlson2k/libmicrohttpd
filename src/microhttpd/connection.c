@@ -551,12 +551,12 @@ MHD_connection_close_ (struct MHD_Connection *connection,
       MHD_destroy_response (resp);
     }
   if ( (NULL != daemon->notify_completed) &&
-       (MHD_YES == connection->client_aware) )
+       (connection->client_aware) )
     daemon->notify_completed (daemon->notify_completed_cls,
 			      connection,
 			      &connection->client_context,
 			      termination_code);
-  connection->client_aware = MHD_NO;
+  connection->client_aware = false;
 }
 
 
@@ -1771,11 +1771,11 @@ parse_initial_message_line (struct MHD_Connection *connection,
     }
   if (NULL != daemon->uri_log_callback)
     {
+      connection->client_aware = true;
       connection->client_context
         = daemon->uri_log_callback (daemon->uri_log_callback_cls,
   				    curi,
                                     connection);
-      connection->client_aware = MHD_YES;
     }
   if (NULL != args)
     {
@@ -1812,7 +1812,7 @@ call_connection_handler (struct MHD_Connection *connection)
   if (NULL != connection->response)
     return;                     /* already queued a response */
   processed = 0;
-  connection->client_aware = MHD_YES;
+  connection->client_aware = true;
   if (MHD_NO ==
       connection->daemon->default_handler (connection->daemon-> default_handler_cls,
 					   connection,
@@ -1974,7 +1974,7 @@ process_request_body (struct MHD_Connection *connection)
 	    }
         }
       used = processed;
-      connection->client_aware = MHD_YES;
+      connection->client_aware = true;
       if (MHD_NO ==
           connection->daemon->default_handler (connection->daemon->default_handler_cls,
                                                connection,
@@ -3132,13 +3132,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if ( (NULL != daemon->notify_completed) &&
-               (MHD_YES == connection->client_aware) )
+               (connection->client_aware) )
           {
+            connection->client_aware = false;
 	    daemon->notify_completed (daemon->notify_completed_cls,
 				      connection,
 				      &connection->client_context,
 				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
-            connection->client_aware = MHD_NO;
           }
           end =
             MHD_lookup_connection_value (connection,
@@ -3183,7 +3183,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->read_buffer_size
                 = connection->daemon->pool_size / 2;
             }
-	  connection->client_aware = MHD_NO;
+	  connection->client_aware = false;
           connection->client_context = NULL;
           connection->continue_message_write_offset = 0;
           connection->responseCode = 0;

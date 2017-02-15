@@ -788,7 +788,7 @@ struct MHD_Connection
    * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
    * handler when the connection closes down).
    */
-  int client_aware;
+  bool client_aware;
 
   /**
    * Socket for this connection.  Set to #MHD_INVALID_SOCKET if

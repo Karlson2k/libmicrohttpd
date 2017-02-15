@@ -1742,12 +1742,12 @@ thread_main_handle_connection (void *data)
           /* Normal HTTP processing is finished,
            * notify application. */
           if ( (NULL != daemon->notify_completed) &&
-               (MHD_YES == con->client_aware) )
+               (con->client_aware) )
             daemon->notify_completed (daemon->notify_completed_cls,
                                       con,
                                       &con->client_context,
                                       MHD_REQUEST_TERMINATED_COMPLETED_OK);
-          con->client_aware = MHD_NO;
+          con->client_aware = false;
 
           thread_main_connection_upgrade (con);
           /* MHD_connection_finish_forward_() was called by thread_main_connection_upgrade(). */
