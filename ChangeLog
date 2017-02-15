@@ -1,3 +1,9 @@
+Wed Feb 15 13:35:36 CET 2017
+	Fixing a few very rare race conditions for thread-pool or
+	thread-per-connection operations during shutdown.
+	Various minor cosmetic improvements.
+	Fixed #4884 and #4888 (solaris portability issues). -CG
+
 Wed Nov 23 15:24:10 MSK 2016
 	Used SO_REUSEADDR (on non-W32) alongside with SO_REUSEPORT if option
 	MHD_OPTION_LISTENING_ADDRESS_REUSE was set. -EG
