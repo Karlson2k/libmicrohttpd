@@ -1098,27 +1098,27 @@ struct MHD_UpgradeResponseHandle
   volatile bool was_closed;
 
   /**
-   * Set to #MHD_YES if connection is ready for cleanup.
+   * Set to true if connection is ready for cleanup.
    *
    * In TLS mode functions #MHD_connection_finish_forward_() must
-   * be called before setting this flag to #MHD_YES.
+   * be called before setting this flag to true.
    *
-   * In thread-per-connection mode #MHD_YES in this flag means
+   * In thread-per-connection mode, true in this flag means
    * that connection's thread exited or about to exit and will
    * not use MHD_Connection::urh data anymore.
    *
-   * In any mode #MHD_YES in this flag also means that
+   * In any mode true in this flag also means that
    * MHD_Connection::urh data will not be used for socketpair
    * forwarding and forwarding itself is finished.
    *
    * When BOTH @e was_closed (changed by command from application)
    * AND @e clean_ready (changed internally by MHD) are set to
-   * #MHD_YES, function #MHD_resume_connection() will move this
+   * true, function #MHD_resume_connection() will move this
    * connection to cleanup list.
    * @remark This flag could be changed from thread that process
    * connection's recv(), send() and response.
    */
-  int clean_ready;
+  bool clean_ready;
 };
 #endif /* UPGRADE_SUPPORT */
 

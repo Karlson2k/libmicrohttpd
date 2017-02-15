@@ -912,10 +912,10 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       urh->app.socket = MHD_INVALID_SOCKET;
       urh->mhd.socket = MHD_INVALID_SOCKET;
       /* Non-TLS connection do not hold any additional resources. */
-      urh->clean_ready = MHD_YES;
+      urh->clean_ready = true;
     }
 #else  /* ! HTTPS_SUPPORT */
-  urh->clean_ready = MHD_YES;
+  urh->clean_ready = true;
 #endif /* ! HTTPS_SUPPORT */
   connection->urh = urh;
   /* As far as MHD's event loops are concerned, this connection is

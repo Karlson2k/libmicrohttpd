@@ -1753,7 +1753,7 @@ thread_main_handle_connection (void *data)
           /* MHD_connection_finish_forward_() was called by thread_main_connection_upgrade(). */
 
           /* "Upgraded" data will not be used in this thread from this point. */
-          con->urh->clean_ready = MHD_YES;
+          con->urh->clean_ready = true;
           /* If 'urh->was_closed' set to true, connection will be
            * moved immediately to cleanup list. Otherwise connection
            * will stay in suspended list until 'urh' will be marked
@@ -2501,7 +2501,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 #ifdef UPGRADE_SUPPORT
           || ( (NULL != urh) &&
                ( (! urh->was_closed) ||
-                 (MHD_NO == urh->clean_ready) ) )
+                 (! urh->clean_ready) ) )
 #endif /* UPGRADE_SUPPORT */
          )
         continue;
@@ -3079,7 +3079,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
            (0 == urh->out_buffer_used) )
         {
           MHD_connection_finish_forward_ (urh->connection);
-          urh->clean_ready = MHD_YES;
+          urh->clean_ready = true;
           /* Resuming will move connection to cleanup list. */
           MHD_resume_connection(urh->connection);
         }
@@ -3478,7 +3478,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
             /* MHD_connection_finish_forward_() will remove connection from
              * 'daemon->urh_head' list. */
             MHD_connection_finish_forward_ (urh->connection);
-            urh->clean_ready = MHD_YES;
+            urh->clean_ready = true;
             /* If 'urh->was_closed' set to true, connection will be
              * moved immediately to cleanup list. Otherwise connection
              * will stay in suspended list until 'urh' will be marked
@@ -3660,7 +3660,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
            * one time for TLS data and one time for socketpair data.
            * If forwarding was finished on first time, second time must
            * be skipped as urh must not be used anymore. */
-          if (MHD_NO != urh->clean_ready)
+          if (urh->clean_ready)
             continue;
 
           /* Update our state based on what is ready according to epoll() */
@@ -3677,7 +3677,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
                (0 == urh->out_buffer_used) )
             {
               MHD_connection_finish_forward_ (urh->connection);
-              urh->clean_ready = MHD_YES;
+              urh->clean_ready = true;
               /* If 'urh->was_closed' set to true, connection will be
                * moved immediately to cleanup list. Otherwise connection
                * will stay in suspended list until 'urh' will be marked
@@ -5606,7 +5606,7 @@ close_all_connections (struct MHD_Daemon *daemon)
          with chance to detect that application is done. */
       process_urh (urh);
       MHD_connection_finish_forward_ (urh->connection);
-      urh->clean_ready = MHD_YES;
+      urh->clean_ready = true;
       /* Resuming will move connection to cleanup list. */
       MHD_resume_connection(urh->connection);
     }
@@ -5637,7 +5637,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #ifdef HTTPS_SUPPORT
           else if (used_tls &&
                    used_thr_p_c &&
-                   (MHD_NO == susp->urh->clean_ready) )
+                   (! susp->urh->clean_ready) )
             shutdown (urh->app.socket,
                       SHUT_RDWR); /* Wake thread by shutdown of app socket. */
 #endif /* HTTPS_SUPPORT */
