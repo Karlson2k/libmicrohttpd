@@ -1374,7 +1374,7 @@ struct MHD_Daemon
   /**
    * Listen socket.
    */
-  MHD_socket socket_fd;
+  MHD_socket listen_fd;
 
   /**
    * Whether to allow/disallow/ignore reuse of listening address.
@@ -1424,6 +1424,13 @@ struct MHD_Daemon
    * Are we shutting down?
    */
   volatile bool shutdown;
+
+  /**
+   * Has this deamon been quiesced via #MHD_quiesce_daemon()?
+   * If so, we should no longer use the @e listen_fd (including
+   * removing it from the @e epoll_fd when possible).
+   */
+  volatile bool was_quiesced;
 
   /**
    * Did we hit some system or process-wide resource limit while
