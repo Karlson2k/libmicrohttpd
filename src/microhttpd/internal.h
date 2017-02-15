@@ -851,15 +851,6 @@ struct MHD_Connection
   unsigned int responseCode;
 
   /**
-   * Set to #MHD_YES if the response's content reader
-   * callback failed to provide data the last time
-   * we tried to read from it.  In that case, the
-   * write socket should be marked as unready until
-   * the CRC call succeeds.
-   */
-  int response_unready;
-
-  /**
    * Are we receiving with chunked encoding?  This will be set to
    * #MHD_YES after we parse the headers and are processing the body
    * with chunks.  After we are done with the body and we are
