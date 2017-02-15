@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2007-2015 Daniel Pittman and Christian Grothoff
+  Copyright (C) 2007-2017 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -808,7 +808,7 @@ struct MHD_Connection
    * once we are done sending our response (and stop trying to read
    * from this socket).
    */
-  int read_closed;
+  bool read_closed;
 
   /**
    * Set to `true` if the thread has been joined.
