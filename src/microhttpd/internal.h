@@ -1407,10 +1407,10 @@ struct MHD_Daemon
   int epoll_upgrade_fd;
 
   /**
-   * #MHD_YES if @e epoll_upgrade_fd is in the 'epoll' set,
-   * #MHD_NO if not.
+   * true if @e epoll_upgrade_fd is in the 'epoll' set,
+   * false if not.
    */
-  int upgrade_fd_in_epoll;
+  bool upgrade_fd_in_epoll;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 #endif

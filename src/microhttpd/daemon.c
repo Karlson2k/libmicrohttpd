@@ -3758,7 +3758,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if ( (MHD_NO == daemon->upgrade_fd_in_epoll) &&
+  if ( (! daemon->upgrade_fd_in_epoll) &&
        (-1 != daemon->epoll_upgrade_fd) )
     {
       event.events = EPOLLIN | EPOLLOUT;
@@ -3775,7 +3775,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
 	  return MHD_NO;
 	}
-      daemon->upgrade_fd_in_epoll = MHD_YES;
+      daemon->upgrade_fd_in_epoll = true;
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if ( (daemon->listen_socket_in_epoll) &&
@@ -5544,14 +5544,14 @@ thread_failed:
      indicate failure */
 #ifdef EPOLL_SUPPORT
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if (MHD_YES == daemon->upgrade_fd_in_epoll)
+  if (daemon->upgrade_fd_in_epoll)
     {
       if (0 != epoll_ctl (daemon->epoll_fd,
 			  EPOLL_CTL_DEL,
 			  daemon->epoll_upgrade_fd,
 			  NULL))
 	MHD_PANIC (_("Failed to remove FD from epoll set\n"));
-      daemon->upgrade_fd_in_epoll = MHD_NO;
+      daemon->upgrade_fd_in_epoll = false;
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if (-1 != daemon->epoll_fd)
