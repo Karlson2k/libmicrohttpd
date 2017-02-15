@@ -937,7 +937,7 @@ struct MHD_Connection
   /**
    * TLS layer was shut down?
    */
-  int tls_closed;
+  bool tls_closed;
 #endif /* HTTPS_SUPPORT */
 
   /**
