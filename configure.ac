@@ -1,5 +1,5 @@
 # This file is part of libmicrohttpd.
-# (C) 2006-2015 Christian Grothoff (and other contributing authors)
+# (C) 2006-2017 Christian Grothoff (and other contributing authors)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -695,12 +695,14 @@ fi
 AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h], [], [AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for optional headers
-AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h search.h sys/ioctl.h \
+AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h sys/ioctl.h \
   sys/socket.h sys/select.h netdb.h netinet/in.h netinet/ip.h netinet/tcp.h arpa/inet.h \
   endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h \
   inttypes.h stddef.h unistd.h \
   sockLib.h inetLib.h net/if.h], [], [], [AC_INCLUDES_DEFAULT])
-AM_CONDITIONAL([HAVE_TSEARCH], [test "x$ac_cv_header_search_h" = "xyes"])
+
+gl_FUNC_TSEARCH
+AM_CONDITIONAL([HAVE_TSEARCH], [test "x$HAVE_TSEARCH" = "x1"])
 
 # Check for generic functions
 AC_CHECK_FUNCS([rand random])

@@ -1,3 +1,6 @@
+Thu Feb 16 11:20:05 CET 2017
+	Replace tsearch configure check with code from gnulib. -CG
+
 Wed Feb 15 13:35:36 CET 2017
 	Fixing a few very rare race conditions for thread-pool or
 	thread-per-connection operations during shutdown.
