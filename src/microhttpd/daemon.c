@@ -899,13 +899,17 @@ call_handlers (struct MHD_Connection *con,
   if (con->tls_read_ready)
     read_ready = MHD_YES;
 #endif /* HTTPS_SUPPORT */
-  if (read_ready)
-    con->read_handler (con);
-  if (write_ready)
-    con->write_handler (con);
-  if (force_close)
+  if (!force_close)
+    {
+      if (read_ready)
+        con->read_handler (con);
+      if (write_ready)
+        con->write_handler (con);
+    }
+  else
     MHD_connection_close_ (con,
                            MHD_REQUEST_TERMINATED_WITH_ERROR);
+
   ret = con->idle_handler (con);
 
   /* Fast track for fast connections. */
