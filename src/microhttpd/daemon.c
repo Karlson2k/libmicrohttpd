@@ -3933,11 +3933,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
 	  prev = pos->prevE;
-	  /* FIXME: use (0 != pos->epoll_state & MHD_EPOLL_STATE_READ_READY) ? MHD_YES : MHD_NO
-	   * and (0 != pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY) ? MHD_YES : MHD_NO */
       call_handlers (pos,
-                     MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info,
-                     MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info,
+                     0 != (pos->epoll_state & MHD_EPOLL_STATE_READ_READY),
+                     0 != (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY),
                      0 != (pos->epoll_state & MHD_EPOLL_STATE_ERROR));
       if (MHD_EPOLL_STATE_IN_EREADY_EDLL ==
             (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
