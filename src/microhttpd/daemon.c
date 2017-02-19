@@ -824,17 +824,11 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                                     max_fd,
                                     fd_setsize))
 	    result = MHD_NO;
-	  if ( (pos->read_buffer_size > pos->read_buffer_offset) &&
-	      ! MHD_add_to_fd_set_ (pos->socket_fd,
-                                    read_fd_set,
-                                    max_fd,
-                                    fd_setsize))
-            result = MHD_NO;
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
-	  if ( (pos->read_buffer_size > pos->read_buffer_offset) &&
+	  if ( (NULL == except_fd_set) ||
 	      ! MHD_add_to_fd_set_ (pos->socket_fd,
-                                    read_fd_set,
+	                            except_fd_set,
                                     max_fd,
                                     fd_setsize))
             result = MHD_NO;
@@ -1431,6 +1425,7 @@ thread_main_handle_connection (void *data)
   int num_ready;
   fd_set rs;
   fd_set ws;
+  fd_set es;
   MHD_socket maxsock;
   struct timeval tv;
   struct timeval *tvp;
@@ -1568,10 +1563,11 @@ thread_main_handle_connection (void *data)
       if (0 == (daemon->options & MHD_USE_POLL))
 	{
 	  /* use select */
-	  int err_state = 0;
+	  bool err_state = false;
 
 	  FD_ZERO (&rs);
 	  FD_ZERO (&ws);
+          FD_ZERO (&es);
 	  maxsock = MHD_INVALID_SOCKET;
 	  switch (con->event_loop_info)
 	    {
@@ -1580,28 +1576,21 @@ thread_main_handle_connection (void *data)
                                         &rs,
                                         &maxsock,
                                         FD_SETSIZE))
-	        err_state = 1;
+	        err_state = true;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
 	      if (! MHD_add_to_fd_set_ (con->socket_fd,
                                         &ws,
                                         &maxsock,
                                         FD_SETSIZE))
-                err_state = 1;
-	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
-                   (! MHD_add_to_fd_set_ (con->socket_fd,
-                                          &rs,
-                                          &maxsock,
-                                          FD_SETSIZE)) )
-	        err_state = 1;
+                err_state = true;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      if ( (con->read_buffer_size > con->read_buffer_offset) &&
-                   (! MHD_add_to_fd_set_ (con->socket_fd,
-                                          &rs,
-                                          &maxsock,
-                                          FD_SETSIZE)) )
-	        err_state = 1;
+	      if (! MHD_add_to_fd_set_ (con->socket_fd,
+                                        &es,
+                                        &maxsock,
+                                        FD_SETSIZE))
+	        err_state = true;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
 	      tvp = &tv;
@@ -1620,7 +1609,7 @@ thread_main_handle_connection (void *data)
                 err_state = 1;
             }
 #endif
-            if (0 != err_state)
+            if (err_state)
               {
 #ifdef HAVE_MESSAGES
                 MHD_DLOG (con->daemon,
@@ -1662,7 +1651,8 @@ thread_main_handle_connection (void *data)
                                        &rs),
                              FD_ISSET (con->socket_fd,
                                        &ws),
-                             false))
+                             FD_ISSET (con->socket_fd,
+                                       &es)) )
             goto exit;
 	}
 #ifdef HAVE_POLL
@@ -1676,16 +1666,13 @@ thread_main_handle_connection (void *data)
 	  switch (con->event_loop_info)
 	    {
 	    case MHD_EVENT_LOOP_INFO_READ:
-	      p[0].events |= POLLIN;
+	      p[0].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_WRITE:
-	      p[0].events |= POLLOUT;
-	      if (con->read_buffer_size > con->read_buffer_offset)
-		p[0].events |= POLLIN;
+	      p[0].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
-	      if (con->read_buffer_size > con->read_buffer_offset)
-		p[0].events |= POLLIN;
+	      p[0].events |= MHD_POLL_EVENTS_ERR_DISC;
 	      tv.tv_sec = 0;
 	      tv.tv_usec = 0;
 	      tvp = &tv;
@@ -1732,7 +1719,7 @@ thread_main_handle_connection (void *data)
               call_handlers (con,
                              0 != (p[0].revents & POLLIN),
                              0 != (p[0].revents & POLLOUT),
-                             0 != (p[0].revents & (POLLERR | POLLHUP))))
+                             0 != (p[0].revents & (POLLERR | MHD_POLL_REVENTS_ERR_DISC))))
             goto exit;
 	}
 #endif
@@ -2288,7 +2275,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	{
 	  struct epoll_event event;
 
-	  event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	  event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
 	  event.data.ptr = connection;
 	  if (0 != epoll_ctl (daemon->epoll_fd,
 			      EPOLL_CTL_ADD,
@@ -3061,7 +3048,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                                    read_fd_set),
                          FD_ISSET (ds,
                                    write_fd_set),
-                         false);
+                         FD_ISSET (ds,
+                                   except_fd_set));
         }
     }
 
@@ -3351,16 +3339,14 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	switch (pos->event_loop_info)
 	  {
 	  case MHD_EVENT_LOOP_INFO_READ:
-	    p[poll_server+i].events |= POLLIN;
+	    p[poll_server+i].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_WRITE:
-	    p[poll_server+i].events |= POLLOUT;
-	    if (pos->read_buffer_size > pos->read_buffer_offset)
-	      p[poll_server+i].events |= POLLIN;
+	    p[poll_server+i].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_BLOCK:
-	    if (pos->read_buffer_size > pos->read_buffer_offset)
-	      p[poll_server+i].events |= POLLIN;
+	    p[poll_server+i].events |=  MHD_POLL_EVENTS_ERR_DISC;
+	    timeout = 0;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
 	    timeout = 0; /* clean up "pos" immediately */
@@ -3442,7 +3428,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         call_handlers (pos,
                        0 != (p[poll_server+i].revents & POLLIN),
                        0 != (p[poll_server+i].revents & POLLOUT),
-                       false);
+                       0 != (p[poll_server+i].revents & MHD_POLL_REVENTS_ERR_DISC));
         i++;
       }
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
@@ -3890,12 +3876,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
              connection as 'eready'. */
           pos = events[i].data.ptr;
           /* normal processing: update read/write data */
-          if (0 != (events[i].events & EPOLLIN))
+          if (0 != (events[i].events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
             {
-              pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
-              if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
-                     (pos->read_buffer_size > pos->read_buffer_offset) ) &&
-                   (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+              pos->epoll_state |= MHD_EPOLL_STATE_ERROR;
+              if (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
                 {
                   EDLL_insert (daemon->eready_head,
                                daemon->eready_tail,
@@ -3903,16 +3887,32 @@ MHD_epoll (struct MHD_Daemon *daemon,
                   pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
                 }
             }
-          if (0 != (events[i].events & EPOLLOUT))
+          else
             {
-              pos->epoll_state |= MHD_EPOLL_STATE_WRITE_READY;
-              if ( (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
-                   (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+              if (0 != (events[i].events & EPOLLIN))
                 {
-                  EDLL_insert (daemon->eready_head,
-                               daemon->eready_tail,
-                               pos);
-                  pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+                  pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
+                  if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
+                         (pos->read_buffer_size > pos->read_buffer_offset) ) &&
+                       (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+                    {
+                      EDLL_insert (daemon->eready_head,
+                                   daemon->eready_tail,
+                                   pos);
+                      pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+                    }
+                }
+              if (0 != (events[i].events & EPOLLOUT))
+                {
+                  pos->epoll_state |= MHD_EPOLL_STATE_WRITE_READY;
+                  if ( (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
+                       (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
+                    {
+                      EDLL_insert (daemon->eready_head,
+                                   daemon->eready_tail,
+                                   pos);
+                      pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+                    }
                 }
             }
         }
@@ -3938,7 +3938,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
       call_handlers (pos,
                      MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info,
                      MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info,
-                     false);
+                     0 != (pos->epoll_state & MHD_EPOLL_STATE_ERROR));
       if (MHD_EPOLL_STATE_IN_EREADY_EDLL ==
             (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
         {

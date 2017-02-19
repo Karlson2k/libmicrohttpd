@@ -155,7 +155,12 @@ enum MHD_EpollState
   /**
    * Is this connection currently suspended?
    */
-  MHD_EPOLL_STATE_SUSPENDED = 16
+  MHD_EPOLL_STATE_SUSPENDED = 16,
+
+  /**
+   * Is this connection in some error state?
+   */
+  MHD_EPOLL_STATE_ERROR = 128
 };
 
 
