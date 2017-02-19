@@ -887,9 +887,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  */
 static int
 call_handlers (struct MHD_Connection *con,
-               int read_ready,
-               int write_ready,
-               int force_close)
+               bool read_ready,
+               bool write_ready,
+               bool force_close)
 {
   int ret;
   /* Initial state of connection. */
@@ -897,7 +897,7 @@ call_handlers (struct MHD_Connection *con,
 
 #ifdef HTTPS_SUPPORT
   if (con->tls_read_ready)
-    read_ready = MHD_YES;
+    read_ready = true;
 #endif /* HTTPS_SUPPORT */
   if (!force_close)
     {
@@ -1662,7 +1662,7 @@ thread_main_handle_connection (void *data)
                                        &rs),
                              FD_ISSET (con->socket_fd,
                                        &ws),
-                             MHD_NO))
+                             false))
             goto exit;
 	}
 #ifdef HAVE_POLL
@@ -3061,7 +3061,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                                    read_fd_set),
                          FD_ISSET (ds,
                                    write_fd_set),
-                         MHD_NO);
+                         false);
         }
     }
 
@@ -3442,7 +3442,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         call_handlers (pos,
                        0 != (p[poll_server+i].revents & POLLIN),
                        0 != (p[poll_server+i].revents & POLLOUT),
-                       MHD_NO);
+                       false);
         i++;
       }
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
@@ -3936,9 +3936,9 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	  /* FIXME: use (0 != pos->epoll_state & MHD_EPOLL_STATE_READ_READY) ? MHD_YES : MHD_NO
 	   * and (0 != pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY) ? MHD_YES : MHD_NO */
       call_handlers (pos,
-                     (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ? MHD_YES : MHD_NO,
-                     (MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) ? MHD_YES : MHD_NO,
-                     MHD_NO);
+                     MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info,
+                     MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info,
+                     false);
       if (MHD_EPOLL_STATE_IN_EREADY_EDLL ==
             (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
         {
