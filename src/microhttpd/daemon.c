@@ -895,9 +895,9 @@ call_handlers (struct MHD_Connection *con,
 #endif /* HTTPS_SUPPORT */
   if (!force_close)
     {
-      if (read_ready)
+      if (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info && read_ready)
         con->read_handler (con);
-      if (write_ready)
+      if (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info && write_ready)
         con->write_handler (con);
     }
   else
