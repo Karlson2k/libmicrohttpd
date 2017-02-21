@@ -886,8 +886,8 @@ call_handlers (struct MHD_Connection *con,
                bool force_close)
 {
   int ret;
-  /* Initial state of connection. */
-  bool was_initing = (con->state == MHD_CONNECTION_INIT);
+  /* Fast track flag */
+  bool on_fasttrack = (con->state == MHD_CONNECTION_INIT);
 
 #ifdef HTTPS_SUPPORT
   if (con->tls_read_ready)
@@ -896,15 +896,24 @@ call_handlers (struct MHD_Connection *con,
   if (!force_close)
     {
       if (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info && read_ready)
-        con->read_handler (con);
+        {
+          con->read_handler (con);
+          ret = con->idle_handler (con);
+        }
+      /* No need to check value of 'ret' here as closed connection
+       * cannot be in MHD_EVENT_LOOP_INFO_WRITE state. */
       if (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info && write_ready)
-        con->write_handler (con);
+        {
+          con->write_handler (con);
+          ret = con->idle_handler (con);
+        }
     }
   else
-    MHD_connection_close_ (con,
-                           MHD_REQUEST_TERMINATED_WITH_ERROR);
-
-  ret = con->idle_handler (con);
+    {
+      MHD_connection_close_ (con,
+                             MHD_REQUEST_TERMINATED_WITH_ERROR);
+      return con->idle_handler (con);
+    }
 
   /* Fast track for fast connections. */
   /* If full request was read by single read_handler() invocation
@@ -914,23 +923,24 @@ call_handlers (struct MHD_Connection *con,
      As writeability of socket was not checked and it may have
      some data pending in system buffers, use this optimization
      only for non-blocking sockets. */
-  if ( (MHD_NO != ret) &&
-       (was_initing) &&
-       (MHD_CONNECTION_HEADERS_SENDING == con->state) &&
-       (con->sk_nonblck) )
+  /* No need to check 'ret' as connection is always in
+   * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */
+  if (on_fasttrack && con->sk_nonblck)
     {
-      con->write_handler (con);
-      /* If all headers were sent by single write_handler() - continue. */
-      if (MHD_CONNECTION_HEADERS_SENT == con->state)
+      if (MHD_CONNECTION_HEADERS_SENDING == con->state)
         {
+          con->write_handler (con);
+          /* Always call 'idle_handler()' after each read/write. */
           ret = con->idle_handler (con);
-          if ( (MHD_NO != ret) &&
-               ( (MHD_CONNECTION_NORMAL_BODY_READY == con->state) ||
-                 (MHD_CONNECTION_CHUNKED_BODY_READY == con->state) ) )
-            {
-              con->write_handler (con);
-              ret = con->idle_handler (con);
-          }
+        }
+      /* If all headers were sent by single write_handler() and
+       * response body is prepared by single idle_handler()
+       * call - continue. */
+      if ((MHD_CONNECTION_NORMAL_BODY_READY == con->state) ||
+          (MHD_CONNECTION_CHUNKED_BODY_READY == con->state))
+        {
+          con->write_handler (con);
+          ret = con->idle_handler (con);
         }
     }
   return ret;
