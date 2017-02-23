@@ -595,9 +595,11 @@ MHD_create_response_from_data (size_t size,
       must_free = MHD_YES;
       data = tmp;
     }
-  response->crc = NULL;
-  response->crfc = must_free ? &free : NULL;
-  response->crc_cls = must_free ? data : NULL;
+  if (must_free)
+    {
+      response->crfc = &free;
+      response->crc_cls = data;
+    }
   response->reference_count = 1;
   response->total_size = size;
   response->data = data;
