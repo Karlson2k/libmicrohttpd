@@ -49,6 +49,25 @@ static const char *const two_hundred[] = {
   "Reset Content",
   "Partial Content",
   "Multi-Status",
+  "Already Reported",
+  "Unknown",
+  "Unknown", /* 210 */
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown", /* 215 */
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown", /* 220 */
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown",
+  "Unknown", /* 225 */
+  "IM Used"
 };
 
 static const char *const three_hundred[] = {
@@ -78,25 +97,25 @@ static const char *const four_hundred[] = {
   "Gone",
   "Length Required",
   "Precondition Failed",
-  "Request Entity Too Large",
-  "Request-URI Too Large",
+  "Payload Too Large",
+  "URI Too Long",
   "Unsupported Media Type",
-  "Requested Range Not Satisfiable",
+  "Range Not Satisfiable",
   "Expectation Failed",
   "Unknown",
   "Unknown",
   "Unknown", /* 420 */
-  "Unknown",
+  "Misdirected Request",
   "Unprocessable Entity",
   "Locked",
   "Failed Dependency",
   "Unordered Collection",
   "Upgrade Required",
   "Unknown",
-  "Unknown",
-  "Unknown",
+  "Precondition Required",
+  "Too Many Requests",
   "Unknown", /* 430 */
-  "Unknown",
+  "Request Header Fields Too Large",
   "Unknown",
   "Unknown",
   "Unknown",
@@ -128,9 +147,10 @@ static const char *const five_hundred[] = {
   "HTTP Version Not Supported",
   "Variant Also Negotiates",
   "Insufficient Storage",
-  "Unknown",
+  "Loop Detected",
   "Bandwidth Limit Exceeded",
-  "Not Extended"
+  "Not Extended",
+  "Network Authentication Required"
 };
 
 

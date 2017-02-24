@@ -298,6 +298,8 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
  * These are the status codes defined for HTTP responses.
  * @{
  */
+/* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
+
 #define MHD_HTTP_CONTINUE 100
 #define MHD_HTTP_SWITCHING_PROTOCOLS 101
 #define MHD_HTTP_PROCESSING 102
