@@ -1386,8 +1386,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
             {
               transmit_error_response (connection,
                                        (connection->url != NULL)
-                                       ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
-                                       : MHD_HTTP_REQUEST_URI_TOO_LONG,
+                                       ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
+                                       : MHD_HTTP_URI_TOO_LONG,
                                        REQUEST_TOO_BIG);
               continue;
             }
@@ -1529,8 +1529,8 @@ get_next_header_line (struct MHD_Connection *connection,
 	{
 	  transmit_error_response (connection,
 				   (NULL != connection->url)
-				   ? MHD_HTTP_REQUEST_ENTITY_TOO_LARGE
-				   : MHD_HTTP_REQUEST_URI_TOO_LONG,
+				   ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
+				   : MHD_HTTP_URI_TOO_LONG,
 				   REQUEST_TOO_BIG);
 	}
       if (line_len)
@@ -1580,7 +1580,7 @@ connection_add_header (struct MHD_Connection *connection,
                 _("Not enough memory in pool to allocate header record!\n"));
 #endif
       transmit_error_response (connection,
-			       MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return MHD_NO;
     }
@@ -1622,7 +1622,7 @@ parse_cookie_header (struct MHD_Connection *connection)
                 _("Not enough memory in pool to parse cookies!\n"));
 #endif
       transmit_error_response (connection,
-                               MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return MHD_NO;
     }
@@ -2244,7 +2244,7 @@ process_broken_line (struct MHD_Connection *connection,
       if (NULL == last)
         {
           transmit_error_response (connection,
-                                   MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+                                   MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                    REQUEST_TOO_BIG);
           return MHD_NO;
         }
@@ -2260,7 +2260,7 @@ process_broken_line (struct MHD_Connection *connection,
 					kind)))
     {
       transmit_error_response (connection,
-                               MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
+                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return MHD_NO;
     }

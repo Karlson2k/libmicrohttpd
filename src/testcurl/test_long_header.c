@@ -152,7 +152,7 @@ testLongUrlGet ()
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
   free (url);
-  if (code != MHD_HTTP_REQUEST_URI_TOO_LONG)
+  if (code != MHD_HTTP_URI_TOO_LONG)
     return 8;
   return 0;
 }
@@ -230,7 +230,7 @@ testLongHeaderGet ()
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
   free (url);
-  if (code != MHD_HTTP_REQUEST_ENTITY_TOO_LARGE)
+  if (code != MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE)
     return 128;
   return 0;
 }
