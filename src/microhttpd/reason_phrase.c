@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2011 Christian Grothoff
+     Copyright (C) 2007, 2011, 2017 Christian Grothoff, Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@
  * @brief  Tables of the string response phrases
  * @author Elliot Glaysher
  * @author Christian Grothoff (minor code clean up)
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include "microhttpd.h"
