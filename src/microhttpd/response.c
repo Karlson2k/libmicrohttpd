@@ -397,7 +397,7 @@ file_reader (void *cls,
     return MHD_CONTENT_READER_END_WITH_ERROR; /* Value of 'response->fd' is not valid. */
   else
     {
-      OVERLAPPED f_ol = {0, 0, 0, 0}; /* Initialize to zero. */
+      OVERLAPPED f_ol = {0, 0, {{0, 0}}, 0}; /* Initialize to zero. */
       ULARGE_INTEGER pos_uli;
       DWORD toRead = (max > INT32_MAX) ? INT32_MAX : (DWORD) max;
       DWORD resRead;
