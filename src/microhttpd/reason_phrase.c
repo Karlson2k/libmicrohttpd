@@ -27,10 +27,10 @@
 #include "microhttpd.h"
 
 #ifndef NULL
-#define NULL (void*)0
+#define NULL ((void*)0)
 #endif
 
-static const char *invalid_hundred[] = {
+static const char *const invalid_hundred[] = {
   NULL
 };
 
@@ -48,13 +48,14 @@ static const char *const two_hundred[] = {
   "No Content",
   "Reset Content",
   "Partial Content",
-  "Multi Status"
+  "Multi-Status",
 };
 
 static const char *const three_hundred[] = {
   "Multiple Choices",
   "Moved Permanently",
   "Moved Temporarily",
+  "Found",
   "See Other",
   "Not Modified",
   "Use Proxy",
@@ -72,7 +73,7 @@ static const char *const four_hundred[] = {
   "Method Not Allowed",
   "Not Acceptable",
   "Proxy Authentication Required",
-  "Request Time-out",
+  "Request Timeout",
   "Conflict",
   "Gone",
   "Length Required",
@@ -123,8 +124,8 @@ static const char *const five_hundred[] = {
   "Not Implemented",
   "Bad Gateway",
   "Service Unavailable",
-  "Gateway Time-out",
-  "HTTP Version not supported",
+  "Gateway Timeout",
+  "HTTP Version Not Supported",
   "Variant Also Negotiates",
   "Insufficient Storage",
   "Unknown",
@@ -135,7 +136,7 @@ static const char *const five_hundred[] = {
 
 struct MHD_Reason_Block
 {
-  unsigned int max;
+  size_t max;
   const char *const*data;
 };
 
