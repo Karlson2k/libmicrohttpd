@@ -886,6 +886,7 @@ call_handlers (struct MHD_Connection *con,
                bool force_close)
 {
   int ret;
+  bool states_info_processed = false;
   /* Fast track flag */
   bool on_fasttrack = (con->state == MHD_CONNECTION_INIT);
 
@@ -899,6 +900,7 @@ call_handlers (struct MHD_Connection *con,
         {
           con->read_handler (con);
           ret = con->idle_handler (con);
+          states_info_processed = true;
         }
       /* No need to check value of 'ret' here as closed connection
        * cannot be in MHD_EVENT_LOOP_INFO_WRITE state. */
@@ -906,6 +908,7 @@ call_handlers (struct MHD_Connection *con,
         {
           con->write_handler (con);
           ret = con->idle_handler (con);
+          states_info_processed = true;
         }
     }
   else
@@ -915,6 +918,11 @@ call_handlers (struct MHD_Connection *con,
       return con->idle_handler (con);
     }
 
+  if (!states_info_processed)
+    { /* Connection is not read or write ready, but external conditions
+       * may be changed and need to be processed. */
+      ret = con->idle_handler (con);
+    }
   /* Fast track for fast connections. */
   /* If full request was read by single read_handler() invocation
      and headers were completely prepared by single idle_handler()
@@ -925,7 +933,7 @@ call_handlers (struct MHD_Connection *con,
      only for non-blocking sockets. */
   /* No need to check 'ret' as connection is always in
    * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */
-  if (on_fasttrack && con->sk_nonblck)
+  else if (on_fasttrack && con->sk_nonblck)
     {
       if (MHD_CONNECTION_HEADERS_SENDING == con->state)
         {
