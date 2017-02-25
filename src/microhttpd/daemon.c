@@ -6002,7 +6002,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 {
   switch(feature)
     {
-    case MHD_FEATURE_MESSGES:
+    case MHD_FEATURE_MESSAGES:
 #ifdef HAVE_MESSAGES
       return MHD_YES;
 #else
