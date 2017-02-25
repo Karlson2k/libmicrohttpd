@@ -3112,7 +3112,7 @@ enum MHD_FEATURE
    * Get whether messages are supported. If supported then in debug
    * mode messages can be printed to stderr or to external logger.
    */
-  MHD_FEATURE_MESSGES = 1,
+  MHD_FEATURE_MESSAGES = 1,
 
   /**
    * Get whether HTTPS is supported.  If supported then flag
