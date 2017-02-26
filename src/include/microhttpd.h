@@ -734,18 +734,92 @@ MHD_get_reason_phrase_for (unsigned int code);
 
 /**
  * @defgroup methods HTTP methods
- * Standard HTTP methods (as strings).
+ * HTTP methods (as strings).
+ * See: http://www.iana.org/assignments/http-methods/http-methods.xml
+ * Registry Version 2015-05-19
  * @{
  */
+/* Main HTTP methods. */
+/* Not safe. Not idempotent. RFC7231, Section 4.3.6. */
 #define MHD_HTTP_METHOD_CONNECT "CONNECT"
+/* Not safe. Idempotent.     RFC7231, Section 4.3.5. */
 #define MHD_HTTP_METHOD_DELETE "DELETE"
+/* Safe.     Idempotent.     RFC7231, Section 4.3.1. */
 #define MHD_HTTP_METHOD_GET "GET"
+/* Safe.     Idempotent.     RFC7231, Section 4.3.2. */
 #define MHD_HTTP_METHOD_HEAD "HEAD"
+/* Safe.     Idempotent.     RFC7231, Section 4.3.7. */
 #define MHD_HTTP_METHOD_OPTIONS "OPTIONS"
+/* Not safe. Not idempotent. RFC7231, Section 4.3.3. */
 #define MHD_HTTP_METHOD_POST "POST"
+/* Not safe. Idempotent.     RFC7231, Section 4.3.4. */
 #define MHD_HTTP_METHOD_PUT "PUT"
-#define MHD_HTTP_METHOD_PATCH "PATCH"
+/* Safe.     Idempotent.     RFC7231, Section 4.3.8. */
 #define MHD_HTTP_METHOD_TRACE "TRACE"
+
+/* Additional HTTP methods. */
+/* Not safe. Idempotent.     RFC3744, Section 8.1. */
+#define MHD_HTTP_METHOD_ACL "ACL"
+/* Not safe. Idempotent.     RFC3253, Section 12.6. */
+#define MHD_HTTP_METHOD_BASELINE_CONTROL "BASELINE-CONTROL"
+/* Not safe. Idempotent.     RFC5842, Section 4. */
+#define MHD_HTTP_METHOD_BIND "BIND"
+/* Not safe. Idempotent.     RFC3253, Section 4.4, Section 9.4. */
+#define MHD_HTTP_METHOD_CHECKIN "CHECKIN"
+/* Not safe. Idempotent.     RFC3253, Section 4.3, Section 8.8. */
+#define MHD_HTTP_METHOD_CHECKOUT "CHECKOUT"
+/* Not safe. Idempotent.     RFC4918, Section 9.8. */
+#define MHD_HTTP_METHOD_COPY "COPY"
+/* Not safe. Idempotent.     RFC3253, Section 8.2. */
+#define MHD_HTTP_METHOD_LABEL "LABEL"
+/* Not safe. Idempotent.     RFC2068, Section 19.6.1.2. */
+#define MHD_HTTP_METHOD_LINK "LINK"
+/* Not safe. Not idempotent. RFC4918, Section 9.10. */
+#define MHD_HTTP_METHOD_LOCK "LOCK"
+/* Not safe. Idempotent.     RFC3253, Section 11.2. */
+#define MHD_HTTP_METHOD_MERGE "MERGE"
+/* Not safe. Idempotent.     RFC3253, Section 13.5. */
+#define MHD_HTTP_METHOD_MKACTIVITY "MKACTIVITY"
+/* Not safe. Idempotent.     RFC4791, Section 5.3.1. */
+#define MHD_HTTP_METHOD_MKCALENDAR "MKCALENDAR"
+/* Not safe. Idempotent.     RFC4918, Section 9.3. */
+#define MHD_HTTP_METHOD_MKCOL "MKCOL"
+/* Not safe. Idempotent.     RFC4437, Section 6. */
+#define MHD_HTTP_METHOD_MKREDIRECTREF "MKREDIRECTREF"
+/* Not safe. Idempotent.     RFC3253, Section 6.3. */
+#define MHD_HTTP_METHOD_MKWORKSPACE "MKWORKSPACE"
+/* Not safe. Idempotent.     RFC4918, Section 9.9. */
+#define MHD_HTTP_METHOD_MOVE "MOVE"
+/* Not safe. Idempotent.     RFC3648, Section 7. */
+#define MHD_HTTP_METHOD_ORDERPATCH "ORDERPATCH"
+/* Not safe. Not idempotent. RFC5789, Section 2. */
+#define MHD_HTTP_METHOD_PATCH "PATCH"
+/* Safe.     Idempotent.     RFC7540, Section 3.5. */
+#define MHD_HTTP_METHOD_PRI "PRI"
+/* Safe.     Idempotent.     RFC4918, Section 9.1. */
+#define MHD_HTTP_METHOD_PROPFIND "PROPFIND"
+/* Not safe. Idempotent.     RFC4918, Section 9.2. */
+#define MHD_HTTP_METHOD_PROPPATCH "PROPPATCH"
+/* Not safe. Idempotent.     RFC5842, Section 6. */
+#define MHD_HTTP_METHOD_REBIND "REBIND"
+/* Safe.     Idempotent.     RFC3253, Section 3.6. */
+#define MHD_HTTP_METHOD_REPORT "REPORT"
+/* Safe.     Idempotent.     RFC5323, Section 2. */
+#define MHD_HTTP_METHOD_SEARCH "SEARCH"
+/* Not safe. Idempotent.     RFC5842, Section 5. */
+#define MHD_HTTP_METHOD_UNBIND "UNBIND"
+/* Not safe. Idempotent.     RFC3253, Section 4.5. */
+#define MHD_HTTP_METHOD_UNCHECKOUT "UNCHECKOUT"
+/* Not safe. Idempotent.     RFC2068, Section 19.6.1.3. */
+#define MHD_HTTP_METHOD_UNLINK "UNLINK"
+/* Not safe. Idempotent.     RFC4918, Section 9.11. */
+#define MHD_HTTP_METHOD_UNLOCK "UNLOCK"
+/* Not safe. Idempotent.     RFC3253, Section 7.1. */
+#define MHD_HTTP_METHOD_UPDATE "UPDATE"
+/* Not safe. Idempotent.     RFC4437, Section 7. */
+#define MHD_HTTP_METHOD_UPDATEREDIRECTREF "UPDATEREDIRECTREF"
+/* Not safe. Idempotent.     RFC3253, Section 3.5. */
+#define MHD_HTTP_METHOD_VERSION_CONTROL "VERSION-CONTROL"
 
 /** @} */ /* end of group methods */
 
