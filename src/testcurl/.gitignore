@@ -102,3 +102,5 @@
 /daemontest_post_loop
 /daemontest_get11
 *.exe
+test_quiesce_stream
+test_large_put_inc11

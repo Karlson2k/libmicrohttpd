@@ -41,3 +41,4 @@
 /postprocessor_test
 /gmon.out
 *.exe
+test_upgrade_tls
