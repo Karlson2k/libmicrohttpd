@@ -1012,13 +1012,19 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
 static void
 process_urh (struct MHD_UpgradeResponseHandle *urh)
 {
-  if (urh->connection->daemon->shutdown)
+  /* Help compiler to optimize:
+   * pointers to 'connection' and 'daemon' are not changed
+   * during this processing, so no need to chain dereference
+   * each time. */
+  struct MHD_Connection * const connection = urh->connection;
+  struct MHD_Daemon * const daemon = connection->daemon;
+  if (daemon->shutdown)
     {
       /* Daemon shutting down, application will not receive any more data. */
 #ifdef HAVE_MESSAGES
       if (! urh->was_closed)
         {
-          MHD_DLOG (urh->connection->daemon,
+          MHD_DLOG (daemon,
                     _("Initiated daemon shutdown while \"upgraded\" connection was not closed.\n"));
         }
 #endif
@@ -1031,7 +1037,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (0 < urh->in_buffer_used)
         {
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (urh->connection->daemon,
+          MHD_DLOG (daemon,
                     _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
                         " bytes of data received from remote side: application shut down socket\n"),
                     (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used);
@@ -1043,12 +1049,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       /* Reading from remote client is not required anymore. */
       urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-      urh->connection->tls_read_ready = false;
+      connection->tls_read_ready = false;
     }
 
   /* handle reading from TLS client and writing to application */
   if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
-         (urh->connection->tls_read_ready) ) &&
+         (connection->tls_read_ready) ) &&
        (urh->in_buffer_used < urh->in_buffer_size) )
     {
       ssize_t res;
@@ -1058,8 +1064,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (buf_size > SSIZE_MAX)
         buf_size = SSIZE_MAX;
 
-      urh->connection->tls_read_ready = false;
-      res = gnutls_record_recv (urh->connection->tls_session,
+      connection->tls_read_ready = false;
+      res = gnutls_record_recv (connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
       if ( (GNUTLS_E_AGAIN == res) ||
@@ -1070,9 +1076,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else if (res > 0)
         {
           urh->in_buffer_used += res;
-          if (0 < gnutls_record_check_pending (urh->connection->tls_session))
+          if (0 < gnutls_record_check_pending (connection->tls_session))
             {
-              urh->connection->tls_read_ready = true;
+              connection->tls_read_ready = true;
             }
         }
       else if (0 >= res)
@@ -1111,7 +1117,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                  Do not try to receive to 'in_buffer' and
                  discard any unsent data. */
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (urh->connection->daemon,
+              MHD_DLOG (daemon,
                         _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
                             " bytes of data received from remote side: %s\n"),
                         (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
@@ -1121,7 +1127,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               urh->in_buffer_used = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
               urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              urh->connection->tls_read_ready = false;
+              connection->tls_read_ready = false;
             }
         }
       else
@@ -1207,7 +1213,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (data_size > SSIZE_MAX)
         data_size = SSIZE_MAX;
 
-      res = gnutls_record_send (urh->connection->tls_session,
+      res = gnutls_record_send (connection->tls_session,
                                 urh->out_buffer,
                                 data_size);
       if ( (GNUTLS_E_AGAIN == res) ||
@@ -1236,7 +1242,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
              Do not try to receive to 'out_buffer' and
              discard any unsent data. */
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (urh->connection->daemon,
+          MHD_DLOG (daemon,
                     _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
                         " bytes of data received from application: %s\n"),
                     (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
@@ -1251,19 +1257,19 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 
   /* Check whether data is present in TLS buffers
    * and incoming forward buffer have some space. */
-  if ( (urh->connection->tls_read_ready) &&
+  if ( (connection->tls_read_ready) &&
        (urh->in_buffer_used < urh->in_buffer_size) &&
-       (0 == (urh->connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
-    urh->connection->daemon->data_already_pending = true;
+       (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+    daemon->data_already_pending = true;
 
-  if ( (urh->connection->daemon->shutdown) &&
+  if ( (daemon->shutdown) &&
        ( (0 != urh->out_buffer_size) ||
          (0 != urh->out_buffer_used) ) )
     {
       /* Daemon shutting down, discard any remaining forward data. */
 #ifdef HAVE_MESSAGES
       if (0 < urh->out_buffer_used)
-        MHD_DLOG (urh->connection->daemon,
+        MHD_DLOG (daemon,
                   _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
                       " bytes of data received from application: daemon shut down\n"),
                   (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used);
