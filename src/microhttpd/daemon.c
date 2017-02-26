@@ -428,11 +428,6 @@ recv_tls_adapter (struct MHD_Connection *connection,
 {
   ssize_t res;
 
-  if (connection->tls_read_ready)
-    {
-      connection->daemon->num_tls_read_ready--;
-      connection->tls_read_ready = false;
-    }
   res = gnutls_record_recv (connection->tls_session,
                             other,
                             (i > SSIZE_MAX) ? SSIZE_MAX : i);
@@ -451,13 +446,13 @@ recv_tls_adapter (struct MHD_Connection *connection,
 	 disrupted); set errno to something caller will interpret
 	 correctly as a hard error */
       MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+      connection->tls_read_ready = false;
       return res;
     }
-  if ((size_t)res == i)
-    {
-      connection->tls_read_ready = true;
-      connection->daemon->num_tls_read_ready++;
-    }
+
+  /* Check whether TLS buffers still have some unread data. */
+  connection->tls_read_ready = ( ((size_t)res == i) &&
+                                 (0 != gnutls_record_check_pending (connection->tls_session)) );
   return res;
 }
 
@@ -951,6 +946,23 @@ call_handlers (struct MHD_Connection *con,
           ret = con->idle_handler (con);
         }
     }
+
+  /* All connection's data and states are processed for this turn.
+   * If connection already has more data to be processed - use
+   * zero timeout for next select()/poll(). */
+  /* Thread-per-connection do not need global zero timeout as
+   * connections are processed individually. */
+  if ( (!con->daemon->data_already_pending) &&
+       (0 == (con->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+    {
+      if (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
+        con->daemon->data_already_pending = true;
+#ifdef HTTPS_SUPPORT
+      else if ( (con->tls_read_ready) &&
+                (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) )
+        con->daemon->data_already_pending = true;
+#endif /* HTTPS_SUPPORT */
+    }
   return ret;
 }
 
@@ -1061,7 +1073,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           if (0 < gnutls_record_check_pending (urh->connection->tls_session))
             {
               urh->connection->tls_read_ready = true;
-              urh->connection->daemon->has_tls_recv_ready = true;
             }
         }
       else if (0 >= res)
@@ -1238,6 +1249,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         }
     }
 
+  /* Check whether data is present in TLS buffers
+   * and incoming forward buffer have some space. */
+  if ( (urh->connection->tls_read_ready) &&
+       (urh->in_buffer_used < urh->in_buffer_size) &&
+       (0 == (urh->connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+    urh->connection->daemon->data_already_pending = true;
+
   if ( (urh->connection->daemon->shutdown) &&
        ( (0 != urh->out_buffer_size) ||
          (0 != urh->out_buffer_used) ) )
@@ -1312,7 +1330,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             {
               struct timeval* tvp;
               struct timeval tv;
-              if (con->tls_read_ready)
+              if ( (con->tls_read_ready) &&
+                   (urh->in_buffer_used < urh->in_buffer_size))
                 { /* No need to wait if incoming data is already pending in TLS buffers. */
                   tv.tv_sec = 0;
                   tv.tv_usec = 0;
@@ -1378,7 +1397,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
           if (0 != urh->in_buffer_used)
             p[1].events |= POLLOUT;
 
-          if (con->tls_read_ready)
+          if ( (con->tls_read_ready) &&
+               (urh->in_buffer_used < urh->in_buffer_size))
             timeout = 0; /* No need to wait if incoming data is already pending in TLS buffers. */
           else
             timeout = UINT_MAX;
@@ -1548,15 +1568,20 @@ thread_main_handle_connection (void *data)
         }
 
       tvp = NULL;
+
+      if ( (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
 #ifdef HTTPS_SUPPORT
-      if (con->tls_read_ready)
+           || ( (con->tls_read_ready) &&
+                (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) )
+#endif /* HTTPS_SUPPORT */
+         )
 	{
-	  /* do not block (more data may be inside of TLS buffers waiting for us) */
+	  /* do not block: more data may be inside of TLS buffers waiting or
+	   * application must provide response data */
 	  tv.tv_sec = 0;
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
-#endif /* HTTPS_SUPPORT */
       if ( (NULL == tvp) &&
            (timeout > 0) )
 	{
@@ -1609,9 +1634,6 @@ thread_main_handle_connection (void *data)
                                         &maxsock,
                                         FD_SETSIZE))
 	        err_state = true;
-	      tv.tv_sec = 0;
-	      tv.tv_usec = 0;
-	      tvp = &tv;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_CLEANUP:
 	      /* how did we get here!? */
@@ -1691,9 +1713,6 @@ thread_main_handle_connection (void *data)
 	      break;
 	    case MHD_EVENT_LOOP_INFO_BLOCK:
 	      p[0].events |= MHD_POLL_EVENTS_ERR_DISC;
-	      tv.tv_sec = 0;
-	      tv.tv_usec = 0;
-	      tvp = &tv;
 	      break;
 	    case MHD_EVENT_LOOP_INFO_CLEANUP:
 	      /* how did we get here!? */
@@ -2905,15 +2924,13 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-#ifdef HTTPS_SUPPORT
-  if (0 != daemon->num_tls_read_ready || daemon->has_tls_recv_ready)
+  if (daemon->data_already_pending)
     {
-      /* if there is any TLS connection with data ready for
-	 reading, we must not block in the event loop */
+      /* Some data already waiting to be processed. */
       *timeout = 0;
       return MHD_YES;
     }
-#endif /* HTTPS_SUPPORT */
+
 #ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (NULL != daemon->eready_head) )
@@ -3009,6 +3026,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   unsigned int mask = MHD_ALLOW_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNAL_THREAD |
     MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL_INTERNAL_THREAD;
 
+  /* Reset. New value will be set when connections are processed. */
+  /* Note: no-op for thread-per-connection as it is always false in that mode. */
+  daemon->data_already_pending = false;
+
   /* Clear ITC to avoid spinning select */
   /* Do it before any other processing so new signals
      will trigger select again and will be processed */
@@ -3016,14 +3037,6 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
-
-#ifdef HTTPS_SUPPORT
-    /* Reset TLS read-ready.
-     * New value will be set by read handlers. */
-    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (0 != (daemon->options & MHD_USE_TLS)) )
-      daemon->has_tls_recv_ready = 0;
-#endif /* HTTPS_SUPPORT */
 
   /* Resuming external connections when using an extern mainloop  */
   if (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & mask))
@@ -3364,7 +3377,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	    break;
 	  case MHD_EVENT_LOOP_INFO_BLOCK:
 	    p[poll_server+i].events |=  MHD_POLL_EVENTS_ERR_DISC;
-	    timeout = 0;
 	    break;
 	  case MHD_EVENT_LOOP_INFO_CLEANUP:
 	    timeout = 0; /* clean up "pos" immediately */
@@ -3412,20 +3424,16 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         free(p);
 	return MHD_NO;
       }
+
+    /* Reset. New value will be set when connections are processed. */
+    daemon->data_already_pending = false;
+
     /* handle ITC FD */
     /* do it before any other processing so
        new signals will be processed in next loop */
     if ( (-1 != poll_itc_idx) &&
          (0 != (p[poll_itc_idx].revents & POLLIN)) )
       MHD_itc_clear_ (daemon->itc);
-
-#ifdef HTTPS_SUPPORT
-    /* Reset TLS read-ready.
-     * New value will be set by read handlers. */
-    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (0 != (daemon->options & MHD_USE_TLS)) )
-      daemon->has_tls_recv_ready = 0;
-#endif /* HTTPS_SUPPORT */
 
     /* handle shutdown */
     if (daemon->shutdown)
@@ -3816,12 +3824,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
   else
     timeout_ms = 0;
 
-#ifdef HTTPS_SUPPORT
-  /* Reset TLS read-ready.
-   * New value will be set by read handlers. */
-  if ( 0 != (daemon->options & MHD_USE_TLS) )
-    daemon->has_tls_recv_ready = false;
-#endif /* HTTPS_SUPPORT */
+  /* Reset. New value will be set when connections are processed. */
+  /* Note: Used mostly for uniformity here as same situation is
+   * signaled in epoll mode by non-empty eready DLL. */
+  daemon->data_already_pending = false;
 
   /* drain 'epoll' event queue; need to iterate as we get at most
      MAX_EVENTS in one system call here; in practice this should

@@ -1452,6 +1452,17 @@ struct MHD_Daemon
   bool resuming;
 
   /**
+   * 'True' if some data is already waiting to be processed.
+   * If set to 'true' - zero timeout for select()/poll*()
+   * is used.
+   * Should be reset each time before processing connections
+   * and raised by any connection which require additional
+   * immediately processing (application does not provide
+   * data for response, data waiting in TLS buffers etc.)
+   */
+  bool data_already_pending;
+
+  /**
    * Number of active parallel connections.
    */
   unsigned int connections;
@@ -1558,20 +1569,6 @@ struct MHD_Daemon
    * true if we have initialized @e https_mem_dhparams.
    */
   bool have_dhparams;
-
-  /**
-   * For how many connections do we have 'tls_read_ready' set to MHD_YES?
-   * Used to avoid O(n) traversal over all connections when determining
-   * event-loop timeout (as it needs to be zero if there is any connection
-   * which might have ready data within TLS).
-   */
-  unsigned int num_tls_read_ready;
-
-  /**
-   * Indicate that some TLS connection(s) have received data pending in
-   * TLS buffers.
-   */
-  bool has_tls_recv_ready;
 
 #endif /* HTTPS_SUPPORT */
 
