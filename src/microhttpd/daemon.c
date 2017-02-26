@@ -436,7 +436,8 @@ recv_tls_adapter (struct MHD_Connection *connection,
     {
       MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #ifdef EPOLL_SUPPORT
-      connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+      if (GNUTLS_E_AGAIN == res)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
       return -1;
     }
@@ -480,7 +481,8 @@ send_tls_adapter (struct MHD_Connection *connection,
     {
       MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #ifdef EPOLL_SUPPORT
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      if (GNUTLS_E_AGAIN == res)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
       return -1;
     }
@@ -1068,11 +1070,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_recv (connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
-      if ( (GNUTLS_E_AGAIN == res) ||
-           (GNUTLS_E_INTERRUPTED == res) )
-        {
-          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-        }
+      if (GNUTLS_E_AGAIN == res)
+        urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
       else if (res > 0)
         {
           urh->in_buffer_used += res;
@@ -1081,7 +1080,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               connection->tls_read_ready = true;
             }
         }
-      else if (0 >= res)
+      else if ( (0 >= res ) &&
+                (GNUTLS_E_INTERRUPTED != res) )
         {
           /* Connection was shut down or got unrecoverable error.
            * signal by shrinking buffer so no more attempts will be
@@ -1107,10 +1107,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         {
           int err = MHD_socket_get_error_ ();
 
-          if ( (MHD_SCKT_ERR_IS_EINTR_ (err)) ||
-               (MHD_SCKT_ERR_IS_EAGAIN_ (err)) )
+          if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
             urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-          else if (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err))
+          else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
+                    (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
             {
               /* persistent / unrecoverable error, treat as
                  if connection was shut down.
@@ -1178,10 +1178,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           else
             {
               const int err = MHD_socket_get_error_ ();
-              if ( (MHD_SCKT_ERR_IS_EINTR_ (err)) ||
-                   (MHD_SCKT_ERR_IS_EAGAIN_ (err)) )
+              if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
                 urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              else if (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err))
+              else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
+                        (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
                 {
                   /* persistent / unrecoverable error, treat as
                      if connection was shut down */
@@ -1216,8 +1216,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_send (connection->tls_session,
                                 urh->out_buffer,
                                 data_size);
-      if ( (GNUTLS_E_AGAIN == res) ||
-           (GNUTLS_E_INTERRUPTED == res) )
+      if (GNUTLS_E_AGAIN == res)
         {
           urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
         }
@@ -1235,7 +1234,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
               urh->out_buffer_used = 0;
             }
         }
-      else
+      else if (GNUTLS_E_INTERRUPTED != res)
         {
           /* persistent / unrecoverable error, treat as
              if connection was shut down.
