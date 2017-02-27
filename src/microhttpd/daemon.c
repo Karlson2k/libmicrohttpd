@@ -428,9 +428,12 @@ recv_tls_adapter (struct MHD_Connection *connection,
 {
   ssize_t res;
 
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX;
+
   res = gnutls_record_recv (connection->tls_session,
                             other,
-                            (i > SSIZE_MAX) ? SSIZE_MAX : i);
+                            i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -450,6 +453,12 @@ recv_tls_adapter (struct MHD_Connection *connection,
       connection->tls_read_ready = false;
       return res;
     }
+
+#ifdef EPOLL_SUPPORT
+  /* If data not available to fill whole buffer - socket is not read ready anymore. */
+  if (i > (size_t)res)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif /* EPOLL_SUPPORT */
 
   /* Check whether TLS buffers still have some unread data. */
   connection->tls_read_ready = ( ((size_t)res == i) &&
@@ -471,11 +480,14 @@ send_tls_adapter (struct MHD_Connection *connection,
                   const void *other,
                   size_t i)
 {
-  int res;
+  ssize_t res;
+
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX;
 
   res = gnutls_record_send (connection->tls_session,
                             other,
-                            (i > SSIZE_MAX) ? SSIZE_MAX : i);
+                            i);
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
@@ -495,6 +507,11 @@ send_tls_adapter (struct MHD_Connection *connection,
       MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
       return -1;
     }
+#ifdef EPOLL_SUPPORT
+  /* If NOT all available data was sent - socket is not write ready anymore. */
+  if (i > (size_t)res)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
   return res;
 }
 
@@ -1075,10 +1092,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else if (res > 0)
         {
           urh->in_buffer_used += res;
-          if (0 < gnutls_record_check_pending (connection->tls_session))
-            {
-              connection->tls_read_ready = true;
-            }
+          if (buf_size > (size_t)res)
+            urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          else if (0 < gnutls_record_check_pending (connection->tls_session))
+            connection->tls_read_ready = true;
         }
       else if ( (0 >= res ) &&
                 (GNUTLS_E_INTERRUPTED != res) )
@@ -1138,6 +1155,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                        &urh->in_buffer[res],
                        urh->in_buffer_used - res);
               urh->in_buffer_used -= res;
+              if (data_size > (size_t)res)
+                urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
             }
           else
             {
@@ -1193,6 +1212,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else
         {
           urh->out_buffer_used += res;
+          if (buf_size > (size_t)res)
+            urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
       if (0 == res)
         {
@@ -1228,6 +1249,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                        &urh->out_buffer[res],
                        urh->out_buffer_used - res);
               urh->out_buffer_used -= res;
+              if (data_size > (size_t)res)
+                urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
             }
           else
             {
@@ -1860,12 +1883,14 @@ recv_param_adapter (struct MHD_Connection *connection,
                    other,
                    i);
 #ifdef EPOLL_SUPPORT
-  if ( (0 > ret) &&
-       (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())) )
+  if (0 > ret)
     {
       /* Got EAGAIN --- no longer read-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+        connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
     }
+  else if (i > ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
   return ret;
 }
@@ -1918,24 +1943,34 @@ send_param_adapter (struct MHD_Connection *connection,
       offsetu64 = connection->response_write_position + connection->response->fd_off;
       left = connection->response->total_size - connection->response_write_position;
       ret = 0;
-      MHD_socket_set_error_to_ENOMEM ();
 #ifndef HAVE_SENDFILE64
-      offset = (off_t) offsetu64;
-      if ( (offsetu64 <= (uint64_t) OFF_T_MAX) &&
-           (0 < (ret = sendfile (connection->socket_fd,
-                                 file_fd,
-                                 &offset,
-                                 left))) )
+      if ((uint64_t)OFF_T_MAX < offsetu64)
+        MHD_socket_set_error_to_ENOMEM ();
+      else
+        {
+          offset = (off_t) offsetu64;
+          ret = sendfile (connection->socket_fd,
+                          file_fd,
+                          &offset,
+                          left);
+        }
 #else  /* HAVE_SENDFILE64 */
-      offset = (off64_t) offsetu64;
-      if ( (offsetu64 <= (uint64_t) OFF64_T_MAX) &&
-	   (0 < (ret = sendfile64 (connection->socket_fd,
-	                           file_fd,
-                                   &offset,
-                                   left))) )
+      if ((uint64_t)OFF64_T_MAX < offsetu64)
+        MHD_socket_set_error_to_ENOMEM ();
+      else
+        {
+          offset = (off64_t) offsetu64;
+          ret = sendfile64 (connection->socket_fd,
+                            file_fd,
+                            &offset,
+                            left);
+        }
 #endif /* HAVE_SENDFILE64 */
+      if (0 < ret)
         {
           /* write successful */
+          if (left > ret)
+            connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
           return ret;
         }
       err = MHD_socket_get_error_();
@@ -1965,12 +2000,14 @@ send_param_adapter (struct MHD_Connection *connection,
                    i);
   err = MHD_socket_get_error_();
 #ifdef EPOLL_SUPPORT
-  if ( (0 > ret) &&
-       (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
+  if (0 > ret)
     {
       /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
     }
+  else if (i > ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
   /* Handle broken kernel / libc, returning -1 but not setting errno;
      kill connection as that should be safe; reported on mailinglist here:
