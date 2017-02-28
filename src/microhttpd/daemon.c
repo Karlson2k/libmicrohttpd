@@ -3103,7 +3103,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
       prev = daemon->connections_tail;
       while (NULL != (pos = prev))
         {
-	  prev = pos->next;
+	  prev = pos->prev;
           ds = pos->socket_fd;
           if (MHD_INVALID_SOCKET == ds)
 	    continue;
