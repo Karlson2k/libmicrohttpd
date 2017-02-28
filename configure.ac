@@ -701,8 +701,16 @@ AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h sys/ioctl.h
   inttypes.h stddef.h unistd.h \
   sockLib.h inetLib.h net/if.h], [], [], [AC_INCLUDES_DEFAULT])
 
-gl_FUNC_TSEARCH
-AM_CONDITIONAL([HAVE_TSEARCH], [test "x$HAVE_TSEARCH" = "x1"])
+AC_CHECK_HEADER([[search.h]],
+  [
+   gl_FUNC_TSEARCH
+   AS_IF([[test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]],
+     [AC_DEFINE([[HAVE_SEARCH_H]], [[1]],
+       [Define to 1 if you have the <search.h> header file and your system have properly functioning tsearch(), tfind() and tdelete() functions])])
+  ],
+  [], [AC_INCLUDES_DEFAULT])
+
+AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
 
 # Check for generic functions
 AC_CHECK_FUNCS([rand random])
