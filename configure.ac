@@ -701,7 +701,7 @@ AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h sys/ioctl.h
   inttypes.h stddef.h unistd.h \
   sockLib.h inetLib.h net/if.h], [], [], [AC_INCLUDES_DEFAULT])
 
-FUNC_TSEARCH
+gl_FUNC_TSEARCH
 AM_CONDITIONAL([HAVE_TSEARCH], [test "x$HAVE_TSEARCH" = "x1"])
 
 # Check for generic functions
