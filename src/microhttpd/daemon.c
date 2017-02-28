@@ -2995,8 +2995,8 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	  have_timeout = MHD_YES;
 	}
     }
-  /* normal timeouts are sorted, so we only need to look at the 'head' */
-  pos = daemon->normal_timeout_head;
+  /* normal timeouts are sorted, so we only need to look at the 'tail' (oldest) */
+  pos = daemon->normal_timeout_tail;
   if ( (NULL != pos) &&
        (0 != pos->connection_timeout) )
     {
