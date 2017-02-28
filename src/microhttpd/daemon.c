@@ -2955,7 +2955,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   time_t earliest_deadline;
   time_t now;
   struct MHD_Connection *pos;
-  int have_timeout;
+  bool have_timeout;
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -2983,7 +2983,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
     }
 #endif /* EPOLL_SUPPORT */
 
-  have_timeout = MHD_NO;
+  have_timeout = false;;
   earliest_deadline = 0; /* avoid compiler warnings */
   for (pos = daemon->manual_timeout_head; NULL != pos; pos = pos->nextX)
     {
@@ -2992,7 +2992,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	  if ( (! have_timeout) ||
 	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
-	  have_timeout = MHD_YES;
+	  have_timeout = true;
 	}
     }
   /* normal timeouts are sorted, so we only need to look at the 'tail' (oldest) */
@@ -3003,10 +3003,10 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       if ( (! have_timeout) ||
 	   (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	earliest_deadline = pos->last_activity + pos->connection_timeout;
-      have_timeout = MHD_YES;
+      have_timeout = true;
     }
 
-  if (MHD_NO == have_timeout)
+  if (have_timeout)
     return MHD_NO;
   now = MHD_monotonic_sec_counter();
   if (earliest_deadline < now)
