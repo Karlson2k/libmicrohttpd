@@ -3739,6 +3739,10 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
+/**
+ * Pointer-marker to distinguish ITC slot in epoll sets.
+ */
+static const char * const epoll_itc_marker = "itc_marker";
 
 /**
  * Do epoll()-based processing (this function is allowed to
@@ -3753,7 +3757,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	   int may_block)
 {
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  static const char *upgrade_marker = "upgrade_ptr";
+  static const char * const upgrade_marker = "upgrade_ptr";
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   struct MHD_Connection *pos;
   struct MHD_Connection *prev;
@@ -3900,13 +3904,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
               continue;
             }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-          /* UGH: we're storing pointers and fds in the same union
-             here; incredibly ugly and somewhat risky, even though a
-             pointer with the same numeric value as the itc.fd[0] can
-             be expected to be rare... FIXME (a construction similar
-             to what we did with the `upgrade_marker` should do) */
-          if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
-               (MHD_itc_r_fd_ (daemon->itc) == events[i].data.fd) )
+          if (epoll_itc_marker == events[i].data.ptr)
             {
               /* It's OK to clear ITC here as all external
                  conditions will be processed later. */
@@ -4819,8 +4817,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       event.events = EPOLLIN;
-      event.data.ptr = NULL;
-      event.data.fd = MHD_itc_r_fd_ (daemon->itc);
+      event.data.ptr = epoll_itc_marker;
       if (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_ADD,
                           MHD_itc_r_fd_ (daemon->itc),
