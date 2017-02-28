@@ -25,6 +25,7 @@ noinst_PROGRAMS = \
  minimal_example_comet \
  querystring_example \
  timeout \
+ msgs_i18n \
  fileserver_example \
  fileserver_example_dirs \
  fileserver_example_external_select \
@@ -71,6 +72,11 @@ upgrade_example_LDADD = \
 timeout_SOURCES = \
  timeout.c
 timeout_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+msgs_i18n_SOURCEs = \
+ msgs_i18n.c
+msgs_i18n_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 chunked_example_SOURCES = \
