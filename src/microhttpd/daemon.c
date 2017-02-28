@@ -3007,7 +3007,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       have_timeout = true;
     }
 
-  if (have_timeout)
+  if (! have_timeout)
     return MHD_NO;
   now = MHD_monotonic_sec_counter();
   if (earliest_deadline < now)
