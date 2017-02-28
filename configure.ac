@@ -1209,6 +1209,16 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
       ],
       [
        have_gnutls_pkgcfg='no'
+       SAVE_CPPFLAGS="$CPPFLAGS"
+       SAVE_CFLAGS="$CFLAGS"
+       SAVE_LDFLAGS="$LDFLAGS"
+       SAVE_LIBS="$LIBS"
+       # Try to use libgcrypt search path
+       # as libgcrypt flags will be used
+       # anyway for HTTPs builds
+       CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+       CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+       LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"
        AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
@@ -1216,6 +1226,10 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
+       CPPFLAGS="$SAVE_CPPFLAGS"
+       CFLAGS="$SAVE_CFLAGS"
+       LDFLAGS="$SAVE_LDFLAGS"
+       LIBS="$SAVE_LIBS"
       ])
   ])
 
