@@ -1088,6 +1088,22 @@ AC_CHECK_PROG([have_socat],[socat], [yes], [no])
 AM_CONDITIONAL([HAVE_ZZUF], [test "x$have_zzuf" = "xyes"])
 AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
 
+GNUTLS_CPPFLAGS=""
+GNUTLS_LDFLAGS=""
+have_gnutls=no
+have_gnutls_sni=no
+have_gcrypt=no
+
+# optional: HTTPS support.  Enabled by default
+AC_ARG_ENABLE([https],
+   [AS_HELP_STRING([--enable-https],
+               [enable HTTPS support (yes, no, auto)[auto]])],
+   [enable_https=${enableval}])
+if test "x$enable_https" != "xno"
+then
+#
+# Next block is large unindented block
+#
 
 # libgcrypt linkage: required for HTTPS support
 AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
@@ -1104,10 +1120,6 @@ then
 fi
 
 # gnutls
-GNUTLS_CPPFLAGS=""
-GNUTLS_LDFLAGS=""
-have_gnutls=no
-have_gnutls_sni=no
 have_gnutls_pkgcfg=no
 AC_MSG_CHECKING([[how to find GnuTLS library]])
 AC_ARG_WITH([[gnutls]],
@@ -1209,22 +1221,14 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
 
 AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG_ERROR([[can't find usable libgnutls]])])
 
-AM_CONDITIONAL(HAVE_GNUTLS, test "x$have_gnutls" = "xyes")
-AM_CONDITIONAL([HAVE_GNUTLS_SNI], [test "x$have_gnutls_sni" = "xyes"])
-
 AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_CFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
 
-# optional: HTTPS support.  Enabled by default
-AC_MSG_CHECKING(whether to support HTTPS)
-AC_ARG_ENABLE([https],
-   [AS_HELP_STRING([--enable-https],
-               [enable HTTPS support (yes, no, auto)[auto]])],
-   [enable_https=${enableval}])
-if test "x$enable_https" != "xno"
-then
+#
+# End of large unindented block
+#
   AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
           AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
           enable_https=yes
@@ -1253,8 +1257,11 @@ then
 else
   MSG_HTTPS="no (disabled)"
 fi
+AC_MSG_CHECKING(whether to support HTTPS)
 AC_MSG_RESULT([$MSG_HTTPS])
 
+AM_CONDITIONAL([HAVE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
+AM_CONDITIONAL([HAVE_GNUTLS_SNI], [[test "x$have_gnutls_sni" = "xyes"]])
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
 # optional: HTTP Basic Auth support. Enabled by default
