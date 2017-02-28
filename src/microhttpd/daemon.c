@@ -819,6 +819,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                               fd_setsize)) )
     result = MHD_NO;
 
+  /* Add all sockets to 'except_fd_set' as well to watch for
+   * out-of-band data. However, ignore errors if INFO_READ
+   * or INFO_WRITE sockets will not fit 'except_fd_set'. */
   /* Start from oldest connections. Make sense for W32 FDSETs. */
   for (pos = daemon->connections_tail; NULL != pos; pos = posn)
     {
@@ -832,6 +835,12 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                                     max_fd,
                                     fd_setsize))
 	    result = MHD_NO;
+#ifdef MHD_POSIX_SOCKETS
+          MHD_add_to_fd_set_ (pos->socket_fd,
+                              except_fd_set,
+                              max_fd,
+                              fd_setsize);
+#endif /* MHD_POSIX_SOCKETS */
 	  break;
 	case MHD_EVENT_LOOP_INFO_WRITE:
 	  if (! MHD_add_to_fd_set_ (pos->socket_fd,
@@ -839,6 +848,12 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                                     max_fd,
                                     fd_setsize))
 	    result = MHD_NO;
+#ifdef MHD_POSIX_SOCKETS
+          MHD_add_to_fd_set_ (pos->socket_fd,
+                              except_fd_set,
+                              max_fd,
+                              fd_setsize);
+#endif /* MHD_POSIX_SOCKETS */
 	  break;
 	case MHD_EVENT_LOOP_INFO_BLOCK:
 	  if ( (NULL == except_fd_set) ||
@@ -853,6 +868,19 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 	  break;
 	}
     }
+#ifdef MHD_WINSOCK_SOCKETS
+  /* W32 use limited array for fd_set so add INFO_READ/INFO_WRITE sockets
+   * only after INFO_BLOCK sockets to ensure that INFO_BLOCK sockets will
+   * not be pushed out. */
+  for (pos = daemon->connections_tail; NULL != pos; pos = posn)
+    {
+      posn = pos->prev;
+      MHD_add_to_fd_set_ (pos->socket_fd,
+                          except_fd_set,
+                          max_fd,
+                          fd_setsize);
+    }
+#endif /* MHD_WINSOCK_SOCKETS */
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   {
     struct MHD_UpgradeResponseHandle *urh;
