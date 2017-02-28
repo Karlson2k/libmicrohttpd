@@ -2992,11 +2992,6 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 	  if ( (! have_timeout) ||
 	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
-#ifdef HTTPS_SUPPORT
-	  if (  (0 != (daemon->options & MHD_USE_TLS)) &&
-		(0 != gnutls_record_check_pending (pos->tls_session)) )
-	    earliest_deadline = 0;
-#endif /* HTTPS_SUPPORT */
 	  have_timeout = MHD_YES;
 	}
     }
@@ -3008,11 +3003,6 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       if ( (! have_timeout) ||
 	   (earliest_deadline > pos->last_activity + pos->connection_timeout) )
 	earliest_deadline = pos->last_activity + pos->connection_timeout;
-#ifdef HTTPS_SUPPORT
-      if (  (0 != (daemon->options & MHD_USE_TLS)) &&
-	    (0 != gnutls_record_check_pending (pos->tls_session)) )
-	earliest_deadline = 0;
-#endif /* HTTPS_SUPPORT */
       have_timeout = MHD_YES;
     }
 
