@@ -3915,16 +3915,21 @@ MHD_epoll (struct MHD_Daemon *daemon,
             }
 	  if (daemon == events[i].data.ptr)
 	    {
-	      unsigned int series_length = 0;
-              /* Run 'accept' until it fails or daemon at limit of connections.
-               * Do not accept more then 10 connections at once. The rest will
-               * be accepted on next turn (level trigger is used for listen
-               * socket). */
-	      while ( (MHD_YES == MHD_accept_connection (daemon)) &&
-                      (series_length < 10) &&
-                      (daemon->connections < daemon->connection_limit) &&
-                      (! daemon->at_limit) )
-                series_length++;
+              /* Check for error conditions on listen socket. */
+              /* FIXME: Initiate MHD_quiesce_daemon() to prevent busy waiting? */
+              if (0 == (events[i].events & (EPOLLERR | EPOLLHUP)))
+                {
+                  unsigned int series_length = 0;
+                  /* Run 'accept' until it fails or daemon at limit of connections.
+                   * Do not accept more then 10 connections at once. The rest will
+                   * be accepted on next turn (level trigger is used for listen
+                   * socket). */
+                  while ( (MHD_YES == MHD_accept_connection (daemon)) &&
+                          (series_length < 10) &&
+                          (daemon->connections < daemon->connection_limit) &&
+                          (! daemon->at_limit) )
+                    series_length++;
+	        }
               continue;
 	    }
           /* this is an event relating to a 'normal' connection,
