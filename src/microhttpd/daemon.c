@@ -819,9 +819,10 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                               fd_setsize)) )
     result = MHD_NO;
 
-  for (pos = daemon->connections_head; NULL != pos; pos = posn)
+  /* Start from oldest connections. Make sense for W32 FDSETs. */
+  for (pos = daemon->connections_tail; NULL != pos; pos = posn)
     {
-      posn = pos->next;
+      posn = pos->prev;
 
       switch (pos->event_loop_info)
 	{
@@ -856,7 +857,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   {
     struct MHD_UpgradeResponseHandle *urh;
 
-    for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+    for (urh = daemon->urh_tail; NULL != urh; urh = urh->prev)
       {
         if (MHD_NO ==
             urh_to_fdset (urh,
@@ -2547,26 +2548,26 @@ static int
 resume_suspended_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  struct MHD_Connection *next = NULL;
+  struct MHD_Connection *prev = NULL;
   int ret;
 
   ret = MHD_NO;
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
   if (daemon->resuming)
-    next = daemon->suspended_connections_head;
+    prev = daemon->suspended_connections_tail;
 
   EXTRA_CHECK(NULL != next);
   daemon->resuming = false;
 
-  while (NULL != (pos = next))
+  while (NULL != (pos = prev))
     {
 #ifdef UPGRADE_SUPPORT
       struct MHD_UpgradeResponseHandle * const urh = pos->urh;
 #else  /* ! UPGRADE_SUPPORT */
       static const void * const urh = NULL;
 #endif /* ! UPGRADE_SUPPORT */
-      next = pos->next;
+      prev = pos->prev;
       if ( (! pos->resuming)
 #ifdef UPGRADE_SUPPORT
           || ( (NULL != urh) &&
@@ -2855,7 +2856,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  while (NULL != (pos = daemon->cleanup_head))
+  while (NULL != (pos = daemon->cleanup_tail))
     {
       DLL_remove (daemon->cleanup_head,
 		  daemon->cleanup_tail,
@@ -2985,7 +2986,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
   have_timeout = false;;
   earliest_deadline = 0; /* avoid compiler warnings */
-  for (pos = daemon->manual_timeout_head; NULL != pos; pos = pos->nextX)
+  for (pos = daemon->manual_timeout_tail; NULL != pos; pos = pos->prevX)
     {
       if (0 != pos->connection_timeout)
 	{
@@ -3050,7 +3051,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 {
   MHD_socket ds;
   struct MHD_Connection *pos;
-  struct MHD_Connection *next;
+  struct MHD_Connection *prev;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
@@ -3099,10 +3100,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* do not have a thread per connection, process all connections now */
-      next = daemon->connections_head;
-      while (NULL != (pos = next))
+      prev = daemon->connections_tail;
+      while (NULL != (pos = prev))
         {
-	  next = pos->next;
+	  prev = pos->next;
           ds = pos->socket_fd;
           if (MHD_INVALID_SOCKET == ds)
 	    continue;
@@ -3118,9 +3119,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /* handle upgraded HTTPS connections */
-  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+  for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
     {
-      urhn = urh->next;
+      urhn = urh->prev;
       /* update urh state based on select() output */
       urh_from_fdset (urh,
                       read_fd_set,
@@ -3325,7 +3326,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 {
   unsigned int num_connections;
   struct MHD_Connection *pos;
-  struct MHD_Connection *next;
+  struct MHD_Connection *prev;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
@@ -3396,7 +3397,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
 
     i = 0;
-    for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
+    for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
       {
 	p[poll_server+i].fd = pos->socket_fd;
 	switch (pos->event_loop_info)
@@ -3417,7 +3418,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 	i++;
       }
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-    for (urh = daemon->urh_head; NULL != urh; urh = urh->next)
+    for (urh = daemon->urh_tail; NULL != urh; urh = urh->prev)
       {
         p[poll_server+i].fd = urh->connection->socket_fd;
         if (urh->in_buffer_used < urh->in_buffer_size)
@@ -3474,10 +3475,10 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         return MHD_NO;
       }
     i = 0;
-    next = daemon->connections_head;
-    while (NULL != (pos = next))
+    prev = daemon->connections_tail;
+    while (NULL != (pos = prev))
       {
-	next = pos->next;
+	prev = pos->prev;
         /* first, sanity checks */
         if (i >= num_connections)
           break; /* connection list changed somehow, retry later ... */
@@ -3490,14 +3491,14 @@ MHD_poll_all (struct MHD_Daemon *daemon,
         i++;
       }
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-    for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+    for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
       {
         if (i >= num_connections)
           break; /* connection list changed somehow, retry later ... */
 
         /* Get next connection here as connection can be removed
          * from 'daemon->urh_head' list. */
-        urhn = urh->next;
+        urhn = urh->prev;
         /* Check for fd mismatch. FIXME: required for safety? */
         if (p[poll_server+i].fd == urh->connection->socket_fd)
           {
@@ -3755,7 +3756,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
   static const char *upgrade_marker = "upgrade_ptr";
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   struct MHD_Connection *pos;
-  struct MHD_Connection *next;
   struct MHD_Connection *prev;
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event event;
@@ -4018,20 +4018,20 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
      Connections with custom timeouts must all be looked at, as we
      do not bother to sort that (presumably very short) list. */
-  next = daemon->manual_timeout_head;
-  while (NULL != (pos = next))
+  prev = daemon->manual_timeout_tail;
+  while (NULL != (pos = prev))
     {
-      next = pos->nextX;
+      prev = pos->prevX;
       pos->idle_handler (pos);
     }
   /* Connections with the default timeout are sorted by prepending
      them to the head of the list whenever we touch the connection;
      thus it suffices to iterate from the tail until the first
      connection is NOT timed out */
-  next = daemon->normal_timeout_tail;
-  while (NULL != (pos = next))
+  prev = daemon->normal_timeout_tail;
+  while (NULL != (pos = prev))
     {
-      next = pos->prevX;
+      prev = pos->prevX;
       pos->idle_handler (pos);
       if (MHD_CONNECTION_CLOSED != pos->state)
 	break; /* sorted by timeout, no need to visit the rest! */
@@ -5657,9 +5657,9 @@ close_all_connections (struct MHD_Daemon *daemon)
 
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
-  for (urh = daemon->urh_head; NULL != urh; urh = urhn)
+  for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
     {
-      urhn = urh->next;
+      urhn = urh->prev;
       /* call generic forwarding function for passing data
          with chance to detect that application is done. */
       process_urh (urh);
@@ -5687,7 +5687,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     {
       struct MHD_Connection * susp;
 
-      susp = daemon->suspended_connections_head;
+      susp = daemon->suspended_connections_tail;
       while (NULL != susp)
         {
           if (NULL == susp->urh) /* "Upgraded" connection? */
@@ -5716,14 +5716,14 @@ close_all_connections (struct MHD_Daemon *daemon)
               susp->resuming = true;
               daemon->resuming = true;
             }
-          susp = susp->next;
+          susp = susp->prev;
         }
     }
   else /* This 'else' is combined with next 'if' */
 #endif /* UPGRADE_SUPPORT */
   if (NULL != daemon->suspended_connections_head)
     MHD_PANIC (_("MHD_stop_daemon() called while we have suspended connections.\n"));
-  for (pos = daemon->connections_head; NULL != pos; pos = pos->next)
+  for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
     {
       shutdown (pos->socket_fd,
                 SHUT_RDWR);
@@ -5738,7 +5738,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   /* now, collect per-connection threads */
   if (used_thr_p_c)
     {
-      pos = daemon->connections_head;
+      pos = daemon->connections_tail;
       while (NULL != pos)
       {
         if (! pos->thread_joined)
@@ -5750,10 +5750,10 @@ close_all_connections (struct MHD_Daemon *daemon)
             pos->thread_joined = true;
             /* The thread may have concurrently modified the DLL,
                need to restart from the beginning */
-            pos = daemon->connections_head;
+            pos = daemon->connections_tail;
             continue;
           }
-        pos = pos->next;
+        pos = pos->prev;
       }
     }
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
@@ -5771,7 +5771,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #endif /* UPGRADE_SUPPORT */
 
   /* now that we're alone, move everyone to cleanup */
-  while (NULL != (pos = daemon->connections_head))
+  while (NULL != (pos = daemon->connections_tail))
   {
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! pos->thread_joined) )
