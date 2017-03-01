@@ -25,6 +25,13 @@
 /*
  * suposing you are in Brazil:
  *
+ * # generate the PO file
+ * $ msginit --input=po/libmicrohttpd.pot --locale=pt_BR --output=libmicrohttpd.po
+ * # open the generated .po in any program like Poedit and translate the MHD messages; once done, let's go to the test:
+ * mkdir -p src/examples/locale/pt_BR/LC_MESSAGES
+ * mv libmicrohttpd.mo libmicrohttpd.po src/examples/locale/pt_BR/LC_MESSAGES
+ * cd src/examples/
+ * gcc -o msgs_i18n msgs_i18n.c -lmicrohttpd
  * export LANGUAGE=pt_BR
  * ./msgs_i18n
  * # it may print: Opção inválida 4196490! (Você terminou a lista com MHD_OPTION_END?)
