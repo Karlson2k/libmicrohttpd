@@ -852,7 +852,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 
         EXTRA_CHECK (-1 != daemon->epoll_upgrade_fd);
         /* First, add network socket */
-        event.events = EPOLLIN | EPOLLOUT;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
         event.data.ptr = &urh->app;
         if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                             EPOLL_CTL_ADD,
@@ -871,14 +871,14 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 	}
 
         /* Second, add our end of the UNIX socketpair() */
-        event.events = EPOLLIN | EPOLLOUT;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
         event.data.ptr = &urh->mhd;
         if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                             EPOLL_CTL_ADD,
                             urh->mhd.socket,
                             &event))
 	{
-          event.events = EPOLLIN | EPOLLOUT;
+          event.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
           event.data.ptr = &urh->app;
           if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                               EPOLL_CTL_DEL,

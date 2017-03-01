@@ -681,81 +681,178 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * @param urh upgrade handle to wait for
  * @param[out] rs read set to initialize
  * @param[out] ws write set to initialize
+ * @param[out] es except set to initialize
  * @param[out] max_fd maximum FD to update
  * @param fd_setsize value of FD_SETSIZE
- * @return #MHD_YES on success, #MHD_NO on error
+ * @return true on success, false on error
  */
-static int
+static bool
 urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
               fd_set *rs,
               fd_set *ws,
+              fd_set *es,
               MHD_socket *max_fd,
               unsigned int fd_setsize)
 {
-  if ( (urh->out_buffer_used < urh->out_buffer_size) &&
-       (MHD_INVALID_SOCKET != urh->mhd.socket) &&
-       (! MHD_add_to_fd_set_ (urh->mhd.socket,
-                              rs,
-                              max_fd,
-                              fd_setsize)) )
-    return MHD_NO;
-  if ( (0 != urh->in_buffer_used) &&
-       (! urh->was_closed) &&
-       (MHD_INVALID_SOCKET != urh->mhd.socket) &&
-       (! MHD_add_to_fd_set_ (urh->mhd.socket,
-                              ws,
-                              max_fd,
-                              fd_setsize)) )
-    return MHD_NO;
-  if ( (urh->in_buffer_used < urh->in_buffer_size) &&
-       (! urh->was_closed) &&
-       (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
-       (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
-                              rs,
-                              max_fd,
-                              fd_setsize)) )
-    return MHD_NO;
-  if ( (0 != urh->out_buffer_used) &&
-       (MHD_INVALID_SOCKET != urh->connection->socket_fd) &&
-       (! MHD_add_to_fd_set_ (urh->connection->socket_fd,
-                              ws,
-                              max_fd,
-                              fd_setsize)) )
-    return MHD_NO;
-  return MHD_YES;
+  const MHD_socket conn_sckt = urh->connection->socket_fd;
+  const MHD_socket mhd_sckt = urh->mhd.socket;
+  bool res = true;
+
+  if (MHD_INVALID_SOCKET != conn_sckt)
+    {
+      if ( (urh->in_buffer_used < urh->in_buffer_size) &&
+           (! MHD_add_to_fd_set_ (conn_sckt,
+                                  rs,
+                                  max_fd,
+                                  fd_setsize)) )
+        res = false;
+      if ( (0 != urh->out_buffer_used) &&
+           (! MHD_add_to_fd_set_ (conn_sckt,
+                                  ws,
+                                  max_fd,
+                                  fd_setsize)) )
+        res = false;
+      if (0 != urh->in_buffer_size)
+        MHD_add_to_fd_set_ (conn_sckt,
+                            es,
+                            max_fd,
+                            fd_setsize);
+    }
+  if (MHD_INVALID_SOCKET != mhd_sckt)
+    {
+      if ( (urh->out_buffer_used < urh->out_buffer_size) &&
+           (! MHD_add_to_fd_set_ (mhd_sckt,
+                                  rs,
+                                  max_fd,
+                                  fd_setsize)) )
+        res = false;
+      if ( (0 != urh->in_buffer_used) &&
+           (! MHD_add_to_fd_set_ (mhd_sckt,
+                                  ws,
+                                  max_fd,
+                                  fd_setsize)) )
+        res = false;
+      if (0 != urh->out_buffer_size)
+        MHD_add_to_fd_set_ (mhd_sckt,
+                            es,
+                            max_fd,
+                            fd_setsize);
+    }
+
+  return res;
 }
 
 
 /**
- * Update the @a urh based on the ready FDs in the @a rs and @a ws.
+ * Update the @a urh based on the ready FDs in
+ * the @a rs, @a ws, and @a es.
  *
  * @param urh upgrade handle to update
  * @param rs read result from select()
  * @param ws write result from select()
+ * @param ws except result from select()
  */
 static void
 urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
                 const fd_set *rs,
-                const fd_set *ws)
+                const fd_set *ws,
+                const fd_set *es,)
 {
-  const MHD_socket mhd_sckt = urh->mhd.socket;
   const MHD_socket conn_sckt = urh->connection->socket_fd;
+  const MHD_socket mhd_sckt = urh->mhd.socket;
 
-  if ((MHD_INVALID_SOCKET != conn_sckt) &&
-      FD_ISSET (conn_sckt, rs))
+  urh->app.celi = MHD_EPOLL_STATE_UNREADY;
+  urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
+
+  if (MHD_INVALID_SOCKET != conn_sckt)
+    {
+      if (FD_ISSET (conn_sckt, rs))
+        urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (conn_sckt, ws))
+        urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
+      if (FD_ISSET (conn_sckt, es))
+        urh->app.celi |= MHD_EPOLL_STATE_ERROR;
+    }
+  if ((MHD_INVALID_SOCKET != mhd_sckt))
+    {
+      if (FD_ISSET (mhd_sckt, rs))
+        urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (mhd_sckt, ws))
+        urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+      if (FD_ISSET (mhd_sckt, es))
+        urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
+    }
+}
+
+
+/**
+ * Set required 'event' members in 'pollfd' elements,
+ * assuming that @a p[0].fd is MHD side of socketpair
+ * and @a p[1].fd is TLS connected socket.
+ *
+ * @param urh upgrade handle to watch for
+ * @param p pollfd array to update
+ */
+static void
+urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
+                  struct pollfd p[2])
+{
+  p[0].events = 0;
+  p[1].events = 0;
+  if (urh->in_buffer_used < urh->in_buffer_size)
+    p[0].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
+  if (0 != urh->out_buffer_used)
+    p[0].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
+  if (0 != urh->in_buffer_size)
+    p[0].events |= MHD_POLL_EVENTS_ERR_DISC;
+  if (urh->out_buffer_used < urh->out_buffer_size)
+    p[1].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
+  if (0 != urh->in_buffer_used)
+    p[1].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
+  if (0 != urh->out_buffer_size)
+    p[1].events |= MHD_POLL_EVENTS_ERR_DISC;
+}
+
+
+/**
+ * Set @a p to watch for @a urh.
+ *
+ * @param urh upgrade handle to watch for
+ * @param p pollfd array to set
+ */
+static void
+urh_to_pollfd(struct MHD_UpgradeResponseHandle *urh,
+              struct pollfd p[2])
+{
+  p[0].fd = urh->connection->socket_fd;
+  p[1].fd = urh->mhd.socket;
+  urh_update_pollfd(urh, p);
+}
+
+
+/**
+ * Update ready state in @a urh based on pollfd.
+ * @param urh upgrade handle to update
+ * @param p 'poll()' processed pollfd.
+ */
+static void
+urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
+                struct pollfd p[2])
+{
+  if (0 != (p[0].revents & POLLIN))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-  if ((MHD_INVALID_SOCKET != conn_sckt) &&
-      FD_ISSET (conn_sckt, ws))
+  if (0 != (p[0].revents & POLLOUT))
     urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-  if ((MHD_INVALID_SOCKET != mhd_sckt) &&
-      FD_ISSET (mhd_sckt, rs))
+  if (0 != (p[0].revents & MHD_POLL_REVENTS_ERR_DISC))
+    urh->app.celi |= MHD_EPOLL_STATE_ERROR;
+  if (0 != (p[1].revents & POLLIN))
     urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-  if ((MHD_INVALID_SOCKET != mhd_sckt) &&
-      FD_ISSET (mhd_sckt, ws))
+  if (0 != (p[1].revents & POLLOUT))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+  if (0 != (p[1].revents & MHD_POLL_REVENTS_ERR_DISC))
+    urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-
 
 /**
  * Obtain the `select()` sets for this daemon.
@@ -891,6 +988,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
             urh_to_fdset (urh,
                           read_fd_set,
                           write_fd_set,
+                          except_fd_set,
                           max_fd,
                           fd_setsize))
           result = MHD_NO;
@@ -1362,19 +1460,22 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
           /* use select */
           fd_set rs;
           fd_set ws;
+          fd_set es;
           MHD_socket max_fd;
           int num_ready;
-          int result;
+          bool result;
 
           FD_ZERO (&rs);
           FD_ZERO (&ws);
+          FD_ZERO (&es);
           max_fd = MHD_INVALID_SOCKET;
           result = urh_to_fdset (urh,
                                  &rs,
                                  &ws,
+                                 &es,
                                  &max_fd,
                                  FD_SETSIZE);
-          if (MHD_NO == result)
+          if (! result)
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (con->daemon,
@@ -1399,7 +1500,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
               num_ready = MHD_SYS_select_ (max_fd + 1,
                                            &rs,
                                            &ws,
-                                           NULL,
+                                           &es,
                                            tvp);
             }
           else
@@ -1420,7 +1521,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             }
           urh_from_fdset (urh,
                           &rs,
-                          &ws);
+                          &ws
+                          &es);
           process_urh (urh);
           if ( (0 == urh->in_buffer_size) &&
                (0 == urh->out_buffer_size) &&
@@ -1433,38 +1535,29 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   else if (0 != (daemon->options & MHD_USE_TLS))
     {
       /* use poll() */
+      struct pollfd p[2];
+      memset (p,
+              0,
+              sizeof (p));
+      p[0].fd = urh->connection->socket_fd;
+      p[1].fd = urh->mhd.socket;
 
       while ( (MHD_CONNECTION_UPGRADE == con->state) ||
               (0 != urh->out_buffer_used) )
         {
-          struct pollfd p[2];
-          unsigned int timeout;
+          int timeout;
 
-          memset (p,
-                  0,
-                  sizeof (struct pollfd) * 2);
-          p[0].fd = urh->connection->socket_fd;
-          p[1].fd = urh->mhd.socket;
-          if (urh->in_buffer_used < urh->in_buffer_size)
-            p[0].events |= POLLIN;
-          if (0 != urh->out_buffer_used)
-            p[0].events |= POLLOUT;
-          if (urh->out_buffer_used < urh->out_buffer_size)
-            p[1].events |= POLLIN;
-          if (0 != urh->in_buffer_used)
-            p[1].events |= POLLOUT;
+          urh_update_pollfd(urh, p);
 
           if ( (con->tls_read_ready) &&
                (urh->in_buffer_used < urh->in_buffer_size))
             timeout = 0; /* No need to wait if incoming data is already pending in TLS buffers. */
           else
-            timeout = UINT_MAX;
+            timeout = -1;
 
-          /* FIXME: does this check really needed? */
-          if ( (0 != (p[0].events | p[1].events)) &&
-               (MHD_sys_poll_ (p,
-                               2,
-                               timeout) < 0) )
+          if (MHD_sys_poll_ (p,
+                             2,
+                             timeout) < 0)
             {
               const int err = MHD_socket_get_error_ ();
 
@@ -1477,14 +1570,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 #endif
               break;
             }
-          if (0 != (p[0].revents & POLLIN))
-            urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-          if (0 != (p[0].revents & POLLOUT))
-            urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-          if (0 != (p[1].revents & POLLIN))
-            urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-          if (0 != (p[1].revents & POLLOUT))
-            urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+          urh_from_pollfd(urh, p);
           process_urh (urh);
           if ( (0 == urh->in_buffer_size) &&
                (0 == urh->out_buffer_size) &&
@@ -3153,7 +3239,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
       /* update urh state based on select() output */
       urh_from_fdset (urh,
                       read_fd_set,
-                      write_fd_set);
+                      write_fd_set,
+                      except_fd_set);
       /* call generic forwarding function for passing data */
       process_urh (urh);
       /* Finished forwarding? */
@@ -3448,18 +3535,8 @@ MHD_poll_all (struct MHD_Daemon *daemon,
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
     for (urh = daemon->urh_tail; NULL != urh; urh = urh->prev)
       {
-        p[poll_server+i].fd = urh->connection->socket_fd;
-        if (urh->in_buffer_used < urh->in_buffer_size)
-          p[poll_server+i].events |= POLLIN;
-        if (0 != urh->out_buffer_used)
-          p[poll_server+i].events |= POLLOUT;
-        i++;
-        p[poll_server+i].fd = urh->mhd.socket;
-        if (urh->out_buffer_used < urh->out_buffer_size)
-          p[poll_server+i].events |= POLLIN;
-        if (0 != urh->in_buffer_used)
-          p[poll_server+i].events |= POLLOUT;
-        i++;
+        urh_to_pollfd(urh, &(p[poll_server+i]));
+        i += 2;
       }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
     if (0 == poll_server + num_connections)
@@ -3528,23 +3605,11 @@ MHD_poll_all (struct MHD_Daemon *daemon,
          * from 'daemon->urh_head' list. */
         urhn = urh->prev;
         /* Check for fd mismatch. FIXME: required for safety? */
-        if (p[poll_server+i].fd == urh->connection->socket_fd)
-          {
-            if (0 != (p[poll_server+i].revents & POLLIN))
-              urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-            if (0 != (p[poll_server+i].revents & POLLOUT))
-              urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-          }
-        i++;
-        /* Check for fd mismatch. FIXME: required for safety? */
-        if (p[poll_server+i].fd == urh->mhd.socket)
-          {
-            if (0 != (p[poll_server+i].revents & POLLIN))
-              urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-            if (0 != (p[poll_server+i].revents & POLLOUT))
-              urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-          }
-        i++;
+        if ((p[poll_server+i].fd != urh->connection->socket_fd) ||
+            (p[poll_server+i+1].fd != urh->mhd.socket))
+          break;
+        urh_from_pollfd(urh, &(p[poll_server+i]));
+        i += 2;
         process_urh (urh);
         /* Finished forwarding? */
         if ( (0 == urh->in_buffer_size) &&
