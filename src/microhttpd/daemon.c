@@ -1191,10 +1191,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 #endif
 
         }
-      urh->in_buffer_size = 0;
+      /* Discard any data received form remote. */
       urh->in_buffer_used = 0;
+      /* Do not try to push data to application. */
       urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
       /* Reading from remote client is not required anymore. */
+      urh->in_buffer_size = 0;
       urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
       connection->tls_read_ready = false;
     }
@@ -1229,8 +1231,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                 (GNUTLS_E_INTERRUPTED != res) )
         {
           /* Connection was shut down or got unrecoverable error.
-           * signal by shrinking buffer so no more attempts will be
-           * performed to receive data. */
+           * Reading from remote client is not required anymore. */
           urh->in_buffer_size = 0;
           urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
@@ -1248,7 +1249,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_send_ (urh->mhd.socket,
                        urh->in_buffer,
                        data_size);
-      if (-1 == res)
+      if (0 > res)
         {
           int err = MHD_socket_get_error_ ();
 
@@ -1258,9 +1259,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                     (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
             {
               /* persistent / unrecoverable error, treat as
-                 if connection was shut down.
-                 Do not try to receive to 'in_buffer' and
-                 discard any unsent data. */
+                 if connection was shut down. */
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
@@ -1268,9 +1267,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                         (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
                         MHD_socket_strerr_ (err));
 #endif
-              urh->in_buffer_size = 0;
+              /* Discard any data received form remote. */
               urh->in_buffer_used = 0;
+              /* Do not try to push data to application. */
               urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+              /* Reading from remote client is not required anymore. */
+              urh->in_buffer_size = 0;
               urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
               connection->tls_read_ready = false;
             }
@@ -1294,15 +1296,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
 
   /* handle reading from application and writing to HTTPS client */
+
+  /* If application signaled MHD about socket closure then
+   * check for any pending data even if socket is not marked
+   * as 'ready' (signal may arrive after poll()/select()).
+   * Socketpair for forwarding is always in non-blocking mode
+   * so no risk that recv() will block the thread. */
   if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) ||
          (urh->was_closed) ) &&
        (urh->out_buffer_used < urh->out_buffer_size) )
     {
-      /* If application signaled MHD about socket closure then
-       * check for any pending data even if socket is not marked
-       * as 'ready' (signal may arrive after poll()/select()).
-       * Socketpair for forwarding is always in non-blocking mode
-       * so no risk that recv() will block the thread. */
       ssize_t res;
       size_t buf_size;
 
@@ -1313,12 +1316,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_recv_ (urh->mhd.socket,
                        &urh->out_buffer[urh->out_buffer_used],
                        buf_size);
-      if (-1 == res)
+      if (0 > res)
         {
           if (urh->was_closed)
             {
-              /* Connection was shut down or all data received and
-               * application will not forward any more data. */
+              /* All data was received and application will not
+               * forward any more data. */
+              /* Do not try to pull data from application. */
               urh->out_buffer_size = 0;
               urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
             }
@@ -1332,6 +1336,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                 {
                   /* persistent / unrecoverable error, treat as
                      if connection was shut down */
+                  /* Do not try to pull data from application. */
                   urh->out_buffer_size = 0;
                   urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
                 }
@@ -1346,10 +1351,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (0 == res)
         {
           /* Connection was shut down or got unrecoverable error.
-           * signal by shrinking buffer so no more attempts will be
-           * performed to receive data. */
+          /* Do not try to pull data from application. */
           urh->out_buffer_size = 0;
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
@@ -1388,9 +1392,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       else if (GNUTLS_E_INTERRUPTED != res)
         {
           /* persistent / unrecoverable error, treat as
-             if connection was shut down.
-             Do not try to receive to 'out_buffer' and
-             discard any unsent data. */
+             if connection was shut down. */
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
@@ -1398,9 +1400,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                     (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
                     gnutls_strerror(res));
 #endif
-          urh->out_buffer_size = 0;
+          /* Discard any data unsent to remote. */
           urh->out_buffer_used = 0;
+          /* Do not try to sent to remote anymore. */
           urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          /* Do not try to pull more data from application. */
+          urh->out_buffer_size = 0;
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
@@ -1424,9 +1429,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                       " bytes of data received from application: daemon shut down\n"),
                   (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used);
 #endif
-      urh->out_buffer_size = 0;
+      /* Discard any data unsent to remote. */
       urh->out_buffer_used = 0;
+      /* Do not try to sent to remote anymore. */
       urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+      /* Do not try to pull more data from application. */
+      urh->out_buffer_size = 0;
       urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
     }
 }
