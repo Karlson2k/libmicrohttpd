@@ -756,7 +756,7 @@ static void
 urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
                 const fd_set *rs,
                 const fd_set *ws,
-                const fd_set *es,)
+                const fd_set *es)
 {
   const MHD_socket conn_sckt = urh->connection->socket_fd;
   const MHD_socket mhd_sckt = urh->mhd.socket;
@@ -1521,7 +1521,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             }
           urh_from_fdset (urh,
                           &rs,
-                          &ws
+                          &ws,
                           &es);
           process_urh (urh);
           if ( (0 == urh->in_buffer_size) &&
