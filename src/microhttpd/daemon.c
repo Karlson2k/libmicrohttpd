@@ -1201,7 +1201,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       connection->tls_read_ready = false;
     }
 
-  /* handle reading from TLS client and writing to application */
+  /* Some platforms (W32, possibly Darwin) may discard data in system buffers
+   * received by system but unread by recv() if remote side was disconnected
+   * and failed send() attempted (send() will always fail after remote disconnect
+   * was detected).
+   * So, before trying send() on any socket, recv() must be performed at first
+   * otherwise last part of incoming data may be lost. */
+
+  /*
+   * handle reading from remote TLS client
+   */
   if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
          (connection->tls_read_ready) ) &&
        (urh->in_buffer_used < urh->in_buffer_size) )
@@ -1236,67 +1245,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
-       (urh->in_buffer_used > 0) )
-    {
-      ssize_t res;
-      size_t data_size;
 
-      data_size = urh->in_buffer_used;
-      if (data_size > MHD_SCKT_SEND_MAX_SIZE_)
-        data_size = MHD_SCKT_SEND_MAX_SIZE_;
-
-      res = MHD_send_ (urh->mhd.socket,
-                       urh->in_buffer,
-                       data_size);
-      if (0 > res)
-        {
-          int err = MHD_socket_get_error_ ();
-
-          if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
-            urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-          else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
-                    (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
-            {
-              /* persistent / unrecoverable error, treat as
-                 if connection was shut down. */
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
-                            " bytes of data received from remote side: %s\n"),
-                        (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
-                        MHD_socket_strerr_ (err));
-#endif
-              /* Discard any data received form remote. */
-              urh->in_buffer_used = 0;
-              /* Do not try to push data to application. */
-              urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-              /* Reading from remote client is not required anymore. */
-              urh->in_buffer_size = 0;
-              urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              connection->tls_read_ready = false;
-            }
-        }
-      else
-        {
-          if (urh->in_buffer_used != res)
-            {
-              memmove (urh->in_buffer,
-                       &urh->in_buffer[res],
-                       urh->in_buffer_used - res);
-              urh->in_buffer_used -= res;
-              if (data_size > (size_t)res)
-                urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-            }
-          else
-            {
-              urh->in_buffer_used = 0;
-            }
-        }
-    }
-
-  /* handle reading from application and writing to HTTPS client */
-
+  /*
+   * handle reading from application
+   */
   /* If application signaled MHD about socket closure then
    * check for any pending data even if socket is not marked
    * as 'ready' (signal may arrive after poll()/select()).
@@ -1356,6 +1308,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
+
+  /*
+   * handle writing to remote HTTPS client
+   */
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
        (urh->out_buffer_used > 0) )
     {
@@ -1407,6 +1363,68 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           /* Do not try to pull more data from application. */
           urh->out_buffer_size = 0;
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+        }
+    }
+
+  /*
+   * handle writing to application
+   */
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+       (urh->in_buffer_used > 0) )
+    {
+      ssize_t res;
+      size_t data_size;
+
+      data_size = urh->in_buffer_used;
+      if (data_size > MHD_SCKT_SEND_MAX_SIZE_)
+        data_size = MHD_SCKT_SEND_MAX_SIZE_;
+
+      res = MHD_send_ (urh->mhd.socket,
+                       urh->in_buffer,
+                       data_size);
+      if (0 > res)
+        {
+          int err = MHD_socket_get_error_ ();
+
+          if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+            urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
+                    (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
+            {
+              /* persistent / unrecoverable error, treat as
+                 if connection was shut down. */
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                            " bytes of data received from remote side: %s\n"),
+                        (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
+                        MHD_socket_strerr_ (err));
+#endif
+              /* Discard any data received form remote. */
+              urh->in_buffer_used = 0;
+              /* Do not try to push data to application. */
+              urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+              /* Reading from remote client is not required anymore. */
+              urh->in_buffer_size = 0;
+              urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+              connection->tls_read_ready = false;
+            }
+        }
+      else
+        {
+          if (urh->in_buffer_used != res)
+            {
+              memmove (urh->in_buffer,
+                       &urh->in_buffer[res],
+                       urh->in_buffer_used - res);
+              urh->in_buffer_used -= res;
+              if (data_size > (size_t)res)
+                urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+            }
+          else
+            {
+              urh->in_buffer_used = 0;
+            }
         }
     }
 
