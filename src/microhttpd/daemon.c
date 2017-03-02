@@ -698,6 +698,8 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
   const MHD_socket mhd_sckt = urh->mhd.socket;
   bool res = true;
 
+  /* Do not add to 'es' only if socket is closed
+   * or not used anymore. */
   if (MHD_INVALID_SOCKET != conn_sckt)
     {
       if ( (urh->in_buffer_used < urh->in_buffer_size) &&
@@ -712,7 +714,12 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                                   max_fd,
                                   fd_setsize)) )
         res = false;
-      if (0 != urh->in_buffer_size)
+      /* Do not monitor again for errors if error was detected before as
+       * error state is remembered. */
+      if ((0 == urh->app.celi & MHD_EPOLL_STATE_ERROR) &&
+          ((0 != urh->in_buffer_size) ||
+           (0 != urh->out_buffer_size) ||
+           (0 != urh->out_buffer_used)))
         MHD_add_to_fd_set_ (conn_sckt,
                             es,
                             max_fd,
@@ -732,7 +739,12 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
                                   max_fd,
                                   fd_setsize)) )
         res = false;
-      if (0 != urh->out_buffer_size)
+      /* Do not monitor again for errors if error was detected before as
+       * error state is remembered. */
+      if ((0 == urh->mhd.celi & MHD_EPOLL_STATE_ERROR) &&
+          ((0 != urh->out_buffer_size) ||
+           (0 != urh->in_buffer_size) ||
+           (0 != urh->in_buffer_used)))
         MHD_add_to_fd_set_ (mhd_sckt,
                             es,
                             max_fd,
@@ -761,8 +773,9 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
   const MHD_socket conn_sckt = urh->connection->socket_fd;
   const MHD_socket mhd_sckt = urh->mhd.socket;
 
-  urh->app.celi = MHD_EPOLL_STATE_UNREADY;
-  urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
+  /* Reset read/write ready, preserve error state. */
+  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
 
   if (MHD_INVALID_SOCKET != conn_sckt)
     {
@@ -799,17 +812,31 @@ urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
 {
   p[0].events = 0;
   p[1].events = 0;
+
   if (urh->in_buffer_used < urh->in_buffer_size)
-    p[0].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
+    p[0].events |= POLLIN;
   if (0 != urh->out_buffer_used)
-    p[0].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
-  if (0 != urh->in_buffer_size)
+    p[0].events |= POLLOUT;
+
+  /* Do not monitor again for errors if error was detected before as
+   * error state is remembered. */
+  if ((0 == urh->app.celi & MHD_EPOLL_STATE_ERROR) &&
+      ((0 != urh->in_buffer_size) ||
+       (0 != urh->out_buffer_size) ||
+       (0 != urh->out_buffer_used)))
     p[0].events |= MHD_POLL_EVENTS_ERR_DISC;
+
   if (urh->out_buffer_used < urh->out_buffer_size)
-    p[1].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
+    p[1].events |= POLLIN;
   if (0 != urh->in_buffer_used)
-    p[1].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
-  if (0 != urh->out_buffer_size)
+    p[1].events |= POLLOUT;
+
+  /* Do not monitor again for errors if error was detected before as
+   * error state is remembered. */
+  if ((0 == urh->mhd.celi & MHD_EPOLL_STATE_ERROR) &&
+      ((0 != urh->out_buffer_size) ||
+       (0 != urh->in_buffer_size) ||
+       (0 != urh->in_buffer_used)))
     p[1].events |= MHD_POLL_EVENTS_ERR_DISC;
 }
 
@@ -839,18 +866,26 @@ static void
 urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
                 struct pollfd p[2])
 {
+  /* Reset read/write ready, preserve error state. */
+  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
+
   if (0 != (p[0].revents & POLLIN))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
   if (0 != (p[0].revents & POLLOUT))
     urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-  if (0 != (p[0].revents & MHD_POLL_REVENTS_ERR_DISC))
+  if (0 != (p[0].revents & POLLHUP))
+    urh->app.celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
+  if (0 != (p[0].revents & MHD_POLL_REVENTS_ERRROR))
     urh->app.celi |= MHD_EPOLL_STATE_ERROR;
   if (0 != (p[1].revents & POLLIN))
     urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
   if (0 != (p[1].revents & POLLOUT))
     urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-  if (0 != (p[1].revents & MHD_POLL_REVENTS_ERR_DISC))
+  if (0 != (p[1].revents & POLLHUP))
     urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
+  if (0 != (p[1].revents & MHD_POLL_REVENTS_ERRROR))
+    urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
@@ -1165,6 +1200,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * each time. */
   struct MHD_Connection * const connection = urh->connection;
   struct MHD_Daemon * const daemon = connection->daemon;
+  /* Prevent data races. */
+  bool was_closed;
   if (daemon->shutdown)
     {
       /* Daemon shutting down, application will not receive any more data. */
@@ -1177,7 +1214,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 #endif
       urh->was_closed = true;
     }
-  if (urh->was_closed)
+  was_closed = urh->was_closed;
+  if (was_closed)
     {
       /* Application was closed connections: no more data
        * can be forwarded to application socket. */
@@ -1191,6 +1229,13 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 #endif
 
         }
+      /* If application signaled MHD about socket closure then
+       * check for any pending data even if socket is not marked
+       * as 'ready' (signal may arrive after poll()/select()).
+       * Socketpair for forwarding is always in non-blocking mode
+       * so no risk that recv() will block the thread. */
+      if (0 != urh->out_buffer_size)
+        urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
       /* Discard any data received form remote. */
       urh->in_buffer_used = 0;
       /* Do not try to push data to application. */
@@ -1201,12 +1246,18 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       connection->tls_read_ready = false;
     }
 
-  /* Some platforms (W32, possibly Darwin) may discard data in system buffers
-   * received by system but unread by recv() if remote side was disconnected
-   * and failed send() attempted (send() will always fail after remote disconnect
-   * was detected).
+  /* On some platforms (W32, possibly Darwin) failed send() (send() will always
+   * fail after remote disconnect was detected) may discard data in system
+   * buffers received by system but not yet read by recv().
    * So, before trying send() on any socket, recv() must be performed at first
    * otherwise last part of incoming data may be lost. */
+
+  /* If disconnect or error was detected - try to read from socket
+   * to dry data possibly pending is system buffers. */
+  if (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi))
+    urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
+  if (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi))
+    urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
 
   /*
    * handle reading from remote TLS client
@@ -1226,9 +1277,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_recv (connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
-      if (GNUTLS_E_AGAIN == res)
-        urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-      else if (res > 0)
+      if (0 < res)
         {
           urh->in_buffer_used += res;
           if (buf_size > (size_t)res)
@@ -1236,26 +1285,34 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           else if (0 < gnutls_record_check_pending (connection->tls_session))
             connection->tls_read_ready = true;
         }
-      else if ( (0 >= res ) &&
-                (GNUTLS_E_INTERRUPTED != res) )
+      else /* 0 >= res */
         {
-          /* Connection was shut down or got unrecoverable error.
-           * Reading from remote client is not required anymore. */
+          if (GNUTLS_E_INTERRUPTED != res)
+            {
+              urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+              if (GNUTLS_E_AGAIN != res)
+                {
+                  /* Unrecoverable error on socket was detected or
+                   * socket was disconnected/shut down. */
+                  /* Stop trying to read from this TLS socket. */
+                  urh->in_buffer_size = 0;
+                }
+            }
+        }
+      if (MHD_EPOLL_STATE_ERROR ==
+          ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY) & urh->app.celi))
+        {
+          /* Unrecoverable error on socket was detected and all
+           * pending data was read from system buffers. */
+          /* Stop trying to read from this TLS socket. */
           urh->in_buffer_size = 0;
-          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
 
   /*
    * handle reading from application
    */
-  /* If application signaled MHD about socket closure then
-   * check for any pending data even if socket is not marked
-   * as 'ready' (signal may arrive after poll()/select()).
-   * Socketpair for forwarding is always in non-blocking mode
-   * so no risk that recv() will block the thread. */
-  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) ||
-         (urh->was_closed) ) &&
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
        (urh->out_buffer_used < urh->out_buffer_size) )
     {
       ssize_t res;
@@ -1268,44 +1325,41 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_recv_ (urh->mhd.socket,
                        &urh->out_buffer[urh->out_buffer_used],
                        buf_size);
-      if (0 > res)
-        {
-          if (urh->was_closed)
-            {
-              /* All data was received and application will not
-               * forward any more data. */
-              /* Do not try to pull data from application. */
-              urh->out_buffer_size = 0;
-              urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
-            }
-          else
-            {
-              const int err = MHD_socket_get_error_ ();
-              if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
-                urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
-                        (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
-                {
-                  /* persistent / unrecoverable error, treat as
-                     if connection was shut down */
-                  /* Do not try to pull data from application. */
-                  urh->out_buffer_size = 0;
-                  urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
-                }
-            }
-        }
-      else
+      if (0 < res)
         {
           urh->out_buffer_used += res;
           if (buf_size > (size_t)res)
             urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
-      if (0 == res)
+      else /* 0 >= res */
         {
-          /* Connection was shut down or got unrecoverable error.
-             Do not try to pull data from application. */
+          const int err = MHD_socket_get_error_ ();
+          if ((0 == res) ||
+              ((! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
+               (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err))))
+            {
+              urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+              if ((0 == res) ||
+                  (was_closed) ||
+                  (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
+                  (! MHD_SCKT_ERR_IS_EAGAIN_ (err)))
+                {
+                  /* Socket disconnect/shutdown was detected;
+                   * Application signaled about closure of 'upgraded' socket;
+                   * or persistent / unrecoverable error. */
+                  /* Do not try to pull more data from application. */
+                  urh->out_buffer_size = 0;
+                }
+            }
+        }
+      if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
+           ( (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
+             (was_closed) ) )
+        {
+          /* Unrecoverable error on socket was detected and all
+           * pending data was read from system buffers. */
+          /* Do not try to pull more data from application. */
           urh->out_buffer_size = 0;
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
     }
 
@@ -1325,40 +1379,49 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_send (connection->tls_session,
                                 urh->out_buffer,
                                 data_size);
-      if (GNUTLS_E_AGAIN == res)
+      if (0 < res)
         {
-          urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-        }
-      else if (res > 0)
-        {
-          if (urh->out_buffer_used != res)
+          const size_t next_out_buffer_used = urh->out_buffer_used - res;
+          if (0 != next_out_buffer_used)
             {
               memmove (urh->out_buffer,
                        &urh->out_buffer[res],
-                       urh->out_buffer_used - res);
-              urh->out_buffer_used -= res;
+                       next_out_buffer_used);
               if (data_size > (size_t)res)
                 urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
             }
-          else
+          urh->out_buffer_used = next_out_buffer_used;
+        }
+      else /* 0 >= res */
+        {
+          if (GNUTLS_E_INTERRUPTED != res)
             {
-              urh->out_buffer_used = 0;
+              urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+              if (GNUTLS_E_INTERRUPTED != res)
+                {
+                  /* TLS connection shut down or
+                   * persistent / unrecoverable error. */
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (daemon,
+                            _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                                " bytes of data received from application: %s\n"),
+                            (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
+                            gnutls_strerror(res));
+#endif
+                  /* Discard any data unsent to remote. */
+                  urh->out_buffer_used = 0;
+                  /* Do not try to pull more data from application. */
+                  urh->out_buffer_size = 0;
+                  urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+                }
             }
         }
-      else if (GNUTLS_E_INTERRUPTED != res)
+      if ( (0 == urh->out_buffer_used) &&
+           (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi)) )
         {
-          /* persistent / unrecoverable error, treat as
-             if connection was shut down. */
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _("Failed to forward to remote client " MHD_UNSIGNED_LONG_LONG_PRINTF \
-                        " bytes of data received from application: %s\n"),
-                    (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
-                    gnutls_strerror(res));
-#endif
-          /* Discard any data unsent to remote. */
-          urh->out_buffer_used = 0;
-          /* Do not try to sent to remote anymore. */
+          /* Unrecoverable error on socket was detected and all
+           * pending data was sent to remote. */
+          /* Do not try to send to remote anymore. */
           urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
           /* Do not try to pull more data from application. */
           urh->out_buffer_size = 0;
@@ -1370,7 +1433,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * handle writing to application
    */
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
-       (urh->in_buffer_used > 0) )
+         (urh->in_buffer_used > 0) )
     {
       ssize_t res;
       size_t data_size;
@@ -1382,49 +1445,55 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_send_ (urh->mhd.socket,
                        urh->in_buffer,
                        data_size);
-      if (0 > res)
+      if (0 < res)
         {
-          int err = MHD_socket_get_error_ ();
-
-          if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
-            urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-          else if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
-                    (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
-            {
-              /* persistent / unrecoverable error, treat as
-                 if connection was shut down. */
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
-                            " bytes of data received from remote side: %s\n"),
-                        (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
-                        MHD_socket_strerr_ (err));
-#endif
-              /* Discard any data received form remote. */
-              urh->in_buffer_used = 0;
-              /* Do not try to push data to application. */
-              urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-              /* Reading from remote client is not required anymore. */
-              urh->in_buffer_size = 0;
-              urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-              connection->tls_read_ready = false;
-            }
-        }
-      else
-        {
-          if (urh->in_buffer_used != res)
+          const size_t next_in_buffer_used = urh->in_buffer_used - res;
+          if (0 != next_in_buffer_used)
             {
               memmove (urh->in_buffer,
                        &urh->in_buffer[res],
-                       urh->in_buffer_used - res);
-              urh->in_buffer_used -= res;
+                       next_in_buffer_used);
               if (data_size > (size_t)res)
                 urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
             }
-          else
+          urh->in_buffer_used = next_in_buffer_used;
+        }
+      else /* 0 >= res */
+        {
+          const int err = MHD_socket_get_error_ ();
+          if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
+               (! MHD_SCKT_ERR_IS_LOW_RESOURCES_(err)) )
             {
-              urh->in_buffer_used = 0;
+              urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+              if (! MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                {
+                  /* Socketpair connection shut down or
+                   * persistent / unrecoverable error. */
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (daemon,
+                            _("Failed to forward to application " MHD_UNSIGNED_LONG_LONG_PRINTF \
+                                " bytes of data received from remote side: %s\n"),
+                            (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
+                            MHD_socket_strerr_ (err));
+#endif
+                  /* Discard any data received form remote. */
+                  urh->in_buffer_used = 0;
+                  /* Reading from remote client is not required anymore. */
+                  urh->in_buffer_size = 0;
+                  urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+                  connection->tls_read_ready = false;
+                }
             }
+        }
+      if ( (0 !=urh->in_buffer_used) &&
+           (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) )
+        {
+          /* Do not try to push data to application. */
+          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          /* Reading from remote client is not required anymore. */
+          urh->in_buffer_size = 0;
+          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          connection->tls_read_ready = false;
         }
     }
 
@@ -3835,6 +3904,10 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
             ueh->celi |= MHD_EPOLL_STATE_READ_READY;
           if (0 != (events[i].events & EPOLLOUT))
             ueh->celi |= MHD_EPOLL_STATE_WRITE_READY;
+          if (0 != (events[i].events & EPOLLHUP))
+            ueh->celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
+          if (0 != (events[i].events & (EPOLLERR | EPOLLPRI)))
+            ueh->celi |= MHD_EPOLL_STATE_ERROR;
 
           process_urh (urh);
           /* Finished forwarding? */

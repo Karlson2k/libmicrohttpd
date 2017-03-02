@@ -369,6 +369,10 @@
  * Note: Out-of-band data is treated as error. */
 #  define MHD_POLL_REVENTS_ERR_DISC \
      (MHD_POLLPRI_OR_ZERO | MHD_POLLRDBAND_OR_ZERO | MHD_POLLNVAL_OR_ZERO | POLLERR | POLLHUP)
+/* MHD_POLL_REVENTS_ERRROR is 'revents' mask for errors.
+ * Note: Out-of-band data is treated as error. */
+#  define MHD_POLL_REVENTS_ERRROR \
+     (MHD_POLLPRI_OR_ZERO | MHD_POLLRDBAND_OR_ZERO | MHD_POLLNVAL_OR_ZERO | POLLERR)
 #endif /* HAVE_POLL */
 
 #define MHD_SCKT_MISSING_ERR_CODE_ 31450
