@@ -4910,7 +4910,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (MHD_ITC_IS_VALID_(daemon->itc))
     {
       event.events = EPOLLIN;
-      event.data.ptr = epoll_itc_marker;
+      event.data.ptr = (void *) epoll_itc_marker;
       if (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_ADD,
                           MHD_itc_r_fd_ (daemon->itc),
