@@ -1247,9 +1247,13 @@ enum MHD_OPTION
    * be the 0-terminated URI of the request.
    *
    * Note that during the time of this call, most of the connection's
-   * state is not initialized (as we have not yet parsed he headers).
+   * state is not initialized (as we have not yet parsed the headers).
    * However, information about the connecting client (IP, socket)
    * is available.
+   *
+   * The specified function is called only once per request, therefore some
+   * programmers may use it to instantiate their own request objects, freeing
+   * them in the notifier #MHD_OPTION_NOTIFY_COMPLETED.
    */
   MHD_OPTION_URI_LOG_CALLBACK = 7,
 
