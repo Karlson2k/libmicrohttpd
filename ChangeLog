@@ -1,3 +1,6 @@
+Mon Mar  6 21:46:59 BRT 2017
+	Added the i18n example fixing #4924. -SC
+
 Thu Feb 16 11:20:05 CET 2017
 	Replace tsearch configure check with code from gnulib. -CG
 
