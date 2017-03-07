@@ -37,6 +37,7 @@ Makefile
 /depcomp
 /.autotools
 /.vscode
+po/configure.acT
 po/Makevars.template
 po/POTFILES
 src/examples/timeout
