@@ -1651,9 +1651,9 @@ thread_main_handle_connection (void *data)
 #endif
 #undef EXTRA_SLOTS
 #ifdef HAVE_POLL
-  const int use_poll = (0 != (daemon->options & MHD_USE_POLL));
+  const bool use_poll = (0 != (daemon->options & MHD_USE_POLL));
 #else  /* ! HAVE_POLL */
-  const int use_poll = MHD_NO;
+  const bool use_poll = 0;
 #endif /* ! HAVE_POLL */
   bool was_suspended = false;
 
@@ -1773,7 +1773,7 @@ thread_main_handle_connection (void *data)
 	  tv.tv_usec = 0;
 	  tvp = &tv;
 	}
-      if (0 == (daemon->options & MHD_USE_POLL))
+      if (! use_poll)
 	{
 	  /* use select */
 	  bool err_state = false;
