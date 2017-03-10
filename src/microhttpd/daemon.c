@@ -5454,7 +5454,8 @@ MHD_start_daemon_va (unsigned int flags,
       listen_fd = daemon->listen_fd;
     }
 
-  if (!MHD_socket_nonblocking_ (listen_fd))
+  if ( (MHD_INVALID_SOCKET != listen_fd) &&
+       (! MHD_socket_nonblocking_ (listen_fd)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5471,8 +5472,9 @@ MHD_start_daemon_va (unsigned int flags,
           goto free_and_fail;
         }
     }
-  if ( (!MHD_SCKT_FD_FITS_FDSET_(listen_fd,
-                                 NULL)) &&
+  if ( (MHD_INVALID_SOCKET != listen_fd) &&
+       (! MHD_SCKT_FD_FITS_FDSET_(listen_fd,
+                                  NULL)) &&
        (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
     {
 #ifdef HAVE_MESSAGES
