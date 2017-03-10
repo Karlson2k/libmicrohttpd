@@ -1,3 +1,7 @@
+Fri Mar 10 16:37:12 CET 2017
+	Fix hypothetical integer overflow for very, very large
+	timeout values. -CG
+
 Fri Mar 10 16:22:54 CET 2017
 	Handle case that we do not listen at all more gracefully
 	in MHD_start_daemon() and not pass '-1' to helper functions
