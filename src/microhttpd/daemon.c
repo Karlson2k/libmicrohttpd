@@ -1303,7 +1303,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if (0 == res)
         {
           /* Connection was shut down or got unrecoverable error.
-          /* Do not try to pull data from application. */
+             Do not try to pull data from application. */
           urh->out_buffer_size = 0;
           urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
