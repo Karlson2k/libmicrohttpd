@@ -2877,9 +2877,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       const int err = MHD_socket_get_error_ ();
 
       /* This could be a common occurance with multiple worker threads */
-      if ( (MHD_SCKT_ERR_IS_ (err,
-                              MHD_SCKT_EINVAL_)) &&
-           (MHD_INVALID_SOCKET == fd) )
+      if (MHD_SCKT_ERR_IS_ (err,
+                            MHD_SCKT_EINVAL_))
         return MHD_NO; /* can happen during shutdown */
       if (MHD_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT_(err))
         return MHD_NO; /* do not print error if client just disconnected early */
