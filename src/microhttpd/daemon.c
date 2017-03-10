@@ -5792,7 +5792,7 @@ close_all_connections (struct MHD_Daemon *daemon)
           else if (used_tls &&
                    used_thr_p_c &&
                    (! susp->urh->clean_ready) )
-            shutdown (urh->app.socket,
+            shutdown (susp->urh->app.socket,
                       SHUT_RDWR); /* Wake thread by shutdown of app socket. */
 #endif /* HTTPS_SUPPORT */
           else
