@@ -79,7 +79,8 @@ ahc_echo (void *cls,
            (! S_ISREG (buf.st_mode)) )
         {
           /* not a regular file, refuse to serve */
-          close (fd);
+          if (0 != close (fd))
+            abort ();
           fd = -1;
         }
     }
@@ -93,10 +94,11 @@ ahc_echo (void *cls,
     }
   else
     {
-      response = MHD_create_response_from_fd64(buf.st_size, fd);
+      response = MHD_create_response_from_fd64 (buf.st_size, fd);
       if (NULL == response)
 	{
-	  close (fd);
+	  if (0 != close (fd))
+            abort ();
 	  return MHD_NO;
 	}
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);

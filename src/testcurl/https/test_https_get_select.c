@@ -101,7 +101,7 @@ testExternalGet (int flags)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | flags,
-                        1082, NULL, NULL, &ahc_echo, "GET", 
+                        1082, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 			MHD_OPTION_END);
@@ -109,7 +109,7 @@ testExternalGet (int flags)
     return 256;
 
   if (curl_uses_nss_ssl() == 0)
-    aes256_sha = "rsa_aes_256_sha";   
+    aes256_sha = "rsa_aes_256_sha";
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1:1082/hello_world");
@@ -175,7 +175,11 @@ testExternalGet (int flags)
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      select (maxposixs + 1, &rs, &ws, &es, &tv);
+      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+        {
+          if (EINTR != errno)
+            abort ();
+        }
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
