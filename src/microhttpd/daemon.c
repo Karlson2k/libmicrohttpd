@@ -1655,12 +1655,12 @@ thread_main_handle_connection (void *data)
 #else  /* ! HAVE_POLL */
   const int use_poll = MHD_NO;
 #endif /* ! HAVE_POLL */
+  bool was_suspended = false;
 
   while ( (! daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
       const unsigned int timeout = daemon->connection_timeout;
-      bool was_suspended = false;
 #ifdef UPGRADE_SUPPORT
       struct MHD_UpgradeResponseHandle * const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
