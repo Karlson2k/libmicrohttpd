@@ -1121,11 +1121,13 @@ call_handlers (struct MHD_Connection *con,
  *
  * @param connection handle to the upgraded connection to clean
  */
-void
-MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
+static void
+cleanup_upgraded_connection (struct MHD_Connection *connection)
 {
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
+  if (NULL == urh)
+    return;
 #ifdef HTTPS_SUPPORT
   /* Signal remote client the end of TLS connection by
    * gracefully closing TLS session. */
@@ -1139,12 +1141,11 @@ MHD_cleanup_upgraded_connection_ (struct MHD_Connection *connection)
   if (MHD_INVALID_SOCKET != urh->app.socket)
     MHD_socket_close_chk_ (urh->app.socket);
 #endif /* HTTPS_SUPPORT */
-
   connection->urh = NULL;
-  if (NULL != urh)
-    free (urh);
+  free (urh);
 }
 #endif /* UPGRADE_SUPPORT */
+
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
@@ -2982,8 +2983,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
            (! MHD_join_thread_ (pos->pid)) )
         MHD_PANIC (_("Failed to join a thread\n"));
 #ifdef UPGRADE_SUPPORT
-      if (NULL != pos->urh)
-        MHD_cleanup_upgraded_connection_ (pos);
+      cleanup_upgraded_connection (pos);
 #endif /* UPGRADE_SUPPORT */
       MHD_pool_destroy (pos->pool);
 #ifdef HTTPS_SUPPORT
