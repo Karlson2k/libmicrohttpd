@@ -36,14 +36,35 @@ enum ConnectionType
 
 static unsigned int nr_of_uploading_clients = 0;
 
+
+/**
+ * Information we keep per connection.
+ */
 struct connection_info_struct
 {
   enum ConnectionType connectiontype;
+
+  /**
+   * Handle to the POST processing state.
+   */
   struct MHD_PostProcessor *postprocessor;
+
+  /**
+   * File handle where we write uploaded data.
+   */
   FILE *fp;
+
+  /**
+   * HTTP response body we will return, NULL if not yet known.
+   */
   const char *answerstring;
-  int answercode;
+
+  /**
+   * HTTP status code we will return, 0 for undecided.
+   */
+  unsigned int answercode;
 };
+
 
 const char *askpage = "<html><body>\n\
                        Upload a file, please!<br>\n\
@@ -52,19 +73,18 @@ const char *askpage = "<html><body>\n\
                        <input name=\"file\" type=\"file\">\n\
                        <input type=\"submit\" value=\" Send \"></form>\n\
                        </body></html>";
-
 const char *busypage =
   "<html><body>This server is busy, please try again later.</body></html>";
-
 const char *completepage =
   "<html><body>The upload has been completed.</body></html>";
-
 const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
 const char *servererrorpage =
-  "<html><body>An internal server error has occured.</body></html>";
+  "<html><body>Invalid request.</body></html>";
 const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
+const char *fileioerror =
+  "<html><body>IO error writing to disk.</body></html>";
 const char* const postprocerror =
   "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
@@ -109,11 +129,12 @@ iterate_post (void *coninfo_cls,
   struct connection_info_struct *con_info = coninfo_cls;
   FILE *fp;
 
-  con_info->answerstring = servererrorpage;
-  con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
-
   if (0 != strcmp (key, "file"))
-    return MHD_NO;
+    {
+      con_info->answerstring = servererrorpage;
+      con_info->answercode = MHD_HTTP_BAD_REQUEST;
+      return MHD_YES;
+    }
 
   if (! con_info->fp)
     {
@@ -122,22 +143,27 @@ iterate_post (void *coninfo_cls,
           fclose (fp);
           con_info->answerstring = fileexistspage;
           con_info->answercode = MHD_HTTP_FORBIDDEN;
-          return MHD_NO;
+          return MHD_YES;
         }
 
       con_info->fp = fopen (filename, "ab");
       if (!con_info->fp)
-        return MHD_NO;
+        {
+          con_info->answerstring = fileioerror;
+          con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
+          return MHD_YES;
+        }
     }
 
   if (size > 0)
     {
       if (! fwrite (data, sizeof (char), size, con_info->fp))
-        return MHD_NO;
+        {
+          con_info->answerstring = fileioerror;
+          con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
+          return MHD_NO;
+        }
     }
-
-  con_info->answerstring = completepage;
-  con_info->answercode = MHD_HTTP_OK;
 
   return MHD_YES;
 }
@@ -183,6 +209,7 @@ answer_to_connection (void *cls,
 {
   if (NULL == *con_cls)
     {
+      /* First call, setup data structures */
       struct connection_info_struct *con_info;
 
       if (nr_of_uploading_clients >= MAXCLIENTS)
@@ -193,7 +220,7 @@ answer_to_connection (void *cls,
       con_info = malloc (sizeof (struct connection_info_struct));
       if (NULL == con_info)
         return MHD_NO;
-
+      con_info->answercode = 0; /* none yet */
       con_info->fp = NULL;
 
       if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
@@ -213,11 +240,11 @@ answer_to_connection (void *cls,
           nr_of_uploading_clients++;
 
           con_info->connectiontype = POST;
-          con_info->answercode = MHD_HTTP_OK;
-          con_info->answerstring = completepage;
         }
       else
-        con_info->connectiontype = GET;
+        {
+          con_info->connectiontype = GET;
+        }
 
       *con_cls = (void *) con_info;
 
@@ -226,6 +253,7 @@ answer_to_connection (void *cls,
 
   if (0 == strcasecmp (method, MHD_HTTP_METHOD_GET))
     {
+      /* We just return the standard form for uploads on all GET requests */
       char buffer[1024];
 
       snprintf (buffer,
@@ -243,34 +271,43 @@ answer_to_connection (void *cls,
 
       if (0 != *upload_data_size)
         {
-          if (MHD_post_process (con_info->postprocessor,
-                                upload_data,
-                                *upload_data_size) != MHD_YES)
+          /* Upload not yet done */
+          if (0 != con_info->answercode)
             {
-              return send_page (connection,
-                                postprocerror,
-                                MHD_HTTP_BAD_REQUEST);
+              /* we already know the answer, skip rest of upload */
+              *upload_data_size = 0;
+              return MHD_YES;
+            }
+          if (MHD_YES !=
+              MHD_post_process (con_info->postprocessor,
+                                upload_data,
+                                *upload_data_size))
+            {
+              con_info->answerstring = postprocerror;
+              con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
             }
           *upload_data_size = 0;
 
           return MHD_YES;
         }
-      else
-	{
-	  if (NULL != con_info->fp)
-	  {
-	    fclose (con_info->fp);
-	    con_info->fp = NULL;
-	  }
-	  /* Now it is safe to open and inspect the file before
-             calling send_page with a response */
-	  return send_page (connection,
-                            con_info->answerstring,
-			    con_info->answercode);
-	}
-
+      /* Upload finished */
+      if (NULL != con_info->fp)
+        {
+          fclose (con_info->fp);
+          con_info->fp = NULL;
+        }
+      if (0 == con_info->answercode)
+        {
+          /* No errors encountered, declare success */
+          con_info->answerstring = completepage;
+          con_info->answercode = MHD_HTTP_OK;
+        }
+      return send_page (connection,
+                        con_info->answerstring,
+                        con_info->answercode);
     }
 
+  /* Note a GET or a POST, generate error */
   return send_page (connection,
                     errorpage,
                     MHD_HTTP_BAD_REQUEST);

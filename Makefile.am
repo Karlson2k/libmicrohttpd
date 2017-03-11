@@ -99,7 +99,7 @@ $(srcdir_po)/POTFILES.in:
 	@$(MAKE) $(AM_MAKEFLAGS) update-POTFILES.in
 
 update-POTFILES.in:
-	@$(am__cd) $(srcdir_po) && echo @ECHO_N@ "Creating po/POTFILES.in... @ECHO_C@" && \
+	@$(am__cd) $(srcdir_po) && echo @ECHO_N@ "Creating po/POTFILES.in... @ECHO_C@" && chmod o+w . && \
 	  find '../src/include' ! -name 'include' -prune -name '*.h' ! -name 'mhd_options.h' > POTFILES.in && \
 	  find '../src/microhttpd' ! -name 'microhttpd' -prune \( -name '*.h' -o -name '*.c' \) ! -name 'test_*' >> POTFILES.in && \
 	  echo "@ECHO_T@done." || (rm -f POTFILES.in ; echo "@ECHO_T@failed." && false)
