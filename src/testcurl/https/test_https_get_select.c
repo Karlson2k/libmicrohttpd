@@ -175,10 +175,15 @@ testExternalGet (int flags)
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
-      if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+      if (-1 != maxposixs)
         {
-          if (EINTR != errno)
-            abort ();
+          if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
+            {
+#ifdef MHD_POSIX_SOCKETS
+              if (EINTR != errno)
+#endif /* MHD_POSIX_SOCKETS */
+                abort ();
+            }
         }
       curl_multi_perform (multi, &running);
       if (running == 0)
