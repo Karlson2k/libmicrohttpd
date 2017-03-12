@@ -1048,26 +1048,34 @@ struct MHD_UpgradeResponseHandle
   char *out_buffer;
 
   /**
-   * Size of the @e in_buffer. 0 if the connection went down for reading.
+   * Size of the @e in_buffer.
+   * Set to 0 if the TLS connection went down for reading or socketpair
+   * went down for writing.
    */
   size_t in_buffer_size;
 
   /**
-   * Size of the @e out_buffer. 0 if the connection went down for writing.
+   * Size of the @e out_buffer.
+   * Set to 0 if the TLS connection went down for writing or socketpair
+   * went down for reading.
    */
   size_t out_buffer_size;
 
   /**
    * Number of bytes actually in use in the @e in_buffer.  Can be larger
    * than @e in_buffer_size if and only if @a in_buffer_size is zero and
-   * we still have bytes to process in the buffer.
+   * we still have bytes that can be forwarded.
+   * Reset to zero if all data was forwarded to socketpair or
+   * if socketpair went down for writing.
    */
   size_t in_buffer_used;
 
   /**
    * Number of bytes actually in use in the @e out_buffer. Can be larger
    * than @e out_buffer_size if and only if @a out_buffer_size is zero and
-   * we still have bytes to process in the buffer.
+   * we still have bytes that can be forwarded.
+   * Reset to zero if all data was forwarded to TLS connection or
+   * if TLS connection went down for writing.
    */
   size_t out_buffer_used;
 
