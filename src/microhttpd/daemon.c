@@ -3252,7 +3252,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 #ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (NULL != daemon->eready_head) )
+       ((NULL != daemon->eready_head)
+#if defined(UPGRADE_SUPPORT) && defined(HTTPS_SUPPORT)
+	 || (NULL != daemon->eready_urh_head)
+#endif /* UPGRADE_SUPPORT && HTTPS_SUPPORT */
+	 ) )
     {
 	  /* Some connection(s) already have some data pending. */
       *timeout = 0;
@@ -3972,6 +3976,46 @@ MHD_poll (struct MHD_Daemon *daemon,
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 
 /**
+ * Return true if @a urh has some data to process, false otherwise
+ */
+static bool
+is_urh_ready(struct MHD_UpgradeResponseHandle * const urh)
+{
+  const struct MHD_Connection * const connection = urh->connection;
+  const struct MHD_Daemon * const daemon = connection->daemon;
+
+  if ( (0 == urh->in_buffer_size) &&
+       (0 == urh->out_buffer_size) &&
+       (0 == urh->in_buffer_used) &&
+       (0 == urh->out_buffer_used) )
+    return false;
+
+  if (urh->connection->daemon->shutdown)
+    return true;
+
+  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
+         (connection->tls_read_ready) ) &&
+       (urh->in_buffer_used < urh->in_buffer_size) )
+    return true;
+
+  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
+       (urh->out_buffer_used < urh->out_buffer_size) )
+    return true;
+
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
+       (urh->out_buffer_used > 0) )
+    return true;
+
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
+       (urh->out_buffer_used > 0) )
+    return true;
+
+  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
+         (urh->in_buffer_used > 0) )
+    return true;
+}
+
+/**
  * Do epoll()-based processing for TLS connections that have been
  * upgraded.  This requires a separate epoll() invocation as we
  * cannot use the `struct MHD_Connection` data structures for
@@ -3984,6 +4028,8 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 {
   struct epoll_event events[MAX_EVENTS];
   int num_events;
+  struct MHD_UpgradeResponseHandle * pos;
+  struct MHD_UpgradeResponseHandle * prev;
 
   num_events = MAX_EVENTS;
   while (MAX_EVENTS == num_events)
@@ -4006,45 +4052,72 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 #endif
 	  return MHD_NO;
 	}
-      for (i=0;i<(unsigned int) num_events;i++)
+      for (i = 0; i < (unsigned int) num_events; i++)
 	{
           struct UpgradeEpollHandle * const ueh = events[i].data.ptr;
           struct MHD_UpgradeResponseHandle * const urh = ueh->urh;
+          bool new_err_state = false;
 
-          /* Each MHD_UpgradeResponseHandle can be processed two times:
-           * one time for TLS data and one time for socketpair data.
-           * If forwarding was finished on first time, second time must
-           * be skipped as urh must not be used anymore. */
           if (urh->clean_ready)
             continue;
 
-          /* Update our state based on what is ready according to epoll() */
+          /* Update ueh state based on what is ready according to epoll() */
           if (0 != (events[i].events & EPOLLIN))
             ueh->celi |= MHD_EPOLL_STATE_READ_READY;
           if (0 != (events[i].events & EPOLLOUT))
             ueh->celi |= MHD_EPOLL_STATE_WRITE_READY;
           if (0 != (events[i].events & EPOLLHUP))
             ueh->celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
-          if (0 != (events[i].events & (EPOLLERR | EPOLLPRI)))
-            ueh->celi |= MHD_EPOLL_STATE_ERROR;
 
-          process_urh (urh);
-          /* Finished forwarding? */
-          if ( (0 == urh->in_buffer_size) &&
-               (0 == urh->out_buffer_size) &&
-               (0 == urh->in_buffer_used) &&
-               (0 == urh->out_buffer_used) )
+          if ( (0 == (ueh->celi & MHD_EPOLL_STATE_ERROR)) &&
+               (0 != (events[i].events & (EPOLLERR | EPOLLPRI))) )
+	    {
+              ueh->celi |= MHD_EPOLL_STATE_ERROR;
+              new_err_state = true;
+	    }
+
+          if (! urh->in_eready_list)
             {
-              MHD_connection_finish_forward_ (urh->connection);
-              urh->clean_ready = true;
-              /* If 'urh->was_closed' set to true, connection will be
-               * moved immediately to cleanup list. Otherwise connection
-               * will stay in suspended list until 'urh' will be marked
-               * with 'was_closed' by application. */
-              MHD_resume_connection(urh->connection);
+              if (new_err_state ||
+        	  is_urh_ready(urh))
+        	{
+        	  EDLL_insert (daemon->eready_urh_head,
+			       daemon->eready_urh_tail,
+			       urh);
+        	  urh->in_eready_list = true;
+        	}
             }
+
         }
     }
+  prev = daemon->eready_urh_tail;
+  while (NULL != (pos = prev))
+    {
+      prev = pos->prevE;
+      process_urh (pos);
+      if (! is_urh_ready(pos))
+      	{
+      	  EDLL_remove (daemon->eready_urh_head,
+      		       daemon->eready_urh_tail,
+      		       pos);
+      	  pos->in_eready_list = false;
+      	}
+      /* Finished forwarding? */
+      if ( (0 == pos->in_buffer_size) &&
+           (0 == pos->out_buffer_size) &&
+           (0 == pos->in_buffer_used) &&
+           (0 == pos->out_buffer_used) )
+        {
+          MHD_connection_finish_forward_ (pos->connection);
+          pos->clean_ready = true;
+          /* If 'pos->was_closed' set to true, connection will be
+           * moved immediately to cleanup list. Otherwise connection
+           * will stay in suspended list until 'pos' will be marked
+           * with 'was_closed' by application. */
+          MHD_resume_connection(pos->connection);
+        }
+    }
+
   return MHD_YES;
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */

@@ -1026,6 +1026,23 @@ struct MHD_UpgradeResponseHandle
    */
   struct MHD_UpgradeResponseHandle *prev;
 
+#ifdef EPOLL_SUPPORT
+  /**
+   * Next pointer for the EDLL listing connections that are epoll-ready.
+   */
+  struct MHD_Connection *nextE;
+
+  /**
+   * Previous pointer for the EDLL listing connections that are epoll-ready.
+   */
+  struct MHD_Connection *prevE;
+
+  /**
+   * Specifies whether urh already in EDLL list of ready connections.
+   */
+  bool in_eready_list;
+#endif
+
   /**
    * The buffer for receiving data from TLS to
    * be passed to the application.  Contains @e in_buffer_size
@@ -1217,7 +1234,19 @@ struct MHD_Daemon
    * Tail of EDLL of connections ready for processing (in epoll mode)
    */
   struct MHD_Connection *eready_tail;
-#endif
+
+#ifdef UPGRADE_SUPPORT
+  /**
+   * Head of EDLL of upgraded connections ready for processing (in epoll mode).
+   */
+  struct MHD_UpgradeResponseHandle *eready_urh_head;
+
+  /**
+   * Tail of EDLL of upgraded connections ready for processing (in epoll mode)
+   */
+  struct MHD_UpgradeResponseHandle *eready_urh_tail;
+#endif /* UPGRADE_SUPPORT */
+#endif /* EPOLL_SUPPORT */
 
   /**
    * Head of the XDLL of ALL connections with a default ('normal')

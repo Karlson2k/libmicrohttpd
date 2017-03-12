@@ -851,7 +851,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 
         EXTRA_CHECK (-1 != daemon->epoll_upgrade_fd);
         /* First, add network socket */
-        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
         event.data.ptr = &urh->app;
         if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                             EPOLL_CTL_ADD,
@@ -870,7 +870,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 	}
 
         /* Second, add our end of the UNIX socketpair() */
-        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
         event.data.ptr = &urh->mhd;
         if (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                             EPOLL_CTL_ADD,
@@ -894,6 +894,10 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
           free (urh);
           return MHD_NO;
 	}
+	EDLL_insert (daemon->eready_urh_head,
+		     daemon->eready_urh_tail,
+		     urh);
+	urh->in_eready_list = true;
       }
 #endif /* EPOLL_SUPPORT */
     if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
