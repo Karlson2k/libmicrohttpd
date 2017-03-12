@@ -1,4 +1,9 @@
-<<<<<<< HEAD
+Sat Mar 11 12:03:45 CET 2017
+	Fix largepost example from tutorial to properly generate
+	error pages. -CG
+	Fix largepost example, must only queue replies either before upload
+	happens or after upload is done, not while upload is ongoing
+
 Fri Mar 10 16:37:12 CET 2017
 	Fix hypothetical integer overflow for very, very large
 	timeout values. -CG
@@ -16,11 +21,6 @@ Tue Mar  7 10:37:45 BRT 2017
 
 Mon Mar  6 21:46:59 BRT 2017
 	Added the i18n example fixing #4924. -SC
-=======
-Sat Mar 11 12:03:45 CET 2017
-	Fix largepost example from tutorial to properly generate
-	error pages. -CG
->>>>>>> 6334f1a7... fix largepost example, must only queue replies either before upload happens or after upload is done, not while upload is ongoing
 
 Thu Feb 16 11:20:05 CET 2017
 	Replace tsearch configure check with code from gnulib. -CG
