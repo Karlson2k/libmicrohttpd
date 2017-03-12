@@ -1,4 +1,11 @@
-Thu Mar 17 10:45:31 MSK 2017
+Sun Mar 19 13:57:30 MSK 2017
+	Rewritten logic of handling "upgraded" TLS connections in epoll mode:
+	used edge trigger instead of level trigger,
+	upgraded "ready" connection are stored in DL-list,
+	fixed handling of more than 128 ready connections,
+	fixed busy-waiting for idle "upgraded" TLS connections. -EG
+
+Fri Mar 17 10:45:31 MSK 2017
 	If read buffer is full, MHD need to receive remote data and application
 	suspended connection, do not fail while connection is suspended and give
 	application one more chance to read data from buffer once connection is
