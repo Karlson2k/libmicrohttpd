@@ -1200,7 +1200,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * each time. */
   struct MHD_Connection * const connection = urh->connection;
   struct MHD_Daemon * const daemon = connection->daemon;
-  /* Prevent data races. */
+  /* Prevent data races: use same value of 'was_closed' throughout
+   * this function. If 'was_closed' changed externally in the middle
+   * of processing - it will be processed on next iteration. */
   bool was_closed;
   if (daemon->shutdown)
     {
