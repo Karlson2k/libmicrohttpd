@@ -281,10 +281,10 @@
  *         boolean false otherwise.
  */
 #if defined(MHD_POSIX_SOCKETS)
-#  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) ((fd) < (setsize))
+#  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) ((fd) < ((MHD_socket)setsize))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) ( ((void*)(pset)==(void*)0) || \
-                                                             (((fd_set*)(pset))->fd_count < (setsize)) || \
+                                                             (((fd_set*)(pset))->fd_count < ((unsigned)setsize)) || \
                                                              (FD_ISSET((fd),(pset))) )
 #endif
 
