@@ -774,8 +774,8 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
   const MHD_socket mhd_sckt = urh->mhd.socket;
 
   /* Reset read/write ready, preserve error state. */
-  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
-  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
 
   if (MHD_INVALID_SOCKET != conn_sckt)
     {
@@ -867,8 +867,8 @@ urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
                 struct pollfd p[2])
 {
   /* Reset read/write ready, preserve error state. */
-  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
-  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY && ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
 
   if (0 != (p[0].revents & POLLIN))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
