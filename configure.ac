@@ -1261,9 +1261,9 @@ AC_SUBST([GNUTLS_LIBS])
               MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"
           ])
         ], [
-          AS_IF([test "x$have_gnutls" = "xyes"], [crypt_missing="libgrypt"],
+          AS_IF([test "x$have_gnutls" = "xyes"], [crypt_missing="libgcrypt"],
                 [test "x$have_gcrypt" = "xyes"], [crypt_missing="libgnutls"],
-                                                 [crypt_missing="libgrypt and libgnutls"])
+                                                 [crypt_missing="libgcrypt and libgnutls"])
           AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
           enable_https=no
           MSG_HTTPS="no (lacking $crypt_missing)"
