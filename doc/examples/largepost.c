@@ -138,6 +138,8 @@ iterate_post (void *coninfo_cls,
 
   if (! con_info->fp)
     {
+      if (0 != con_info->answercode) /* something went wrong */
+        return MHD_YES;
       if (NULL != (fp = fopen (filename, "rb")))
         {
           fclose (fp);
@@ -161,7 +163,7 @@ iterate_post (void *coninfo_cls,
         {
           con_info->answerstring = fileioerror;
           con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
-          return MHD_NO;
+          return MHD_YES;
         }
     }
 
@@ -325,7 +327,11 @@ main ()
                              MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
                              MHD_OPTION_END);
   if (NULL == daemon)
-    return 1;
+    {
+      fprintf (stderr,
+               "Failed to start daemon\n");
+      return 1;
+    }
   (void) getchar ();
   MHD_stop_daemon (daemon);
   return 0;
