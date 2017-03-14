@@ -2153,6 +2153,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * before calling this function. FD_SETSIZE is assumed
  * to be platform's default.
  *
+ * This function could be called only for daemon started
+ * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
  * @param write_fd_set write set
@@ -2180,6 +2183,9 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * before calling this function. Passing custom FD_SETSIZE
  * as @a fd_setsize allow usage of larger/smaller than
  * platform's default fd_sets.
+ *
+ * This function could be called only for daemon started
+ * without MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -2209,6 +2215,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
  * before calling this function. Size of fd_set is
  * determined by current value of FD_SETSIZE.
+ *
+ * This function could be called only for daemon started
+ * without MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set

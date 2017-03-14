@@ -889,13 +889,9 @@ urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
+
 /**
- * Obtain the `select()` sets for this daemon.
- * Daemon's FDs will be added to fd_sets. To get only
- * daemon FDs in fd_sets, call FD_ZERO for each fd_set
- * before calling this function. Passing custom FD_SETSIZE
- * as @a fd_setsize allow usage of larger/smaller than
- * platform's default fd_sets.
+ * Internal version of #MHD_get_fdset2().
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -904,44 +900,27 @@ urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
  * @param max_fd increased to largest FD added (if larger
  *               than existing value); can be NULL
  * @param fd_setsize value of FD_SETSIZE
- * @return #MHD_YES on success, #MHD_NO if this
- *         daemon was not started with the right
- *         options for this call or any FD didn't
+ * @return #MHD_YES on success, #MHD_NO if any FD didn't
  *         fit fd_set.
  * @ingroup event
  */
 int
-MHD_get_fdset2 (struct MHD_Daemon *daemon,
-               fd_set *read_fd_set,
-               fd_set *write_fd_set,
-               fd_set *except_fd_set,
-               MHD_socket *max_fd,
-               unsigned int fd_setsize)
+internal_get_fdset2 (struct MHD_Daemon *daemon,
+                     fd_set *read_fd_set,
+                     fd_set *write_fd_set,
+                     fd_set *except_fd_set,
+                     MHD_socket *max_fd,
+                     unsigned int fd_setsize)
+
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *posn;
   int result = MHD_YES;
   MHD_socket ls;
 
-  if ( (NULL == daemon) ||
-       (NULL == read_fd_set) ||
-       (NULL == write_fd_set) ||
-       (daemon->shutdown) ||
-       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
-       (0 != (daemon->options & MHD_USE_POLL)))
+  if (daemon->shutdown)
     return MHD_NO;
-#ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
-    {
-      /* we're in epoll mode, use the epoll FD as a stand-in for
-	 the entire event set */
 
-      return MHD_add_to_fd_set_ (daemon->epoll_fd,
-                                 read_fd_set,
-                                 max_fd,
-                                 fd_setsize) ? MHD_YES : MHD_NO;
-    }
-#endif
   ls = daemon->listen_fd;
   if ( (MHD_INVALID_SOCKET != ls) &&
        (! daemon->was_quiesced) &&
@@ -1039,6 +1018,80 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 #endif
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   return result;
+}
+
+
+/**
+ * Obtain the `select()` sets for this daemon.
+ * Daemon's FDs will be added to fd_sets. To get only
+ * daemon FDs in fd_sets, call FD_ZERO for each fd_set
+ * before calling this function. Passing custom FD_SETSIZE
+ * as @a fd_setsize allow usage of larger/smaller than
+ * platform's default fd_sets.
+ *
+ * This function could be called only for daemon started
+ * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @param fd_setsize value of FD_SETSIZE
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or any FD didn't
+ *         fit fd_set.
+ * @ingroup event
+ */
+int
+MHD_get_fdset2 (struct MHD_Daemon *daemon,
+               fd_set *read_fd_set,
+               fd_set *write_fd_set,
+               fd_set *except_fd_set,
+               MHD_socket *max_fd,
+               unsigned int fd_setsize)
+{
+  fd_set es;
+
+  if ( (NULL == daemon) ||
+       (NULL == read_fd_set) ||
+       (NULL == write_fd_set) ||
+       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ||
+       (0 != (daemon->options & MHD_USE_POLL)))
+    return MHD_NO;
+
+  if (NULL == except_fd_set)
+    { /* Workaround to maintain backward compatibility. */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("MHD_get_fdset2() called with except_fd_set "
+                  "set to NULL. Such behavior is unsupported.\n"));
+#endif
+      except_fd_set = es;
+      FD_ZERO(except_fd_set);
+    }
+
+#ifdef EPOLL_SUPPORT
+  if (0 != (daemon->options & MHD_USE_EPOLL))
+    {
+      if (daemon->shutdown)
+        return MHD_NO;
+
+      /* we're in epoll mode, use the epoll FD as a stand-in for
+         the entire event set */
+
+      return MHD_add_to_fd_set_ (daemon->epoll_fd,
+                                 read_fd_set,
+                                 max_fd,
+                                 fd_setsize) ? MHD_YES : MHD_NO;
+    }
+#endif
+
+  return internal_get_fdset2 (daemon, read_fd_set,
+                              write_fd_set, except_fd_set,
+                              max_fd, fd_setsize);
 }
 
 
@@ -3397,12 +3450,12 @@ MHD_select (struct MHD_Daemon *daemon,
 
       /* single-threaded, go over everything */
       if (MHD_NO ==
-          MHD_get_fdset2 (daemon,
-                          &rs,
-                          &ws,
-                          &es,
-                          &maxsock,
-                          FD_SETSIZE))
+          internal_get_fdset2 (daemon,
+                               &rs,
+                               &ws,
+                               &es,
+                               &maxsock,
+                               FD_SETSIZE))
         {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
