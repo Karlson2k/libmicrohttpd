@@ -2289,10 +2289,13 @@ MHD_run (struct MHD_Daemon *daemon);
  * not have to call `select()` again to determine which operations are
  * ready.
  *
+ * This function cannot be used with daemon started with
+ * MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set
  * @param write_fd_set write set
- * @param except_fd_set except set (not used, can be NULL)
+ * @param except_fd_set except set
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */

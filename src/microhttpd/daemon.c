@@ -3288,16 +3288,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 
 /**
- * Run webserver operations. This method should be called by clients
- * in combination with #MHD_get_fdset if the client-controlled select
- * method is used.
- *
- * You can use this function instead of #MHD_run if you called
- * `select()` on the result from #MHD_get_fdset.  File descriptors in
- * the sets that are not controlled by MHD will be ignored.  Calling
- * this function instead of #MHD_run is more efficient as MHD will
- * not have to call `select()` again to determine which operations are
- * ready.
+ * Internal version of #MHD_run_from_select().
  *
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set
@@ -3307,10 +3298,10 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * @ingroup event
  */
 int
-MHD_run_from_select (struct MHD_Daemon *daemon,
-		     const fd_set *read_fd_set,
-		     const fd_set *write_fd_set,
-		     const fd_set *except_fd_set)
+internal_run_from_select (struct MHD_Daemon *daemon,
+                          const fd_set *read_fd_set,
+                          const fd_set *write_fd_set,
+                          const fd_set *except_fd_set)
 {
   MHD_socket ds;
   struct MHD_Connection *pos;
@@ -3411,8 +3402,68 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 
 
 /**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset if the client-controlled select
+ * method is used.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * `select()` on the result from #MHD_get_fdset.  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run is more efficient as MHD will
+ * not have to call `select()` again to determine which operations are
+ * ready.
+ *
+ * This function cannot be used with daemon started with
+ * MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to run select loop for
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @ingroup event
+ */
+int
+MHD_run_from_select (struct MHD_Daemon *daemon,
+                     const fd_set *read_fd_set,
+                     const fd_set *write_fd_set,
+                     const fd_set *except_fd_set)
+{
+  fd_set es;
+  if (0 != (daemon->options &
+        (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL)) )
+    return MHD_NO;
+  if (NULL == read_fd_set || NULL == write_fd_set)
+    return MHD_NO;
+  if (NULL == except_fd_set)
+    { /* Workaround to maintain backward compatibility. */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("MHD_run_from_select() called with except_fd_set "
+                  "set to NULL. Such behavior is deprecated.\n"));
+#endif
+      except_fd_set = es;
+      FD_ZERO(except_fd_set);
+    }
+  if (0 != (daemon->options & MHD_USE_EPOLL))
+    {
+#ifdef EPOLL_SUPPORT
+      int ret;
+      ret = MHD_epoll (daemon, MHD_NO);
+      MHD_cleanup_connections (daemon);
+      return ret;
+#else  /* ! EPOLL_SUPPORT */
+      return MHD_NO;
+#endif /* ! EPOLL_SUPPORT */
+    }
+  return internal_run_from_select (daemon, read_fd_set,
+                                   write_fd_set, except_fd_set);
+}
+
+
+/**
  * Main internal select() call.  Will compute select sets, call select()
- * and then #MHD_run_from_select with the result.
+ * and then #internal_run_from_select with the result.
  *
  * @param daemon daemon to run select() loop for
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
@@ -3566,10 +3617,10 @@ MHD_select (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-  if (MHD_YES == MHD_run_from_select (daemon,
-                                      &rs,
-                                      &ws,
-                                      &es))
+  if (MHD_YES == internal_run_from_select (daemon,
+                                           &rs,
+                                           &ws,
+                                           &es))
     return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
   return MHD_NO;
 }
