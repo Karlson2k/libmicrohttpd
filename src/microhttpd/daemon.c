@@ -716,7 +716,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
         res = false;
       /* Do not monitor again for errors if error was detected before as
        * error state is remembered. */
-      if ((0 == urh->app.celi & MHD_EPOLL_STATE_ERROR) &&
+      if ((0 == (urh->app.celi & MHD_EPOLL_STATE_ERROR)) &&
           ((0 != urh->in_buffer_size) ||
            (0 != urh->out_buffer_size) ||
            (0 != urh->out_buffer_used)))
@@ -741,7 +741,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
         res = false;
       /* Do not monitor again for errors if error was detected before as
        * error state is remembered. */
-      if ((0 == urh->mhd.celi & MHD_EPOLL_STATE_ERROR) &&
+      if ((0 == (urh->mhd.celi & MHD_EPOLL_STATE_ERROR)) &&
           ((0 != urh->out_buffer_size) ||
            (0 != urh->in_buffer_size) ||
            (0 != urh->in_buffer_used)))
@@ -820,7 +820,7 @@ urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
 
   /* Do not monitor again for errors if error was detected before as
    * error state is remembered. */
-  if ((0 == urh->app.celi & MHD_EPOLL_STATE_ERROR) &&
+  if ((0 == (urh->app.celi & MHD_EPOLL_STATE_ERROR)) &&
       ((0 != urh->in_buffer_size) ||
        (0 != urh->out_buffer_size) ||
        (0 != urh->out_buffer_used)))
@@ -833,7 +833,7 @@ urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
 
   /* Do not monitor again for errors if error was detected before as
    * error state is remembered. */
-  if ((0 == urh->mhd.celi & MHD_EPOLL_STATE_ERROR) &&
+  if ((0 == (urh->mhd.celi & MHD_EPOLL_STATE_ERROR)) &&
       ((0 != urh->out_buffer_size) ||
        (0 != urh->in_buffer_size) ||
        (0 != urh->in_buffer_used)))
