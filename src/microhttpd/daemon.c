@@ -1279,15 +1279,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_recv (connection->tls_session,
                                 &urh->in_buffer[urh->in_buffer_used],
                                 buf_size);
-      if (0 < res)
-        {
-          urh->in_buffer_used += res;
-          if (buf_size > (size_t)res)
-            urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-          else if (0 < gnutls_record_check_pending (connection->tls_session))
-            connection->tls_read_ready = true;
-        }
-      else /* 0 >= res */
+      if (0 >= res)
         {
           if (GNUTLS_E_INTERRUPTED != res)
             {
@@ -1300,6 +1292,14 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                   urh->in_buffer_size = 0;
                 }
             }
+        }
+      else /* 0 < res */
+        {
+          urh->in_buffer_used += res;
+          if (buf_size > (size_t)res)
+            urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          else if (0 < gnutls_record_check_pending (connection->tls_session))
+            connection->tls_read_ready = true;
         }
       if (MHD_EPOLL_STATE_ERROR ==
           ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY) & urh->app.celi))
@@ -1327,13 +1327,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_recv_ (urh->mhd.socket,
                        &urh->out_buffer[urh->out_buffer_used],
                        buf_size);
-      if (0 < res)
-        {
-          urh->out_buffer_used += res;
-          if (buf_size > (size_t)res)
-            urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
-        }
-      else /* 0 >= res */
+      if (0 >= res)
         {
           const int err = MHD_socket_get_error_ ();
           if ((0 == res) ||
@@ -1353,6 +1347,12 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                   urh->out_buffer_size = 0;
                 }
             }
+        }
+      else /* 0 < res */
+        {
+          urh->out_buffer_used += res;
+          if (buf_size > (size_t)res)
+            urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
         }
       if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
            ( (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
@@ -1381,20 +1381,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = gnutls_record_send (connection->tls_session,
                                 urh->out_buffer,
                                 data_size);
-      if (0 < res)
-        {
-          const size_t next_out_buffer_used = urh->out_buffer_used - res;
-          if (0 != next_out_buffer_used)
-            {
-              memmove (urh->out_buffer,
-                       &urh->out_buffer[res],
-                       next_out_buffer_used);
-              if (data_size > (size_t)res)
-                urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-            }
-          urh->out_buffer_used = next_out_buffer_used;
-        }
-      else /* 0 >= res */
+      if (0 >= res)
         {
           if (GNUTLS_E_INTERRUPTED != res)
             {
@@ -1417,6 +1404,19 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                   urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
                 }
             }
+        }
+      else /* 0 < res */
+        {
+          const size_t next_out_buffer_used = urh->out_buffer_used - res;
+          if (0 != next_out_buffer_used)
+            {
+              memmove (urh->out_buffer,
+                       &urh->out_buffer[res],
+                       next_out_buffer_used);
+              if (data_size > (size_t)res)
+                urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+            }
+          urh->out_buffer_used = next_out_buffer_used;
         }
       if ( (0 == urh->out_buffer_used) &&
            (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi)) )
@@ -1447,20 +1447,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       res = MHD_send_ (urh->mhd.socket,
                        urh->in_buffer,
                        data_size);
-      if (0 < res)
-        {
-          const size_t next_in_buffer_used = urh->in_buffer_used - res;
-          if (0 != next_in_buffer_used)
-            {
-              memmove (urh->in_buffer,
-                       &urh->in_buffer[res],
-                       next_in_buffer_used);
-              if (data_size > (size_t)res)
-                urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-            }
-          urh->in_buffer_used = next_in_buffer_used;
-        }
-      else /* 0 >= res */
+      if (0 >= res)
         {
           const int err = MHD_socket_get_error_ ();
           if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
@@ -1487,7 +1474,20 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                 }
             }
         }
-      if ( (0 !=urh->in_buffer_used) &&
+      else /* 0 < res */
+        {
+          const size_t next_in_buffer_used = urh->in_buffer_used - res;
+          if (0 != next_in_buffer_used)
+            {
+              memmove (urh->in_buffer,
+                       &urh->in_buffer[res],
+                       next_in_buffer_used);
+              if (data_size > (size_t)res)
+                urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+            }
+          urh->in_buffer_used = next_in_buffer_used;
+        }
+      if ( (0 == urh->in_buffer_used) &&
            (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) )
         {
           /* Do not try to push data to application. */
