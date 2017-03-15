@@ -3221,7 +3221,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   ret = MHD_YES;
 #ifdef EPOLL_SUPPORT
   if ( (! connection->suspended) &&
-       (0 != (daemon->options & MHD_USE_EPOLL))
+       (0 != (daemon->options & MHD_USE_EPOLL)) )
     {
       ret = MHD_connection_epoll_update_ (connection);
     }
