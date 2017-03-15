@@ -3257,7 +3257,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
       /* add to epoll set */
       struct epoll_event event;
 
-      event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+      event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
       event.data.ptr = connection;
       if (0 != epoll_ctl (daemon->epoll_fd,
 			  EPOLL_CTL_ADD,
