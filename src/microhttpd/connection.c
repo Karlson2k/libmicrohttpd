@@ -3201,6 +3201,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  return MHD_NO;
 #ifdef UPGRADE_SUPPORT
 	case MHD_CONNECTION_UPGRADE:
+          connection->in_idle = false;
           return MHD_YES; /* keep open */
 #endif /* UPGRADE_SUPPORT */
        default:
