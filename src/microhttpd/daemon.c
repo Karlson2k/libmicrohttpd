@@ -1084,8 +1084,8 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 _("MHD_get_fdset2() called with except_fd_set "
                   "set to NULL. Such behavior is unsupported.\n"));
 #endif
+      FD_ZERO (&es);
       except_fd_set = &es;
-      FD_ZERO(except_fd_set);
     }
 
 #ifdef EPOLL_SUPPORT
@@ -3457,8 +3457,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                 _("MHD_run_from_select() called with except_fd_set "
                   "set to NULL. Such behavior is deprecated.\n"));
 #endif
+      FD_ZERO (&es);
       except_fd_set = &es;
-      FD_ZERO(except_fd_set);
     }
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
