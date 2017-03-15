@@ -88,6 +88,8 @@
 #define DEBUG_CONNECT MHD_NO
 
 
+/* Forward declarations. */
+
 /**
  * Close all connections for the daemon.
  * Must only be called when MHD_Daemon::shutdown was set to #MHD_YES.
@@ -98,6 +100,19 @@
  */
 static void
 close_all_connections (struct MHD_Daemon *daemon);
+
+
+/**
+ * Do epoll()-based processing (this function is allowed to
+ * block if @a may_block is set to #MHD_YES).
+ *
+ * @param daemon daemon to run poll loop for
+ * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ */
+static int
+MHD_epoll (struct MHD_Daemon *daemon,
+	   int may_block);
 
 
 /**
@@ -1069,7 +1084,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 _("MHD_get_fdset2() called with except_fd_set "
                   "set to NULL. Such behavior is unsupported.\n"));
 #endif
-      except_fd_set = es;
+      except_fd_set = &es;
       FD_ZERO(except_fd_set);
     }
 
@@ -3442,7 +3457,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                 _("MHD_run_from_select() called with except_fd_set "
                   "set to NULL. Such behavior is deprecated.\n"));
 #endif
-      except_fd_set = es;
+      except_fd_set = &es;
       FD_ZERO(except_fd_set);
     }
   if (0 != (daemon->options & MHD_USE_EPOLL))
