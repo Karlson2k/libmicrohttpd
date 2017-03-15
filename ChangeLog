@@ -1,3 +1,10 @@
+Wed Mar 15 23:29:59 MSK 2017
+	Prevented socket read/write if connection is suspended.
+	Added missing resets of 'connection->in_idle'.
+	Reworked handling of suspended connection: ensure that
+	connection is not disconnected by timeout, always
+	updated read/write states right after suspending. -EG
+
 Wed Mar 15 21:02:26 MSK 2017
 	Added new enum value MHD_CONNECTION_INFO_CONNECTION_TIMEOUT
 	to get connection timeout by MHD_get_connection_info(). -EG
