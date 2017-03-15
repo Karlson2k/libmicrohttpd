@@ -2732,7 +2732,6 @@ int
 MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
-  unsigned int timeout;
   const char *end;
   char *line;
   size_t line_len;
@@ -2740,13 +2739,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   int ret;
 
   connection->in_idle = true;
-  while (1)
+  while (! connection->suspended)
     {
-      if (connection->suspended)
-        {
-          connection->in_idle = false;
-          return MHD_YES;
-        }
 #if DEBUG_STATES
       MHD_DLOG (daemon,
                 _("In function %s handling connection at state: %s\n"),
@@ -3210,19 +3204,24 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         }
       break;
     }
-  timeout = connection->connection_timeout;
-  if ( (0 != timeout) &&
-       (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)) )
+  if (! connection->suspended)
     {
-      MHD_connection_close_ (connection,
-                             MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-      connection->in_idle = false;
-      return MHD_YES;
+      unsigned int timeout;
+      timeout = connection->connection_timeout;
+      if ( (0 != timeout) &&
+           (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)) )
+        {
+          MHD_connection_close_ (connection,
+                                 MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+          connection->in_idle = false;
+          return MHD_YES;
+        }
     }
   MHD_connection_update_event_loop_info (connection);
   ret = MHD_YES;
 #ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+  if ( (! connection->suspended) &&
+       (0 != (daemon->options & MHD_USE_EPOLL))
     {
       ret = MHD_connection_epoll_update_ (connection);
     }
@@ -3277,7 +3276,6 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 	}
       connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
     }
-  connection->in_idle = false;
   return MHD_YES;
 }
 #endif
