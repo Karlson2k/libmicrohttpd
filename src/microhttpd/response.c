@@ -678,9 +678,8 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                   SHUT_RDWR);
       }
 #endif /* HTTPS_SUPPORT */
-    urh->was_closed = true;
     EXTRA_CHECK (MHD_CONNECTION_UPGRADE == connection->state);
-    connection->state = MHD_CONNECTION_UPGRADE_CLOSED;
+    urh->was_closed = true;
     /* As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
      * be moved to cleanup list by MHD_resume_connection(). */

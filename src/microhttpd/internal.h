@@ -514,13 +514,6 @@ enum MHD_CONNECTION_STATE
    * control of the application.
    */
   MHD_CONNECTION_UPGRADE = MHD_TLS_CONNECTION_INIT + 1,
-
-  /**
-   * Connection was "upgraded" and subsequently closed
-   * by the application.  We now need to do our own
-   * internal cleanup.
-   */
-  MHD_CONNECTION_UPGRADE_CLOSED = MHD_CONNECTION_UPGRADE + 1
 #endif /* UPGRADE_SUPPORT */
 
 };

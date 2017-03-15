@@ -2446,8 +2446,6 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
           break;
-        case MHD_CONNECTION_UPGRADE_CLOSED:
-          break;
 #endif /* UPGRADE_SUPPORT */
         default:
           /* shrink read buffer to how much is actually used */
@@ -2634,8 +2632,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
-          break;
-        case MHD_CONNECTION_UPGRADE_CLOSED:
           break;
 #endif /* UPGRADE_SUPPORT */
         default:
@@ -3202,8 +3198,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
 	case MHD_CONNECTION_UPGRADE:
           return MHD_YES; /* keep open */
-        case MHD_CONNECTION_UPGRADE_CLOSED:
-          return MHD_YES; /* "Upgraded" connection should be closed in special way. */
 #endif /* UPGRADE_SUPPORT */
        default:
           EXTRA_CHECK (0);

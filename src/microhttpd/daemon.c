@@ -1620,7 +1620,9 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   if ( (0 != (daemon->options & MHD_USE_TLS)) &&
       (0 == (daemon->options & MHD_USE_POLL)))
     {
-      while ( (MHD_CONNECTION_UPGRADE == con->state) ||
+      while ( (0 != urh->in_buffer_size) ||
+              (0 != urh->out_buffer_size) ||
+              (0 != urh->in_buffer_used) ||
               (0 != urh->out_buffer_used) )
         {
           /* use select */
@@ -1690,11 +1692,6 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
                           &ws,
                           &es);
           process_urh (urh);
-          if ( (0 == urh->in_buffer_size) &&
-               (0 == urh->out_buffer_size) &&
-               (0 == urh->in_buffer_used) &&
-               (0 == urh->out_buffer_used) )
-            break; /* connections died, we have no more purpose here */
         }
     }
 #ifdef HAVE_POLL
@@ -1708,7 +1705,9 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       p[0].fd = urh->connection->socket_fd;
       p[1].fd = urh->mhd.socket;
 
-      while ( (MHD_CONNECTION_UPGRADE == con->state) ||
+      while ( (0 != urh->in_buffer_size) ||
+              (0 != urh->out_buffer_size) ||
+              (0 != urh->in_buffer_used) ||
               (0 != urh->out_buffer_used) )
         {
           int timeout;
@@ -1738,11 +1737,6 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
             }
           urh_from_pollfd(urh, p);
           process_urh (urh);
-          if ( (0 == urh->in_buffer_size) &&
-               (0 == urh->out_buffer_size) &&
-               (0 == urh->in_buffer_used) &&
-               (0 == urh->out_buffer_used) )
-            break; /* connections died, we have no more purpose here */
         }
     }
   /* end POLL */
@@ -2070,11 +2064,7 @@ thread_main_handle_connection (void *data)
 	}
 #endif
 #ifdef UPGRADE_SUPPORT
-      /* Check for 'MHD_CONNECTION_UPGRADE_CLOSED' too:
-       * application can finish with "upgraded" connection
-       * before this thread process it for the first time. */
-      if ( (MHD_CONNECTION_UPGRADE == con->state) ||
-           (MHD_CONNECTION_UPGRADE_CLOSED == con->state) )
+      if (MHD_CONNECTION_UPGRADE == con->state)
         {
           /* Normal HTTP processing is finished,
            * notify application. */
