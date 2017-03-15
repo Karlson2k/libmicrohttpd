@@ -2737,6 +2737,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   char *line;
   size_t line_len;
   int client_close;
+  int ret;
 
   connection->in_idle = true;
   while (1)
@@ -3218,11 +3219,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       return MHD_YES;
     }
   MHD_connection_update_event_loop_info (connection);
+  ret = MHD_YES;
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
-    return MHD_connection_epoll_update_ (connection);
+    {
+      ret = MHD_connection_epoll_update_ (connection);
+    }
 #endif /* EPOLL_SUPPORT */
-  return MHD_YES;
+  connection->in_idle = false;
+  return ret;
 }
 
 
