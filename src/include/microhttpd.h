@@ -1641,6 +1641,13 @@ union MHD_ConnectionInfo
   int /* MHD_YES or MHD_NO */ suspended;
 
   /**
+   * Amount of second that connection could spend in idle state
+   * before automatically disconnected.
+   * Zero for no timeout (unlimited idle time).
+   */
+  unsigned int connection_timeout;
+
+  /**
    * Connect socket
    */
   MHD_socket connect_fd;
@@ -1742,10 +1749,17 @@ enum MHD_ConnectionInfoType
   MHD_CONNECTION_INFO_SOCKET_CONTEXT,
 
   /**
-   * Check wheter the connection is suspended.
+   * Check whether the connection is suspended.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_CONNECTION_SUSPENDED
+  MHD_CONNECTION_INFO_CONNECTION_SUSPENDED,
+
+
+  /**
+   * Get connection timeout
+   * @ingroup request
+   */
+  MHD_CONNECTION_INFO_CONNECTION_TIMEOUT
 };
 
 
