@@ -2404,7 +2404,8 @@ int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
   update_last_activity (connection);
-  if (MHD_CONNECTION_CLOSED == connection->state)
+  if ( (MHD_CONNECTION_CLOSED == connection->state) ||
+       (connection->suspended) )
     return MHD_YES;
   /* make sure "read" has a reasonable number of bytes
      in buffer to use per system call (if possible) */
@@ -2474,6 +2475,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
   ssize_t ret;
+  if (connection->suspended)
+    return MHD_YES;
 
   update_last_activity (connection);
   while (1)
