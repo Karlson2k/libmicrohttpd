@@ -1,3 +1,8 @@
+Thu Mar 16 16:49:07 MSK 2017
+	Added ability to get actual daemon flags via MHD_get_daemon_info().
+	Fixed test_upgrade to work in request mode.
+	Fixed compiler warnings in test_upgrade. -EG
+
 Wed Mar 15 23:29:59 MSK 2017
 	Prevented socket read/write if connection is suspended.
 	Added missing resets of 'connection->in_idle'.

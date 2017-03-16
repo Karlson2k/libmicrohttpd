@@ -101,6 +101,7 @@
 static void
 close_all_connections (struct MHD_Daemon *daemon);
 
+#ifdef EPOLL_SUPPORT
 
 /**
  * Do epoll()-based processing (this function is allowed to
@@ -114,6 +115,7 @@ static int
 MHD_epoll (struct MHD_Daemon *daemon,
 	   int may_block);
 
+#endif /* EPOLL_SUPPORT */
 
 /**
  * Default implementation of the panic function,

@@ -888,6 +888,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
     }
 }
 
+#ifdef HAVE_POLL
 
 /**
  * Run the MHD external event loop using select.
@@ -899,8 +900,10 @@ run_mhd_poll_loop (struct MHD_Daemon *daemon)
 {
   abort (); /* currently not implementable with existing MHD API */
 }
+#endif /* HAVE_POLL */
 
 
+#ifdef EPOLL_SUPPORT
 /**
  * Run the MHD external event loop using select.
  *
@@ -938,7 +941,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
       MHD_run (daemon);
     }
 }
-
+#endif /* EPOLL_SUPPORT */
 
 /**
  * Run the MHD external event loop using select.
@@ -949,14 +952,16 @@ static void
 run_mhd_loop (struct MHD_Daemon *daemon,
               int flags)
 {
-  if (0 != (flags & MHD_USE_POLL))
+  if (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))
+    run_mhd_select_loop (daemon);
+#ifdef HAVE_POLL
+  else if (0 != (flags & MHD_USE_POLL))
     run_mhd_poll_loop (daemon);
+#endif /* HAVE_POLL */
 #if EPOLL_SUPPORT
   else if (0 != (flags & MHD_USE_EPOLL))
     run_mhd_epoll_loop (daemon);
 #endif
-  else if (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))
-    run_mhd_select_loop (daemon);
   else
     abort ();
 }
