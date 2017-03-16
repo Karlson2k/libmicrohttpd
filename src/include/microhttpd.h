@@ -1795,6 +1795,9 @@ enum MHD_DaemonInfoType
   /**
    * Request the number of current connections handled by the daemon.
    * No extra arguments should be passed.
+   * Note: when using MHD in external polling mode, this type of request
+   * could be used only when #MHD_run()/#MHD_run_from_select is not
+   * working in other thread at the same time.
    */
   MHD_DAEMON_INFO_CURRENT_CONNECTIONS,
 
