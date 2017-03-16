@@ -140,6 +140,8 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
             __FUNCTION__,
             MHD_state_to_string (connection->state));
 #endif
+  if (connection->suspended)
+    return MHD_connection_handle_idle (connection);
   timeout = connection->connection_timeout;
   if ( (timeout != 0) &&
        (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)))
