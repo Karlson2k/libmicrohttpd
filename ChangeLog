@@ -1,3 +1,12 @@
+Thu Mar 16 22:31:54 MSK 2017
+	Unified update of last activity on connections.
+	Update last activity only if something is really transmitted.
+	Update last activity each time when something is transmitted.
+	Removed early duplicated check for timeout on HTTPS connections.
+	Removed update of last active time for connections without timeout.
+	Fixed reset of timeout timer on resumed connections.
+	Fixed thread-safety of MHD_set_connection_option(). -EG
+
 Thu Mar 16 21:05:08 MSK 2017
 	Fixed minor bug resulted in slight slowdown of HTTPS connection
 	handshake. -EG
