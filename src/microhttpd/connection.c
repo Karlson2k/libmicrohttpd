@@ -2373,11 +2373,15 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
+  if (0 == connection->connection_timeout)
+    return; /* Skip update of activity for connections
+               without timeout timer. */
+  if (connection->suspended)
+    return; /* no activity on suspended connections */
+
   connection->last_activity = MHD_monotonic_sec_counter();
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return; /* each connection has personal timeout */
-  if (connection->suspended)
-    return; /* not timeouts for suspended connections */
 
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
@@ -3373,6 +3377,9 @@ MHD_set_connection_option (struct MHD_Connection *connection,
   switch (option)
     {
     case MHD_CONNECTION_OPTION_TIMEOUT:
+      if (0 == connection->connection_timeout)
+        connection->last_activity = MHD_monotonic_sec_counter();
+
       MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
           (! connection->suspended) )

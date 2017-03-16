@@ -142,6 +142,6 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection);
  * @param connection the connection that saw some activity
  */
 void
-update_last_activity (struct MHD_Connection *connection);
+MHD_update_last_activity_ (struct MHD_Connection *connection);
 
 #endif

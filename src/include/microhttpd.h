@@ -3143,6 +3143,8 @@ enum MHD_CONNECTION_OPTION
    * Set a custom timeout for the given connection.  Specified
    * as the number of seconds, given as an `unsigned int`.  Use
    * zero for no timeout.
+   * If timeout was set to zero (or unset) before, setup of new value by
+   * MHD_set_connection_option() will reset timeout timer.
    */
   MHD_CONNECTION_OPTION_TIMEOUT
 
