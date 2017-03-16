@@ -1,3 +1,10 @@
+Thu Mar 16 20:35:59 MSK 2017
+	Improved thread-safety for DL-lists. -EG
+
+Thu Mar 16 17:55:01 MSK 2017
+	Fixed thread-safety of MHD_get_daemon_info() for
+	MHD_DAEMON_INFO_CURRENT_CONNECTIONS. -EG
+
 Thu Mar 16 16:49:07 MSK 2017
 	Added ability to get actual daemon flags via MHD_get_daemon_info().
 	Fixed test_upgrade to work in request mode.

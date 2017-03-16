@@ -2382,6 +2382,7 @@ update_last_activity (struct MHD_Connection *connection)
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
 
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   /* move connection to head of timeout list (by remove + add operation) */
   XDLL_remove (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
@@ -2389,6 +2390,7 @@ update_last_activity (struct MHD_Connection *connection)
   XDLL_insert (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
 	       connection);
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 

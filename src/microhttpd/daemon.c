@@ -4403,6 +4403,9 @@ close_connection (struct MHD_Connection *pos)
     }
   MHD_connection_close_ (pos,
                          MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN);
+
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+
   if (pos->connection_timeout == pos->daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
 		 daemon->normal_timeout_tail,
@@ -4417,6 +4420,8 @@ close_connection (struct MHD_Connection *pos)
   DLL_insert (daemon->cleanup_head,
 	      daemon->cleanup_tail,
 	      pos);
+
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
 
 

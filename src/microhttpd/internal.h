@@ -1373,7 +1373,8 @@ struct MHD_Daemon
   MHD_mutex_ per_ip_connection_mutex;
 
   /**
-   * Mutex for (modifying) access to the "cleanup" connection DLL.
+   * Mutex for (modifying) access to the "cleanup", "normal_timeout" and
+   * "manual_timeout" DLLs.
    */
   MHD_mutex_ cleanup_connection_mutex;
 
