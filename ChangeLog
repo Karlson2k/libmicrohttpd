@@ -1,3 +1,7 @@
+Thu Mar 16 23:12:07 MSK 2017
+	Idle connection should be disconnected *after* "timeout" number of
+	second, not *before* this number. -EG/VT
+
 Thu Mar 16 22:31:54 MSK 2017
 	Unified update of last activity on connections.
 	Update last activity only if something is really transmitted.

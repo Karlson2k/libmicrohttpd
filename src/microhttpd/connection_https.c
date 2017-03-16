@@ -155,7 +155,7 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
     }
   timeout = connection->connection_timeout;
   if ( (timeout != 0) &&
-       (timeout <= (MHD_monotonic_sec_counter() - connection->last_activity)))
+       (timeout < (MHD_monotonic_sec_counter() - connection->last_activity)))
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
 #ifdef EPOLL_SUPPORT
