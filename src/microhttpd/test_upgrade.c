@@ -955,8 +955,10 @@ run_mhd_loop (struct MHD_Daemon *daemon,
   else if (0 != (flags & MHD_USE_EPOLL))
     run_mhd_epoll_loop (daemon);
 #endif
-  else
+  else if (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))
     run_mhd_select_loop (daemon);
+  else
+    abort ();
 }
 
 static bool test_tls;
@@ -974,6 +976,7 @@ test_upgrade (int flags,
   struct MHD_Daemon *d = NULL;
   wr_socket sock;
   struct sockaddr_in sa;
+  const union MHD_DaemonInfo *real_flags;
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
   pid_t pid = -1;
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
@@ -1006,6 +1009,9 @@ test_upgrade (int flags,
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
     return 2;
+  real_flags = MHD_get_daemon_info(d, MHD_DAEMON_INFO_FLAGS);
+  if (NULL == real_flags)
+    abort ();
   if (!test_tls || TLS_LIB_GNUTLS == use_tls_tool)
     {
       sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();
@@ -1042,7 +1048,7 @@ test_upgrade (int flags,
                            &sock))
     abort ();
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
-    run_mhd_loop (d, flags);
+    run_mhd_loop (d, real_flags->flags);
   pthread_join (pt_client,
                 NULL);
   pthread_join (pt,
