@@ -3171,10 +3171,14 @@ union MHD_DaemonInfo
   size_t mac_key_size;
 
   /**
-   * Socket, returned for #MHD_DAEMON_INFO_EPOLL_FD
-   * and #MHD_DAEMON_INFO_LISTEN_FD.
+   * Socket, returned for #MHD_DAEMON_INFO_LISTEN_FD.
    */
   MHD_socket listen_fd;
+
+  /**
+   * epoll FD, returned for #MHD_DAEMON_INFO_EPOLL_FD.
+   */
+  int epoll_fd;
 
   /**
    * Number of active connections, for #MHD_DAEMON_INFO_CURRENT_CONNECTIONS.
