@@ -48,7 +48,7 @@ run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
 
-  connection->last_activity = MHD_monotonic_sec_counter ();
+  MHD_update_last_activity_ (connection);
   if (MHD_TLS_CONNECTION_INIT == connection->state)
     {
       ret = gnutls_handshake (connection->tls_session);

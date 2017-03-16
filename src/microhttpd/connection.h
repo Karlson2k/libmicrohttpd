@@ -134,5 +134,14 @@ int
 MHD_connection_epoll_update_ (struct MHD_Connection *connection);
 #endif
 
+/**
+ * Update the 'last_activity' field of the connection to the current time
+ * and move the connection to the head of the 'normal_timeout' list if
+ * the timeout for the connection uses the default value.
+ *
+ * @param connection the connection that saw some activity
+ */
+void
+update_last_activity (struct MHD_Connection *connection);
 
 #endif

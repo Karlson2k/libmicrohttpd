@@ -2368,8 +2368,8 @@ parse_connection_headers (struct MHD_Connection *connection)
  *
  * @param connection the connection that saw some activity
  */
-static void
-update_last_activity (struct MHD_Connection *connection)
+void
+MHD_update_last_activity_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
@@ -2405,7 +2405,7 @@ update_last_activity (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
-  update_last_activity (connection);
+  MHD_update_last_activity_ (connection);
   if ( (MHD_CONNECTION_CLOSED == connection->state) ||
        (connection->suspended) )
     return MHD_YES;
@@ -2480,7 +2480,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   if (connection->suspended)
     return MHD_YES;
 
-  update_last_activity (connection);
+  MHD_update_last_activity_ (connection);
   while (1)
     {
 #if DEBUG_STATES

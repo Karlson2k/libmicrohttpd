@@ -1865,10 +1865,9 @@ thread_main_handle_connection (void *data)
           continue; /* Check again for resume. */
         } /* End of "suspended" branch. */
 
-      if ( (was_suspended) &&
-           (0 != con->connection_timeout) )
+      if (was_suspended)
         {
-          con->last_activity = MHD_monotonic_sec_counter(); /* Reset timeout timer. */
+          MHD_update_last_activity_ (con); /* Reset timeout timer. */
           was_suspended = false;
         }
 
