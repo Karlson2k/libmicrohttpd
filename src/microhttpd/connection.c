@@ -3373,6 +3373,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
   switch (option)
     {
     case MHD_CONNECTION_OPTION_TIMEOUT:
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
           (! connection->suspended) )
         {
@@ -3401,6 +3402,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
                           daemon->manual_timeout_tail,
                           connection);
         }
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
       return MHD_YES;
     default:
       return MHD_NO;
