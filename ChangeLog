@@ -1,3 +1,9 @@
+Thu Mar 16 23:45:29 MSK 2017
+	Allow again to run MHD in external epoll mode by
+	MHD_run_from_select() - this allow unification of user code
+	and produce no harm for performance. Especially useful with
+	MHD_USE_AUTO flag. -EG
+
 Thu Mar 16 23:12:07 MSK 2017
 	Idle connection should be disconnected *after* "timeout" number of
 	second, not *before* this number. -EG/VT

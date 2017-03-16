@@ -3441,7 +3441,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 {
   fd_set es;
   if (0 != (daemon->options &
-        (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL | MHD_USE_EPOLL)) )
+        (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL)) )
     return MHD_NO;
   if (NULL == read_fd_set || NULL == write_fd_set)
     return MHD_NO;
@@ -3454,6 +3454,17 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #endif
       FD_ZERO (&es);
       except_fd_set = &es;
+    }
+  if (0 != (daemon->options & MHD_USE_EPOLL))
+    {
+#ifdef EPOLL_SUPPORT
+      int ret;
+      ret = MHD_epoll (daemon, MHD_NO);
+      MHD_cleanup_connections (daemon);
+      return ret;
+#else  /* ! EPOLL_SUPPORT */
+      return MHD_NO;
+#endif /* ! EPOLL_SUPPORT */
     }
   return internal_run_from_select (daemon, read_fd_set,
                                    write_fd_set, except_fd_set);
