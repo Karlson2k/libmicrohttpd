@@ -1,3 +1,7 @@
+Thu Mar 16 21:05:08 MSK 2017
+	Fixed minor bug resulted in slight slowdown of HTTPS connection
+	handshake. -EG
+
 Thu Mar 16 20:35:59 MSK 2017
 	Improved thread-safety for DL-lists. -EG
 

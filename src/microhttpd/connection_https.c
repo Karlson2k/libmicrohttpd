@@ -48,7 +48,6 @@ run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
 
-  MHD_update_last_activity_ (connection);
   if (MHD_TLS_CONNECTION_INIT == connection->state)
     {
       ret = gnutls_handshake (connection->tls_session);
@@ -56,6 +55,7 @@ run_tls_handshake (struct MHD_Connection *connection)
 	{
 	  /* set connection state to enable HTTP processing */
 	  connection->state = MHD_CONNECTION_INIT;
+	  MHD_update_last_activity_ (connection);
 	  return MHD_NO;
 	}
       if ( (GNUTLS_E_AGAIN == ret) ||

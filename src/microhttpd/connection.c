@@ -2405,7 +2405,6 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
-  MHD_update_last_activity_ (connection);
   if ( (MHD_CONNECTION_CLOSED == connection->state) ||
        (connection->suspended) )
     return MHD_YES;
@@ -2416,6 +2415,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     try_grow_read_buffer (connection);
   if (MHD_NO == do_read (connection))
     return MHD_YES;
+  MHD_update_last_activity_ (connection);
   while (1)
     {
 #if DEBUG_STATES
@@ -2480,7 +2480,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   if (connection->suspended)
     return MHD_YES;
 
-  MHD_update_last_activity_ (connection);
   while (1)
     {
 #if DEBUG_STATES
@@ -2529,6 +2528,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                    &HTTP_100_CONTINUE[connection->continue_message_write_offset]);
 #endif
           connection->continue_message_write_offset += ret;
+          MHD_update_last_activity_ (connection);
           break;
         case MHD_CONNECTION_CONTINUE_SENT:
         case MHD_CONNECTION_BODY_RECEIVED:
@@ -2537,7 +2537,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
-          do_write (connection);
+          if (MHD_NO != do_write (connection))
+            MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_HEADERS_SENDING != connection->state)
  	     break;
           check_write_done (connection,
@@ -2569,7 +2570,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         [(size_t)data_write_offset],
                                         response->data_size -
                                         (size_t)data_write_offset);
-            err = MHD_socket_get_error_ ();
 #if DEBUG_SEND_DATA
             if (ret > 0)
               fprintf (stderr,
@@ -2583,6 +2583,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               MHD_mutex_unlock_chk_ (&response->mutex);
             if (ret < 0)
               {
+                err = MHD_socket_get_error_ ();
                 if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
                     MHD_SCKT_ERR_IS_EAGAIN_ (err))
                   return MHD_YES;
@@ -2597,6 +2598,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 return MHD_YES;
               }
             connection->response_write_position += ret;
+            MHD_update_last_activity_ (connection);
           }
           if (connection->response_write_position ==
               connection->response->total_size)
@@ -2606,7 +2608,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
-          do_write (connection);
+          if (MHD_NO != do_write (connection))
+            MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_CHUNKED_BODY_READY != connection->state)
 	     break;
           check_write_done (connection,
@@ -2620,7 +2623,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_FOOTERS_SENDING:
-          do_write (connection);
+          if (MHD_NO != do_write (connection))
+            MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_FOOTERS_SENDING != connection->state)
 	    break;
           check_write_done (connection,
