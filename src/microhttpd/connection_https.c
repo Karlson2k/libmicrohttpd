@@ -154,9 +154,6 @@ MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_CLOSED:
       return MHD_connection_handle_idle (connection);
     default:
-      if ( (0 != gnutls_record_check_pending (connection->tls_session)) &&
-	   (MHD_YES != MHD_tls_connection_handle_read (connection)) )
-	return MHD_YES;
       return MHD_connection_handle_idle (connection);
     }
 #ifdef EPOLL_SUPPORT
