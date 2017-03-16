@@ -56,7 +56,7 @@ run_tls_handshake (struct MHD_Connection *connection)
 	{
 	  /* set connection state to enable HTTP processing */
 	  connection->state = MHD_CONNECTION_INIT;
-	  return MHD_YES;
+	  return MHD_NO;
 	}
       if ( (GNUTLS_E_AGAIN == ret) ||
 	   (GNUTLS_E_INTERRUPTED == ret) )
