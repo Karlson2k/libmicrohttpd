@@ -2860,6 +2860,10 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                       pos);
           if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
             {
+              /* Reset timeout timer on resume. */
+              if (0 != pos->connection_timeout)
+                pos->last_activity = MHD_monotonic_sec_counter();
+
               if (pos->connection_timeout == daemon->connection_timeout)
                 XDLL_insert (daemon->normal_timeout_head,
                              daemon->normal_timeout_tail,
