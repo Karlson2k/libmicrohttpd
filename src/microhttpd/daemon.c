@@ -6259,6 +6259,8 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
             }
         }
       return (const union MHD_DaemonInfo *) &daemon->connections;
+    case MHD_DAEMON_INFO_FLAGS:
+      return (const union MHD_DaemonInfo *) &daemon->options;
     default:
       return NULL;
     };

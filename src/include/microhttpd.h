@@ -1796,7 +1796,15 @@ enum MHD_DaemonInfoType
    * Request the number of current connections handled by the daemon.
    * No extra arguments should be passed.
    */
-  MHD_DAEMON_INFO_CURRENT_CONNECTIONS
+  MHD_DAEMON_INFO_CURRENT_CONNECTIONS,
+
+  /**
+   * Request the daemon flags.
+   * No extra arguments should be passed.
+   * Note: flags may differ from original 'flags' specified for
+   * daemon, especially if #MHD_USE_AUTO was set.
+   */
+  MHD_DAEMON_INFO_FLAGS
 };
 
 
@@ -3184,6 +3192,14 @@ union MHD_DaemonInfo
    * Number of active connections, for #MHD_DAEMON_INFO_CURRENT_CONNECTIONS.
    */
   unsigned int num_connections;
+
+  /**
+   * Combination of #MHD_FLAG values, for #MHD_DAEMON_INFO_FLAGS.
+   * This value is actually a bitfield.
+   * Note: flags may differ from original 'flags' specified for
+   * daemon, especially if #MHD_USE_AUTO was set.
+   */
+  enum MHD_FLAG flags;
 };
 
 
