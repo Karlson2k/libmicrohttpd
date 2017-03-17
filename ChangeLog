@@ -1,3 +1,9 @@
+Thu Mar 17 10:45:31 MSK 2017
+	If read buffer is full, MHD need to receive remote data and application
+	suspended connection, do not fail while connection is suspended and give
+	application one more chance to read data from buffer once connection is
+	resumed. -EG
+
 Thu Mar 16 23:45:29 MSK 2017
 	Allow again to run MHD in external epoll mode by
 	MHD_run_from_select() - this allow unification of user code
@@ -15,6 +21,7 @@ Thu Mar 16 22:31:54 MSK 2017
 	Removed early duplicated check for timeout on HTTPS connections.
 	Removed update of last active time for connections without timeout.
 	Fixed reset of timeout timer on resumed connections.
+	Fixed never-expired timeouts on HTTPS connections.
 	Fixed thread-safety of MHD_set_connection_option(). -EG
 
 Thu Mar 16 21:05:08 MSK 2017

@@ -1410,7 +1410,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
             {
               if ((MHD_YES != try_grow_read_buffer (connection)) &&
                   (0 != (connection->daemon->options &
-                         MHD_USE_INTERNAL_POLLING_THREAD)))
+                         MHD_USE_INTERNAL_POLLING_THREAD)) &&
+                  (! connection->suspended))
                 {
                   /* failed to grow the read buffer, and the
                      client which is supposed to handle the
@@ -1423,6 +1424,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
                      on the connection (if a timeout is even
                      set!).
                      Solution: we kill the connection with an error */
+                  /* If connection is suspended, give application one
+                   * more chance to read data once connection is resumed. */
                   transmit_error_response (connection,
                                            MHD_HTTP_INTERNAL_SERVER_ERROR,
                                            INTERNAL_ERROR);
