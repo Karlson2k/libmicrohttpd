@@ -1028,14 +1028,14 @@ struct MHD_UpgradeResponseHandle
 
 #ifdef EPOLL_SUPPORT
   /**
-   * Next pointer for the EDLL listing connections that are epoll-ready.
+   * Next pointer for the EDLL listing urhs that are epoll-ready.
    */
-  struct MHD_Connection *nextE;
+  struct MHD_UpgradeResponseHandle *nextE;
 
   /**
-   * Previous pointer for the EDLL listing connections that are epoll-ready.
+   * Previous pointer for the EDLL listing urhs that are epoll-ready.
    */
-  struct MHD_Connection *prevE;
+  struct MHD_UpgradeResponseHandle *prevE;
 
   /**
    * Specifies whether urh already in EDLL list of ready connections.

@@ -593,6 +593,13 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
     {
       MHD_PANIC (_("Failed to remove FD from epoll set\n"));
     }
+  if (urh->in_eready_list)
+    {
+      EDLL_remove (daemon->eready_urh_head,
+		   daemon->eready_urh_tail,
+		   urh);
+      urh->in_eready_list = false;
+    }
 #endif /* EPOLL_SUPPORT */
   if (MHD_INVALID_SOCKET != urh->mhd.socket)
     {
