@@ -3976,13 +3976,16 @@ MHD_poll (struct MHD_Daemon *daemon,
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 
 /**
- * Return true if @a urh has some data to process, false otherwise
+ * Checks whether @a urh has some data to process.
+ *
+ * @param urh upgrade handler to analyse
+ * @return 'true' if @a urh has some data to process,
+ *         'false' otherwise
  */
 static bool
 is_urh_ready(struct MHD_UpgradeResponseHandle * const urh)
 {
   const struct MHD_Connection * const connection = urh->connection;
-  const struct MHD_Daemon * const daemon = connection->daemon;
 
   if ( (0 == urh->in_buffer_size) &&
        (0 == urh->out_buffer_size) &&
@@ -3990,7 +3993,7 @@ is_urh_ready(struct MHD_UpgradeResponseHandle * const urh)
        (0 == urh->out_buffer_used) )
     return false;
 
-  if (urh->connection->daemon->shutdown)
+  if (connection->daemon->shutdown)
     return true;
 
   if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
@@ -4006,13 +4009,11 @@ is_urh_ready(struct MHD_UpgradeResponseHandle * const urh)
        (urh->out_buffer_used > 0) )
     return true;
 
-  if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
-       (urh->out_buffer_used > 0) )
-    return true;
-
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
          (urh->in_buffer_used > 0) )
     return true;
+
+  return false;
 }
 
 /**
@@ -4072,6 +4073,9 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
           if ( (0 == (ueh->celi & MHD_EPOLL_STATE_ERROR)) &&
                (0 != (events[i].events & (EPOLLERR | EPOLLPRI))) )
 	    {
+              /* Process new error state only one time
+               * and avoid continuously marking this connection
+               * as 'ready'. */
               ueh->celi |= MHD_EPOLL_STATE_ERROR;
               new_err_state = true;
 	    }
@@ -4087,7 +4091,6 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
         	  urh->in_eready_list = true;
         	}
             }
-
         }
     }
   prev = daemon->eready_urh_tail;
@@ -4110,10 +4113,10 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
         {
           MHD_connection_finish_forward_ (pos->connection);
           pos->clean_ready = true;
-          /* If 'pos->was_closed' set to true, connection will be
-           * moved immediately to cleanup list. Otherwise connection
-           * will stay in suspended list until 'pos' will be marked
-           * with 'was_closed' by application. */
+          /* If 'pos->was_closed' already was set to true, connection
+           * will be moved immediately to cleanup list. Otherwise
+           * connection will stay in suspended list until 'pos' will
+           * be marked with 'was_closed' by application. */
           MHD_resume_connection(pos->connection);
         }
     }
