@@ -246,21 +246,18 @@ freebsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
-     shutdown_trig_select='no'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 openbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
      mhd_host_os='OpenBSD'
-     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 netbsd*)
      AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
      mhd_host_os='NetBSD'
-     shutdown_trig_select='yes'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
 *solaris*)
@@ -273,14 +270,12 @@ netbsd*)
      ;;
 *arm-linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
-     shutdown_trig_select='yes'
      mhd_host_os='ARM Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
      CFLAGS="-fPIC -pipe $CFLAGS"
      ;;
 *linux*)
      AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
-     shutdown_trig_select='yes'
      mhd_host_os='Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
      ;;
@@ -328,9 +323,6 @@ netbsd*)
 #    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
 ;;
 esac
-
-AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$shutdown_trig_select" = "xyes"])
-AS_IF([test "x$shutdown_trig_select" = "xyes"], [AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
@@ -602,6 +594,9 @@ if test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"; then
 fi
 AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
+
+MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
+AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler
@@ -1444,6 +1439,8 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Inter-thread comm: ${use_itc}
   libcurl (testing): ${MSG_CURL}
   Target directory:  ${prefix}
+  Shutdown of listening socket
+  trigger select:    ${mhd_cv_host_shtdwn_trgr_select}
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}

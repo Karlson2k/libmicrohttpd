@@ -1,3 +1,8 @@
+Mon Mar 20 0:51:24 MSK 2017
+	Added autoconf module for detection whatever shutdown of listening socket
+	trigger select. This is only reliable method to use such feature as some
+	platforms change behaviour from version to version. -EG
+
 Sun Mar 19 13:57:30 MSK 2017
 	Rewritten logic of handling "upgraded" TLS connections in epoll mode:
 	used edge trigger instead of level trigger,
