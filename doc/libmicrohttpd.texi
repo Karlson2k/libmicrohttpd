@@ -2814,6 +2814,14 @@ socket was first accepted.  Note that this is NOT the same as the
 
 Takes no extra arguments.
 
+@item MHD_CONNECTION_INFO_TIMEOUT
+Returns pointer to an @code{unsigned int} that is the current timeout
+used for the connection (in seconds, 0 for no timeout).  Note that
+while suspended connections will not timeout, the timeout value
+returned for suspended connections will be the timeout that the
+connection will use after it is resumed, and thus might not be zero.
+
+Takes no extra arguments.
 @end table
 @end deftp
 
