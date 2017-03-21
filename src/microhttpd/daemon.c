@@ -2799,7 +2799,18 @@ MHD_resume_connection (struct MHD_Connection *connection)
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   connection->resuming = true;
+  connection->just_resumed = true;
   daemon->resuming = true;
+  if (connection->connection_timeout == daemon->connection_timeout)
+  {
+    /* move to the end... */
+    XDLL_remove (daemon->normal_timeout_head,
+		 daemon->normal_timeout_tail,
+		 connection);
+    XDLL_insert (daemon->normal_timeout_head,
+		 daemon->normal_timeout_tail,
+		 connection);
+  }
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
   if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "r")) )
