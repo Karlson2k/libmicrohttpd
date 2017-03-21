@@ -18,7 +18,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
 AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_PREREQ([2.64])dnl
@@ -141,11 +141,12 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 #  endif
 #endif
 
+
 #ifdef HAVE_NANOSLEEP
-static const struct timespec sm_tmout = {0, 100000};
+static const struct timespec sm_tmout = {0, 1000};
 #  define short_sleep() nanosleep(&sm_tmout, NULL)
-#elif HAVE_USLEEP
-#  define short_sleep() usleep(100)
+#elif defined(HAVE_USLEEP)
+#  define short_sleep() usleep(1)
 #else
 #  define short_sleep() (void)0
 #endif
@@ -155,8 +156,24 @@ static volatile int select_ends = 0;
 static volatile int gerror = 0;
 static int timeout_mils;
 
+#ifndef HAVE_GETTIMEOFDAY
+static volatile long long select_elapsed_time = 0;
+
+static long long time_chk(void)
+{
+  long long ret = time(NULL);
+  if (-1 == ret)
+    gerror = 4;
+  return ret;
+}
+#endif
+
+
 static void* select_thrd_func(void* param)
 {
+#ifndef HAVE_GETTIMEOFDAY
+  long long start, stop;
+#endif
   fd_set rs;
   struct timeval tmot = {0, 0};
   MHD_socket fd = *((MHD_socket*)param);
@@ -164,18 +181,23 @@ static void* select_thrd_func(void* param)
   FD_ZERO(&rs);
   FD_SET(fd, &rs);
   tmot.tv_usec = timeout_mils * 1000;
+#ifndef HAVE_GETTIMEOFDAY
+  start = time_chk();
+#endif
   going_select = 1;
   if (0 > select ((int)(fd) + 1, &rs, NULL, NULL, &tmot))
-    gerror = 1;
+    gerror = 5;
+#ifndef HAVE_GETTIMEOFDAY
+  stop = time_chk();
+  select_elapsed_time = stop - start;
+#endif
   select_ends = 1;
   return NULL;
 }
 
 
 static MHD_socket create_socket(void)
-{
-  return socket (AF_INET, SOCK_STREAM, 0);
-}
+{ return socket (AF_INET, SOCK_STREAM, 0); }
 
 static void close_socket(MHD_socket fd)
 {
@@ -222,71 +244,89 @@ static long long test_run_select(int timeout_millsec, int use_shutdown, long lon
 #ifdef HAVE_GETTIMEOFDAY
   struct timeval start, stop;
 #else
-  clock_t start, stop;
-  if (-1 == clock())
-    return 0;
+  long long start;
 #endif
 
   fd = create_socket_listen(0);
   if (MHD_INVALID_SOCKET == fd)
-    return 0;
+    return -7;
   going_select = 0;
   select_ends = 0;
   gerror = 0;
   timeout_mils = timeout_millsec;
   if (0 != pthread_create (&select_thrd, NULL, select_thrd_func, (void*)&fd))
-    return 0;
-#ifdef HAVE_GETTIMEOFDAY
+    return -8;
   while (!going_select) {short_sleep();}
+#ifdef HAVE_GETTIMEOFDAY
   gettimeofday (&start, NULL);
 #else
-  while (!going_select)
-  { start = clock(); short_sleep(); }
+  start = time_chk();
 #endif
   if (use_shutdown)
     {
 #ifdef HAVE_GETTIMEOFDAY
       struct timeval current;
-      do {gettimeofday(&current, NULL); short_sleep();} while (delay_before_shutdown > diff_time(current, start));
+      do {short_sleep(); gettimeofday(&current, NULL); } while (delay_before_shutdown > diff_time(current, start));
 #else
-      while (delay_before_shutdown > clock() - start) {short_sleep();}
+      while (delay_before_shutdown > time_chk() - start) {short_sleep();}
 #endif
       shutdown(fd, SHUT_RDWR);
     }
 #ifdef HAVE_GETTIMEOFDAY
   while (!select_ends) {short_sleep();}
   gettimeofday (&stop, NULL);
-#else
-  while (!select_ends)
-  { stop = clock(); short_sleep();}
 #endif
   if (0 != pthread_join(select_thrd, NULL))
-    return 0;
+    return -9;
   close_socket(fd);
   if (gerror)
-    return 0;
+    return -10;
+#ifdef HAVE_GETTIMEOFDAY
   return (long long)diff_time(stop, start);
+#else
+  return select_elapsed_time;
+#endif
 }
 
 static int test_it(void)
 {
-  clock_t duration1, duration2;
-  duration1 = test_run_select(50, 0, 0);
-  if (0 == duration1)
-    return 16;
+  long long duration2;
+#ifdef HAVE_GETTIMEOFDAY
+  long long duration0, duration1;
+  duration0 = test_run_select(0, 0, 0);
+  if (0 > duration0)
+    return -duration0;
 
-  duration2 = test_run_select(500, 1, duration1 / 2);
-  if (0 == duration2)
-    return 18;
+  duration1 = test_run_select(50, 0, 0);
+  if (0 > duration1)
+    return -duration1 + 20;
+
+  duration2 = test_run_select(500, 1, (duration0 + duration1) / 2);
+  if (0 > duration2)
+    return -duration2 + 40;
 
   if (duration1 * 2 > duration2)
     { /* Check second time to be sure. */
-      duration2 = test_run_select(500, 1, duration1 / 2);
-      if (0 == duration2)
-        return 20;
+      duration2 = test_run_select(500, 1, (duration0 + duration1) / 2);
+      if (0 > duration2)
+        return -duration2 + 60;
       if (duration1 * 2 > duration2)
         return 0;
     }
+#else
+  duration2 = test_run_select(5000, 1, 2);
+  if (0 > duration2)
+    return -duration2 + 80;
+
+  if (4 > duration2)
+    { /* Check second time to be sure. */
+      duration2 = test_run_select(5000, 1, 2);
+      if (0 > duration2)
+      return -duration2 + 100;
+      if (4 > duration2)
+        return 0;
+    }
+#endif
   return 1;
 }
 
@@ -316,13 +356,13 @@ int main(void)
 {
   int res;
   if (!init())
-    return 10;
+    return 19;
 
   res = test_it();
 
   cleanup();
   if (gerror)
-    return 40;
+    return gerror;
 
   return res;
 }
