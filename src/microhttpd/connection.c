@@ -92,7 +92,7 @@
  * minimal.
  */
 #ifdef HAVE_MESSAGES
-#define INTERNAL_ERROR "<html><head><title>Internal server error</title></head><body>Some programmer needs to study the manual more carefully.</body></html>"
+#define INTERNAL_ERROR "<html><head><title>Internal server error</title></head><body>Please ask the developer of this Web server to carefully read the GNU libmicrohttpd documentation about connection management and blocking.</body></html>"
 #else
 #define INTERNAL_ERROR ""
 #endif
