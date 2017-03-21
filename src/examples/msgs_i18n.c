@@ -19,7 +19,8 @@
 /**
  * @file msgs_i18n.c
  * @brief example for how to use translate libmicrohttpd messages
- * @author Christian Grothoff, Silvio Clecio (silvioprog)
+ * @author Christian Grothoff
+ * @author Silvio Clecio (silvioprog)
  */
 
 /*
@@ -35,51 +36,60 @@
  * export LANGUAGE=pt_BR
  * ./msgs_i18n
  * # it may print: Opção inválida 4196490! (Você terminou a lista com MHD_OPTION_END?)
- *
- * # tip: if you get any problem in your i18n application, you can debug it using `strace` tool, e.g:
- * $ strace -e trace=open ./msgs_i18n
- * 
  */
-
 #include <stdio.h>
 #include <locale.h>
 #include <libintl.h>
 #include <microhttpd.h>
 
-#ifndef _
-#define _(fm) dgettext("libmicrohttpd", fm)
-#endif
 
 static int
-ahc_echo(void *cls,
-         struct MHD_Connection *cnc,
-         const char *url,
-         const char *mt,
-         const char *ver,
-         const char *upd,
-         size_t *upsz,
-         void **ptr) {
-    return MHD_NO;
+ahc_echo (void *cls,
+	  struct MHD_Connection *cnc,
+	  const char *url,
+	  const char *mt,
+	  const char *ver,
+	  const char *upd,
+	  size_t *upsz,
+	  void **ptr)
+{  
+  return MHD_NO;
 }
+
 
 static void
-error_handler(void *cls,
-              const char *fm,
-              va_list ap) {
-    vprintf(_(fm), ap);
+error_handler (void *cls,
+	       const char *fm,
+	       va_list ap)
+{
+  /* Here we do the translation using GNU gettext.
+     As the error message is from libmicrohttpd, we specify
+     "libmicrohttpd" as the translation domain here. */
+  vprintf (dgettext ("libmicrohttpd",
+		     fm),
+	  ap);
 }
 
+
 int
-main() {
-    setlocale(LC_ALL, "");
-    /* notice I'm using PO files in the directory "libmicrohttpd/src/examples/locale", please change it matching
-     * where the MHD PO files are installed */
-    bindtextdomain("libmicrohttpd", "locale");
-    MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_FEATURE_MESSAGES | MHD_USE_ERROR_LOG,
-                     8080,
-                     NULL, NULL,
-                     &ahc_echo, NULL,
-                     MHD_OPTION_EXTERNAL_LOGGER, &error_handler, NULL
-                     /* MHD_OPTION_END - to raise the error "Invalid option ..." we are going to translate */);
-    return 1; /* purposely */
+main (int argc,
+      char **argv)
+{
+  setlocale(LC_ALL, "");
+
+  /* The example uses PO files in the directory 
+     "libmicrohttpd/src/examples/locale".  This
+     needs to be adapted to match
+     where the MHD PO files are installed. */
+  bindtextdomain ("libmicrohttpd",
+		  "locale");
+  MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_FEATURE_MESSAGES | MHD_USE_ERROR_LOG,
+		    8080,
+		    NULL, NULL,
+		    &ahc_echo, NULL,
+		    MHD_OPTION_EXTERNAL_LOGGER, &error_handler, NULL,
+		    99999 /* invalid option, to raise the error 
+			     "Invalid option ..." which we are going 
+			     to translate */);
+  return 1; /* This program won't "succeed"... */
 }
