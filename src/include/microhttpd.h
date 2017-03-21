@@ -2178,8 +2178,13 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * before calling this function. FD_SETSIZE is assumed
  * to be platform's default.
  *
- * This function could be called only for daemon started
- * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ * This function should only be called in when MHD is configured to
+ * use external select with @code{select()} or with @code{epoll()}.
+ * In the latter case, it will only add the single @code{epoll()} file
+ * descriptor used by MHD to the sets.
+ *
+ * This function must be called only for daemon started
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -2205,12 +2210,18 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * Obtain the `select()` sets for this daemon.
  * Daemon's FDs will be added to fd_sets. To get only
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
- * before calling this function. Passing custom FD_SETSIZE
- * as @a fd_setsize allow usage of larger/smaller than
- * platform's default fd_sets.
+ * before calling this function.
  *
- * This function could be called only for daemon started
- * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
+ * larger/smaller than platform's default fd_sets.
+ *
+ * This function should only be called in when MHD is configured to
+ * use external select with @code{select()} or with @code{epoll()}.
+ * In the latter case, it will only add the single @code{epoll()} file
+ * descriptor used by MHD to the sets.
+ *
+ * This function must be called only for daemon started
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -2227,11 +2238,11 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN int
 MHD_get_fdset2 (struct MHD_Daemon *daemon,
-               fd_set *read_fd_set,
-               fd_set *write_fd_set,
-               fd_set *except_fd_set,
-               MHD_socket *max_fd,
-               unsigned int fd_setsize);
+		fd_set *read_fd_set,
+		fd_set *write_fd_set,
+		fd_set *except_fd_set,
+		MHD_socket *max_fd,
+		unsigned int fd_setsize);
 
 
 /**
@@ -2242,7 +2253,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * determined by current value of FD_SETSIZE.
  *
  * This function could be called only for daemon started
- * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -2288,7 +2299,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
  * with this function, MHD will internally do the appropriate `select()`
  * call itself again.  While it is always safe to call #MHD_run (if
- * ::MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
+ * #MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
  * #MHD_run_from_select if performance is important (as it saves an
  * expensive call to `select()`).
  *
@@ -2315,7 +2326,7 @@ MHD_run (struct MHD_Daemon *daemon);
  * ready.
  *
  * This function cannot be used with daemon started with
- * MHD_USE_INTERNAL_POLLING_THREAD flag.
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set

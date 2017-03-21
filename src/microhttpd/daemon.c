@@ -1046,8 +1046,8 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
  * as @a fd_setsize allow usage of larger/smaller than
  * platform's default fd_sets.
  *
- * This function could be called only for daemon started
- * without MHD_USE_INTERNAL_POLLING_THREAD flag.
+ * This function must be called only for daemon started
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
  * @param read_fd_set read set
@@ -1106,9 +1106,12 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
     }
 #endif
 
-  return internal_get_fdset2 (daemon, read_fd_set,
-                              write_fd_set, except_fd_set,
-                              max_fd, fd_setsize);
+  return internal_get_fdset2 (daemon,
+			      read_fd_set,
+                              write_fd_set,
+			      except_fd_set,
+                              max_fd,
+			      fd_setsize);
 }
 
 

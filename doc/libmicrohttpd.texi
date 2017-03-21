@@ -1594,6 +1594,15 @@ is added to @var{read_fd_set}. The list of currently existent
 connections is scanned and their file descriptors added to the correct
 set.
 
+When calling this function, FD_SETSIZE is assumed to be platform's
+default.  If you changed FD_SETSIZE for your application,
+you should use @code{MHD_get_fdset2()} instead.
+
+This function should only be called in when MHD is configured to use
+external select with @code{select()} or with @code{epoll()}.  In
+the latter case, it will only add the single @code{epoll()} file
+descriptor used by MHD to the sets.
+
 After the call completed successfully: the variable referenced by
 @var{max_fd} references the file descriptor with highest integer
 identifier. The variable must be set to zero before invoking this
@@ -1603,6 +1612,10 @@ Return @code{MHD_YES} on success, @code{MHD_NO} if: the arguments are
 invalid (example: @code{NULL} pointers); this daemon was not started with
 the right options for this call.
 @end deftypefun
+
+
+@deftypefun int MHD_get_fdset2 (struct MHD_Daemon *daemon, fd_set * read_fd_set, fd_set * write_fd_set, fd_set * except_fd_set, int *max_fd, unsigned int fd_setsize)
+Like @code{MHD_get_fdset()}, except that you can manually specify the value of FD_SETSIZE used by your application.
 
 
 @deftypefun int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
