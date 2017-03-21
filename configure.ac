@@ -939,6 +939,8 @@ AC_LINK_IFELSE(
   ],
   [
     AC_DEFINE([HAVE_CLOCK_GET_TIME], [1], [Define to 1 if you have `clock_get_time', `host_get_clock_service' and `mach_port_deallocate' functions.])
+# For glibc < 2.17, we need -lrt:    
+    MHD_LIBDEPS="-lrt $MHD_LIBDEPS"
     AC_MSG_RESULT([[yes]])
   ],
   [AC_MSG_RESULT([[no]])
