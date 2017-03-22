@@ -1616,6 +1616,7 @@ the right options for this call.
 
 @deftypefun int MHD_get_fdset2 (struct MHD_Daemon *daemon, fd_set * read_fd_set, fd_set * write_fd_set, fd_set * except_fd_set, int *max_fd, unsigned int fd_setsize)
 Like @code{MHD_get_fdset()}, except that you can manually specify the value of FD_SETSIZE used by your application.
+@end deftypefun
 
 
 @deftypefun int MHD_get_timeout (struct MHD_Daemon *daemon, unsigned long long *timeout)
