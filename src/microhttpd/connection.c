@@ -1415,11 +1415,10 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
             {
-              if ( (MHD_YES != try_grow_read_buffer (connection)) &&
-		   (0 != (connection->daemon->options &
-			  MHD_USE_INTERNAL_POLLING_THREAD)) &&
-		   (! connection->suspended) &&
-		   (! connection->just_resumed) )
+              if ((MHD_YES != try_grow_read_buffer (connection)) &&
+                  (0 != (connection->daemon->options &
+                         MHD_USE_INTERNAL_POLLING_THREAD)) &&
+                  (! connection->suspended))
                 {
                   /* failed to grow the read buffer, and the
                      client which is supposed to handle the
@@ -1823,7 +1822,6 @@ call_connection_handler (struct MHD_Connection *connection)
     return;                     /* already queued a response */
   processed = 0;
   connection->client_aware = true;
-  connection->just_resumed = false;	
   if (MHD_NO ==
       connection->daemon->default_handler (connection->daemon-> default_handler_cls,
 					   connection,
@@ -1986,7 +1984,6 @@ process_request_body (struct MHD_Connection *connection)
         }
       used = processed;
       connection->client_aware = true;
-      connection->just_resumed = false;
       if (MHD_NO ==
           connection->daemon->default_handler (connection->daemon->default_handler_cls,
                                                connection,

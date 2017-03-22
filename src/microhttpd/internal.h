@@ -947,12 +947,6 @@ struct MHD_Connection
    * Is the connection wanting to resume?
    */
   bool resuming;
-  
-  /**
-   * Did the connection just resume? (Means we are generous
-   * in dealing with a full read buffer...).
-   */
-  bool just_resumed;
 };
 
 
