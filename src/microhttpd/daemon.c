@@ -1145,7 +1145,8 @@ call_handlers (struct MHD_Connection *con,
 #endif /* HTTPS_SUPPORT */
   if (!force_close)
     {
-      if (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info && read_ready)
+      if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
+	   read_ready)
         {
           con->read_handler (con);
           ret = con->idle_handler (con);
@@ -1153,7 +1154,8 @@ call_handlers (struct MHD_Connection *con,
         }
       /* No need to check value of 'ret' here as closed connection
        * cannot be in MHD_EVENT_LOOP_INFO_WRITE state. */
-      if (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info && write_ready)
+      if ( (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info) &&
+	   write_ready)
         {
           con->write_handler (con);
           ret = con->idle_handler (con);
@@ -3317,7 +3319,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-int
+static int
 internal_run_from_select (struct MHD_Daemon *daemon,
                           const fd_set *read_fd_set,
                           const fd_set *write_fd_set,
