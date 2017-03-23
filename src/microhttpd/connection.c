@@ -1418,7 +1418,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
               if ((MHD_YES != try_grow_read_buffer (connection)) &&
                   (0 != (connection->daemon->options &
                          MHD_USE_INTERNAL_POLLING_THREAD)) &&
-                  (! connection->suspended))
+                  (! connection->suspended) &&
+                  (! connection->resuming))
                 {
                   /* failed to grow the read buffer, and the
                      client which is supposed to handle the
