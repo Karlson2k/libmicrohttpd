@@ -4824,7 +4824,24 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_THREAD_POOL_SIZE:
           daemon->worker_pool_size = va_arg (ap,
                                              unsigned int);
-	  if (daemon->worker_pool_size >= (SIZE_MAX / sizeof (struct MHD_Daemon)))
+          if (0 == daemon->worker_pool_size)
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("Warning: Zero size, specified for thread pool size, is ignored. "
+                          "Thread pool is not used.\n"));
+#endif
+            }
+          else if (1 == daemon->worker_pool_size)
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("Warning: \"1\", specified for thread pool size, is ignored. "
+                          "Thread pool is not used.\n"));
+#endif
+              daemon->worker_pool_size = 0;
+            }
+          else if (daemon->worker_pool_size >= (SIZE_MAX / sizeof (struct MHD_Daemon)))
 	    {
 #ifdef HAVE_MESSAGES
 	      MHD_DLOG (daemon,
