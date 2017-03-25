@@ -5005,8 +5005,18 @@ parse_options_va (struct MHD_Daemon *daemon,
 	  break;
 #endif
 	case MHD_OPTION_LISTEN_SOCKET:
-	  daemon->listen_fd = va_arg (ap,
-                                      MHD_socket);
+          if (0 != (daemon->options & MHD_USE_NO_LISTEN_SOCKET))
+            {
+#ifdef HAVE_MESSAGES
+                MHD_DLOG (daemon,
+                          _("MHD_OPTION_LISTEN_SOCKET specified for daemon "
+                            "with MHD_USE_NO_LISTEN_SOCKET flag set.\n"));
+#endif
+                return MHD_NO;
+            }
+          else
+            daemon->listen_fd = va_arg (ap,
+                                        MHD_socket);
 	  break;
         case MHD_OPTION_EXTERNAL_LOGGER:
 #ifdef HAVE_MESSAGES
