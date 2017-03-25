@@ -5317,31 +5317,35 @@ MHD_start_daemon_va (unsigned int flags,
   socklen_t addrlen;
   unsigned int i;
   int use_itc;
+  enum MHD_FLAG eflags; /* same type as in MHD_Daemon */
+  enum MHD_FLAG *pflags;
 
+  eflags = (enum MHD_FLAG) flags;
+  pflags = &eflags;
 #ifndef HAVE_INET6
-  if (0 != (flags & MHD_USE_IPv6))
+  if (0 != (*pflags & MHD_USE_IPv6))
     return NULL;
 #endif
 #ifndef HAVE_POLL
-  if (0 != (flags & MHD_USE_POLL))
+  if (0 != (*pflags & MHD_USE_POLL))
     return NULL;
 #endif
 #ifndef EPOLL_SUPPORT
-  if (0 != (flags & MHD_USE_EPOLL))
+  if (0 != (*pflags & MHD_USE_EPOLL))
     return NULL;
 #endif /* ! EPOLL_SUPPORT */
 #ifndef HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_TLS))
+  if (0 != (*pflags & MHD_USE_TLS))
     return NULL;
 #endif /* ! HTTPS_SUPPORT */
 #ifndef TCP_FASTOPEN
-  if (0 != (flags & MHD_USE_TCP_FASTOPEN))
+  if (0 != (*pflags & MHD_USE_TCP_FASTOPEN))
     return NULL;
 #endif
-  if (0 != (flags & MHD_ALLOW_UPGRADE))
+  if (0 != (*pflags & MHD_ALLOW_UPGRADE))
     {
 #ifdef UPGRADE_SUPPORT
-      flags |= MHD_ALLOW_SUSPEND_RESUME;
+      *pflags |= MHD_ALLOW_SUSPEND_RESUME;
 #else  /* ! UPGRADE_SUPPORT */
       return NULL;
 #endif /* ! UPGRADE_SUPPORT */
@@ -5350,30 +5354,30 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 
   /* Check for invalid combinations of flags. */
-  if ( ((0 != (flags & MHD_USE_POLL)) && (0 != (flags & MHD_USE_EPOLL))) ||
-       ((0 != (flags & MHD_USE_EPOLL)) && (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))) ||
-       ((0 != (flags & MHD_USE_POLL)) && (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD))) ||
-       ((0 != (flags & MHD_USE_AUTO)) && (0 != (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))) )
+  if ( ((0 != (*pflags & MHD_USE_POLL)) && (0 != (*pflags & MHD_USE_EPOLL))) ||
+       ((0 != (*pflags & MHD_USE_EPOLL)) && (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))) ||
+       ((0 != (*pflags & MHD_USE_POLL)) && (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))) ||
+       ((0 != (*pflags & MHD_USE_AUTO)) && (0 != (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL)))) )
     return NULL;
 
-  if (0 != (flags & MHD_USE_AUTO))
+  if (0 != (*pflags & MHD_USE_AUTO))
     {
-      if (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))
+      if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
         {
           /* Thread per connection with internal polling thread. */
 #ifdef HAVE_POLL
-          flags |= MHD_USE_POLL;
+          *pflags |= MHD_USE_POLL;
 #else  /* ! HAVE_POLL */
           /* use select() - do not modify flags */
 #endif /* ! HAVE_POLL */
         }
-      else if (0 != (flags & MHD_USE_INTERNAL_POLLING_THREAD))
+      else if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
         {
           /* Internal polling thread. */
 #if defined(EPOLL_SUPPORT)
-          flags |= MHD_USE_EPOLL;
+          *pflags |= MHD_USE_EPOLL;
 #elif defined(HAVE_POLL)
-          flags |= MHD_USE_POLL;
+          *pflags |= MHD_USE_POLL;
 #else  /* !HAVE_POLL && !EPOLL_SUPPORT */
           /* use select() - do not modify flags */
 #endif /* !HAVE_POLL && !EPOLL_SUPPORT */
@@ -5382,7 +5386,7 @@ MHD_start_daemon_va (unsigned int flags,
         {
           /* Internal threads are not used - "external" polling mode. */
 #if defined(EPOLL_SUPPORT)
-          flags |= MHD_USE_EPOLL;
+          *pflags |= MHD_USE_EPOLL;
 #else  /* ! EPOLL_SUPPORT */
           /* use select() - do not modify flags */
 #endif /* ! EPOLL_SUPPORT */
@@ -5399,7 +5403,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   /* try to open listen socket */
 #ifdef HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_TLS))
+  if (0 != (*pflags & MHD_USE_TLS))
     {
       gnutls_priority_init (&daemon->priority_cache,
 			    "NORMAL",
@@ -5408,7 +5412,8 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* HTTPS_SUPPORT */
   daemon->listen_fd = MHD_INVALID_SOCKET;
   daemon->listening_address_reuse = 0;
-  daemon->options = flags;
+  daemon->options = *pflags;
+  pflags = &daemon->options;
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;
@@ -5430,8 +5435,8 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
   daemon->custom_error_log_cls = stderr;
 #endif
-  if ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD)) )
+  if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5439,15 +5444,14 @@ MHD_start_daemon_va (unsigned int flags,
                   "MHD_USE_INTERNAL_POLLING_THREAD. Flag MHD_USE_INTERNAL_POLLING_THREAD "
                    "was added. Consider setting MHD_USE_INTERNAL_POLLING_THREAD explicitly.\n"));
 #endif
-      flags |= MHD_USE_INTERNAL_POLLING_THREAD;
-      daemon->options |= MHD_USE_INTERNAL_POLLING_THREAD;
+      *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
-  use_itc = (0 != (daemon->options & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
+  use_itc = (0 != (*pflags & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
 #else
   use_itc = 1; /* yes, must use ITC to signal thread */
 #endif
-  if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD))
+  if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
     use_itc = 0; /* useless if we are using 'external' select */
   if (use_itc)
   {
@@ -5462,7 +5466,7 @@ MHD_start_daemon_va (unsigned int flags,
       return NULL;
     }
   }
-  if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+  if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
        (1 == use_itc) &&
        (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
                                   NULL)) )
@@ -5481,7 +5485,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->nonce_nc_size = 4; /* tiny */
 #endif
 #ifdef HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_TLS))
+  if (0 != (*pflags & MHD_USE_TLS))
     {
       daemon->cred_type = GNUTLS_CRD_CERTIFICATE;
     }
@@ -5493,7 +5497,7 @@ MHD_start_daemon_va (unsigned int flags,
                                    ap))
     {
 #ifdef HTTPS_SUPPORT
-      if ( (0 != (flags & MHD_USE_TLS)) &&
+      if ( (0 != (*pflags & MHD_USE_TLS)) &&
 	   (NULL != daemon->priority_cache) )
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
@@ -5511,7 +5515,7 @@ MHD_start_daemon_va (unsigned int flags,
 		    _("Specified value for NC_SIZE too large\n"));
 #endif
 #ifdef HTTPS_SUPPORT
-	  if (0 != (flags & MHD_USE_TLS))
+	  if (0 != (*pflags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
 	  free (daemon);
@@ -5526,7 +5530,7 @@ MHD_start_daemon_va (unsigned int flags,
 		    MHD_strerror_ (errno));
 #endif
 #ifdef HTTPS_SUPPORT
-	  if (0 != (flags & MHD_USE_TLS))
+	  if (0 != (*pflags & MHD_USE_TLS))
 	    gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
 	  free (daemon);
@@ -5541,7 +5545,7 @@ MHD_start_daemon_va (unsigned int flags,
 		_("MHD failed to initialize nonce-nc mutex\n"));
 #endif
 #ifdef HTTPS_SUPPORT
-      if (0 != (flags & MHD_USE_TLS))
+      if (0 != (*pflags & MHD_USE_TLS))
 	gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
       free (daemon->nnc);
@@ -5551,7 +5555,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 
   /* Thread pooling currently works only with internal select thread model */
-  if ( (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+  if ( (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (daemon->worker_pool_size > 0) )
     {
 #ifdef HAVE_MESSAGES
@@ -5562,7 +5566,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 
 #ifdef __SYMBIAN32__
-  if (0 != (flags & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION)))
+  if (0 != (*pflags & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION)))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5572,10 +5576,10 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif
   if ( (MHD_INVALID_SOCKET == daemon->listen_fd) &&
-       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
-      listen_fd = MHD_socket_create_listen_(flags & MHD_USE_IPv6);
+      listen_fd = MHD_socket_create_listen_(*pflags & MHD_USE_IPv6);
       if (MHD_INVALID_SOCKET == listen_fd)
 	{
 #ifdef HAVE_MESSAGES
@@ -5698,7 +5702,7 @@ MHD_start_daemon_va (unsigned int flags,
 
       /* check for user supplied sockaddr */
 #if HAVE_INET6
-      if (0 != (flags & MHD_USE_IPv6))
+      if (0 != (*pflags & MHD_USE_IPv6))
 	addrlen = sizeof (struct sockaddr_in6);
       else
 #endif
@@ -5706,7 +5710,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (NULL == servaddr)
 	{
 #if HAVE_INET6
-	  if (0 != (flags & MHD_USE_IPv6))
+	  if (0 != (*pflags & MHD_USE_IPv6))
 	    {
 	      memset (&servaddr6,
                       0,
@@ -5734,7 +5738,7 @@ MHD_start_daemon_va (unsigned int flags,
 	}
       daemon->listen_fd = listen_fd;
 
-      if (0 != (flags & MHD_USE_IPv6))
+      if (0 != (*pflags & MHD_USE_IPv6))
 	{
 #ifdef IPPROTO_IPV6
 #ifdef IPV6_V6ONLY
@@ -5743,7 +5747,7 @@ MHD_start_daemon_va (unsigned int flags,
 	     and may also be missing on older POSIX systems; good luck if you have any of those,
 	     your IPv6 socket may then also bind against IPv4 anyway... */
 	  const MHD_SCKT_OPT_BOOL_ v6_only =
-            (MHD_USE_DUAL_STACK != (flags & MHD_USE_DUAL_STACK));
+            (MHD_USE_DUAL_STACK != (*pflags & MHD_USE_DUAL_STACK));
 	  if (0 > setsockopt (listen_fd,
                               IPPROTO_IPV6, IPV6_V6ONLY,
                               (const void *) &v6_only,
@@ -5770,7 +5774,7 @@ MHD_start_daemon_va (unsigned int flags,
 	  goto free_and_fail;
 	}
 #ifdef TCP_FASTOPEN
-      if (0 != (flags & MHD_USE_TCP_FASTOPEN))
+      if (0 != (*pflags & MHD_USE_TCP_FASTOPEN))
       {
         if (0 == daemon->fastopen_queue_size)
           daemon->fastopen_queue_size = MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT;
@@ -5813,7 +5817,7 @@ MHD_start_daemon_va (unsigned int flags,
                 _("Failed to set nonblocking mode on listening socket: %s\n"),
                 MHD_socket_last_strerr_());
 #endif
-      if (0 != (flags & MHD_USE_EPOLL) ||
+      if (0 != (*pflags & MHD_USE_EPOLL) ||
           daemon->worker_pool_size > 0)
         {
            /* Accept must be non-blocking. Multiple children may wake up
@@ -5826,7 +5830,7 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (MHD_INVALID_SOCKET != listen_fd) &&
        (! MHD_SCKT_FD_FITS_FDSET_(listen_fd,
                                   NULL)) &&
-       (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
+       (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5839,11 +5843,11 @@ MHD_start_daemon_va (unsigned int flags,
     }
 
 #ifdef EPOLL_SUPPORT
-  if ( (0 != (flags & MHD_USE_EPOLL)) &&
+  if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
        (0 == daemon->worker_pool_size) &&
-       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {
-      if (0 != (flags & MHD_USE_THREAD_PER_CONNECTION))
+      if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
 	{
 #ifdef HAVE_MESSAGES
 	  MHD_DLOG (daemon,
@@ -5880,7 +5884,7 @@ MHD_start_daemon_va (unsigned int flags,
 
 #ifdef HTTPS_SUPPORT
   /* initialize HTTPS daemon certificate aspects & send / recv functions */
-  if ( (0 != (flags & MHD_USE_TLS)) &&
+  if ( (0 != (*pflags & MHD_USE_TLS)) &&
        (0 != MHD_TLS_init (daemon)) )
     {
 #ifdef HAVE_MESSAGES
@@ -5894,11 +5898,11 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 #endif /* HTTPS_SUPPORT */
-  if ( ( (0 != (flags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+  if ( ( (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
 	 (0 == daemon->worker_pool_size) ) &&
-       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) &&
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) &&
        (! MHD_create_named_thread_ (&daemon->pid,
-                                    (flags & MHD_USE_THREAD_PER_CONNECTION) ?
+                                    (*pflags & MHD_USE_THREAD_PER_CONNECTION) ?
                                     "MHD-listen" : "MHD-single",
                                     daemon->thread_stack_size,
                                     &MHD_select_thread,
@@ -5916,7 +5920,7 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
   if ( (daemon->worker_pool_size > 0) &&
-       (0 == (daemon->options & MHD_USE_NO_LISTEN_SOCKET)) )
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* Coarse-grained count of connections per thread (note error
        * due to integer division). Also keep track of how many
@@ -5961,7 +5965,7 @@ MHD_start_daemon_va (unsigned int flags,
                   goto thread_failed;
                 }
             }
-          if ( (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+          if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
                (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
                                           NULL)) )
             {
@@ -5980,7 +5984,7 @@ MHD_start_daemon_va (unsigned int flags,
           if (i < leftover_conns)
             ++d->connection_limit;
 #ifdef EPOLL_SUPPORT
-	  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+	  if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
 	       (MHD_YES != setup_epoll_to_listen (d)) )
 	    goto thread_failed;
 #endif
@@ -6072,7 +6076,7 @@ thread_failed:
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
 #ifdef HTTPS_SUPPORT
-  if (0 != (flags & MHD_USE_TLS))
+  if (0 != (*pflags & MHD_USE_TLS))
     gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
   if (MHD_ITC_IS_VALID_(daemon->itc))
