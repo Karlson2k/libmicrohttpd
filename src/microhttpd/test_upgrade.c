@@ -990,14 +990,14 @@ test_upgrade (int flags,
 
   if (!test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,
-                        1080,
-                        NULL, NULL,
-                        &ahc_upgrade, NULL,
-                        MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
-                        MHD_OPTION_NOTIFY_COMPLETED, &notify_completed_cb, NULL,
-                        MHD_OPTION_NOTIFY_CONNECTION, &notify_connection_cb, NULL,
-                        MHD_OPTION_THREAD_POOL_SIZE, pool,
-                        MHD_OPTION_END);
+			  1080,
+			  NULL, NULL,
+			  &ahc_upgrade, NULL,
+			  MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+			  MHD_OPTION_NOTIFY_COMPLETED, &notify_completed_cb, NULL,
+			  MHD_OPTION_NOTIFY_CONNECTION, &notify_connection_cb, NULL,
+			  MHD_OPTION_THREAD_POOL_SIZE, pool,
+			  MHD_OPTION_END);
 #ifdef HTTPS_SUPPORT
   else
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE | MHD_USE_TLS,

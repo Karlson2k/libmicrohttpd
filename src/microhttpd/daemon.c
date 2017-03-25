@@ -4822,24 +4822,6 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                  void *);
           break;
         case MHD_OPTION_THREAD_POOL_SIZE:
-          if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
-            {
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("MHD_OPTION_THREAD_POOL_SIZE option is specified but "
-                          "MHD_USE_INTERNAL_POLLING_THREAD flag is not specified.\n"));
-#endif
-              return MHD_NO;
-            }
-          if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-            {
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("Both MHD_OPTION_THREAD_POOL_SIZE option and "
-                          "MHD_USE_THREAD_PER_CONNECTION flag are specified.\n"));
-#endif
-              return MHD_NO;
-            }
           daemon->worker_pool_size = va_arg (ap,
                                              unsigned int);
           if (0 == daemon->worker_pool_size)
@@ -4867,6 +4849,27 @@ parse_options_va (struct MHD_Daemon *daemon,
 			daemon->worker_pool_size);
 #endif
 	      return MHD_NO;
+	    }
+	  else
+	    {
+	      if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+		{
+#ifdef HAVE_MESSAGES
+		  MHD_DLOG (daemon,
+			    _("MHD_OPTION_THREAD_POOL_SIZE option is specified but "
+			      "MHD_USE_INTERNAL_POLLING_THREAD flag is not specified.\n"));
+#endif
+		  return MHD_NO;
+		}
+	      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+		{
+#ifdef HAVE_MESSAGES
+		  MHD_DLOG (daemon,
+			    _("Both MHD_OPTION_THREAD_POOL_SIZE option and "
+			      "MHD_USE_THREAD_PER_CONNECTION flag are specified.\n"));
+#endif
+		  return MHD_NO;
+		}
 	    }
           break;
 #ifdef HTTPS_SUPPORT
