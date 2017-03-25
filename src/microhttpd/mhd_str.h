@@ -106,38 +106,6 @@ MHD_str_to_uint64_n_ (const char * str,
 
 
 /**
- * Convert hexadecimal US-ASCII digits in string to number in size_t.
- * Conversion stopped at first non-digit character.
- * @param str string to convert
- * @param out_val pointer to size_t to store result of conversion
- * @return non-zero number of characters processed on succeed, 
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in size_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_sizet_ (const char * str,
-                    size_t * out_val);
-
-
-/**
- * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in size_t.
- * Conversion stopped at first non-digit character or after @a maxlen 
- * digits.
- * @param str string to convert
- * @param maxlen maximum number of characters to process
- * @param out_val pointer to size_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in size_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_sizet_n_ (const char * str,
-                      size_t maxlen,
-                      size_t * out_val);
-
-
-/**
  * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
  * Conversion stopped at first non-digit character.
  * @param str string to convert

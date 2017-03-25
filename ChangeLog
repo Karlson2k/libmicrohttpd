@@ -1,3 +1,7 @@
+Sat Mar 25 20:58:24 CET 2017
+	Remove dead MHD_strx_to_sizet-functions and associated
+	test cases from code. -CG
+
 Sat Mar 25 20:40:10 CET 2017
 	Allow chunk size > 16 MB (up to 2^64-1). Ignore
 	chunk extensions instead of triggering an error.
