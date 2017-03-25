@@ -863,13 +863,13 @@ struct MHD_Connection
    * otherwise, this is the size of the current chunk.  A value of
    * zero is also used when we're at the end of the chunks.
    */
-  size_t current_chunk_size;
+  uint64_t current_chunk_size;
 
   /**
    * If we are receiving with chunked encoding, where are we currently
    * with respect to the current chunk (at what offset / position)?
    */
-  size_t current_chunk_offset;
+  uint64_t current_chunk_offset;
 
   /**
    * Handler used for processing read connection operations

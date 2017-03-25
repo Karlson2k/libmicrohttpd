@@ -1852,10 +1852,11 @@ call_connection_handler (struct MHD_Connection *connection)
 static void
 process_request_body (struct MHD_Connection *connection)
 {
-  size_t processed;
+  uint64_t processed;
   size_t available;
   size_t used;
   size_t i;
+  size_t end_size;
   int instant_retry;
   int malformed;
   char *buffer_head;
@@ -1872,7 +1873,7 @@ process_request_body (struct MHD_Connection *connection)
            (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) )
         {
           if ( (connection->current_chunk_offset == connection->current_chunk_size) &&
-               (0 != connection->current_chunk_offset) &&
+               (0LLU != connection->current_chunk_offset) &&
                (available >= 2) )
             {
               /* skip new line at the *end* of a chunk */
@@ -1915,28 +1916,41 @@ process_request_body (struct MHD_Connection *connection)
               while (i < available)
                 {
                   if ( ('\r' == buffer_head[i]) ||
-                       ('\n' == buffer_head[i]) )
+                       ('\n' == buffer_head[i]) ||
+		       (';' == buffer_head[i]) )
                     break;
                   i++;
-                  if (i >= 6)
+                  if (i >= 16)
                     break;
                 }
-              /* take '\n' into account; if '\n'
-                 is the unavailable character, we
-                 will need to wait until we have it
+	      end_size = i;
+	      /* find beginning of CRLF (skip over chunk extensions) */
+	      if (';' == buffer_head[i])
+		{
+		  while (i < available)
+		  {
+		    if ( ('\r' == buffer_head[i]) ||
+			 ('\n' == buffer_head[i]) )
+		      break;
+		    i++;
+		  }
+		}	      
+              /* take '\n' into account; if '\n' is the unavailable
+                 character, we will need to wait until we have it
                  before going further */
               if ( (i + 1 >= available) &&
                    ! ( (1 == i) &&
                        (2 == available) &&
                        ('0' == buffer_head[0]) ) )
                 break;          /* need more data... */
-              malformed = (i >= 6);
+	      i++;
+              malformed = (end_size >= 16);
               if (! malformed)
                 {
-                  size_t num_dig = MHD_strx_to_sizet_n_ (buffer_head,
-                                                         i,
-                                                         &connection->current_chunk_size);
-                  malformed = (i != num_dig);
+                  size_t num_dig = MHD_strx_to_uint64_n_ (buffer_head,
+							  end_size,
+							  &connection->current_chunk_size);
+                  malformed = (end_size != num_dig);
                 }
               if (malformed)
                 {
@@ -1945,11 +1959,11 @@ process_request_body (struct MHD_Connection *connection)
 					  _("Received malformed HTTP request (bad chunked encoding). Closing connection.\n"));
                   return;
                 }
-              i++;
+	      /* skip 2nd part of line feed */
               if ( (i < available) &&
                    ( ('\r' == buffer_head[i]) ||
                      ('\n' == buffer_head[i]) ) )
-                i++;            /* skip 2nd part of line feed */
+                i++;            
 
               buffer_head += i;
               available -= i;
@@ -1957,7 +1971,7 @@ process_request_body (struct MHD_Connection *connection)
 
               if (available > 0)
                 instant_retry = MHD_YES;
-              if (0 == connection->current_chunk_size)
+              if (0LLU == connection->current_chunk_size)
                 {
                   connection->remaining_upload_size = 0;
                   break;

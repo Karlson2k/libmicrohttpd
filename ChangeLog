@@ -1,3 +1,8 @@
+Sat Mar 25 20:40:10 CET 2017
+	Allow chunk size > 16 MB (up to 2^64-1). Ignore
+	chunk extensions instead of triggering an error.
+	(fixes #4967). -CG
+
 Tue Mar 25 20:59:18 MSK 2017
 	Check for invalid combinations of flags and options in
 	MHD_start_daemon(). -EG
