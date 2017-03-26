@@ -3332,8 +3332,6 @@ internal_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  unsigned int mask = MHD_TEST_ALLOW_SUSPEND_RESUME | MHD_USE_INTERNAL_POLLING_THREAD;
-
   /* Reset. New value will be set when connections are processed. */
   /* Note: no-op for thread-per-connection as it is always false in that mode. */
   daemon->data_already_pending = false;
@@ -3345,10 +3343,6 @@ internal_run_from_select (struct MHD_Daemon *daemon,
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
-
-  /* Resuming external connections when using an extern mainloop  */
-  if (MHD_TEST_ALLOW_SUSPEND_RESUME == (daemon->options & mask))
-    resume_suspended_connections (daemon);
 
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
@@ -3477,6 +3471,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
       return MHD_NO;
 #endif /* ! EPOLL_SUPPORT */
     }
+
+  /* Resuming external connections when using an extern mainloop  */
+  resume_suspended_connections (daemon);
+
   return internal_run_from_select (daemon, read_fd_set,
                                    write_fd_set, except_fd_set);
 }
