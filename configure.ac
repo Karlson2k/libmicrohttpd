@@ -918,9 +918,20 @@ AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONB
                    ])
 
 
-AC_SEARCH_LIBS([clock_gettime], [rt], [
-				AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
-])
+AC_CHECK_DECL([[clock_gettime]],
+  [
+   SAVE_LIBS="$LIBS"
+   AC_SEARCH_LIBS([clock_gettime], [rt],
+     [
+      AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Have clock_gettime])
+      AS_VAR_IF([[ac_cv_search_clock_gettime]],[["none required"]], [],
+        [
+         MHD_LIBDEPS="$ac_cv_search_clock_gettime $MHD_LIBDEPS"
+         MHD_LIBDEPS_PKGCFG="$ac_cv_search_clock_gettime $MHD_LIBDEPS_PKGCFG"
+        ])
+     ], [], [$MHD_LIBDEPS])
+   LIBS="$SAVE_LIBS"
+  ], [], [[#include <time.h>]])
 
 AC_MSG_CHECKING([[for clock_get_time]])
 AC_LINK_IFELSE(
@@ -939,8 +950,6 @@ AC_LINK_IFELSE(
   ],
   [
     AC_DEFINE([HAVE_CLOCK_GET_TIME], [1], [Define to 1 if you have `clock_get_time', `host_get_clock_service' and `mach_port_deallocate' functions.])
-# For glibc < 2.17, we need -lrt:    
-    MHD_LIBDEPS="-lrt $MHD_LIBDEPS"
     AC_MSG_RESULT([[yes]])
   ],
   [AC_MSG_RESULT([[no]])
