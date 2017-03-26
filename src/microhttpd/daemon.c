@@ -5313,7 +5313,6 @@ MHD_start_daemon_va (unsigned int flags,
   const struct sockaddr *servaddr = NULL;
   socklen_t addrlen;
   unsigned int i;
-  int use_itc;
   enum MHD_FLAG eflags; /* same type as in MHD_Daemon */
   enum MHD_FLAG *pflags;
 
@@ -5443,14 +5442,16 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
     }
-#ifdef HAVE_LISTEN_SHUTDOWN
-  use_itc = (0 != (*pflags & (MHD_USE_NO_LISTEN_SOCKET | MHD_USE_ITC)));
-#else
-  use_itc = 1; /* yes, must use ITC to signal thread */
-#endif
   if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    use_itc = 0; /* useless if we are using 'external' select */
-  if (use_itc)
+    *pflags &= ~MHD_USE_ITC; /* useless if we are using 'external' select */
+  else
+    {
+#ifdef HAVE_LISTEN_SHUTDOWN
+      if (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET))
+#endif
+        *pflags |= MHD_USE_ITC; /* yes, must use ITC to signal thread */
+    }
+  if (0 != (*pflags & MHD_USE_ITC))
   {
     if (! MHD_itc_init_ (daemon->itc))
     {
@@ -5462,20 +5463,19 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-  }
-  if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-       (1 == use_itc) &&
-       (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
-                                  NULL)) )
-    {
+    if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+         (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
+                                    NULL)) )
+      {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		_("file descriptor for inter-thread communication channel exceeds maximum value\n"));
+        MHD_DLOG (daemon,
+                  _("file descriptor for inter-thread communication channel exceeds maximum value\n"));
 #endif
-      MHD_itc_destroy_chk_ (daemon->itc);
-      free (daemon);
-      return NULL;
-    }
+        MHD_itc_destroy_chk_ (daemon->itc);
+        free (daemon);
+        return NULL;
+      }
+  }
 #ifdef DAUTH_SUPPORT
   daemon->digest_auth_rand_size = 0;
   daemon->digest_auth_random = NULL;
