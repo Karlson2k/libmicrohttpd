@@ -4643,7 +4643,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   ret = daemon->listen_fd;
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
-  if ( (MHD_ITC_IS_INVALID_(daemon->itc)) &&
+  if ( (0 == (daemon->options & (MHD_USE_ITC))) &&
        (0 != (daemon->options & (MHD_USE_INTERNAL_POLLING_THREAD))) )
     {
 #ifdef HAVE_MESSAGES
@@ -5978,6 +5978,8 @@ MHD_start_daemon_va (unsigned int flags,
                   goto thread_failed;
                 }
             }
+          else
+            MHD_itc_set_invalid_ (d->itc);
 
           /* Divide available connections evenly amongst the threads.
            * Thread indexes in [0, leftover_conns) each get one of the
