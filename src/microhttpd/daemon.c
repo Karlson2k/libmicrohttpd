@@ -3590,7 +3590,6 @@ MHD_select (struct MHD_Daemon *daemon,
      place. */
   if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
        (MHD_ITC_IS_VALID_(daemon->itc)) &&
-       (0 != (daemon->options & MHD_USE_ITC)) &&
        ( (daemon->connections == daemon->connection_limit) ||
          (daemon->at_limit) ) )
     {
