@@ -1,3 +1,8 @@
+Sun Mar 26 13:49:01 MSK 2017
+	Internal refactoring for simplification and unification.
+	Minor optimizations and minor fixes.
+	MHD_USE_ITC used again in thread pool mode. -EG
+
 Sat Mar 25 20:58:24 CET 2017
 	Remove dead MHD_strx_to_sizet-functions and associated
 	test cases from code. -CG

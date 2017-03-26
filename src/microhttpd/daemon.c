@@ -5955,8 +5955,7 @@ MHD_start_daemon_va (unsigned int flags,
           d->worker_pool_size = 0;
           d->worker_pool = NULL;
 
-          /* Always use individual control ITCs */
-          if (1)
+          if (0 != (*pflags & MHD_USE_ITC))
             {
               if (! MHD_itc_init_ (d->itc))
                 {
@@ -5967,17 +5966,17 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
                   goto thread_failed;
                 }
-            }
-          if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-               (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
-                                          NULL)) )
-            {
+              if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+                   (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
+                                              NULL)) )
+                {
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
+                  MHD_DLOG (daemon,
+                            _("File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
 #endif
-              MHD_itc_destroy_chk_ (d->itc);
-              goto thread_failed;
+                  MHD_itc_destroy_chk_ (d->itc);
+                  goto thread_failed;
+                }
             }
 
           /* Divide available connections evenly amongst the threads.
