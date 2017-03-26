@@ -5398,6 +5398,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   /* try to open listen socket */
 #ifdef HTTPS_SUPPORT
+  daemon->priority_cache = NULL;
   if (0 != (*pflags & MHD_USE_TLS))
     {
       gnutls_priority_init (&daemon->priority_cache,
@@ -5450,31 +5451,6 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
         *pflags |= MHD_USE_ITC; /* yes, must use ITC to signal thread */
     }
-  if (0 != (*pflags & MHD_USE_ITC))
-  {
-    if (! MHD_itc_init_ (daemon->itc))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		_("Failed to create inter-thread communication channel: %s\n"),
-		MHD_itc_last_strerror_ ());
-#endif
-      free (daemon);
-      return NULL;
-    }
-    if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-         (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
-                                    NULL)) )
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _("file descriptor for inter-thread communication channel exceeds maximum value\n"));
-#endif
-        MHD_itc_destroy_chk_ (daemon->itc);
-        free (daemon);
-        return NULL;
-      }
-  }
 #ifdef DAUTH_SUPPORT
   daemon->digest_auth_rand_size = 0;
   daemon->digest_auth_random = NULL;
@@ -5500,6 +5476,37 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
+  if ( (0 != (*pflags & MHD_USE_ITC)) &&
+       (0 == daemon->worker_pool_size) )
+    {
+      if (! MHD_itc_init_ (daemon->itc))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("Failed to create inter-thread communication channel: %s\n"),
+                    MHD_itc_last_strerror_ ());
+#endif
+          if (NULL != daemon->priority_cache)
+            gnutls_priority_deinit (daemon->priority_cache);
+          free (daemon);
+          return NULL;
+        }
+      if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+           (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (daemon->itc),
+                                      NULL)) )
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("file descriptor for inter-thread communication channel exceeds maximum value\n"));
+#endif
+          MHD_itc_destroy_chk_ (daemon->itc);
+          if (NULL != daemon->priority_cache)
+            gnutls_priority_deinit (daemon->priority_cache);
+          free (daemon);
+          return NULL;
+        }
+    }
+
 #ifdef DAUTH_SUPPORT
   if (daemon->nonce_nc_size > 0)
     {
