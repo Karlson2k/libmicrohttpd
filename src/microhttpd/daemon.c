@@ -5675,7 +5675,6 @@ MHD_start_daemon_va (unsigned int flags,
            */
 #if (defined(_WIN32) && defined(SO_EXCLUSIVEADDRUSE)) || \
     (defined(__sun) && defined(SO_EXCLBIND))
-#ifdef SO_EXCLUSIVEADDRUSE
           if (0 > setsockopt (listen_fd,
                               SOL_SOCKET,
 #ifdef SO_EXCLUSIVEADDRUSE
@@ -5699,7 +5698,6 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined\n"));
 #endif
           goto free_and_fail;
-#endif
 #endif /* _WIN32 */
         }
 
