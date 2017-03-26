@@ -2728,7 +2728,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  if (MHD_ALLOW_SUSPEND_RESUME != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+  if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   if (connection->resuming)
@@ -2797,7 +2797,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon;
 
   daemon = connection->daemon;
-  if (MHD_ALLOW_SUSPEND_RESUME != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+  if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   connection->resuming = true;
@@ -3332,8 +3332,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  unsigned int mask = MHD_ALLOW_SUSPEND_RESUME | MHD_USE_EPOLL_INTERNAL_THREAD |
-    MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL_INTERNAL_THREAD;
+  unsigned int mask = MHD_TEST_ALLOW_SUSPEND_RESUME | MHD_USE_INTERNAL_POLLING_THREAD;
 
   /* Reset. New value will be set when connections are processed. */
   /* Note: no-op for thread-per-connection as it is always false in that mode. */
@@ -3348,7 +3347,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
     MHD_itc_clear_ (daemon->itc);
 
   /* Resuming external connections when using an extern mainloop  */
-  if (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & mask))
+  if (MHD_TEST_ALLOW_SUSPEND_RESUME == (daemon->options & mask))
     resume_suspended_connections (daemon);
 
 #ifdef EPOLL_SUPPORT
@@ -3517,7 +3516,7 @@ MHD_select (struct MHD_Daemon *daemon,
   err_state = MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if ( (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & MHD_ALLOW_SUSPEND_RESUME)) &&
+      if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
            (MHD_YES == resume_suspended_connections (daemon)) )
         may_block = MHD_NO;
 
@@ -3669,7 +3668,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
-  if ( (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & MHD_ALLOW_SUSPEND_RESUME)) &&
+  if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
        (MHD_YES == resume_suspended_connections (daemon)) )
     may_block = MHD_NO;
 
@@ -4375,7 +4374,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
   /* we handle resumes here because we may have ready connections
      that will not be placed into the epoll list immediately. */
-  if (MHD_ALLOW_SUSPEND_RESUME == (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     (void) resume_suspended_connections (daemon);
 
   /* process events for connections */
@@ -6126,7 +6125,7 @@ close_all_connections (struct MHD_Daemon *daemon)
      running into the check for there not being any suspended
      connections left in case of a tight race with a recently
      resumed connection. */
-  if (0 != (MHD_ALLOW_SUSPEND_RESUME & daemon->options))
+  if (0 != (MHD_TEST_ALLOW_SUSPEND_RESUME & daemon->options))
     {
       daemon->resuming = true; /* Force check for pending resume. */
       resume_suspended_connections (daemon);
@@ -6249,7 +6248,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (NULL == daemon)
     return;
 
-  if (0 != (MHD_ALLOW_SUSPEND_RESUME & daemon->options))
+  if (0 != (MHD_TEST_ALLOW_SUSPEND_RESUME & daemon->options))
     resume_suspended_connections (daemon);
 
   daemon->shutdown = true;
