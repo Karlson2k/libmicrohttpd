@@ -5486,8 +5486,10 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Failed to create inter-thread communication channel: %s\n"),
                     MHD_itc_last_strerror_ ());
 #endif
+#ifdef HTTPS_SUPPORT
           if (NULL != daemon->priority_cache)
             gnutls_priority_deinit (daemon->priority_cache);
+#endif /* HTTPS_SUPPORT */
           free (daemon);
           return NULL;
         }
@@ -5500,8 +5502,10 @@ MHD_start_daemon_va (unsigned int flags,
                     _("file descriptor for inter-thread communication channel exceeds maximum value\n"));
 #endif
           MHD_itc_destroy_chk_ (daemon->itc);
+#ifdef HTTPS_SUPPORT
           if (NULL != daemon->priority_cache)
             gnutls_priority_deinit (daemon->priority_cache);
+#endif /* HTTPS_SUPPORT */
           free (daemon);
           return NULL;
         }
