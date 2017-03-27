@@ -3,8 +3,8 @@
   <PropertyGroup Label="UserMacros">
     <!-- WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
          Only 0 and 1 are used currently -->
-    <TargetOSLevel Condition="'$(PlatformToolset)'=='v120_xp' Or '$(PlatformToolset)'=='v140_xp' Or '$(PlatformToolset)'=='v141_xp'">0</TargetOSLevel>
-    <TargetOSLevel Condition="'$(PlatformToolset)'!='v120_xp' And '$(PlatformToolset)'!='v140_xp' And '$(PlatformToolset)'!='v141_xp'">1</TargetOSLevel>
+    <TargetOSLevel Condition="$(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
+    <TargetOSLevel Condition="! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
   </PropertyGroup>
   <PropertyGroup>
     <IncludePath>$(SolutionDir);$(MhdW32Common);$(MhdSrc)include;$(IncludePath)</IncludePath>
