@@ -1934,7 +1934,7 @@ process_request_body (struct MHD_Connection *connection)
 		      break;
 		    i++;
 		  }
-		}	      
+		}
               /* take '\n' into account; if '\n' is the unavailable
                  character, we will need to wait until we have it
                  before going further */
@@ -1963,7 +1963,7 @@ process_request_body (struct MHD_Connection *connection)
               if ( (i < available) &&
                    ( ('\r' == buffer_head[i]) ||
                      ('\n' == buffer_head[i]) ) )
-                i++;            
+                i++;
 
               buffer_head += i;
               available -= i;
@@ -1999,21 +1999,25 @@ process_request_body (struct MHD_Connection *connection)
         }
       used = processed;
       connection->client_aware = true;
-      if (MHD_NO ==
-          connection->daemon->default_handler (connection->daemon->default_handler_cls,
-                                               connection,
-                                               connection->url,
-                                               connection->method,
-                                               connection->version,
-                                               buffer_head,
-                                               &processed,
-                                               &connection->client_context))
+      {
+        size_t processed_st = (size_t) processed;
+        if (MHD_NO ==
+            connection->daemon->default_handler (connection->daemon->default_handler_cls,
+                                                 connection,
+                                                 connection->url,
+                                                 connection->method,
+                                                 connection->version,
+                                                 buffer_head,
+                                                 &processed_st,
+                                                 &connection->client_context))
         {
           /* serious internal error, close connection */
 	  CONNECTION_CLOSE_ERROR (connection,
                                   _("Application reported internal error, closing connection.\n"));
           return;
         }
+        processed = (uint64_t) processed_st;
+      }
       if (processed > used)
         mhd_panic (mhd_panic_cls,
                    __FILE__,
