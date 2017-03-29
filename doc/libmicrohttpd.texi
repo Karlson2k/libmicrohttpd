@@ -1,5 +1,6 @@
 \input texinfo
 @setfilename libmicrohttpd.info
+@documentencoding UTF-8
 @include version.texi
 @settitle The GNU libmicrohttpd Reference Manual
 @c Unify all the indices into concept index.
