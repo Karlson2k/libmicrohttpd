@@ -113,6 +113,35 @@ Tue Mar  7 10:37:45 BRT 2017
 Mon Mar  6 21:46:59 BRT 2017
 	Added the i18n example fixing #4924. -SC
 
+Wed Mar 1 23:47:05 CET 2017
+	Minor internal optimisations.
+	Changed closure connection monitoring logic: now all connections are
+	monitored for OOB data (which treated as error), connections are not
+	monitored any more for incoming data if incoming data is not required for
+	processing. except_fd_set is not optional now for MHD_get_fdset(),
+	MHD_get_fdset2() and MHD_run_from_select().
+	Improved connection processing in epoll mode: now connection can process
+	both read and write each turn.
+	Updated HTTP response codes; updated and added all missing standard HTTP
+	headers names (and headers categories); updated and added all missing
+	standard and additional HTTP methods. Now MHD return status
+	MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE (431) instead of old
+	MHD_HTTP_REQUEST_ENTITY_TOO_LARGE (413) for very long header.
+	Reworked handling of data pending in TLS buffers, resolved busy-waiting
+	if incoming data is pending in TLS buffers and connection is in
+	LOOP_INFO_WRITE mode.
+	Do not clear 'ready' flag in epoll mode if send()/recv() result is
+	EINTERRUPTED.
+	Better detection of unready connection state: used less number of calls of
+	recv()/send() in epoll mode.
+	Configure: do not run gcrypt and GnuTLS tests if HTTPS is disabled by
+	configure parameter.
+	Fixed wrong value returned by MHD_get_timeout().
+	All double-linked lists now walked from tail to head. As new items are
+	added to head, this result in more uniform processing time.
+	Improved sockets errors handling in epoll mode.
+	OOB data on 'upgraded' sockets is treated as error. -EG
+
 Thu Feb 16 11:20:05 CET 2017
 	Replace tsearch configure check with code from gnulib. -CG
 
@@ -121,6 +150,24 @@ Wed Feb 15 13:35:36 CET 2017
 	thread-per-connection operations during shutdown.
 	Various minor cosmetic improvements.
 	Fixed #4884 and #4888 (solaris portability issues). -CG
+
+Wed Feb 08 22:33:10 MSK 2016
+	Ported test_quiesce_stream to W32.
+	Improved precompiler flags selection of OpenBSD.
+	Fixed sending responses backed by files not supported by sendfile().
+	Fixed thread safety for responses backed by file FD.
+	Updated fileserver_example.
+	Improved handling of 'upgraded' TLS forwarding in select() and poll()
+	modes.
+	Fixed processing of incoming TLS data in epoll mode if more than 128
+	connections are active.
+	Fixed accepting more than 128 incoming connection in epoll mode.
+	Improved test_large_put, added poll() and epoll testing.
+	Added test_large_put_inc for testing of incremental buffer processing.
+	Rewritten epoll connection processing logic: handle all connection one
+	time per turn instead of trying to handle all active connection until all
+	pending data is dried. Result is more uniform connection processing
+	period. -EG
 
 Wed Nov 23 15:24:10 MSK 2016
 	Used SO_REUSEADDR (on non-W32) alongside with SO_REUSEPORT if option
