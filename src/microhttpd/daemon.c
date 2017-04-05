@@ -3269,7 +3269,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
     }
 #endif /* EPOLL_SUPPORT */
 
-  have_timeout = false;;
+  have_timeout = false;
   earliest_deadline = 0; /* avoid compiler warnings */
   for (pos = daemon->manual_timeout_tail; NULL != pos; pos = pos->prevX)
     {
