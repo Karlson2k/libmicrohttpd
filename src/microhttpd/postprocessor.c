@@ -296,19 +296,19 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   boundary = NULL;
   if (! MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                                    encoding,
-                                   strlen (MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
+                                   MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
     {
       if (! MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA,
                                        encoding,
-                                       strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
+                                       MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
         return NULL;
       boundary =
-        &encoding[strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
+        &encoding[MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)];
       /* Q: should this be "strcasestr"? */
       boundary = strstr (boundary, "boundary=");
       if (NULL == boundary)
 	return NULL; /* failed to determine boundary */
-      boundary += strlen ("boundary=");
+      boundary += MHD_STATICSTR_LEN_ ("boundary=");
       blen = strlen (boundary);
       if ( (blen == 0) ||
            (blen * 2 + 2 > buffer_size) )
@@ -710,12 +710,12 @@ process_multipart_headers (struct MHD_PostProcessor *pp,
   buf[newline] = '\0';
   if (MHD_str_equal_caseless_n_ ("Content-disposition: ",
                                  buf,
-                                 strlen ("Content-disposition: ")))
+                                 MHD_STATICSTR_LEN_ ("Content-disposition: ")))
     {
-      try_get_value (&buf[strlen ("Content-disposition: ")],
+      try_get_value (&buf[MHD_STATICSTR_LEN_ ("Content-disposition: ")],
                      "name",
                      &pp->content_name);
-      try_get_value (&buf[strlen ("Content-disposition: ")],
+      try_get_value (&buf[MHD_STATICSTR_LEN_ ("Content-disposition: ")],
                      "filename",
                      &pp->content_filename);
     }
@@ -1043,7 +1043,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
           if ( (NULL != pp->content_type) &&
                (MHD_str_equal_caseless_n_ (pp->content_type,
                                            "multipart/mixed",
-                                           strlen ("multipart/mixed"))))
+                                           MHD_STATICSTR_LEN_ ("multipart/mixed"))))
             {
               pp->nested_boundary = strstr (pp->content_type,
                                             "boundary=");
@@ -1053,7 +1053,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
                   return MHD_NO;
                 }
               pp->nested_boundary =
-                strdup (&pp->nested_boundary[strlen ("boundary=")]);
+                strdup (&pp->nested_boundary[MHD_STATICSTR_LEN_ ("boundary=")]);
               if (NULL == pp->nested_boundary)
                 {
                   /* out of memory */
@@ -1221,13 +1221,13 @@ MHD_post_process (struct MHD_PostProcessor *pp,
     return MHD_NO;
   if (MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                                  pp->encoding,
-                                 strlen(MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
+                                 MHD_STATICSTR_LEN_(MHD_HTTP_POST_ENCODING_FORM_URLENCODED)))
     return post_process_urlencoded (pp,
                                     post_data,
                                     post_data_len);
   if (MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA,
                                  pp->encoding,
-                                 strlen (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
+                                 MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA)))
     return post_process_multipart (pp,
                                    post_data,
                                    post_data_len);

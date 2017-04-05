@@ -489,7 +489,7 @@ need_100_continue (struct MHD_Connection *connection)
 	   (MHD_str_equal_caseless_(expect,
                                     "100-continue")) &&
 	   (connection->continue_message_write_offset <
-	    strlen (HTTP_100_CONTINUE)) );
+	    MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)) );
 }
 
 
@@ -1201,11 +1201,11 @@ build_header_response (struct MHD_Connection *connection)
     }
 
   if (must_add_close)
-    size += strlen ("Connection: close\r\n");
+    size += MHD_STATICSTR_LEN_ ("Connection: close\r\n");
   if (must_add_keep_alive)
-    size += strlen ("Connection: Keep-Alive\r\n");
+    size += MHD_MACROSTR_LEN_ ("Connection: Keep-Alive\r\n");
   if (must_add_chunked_encoding)
-    size += strlen ("Transfer-Encoding: chunked\r\n");
+    size += MHD_MACROSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
   if (must_add_content_length)
     size += content_length_len;
   EXTRA_CHECK (! (must_add_close && must_add_keep_alive) );
@@ -1241,24 +1241,24 @@ build_header_response (struct MHD_Connection *connection)
       /* we must add the 'Connection: close' header */
       memcpy (&data[off],
               "Connection: close\r\n",
-	      strlen ("Connection: close\r\n"));
-      off += strlen ("Connection: close\r\n");
+              MHD_STATICSTR_LEN_ ("Connection: close\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Connection: close\r\n");
     }
   if (must_add_keep_alive)
     {
       /* we must add the 'Connection: Keep-Alive' header */
       memcpy (&data[off],
               "Connection: Keep-Alive\r\n",
-	      strlen ("Connection: Keep-Alive\r\n"));
-      off += strlen ("Connection: Keep-Alive\r\n");
+              MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n");
     }
   if (must_add_chunked_encoding)
     {
       /* we must add the 'Transfer-Encoding: chunked' header */
       memcpy (&data[off],
               "Transfer-Encoding: chunked\r\n",
-	      strlen ("Transfer-Encoding: chunked\r\n"));
-      off += strlen ("Transfer-Encoding: chunked\r\n");
+              MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
     }
   if (must_add_content_length)
     {
@@ -2343,7 +2343,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 #endif
       EXTRA_CHECK (NULL == connection->response);
       response =
-        MHD_create_response_from_buffer (strlen (REQUEST_LACKS_HOST),
+        MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (REQUEST_LACKS_HOST),
 					 REQUEST_LACKS_HOST,
 					 MHD_RESPMEM_PERSISTENT);
       MHD_queue_response (connection,
@@ -2535,7 +2535,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           ret = connection->send_cls (connection,
                                       &HTTP_100_CONTINUE
                                       [connection->continue_message_write_offset],
-                                      strlen (HTTP_100_CONTINUE) -
+                                      MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE) -
                                       connection->continue_message_write_offset);
           if (ret < 0)
             {
@@ -2912,7 +2912,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_CONTINUE_SENDING:
           if (connection->continue_message_write_offset ==
-              strlen (HTTP_100_CONTINUE))
+              MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE))
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENT;
               if (MHD_NO != socket_flush_possible (connection))

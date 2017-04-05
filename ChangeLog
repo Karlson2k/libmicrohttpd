@@ -1,3 +1,8 @@
+Wed Apr 05 12:53:26 MSK 2017
+	Fixed some compiler warnings.
+	Fixed error snprintf() errors detection in digestauth.c.
+	Converted many run-time 'strlen()' to compile-time calculations. -EG
+
 Sun Mar 26 13:49:01 MSK 2017
 	Internal refactoring for simplification and unification.
 	Minor optimizations and minor fixes.

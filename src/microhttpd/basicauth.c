@@ -57,9 +57,9 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 						       MHD_HTTP_HEADER_AUTHORIZATION))) ||
        (0 != strncmp (header,
                       _BASIC_BASE,
-                      strlen (_BASIC_BASE))) )
+                      MHD_STATICSTR_LEN_ (_BASIC_BASE))) )
     return NULL;
-  header += strlen (_BASIC_BASE);
+  header += MHD_STATICSTR_LEN_ (_BASIC_BASE);
   if (NULL == (decode = BASE64Decode (header)))
     {
 #ifdef HAVE_MESSAGES

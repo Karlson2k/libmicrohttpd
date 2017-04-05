@@ -477,9 +477,9 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
     return NULL;
   if (0 != strncmp (header,
                     _BASE,
-                    strlen (_BASE)))
+                    MHD_STATICSTR_LEN_ (_BASE)))
     return NULL;
-  header += strlen (_BASE);
+  header += MHD_STATICSTR_LEN_ (_BASE);
   if (0 == (len = lookup_sub_value (user,
 				    sizeof (user),
 				    header,
@@ -699,9 +699,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     return MHD_NO;
   if (0 != strncmp (header,
                     _BASE,
-                    strlen(_BASE)))
+                    MHD_STATICSTR_LEN_(_BASE)))
     return MHD_NO;
-  header += strlen (_BASE);
+  header += MHD_STATICSTR_LEN_ (_BASE);
   left = strlen (header);
 
   {

@@ -75,8 +75,8 @@ add_response_entry (struct MHD_Response *response,
   if ( (NULL == response) ||
        (NULL == header) ||
        (NULL == content) ||
-       (0 == strlen (header)) ||
-       (0 == strlen (content)) ||
+       (0 == header[0]) ||
+       (0 == content[0]) ||
        (NULL != strchr (header, '\t')) ||
        (NULL != strchr (header, '\r')) ||
        (NULL != strchr (header, '\n')) ||
