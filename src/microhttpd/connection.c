@@ -1743,7 +1743,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
   while ( (' ' == uri[0]) &&
           ( (size_t)(uri - line) < line_len) )
     uri++;
-  if (uri - line == line_len)
+  if ((size_t)(uri - line) == line_len)
     {
       curi = "";
       uri = NULL;

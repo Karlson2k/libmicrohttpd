@@ -2169,7 +2169,7 @@ recv_param_adapter (struct MHD_Connection *connection,
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
         connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
     }
-  else if (i > ret)
+  else if (i > (size_t)ret)
     connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
   return ret;
@@ -2249,7 +2249,7 @@ send_param_adapter (struct MHD_Connection *connection,
       if (0 < ret)
         {
           /* write successful */
-          if (left > ret)
+          if (left > (uint64_t)ret)
             connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
           return ret;
         }
@@ -2286,7 +2286,7 @@ send_param_adapter (struct MHD_Connection *connection,
       if (MHD_SCKT_ERR_IS_EAGAIN_(err))
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
     }
-  else if (i > ret)
+  else if (i > (size_t)ret)
     connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
   /* Handle broken kernel / libc, returning -1 but not setting errno;
@@ -3300,7 +3300,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   else
     {
       const time_t second_left = earliest_deadline - now;
-      if (second_left > ULLONG_MAX / 1000)
+      if (second_left > ULLONG_MAX / 1000) /* Ignore compiler warning: 'second_left' is always positive. */
         *timeout = ULLONG_MAX;
       else
         *timeout = 1000LL * second_left;
