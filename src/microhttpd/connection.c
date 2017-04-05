@@ -1203,9 +1203,9 @@ build_header_response (struct MHD_Connection *connection)
   if (must_add_close)
     size += MHD_STATICSTR_LEN_ ("Connection: close\r\n");
   if (must_add_keep_alive)
-    size += MHD_MACROSTR_LEN_ ("Connection: Keep-Alive\r\n");
+    size += MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n");
   if (must_add_chunked_encoding)
-    size += MHD_MACROSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
+    size += MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
   if (must_add_content_length)
     size += content_length_len;
   EXTRA_CHECK (! (must_add_close && must_add_keep_alive) );
