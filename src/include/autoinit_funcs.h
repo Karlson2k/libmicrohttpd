@@ -1,6 +1,6 @@
 /*
  *  AutoinitFuncs: Automatic Initialization and Deinitialization Functions
- *  CopyrightCopyright (C) 2014  Karlson2k (Evgeny Grin)
+ *  Copyright(C) 2014-2017  Karlson2k (Evgeny Grin)
  *
  *  This header is free software; you can redistribute it and / or
  *  modify it under the terms of the GNU Lesser General Public
@@ -47,11 +47,13 @@
 
    _SET_INIT_AND_DEINIT_FUNCS(libInit,libDeinit);
    -------------------------------------------------
-   
-   If initializer or deinitializer functions is not needed, just define
+
+   If initializer or deinitializer function is not needed, just define
    it as empty function.
-   
-   This header should work with GCC, clang, MSVC (2010 or later).
+
+   This header should work with GCC, clang, MSVC (2010 or later) and
+   SunPro / Sun Studio / Oracle Solaris Studio / Oracle Developer Studio
+   compiler.
    Supported C and C++ languages; application, static and dynamic (DLL)
    libraries; non-optimized (Debug) and optimized (Release) compilation
    and linking.
@@ -65,10 +67,10 @@
 * Current version of the header.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000001
+#define AUTOINIT_FUNCS_VERSION 0x01000100
 
-#if defined(__GNUC__) || defined(__SUNPRO_C)
-#/* if possible - check for supported attribute */
+#if defined(__GNUC__)
+ /* if possible - check for supported attribute */
 #ifdef __has_attribute
 #if !__has_attribute(constructor) || !__has_attribute(destructor)
 #define _GNUC_ATTR_CONSTR_NOT_SUPPORTED 1
@@ -76,7 +78,10 @@
 #endif /* __has_attribute */
 #endif /* __GNUC__ */
 
-#if (defined(__GNUC__) || defined(__SUNPRO_C)) && !defined(_GNUC_ATTR_CONSTR_NOT_SUPPORTED)
+/* "_attribute__ ((constructor))" is supported by GCC, clang and
+   Sun/Oracle compiler starting from version 12.1. */
+#if (defined(__GNUC__) && !defined(_GNUC_ATTR_CONSTR_NOT_SUPPORTED)) || \
+    (defined(__SUNPRO_C) && __SUNPRO_C+0 >= 0x5100)
 
 #define GNUC_SET_INIT_AND_DEINIT(FI,FD) \
   void __attribute__ ((constructor)) _GNUC_init_helper_##FI(void) \
