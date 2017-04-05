@@ -3245,7 +3245,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
   if (! connection->suspended)
     {
-      unsigned int timeout;
+      time_t timeout;
       timeout = connection->connection_timeout;
       if ( (0 != timeout) &&
            (timeout < (MHD_monotonic_sec_counter() - connection->last_activity)) )
@@ -3377,7 +3377,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     case MHD_CONNECTION_INFO_CONNECTION_SUSPENDED:
       return (const union MHD_ConnectionInfo *) &connection->suspended;
     case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
-      return (const union MHD_ConnectionInfo *) &connection->connection_timeout;
+      connection->connection_timeout_dummy = connection->connection_timeout;
+      return (const union MHD_ConnectionInfo *) &connection->connection_timeout_dummy;
     default:
       return NULL;
     };

@@ -789,7 +789,12 @@ struct MHD_Connection
    * After how many seconds of inactivity should
    * this connection time out?  Zero for no timeout.
    */
-  unsigned int connection_timeout;
+  time_t connection_timeout;
+
+  /**
+   * Special member to be returned by #MHD_get_connection_info()
+   */
+  unsigned int connection_timeout_dummy;
 
   /**
    * Did we ever call the "default_handler" on this connection?  (this
@@ -1517,7 +1522,7 @@ struct MHD_Daemon
    * After how many seconds of inactivity should
    * connections time out?  Zero for no timeout.
    */
-  unsigned int connection_timeout;
+  time_t connection_timeout;
 
   /**
    * Maximum number of connections per IP, or 0 for

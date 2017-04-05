@@ -1803,7 +1803,7 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
     {
-      const unsigned int timeout = daemon->connection_timeout;
+      const time_t timeout = daemon->connection_timeout;
 #ifdef UPGRADE_SUPPORT
       struct MHD_UpgradeResponseHandle * const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
@@ -3276,7 +3276,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       if (0 != pos->connection_timeout)
 	{
 	  if ( (! have_timeout) ||
-	       (earliest_deadline > pos->last_activity + pos->connection_timeout) )
+	       (earliest_deadline - pos->last_activity > pos->connection_timeout) )
 	    earliest_deadline = pos->last_activity + pos->connection_timeout;
 	  have_timeout = true;
 	}
@@ -3287,7 +3287,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
        (0 != pos->connection_timeout) )
     {
       if ( (! have_timeout) ||
-	   (earliest_deadline > pos->last_activity + pos->connection_timeout) )
+	   (earliest_deadline - pos->connection_timeout > pos->last_activity) )
 	earliest_deadline = pos->last_activity + pos->connection_timeout;
       have_timeout = true;
     }
@@ -4766,6 +4766,7 @@ parse_options_va (struct MHD_Daemon *daemon,
   enum MHD_OPTION opt;
   struct MHD_OptionItem *oa;
   unsigned int i;
+  unsigned int uv;
 #ifdef HTTPS_SUPPORT
   int ret;
   const char *pstr;
@@ -4788,8 +4789,18 @@ parse_options_va (struct MHD_Daemon *daemon,
                                              unsigned int);
           break;
         case MHD_OPTION_CONNECTION_TIMEOUT:
-          daemon->connection_timeout = va_arg (ap,
-                                               unsigned int);
+          uv = va_arg (ap,
+                       unsigned int);
+          if (TIME_T_MAX < uv)
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("Warning: Too large timeout value, ignored.\n"));
+#endif
+              daemon->connection_timeout = 0;
+            }
+          else
+            daemon->connection_timeout = (time_t)uv;
           break;
         case MHD_OPTION_NOTIFY_COMPLETED:
           daemon->notify_completed = va_arg (ap,
