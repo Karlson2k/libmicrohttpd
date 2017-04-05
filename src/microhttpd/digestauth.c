@@ -950,7 +950,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 			      int signal_stale)
 {
   int ret;
-  size_t hlen;
+  int hlen;
   char nonce[NONCE_STD_LEN + 1];
 
   /* Generating the server nonce */
@@ -986,7 +986,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
     {
       char *header;
 
-      header = malloc (hlen + 1);
+      header = MHD_calloc_ (1, hlen + 1);
       if (NULL == header)
         {
 #ifdef HAVE_MESSAGES
