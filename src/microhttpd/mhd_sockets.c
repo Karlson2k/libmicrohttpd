@@ -511,7 +511,7 @@ MHD_socket_create_listen_ (int use_ipv6)
   if(! MHD_socket_nosignal_(fd))
     {
       const int err = MHD_socket_get_error_ ();
-      MHD_socket_close_ (fd);
+      (void) MHD_socket_close_ (fd);
       MHD_socket_fset_error_ (err);
       return MHD_INVALID_SOCKET;
     }
