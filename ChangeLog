@@ -1,3 +1,6 @@
+Thu Apr 06 23:02:07 MSK 2017
+	Make zzuf tests compatible with *BSD platforms. -EG
+
 Thu Apr 06 22:14:22 MSK 2017
 	Added warning for hypothetical extra large timeout.
 	Fixed incorrect timeout calculation under extra rare conditions.

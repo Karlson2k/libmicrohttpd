@@ -88,7 +88,7 @@ zzuf_socat_start ()
         }
       return;
     }
-  setpgrp ();
+  setpgid (0, 0);
   execvp ("zzuf", args);
   fprintf (stderr, "execution of `zzuf' failed: %s\n", strerror (errno));
   zzuf_pid = 0;                 /* fork failed */
