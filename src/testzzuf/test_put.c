@@ -138,7 +138,7 @@ testInternalPut ()
     {
       fprintf (stderr, ".");
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
@@ -189,7 +189,7 @@ testMultithreadedPut ()
     {
       fprintf (stderr, ".");
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);
@@ -258,7 +258,7 @@ testExternalPut ()
       fprintf (stderr, ".");
 
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       curl_easy_setopt (c, CURLOPT_READFUNCTION, &putBuffer);

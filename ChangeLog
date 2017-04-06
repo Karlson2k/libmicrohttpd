@@ -1,3 +1,8 @@
+Thu Apr 06 22:14:22 MSK 2017
+	Added warning for hypothetical extra large timeout.
+	Fixed incorrect timeout calculation under extra rare conditions.
+	Fixed accidental usage of IPv6 in testsuite in specific conditions. -EG
+
 Wed Apr 05 14:14:22 MSK 2017
 	Updated autoinit_funcs.h to latest upstream version with proper support of
 	Oracle/Sun compiler. -EG

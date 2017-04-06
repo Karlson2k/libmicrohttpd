@@ -187,7 +187,7 @@ testInternalPost ()
     {
       fprintf (stderr, ".");
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       pd = make_form ();
@@ -238,7 +238,7 @@ testMultithreadedPost ()
     {
       fprintf (stderr, ".");
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:11081/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       pd = make_form ();
@@ -306,7 +306,7 @@ testExternalPost ()
       fprintf (stderr, ".");
 
       c = curl_easy_init ();
-      curl_easy_setopt (c, CURLOPT_URL, "http://localhost:1082/hello_world");
+      curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/hello_world");
       curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
       curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
       pd = make_form ();

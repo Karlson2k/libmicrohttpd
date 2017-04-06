@@ -117,14 +117,14 @@ gnutlscli_connect (int *sock,
               "--insecure",
               "-p",
               destination,
-              "localhost",
+              "127.0.0.1",
               (char *) NULL);
     }
   else if (TLS_CLI_OPENSSL == use_tls_tool)
     {
       snprintf (destination,
                 sizeof(destination),
-                "localhost:%u",
+                "127.0.0.1:%u",
                 (unsigned int) port);
       execlp ("openssl",
               "openssl",
