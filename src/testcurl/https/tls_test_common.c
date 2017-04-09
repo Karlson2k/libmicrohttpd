@@ -104,7 +104,8 @@ test_daemon_get (void *cls,
   /* perform peer authentication */
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, ver_peer);
-  curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
+  if (ver_peer)
+    curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   
