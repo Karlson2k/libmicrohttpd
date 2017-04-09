@@ -1234,6 +1234,9 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
+            GNUTLS_CPPFLAGS="$LIBGCRYPT_CFLAGS"
+            GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
+            GNUTLS_LDFLAGS="$LIBGCRYPT_LIBS"
             GNUTLS_LIBS="-lgnutls"
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
