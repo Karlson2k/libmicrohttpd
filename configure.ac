@@ -398,7 +398,13 @@ if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; the
   SAVE_CFLAGS="$CFLAGS"
   LIBS="$PTHREAD_LIBS $LIBS"
   CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-  AC_CHECK_HEADERS([pthread_np.h],[],[],[AC_INCLUDES_DEFAULT])
+  AC_CHECK_HEADERS([pthread_np.h],[],[],
+    [
+AC_INCLUDES_DEFAULT
+      [
+#include <pthread.h>
+      ]
+    ])
 
   # Try to find how to set thread name by thread attributes.
   # If pthread_attr_setname_np(3) is not declared, it's not possible to detect
