@@ -35,6 +35,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#ifdef __sun
+#include <signal.h>
+#endif /* __sun */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -303,6 +306,13 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+#ifdef __sun
+  struct sigaction act;
+
+  /* Solaris has no way to disable SIGPIPE on socket disconnect. */
+  act.sa_handler = SIG_IGN;
+  sigaction(SIGPIPE, &act, NULL);
+#endif /* __sun */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
