@@ -73,24 +73,31 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  char *aes256_sha = "AES256-SHA";
 
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-  if (setup_ca_cert () == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
-
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
-      return -1;
+      return 99;
+    }
+  if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
+    {
+      fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+      curl_global_cleanup ();
+      return 77;
     }
 
-  char *aes256_sha = "AES256-SHA";
+  if (setup_ca_cert () == NULL)
+    {
+      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
+      curl_global_cleanup ();
+      return 99;
+    }
+
   if (curl_uses_nss_ssl() == 0)
     {
       aes256_sha = "rsa_aes_256_sha";
@@ -106,5 +113,5 @@ main (int argc, char *const *argv)
     fprintf (stderr,
 	     "Failed to remove `%s'\n",
 	     ca_cert_file_name);
-  return errorCount != 0;
+  return errorCount != 0 ? 1 : 0;
 }

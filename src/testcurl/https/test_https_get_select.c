@@ -230,14 +230,21 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return -1;
+      return 99;
     }
+  if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
+    {
+      fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+      curl_global_cleanup ();
+      return 77;
+    }
+
 #ifdef EPOLL_SUPPORT
-  if (0 != (errorCount = testExternalGet (MHD_USE_EPOLL)))
-    fprintf (stderr, "Fail: %d\n", errorCount);
+  errorCount += testExternalGet (MHD_USE_EPOLL);
 #endif
-  if (0 != (errorCount = testExternalGet (0)))
-    fprintf (stderr, "Fail: %d\n", errorCount);
+  errorCount += testExternalGet (0);
   curl_global_cleanup ();
-  return errorCount != 0;
+  if (errorCount != 0)
+    fprintf (stderr, "Failed test: %s, error: %u.\n", argv[0], errorCount);
+  return errorCount != 0 ? 1 : 0;
 }

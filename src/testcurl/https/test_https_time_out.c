@@ -143,5 +143,5 @@ main (int argc, char *const *argv)
   MHD_stop_daemon (d);
   gnutls_global_deinit ();
 
-  return errorCount != 0;
+  return errorCount != 0 ? 1 : 0;
 }

@@ -256,8 +256,15 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
+      return 99;
+    }
+  if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
+    {
+      fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+      curl_global_cleanup ();
       return 77;
     }
+
   load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
   load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_ERROR_LOG,
@@ -278,6 +285,8 @@ main (int argc, char *const *argv)
 
   MHD_stop_daemon (d);
   curl_global_cleanup ();
+  if (error_count != 0)
+    fprintf (stderr, "Failed test: %s, error: %u.\n", argv[0], error_count);
   return (0 != error_count) ? 1 : 0;
 }
 

@@ -180,18 +180,20 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error (code: %u)\n", errorCount);
-      return -1;
+      return 99;
     }
 
   ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
   if (NULL == ssl_version)
   {
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+    curl_global_cleanup ();
     return 77;
   }
   if (0 != strncmp (ssl_version, "GnuTLS", 6))
   {
     fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
+    curl_global_cleanup ();
     return 77;
   }
 #if LIBCURL_VERSION_NUM >= 0x072200
@@ -199,7 +201,5 @@ main (int argc, char *const *argv)
 #endif
   print_test_result (errorCount, argv[0]);
   curl_global_cleanup ();
-  if (errorCount > 0)
-    fprintf (stderr, "Error (code: %u)\n", errorCount);
-  return errorCount;
+  return errorCount != 0 ? 1 : 0;
 }

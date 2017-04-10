@@ -1,3 +1,10 @@
+Mon Apr 10 19:50:20 MSK 2017
+	HTTPS tests: skip tests instead of failing if HTTPS is not supported by
+	libcurl.
+	HTTPS tests: fixed return values so testsuite is able to correctly
+	interpret it.
+	Fixed ignored result of epoll test in test_https_get_select. -EG
+
 Thu Apr 06 23:02:07 MSK 2017
 	Make zzuf tests compatible with *BSD platforms. -EG
 

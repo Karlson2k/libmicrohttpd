@@ -139,9 +139,9 @@ test_daemon_get (void *cls,
 void
 print_test_result (int test_outcome, char *test_name)
 {
-#if 0
   if (test_outcome != 0)
-    fprintf (stderr, "running test: %s [fail]\n", test_name);
+    fprintf (stderr, "running test: %s [fail: %u]\n", test_name, (unsigned int)test_outcome);
+#if 0
   else
     fprintf (stdout, "running test: %s [pass]\n", test_name);
 #endif

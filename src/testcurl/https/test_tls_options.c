@@ -109,7 +109,7 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return 77;
+      return 99;
     }
 
   const char *aes128_sha = "AES128-SHA";
@@ -151,5 +151,5 @@ main (int argc, char *const *argv)
     }
   curl_global_cleanup ();
 
-  return errorCount != 0;
+  return errorCount != 0 ? 1 : 0;
 }

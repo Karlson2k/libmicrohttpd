@@ -144,21 +144,23 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
   srand (iseed);
-  ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
-  if (NULL == ssl_version)
-  {
-    fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
-    return 0;
-  }
-  if (0 != strncmp (ssl_version, "GnuTLS", 6))
-  {
-    fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
-    return 0;
-  }
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));
-      return -1;
+      return 99;
+    }
+  ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (0 != strncmp (ssl_version, "GnuTLS", 6))
+    {
+      fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
+      curl_global_cleanup ();
+      return 77;
+    }
+  if (NULL == ssl_version)
+    {
+      fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+      curl_global_cleanup ();
+      return 77;
     }
 
   char *aes256_sha = "AES256-SHA";
@@ -184,8 +186,8 @@ main (int argc, char *const *argv)
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
   if (errorCount != 0)
-    fprintf (stderr, "Failed test: %s.\n", argv[0]);
+    fprintf (stderr, "Failed test: %s, error: %u.\n", argv[0], errorCount);
 
   curl_global_cleanup ();
-  return errorCount != 0;
+  return errorCount != 0 ? 1 : 0;
 }
