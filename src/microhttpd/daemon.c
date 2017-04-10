@@ -814,6 +814,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
     }
 }
 
+#ifdef HAVE_POLL
 
 /**
  * Set required 'event' members in 'pollfd' elements,
@@ -904,6 +905,7 @@ urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
   if (0 != (p[1].revents & MHD_POLL_REVENTS_ERRROR))
     urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
 }
+#endif /* HAVE_POLL */
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 
