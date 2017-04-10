@@ -3381,7 +3381,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return (const union MHD_ConnectionInfo *) &connection->connection_timeout_dummy;
     default:
       return NULL;
-    };
+    }
 }
 
 
