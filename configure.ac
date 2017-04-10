@@ -182,7 +182,21 @@ AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
 
 
 AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
-                      [[errattr_CFLAGS="-Werror=attributes"]],
+  [
+   save_CFLAGS="$CFLAGS"
+   CFLAGS="$CFLAGS -Werror=attributes"
+   AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[__attribute__((non_existing_attrb_dummy)) int SimpleFunc(void) {return 3;}]], [[int r = SimpleFunc(); if (r) return r;]])],
+     [
+       AC_MSG_RESULT([[no]])
+       errattr_CFLAGS=""
+     ], [
+       AC_MSG_RESULT([[yes]])
+       errattr_CFLAGS="-Werror=attributes"
+     ])
+   CFLAGS="$save_CFLAGS"
+  ],
                       [[errattr_CFLAGS=""]], [], [])
 AC_MSG_CHECKING([[for function inline keywords suppoted by $CC]])
 save_CFLAGS="$CFLAGS"
