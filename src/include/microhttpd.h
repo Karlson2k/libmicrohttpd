@@ -1732,7 +1732,7 @@ enum MHD_ConnectionInfoType
   MHD_CONNECTION_INFO_DAEMON,
 
   /**
-   * Request the file descriptor for the listening socket.
+   * Request the file descriptor for the connection socket.
    * No extra arguments should be passed.
    * @ingroup request
    */
