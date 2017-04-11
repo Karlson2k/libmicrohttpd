@@ -16,11 +16,15 @@ W32VS2015 = w32/VS2015/libmicrohttpd.vcxproj w32/VS2015/libmicrohttpd.vcxproj.fi
   w32/VS2015/hellobrowser.vcxproj w32/VS2015/hellobrowser.vcxproj.filters \
   w32/VS2015/simplepost.vcxproj w32/VS2015/largepost.vcxproj \
   w32/VS2015/libmicrohttpd.sln
+W32VS2017 = w32/VS2017/libmicrohttpd.vcxproj w32/VS2017/libmicrohttpd.vcxproj.filters \
+  w32/VS2017/hellobrowser.vcxproj w32/VS2017/hellobrowser.vcxproj.filters \
+  w32/VS2017/simplepost.vcxproj w32/VS2017/largepost.vcxproj \
+  w32/VS2017/libmicrohttpd.sln
 EXTRA_DIST = \
   acinclude.m4 \
   libmicrohttpd.pc.in \
   $(EXTRA_PO_DIST) \
-  $(W32COMMON) $(W32VS2013) $(W32VS2015)
+  $(W32COMMON) $(W32VS2013) $(W32VS2015) $(W32VS2017)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc
