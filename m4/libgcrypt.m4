@@ -1,47 +1,62 @@
-dnl Autoconf macros for libgcrypt
-dnl       Copyright (C) 2002, 2004, 2011 Free Software Foundation, Inc.
-dnl       Copyright (C) 2014 Karlson2k (Evgeny Grin)
-dnl
-dnl This file is free software; as a special exception the author gives
-dnl unlimited permission to copy and/or distribute it, with or without
-dnl modifications, as long as this notice is preserved.
-dnl
-dnl This file is distributed in the hope that it will be useful, but
-dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
-dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# libgcrypt.m4 - Autoconf macros to detect libgcrypt
+# Copyright (C) 2002, 2003, 2004, 2011, 2014 g10 Code GmbH
+#
+# This file is free software; as a special exception the author gives
+# unlimited permission to copy and/or distribute it, with or without
+# modifications, as long as this notice is preserved.
+#
+# This file is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# Last-changed: 2014-10-02
 
 
 dnl AM_PATH_LIBGCRYPT([MINIMUM-VERSION,
 dnl                   [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
 dnl Test for libgcrypt and define LIBGCRYPT_CFLAGS and LIBGCRYPT_LIBS.
-dnl MINIMUN-VERSION is a string with the version number optionalliy prefixed
+dnl MINIMUM-VERSION is a string with the version number optionalliy prefixed
 dnl with the API version to also check the API compatibility. Example:
-dnl a MINIMUN-VERSION of 1:1.2.5 won't pass the test unless the installed
+dnl a MINIMUM-VERSION of 1:1.2.5 won't pass the test unless the installed
 dnl version of libgcrypt is at least 1.2.5 *and* the API number is 1.  Using
-dnl this features allows to prevent build against newer versions of libgcrypt
+dnl this feature prevents building against newer versions of libgcrypt
 dnl with a changed API.
 dnl
-dnl Updated by Karlson2k to be more tolerant to host tools variations.
+dnl If a prefix option is not used, the config script is first
+dnl searched in $SYSROOT/bin and then along $PATH.  If the used
+dnl config script does not match the host specification the script
+dnl is added to the gpg_config_script_warn variable.
 dnl
 AC_DEFUN([AM_PATH_LIBGCRYPT],
 [ AC_REQUIRE([AC_CANONICAL_HOST])
-  AC_REQUIRE([AC_PROG_GREP])
-  AC_REQUIRE([AC_PROG_SED])
   AC_ARG_WITH(libgcrypt-prefix,
             AC_HELP_STRING([--with-libgcrypt-prefix=PFX],
                            [prefix where LIBGCRYPT is installed (optional)]),
      libgcrypt_config_prefix="$withval", libgcrypt_config_prefix="")
-  if test x$libgcrypt_config_prefix != x ; then
-     if test x${LIBGCRYPT_CONFIG+set} != xset ; then
-        LIBGCRYPT_CONFIG=$libgcrypt_config_prefix/bin/libgcrypt-config
+  if test x"${LIBGCRYPT_CONFIG}" = x ; then
+     if test x"${libgcrypt_config_prefix}" != x ; then
+        LIBGCRYPT_CONFIG="${libgcrypt_config_prefix}/bin/libgcrypt-config"
+     else
+       case "${SYSROOT}" in
+         /*)
+           if test -x "${SYSROOT}/bin/libgcrypt-config" ; then
+             LIBGCRYPT_CONFIG="${SYSROOT}/bin/libgcrypt-config"
+           fi
+           ;;
+         '')
+           ;;
+          *)
+           AC_MSG_WARN([Ignoring \$SYSROOT as it is not an absolute path.])
+           ;;
+       esac
      fi
   fi
 
-  AC_PATH_TOOL(LIBGCRYPT_CONFIG, libgcrypt-config, no)
+  AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, no)
   tmp=ifelse([$1], ,1:1.2.0,$1)
-  if echo "$tmp" | $GREP ':' >/dev/null 2>/dev/null ; then
-     req_libgcrypt_api=`echo "$tmp"     | $SED 's/\(.*\):\(.*\)/\1/'`
-     min_libgcrypt_version=`echo "$tmp" | $SED 's/\(.*\):\(.*\)/\2/'`
+  if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
+     req_libgcrypt_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
+     min_libgcrypt_version=`echo "$tmp" | sed 's/\(.*\):\(.*\)/\2/'`
   else
      req_libgcrypt_api=0
      min_libgcrypt_version="$tmp"
@@ -51,18 +66,18 @@ AC_DEFUN([AM_PATH_LIBGCRYPT],
   ok=no
   if test "$LIBGCRYPT_CONFIG" != "no" ; then
     req_major=`echo $min_libgcrypt_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
     req_minor=`echo $min_libgcrypt_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
     req_micro=`echo $min_libgcrypt_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
     libgcrypt_config_version=`$LIBGCRYPT_CONFIG --version`
     major=`echo $libgcrypt_config_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
     minor=`echo $libgcrypt_config_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
     micro=`echo $libgcrypt_config_version | \
-               $SED 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\3/'`
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\3/'`
     if test "$major" -gt "$req_major"; then
         ok=yes
     else
@@ -113,8 +128,9 @@ AC_DEFUN([AM_PATH_LIBGCRYPT],
 *** built for $libgcrypt_config_host and thus may not match the
 *** used host $host.
 *** You may want to use the configure option --with-libgcrypt-prefix
-*** to specify a matching config script.
+*** to specify a matching config script or use \$SYSROOT.
 ***]])
+        gpg_config_script_warn="$gpg_config_script_warn libgcrypt"
       fi
     fi
   else

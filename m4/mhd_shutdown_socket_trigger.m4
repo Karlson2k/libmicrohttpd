@@ -1,7 +1,7 @@
 # SYNOPSIS
 #
 #   MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([ACTION-IF-TRIGGER], [ACTION-IF-NOT],
-#                                     [ACTIION-IF-UNKNOWN])
+#                                     [ACTION-IF-UNKNOWN])
 #
 # DESCRIPTION
 #
