@@ -1,3 +1,6 @@
+Tue Apr 11 22:17:00 MSK 2017
+	Releasing GNU libmicrohttpd 0.9.53. -EG
+
 Mon Apr 10 19:50:20 MSK 2017
 	HTTPS tests: skip tests instead of failing if HTTPS is not supported by
 	libcurl.
