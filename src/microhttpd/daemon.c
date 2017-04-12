@@ -2251,8 +2251,10 @@ send_param_adapter (struct MHD_Connection *connection,
       if (0 < ret)
         {
           /* write successful */
+#ifdef EPOLL_SUPPORT
           if (left > (uint64_t)ret)
             connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
           return ret;
         }
       err = MHD_socket_get_error_();
