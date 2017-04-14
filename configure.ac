@@ -354,12 +354,12 @@ AS_CASE([[$with_threads]],
 # testsuite use only posix threads.
 AX_PTHREAD(
   [
-    HAVE_POSIX_THREADS='yes'
+    mhd_have_posix_threads='yes'
     AC_DEFINE([[HAVE_PTHREAD_H]],[[1]],[Define to 1 if you have the <pthread.h> header file.])
-  ],[[HAVE_POSIX_THREADS='no']])
-AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$HAVE_POSIX_THREADS" = "xyes"])
+  ],[[mhd_have_posix_threads='no']])
+AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$mhd_have_posix_threads" = "xyes"])
 
-HAVE_W32_THREADS='no'
+mhd_have_w32_threads='no'
 AS_IF([[test "x$with_threads" = "xauto"]],
  [
  AS_IF([[test "x$os_is_windows" = "xyes"]],
@@ -367,9 +367,9 @@ AS_IF([[test "x$with_threads" = "xauto"]],
     AC_MSG_CHECKING([[for W32 threads]])
     AC_LINK_IFELSE(
       [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
-      , [[HAVE_W32_THREADS='yes']], [[HAVE_W32_THREADS='no']]
+      , [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
       )
-    AC_MSG_RESULT([[$HAVE_W32_THREADS]])
+    AC_MSG_RESULT([[$mhd_have_w32_threads]])
    ])
  ]
 )
@@ -377,7 +377,7 @@ AS_IF([[test "x$with_threads" = "xauto"]],
 AC_MSG_CHECKING([[for threading lib to use with libmicrohttpd]])
 AS_IF([[test "x$with_threads" = "xposix"]],
   [ # forced posix threads
-    AS_IF([[test "x$HAVE_POSIX_THREADS" = "xyes"]], [[ USE_THREADS='posix' ]],
+    AS_IF([[test "x$mhd_have_posix_threads" = "xyes"]], [[ USE_THREADS='posix' ]],
       [ AS_IF([[test "x$os_is_windows" = "xyes"]] ,
           [ AC_MSG_ERROR([[Posix threads are not available. Try to configure --with-threads=auto]])],
           [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]])] )
@@ -385,15 +385,15 @@ AS_IF([[test "x$with_threads" = "xposix"]],
     ] ,
   [[ test "x$with_threads" = "xw32" ]] ,
   [ # forced w32 threads
-    AS_IF([[test "x$HAVE_W32_THREADS" = "xyes"]],
+    AS_IF([[test "x$mhd_have_w32_threads" = "xyes"]],
       [[ USE_THREADS='w32' ]],
       [ AC_MSG_ERROR([[W32 threads are not available. Try to configure --with-threads=auto]])])
     ] ,
     [ # automatic threads lib selection
-      AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$HAVE_W32_THREADS" = "xyes"]] ,
+      AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$mhd_have_w32_threads" = "xyes"]] ,
         [[ USE_THREADS='w32' ]] ,
-        [[ test "x$HAVE_POSIX_THREADS" = "xyes" ]], [[ USE_THREADS='posix' ]],
-        [[ test "x$HAVE_W32_THREADS" = "xyes" ]], [[ USE_THREADS='w32' ]],
+        [[ test "x$mhd_have_posix_threads" = "xyes" ]], [[ USE_THREADS='posix' ]],
+        [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]],
         [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]]) ]
         )
     ]
