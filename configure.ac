@@ -341,11 +341,17 @@ esac
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
    [], [with_threads='auto'])
-test "x$with_threads" = "xwin32" && with_threads='w32'
-test "x$with_threads" = "xpthreads" && with_threads='posix'
+AS_CASE([[$with_threads]],
+  [[win32]], [[with_threads='w32']],
+  [[pthreads]], [[with_threads='posix']],
+  [[posix]], [[:]],
+  [[w32]], [[:]],
+  [[auto]], [[:]],
+    [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
+)
 
 # Check for posix threads support, regardless of configure parameters as
-# posix threads are used in some tests even on W32.
+# testsuite use only posix threads.
 AX_PTHREAD(
   [
     HAVE_POSIX_THREADS='yes'
@@ -354,7 +360,9 @@ AX_PTHREAD(
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$HAVE_POSIX_THREADS" = "xyes"])
 
 HAVE_W32_THREADS='no'
-AS_IF([[test "x$os_is_windows" = "xyes"]],
+AS_IF([[test "x$with_threads" = "xauto"]],
+ [
+ AS_IF([[test "x$os_is_windows" = "xyes"]],
    [
     AC_MSG_CHECKING([[for W32 threads]])
     AC_LINK_IFELSE(
@@ -363,6 +371,8 @@ AS_IF([[test "x$os_is_windows" = "xyes"]],
       )
     AC_MSG_RESULT([[$HAVE_W32_THREADS]])
    ])
+ ]
+)
 
 AC_MSG_CHECKING([[for threading lib to use with libmicrohttpd]])
 AS_IF([[test "x$with_threads" = "xposix"]],
