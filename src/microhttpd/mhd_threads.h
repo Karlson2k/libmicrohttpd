@@ -52,6 +52,8 @@
 #    define WIN32_LEAN_AND_MEAN 1
 #  endif /* !WIN32_LEAN_AND_MEAN */
 #  include <windows.h>
+#elif defined(MHD_USE_SOLARIS_THREADS)
+#  include <thread.h>
 #else
 #  error No threading API is available.
 #endif
@@ -75,9 +77,11 @@
   typedef pthread_t MHD_thread_handle_;
 #elif defined(MHD_USE_W32_THREADS)
   typedef HANDLE MHD_thread_handle_;
+#elif defined(MHD_USE_SOLARIS_THREADS)
+  typedef thread_t MHD_thread_handle_;
 #endif
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_SOLARIS_THREADS)
 #  define MHD_THRD_RTRN_TYPE_ void*
 #  define MHD_THRD_CALL_SPEC_
 #elif defined(MHD_USE_W32_THREADS)
@@ -99,6 +103,13 @@
  * @return nonzero on success, zero otherwise
  */
 #define MHD_join_thread_(thread) (WAIT_OBJECT_0 == WaitForSingleObject((thread), INFINITE) ? (CloseHandle((thread)), !0) : 0)
+#elif defined(MHD_USE_SOLARIS_THREADS)
+  /**
+   * Wait until specified thread is ended and free thread handle on success.
+   * @param thread handle to watch
+   * @return nonzero on success, zero otherwise
+   */
+  #define MHD_join_thread_(thread) (!thr_join((thread), NULL, NULL))
 #endif
 
 /**
@@ -111,6 +122,7 @@ typedef MHD_THRD_RTRN_TYPE_
 (MHD_THRD_CALL_SPEC_ *MHD_THREAD_START_ROUTINE_)(void *cls);
 
 
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 /**
  * Create a thread and set the attributes according to our options.
  *
@@ -127,6 +139,10 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
                     size_t stack_size,
                     MHD_THREAD_START_ROUTINE_ start_routine,
                     void *arg);
+#elif defined(MHD_USE_SOLARIS_THREADS)
+#  define MHD_create_thread_(phndl, stck_s, s_routine, arg) \
+            (0 == (errno = thr_create(NULL,(stck_s),(start_routine),(arg),0,(phndl))))
+#endif
 
 #ifndef MHD_USE_THREAD_NAME_
 #define MHD_create_named_thread_(t,n,s,r,a) MHD_create_thread_((t),(s),(r),(a))

@@ -39,7 +39,7 @@
 
 
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_SOLARIS_THREADS)
 typedef pthread_t MHD_thread_ID_;
 #elif defined(MHD_USE_W32_THREADS)
 typedef DWORD MHD_thread_ID_;
@@ -173,6 +173,7 @@ MHD_set_thread_name_(const MHD_thread_ID_ thread_id,
 #endif /* MHD_USE_THREAD_NAME_ */
 
 
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 /**
  * Create a thread and set the attributes according to our options.
  *
@@ -238,6 +239,8 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
   return !0;
 #endif
 }
+#endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
+
 
 #ifdef MHD_USE_THREAD_NAME_
 

@@ -425,7 +425,8 @@ AS_IF([[test "x$with_threads" = "xposix"]],
      [[test "x$mhd_host_os" = "xSolaris" && test "x$mhd_have_solaris_threads" = "xyes"]], [[ USE_THREADS='solaris' ]],
      [[ test "x$mhd_have_posix_threads" = "xyes" ]], [[ USE_THREADS='posix' ]],
      [[ test "x$mhd_have_solaris_threads" = "xyes" ]], [[ USE_THREADS='solaris' ]],
-     [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]],
+     [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]]
+   )
   ]
 )
 if test "x$USE_THREADS" = "xposix"; then
@@ -436,9 +437,15 @@ if test "x$USE_THREADS" = "xposix"; then
   MHD_LIBDEPS_PKGCFG="$PTHREAD_LIBS $MHD_LIBDEPS_PKGCFG"
 elif test "x$USE_THREADS" = "xw32"; then
   AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])
+elif test "x$USE_THREADS" = "xsolaris"; then
+  AC_DEFINE([MHD_USE_SOLARIS_THREADS],[1],[define to use Solaris threads])
+  MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS -D_REENTRANT"
+  MHD_LIBDEPS="$MHD_LIBDEPS -lthreads"
+  MHD_LIBDEPS_PKGCFG="$MHD_LIBDEPS_PKGCFG -lthreads"
 fi
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
+AM_CONDITIONAL([USE_SOLARIS_THREADS], [test "x$USE_THREADS" = "xsolaris"])
 AC_MSG_RESULT([[$USE_THREADS]])
 
 AC_ARG_ENABLE([[thread-names]],
