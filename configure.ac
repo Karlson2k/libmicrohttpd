@@ -407,22 +407,27 @@ AS_IF([[test "x$with_threads" = "xposix"]],
           [ AC_MSG_ERROR([[Posix threads are not available. Try to configure --with-threads=auto]])],
           [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]])] )
       ])
-    ] ,
-  [[ test "x$with_threads" = "xw32" ]] ,
+  ],
+  [[ test "x$with_threads" = "xw32" ]],
   [ # forced w32 threads
     AS_IF([[test "x$mhd_have_w32_threads" = "xyes"]],
       [[ USE_THREADS='w32' ]],
       [ AC_MSG_ERROR([[W32 threads are not available. Try to configure --with-threads=auto]])])
-    ] ,
-    [ # automatic threads lib selection
-      AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$mhd_have_w32_threads" = "xyes"]] ,
-        [[ USE_THREADS='w32' ]] ,
-        [[ test "x$mhd_have_posix_threads" = "xyes" ]], [[ USE_THREADS='posix' ]],
-        [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]],
-        [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]]) ]
-        )
-    ]
-  )
+  ],
+  [[ test "x$with_threads" = "xsolaris" ]],
+  [ # forced w32 threads
+    AS_IF([[test "x$mhd_have_solaris_threads" = "xyes"]],
+      [[ USE_THREADS='solaris' ]],
+      [ AC_MSG_ERROR([[Solaris threads are not available. Try to configure --with-threads=auto]])])
+  ],
+  [ # automatic threads lib selection
+   AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$mhd_have_w32_threads" = "xyes"]], [[ USE_THREADS='w32' ]],
+     [[test "x$mhd_host_os" = "xSolaris" && test "x$mhd_have_solaris_threads" = "xyes"]], [[ USE_THREADS='solaris' ]],
+     [[ test "x$mhd_have_posix_threads" = "xyes" ]], [[ USE_THREADS='posix' ]],
+     [[ test "x$mhd_have_solaris_threads" = "xyes" ]], [[ USE_THREADS='solaris' ]],
+     [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]],
+  ]
+)
 if test "x$USE_THREADS" = "xposix"; then
   CC="$PTHREAD_CC"
   AC_DEFINE([MHD_USE_POSIX_THREADS],[1],[define to use pthreads])
