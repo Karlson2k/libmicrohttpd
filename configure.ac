@@ -368,11 +368,13 @@ AS_IF([[test "x$with_threads" != "xpthreads"]],
     [
      AC_MSG_CHECKING([[for W32 threads]])
      AC_LINK_IFELSE(
-       [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
-       , [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
-       )
+       [AC_LANG_PROGRAM([[
+#include <windows.h>]], [[HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);]])
+       ], [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
+     )
      AC_MSG_RESULT([[$mhd_have_w32_threads]])
-    ])
+    ]
+  )
   AS_IF([[test "x$with_threads" != "xw32"]],
     [
      AC_MSG_CHECKING([[for Solaris threads]])
@@ -384,10 +386,10 @@ AS_IF([[test "x$with_threads" != "xpthreads"]],
        [AC_LANG_PROGRAM([[
 #include <thread.h>
 void* sml_routine(void* param) { return param; }
-         ]], [[thread_t th_id; thr_create(NULL, 0, sml_routine, NULL, 0, &th_id); thr_join(th_id, NULL, NULL);]])
+         ]], [[thread_t th_id; thr_create(NULL, 0, sml_routine, NULL, 0, &th_id); thr_join(th_id, NULL, NULL);]]
+        )
        ],
        [[mhd_have_solaris_threads='yes']], [[mhd_have_solaris_threads='no']]
-      )
      )
      CPPFLAGS="$SAVE_CPPFLAGS"
      LIBS="$SAVE_LIBS"
