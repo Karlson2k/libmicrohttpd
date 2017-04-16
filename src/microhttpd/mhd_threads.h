@@ -141,7 +141,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
                     void *arg);
 #elif defined(MHD_USE_SOLARIS_THREADS)
 #  define MHD_create_thread_(phndl, stck_s, s_routine, arg) \
-            (0 == (errno = thr_create(NULL,(stck_s),(start_routine),(arg),0,(phndl))))
+            (0 == (errno = thr_create(NULL,(stck_s),(s_routine),(arg),0,(phndl))))
 #endif
 
 #ifndef MHD_USE_THREAD_NAME_
