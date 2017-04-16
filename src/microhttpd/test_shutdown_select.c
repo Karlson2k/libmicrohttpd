@@ -30,6 +30,9 @@
  */
 
 #include "MHD_config.h"
+#if defined(MHD_USE_SOLARIS_THREADS) && defined(MHD_USE_POSIX_THREADS)
+#  undef MHD_USE_SOLARIS_THREADS
+#endif
 #include "platform.h"
 #include "mhd_sockets.h"
 #include <stdlib.h>

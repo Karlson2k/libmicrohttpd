@@ -142,9 +142,13 @@ endif
 check_PROGRAMS = \
   test_str_compare \
   test_str_to_value \
-  test_shutdown_select \
-  test_shutdown_poll \
   test_daemon
+
+if HAVE_POSIX_OR_W32_THREADS
+check_PROGRAMS += \
+  test_shutdown_select \
+  test_shutdown_poll
+endif
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
@@ -228,7 +232,11 @@ test_postprocessor_large_LDADD = \
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
-if USE_POSIX_THREADS
+if !USE_W32_THREADS
+if USE_SOLARIS_THREADS
+test_shutdown_select_CPPFLAGS = \
+  $(AM_CPPFLAGS) -DMHD_USE_POSIX_THREADS=1
+endif
 test_shutdown_select_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_shutdown_select_LDADD = \
@@ -237,7 +245,11 @@ endif
 
 test_shutdown_poll_SOURCES = \
   test_shutdown_select.c mhd_threads.h
-if USE_POSIX_THREADS
+if !USE_W32_THREADS
+if USE_SOLARIS_THREADS
+test_shutdown_poll_CPPFLAGS = \
+  $(AM_CPPFLAGS) -DMHD_USE_POSIX_THREADS=1
+endif
 test_shutdown_poll_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_shutdown_poll_LDADD = \

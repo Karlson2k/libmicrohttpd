@@ -398,6 +398,9 @@ void* sml_routine(void* param) { return param; }
   )
  ]
 )
+AM_CONDITIONAL([HAVE_W32_THREADS], [[test "x$mhd_have_w32_threads" = "xyes"]])
+AM_CONDITIONAL([HAVE_POSIX_OR_W32_THREADS],
+   [[test "x$mhd_have_posix_threads" = "xyes" || test "x$mhd_have_w32_threads" = "xyes"]])
 
 AC_MSG_CHECKING([[for threading lib to use with libmicrohttpd]])
 AS_IF([[test "x$with_threads" = "xposix"]],
@@ -440,7 +443,7 @@ elif test "x$USE_THREADS" = "xw32"; then
 elif test "x$USE_THREADS" = "xsolaris"; then
   AC_DEFINE([MHD_USE_SOLARIS_THREADS],[1],[define to use Solaris threads])
   MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS -D_REENTRANT"
-  MHD_LIBDEPS="$MHD_LIBDEPS -lthreads"
+  MHD_LIBDEPS="$MHD_LIBDEPS -lthread"
   MHD_LIBDEPS_PKGCFG="$MHD_LIBDEPS_PKGCFG -lthreads"
 fi
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
