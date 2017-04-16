@@ -339,13 +339,14 @@ netbsd*)
 esac
 
 AC_ARG_WITH([threads],
-   [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
+   [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, solaris, auto) [auto]])],
    [], [with_threads='auto'])
 AS_CASE([[$with_threads]],
   [[win32]], [[with_threads='w32']],
   [[pthreads]], [[with_threads='posix']],
   [[posix]], [[:]],
   [[w32]], [[:]],
+  [[solaris]], [[:]],
   [[auto]], [[:]],
     [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
 )
@@ -360,17 +361,39 @@ AX_PTHREAD(
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$mhd_have_posix_threads" = "xyes"])
 
 mhd_have_w32_threads='no'
-AS_IF([[test "x$with_threads" = "xauto"]],
+mhd_have_solaris_threads='no'
+AS_IF([[test "x$with_threads" != "xpthreads"]],
  [
- AS_IF([[test "x$os_is_windows" = "xyes"]],
-   [
-    AC_MSG_CHECKING([[for W32 threads]])
-    AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
-      , [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
+  AS_IF([[test "x$with_threads" != "xsolaris" && test "x$os_is_windows" = "xyes"]],
+    [
+     AC_MSG_CHECKING([[for W32 threads]])
+     AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
+       , [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
+       )
+     AC_MSG_RESULT([[$mhd_have_w32_threads]])
+    ])
+  AS_IF([[test "x$with_threads" != "xw32"]],
+    [
+     AC_MSG_CHECKING([[for Solaris threads]])
+     SAVE_CPPFLAGS="$CPPFLAGS"
+     SAVE_LIBS="$LIBS"
+     LIBS="$LIBS -lthread"
+     CPPFLAGS="$CPPFLAGS -D_REENTRANT"
+     AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM([[
+#include <thread.h>
+void* sml_routine(void* param) { return param; }
+         ]], [[thread_t th_id; thr_create(NULL, 0, sml_routine, NULL, 0, &th_id); thr_join(th_id, NULL, NULL);]])
+       ],
+       [[mhd_have_solaris_threads='yes']], [[mhd_have_solaris_threads='no']]
       )
-    AC_MSG_RESULT([[$mhd_have_w32_threads]])
-   ])
+     )
+     CPPFLAGS="$SAVE_CPPFLAGS"
+     LIBS="$SAVE_LIBS"
+     AC_MSG_RESULT([[$mhd_have_solaris_threads]])
+    ]
+  )
  ]
 )
 
@@ -412,7 +435,7 @@ AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
 AC_MSG_RESULT([[$USE_THREADS]])
 
 AC_ARG_ENABLE([[thread-names]],
-   [AS_HELP_STRING([--disable-thread-names [auto] ],[do not set names on MHD generated threads])],
+   [AS_HELP_STRING([--disable-thread-names ],[do not set names on MHD generated threads [auto]])],
    [], [enable_thread_names='auto'])
 
 if test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"; then
