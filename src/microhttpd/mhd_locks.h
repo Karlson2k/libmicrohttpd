@@ -50,6 +50,9 @@
 #  undef HAVE_CONFIG_H
 #  include <pthread.h>
 #  define HAVE_CONFIG_H 1
+#elif defined(MHD_USE_SOLARIS_THREADS)
+#  define MHD_SOLARIS_MUTEX_ 1
+#  include <synch.h>
 #else
 #  error No base mutex API is available.
 #endif
@@ -67,6 +70,8 @@
   typedef pthread_mutex_t MHD_mutex_;
 #elif defined(MHD_W32_MUTEX_)
   typedef CRITICAL_SECTION MHD_mutex_;
+#elif defined(MHD_SOLARIS_MUTEX_)
+  typedef mutex_t MHD_mutex_;
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -83,6 +88,13 @@
  * @return nonzero on success, zero otherwise
  */
 #define MHD_mutex_init_(pmutex) (InitializeCriticalSectionAndSpinCount((pmutex),16))
+#elif defined(MHD_SOLARIS_MUTEX_)
+/**
+ * Initialise new mutex.
+ * @param pmutex pointer to the mutex
+ * @return nonzero on success, zero otherwise
+ */
+#define MHD_mutex_init_(pmutex) (!(mutex_init((pmutex), USYNC_THREAD, NULL)))
 #endif
 
 #if defined(MHD_PTHREAD_MUTEX_)
@@ -99,6 +111,13 @@
  * @return Always nonzero
  */
 #define MHD_mutex_destroy_(pmutex) (DeleteCriticalSection((pmutex)), !0)
+#elif defined(MHD_SOLARIS_MUTEX_)
+/**
+ * Destroy previously initialised mutex.
+ * @param pmutex pointer to mutex
+ * @return nonzero on success, zero otherwise
+ */
+#define MHD_mutex_destroy_(pmutex) (!(mutex_destroy((pmutex))))
 #endif
 
 /**
@@ -130,6 +149,15 @@
  * @return Always nonzero
  */
 #define MHD_mutex_lock_(pmutex) (EnterCriticalSection((pmutex)), !0)
+#elif defined(MHD_SOLARIS_MUTEX_)
+/**
+ * Acquire lock on previously initialised mutex.
+ * If mutex was already locked by other thread, function
+ * blocks until mutex becomes available.
+ * @param pmutex pointer to mutex
+ * @return nonzero on success, zero otherwise
+ */
+#define MHD_mutex_lock_(pmutex) (!(mutex_lock((pmutex))))
 #endif
 
 /**
@@ -158,6 +186,13 @@
  * @return Always nonzero
  */
 #define MHD_mutex_unlock_(pmutex) (LeaveCriticalSection((pmutex)), !0)
+#elif defined(MHD_SOLARIS_MUTEX_)
+/**
+ * Unlock previously initialised and locked mutex.
+ * @param pmutex pointer to mutex
+ * @return nonzero on success, zero otherwise
+ */
+#define MHD_mutex_unlock_(pmutex) (!(mutex_unlock((pmutex))))
 #endif
 
 /**
