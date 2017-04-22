@@ -231,27 +231,35 @@ test_postprocessor_large_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_shutdown_select_SOURCES = \
-  test_shutdown_select.c
+  test_shutdown_select.c mhd_threads.h
+test_shutdown_select_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+test_shutdown_select_CFLAGS = \
+  $(AM_CFLAGS)
 if !USE_W32_THREADS
 if USE_SOLARIS_THREADS
-test_shutdown_select_CPPFLAGS = \
-  $(AM_CPPFLAGS) -DMHD_USE_POSIX_THREADS=1
+test_shutdown_select_CPPFLAGS += \
+  -DMHD_USE_POSIX_THREADS=1
 endif
-test_shutdown_select_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_select_CFLAGS += \
+  $(PTHREAD_CFLAGS)
 test_shutdown_select_LDADD = \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_poll_SOURCES = \
   test_shutdown_select.c mhd_threads.h
+test_shutdown_poll_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+test_shutdown_poll_CFLAGS = \
+  $(AM_CFLAGS)
 if !USE_W32_THREADS
 if USE_SOLARIS_THREADS
-test_shutdown_poll_CPPFLAGS = \
-  $(AM_CPPFLAGS) -DMHD_USE_POSIX_THREADS=1
+test_shutdown_poll_CPPFLAGS += \
+  -DMHD_USE_POSIX_THREADS=1
 endif
-test_shutdown_poll_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_poll_CFLAGS += \
+  $(PTHREAD_CFLAGS)
 test_shutdown_poll_LDADD = \
   $(PTHREAD_LIBS)
 endif
