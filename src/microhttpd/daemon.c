@@ -6641,10 +6641,10 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #if defined(HTTPS_SUPPORT) && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(MHD_W32_MUTEX_) || defined(MHD_SOLARIS_MUTEX_)
 
 static int
-gcry_w32_mutex_init (void **ppmtx)
+mhd_gcry_mutex_init (void **ppmtx)
 {
   *ppmtx = malloc (sizeof (MHD_mutex_));
 
@@ -6662,16 +6662,16 @@ gcry_w32_mutex_init (void **ppmtx)
 
 
 static int
-gcry_w32_mutex_destroy (void **ppmtx)
+mhd_gcry_mutex_destroy (void **ppmtx)
 {
-  int res = (MHD_mutex_destroy_chk_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+  int res = (MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
   free (*ppmtx);
   return res;
 }
 
 
 static int
-gcry_w32_mutex_lock (void **ppmtx)
+mhd_gcry_mutex_lock (void **ppmtx)
 {
   MHD_mutex_lock_chk_ ((MHD_mutex_*)*ppmtx);
   return 0;
@@ -6679,20 +6679,20 @@ gcry_w32_mutex_lock (void **ppmtx)
 
 
 static int
-gcry_w32_mutex_unlock (void **ppmtx)
+mhd_gcry_mutex_unlock (void **ppmtx)
 {
   MHD_mutex_unlock_chk_ ((MHD_mutex_*)*ppmtx);
   return 0;
 }
 
 
-static struct gcry_thread_cbs gcry_threads_w32 = {
+static struct gcry_thread_cbs mhd_gcry_threads = {
   (GCRY_THREAD_OPTION_USER | (GCRY_THREAD_OPTION_VERSION << 8)),
-  NULL, gcry_w32_mutex_init, gcry_w32_mutex_destroy,
-  gcry_w32_mutex_lock, gcry_w32_mutex_unlock,
+  NULL, mhd_gcry_mutex_init, mhd_gcry_mutex_destroy,
+  mhd_gcry_mutex_lock, mhd_gcry_mutex_unlock,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-#endif /* defined(MHD_W32_MUTEX_) */
+#endif /* MHD_W32_MUTEX_ || MHD_SOLARIS_MUTEX_ */
 #endif /* HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600 */
 
 
@@ -6721,9 +6721,9 @@ MHD_init(void)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
                          &gcry_threads_pthread))
     MHD_PANIC (_("Failed to initialise multithreading in libgcrypt\n"));
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(MHD_W32_MUTEX_) || defined(MHD_SOLARIS_MUTEX_)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
-                         &gcry_threads_w32))
+                         &mhd_gcry_threads))
     MHD_PANIC (_("Failed to initialise multithreading in libgcrypt\n"));
 #endif /* defined(MHD_W32_MUTEX_) */
   gcry_check_version (NULL);
