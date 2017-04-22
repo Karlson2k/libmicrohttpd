@@ -1,3 +1,8 @@
+Sat Apr 22 20:39:00 MSK 2017
+	Fixed builds in Linux without epoll.
+	Check for invalid --with-thread= configure parameters.
+	Fixed support for old libgcrypt on W32 with W32 threads. -EG
+
 Tue Apr 11 22:17:00 MSK 2017
 	Releasing GNU libmicrohttpd 0.9.53. -EG
 

@@ -6664,7 +6664,7 @@ gcry_w32_mutex_init (void **ppmtx)
 static int
 gcry_w32_mutex_destroy (void **ppmtx)
 {
-  int res = (MHD_mutex_destroy_chk_ ((MHD_mutex_*)*ppmtx)) ? 0 : 1;
+  int res = (MHD_mutex_destroy_ ((MHD_mutex_*)*ppmtx)) ? 0 : EINVAL;
   free (*ppmtx);
   return res;
 }
@@ -6673,16 +6673,14 @@ gcry_w32_mutex_destroy (void **ppmtx)
 static int
 gcry_w32_mutex_lock (void **ppmtx)
 {
-  MHD_mutex_lock_chk_ ((MHD_mutex_*)*ppmtx);
-  return 0;
+  return MHD_mutex_lock_ ((MHD_mutex_*)*ppmtx) ? 0 : EINVAL;
 }
 
 
 static int
 gcry_w32_mutex_unlock (void **ppmtx)
 {
-  MHD_mutex_unlock_chk_ ((MHD_mutex_*)*ppmtx);
-  return 0;
+  return MHD_mutex_unlock_ ((MHD_mutex_*)*ppmtx) ? 0 : EINVAL;
 }
 
 
