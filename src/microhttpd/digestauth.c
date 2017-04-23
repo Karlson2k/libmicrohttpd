@@ -413,7 +413,7 @@ check_nonce_nc (struct MHD_Connection *connection,
     {
       /* Fresh nonce, reinitialize array */
       strcpy (nn->nonce,
-              nonce);
+	      nonce);
       nn->nc = 0;
       nn->nmask = 0;
       MHD_mutex_unlock_chk_ (&daemon->nnc_lock);

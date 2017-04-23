@@ -1,3 +1,7 @@
+Sun Apr 23 20:05:44 CEST 2017
+	Enforce RFC 7230's rule on no whitespace in HTTP header
+	field names if MHD_USE_PEDANTIC_CHECKS is set. -CG
+
 Sun Apr 23 19:20:33 CEST 2017
 	Replace remaining occurences of sprintf() with
 	MHD_snprintf_(). Thanks to Ram for pointing this out. -CG
