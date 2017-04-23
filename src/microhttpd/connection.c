@@ -907,9 +907,11 @@ keepalive_possible (struct MHD_Connection *connection)
  *
  * @param date where to write the header, with
  *        at least 128 bytes available space.
+ * @param date_len number of bytes in @a date
  */
 static void
-get_date_string (char *date)
+get_date_string (char *date,
+		 size_t date_len)
 {
   static const char *const days[] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
@@ -944,15 +946,16 @@ get_date_string (char *date)
     return;
   now = *pNow;
 #endif
-  sprintf (date,
-           "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
-           days[now.tm_wday % 7],
-           (unsigned int) now.tm_mday,
-           mons[now.tm_mon % 12],
-           (unsigned int) (1900 + now.tm_year),
-           (unsigned int) now.tm_hour,
-           (unsigned int) now.tm_min,
-           (unsigned int) now.tm_sec);
+  MHD_snprintf_ (date,
+		 date_len,
+		 "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+		 days[now.tm_wday % 7],
+		 (unsigned int) now.tm_mday,
+		 mons[now.tm_mon % 12],
+		 (unsigned int) (1900 + now.tm_year),
+		 (unsigned int) now.tm_hour,
+		 (unsigned int) now.tm_min,
+		 (unsigned int) now.tm_sec);
 }
 
 
@@ -1038,16 +1041,17 @@ build_header_response (struct MHD_Connection *connection)
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
       reason_phrase = MHD_get_reason_phrase_for (rc);
-      sprintf (code,
-               "%s %u %s\r\n",
-	       (0 != (connection->responseCode & MHD_ICY_FLAG))
-	       ? "ICY"
-	       : ( (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_0,
-				     connection->version))
-		   ? MHD_HTTP_VERSION_1_0
-		   : MHD_HTTP_VERSION_1_1),
-	       rc,
-	       reason_phrase);
+      MHD_snprintf_ (code,
+		     sizeof (code),
+		     "%s %u %s\r\n",
+		     (0 != (connection->responseCode & MHD_ICY_FLAG))
+		     ? "ICY"
+		     : ( (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_0,
+						   connection->version))
+			 ? MHD_HTTP_VERSION_1_0
+			 : MHD_HTTP_VERSION_1_1),
+		     rc,
+		     reason_phrase);
       off = strlen (code);
       /* estimate size */
       size = off + 2;           /* +2 for extra "\r\n" at the end */
@@ -1055,7 +1059,8 @@ build_header_response (struct MHD_Connection *connection)
       if ( (0 == (connection->daemon->options & MHD_USE_SUPPRESS_DATE_NO_CLOCK)) &&
 	   (NULL == MHD_get_response_header (connection->response,
 					     MHD_HTTP_HEADER_DATE)) )
-        get_date_string (date);
+        get_date_string (date,
+			 sizeof (date));
       else
         date[0] = '\0';
       size += strlen (date);
@@ -1179,9 +1184,10 @@ build_header_response (struct MHD_Connection *connection)
             a recent development of the HTTP 1.1 specification.
           */
           content_length_len
-            = sprintf (content_length_buf,
-                       MHD_HTTP_HEADER_CONTENT_LENGTH ": " MHD_UNSIGNED_LONG_LONG_PRINTF "\r\n",
-                       (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
+            = MHD_snprintf_ (content_length_buf,
+			     sizeof (content_length_buf),
+			     MHD_HTTP_HEADER_CONTENT_LENGTH ": " MHD_UNSIGNED_LONG_LONG_PRINTF "\r\n",
+			     (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
           must_add_content_length = MHD_YES;
         }
 
@@ -1274,10 +1280,11 @@ build_header_response (struct MHD_Connection *connection)
               (MHD_YES == must_add_close) &&
               (MHD_str_equal_caseless_(pos->header,
                                        MHD_HTTP_HEADER_CONNECTION) ) ) ) )
-      off += sprintf (&data[off],
-		      "%s: %s\r\n",
-		      pos->header,
-		      pos->value);
+      off += MHD_snprintf_ (&data[off],
+			    size - off,
+			    "%s: %s\r\n",
+			    pos->header,
+			    pos->value);
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
       strcpy (&data[off],

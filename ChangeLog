@@ -1,3 +1,7 @@
+Sun Apr 23 19:20:33 CEST 2017
+	Replace remaining occurences of sprintf() with
+	MHD_snprintf_(). Thanks to Ram for pointing this out. -CG
+
 Sat Apr 22 20:39:00 MSK 2017
 	Fixed builds in Linux without epoll.
 	Check for invalid --with-thread= configure parameters.
