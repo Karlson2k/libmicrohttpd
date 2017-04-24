@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006-2016 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006-2017 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -1136,7 +1136,16 @@ enum MHD_FLAG
    * This is combination of #MHD_USE_AUTO and #MHD_USE_INTERNAL_POLLING_THREAD
    * flags.
    */
-  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
+  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
+
+  /**
+   * Be permissive about the protocol, allowing slight deviations that
+   * are technically not allowed by the RFC.
+   * Specifically, at the moment, this flag causes MHD to
+   * allow spaces in header field names.  This is
+   * disallowed by the standard.
+   */
+  MHD_USE_PERMISSIVE_CHECKS = 131072
 
 };
 

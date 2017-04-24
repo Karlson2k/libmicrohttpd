@@ -2213,7 +2213,7 @@ process_header_line (struct MHD_Connection *connection,
 			      _("Received malformed line (no colon). Closing connection.\n"));
       return MHD_NO;
     }
-  if (0 != (MHD_USE_PEDANTIC_CHECKS & connection->daemon->options))
+  if (0 == (MHD_USE_PERMISSIVE_CHECKS & connection->daemon->options))
     {
       /* check for whitespace before colon, which is not allowed
 	 by RFC 7230 section 3.2.4; we count space ' ' and

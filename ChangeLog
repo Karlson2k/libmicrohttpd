@@ -1,3 +1,7 @@
+Mon Apr 24 17:29:45 CEST 2017
+	Enforce RFC 7230's rule on no whitespace by default,
+	introduce new MHD_USE_PERMISSIVE_CHECKS to disable. -CG
+
 Sun Apr 23 20:05:44 CEST 2017
 	Enforce RFC 7230's rule on no whitespace in HTTP header
 	field names if MHD_USE_PEDANTIC_CHECKS is set. -CG
