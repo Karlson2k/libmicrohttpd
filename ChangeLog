@@ -1,3 +1,7 @@
+Tue Apr 25 19:11:00 CEST 2017
+	Allow flag MHD_USE_POLL with MHD_USE_THREAD_PER_CONNECTION and without
+	flag MHD_USE_INTERNAL_POLLING_THREAD for backward compatibility. -EG
+
 Mon Apr 24 17:29:45 CEST 2017
 	Enforce RFC 7230's rule on no whitespace by default,
 	introduce new MHD_USE_PERMISSIVE_CHECKS to disable. -CG
