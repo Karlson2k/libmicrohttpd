@@ -166,7 +166,7 @@ toasciiupper (char c)
  * Convert US-ASCII decimal digit to its value.
  *
  * @param c character to convert
- * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
+ * @return value of decimal digit or -1 if @ c is not decimal digit
  */
 _MHD_inline int
 todigitvalue (char c)
