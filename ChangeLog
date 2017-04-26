@@ -1,3 +1,7 @@
+Tue Apr 26 15:11:00 CEST 2017
+	Fixed shift in HTTP reasons strings.
+	Added test for HTTP reasons strings. -EG
+
 Tue Apr 25 19:11:00 CEST 2017
 	Allow flag MHD_USE_POLL with MHD_USE_THREAD_PER_CONNECTION and without
 	flag MHD_USE_INTERNAL_POLLING_THREAD for backward compatibility. -EG

@@ -74,7 +74,6 @@ static const char *const two_hundred[] = {
 static const char *const three_hundred[] = {
   "Multiple Choices",
   "Moved Permanently",
-  "Moved Temporarily",
   "Found",
   "See Other",
   "Not Modified",
