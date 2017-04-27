@@ -5098,14 +5098,16 @@ parse_options_va (struct MHD_Daemon *daemon,
 		    return MHD_NO;
 		  break;
 		  /* all options taking 'enum' */
+#ifdef HTTPS_SUPPORT
 		case MHD_OPTION_HTTPS_CRED_TYPE:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
-						(int) oa[i].value,
+						(gnutls_credentials_type_t) oa[i].value,
 						MHD_OPTION_END))
 		    return MHD_NO;
 		  break;
+#endif /* HTTPS_SUPPORT */
                   /* all options taking 'MHD_socket' */
                 case MHD_OPTION_LISTEN_SOCKET:
                   if (MHD_YES != parse_options (daemon,
