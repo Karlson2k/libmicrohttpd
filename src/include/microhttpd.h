@@ -957,6 +957,11 @@ enum MHD_FLAG
    * MHD, and OFF in production.
    */
   MHD_USE_PEDANTIC_CHECKS = 32,
+#if 0 /* Will be marked for real deprecation later. */
+#define MHD_USE_PEDANTIC_CHECKS \
+  _MHD_DEPR_IN_MACRO("Flag MHD_USE_PEDANTIC_CHECKS is deprecated, use option MHD_OPTION_STRICT_FOR_CLIENT instead") \
+  32
+#endif /* 0 */
 
   /**
    * Use `poll()` instead of `select()`. This allows sockets with `fd >=
@@ -1136,16 +1141,7 @@ enum MHD_FLAG
    * This is combination of #MHD_USE_AUTO and #MHD_USE_INTERNAL_POLLING_THREAD
    * flags.
    */
-  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
-
-  /**
-   * Be permissive about the protocol, allowing slight deviations that
-   * are technically not allowed by the RFC.
-   * Specifically, at the moment, this flag causes MHD to
-   * allow spaces in header field names.  This is
-   * disallowed by the standard.
-   */
-  MHD_USE_PERMISSIVE_CHECKS = 131072
+  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
 
 };
 
@@ -1471,7 +1467,26 @@ enum MHD_OPTION
    * value is used. This option should be followed by an `unsigned int`
    * argument.
    */
-  MHD_OPTION_LISTEN_BACKLOG_SIZE = 28
+  MHD_OPTION_LISTEN_BACKLOG_SIZE = 28,
+
+  /**
+   * If set to 1 - be strict about the protocol (as opposed to as
+   * tolerant as possible).  Specifically, at the moment, this flag
+   * causes MHD to reject HTTP 1.1 connections without a "Host" header.
+   * This is required by the standard, but of course in violation of
+   * the "be as liberal as possible in what you accept" norm.  It is
+   * recommended to set this to 1 if you are testing clients against
+   * MHD, and 0 in production.
+   * if set to -1 - be opposite to strict and be permissive about the
+   * protocol, allowing slight deviations that are technically not
+   * allowed by the RFC. Specifically, at the moment, this flag
+   * causes MHD to allow spaces in header field names. This is
+   * disallowed by the standard.
+   * It is not recommended to set it to -1 on publicly available
+   * servers as it may potentially lower level of protection.
+   * This option should be followed by an `int` argument.
+   */
+  MHD_OPTION_STRICT_FOR_CLIENT = 29
 };
 
 

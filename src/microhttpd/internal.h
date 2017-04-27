@@ -1540,6 +1540,11 @@ struct MHD_Daemon
    */
   uint16_t port;
 
+  /**
+   * Be neutral (zero), strict (1) or permissive (-1) to client.
+   */
+  int strict_for_client;
+
 #ifdef HTTPS_SUPPORT
 #ifdef UPGRADE_SUPPORT
   /**

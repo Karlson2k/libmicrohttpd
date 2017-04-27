@@ -1,3 +1,8 @@
+Thu Apr 27 22:31:00 CEST 2017
+	Replaced flags MHD_USE_PEDANTIC_CHECKS and MHD_USE_PERMISSIVE_CHECKS by
+	single option MHD_OPTION_STRICT_FOR_CLIENT. Flag MHD_USE_PEDANTIC_CHECKS
+	is still supported. -EG
+
 Tue Apr 26 15:11:00 CEST 2017
 	Fixed shift in HTTP reasons strings.
 	Added test for HTTP reasons strings. -EG

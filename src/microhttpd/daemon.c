@@ -5063,6 +5063,18 @@ parse_options_va (struct MHD_Daemon *daemon,
 	  daemon->listen_backlog_size = va_arg (ap,
                                                 unsigned int);
 	  break;
+	case MHD_OPTION_STRICT_FOR_CLIENT:
+          daemon->strict_for_client = va_arg (ap, int);;
+#ifdef HAVE_MESSAGES
+	  if ( (0 != (daemon->options & MHD_USE_PEDANTIC_CHECKS)) &&
+	       (1 != daemon->strict_for_client) )
+            {
+              MHD_DLOG (daemon,
+                        _("Flag MHD_USE_PEDANTIC_CHECKS is ignored because "
+                          "another behavior is specified by MHD_OPTION_STRICT_CLIENT.\n"));
+            }
+#endif /* HAVE_MESSAGES */
+	  break;
 	case MHD_OPTION_ARRAY:
 	  oa = va_arg (ap, struct MHD_OptionItem*);
 	  i = 0;
@@ -5114,6 +5126,15 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                 servaddr,
                                                 opt,
                                                 (MHD_socket) oa[i].value,
+                                                MHD_OPTION_END))
+                    return MHD_NO;
+                  break;
+                  /* all options taking 'int' */
+                case MHD_OPTION_STRICT_FOR_CLIENT:
+                  if (MHD_YES != parse_options (daemon,
+                                                servaddr,
+                                                opt,
+                                                (int) oa[i].value,
                                                 MHD_OPTION_END))
                     return MHD_NO;
                   break;
@@ -5428,6 +5449,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->listening_address_reuse = 0;
   daemon->options = *pflags;
   pflags = &daemon->options;
+  daemon->strict_for_client = (0 != (*pflags & MHD_USE_PEDANTIC_CHECKS)) ? 1 : 0;
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;
