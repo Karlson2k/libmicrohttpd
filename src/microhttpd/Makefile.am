@@ -253,4 +253,4 @@ test_str_to_value_SOURCES = \
 
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
-  reason_phrase.c microhttpd.h mhd_str.c mhd_str.h
+  reason_phrase.c mhd_str.c mhd_str.h
