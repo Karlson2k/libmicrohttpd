@@ -748,6 +748,12 @@ struct MHD_Connection
   size_t write_buffer_append_offset;
 
   /**
+   * Number of bytes we had in the HTTP header, set once we
+   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
+   */
+  size_t header_size;
+
+  /**
    * How many more bytes of the body do we expect
    * to read? #MHD_SIZE_UNKNOWN for unknown.
    */

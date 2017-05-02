@@ -1831,7 +1831,7 @@ call_connection_handler (struct MHD_Connection *connection)
   processed = 0;
   connection->client_aware = true;
   if (MHD_NO ==
-      connection->daemon->default_handler (connection->daemon-> default_handler_cls,
+      connection->daemon->default_handler (connection->daemon->default_handler_cls,
 					   connection,
                                            connection->url,
 					   connection->method,
@@ -2857,6 +2857,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
+              connection->header_size = (size_t) (line - connection->read_buffer);
               continue;
             }
           if (MHD_NO == process_header_line (connection,
@@ -2892,6 +2893,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (0 == line[0])
             {
               connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
+              connection->header_size = (size_t) (line - connection->read_buffer);
               continue;
             }
           continue;
@@ -3402,6 +3404,12 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
       connection->connection_timeout_dummy = (unsigned int)connection->connection_timeout;
       return (const union MHD_ConnectionInfo *) &connection->connection_timeout_dummy;
+    case MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE:
+      if ( (MHD_CONNECTION_HEADERS_RECEIVED > connection->state) ||
+           (MHD_CONNECTION_CLOSED == connection->state) ||
+           (MHD_CONNECTION_IN_CLEANUP == connection->state) )
+        return NULL; /* invalid, too early! */
+      return (const union MHD_ConnectionInfo *) &connection->header_size;
     default:
       return NULL;
     }

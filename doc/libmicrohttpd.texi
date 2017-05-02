@@ -496,6 +496,8 @@ that IPv4 addresses are returned by MHD in the IPv6-mapped format
 (the 'struct sockaddr_in6' format will be used for IPv4 and IPv6).
 
 @item MHD_USE_PEDANTIC_CHECKS
+@cindex deprecated
+Deprecated (use @code{MHD_OPTION_STRICT_FOR_CLIENT}).
 Be pedantic about the protocol.
 Specifically, at the moment, this flag causes MHD to reject HTTP
 1.1 connections without a @code{Host} header.  This is required by the
@@ -503,13 +505,6 @@ standard, but of course in violation of the ``be as liberal as possible
 in what you accept'' norm.  It is recommended to turn this @strong{ON}
 if you are testing clients against MHD, and @strong{OFF} in
 production.
-
-@item MHD_USE_PERMISSIVE_CHECKS
-Be permissive about the protocol, allowing slight deviations that are
-technically not allowed by the RFC.  Specifically, at the moment, this
-flag causes MHD to allow spaces in header field names.  This is
-disallowed by the standard.
-
 
 @item MHD_USE_POLL
 @cindex FD_SETSIZE
@@ -734,6 +729,31 @@ connections, they will be immediately rejected.  The option
 should be followed by an @code{unsigned int}.  The default is
 zero, which means no limit on the number of connections
 from the same IP address.
+
+@item MHD_OPTION_LISTEN_BACKLOG_SIZE
+Set the size of the @code{listen()} back log queue of the TCP socket.
+Takes an @code{unsigned int} as the argument.  Default is the
+platform-specific value of @code{SOMAXCONN}.
+
+@item MHD_OPTION_STRICT_FOR_CLIENT
+Specify how strict we should enforce the HTTP protocol.
+Takes an @code{int} as the argument.  Default is zero.
+
+If set to 1, MHD will be strict about the protocol.  Specifically, at
+the moment, this flag uses MHD to reject HTTP 1.1 connections without
+a "Host" header.  This is required by the standard, but of course in
+violation of the "be as liberal as possible in what you accept" norm.
+It is recommended to set this to 1 if you are testing clients against
+MHD, and 0 in production.
+
+If set to -1 MHD will be permissive about the protocol, allowing
+slight deviations that are technically not allowed by the
+RFC. Specifically, at the moment, this flag causes MHD to allow spaces
+in header field names. This is disallowed by the standard.
+
+It is not recommended to set it to -1 on publicly available servers as
+it may potentially lower level of protection.
+
 
 @item MHD_OPTION_SOCK_ADDR
 @cindex bind, restricting bind
@@ -2823,7 +2843,7 @@ socket was first accepted.  Note that this is NOT the same as the
 
 Takes no extra arguments.
 
-@item MHD_CONNECTION_INFO_TIMEOUT
+@item MHD_CONNECTION_INFO_CONNECTION_TIMEOUT
 Returns pointer to an @code{unsigned int} that is the current timeout
 used for the connection (in seconds, 0 for no timeout).  Note that
 while suspended connections will not timeout, the timeout value
@@ -2831,6 +2851,15 @@ returned for suspended connections will be the timeout that the
 connection will use after it is resumed, and thus might not be zero.
 
 Takes no extra arguments.
+
+@item MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE
+@cindex performance
+Returns pointer to an @code{size_t} that represents the size of the
+HTTP header received from the client. Only valid after the first callback
+to the access handler.
+
+Takes no extra arguments.
+
 @end table
 @end deftp
 

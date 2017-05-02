@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095300
+#define MHD_VERSION 0x00095400
 
 /**
  * MHD-internal return code for "YES".
@@ -1677,6 +1677,11 @@ union MHD_ConnectionInfo
   MHD_socket connect_fd;
 
   /**
+   * Size of the client's HTTP header.
+   */
+  size_t header_size;
+
+  /**
    * GNUtls session handle, of type "gnutls_session_t".
    */
   void * /* gnutls_session_t */ tls_session;
@@ -1778,12 +1783,17 @@ enum MHD_ConnectionInfoType
    */
   MHD_CONNECTION_INFO_CONNECTION_SUSPENDED,
 
-
   /**
    * Get connection timeout
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_CONNECTION_TIMEOUT
+  MHD_CONNECTION_INFO_CONNECTION_TIMEOUT,
+
+  /**
+   * Return length of the client's HTTP request header.
+   * @ingroup request
+   */
+  MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE
 };
 
 

@@ -42,3 +42,4 @@
 /gmon.out
 *.exe
 test_upgrade_tls
+test_http_reasons
