@@ -3234,6 +3234,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 socket_start_normal_buffering (connection);
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
+              connection->last = NULL;
+              connection->colon = NULL;
+              connection->header_size = 0;
               /* Reset the read buffer to the starting size,
                  preserving the bytes we have already read. */
               connection->read_buffer
@@ -3252,6 +3255,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  connection->headers_received_tail = NULL;
           connection->response_write_position = 0;
           connection->have_chunked_upload = false;
+          connection->current_chunk_size = 0;
+          connection->current_chunk_offset = 0;
           connection->method = NULL;
           connection->url = NULL;
           connection->write_buffer = NULL;
