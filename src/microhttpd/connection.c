@@ -882,7 +882,8 @@ keepalive_possible (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
     if ( (MHD_str_equal_caseless_ (end,
                                    "upgrade")) &&
-         (NULL == connection->response || NULL == connection->respÿonse->upgrade_handler) )
+         ( (NULL == connection->response) ||
+           (NULL == connection->response->upgrade_handler) ) )
       return MHD_NO;
 #endif /* UPGRADE_SUPPORT */
 
