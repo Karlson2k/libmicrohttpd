@@ -23,7 +23,7 @@
  * @author Matthieu Speder
  */
 #include "platform.h"
-#include <limits.h>
+#include "mhd_limits.h"
 #include "internal.h"
 #include "base64.h"
 #include "mhd_compat.h"

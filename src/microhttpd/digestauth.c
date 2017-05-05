@@ -23,7 +23,7 @@
  * @author Matthieu Speder
  */
 #include "platform.h"
-#include <limits.h>
+#include "mhd_limits.h"
 #include "internal.h"
 #include "md5.h"
 #include "mhd_mono_clock.h"

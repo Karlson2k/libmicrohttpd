@@ -26,7 +26,7 @@
  */
 
 #include "internal.h"
-#include <limits.h>
+#include "mhd_limits.h"
 #include "connection.h"
 #include "memorypool.h"
 #include "response.h"
