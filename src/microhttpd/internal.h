@@ -570,6 +570,27 @@ typedef ssize_t
 
 
 /**
+ * Ability to use same connection for next request
+ */
+enum MHD_ConnKeepAlive
+{
+  /**
+   * Connection must be closed after sending response.
+   */
+  MHD_CONN_MUST_CLOSE = -1,
+
+  /**
+   * KeelAlive state is not yet determined
+   */
+  MHD_CONN_KEEPALIVE_UNKOWN = 0,
+
+  /**
+   * Connection can be used for serving next request
+   */
+  MHD_CONN_USE_KEEPALIVE = 1
+};
+
+/**
  * State kept for each HTTP request.
  */
 struct MHD_Connection
@@ -674,6 +695,13 @@ struct MHD_Connection
    * in pool.
    */
   char *version;
+
+  /**
+   * Close connection after sending response?
+   * Functions may change value from "Unknown" or "KeepAlive" to "Must close",
+   * but no functions reset value "Must Close" to any other value.
+   */
+  enum MHD_ConnKeepAlive keepalive;
 
   /**
    * Buffer for reading requests.  Allocated in pool.  Actually one

@@ -1,3 +1,8 @@
+Tue May  5 20:57:00 MSK 2017
+	Fixed null dereference when connection has "Upgrade" request and 
+	connection is not upgraded.  -JB/EG
+	Better handle Keep-Alive/Close. -EG
+
 Tue May  2 18:37:53 CEST 2017
 	Update manual. -CG
 	Add MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE.

@@ -863,6 +863,8 @@ keepalive_possible (struct MHD_Connection *connection)
 {
   const char *end;
 
+  if (MHD_CONN_MUST_CLOSE == connection->keepalive)
+    return MHD_NO;
   if (NULL == connection->version)
     return MHD_NO;
   if ( (NULL != connection->response) &&
@@ -1103,6 +1105,9 @@ build_header_response (struct MHD_Connection *connection)
                                        "close")) )
         client_requested_close = NULL;
 
+      if (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
+        connection->keepalive = MHD_CONN_MUST_CLOSE;
+
       /* now analyze chunked encoding situation */
       connection->have_chunked_upload = false;
 
@@ -1148,7 +1153,8 @@ build_header_response (struct MHD_Connection *connection)
 
       /* check for other reasons to add 'close' header */
       if ( ( (NULL != client_requested_close) ||
-             (connection->read_closed) ) &&
+             (connection->read_closed) ||
+             (MHD_CONN_MUST_CLOSE == connection->keepalive)) &&
            (NULL == response_has_close) &&
            (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
@@ -1196,7 +1202,7 @@ build_header_response (struct MHD_Connection *connection)
       if ( (NULL == response_has_keepalive) &&
            (NULL == response_has_close) &&
            (MHD_NO == must_add_close) &&
-           (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) &&
+           (MHD_CONN_MUST_CLOSE != connection->keepalive) &&
            (MHD_YES == keepalive_possible (connection)) )
         must_add_keep_alive = MHD_YES;
       break;
@@ -1205,6 +1211,14 @@ build_header_response (struct MHD_Connection *connection)
       break;
     default:
       EXTRA_CHECK (0);
+    }
+
+  if (MHD_CONN_MUST_CLOSE != connection->keepalive)
+    {
+      if ( (must_add_close) || (NULL != response_has_close) )
+        connection->keepalive = MHD_CONN_MUST_CLOSE;
+      else if ( (must_add_keep_alive) || (NULL != response_has_keepalive) )
+        connection->keepalive = MHD_CONN_USE_KEEPALIVE;
     }
 
   if (must_add_close)
@@ -1353,6 +1367,8 @@ transmit_error_response (struct MHD_Connection *connection,
                       response);
   EXTRA_CHECK (NULL != connection->response);
   MHD_destroy_response (response);
+  /* Do not reuse this connection. */
+  connection->keepalive = MHD_CONN_MUST_CLOSE;
   if (MHD_NO == build_header_response (connection))
     {
       /* oops - close! */
@@ -2799,10 +2815,8 @@ int
 MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
-  const char *end;
   char *line;
   size_t line_len;
-  int client_close;
   int ret;
 
   connection->in_idle = true;
@@ -3184,12 +3198,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           else
             socket_start_normal_buffering (connection);
 
-          end =
-            MHD_get_response_header (connection->response,
-				     MHD_HTTP_HEADER_CONNECTION);
-          client_close = ( (NULL != end) &&
-                           (MHD_str_equal_caseless_(end,
-                                                    "close")));
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if ( (NULL != daemon->notify_completed) &&
@@ -3201,22 +3209,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 				      &connection->client_context,
 				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
           }
-          end =
-            MHD_lookup_connection_value (connection,
-					 MHD_HEADER_KIND,
-                                         MHD_HTTP_HEADER_CONNECTION);
-          if ( (connection->read_closed) ||
-               (client_close) ||
-               ( (NULL != end) &&
-		 (MHD_str_equal_caseless_ (end,
-                                           "close")) ) )
-            {
-              connection->read_closed = true;
-              connection->read_buffer_offset = 0;
-            }
-          if ( ( (connection->read_closed) &&
-                 (0 == connection->read_buffer_offset) ) ||
-               (MHD_NO == keepalive_possible (connection) ) )
+          if ( (MHD_CONN_USE_KEEPALIVE != connection->keepalive) ||
+               (connection->read_closed) )
             {
               /* have to close for some reason */
               MHD_connection_close_ (connection,
@@ -3237,6 +3231,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->last = NULL;
               connection->colon = NULL;
               connection->header_size = 0;
+              connection->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
               /* Reset the read buffer to the starting size,
                  preserving the bytes we have already read. */
               connection->read_buffer
