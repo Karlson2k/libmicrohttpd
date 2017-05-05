@@ -1340,7 +1340,11 @@ transmit_error_response (struct MHD_Connection *connection,
             status_code,
             message);
 #endif
-  EXTRA_CHECK (NULL == connection->response);
+  if (NULL != connection->response)
+    {
+      MHD_destroy_response (connection->response);
+      connection->response = NULL;
+    }
   response = MHD_create_response_from_buffer (strlen (message),
 					      (void *) message,
 					      MHD_RESPMEM_PERSISTENT);
