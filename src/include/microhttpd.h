@@ -1526,11 +1526,15 @@ enum MHD_ValueKind
 
   /**
    * Response header
+   * @deprecated
    */
   MHD_RESPONSE_HEADER_KIND = 0,
+#define MHD_RESPONSE_HEADER_KIND \
+  _MHD_DEPR_IN_MACRO("Value MHD_RESPONSE_HEADER_KIND is deprecated and not used") \
+  MHD_RESPONSE_HEADER_KIND
 
   /**
-   * HTTP header.
+   * HTTP header (request/response).
    */
   MHD_HEADER_KIND = 1,
 

@@ -1047,9 +1047,6 @@ The @code{MHD_ValueKind} specifies the source of the key-value pairs in
 the HTTP protocol.
 
 @table @code
-@item MHD_RESPONSE_HEADER_KIND
-Response header.
-
 @item MHD_HEADER_KIND
 HTTP header.
 
