@@ -1888,4 +1888,38 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 		      unsigned int *num_headers);
 
 
+/**
+ * Check whether response header contains particular @a token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param response  the response to query
+ * @param key       header name
+ * @param token     the token to find
+ * @param token_len the length of token, not including optional
+ *                  terminating null-character.
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+bool
+MHD_check_response_header_token_ci (const struct MHD_Response *response,
+                                    const char *key,
+                                    const char *token,
+                                    size_t token_len);
+
+/**
+ * Check whether response header contains particular static @a tkn.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param r   the response to query
+ * @param k   header name
+ * @param tkn the static string of token to find
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+#define MHD_check_response_header_s_token_ci(r,k,tkn) \
+    MHD_check_response_header_token_ci((r),(k),(tkn),MHD_STATICSTR_LEN_(tkn))
+
+
 #endif

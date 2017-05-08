@@ -248,6 +248,40 @@ MHD_get_response_header (struct MHD_Response *response,
   return NULL;
 }
 
+/**
+ * Check whether response header contains particular token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param response  the response to query
+ * @param key       header name
+ * @param token     the token to find
+ * @param token_len the length of token, not including optional
+ *                  terminating null-character.
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+bool
+MHD_check_response_header_token_ci (const struct MHD_Response *response,
+                                    const char *key,
+                                    const char *token,
+                                    size_t token_len)
+{
+  struct MHD_HTTP_Header *pos;
+
+  if (NULL == key || 0 == key[0] || NULL == token || 0 == token[0])
+    return false;
+
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
+    {
+      if ( (pos->kind == MHD_HEADER_KIND) &&
+           MHD_str_equal_caseless_ (pos->header, key) &&
+           MHD_str_has_token_caseless_ (pos->value, token, token_len) )
+        return true;
+    }
+  return false;
+}
+
 
 /**
  * Create a response object.  The response object can be extended with
