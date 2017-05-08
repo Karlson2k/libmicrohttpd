@@ -1,4 +1,8 @@
-Tue May  5 20:57:00 MSK 2017
+Mon May  8 19:30:00 MSK 2017
+	Fixed: use case-insensitive matching for header name in
+	MHD_get_response_header(), match only headers (not footers). -EG
+
+Fri May  5 20:57:00 MSK 2017
 	Fixed null dereference when connection has "Upgrade" request and 
 	connection is not upgraded.  -JB/EG
 	Better handle Keep-Alive/Close. -EG
