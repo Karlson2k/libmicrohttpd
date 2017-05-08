@@ -30,10 +30,20 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif /* HAVE_STDBOOL_H */
 
 #ifdef MHD_FAVOR_SMALL_CODE
 #include "mhd_limits.h"
 #endif /* MHD_FAVOR_SMALL_CODE */
+
+#ifndef MHD_STATICSTR_LEN_
+/**
+ * Determine length of static string / macro strings at compile time.
+ */
+#define MHD_STATICSTR_LEN_(macro) (sizeof(macro)/sizeof(char) - 1)
+#endif /* ! MHD_STATICSTR_LEN_ */
 
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
@@ -70,6 +80,38 @@ int
 MHD_str_equal_caseless_n_ (const char * const str1,
                   const char * const str2,
                   size_t maxlen);
+
+
+/**
+ * Check whether @a str has case-insensitive @a token.
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Match succeed if substring between start, end of string or comma
+ * contains only case-insensitive token and optional spaces and tabs.
+ * @warning token must not contain null-charters except optional
+ *          terminating null-character.
+ * @param str the string to check
+ * @param token the token to find
+ * @param token_len length of token, not including optional terminating
+ *                  null-character.
+ * @return non-zero if two strings are equal, zero otherwise.
+ */
+bool
+MHD_str_has_token_caseless_ (const char * str,
+                             const char * const token,
+                             size_t token_len);
+
+/**
+ * Check whether @a str has case-insensitive static @a tkn.
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Match succeed if substring between start, end of string or comma
+ * contains only case-insensitive token and optional spaces and tabs.
+ * @warning tkn must be static string
+ * @param str the string to check
+ * @param tkn the static string of token to find
+ * @return non-zero if two strings are equal, zero otherwise.
+ */
+#define MHD_str_has_s_token_caseless_(str,tkn) \
+    MHD_str_has_token_caseless_((str),(tkn),MHD_STATICSTR_LEN_(tkn))
 
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case to improve speed */

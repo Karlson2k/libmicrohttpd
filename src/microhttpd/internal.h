@@ -117,10 +117,13 @@ extern void *mhd_panic_cls;
 #define BUILTIN_NOT_REACHED
 #endif
 
+#ifndef MHD_STATICSTR_LEN_
 /**
  * Determine length of static string / macro strings at compile time.
  */
 #define MHD_STATICSTR_LEN_(macro) (sizeof(macro)/sizeof(char) - 1)
+#endif /* ! MHD_STATICSTR_LEN_ */
+
 
 /**
  * State of the socket with respect to epoll (bitmask).

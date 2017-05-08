@@ -142,6 +142,7 @@ endif
 check_PROGRAMS = \
   test_str_compare \
   test_str_to_value \
+  test_str_token \
   test_http_reasons \
   test_shutdown_select \
   test_shutdown_poll \
@@ -250,6 +251,9 @@ test_str_compare_SOURCES = \
 
 test_str_to_value_SOURCES = \
   test_str.c test_helpers.h mhd_str.c
+
+test_str_token_SOURCES = \
+  test_str_token.c mhd_str.c
 
 test_http_reasons_SOURCES = \
   test_http_reasons.c \

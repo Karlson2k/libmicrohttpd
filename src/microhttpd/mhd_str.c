@@ -365,6 +365,64 @@ MHD_str_equal_caseless_n_ (const char * const str1,
   return !0;
 }
 
+
+/**
+ * Check whether @a str has case-insensitive @a token.
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Match succeed if substring between start, end (of string) or comma
+ * contains only case-insensitive token and optional spaces and tabs.
+ * @warning token must not contain null-charters except optional
+ *          terminating null-character.
+ * @param str the string to check
+ * @param token the token to find
+ * @param token_len length of token, not including optional terminating
+ *                  null-character.
+ * @return non-zero if two strings are equal, zero otherwise.
+ */
+bool
+MHD_str_has_token_caseless_ (const char * str,
+                             const char * const token,
+                             size_t token_len)
+{
+  if (0 == token_len)
+    return false;
+
+  while (0 != *str)
+    {
+      size_t i;
+      /* Skip all whitespaces and empty tokens. */
+      while (' ' == *str || '\t' == *str || ',' == *str) str++;
+
+      /* Check for token match. */
+      i = 0;
+      while (1)
+        {
+          const char sc = *(str++);
+          const char tc = token[i++];
+
+          if (0 == sc)
+            return false;
+          if ( (sc != tc) &&
+               (toasciilower (sc) != toasciilower (tc)) )
+            break;
+          if (i >= token_len)
+            {
+              /* Check whether substring match token fully or
+               * has additional unmatched chars at tail. */
+              while (' ' == *str || '\t' == *str) str++;
+              /* End of (sub)string? */
+              if (0 == *str || ',' == *str)
+                return true;
+              /* Unmatched chars at end of substring. */
+              break;
+            }
+        }
+       /* Find next substring. */
+      while (0 != *str && ',' != *str) str++;
+    }
+  return false;
+}
+
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case */
 
