@@ -2079,7 +2079,11 @@ process_request_body (struct MHD_Connection *connection)
       used = processed;
       connection->client_aware = true;
       {
-        size_t processed_st = (size_t) processed;
+        size_t processed_st;
+        if (processed > SIZE_MAX)
+          processed_st = SIZE_MAX;
+        else
+          processed_st = (size_t) processed;
         if (MHD_NO ==
             connection->daemon->default_handler (connection->daemon->default_handler_cls,
                                                  connection,
@@ -2097,7 +2101,7 @@ process_request_body (struct MHD_Connection *connection)
         }
         processed = (uint64_t) processed_st;
       }
-      if (processed > used)
+      if (processed > (uint64_t)used)
         mhd_panic (mhd_panic_cls,
                    __FILE__,
                    __LINE__
@@ -2120,7 +2124,7 @@ process_request_body (struct MHD_Connection *connection)
 		      _("WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n"));
 #endif
 	}
-      used -= processed;
+      used -= (size_t)processed; /* 'processed' is less than SIZE_MAX */
       if (connection->have_chunked_upload)
         connection->current_chunk_offset += used;
       /* dh left "processed" bytes in buffer for next time... */
