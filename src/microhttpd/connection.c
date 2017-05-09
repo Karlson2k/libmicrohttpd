@@ -1148,11 +1148,19 @@ build_header_response (struct MHD_Connection *connection)
 
       if (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
         connection->keepalive = MHD_CONN_MUST_CLOSE;
+#ifdef UPGRADE_SUPPORT
+      else if (NULL != connection->response->upgrade_handler)
+        /* If this connection will not be "upgraded", it must be closed. */
+        connection->keepalive = MHD_CONN_MUST_CLOSE;
+#endif /* UPGRADE_SUPPORT */
 
       /* now analyze chunked encoding situation */
       connection->have_chunked_upload = false;
 
       if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == connection->response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
            (! response_has_close) &&
            (! client_requested_close) )
         {
@@ -1244,6 +1252,9 @@ build_header_response (struct MHD_Connection *connection)
            (! response_has_close) &&
            (MHD_NO == must_add_close) &&
            (MHD_CONN_MUST_CLOSE != connection->keepalive) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == connection->response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
            (MHD_YES == keepalive_possible (connection)) )
         must_add_keep_alive = MHD_YES;
       break;

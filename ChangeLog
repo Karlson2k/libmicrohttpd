@@ -1,3 +1,7 @@
+Tue May  9 23:16:00 MSK 2017
+	Fixed: Do not add "Connection: Keep-Alive" header for "upgrade"
+	connections. -EG
+
 Tue May  9 21:01:00 MSK 2017
 	Fixed: check all "Connection" headers of request for "Close" and "Upgrade"
 	tokens instead of using only first "Connection" header with full string
