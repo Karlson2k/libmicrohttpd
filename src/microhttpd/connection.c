@@ -468,6 +468,57 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
 
 
 /**
+ * Check whether request header contains particular token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param connection the connection to get values from
+ * @param header     the header name
+ * @param token      the token to find
+ * @param token_len  the length of token, not including optional
+ *                   terminating null-character.
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+static bool
+MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
+                         const char *header,
+                         const char *token,
+                         size_t token_len)
+{
+  struct MHD_HTTP_Header *pos;
+
+  if (NULL == connection || NULL == header || 0 == header[0] || NULL == token || 0 == token[0])
+    return false;
+  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    {
+      if ((0 != (pos->kind & MHD_HEADER_KIND)) &&
+          ( (header == pos->header) ||
+            (MHD_str_equal_caseless_(header,
+                                      pos->header)) ) &&
+          (MHD_str_has_token_caseless_ (pos->value, token, token_len)))
+        return true;
+    }
+  return false;
+}
+
+
+/**
+ * Check whether request header contains particular static @a tkn.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param c   the connection to get values from
+ * @param h   the header name
+ * @param tkn the static string of token to find
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+#define MHD_lookup_header_s_token_ci(c,h,tkn) \
+    MHD_lookup_header_token_ci((c),(h),(tkn),MHD_STATICSTR_LEN_(tkn))
+
+
+/**
  * Do we (still) need to send a 100 continue
  * message for this connection?
  *
