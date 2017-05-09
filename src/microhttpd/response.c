@@ -241,8 +241,7 @@ MHD_get_response_header (struct MHD_Response *response,
     return NULL;
   for (pos = response->first_header; NULL != pos; pos = pos->next)
     {
-      if ( (pos->kind == MHD_HEADER_KIND) &&
-           MHD_str_equal_caseless_ (pos->header, key) )
+      if ( MHD_str_equal_caseless_ (pos->header, key) )
         return pos->value;
     }
   return NULL;

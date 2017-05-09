@@ -1,3 +1,7 @@
+Tue May  9 12:28:00 MSK 2017
+	Revert: continue match footers in MHD_get_response_header() for backward
+	compatibility. -EG
+
 Mon May  8 19:30:00 MSK 2017
 	Fixed: use case-insensitive matching for header name in
 	MHD_get_response_header(), match only headers (not footers). -EG
