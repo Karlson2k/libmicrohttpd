@@ -1019,8 +1019,8 @@ build_header_response (struct MHD_Connection *connection)
   const char *reason_phrase;
   uint32_t rc;
   const char *client_requested_close;
-  const char *response_has_close;
-  const char *response_has_keepalive;
+  bool response_has_close;
+  bool response_has_keepalive;
   const char *have_encoding;
   const char *have_content_length;
   int must_add_close;
@@ -1082,21 +1082,17 @@ build_header_response (struct MHD_Connection *connection)
   must_add_chunked_encoding = MHD_NO;
   must_add_keep_alive = MHD_NO;
   must_add_content_length = MHD_NO;
-  response_has_keepalive = NULL;
+  response_has_close = false;
+  response_has_keepalive = false;
   switch (connection->state)
     {
     case MHD_CONNECTION_FOOTERS_RECEIVED:
-      response_has_close = MHD_get_response_header (connection->response,
-                                                    MHD_HTTP_HEADER_CONNECTION);
-      response_has_keepalive = response_has_close;
-      if ( (NULL != response_has_close) &&
-           (! MHD_str_equal_caseless_ (response_has_close,
-                                       "close")) )
-        response_has_close = NULL;
-      if ( (NULL != response_has_keepalive) &&
-           (! MHD_str_equal_caseless_ (response_has_keepalive,
-                                       "Keep-Alive")) )
-        response_has_keepalive = NULL;
+      response_has_close = MHD_check_response_header_s_token_ci (connection->response,
+                                                                 MHD_HTTP_HEADER_CONNECTION,
+                                                                 "close");
+      response_has_keepalive = MHD_check_response_header_s_token_ci (connection->response,
+                                                                     MHD_HTTP_HEADER_CONNECTION,
+                                                                     "Keep-Alive");
       client_requested_close = MHD_lookup_connection_value (connection,
                                                             MHD_HEADER_KIND,
                                                             MHD_HTTP_HEADER_CONNECTION);
@@ -1112,7 +1108,7 @@ build_header_response (struct MHD_Connection *connection)
       connection->have_chunked_upload = false;
 
       if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
-           (NULL == response_has_close) &&
+           (! response_has_close) &&
            (NULL == client_requested_close) )
         {
           /* size is unknown, and close was not explicitly requested;
@@ -1146,7 +1142,7 @@ build_header_response (struct MHD_Connection *connection)
             {
               /* Keep alive or chunking not possible
                  => set close header if not present */
-              if (NULL == response_has_close)
+              if (! response_has_close)
                 must_add_close = MHD_YES;
             }
         }
@@ -1155,7 +1151,7 @@ build_header_response (struct MHD_Connection *connection)
       if ( ( (NULL != client_requested_close) ||
              (connection->read_closed) ||
              (MHD_CONN_MUST_CLOSE == connection->keepalive)) &&
-           (NULL == response_has_close) &&
+           (! response_has_close) &&
            (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
 
@@ -1199,15 +1195,15 @@ build_header_response (struct MHD_Connection *connection)
         }
 
       /* check for adding keep alive */
-      if ( (NULL == response_has_keepalive) &&
-           (NULL == response_has_close) &&
+      if ( (! response_has_keepalive) &&
+           (! response_has_close) &&
            (MHD_NO == must_add_close) &&
            (MHD_CONN_MUST_CLOSE != connection->keepalive) &&
            (MHD_YES == keepalive_possible (connection)) )
         must_add_keep_alive = MHD_YES;
       break;
     case MHD_CONNECTION_BODY_SENT:
-      response_has_keepalive = NULL;
+      response_has_keepalive = false;
       break;
     default:
       EXTRA_CHECK (0);
@@ -1215,9 +1211,9 @@ build_header_response (struct MHD_Connection *connection)
 
   if (MHD_CONN_MUST_CLOSE != connection->keepalive)
     {
-      if ( (must_add_close) || (NULL != response_has_close) )
+      if ( (must_add_close) || (response_has_close) )
         connection->keepalive = MHD_CONN_MUST_CLOSE;
-      else if ( (must_add_keep_alive) || (NULL != response_has_keepalive) )
+      else if ( (must_add_keep_alive) || (response_has_keepalive) )
         connection->keepalive = MHD_CONN_USE_KEEPALIVE;
     }
 
@@ -1233,12 +1229,17 @@ build_header_response (struct MHD_Connection *connection)
   EXTRA_CHECK (! (must_add_chunked_encoding && must_add_content_length) );
 
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
-    if ( (pos->kind == kind) &&
-         (! ( (MHD_YES == must_add_close) &&
-              (pos->value == response_has_keepalive) &&
-              (MHD_str_equal_caseless_(pos->header,
-                                MHD_HTTP_HEADER_CONNECTION) ) ) ) )
-      size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
+    {
+      /* TODO: add proper support for excluding "Keep-Alive" token. */
+      if ( (pos->kind == kind) &&
+           (! ( (MHD_YES == must_add_close) &&
+                (response_has_keepalive) &&
+                (MHD_str_equal_caseless_(pos->header,
+                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_(pos->value,
+                                         "Keep-Alive")) ) ) )
+        size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
+    }
   /* produce data */
   data = MHD_pool_allocate (connection->pool,
                             size + 1,
@@ -1290,16 +1291,21 @@ build_header_response (struct MHD_Connection *connection)
       off += content_length_len;
     }
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
-    if ( (pos->kind == kind) &&
-         (! ( (pos->value == response_has_keepalive) &&
-              (MHD_YES == must_add_close) &&
-              (MHD_str_equal_caseless_(pos->header,
-                                       MHD_HTTP_HEADER_CONNECTION) ) ) ) )
-      off += MHD_snprintf_ (&data[off],
-			    size - off,
-			    "%s: %s\r\n",
-			    pos->header,
-			    pos->value);
+    {
+      /* TODO: add proper support for excluding "Keep-Alive" token. */
+      if ( (pos->kind == kind) &&
+           (! ( (MHD_YES == must_add_close) &&
+                (response_has_keepalive) &&
+                (MHD_str_equal_caseless_(pos->header,
+                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_(pos->value,
+                                         "Keep-Alive")) ) ) )
+        off += MHD_snprintf_ (&data[off],
+                              size - off,
+                              "%s: %s\r\n",
+                              pos->header,
+                              pos->value);
+    }
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
       strcpy (&data[off],
