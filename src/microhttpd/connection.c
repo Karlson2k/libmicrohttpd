@@ -912,8 +912,6 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 static int
 keepalive_possible (struct MHD_Connection *connection)
 {
-  const char *end;
-
   if (MHD_CONN_MUST_CLOSE == connection->keepalive)
     return MHD_NO;
   if (NULL == connection->version)
@@ -921,37 +919,37 @@ keepalive_possible (struct MHD_Connection *connection)
   if ( (NULL != connection->response) &&
        (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
     return MHD_NO;
-  end = MHD_lookup_connection_value (connection,
-                                     MHD_HEADER_KIND,
-                                     MHD_HTTP_HEADER_CONNECTION);
+
   if (MHD_str_equal_caseless_(connection->version,
                               MHD_HTTP_VERSION_1_1))
-  {
-    if (NULL == end)
-      return MHD_YES;
-    if (MHD_str_equal_caseless_ (end,
-                                 "close"))
-      return MHD_NO;
+    {
+      if (MHD_lookup_header_s_token_ci (connection,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "upgrade"))
+        {
 #ifdef UPGRADE_SUPPORT
-    if ( (MHD_str_equal_caseless_ (end,
-                                   "upgrade")) &&
-         ( (NULL == connection->response) ||
-           (NULL == connection->response->upgrade_handler) ) )
-      return MHD_NO;
+           if ( (NULL == connection->response) ||
+                (NULL == connection->response->upgrade_handler) )
 #endif /* UPGRADE_SUPPORT */
+             return MHD_NO;
+        }
+      if (MHD_lookup_header_s_token_ci (connection,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "close"))
+        return MHD_NO;
 
-    return MHD_YES;
-  }
+      return MHD_YES;
+    }
   if (MHD_str_equal_caseless_(connection->version,
                               MHD_HTTP_VERSION_1_0))
-  {
-    if (NULL == end)
+    {
+      if (MHD_lookup_header_s_token_ci (connection,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "Keep-Alive"))
+        return MHD_YES;
+
       return MHD_NO;
-    if (MHD_str_equal_caseless_(end,
-                                "Keep-Alive"))
-      return MHD_YES;
-    return MHD_NO;
-  }
+    }
   return MHD_NO;
 }
 
@@ -1069,7 +1067,7 @@ build_header_response (struct MHD_Connection *connection)
   enum MHD_ValueKind kind;
   const char *reason_phrase;
   uint32_t rc;
-  const char *client_requested_close;
+  bool client_requested_close;
   bool response_has_close;
   bool response_has_keepalive;
   const char *have_encoding;
@@ -1144,13 +1142,9 @@ build_header_response (struct MHD_Connection *connection)
       response_has_keepalive = MHD_check_response_header_s_token_ci (connection->response,
                                                                      MHD_HTTP_HEADER_CONNECTION,
                                                                      "Keep-Alive");
-      client_requested_close = MHD_lookup_connection_value (connection,
-                                                            MHD_HEADER_KIND,
-                                                            MHD_HTTP_HEADER_CONNECTION);
-      if ( (NULL != client_requested_close) &&
-           (! MHD_str_equal_caseless_ (client_requested_close,
-                                       "close")) )
-        client_requested_close = NULL;
+      client_requested_close = MHD_lookup_header_s_token_ci (connection,
+                                                            MHD_HTTP_HEADER_CONNECTION,
+                                                            "close");
 
       if (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
         connection->keepalive = MHD_CONN_MUST_CLOSE;
@@ -1160,7 +1154,7 @@ build_header_response (struct MHD_Connection *connection)
 
       if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
            (! response_has_close) &&
-           (NULL == client_requested_close) )
+           (! client_requested_close) )
         {
           /* size is unknown, and close was not explicitly requested;
              need to either to HTTP 1.1 chunked encoding or
@@ -1199,7 +1193,7 @@ build_header_response (struct MHD_Connection *connection)
         }
 
       /* check for other reasons to add 'close' header */
-      if ( ( (NULL != client_requested_close) ||
+      if ( ( (client_requested_close) ||
              (connection->read_closed) ||
              (MHD_CONN_MUST_CLOSE == connection->keepalive)) &&
            (! response_has_close) &&

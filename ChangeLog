@@ -1,3 +1,8 @@
+Tue May  9 21:01:00 MSK 2017
+	Fixed: check all "Connection" headers of request for "Close" and "Upgrade"
+	tokens instead of using only first "Connection" header with full string
+	match. -EG
+
 Tue May  9 12:28:00 MSK 2017
 	Revert: continue match footers in MHD_get_response_header() for backward
 	compatibility. -EG
