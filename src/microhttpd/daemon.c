@@ -3477,7 +3477,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     }
 
   /* Resuming external connections when using an extern mainloop  */
-  resume_suspended_connections (daemon);
+  if (0 != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+    resume_suspended_connections (daemon);
 
   return internal_run_from_select (daemon, read_fd_set,
                                    write_fd_set, except_fd_set);
@@ -4460,6 +4461,10 @@ MHD_run (struct MHD_Daemon *daemon)
   if ( (daemon->shutdown) ||
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
     return MHD_NO;
+  /* Resume resuming connection (if any) so they will be processing
+   * in this turn. */
+  if (0 != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+    resume_suspended_connections (daemon);
   if (0 != (daemon->options & MHD_USE_POLL))
   {
     MHD_poll (daemon, MHD_NO);
