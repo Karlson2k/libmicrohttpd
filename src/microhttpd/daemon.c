@@ -2901,6 +2901,9 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
               pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
             }
 #endif
+          /* Process response queued during suspend and update states. */
+          if (!used_thr_p_c)
+            MHD_connection_handle_idle (pos);
         }
 #ifdef UPGRADE_SUPPORT
       else
