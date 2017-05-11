@@ -923,7 +923,7 @@ urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
  *         fit fd_set.
  * @ingroup event
  */
-int
+static int
 internal_get_fdset2 (struct MHD_Daemon *daemon,
                      fd_set *read_fd_set,
                      fd_set *write_fd_set,

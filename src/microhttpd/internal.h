@@ -1872,7 +1872,7 @@ typedef int
  *
  * @param kind header kind to pass to @a cb
  * @param connection connection to add headers to
- * @param[in|out] args argument URI string (after "?" in URI),
+ * @param[in,out] args argument URI string (after "?" in URI),
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
  * @param[out] num_headers set to the number of headers found
