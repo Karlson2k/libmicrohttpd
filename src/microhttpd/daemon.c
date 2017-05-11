@@ -2895,7 +2895,8 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
               EDLL_insert (daemon->eready_head,
                            daemon->eready_tail,
                            pos);
-              pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
+              pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL | \
+                  MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
               pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
             }
 #endif
