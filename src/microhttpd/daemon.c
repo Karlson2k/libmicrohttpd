@@ -2833,6 +2833,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   struct MHD_Connection *prev = NULL;
   int ret;
+  const bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
 
   ret = MHD_NO;
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -2870,7 +2871,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
           DLL_insert (daemon->connections_head,
                       daemon->connections_tail,
                       pos);
-          if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+          if (!used_thr_p_c)
             {
               /* Reset timeout timer on resume. */
               if (0 != pos->connection_timeout)
@@ -2916,7 +2917,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       pos->resuming = false;
     }
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+  if ( (used_thr_p_c) &&
        (MHD_NO != ret) )
     { /* Wake up suspended connections. */
       if (! MHD_itc_activate_(daemon->itc,
