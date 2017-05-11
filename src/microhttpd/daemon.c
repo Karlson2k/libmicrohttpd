@@ -779,7 +779,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
  * @param urh upgrade handle to update
  * @param rs read result from select()
  * @param ws write result from select()
- * @param ws except result from select()
+ * @param es except result from select()
  */
 static void
 urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,

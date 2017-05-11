@@ -568,7 +568,7 @@ typedef ssize_t
  */
 typedef ssize_t
 (*TransmitCallback) (struct MHD_Connection *conn,
-                     const void *write_to,
+                     const void *read_from,
                      size_t max_bytes);
 
 

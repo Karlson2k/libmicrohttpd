@@ -1587,6 +1587,14 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
           return;       /* do nothing, not even reading */
+        case MHD_CONNECTION_IN_CLEANUP:
+          EXTRA_CHECK (0);
+          break;
+#ifdef UPGRADE_SUPPORT
+        case MHD_CONNECTION_UPGRADE:
+          EXTRA_CHECK (0);
+          break;
+#endif /* UPGRADE_SUPPORT */
         default:
           EXTRA_CHECK (0);
         }
@@ -2782,6 +2790,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
           return MHD_YES;
         case MHD_TLS_CONNECTION_INIT:
+          EXTRA_CHECK (0);
+          break;
+        case MHD_CONNECTION_IN_CLEANUP:
           EXTRA_CHECK (0);
           break;
 #ifdef UPGRADE_SUPPORT
