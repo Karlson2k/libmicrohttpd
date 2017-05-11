@@ -1205,6 +1205,9 @@ build_header_response (struct MHD_Connection *connection)
              (connection->read_closed) ||
              (MHD_CONN_MUST_CLOSE == connection->keepalive)) &&
            (! response_has_close) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == connection->response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
            (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
 
