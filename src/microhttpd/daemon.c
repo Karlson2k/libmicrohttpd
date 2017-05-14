@@ -1878,6 +1878,8 @@ thread_main_handle_connection (void *data)
       if (was_suspended)
         {
           MHD_update_last_activity_ (con); /* Reset timeout timer. */
+          /* Process response queued during suspend and update states. */
+          MHD_connection_handle_idle (con);
           was_suspended = false;
         }
 
