@@ -3509,12 +3509,13 @@ MHD_select (struct MHD_Daemon *daemon,
   FD_ZERO (&es);
   maxsock = MHD_INVALID_SOCKET;
   err_state = MHD_NO;
+  if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
+       (MHD_YES == resume_suspended_connections (daemon)) &&
+       (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+    may_block = MHD_NO;
+
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
-           (MHD_YES == resume_suspended_connections (daemon)) )
-        may_block = MHD_NO;
-
       /* single-threaded, go over everything */
       if (MHD_NO ==
           internal_get_fdset2 (daemon,

@@ -1,3 +1,7 @@
+Sun May 14 15:05:00 MSK 2017
+	Fixed resuming connections and closing upgraded connections in select()
+	mode with thread-per-connection. -EG
+
 Sun May 14 14:49:00 MSK 2017
 	Removed extra call to resume connections in MHD_run().
 	Handle resumed connection without delay in epoll mode.
