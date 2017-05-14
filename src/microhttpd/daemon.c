@@ -3353,21 +3353,6 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
 
-#ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
-    {
-      /* we're in epoll mode, the epoll FD stands for
-	 the entire event set! */
-      if (! MHD_SCKT_FD_FITS_FDSET_(daemon->epoll_fd,
-                                    NULL))
-	return MHD_NO; /* poll fd too big, fail hard */
-      if (FD_ISSET (daemon->epoll_fd,
-                    read_fd_set))
-	return MHD_run (daemon);
-      return MHD_YES;
-    }
-#endif
-
   /* select connection thread handling type */
   if ( (MHD_INVALID_SOCKET != (ds = daemon->listen_fd)) &&
        (! daemon->was_quiesced) &&
