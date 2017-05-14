@@ -3897,6 +3897,10 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
       poll_itc_idx = poll_count;
       poll_count++;
     }
+
+  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
+    (void)resume_suspended_connections (daemon);
+
   if (MHD_NO == may_block)
     timeout = 0;
   else

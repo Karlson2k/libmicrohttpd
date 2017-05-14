@@ -1,3 +1,11 @@
+Sun May 14 14:49:00 MSK 2017
+	Removed extra call to resume connections in MHD_run().
+	Handle resumed connection without delay in epoll mode.
+	Update states of resumed connection after resume in thread-per-connection
+	mode.
+	Fixed resuming connections and closing upgraded connections in poll()
+	mode with thread-per-connection. -EG
+
 Thu May 11 22:37:00 MSK 2017
 	Faster start really processing data in resumed connections. -EG
 
