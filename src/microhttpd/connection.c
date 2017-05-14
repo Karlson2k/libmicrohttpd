@@ -3161,14 +3161,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
           if (NULL != connection->response->upgrade_handler)
             {
-              struct MHD_Response *resp_clr = connection->response;
-
               socket_start_normal_buffering (connection);
               connection->state = MHD_CONNECTION_UPGRADE;
-              connection->response = NULL;
               /* This connection is "upgraded".  Pass socket to application. */
               if (MHD_YES !=
-                  MHD_response_execute_upgrade_ (resp_clr,
+                  MHD_response_execute_upgrade_ (connection->response,
                                                  connection))
                 {
                   /* upgrade failed, fail hard */
@@ -3177,8 +3174,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                   continue;
                 }
               /* Response is not required anymore for this connection. */
-              if (NULL != resp_clr)
-                MHD_destroy_response (resp_clr);
+              if (NULL != connection->response)
+                MHD_destroy_response (connection->response);
               continue;
             }
 #endif /* UPGRADE_SUPPORT */
