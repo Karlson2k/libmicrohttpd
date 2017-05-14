@@ -3467,7 +3467,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     }
 
   /* Resuming external connections when using an extern mainloop  */
-  if (0 != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
+  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     resume_suspended_connections (daemon);
 
   return internal_run_from_select (daemon, read_fd_set,
@@ -4226,6 +4226,11 @@ MHD_epoll (struct MHD_Daemon *daemon,
 	MHD_PANIC (_("Failed to remove listen FD from epoll set\n"));
       daemon->listen_socket_in_epoll = false;
     }
+
+  if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
+       (MHD_YES == resume_suspended_connections (daemon)) )
+    may_block = MHD_NO;
+
   if (MHD_YES == may_block)
     {
       if (MHD_YES == MHD_get_timeout (daemon,
@@ -4364,11 +4369,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
     run_epoll_for_upgrade (daemon);
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
-  /* we handle resumes here because we may have ready connections
-     that will not be placed into the epoll list immediately. */
-  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
-    (void) resume_suspended_connections (daemon);
-
   /* process events for connections */
   prev = daemon->eready_tail;
   while (NULL != (pos = prev))
@@ -4451,10 +4451,6 @@ MHD_run (struct MHD_Daemon *daemon)
   if ( (daemon->shutdown) ||
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
     return MHD_NO;
-  /* Resume resuming connection (if any) so they will be processing
-   * in this turn. */
-  if (0 != (daemon->options & MHD_ALLOW_SUSPEND_RESUME))
-    resume_suspended_connections (daemon);
   if (0 != (daemon->options & MHD_USE_POLL))
   {
     MHD_poll (daemon, MHD_NO);
