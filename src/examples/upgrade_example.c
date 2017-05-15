@@ -158,6 +158,9 @@ run_usock (void *cls)
  * but instead use #MHD_upgrade_action() for special operations
  * on @a sock.
  *
+ * Data forwarding to "upgraded" @a sock will be started as soon
+ * as this function return.
+ *
  * Except when in 'thread-per-connection' mode, implementations
  * of this function should never block (as it will still be called
  * from within the main event loop).
@@ -225,6 +228,11 @@ uh_cb (void *cls,
      a clean shutdown, as the we stop the daemon even if a worker thread
      is still running. Alas, this is a simple example... */
   pthread_detach (pt);
+
+  /* This callback must return as soon as possible. */
+
+  /* Data forwarding to "upgraded" socket will be started
+   * after return from this callback. */
 }
 
 
