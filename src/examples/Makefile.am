@@ -20,7 +20,6 @@ noinst_PROGRAMS = \
  benchmark_https \
  chunked_example \
  minimal_example \
- upgrade_example \
  dual_stack_example \
  minimal_example_comet \
  querystring_example \
@@ -54,6 +53,11 @@ endif
 if ENABLE_BAUTH
 noinst_PROGRAMS += \
  authorization_example
+endif
+
+if ENABLE_UPGRADE
+noinst_PROGRAMS += \
+ upgrade_example
 endif
 
 if HAVE_W32
