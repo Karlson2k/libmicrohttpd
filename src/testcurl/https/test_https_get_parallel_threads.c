@@ -150,15 +150,15 @@ main (int argc, char *const *argv)
       return 99;
     }
   ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
-  if (0 != strncmp (ssl_version, "GnuTLS", 6))
-    {
-      fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
-      curl_global_cleanup ();
-      return 77;
-    }
   if (NULL == ssl_version)
     {
       fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+      curl_global_cleanup ();
+      return 77;
+    }
+  if (0 != strncmp (ssl_version, "GnuTLS", 6))
+    {
+      fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
       curl_global_cleanup ();
       return 77;
     }
