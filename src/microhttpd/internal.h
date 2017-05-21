@@ -1926,5 +1926,16 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
 #define MHD_check_response_header_s_token_ci(r,k,tkn) \
     MHD_check_response_header_token_ci((r),(k),(tkn),MHD_STATICSTR_LEN_(tkn))
 
+/**
+ * Internal version of ::MHD_suspend_connection().
+ *
+ * @remark In thread-per-connection mode: can be called from any thread,
+ * in any other mode: to be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param connection the connection to suspend
+ */
+void
+internal_suspend_connection_ (struct MHD_Connection *connection);
 
 #endif

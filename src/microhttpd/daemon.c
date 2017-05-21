@@ -2699,29 +2699,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
 
 /**
- * Suspend handling of network data for a given connection.  This can
- * be used to dequeue a connection from MHD's event loop (external
- * select, internal select or thread pool; not applicable to
- * thread-per-connection!) for a while.
- *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_ITC to
- * ensure that a resumed connection is immediately processed by MHD.
- *
- * Suspended connections continue to count against the total number of
- * connections allowed (per daemon, as well as per IP, if such limits
- * are set).  Suspended connections will NOT time out; timeouts will
- * restart when the connection handling is resumed.  While a
- * connection is suspended, MHD will not detect disconnects by the
- * client.
- *
- * The only safe time to suspend a connection is from the
- * #MHD_AccessHandlerCallback.
- *
- * Finally, it is an API violation to call #MHD_stop_daemon while
- * having suspended connections (this will at least create memory and
- * socket leaks or lead to undefined behavior).  You must explicitly
- * resume all connections before stopping the daemon.
+ * Internal version of ::MHD_suspend_connection().
  *
  * @remark In thread-per-connection mode: can be called from any thread,
  * in any other mode: to be called only from thread that process
@@ -2730,24 +2708,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
  * @param connection the connection to suspend
  */
 void
-MHD_suspend_connection (struct MHD_Connection *connection)
+internal_suspend_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
-    MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-#ifdef UPGRADE_SUPPORT
-  if (NULL != connection->urh)
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Error: connection sheduled for \"upgrade\" cannot be suspended"));
-#endif /* HAVE_MESSAGES */
-      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-      return;
-    }
-#endif /* UPGRADE_SUPPORT */
   if (connection->resuming)
     {
       /* suspending again while we didn't even complete resuming yet */
@@ -2797,6 +2762,58 @@ MHD_suspend_connection (struct MHD_Connection *connection)
     }
 #endif
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+}
+
+
+/**
+ * Suspend handling of network data for a given connection.  This can
+ * be used to dequeue a connection from MHD's event loop (external
+ * select, internal select or thread pool; not applicable to
+ * thread-per-connection!) for a while.
+ *
+ * If you use this API in conjunction with a internal select or a
+ * thread pool, you must set the option #MHD_USE_ITC to
+ * ensure that a resumed connection is immediately processed by MHD.
+ *
+ * Suspended connections continue to count against the total number of
+ * connections allowed (per daemon, as well as per IP, if such limits
+ * are set).  Suspended connections will NOT time out; timeouts will
+ * restart when the connection handling is resumed.  While a
+ * connection is suspended, MHD will not detect disconnects by the
+ * client.
+ *
+ * The only safe time to suspend a connection is from the
+ * #MHD_AccessHandlerCallback.
+ *
+ * Finally, it is an API violation to call #MHD_stop_daemon while
+ * having suspended connections (this will at least create memory and
+ * socket leaks or lead to undefined behavior).  You must explicitly
+ * resume all connections before stopping the daemon.
+ *
+ * @remark In thread-per-connection mode: can be called from any thread,
+ * in any other mode: to be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param connection the connection to suspend
+ */
+void
+MHD_suspend_connection (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon * const daemon = connection->daemon;
+
+  if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
+    MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
+#ifdef UPGRADE_SUPPORT
+  if (NULL != connection->urh)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Error: connection scheduled for \"upgrade\" cannot be suspended"));
+#endif /* HAVE_MESSAGES */
+      return;
+    }
+#endif /* UPGRADE_SUPPORT */
+  internal_suspend_connection_ (connection);
 }
 
 

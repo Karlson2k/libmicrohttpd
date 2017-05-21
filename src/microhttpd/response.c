@@ -962,7 +962,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   /* As far as MHD's event loops are concerned, this connection is
      suspended; it will be resumed once application is done by the
      #MHD_upgrade_action() function */
-  MHD_suspend_connection (connection);
+  internal_suspend_connection_ (connection);
 
   /* hand over socket to application */
   response->upgrade_handler (response->upgrade_handler_cls,
