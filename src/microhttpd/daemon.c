@@ -2737,6 +2737,16 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#ifdef UPGRADE_SUPPORT
+  if (NULL != connection->urh)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Error: connection sheduled for \"upgrade\" cannot be suspended"));
+#endif /* HAVE_MESSAGES */
+      return;
+    }
+#endif /* UPGRADE_SUPPORT */
   if (connection->resuming)
     {
       /* suspending again while we didn't even complete resuming yet */
