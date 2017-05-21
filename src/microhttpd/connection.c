@@ -2834,17 +2834,6 @@ cleanup_connection (struct MHD_Connection *connection)
       connection->response = NULL;
     }
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      if (connection->connection_timeout == daemon->connection_timeout)
-        XDLL_remove (daemon->normal_timeout_head,
-                     daemon->normal_timeout_tail,
-                     connection);
-      else
-        XDLL_remove (daemon->manual_timeout_head,
-                     daemon->manual_timeout_tail,
-                     connection);
-    }
   if (connection->suspended)
     {
       DLL_remove (daemon->suspended_connections_head,
@@ -2854,6 +2843,17 @@ cleanup_connection (struct MHD_Connection *connection)
     }
   else
     {
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        {
+          if (connection->connection_timeout == daemon->connection_timeout)
+            XDLL_remove (daemon->normal_timeout_head,
+                         daemon->normal_timeout_tail,
+                         connection);
+          else
+            XDLL_remove (daemon->manual_timeout_head,
+                         daemon->manual_timeout_tail,
+                         connection);
+        }
       DLL_remove (daemon->connections_head,
                   daemon->connections_tail,
                   connection);
