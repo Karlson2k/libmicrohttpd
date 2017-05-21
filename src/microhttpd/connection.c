@@ -1954,13 +1954,8 @@ call_connection_handler (struct MHD_Connection *connection)
 static void
 process_request_body (struct MHD_Connection *connection)
 {
-  uint64_t processed;
   size_t available;
-  size_t used;
-  size_t i;
-  size_t end_size;
   int instant_retry;
-  int malformed;
   char *buffer_head;
 
   if (NULL != connection->response)
@@ -1970,6 +1965,10 @@ process_request_body (struct MHD_Connection *connection)
   available = connection->read_buffer_offset;
   do
     {
+      size_t to_be_processed;
+      size_t left_unprocessed;
+      size_t processed_size;
+
       instant_retry = MHD_NO;
       if ( (connection->have_chunked_upload) &&
            (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) )
@@ -1978,6 +1977,7 @@ process_request_body (struct MHD_Connection *connection)
                (0LLU != connection->current_chunk_offset) &&
                (available >= 2) )
             {
+              size_t i;
               /* skip new line at the *end* of a chunk */
               i = 0;
               if ( ('\r' == buffer_head[i]) ||
@@ -2001,18 +2001,27 @@ process_request_body (struct MHD_Connection *connection)
           if (connection->current_chunk_offset <
               connection->current_chunk_size)
             {
+              uint64_t cur_chunk_left;
               /* we are in the middle of a chunk, give
                  as much as possible to the client (without
                  crossing chunk boundaries) */
-              processed
+              cur_chunk_left
                 = connection->current_chunk_size - connection->current_chunk_offset;
-              if (processed > available)
-                processed = available;
-              if (available > processed)
-                instant_retry = MHD_YES;
+              if (cur_chunk_left > available)
+                to_be_processed = available;
+              else
+                { /* cur_chunk_left <= (size_t)available */
+                  to_be_processed = (size_t)cur_chunk_left;
+                  if (available > to_be_processed)
+                    instant_retry = MHD_YES;
+                }
             }
           else
             {
+              size_t i;
+              size_t end_size;
+              bool malformed;
+
               /* we need to read chunk boundaries */
               i = 0;
               while (i < available)
@@ -2088,7 +2097,7 @@ process_request_body (struct MHD_Connection *connection)
 	       (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) &&
 	       (connection->remaining_upload_size < available) )
 	    {
-              processed = (size_t)connection->remaining_upload_size;
+              to_be_processed = (size_t)connection->remaining_upload_size;
 	    }
           else
 	    {
@@ -2096,35 +2105,27 @@ process_request_body (struct MHD_Connection *connection)
                * 1. no chunked encoding, give all to the client
                * 2. client may send large chunked data, but only a smaller part is available at one time.
                */
-              processed = available;
+              to_be_processed = available;
 	    }
         }
-      used = processed;
+      left_unprocessed = to_be_processed;
       connection->client_aware = true;
-      {
-        size_t processed_st;
-        if (processed > SIZE_MAX)
-          processed_st = SIZE_MAX;
-        else
-          processed_st = (size_t) processed;
-        if (MHD_NO ==
-            connection->daemon->default_handler (connection->daemon->default_handler_cls,
-                                                 connection,
-                                                 connection->url,
-                                                 connection->method,
-                                                 connection->version,
-                                                 buffer_head,
-                                                 &processed_st,
-                                                 &connection->client_context))
+      if (MHD_NO ==
+          connection->daemon->default_handler (connection->daemon->default_handler_cls,
+                                               connection,
+                                               connection->url,
+                                               connection->method,
+                                               connection->version,
+                                               buffer_head,
+                                               &left_unprocessed,
+                                               &connection->client_context))
         {
           /* serious internal error, close connection */
-	  CONNECTION_CLOSE_ERROR (connection,
+          CONNECTION_CLOSE_ERROR (connection,
                                   _("Application reported internal error, closing connection.\n"));
           return;
         }
-        processed = (uint64_t) processed_st;
-      }
-      if (processed > (uint64_t)used)
+      if (left_unprocessed > to_be_processed)
         mhd_panic (mhd_panic_cls,
                    __FILE__,
                    __LINE__
@@ -2134,27 +2135,27 @@ process_request_body (struct MHD_Connection *connection)
 		   , NULL
 #endif
 		   );
-      if (0 != processed)
+      if (0 != left_unprocessed)
 	{
 	  instant_retry = MHD_NO; /* client did not process everything */
 #ifdef HAVE_MESSAGES
-	  /* client did not process all POST data, complain if
+	  /* client did not process all upload data, complain if
 	     the setup was incorrect, which may prevent us from
 	     handling the rest of the request */
 	  if ( (0 != (connection->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
 	       (! connection->suspended) )
 	    MHD_DLOG (connection->daemon,
-		      _("WARNING: incomplete POST processing and connection not suspended will result in hung connection.\n"));
+		      _("WARNING: incomplete upload processing and connection not suspended may result in hung connection.\n"));
 #endif
 	}
-      used -= (size_t)processed; /* 'processed' is less than SIZE_MAX */
+      processed_size = to_be_processed - left_unprocessed;
       if (connection->have_chunked_upload)
-        connection->current_chunk_offset += used;
+        connection->current_chunk_offset += processed_size;
       /* dh left "processed" bytes in buffer for next time... */
-      buffer_head += used;
-      available -= used;
+      buffer_head += processed_size;
+      available -= processed_size;
       if (MHD_SIZE_UNKNOWN != connection->remaining_upload_size)
-        connection->remaining_upload_size -= used;
+        connection->remaining_upload_size -= processed_size;
     }
   while (MHD_YES == instant_retry);
   if (available > 0)
