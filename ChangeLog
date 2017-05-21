@@ -1,3 +1,13 @@
+Sun May 21 18:48:00 MSK 2017
+	Fixed build with disabled "UPGRADE".
+	Fixed possible null-dereference in HTTPS test.
+	Fixed compiler warning in process_request_body(), minor optimizations.
+	Do not allow suspend of "upgraded" connections.
+	Fixed returned value for MHD_CONNECTION_INFO_CONNECTION_SUSPENDED.
+	Fixed removal from timeout lists of non-existing connections in
+	cleanup_connection().
+	Fixed double locking of mutex. -EG
+
 Sun May 14 15:05:00 MSK 2017
 	Fixed resuming connections and closing upgraded connections in select()
 	mode with thread-per-connection. -EG
