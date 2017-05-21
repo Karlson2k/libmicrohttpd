@@ -3486,7 +3486,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     case MHD_CONNECTION_INFO_SOCKET_CONTEXT:
       return (const union MHD_ConnectionInfo *) &connection->socket_context;
     case MHD_CONNECTION_INFO_CONNECTION_SUSPENDED:
-      return (const union MHD_ConnectionInfo *) &connection->suspended;
+      connection->suspended_dummy = connection->suspended ? MHD_YES : MHD_NO;
+      return (const union MHD_ConnectionInfo *) &connection->suspended_dummy;
     case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
       connection->connection_timeout_dummy = (unsigned int)connection->connection_timeout;
       return (const union MHD_ConnectionInfo *) &connection->connection_timeout_dummy;

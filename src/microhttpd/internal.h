@@ -996,6 +996,11 @@ struct MHD_Connection
   bool suspended;
 
   /**
+   * Special member to be returned by #MHD_get_connection_info()
+   */
+  int suspended_dummy;
+
+  /**
    * Is the connection wanting to resume?
    */
   bool resuming;
