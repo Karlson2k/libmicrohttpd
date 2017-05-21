@@ -1526,8 +1526,6 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
                      on the connection (if a timeout is even
                      set!).
                      Solution: we kill the connection with an error */
-                  /* If connection is suspended, give application one
-                   * more chance to read data once connection is resumed. */
                   transmit_error_response (connection,
                                            MHD_HTTP_INTERNAL_SERVER_ERROR,
                                            INTERNAL_ERROR);
