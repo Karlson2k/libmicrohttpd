@@ -2744,6 +2744,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
       MHD_DLOG (daemon,
                 _("Error: connection sheduled for \"upgrade\" cannot be suspended"));
 #endif /* HAVE_MESSAGES */
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
       return;
     }
 #endif /* UPGRADE_SUPPORT */
