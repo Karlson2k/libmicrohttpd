@@ -4513,6 +4513,8 @@ close_connection (struct MHD_Connection *pos)
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
+  EXTRA_CHECK (! pos->suspended);
+  EXTRA_CHECK (! pos->resuming);
   if (pos->connection_timeout == pos->daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
 		 daemon->normal_timeout_tail,
