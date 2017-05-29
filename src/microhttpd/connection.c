@@ -3342,6 +3342,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         case MHD_CONNECTION_CLOSED:
 	  cleanup_connection (connection);
+          connection->in_idle = false;
 	  return MHD_NO;
 #ifdef UPGRADE_SUPPORT
 	case MHD_CONNECTION_UPGRADE:
