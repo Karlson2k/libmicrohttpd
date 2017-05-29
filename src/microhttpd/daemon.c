@@ -1151,7 +1151,7 @@ call_handlers (struct MHD_Connection *con,
 	   read_ready)
         {
           con->read_handler (con);
-          ret = con->idle_handler (con);
+          ret = MHD_connection_handle_idle (con);
           states_info_processed = true;
         }
       /* No need to check value of 'ret' here as closed connection
@@ -1160,7 +1160,7 @@ call_handlers (struct MHD_Connection *con,
 	   write_ready)
         {
           con->write_handler (con);
-          ret = con->idle_handler (con);
+          ret = MHD_connection_handle_idle (con);
           states_info_processed = true;
         }
     }
@@ -1168,17 +1168,17 @@ call_handlers (struct MHD_Connection *con,
     {
       MHD_connection_close_ (con,
                              MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return con->idle_handler (con);
+      return MHD_connection_handle_idle (con);
     }
 
   if (!states_info_processed)
     { /* Connection is not read or write ready, but external conditions
        * may be changed and need to be processed. */
-      ret = con->idle_handler (con);
+      ret = MHD_connection_handle_idle (con);
     }
   /* Fast track for fast connections. */
   /* If full request was read by single read_handler() invocation
-     and headers were completely prepared by single idle_handler()
+     and headers were completely prepared by single MHD_connection_handle_idle()
      then try not to wait for next sockets polling and send response
      immediately.
      As writeability of socket was not checked and it may have
@@ -1191,17 +1191,17 @@ call_handlers (struct MHD_Connection *con,
       if (MHD_CONNECTION_HEADERS_SENDING == con->state)
         {
           con->write_handler (con);
-          /* Always call 'idle_handler()' after each read/write. */
-          ret = con->idle_handler (con);
+          /* Always call 'MHD_connection_handle_idle()' after each read/write. */
+          ret = MHD_connection_handle_idle (con);
         }
       /* If all headers were sent by single write_handler() and
-       * response body is prepared by single idle_handler()
+       * response body is prepared by single MHD_connection_handle_idle()
        * call - continue. */
       if ((MHD_CONNECTION_NORMAL_BODY_READY == con->state) ||
           (MHD_CONNECTION_CHUNKED_BODY_READY == con->state))
         {
           con->write_handler (con);
-          ret = con->idle_handler (con);
+          ret = MHD_connection_handle_idle (con);
         }
     }
 
@@ -2118,7 +2118,7 @@ thread_main_handle_connection (void *data)
                                (daemon->shutdown) ?
                                MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
                                MHD_REQUEST_TERMINATED_WITH_ERROR);
-      con->idle_handler (con);
+      MHD_connection_handle_idle (con);
     }
 exit:
   if (NULL != con->response)
@@ -4428,7 +4428,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
 
   /* Finally, handle timed-out connections; we need to do this here
-     as the epoll mechanism won't call the 'idle_handler' on everything,
+     as the epoll mechanism won't call the 'MHD_connection_handle_idle()' on everything,
      as the other event loops do.  As timeouts do not get an explicit
      event, we need to find those connections that might have timed out
      here.
@@ -4439,7 +4439,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
       prev = pos->prevX;
-      pos->idle_handler (pos);
+      MHD_connection_handle_idle (pos);
     }
   /* Connections with the default timeout are sorted by prepending
      them to the head of the list whenever we touch the connection;
@@ -4449,7 +4449,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
       prev = pos->prevX;
-      pos->idle_handler (pos);
+      MHD_connection_handle_idle (pos);
       if (MHD_CONNECTION_CLOSED != pos->state)
 	break; /* sorted by timeout, no need to visit the rest! */
     }

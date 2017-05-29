@@ -2910,6 +2910,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
       switch (connection->state)
         {
+#ifdef HTTPS_SUPPORT
+        case MHD_TLS_CONNECTION_INIT:
+          break;
+#endif /* HTTPS_SUPPORT */
         case MHD_CONNECTION_INIT:
           line = get_next_header_line (connection,
                                        &line_len);
@@ -3441,7 +3445,6 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_connection_handle_read;
   connection->write_handler = &MHD_connection_handle_write;
-  connection->idle_handler = &MHD_connection_handle_idle;
 }
 
 

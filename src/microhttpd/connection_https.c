@@ -120,53 +120,6 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 
 
 /**
- * This function was created to handle per-connection processing that
- * has to happen even if the socket cannot be read or written to.  All
- * implementations (multithreaded, external select, internal select)
- * call this function.
- *
- * @param connection being handled
- * @return #MHD_YES if we should continue to process the
- *         connection (not dead yet), #MHD_NO if it died
- */
-static int
-MHD_tls_connection_handle_idle (struct MHD_Connection *connection)
-{
-  time_t timeout;
-
-#if DEBUG_STATES
-  MHD_DLOG (connection->daemon,
-            _("In function %s handling connection at state: %s\n"),
-            __FUNCTION__,
-            MHD_state_to_string (connection->state));
-#endif
-  if (connection->suspended)
-    return MHD_connection_handle_idle (connection);
-  switch (connection->state)
-    {
-      /* on newly created connections we might reach here before any reply has been received */
-    case MHD_TLS_CONNECTION_INIT:
-      break;
-      /* close connection if necessary */
-    case MHD_CONNECTION_CLOSED:
-      return MHD_connection_handle_idle (connection);
-    default:
-      return MHD_connection_handle_idle (connection);
-    }
-  timeout = connection->connection_timeout;
-  if ( (timeout != 0) &&
-       (timeout < (MHD_monotonic_sec_counter() - connection->last_activity)))
-    MHD_connection_close_ (connection,
-                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-#ifdef EPOLL_SUPPORT
-  return MHD_connection_epoll_update_ (connection);
-#else
-  return MHD_YES;
-#endif
-}
-
-
-/**
  * Set connection callback function to be used through out
  * the processing of this secure connection.
  *
@@ -177,7 +130,6 @@ MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_tls_connection_handle_read;
   connection->write_handler = &MHD_tls_connection_handle_write;
-  connection->idle_handler = &MHD_tls_connection_handle_idle;
 }
 
 

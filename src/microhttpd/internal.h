@@ -936,12 +936,6 @@ struct MHD_Connection
   int (*write_handler) (struct MHD_Connection *connection);
 
   /**
-   * Handler used for processing idle connection operations
-   * @sa #MHD_connection_handle_idle, #MHD_tls_connection_handle_idle
-   */
-  int (*idle_handler) (struct MHD_Connection *connection);
-
-  /**
    * Function used for reading HTTP request stream.
    */
   ReceiveCallback recv_cls;
