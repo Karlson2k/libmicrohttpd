@@ -567,7 +567,7 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
        * remote side as end of transmission. */
       if (0 != (daemon->options & MHD_USE_TLS))
         {
-          if (MHD_NO == MHD_tls_connection_shutdown(connection))
+          if (! MHD_tls_connection_shutdown(connection))
             shutdown (connection->socket_fd,
                       SHUT_WR);
         }

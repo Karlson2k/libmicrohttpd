@@ -43,9 +43,9 @@ MHD_set_https_callbacks (struct MHD_Connection *connection);
  * Initiate shutdown of TLS layer of connection.
  *
  * @param connection to use
- * @return #MHD_YES if succeed, #MHD_NO otherwise.
+ * @return true if succeed, false otherwise.
  */
-int
+bool
 MHD_tls_connection_shutdown (struct MHD_Connection *connection);
 #endif /* HTTPS_SUPPORT */
 
