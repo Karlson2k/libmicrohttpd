@@ -142,12 +142,12 @@ MHD_set_https_callbacks (struct MHD_Connection *connection)
 int
 MHD_tls_connection_shutdown (struct MHD_Connection *connection)
 {
-  if (connection->tls_closed)
-    return MHD_NO;
-
-  connection->tls_closed = true;
-  return (GNUTLS_E_SUCCESS == gnutls_bye(connection->tls_session, GNUTLS_SHUT_WR)) ?
-      MHD_YES : MHD_NO;
+  if (! connection->tls_closed)
+    {
+      connection->tls_closed =
+          (GNUTLS_E_SUCCESS == gnutls_bye(connection->tls_session, GNUTLS_SHUT_WR));
+    }
+  return connection->tls_closed ? MHD_YES : MHD_NO;;
 }
 
 /* end of connection_https.c */
