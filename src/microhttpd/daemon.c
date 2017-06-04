@@ -2625,21 +2625,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  goto cleanup;
         }
     }
-  else
-    if ( (external_add) &&
-	 (MHD_ITC_IS_VALID_(daemon->itc)) &&
-	 (! MHD_itc_activate_ (daemon->itc, "n")) )
-      {
-#ifdef HAVE_MESSAGES
-	MHD_DLOG (daemon,
-		  _("Failed to signal new connection via inter-thread communication channel."));
-#endif
-      }
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
-      if (0 == (daemon->options & MHD_USE_TURBO))
-	{
+      if ((0 == (daemon->options & MHD_USE_TURBO)) || (external_add))
+	{ /* Do not manipulate EReady DL-list in 'external_add' mode. */
 	  struct epoll_event event;
 
 	  event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
@@ -2668,7 +2658,18 @@ internal_add_connection (struct MHD_Daemon *daemon,
 		       connection);
 	}
     }
+  else /* This 'else' is combined with next 'if'. */
 #endif
+  if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (external_add) &&
+       (MHD_ITC_IS_VALID_(daemon->itc)) &&
+       (! MHD_itc_activate_ (daemon->itc, "n")) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to signal new connection via inter-thread communication channel."));
+#endif
+    }
   daemon->connections++;
   return MHD_YES;
  cleanup:
