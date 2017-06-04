@@ -30,6 +30,36 @@
 
 #include "internal.h"
 
+/**
+ * Error code similar to EGAIN or EINTR
+ */
+#define MHD_ERR_AGAIN_ (-3073)
+
+/**
+ * "Connection (remote) reset" error code
+ */
+#define MHD_ERR_CONNRESET_ (-3074)
+
+/**
+ * "Not connected" error code
+ */
+#define MHD_ERR_NOTCONN_ (-3075)
+
+/**
+ * "Not enough memory" error code
+ */
+#define MHD_ERR_NOMEM_ (-3076)
+
+/**
+ * "Bad FD" error code
+ */
+#define MHD_ERR_BADF_ (-3077)
+
+/**
+ * Error code similar to EINVAL
+ */
+#define MHD_ERR_INVAL_ (-3078)
+
 
 /**
  * Set callbacks for this connection to those for HTTP.

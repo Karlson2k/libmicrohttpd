@@ -41,7 +41,8 @@
  * @param connection the MHD_Connection structure
  * @param other where to write received data to
  * @param i maximum size of other (in bytes)
- * @return number of bytes actually received
+ * @return positive value for number of bytes actually received or
+ *         negative value for error number MHD_ERR_xxx_
  */
 static ssize_t
 recv_tls_adapter (struct MHD_Connection *connection,
@@ -59,21 +60,18 @@ recv_tls_adapter (struct MHD_Connection *connection,
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #ifdef EPOLL_SUPPORT
       if (GNUTLS_E_AGAIN == res)
         connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
-      return -1;
+      return MHD_ERR_AGAIN_;
     }
   if (res < 0)
     {
       /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
-         disrupted); set errno to something caller will interpret
-         correctly as a hard error */
-      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+         disrupted); interpret as a hard error */
       connection->tls_read_ready = false;
-      return res;
+      return MHD_ERR_CONNRESET_;
     }
 
 #ifdef EPOLL_SUPPORT

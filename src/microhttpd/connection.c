@@ -118,7 +118,8 @@
  * @param connection the MHD connection structure
  * @param other where to write received data to
  * @param i maximum size of other (in bytes)
- * @return number of bytes actually received
+ * @return positive value for number of bytes actually received or
+ *         negative value for error number MHD_ERR_xxx_
  */
 static ssize_t
 recv_param_adapter (struct MHD_Connection *connection,
@@ -130,8 +131,7 @@ recv_param_adapter (struct MHD_Connection *connection,
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
-      return -1;
+      return MHD_ERR_NOTCONN_;
     }
   if (i > MHD_SCKT_SEND_MAX_SIZE_)
     i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
@@ -139,16 +139,26 @@ recv_param_adapter (struct MHD_Connection *connection,
   ret = MHD_recv_ (connection->socket_fd,
                    other,
                    i);
-#ifdef EPOLL_SUPPORT
   if (0 > ret)
     {
-      /* Got EAGAIN --- no longer read-ready */
-      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
-        connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+        {
+#ifdef EPOLL_SUPPORT
+          /* Got EAGAIN --- no longer read-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+      /* Treat any other error as hard error. */
+      return MHD_ERR_CONNRESET_;
     }
+#ifdef EPOLL_SUPPORT
   else if (i > (size_t)ret)
     connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
-#endif
+#endif /* EPOLL_SUPPORT */
   return ret;
 }
 
@@ -2660,11 +2670,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                                      connection->read_buffer_offset);
   if (bytes_read < 0)
     {
-      const int err = MHD_socket_get_error_ ();
-      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-          MHD_SCKT_ERR_IS_EAGAIN_ (err))
+      if (MHD_ERR_AGAIN_ == bytes_read)
           return MHD_YES; /* No new data to process. */
-      if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
+      if (MHD_ERR_CONNRESET_ == bytes_read)
         {
            CONNECTION_CLOSE_ERROR (connection,
                                    (MHD_CONNECTION_INIT == connection->state) ?
