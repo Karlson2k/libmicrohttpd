@@ -2677,6 +2677,10 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                connection,
                                &connection->socket_context,
                                MHD_CONNECTION_NOTIFY_CLOSED);
+#ifdef HTTPS_SUPPORT
+ if (NULL != connection->tls_session)
+   gnutls_deinit (connection->tls_session);
+#endif /* HTTPS_SUPPORT */
   MHD_socket_close_chk_ (client_socket);
   MHD_ip_limit_del (daemon,
                     addr,
