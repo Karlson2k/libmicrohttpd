@@ -2567,12 +2567,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
  	  return MHD_NO;
         }
-      gnutls_transport_set_ptr (connection->tls_session,
-				(gnutls_transport_ptr_t) connection);
-      gnutls_transport_set_pull_function (connection->tls_session,
-					  (gnutls_pull_func) &recv_param_adapter);
-      gnutls_transport_set_push_function (connection->tls_session,
-					  (gnutls_push_func) &send_param_adapter);
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030109) && !defined(_WIN64)
+      gnutls_transport_set_int (connection->tls_session, (int)(client_socket));
+#else  /* GnuTLS before 3.1.9 or Win x64 */
+      gnutls_transport_set_ptr (connection->tls_session, (gnutls_transport_ptr_t)(intptr_t)(client_socket));
+#endif /* GnuTLS before 3.1.9 */
 
       if (daemon->https_mem_trust)
 	  gnutls_certificate_server_set_request (connection->tls_session,
