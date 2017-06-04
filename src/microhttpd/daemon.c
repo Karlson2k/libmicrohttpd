@@ -2591,11 +2591,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-  {
-    XDLL_insert (daemon->normal_timeout_head,
-                 daemon->normal_timeout_tail,
-                 connection);
-  }
+    {
+      XDLL_insert (daemon->normal_timeout_head,
+                   daemon->normal_timeout_tail,
+                   connection);
+    }
   DLL_insert (daemon->connections_head,
 	      daemon->connections_tail,
 	      connection);
