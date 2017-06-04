@@ -2189,8 +2189,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  * this call and must no longer be used directly by the application
  * afterwards.
  *
- * Per-IP connection limits are ignored when using this API.
- *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).

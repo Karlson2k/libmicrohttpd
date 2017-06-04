@@ -1,3 +1,7 @@
+Sun Jun 04 15:02:00 MSK 2017
+	Improved thread-safety of MHD_add_connection() and
+	internal_add_connection(), minor optimisations. -EG
+
 Sun May 28 23:26:00 MSK 2017
 	Releasing GNU libmicrohttpd 0.9.55. -EG
 
