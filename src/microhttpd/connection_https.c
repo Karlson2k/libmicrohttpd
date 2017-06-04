@@ -36,6 +36,109 @@
 
 
 /**
+ * Callback for receiving data from the socket.
+ *
+ * @param connection the MHD_Connection structure
+ * @param other where to write received data to
+ * @param i maximum size of other (in bytes)
+ * @return number of bytes actually received
+ */
+static ssize_t
+recv_tls_adapter (struct MHD_Connection *connection,
+                  void *other,
+                  size_t i)
+{
+  ssize_t res;
+
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX;
+
+  res = gnutls_record_recv (connection->tls_session,
+                            other,
+                            i);
+  if ( (GNUTLS_E_AGAIN == res) ||
+       (GNUTLS_E_INTERRUPTED == res) )
+    {
+      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
+#ifdef EPOLL_SUPPORT
+      if (GNUTLS_E_AGAIN == res)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif
+      return -1;
+    }
+  if (res < 0)
+    {
+      /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
+         disrupted); set errno to something caller will interpret
+         correctly as a hard error */
+      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+      connection->tls_read_ready = false;
+      return res;
+    }
+
+#ifdef EPOLL_SUPPORT
+  /* If data not available to fill whole buffer - socket is not read ready anymore. */
+  if (i > (size_t)res)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif /* EPOLL_SUPPORT */
+
+  /* Check whether TLS buffers still have some unread data. */
+  connection->tls_read_ready = ( ((size_t)res == i) &&
+                                 (0 != gnutls_record_check_pending (connection->tls_session)) );
+  return res;
+}
+
+
+/**
+ * Callback for writing data to the socket.
+ *
+ * @param connection the MHD connection structure
+ * @param other data to write
+ * @param i number of bytes to write
+ * @return actual number of bytes written
+ */
+static ssize_t
+send_tls_adapter (struct MHD_Connection *connection,
+                  const void *other,
+                  size_t i)
+{
+  ssize_t res;
+
+  if (i > SSIZE_MAX)
+    i = SSIZE_MAX;
+
+  res = gnutls_record_send (connection->tls_session,
+                            other,
+                            i);
+  if ( (GNUTLS_E_AGAIN == res) ||
+       (GNUTLS_E_INTERRUPTED == res) )
+    {
+      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
+#ifdef EPOLL_SUPPORT
+      if (GNUTLS_E_AGAIN == res)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif
+      return -1;
+    }
+  if (res < 0)
+    {
+      /* some other GNUTLS error, should set 'errno'; as we do not
+         really understand the error (not listed in GnuTLS
+         documentation explicitly), we set 'errno' to something that
+         will cause the connection to fail. */
+      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+      return -1;
+    }
+#ifdef EPOLL_SUPPORT
+  /* If NOT all available data was sent - socket is not write ready anymore. */
+  if (i > (size_t)res)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+  return res;
+}
+
+
+/**
  * Give gnuTLS chance to work on the TLS handshake.
  *
  * @param connection connection to handshake on
@@ -130,6 +233,8 @@ MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_tls_connection_handle_read;
   connection->write_handler = &MHD_tls_connection_handle_write;
+  connection->recv_cls = &recv_tls_adapter;
+  connection->send_cls = &send_tls_adapter;
 }
 
 

@@ -110,6 +110,168 @@
 
 
 /**
+ * Callback for receiving data from the socket.
+ *
+ * @param connection the MHD connection structure
+ * @param other where to write received data to
+ * @param i maximum size of other (in bytes)
+ * @return number of bytes actually received
+ */
+static ssize_t
+recv_param_adapter (struct MHD_Connection *connection,
+                    void *other,
+                    size_t i)
+{
+  ssize_t ret;
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+    {
+      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
+      return -1;
+    }
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
+  ret = MHD_recv_ (connection->socket_fd,
+                   other,
+                   i);
+#ifdef EPOLL_SUPPORT
+  if (0 > ret)
+    {
+      /* Got EAGAIN --- no longer read-ready */
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+        connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+    }
+  else if (i > (size_t)ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif
+  return ret;
+}
+
+
+/**
+ * Callback for writing data to the socket.
+ *
+ * @param connection the MHD connection structure
+ * @param other data to write
+ * @param i number of bytes to write
+ * @return actual number of bytes written
+ */
+static ssize_t
+send_param_adapter (struct MHD_Connection *connection,
+                    const void *other,
+                    size_t i)
+{
+  ssize_t ret;
+  int err;
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+    {
+      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
+      return -1;
+    }
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
+#if LINUX
+  if ( (connection->write_buffer_append_offset ==
+        connection->write_buffer_send_offset) &&
+       (NULL != connection->response) &&
+       (MHD_resp_sender_sendfile == connection->resp_sender) )
+    {
+      /* can use sendfile */
+      int file_fd = connection->response->fd;
+      uint64_t left;
+      uint64_t offsetu64;
+#ifndef HAVE_SENDFILE64
+      off_t offset;
+#else  /* HAVE_SENDFILE64 */
+      off64_t offset;
+#endif /* HAVE_SENDFILE64 */
+      offsetu64 = connection->response_write_position + connection->response->fd_off;
+      left = connection->response->total_size - connection->response_write_position;
+      ret = 0;
+#ifndef HAVE_SENDFILE64
+      if ((uint64_t)OFF_T_MAX < offsetu64)
+        MHD_socket_set_error_to_ENOMEM ();
+      else
+        {
+          offset = (off_t) offsetu64;
+          ret = sendfile (connection->socket_fd,
+                          file_fd,
+                          &offset,
+                          left);
+        }
+#else  /* HAVE_SENDFILE64 */
+      if ((uint64_t)OFF64_T_MAX < offsetu64)
+        MHD_socket_set_error_to_ENOMEM ();
+      else
+        {
+          offset = (off64_t) offsetu64;
+          ret = sendfile64 (connection->socket_fd,
+                            file_fd,
+                            &offset,
+                            left);
+        }
+#endif /* HAVE_SENDFILE64 */
+      if (0 < ret)
+        {
+          /* write successful */
+#ifdef EPOLL_SUPPORT
+          if (left > (uint64_t)ret)
+            connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+          return ret;
+        }
+      err = MHD_socket_get_error_();
+#ifdef EPOLL_SUPPORT
+      if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
+        {
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+        }
+#endif
+      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+          MHD_SCKT_ERR_IS_EAGAIN_ (err))
+        return 0;
+      if (MHD_SCKT_ERR_IS_(err,
+                           MHD_SCKT_EBADF_))
+        return -1;
+      /* sendfile() failed with EINVAL if mmap()-like operations are not
+         supported for FD or other 'unusual' errors occurred, so we should try
+         to fall back to 'SEND'; see also this thread for info on
+         odd libc/Linux behavior with sendfile:
+         http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+      connection->resp_sender = MHD_resp_sender_std;
+    }
+#endif
+  ret = MHD_send_ (connection->socket_fd,
+                   other,
+                   i);
+  err = MHD_socket_get_error_();
+#ifdef EPOLL_SUPPORT
+  if (0 > ret)
+    {
+      /* EAGAIN --- no longer write-ready */
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+    }
+  else if (i > (size_t)ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif
+  /* Handle broken kernel / libc, returning -1 but not setting errno;
+     kill connection as that should be safe; reported on mailinglist here:
+     http://lists.gnu.org/archive/html/libmicrohttpd/2014-10/msg00023.html */
+  if ( (0 > ret) &&
+       (0 == err) )
+    MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+  return ret;
+}
+
+
+/**
  * Check whether is possible to force push socket buffer content as
  * partial packet.
  * MHD use different buffering logic depending on whether flushing of
@@ -3445,6 +3607,8 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
   connection->read_handler = &MHD_connection_handle_read;
   connection->write_handler = &MHD_connection_handle_write;
+  connection->recv_cls = &recv_param_adapter;
+  connection->send_cls = &send_param_adapter;
 }
 
 
