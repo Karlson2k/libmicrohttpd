@@ -2327,50 +2327,6 @@ process_request_body (struct MHD_Connection *connection)
 
 
 /**
- * Try writing data to the socket from the
- * write buffer of the connection.
- *
- * @param connection connection we're processing
- * @return #MHD_YES if something changed,
- *         #MHD_NO if we were interrupted
- */
-static int
-do_write (struct MHD_Connection *connection)
-{
-  ssize_t ret;
-  size_t max;
-
-  max = connection->write_buffer_append_offset - connection->write_buffer_send_offset;
-  ret = connection->send_cls (connection,
-                              &connection->write_buffer
-                              [connection->write_buffer_send_offset],
-                              max);
-
-  if (ret < 0)
-    {
-      const int err = MHD_socket_get_error_ ();
-      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-          MHD_SCKT_ERR_IS_EAGAIN_ (err))
-        return MHD_NO;
-      CONNECTION_CLOSE_ERROR (connection,
-                              NULL);
-      return MHD_YES;
-    }
-#if DEBUG_SEND_DATA
-  fprintf (stderr,
-           _("Sent response: `%.*s'\n"),
-           ret,
-           &connection->write_buffer[connection->write_buffer_send_offset]);
-#endif
-  /* only increment if this wasn't a "sendfile" transmission without
-     buffer involvement! */
-  if (0 != max)
-    connection->write_buffer_send_offset += ret;
-  return MHD_YES;
-}
-
-
-/**
  * Check if we are done sending the write-buffer.
  * If so, transition into "next_state".
  *
@@ -2839,8 +2795,23 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
-          if (MHD_NO != do_write (connection))
-            MHD_update_last_activity_ (connection);
+          ret = connection->send_cls (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      connection->write_buffer_append_offset -
+                                        connection->write_buffer_send_offset);
+          if (ret < 0)
+            {
+              const int err = MHD_socket_get_error_ ();
+              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                break;
+              CONNECTION_CLOSE_ERROR (connection,
+                                      _("Connection was closed while sending response headers.\n"));
+              return MHD_YES;
+            }
+          connection->write_buffer_send_offset += ret;
+          MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_HEADERS_SENDING != connection->state)
  	     break;
           check_write_done (connection,
@@ -2910,8 +2881,23 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_CHUNKED_BODY_READY:
-          if (MHD_NO != do_write (connection))
-            MHD_update_last_activity_ (connection);
+          ret = connection->send_cls (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      connection->write_buffer_append_offset -
+                                        connection->write_buffer_send_offset);
+          if (ret < 0)
+            {
+              const int err = MHD_socket_get_error_ ();
+              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                break;
+              CONNECTION_CLOSE_ERROR (connection,
+                                      _("Connection was closed while sending response body.\n"));
+              return MHD_YES;
+            }
+          connection->write_buffer_send_offset += ret;
+          MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_CHUNKED_BODY_READY != connection->state)
 	     break;
           check_write_done (connection,
@@ -2925,8 +2911,23 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_FOOTERS_SENDING:
-          if (MHD_NO != do_write (connection))
-            MHD_update_last_activity_ (connection);
+          ret = connection->send_cls (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      connection->write_buffer_append_offset -
+                                        connection->write_buffer_send_offset);
+          if (ret < 0)
+            {
+              const int err = MHD_socket_get_error_ ();
+              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                break;
+              CONNECTION_CLOSE_ERROR (connection,
+                                      _("Connection was closed while sending response body.\n"));
+              return MHD_YES;
+            }
+          connection->write_buffer_send_offset += ret;
+          MHD_update_last_activity_ (connection);
 	  if (MHD_CONNECTION_FOOTERS_SENDING != connection->state)
 	    break;
           check_write_done (connection,
