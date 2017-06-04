@@ -1901,10 +1901,10 @@ typedef int
  *        part of #MHD_get_connection_values; very large POST
  *        data *will* be made available incrementally in
  *        @a upload_data)
- * @param upload_data_size set initially to the size of the
+ * @param[in,out] upload_data_size set initially to the size of the
  *        @a upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param con_cls pointer that the callback can set to some
+ * @param[in,out] con_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
