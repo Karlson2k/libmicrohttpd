@@ -36,6 +36,9 @@
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
 #include "mhd_itc.h"
+#ifdef __linux__
+#include <sys/sendfile.h>
+#endif
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
 #endif /* HTTPS_SUPPORT */

@@ -797,13 +797,13 @@ struct MHD_Connection
    */
   uint64_t response_write_position;
 
-#if LINUX
+#ifdef __linux__
   enum MHD_resp_sender_
   {
     MHD_resp_sender_std = 0,
     MHD_resp_sender_sendfile
   } resp_sender;
-#endif /* LINUX */
+#endif /* __linux__ */
 
   /**
    * Position in the 100 CONTINUE message that
