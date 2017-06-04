@@ -3195,8 +3195,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       if (NULL != pos->tls_session)
 	gnutls_deinit (pos->tls_session);
 #endif /* HTTPS_SUPPORT */
-      daemon->connections--;
-      daemon->at_limit = false;
 
       /* clean up the connection */
       if (NULL != daemon->notify_connection)
@@ -3247,6 +3245,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       free (pos);
 
       MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+      daemon->connections--;
+      daemon->at_limit = false;
     }
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 }
