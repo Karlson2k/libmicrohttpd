@@ -213,6 +213,7 @@ static ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
   int ret;
+  int err;
   const int file_fd = connection->response->fd;
   uint64_t left;
   uint64_t offsetu64;
