@@ -2205,10 +2205,6 @@ send_param_adapter (struct MHD_Connection *connection,
   if (i > MHD_SCKT_SEND_MAX_SIZE_)
     i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
-  if (0 != (connection->daemon->options & MHD_USE_TLS))
-    return MHD_send_ (connection->socket_fd,
-                      other,
-                      i);
 #if LINUX
   if ( (connection->write_buffer_append_offset ==
 	connection->write_buffer_send_offset) &&
