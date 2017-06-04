@@ -2327,57 +2327,6 @@ process_request_body (struct MHD_Connection *connection)
 
 
 /**
- * Try reading data from the socket into the read buffer of the
- * connection.
- *
- * @param connection connection we're processing
- * @return #MHD_YES if something changed,
- *         #MHD_NO if we were interrupted or if
- *                no space was available
- */
-static int
-do_read (struct MHD_Connection *connection)
-{
-  ssize_t bytes_read;
-
-  if (connection->read_buffer_size == connection->read_buffer_offset)
-    return MHD_NO;
-  bytes_read = connection->recv_cls (connection,
-                                     &connection->read_buffer
-                                     [connection->read_buffer_offset],
-                                     connection->read_buffer_size -
-                                     connection->read_buffer_offset);
-  if (bytes_read < 0)
-    {
-      const int err = MHD_socket_get_error_ ();
-      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-          MHD_SCKT_ERR_IS_EAGAIN_ (err))
-	  return MHD_NO;
-      if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
-        {
-           CONNECTION_CLOSE_ERROR (connection,
-                                   NULL);
-	   return MHD_NO;
-	}
-      CONNECTION_CLOSE_ERROR (connection,
-                              NULL);
-      return MHD_YES;
-    }
-  if (0 == bytes_read)
-    {
-      /* other side closed connection; RFC 2616, section 8.1.4 suggests
-	 we should then shutdown ourselves as well. */
-      connection->read_closed = true;
-      MHD_connection_close_ (connection,
-                             MHD_REQUEST_TERMINATED_CLIENT_ABORT);
-      return MHD_YES;
-    }
-  connection->read_buffer_offset += bytes_read;
-  return MHD_YES;
-}
-
-
-/**
  * Try writing data to the socket from the
  * write buffer of the connection.
  *
@@ -2721,6 +2670,8 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 int
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
+  ssize_t bytes_read;
+
   if ( (MHD_CONNECTION_CLOSED == connection->state) ||
        (connection->suspended) )
     return MHD_YES;
@@ -2729,8 +2680,43 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (connection->read_buffer_offset + connection->daemon->pool_increment >
       connection->read_buffer_size)
     try_grow_read_buffer (connection);
-  if (MHD_NO == do_read (connection))
-    return MHD_YES;
+
+  if (connection->read_buffer_size == connection->read_buffer_offset)
+    return MHD_YES; /* No space for receiving data. */
+  bytes_read = connection->recv_cls (connection,
+                                     &connection->read_buffer
+                                     [connection->read_buffer_offset],
+                                     connection->read_buffer_size -
+                                     connection->read_buffer_offset);
+  if (bytes_read < 0)
+    {
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+          MHD_SCKT_ERR_IS_EAGAIN_ (err))
+          return MHD_YES; /* No new data to process. */
+      if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
+        {
+           CONNECTION_CLOSE_ERROR (connection,
+                                   (MHD_CONNECTION_INIT == connection->state) ?
+                                     NULL :
+                                     _("Socket is unexpectedly disconnected when reading request.\n"));
+           return MHD_NO;
+        }
+      CONNECTION_CLOSE_ERROR (connection,
+                              (MHD_CONNECTION_INIT == connection->state) ?
+                                NULL :
+                                _("Connection socket is closed due to unexpected error when reading request.\n"));
+      return MHD_YES;
+    }
+
+  if (0 == bytes_read)
+    { /* Remote side closed connection. */
+      connection->read_closed = true;
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_CLIENT_ABORT);
+      return MHD_YES;
+    }
+  connection->read_buffer_offset += bytes_read;
   MHD_update_last_activity_ (connection);
   while (1)
     {
