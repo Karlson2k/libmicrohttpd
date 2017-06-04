@@ -2357,22 +2357,24 @@ internal_add_connection (struct MHD_Daemon *daemon,
   struct MHD_Connection *connection;
   unsigned int i;
   int eno;
-  struct MHD_Daemon *worker;
 
-  if (NULL != daemon->worker_pool)
+  /* Direct add to master daemon could happen only with "external" add mode. */
+  EXTRA_CHECK ((NULL == daemon->worker_pool) || (external_add));
+  if ((external_add) && (NULL != daemon->worker_pool))
     {
       /* have a pool, try to find a pool with capacity; we use the
 	 socket as the initial offset into the pool for load
 	 balancing */
       for (i = 0; i < daemon->worker_pool_size; ++i)
         {
-          worker = &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
+          struct MHD_Daemon * const worker =
+                &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
           if (worker->connections < worker->connection_limit)
             return internal_add_connection (worker,
                                             client_socket,
                                             addr,
                                             addrlen,
-                                            external_add,
+                                            true,
                                             non_blck);
         }
       /* all pools are at their connection limit, must refuse */
