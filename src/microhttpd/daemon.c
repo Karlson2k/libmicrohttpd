@@ -2351,7 +2351,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 			 MHD_socket client_socket,
 			 const struct sockaddr *addr,
 			 socklen_t addrlen,
-			 int external_add,
+			 bool external_add,
 			 bool non_blck)
 {
   struct MHD_Connection *connection;
@@ -2624,7 +2624,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
         }
     }
   else
-    if ( (MHD_YES == external_add) &&
+    if ( (external_add) &&
 	 (MHD_ITC_IS_VALID_(daemon->itc)) &&
 	 (! MHD_itc_activate_ (daemon->itc, "n")) )
       {
@@ -3023,7 +3023,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 				  client_socket,
 				  addr,
                                   addrlen,
-				  MHD_YES,
+				  true,
 				  sk_nonbl);
 }
 
@@ -3153,7 +3153,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                   s,
 				  addr,
                                   addrlen,
-				  MHD_NO,
+				  false,
                                   sk_nonbl);
   return MHD_YES;
 }
