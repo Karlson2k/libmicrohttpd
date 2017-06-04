@@ -175,78 +175,6 @@ send_param_adapter (struct MHD_Connection *connection,
   if (i > MHD_SCKT_SEND_MAX_SIZE_)
     i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
-#if LINUX
-  if ( (connection->write_buffer_append_offset ==
-        connection->write_buffer_send_offset) &&
-       (NULL != connection->response) &&
-       (MHD_resp_sender_sendfile == connection->resp_sender) )
-    {
-      /* can use sendfile */
-      int file_fd = connection->response->fd;
-      uint64_t left;
-      uint64_t offsetu64;
-#ifndef HAVE_SENDFILE64
-      off_t offset;
-#else  /* HAVE_SENDFILE64 */
-      off64_t offset;
-#endif /* HAVE_SENDFILE64 */
-      offsetu64 = connection->response_write_position + connection->response->fd_off;
-      left = connection->response->total_size - connection->response_write_position;
-      ret = 0;
-#ifndef HAVE_SENDFILE64
-      if ((uint64_t)OFF_T_MAX < offsetu64)
-        MHD_socket_set_error_to_ENOMEM ();
-      else
-        {
-          offset = (off_t) offsetu64;
-          ret = sendfile (connection->socket_fd,
-                          file_fd,
-                          &offset,
-                          left);
-        }
-#else  /* HAVE_SENDFILE64 */
-      if ((uint64_t)OFF64_T_MAX < offsetu64)
-        MHD_socket_set_error_to_ENOMEM ();
-      else
-        {
-          offset = (off64_t) offsetu64;
-          ret = sendfile64 (connection->socket_fd,
-                            file_fd,
-                            &offset,
-                            left);
-        }
-#endif /* HAVE_SENDFILE64 */
-      if (0 < ret)
-        {
-          /* write successful */
-#ifdef EPOLL_SUPPORT
-          if (left > (uint64_t)ret)
-            connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif /* EPOLL_SUPPORT */
-          return ret;
-        }
-      err = MHD_socket_get_error_();
-#ifdef EPOLL_SUPPORT
-      if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
-        {
-          /* EAGAIN --- no longer write-ready */
-          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-        }
-#endif
-      if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-          MHD_SCKT_ERR_IS_EAGAIN_ (err))
-        return 0;
-      if (MHD_SCKT_ERR_IS_(err,
-                           MHD_SCKT_EBADF_))
-        return -1;
-      /* sendfile() failed with EINVAL if mmap()-like operations are not
-         supported for FD or other 'unusual' errors occurred, so we should try
-         to fall back to 'SEND'; see also this thread for info on
-         odd libc/Linux behavior with sendfile:
-         http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-      connection->resp_sender = MHD_resp_sender_std;
-    }
-#endif
   ret = MHD_send_ (connection->socket_fd,
                    other,
                    i);
@@ -269,6 +197,87 @@ send_param_adapter (struct MHD_Connection *connection,
     MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
   return ret;
 }
+
+
+#ifdef __linux__
+/**
+ * Function for sending responses backed by file FD.
+ *
+ * @param connection the MHD connection structure
+ * @return actual number of bytes sent
+ */
+static ssize_t
+sendfile_adapter (struct MHD_Connection *connection)
+{
+  int file_fd = connection->response->fd;
+  uint64_t left;
+  uint64_t offsetu64;
+#ifndef HAVE_SENDFILE64
+  off_t offset;
+#else  /* HAVE_SENDFILE64 */
+  off64_t offset;
+#endif /* HAVE_SENDFILE64 */
+  EXTRA_CHECK (MHD_resp_sender_sendfile == connection->resp_sender);
+
+  offsetu64 = connection->response_write_position + connection->response->fd_off;
+  left = connection->response->total_size - connection->response_write_position;
+  ret = 0;
+#ifndef HAVE_SENDFILE64
+  if ((uint64_t)OFF_T_MAX < offsetu64)
+    MHD_socket_set_error_to_ENOMEM ();
+  else
+    {
+      offset = (off_t) offsetu64;
+      ret = sendfile (connection->socket_fd,
+                      file_fd,
+                      &offset,
+                      left);
+    }
+#else  /* HAVE_SENDFILE64 */
+  if ((uint64_t)OFF64_T_MAX < offsetu64)
+    MHD_socket_set_error_to_ENOMEM ();
+  else
+    {
+      offset = (off64_t) offsetu64;
+      ret = sendfile64 (connection->socket_fd,
+                        file_fd,
+                        &offset,
+                        left);
+    }
+#endif /* HAVE_SENDFILE64 */
+  if (0 < ret)
+    {
+      /* write successful */
+#ifdef EPOLL_SUPPORT
+      if (left > (uint64_t)ret)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+      return ret;
+    }
+  err = MHD_socket_get_error_();
+#ifdef EPOLL_SUPPORT
+  if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
+    {
+      /* EAGAIN --- no longer write-ready */
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+    }
+#endif
+  if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
+      MHD_SCKT_ERR_IS_EAGAIN_ (err))
+    return 0;
+  if (MHD_SCKT_ERR_IS_(err,
+                       MHD_SCKT_EBADF_))
+    return -1;
+  /* sendfile() failed with EINVAL if mmap()-like operations are not
+     supported for FD or other 'unusual' errors occurred, so we should try
+     to fall back to 'SEND'; see also this thread for info on
+     odd libc/Linux behavior with sendfile:
+     http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+  connection->resp_sender = MHD_resp_sender_std;
+  MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
+  return 0;
+}
+#endif /* __linux__ */
 
 
 /**
@@ -2834,24 +2843,35 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 /* mutex was already unlocked by try_ready_normal_body */
                 break;
               }
-            data_write_offset = connection->response_write_position
-                                - response->data_start;
-            if (data_write_offset > (uint64_t)SIZE_MAX)
-              MHD_PANIC (_("Data offset exceeds limit"));
-            ret = connection->send_cls (connection,
-                                        &response->data
-                                        [(size_t)data_write_offset],
-                                        response->data_size -
-                                        (size_t)data_write_offset);
+#ifdef __linux__
+            if (MHD_resp_sender_sendfile == connection->resp_sender)
+              {
+                ret = sendfile_adapter (connection);
+              }
+            else
+#else  /* ! __linux__ */
+            if (1)
+#endif /* ! __linux__ */
+              {
+                data_write_offset = connection->response_write_position
+                                    - response->data_start;
+                if (data_write_offset > (uint64_t)SIZE_MAX)
+                  MHD_PANIC (_("Data offset exceeds limit"));
+                ret = connection->send_cls (connection,
+                                            &response->data
+                                            [(size_t)data_write_offset],
+                                            response->data_size -
+                                            (size_t)data_write_offset);
 #if DEBUG_SEND_DATA
-            if (ret > 0)
-              fprintf (stderr,
-                       _("Sent %d-byte DATA response: `%.*s'\n"),
-                       (int) ret,
-                       (int) ret,
-                       &response->data[connection->response_write_position -
-                                       response->data_start]);
+                if (ret > 0)
+                  fprintf (stderr,
+                           _("Sent %d-byte DATA response: `%.*s'\n"),
+                           (int) ret,
+                           (int) ret,
+                           &response->data[connection->response_write_position -
+                                           response->data_start]);
 #endif
+              }
             if (NULL != response->crc)
               MHD_mutex_unlock_chk_ (&response->mutex);
             if (ret < 0)
