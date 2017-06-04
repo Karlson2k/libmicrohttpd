@@ -93,7 +93,8 @@ recv_tls_adapter (struct MHD_Connection *connection,
  * @param connection the MHD connection structure
  * @param other data to write
  * @param i number of bytes to write
- * @return actual number of bytes written
+ * @return positive value for number of bytes actually sent or
+ *         negative value for error number MHD_ERR_xxx_
  */
 static ssize_t
 send_tls_adapter (struct MHD_Connection *connection,
@@ -116,16 +117,13 @@ send_tls_adapter (struct MHD_Connection *connection,
       if (GNUTLS_E_AGAIN == res)
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
-      return -1;
+      return MHD_ERR_AGAIN_;
     }
   if (res < 0)
     {
-      /* some other GNUTLS error, should set 'errno'; as we do not
-         really understand the error (not listed in GnuTLS
-         documentation explicitly), we set 'errno' to something that
-         will cause the connection to fail. */
-      MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
-      return -1;
+      /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
+         disrupted); interpret as a hard error */
+      return MHD_ERR_CONNRESET_;
     }
 #ifdef EPOLL_SUPPORT
   /* If NOT all available data was sent - socket is not write ready anymore. */

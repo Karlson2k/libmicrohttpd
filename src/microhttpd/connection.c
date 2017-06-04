@@ -169,7 +169,8 @@ recv_param_adapter (struct MHD_Connection *connection,
  * @param connection the MHD connection structure
  * @param other data to write
  * @param i number of bytes to write
- * @return actual number of bytes written
+ * @return positive value for number of bytes actually sent or
+ *         negative value for error number MHD_ERR_xxx_
  */
 static ssize_t
 send_param_adapter (struct MHD_Connection *connection,
@@ -177,13 +178,11 @@ send_param_adapter (struct MHD_Connection *connection,
                     size_t i)
 {
   ssize_t ret;
-  int err;
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
     {
-      MHD_socket_set_error_ (MHD_SCKT_ENOTCONN_);
-      return -1;
+      return MHD_ERR_NOTCONN_;
     }
   if (i > MHD_SCKT_SEND_MAX_SIZE_)
     i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
@@ -191,23 +190,27 @@ send_param_adapter (struct MHD_Connection *connection,
   ret = MHD_send_ (connection->socket_fd,
                    other,
                    i);
-  err = MHD_socket_get_error_();
-#ifdef EPOLL_SUPPORT
   if (0 > ret)
     {
-      /* EAGAIN --- no longer write-ready */
+      const int err = MHD_socket_get_error_();
+
       if (MHD_SCKT_ERR_IS_EAGAIN_(err))
-        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+        {
+#ifdef EPOLL_SUPPORT
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+      /* Treat any other error as hard error. */
+      return MHD_ERR_CONNRESET_;
     }
+#ifdef EPOLL_SUPPORT
   else if (i > (size_t)ret)
     connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif
-  /* Handle broken kernel / libc, returning -1 but not setting errno;
-     kill connection as that should be safe; reported on mailinglist here:
-     http://lists.gnu.org/archive/html/libmicrohttpd/2014-10/msg00023.html */
-  if ( (0 > ret) &&
-       (0 == err) )
-    MHD_socket_set_error_ (MHD_SCKT_ECONNRESET_);
+#endif /* EPOLL_SUPPORT */
   return ret;
 }
 
@@ -223,7 +226,6 @@ static ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
   int ret;
-  int err;
   const int file_fd = connection->response->fd;
   uint64_t left;
   uint64_t offsetu64;
@@ -236,61 +238,60 @@ sendfile_adapter (struct MHD_Connection *connection)
 
   offsetu64 = connection->response_write_position + connection->response->fd_off;
   left = connection->response->total_size - connection->response_write_position;
-  ret = 0;
+  if (left > SSIZE_MAX)
+    left = SSIZE_MAX;
 #ifndef HAVE_SENDFILE64
   if ((uint64_t)OFF_T_MAX < offsetu64)
-    MHD_socket_set_error_to_ENOMEM ();
-  else
-    {
-      offset = (off_t) offsetu64;
-      ret = sendfile (connection->socket_fd,
+    { /* Retry to send with standard 'send()'. */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+    offset = (off_t) offsetu64;
+    ret = sendfile (connection->socket_fd,
+                    file_fd,
+                    &offset,
+                    left);
+#else  /* HAVE_SENDFILE64 */
+  if ((uint64_t)OFF64_T_MAX < offsetu64)
+    { /* Retry to send with standard 'send()'. */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+    offset = (off64_t) offsetu64;
+    ret = sendfile64 (connection->socket_fd,
                       file_fd,
                       &offset,
                       left);
-    }
-#else  /* HAVE_SENDFILE64 */
-  if ((uint64_t)OFF64_T_MAX < offsetu64)
-    MHD_socket_set_error_to_ENOMEM ();
-  else
-    {
-      offset = (off64_t) offsetu64;
-      ret = sendfile64 (connection->socket_fd,
-                        file_fd,
-                        &offset,
-                        left);
-    }
 #endif /* HAVE_SENDFILE64 */
-  if (0 < ret)
+  if (0 > ret)
     {
-      /* write successful */
+      const int err = MHD_socket_get_error_();
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
+        {
 #ifdef EPOLL_SUPPORT
-      if (left > (uint64_t)ret)
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+      if (MHD_SCKT_ERR_IS_(err,
+                           MHD_SCKT_EBADF_))
+        return MHD_ERR_BADF_;
+      /* sendfile() failed with EINVAL if mmap()-like operations are not
+         supported for FD or other 'unusual' errors occurred, so we should try
+         to fall back to 'SEND'; see also this thread for info on
+         odd libc/Linux behavior with sendfile:
+         http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+#ifdef EPOLL_SUPPORT
+  else if (left > (uint64_t)ret)
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-      return ret;
-    }
-  err = MHD_socket_get_error_();
-#ifdef EPOLL_SUPPORT
-  if ( (0 > ret) && (MHD_SCKT_ERR_IS_EAGAIN_(err)) )
-    {
-      /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-    }
-#endif
-  if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-      MHD_SCKT_ERR_IS_EAGAIN_ (err))
-    return 0;
-  if (MHD_SCKT_ERR_IS_(err,
-                       MHD_SCKT_EBADF_))
-    return -1;
-  /* sendfile() failed with EINVAL if mmap()-like operations are not
-     supported for FD or other 'unusual' errors occurred, so we should try
-     to fall back to 'SEND'; see also this thread for info on
-     odd libc/Linux behavior with sendfile:
-     http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-  connection->resp_sender = MHD_resp_sender_std;
-  MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
-  return 0;
+  return ret;
 }
 #endif /* __linux__ */
 
@@ -2786,16 +2787,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       connection->continue_message_write_offset);
           if (ret < 0)
             {
-              const int err = MHD_socket_get_error_ ();
-
-              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+              if (MHD_ERR_AGAIN_ == ret)
                 break;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (connection->daemon,
-                        _("Failed to send data in request for %s: %s\n"),
-                        connection->url,
-                        MHD_socket_strerr_ (err));
+                        _("Failed to send data in request for %s.\n"),
+                        connection->url);
 #endif
 	      CONNECTION_CLOSE_ERROR (connection,
                                       NULL);
@@ -2824,9 +2821,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         connection->write_buffer_send_offset);
           if (ret < 0)
             {
-              const int err = MHD_socket_get_error_ ();
-              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+              if (MHD_ERR_AGAIN_ == ret)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response headers.\n"));
@@ -2889,9 +2884,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               MHD_mutex_unlock_chk_ (&response->mutex);
             if (ret < 0)
               {
-                err = MHD_socket_get_error_ ();
-                if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-                    MHD_SCKT_ERR_IS_EAGAIN_ (err))
+                if (MHD_ERR_AGAIN_ == ret)
                   return MHD_YES;
 #ifdef HAVE_MESSAGES
                 MHD_DLOG (connection->daemon,
@@ -2921,9 +2914,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         connection->write_buffer_send_offset);
           if (ret < 0)
             {
-              const int err = MHD_socket_get_error_ ();
-              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+              if (MHD_ERR_AGAIN_ == ret)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response body.\n"));
@@ -2951,9 +2942,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         connection->write_buffer_send_offset);
           if (ret < 0)
             {
-              const int err = MHD_socket_get_error_ ();
-              if (MHD_SCKT_ERR_IS_EINTR_ (err) ||
-                  MHD_SCKT_ERR_IS_EAGAIN_ (err))
+              if (MHD_ERR_AGAIN_ == ret)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response body.\n"));
