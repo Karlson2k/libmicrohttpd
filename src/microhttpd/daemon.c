@@ -2330,9 +2330,6 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  *
  * Per-IP connection limits are ignored when using this API.
  *
- * @remark To be called only from thread that process
- * daemon's select()/poll()/etc.
- *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).
@@ -2356,7 +2353,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 {
   struct MHD_Connection *connection;
   unsigned int i;
-  int eno;
+  int eno = 0;
 
   /* Direct add to master daemon could happen only with "external" add mode. */
   EXTRA_CHECK ((NULL == daemon->worker_pool) || (external_add));
@@ -2590,6 +2587,21 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  /* Firm check under lock. */
+  if (daemon->connections >= daemon->connection_limit)
+    {
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+      /* above connection limit - reject */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Server reached connection limit. Closing inbound connection.\n"));
+#endif
+#if ENFILE
+      eno = ENFILE;
+#endif
+      goto cleanup;
+    }
+  daemon->connections++;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       XDLL_insert (daemon->normal_timeout_head,
@@ -2670,7 +2682,6 @@ internal_add_connection (struct MHD_Daemon *daemon,
                 _("Failed to signal new connection via inter-thread communication channel."));
 #endif
     }
-  daemon->connections++;
   return MHD_YES;
  cleanup:
   if (NULL != daemon->notify_connection)
@@ -2700,7 +2711,10 @@ internal_add_connection (struct MHD_Daemon *daemon,
   MHD_pool_destroy (connection->pool);
   free (connection->addr);
   free (connection);
-  errno = eno;
+  if (0 != eno)
+    errno = eno;
+  else
+    errno  = EINVAL;
   return MHD_NO;
 }
 
