@@ -2364,7 +2364,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       /* have a pool, try to find a pool with capacity; we use the
 	 socket as the initial offset into the pool for load
 	 balancing */
-      for (i=0;i<daemon->worker_pool_size;i++)
+      for (i = 0; i < daemon->worker_pool_size; ++i)
         {
           worker = &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
           if (worker->connections < worker->connection_limit)
