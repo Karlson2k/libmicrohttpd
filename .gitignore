@@ -37,6 +37,8 @@ Makefile
 /depcomp
 /.autotools
 /.vscode
+/.settings
+/.vs
 po/configure.acT
 po/Makevars.template
 po/POTFILES
