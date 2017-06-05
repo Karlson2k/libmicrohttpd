@@ -2717,48 +2717,43 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     }
   connection->read_buffer_offset += bytes_read;
   MHD_update_last_activity_ (connection);
-  while (1)
-    {
 #if DEBUG_STATES
-      MHD_DLOG (connection->daemon,
-                _("In function %s handling connection at state: %s\n"),
-                __FUNCTION__,
-                MHD_state_to_string (connection->state));
+  MHD_DLOG (connection->daemon,
+            _("In function %s handling connection at state: %s\n"),
+            __FUNCTION__,
+            MHD_state_to_string (connection->state));
 #endif
-      switch (connection->state)
+  switch (connection->state)
+    {
+    case MHD_CONNECTION_INIT:
+    case MHD_CONNECTION_URL_RECEIVED:
+    case MHD_CONNECTION_HEADER_PART_RECEIVED:
+    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case MHD_CONNECTION_HEADERS_PROCESSED:
+    case MHD_CONNECTION_CONTINUE_SENDING:
+    case MHD_CONNECTION_CONTINUE_SENT:
+    case MHD_CONNECTION_BODY_RECEIVED:
+    case MHD_CONNECTION_FOOTER_PART_RECEIVED:
+      /* nothing to do but default action */
+      if (connection->read_closed)
         {
-        case MHD_CONNECTION_INIT:
-        case MHD_CONNECTION_URL_RECEIVED:
-        case MHD_CONNECTION_HEADER_PART_RECEIVED:
-        case MHD_CONNECTION_HEADERS_RECEIVED:
-        case MHD_CONNECTION_HEADERS_PROCESSED:
-        case MHD_CONNECTION_CONTINUE_SENDING:
-        case MHD_CONNECTION_CONTINUE_SENT:
-        case MHD_CONNECTION_BODY_RECEIVED:
-        case MHD_CONNECTION_FOOTER_PART_RECEIVED:
-          /* nothing to do but default action */
-          if (connection->read_closed)
-            {
-	      MHD_connection_close_ (connection,
-                                     MHD_REQUEST_TERMINATED_READ_ERROR);
-              continue;
-            }
-          break;
-        case MHD_CONNECTION_CLOSED:
-          return;
-#ifdef UPGRADE_SUPPORT
-        case MHD_CONNECTION_UPGRADE:
-          EXTRA_CHECK (0);
-          break;
-#endif /* UPGRADE_SUPPORT */
-        default:
-          /* shrink read buffer to how much is actually used */
-          MHD_pool_reallocate (connection->pool,
-                               connection->read_buffer,
-                               connection->read_buffer_size + 1,
-                               connection->read_buffer_offset);
-          break;
+          MHD_connection_close_ (connection,
+                                 MHD_REQUEST_TERMINATED_READ_ERROR);
         }
+      return;
+    case MHD_CONNECTION_CLOSED:
+      return;
+#ifdef UPGRADE_SUPPORT
+    case MHD_CONNECTION_UPGRADE:
+      EXTRA_CHECK (0);
+      return;
+#endif /* UPGRADE_SUPPORT */
+    default:
+      /* shrink read buffer to how much is actually used */
+      MHD_pool_reallocate (connection->pool,
+                           connection->read_buffer,
+                           connection->read_buffer_size + 1,
+                           connection->read_buffer_offset);
       break;
     }
   return;
