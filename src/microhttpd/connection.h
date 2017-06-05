@@ -77,10 +77,8 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection);
  * call this function to handle reads.
  *
  * @param connection connection to handle
- * @return always MHD_YES (we should continue to process the
- *         connection)
  */
-int
+void
 MHD_connection_handle_read (struct MHD_Connection *connection);
 
 

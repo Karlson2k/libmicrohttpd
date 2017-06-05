@@ -2656,24 +2656,22 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
  * determined that there is data to be read off a socket.
  *
  * @param connection connection to handle
- * @return always #MHD_YES (we should continue to process the
- *         connection)
  */
-int
+void
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
   ssize_t bytes_read;
 
   if ( (MHD_CONNECTION_CLOSED == connection->state) ||
        (connection->suspended) )
-    return MHD_YES;
+    return;
 #ifdef HTTPS_SUPPORT
   if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
     { /* HTTPS connection. */
       if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
         {
           if (!MHD_run_tls_handshake_ (connection))
-            return MHD_YES;
+            return;
         }
     }
 #endif /* HTTPS_SUPPORT */
@@ -2685,7 +2683,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     try_grow_read_buffer (connection);
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
-    return MHD_YES; /* No space for receiving data. */
+    return; /* No space for receiving data. */
   bytes_read = connection->recv_cls (connection,
                                      &connection->read_buffer
                                      [connection->read_buffer_offset],
@@ -2694,20 +2692,20 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (bytes_read < 0)
     {
       if (MHD_ERR_AGAIN_ == bytes_read)
-          return MHD_YES; /* No new data to process. */
+          return; /* No new data to process. */
       if (MHD_ERR_CONNRESET_ == bytes_read)
         {
            CONNECTION_CLOSE_ERROR (connection,
                                    (MHD_CONNECTION_INIT == connection->state) ?
                                      NULL :
                                      _("Socket is unexpectedly disconnected when reading request.\n"));
-           return MHD_NO;
+           return;
         }
       CONNECTION_CLOSE_ERROR (connection,
                               (MHD_CONNECTION_INIT == connection->state) ?
                                 NULL :
                                 _("Connection socket is closed due to unexpected error when reading request.\n"));
-      return MHD_YES;
+      return;
     }
 
   if (0 == bytes_read)
@@ -2715,7 +2713,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       connection->read_closed = true;
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_CLIENT_ABORT);
-      return MHD_YES;
+      return;
     }
   connection->read_buffer_offset += bytes_read;
   MHD_update_last_activity_ (connection);
@@ -2747,7 +2745,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
             }
           break;
         case MHD_CONNECTION_CLOSED:
-          return MHD_YES;
+          return;
 #ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
           EXTRA_CHECK (0);
@@ -2763,7 +2761,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
         }
       break;
     }
-  return MHD_YES;
+  return;
 }
 
 
