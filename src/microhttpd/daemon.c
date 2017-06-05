@@ -1052,7 +1052,7 @@ call_handlers (struct MHD_Connection *con,
       if ( (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info) &&
 	   write_ready)
         {
-          con->write_handler (con);
+          MHD_connection_handle_write (con);
           ret = MHD_connection_handle_idle (con);
           states_info_processed = true;
         }
@@ -1083,7 +1083,7 @@ call_handlers (struct MHD_Connection *con,
     {
       if (MHD_CONNECTION_HEADERS_SENDING == con->state)
         {
-          con->write_handler (con);
+          MHD_connection_handle_write (con);
           /* Always call 'MHD_connection_handle_idle()' after each read/write. */
           ret = MHD_connection_handle_idle (con);
         }
@@ -1093,7 +1093,7 @@ call_handlers (struct MHD_Connection *con,
       if ((MHD_CONNECTION_NORMAL_BODY_READY == con->state) ||
           (MHD_CONNECTION_CHUNKED_BODY_READY == con->state))
         {
-          con->write_handler (con);
+          MHD_connection_handle_write (con);
           ret = MHD_connection_handle_idle (con);
         }
     }

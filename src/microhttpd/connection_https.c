@@ -181,26 +181,6 @@ MHD_run_tls_handshake_ (struct MHD_Connection *connection)
 
 
 /**
- * This function was created to handle writes to sockets when it has
- * been determined that the socket can be written to. This function
- * will forward all write requests to the underlying daemon unless
- * the connection has been marked for closing.
- *
- * @return always #MHD_YES (we should continue to process the connection)
- */
-static int
-MHD_tls_connection_handle_write (struct MHD_Connection *connection)
-{
-  if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
-    {
-      if (!MHD_run_tls_handshake_(connection))
-        return MHD_YES;
-    }
-  return MHD_connection_handle_write (connection);
-}
-
-
-/**
  * Set connection callback function to be used through out
  * the processing of this secure connection.
  *
@@ -209,7 +189,6 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 void
 MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
-  connection->write_handler = &MHD_tls_connection_handle_write;
   connection->recv_cls = &recv_tls_adapter;
   connection->send_cls = &send_tls_adapter;
 }

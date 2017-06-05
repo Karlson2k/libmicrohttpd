@@ -931,12 +931,6 @@ struct MHD_Connection
   uint64_t current_chunk_offset;
 
   /**
-   * Handler used for processing write connection operations
-   * @sa #MHD_connection_handle_write, #MHD_tls_connection_handle_write
-   */
-  int (*write_handler) (struct MHD_Connection *connection);
-
-  /**
    * Function used for reading HTTP request stream.
    */
   ReceiveCallback recv_cls;

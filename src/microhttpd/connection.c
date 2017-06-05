@@ -2783,6 +2783,17 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   if (connection->suspended)
     return MHD_YES;
 
+#ifdef HTTPS_SUPPORT
+  if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
+    { /* HTTPS connection. */
+      if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
+        {
+          if (!MHD_run_tls_handshake_ (connection))
+            return MHD_YES;
+        }
+    }
+#endif /* HTTPS_SUPPORT */
+
   while (1)
     {
 #if DEBUG_STATES
@@ -3635,7 +3646,6 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 void
 MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
-  connection->write_handler = &MHD_connection_handle_write;
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;
 }
