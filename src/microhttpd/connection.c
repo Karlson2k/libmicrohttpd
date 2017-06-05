@@ -2852,7 +2852,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           if (connection->response_write_position <
               connection->response->total_size)
           {
-            int err;
             uint64_t data_write_offset;
 
             if (NULL != response->crc)
