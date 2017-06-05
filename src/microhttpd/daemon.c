@@ -2258,7 +2258,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   else
     {
 #ifdef HTTPS_SUPPORT
-      connection->state = MHD_TLS_CONNECTION_INIT;
+      connection->tls_state = MHD_TLS_CONN_INIT;
       MHD_set_https_callbacks (connection);
       gnutls_init (&connection->tls_session,
                    GNUTLS_SERVER);

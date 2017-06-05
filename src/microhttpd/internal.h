@@ -510,25 +510,32 @@ enum MHD_CONNECTION_STATE
    */
   MHD_CONNECTION_IN_CLEANUP = MHD_CONNECTION_CLOSED + 1,
 
-  /*
-   *  SSL/TLS connection states
-   */
-
-  /**
-   * The initial connection state for all secure connectoins
-   * Handshake messages will be processed in this state & while
-   * in the #MHD_TLS_HELLO_REQUEST state
-   */
-  MHD_TLS_CONNECTION_INIT = MHD_CONNECTION_IN_CLEANUP + 1,
-
 #ifdef UPGRADE_SUPPORT
   /**
    * Connection was "upgraded" and socket is now under the
    * control of the application.
    */
-  MHD_CONNECTION_UPGRADE = MHD_TLS_CONNECTION_INIT + 1,
+  MHD_CONNECTION_UPGRADE
 #endif /* UPGRADE_SUPPORT */
 
+};
+
+
+/**
+ * States of TLS transport layer.
+ */
+enum MHD_TLS_CONN_STATE
+{
+  MHD_TLS_CONN_NO_TLS = 0,  /**< Not a TLS connection (plain socket).   */
+  MHD_TLS_CONN_INIT,        /**< TLS connection is not established yet. */
+  MHD_TLS_CONN_HANDSHAKING, /**< TLS is in handshake process.           */
+  MHD_TLS_CONN_CONNECTED,   /**< TLS is established.                    */
+  MHD_TLS_CONN_WR_CLOSING,  /**< Closing WR side of TLS layer.          */
+  MHD_TLS_CONN_WR_CLOSED,   /**< WR side of TLS layer is closed.        */
+  MHD_TLS_CONN_TLS_CLOSING, /**< TLS session is terminating.            */
+  MHD_TLS_CONN_TLS_CLOSED,  /**< TLS session is terminated.             */
+  MHD_TLS_CONN_TLS_FAILED,  /**< TLS session failed.                    */
+  MHD_TLS_CONN_INVALID_STATE/**< Sentinel. Not a valid value.           */
 };
 
 /**
@@ -971,6 +978,11 @@ struct MHD_Connection
    * Memory location to return for protocol session info.
    */
   int cipher;
+
+  /**
+   * State of connection's TLS layer
+   */
+  enum MHD_TLS_CONN_STATE tls_state;
 
   /**
    * Could it be that we are ready to read due to TLS buffers

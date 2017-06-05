@@ -1648,6 +1648,25 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
   /* Do not update states of suspended connection */
   if (connection->suspended)
     return; /* States will be updated after resume. */
+#ifdef HTTPS_SUPPORT
+  if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
+    { /* HTTPS connection. */
+      switch (connection->tls_state)
+        {
+          case MHD_TLS_CONN_INIT:
+            connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+            return;
+          case MHD_TLS_CONN_HANDSHAKING:
+            if (0 == gnutls_record_get_direction (connection->tls_session))
+              connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+            else
+              connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+            return;
+          default:
+            break;
+        }
+    }
+#endif /* HTTPS_SUPPORT */
   while (1)
     {
 #if DEBUG_STATES
@@ -1658,14 +1677,6 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 #endif
       switch (connection->state)
         {
-#ifdef HTTPS_SUPPORT
-	case MHD_TLS_CONNECTION_INIT:
-	  if (0 == gnutls_record_get_direction (connection->tls_session))
-            connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-	  else
-            connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-	  break;
-#endif /* HTTPS_SUPPORT */
         case MHD_CONNECTION_INIT:
         case MHD_CONNECTION_URL_RECEIVED:
         case MHD_CONNECTION_HEADER_PART_RECEIVED:
@@ -2959,9 +2970,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_CLOSED:
           return MHD_YES;
-        case MHD_TLS_CONNECTION_INIT:
-          EXTRA_CHECK (0);
-          break;
         case MHD_CONNECTION_IN_CLEANUP:
           EXTRA_CHECK (0);
           break;
@@ -3072,6 +3080,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   connection->in_idle = true;
   while (! connection->suspended)
     {
+#ifdef HTTPS_SUPPORT
+      if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
+        { /* HTTPS connection. */
+          if ((MHD_TLS_CONN_INIT <= connection->tls_state) &&
+              (MHD_TLS_CONN_CONNECTED > connection->tls_state))
+            break;
+        }
+#endif /* HTTPS_SUPPORT */
 #if DEBUG_STATES
       MHD_DLOG (daemon,
                 _("In function %s handling connection at state: %s\n"),
@@ -3080,10 +3096,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
       switch (connection->state)
         {
-#ifdef HTTPS_SUPPORT
-        case MHD_TLS_CONNECTION_INIT:
-          break;
-#endif /* HTTPS_SUPPORT */
         case MHD_CONNECTION_INIT:
           line = get_next_header_line (connection,
                                        &line_len);

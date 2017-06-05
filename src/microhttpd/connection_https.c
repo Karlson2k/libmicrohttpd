@@ -147,23 +147,26 @@ run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
 
-  if (MHD_TLS_CONNECTION_INIT == connection->state)
+  if ((MHD_TLS_CONN_INIT == connection->tls_state) ||
+      (MHD_TLS_CONN_HANDSHAKING == connection->tls_state))
     {
       ret = gnutls_handshake (connection->tls_session);
       if (ret == GNUTLS_E_SUCCESS)
 	{
-	  /* set connection state to enable HTTP processing */
-	  connection->state = MHD_CONNECTION_INIT;
+	  /* set connection TLS state to enable HTTP processing */
+	  connection->tls_state = MHD_TLS_CONN_CONNECTED;
 	  MHD_update_last_activity_ (connection);
 	  return MHD_NO;
 	}
       if ( (GNUTLS_E_AGAIN == ret) ||
 	   (GNUTLS_E_INTERRUPTED == ret) )
 	{
+          connection->tls_state = MHD_TLS_CONN_HANDSHAKING;
 	  /* handshake not done */
 	  return MHD_YES;
 	}
       /* handshake failed */
+      connection->tls_state = MHD_TLS_CONN_TLS_FAILED;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
 		_("Error: received handshake message out of context\n"));
