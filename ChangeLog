@@ -1,3 +1,14 @@
+Mon Jun 05 23:34:00 MSK 2017
+	More internal refactoring:
+	merged MHD_tls_connection_handle_read/write() with non-TLS version,
+	reduced and unified number of layers for network processing (before
+	refactoring MHD_tls_connection_handle_read->MHD_connection_handle_read->
+	do_read->recv_tls_adapter->GnuTLS->recv_param_adapter - 5 MHD layers;
+	after refactoring MHD_connection_handle_read->recv_tls_adapter->GnuTLS -
+	2 MHD layers),
+	simplified and removed dead code from
+	MHD_connection_handle_read/write() without functional change. -EG
+
 Mon Jun 05 22:20:00 MSK 2017
 	Internal refactoring:
 	used TCP sockets directly with GnuTLS (performance improvement),
