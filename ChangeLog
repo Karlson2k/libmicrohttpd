@@ -1,3 +1,15 @@
+Mon Jun 05 22:20:00 MSK 2017
+	Internal refactoring:
+	used TCP sockets directly with GnuTLS (performance improvement),
+	moved some connection-related code from daemon.c to 
+	connection.c/connection_https.c,
+	removed hacks around sendfile() and implemented correct support of
+	sendfile(),
+	removed do_read() and do_write() to reduce number of layer around send()
+	and recv() and to improve readability and maintainability of code,
+	implemented separate tracking of TLS layer state, independent of HTTP
+	connection stage. -EG
+
 Sun Jun 04 15:02:00 MSK 2017
 	Improved thread-safety of MHD_add_connection() and
 	internal_add_connection(), minor optimisations. -EG

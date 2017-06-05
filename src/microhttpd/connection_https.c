@@ -138,11 +138,12 @@ send_tls_adapter (struct MHD_Connection *connection,
  * Give gnuTLS chance to work on the TLS handshake.
  *
  * @param connection connection to handshake on
- * @return #MHD_YES on error or if the handshake is progressing
- *         #MHD_NO if the handshake has completed successfully
- *         and we should start to read/write data
+ * @return true if the handshake has completed successfully
+ *         and we should start to read/write data,
+ *         false is handshake in progress or in case
+ *         of error
  */
-static int
+static bool
 run_tls_handshake (struct MHD_Connection *connection)
 {
   int ret;
@@ -156,14 +157,14 @@ run_tls_handshake (struct MHD_Connection *connection)
 	  /* set connection TLS state to enable HTTP processing */
 	  connection->tls_state = MHD_TLS_CONN_CONNECTED;
 	  MHD_update_last_activity_ (connection);
-	  return MHD_NO;
+	  return true;
 	}
       if ( (GNUTLS_E_AGAIN == ret) ||
 	   (GNUTLS_E_INTERRUPTED == ret) )
 	{
           connection->tls_state = MHD_TLS_CONN_HANDSHAKING;
 	  /* handshake not done */
-	  return MHD_YES;
+	  return false;
 	}
       /* handshake failed */
       connection->tls_state = MHD_TLS_CONN_TLS_FAILED;
@@ -173,9 +174,9 @@ run_tls_handshake (struct MHD_Connection *connection)
 #endif
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return MHD_YES;
+      return false;
     }
-  return MHD_NO;
+  return true;
 }
 
 
@@ -198,8 +199,11 @@ run_tls_handshake (struct MHD_Connection *connection)
 static int
 MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 {
-  if (MHD_YES == run_tls_handshake (connection))
-    return MHD_YES;
+  if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
+    {
+      if (!run_tls_handshake(connection))
+        return MHD_YES;
+    }
   return MHD_connection_handle_read (connection);
 }
 
@@ -215,8 +219,11 @@ MHD_tls_connection_handle_read (struct MHD_Connection *connection)
 static int
 MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
-  if (MHD_YES == run_tls_handshake (connection))
-    return MHD_YES;
+  if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
+    {
+      if (!run_tls_handshake(connection))
+        return MHD_YES;
+    }
   return MHD_connection_handle_write (connection);
 }
 
