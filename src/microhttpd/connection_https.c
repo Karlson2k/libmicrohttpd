@@ -257,13 +257,13 @@ MHD_tls_connection_shutdown (struct MHD_Connection *connection)
     {
       const int res =
           gnutls_bye(connection->tls_session, GNUTLS_SHUT_WR);
-      if (GNUTLS_E_SUCCESS == ret)
+      if (GNUTLS_E_SUCCESS == res)
         {
           connection->tls_state = MHD_TLS_CONN_WR_CLOSED;
           return true;
         }
-      if ((GNUTLS_E_AGAIN == ret) ||
-          (GNUTLS_E_INTERRUPTED == ret))
+      if ((GNUTLS_E_AGAIN == res) ||
+          (GNUTLS_E_INTERRUPTED == res))
         {
           connection->tls_state = MHD_TLS_CONN_WR_CLOSING;
           return true;
