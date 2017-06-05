@@ -2667,6 +2667,17 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if ( (MHD_CONNECTION_CLOSED == connection->state) ||
        (connection->suspended) )
     return MHD_YES;
+#ifdef HTTPS_SUPPORT
+  if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
+    { /* HTTPS connection. */
+      if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
+        {
+          if (!MHD_run_tls_handshake_ (connection))
+            return MHD_YES;
+        }
+    }
+#endif /* HTTPS_SUPPORT */
+
   /* make sure "read" has a reasonable number of bytes
      in buffer to use per system call (if possible) */
   if (connection->read_buffer_offset + connection->daemon->pool_increment >
@@ -3624,7 +3635,6 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 void
 MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
-  connection->read_handler = &MHD_connection_handle_read;
   connection->write_handler = &MHD_connection_handle_write;
   connection->recv_cls = &recv_param_adapter;
   connection->send_cls = &send_param_adapter;

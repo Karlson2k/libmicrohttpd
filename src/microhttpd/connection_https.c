@@ -143,8 +143,8 @@ send_tls_adapter (struct MHD_Connection *connection,
  *         false is handshake in progress or in case
  *         of error
  */
-static bool
-run_tls_handshake (struct MHD_Connection *connection)
+bool
+MHD_run_tls_handshake_ (struct MHD_Connection *connection)
 {
   int ret;
 
@@ -181,34 +181,6 @@ run_tls_handshake (struct MHD_Connection *connection)
 
 
 /**
- * This function handles a particular SSL/TLS connection when
- * it has been determined that there is data to be read off a
- * socket. Message processing is done by message type which is
- * determined by peeking into the first message type byte of the
- * stream.
- *
- * Error message handling: all fatal level messages cause the
- * connection to be terminated.
- *
- * Application data is forwarded to the underlying daemon for
- * processing.
- *
- * @param connection the source connection
- * @return always #MHD_YES (we should continue to process the connection)
- */
-static int
-MHD_tls_connection_handle_read (struct MHD_Connection *connection)
-{
-  if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
-    {
-      if (!run_tls_handshake(connection))
-        return MHD_YES;
-    }
-  return MHD_connection_handle_read (connection);
-}
-
-
-/**
  * This function was created to handle writes to sockets when it has
  * been determined that the socket can be written to. This function
  * will forward all write requests to the underlying daemon unless
@@ -221,7 +193,7 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 {
   if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
     {
-      if (!run_tls_handshake(connection))
+      if (!MHD_run_tls_handshake_(connection))
         return MHD_YES;
     }
   return MHD_connection_handle_write (connection);
@@ -237,7 +209,6 @@ MHD_tls_connection_handle_write (struct MHD_Connection *connection)
 void
 MHD_set_https_callbacks (struct MHD_Connection *connection)
 {
-  connection->read_handler = &MHD_tls_connection_handle_read;
   connection->write_handler = &MHD_tls_connection_handle_write;
   connection->recv_cls = &recv_tls_adapter;
   connection->send_cls = &send_tls_adapter;

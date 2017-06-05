@@ -1043,7 +1043,7 @@ call_handlers (struct MHD_Connection *con,
       if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
 	   read_ready)
         {
-          con->read_handler (con);
+          MHD_connection_handle_read (con);
           ret = MHD_connection_handle_idle (con);
           states_info_processed = true;
         }
