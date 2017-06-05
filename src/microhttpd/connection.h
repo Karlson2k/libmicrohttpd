@@ -89,10 +89,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection);
  * call this function
  *
  * @param connection connection to handle
- * @return always MHD_YES (we should continue to process the
- *         connection)
  */
-int
+void
 MHD_connection_handle_write (struct MHD_Connection *connection);
 
 

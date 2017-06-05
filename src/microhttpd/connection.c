@@ -2770,16 +2770,14 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
  * been determined that the socket can be written to.
  *
  * @param connection connection to handle
- * @return always #MHD_YES (we should continue to process the
- *         connection)
  */
-int
+void
 MHD_connection_handle_write (struct MHD_Connection *connection)
 {
   struct MHD_Response *response;
   ssize_t ret;
   if (connection->suspended)
-    return MHD_YES;
+    return;
 
 #ifdef HTTPS_SUPPORT
   if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
@@ -2787,7 +2785,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       if (MHD_TLS_CONN_CONNECTED > connection->tls_state)
         {
           if (!MHD_run_tls_handshake_ (connection))
-            return MHD_YES;
+            return;
         }
     }
 #endif /* HTTPS_SUPPORT */
@@ -2827,7 +2825,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #endif
 	      CONNECTION_CLOSE_ERROR (connection,
                                       NULL);
-              return MHD_YES;
+              return;
             }
 #if DEBUG_SEND_DATA
           fprintf (stderr,
@@ -2856,7 +2854,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response headers.\n"));
-              return MHD_YES;
+              return;
             }
           connection->write_buffer_send_offset += ret;
           MHD_update_last_activity_ (connection);
@@ -2915,7 +2913,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
             if (ret < 0)
               {
                 if (MHD_ERR_AGAIN_ == ret)
-                  return MHD_YES;
+                  return;
 #ifdef HAVE_MESSAGES
                 MHD_DLOG (connection->daemon,
                           _("Failed to send data in request for `%s'.\n"),
@@ -2923,7 +2921,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #endif
                 CONNECTION_CLOSE_ERROR (connection,
                                         NULL);
-                return MHD_YES;
+                return;
               }
             connection->response_write_position += ret;
             MHD_update_last_activity_ (connection);
@@ -2947,7 +2945,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response body.\n"));
-              return MHD_YES;
+              return;
             }
           connection->write_buffer_send_offset += ret;
           MHD_update_last_activity_ (connection);
@@ -2975,7 +2973,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                 break;
               CONNECTION_CLOSE_ERROR (connection,
                                       _("Connection was closed while sending response body.\n"));
-              return MHD_YES;
+              return;
             }
           connection->write_buffer_send_offset += ret;
           MHD_update_last_activity_ (connection);
@@ -2988,7 +2986,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
           break;
         case MHD_CONNECTION_CLOSED:
-          return MHD_YES;
+          return;
         case MHD_CONNECTION_IN_CLEANUP:
           EXTRA_CHECK (0);
           break;
@@ -3001,11 +2999,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           EXTRA_CHECK (0);
 	  CONNECTION_CLOSE_ERROR (connection,
                                   _("Internal error\n"));
-          return MHD_YES;
+          return;
         }
       break;
     }
-  return MHD_YES;
+  return;
 }
 
 
