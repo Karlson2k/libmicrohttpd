@@ -714,7 +714,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                   SHUT_RDWR);
       }
 #endif /* HTTPS_SUPPORT */
-    EXTRA_CHECK (MHD_CONNECTION_UPGRADE == connection->state);
+    mhd_assert (MHD_CONNECTION_UPGRADE == connection->state);
     urh->was_closed = true;
     /* As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
@@ -885,7 +885,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
            to the event set of the daemon's `epoll_upgrade_fd` */
         struct epoll_event event;
 
-        EXTRA_CHECK (-1 != daemon->epoll_upgrade_fd);
+        mhd_assert (-1 != daemon->epoll_upgrade_fd);
         /* First, add network socket */
         event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
         event.data.ptr = &urh->app;

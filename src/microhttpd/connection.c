@@ -234,7 +234,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #else  /* HAVE_SENDFILE64 */
   off64_t offset;
 #endif /* HAVE_SENDFILE64 */
-  EXTRA_CHECK (MHD_resp_sender_sendfile == connection->resp_sender);
+  mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
 
   offsetu64 = connection->response_write_position + connection->response->fd_off;
   left = connection->response->total_size - connection->response_write_position;
@@ -1065,8 +1065,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
                         sizeof (cbuf),
                         "%X\r\n",
                         (unsigned int) ret);
-  EXTRA_CHECK(cblen > 0);
-  EXTRA_CHECK(cblen < sizeof(cbuf));
+  mhd_assert(cblen > 0);
+  mhd_assert(cblen < sizeof(cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen],
           cbuf,
           cblen);
@@ -1264,7 +1264,7 @@ build_header_response (struct MHD_Connection *connection)
   int must_add_keep_alive;
   int must_add_content_length;
 
-  EXTRA_CHECK (NULL != connection->version);
+  mhd_assert (NULL != connection->version);
   if (0 == connection->version[0])
     {
       data = MHD_pool_allocate (connection->pool,
@@ -1452,7 +1452,7 @@ build_header_response (struct MHD_Connection *connection)
       response_has_keepalive = false;
       break;
     default:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
     }
 
   if (MHD_CONN_MUST_CLOSE != connection->keepalive)
@@ -1471,8 +1471,8 @@ build_header_response (struct MHD_Connection *connection)
     size += MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
   if (must_add_content_length)
     size += content_length_len;
-  EXTRA_CHECK (! (must_add_close && must_add_keep_alive) );
-  EXTRA_CHECK (! (must_add_chunked_encoding && must_add_content_length) );
+  mhd_assert (! (must_add_close && must_add_keep_alive) );
+  mhd_assert (! (must_add_chunked_encoding && must_add_content_length) );
 
   for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
     {
@@ -1617,7 +1617,7 @@ transmit_error_response (struct MHD_Connection *connection,
   MHD_queue_response (connection,
                       status_code,
                       response);
-  EXTRA_CHECK (NULL != connection->response);
+  mhd_assert (NULL != connection->response);
   MHD_destroy_response (response);
   /* Do not reuse this connection. */
   connection->keepalive = MHD_CONN_MUST_CLOSE;
@@ -1698,10 +1698,10 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 	    connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
           break;
         case MHD_CONNECTION_HEADERS_RECEIVED:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         case MHD_CONNECTION_HEADERS_PROCESSED:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         case MHD_CONNECTION_CONTINUE_SENDING:
           connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
@@ -1758,7 +1758,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
           break;
         case MHD_CONNECTION_HEADERS_SENT:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         case MHD_CONNECTION_NORMAL_BODY_READY:
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
@@ -1773,27 +1773,27 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
           break;
         case MHD_CONNECTION_BODY_SENT:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         case MHD_CONNECTION_FOOTERS_SENDING:
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
           break;
         case MHD_CONNECTION_FOOTERS_SENT:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         case MHD_CONNECTION_CLOSED:
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
           return;       /* do nothing, not even reading */
         case MHD_CONNECTION_IN_CLEANUP:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
 #ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
 #endif /* UPGRADE_SUPPORT */
         default:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
         }
       break;
     }
@@ -2505,7 +2505,7 @@ process_broken_line (struct MHD_Connection *connection,
       connection->last = last;
       return MHD_YES;           /* possibly more than 2 lines... */
     }
-  EXTRA_CHECK ( (NULL != last) &&
+  mhd_assert ( (NULL != last) &&
                 (NULL != connection->colon) );
   if ((MHD_NO == connection_add_header (connection,
                                         last,
@@ -2565,7 +2565,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
                 _("Received HTTP 1.1 request without `Host' header.\n"));
 #endif
-      EXTRA_CHECK (NULL == connection->response);
+      mhd_assert (NULL == connection->response);
       response =
         MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (REQUEST_LACKS_HOST),
 					 REQUEST_LACKS_HOST,
@@ -2745,7 +2745,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       return;
 #ifdef UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
 #endif /* UPGRADE_SUPPORT */
     default:
@@ -2797,7 +2797,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     case MHD_CONNECTION_URL_RECEIVED:
     case MHD_CONNECTION_HEADER_PART_RECEIVED:
     case MHD_CONNECTION_HEADERS_RECEIVED:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
     case MHD_CONNECTION_HEADERS_PROCESSED:
       return;
@@ -2833,7 +2833,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     case MHD_CONNECTION_BODY_RECEIVED:
     case MHD_CONNECTION_FOOTER_PART_RECEIVED:
     case MHD_CONNECTION_FOOTERS_RECEIVED:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
       ret = connection->send_cls (connection,
@@ -2924,7 +2924,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_FOOTERS_SENT; /* have no footers */
       return;
     case MHD_CONNECTION_NORMAL_BODY_UNREADY:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
       ret = connection->send_cls (connection,
@@ -2952,7 +2952,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       return;
     case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
     case MHD_CONNECTION_BODY_SENT:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
     case MHD_CONNECTION_FOOTERS_SENDING:
       ret = connection->send_cls (connection,
@@ -2976,20 +2976,20 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                         MHD_CONNECTION_FOOTERS_SENT);
       return;
     case MHD_CONNECTION_FOOTERS_SENT:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
     case MHD_CONNECTION_CLOSED:
       return;
     case MHD_CONNECTION_IN_CLEANUP:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
 #ifdef UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       return;
 #endif /* UPGRADE_SUPPORT */
     default:
-      EXTRA_CHECK (0);
+      mhd_assert (0);
       CONNECTION_CLOSE_ERROR (connection,
                               _("Internal error\n"));
       break;
@@ -3544,7 +3544,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           return MHD_YES; /* keep open */
 #endif /* UPGRADE_SUPPORT */
        default:
-          EXTRA_CHECK (0);
+          mhd_assert (0);
           break;
         }
       break;

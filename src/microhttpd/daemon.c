@@ -2081,7 +2081,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   int eno = 0;
 
   /* Direct add to master daemon could happen only with "external" add mode. */
-  EXTRA_CHECK ((NULL == daemon->worker_pool) || (external_add));
+  mhd_assert ((NULL == daemon->worker_pool) || (external_add));
   if ((external_add) && (NULL != daemon->worker_pool))
     {
       /* have a pool, try to find a pool with capacity; we use the
@@ -2475,7 +2475,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
   DLL_remove (daemon->connections_head,
               daemon->connections_tail,
               connection);
-  EXTRA_CHECK (! connection->suspended);
+  mhd_assert (! connection->suspended);
   DLL_insert (daemon->suspended_connections_head,
               daemon->suspended_connections_tail,
               connection);
@@ -2612,7 +2612,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   if (daemon->resuming)
     prev = daemon->suspended_connections_tail;
 
-  EXTRA_CHECK(NULL != next);
+  mhd_assert(NULL != prev);
   daemon->resuming = false;
 
   while (NULL != (pos = prev))
@@ -2632,7 +2632,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
          )
         continue;
       ret = MHD_YES;
-      EXTRA_CHECK (pos->suspended);
+      mhd_assert (pos->suspended);
       DLL_remove (daemon->suspended_connections_head,
                   daemon->suspended_connections_tail,
                   pos);
@@ -4266,8 +4266,8 @@ close_connection (struct MHD_Connection *pos)
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
-  EXTRA_CHECK (! pos->suspended);
-  EXTRA_CHECK (! pos->resuming);
+  mhd_assert (! pos->suspended);
+  mhd_assert (! pos->resuming);
   if (pos->connection_timeout == pos->daemon->connection_timeout)
     XDLL_remove (daemon->normal_timeout_head,
 		 daemon->normal_timeout_tail,

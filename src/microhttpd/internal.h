@@ -30,6 +30,8 @@
 #include "mhd_options.h"
 #include "platform.h"
 #include "microhttpd.h"
+#include "mhd_assert.h"
+
 #ifdef HTTPS_SUPPORT
 #include <gnutls/gnutls.h>
 #if GNUTLS_VERSION_MAJOR >= 3
@@ -1697,13 +1699,6 @@ struct MHD_Daemon
 };
 
 
-#if EXTRA_CHECKS
-#define EXTRA_CHECK(a) do { if (!(a)) abort(); } while (0)
-#else
-#define EXTRA_CHECK(a)
-#endif
-
-
 /**
  * Insert an element at the head of a DLL. Assumes that head, tail and
  * element are structs with prev and next fields.
@@ -1713,8 +1708,8 @@ struct MHD_Daemon
  * @param element element to insert
  */
 #define DLL_insert(head,tail,element) do { \
-  EXTRA_CHECK (NULL == (element)->next); \
-  EXTRA_CHECK (NULL == (element)->prev); \
+  mhd_assert (NULL == (element)->next); \
+  mhd_assert (NULL == (element)->prev); \
   (element)->next = (head); \
   (element)->prev = NULL; \
   if ((tail) == NULL) \
@@ -1734,8 +1729,8 @@ struct MHD_Daemon
  * @param element element to remove
  */
 #define DLL_remove(head,tail,element) do { \
-  EXTRA_CHECK ( (NULL != (element)->next) || ((element) == (tail)));  \
-  EXTRA_CHECK ( (NULL != (element)->prev) || ((element) == (head)));  \
+  mhd_assert ( (NULL != (element)->next) || ((element) == (tail)));  \
+  mhd_assert ( (NULL != (element)->prev) || ((element) == (head)));  \
   if ((element)->prev == NULL) \
     (head) = (element)->next;  \
   else \
@@ -1758,8 +1753,8 @@ struct MHD_Daemon
  * @param element element to insert
  */
 #define XDLL_insert(head,tail,element) do { \
-  EXTRA_CHECK (NULL == (element)->nextX); \
-  EXTRA_CHECK (NULL == (element)->prevX); \
+  mhd_assert (NULL == (element)->nextX); \
+  mhd_assert (NULL == (element)->prevX); \
   (element)->nextX = (head); \
   (element)->prevX = NULL; \
   if (NULL == (tail)) \
@@ -1779,8 +1774,8 @@ struct MHD_Daemon
  * @param element element to remove
  */
 #define XDLL_remove(head,tail,element) do { \
-  EXTRA_CHECK ( (NULL != (element)->nextX) || ((element) == (tail)));  \
-  EXTRA_CHECK ( (NULL != (element)->prevX) || ((element) == (head)));  \
+  mhd_assert ( (NULL != (element)->nextX) || ((element) == (tail)));  \
+  mhd_assert ( (NULL != (element)->prevX) || ((element) == (head)));  \
   if (NULL == (element)->prevX) \
     (head) = (element)->nextX;  \
   else \
