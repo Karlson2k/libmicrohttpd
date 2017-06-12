@@ -1417,8 +1417,6 @@ AC_LINK_IFELSE(
 
 AM_CONDITIONAL([HAVE_FORK_WAITPID], [test "x$mhd_have_fork_waitpid" = "xyes"])
 
-MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
-
 # gcov compilation
 AC_MSG_CHECKING(whether to compile with support for code coverage analysis)
 AC_ARG_ENABLE([coverage],
@@ -1431,6 +1429,54 @@ AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
 AC_SUBST([CPU_COUNT])
+
+AC_MSG_CHECKING([[whether to enable debug asserts]])
+AC_ARG_ENABLE([[asserts]],
+              AS_HELP_STRING([[--enable-asserts]],
+                             [enable test build with debug asserts]),
+              [], [[enable_asserts='no']])
+AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
+AC_MSG_RESULT([[$enable_asserts]])
+
+AS_VAR_IF([[enable_asserts]], [["yes"]],
+  [
+   AC_DEFINE([[_DEBUG]], [[1]], [Define to use debug asserts.])
+   [mhd_assert_test_prg="#include <assert.h>
+   int pos_val(void) {return 5;}
+   int neg_val(void) {return -5;}
+   int main(void)
+   { int pos_var = pos_val(), neg_var = neg_val();
+     assert(neg_var > pos_var); /* Must trigger assert. */
+     (void)pos_var; (void)neg_var;
+     return 0; }
+   "]
+   AC_CACHE_CHECK([[whether system assert() is available]], [mhd_cv_sys_assert_avail],
+     [
+      AC_LINK_IFELSE([AC_LANG_SOURCE([[$mhd_assert_test_prg]])],
+                     [[mhd_cv_sys_assert_avail='yes']],
+                     [[mhd_cv_sys_assert_avail='no']])
+     ]
+   )
+   AS_VAR_IF([[mhd_cv_sys_assert_avail]], [["yes"]],
+     [
+      AC_CACHE_CHECK([[whether system assert() is usable]], [mhd_cv_sys_assert_use],
+        [
+         AC_RUN_IFELSE([AC_LANG_SOURCE([[$mhd_assert_test_prg]])],
+                       [[mhd_cv_sys_assert_use='no']],
+                       [[mhd_cv_sys_assert_use='yes']],
+                       [[mhd_cv_sys_assert_use='assuming yes']])
+        ]
+      )
+      AS_VAR_IF([[mhd_cv_sys_assert_use]], [["no"]], [],
+        [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
+     ]
+   )
+   AS_UNSET([mhd_assert_test_prg])
+  ],
+  [AC_DEFINE([[NDEBUG]], [[1]], [Define to disable usage of debug asserts.])]
+)
+
+MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 
 AC_SUBST(MHD_LIB_CPPFLAGS)
 AC_SUBST(MHD_LIB_CFLAGS)
@@ -1485,6 +1531,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Shutdown of listening socket
   trigger select:    ${mhd_cv_host_shtdwn_trgr_select}
+  Use debug asserts: ${enable_asserts}
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
