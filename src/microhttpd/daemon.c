@@ -5280,6 +5280,11 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
+#ifndef NDEBUG
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (daemon,  _("Using debug build of libmicrohttpd.\n") );
+#endif /* HAVE_MESSAGES */
+#endif /* ! NDEBUG */
   if ( (0 != (*pflags & MHD_USE_ITC)) &&
        (0 == daemon->worker_pool_size) )
     {
