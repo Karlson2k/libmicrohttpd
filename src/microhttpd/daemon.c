@@ -5381,16 +5381,6 @@ MHD_start_daemon_va (unsigned int flags,
       goto free_and_fail;
     }
 
-#ifdef __SYMBIAN32__
-  if (0 != (*pflags & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION)))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-		_("Threaded operations are not supported on Symbian.\n"));
-#endif
-      goto free_and_fail;
-    }
-#endif
   if ( (MHD_INVALID_SOCKET == daemon->listen_fd) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {

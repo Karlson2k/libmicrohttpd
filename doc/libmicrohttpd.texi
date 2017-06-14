@@ -448,8 +448,7 @@ have MHD processed network connections and data.
 Starting the daemon may also fail if a particular option is not
 implemented or not supported on the target platform (i.e. no support
 for @acronym{TLS}, threads or IPv6). TLS support generally depends on
-options given during MHD compilation. Threaded operations (including
-@code{MHD_USE_INTERNAL_POLLING_THREAD}) are not supported on Symbian.
+options given during MHD compilation.
 
 @table @code
 @item MHD_NO_FLAG
