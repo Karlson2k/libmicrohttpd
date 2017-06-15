@@ -5516,11 +5516,17 @@ MHD_start_daemon_va (unsigned int flags,
 #if HAVE_INET6
 	  if (0 != (*pflags & MHD_USE_IPv6))
 	    {
-	      memset (&servaddr6,
+#ifdef IN6ADDR_ANY_INIT
+	      static const struct in6_addr static_in6any = IN6ADDR_ANY_INIT;
+#endif
+              memset (&servaddr6,
                       0,
                       sizeof (struct sockaddr_in6));
 	      servaddr6.sin6_family = AF_INET6;
 	      servaddr6.sin6_port = htons (port);
+#ifdef IN6ADDR_ANY_INIT
+	      servaddr6.sin6_addr = static_in6any;
+#endif
 #if HAVE_SOCKADDR_IN_SIN_LEN
 	      servaddr6.sin6_len = sizeof (struct sockaddr_in6);
 #endif
@@ -5534,6 +5540,8 @@ MHD_start_daemon_va (unsigned int flags,
                       sizeof (struct sockaddr_in));
 	      servaddr4.sin_family = AF_INET;
 	      servaddr4.sin_port = htons (port);
+	      if (0 != INADDR_ANY)
+	        servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
 #if HAVE_SOCKADDR_IN_SIN_LEN
 	      servaddr4.sin_len = sizeof (struct sockaddr_in);
 #endif
