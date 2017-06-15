@@ -43,8 +43,9 @@ testStartError ()
   d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0, NULL, NULL, NULL, NULL);
   if (NULL != d)
   {
+    MHD_stop_daemon ();
     fprintf (stderr,
-             "Succeeded at binding to port 0?\n");
+             "Succeeded to start without MHD_AccessHandlerCallback?\n");
     return 1;
   }
   return 0;
