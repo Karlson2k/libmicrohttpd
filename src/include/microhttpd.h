@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095500
+#define MHD_VERSION 0x00095501
 
 /**
  * MHD-internal return code for "YES".
@@ -1845,7 +1845,15 @@ enum MHD_DaemonInfoType
    * Note: flags may differ from original 'flags' specified for
    * daemon, especially if #MHD_USE_AUTO was set.
    */
-  MHD_DAEMON_INFO_FLAGS
+  MHD_DAEMON_INFO_FLAGS,
+
+  /**
+   * Request the port number of daemon's listen socket.
+   * No extra arguments should be passed.
+   * Note: if port '0' was specified for #MHD_start_daemon(), returned
+   * value will be real port number.
+   */
+  MHD_DAEMON_INFO_BIND_PORT
 };
 
 
@@ -3248,6 +3256,11 @@ union MHD_DaemonInfo
   MHD_socket listen_fd;
 
   /**
+   * Bind port number, returned for #MHD_DAEMON_INFO_BIND_PORT.
+   */
+  uint16_t port;
+
+  /**
    * epoll FD, returned for #MHD_DAEMON_INFO_EPOLL_FD.
    */
   int epoll_fd;
@@ -3437,6 +3450,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether MHD support automatic detection of bind port number.
+   * @sa #MHD_DAEMON_INFO_BIND_PORT
    */
   MHD_FEATURE_AUTODETECT_BIND_PORT = 19
 };
