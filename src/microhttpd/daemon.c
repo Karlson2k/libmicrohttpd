@@ -4346,7 +4346,11 @@ unescape_wrapper (void *cls,
  * #MHD_start_daemon_va.
  *
  * @param flags combination of `enum MHD_FLAG` values
- * @param port port to bind to
+ * @param port port to bind to (in host byte order),
+ *        use '0' to bind to random free port,
+ *        ignored if MHD_OPTION_SOCK_ADDR or
+ *        MHD_OPTION_LISTEN_SOCKET is provided
+ *        or MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
@@ -5082,7 +5086,11 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
  * Start a webserver on the given port.
  *
  * @param flags combination of `enum MHD_FLAG` values
- * @param port port to bind to (in host byte order)
+ * @param port port to bind to (in host byte order),
+ *        use '0' to bind to random free port,
+ *        ignored if MHD_OPTION_SOCK_ADDR or
+ *        MHD_OPTION_LISTEN_SOCKET is provided
+ *        or MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
@@ -5619,6 +5627,80 @@ MHD_start_daemon_va (unsigned int flags,
   else
     {
       listen_fd = daemon->listen_fd;
+    }
+
+  if ( (0 == daemon->port) &&
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
+    { /* Get port number. */
+      struct sockaddr *realaddr;
+#ifdef MHD_POSIX_SOCKETS
+      socklen_t alloc_len;
+#endif /* MHD_POSIX_SOCKETS */
+#ifdef HAVE_INET6
+      if (0 != (*pflags & MHD_USE_IPv6))
+        {
+          memset (&servaddr6,
+                  0,
+                  sizeof (struct sockaddr_in6));
+          servaddr6.sin6_family = AF_INET6;
+#ifdef HAVE_SOCKADDR_IN_SIN_LEN
+          servaddr6.sin6_len = sizeof (struct sockaddr_in6);
+#endif /* HAVE_SOCKADDR_IN_SIN_LEN */
+          addrlen = (socklen_t) sizeof (struct sockaddr_in6);
+          realaddr = (struct sockaddr *) &servaddr6;
+        }
+      else
+#else  /* ! HAVE_INET6 */
+      if (1)
+#endif /* ! HAVE_INET6 */
+        {
+          memset (&servaddr4,
+                  0,
+                  sizeof (struct sockaddr_in));
+          servaddr4.sin_family = AF_INET;
+#ifdef HAVE_SOCKADDR_IN_SIN_LEN
+          servaddr4.sin_len = sizeof (struct sockaddr_in);
+#endif /* HAVE_SOCKADDR_IN_SIN_LEN */
+          addrlen = (socklen_t) sizeof (struct sockaddr_in);
+          realaddr = (struct sockaddr *) &servaddr4;
+        }
+#ifdef MHD_POSIX_SOCKETS
+      alloc_len = addrlen;
+#endif /* MHD_POSIX_SOCKETS */
+      if (0 != getsockname (listen_fd, realaddr, &addrlen))
+        {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to get listen port number: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif /* HAVE_MESSAGES */
+        }
+#ifdef MHD_POSIX_SOCKETS
+      else if (alloc_len < addrlen)
+        {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to get listen port number due to small buffer\n"));
+#endif /* HAVE_MESSAGES */
+        }
+#endif /* MHD_POSIX_SOCKETS */
+      else
+        {
+#ifdef HAVE_INET6
+          if (0 != (*pflags & MHD_USE_IPv6))
+            {
+              mhd_assert (AF_INET6 == servaddr6.sin6_family);
+              daemon->port = ntohs(servaddr6.sin6_port);
+            }
+          else
+#else  /* ! HAVE_INET6 */
+          if (1)
+#endif /* ! HAVE_INET6 */
+            {
+              mhd_assert (AF_INET == servaddr4.sin_family);
+              daemon->port = ntohs(servaddr4.sin_port);
+            }
+        }
     }
 
   if ( (MHD_INVALID_SOCKET != listen_fd) &&
@@ -6421,6 +6503,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #endif
     case MHD_FEATURE_RESPONSES_SHARED_FD:
 #if defined(HAVE_PREAD64) || defined(HAVE_PREAD) || defined(_WIN32)
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+    case MHD_FEATURE_AUTODETECT_BIND_PORT:
+#ifdef MHD_USE_GETSOCKNAME
       return MHD_YES;
 #else
       return MHD_NO;

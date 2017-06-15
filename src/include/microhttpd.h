@@ -2095,7 +2095,11 @@ typedef int
  * Start a webserver on the given port.
  *
  * @param flags combination of `enum MHD_FLAG` values
- * @param port port to bind to (in host byte order)
+ * @param port port to bind to (in host byte order),
+ *        use '0' to bind to random free port,
+ *        ignored if MHD_OPTION_SOCK_ADDR or
+ *        MHD_OPTION_LISTEN_SOCKET is provided
+ *        or MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
@@ -2121,7 +2125,11 @@ MHD_start_daemon_va (unsigned int flags,
  * #MHD_start_daemon_va.
  *
  * @param flags combination of `enum MHD_FLAG` values
- * @param port port to bind to
+ * @param port port to bind to (in host byte order),
+ *        use '0' to bind to random free port,
+ *        ignored if MHD_OPTION_SOCK_ADDR or
+ *        MHD_OPTION_LISTEN_SOCKET is provided
+ *        or MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
@@ -3425,7 +3433,12 @@ enum MHD_FEATURE
    * It's always safe to use same file FD in multiple responses if MHD
    * is run in any single thread mode.
    */
-  MHD_FEATURE_RESPONSES_SHARED_FD = 18
+  MHD_FEATURE_RESPONSES_SHARED_FD = 18,
+
+  /**
+   * Get whether MHD support automatic detection of bind port number.
+   */
+  MHD_FEATURE_AUTODETECT_BIND_PORT = 19
 };
 
 

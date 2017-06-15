@@ -756,6 +756,119 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
 #endif
    ])
 
+AC_CHECK_DECLS([getsockname],
+  [
+   AC_CHECK_FUNCS([getsockname], 
+     [
+      AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhc_cv_getsockname_usable]],
+        [
+         AC_RUN_IFELSE(
+           [
+            AC_LANG_SOURCE(
+             [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
+
+static void zr_mem(void *ptr, socklen_t size)
+{ char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
+
+int main(void)
+{
+  const socklen_t c_addr_size = (socklen_t)sizeof(struct sockaddr_in);
+  struct sockaddr_in sa;
+  socklen_t addr_size;
+  int ret = 1;
+#if !defined(_WIN32) || defined(__CYGWIN__)
+  int sckt;
+  const int invld_sckt = -1;
+#else
+  SOCKET sckt;
+  const SOCKET invld_sckt = INVALID_SOCKET;
+  WSADATA wsa_data;
+
+  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
+    return 20;
+#endif
+
+  sckt = socket (PF_INET, SOCK_STREAM, 0);
+  if (invld_sckt != sckt)
+  {
+    zr_mem(&sa, c_addr_size);
+    sa.sin_family = AF_INET;
+#if HAVE_SOCKADDR_IN_SIN_LEN
+    sa.sin_len = c_addr_size;
+#endif
+    if (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
+    {
+      if (0 == listen (sckt, 1))
+      {
+        addr_size = c_addr_size;
+        if (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
+        {
+          if (c_addr_size >= addr_size)
+          {
+            if (0 != ntohs(sa.sin_port))
+            { ret = 0;
+            } else ret = 7;
+          } else ret = 6;
+        } else ret = 5;
+      } else ret = 4;
+    } else ret = 3;
+  } else ret = 2;
+#if !defined(_WIN32) || defined(__CYGWIN__)
+  close (sckt);
+#else
+  closesocket (sckt);
+  WSACleanup();
+#endif
+  return ret;
+}
+             ]]
+            )
+           ],
+           [[mhc_cv_getsockname_usable='yes']],
+           [[mhc_cv_getsockname_usable='no']],
+           [[mhc_cv_getsockname_usable='assuming yes']]
+         )
+        ]
+      )
+      AS_VAR_IF([[mhc_cv_getsockname_usable]], [["no"]], [:],
+        [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])])
+     ]
+   )
+  ], [],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+  ]]
+)
 
 # Check for inter-thread signaling type
 AC_ARG_ENABLE([[itc]],
