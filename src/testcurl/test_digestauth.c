@@ -140,6 +140,13 @@ testDigestAuth ()
   size_t off = 0;
   char buf[2048];
   char rnd[8];
+  int port;
+  char url[128];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1165;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -190,14 +197,23 @@ testDigestAuth ()
   }
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1337, NULL, NULL, &ahc_echo, PAGE,
+                        port, NULL, NULL, &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
 			MHD_OPTION_NONCE_NC_SIZE, 300,
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(url, "http://127.0.0.1:%d/bar%%20 foo?a=bü%%20", port);
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1337/bar%20 foo?a=bü%20");
+  curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);

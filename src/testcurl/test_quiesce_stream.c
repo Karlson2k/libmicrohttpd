@@ -22,6 +22,7 @@
  * @brief  Testcase for libmicrohttpd quiescing
  * @author Markus Doppelbauer
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "mhd_options.h"
 #include <stdlib.h>
@@ -166,8 +167,16 @@ http_AccessHandlerCallback (void *cls,
 
 
 int
-main()
+main(void)
 {
+  int port;
+  char command_line[1024];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1470;
+
   /* Panic callback */
   MHD_set_panic_func (&http_PanicCallback,
                       NULL);
@@ -181,7 +190,7 @@ main()
 
   /* Create daemon */
   struct MHD_Daemon *daemon = MHD_start_daemon (daemon_flags,
-                                                8000,
+                                                port,
                                                 NULL,
                                                 NULL,
                                                 &http_AccessHandlerCallback,
@@ -189,7 +198,17 @@ main()
                                                 MHD_OPTION_END);
   if (NULL == daemon)
     return 1;
-  if (0 != system ("curl -s http://127.0.0.1:8000"))
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (daemon, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (daemon); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(command_line, "curl -s http://127.0.0.1:%d", port);
+
+  if (0 != system (command_line))
     {
       MHD_stop_daemon (daemon);
       return 1;

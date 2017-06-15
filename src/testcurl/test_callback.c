@@ -111,16 +111,33 @@ main(int argc, char **argv)
   int running;
   struct timeval tv;
   int extra;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1140;
 
   d = MHD_start_daemon(0,
-		       8000,
+		       port,
 		       NULL,
 		       NULL,
 		       &callback,
 		       NULL,
 		       MHD_OPTION_END);
+  if (d == NULL)
+    return 32;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 48; }
+      port = (int)dinfo->port;
+    }
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:8000/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &discard_buffer);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);

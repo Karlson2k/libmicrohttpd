@@ -23,7 +23,6 @@
  * @brief  Testcase for libmicrohttpd tolerating client not closing immediately
  * @author hollosig
  */
-#define PORT	12345
 
 #include "platform.h"
 #include <stdio.h>
@@ -90,9 +89,16 @@ int
 main ()
 {
   struct MHD_Daemon *daemon;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1490;
+
 
   daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                             PORT,
+                             port,
                              NULL,
                              NULL, connection_handler, NULL, MHD_OPTION_END);
 
@@ -101,11 +107,19 @@ main ()
       fprintf (stderr, "Daemon cannot be started!");
       exit (1);
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (daemon, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (daemon); return 32; }
+      port = (int)dinfo->port;
+    }
 
   CURL *curl = curl_easy_init ();
   //curl_easy_setopt(curl, CURLOPT_POST, 1L);
   char url[255];
-  sprintf (url, "http://127.0.0.1:%d", PORT);
+  sprintf (url, "http://127.0.0.1:%d", port);
   curl_easy_setopt (curl, CURLOPT_URL, url);
   curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_data);
 

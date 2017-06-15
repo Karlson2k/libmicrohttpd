@@ -89,7 +89,7 @@ testStartStop ()
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1080,
+                        0,
                         &apc_nothing, NULL,
                         &ahc_nothing, NULL,
                         MHD_OPTION_END);
@@ -97,7 +97,7 @@ testStartStop ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             1080);
+             0);
     exit (77);
   }
   MHD_stop_daemon (d);
@@ -114,7 +114,7 @@ testExternalRun ()
   int i;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        1081,
+                        0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
                         MHD_OPTION_END);
@@ -123,7 +123,7 @@ testExternalRun ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             1081);
+             0);
     exit (77);
   }
   i = 0;
@@ -158,7 +158,7 @@ testThread ()
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_INTERNAL_POLLING_THREAD,
-                        1082,
+                        0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
                         MHD_OPTION_END);
@@ -187,7 +187,7 @@ testMultithread ()
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION,
-                        1083,
+                        0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
                         MHD_OPTION_END);
@@ -196,7 +196,7 @@ testMultithread ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             1083);
+             0);
     exit (77);
   }
   if (MHD_run (d) != MHD_NO)

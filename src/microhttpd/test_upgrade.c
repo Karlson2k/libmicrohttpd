@@ -982,6 +982,7 @@ test_upgrade (int flags,
   wr_socket sock;
   struct sockaddr_in sa;
   const union MHD_DaemonInfo *real_flags;
+  const union MHD_DaemonInfo *dinfo;
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
   pid_t pid = -1;
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
@@ -990,7 +991,8 @@ test_upgrade (int flags,
 
   if (!test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,
-			  1080,
+			  MHD_is_feature_supported(MHD_FEATURE_AUTODETECT_BIND_PORT) ?
+			      0 : 1090,
 			  NULL, NULL,
 			  &ahc_upgrade, NULL,
 			  MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
@@ -1001,7 +1003,8 @@ test_upgrade (int flags,
 #ifdef HTTPS_SUPPORT
   else
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE | MHD_USE_TLS,
-                          1080,
+                          MHD_is_feature_supported(MHD_FEATURE_AUTODETECT_BIND_PORT) ?
+                              0 : 1090,
                           NULL, NULL,
                           &ahc_upgrade, NULL,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
@@ -1017,13 +1020,16 @@ test_upgrade (int flags,
   real_flags = MHD_get_daemon_info(d, MHD_DAEMON_INFO_FLAGS);
   if (NULL == real_flags)
     abort ();
+  dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+  if (NULL == dinfo || 0 == dinfo->port)
+    abort ();
   if (!test_tls || TLS_LIB_GNUTLS == use_tls_tool)
     {
       sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();
       if (WR_BAD == sock)
         abort ();
       sa.sin_family = AF_INET;
-      sa.sin_port = htons (1080);
+      sa.sin_port = htons (dinfo->port);
       sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
       if (0 != wr_connect (sock,
                         (struct sockaddr *) &sa,
@@ -1034,7 +1040,7 @@ test_upgrade (int flags,
     {
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
       MHD_socket tls_fork_sock;
-      if (-1 == (pid = gnutlscli_connect (&tls_fork_sock, 1080)))
+      if (-1 == (pid = gnutlscli_connect (&tls_fork_sock, dinfo->port)))
         {
           MHD_stop_daemon (d);
           return 4;

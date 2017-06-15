@@ -121,16 +121,35 @@ testInternalGet ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1200;
+      if (oneone)
+        port += 10;
+    }
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -171,16 +190,35 @@ testMultithreadedGet ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1201;
+      if (oneone)
+        port += 10;
+    }
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -221,17 +259,36 @@ testMultithreadedPoolGet ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1202;
+      if (oneone)
+        port += 10;
+    }
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1081, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 16;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1081/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -286,17 +343,36 @@ testExternalGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1203;
+      if (oneone)
+        port += 10;
+    }
 
   multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -406,6 +482,7 @@ testUnknownPortGet ()
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
+  int port;
 
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
@@ -418,24 +495,36 @@ testUnknownPortGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_END);
   if (d == NULL)
     return 32768;
 
-  di = MHD_get_daemon_info (d, MHD_DAEMON_INFO_LISTEN_FD);
-  if (di == NULL)
-    return 65536;
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    {
+      di = MHD_get_daemon_info (d, MHD_DAEMON_INFO_LISTEN_FD);
+      if (di == NULL)
+        return 65536;
 
-  if (0 != getsockname(di->listen_fd, (struct sockaddr *) &addr, &addr_len))
-    return 131072;
+      if (0 != getsockname(di->listen_fd, (struct sockaddr *) &addr, &addr_len))
+        return 131072;
 
-  if (addr.sin_family != AF_INET)
-    return 26214;
+      if (addr.sin_family != AF_INET)
+        return 26214;
+      port = (int)ntohs(addr.sin_port);
+    }
+  else
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
 
-  snprintf(buf, sizeof(buf), "http://127.0.0.1:%hu/",
-           ntohs(addr.sin_port));
+  snprintf(buf, sizeof(buf), "http://127.0.0.1:%d/",
+           port);
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, buf);

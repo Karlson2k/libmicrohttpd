@@ -55,7 +55,7 @@ testInternalGet (int poll_flag)
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | poll_flag,
-                        11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        0, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
   MHD_stop_daemon (d);
@@ -68,7 +68,7 @@ testMultithreadedGet (int poll_flag)
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG  | poll_flag,
-                        1081, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        0, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 2;
   MHD_stop_daemon (d);
@@ -81,7 +81,7 @@ testMultithreadedPoolGet (int poll_flag)
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | poll_flag,
-                        1081, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 4;
@@ -95,7 +95,7 @@ testExternalGet ()
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        0, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 8;
   MHD_stop_daemon (d);

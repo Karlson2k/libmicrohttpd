@@ -55,6 +55,7 @@ struct CBC
   size_t size;
 };
 
+static int port;
 
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
@@ -126,7 +127,7 @@ ServeOneRequest(void *param)
   fd = (MHD_socket) (intptr_t) param;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        1082, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_LISTEN_SOCKET, fd,
                         MHD_OPTION_NOTIFY_COMPLETED, &request_completed, &done,
                         MHD_OPTION_END);
@@ -172,7 +173,8 @@ setupCURL (void *cbc)
   CURL *c;
 
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
@@ -200,20 +202,33 @@ testGet (int type, int pool_count, int poll_flag)
   pthread_t thrd;
   const char *thrdRet;
 
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1480;
+
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   if (pool_count > 0) {
     d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
-                          11080, NULL, NULL, &ahc_echo, "GET",
+                          port, NULL, NULL, &ahc_echo, "GET",
                           MHD_OPTION_THREAD_POOL_SIZE, pool_count, MHD_OPTION_END);
 
   } else {
     d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
-                          11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                          port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   }
   if (d == NULL)
     return 1;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
 
   c = setupCURL(&cbc);
 
@@ -342,17 +357,30 @@ testExternalGet ()
   int i;
   MHD_socket fd;
 
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1481;
+
   multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        11080,
+                        port,
                         NULL, NULL,
                         &ahc_echo, "GET",
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   c = setupCURL(&cbc);
 
   multi = curl_multi_init ();

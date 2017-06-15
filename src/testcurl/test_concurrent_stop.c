@@ -217,6 +217,14 @@ testMultithreadedGet (int port,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   p = start_gets (port);
   sleep (1);
   MHD_stop_daemon (d);
@@ -240,6 +248,14 @@ testMultithreadedPoolGet (int port,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   p = start_gets (port);
   sleep (1);
   MHD_stop_daemon (d);
@@ -252,10 +268,17 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port = 1081;
+  int port;
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 1142;
+
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  if (0 != port && oneone)
+    port += 5;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   response = MHD_create_response_from_buffer (strlen ("/hello_world"),

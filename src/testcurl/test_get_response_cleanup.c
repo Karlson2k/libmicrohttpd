@@ -153,13 +153,33 @@ testInternalGet ()
 {
   struct MHD_Daemon *d;
   pid_t curl;
+  int port;
+  char url[127];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1180;
+      if (oneone)
+        port += 10;
+    }
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        11080, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  curl = fork_curl ("http://127.0.0.1:11080/");
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(url, "http://127.0.0.1:%d/", port);
+  curl = fork_curl (url);
   sleep (1);
   kill_curl (curl);
   sleep (1);
@@ -176,20 +196,40 @@ testMultithreadedGet ()
 {
   struct MHD_Daemon *d;
   pid_t curl;
+  int port;
+  char url[127];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1181;
+      if (oneone)
+        port += 10;
+    }
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1081, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, "GET",
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 2,
 			MHD_OPTION_END);
   if (d == NULL)
     return 16;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(url, "http://127.0.0.1:%d/", port);
   //fprintf (stderr, "Forking cURL!\n");
-  curl = fork_curl ("http://127.0.0.1:1081/");
+  curl = fork_curl (url);
   sleep (1);
   kill_curl (curl);
   sleep (1);
-  curl = fork_curl ("http://127.0.0.1:1081/");
+  curl = fork_curl (url);
   sleep (1);
   if (ok != 0)
     {
@@ -213,14 +253,34 @@ testMultithreadedPoolGet ()
 {
   struct MHD_Daemon *d;
   pid_t curl;
+  int port;
+  char url[127];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1182;
+      if (oneone)
+        port += 10;
+    }
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        1081, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT, MHD_OPTION_END);
   if (d == NULL)
     return 64;
-  curl = fork_curl ("http://127.0.0.1:1081/");
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(url, "http://127.0.0.1:%d/", port);
+  curl = fork_curl (url);
   sleep (1);
   kill_curl (curl);
   sleep (1);
@@ -243,13 +303,33 @@ testExternalGet ()
   time_t start;
   struct timeval tv;
   pid_t curl;
+  int port;
+  char url[127];
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    {
+      port = 1183;
+      if (oneone)
+        port += 10;
+    }
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        1082, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 256;
-  curl = fork_curl ("http://127.0.0.1:1082/");
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
+  sprintf(url, "http://127.0.0.1:%d/", port);
+  curl = fork_curl (url);
 
   start = time (NULL);
   while ((time (NULL) - start < 2))
