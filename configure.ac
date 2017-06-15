@@ -777,7 +777,7 @@ AS_CASE([[$enable_itc]],
 
 AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
   AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
-    AC_CHECK_HEADERS([[sys/eventfd.h]], [], [], [AC_INCLUDES_DEFAULT])
+    AC_CHECK_HEADERS([sys/eventfd.h], [], [], [AC_INCLUDES_DEFAULT])
     AS_VAR_IF([[ac_cv_header_sys_eventfd_h]], [["yes"]], [
       AC_CACHE_CHECK([whether eventfd(2) is usable], [[mhd_cv_eventfd_usable]], [
         AC_LINK_IFELSE([
@@ -1080,7 +1080,7 @@ fi
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 mhd_have_magic_open='no'
-AC_CHECK_HEADERS([[magic.h]],
+AC_CHECK_HEADERS([magic.h],
   [ AC_CHECK_LIB([[magic]], [[magic_open]], [[mhd_have_magic_open='yes']]) ],[],
   [AC_INCLUDES_DEFAULT])
 
