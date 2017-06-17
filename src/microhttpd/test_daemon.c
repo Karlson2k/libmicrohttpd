@@ -43,7 +43,7 @@ testStartError ()
   d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0, NULL, NULL, NULL, NULL);
   if (NULL != d)
   {
-    MHD_stop_daemon ();
+    MHD_stop_daemon (d);
     fprintf (stderr,
              "Succeeded to start without MHD_AccessHandlerCallback?\n");
     return 1;
