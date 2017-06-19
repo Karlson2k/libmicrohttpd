@@ -284,8 +284,9 @@ main (int argc, char *const *argv)
   response = MHD_create_response_from_buffer (strlen ("/hello_world"),
 					      "/hello_world",
 					      MHD_RESPMEM_MUST_COPY);
-  errorCount += testMultithreadedGet (port++, 0);
-  errorCount += testMultithreadedPoolGet (port++, 0);
+  errorCount += testMultithreadedGet (port, 0);
+  if (0 != port) port++;
+  errorCount += testMultithreadedPoolGet (port, 0);
   MHD_destroy_response (response);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
