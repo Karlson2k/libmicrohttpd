@@ -269,7 +269,11 @@ gen_test_file_url (char *url, int port)
   char *doc_path;
   size_t doc_path_len;
   /* setup test file path, url */
+#ifdef PATH_MAX
   doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
+#else  /* ! PATH_MAX */
+  doc_path_len = 4096;
+#endif /* ! PATH_MAX */
   if (NULL == (doc_path = malloc (doc_path_len)))
     {
       fprintf (stderr, MHD_E_MEM);
