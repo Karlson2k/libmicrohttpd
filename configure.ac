@@ -326,6 +326,11 @@ netbsd*)
      mhd_host_os='OS/390'
      AC_MSG_RESULT([[$mhd_host_os]])
     ;;
+gnu*)
+     AC_DEFINE([[GNU_HURD]], [[1]], [Define to `1' if host machine runs on GNU Hurd.])
+     mhd_host_os='GNU Hurd'
+     AC_MSG_RESULT([[$mhd_host_os]])
+    ;;
 *)
      mhd_host_os='unrecognised OS'
      AC_MSG_RESULT([[$mhd_host_os]])
