@@ -331,10 +331,6 @@ netbsd*)
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_MSG_WARN([Unrecognised OS $host_os])
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
-#    You might want to find out if your OS supports shutdown on listen sockets,
-#    and extend the switch statement; if we do not have 'HAVE_LISTEN_SHUTDOWN',
-#    pipes are used instead to signal 'select'.
-#    AC_DEFINE_UNQUOTED(HAVE_LISTEN_SHUTDOWN,1,[can use shutdown on listen sockets])
 ;;
 esac
 
