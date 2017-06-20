@@ -29,7 +29,9 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];
@@ -102,10 +104,12 @@ main (int argc, char *const *argv)
   const char *aes256_sha_tlsv1   = "AES256-SHA";
   const char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
 
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));

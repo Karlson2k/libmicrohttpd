@@ -1,3 +1,6 @@
+Tue Jun 20 23:52:00 MSK 2017
+	Libgcrypt is now optional and required only for old GnuTLS versions. -EG
+
 Wed Jun 14 21:42:00 MSK 2017
 	Added support for debug assert() and new configure parameter 
 	--enable-asserts for debug builds.

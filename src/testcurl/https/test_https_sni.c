@@ -28,7 +28,9 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
 #include <gnutls/gnutls.h>
 
@@ -249,10 +251,12 @@ main (int argc, char *const *argv)
   unsigned int error_count = 0;
   struct MHD_Daemon *d;
 
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {
       fprintf (stderr, "Error: %s\n", strerror (errno));

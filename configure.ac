@@ -1255,20 +1255,6 @@ then
 # Next block is large unindented block
 #
 
-# libgcrypt linkage: required for HTTPS support
-AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
-if test "x$have_gcrypt" = "xyes"
-then
-  SAVE_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
-  # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-  SAVE_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
-  AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-  CFLAGS="$SAVE_CFLAGS"
-  CPPFLAGS="$SAVE_CPPFLAGS"
-fi
-
 # gnutls
 have_gnutls_pkgcfg=no
 AC_MSG_CHECKING([[how to find GnuTLS library]])
@@ -1358,16 +1344,33 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        LIBS="$SAVE_LIBS"
       ],
       [
+       # check for GnuTLS at default paths
        have_gnutls_pkgcfg='no'
+       AC_CHECK_HEADERS([gnutls/gnutls.h],
+        [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+          [
+            GNUTLS_LIBS="-lgnutls"
+            AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
+            have_gnutls=yes
+          ])], [], [AC_INCLUDES_DEFAULT])
+      ])
+  ])
+
+have_gcrypt='unknown'
+AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
+  [
+   AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
+   AS_IF([[test "x$have_gcrypt" = "xyes"]],
+     [
        SAVE_CPPFLAGS="$CPPFLAGS"
        SAVE_CFLAGS="$CFLAGS"
-       SAVE_LDFLAGS="$LDFLAGS"
        SAVE_LIBS="$LIBS"
-       # Try to use libgcrypt search path
-       # as libgcrypt flags will be used
-       # anyway for HTTPs builds
+       SAVE_LDFLAGS="$LDFLAGS"
        CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+       # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
        CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+       AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
+       # Check for GnuTLS with gcrypt flags
        LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"
        AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
@@ -1383,44 +1386,129 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        CFLAGS="$SAVE_CFLAGS"
        LDFLAGS="$SAVE_LDFLAGS"
        LIBS="$SAVE_LIBS"
-      ])
-  ])
-
+     ]
+   )
+  ]
+)
 AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG_ERROR([[can't find usable libgnutls]])])
-
-AC_SUBST([GNUTLS_CPPFLAGS])
-AC_SUBST([GNUTLS_CFLAGS])
-AC_SUBST([GNUTLS_LDFLAGS])
-AC_SUBST([GNUTLS_LIBS])
-
 #
 # End of large unindented block
 #
-  AS_IF([test "x$have_gnutls" = "xyes" && test "x$have_gcrypt" = "xyes"], [
+
+  AS_IF([test "x$have_gnutls" = "xyes"],
+    [
+     SAVE_CPPFLAGS="$CPPFLAGS"
+     SAVE_CFLAGS="$CFLAGS"
+     SAVE_LDFLAGS="$LDFLAGS"
+     SAVE_LIBS="$LIBS"
+     CPPFLAGS="$GNUTLS_CFLAGS $CPPFLAGS"
+     CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
+     LDFLAGS="$GNUTLS_LIBS $LDFLAGS"
+     LIBS="$LIBS $GNUTLS_LIBS"
+     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_grypt_required],
+       [
+        AC_COMPILE_IFELSE(
+          [
+           AC_LANG_PROGRAM(
+             [
+#include <gnutls/gnutls.h>
+             ],
+             [
+#if !defined(GNUTLS_VERSION_NUMBER) || GNUTLS_VERSION_NUMBER+0 <= 0x020c14
+#error Old versions of GnuTLS require libgcript initialisaion
+choke me now
+#endif
+             ]
+           )
+          ],
+          [[mhd_cv_grypt_required='no']], [[mhd_cv_grypt_required='yes']]
+        )
+       ]
+     )
+     CPPFLAGS="$SAVE_CPPFLAGS"
+     CFLAGS="$SAVE_CFLAGS"
+     LDFLAGS="$SAVE_LDFLAGS"
+     LIBS="$SAVE_LIBS"
+    ]
+  )
+
+  AS_IF([[test "x$mhd_cv_grypt_required" = "xyes" && test "x$have_gcrypt" = "xunknown"]],
+    [
+     AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
+     AS_IF([[test "x$have_gcrypt" = "xyes"]],
+       [
+         SAVE_CPPFLAGS="$CPPFLAGS"
+         SAVE_CFLAGS="$CFLAGS"
+         CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+         # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
+         CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+         AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
+         # Check for GnuTLS with gcrypt flags
+         CPPFLAGS="$SAVE_CPPFLAGS"
+         CFLAGS="$SAVE_CFLAGS"
+       ]
+     )
+    ]
+  )
+  AC_SUBST([GNUTLS_CPPFLAGS])
+  AC_SUBST([GNUTLS_CFLAGS])
+  AC_SUBST([GNUTLS_LDFLAGS])
+  AC_SUBST([GNUTLS_LIBS])
+
+  AS_UNSET([[crypt_missing]])
+  AS_IF([[test "x$have_gnutls" = "xyes"]],
+    [
+     AS_IF([[test "x$mhd_cv_grypt_required" = "xyes" && test "x$have_gcrypt" != "xyes"]],
+       [
+        crypt_missing="required libgcrypt"
+        AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
+        enable_https=no
+        MSG_HTTPS="no (lacking $crypt_missing)"
+       ],
+         [
           AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
           enable_https=yes
-          MSG_HTTPS="yes (using libgnutls and libgcrypt)"
-          MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
-          MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
-          MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
-          MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
+          AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+            [
+             MSG_HTTPS="yes (using libgnutls and libgcrypt)"
+             MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
+             MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
+             MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
+             MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
+             AC_DEFINE([[MHD_HTTPS_REQUIRE_GRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
+            ],
+            [[
+             MSG_HTTPS="yes (using libgnutls)"
+             MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $GNUTLS_CPPFLAGS"
+             MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS"
+             MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
+             MHD_LIBDEPS="$GNUTLS_LIBS $MHD_LIBDEPS"
+            ]]
+          )
           AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
             [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
               MHD_REQ_PRIVATE='gnutls'
-              MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"
+              AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+                [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
+              )
             ],
             [
               MHD_REQ_PRIVATE=''
-              MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"
+              AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+                [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
+              )
+              MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $MHD_LIBDEPS_PKGCFG"
           ])
-        ], [
-          AS_IF([test "x$have_gnutls" = "xyes"], [crypt_missing="libgcrypt"],
-                [test "x$have_gcrypt" = "xyes"], [crypt_missing="libgnutls"],
-                                                 [crypt_missing="libgcrypt and libgnutls"])
-          AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
-          enable_https=no
-          MSG_HTTPS="no (lacking $crypt_missing)"
-        ])
+         ]
+     )
+    ],
+    [
+     crypt_missing="libgnutls"
+     AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
+     enable_https=no
+     MSG_HTTPS="no (lacking $crypt_missing)"
+    ]
+  )
 else
   MSG_HTTPS="no (disabled)"
 fi
@@ -1430,6 +1518,7 @@ AC_MSG_RESULT([$MSG_HTTPS])
 AM_CONDITIONAL([HAVE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AM_CONDITIONAL([HAVE_GNUTLS_SNI], [[test "x$have_gnutls_sni" = "xyes"]])
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
+AM_CONDITIONAL([HTTPS_REQUIRE_GRYPT], [[test "x$enable_https" = "xyes" && test "x$mhd_cv_grypt_required" = "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP basic authentication]])

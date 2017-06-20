@@ -28,7 +28,9 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include "tls_test_common.h"
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "mhd_sockets.h" /* only macros used */
 
 
@@ -109,10 +111,12 @@ main (int argc, char *const *argv)
   gnutls_certificate_credentials_t xcred;
 
 
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
   gnutls_global_init ();
   gnutls_global_set_log_level (11);
 

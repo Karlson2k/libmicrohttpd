@@ -28,7 +28,9 @@
 #include "microhttpd.h"
 #include <sys/stat.h>
 #include <limits.h>
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];
@@ -85,11 +87,13 @@ main (int argc, char *const *argv)
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_ERROR_LOG;
 
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
  if (curl_check_version (MHD_REQ_CURL_VERSION))
     {
       return 77;

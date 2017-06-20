@@ -47,7 +47,9 @@
 
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #endif /* HTTPS_SUPPORT */
 
 #ifdef _WIN32
@@ -6520,6 +6522,7 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 }
 
 
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #if defined(HTTPS_SUPPORT) && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -6574,7 +6577,7 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 
 #endif /* defined(MHD_W32_MUTEX_) */
 #endif /* HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600 */
-
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
 
 /**
  * Initialize do setup work.
@@ -6596,6 +6599,7 @@ MHD_init(void)
     MHD_PANIC (_("Winsock version 2.2 is not available\n"));
 #endif
 #ifdef HTTPS_SUPPORT
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #if GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
@@ -6611,6 +6615,7 @@ MHD_init(void)
   if (NULL == gcry_check_version ("1.6.0"))
     MHD_PANIC (_("libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer\n"));
 #endif
+#endif /* MHD_HTTPS_REQUIRE_GRYPT */
   gnutls_global_init ();
 #endif /* HTTPS_SUPPORT */
   MHD_monotonic_sec_counter_init();
