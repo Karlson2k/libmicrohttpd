@@ -77,19 +77,33 @@ testInternalSelectGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3000;
 
   multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | MHD_USE_INTERNAL_POLLING_THREAD,
-                        1082, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
 			MHD_OPTION_END);
   if (d == NULL)
     return 256;
 
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
   char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
     {
@@ -97,7 +111,8 @@ testInternalSelectGet ()
     }
 
   c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1:1082/hello_world");
+  curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */

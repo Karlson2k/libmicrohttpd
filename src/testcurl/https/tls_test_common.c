@@ -318,7 +318,7 @@ gen_test_file_url (char *url, int port)
  * test HTTPS file transfer
  */
 int
-test_https_transfer (void *cls, const char *cipher_suite, int proto_version)
+test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_version)
 {
   int len;
   int ret = 0;
@@ -334,7 +334,7 @@ test_https_transfer (void *cls, const char *cipher_suite, int proto_version)
   cbc.size = len;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url, DEAMON_TEST_PORT))
+  if (gen_test_file_url (url, port))
     {
       ret = -1;
       goto cleanup;
@@ -366,21 +366,33 @@ cleanup:
  * @param d
  * @param daemon_flags
  * @param arg_list
- * @return
+ * @return port number on success or zero on failure
  */
 int
-setup_testcase (struct MHD_Daemon **d, int daemon_flags, va_list arg_list)
+setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list arg_list)
 {
-  *d = MHD_start_daemon_va (daemon_flags, DEAMON_TEST_PORT,
+  *d = MHD_start_daemon_va (daemon_flags, port,
                             NULL, NULL, &http_ahc, NULL, arg_list);
 
   if (*d == NULL)
     {
       fprintf (stderr, MHD_E_SERVER_INIT);
-      return -1;
+      return 0;
     }
 
-  return 0;
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (*d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        {
+          MHD_stop_daemon (*d);
+          return 0;
+        }
+      port = (int)dinfo->port;
+    }
+
+  return port;
 }
 
 void
@@ -454,8 +466,9 @@ teardown_session (gnutls_session_t session,
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) */
 int
 test_wrap (const char *test_name, int
-           (*test_function) (void * cls, const char *cipher_suite,
+           (*test_function) (void * cls, int port, const char *cipher_suite,
                              int proto_version), void * cls,
+           int port,
            int daemon_flags, const char *cipher_suite, int proto_version, ...)
 {
   int ret;
@@ -463,7 +476,8 @@ test_wrap (const char *test_name, int
   struct MHD_Daemon *d;
 
   va_start (arg_list, proto_version);
-  if (setup_testcase (&d, daemon_flags, arg_list) != 0)
+  port = setup_testcase (&d, port, daemon_flags, arg_list);
+  if (0 == port)
     {
       va_end (arg_list);
       fprintf (stderr, "Failed to setup testcase %s\n", test_name);
@@ -472,7 +486,7 @@ test_wrap (const char *test_name, int
 #if 0
   fprintf (stdout, "running test: %s ", test_name);
 #endif
-  ret = test_function (NULL, cipher_suite, proto_version);
+  ret = test_function (NULL, port, cipher_suite, proto_version);
 #if 0
   if (ret == 0)
     {

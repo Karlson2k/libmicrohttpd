@@ -32,8 +32,6 @@
 #define DEBUG_HTTPS_TEST 0
 #define CURL_VERBOS_LEVEL 0
 
-#define DEAMON_TEST_PORT 4233
-
 #define test_data "Hello World\n"
 #define ca_cert_file_name "tmp_ca_cert.pem"
 
@@ -51,6 +49,7 @@
 struct https_test_data
 {
   void *cls;
+  int port;
   const char *cipher_suite;
   int proto_version;
 };
@@ -114,10 +113,10 @@ send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
                int proto_version);
 
 int
-test_https_transfer (void *cls, const char *cipher_suite, int proto_version);
+test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_version);
 
 int
-setup_testcase (struct MHD_Daemon **d, int daemon_flags, va_list arg_list);
+setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list arg_list);
 
 void teardown_testcase (struct MHD_Daemon *d);
 
@@ -135,7 +134,8 @@ teardown_session (gnutls_session_t session,
 
 int
 test_wrap (const char *test_name, int
-           (*test_function) (void * cls, const char *cipher_suite,
-                             int proto_version), void *test_function_cls,
+           (*test_function) (void * cls, int port, const char *cipher_suite,
+                             int proto_version), void * cls,
+           int port,
            int daemon_flags, const char *cipher_suite, int proto_version, ...);
 #endif /* TLS_TEST_COMMON_H_ */

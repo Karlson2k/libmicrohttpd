@@ -180,13 +180,14 @@ sni_callback (gnutls_session_t session,
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-do_get (const char *url)
+do_get (const char *url, int port)
 {
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
   size_t len;
   struct curl_slist *dns_info;
+  char buf[256];
 
   len = strlen (test_data);
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
@@ -202,6 +203,7 @@ do_get (const char *url)
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
+  curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
@@ -212,8 +214,10 @@ do_get (const char *url)
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 2);
-  dns_info = curl_slist_append (NULL, "host1:4233:127.0.0.1");
-  dns_info = curl_slist_append (dns_info, "host2:4233:127.0.0.1");
+  sprintf(buf, "host1:%d:127.0.0.1", port);
+  dns_info = curl_slist_append (NULL, buf);
+  sprintf(buf, "host2:%d:127.0.0.1", port);
+  dns_info = curl_slist_append (dns_info, buf);
   curl_easy_setopt (c, CURLOPT_RESOLVE, dns_info);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 
@@ -250,6 +254,12 @@ main (int argc, char *const *argv)
 {
   unsigned int error_count = 0;
   struct MHD_Daemon *d;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3060;
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
@@ -272,7 +282,7 @@ main (int argc, char *const *argv)
   load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
   load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_ERROR_LOG,
-                        4233,
+                        port,
                         NULL, NULL,
                         &http_ahc, NULL,
                         MHD_OPTION_HTTPS_CERT_CALLBACK, &sni_callback,
@@ -282,9 +292,17 @@ main (int argc, char *const *argv)
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
-  if (0 != do_get ("https://host1:4233/"))
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
+  if (0 != do_get ("https://host1/", port))
     error_count++;
-  if (0 != do_get ("https://host2:4233/"))
+  if (0 != do_get ("https://host2/", port))
     error_count++;
 
   MHD_stop_daemon (d);

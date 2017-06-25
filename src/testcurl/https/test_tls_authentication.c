@@ -50,9 +50,15 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
 {
   int ret;
   struct MHD_Daemon *d;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3070;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, DEAMON_TEST_PORT,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
@@ -63,8 +69,16 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
 
-  ret = test_daemon_get (NULL, cipher_suite, proto_version, DEAMON_TEST_PORT, 0);
+  ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 0);
 
   MHD_stop_daemon (d);
   return ret;

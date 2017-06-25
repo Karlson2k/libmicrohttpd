@@ -47,8 +47,8 @@ ahc_echo (void *cls,
   return 0;
 }
 
-int
-test_wrap (char *test_name, int (*test) (void))
+static int
+test_wrap_loc (char *test_name, int (*test) (void))
 {
   int ret;
 
@@ -119,7 +119,7 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
 
-  errorCount += test_wrap ("ip addr option", &test_ip_addr_option);
+  errorCount += test_wrap_loc ("ip addr option", &test_ip_addr_option);
 
   return errorCount != 0;
 }

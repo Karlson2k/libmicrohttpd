@@ -43,7 +43,7 @@ int curl_check_version (const char *req_version, ...);
  *
  */
 static int
-test_unmatching_ssl_version (void * cls, const char *cipher_suite,
+test_unmatching_ssl_version (void * cls, int port, const char *cipher_suite,
                              int curl_req_ssl_version)
 {
   struct CBC cbc;
@@ -57,7 +57,7 @@ test_unmatching_ssl_version (void * cls, const char *cipher_suite,
   cbc.pos = 0;
 
   char url[255];
-  if (gen_test_file_url (url, DEAMON_TEST_PORT))
+  if (gen_test_file_url (url, port))
     {
       free (cbc.buf);
       fprintf (stderr, "Internal error in gen_test_file_url\n");
@@ -86,6 +86,12 @@ main (int argc, char *const *argv)
   const char *ssl_version;
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_ERROR_LOG;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3010;
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
@@ -127,7 +133,7 @@ main (int argc, char *const *argv)
 
   if (0 !=
     test_wrap ("TLS1.0-AES-SHA1",
-	       &test_https_transfer, NULL, daemon_flags,
+	       &test_https_transfer, NULL, port, daemon_flags,
 	       aes128_sha,
 	       CURL_SSLVERSION_TLSv1,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -142,7 +148,7 @@ main (int argc, char *const *argv)
 	   "The following handshake should fail (and print an error message)...\n");
   if (0 !=
     test_wrap ("TLS1.0 vs SSL3",
-	       &test_unmatching_ssl_version, NULL, daemon_flags,
+	       &test_unmatching_ssl_version, NULL, port, daemon_flags,
 	       aes256_sha,
 	       CURL_SSLVERSION_SSLv3,
 	       MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,

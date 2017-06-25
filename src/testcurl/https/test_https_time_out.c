@@ -47,7 +47,7 @@ extern const char srv_self_signed_cert_pem[];
 static const int TIME_OUT = 3;
 
 static int
-test_tls_session_time_out (gnutls_session_t session)
+test_tls_session_time_out (gnutls_session_t session, int port)
 {
   int ret;
   MHD_socket sd;
@@ -62,7 +62,7 @@ test_tls_session_time_out (gnutls_session_t session)
 
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
-  sa.sin_port = htons (DEAMON_TEST_PORT);
+  sa.sin_port = htons (port);
   sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
   gnutls_transport_set_ptr (session, (gnutls_transport_ptr_t) (intptr_t) sd);
@@ -109,7 +109,12 @@ main (int argc, char *const *argv)
   gnutls_datum_t key;
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
+  int port;
 
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3070;
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
@@ -121,7 +126,7 @@ main (int argc, char *const *argv)
   gnutls_global_set_log_level (11);
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, DEAMON_TEST_PORT,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_dummy_ahc, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -133,13 +138,21 @@ main (int argc, char *const *argv)
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
 
   if (0 != setup_session (&session, &key, &cert, &xcred))
     {
       fprintf (stderr, "failed to setup session\n");
       return 1;
     }
-  errorCount += test_tls_session_time_out (session);
+  errorCount += test_tls_session_time_out (session, port);
   teardown_session (session, &key, &cert, xcred);
 
   print_test_result (errorCount, argv[0]);

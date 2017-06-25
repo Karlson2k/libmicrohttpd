@@ -42,13 +42,14 @@ extern const char srv_self_signed_cert_pem[];
  * Test daemon response to TLS client hello requests containing extensions
  *
  * @param session
+ * @param port
  * @param exten_t - the type of extension being appended to client hello request
  * @param ext_count - the number of consecutive extension replicas inserted into request
  * @param ext_length - the length of each appended extension
  * @return 0 on successful test completion, -1 otherwise
  */
 static int
-test_hello_extension (gnutls_session_t session, extensions_t exten_t,
+test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
                       int ext_count, int ext_length)
 {
   int i, ret = 0, pos = 0;
@@ -84,7 +85,7 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
     }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
-  sa.sin_port = htons (DEAMON_TEST_PORT);
+  sa.sin_port = htons (port);
   sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
   enum MHD_GNUTLS_Protocol hver;
@@ -167,7 +168,7 @@ test_hello_extension (gnutls_session_t session, extensions_t exten_t,
 
   gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
-  if (gen_test_file_url (url, DEAMON_TEST_PORT))
+  if (gen_test_file_url (url, port))
     {
       ret = -1;
       goto cleanup;
@@ -210,11 +211,16 @@ main (int argc, char *const *argv)
   gnutls_datum_t key;
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
-
   const int ext_arr[] = {
     GNUTLS_EXTENSION_SERVER_NAME,
     -1
   };
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3080;
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
@@ -237,7 +243,7 @@ main (int argc, char *const *argv)
     }
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, DEAMON_TEST_PORT,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -248,26 +254,34 @@ main (int argc, char *const *argv)
       fprintf (stderr, "%s\n", MHD_E_SERVER_INIT);
       return -1;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
 
   i = 0;
   setup_session (&session, &key, &cert, &xcred);
-  errorCount += test_hello_extension (session, ext_arr[i], 1, 16);
+  errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
   teardown_session (session, &key, &cert, xcred);
 #if 1
   i = 0;
   while (ext_arr[i] != -1)
     {
       setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, ext_arr[i], 1, 16);
+      errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
       teardown_session (session, &key, &cert, xcred);
 
       setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, ext_arr[i], 3, 8);
+      errorCount += test_hello_extension (session, port, ext_arr[i], 3, 8);
       teardown_session (session, &key, &cert, xcred);
 
       /* this test specifically tests the issue raised in CVE-2008-1948 */
       setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, ext_arr[i], 6, 0);
+      errorCount += test_hello_extension (session, port, ext_arr[i], 6, 0);
       teardown_session (session, &key, &cert, xcred);
       i++;
     }

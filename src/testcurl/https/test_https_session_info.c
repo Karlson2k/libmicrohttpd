@@ -100,17 +100,21 @@ test_query_session ()
   struct CBC cbc;
   CURLcode errornum;
   char url[256];
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3060;
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * 255)))
     return 16;
   cbc.size = 255;
   cbc.pos = 0;
 
-  gen_test_file_url (url, DEAMON_TEST_PORT);
-
   /* setup test */
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, DEAMON_TEST_PORT,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &query_session_ahc, NULL,
 			MHD_OPTION_HTTPS_PRIORITIES, "NORMAL:+ARCFOUR-128",
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
@@ -122,6 +126,14 @@ test_query_session ()
       free (cbc.buf);
       return 2;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return 32; }
+      port = (int)dinfo->port;
+    }
 
   const char *aes256_sha = "AES256-SHA";
   if (curl_uses_nss_ssl() == 0)
@@ -129,6 +141,7 @@ test_query_session ()
       aes256_sha = "rsa_aes_256_sha";
     }
 
+  gen_test_file_url (url, port);
   c = curl_easy_init ();
 #if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);
@@ -172,6 +185,7 @@ test_query_session ()
 int
 main (int argc, char *const *argv)
 {
+#if LIBCURL_VERSION_NUM >= 0x072200
   unsigned int errorCount = 0;
   const char *ssl_version;
 
@@ -200,10 +214,11 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
-#if LIBCURL_VERSION_NUM >= 0x072200
   errorCount += test_query_session ();
-#endif
   print_test_result (errorCount, argv[0]);
   curl_global_cleanup ();
   return errorCount != 0 ? 1 : 0;
+#else  /* LIBCURL_VERSION_NUM < 0x072200 */
+  return 77;
+#endif /* LIBCURL_VERSION_NUM < 0x072200 */
 }

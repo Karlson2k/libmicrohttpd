@@ -63,7 +63,7 @@ https_transfer_thread_adapter (void *args)
 
   /* time spread incomming requests */
   usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
-  ret = test_https_transfer (cargs->cls,
+  ret = test_https_transfer (cargs->cls, cargs->port,
                              cargs->cipher_suite, cargs->proto_version);
   if (ret == 0)
     return NULL;
@@ -78,12 +78,12 @@ https_transfer_thread_adapter (void *args)
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_single_client (void *cls, const char *cipher_suite,
+test_single_client (void *cls, int port, const char *cipher_suite,
                     int curl_proto_version)
 {
   void *client_thread_ret;
   struct https_test_data client_args =
-    { NULL, cipher_suite, curl_proto_version };
+    { NULL, port, cipher_suite, curl_proto_version };
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
@@ -100,7 +100,7 @@ test_single_client (void *cls, const char *cipher_suite,
  * TODO : make client_count a parameter - numver of curl client threads to spawn
  */
 static int
-test_parallel_clients (void *cls, const char *cipher_suite,
+test_parallel_clients (void *cls, int port, const char *cipher_suite,
                        int curl_proto_version)
 {
   int i;
@@ -108,7 +108,7 @@ test_parallel_clients (void *cls, const char *cipher_suite,
   void *client_thread_ret;
   pthread_t client_arr[client_count];
   struct https_test_data client_args =
-    { NULL, cipher_suite, curl_proto_version };
+    { NULL, port, cipher_suite, curl_proto_version };
 
   for (i = 0; i < client_count; ++i)
     {
@@ -138,6 +138,12 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   const char *ssl_version;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3010;
 
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
@@ -175,7 +181,7 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_wrap ("multi threaded daemon, single client", &test_single_client,
-               NULL,
+               NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
@@ -183,7 +189,7 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_wrap ("multi threaded daemon, parallel client",
-               &test_parallel_clients, NULL,
+               &test_parallel_clients, NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD,
                aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,

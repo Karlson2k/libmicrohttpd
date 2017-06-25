@@ -47,9 +47,15 @@ test_cipher_option (FILE * test_fd,
 {
   int ret;
   struct MHD_Daemon *d;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3040;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, 4233,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -60,8 +66,16 @@ test_cipher_option (FILE * test_fd,
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
 
-  ret = test_https_transfer (test_fd, cipher_suite, proto_version);
+  ret = test_https_transfer (test_fd, port, cipher_suite, proto_version);
 
   MHD_stop_daemon (d);
   return ret;
@@ -76,9 +90,15 @@ test_secure_get (FILE * test_fd,
 {
   int ret;
   struct MHD_Daemon *d;
+  int port;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+    port = 3041;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, 4233,
+                        MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
@@ -89,8 +109,16 @@ test_secure_get (FILE * test_fd,
       fprintf (stderr, MHD_E_SERVER_INIT);
       return -1;
     }
+  if (0 == port)
+    {
+      const union MHD_DaemonInfo *dinfo;
+      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+      if (NULL == dinfo || 0 == dinfo->port)
+        { MHD_stop_daemon (d); return -1; }
+      port = (int)dinfo->port;
+    }
 
-  ret = test_https_transfer (test_fd, cipher_suite, proto_version);
+  ret = test_https_transfer (test_fd, port, cipher_suite, proto_version);
 
   MHD_stop_daemon (d);
   return ret;
