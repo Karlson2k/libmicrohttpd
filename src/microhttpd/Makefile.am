@@ -144,8 +144,6 @@ check_PROGRAMS = \
   test_str_to_value \
   test_str_token \
   test_http_reasons \
-  test_shutdown_select \
-  test_shutdown_poll \
   test_daemon
 
 if HAVE_POSIX_THREADS
@@ -166,10 +164,14 @@ endif
 
 TESTS = $(check_PROGRAMS)
 
-if !HAVE_LISTEN_SHUTDOWN
-XFAIL_TESTS = \
+if HAVE_LISTEN_SHUTDOWN
+check_PROGRAMS += \
   test_shutdown_select \
   test_shutdown_poll
+else
+check_PROGRAMS += \
+  test_shutdown_select_ignore \
+  test_shutdown_poll_ignore
 endif
 
 test_daemon_SOURCES = \
@@ -243,6 +245,24 @@ if USE_POSIX_THREADS
 test_shutdown_poll_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_shutdown_poll_LDADD = \
+  $(PTHREAD_LIBS)
+endif
+
+test_shutdown_select_ignore_SOURCES = \
+  test_shutdown_select.c
+if USE_POSIX_THREADS
+test_shutdown_select_ignore_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_select_ignore_LDADD = \
+  $(PTHREAD_LIBS)
+endif
+
+test_shutdown_poll_ignore_SOURCES = \
+  test_shutdown_select.c mhd_threads.h
+if USE_POSIX_THREADS
+test_shutdown_poll_ignore_CFLAGS = \
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_shutdown_poll_ignore_LDADD = \
   $(PTHREAD_LIBS)
 endif
 

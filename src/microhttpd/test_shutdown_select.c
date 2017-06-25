@@ -285,8 +285,10 @@ main (int argc, char *const *argv)
   int err;
 #endif /* MHD_WINSOCK_SOCKETS */
   bool test_poll;
+  bool must_ignore;
 
   test_poll = has_in_name(argv[0], "_poll");
+  must_ignore = has_in_name(argv[0], "_ignore");
   if (!test_poll)
     test_func = &select_thread;
   else
@@ -379,5 +381,5 @@ main (int argc, char *const *argv)
   WSACleanup();
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  return result;
+  return must_ignore ? (!result) : (result);
 }
