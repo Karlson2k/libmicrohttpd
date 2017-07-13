@@ -2939,6 +2939,34 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 
 
 /**
+ * Handle given to the application to manage special
+ * actions relating to MHD responses that "upgrade"
+ * the HTTP protocol (i.e. to WebSockets).
+ */
+struct MHD_UpgrHandleCbk;
+
+typedef void
+(*MHD_UpgrStartCbk)(void *cls,
+                    struct MHD_Connection *connection,
+                    void *upgrade_handler_cls,
+                    struct MHD_UpgrHandleCbk *urh);
+
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
+                                     void *upgrade_handler_cls);
+
+
+typedef void (*MHD_UpgrTransferFinishedCbk) (size_t transfered, struct MHD_UpgrHandleCbk *uh, void *data, size_t data_size, void *cls);
+
+_MHD_EXTERN int MHD_upgr_send_all(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
+
+_MHD_EXTERN int MHD_upgr_recv_fill(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
+
+_MHD_EXTERN ssize_t MHD_upgr_send(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size);
+
+_MHD_EXTERN ssize_t MHD_upgr_recv(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size);
+
+/**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
  * is still in the queue for some clients, so the memory may not
