@@ -2044,6 +2044,35 @@ exit:
 static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon);
 
+#if defined(HTTPS_SUPPORT)
+#if !defined(MHD_WINSOCK_SOCKETS) && !defined(MHD_socket_nosignal_) && \
+    (GNUTLS_VERSION_NUMBER+0 < 0x030402) && defined(MSG_NOSIGNAL)
+/**
+ * Older version of GnuTLS do not support suppressing of SIGPIPE signal.
+ * Use push function replacement with suppressing SIGPIPE signal where necessary
+ * and if possible.
+ */
+#define MHD_TLSLIB_NEED_PUSH_FUNC 1
+#endif /* !_WIN32 && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
+
+#ifdef MHD_TLSLIB_NEED_PUSH_FUNC
+/**
+ * Data push function replacement with suppressing SIGPIPE signal
+ * for TLS library.
+ */
+static ssize_t
+MHD_tls_push_func_(gnutls_transport_ptr_t trnsp,
+                   const void *data,
+                   size_t data_size)
+{
+#if (MHD_SCKT_SEND_MAX_SIZE_ < SSIZE_MAX) || (0 == SSIZE_MAX)
+  if (data_size > MHD_SCKT_SEND_MAX_SIZE_)
+    data_size = MHD_SCKT_SEND_MAX_SIZE_;
+#endif /* (MHD_SCKT_SEND_MAX_SIZE_ < SSIZE_MAX) || (0 == SSIZE_MAX) */
+  return MHD_send_ ((MHD_socket)(intptr_t)(trnsp), data, data_size);
+}
+#endif /* MHD_TLSLIB_DONT_SUPPRESS_SIGPIPE */
+#endif /* HTTPS_SUPPORT */
 
 /**
  * Add another client connection to the set of connections
@@ -2263,7 +2292,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
       connection->tls_state = MHD_TLS_CONN_INIT;
       MHD_set_https_callbacks (connection);
       gnutls_init (&connection->tls_session,
-                   GNUTLS_SERVER);
+                   GNUTLS_SERVER
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030402)
+                   | GNUTLS_NO_SIGNAL
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030402 */
+                  );
       gnutls_priority_set (connection->tls_session,
 			   daemon->priority_cache);
       switch (daemon->cred_type)
@@ -2297,7 +2330,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #else  /* GnuTLS before 3.1.9 or Win x64 */
       gnutls_transport_set_ptr (connection->tls_session, (gnutls_transport_ptr_t)(intptr_t)(client_socket));
 #endif /* GnuTLS before 3.1.9 */
-
+#ifdef MHD_TLSLIB_NEED_PUSH_FUNC
+      gnutls_transport_set_push_function (connection->tls_session, MHD_tls_push_func_);
+#endif /* MHD_TLSLIB_NEED_PUSH_FUNC */
       if (daemon->https_mem_trust)
 	  gnutls_certificate_server_set_request (connection->tls_session,
 						 GNUTLS_CERT_REQUEST);
