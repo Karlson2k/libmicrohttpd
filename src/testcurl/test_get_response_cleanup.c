@@ -35,9 +35,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#ifdef __sun
+#ifndef _WIN32
 #include <signal.h>
-#endif /* __sun */
+#endif /* _WIN32 */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -386,13 +386,16 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-#ifdef __sun
-  struct sigaction act;
-
+#ifndef _WIN32
   /* Solaris has no way to disable SIGPIPE on socket disconnect. */
-  act.sa_handler = SIG_IGN;
-  sigaction(SIGPIPE, &act, NULL);
-#endif /* __sun */
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
+    {
+      struct sigaction act;
+
+      act.sa_handler = SIG_IGN;
+      sigaction(SIGPIPE, &act, NULL);
+    }
+#endif /* _WIN32 */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
