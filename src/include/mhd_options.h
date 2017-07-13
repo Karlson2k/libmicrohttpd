@@ -131,4 +131,7 @@
 #define MHD_FAVOR_FAST_CODE 1
 #endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
 
+/* ###################### TMP @@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+#define UPGRADE_CBK_SUPPORT 1
+
 #endif /* MHD_OPTIONS_H */
