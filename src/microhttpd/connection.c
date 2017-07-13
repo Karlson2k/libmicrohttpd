@@ -1496,6 +1496,11 @@ build_header_response (struct MHD_Connection *connection)
         /* If this connection will not be "upgraded", it must be closed. */
         connection->keepalive = MHD_CONN_MUST_CLOSE;
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+      else if (NULL != connection->response->upgr_cbk_start_handler)
+        /* If this connection will not be "upgraded", it must be closed. */
+        connection->keepalive = MHD_CONN_MUST_CLOSE;
+#endif /* UPGRADE_CBK_SUPPORT */
 
       /* now analyze chunked encoding situation */
       connection->have_chunked_upload = false;

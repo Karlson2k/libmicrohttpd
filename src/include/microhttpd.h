@@ -2938,6 +2938,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 				 void *upgrade_handler_cls);
 
 
+
 /**
  * Handle given to the application to manage special
  * actions relating to MHD responses that "upgrade"
@@ -2953,7 +2954,7 @@ typedef void
 
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
-                                     void *upgrade_handler_cls);
+                                     void *upgr_start_handler_cls);
 
 
 typedef void (*MHD_UpgrTransferFinishedCbk) (size_t transfered, struct MHD_UpgrHandleCbk *uh, void *data, size_t data_size, void *cls);
@@ -2961,8 +2962,6 @@ typedef void (*MHD_UpgrTransferFinishedCbk) (size_t transfered, struct MHD_UpgrH
 _MHD_EXTERN int MHD_upgr_send_all(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
 
 _MHD_EXTERN int MHD_upgr_recv_fill(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
-
-_MHD_EXTERN ssize_t MHD_upgr_send(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size);
 
 _MHD_EXTERN ssize_t MHD_upgr_recv(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size);
 

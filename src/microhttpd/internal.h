@@ -332,7 +332,11 @@ struct MHD_Response
    */
   void *upgrade_handler_cls;
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+  MHD_UpgrStartCbk upgr_cbk_start_handler;
 
+  void *upgr_cbk_start_handler_cls;
+#endif /* UPGRADE_CBK_SUPPORT*/
   /**
    * Mutex to synchronize access to @e data, @e size and
    * @e reference_count.
