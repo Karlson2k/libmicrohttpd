@@ -1113,13 +1113,8 @@ keepalive_possible (struct MHD_Connection *connection)
       if (MHD_lookup_header_s_token_ci (connection,
                                         MHD_HTTP_HEADER_CONNECTION,
                                         "upgrade"))
-        {
-#ifdef UPGRADE_SUPPORT
-           if ( (NULL == connection->response) ||
-                (NULL == connection->response->upgrade_handler) )
-#endif /* UPGRADE_SUPPORT */
-             return MHD_NO;
-        }
+        return MHD_NO;
+
       if (MHD_lookup_header_s_token_ci (connection,
                                         MHD_HTTP_HEADER_CONNECTION,
                                         "close"))
