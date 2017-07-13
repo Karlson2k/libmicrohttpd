@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00095501
+#define MHD_VERSION 0x00095502
 
 /**
  * MHD-internal return code for "YES".
@@ -3452,7 +3452,14 @@ enum MHD_FEATURE
    * Get whether MHD support automatic detection of bind port number.
    * @sa #MHD_DAEMON_INFO_BIND_PORT
    */
-  MHD_FEATURE_AUTODETECT_BIND_PORT = 19
+  MHD_FEATURE_AUTODETECT_BIND_PORT = 19,
+
+  /**
+   * Get whether MHD support SIGPIPE suppression.
+   * If SIGPIPE suppression is not supported, application must handle
+   * SIGPIPE signal by itself.
+   */
+  MHD_FEATURE_AUTOSUPPRESS_SIGPIPE = 20
 };
 
 

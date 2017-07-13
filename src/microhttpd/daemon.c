@@ -6552,6 +6552,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else
       return MHD_NO;
 #endif
+    case MHD_FEATURE_AUTOSUPPRESS_SIGPIPE:
+#if defined(MHD_WINSOCK_SOCKETS) || defined(MHD_socket_nosignal_) || defined (MSG_NOSIGNAL)
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
     }
   return MHD_NO;
 }
