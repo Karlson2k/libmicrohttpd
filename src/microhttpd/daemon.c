@@ -2296,6 +2296,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if (GNUTLS_VERSION_NUMBER+0 >= 0x030402)
                    | GNUTLS_NO_SIGNAL
 #endif /* GNUTLS_VERSION_NUMBER >= 0x030402 */
+#if GNUTLS_VERSION_MAJOR >= 3
+                   | GNUTLS_NONBLOCK
+#endif /* GNUTLS_VERSION_MAJOR >= 3*/
                   );
       gnutls_priority_set (connection->tls_session,
 			   daemon->priority_cache);
