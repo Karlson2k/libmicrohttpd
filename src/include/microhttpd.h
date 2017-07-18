@@ -1477,13 +1477,6 @@ enum MHD_OPTION
    * the "be as liberal as possible in what you accept" norm.  It is
    * recommended to set this to 1 if you are testing clients against
    * MHD, and 0 in production.
-   * if set to -1 - be opposite to strict and be permissive about the
-   * protocol, allowing slight deviations that are technically not
-   * allowed by the RFC. Specifically, at the moment, this flag
-   * causes MHD to allow spaces in header field names. This is
-   * disallowed by the standard.
-   * It is not recommended to set it to -1 on publicly available
-   * servers as it may potentially lower level of protection.
    * This option should be followed by an `int` argument.
    */
   MHD_OPTION_STRICT_FOR_CLIENT = 29
