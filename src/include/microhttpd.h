@@ -2946,18 +2946,35 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  */
 struct MHD_UpgrHandleCbk;
 
-typedef void
-(*MHD_UpgrStartCbk)(void *cls,
-                    struct MHD_Connection *connection,
-                    void *upgrade_handler_cls,
-                    struct MHD_UpgrHandleCbk *urh);
+typedef int
+(*MHD_UpgrStartCbk)(struct MHD_Connection *connection,
+                    void *con_cls,
+                    struct MHD_UpgrHandleCbk *uh,
+                    void *upgrade_handler_cls);
 
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
                                      void *upgr_start_handler_cls);
 
 
-typedef void (*MHD_UpgrTransferFinishedCbk) (size_t transfered, struct MHD_UpgrHandleCbk *uh, void *data, size_t data_size, void *cls);
+enum MHD_UpgrTransferResult
+{
+  MHD_UPGR_TRNSF_RESULT_SENT_OK = 0x40 & 0x1,
+
+  MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_TIMEOUT = 0x40 & 0x8,
+  MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_APP = 0x40 & 0x10,
+  MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_REMOTE_DISCNT = 0x40 & 0x18,
+  MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_NET_ERR = 0x40 & 0x20,
+
+  MHD_UPGR_TRNSF_RESULT_RECV_OK = 0x80 & 0x1,
+
+  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_TIMEOUT = 0x80 & 0x8,
+  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_APP = 0x80 & 0x10,
+  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_DISCNT = 0x80 & 0x18,
+  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_NET_ERR = 0x80 & 0x20
+};
+
+typedef void (*MHD_UpgrTransferFinishedCbk) (struct MHD_UpgrHandleCbk *uh, enum MHD_UpgrTransferResult result, size_t transfered, void *data, size_t data_size, void *cls);
 
 _MHD_EXTERN int MHD_upgr_send_all(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
 

@@ -137,6 +137,8 @@ libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
 endif
 
+libmicrohttpd_la_SOURCES += \
+  upgrade_cbk.c
 
 
 check_PROGRAMS = \

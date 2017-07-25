@@ -1055,38 +1055,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 }
 #endif /* UPGRADE_SUPPORT */
 
-#ifdef UPGRADE_CBK_SUPPORT
-_MHD_EXTERN struct MHD_Response *
-MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
-                                     void *upgr_start_handler_cls)
-{
-  struct MHD_Response *response;
 
-  if (NULL == upgr_start_handler)
-    return NULL; /* invalid request */
-  response = MHD_calloc_ (1, sizeof (struct MHD_Response));
-  if (NULL == response)
-    return NULL;
-  if (! MHD_mutex_init_ (&response->mutex))
-    {
-      free (response);
-      return NULL;
-    }
-  response->upgr_cbk_start_handler = upgr_start_handler;
-  response->upgr_cbk_start_handler_cls = upgr_start_handler_cls;
-  response->total_size = MHD_SIZE_UNKNOWN;
-  response->reference_count = 1;
-  if (MHD_NO ==
-      MHD_add_response_header (response,
-                               MHD_HTTP_HEADER_CONNECTION,
-                               "Upgrade"))
-    {
-      MHD_destroy_response (response);
-      return NULL;
-    }
-  return response;
-}
-#endif /* UPGRADE_CBK_SUPPORT */
 
 
 /**

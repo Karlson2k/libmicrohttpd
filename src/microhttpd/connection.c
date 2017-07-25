@@ -1509,6 +1509,9 @@ build_header_response (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
            (NULL == connection->response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+           (NULL == connection->response->upgr_cbk_start_handler) &&
+#endif /* UPGRADE_CBK_SUPPORT */
            (! response_has_close) &&
            (! client_requested_close) )
         {
@@ -1556,6 +1559,9 @@ build_header_response (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
            (NULL == connection->response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+           (NULL == connection->response->upgr_cbk_start_handler) &&
+#endif /* UPGRADE_CBK_SUPPORT */
            (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
 
@@ -1606,6 +1612,9 @@ build_header_response (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
            (NULL == connection->response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+           (NULL == connection->response->upgr_cbk_start_handler) &&
+#endif /* UPGRADE_CBK_SUPPORT */
            (MHD_YES == keepalive_possible (connection)) )
         must_add_keep_alive = MHD_YES;
       break;
@@ -3537,6 +3546,31 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+          if (NULL != connection->response->upgr_cbk_start_handler)
+            {
+              socket_start_normal_buffering (connection);
+              connection->state = MHD_CONNECTION_UPGR_CBK;
+              /* This connection is "upgraded".  Pass socket to application. */
+              if (MHD_NO ==
+                  MHD_response_start_upgrade_cbk_ (connection->response,
+                                                   connection))
+                {
+                  /* upgrade failed, fail hard */
+                  CONNECTION_CLOSE_ERROR (connection,
+                                          NULL);
+                  continue;
+                }
+              /* Response is not required anymore for this connection. */
+              if (NULL != connection->response)
+                {
+                  struct MHD_Response * const resp = connection->response;
+                  connection->response = NULL;
+                  MHD_destroy_response (resp);
+                }
+              continue;
+            }
+#endif /* UPGRADE_CBK_SUPPORT */
           if (MHD_NO != socket_flush_possible (connection))
             socket_start_extra_buffering (connection);
           else
@@ -3935,6 +3969,7 @@ MHD_queue_response (struct MHD_Connection *connection,
                     struct MHD_Response *response)
 {
   struct MHD_Daemon *daemon;
+  bool upgrade_response = false;
 
   if ( (NULL == connection) ||
        (NULL == response) ||
@@ -3959,25 +3994,43 @@ MHD_queue_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
 #ifdef UPGRADE_SUPPORT
-  if ( (NULL != response->upgrade_handler) &&
-       (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
-#endif
-      return MHD_NO;
-    }
-  if ( (MHD_HTTP_SWITCHING_PROTOCOLS != status_code) &&
-       (NULL != response->upgrade_handler) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Application used invalid status code for 'upgrade' response!\n"));
-#endif
-      return MHD_NO;
-    }
+  upgrade_response = (NULL != response->upgrade_handler);
 #endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+  upgrade_response = (NULL != response->upgr_cbk_start_handler);
+#endif /* UPGRADE_CBK_SUPPORT */
+#if defined(UPGRADE_SUPPORT) && defined(UPGRADE_CBK_SUPPORT)
+  mhd_assert( (NULL == response->upgrade_handler) || (NULL == response->upgr_cbk_start_handler));
+#endif /* UPGRADE_SUPPORT && UPGRADE_CBK_SUPPORT */
+#if defined(UPGRADE_SUPPORT) || defined(UPGRADE_CBK_SUPPORT)
+  if ( false
+#ifdef UPGRADE_SUPPORT
+       || (NULL != response->upgrade_handler)
+#endif /* UPGRADE_SUPPORT */
+#ifdef UPGRADE_CBK_SUPPORT
+       || (NULL != response->upgr_cbk_start_handler)
+#endif /* UPGRADE_CBK_SUPPORT */
+     )
+    { /* Response with 'upgrade' of any kind. */
+      if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
+#endif
+          return MHD_NO;
+        }
+
+      if (MHD_HTTP_SWITCHING_PROTOCOLS != status_code)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("Application used invalid status code for 'upgrade' response!\n"));
+#endif
+          return MHD_NO;
+        }
+    }
+#endif /* UPGRADE_SUPPORT || UPGRADE_CBK_SUPPORT */
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;

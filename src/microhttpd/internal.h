@@ -514,15 +514,25 @@ enum MHD_CONNECTION_STATE
   /**
    * 20: This connection is finished (only to be freed)
    */
-  MHD_CONNECTION_IN_CLEANUP = MHD_CONNECTION_CLOSED + 1,
+  MHD_CONNECTION_IN_CLEANUP = MHD_CONNECTION_CLOSED + 1
 
 #ifdef UPGRADE_SUPPORT
+  ,
   /**
    * Connection was "upgraded" and socket is now under the
    * control of the application.
    */
   MHD_CONNECTION_UPGRADE
 #endif /* UPGRADE_SUPPORT */
+
+#ifdef UPGRADE_CBK_SUPPORT
+  ,
+  /**
+   * Connection was "upgraded" and all data now should be
+   * pumped to/from application.
+   */
+  MHD_CONNECTION_UPGR_CBK
+#endif /* UPGRADE_CBK_SUPPORT */
 
 };
 
@@ -1197,6 +1207,51 @@ struct MHD_UpgradeResponseHandle
 };
 #endif /* UPGRADE_SUPPORT */
 
+#ifdef UPGRADE_CBK_SUPPORT
+enum MHD_UpgrCbkState
+{
+  MHD_UPGR_STATE_CONNECTED = 0,
+  MHD_UPGR_STATE_NOTIFIED = 0x1, // Dummy value
+  MHD_UPGR_STATE_CLOSING = 0x2,
+  MHD_UPGR_STATE_TIMEOUT = 0x4,
+  MHD_UPGR_STATE_CLOSED_BY_APP,
+  MHD_UPGR_STATE_DISCONN_REMOTE,
+  MHD_UPGR_STATE_DISCONN_ERR,
+  MHD_UPGR_STATE_INVALID
+};
+
+struct MHD_UpgrHandleCbk
+{
+  /**
+   * The connection corresponding to this upgrade handle.
+   * @remark Used only in connection's thread.
+   */
+  struct MHD_Connection *connection;
+  enum MHD_UpgrCbkState state;
+
+  MHD_mutex_ recv_mutex;
+  bool has_recv_data_in_conn_buffer;
+  size_t conn_buffer_offset;
+  bool recv_needed;
+  bool recv_ready;
+  int8_t *recv_buff;
+  size_t recv_buff_size;
+  size_t recv_buff_used;
+  bool peer_closed_write;
+  MHD_UpgrTransferFinishedCbk recv_finished_cbk;
+  void *recv_finished_cbk_cls;
+
+  MHD_mutex_ send_mutex;
+  bool send_needed;
+  bool send_ready;
+  int8_t *send_buff;
+  size_t send_buff_size;
+  size_t send_buff_sent;
+  MHD_UpgrTransferFinishedCbk send_finished_cbk;
+  void *send_finished_cbk_cls;
+};
+
+#endif /* UPGRADE_CBK_SUPPORT */
 
 /**
  * Signature of function called to log URI accesses.

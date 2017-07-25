@@ -53,5 +53,10 @@ int
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection);
 
+bool
+MHD_response_start_upgrade_cbk_ (struct MHD_Response *response,
+                                 struct MHD_Connection *connection);
+
+
 
 #endif
