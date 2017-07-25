@@ -30,9 +30,27 @@ static ssize_t
 callback (void *cls,
           uint64_t pos,
           char *buf,
-          size_t max)
+          size_t buf_size)
 {
-  return MHD_CONTENT_READER_END_OF_STREAM;
+  static const char response_data[] = "<html><head><title>Simple response</title></head>" \
+      "<body>Simple response text</body></html>";
+  static const uint64_t response_size = (sizeof(response_data)/sizeof(char)) - 1;
+  size_t size_to_copy;
+
+  /* Note: 'pos' will never exceed size of transmitted data. */
+  /* You can use 'pos == response_size' in next check. */
+  if (pos >= response_size)
+    { /* Whole response was sent. Signal end of response. */
+      return MHD_CONTENT_READER_END_OF_STREAM;
+    }
+
+  if (buf_size < (response_size - pos) )
+    size_to_copy = buf_size;
+  else
+    size_to_copy = response_size - pos;
+
+  memcpy (buf, response_data + pos, size_to_copy);
+  return size_to_copy;
 }
 
 
