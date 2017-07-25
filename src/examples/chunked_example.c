@@ -20,6 +20,7 @@
  * @file chunked_example.c
  * @brief example for generating chunked encoding with libmicrohttpd
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -44,12 +45,31 @@ callback (void *cls,
       return MHD_CONTENT_READER_END_OF_STREAM;
     }
 
+  /* Pseudo code.        *
+  if (data_not_ready)
+    {
+      // Callback will be called again on next loop.
+      // Consider suspending connection until data will be ready.
+      return 0;
+    }
+   * End of pseudo code. */
+
   if (buf_size < (response_size - pos) )
     size_to_copy = buf_size;
   else
     size_to_copy = response_size - pos;
 
   memcpy (buf, response_data + pos, size_to_copy);
+
+  /* Pseudo code.        *
+  if (error_preparing_response)
+    {
+      // Close connection with error.
+      return MHD_CONTENT_READER_END_WITH_ERROR;
+    }
+   * End of pseudo code. */
+
+  /* Return amount of data copied to buffer. */
   return size_to_copy;
 }
 
