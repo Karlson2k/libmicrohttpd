@@ -26,6 +26,11 @@
 #include "platform.h"
 #include <microhttpd.h>
 
+struct responseContentCallbackParam
+{
+  const char *response_data;
+  size_t response_size;
+};
 
 static ssize_t
 callback (void *cls,
@@ -33,14 +38,13 @@ callback (void *cls,
           char *buf,
           size_t buf_size)
 {
-  static const char response_data[] = "<html><head><title>Simple response</title></head>" \
-      "<body>Simple response text</body></html>";
-  static const uint64_t response_size = (sizeof(response_data)/sizeof(char)) - 1;
   size_t size_to_copy;
+  struct responseContentCallbackParam * const param =
+      (struct responseContentCallbackParam *)cls;
 
   /* Note: 'pos' will never exceed size of transmitted data. */
-  /* You can use 'pos == response_size' in next check. */
-  if (pos >= response_size)
+  /* You can use 'pos == param->response_size' in next check. */
+  if (pos >= param->response_size)
     { /* Whole response was sent. Signal end of response. */
       return MHD_CONTENT_READER_END_OF_STREAM;
     }
@@ -54,12 +58,12 @@ callback (void *cls,
     }
    * End of pseudo code. */
 
-  if (buf_size < (response_size - pos) )
+  if (buf_size < (param->response_size - pos))
     size_to_copy = buf_size;
   else
-    size_to_copy = response_size - pos;
+    size_to_copy = param->response_size - pos;
 
-  memcpy (buf, response_data + pos, size_to_copy);
+  memcpy (buf, param->response_data + pos, size_to_copy);
 
   /* Pseudo code.        *
   if (error_preparing_response)
@@ -73,6 +77,14 @@ callback (void *cls,
   return size_to_copy;
 }
 
+void
+free_callback_param(void *cls)
+{
+  free(cls);
+}
+
+static const char simple_response_text[] = "<html><head><title>Simple response</title></head>"
+                                           "<body>Simple response text</body></html>";
 
 
 static int
@@ -84,6 +96,7 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **ptr)
 {
   static int aptr;
+  struct responseContentCallbackParam * callback_param;
   struct MHD_Response *response;
   int ret;
 
@@ -95,12 +108,20 @@ ahc_echo (void *cls,
       *ptr = &aptr;
       return MHD_YES;
     }
+
+  callback_param = malloc (sizeof(struct responseContentCallbackParam));
+  if (NULL == callback_param)
+    return MHD_NO; /* Not enough memory. */
+
+  callback_param->response_data = simple_response_text;
+  callback_param->response_size = (sizeof(simple_response_text)/sizeof(char)) - 1;
+
   *ptr = NULL;                  /* reset when done */
   response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
                                                 &callback,
-                                                NULL,
-                                                NULL);
+                                                callback_param,
+                                                &free_callback_param);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
