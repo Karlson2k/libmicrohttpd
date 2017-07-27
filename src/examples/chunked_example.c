@@ -26,7 +26,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 
-struct responseContentCallbackParam
+struct ResponseContentCallbackParam
 {
   const char *response_data;
   size_t response_size;
@@ -39,8 +39,8 @@ callback (void *cls,
           size_t buf_size)
 {
   size_t size_to_copy;
-  struct responseContentCallbackParam * const param =
-      (struct responseContentCallbackParam *)cls;
+  struct ResponseContentCallbackParam * const param =
+      (struct ResponseContentCallbackParam *)cls;
 
   /* Note: 'pos' will never exceed size of transmitted data. */
   /* You can use 'pos == param->response_size' in next check. */
@@ -96,7 +96,7 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **ptr)
 {
   static int aptr;
-  struct responseContentCallbackParam * callback_param;
+  struct ResponseContentCallbackParam * callback_param;
   struct MHD_Response *response;
   int ret;
 
@@ -109,7 +109,7 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
 
-  callback_param = malloc (sizeof(struct responseContentCallbackParam));
+  callback_param = malloc (sizeof(struct ResponseContentCallbackParam));
   if (NULL == callback_param)
     return MHD_NO; /* Not enough memory. */
 
