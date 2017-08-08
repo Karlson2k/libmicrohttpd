@@ -798,16 +798,17 @@ typedef enum MHD_Bool
 /**
  * Signature of the callback used by MHD to notify the application
  * that we now expect a response.  The application can either
- * call #MHD_response_queue() or suspend the request or return
- * #MHD_NO.
+ * call #MHD_response_queue() or suspend the request and return
+ * NULL to resume processing later, or return NULL without suspending
+ * to close the connection (hard error).
  *
  * @param cls client-defined closure
  * @ingroup request
- * @return #MHD_YES if the upload was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
- *         error while handling the request
+ * @return response object to return, NULL if processing was
+ *         suspended or on hard errors; the response object
+ *         will be "consumed" at this point (i.e. the RC decremented)
  */
-typedef enum MHD_Bool
+typedef struct MHD_Response *
 (*MHD_RequestFetchResponseCallback) (void *cls);
 
 
@@ -1157,21 +1158,103 @@ MHD_request_lookup_value (struct MHD_Request *request,
 			  const char *key);
 
 
+
 /**
- * Queue a response to be transmitted to the client (as soon as
- * possible but after the current callback returns).
- *
- * @param request the request identifying the client
- * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
- * @param response response to transmit
- * @return #MHD_NO on error (i.e. reply already sent),
- *         #MHD_YES on success or if message has been queued
- * @ingroup response
+ * @defgroup httpcode HTTP response codes.
+ * These are the status codes defined for HTTP responses.
+ * @{
  */
-_MHD_EXTERN int
-MHD_request_queue_response (struct MHD_Request *request,
-			    unsigned int status_code,
-			    struct MHD_Response *response);
+/* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
+enum MHD_HTTP_StatusCode {
+  MHD_HTTP_CONTINUE = 100,
+  MHD_HTTP_SWITCHING_PROTOCOLS = 101,
+  MHD_HTTP_PROCESSING = 102,
+
+  MHD_HTTP_OK = 200,
+  MHD_HTTP_CREATED = 201,
+  MHD_HTTP_ACCEPTED = 202,
+  MHD_HTTP_NON_AUTHORITATIVE_INFORMATION = 203,
+  MHD_HTTP_NO_CONTENT = 204,
+  MHD_HTTP_RESET_CONTENT = 205,
+  MHD_HTTP_PARTIAL_CONTENT = 206,
+  MHD_HTTP_MULTI_STATUS = 207,
+  MHD_HTTP_ALREADY_REPORTED = 208,
+
+  MHD_HTTP_IM_USED = 226,
+
+  MHD_HTTP_MULTIPLE_CHOICES = 300,
+  MHD_HTTP_MOVED_PERMANENTLY = 301,
+  MHD_HTTP_FOUND = 302,
+  MHD_HTTP_SEE_OTHER = 303,
+  MHD_HTTP_NOT_MODIFIED = 304,
+  MHD_HTTP_USE_PROXY = 305,
+  MHD_HTTP_SWITCH_PROXY = 306,
+  MHD_HTTP_TEMPORARY_REDIRECT = 307,
+  MHD_HTTP_PERMANENT_REDIRECT = 308,
+
+  MHD_HTTP_BAD_REQUEST = 400,
+  MHD_HTTP_UNAUTHORIZED = 401,
+  MHD_HTTP_PAYMENT_REQUIRED = 402,
+  MHD_HTTP_FORBIDDEN = 403,
+  MHD_HTTP_NOT_FOUND = 404,
+  MHD_HTTP_METHOD_NOT_ALLOWED = 405,
+  MHD_HTTP_NOT_ACCEPTABLE = 406,
+/** @deprecated */
+#define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") MHD_HTTP_NOT_ACCEPTABLE 
+  MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED = 407,
+  MHD_HTTP_REQUEST_TIMEOUT = 408,
+  MHD_HTTP_CONFLICT = 409,
+  MHD_HTTP_GONE = 410,
+  MHD_HTTP_LENGTH_REQUIRED = 411,
+  MHD_HTTP_PRECONDITION_FAILED = 412,
+  MHD_HTTP_PAYLOAD_TOO_LARGE = 413,
+/** @deprecated */
+#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_PAYLOAD_TOO_LARGE") MHD_HTTP_PAYLOAD_TOO_LARGE
+  MHD_HTTP_URI_TOO_LONG = 414,
+/** @deprecated */
+#define MHD_HTTP_REQUEST_URI_TOO_LONG \
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG") MHD_HTTP_URI_TOO_LONG
+  MHD_HTTP_UNSUPPORTED_MEDIA_TYPE = 415,
+  MHD_HTTP_RANGE_NOT_SATISFIABLE = 416,
+/** @deprecated */
+#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE \
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") MHD_HTTP_RANGE_NOT_SATISFIABLE
+  MHD_HTTP_EXPECTATION_FAILED = 417,
+
+  MHD_HTTP_MISDIRECTED_REQUEST = 421,
+  MHD_HTTP_UNPROCESSABLE_ENTITY = 422,
+  MHD_HTTP_LOCKED = 423,
+  MHD_HTTP_FAILED_DEPENDENCY = 424,
+  MHD_HTTP_UNORDERED_COLLECTION = 425,
+  MHD_HTTP_UPGRADE_REQUIRED = 426,
+
+  MHD_HTTP_PRECONDITION_REQUIRED = 428,
+  MHD_HTTP_TOO_MANY_REQUESTS = 429,
+  MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+
+  MHD_HTTP_NO_RESPONSE = 444,
+
+  MHD_HTTP_RETRY_WITH = 449,
+  MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,
+  MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
+
+  MHD_HTTP_INTERNAL_SERVER_ERROR = 500,
+  MHD_HTTP_NOT_IMPLEMENTED = 501,
+  MHD_HTTP_BAD_GATEWAY = 502,
+  MHD_HTTP_SERVICE_UNAVAILABLE = 503,
+  MHD_HTTP_GATEWAY_TIMEOUT = 504,
+  MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED = 505,
+  MHD_HTTP_VARIANT_ALSO_NEGOTIATES = 506,
+  MHD_HTTP_INSUFFICIENT_STORAGE = 507,
+  MHD_HTTP_LOOP_DETECTED = 508,
+  MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED = 509,
+  MHD_HTTP_NOT_EXTENDED = 510,
+  MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED 511
+
+};
+/** @} */ /* end of group httpcode */
 
 
 /**
@@ -1262,6 +1345,7 @@ MHD_response_set_options (struct MHD_Response *response,
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *
+ * @param sc status code to return
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
  *                   MHD may still call @a crc using smaller chunks); this
@@ -1275,7 +1359,8 @@ MHD_response_set_options (struct MHD_Response *response,
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
-MHD_response_from_callback (uint64_t size,
+MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
+			    uint64_t size,
 			    size_t block_size,
 			    MHD_ContentReaderCallback crc,
 			    void *crc_cls,
@@ -1322,6 +1407,8 @@ enum MHD_ResponseMemoryMode
  * Create a response object.  The response object can be extended with
  * header information and then be used any number of times.
  *
+ * @param sc status code to use for the response;
+ *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0;
  * @param size size of the data portion of the response
  * @param buffer size bytes containing the response's data portion
  * @param mode flags for buffer management
@@ -1329,7 +1416,8 @@ enum MHD_ResponseMemoryMode
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
-MHD_response_from_buffer (size_t size,
+MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
+			  size_t size,
 			  void *buffer,
 			  enum MHD_ResponseMemoryMode mode);
 
@@ -1339,6 +1427,7 @@ MHD_response_from_buffer (size_t size,
  * data is read.  The response object can be extended with
  * header information and then be used any number of times.
  *
+ * @param sc status code to return
  * @param fd file descriptor referring to a file on disk with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
@@ -1352,7 +1441,8 @@ MHD_response_from_buffer (size_t size,
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
-MHD_response_from_fd (int fd,
+MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
+		      int fd,
 		      uint64_t offset,
 		      uint64_t size);
 
@@ -1423,7 +1513,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * of this function should never block (as it will still be called
  * from within the main event loop).
  *
- * @param cls closure, whatever was given to #MHD_create_response_for_upgrade().
+ * @param cls closure, whatever was given to #MHD_response_create_for_upgrade().
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
@@ -1470,8 +1560,9 @@ typedef void
  * to the OS; if there are communication errors before, the usual MHD
  * connection error handling code will be performed.
  *
- * Setting the correct HTTP code (i.e. MHD_HTTP_SWITCHING_PROTOCOLS)
- * and setting correct HTTP headers for the upgrade must be done
+ * MHD will automatically set the correct HTTP status
+ * code (#MHD_HTTP_SWITCHING_PROTOCOLS).
+ * Setting correct HTTP headers for the upgrade must be done
  * manually (this way, it is possible to implement most existing
  * WebSocket versions using this API; in fact, this API might be useful
  * for any protocol switch, not just WebSockets).  Note that
@@ -1494,16 +1585,25 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 
 
 /**
- * Destroy a response object and associated resources.  Note that
- * libmicrohttpd may keep some of the resources around if the response
- * is still in the queue for some clients, so the memory may not
- * necessarily be freed immediatley.
+ * Decrease reference counter of a response object.  If the counter
+ * hits zero, destroys a response object and associated resources.
  *
- * @param response response to destroy
+ * @param response response to decrement RC of
  * @ingroup response
  */
 _MHD_EXTERN void
-MHD_response_destroy (struct MHD_Response *response);
+MHD_response_decref (struct MHD_Response *response);
+
+
+/**
+ * Increases reference counter of a response object. Used so that
+ * the same response object can be queued repeatedly.
+ *
+ * @param response response to increment RC for
+ * @ingroup response
+ */
+_MHD_EXTERN void
+MHD_response_incref (struct MHD_Response *response);
 
 
 /**
