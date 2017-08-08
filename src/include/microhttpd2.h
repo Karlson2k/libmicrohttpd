@@ -53,6 +53,10 @@
  *   at the same time avoid symbol conflict with legacy names
  *   (so we can have one binary implementing old and new 
  *   library API at the same time via compatibility layer).
+ * - make it impossible to queue a response at the wrong time
+ * - make it clear which response status codes are "properly" 
+ *   supported (include the descriptive string) by using an enum;
+ * - simplify API for common-case of one-shot responses
  */
 
 
