@@ -56,7 +56,8 @@
  * - make it impossible to queue a response at the wrong time
  * - make it clear which response status codes are "properly" 
  *   supported (include the descriptive string) by using an enum;
- * - simplify API for common-case of one-shot responses
+ * - simplify API for common-case of one-shot responses by
+ *   eliminating need for destroy response in those cases;
  */
 
 
@@ -103,7 +104,10 @@ enum MHD_OptionValue;
 
 
 /**
- * Option configuring the service.
+ * Option configuring the service.  This struct should be treated as
+ * completely opaque by the application.  It is declared in the header
+ * to support applications allocating arrays of this struct (in
+ * particular on the stack).
  */
 struct MHD_Option
 {
@@ -114,17 +118,17 @@ struct MHD_Option
   enum MHD_OptionValue option;
 
   /**
-   * Option value.
+   * Option value.  Internal-use only!
    */
   intptr_t value1;
 
   /**
-   * Option value.
+   * Option value.  Internal-use only!
    */
   intptr_t value2;
   
   /**
-   * Option value.
+   * Option value.  Internal-use only!
    */
   intptr_t value3;
 
@@ -177,7 +181,7 @@ MHD_option_suppress_date_no_clock (void);
  * enforced by #MHD_option_allow_suspend_resume() and if there is no
  * listen socket.  #MHD_option_enable_itc() is always used
  * automatically on platforms where select()/poll()/other ignore
- * shutdown of listen socket.
+ * shutdown() of a listen socket.
  *
  * @return MHD option
  */
@@ -492,7 +496,7 @@ MHD_option_gnutls_credentials (int gnutls_credentials);
  * the SNI information provided.  The callback is expected to access
  * the SNI data using `gnutls_server_name_get()`.  Using this option
  * requires GnuTLS 3.0 or higher.
-   *
+ *
  * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
  * @return MHD option
  */
@@ -1276,8 +1280,10 @@ enum MHD_HTTP_StatusCode {
  * request is suspended, MHD will not detect disconnects by the
  * client.
  *
- * The only safe time to suspend a request is from the
- * #MHD_AccessHandlerCallback.
+ * The only safe time to suspend a request is from either a
+ * #MHD_RequestHeaderCallback, #MHD_UploadCallback, or a
+ * #MHD_RequestfetchResponseCallback.  Suspending a request
+ * at any other time will cause an assertion failure.
  *
  * Finally, it is an API violation to call #MHD_stop_daemon while
  * having suspended requests (this will at least create memory and
