@@ -3000,6 +3000,14 @@ _MHD_EXTERN int MHD_upgr_recv_fill(struct MHD_UpgrHandleCbk *uh, void *buffer, s
 
 _MHD_EXTERN ssize_t MHD_upgr_recv(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size);
 
+enum MHD_UpgrTerminationType
+{
+  MHD_UPGR_TERMINATION_BY_TIMEOUT = 1,
+  MHD_UPGR_TERMINATION_BY_APP = 2,
+  MHD_UPGR_TERMINATION_BY_REMOTE_DISCNT = 3,
+  MHD_UPGR_TERMINATION_BY_NET_ERR = 4
+};
+
 /**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
