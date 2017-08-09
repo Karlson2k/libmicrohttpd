@@ -1921,7 +1921,7 @@ MHD_connection_get_information_sz (struct MHD_Connection *connection,
 #define MHD_connection_get_information(connection,   \
                                        info_type,    \
                                        return_value) \
-        MHD_connection_get_information_sz ((connection),(info_type),(return_value),sizeof(enum MHD_ConnectionInformationType))
+        MHD_connection_get_information_sz ((connection),(info_type),(return_value),sizeof(union MHD_ConnectionInformation))
 
 
 /**
