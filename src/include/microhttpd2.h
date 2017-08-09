@@ -1894,7 +1894,7 @@ union MHD_ConnectionInformation
  * @param info_type what information is desired?
  * @param[out] return_value pointer to union where requested information will
  *                          be stored
- * @param return_value_size size of union MHD_DaemonInformation at compile
+ * @param return_value_size size of union MHD_ConnectionInformation at compile
  *                          time
  * @return #MHD_YES on success, #MHD_NO on error
  *         (@a info_type is unknown, NULL pointer etc.)
@@ -1993,7 +1993,7 @@ enum MHD_RequestInformationType
  * @param info_type what information is desired?
  * @param[out] return_value pointer to union where requested information will
  *                          be stored
- * @param return_value_size size of union MHD_DaemonInformation at compile
+ * @param return_value_size size of union MHD_RequestInformation at compile
  *                          time
  * @return #MHD_YES on success, #MHD_NO on error
  *         (@a info_type is unknown, NULL pointer etc.)
