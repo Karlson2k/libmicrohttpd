@@ -3008,6 +3008,11 @@ enum MHD_UpgrTerminationType
   MHD_UPGR_TERMINATION_BY_NET_ERR = 4
 };
 
+typedef void (*MHD_UpgrTerminationCbk) (enum MHD_UpgrTerminationType termination_type, void *cls);
+
+_MHD_EXTERN int
+MHD_upgr_register_termination_cbk (MHD_UpgrTerminationCbk callback, enum MHD_UpgrTerminationType termination_type, void *cls);
+
 /**
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
