@@ -39,9 +39,12 @@ if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
   post_example
 if HAVE_MAGIC
-noinst_PROGRAMS += \
-  demo \
-  demo_https
+if HAVE_POSIX_THREADS
+noinst_PROGRAMS += demo
+if ENABLE_HTTPS
+noinst_PROGRAMS += demo_https
+endif
+endif
 endif
 endif
 
@@ -55,9 +58,11 @@ noinst_PROGRAMS += \
  authorization_example
 endif
 
+if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
 noinst_PROGRAMS += \
  upgrade_example
+endif
 endif
 
 if HAVE_W32
@@ -71,8 +76,11 @@ minimal_example_LDADD = \
 
 upgrade_example_SOURCES = \
  upgrade_example.c
+upgrade_example_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 upgrade_example_LDADD = \
- $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS)
 
 timeout_SOURCES = \
  timeout.c
