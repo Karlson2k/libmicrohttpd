@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006-2017 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006-2017 Christian Grothoff, Karlson2k (Evgeny Grin)
+     (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -58,6 +59,7 @@
  *   supported (include the descriptive string) by using an enum;
  * - simplify API for common-case of one-shot responses by
  *   eliminating need for destroy response in those cases;
+ * - improve thread-safety
  */
 
 
@@ -1895,18 +1897,41 @@ union MHD_ConnectionInformation
 
 /**
  * Obtain information about the given connection.
+ * Use wrapper macro #MHD_connection_get_information() instead of direct use
+ * of this function.
  *
  * @param connection what connection to get information about
  * @param info_type what information is desired?
- * @param ... depends on @a info_type
- * @return NULL if this information is not available
- *         (or if the @a info_type is unknown)
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @param return_value_size size of union MHD_ConnectionInformation at compile
+ *                          time
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
  * @ingroup specialized
  */
-_MHD_EXTERN const union MHD_ConnectionInformation *
-MHD_connection_get_information (struct MHD_Connection *connection,
-				enum MHD_ConnectionInformationType info_type,
-				...);
+_MHD_EXTERN enum MHD_Bool
+MHD_connection_get_information_sz (struct MHD_Connection *connection,
+				   enum MHD_ConnectionInformationType info_type,
+				   union MHD_ConnectionInformation *return_value,
+				   size_t return_value_size);
+
+
+/**
+ * Obtain information about the given connection.
+ *
+ * @param connection what connection to get information about
+ * @param info_type what information is desired?
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
+ * @ingroup specialized
+ */
+#define MHD_connection_get_information(connection,   \
+                                       info_type,    \
+                                       return_value) \
+        MHD_connection_get_information_sz ((connection),(info_type),(return_value),sizeof(union MHD_ConnectionInformation))
 
 
 /**
@@ -1970,19 +1995,42 @@ enum MHD_RequestInformationType
 
 
 /**
- * Obtain information about the given connection.
+ * Obtain information about the given request.
+ * Use wrapper macro #MHD_request_get_information() instead of direct use
+ * of this function.
  *
- * @param connection what connection to get information about
+ * @param request what request to get information about
  * @param info_type what information is desired?
- * @param ... depends on @a info_type
- * @return NULL if this information is not available
- *         (or if the @a info_type is unknown)
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @param return_value_size size of union MHD_RequestInformation at compile
+ *                          time
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
  * @ingroup specialized
  */
-_MHD_EXTERN const union MHD_RequestInformation *
-MHD_request_get_information (struct MHD_Request *request,
-			     enum MHD_RequestInformationType info_type,
-			     ...);
+_MHD_EXTERN enum MHD_Bool
+MHD_request_get_information_sz (struct MHD_Request *request,
+			        enum MHD_RequestInformationType info_type,
+			        union MHD_RequestInformation *return_value,
+			        size_t return_value_size);
+
+
+/**
+ * Obtain information about the given request.
+ *
+ * @param request what request to get information about
+ * @param info_type what information is desired?
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
+ * @ingroup specialized
+ */
+#define MHD_request_get_information (request,      \
+                                     info_type,    \
+                                     return_value) \
+        MHD_request_get_information_sz ((request), (info_type), (return_value), sizeof(union MHD_RequestInformation))
 
 
 /**
@@ -2053,18 +2101,38 @@ union MHD_DaemonInformation
 
 
 /**
- * Obtain information about the given daemon
- * (not fully implemented!).
+ * Obtain information about the given daemon.
+ * Use wrapper macro #MHD_daemon_get_information() instead of direct use
+ * of this function.
  *
  * @param daemon what daemon to get information about
  * @param info_type what information is desired?
- * @param ... depends on @a info_type
- * @return NULL if this information is not available
- *         (or if the @a info_type is unknown)
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @param return_value_size size of union MHD_DaemonInformation at compile
+ *                          time
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
  * @ingroup specialized
  */
-_MHD_EXTERN const union MHD_DaemonInformation *
-MHD_daemon_get_information (struct MHD_Daemon *daemon,
-			    enum MHD_DaemonInformationType info_type,
-			    ...);
+_MHD_EXTERN enum MHD_Bool
+MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
+			       enum MHD_DaemonInformationType info_type,
+			       union MHD_DaemonInformation *return_value,
+			       size_t return_value_size);
 
+/**
+ * Obtain information about the given daemon.
+ *
+ * @param daemon what daemon to get information about
+ * @param info_type what information is desired?
+ * @param[out] return_value pointer to union where requested information will
+ *                          be stored
+ * @return #MHD_YES on success, #MHD_NO on error
+ *         (@a info_type is unknown, NULL pointer etc.)
+ * @ingroup specialized
+ */
+#define MHD_daemon_get_information(daemon,       \
+                                   info_type,    \
+                                   return_value) \
+	MHD_daemon_get_information_sz((daemon), (info_type), (return_value), sizeof(union MHD_DaemonInformation));
