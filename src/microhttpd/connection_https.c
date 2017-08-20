@@ -64,6 +64,8 @@ recv_tls_adapter (struct MHD_Connection *connection,
       if (GNUTLS_E_AGAIN == res)
         connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
 #endif
+      /* Any network errors means that buffer is empty. */
+      connection->tls_read_ready = false;
       return MHD_ERR_AGAIN_;
     }
   if (res < 0)
