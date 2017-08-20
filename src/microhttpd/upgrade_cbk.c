@@ -59,47 +59,58 @@ MHD_response_start_upgrade_cbk_ (struct MHD_Response *response,
   uh->connection = connection;
   uh->has_recv_data_in_conn_buffer = (0 != connection->read_buffer_offset);
 
-  if (MHD_mutex_init_ (&(uh->recv_mutex)))
+  if (MHD_mutex_init_ (&(uh->termination_mutex)))
     {
-      if (MHD_mutex_init_ (&(uh->send_mutex)))
+      if (MHD_mutex_init_ (&(uh->recv_mutex)))
         {
-          if (MHD_NO != response->upgr_cbk_start_handler (connection,
-                                                          connection->client_context,
-                                                          uh,
-                                                          response->upgr_cbk_start_handler_cls))
+          if (MHD_mutex_init_ (&(uh->send_mutex)))
             {
-              /* Normal HTTP processing is finished,
-               * notify application. */
-              if ( (NULL != daemon->notify_completed) &&
-                   (connection->client_aware) )
-                daemon->notify_completed (daemon->notify_completed_cls,
-                                          connection,
-                                          &(connection->client_context),
-                                          MHD_REQUEST_TERMINATED_COMPLETED_OK);
-              connection->client_aware = false;
-              if (! uh->has_recv_data_in_conn_buffer)
+              if (MHD_NO != response->upgr_cbk_start_handler (connection,
+                                                              connection->client_context,
+                                                              uh,
+                                                              response->upgr_cbk_start_handler_cls))
                 {
-                  MHD_mutex_lock_chk_ (uh->recv_mutex);
-                  /* Destroy connection's memory pool as it will not be used any more. */
-                  connection->read_buffer = NULL;
-                  connection->write_buffer = NULL;
-                  MHD_pool_destroy (connection->pool);
-                  connection->pool = NULL;
-                  MHD_mutex_unlock_chk_ (uh->recv_mutex);
+                  /* Normal HTTP processing is finished,
+                   * notify application. */
+                  if ( (NULL != daemon->notify_completed) &&
+                       (connection->client_aware) )
+                    daemon->notify_completed (daemon->notify_completed_cls,
+                                              connection,
+                                              &(connection->client_context),
+                                              MHD_REQUEST_TERMINATED_COMPLETED_OK);
+                  connection->client_aware = false;
+                  if (! uh->has_recv_data_in_conn_buffer)
+                    {
+                      MHD_mutex_lock_chk_ (uh->recv_mutex);
+                      /* Destroy connection's memory pool as it will not be used any more. */
+                      connection->read_buffer = NULL;
+                      connection->write_buffer = NULL;
+                      MHD_pool_destroy (connection->pool);
+                      connection->pool = NULL;
+                      MHD_mutex_unlock_chk_ (uh->recv_mutex);
+                    }
+                  return true;
                 }
-              return true;
-            }
 
-          MHD_mutex_destroy_chk_ (&(uh->send_mutex));
+              MHD_mutex_destroy_chk_ (&(uh->send_mutex));
+            }
+          else
+            {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("Failed to initialise mutex.\n"));
+#endif /* HAVE_MESSAGES */
+            }
+          MHD_mutex_destroy_chk_ (&(uh->recv_mutex));
         }
       else
         {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Failed to initialise mutex.\n"));
+          MHD_DLOG (daemon,
+                    _("Failed to initialise mutex.\n"));
 #endif /* HAVE_MESSAGES */
         }
-      MHD_mutex_destroy_chk_ (&(uh->recv_mutex));
+      MHD_mutex_destroy_chk_ (&(uh->termination_mutex));
     }
   else
     {
@@ -148,6 +159,10 @@ MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
 void
 MHD_upgr_start_closing_ (struct MHD_UpgrHandleCbk *uh);
 
+/**
+ * @remark To be called only from connection's thread.
+ * @param uh
+ */
 void
 MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
 {
@@ -155,31 +170,38 @@ MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
   mhd_assert (MHD_UPGR_STATE_CONNECTED <= uh->state);
   mhd_assert (MHD_UPGR_STATE_INVALID > uh->state);
 
-  /* Fast check without locking. */
-  if (NULL == uh->recv_buff)
+  if (MHD_UPGR_STATE_TIMEOUT <= uh->state)
     return;
 
+  mhd_assert (0 == (uh->state & MHD_UPGR_STATE_FLAG_NOTIFIED));
+
   MHD_mutex_lock_chk_ (uh->recv_mutex);
-  /* Firm check under lock. */
   if (NULL != uh->recv_buff)
     {
       ssize_t send_res;
-      mhd_assert (0 != uh->recv_buff_size);
-      mhd_assert (uh->recv_buff_used < uh->recv_buff_size);
+      mhd_assert (0 != uh->send_buff_size);
+      mhd_assert (uh->send_buff_sent < uh->send_buff_size);
 
-      send_res = connection->send_cls (connection, uh->recv_buff + uh->recv_buff_used,
-                                       uh->recv_buff_size - uh->recv_buff_used);
+      uh->send_needed = false;
+      send_res = connection->send_cls (connection, uh->send_buff + uh->send_buff_sent,
+                                       uh->send_buff_size - uh->send_buff_sent);
       mhd_assert (0 != send_res);
 
-      /* FIXME: remove flag clearing here or modify check in 'process_sent'. */
       if (0 >= send_res)
         {
           if (MHD_ERR_AGAIN_ != send_res)
             { /* Hard error. */
-              uh->
+              if (MHD_ERR_CONNRESET_ == send_res)
+                uh->state = MHD_UPGR_STATE_DISCONN_REMOTE;
+              else
+                uh->state = MHD_UPGR_STATE_DISCONN_ERR;
             }
         }
-
+      else
+        {
+          mhd_assert (((size_t)send_res) <= (uh->send_buff_size - uh->send_buff_sent));
+          uh->send_buff_sent += (size_t)send_res;
+        }
     }
   MHD_mutex_unlock_chk_ (uh->recv_mutex);
 }
@@ -187,7 +209,84 @@ MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
 void
 MHD_upgr_net_recv_ (struct MHD_UpgrHandleCbk *uh)
 {
+  struct MHD_Connection * const connection = uh->connection;
+  mhd_assert (MHD_UPGR_STATE_CONNECTED <= uh->state);
+  mhd_assert (MHD_UPGR_STATE_INVALID > uh->state);
 
+  if (MHD_UPGR_STATE_TIMEOUT <= uh->state)
+    return;
+
+  mhd_assert (0 == (uh->state & MHD_UPGR_STATE_FLAG_NOTIFIED));
+
+  MHD_mutex_lock_chk_ (uh->recv_mutex);
+  if ( (NULL != uh->recv_buff) &&
+       (! uh->peer_closed_write) )
+    {
+      ssize_t recv_res;
+      mhd_assert (0 != uh->recv_buff_size);
+      mhd_assert (uh->recv_buff_used < uh->recv_buff_size);
+
+      uh->recv_needed = false;
+      recv_res = connection->send_cls (connection, uh->recv_buff + uh->recv_buff_used,
+                                       uh->recv_buff_size - uh->recv_buff_used);
+
+      if (0 > recv_res)
+        {
+          if (MHD_ERR_AGAIN_ != recv_res)
+            { /* Hard error. */
+              if (MHD_ERR_CONNRESET_ == recv_res)
+                uh->state = MHD_UPGR_STATE_DISCONN_REMOTE;
+              else
+                uh->state = MHD_UPGR_STATE_DISCONN_ERR;
+            }
+        }
+      else if (0 == recv_res)
+        uh->peer_closed_write = true;
+      else
+        {
+          mhd_assert (((size_t)recv_res) <= (uh->recv_buff_size - uh->recv_buff_used));
+          uh->recv_buff_used += (size_t)recv_res;
+        }
+    }
+  MHD_mutex_unlock_chk_ (uh->recv_mutex);
+}
+
+bool
+MHD_upgr_check_termination_ (struct MHD_UpgrHandleCbk *uh)
+{
+  MHD_UpgrTerminationCbk term_callback;
+  void *callback_cls;
+  enum MHD_UpgrTerminationType term_type;
+
+  mhd_assert (MHD_UPGR_STATE_CONNECTED <= uh->state);
+  mhd_assert (MHD_UPGR_STATE_INVALID > uh->state);
+
+  if (MHD_UPGR_STATE_TIMEOUT > uh->state)
+    return false;
+
+  MHD_mutex_lock_chk_ (uh->recv_mutex);
+  mhd_assert (0 == (uh->state & MHD_UPGR_STATE_FLAG_NOTIFIED));
+  term_callback = uh->termination_cbk;
+  callback_cls = uh->termintaion_cbk_cls;
+  switch (uh->state)
+    {
+      case MHD_UPGR_STATE_TIMEOUT:
+        term_type = MHD_UPGR_TERMINATION_BY_TIMEOUT; break;
+      case MHD_UPGR_STATE_CLOSED_BY_APP:
+        term_type = MHD_UPGR_TERMINATION_BY_APP; break;
+      case MHD_UPGR_STATE_DISCONN_REMOTE:
+        term_type = MHD_UPGR_TERMINATION_BY_REMOTE_DISCNT; break;
+      case MHD_UPGR_STATE_DISCONN_ERR:
+        term_type = MHD_UPGR_TERMINATION_BY_NET_ERR; break;
+      default:
+        mhd_assert(0); break;
+    }
+  uh->state = (enum MHD_UpgrCbkState) (uh->state | MHD_UPGR_STATE_FLAG_NOTIFIED);
+  MHD_mutex_unlock_chk_ (uh->recv_mutex);
+  if (NULL != term_callback)
+    term_callback (uh, term_type, callback_cls);
+
+  return true;
 }
 
 _MHD_EXTERN int
@@ -610,6 +709,9 @@ MHD_upgr_process_recieved_ (struct MHD_UpgrHandleCbk *uh)
           const MHD_UpgrTransferFinishedCbk recv_finished_cbk = uh->recv_finished_cbk;
           void * const recv_finished_cbk_cls = uh->recv_finished_cbk_cls;
           enum MHD_UpgrTransferResult tr_result;
+          /* Receive completion callback must be called before
+           * termination notification callback. */
+          mhd_assert (0 == (uh->state & MHD_UPGR_STATE_FLAG_NOTIFIED));
 
           if (NULL != recv_finished_cbk)
             {
@@ -619,6 +721,7 @@ MHD_upgr_process_recieved_ (struct MHD_UpgrHandleCbk *uh)
                   /* TODO: handle closure processing. */
                 case MHD_UPGR_STATE_CONNECTED:
                   mhd_assert (uh->peer_closed_write);
+                  /* TODO: add one more state "remote side closure"? */
                   tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_DISCNT; break;
                 case MHD_UPGR_STATE_TIMEOUT:
                   tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_TIMEOUT; break;
@@ -678,6 +781,41 @@ MHD_upgr_process_recieved_ (struct MHD_UpgrHandleCbk *uh)
             }
         }
     }
-
   MHD_mutex_unlock_chk_ (uh->recv_mutex);
+}
+
+
+_MHD_EXTERN int
+MHD_upgr_register_termination_cbk (struct MHD_UpgrHandleCbk *uh, MHD_UpgrTerminationCbk callback, void *cls)
+{
+  int ret = MHD_NO;
+  if (NULL == uh)
+    return ret;
+  MHD_mutex_lock_chk_ (uh->termination_mutex);
+  mhd_assert (MHD_UPGR_STATE_CONNECTED <= uh->state);
+  mhd_assert (MHD_UPGR_STATE_INVALID > uh->state);
+  if (0 == (uh->state | MHD_UPGR_STATE_FLAG_NOTIFIED))
+    {
+      if (NULL != callback)
+        {
+          uh->termination_cbk = callback;
+          uh->termintaion_cbk_cls = cls;
+        }
+      else
+        {
+          uh->termination_cbk = NULL;
+          uh->termintaion_cbk_cls = NULL;
+        }
+      ret = MHD_YES;
+    }
+  else
+    {
+#ifdef HAVE_MESSAGES
+      const struct MHD_Daemon * const daemon = uh->connection->daemon;
+      MHD_DLOG (daemon,
+                _("Connection was already disconnected.\n"));
+#endif /* HAVE_MESSAGES */
+    }
+  MHD_mutex_unlock_chk_ (uh->termination_mutex);
+  return ret;
 }
