@@ -32,13 +32,13 @@
 #include "mhd_limits.h"
 
 #ifdef MHD_FAVOR_SMALL_CODE
-#ifdef _MHD_inline
-#undef _MHD_inline
-#endif /* _MHD_inline */
+#ifdef _MHD_static_inline
+#undef _MHD_static_inline
+#endif /* _MHD_static_inline */
 /* Do not force inlining and do not use macro functions, use normal static
    functions instead.
    This may give more flexibility for size optimizations. */
-#define _MHD_inline static
+#define _MHD_static_inline static
 #ifndef INLINE_FUNC
 #define INLINE_FUNC 1
 #endif /* !INLINE_FUNC */
@@ -56,7 +56,7 @@
  * @param c character to check
  * @return non-zero if character is lower case letter, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciilower (char c)
 {
   return (c >= 'a') && (c <= 'z');
@@ -69,7 +69,7 @@ isasciilower (char c)
  * @param c character to check
  * @return non-zero if character is upper case letter, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciiupper (char c)
 {
   return (c >= 'A') && (c <= 'Z');
@@ -82,7 +82,7 @@ isasciiupper (char c)
  * @param c character to check
  * @return non-zero if character is letter in US-ASCII, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciialpha (char c)
 {
   return isasciilower (c) || isasciiupper (c);
@@ -95,7 +95,7 @@ isasciialpha (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciidigit (char c)
 {
   return (c >= '0') && (c <= '9');
@@ -108,7 +108,7 @@ isasciidigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciixdigit (char c)
 {
   return isasciidigit (c) ||
@@ -123,7 +123,7 @@ isasciixdigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit or letter, zero otherwise
  */
-_MHD_inline bool
+_MHD_static_inline bool
 isasciialnum (char c)
 {
   return isasciialpha (c) || isasciidigit (c);
@@ -139,7 +139,7 @@ isasciialnum (char c)
  * @param c character to convert
  * @return converted to lower case character
  */
-_MHD_inline char
+_MHD_static_inline char
 toasciilower (char c)
 {
   return isasciiupper (c) ? (c - 'A' + 'a') : c;
@@ -155,7 +155,7 @@ toasciilower (char c)
  * @param c character to convert
  * @return converted to upper case character
  */
-_MHD_inline char
+_MHD_static_inline char
 toasciiupper (char c)
 {
   return isasciilower (c) ? (c - 'a' + 'A') : c;
@@ -168,7 +168,7 @@ toasciiupper (char c)
  * @param c character to convert
  * @return value of decimal digit or -1 if @ c is not decimal digit
  */
-_MHD_inline int
+_MHD_static_inline int
 todigitvalue (char c)
 {
   if (isasciidigit (c))
@@ -184,7 +184,7 @@ todigitvalue (char c)
  * @param c character to convert
  * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
  */
-_MHD_inline int
+_MHD_static_inline int
 toxdigitvalue (char c)
 {
   if (isasciidigit (c))

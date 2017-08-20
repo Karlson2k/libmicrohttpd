@@ -241,7 +241,9 @@ done
 AS_IF([[test "x$inln_prfx" != "xnone"]],
       [
        AC_DEFINE([INLINE_FUNC],[1],[Define to 1 if your C compiler supports inline functions.])
-       AC_DEFINE_UNQUOTED([_MHD_inline],[static $inln_prfx],[Define to prefix which will be used with MHD inline functions.])
+       AC_DEFINE_UNQUOTED([_MHD_static_inline],[static $inln_prfx],[Define to prefix which will be used with MHD static inline functions.])
+      ], [
+       AC_DEFINE([_MHD_static_inline],[static],[Define to prefix which will be used with MHD static inline functions.])
       ])
 AC_MSG_RESULT([[$inln_prfx]])
 CFLAGS="$save_CFLAGS"
