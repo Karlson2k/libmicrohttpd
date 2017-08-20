@@ -36,12 +36,13 @@
 #define MHD_ERR_AGAIN_ (-3073)
 
 /**
- * "Connection (remote) reset" error code
+ * Connection was hard-closed by remote peer.
  */
 #define MHD_ERR_CONNRESET_ (-3074)
 
 /**
- * "Not connected" error code
+ * Connection is not connected anymore due to
+ * network error or any other reason.
  */
 #define MHD_ERR_NOTCONN_ (-3075)
 

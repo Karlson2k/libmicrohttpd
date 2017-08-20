@@ -73,7 +73,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
       /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
          disrupted); interpret as a hard error */
       connection->tls_read_ready = false;
-      return MHD_ERR_CONNRESET_;
+      return MHD_ERR_NOTCONN_;
     }
 
 #ifdef EPOLL_SUPPORT
@@ -125,7 +125,7 @@ send_tls_adapter (struct MHD_Connection *connection,
     {
       /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
          disrupted); interpret as a hard error */
-      return MHD_ERR_CONNRESET_;
+      return MHD_ERR_NOTCONN_;
     }
 #ifdef EPOLL_SUPPORT
   /* If NOT all available data was sent - socket is not write ready anymore. */

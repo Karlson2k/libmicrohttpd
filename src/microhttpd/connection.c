@@ -152,8 +152,10 @@ recv_param_adapter (struct MHD_Connection *connection,
         }
       if (MHD_SCKT_ERR_IS_EINTR_ (err))
         return MHD_ERR_AGAIN_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+        return MHD_ERR_CONNRESET_;
       /* Treat any other error as hard error. */
-      return MHD_ERR_CONNRESET_;
+      return MHD_ERR_NOTCONN_;
     }
 #ifdef EPOLL_SUPPORT
   else if (i > (size_t)ret)
@@ -204,8 +206,10 @@ send_param_adapter (struct MHD_Connection *connection,
         }
       if (MHD_SCKT_ERR_IS_EINTR_ (err))
         return MHD_ERR_AGAIN_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+        return MHD_ERR_CONNRESET_;
       /* Treat any other error as hard error. */
-      return MHD_ERR_CONNRESET_;
+      return MHD_ERR_NOTCONN_;
     }
 #ifdef EPOLL_SUPPORT
   else if (i > (size_t)ret)
