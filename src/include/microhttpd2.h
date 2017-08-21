@@ -760,23 +760,51 @@ MHD_option_digest_auth_nc_size (size_t stack_limit_b);
  */
 _MHD_EXTERN struct MHD_Option
 MHD_option_connection_completion (MHD_ConnectionCompledCallback ccc,
-				  void *ccc_cls;)
+				  void *ccc_cls);
+
+
+/**
+ * Return values for the #MHD_RequestHeaderCallback implementations.
+ */
+enum MHD_HeaderResult
+{
+  /**
+   * Close the connection, we encountered a serious error.
+   */
+  MHD_HR_CLOSE_CONNECTION = 0,
+
+  /**
+   * Continue to handle the connection normally, if requested
+   * by the client send a "100 CONTINUE" response.  If the
+   * #MHD_RequestHeaderCallback is not defined for a given
+   * request, this behavior is what will always happen.
+   */
+  MHD_HR_CONTINUE_NORMALLY = 1,
+
+  /**
+   * Refuse handling the upload. This code ensures that MHD will
+   * not send a "100 CONTINUE" response (even if requested)
+   * and instead MHD will immediately proceed to the
+   * #MHD_RequestFetchResponseCallback to get the response.  This
+   * is useful if an upload must be refused, i.e. because it is
+   * too big or not supported for the given encoding/uri/method.
+   */
+  MHD_HR_REFUSE_UPLOAD = 2
+  
+};
 
   
 /**
  * Signature of the callback used by MHD to notify the application
  * that we have received the full header of a request.  Can be used to
- * send error responses to a "Expect: 100-continue" request.
- * Note that regular responses should be set in the
- * #MHD_RequestCompletedCallback.
+ * suppress "100 CONTINUE" responses to requests containing an
+ * "Expect: 100-continue" header (by returning #MHD_HR_REFUSE_UPLOAD).
  *
  * @param cls client-defined closure
  * @ingroup request
- * @return #MHD_YES if the upload was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
- *         error while handling the request
+ * @return how to proceed handling the request
  */
-typedef enum MHD_Bool
+typedef enum MHD_HeaderResult
 (*MHD_RequestHeaderCallback) (void *cls);
 
 
@@ -785,13 +813,9 @@ typedef enum MHD_Bool
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
- * @param upload_data the data being uploaded (excluding HEADERS,
- *        for a POST that fits into memory and that is encoded
- *        with a supported encoding, the POST data will NOT be
- *        given in upload_data and is instead available as
- *        part of #MHD_get_connection_values; very large POST
- *        data *will* be made available incrementally in
- *        @a upload_data)
+ * @param upload_data the data being uploaded (excluding headers)
+ *        POST data will typically be made available incrementally via
+ *        multiple callbacks
  * @param[in,out] upload_data_size set initially to the size of the
  *        @a upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
@@ -881,7 +905,7 @@ struct MHD_RequestHandlerCallbacks
  * #MHD_HTTP_METHOD_DELETE, #MHD_HTTP_METHOD_POST, etc).  The callback
  * must initialize @a rhp to provide further callbacks which will
  * process the request further and ultimately to provide the response
- * to give back to the client.
+ * to give back to the client, or return #MHD_NO.
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
@@ -903,112 +927,6 @@ typedef enum MHD_Bool
 			struct MHD_RequestHandlerCallbacks *rhp);
 
 
-/**
- * Generic option to set a global URL handler which
- * will be called for all requests.  You may prefer the
- * more convenient, but less generic #MHD_option_url_table().
- *
- * @param rc function to call for requests
- * @param rc_cls closure to give to @a rc
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_url_handler (MHD_RequestCallback rc,
-			void *rc_cls);
-
-
-/**
- * A client has requested the given url using the given method
- * (#MHD_HTTP_METHOD_GET, #MHD_HTTP_METHOD_PUT,
- * #MHD_HTTP_METHOD_DELETE, #MHD_HTTP_METHOD_POST, etc).  The callback
- * must initialize @a rhp to provide further callbacks which will
- * process the request further and ultimately to provide the response
- * to give back to the client.
- *
- * @param cls argument given together with the function
- *        pointer when the handler was registered with MHD
- * @param request HTTP request handle
- * @param[out] must be set to function pointers to be used to
- *        handle the request further; can be assumed to have
- *        been initialized to all-NULL values already.
- * @return #MHD_YES if the request was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serious
- *         error while handling the request
- */
-typedef enum MHD_Bool
-(*MHD_RequestStartCallback) (void *cls,
-			     struct MHD_Request *request,
-			     struct MHD_RequestHandlerCallbacks *rhp);
-
-
-/**
- * Definition of a request handler for a URL and method.
- */
-struct MHD_UrlHandler;
-
-
-/**
- * Create URL handler array terminator.
- */
-_MHD_EXTERN struct MHD_UrlHandler
-MHD_url_handler_end (void);
-
-
-/**
- * Create a generic URL handler array entry.
- *
- * @param method HTTP method to which this handler
- *   matches. Case-insensitive, i.e. "GET".
- * @param url Which URL does this handler match. Case-sensitive,
- *   i.e. "/favicon.ico".
- * @param start_cb function to call for matching requests
- * @param start_cb_cls closure for @a start_cb
- * @return url handler array entry
- */
-_MHD_EXTERN struct MHD_UrlHandler
-MHD_url_handler_generic (const char *method,
-			 const char *url,
-			 MHD_RequestStartCallback start_cb,
-			 void *start_cb_cls);
-
-
-/**
- * Create a simple URL handler array entry for requests
- * where the application simply returns a response and
- * has no state to initialize or clean up and where there
- * is no upload.
- *
- * @param method HTTP method to which this handler
- *   matches. Case-insensitive, i.e. "GET".
- * @param url Which URL does this handler match. Case-sensitive,
- *   i.e. "/favicon.ico".
- * @param fetch_cb function to call for matching requests
- * @param fetch_cb_cls closure for @a fetch_cb
- * @return url handler array entry
- */
-_MHD_EXTERN struct MHD_UrlHandler
-MHD_url_handler_simple (const char *method,
-			const char *url,
-			MHD_RequestFetchResponseCallback fetch_cb,
-			void *fetch_cb_cls);
-
-
-/**
- * Set a table of @a handlers to process requests of matching methods
- * and URLs.  Requests that do not match any entry will yield a 404
- * NOT FOUND response.  Note that this function may sort the @a
- * handlers array in-place for faster (logarithmic) lookups later,
- * hence the argument must be muteable.  The @a handlers array must
- * remain allocated by the application throughout the lifetime of the
- * daemon!
- *
- * @param[in,out] handlers url handler table, terminated
- *     by #MHD_url_handler_end()
- * @return option array entry
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_url_table (struct MHD_UrlHandler handlers[]);
-
-
 /* **************** Daemon handling functions ***************** */
 
 /**
@@ -1018,11 +936,15 @@ MHD_option_url_table (struct MHD_UrlHandler handlers[]);
  *        persist in memory past this call (note that individual
  *        arguments passed to the functions may need to
  *        be preserved)
+ * @param cb function to be called for incoming requests
+ * @param cb_cls closure for @a cb
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
 _MHD_EXTERN struct MHD_Daemon *
-MHD_daemon_start (const struct MHD_Option options[]);
+MHD_daemon_start (const struct MHD_Option options[],
+		  MHD_RequestCallback cb,
+		  void *cb_cls);
 
 
 /**
