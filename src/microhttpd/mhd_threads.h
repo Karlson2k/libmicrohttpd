@@ -123,6 +123,22 @@
 #define MHD_join_thread_(thread) (WAIT_OBJECT_0 == WaitForSingleObject((thread), INFINITE) ? (CloseHandle((thread)), !0) : 0)
 #endif
 
+#if defined(MHD_USE_POSIX_THREADS)
+/**
+ * Check whether provided thread ID match current thread.
+ * @param ID thread ID to match
+ * @return nonzero on match, zero otherwise
+ */
+#define MHD_thread_ID_match_current_(ID) (pthread_equal((ID), pthread_self()))
+#elif defined(MHD_USE_W32_THREADS)
+/**
+ * Check whether provided thread ID match current thread.
+ * @param ID thread ID to match
+ * @return nonzero on match, zero otherwise
+ */
+#define MHD_thread_ID_match_current_(ID) (GetCurrentThreadId() == (ID))
+#endif
+
 /**
  * Signature of main function for a thread.
  *
