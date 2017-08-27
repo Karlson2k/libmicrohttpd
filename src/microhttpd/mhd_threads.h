@@ -86,6 +86,28 @@
 #endif
 
 #if defined(MHD_USE_POSIX_THREADS)
+  typedef pthread_t MHD_thread_ID_;
+#elif defined(MHD_USE_W32_THREADS)
+  typedef DWORD MHD_thread_ID_;
+#endif
+
+#if defined(MHD_USE_POSIX_THREADS)
+  union _MHD_thread_handle_ID_
+  {
+    MHD_thread_handle_  handle;
+    MHD_thread_ID_      ID;
+  };
+  typedef union _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
+#elif defined(MHD_USE_W32_THREADS)
+  struct _MHD_thread_handle_ID_
+  {
+    MHD_thread_handle_  handle;
+    MHD_thread_ID_      ID;
+  };
+  typedef struct _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
+#endif
+
+#if defined(MHD_USE_POSIX_THREADS)
 /**
  * Wait until specified thread is ended and free thread handle on success.
  * @param thread handle to watch
@@ -123,7 +145,7 @@ typedef MHD_THRD_RTRN_TYPE_
  * @return non-zero on success; zero otherwise
  */
 int
-MHD_create_thread_ (MHD_thread_handle_ *thread,
+MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
                     size_t stack_size,
                     MHD_THREAD_START_ROUTINE_ start_routine,
                     void *arg);
@@ -142,7 +164,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
  * @return non-zero on success; zero otherwise
  */
 int
-MHD_create_named_thread_ (MHD_thread_handle_ *thread,
+MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
                           const char* thread_name,
                           size_t stack_size,
                           MHD_THREAD_START_ROUTINE_ start_routine,

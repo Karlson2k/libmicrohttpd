@@ -2962,7 +2962,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 
       if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
 	   (! pos->thread_joined) &&
-           (! MHD_join_thread_ (pos->pid)) )
+           (! MHD_join_thread_ (pos->pid.handle)) )
         MHD_PANIC (_("Failed to join a thread\n"));
 #ifdef UPGRADE_SUPPORT
       cleanup_upgraded_connection (pos);
@@ -6131,7 +6131,7 @@ close_all_connections (struct MHD_Daemon *daemon)
         if (! pos->thread_joined)
           {
             MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-            if (! MHD_join_thread_ (pos->pid))
+            if (! MHD_join_thread_ (pos->pid.handle))
               MHD_PANIC (_("Failed to join a thread\n"));
             MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
             pos->thread_joined = true;
@@ -6218,7 +6218,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           /* Start harvesting. */
           for (i = 0; i < daemon->worker_pool_size; ++i)
             {
-              if (! MHD_join_thread_ (daemon->worker_pool[i].pid))
+              if (! MHD_join_thread_ (daemon->worker_pool[i].pid.handle))
                 MHD_PANIC (_("Failed to join a thread\n"));
 #ifdef EPOLL_SUPPORT
               if (-1 != daemon->worker_pool[i].epoll_fd)
@@ -6252,7 +6252,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
                                  SHUT_RDWR);
             }
 #endif
-          if (! MHD_join_thread_ (daemon->pid))
+          if (! MHD_join_thread_ (daemon->pid.handle))
             {
               MHD_PANIC (_("Failed to join a thread\n"));
             }

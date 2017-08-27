@@ -755,7 +755,7 @@ struct MHD_Connection
    * Thread handle for this connection (if we are using
    * one thread per connection).
    */
-  MHD_thread_handle_ pid;
+  MHD_thread_handle_ID_ pid;
 
   /**
    * Size of @e read_buffer (in bytes).  This value indicates
@@ -1442,7 +1442,7 @@ struct MHD_Daemon
   /**
    * The select thread handle (if we have internal select)
    */
-  MHD_thread_handle_ pid;
+  MHD_thread_handle_ID_ pid;
 
   /**
    * Mutex for per-IP connection counts.

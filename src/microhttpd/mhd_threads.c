@@ -38,14 +38,6 @@
 #include <errno.h>
 
 
-
-#if defined(MHD_USE_POSIX_THREADS)
-typedef pthread_t MHD_thread_ID_;
-#elif defined(MHD_USE_W32_THREADS)
-typedef DWORD MHD_thread_ID_;
-#endif
-
-
 #ifndef MHD_USE_THREAD_NAME_
 
 #define MHD_set_thread_name_(t, n) (void)
@@ -183,7 +175,7 @@ MHD_set_thread_name_(const MHD_thread_ID_ thread_id,
  * @return non-zero on success; zero otherwise (with errno set)
  */
 int
-MHD_create_thread_ (MHD_thread_handle_ *thread,
+MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
                     size_t stack_size,
                     MHD_THREAD_START_ROUTINE_ start_routine,
                     void *arg)
@@ -200,7 +192,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
           res = pthread_attr_setstacksize (&attr,
                                            stack_size);
           if (0 == res)
-              res = pthread_create (thread,
+              res = pthread_create (&(thread->handle),
                                     &attr,
                                     start_routine,
                                     arg);
@@ -208,7 +200,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
         }
     }
   else
-    res = pthread_create (thread,
+    res = pthread_create (&(thread->handle),
                           NULL,
                           start_routine,
                           arg);
@@ -218,6 +210,7 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
 
   return !res;
 #elif defined(MHD_USE_W32_THREADS)
+  unsigned int thread_ID;
 #if SIZE_MAX != UINT_MAX
   if (stack_size > UINT_MAX)
     {
@@ -226,15 +219,18 @@ MHD_create_thread_ (MHD_thread_handle_ *thread,
     }
 #endif /* SIZE_MAX != UINT_MAX */
 
-  *thread = (HANDLE) _beginthreadex (NULL,
+  thread->handle = (MHD_thread_handle_)
+                     _beginthreadex (NULL,
                                      (unsigned int) stack_size,
                                      start_routine,
                                      arg,
                                      0,
-                                     NULL);
-  if ((MHD_thread_handle_)-1 == (*thread))
+                                     &thread_ID);
+
+  if ((MHD_thread_handle_)-1 == thread->handle)
     return 0;
 
+  thread->ID = (MHD_thread_ID_)thread_ID;
   return !0;
 #endif
 }
@@ -294,7 +290,7 @@ named_thread_starter (void *data)
  * @return non-zero on success; zero otherwise (with errno set)
  */
 int
-MHD_create_named_thread_ (MHD_thread_handle_ *thread,
+MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
                           const char* thread_name,
                           size_t stack_size,
                           MHD_THREAD_START_ROUTINE_ start_routine,
@@ -323,7 +319,7 @@ MHD_create_named_thread_ (MHD_thread_handle_ *thread,
         res = pthread_attr_setstacksize (&attr,
                                          stack_size);
       if (0 == res)
-          res = pthread_create (thread,
+          res = pthread_create (&(thread->handle),
                                 &attr,
                                 start_routine,
                                 arg);
