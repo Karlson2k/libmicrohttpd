@@ -2397,6 +2397,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  goto cleanup;
         }
     }
+  else
+    connection->pid = daemon->pid;
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {

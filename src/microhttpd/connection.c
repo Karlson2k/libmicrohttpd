@@ -3769,9 +3769,7 @@ MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)
 {
-#ifdef UPGRADE_SUPPORT
   struct MHD_Daemon *daemon;
-#endif /* UPGRADE_SUPPORT */
 
   if ( (NULL == connection) ||
        (NULL == response) ||
@@ -3779,8 +3777,18 @@ MHD_queue_response (struct MHD_Connection *connection,
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
 	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
     return MHD_NO;
-#ifdef UPGRADE_SUPPORT
   daemon = connection->daemon;
+  if ( (!connection->suspended) &&
+       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+       (!MHD_thread_ID_match_current_(connection->pid.ID)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Attempted to queue response on wrong thread!\n"));
+#endif
+      return MHD_NO;
+    }
+#ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
     {
