@@ -182,7 +182,6 @@ MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
       mhd_assert (0 != uh->send_buff_size);
       mhd_assert (uh->send_buff_sent < uh->send_buff_size);
 
-      uh->send_needed = false;
       send_res = connection->send_cls (connection, uh->send_buff + uh->send_buff_sent,
                                        uh->send_buff_size - uh->send_buff_sent);
       mhd_assert (0 != send_res);
@@ -191,6 +190,7 @@ MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
         {
           if (MHD_ERR_AGAIN_ != send_res)
             { /* Hard error. */
+              uh->send_needed = false;
               if (MHD_ERR_CONNRESET_ == send_res)
                 uh->state = MHD_UPGR_STATE_DISCONN_REMOTE;
               else
@@ -201,6 +201,8 @@ MHD_upgr_net_send_ (struct MHD_UpgrHandleCbk *uh)
         {
           mhd_assert (((size_t)send_res) <= (uh->send_buff_size - uh->send_buff_sent));
           uh->send_buff_sent += (size_t)send_res;
+          if (uh->send_buff_sent == uh->send_buff_size)
+            uh->send_needed = false;
         }
     }
   MHD_mutex_unlock_chk_ (uh->recv_mutex);
@@ -226,7 +228,6 @@ MHD_upgr_net_recv_ (struct MHD_UpgrHandleCbk *uh)
       mhd_assert (0 != uh->recv_buff_size);
       mhd_assert (uh->recv_buff_used < uh->recv_buff_size);
 
-      uh->recv_needed = false;
       recv_res = connection->send_cls (connection, uh->recv_buff + uh->recv_buff_used,
                                        uh->recv_buff_size - uh->recv_buff_used);
 
@@ -234,6 +235,7 @@ MHD_upgr_net_recv_ (struct MHD_UpgrHandleCbk *uh)
         {
           if (MHD_ERR_AGAIN_ != recv_res)
             { /* Hard error. */
+              uh->recv_needed = false;
               if (MHD_ERR_CONNRESET_ == recv_res)
                 uh->state = MHD_UPGR_STATE_DISCONN_REMOTE;
               else
@@ -241,11 +243,16 @@ MHD_upgr_net_recv_ (struct MHD_UpgrHandleCbk *uh)
             }
         }
       else if (0 == recv_res)
-        uh->peer_closed_write = true;
+        {
+          uh->recv_needed = false;
+          uh->peer_closed_write = true;
+        }
       else
         {
           mhd_assert (((size_t)recv_res) <= (uh->recv_buff_size - uh->recv_buff_used));
           uh->recv_buff_used += (size_t)recv_res;
+          if (uh->recv_buff_used == uh->recv_buff_size)
+            uh->recv_needed = false;
         }
     }
   MHD_mutex_unlock_chk_ (uh->recv_mutex);
@@ -275,7 +282,6 @@ MHD_upgr_check_termination_ (struct MHD_UpgrHandleCbk *uh)
       case MHD_UPGR_STATE_CLOSED_BY_APP:
         term_type = MHD_UPGR_TERMINATION_BY_APP; break;
       case MHD_UPGR_STATE_DISCONN_REMOTE:
-        term_type = MHD_UPGR_TERMINATION_BY_REMOTE_DISCNT; break;
       case MHD_UPGR_STATE_DISCONN_ERR:
         term_type = MHD_UPGR_TERMINATION_BY_NET_ERR; break;
       default:
@@ -582,8 +588,8 @@ MHD_upgr_recv (struct MHD_UpgrHandleCbk *uh,
                     }
                 }
             }
-          MHD_mutex_unlock_chk_ (uh->recv_mutex);
         }
+      MHD_mutex_unlock_chk_ (uh->recv_mutex);
     }
   return ret;
 }
@@ -623,7 +629,7 @@ MHD_upgr_process_sent_ (struct MHD_UpgrHandleCbk *uh)
                 case MHD_UPGR_STATE_CLOSED_BY_APP:
                   tr_result = MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_APP; break;
                 case MHD_UPGR_STATE_DISCONN_REMOTE:
-                  tr_result = MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_REMOTE_DISCNT; break;
+                  tr_result = MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_REMOTE; break;
                 case MHD_UPGR_STATE_DISCONN_ERR:
                   tr_result = MHD_UPGR_TRNSF_RESULT_SEND_ABORTED_BY_NET_ERR; break;
                 default:
@@ -722,13 +728,13 @@ MHD_upgr_process_recieved_ (struct MHD_UpgrHandleCbk *uh)
                 case MHD_UPGR_STATE_CONNECTED:
                   mhd_assert (uh->peer_closed_write);
                   /* TODO: add one more state "remote side closure"? */
-                  tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_DISCNT; break;
+                  tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE; break;
                 case MHD_UPGR_STATE_TIMEOUT:
                   tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_TIMEOUT; break;
                 case MHD_UPGR_STATE_CLOSED_BY_APP:
                   tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_APP; break;
                 case MHD_UPGR_STATE_DISCONN_REMOTE:
-                  tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_DISCNT; break;
+                  tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE; break;
                 case MHD_UPGR_STATE_DISCONN_ERR:
                   tr_result = MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_NET_ERR; break;
                 default:
@@ -818,4 +824,20 @@ MHD_upgr_register_termination_cbk (struct MHD_UpgrHandleCbk *uh, MHD_UpgrTermina
     }
   MHD_mutex_unlock_chk_ (uh->termination_mutex);
   return ret;
+}
+
+void
+MHD_upgr_process_readiness_ (struct MHD_UpgrHandleCbk *uh, bool read_ready, bool write_ready, bool net_err)
+{
+  mhd_assert (MHD_UPGR_STATE_CONNECTED <= uh->state);
+  mhd_assert (MHD_UPGR_STATE_CLOSING >= uh->state);
+  if (!read_ready && !write_ready && net_err)
+    {
+      /* FIXME: sync threads! */
+      uh->state = MHD_UPGR_STATE_DISCONN_ERR; /* FIXME: handle network error and remote disconnect separately? */
+    }
+  else
+    {
+
+    }
 }
