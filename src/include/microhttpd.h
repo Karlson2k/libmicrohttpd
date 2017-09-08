@@ -2227,6 +2227,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * use external select with @code{select()} or with @code{epoll()}.
  * In the latter case, it will only add the single @code{epoll()} file
  * descriptor used by MHD to the sets.
+ * It's necessary to use #MHD_get_timeout() in combination with
+ * this function.
  *
  * This function must be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
@@ -2264,6 +2266,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * use external select with @code{select()} or with @code{epoll()}.
  * In the latter case, it will only add the single @code{epoll()} file
  * descriptor used by MHD to the sets.
+ * It's necessary to use #MHD_get_timeout() in combination with
+ * this function.
  *
  * This function must be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
@@ -2296,6 +2300,8 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
  * before calling this function. Size of fd_set is
  * determined by current value of FD_SETSIZE.
+ * It's necessary to use #MHD_get_timeout() in combination with
+ * this function.
  *
  * This function could be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
@@ -2317,17 +2323,21 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 
 
 /**
- * Obtain timeout value for `select()` for this daemon (only needed if
- * connection timeout is used).  The returned value is how many milliseconds
- * `select()` or `poll()` should at most block, not the timeout value set for
- * connections.  This function MUST NOT be called if MHD is running with
- * #MHD_USE_THREAD_PER_CONNECTION.
+ * Obtain timeout value for polling function for this daemon.
+ * This function set value to amount of milliseconds for which polling
+ * function (`select()` or `poll()`) should at most block, not the
+ * timeout value set for connections.
+ * It is important to always use this function, even if connection
+ * timeout is not set, as in some cases MHD may already have more
+ * data to process on next turn (data pending in TLS buffers,
+ * connections are already ready with epoll etc.) and returned timeout
+ * will be zero.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
  *        not used (or no connections exist that would
- *        necessiate the use of a timeout right now).
+ *        necessitate the use of a timeout right now).
  * @ingroup event
  */
 _MHD_EXTERN int
@@ -2338,7 +2348,8 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 /**
  * Run webserver operations (without blocking unless in client
  * callbacks).  This method should be called by clients in combination
- * with #MHD_get_fdset if the client-controlled select method is used.
+ * with #MHD_get_fdset if the client-controlled select method is used and
+ * #MHD_get_timeout().
  *
  * This function is a convenience method, which is useful if the
  * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
@@ -2360,8 +2371,8 @@ MHD_run (struct MHD_Daemon *daemon);
 
 /**
  * Run webserver operations. This method should be called by clients
- * in combination with #MHD_get_fdset if the client-controlled select
- * method is used.
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
  *
  * You can use this function instead of #MHD_run if you called
  * `select()` on the result from #MHD_get_fdset.  File descriptors in
