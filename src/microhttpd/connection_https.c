@@ -114,7 +114,6 @@ send_tls_adapter (struct MHD_Connection *connection,
   if ( (GNUTLS_E_AGAIN == res) ||
        (GNUTLS_E_INTERRUPTED == res) )
     {
-      MHD_socket_set_error_ (MHD_SCKT_EINTR_);
 #ifdef EPOLL_SUPPORT
       if (GNUTLS_E_AGAIN == res)
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
