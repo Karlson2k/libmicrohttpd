@@ -128,9 +128,9 @@ send_tls_adapter (struct MHD_Connection *connection,
       return MHD_ERR_NOTCONN_;
     }
 #ifdef EPOLL_SUPPORT
-  /* If NOT all available data was sent - socket is not write ready anymore. */
-  if (i > (size_t)res)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+  /* Unlike non-TLS connections, do not reset "write-ready" if
+   * sent smaller amount than provided, as TLS connections may
+   * break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
   return res;
 }
