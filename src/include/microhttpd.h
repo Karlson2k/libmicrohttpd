@@ -1819,6 +1819,8 @@ enum MHD_DaemonInfoType
   /**
    * Request the file descriptor for the external epoll.
    * No extra arguments should be passed.
+   * Waiting on epoll FD must not block longer than value
+   * returned by #MHD_get_timeout().
    */
   MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
   MHD_DAEMON_INFO_EPOLL_FD = MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
