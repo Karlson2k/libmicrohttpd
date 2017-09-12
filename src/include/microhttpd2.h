@@ -99,668 +99,50 @@ struct MHD_Request;
 
 
 /**
- * Enumeration used to define options in 
- * `struct MHD_Option`. Opaque to the application.
+ * Return values for reporting errors, also used
+ * for logging. 
+ *
+ * A value of 0 indicates success (as a return value).
+ * Values between 1 and 10000 must not be used.
+ * Values from 10000-19999 are informational.
+ * Values from 20000-29999 indicate successful operations.
+ * Values from 30000-39999 indicate unsuccessful (normal) operations.
+ * Values from 40000-49999 indicate client errors.
+ * Values from 50000-59999 indicate server errors.
  */
-enum MHD_OptionValue;
-
-
-/**
- * Option configuring the service.  This struct should be treated as
- * completely opaque by the application.  It is declared in the header
- * to support applications allocating arrays of this struct (in
- * particular on the stack).
- */
-struct MHD_Option
+enum MHD_StatusCode
 {
-  /**
-   * Which option is being given.  #MHD_OPTION_VALUE_END
-   * terminates the array.
-   */
-  enum MHD_OptionValue option;
 
   /**
-   * Option value.  Internal-use only!
+   * Successful operation (not used for logging).
    */
-  intptr_t value1;
-
-  /**
-   * Option value.  Internal-use only!
-   */
-  intptr_t value2;
+  MHD_SC_OK = 0,
   
   /**
-   * Option value.  Internal-use only!
+   * Informational event, MHD started.
    */
-  intptr_t value3;
+  MHD_SC_DAEMON_STARTED = 10000,
 
+  /**
+   * This build of MHD does not support TLS, but the application
+   * requested TLS.
+   */
+  MHD_TLS_DISABLED = 50000,
+
+  /**
+   * The application requested an unsupported TLS backend to be used.
+   */
+  MHD_TLS_BACKEND_UNSUPPORTED = 50001,
+
+  /**
+   * The application requested a TLS cipher suite which is not 
+   * supported by the selected backend.
+   */
+  MHD_TLS_CIPHERS_INVALID = 50002
+  
 };
 
 
-/**
- * Returns terminating element of an option array.
- *
- * @return MHD option array terminator
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_end (void);
-
-
-/**
- * Set logging method.  Specify NULL to disable logging entirely.  By
- * default (if this option is not given), we log error messages to
- * stderr.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_log (MHD_LogCallback logger,
-		void *cls logger_cls);
-
-
-/**
- * Convenience macro used to disable logging.
- *
- * @return MHD option that disables logging
- */
-#define MHD_option_disable_logging() MHD_option_log (NULL, NULL)
-
-
-/**
- * Suppress use of "Date" header as this system has no RTC.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_suppress_date_no_clock (void);
-
-
-/**
- * Use inter-thread communication channel.  #MHD_option_enable_itc()
- * can be used with #MHD_option_thread_internal() and is ignored with
- * any "external" mode.  It's required for use of
- * #MHD_daemon_quiesce() or #MHD_connection_add().  This option is
- * enforced by #MHD_option_allow_suspend_resume() and if there is no
- * listen socket.  #MHD_option_enable_itc() is always used
- * automatically on platforms where select()/poll()/other ignore
- * shutdown() of a listen socket.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_enable_itc (void);
-
-
-/**
- * Enable `turbo`.  Disables certain calls to `shutdown()`,
- * enables aggressive non-blocking optimistic reads and
- * other potentially unsafe optimizations.
- * Most effects only happen with #MHD_ELS_EPOLL.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_enable_turbo (void);
-
-
-/**
- * Enable suspend/resume functions, which also implies setting up
- * #MHD_option_enable_itc() to signal resume.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_allow_suspend_resume (void);
-
-
-/**
- * You need to set this option if you want to use HTTP "Upgrade".
- * "Upgrade" may require usage of additional internal resources,
- * which we do not want to use unless necessary.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_allow_upgrade (void);
-
-
-/**
- * Possible levels of enforcement for TCP_FASTOPEN.
- */
-enum MHD_FastOpenMethod
-{
-  /** 
-   * Disable use of TCP_FASTOPEN.
-   */
-  MHD_FOM_DISABLE = -1,
-  
-  /**
-   * Enable TCP_FASTOPEN where supported (Linux with a kernel >= 3.6).
-   * This is the default.
-   */
-  MHD_FOM_AUTO = 0,
-
-  /**
-   * If TCP_FASTOPEN is not available, cause #MHD_daemon_start() to
-fail.
-  */
-  MHD_FOM_REQUIRE = 1
-};
-
-
-/**
- * Configure TCP_FASTOPEN option, including setting a 
- * custom @a queue_length.
- *
- * Note that having a larger queue size can cause resource exhaustion
- * attack as the TCP stack has to now allocate resources for the SYN
- * packet along with its DATA. 
- *
- * @param fom under which conditions should we use TCP_FASTOPEN?
- * @param queue_length queue length to use, default is 50 if this
- *        option is never given.
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tcp_fastopen (enum MHD_FastOpenMethod fom,
-			 unsigned int queue_length);
-
-
-/**
- * Bind to the given TCP port.
- * Ineffective in conjunction with #MHD_option_listen_socket().
- * Ineffective in conjunction with #MHD_option_bind_sa().
- *
- * If neither this option nor the other two mentioned above
- * is specified, MHD will simply not listen on any socket!
- *
- * @param port port to use, 0 to bind to a random (free) port
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_bind_port (uint16_t port);
-
-
-/**
- * Bind to the given socket address.
- * Ineffective in conjunction with #MHD_option_listen_socket().
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_bind_socket_address (const struct sockaddr *sa);
-
-
-/**
- * Use the given backlog for the listen() call.
- * Ineffective in conjunction with #MHD_option_listen_socket().
- *
- * @param listen_backlog backlog to use
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_listen_queue (int listen_backlog);
-
-
-/**
- * If present true, allow reusing address:port socket (by using
- * SO_REUSEPORT on most platform, or platform-specific ways).  If
- * present and set to false, disallow reusing address:port socket
- * (does nothing on most plaform, but uses SO_EXCLUSIVEADDRUSE on
- * Windows).
- * Ineffective in conjunction with #MHD_option_listen_socket().
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_listen_allow_address_reuse (void);
-
-
-/**
- * Accept connections from the given socket.  Socket
- * must be a TCP or UNIX domain (stream) socket.
- * 
- * Disables other listen options, including
- * #MHD_option_bind_sa(), #MHD_option_bind_port(),
- * #MHD_option_listen_queue() and
- * #MHD_option_listen_allow_address_reuse().
- *
- * @param listen_socket listen socket to use
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_listen_socket (int listen_socket);
-
-
-/**
- * Event loop syscalls supported by MHD.
- */
-enum MHD_EventLoopSyscall
-{
-  /**
-   * Automatic selection of best-available method. This is also the
-   * default.
-   */ 
-  MHD_ELS_AUTO = 0,
-
-  /**
-   * Use select().
-   */
-  MHD_ELS_SELECT = 1,
-  
-  /**
-   * Use poll().
-   */
-  MHD_ELS_POLL = 2,
-  
-  /**
-   * Use epoll().
-   */
-  MHD_ELS_EPOLL = 3
-};
-
-
-/**
- * Force use of a particular event loop system call.
- * 
- * @param els event loop syscall to use
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_event_loop (enum MHD_EventLoopSyscall els);
-
-
-/**
- * Protocol strictness enforced by MHD on clients.
- */
-enum MHD_ProtocolStrictLevel
-{
-  /**
-   * Be particularly permissive about the protocol, allowing slight
-   * deviations that are technically not allowed by the
-   * RFC. Specifically, at the moment, this flag causes MHD to allow
-   * spaces in header field names. This is disallowed by the standard.
-   * It is not recommended to set this value on publicly available
-   * servers as it may potentially lower level of protection.
-   */
-  MHD_SL_PERMISSIVE = -1,
-
-  /**
-   * Sane level of protocol enforcement for production use.
-   */
-  MHD_SL_DEFAULT = 0,
-
-  /**
-   * Be strict about the protocol (as opposed to as tolerant as
-   * possible).  Specifically, at the moment, this flag causes MHD to
-   * reject HTTP 1.1 connections without a "Host" header.  This is
-   * required by the standard, but of course in violation of the "be
-   * as liberal as possible in what you accept" norm.  It is
-   * recommended to set this if you are testing clients against
-   * MHD, and to use default in production.
-   */
-  MHD_SL_STRICT = 1
-};
-
-
-/**
- * Set how strictly MHD will enforce the HTTP protocol.
- * 
- * @param sl how strict should we be
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_protocol_strict_level (enum MHD_ProtocolStrictLevel sl);
-
-
-/**
- * Enable TLS.
- *
- * @param tls_backend which TLS backend should be used,
- *    currently only "gnutls" is supported.  You can
- *    also specify "NULL" for best-available (which is the default).
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls (const char *tls_backend);
-
-
-/**
- * Provide TLS key and certificate data in-memory.
- *
- * @param mem_key private key (key.pem) to be used by the
- *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
- * @param mem_cert certificate (cert.pem) to be used by the
- *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls_key_and_cert_from_memory (const char *mem_key,
-					 const char *mem_cert);
-
-
-/**
- * Provide passphrase to decrypt 'key.pem' (if required).
- *
- * @param pass passphrase phrase to decrypt 'key.pem'
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls_key_passphrase (const char *pass);
-
-
-/**
- * Configure TLS ciphers to use.  Default is "NORMAL".
- *
- * @param ciphers which ciphers should be used by TLS
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls_ciphers (const char *ciphers);
-
-
-/**
- * Configure DH parameters (dh.pem) to use for the TLS key
- * exchange. 
- *
- * @param dh parameters to use
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls_mem_dhparams (const char *dh);
-
-
-/**
- * Memory pointer for the certificate (ca.pem) to be used by the
- * HTTPS daemon for client authentification.  
- *
- * @param mem_trust memory pointer to the certificate
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_tls_mem_trust (const char *mem_trust);
-
-
-/**
- * Configure daemon credentials type for GnuTLS.
- *
- * @param gnutls_credentials must be a value of
- *   type `gnutls_credentials_type_t`
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_gnutls_credentials (int gnutls_credentials);
-
-
-/**
- * Provide TLS key and certificate data via callback.
- *
- * Use a callback to determine which X.509 certificate should be used
- * for a given HTTPS connection.  This option provides an alternative
- * to #MHD_option_tls_key_and_cert_from_memory().  You must use this
- * version if multiple domains are to be hosted at the same IP address
- * using TLS's Server Name Indication (SNI) extension.  In this case,
- * the callback is expected to select the correct certificate based on
- * the SNI information provided.  The callback is expected to access
- * the SNI data using `gnutls_server_name_get()`.  Using this option
- * requires GnuTLS 3.0 or higher.
- *
- * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_gnutls_key_and_cert_from_callback (void *cb);
-
-
-/**
- * Run using a specific address family (by default, MHD will support
- * dual stack if supported by the operating system).
- *
- * @param af address family to use, i.e. #AF_INET or #AF_INET6,
- *           or #AF_UNSPEC for dual stack
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_address_family (int af);
-
-
-/**
- * Enable use of one thread per connection.
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_thread_per_connection (void);
-
-
-/**
- * Enable use of MHD-internal worker thread.
- *
- * Run using an internal thread (or thread pool) for sockets sending
- * and receiving and data processing. Without this flag MHD will not
- * run automatically in background thread(s).  If this option is set,
- * #MHD_run() and #MHD_run_from_select() cannot be used.   
- *
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_thread_iternal (void);
-
-
-/**
- * Enable use of a thread pool of the given size.
- *
- * @param num_threads number of threads to run in the pool
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_thread_pool_size (unsigned int num_threads);
-
-
-/**
- * Allow or deny a client to connect.
- *
- * @param cls closure
- * @param addr address information from the client
- * @param addrlen length of @a addr
- * @see #MHD_option_accept_policy()
- * @return #MHD_YES if connection is allowed, #MHD_NO if not
- */
-typedef enum MHD_Bool
-(*MHD_AcceptPolicyCallback) (void *cls,
-                             const struct sockaddr *addr,
-                             socklen_t addrlen);
-
-
-/**
- * Return option setting a policy that accepts/rejects connections
- * based on the client's IP address.  This function will be called
- * before a connection object is created.
- *
- * @param apc function to call to check the policy
- * @param apc_cls closure for @a apc
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_accept_policy (MHD_AcceptPolicyCallback apc,
-			  void *apc_cls);
-
-
-/**
- * Signature of the callback used by MHD to notify the
- * application about started/stopped connections
- *
- * @param cls client-defined closure
- * @param connection connection handle
- * @param socket_context socket-specific pointer where the
- *                       client can associate some state specific
- *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
- *                       HTTP request.  The client can initialize
- *                       during #MHD_CONNECTION_NOTIFY_STARTED and
- *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
- *                       and access in the meantime using
- *                       #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
- * @param toe reason for connection notification
- * @see #MHD_OPTION_NOTIFY_CONNECTION
- * @ingroup request
- */
-typedef void
-(*MHD_ConnectionCompletedCallback) (void *cls,
-				    struct MHD_Connection *connection,
-				    enum MHD_ConnectionNotificationCode toe);
-
-
-/**
- * Register a function that should be called whenever a connection is
- * started or closed.
- *
- * @param ncc function to call to check the policy
- * @param ncc_cls closure for @a apc
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_set_notify_connection (MHD_NotifyConnectionCallback ncc,
-				  void *ncc_cls);
-
-
-/**
- * Maximum memory size per connection (followed by a `size_t`).
- * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
- * Values above 128k are unlikely to result in much benefit, as half
- * of the memory will be typically used for IO, and TCP buffers are
- * unlikely to support window sizes above 64k on most systems.
- *
- * @param memory_limit_b connection memory limit to use in bytes
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_memory_limit (size_t memory_limit_b);
-
-
-/**
- * Increment to use for growing the read buffer (followed by a
- * `size_t`). Must fit within #MHD_option_connection_memory_limit()).
- *
- * @param memory_limit_b connection memory limit to use in bytes
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_memory_increment (size_t memory_increment_b);
-
-
-/**
- * Desired size of the stack for threads created by MHD.  Use 0 for
- * system default.
- *
- * @param stack_limit_b stack size to use in bytes
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_thread_stack_size (size_t stack_limit_b);
-
-
-/**
- * Set maximum number of concurrent connections to accept.  If not
- * given, MHD will not enforce any global limit (modulo running into
- * OS limits).
- *
- * @param connection_limit maximum number of concurrent connections
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_global_limit (unsigned int connection_limit);
-
-
-/**
- * Limit on the number of (concurrent) connections made to the
- * server from the same IP address.  Can be used to prevent one
- * IP from taking over all of the allowed connections.  If the
- * same IP tries to establish more than the specified number of
- * connections, they will be immediately rejected.  The default is
- * zero, which means no limit on the number of connections
- * from the same IP address.
- *
- * @param connection_limit maximum number of concurrent connections
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_ip_limit (unsigned int connection_limit);
-
-
-/**
- * After how many seconds of inactivity should a
- * connection automatically be timed out? 
- * Use zero for no timeout, which is also the (unsafe!) default.
- *
- * @param timeout_s number of seconds of timeout to use
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_default_timeout (unsigned int timeout_s);
-
-
-/**
- * Signature of functions performing unescaping of strings.
- * The return value must be "strlen(s)" and @a s  should be
- * updated.  Note that the unescape function must not lengthen @a s
- * (the result must be shorter than the input and still be
- * 0-terminated).  
- *
- * @param cls closure
- * @param req the request for which unescaping is performed
- * @param[in,out] s string to unescape
- * @return number of characters in @a s (excluding 0-terminator)
- */
-typedef size_t
-MHD_UnescapeCallback (void *cls,
-		      struct MHD_Request *req,
-		      char *s);
-
-
-/**
- * Specify a function that should be called for unescaping escape
- * sequences in URIs and URI arguments.  Note that this function
- * will NOT be used by the `struct MHD_PostProcessor`.  If this
- * option is not specified, the default method will be used which
- * decodes escape sequences of the form "%HH". 
- *
- * @param unescape_cb function to use, NULL for default
- * @param unescape_cb_cls closure for @a unescape_cb
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_unescape_cb (MHD_UnescapeCallback unescape_cb,
-			void *unescape_cb_cls);
-
-
-/**
- * Set random values to be used by the Digest Auth module.  Note that
- * the application must ensure that @a buf remains allocated and
- * unmodified while the deamon is running.
- *
- * @param buf_size number of bytes in @a buf
- * @param buf entropy buffer
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_digest_auth_random (size_t buf_size,
-			       const void *buf);
-
-
-/**
- * Size of the internal array holding the map of the nonce and
- * the nonce counter. 
- *
- * @param nc_length desired array length
- * @return MHD option
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_digest_auth_nc_size (size_t stack_limit_b);
-
-
-/**
- * Return option setting a callback to call upon connection
- * completion.
- *
- * @param ccc function to call
- * @param ccc_cls closure for @a ccc
- */
-_MHD_EXTERN struct MHD_Option
-MHD_option_connection_completion (MHD_ConnectionCompledCallback ccc,
-				  void *ccc_cls);
 
 
 /**
@@ -856,8 +238,8 @@ typedef struct MHD_Response *
  * @ingroup request
  */
 typedef void
-(*MHD_RequestCompletedCallback) (void *cls,
-                                 enum MHD_RequestTerminationCode toe);
+(*MHD_RequestTerminationCallback) (void *cls,
+				   enum MHD_RequestTerminationCode toe);
 
 
 /**
@@ -894,7 +276,7 @@ struct MHD_RequestHandlerCallbacks
    * application a chance to check on the final status of
    * the request (and to clean up @e cls).
    */
-  MHD_RequestCompletedCallback completed_cb;
+  MHD_RequestTerminationCallback termination_cb;
 
 };
 
@@ -927,24 +309,29 @@ typedef enum MHD_Bool
 			struct MHD_RequestHandlerCallbacks *rhp);
 
 
-/* **************** Daemon handling functions ***************** */
-
 /**
- * Start a webserver on the given port.
+ * Create (but do not yet start) an MHD daemon.
+ * Usually, you will want to set various options before
+ * starting the daemon with #MHD_daemon_start().
  *
- * @param options array of options, does NOT have to
- *        persist in memory past this call (note that individual
- *        arguments passed to the functions may need to
- *        be preserved)
  * @param cb function to be called for incoming requests
  * @param cb_cls closure for @a cb
- * @return NULL on error, handle to daemon on success
+ */
+struct MHD_Daemon *
+MHD_daemon_create (MHD_RequestCallback cb,
+		   void *cb_cls);
+
+
+/**
+ * Start a webserver.
+ *
+ * @param daemon daemon to start; you can no longer set
+ *        options on this daemon after this call!
+ * @return #MHD_SC_OK on success
  * @ingroup event
  */
-_MHD_EXTERN struct MHD_Daemon *
-MHD_daemon_start (const struct MHD_Option options[],
-		  MHD_RequestCallback cb,
-		  void *cb_cls);
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_start (struct MHD_Daemon *daemon);
 
 
 /**
@@ -963,7 +350,8 @@ MHD_daemon_start (const struct MHD_Option options[],
  *
  * @param daemon daemon to stop accepting new connections for
  * @return old listen socket on success, #MHD_INVALID_SOCKET if
- *         the daemon was already not listening anymore
+ *         the daemon was already not listening anymore, or
+ *         was never started
  * @ingroup specialized
  */
 _MHD_EXTERN MHD_socket
@@ -971,29 +359,671 @@ MHD_daemon_quiesce (struct MHD_Daemon *daemon);
 
 
 /**
- * Shutdown an HTTP daemon.
+ * Shutdown and destroy an HTTP daemon.
  *
  * @param daemon daemon to stop
  * @ingroup event
  */
 _MHD_EXTERN void
-MHD_daemon_stop (struct MHD_Daemon *daemon);
+MHD_daemon_destroy (struct MHD_Daemon *daemon);
+
+
+/* ********************* daemon options ************** */
+
+
+/**
+ * Type of a callback function used for logging by MHD.
+ *
+ * @param cls closure
+ * @param sc status code of the event
+ * @param fm format string (`printf()`-style)
+ * @param ap arguments to @a fm
+ * @ingroup logging
+ */
+typedef void
+(*MHD_LoggingCallback)(void *cls,
+		       enum MHD_StatusCode sc,
+		       const char *fm,
+		       va_list ap);
+
+
+/**
+ * Set logging method.  Specify NULL to disable logging entirely.  By
+ * default (if this option is not given), we log error messages to
+ * stderr.
+ *
+ * @param daemon which instance to setup logging for
+ * @param logger function to invoke
+ * @param logger_cls closure for @a logger
+ */
+_MHD_EXTERN void
+MHD_option_set_logger (struct MHD_Daemon *daemon,
+		       MHD_LoggingCallback logger,
+		       void *logger_cls);
+
+
+/**
+ * Convenience macro used to disable logging.
+ *
+ * @param daemon which instance to disable logging for
+ */
+#define MHD_option_disable_logging(daemon) MHD_option_set_logger (daemon, NULL, NULL)
+
+
+/**
+ * Suppress use of "Date" header as this system has no RTC.
+ *
+ * @param daemon which instance to disable clock for.
+ */
+_MHD_EXTERN void
+MHD_option_suppress_date_no_clock (struct MHD_Daemon *daemon);
+
+
+/**
+ * Use inter-thread communication channel.  #MHD_option_enable_itc()
+ * can be used with #MHD_option_thread_internal() and is ignored with
+ * any "external" mode.  It's required for use of
+ * #MHD_daemon_quiesce() or #MHD_connection_add().  This option is
+ * enforced by #MHD_option_allow_suspend_resume() and if there is no
+ * listen socket.  #MHD_option_enable_itc() is always used
+ * automatically on platforms where select()/poll()/other ignore
+ * shutdown() of a listen socket.
+ *
+ * @param daemon which instance to enable itc for
+ */
+_MHD_EXTERN void
+MHD_option_enable_itc (struct MHD_Daemon *daemon);
+
+
+/**
+ * Enable `turbo`.  Disables certain calls to `shutdown()`,
+ * enables aggressive non-blocking optimistic reads and
+ * other potentially unsafe optimizations.
+ * Most effects only happen with #MHD_ELS_EPOLL.
+ *
+ * @param daemon which instance to enable turbo for
+ */
+_MHD_EXTERN void
+MHD_option_enable_turbo (struct MHD_Daemon *daemon);
+
+
+/**
+ * Enable suspend/resume functions, which also implies setting up
+ * #MHD_option_enable_itc() to signal resume.
+ *
+ * @param daemon which instance to enable suspend/resume for
+ */
+_MHD_EXTERN void
+MHD_option_allow_suspend_resume (struct MHD_Daemon *daemon);
+
+
+/**
+ * You need to set this option if you want to use HTTP "Upgrade".
+ * "Upgrade" may require usage of additional internal resources,
+ * which we do not want to use unless necessary.
+ *
+ * @param daemon which instance to enable suspend/resume for
+ */
+_MHD_EXTERN void
+MHD_option_allow_upgrade (struct MHD_Daemon *daemon);
+
+
+/**
+ * Possible levels of enforcement for TCP_FASTOPEN.
+ */
+enum MHD_FastOpenMethod
+{
+  /** 
+   * Disable use of TCP_FASTOPEN.
+   */
+  MHD_FOM_DISABLE = -1,
+  
+  /**
+   * Enable TCP_FASTOPEN where supported (Linux with a kernel >= 3.6).
+   * This is the default.
+   */
+  MHD_FOM_AUTO = 0,
+
+  /**
+   * If TCP_FASTOPEN is not available, return #MHD_NO.
+   * Also causes #MHD_daemon_start() to fail if setting
+   * the option fails later.
+   */
+  MHD_FOM_REQUIRE = 1
+};
+
+
+/**
+ * Configure TCP_FASTOPEN option, including setting a 
+ * custom @a queue_length.
+ *
+ * Note that having a larger queue size can cause resource exhaustion
+ * attack as the TCP stack has to now allocate resources for the SYN
+ * packet along with its DATA. 
+ *
+ * @param daemon which instance to configure TCP_FASTOPEN for
+ * @param fom under which conditions should we use TCP_FASTOPEN?
+ * @param queue_length queue length to use, default is 50 if this
+ *        option is never given.
+ * @return #MHD_YES upon success, #MHD_NO if #MHD_FOM_REQUIRE was
+ *         given, but TCP_FASTOPEN is not available on the platform
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_option_tcp_fastopen (struct MHD_Daemon *daemon,
+			 enum MHD_FastOpenMethod fom,
+			 unsigned int queue_length);
+
+
+/**
+ * Bind to the given TCP port and address family.
+ * Ineffective in conjunction with #MHD_option_listen_socket().
+ * Ineffective in conjunction with #MHD_option_bind_sa().
+ *
+ * If neither this option nor the other two mentioned above
+ * is specified, MHD will simply not listen on any socket!
+ *
+ * @param daemon which instance to configure the TCP port for
+ * @param af address family to use, i.e. #AF_INET or #AF_INET6,
+ *           or #AF_UNSPEC for dual stack
+ * @param port port to use, 0 to bind to a random (free) port
+ */
+_MHD_EXTERN void
+MHD_option_bind_port (struct MHD_Daemon *daemon,
+		      int af,
+		      uint16_t port);
+
+
+/**
+ * Bind to the given socket address.
+ * Ineffective in conjunction with #MHD_option_listen_socket().
+ *
+ * @param daemon which instance to configure the binding address for
+ * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
+ *        or even a UNIX domain socket (AF_UNIX)
+ */
+_MHD_EXTERN void
+MHD_option_bind_socket_address (struct MHD_Daemon *daemon,
+				const struct sockaddr *sa);
+
+
+/**
+ * Use the given backlog for the listen() call.
+ * Ineffective in conjunction with #MHD_option_listen_socket().
+ *
+ * @param daemon which instance to configure the backlog for
+ * @param listen_backlog backlog to use
+ */
+_MHD_EXTERN void
+MHD_option_listen_queue (struct MHD_Daemon *daemon,
+			 int listen_backlog);
+
+
+/**
+ * If present true, allow reusing address:port socket (by using
+ * SO_REUSEPORT on most platform, or platform-specific ways).  If
+ * present and set to false, disallow reusing address:port socket
+ * (does nothing on most plaform, but uses SO_EXCLUSIVEADDRUSE on
+ * Windows).
+ * Ineffective in conjunction with #MHD_option_listen_socket().
+ *
+ * @param daemon daemon to configure address reuse for
+ */
+_MHD_EXTERN void
+MHD_option_listen_allow_address_reuse (struct MHD_Daemon *daemon);
+
+
+/**
+ * Accept connections from the given socket.  Socket
+ * must be a TCP or UNIX domain (stream) socket.
+ * 
+ * Unless -1 is given, this disables other listen options, including
+ * #MHD_option_bind_sa(), #MHD_option_bind_port(),
+ * #MHD_option_listen_queue() and
+ * #MHD_option_listen_allow_address_reuse().
+ *
+ * @param daemon daemon to set listen socket for
+ * @param listen_socket listen socket to use,
+ *        -1 will cause this call to be ignored (other
+ *        binding options may still be effective)
+ */
+_MHD_EXTERN void
+MHD_option_listen_socket (struct MHD_Daemon *daemon,
+			  int listen_socket);
+
+
+/**
+ * Event loop syscalls supported by MHD.
+ */
+enum MHD_EventLoopSyscall
+{
+  /**
+   * Automatic selection of best-available method. This is also the
+   * default.
+   */ 
+  MHD_ELS_AUTO = 0,
+
+  /**
+   * Use select().
+   */
+  MHD_ELS_SELECT = 1,
+  
+  /**
+   * Use poll().
+   */
+  MHD_ELS_POLL = 2,
+  
+  /**
+   * Use epoll().
+   */
+  MHD_ELS_EPOLL = 3
+};
+
+
+/**
+ * Force use of a particular event loop system call.
+ * 
+ * @param daemon daemon to set event loop style for
+ * @param els event loop syscall to use
+ */
+_MHD_EXTERN void
+MHD_option_event_loop (struct MHD_Daemon *daemon,
+		       enum MHD_EventLoopSyscall els);
+
+
+/**
+ * Protocol strictness enforced by MHD on clients.
+ */
+enum MHD_ProtocolStrictLevel
+{
+  /**
+   * Be particularly permissive about the protocol, allowing slight
+   * deviations that are technically not allowed by the
+   * RFC. Specifically, at the moment, this flag causes MHD to allow
+   * spaces in header field names. This is disallowed by the standard.
+   * It is not recommended to set this value on publicly available
+   * servers as it may potentially lower level of protection.
+   */
+  MHD_PSL_PERMISSIVE = -1,
+
+  /**
+   * Sane level of protocol enforcement for production use.
+   */
+  MHD_PSL_DEFAULT = 0,
+
+  /**
+   * Be strict about the protocol (as opposed to as tolerant as
+   * possible).  Specifically, at the moment, this flag causes MHD to
+   * reject HTTP 1.1 connections without a "Host" header.  This is
+   * required by the standard, but of course in violation of the "be
+   * as liberal as possible in what you accept" norm.  It is
+   * recommended to set this if you are testing clients against
+   * MHD, and to use default in production.
+   */
+  MHD_PSL_STRICT = 1
+};
+
+
+/**
+ * Set how strictly MHD will enforce the HTTP protocol.
+ * 
+ * @param daemon daemon to configure strictness for
+ * @param sl how strict should we be
+ */
+_MHD_EXTERN void
+MHD_option_protocol_strict_level (struct MHD_Daemon *daemon,
+				  enum MHD_ProtocolStrictLevel sl);
+
+
+/**
+ * Enable and configure TLS.
+ *
+ * @param daemon which instance should be configured
+ * @param tls_backend which TLS backend should be used,
+ *    currently only "gnutls" is supported.  You can
+ *    also specify "NULL" for best-available (which is the default).
+ * @param ciphers which ciphers should be used by TLS, default is
+ *     "NORMAL"
+ * @return status code, #MHD_SC_OK upon success
+ *     #MHD_TLS_BACKEND_UNSUPPORTED if the @a backend is unknown
+ *     #MHD_TLS_DISABLED if this build of MHD does not support TLS
+ *     #MHD_TLS_CIPHERS_INVALID if the given @a ciphers are not supported
+ *     by this backend 
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_option_set_tls_backend (struct MHD_Daemon *daemon,
+			    const char *tls_backend,
+			    const char *ciphers);
+
+
+/**
+ * Provide TLS key and certificate data in-memory.
+ *
+ * @param daemon which instance should be configured
+ * @param mem_key private key (key.pem) to be used by the
+ *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
+ * @param mem_cert certificate (cert.pem) to be used by the
+ *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
+ * @param pass passphrase phrase to decrypt 'key.pem', NULL
+ *     if @param mem_key is in cleartext already
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_option_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
+					 const char *mem_key,
+					 const char *mem_cert,
+					 const char *pass);
+
+
+
+/**
+ * Configure DH parameters (dh.pem) to use for the TLS key
+ * exchange. 
+ *
+ * @param daemon daemon to configure tls for
+ * @param dh parameters to use
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+  MHD_option_tls_mem_dhparams (struct MHD_Daemon *daemon,
+			       const char *dh);
+
+
+/**
+ * Memory pointer for the certificate (ca.pem) to be used by the
+ * HTTPS daemon for client authentification.  
+ *
+ * @param daemon daemon to configure tls for
+ * @param mem_trust memory pointer to the certificate
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_option_tls_mem_trust (struct MHD_Daemon *daemon,
+			  const char *mem_trust);
+  
+
+/**
+ * Configure daemon credentials type for GnuTLS.
+ *
+ * @param gnutls_credentials must be a value of
+ *   type `gnutls_credentials_type_t`
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_option_gnutls_credentials (struct MHD_Daemon *daemon,
+			       int gnutls_credentials);
+
+
+/**
+ * Provide TLS key and certificate data via callback.
+ *
+ * Use a callback to determine which X.509 certificate should be used
+ * for a given HTTPS connection.  This option provides an alternative
+ * to #MHD_option_tls_key_and_cert_from_memory().  You must use this
+ * version if multiple domains are to be hosted at the same IP address
+ * using TLS's Server Name Indication (SNI) extension.  In this case,
+ * the callback is expected to select the correct certificate based on
+ * the SNI information provided.  The callback is expected to access
+ * the SNI data using `gnutls_server_name_get()`.  Using this option
+ * requires GnuTLS 3.0 or higher.
+ *
+ * @param daemon daemon to configure callback for
+ * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
+ */
+_MHD_EXTERN void
+MHD_option_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
+					      void *cb);
+
+
+/**
+ * Which threading model should be used by MHD?
+ */
+enum MHD_ThreadingModel
+{
+
+  /**
+   * MHD should create its own thread for listening and furthermore
+   * create another thread per connection to handle requests.  Use
+   * this if handling requests is CPU-intensive or blocking, your
+   * application is thread-safe and you have plenty of memory (per
+   * request).
+   */
+  MHD_TM_THREAD_PER_CONNECTION = -1,
+
+  /**
+   * Use an external event loop. This is the default.  
+   */ 
+  MHD_TM_EXTERNAL_EVENT_LOOP = 0,
+
+  /**
+   * Run with one or more worker threads.  Any positive value
+   * means that MHD should start that number of worker threads
+   * (so > 1 is a thread pool) and distributed processing of
+   * requests among the workers.
+   *
+   * A good way to express the use of a thread pool
+   * in your code would be to write "4 * MHD_TM_WORKER_THREADS"
+   * to indicate four threads.
+   *
+   * If a positive value is set, * #MHD_daemon_run() and
+   * #MHD_daemon_run_from_select() cannot be used.
+   */
+  MHD_TM_WORKER_THREADS = 1
+  
+};
+  
+  
+/**
+ * Specify threading model to use.
+ *
+ * @param daemon daemon to configure
+ * @param tm model to use (positive values indicate the
+ *        number of worker threads to be used)
+ */
+_MHD_EXTERN void
+MHD_option_threading_model (struct MHD_Daemon *daemon,
+			    enum MHD_ThreadingModel tm);
+
+
+/**
+ * Allow or deny a client to connect.
+ *
+ * @param cls closure
+ * @param addr address information from the client
+ * @param addrlen length of @a addr
+ * @see #MHD_option_accept_policy()
+ * @return #MHD_YES if connection is allowed, #MHD_NO if not
+ */
+typedef enum MHD_Bool
+(*MHD_AcceptPolicyCallback) (void *cls,
+                             const struct sockaddr *addr,
+                             socklen_t addrlen);
+
+
+/**
+ * Set  a policy callback that accepts/rejects connections
+ * based on the client's IP address.  This function will be called
+ * before a connection object is created.
+ *
+ * @param daemon daemon to set policy for
+ * @param apc function to call to check the policy
+ * @param apc_cls closure for @a apc
+ */
+_MHD_EXTERN void
+MHD_option_accept_policy (struct MHD_Daemon *daemon,
+			  MHD_AcceptPolicyCallback apc,
+			  void *apc_cls);
+
+
+/**
+ * Signature of the callback used by MHD to notify the
+ * application about started/stopped connections
+ *
+ * @param cls client-defined closure
+ * @param connection connection handle
+ * @param socket_context socket-specific pointer where the
+ *                       client can associate some state specific
+ *                       to the TCP connection; note that this is
+ *                       different from the "con_cls" which is per
+ *                       HTTP request.  The client can initialize
+ *                       during #MHD_CONNECTION_NOTIFY_STARTED and
+ *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
+ *                       and access in the meantime using
+ *                       #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
+ * @param toe reason for connection notification
+ * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @ingroup request
+ */
+typedef void
+(*MHD_ConnectionCompletedCallback) (void *cls,
+				    struct MHD_Connection *connection,
+				    enum MHD_ConnectionNotificationCode toe);
+
+
+/**
+ * Register a function that should be called whenever a connection is
+ * started or closed.
+ *
+ * @param daemon daemon to set callback for
+ * @param ncc function to call to check the policy
+ * @param ncc_cls closure for @a apc
+ * @param ccc function to call upon completion, NULL for none
+ * @param ccc_cls closure for @a ccc
+ */
+_MHD_EXTERN void
+MHD_option_set_notify_connection (struct MHD_Daemon *daemon,
+				  MHD_NotifyConnectionCallback ncc,
+				  void *ncc_cls);
+
+
+/**
+ * Maximum memory size per connection (followed by a `size_t`).
+ * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
+ * Values above 128k are unlikely to result in much benefit, as half
+ * of the memory will be typically used for IO, and TCP buffers are
+ * unlikely to support window sizes above 64k on most systems.
+ *
+ * @param daemon daemon to configure
+ * @param memory_limit_b connection memory limit to use in bytes
+ * @param memory_increment_b increment to use when growing the read buffer, must be smaller than @a memory_limit_b
+ */
+_MHD_EXTERN void
+MHD_option_connection_memory_limit (struct MHD_Daemon *daemon,
+				    size_t memory_limit_b,
+				    size_t memory_increment_b);
+
+
+/**
+ * Desired size of the stack for threads created by MHD.  Use 0 for
+ * system default.  Only useful if the selected threading model
+ * is not #MHD_TM_EXTERNAL_EVENT_LOOP.
+ *
+ * @param daemon daemon to configure
+ * @param stack_limit_b stack size to use in bytes
+ */
+_MHD_EXTERN void
+MHD_option_thread_stack_size (struct MHD_Daemon *daemon,
+			      size_t stack_limit_b);
+
+
+/**
+ * Set maximum number of concurrent connections to accept.  If not
+ * given, MHD will not enforce any limits (modulo running into
+ * OS limits).  Values of 0 mean no limit.
+ *
+ * @param daemon daemon to configure
+ * @param global_connection_limit maximum number of (concurrent)
+          connections
+ * @param ip_connection_limit limit on the number of (concurrent) 
+ *        connections made to the server from the same IP address.
+ *        Can be used to prevent one IP from taking over all of
+ *        the allowed connections.  If the same IP tries to
+ *        establish more than the specified number of
+ *        connections, they will be immediately rejected.
+ */
+_MHD_EXTERN void
+MHD_option_connection_limits (struct MHD_Daemon *daemon,
+			      unsigned int global_connection_limit,
+			      unsigned int ip_connection_limit);
+
+
+/**
+ * After how many seconds of inactivity should a
+ * connection automatically be timed out? 
+ * Use zero for no timeout, which is also the (unsafe!) default.
+ *
+ * @param daemon daemon to configure
+ * @param timeout_s number of seconds of timeout to use
+ */
+_MHD_EXTERN void
+MHD_option_connection_default_timeout (struct MHD_Daemon *daemon,
+				       unsigned int timeout_s);
+
+
+/**
+ * Signature of functions performing unescaping of strings.
+ * The return value must be "strlen(s)" and @a s  should be
+ * updated.  Note that the unescape function must not lengthen @a s
+ * (the result must be shorter than the input and still be
+ * 0-terminated).  
+ *
+ * @param cls closure
+ * @param req the request for which unescaping is performed
+ * @param[in,out] s string to unescape
+ * @return number of characters in @a s (excluding 0-terminator)
+ */
+typedef size_t
+MHD_UnescapeCallback (void *cls,
+		      struct MHD_Request *req,
+		      char *s);
+
+
+/**
+ * Specify a function that should be called for unescaping escape
+ * sequences in URIs and URI arguments.  Note that this function
+ * will NOT be used by the `struct MHD_PostProcessor`.  If this
+ * option is not specified, the default method will be used which
+ * decodes escape sequences of the form "%HH". 
+ *
+ * @param daemon daemon to configure
+ * @param unescape_cb function to use, NULL for default
+ * @param unescape_cb_cls closure for @a unescape_cb
+ */
+_MHD_EXTERN void
+MHD_option_unescape_cb (struct MHD_Daemon *daemon,
+			MHD_UnescapeCallback unescape_cb,
+			void *unescape_cb_cls);
+
+
+/**
+ * Set random values to be used by the Digest Auth module.  Note that
+ * the application must ensure that @a buf remains allocated and
+ * unmodified while the deamon is running.
+ *
+ * @param daemon daemon to configure
+ * @param buf_size number of bytes in @a buf
+ * @param buf entropy buffer
+ */
+_MHD_EXTERN void
+MHD_option_digest_auth_random (struct MHD_Daemon *daemon,
+			       size_t buf_size,
+			       const void *buf);
+
+
+/**
+ * Size of the internal array holding the map of the nonce and
+ * the nonce counter. 
+ *
+ * @param daemon daemon to configure
+ * @param nc_length desired array length
+ */
+_MHD_EXTERN void
+MHD_option_digest_auth_nc_size (struct MHD_Daemon *daemon,
+				size_t stack_limit_b);
+
+
 
 
 /* ********************* connection options ************** */
-
-/**
- * MHD connection options.  Given to #MHD_set_connection_option() to
- * set custom options for a particular connection.
- */
-struct MHD_ConnectionOption;
-
-
-/**
- * Generate array terminator for connection options.
- */
-struct MHD_ConnectionOption
-MHD_connection_option_end (void);
 
 
 /**
@@ -1002,24 +1032,12 @@ MHD_connection_option_end (void);
  * timeout was set to zero (or unset) before, setting of a new value
  * by MHD_connection_set_option() will reset timeout timer.
  * 
+ * @param connection connection to configure timeout for
  * @param timeout_s new timeout in seconds
  */
 struct MHD_ConnectionOption
-MHD_connection_option_timeout (unsigned int timeout_s);
-
-
-/**
- * Set a custom option for the given connection, overriding defaults.
- *
- * @param connection connection to modify
- * @param options array of options to set, does NOT have to
- *        persist past this call
- * @ingroup specialized
- * @return #MHD_YES on success
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_connection_set_options (struct MHD_Connection *connection,
-			    struct MHD_ConnectionOption options[]);
+MHD_connection_option_timeout (struct MHD_Connection *connection,
+			       unsigned int timeout_s);
 
 
 /* **************** Request handling functions ***************** */
@@ -1242,37 +1260,14 @@ MHD_request_resume (struct MHD_Request *request);
 
 
 /**
- * MHD response option.
- */
-struct MHD_ResponseOption;
-
-
-/**
- * End of options array.
- */
-struct MHD_ResponseOption
-MHD_response_option_end (void);
-
-
-/**
  * Only respond in conservative HTTP 1.0-mode.   In particular,
  * do not (automatically) sent "Connection" headers and always
  * close the connection after generating the response.
- */
-struct MHD_ResponseOption
-MHD_response_option_v10_only (void);
-
-
-/**
- * Set special @a options for a @a response.
  *
  * @param response the response to modify
- * @param options options to set for the response
- * @return #MHD_YES on success, #MHD_NO on error
  */
-_MHD_EXTERN enum MHD_Bool
-MHD_response_set_options (struct MHD_Response *response,
-                          enum MHD_ResponseOption options[]);
+_MHD_EXTERN void
+MHD_response_option_v10_only (struct MHD_Response *response);
 
 
 /**
