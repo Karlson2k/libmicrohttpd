@@ -30,8 +30,11 @@
  * - simplify application callbacks by splitting header/upload/post
  *   functionality currently provided by calling the same 
  *   MHD_AccessHandlerCallback 3+ times into separate callbacks.
+ * - keep the API very simple for simple requests, but allow
+ *   more complex logic to be incrementally introduced
+ *   (via new struct MHD_Action construction)
  * - avoid repeated scans for URL matches via the new
- *   struct MHD_RequestHandlerCallbacks construction
+ *   struct MHD_Action construction
  * - provide default logarithmic implementation of URL scan
  *   => reduce strcmp(url) from >= 3n operations to "log n"
  *      per request.
@@ -55,11 +58,12 @@
  *   (so we can have one binary implementing old and new 
  *   library API at the same time via compatibility layer).
  * - make it impossible to queue a response at the wrong time
+ * - make it impossible to suspend a connection/request at the
+ *   wrong time (improves thread-safety)
  * - make it clear which response status codes are "properly" 
  *   supported (include the descriptive string) by using an enum;
  * - simplify API for common-case of one-shot responses by
- *   eliminating need for destroy response in those cases;
- * - improve thread-safety
+ *   eliminating need for destroy response in most cases;
  */
 
 
@@ -143,142 +147,11 @@ enum MHD_StatusCode
 };
 
 
-
-
 /**
- * Return values for the #MHD_RequestHeaderCallback implementations.
+ * Actions are returned by the application to drive the request
+ * handling of MHD.
  */
-enum MHD_HeaderResult
-{
-  /**
-   * Close the connection, we encountered a serious error.
-   */
-  MHD_HR_CLOSE_CONNECTION = 0,
-
-  /**
-   * Continue to handle the connection normally, if requested
-   * by the client send a "100 CONTINUE" response.  If the
-   * #MHD_RequestHeaderCallback is not defined for a given
-   * request, this behavior is what will always happen.
-   */
-  MHD_HR_CONTINUE_NORMALLY = 1,
-
-  /**
-   * Refuse handling the upload. This code ensures that MHD will
-   * not send a "100 CONTINUE" response (even if requested)
-   * and instead MHD will immediately proceed to the
-   * #MHD_RequestFetchResponseCallback to get the response.  This
-   * is useful if an upload must be refused, i.e. because it is
-   * too big or not supported for the given encoding/uri/method.
-   */
-  MHD_HR_REFUSE_UPLOAD = 2
-  
-};
-
-  
-/**
- * Signature of the callback used by MHD to notify the application
- * that we have received the full header of a request.  Can be used to
- * suppress "100 CONTINUE" responses to requests containing an
- * "Expect: 100-continue" header (by returning #MHD_HR_REFUSE_UPLOAD).
- *
- * @param cls client-defined closure
- * @ingroup request
- * @return how to proceed handling the request
- */
-typedef enum MHD_HeaderResult
-(*MHD_RequestHeaderCallback) (void *cls);
-
-
-/**
- * A client has uploaded data.
- *
- * @param cls argument given together with the function
- *        pointer when the handler was registered with MHD
- * @param upload_data the data being uploaded (excluding headers)
- *        POST data will typically be made available incrementally via
- *        multiple callbacks
- * @param[in,out] upload_data_size set initially to the size of the
- *        @a upload_data provided; the method must update this
- *        value to the number of bytes NOT processed;
- * @return #MHD_YES if the upload was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
- *         error while handling the request
- */
-typedef enum MHD_Bool
-(*MHD_UploadCallback) (void *cls,
-		       const char *upload_data,
-		       size_t *upload_data_size);
-
-
-/**
- * Signature of the callback used by MHD to notify the application
- * that we now expect a response.  The application can either
- * call #MHD_response_queue() or suspend the request and return
- * NULL to resume processing later, or return NULL without suspending
- * to close the connection (hard error).
- *
- * @param cls client-defined closure
- * @ingroup request
- * @return response object to return, NULL if processing was
- *         suspended or on hard errors; the response object
- *         will be "consumed" at this point (i.e. the RC decremented)
- */
-typedef struct MHD_Response *
-(*MHD_RequestFetchResponseCallback) (void *cls);
-
-
-/**
- * Signature of the callback used by MHD to notify the
- * application about completed requests.
- *
- * @param cls client-defined closure
- * @param toe reason for request termination
- * @see #MHD_option_request_completion()
- * @ingroup request
- */
-typedef void
-(*MHD_RequestTerminationCallback) (void *cls,
-				   enum MHD_RequestTerminationCode toe);
-
-
-/**
- * Functions called for an MHD request to process it.
- * Not all functions must be implemented for each request.
- */
-struct MHD_RequestHandlerCallbacks
-{
-  /**
-   * Closure argument passed to all callbacks in this struct.
-   */
-  void *cls;
-
-  /** 
-   * Function called after we have received the full HTTP header.
-   */
-  MHD_RequestHeaderCallback header_cb;
-
-  /**
-   * Function called if we receive uploaded data.
-   */
-  MHD_UploadCallback upload_cb;
-
-  /**
-   * Function called when we expect the application to
-   * generate a response (mandatory to be set; if not
-   * set and #MHD_NO is not returned, MHD will generate
-   * 500 internal error and log an error).
-   */
-  MHD_RequestFetchResponseCallback fetch_response_cb;
-
-  /**
-   * Function called last to clean up.  Gives the
-   * application a chance to check on the final status of
-   * the request (and to clean up @e cls).
-   */
-  MHD_RequestTerminationCallback termination_cb;
-
-};
+struct MHD_Action;
 
 
 /**
@@ -294,19 +167,15 @@ struct MHD_RequestHandlerCallbacks
  * @param url the requested url (without arguments after "?")
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
  *        #MHD_HTTP_METHOD_PUT, etc.)
- * @param[out] must be set to function pointers to be used to
- *        handle the request further; can be assumed to have
- *        been initialized to all-NULL values already.
- * @return #MHD_YES if the request was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
+ * @return action how to proceed, NULL
+ *         if the socket must be closed due to a serios
  *         error while handling the request
  */
-typedef enum MHD_Bool
+typedef struct MHD_Action *
 (*MHD_RequestCallback) (void *cls,
 			struct MHD_Request *request,
 			const char *url,
-			const char *method,
-			struct MHD_RequestHandlerCallbacks *rhp);
+			const char *method);
 
 
 /**
@@ -397,7 +266,7 @@ typedef void
  * @param logger_cls closure for @a logger
  */
 _MHD_EXTERN void
-MHD_option_set_logger (struct MHD_Daemon *daemon,
+MHD_daemon_set_logger (struct MHD_Daemon *daemon,
 		       MHD_LoggingCallback logger,
 		       void *logger_cls);
 
@@ -407,7 +276,7 @@ MHD_option_set_logger (struct MHD_Daemon *daemon,
  *
  * @param daemon which instance to disable logging for
  */
-#define MHD_option_disable_logging(daemon) MHD_option_set_logger (daemon, NULL, NULL)
+#define MHD_daemon_disable_logging(daemon) MHD_daemon_set_logger (daemon, NULL, NULL)
 
 
 /**
@@ -416,23 +285,23 @@ MHD_option_set_logger (struct MHD_Daemon *daemon,
  * @param daemon which instance to disable clock for.
  */
 _MHD_EXTERN void
-MHD_option_suppress_date_no_clock (struct MHD_Daemon *daemon);
+MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon);
 
 
 /**
- * Use inter-thread communication channel.  #MHD_option_enable_itc()
- * can be used with #MHD_option_thread_internal() and is ignored with
+ * Use inter-thread communication channel.  #MHD_daemon_enable_itc()
+ * can be used with #MHD_daemon_thread_internal() and is ignored with
  * any "external" mode.  It's required for use of
  * #MHD_daemon_quiesce() or #MHD_connection_add().  This option is
- * enforced by #MHD_option_allow_suspend_resume() and if there is no
- * listen socket.  #MHD_option_enable_itc() is always used
+ * enforced by #MHD_daemon_allow_suspend_resume() and if there is no
+ * listen socket.  #MHD_daemon_enable_itc() is always used
  * automatically on platforms where select()/poll()/other ignore
  * shutdown() of a listen socket.
  *
  * @param daemon which instance to enable itc for
  */
 _MHD_EXTERN void
-MHD_option_enable_itc (struct MHD_Daemon *daemon);
+MHD_daemon_enable_itc (struct MHD_Daemon *daemon);
 
 
 /**
@@ -444,17 +313,17 @@ MHD_option_enable_itc (struct MHD_Daemon *daemon);
  * @param daemon which instance to enable turbo for
  */
 _MHD_EXTERN void
-MHD_option_enable_turbo (struct MHD_Daemon *daemon);
+MHD_daemon_enable_turbo (struct MHD_Daemon *daemon);
 
 
 /**
  * Enable suspend/resume functions, which also implies setting up
- * #MHD_option_enable_itc() to signal resume.
+ * #MHD_daemon_enable_itc() to signal resume.
  *
  * @param daemon which instance to enable suspend/resume for
  */
 _MHD_EXTERN void
-MHD_option_allow_suspend_resume (struct MHD_Daemon *daemon);
+MHD_daemon_allow_suspend_resume (struct MHD_Daemon *daemon);
 
 
 /**
@@ -465,7 +334,7 @@ MHD_option_allow_suspend_resume (struct MHD_Daemon *daemon);
  * @param daemon which instance to enable suspend/resume for
  */
 _MHD_EXTERN void
-MHD_option_allow_upgrade (struct MHD_Daemon *daemon);
+MHD_daemon_allow_upgrade (struct MHD_Daemon *daemon);
 
 
 /**
@@ -509,15 +378,15 @@ enum MHD_FastOpenMethod
  *         given, but TCP_FASTOPEN is not available on the platform
  */
 _MHD_EXTERN enum MHD_Bool
-MHD_option_tcp_fastopen (struct MHD_Daemon *daemon,
+MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
 			 enum MHD_FastOpenMethod fom,
 			 unsigned int queue_length);
 
 
 /**
  * Bind to the given TCP port and address family.
- * Ineffective in conjunction with #MHD_option_listen_socket().
- * Ineffective in conjunction with #MHD_option_bind_sa().
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
+ * Ineffective in conjunction with #MHD_daemon_bind_sa().
  *
  * If neither this option nor the other two mentioned above
  * is specified, MHD will simply not listen on any socket!
@@ -528,33 +397,33 @@ MHD_option_tcp_fastopen (struct MHD_Daemon *daemon,
  * @param port port to use, 0 to bind to a random (free) port
  */
 _MHD_EXTERN void
-MHD_option_bind_port (struct MHD_Daemon *daemon,
+MHD_daemon_bind_port (struct MHD_Daemon *daemon,
 		      int af,
 		      uint16_t port);
 
 
 /**
  * Bind to the given socket address.
- * Ineffective in conjunction with #MHD_option_listen_socket().
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
  *
  * @param daemon which instance to configure the binding address for
  * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
  *        or even a UNIX domain socket (AF_UNIX)
  */
 _MHD_EXTERN void
-MHD_option_bind_socket_address (struct MHD_Daemon *daemon,
+MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
 				const struct sockaddr *sa);
 
 
 /**
  * Use the given backlog for the listen() call.
- * Ineffective in conjunction with #MHD_option_listen_socket().
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
  *
  * @param daemon which instance to configure the backlog for
  * @param listen_backlog backlog to use
  */
 _MHD_EXTERN void
-MHD_option_listen_queue (struct MHD_Daemon *daemon,
+MHD_daemon_listen_queue (struct MHD_Daemon *daemon,
 			 int listen_backlog);
 
 
@@ -564,12 +433,12 @@ MHD_option_listen_queue (struct MHD_Daemon *daemon,
  * present and set to false, disallow reusing address:port socket
  * (does nothing on most plaform, but uses SO_EXCLUSIVEADDRUSE on
  * Windows).
- * Ineffective in conjunction with #MHD_option_listen_socket().
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
  *
  * @param daemon daemon to configure address reuse for
  */
 _MHD_EXTERN void
-MHD_option_listen_allow_address_reuse (struct MHD_Daemon *daemon);
+MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon);
 
 
 /**
@@ -577,9 +446,9 @@ MHD_option_listen_allow_address_reuse (struct MHD_Daemon *daemon);
  * must be a TCP or UNIX domain (stream) socket.
  * 
  * Unless -1 is given, this disables other listen options, including
- * #MHD_option_bind_sa(), #MHD_option_bind_port(),
- * #MHD_option_listen_queue() and
- * #MHD_option_listen_allow_address_reuse().
+ * #MHD_daemon_bind_sa(), #MHD_daemon_bind_port(),
+ * #MHD_daemon_listen_queue() and
+ * #MHD_daemon_listen_allow_address_reuse().
  *
  * @param daemon daemon to set listen socket for
  * @param listen_socket listen socket to use,
@@ -587,7 +456,7 @@ MHD_option_listen_allow_address_reuse (struct MHD_Daemon *daemon);
  *        binding options may still be effective)
  */
 _MHD_EXTERN void
-MHD_option_listen_socket (struct MHD_Daemon *daemon,
+MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
 			  int listen_socket);
 
 
@@ -626,7 +495,7 @@ enum MHD_EventLoopSyscall
  * @param els event loop syscall to use
  */
 _MHD_EXTERN void
-MHD_option_event_loop (struct MHD_Daemon *daemon,
+MHD_daemon_event_loop (struct MHD_Daemon *daemon,
 		       enum MHD_EventLoopSyscall els);
 
 
@@ -670,7 +539,7 @@ enum MHD_ProtocolStrictLevel
  * @param sl how strict should we be
  */
 _MHD_EXTERN void
-MHD_option_protocol_strict_level (struct MHD_Daemon *daemon,
+MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
 				  enum MHD_ProtocolStrictLevel sl);
 
 
@@ -690,7 +559,7 @@ MHD_option_protocol_strict_level (struct MHD_Daemon *daemon,
  *     by this backend 
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_option_set_tls_backend (struct MHD_Daemon *daemon,
+MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
 			    const char *tls_backend,
 			    const char *ciphers);
 
@@ -708,11 +577,10 @@ MHD_option_set_tls_backend (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK upon success; TODO: define failure modes
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_option_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
+MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
 					 const char *mem_key,
 					 const char *mem_cert,
 					 const char *pass);
-
 
 
 /**
@@ -724,7 +592,7 @@ MHD_option_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK upon success; TODO: define failure modes
  */
 _MHD_EXTERN enum MHD_StatusCode
-  MHD_option_tls_mem_dhparams (struct MHD_Daemon *daemon,
+  MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
 			       const char *dh);
 
 
@@ -737,7 +605,7 @@ _MHD_EXTERN enum MHD_StatusCode
  * @return #MHD_SC_OK upon success; TODO: define failure modes
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_option_tls_mem_trust (struct MHD_Daemon *daemon,
+MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
 			  const char *mem_trust);
   
 
@@ -749,7 +617,7 @@ MHD_option_tls_mem_trust (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK upon success; TODO: define failure modes
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_option_gnutls_credentials (struct MHD_Daemon *daemon,
+MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
 			       int gnutls_credentials);
 
 
@@ -758,7 +626,7 @@ MHD_option_gnutls_credentials (struct MHD_Daemon *daemon,
  *
  * Use a callback to determine which X.509 certificate should be used
  * for a given HTTPS connection.  This option provides an alternative
- * to #MHD_option_tls_key_and_cert_from_memory().  You must use this
+ * to #MHD_daemon_tls_key_and_cert_from_memory().  You must use this
  * version if multiple domains are to be hosted at the same IP address
  * using TLS's Server Name Indication (SNI) extension.  In this case,
  * the callback is expected to select the correct certificate based on
@@ -770,7 +638,7 @@ MHD_option_gnutls_credentials (struct MHD_Daemon *daemon,
  * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
  */
 _MHD_EXTERN void
-MHD_option_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
+MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
 					      void *cb);
 
 
@@ -820,7 +688,7 @@ enum MHD_ThreadingModel
  *        number of worker threads to be used)
  */
 _MHD_EXTERN void
-MHD_option_threading_model (struct MHD_Daemon *daemon,
+MHD_daemon_threading_model (struct MHD_Daemon *daemon,
 			    enum MHD_ThreadingModel tm);
 
 
@@ -830,7 +698,7 @@ MHD_option_threading_model (struct MHD_Daemon *daemon,
  * @param cls closure
  * @param addr address information from the client
  * @param addrlen length of @a addr
- * @see #MHD_option_accept_policy()
+ * @see #MHD_daemon_accept_policy()
  * @return #MHD_YES if connection is allowed, #MHD_NO if not
  */
 typedef enum MHD_Bool
@@ -849,9 +717,21 @@ typedef enum MHD_Bool
  * @param apc_cls closure for @a apc
  */
 _MHD_EXTERN void
-MHD_option_accept_policy (struct MHD_Daemon *daemon,
+MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
 			  MHD_AcceptPolicyCallback apc,
 			  void *apc_cls);
+
+
+typedef void *
+(MHD_EarlyUriLogCallback)(void *cls,			 
+			  const char *uri,
+			  struct MHD_Request *request);
+
+
+_MHD_EXTERN void
+MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
+				 MHD_EarlyUriLogCallback cb,
+				 void *cb_cls);
 
 
 /**
@@ -890,7 +770,7 @@ typedef void
  * @param ccc_cls closure for @a ccc
  */
 _MHD_EXTERN void
-MHD_option_set_notify_connection (struct MHD_Daemon *daemon,
+MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
 				  MHD_NotifyConnectionCallback ncc,
 				  void *ncc_cls);
 
@@ -907,7 +787,7 @@ MHD_option_set_notify_connection (struct MHD_Daemon *daemon,
  * @param memory_increment_b increment to use when growing the read buffer, must be smaller than @a memory_limit_b
  */
 _MHD_EXTERN void
-MHD_option_connection_memory_limit (struct MHD_Daemon *daemon,
+MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
 				    size_t memory_limit_b,
 				    size_t memory_increment_b);
 
@@ -921,7 +801,7 @@ MHD_option_connection_memory_limit (struct MHD_Daemon *daemon,
  * @param stack_limit_b stack size to use in bytes
  */
 _MHD_EXTERN void
-MHD_option_thread_stack_size (struct MHD_Daemon *daemon,
+MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
 			      size_t stack_limit_b);
 
 
@@ -941,7 +821,7 @@ MHD_option_thread_stack_size (struct MHD_Daemon *daemon,
  *        connections, they will be immediately rejected.
  */
 _MHD_EXTERN void
-MHD_option_connection_limits (struct MHD_Daemon *daemon,
+MHD_daemon_connection_limits (struct MHD_Daemon *daemon,
 			      unsigned int global_connection_limit,
 			      unsigned int ip_connection_limit);
 
@@ -955,7 +835,7 @@ MHD_option_connection_limits (struct MHD_Daemon *daemon,
  * @param timeout_s number of seconds of timeout to use
  */
 _MHD_EXTERN void
-MHD_option_connection_default_timeout (struct MHD_Daemon *daemon,
+MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
 				       unsigned int timeout_s);
 
 
@@ -989,7 +869,7 @@ MHD_UnescapeCallback (void *cls,
  * @param unescape_cb_cls closure for @a unescape_cb
  */
 _MHD_EXTERN void
-MHD_option_unescape_cb (struct MHD_Daemon *daemon,
+MHD_daemon_unescape_cb (struct MHD_Daemon *daemon,
 			MHD_UnescapeCallback unescape_cb,
 			void *unescape_cb_cls);
 
@@ -1004,7 +884,7 @@ MHD_option_unescape_cb (struct MHD_Daemon *daemon,
  * @param buf entropy buffer
  */
 _MHD_EXTERN void
-MHD_option_digest_auth_random (struct MHD_Daemon *daemon,
+MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
 			       size_t buf_size,
 			       const void *buf);
 
@@ -1017,10 +897,8 @@ MHD_option_digest_auth_random (struct MHD_Daemon *daemon,
  * @param nc_length desired array length
  */
 _MHD_EXTERN void
-MHD_option_digest_auth_nc_size (struct MHD_Daemon *daemon,
+MHD_daemon_digest_auth_nc_size (struct MHD_Daemon *daemon,
 				size_t stack_limit_b);
-
-
 
 
 /* ********************* connection options ************** */
@@ -1036,8 +914,8 @@ MHD_option_digest_auth_nc_size (struct MHD_Daemon *daemon,
  * @param timeout_s new timeout in seconds
  */
 struct MHD_ConnectionOption
-MHD_connection_option_timeout (struct MHD_Connection *connection,
-			       unsigned int timeout_s);
+MHD_connection_timeout (struct MHD_Connection *connection,
+			unsigned int timeout_s);
 
 
 /* **************** Request handling functions ***************** */
@@ -1207,6 +1085,7 @@ enum MHD_HTTP_StatusCode {
 /** @} */ /* end of group httpcode */
 
 
+
 /**
  * Suspend handling of network data for a given request.  This can
  * be used to dequeue a request from MHD's event loop for a while.
@@ -1227,15 +1106,15 @@ enum MHD_HTTP_StatusCode {
  * #MHD_RequestfetchResponseCallback.  Suspending a request
  * at any other time will cause an assertion failure.
  *
- * Finally, it is an API violation to call #MHD_stop_daemon while
+ * Finally, it is an API violation to call #MHD_daemon_stop() while
  * having suspended requests (this will at least create memory and
  * socket leaks or lead to undefined behavior).  You must explicitly
  * resume all requests before stopping the daemon.
  *
- * @param request the request to suspend
+ * @return action to cause a request to be suspended.
  */
-_MHD_EXTERN void
-MHD_request_suspend (struct MHD_Request *request);
+_MHD_EXTERN struct MHD_Action *
+MHD_action_suspend (void);
 
 
 /**
@@ -1260,18 +1139,68 @@ MHD_request_resume (struct MHD_Request *request);
 
 
 /**
- * Only respond in conservative HTTP 1.0-mode.   In particular,
- * do not (automatically) sent "Connection" headers and always
- * close the connection after generating the response.
+ * Converts a @a response to an action.  If @a consume
+ * is set, the reference to the @a response is consumed
+ * by the conversion. If @a consume is #MHD_NO, then
+ * the response can be converted to actions in the future.
+ * However, the @a response is frozen by this step and
+ * must no longer be modified (i.e. by setting headers).
  *
- * @param response the response to modify
+ * @param response response to convert, not NULL
+ * @param consume should the response object be consumed?
+ * @return corresponding action, never returns NULL
+ *
+ * Implementation note: internally, this is largely just
+ * a cast (and possibly an RC increment operation), 
+ * as a response *is* an action.  As no memory is
+ * allocated, this operation cannot fail.
+ */ 
+struct MHD_Action *
+MHD_action_from_response (struct MHD_Response *response,
+			  enum MHD_bool consume);
+
+
+/**
+ * Only respond in conservative HTTP 1.0-mode.  In
+ * particular, do not (automatically) sent "Connection" headers and
+ * always close the connection after generating the response.
+ *
+ * @param request the request for which we force HTTP 1.0 to be used
  */
 _MHD_EXTERN void
 MHD_response_option_v10_only (struct MHD_Response *response);
 
 
 /**
- * Create a response object.  The response object can be extended with
+ * Signature of the callback used by MHD to notify the
+ * application about completed requests.
+ *
+ * @param cls client-defined closure
+ * @param toe reason for request termination
+ * @see #MHD_option_request_completion()
+ * @ingroup request
+ */
+typedef void
+(*MHD_RequestTerminationCallback) (void *cls,
+				   enum MHD_RequestTerminationCode toe);
+
+
+/**
+ * Set a function to be called once MHD is finished with the
+ * request.
+ *
+ * @param response which response to set the callback for
+ * @param termination_cb function to call
+ * @param termination_cb_cls closure for @e termination_cb
+ */
+void
+MHD_response_option_termination_callback (struct MHD_Response *response,
+					  MHD_RequestTerminationCallback termination_cb,
+					  void *termination_cb_cls);
+
+
+/**
+ * Create a response action.  The response object can be extended with
  * header information and then be used any number of times.
  *
  * @param sc status code to return
@@ -1377,12 +1306,12 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
 
 
 /**
- * Enumeration for actions MHD should perform on the underlying socket
+ * Enumeration for operations MHD should perform on the underlying socket
  * of the upgrade.  This API is not finalized, and in particular
  * the final set of actions is yet to be decided. This is just an
  * idea for what we might want.
  */
-enum MHD_UpgradeAction
+enum MHD_UpgradeOperation
 {
 
   /**
@@ -1390,7 +1319,7 @@ enum MHD_UpgradeAction
    *
    * Takes no extra arguments.
    */
-  MHD_UPGRADE_ACTION_CLOSE = 0
+  MHD_UPGRADE_OPERATION_CLOSE = 0
 
 };
 
@@ -1411,14 +1340,14 @@ struct MHD_UpgradeResponseHandle;
  *
  * @param urh the handle identifying the connection to perform
  *            the upgrade @a action on.
- * @param action which action should be performed
+ * @param operation which operation should be performed
  * @param ... arguments to the action (depends on the action)
  * @return #MHD_NO on error, #MHD_YES on success
  */
 _MHD_EXTERN enum MHD_Bool
-MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
-                    enum MHD_UpgradeAction action,
-                    ...);
+MHD_upgrade_operation (struct MHD_UpgradeResponseHandle *urh,
+		       enum MHD_UpgradeOperation operation,
+		       ...);
 
 
 /**
@@ -1514,25 +1443,16 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 
 
 /**
- * Decrease reference counter of a response object.  If the counter
- * hits zero, destroys a response object and associated resources.
+ * Explicitly decrease reference counter of a response object.  If the
+ * counter hits zero, destroys a response object and associated
+ * resources.  Usually, this is implicitly done by converting a
+ * response to an action and returning the action to MHD.
  *
  * @param response response to decrement RC of
  * @ingroup response
  */
 _MHD_EXTERN void
 MHD_response_decref (struct MHD_Response *response);
-
-
-/**
- * Increases reference counter of a response object. Used so that
- * the same response object can be queued repeatedly.
- *
- * @param response response to increment RC for
- * @ingroup response
- */
-_MHD_EXTERN void
-MHD_response_incref (struct MHD_Response *response);
 
 
 /**
@@ -1610,20 +1530,100 @@ MHD_response_get_header (struct MHD_Response *response,
 			 const char *key);
 
 
-/* ********************** PostProcessor functions ********************** */
+/* ************Upload and PostProcessor functions ********************** */
 
 /**
- * Create a `struct MHD_PostProcessor`.
+ * Action telling MHD to continue processing the upload.
  *
- * A `struct MHD_PostProcessor` can be used to (incrementally) parse
- * the data portion of a POST request.  Note that some buggy browsers
- * fail to set the encoding type.  If you want to support those, you
- * may have to call #MHD_set_connection_value with the proper encoding
- * type before creating a post processor (if no supported encoding
- * type is set, this function will fail).
+ * @return action operation, never NULL
+ */
+_MHD_EXTERN struct MHD_Action *
+MHD_action_continue (void);
+
+
+/**
+ * Function to process data uploaded by a client.
  *
- * @param connection the connection on which the POST is
- *        happening (used to determine the POST format)
+ * @param cls argument given together with the function
+ *        pointer when the handler was registered with MHD
+ * @param upload_data the data being uploaded (excluding headers)
+ *        POST data will typically be made available incrementally via
+ *        multiple callbacks
+ * @param[in,out] upload_data_size set initially to the size of the
+ *        @a upload_data provided; the method must update this
+ *        value to the number of bytes NOT processed;
+ * @return action specifying how to proceed, often
+ *         #MHD_action_continue() if all is well,
+ *         #MHD_action_suspend() to stop reading the upload until 
+ *              the request is resumed,
+ *         NULL to close the socket, or a response
+ *         to discard the rest of the upload and return the data given
+ */
+typedef struct MHD_Action *
+(*MHD_UploadCallback) (void *cls,
+		       const char *upload_data,
+		       size_t *upload_data_size);
+
+
+/**
+ * Create an action that handles an upload.
+ *
+ * @param uc function to call with uploaded data
+ * @param uc_cls closure for @a uc
+ * @return NULL on error (out of memory)
+ * @ingroup action
+ */
+_MHD_EXTERN struct MHD_Action *
+MHD_action_process_upload (MHD_UploadCallback uc,
+			   void *uc_cls);
+
+
+/**
+ * Iterator over key-value pairs where the value maybe made available
+ * in increments and/or may not be zero-terminated.  Used for
+ * MHD parsing POST data.  To access "raw" data from POST or PUT
+ * requests, use #MHD_action_process_upload() instead.
+ *
+ * @param cls user-specified closure
+ * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
+ * @param key 0-terminated key for the value
+ * @param filename name of the uploaded file, NULL if not known
+ * @param content_type mime-type of the data, NULL if not known
+ * @param transfer_encoding encoding of the data, NULL if not known
+ * @param data pointer to @a size bytes of data at the
+ *              specified offset
+ * @param off offset of data in the overall value
+ * @param size number of bytes in @a data available
+ * @return action specifying how to proceed, often
+ *         #MHD_action_continue() if all is well,
+ *         #MHD_action_suspend() to stop reading the upload until 
+ *              the request is resumed,
+ *         NULL to close the socket, or a response
+ *         to discard the rest of the upload and return the data given
+ */
+typedef struct MHD_Action *
+(*MHD_PostDataIterator) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         const char *filename,
+                         const char *content_type,
+                         const char *transfer_encoding,
+                         const char *data,
+                         uint64_t off,
+                         size_t size);
+
+
+/**
+ * Create an action that parses a POST request.
+ *
+ * This action can be used to (incrementally) parse the data portion
+ * of a POST request.  Note that some buggy browsers fail to set the
+ * encoding type.  If you want to support those, you may have to call
+ * #MHD_set_connection_value with the proper encoding type before
+ * returning this action (if no supported encoding type is detected,
+ * returning this action will cause a bad request to be returned to
+ * the client).
+ *
  * @param buffer_size maximum number of bytes to use for
  *        internal buffering (used only for the parsing,
  *        specifically the parsing of the keys).  A
@@ -1637,44 +1637,11 @@ MHD_response_get_header (struct MHD_Response *response,
  *         otherwise a PP handle
  * @ingroup request
  */
-_MHD_EXTERN struct MHD_PostProcessor *
-MHD_post_processor_create (struct MHD_Connection *connection,
-			   size_t buffer_size,
-			   MHD_PostDataIterator iter,
-			   void *iter_cls);
+_MHD_EXTERN struct MHD_Action *
+MHD_action_parse_post (size_t buffer_size,
+		       MHD_PostDataIterator iter,
+		       void *iter_cls);
 
-
-/**
- * Parse and process POST data.  Call this function when POST data is
- * available (usually during an #MHD_AccessHandlerCallback) with the
- * "upload_data" and "upload_data_size".  Whenever possible, this will
- * then cause calls to the #MHD_PostDataIterator.
- *
- * @param pp the post processor
- * @param post_data @a post_data_len bytes of POST data
- * @param post_data_len length of @a post_data
- * @return #MHD_YES on success, #MHD_NO on error
- *         (out-of-memory, iterator aborted, parse error)
- * @ingroup request
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_post_processor_run (struct MHD_PostProcessor *pp,
-			const char *post_data,
-			size_t post_data_len);
-
-
-/**
- * Release PostProcessor resources.
- *
- * @param pp the PostProcessor to destroy
- * @return #MHD_YES if processing completed nicely,
- *         #MHD_NO if there were spurious characters / formatting
- *                problems; it is common to ignore the return
- *                value of this function
- * @ingroup request
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_post_processor_destroy (struct MHD_PostProcessor *pp);
 
 
 /* ********************** generic query functions ********************** */
