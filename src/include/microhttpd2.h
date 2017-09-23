@@ -80,7 +80,9 @@ enum MHD_Bool
   MHD_NO = 0,
 
   /**
-   * MHD-internal return code for "YES".
+   * MHD-internal return code for "YES".  All non-zero values
+   * will be interpreted as "YES", but MHD will only ever
+   * return #MHD_YES or #MHD_NO.
    */
   MHD_YES = 1
 };
@@ -289,19 +291,24 @@ MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon);
 
 
 /**
- * Use inter-thread communication channel.  #MHD_daemon_enable_itc()
- * can be used with #MHD_daemon_thread_internal() and is ignored with
- * any "external" mode.  It's required for use of
- * #MHD_daemon_quiesce() or #MHD_connection_add().  This option is
- * enforced by #MHD_daemon_allow_suspend_resume() and if there is no
- * listen socket.  #MHD_daemon_enable_itc() is always used
- * automatically on platforms where select()/poll()/other ignore
- * shutdown() of a listen socket.
+ * Disable use of inter-thread communication channel.
+ * #MHD_daemon_disable_itc() can be used with
+ * #MHD_daemon_thread_internal() to perform some additional
+ * optimizations (in particular, not creating a pipe for IPC
+ * signalling).  If it is used, certain functions like
+ * #MHD_daemon_quiesce() or #MHD_connection_add() or
+ * #MHD_action_suspend() cannot be used anymore.
+ * #MHD_daemon_disable_itc() is not beneficial on platforms where
+ * select()/poll()/other signal shutdown() of a listen socket.
  *
- * @param daemon which instance to enable itc for
+ * You should only use this function if you are sure you do
+ * satisfy all of its requirements and need a generally minor
+ * boost in performance.
+ * 
+ * @param daemon which instance to disable itc for
  */
 _MHD_EXTERN void
-MHD_daemon_enable_itc (struct MHD_Daemon *daemon);
+MHD_daemon_disable_itc (struct MHD_Daemon *daemon);
 
 
 /**
@@ -317,24 +324,31 @@ MHD_daemon_enable_turbo (struct MHD_Daemon *daemon);
 
 
 /**
- * Enable suspend/resume functions, which also implies setting up
- * #MHD_daemon_enable_itc() to signal resume.
+ * Disable #MHD_action_suspend() functionality.
  *
- * @param daemon which instance to enable suspend/resume for
+ * You should only use this function if you are sure you do
+ * satisfy all of its requirements and need a generally minor
+ * boost in performance.
+ *
+ * @param daemon which instance to disable suspend for
  */
 _MHD_EXTERN void
-MHD_daemon_allow_suspend_resume (struct MHD_Daemon *daemon);
+MHD_daemon_disallow_suspend_resume (struct MHD_Daemon *daemon);
 
 
 /**
- * You need to set this option if you want to use HTTP "Upgrade".
+ * You need to set this option if you want to disable use of HTTP "Upgrade".
  * "Upgrade" may require usage of additional internal resources,
- * which we do not want to use unless necessary.
+ * which we can avoid providing if they will not be used.
+ *
+ * You should only use this function if you are sure you do
+ * satisfy all of its requirements and need a generally minor
+ * boost in performance.
  *
  * @param daemon which instance to enable suspend/resume for
  */
 _MHD_EXTERN void
-MHD_daemon_allow_upgrade (struct MHD_Daemon *daemon);
+MHD_daemon_disallow_upgrade (struct MHD_Daemon *daemon);
 
 
 /**
@@ -384,7 +398,35 @@ MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
 
 
 /**
- * Bind to the given TCP port and address family.
+ * Address family to be used by MHD.
+ */
+enum MHD_AddressFamily
+{
+  /**
+   * Pick "best" available method automatically.
+   */
+  MHD_AF_AUTO,
+
+  /**
+   * Use IPv4.
+   */
+  MHD_AF_INET4,
+
+  /**
+   * Use IPv6.
+   */ 
+  MHD_AF_INET6,
+
+  /**
+   * Use dual stack.
+   */
+  MHD_AF_DUAL
+};
+
+
+/**
+ * Bind to the given TCP port and address family.  
+ *
  * Ineffective in conjunction with #MHD_daemon_listen_socket().
  * Ineffective in conjunction with #MHD_daemon_bind_sa().
  *
@@ -398,7 +440,7 @@ MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN void
 MHD_daemon_bind_port (struct MHD_Daemon *daemon,
-		      int af,
+		      enum MHD_AddressFamily af,
 		      uint16_t port);
 
 
@@ -409,10 +451,12 @@ MHD_daemon_bind_port (struct MHD_Daemon *daemon,
  * @param daemon which instance to configure the binding address for
  * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
  *        or even a UNIX domain socket (AF_UNIX)
+ * @param sa_len number of bytes in @a sa
  */
 _MHD_EXTERN void
 MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
-				const struct sockaddr *sa);
+				const struct sockaddr *sa,
+				size_t sa_lem);
 
 
 /**
@@ -493,8 +537,9 @@ enum MHD_EventLoopSyscall
  * 
  * @param daemon daemon to set event loop style for
  * @param els event loop syscall to use
+ * @return #MHD_NO on failure, #MHD_YES on success
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_Bool
 MHD_daemon_event_loop (struct MHD_Daemon *daemon,
 		       enum MHD_EventLoopSyscall els);
 
@@ -669,7 +714,7 @@ enum MHD_ThreadingModel
    * requests among the workers.
    *
    * A good way to express the use of a thread pool
-   * in your code would be to write "4 * MHD_TM_WORKER_THREADS"
+   * in your code would be to write "MHD_TM_THREAD_POOL(4)"
    * to indicate four threads.
    *
    * If a positive value is set, * #MHD_daemon_run() and
@@ -678,8 +723,16 @@ enum MHD_ThreadingModel
   MHD_TM_WORKER_THREADS = 1
   
 };
-  
-  
+
+
+/**
+ * Use a thread pool of size @a n.
+ *
+ * @return an `enum MHD_ThreadingModel` for a thread pool of size @a n
+ */
+#define MHD_TM_THREAD_POOL(n) ((enum MHD_ThreadingModel)(n))  
+
+
 /**
  * Specify threading model to use.
  *
@@ -704,7 +757,7 @@ MHD_daemon_threading_model (struct MHD_Daemon *daemon,
 typedef enum MHD_Bool
 (*MHD_AcceptPolicyCallback) (void *cls,
                              const struct sockaddr *addr,
-                             socklen_t addrlen);
+                             size_t addrlen);
 
 
 /**
