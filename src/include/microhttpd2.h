@@ -28,7 +28,7 @@
  *
  * Main goals:
  * - simplify application callbacks by splitting header/upload/post
- *   functionality currently provided by calling the same 
+ *   functionality currently provided by calling the same
  *   MHD_AccessHandlerCallback 3+ times into separate callbacks.
  * - keep the API very simple for simple requests, but allow
  *   more complex logic to be incrementally introduced
@@ -55,12 +55,12 @@
  * - use more consistent prefixes for related functions
  *   by using MHD_subject_verb_object naming convention, also
  *   at the same time avoid symbol conflict with legacy names
- *   (so we can have one binary implementing old and new 
+ *   (so we can have one binary implementing old and new
  *   library API at the same time via compatibility layer).
  * - make it impossible to queue a response at the wrong time
  * - make it impossible to suspend a connection/request at the
  *   wrong time (improves thread-safety)
- * - make it clear which response status codes are "properly" 
+ * - make it clear which response status codes are "properly"
  *   supported (include the descriptive string) by using an enum;
  * - simplify API for common-case of one-shot responses by
  *   eliminating need for destroy response in most cases;
@@ -106,7 +106,7 @@ struct MHD_Request;
 
 /**
  * Return values for reporting errors, also used
- * for logging. 
+ * for logging.
  *
  * A value of 0 indicates success (as a return value).
  * Values between 1 and 10000 must not be used.
@@ -123,7 +123,7 @@ enum MHD_StatusCode
    * Successful operation (not used for logging).
    */
   MHD_SC_OK = 0,
-  
+
   /**
    * Informational event, MHD started.
    */
@@ -141,11 +141,11 @@ enum MHD_StatusCode
   MHD_TLS_BACKEND_UNSUPPORTED = 50001,
 
   /**
-   * The application requested a TLS cipher suite which is not 
+   * The application requested a TLS cipher suite which is not
    * supported by the selected backend.
    */
   MHD_TLS_CIPHERS_INVALID = 50002
-  
+
 };
 
 
@@ -154,6 +154,55 @@ enum MHD_StatusCode
  * handling of MHD.
  */
 struct MHD_Action;
+
+
+/**
+ * HTTP methods explicitly supported by MHD.  Note that for
+ * non-canonical methods, MHD will return #MHD_METHOD_UNKNOWN
+ * and you can use #MHD_REQUEST_INFORMATION_HTTP_METHOD to get
+ * the original string.
+ */
+enum MHD_Method
+{
+
+  /**
+   * Method did not match any of the methods given below.
+   */
+  MHD_METHOD_UNKNOWN = 0,
+
+  /**
+   * "GET" method.
+   */
+  MHD_METHOD_GET = 1,
+
+  /**
+   * "HEAD" method.
+   */
+  MHD_METHOD_HEAD = 2,
+
+  /**
+   * "PUT" method.
+   */
+  MHD_METHOD_PUT = 3,
+
+  /**
+   * "POST" method.
+   */
+  MHD_METHOD_POST = 4,
+
+  /**
+   * "OPTIONS" method.
+   */
+  MHD_METHOD_OPTIONS = 5,
+
+  /**
+   * "TRACE" method.
+   */
+  MHD_METHOD_TRACE = 6,
+
+  // more?
+
+};
 
 
 /**
@@ -177,7 +226,7 @@ typedef struct MHD_Action *
 (*MHD_RequestCallback) (void *cls,
 			struct MHD_Request *request,
 			const char *url,
-			const char *method);
+			enum MHD_Method method);
 
 
 /**
@@ -304,7 +353,7 @@ MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon);
  * You should only use this function if you are sure you do
  * satisfy all of its requirements and need a generally minor
  * boost in performance.
- * 
+ *
  * @param daemon which instance to disable itc for
  */
 _MHD_EXTERN void
@@ -356,11 +405,11 @@ MHD_daemon_disallow_upgrade (struct MHD_Daemon *daemon);
  */
 enum MHD_FastOpenMethod
 {
-  /** 
+  /**
    * Disable use of TCP_FASTOPEN.
    */
   MHD_FOM_DISABLE = -1,
-  
+
   /**
    * Enable TCP_FASTOPEN where supported (Linux with a kernel >= 3.6).
    * This is the default.
@@ -377,12 +426,12 @@ enum MHD_FastOpenMethod
 
 
 /**
- * Configure TCP_FASTOPEN option, including setting a 
+ * Configure TCP_FASTOPEN option, including setting a
  * custom @a queue_length.
  *
  * Note that having a larger queue size can cause resource exhaustion
  * attack as the TCP stack has to now allocate resources for the SYN
- * packet along with its DATA. 
+ * packet along with its DATA.
  *
  * @param daemon which instance to configure TCP_FASTOPEN for
  * @param fom under which conditions should we use TCP_FASTOPEN?
@@ -414,7 +463,7 @@ enum MHD_AddressFamily
 
   /**
    * Use IPv6.
-   */ 
+   */
   MHD_AF_INET6,
 
   /**
@@ -425,7 +474,7 @@ enum MHD_AddressFamily
 
 
 /**
- * Bind to the given TCP port and address family.  
+ * Bind to the given TCP port and address family.
  *
  * Ineffective in conjunction with #MHD_daemon_listen_socket().
  * Ineffective in conjunction with #MHD_daemon_bind_sa().
@@ -488,7 +537,7 @@ MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon);
 /**
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (stream) socket.
- * 
+ *
  * Unless -1 is given, this disables other listen options, including
  * #MHD_daemon_bind_sa(), #MHD_daemon_bind_port(),
  * #MHD_daemon_listen_queue() and
@@ -512,19 +561,19 @@ enum MHD_EventLoopSyscall
   /**
    * Automatic selection of best-available method. This is also the
    * default.
-   */ 
+   */
   MHD_ELS_AUTO = 0,
 
   /**
    * Use select().
    */
   MHD_ELS_SELECT = 1,
-  
+
   /**
    * Use poll().
    */
   MHD_ELS_POLL = 2,
-  
+
   /**
    * Use epoll().
    */
@@ -534,7 +583,7 @@ enum MHD_EventLoopSyscall
 
 /**
  * Force use of a particular event loop system call.
- * 
+ *
  * @param daemon daemon to set event loop style for
  * @param els event loop syscall to use
  * @return #MHD_NO on failure, #MHD_YES on success
@@ -579,7 +628,7 @@ enum MHD_ProtocolStrictLevel
 
 /**
  * Set how strictly MHD will enforce the HTTP protocol.
- * 
+ *
  * @param daemon daemon to configure strictness for
  * @param sl how strict should we be
  */
@@ -601,7 +650,7 @@ MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
  *     #MHD_TLS_BACKEND_UNSUPPORTED if the @a backend is unknown
  *     #MHD_TLS_DISABLED if this build of MHD does not support TLS
  *     #MHD_TLS_CIPHERS_INVALID if the given @a ciphers are not supported
- *     by this backend 
+ *     by this backend
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
@@ -630,7 +679,7 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
 
 /**
  * Configure DH parameters (dh.pem) to use for the TLS key
- * exchange. 
+ * exchange.
  *
  * @param daemon daemon to configure tls for
  * @param dh parameters to use
@@ -643,7 +692,7 @@ _MHD_EXTERN enum MHD_StatusCode
 
 /**
  * Memory pointer for the certificate (ca.pem) to be used by the
- * HTTPS daemon for client authentification.  
+ * HTTPS daemon for client authentification.
  *
  * @param daemon daemon to configure tls for
  * @param mem_trust memory pointer to the certificate
@@ -652,7 +701,7 @@ _MHD_EXTERN enum MHD_StatusCode
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
 			  const char *mem_trust);
-  
+
 
 /**
  * Configure daemon credentials type for GnuTLS.
@@ -703,8 +752,8 @@ enum MHD_ThreadingModel
   MHD_TM_THREAD_PER_CONNECTION = -1,
 
   /**
-   * Use an external event loop. This is the default.  
-   */ 
+   * Use an external event loop. This is the default.
+   */
   MHD_TM_EXTERNAL_EVENT_LOOP = 0,
 
   /**
@@ -721,7 +770,7 @@ enum MHD_ThreadingModel
    * #MHD_daemon_run_from_select() cannot be used.
    */
   MHD_TM_WORKER_THREADS = 1
-  
+
 };
 
 
@@ -730,7 +779,7 @@ enum MHD_ThreadingModel
  *
  * @return an `enum MHD_ThreadingModel` for a thread pool of size @a n
  */
-#define MHD_TM_THREAD_POOL(n) ((enum MHD_ThreadingModel)(n))  
+#define MHD_TM_THREAD_POOL(n) ((enum MHD_ThreadingModel)(n))
 
 
 /**
@@ -776,7 +825,7 @@ MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
 
 
 typedef void *
-(MHD_EarlyUriLogCallback)(void *cls,			 
+(MHD_EarlyUriLogCallback)(void *cls,
 			  const char *uri,
 			  struct MHD_Request *request);
 
@@ -866,7 +915,7 @@ MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
  * @param daemon daemon to configure
  * @param global_connection_limit maximum number of (concurrent)
           connections
- * @param ip_connection_limit limit on the number of (concurrent) 
+ * @param ip_connection_limit limit on the number of (concurrent)
  *        connections made to the server from the same IP address.
  *        Can be used to prevent one IP from taking over all of
  *        the allowed connections.  If the same IP tries to
@@ -881,7 +930,7 @@ MHD_daemon_connection_limits (struct MHD_Daemon *daemon,
 
 /**
  * After how many seconds of inactivity should a
- * connection automatically be timed out? 
+ * connection automatically be timed out?
  * Use zero for no timeout, which is also the (unsafe!) default.
  *
  * @param daemon daemon to configure
@@ -897,7 +946,7 @@ MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
  * The return value must be "strlen(s)" and @a s  should be
  * updated.  Note that the unescape function must not lengthen @a s
  * (the result must be shorter than the input and still be
- * 0-terminated).  
+ * 0-terminated).
  *
  * @param cls closure
  * @param req the request for which unescaping is performed
@@ -915,7 +964,7 @@ MHD_UnescapeCallback (void *cls,
  * sequences in URIs and URI arguments.  Note that this function
  * will NOT be used by the `struct MHD_PostProcessor`.  If this
  * option is not specified, the default method will be used which
- * decodes escape sequences of the form "%HH". 
+ * decodes escape sequences of the form "%HH".
  *
  * @param daemon daemon to configure
  * @param unescape_cb function to use, NULL for default
@@ -944,7 +993,7 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
 
 /**
  * Size of the internal array holding the map of the nonce and
- * the nonce counter. 
+ * the nonce counter.
  *
  * @param daemon daemon to configure
  * @param nc_length desired array length
@@ -962,7 +1011,7 @@ MHD_daemon_digest_auth_nc_size (struct MHD_Daemon *daemon,
  * Specified as the number of seconds.  Use zero for no timeout.  If
  * timeout was set to zero (or unset) before, setting of a new value
  * by MHD_connection_set_option() will reset timeout timer.
- * 
+ *
  * @param connection connection to configure timeout for
  * @param timeout_s new timeout in seconds
  */
@@ -1082,7 +1131,7 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_NOT_ACCEPTABLE = 406,
 /** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") MHD_HTTP_NOT_ACCEPTABLE 
+  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") MHD_HTTP_NOT_ACCEPTABLE
   MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED = 407,
   MHD_HTTP_REQUEST_TIMEOUT = 408,
   MHD_HTTP_CONFLICT = 409,
@@ -1200,17 +1249,17 @@ MHD_request_resume (struct MHD_Request *request);
  * must no longer be modified (i.e. by setting headers).
  *
  * @param response response to convert, not NULL
- * @param consume should the response object be consumed?
+ * @param destroy_after_use should the response object be consumed?
  * @return corresponding action, never returns NULL
  *
  * Implementation note: internally, this is largely just
- * a cast (and possibly an RC increment operation), 
+ * a cast (and possibly an RC increment operation),
  * as a response *is* an action.  As no memory is
  * allocated, this operation cannot fail.
- */ 
+ */
 struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
-			  enum MHD_bool consume);
+			  enum MHD_bool destroy_after_use);
 
 
 /**
@@ -1224,8 +1273,7 @@ _MHD_EXTERN void
 MHD_response_option_v10_only (struct MHD_Response *response);
 
 
-/**
- * Signature of the callback used by MHD to notify the
+/** * Signature of the callback used by MHD to notify the
  * application about completed requests.
  *
  * @param cls client-defined closure
@@ -1505,7 +1553,7 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * @ingroup response
  */
 _MHD_EXTERN void
-MHD_response_decref (struct MHD_Response *response);
+MHD_response_queue_for_destroy (struct MHD_Response *response);
 
 
 /**
@@ -1525,7 +1573,7 @@ MHD_response_add_header (struct MHD_Response *response,
 
 
 /**
- * Add a footer line to the response.
+ * Add a tailer line to the response.
  *
  * @param response response to add a footer to
  * @param footer the footer to add
@@ -1535,9 +1583,9 @@ MHD_response_add_header (struct MHD_Response *response,
  * @ingroup response
  */
 _MHD_EXTERN enum MHD_Bool
-MHD_response_add_footer (struct MHD_Response *response,
-                         const char *footer,
-			 const char *content);
+MHD_response_add_trailer (struct MHD_Response *response,
+                          const char *footer,
+                          const char *content);
 
 
 /**
@@ -1608,7 +1656,7 @@ MHD_action_continue (void);
  *        value to the number of bytes NOT processed;
  * @return action specifying how to proceed, often
  *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until 
+ *         #MHD_action_suspend() to stop reading the upload until
  *              the request is resumed,
  *         NULL to close the socket, or a response
  *         to discard the rest of the upload and return the data given
@@ -1650,7 +1698,7 @@ MHD_action_process_upload (MHD_UploadCallback uc,
  * @param size number of bytes in @a data available
  * @return action specifying how to proceed, often
  *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until 
+ *         #MHD_action_suspend() to stop reading the upload until
  *              the request is resumed,
  *         NULL to close the socket, or a response
  *         to discard the rest of the upload and return the data given
@@ -1892,7 +1940,13 @@ union MHD_RequestInformation
    * HTTP version requested by the client.
    */
   const char *http_version;
-  
+
+  /**
+   * HTTP method of the request, as a string.  Particularly useful if
+   * #MHD_HTTP_METHOD_UNKNOWN was given.
+   */
+  const char *http_method;
+
   /**
    * Size of the client's HTTP header.
    */
@@ -1911,19 +1965,25 @@ enum MHD_RequestInformationType
    * Return which connection the request is associated with.
    */
   MHD_REQUEST_INFORMATION_CONNECTION,
-  
+
   /**
    * Check whether the connection is suspended.
    * @ingroup request
    */
   MHD_REQUEST_INFORMATION_SUSPENDED,
-  
+
   /**
    * Return the HTTP version string given by the client.
    * @ingroup request
    */
   MHD_REQUEST_INFORMATION_HTTP_VERSION,
-  
+
+  /**
+   * Return the HTTP method used by the request.
+   * @ingroup request
+   */
+  MHD_REQUEST_INFORMATION_HTTP_METHOD,
+
   /**
    * Return length of the client's HTTP request header.
    * @ingroup request
