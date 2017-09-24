@@ -496,12 +496,12 @@ MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon);
  *
  * @param daemon daemon to set listen socket for
  * @param listen_socket listen socket to use,
- *        -1 will cause this call to be ignored (other
- *        binding options may still be effective)
+ *        MHD_INVALID_SOCKET value will cause this call to be
+ *        ignored (other binding options may still be effective)
  */
 _MHD_EXTERN void
 MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
-			  int listen_socket);
+			  MHD_socket listen_socket);
 
 
 /**
@@ -1132,7 +1132,7 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_LOOP_DETECTED = 508,
   MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED = 509,
   MHD_HTTP_NOT_EXTENDED = 510,
-  MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED 511
+  MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
 /** @} */ /* end of group httpcode */
@@ -1527,10 +1527,11 @@ MHD_response_add_header (struct MHD_Response *response,
 /**
  * Add a footer line to the response.
  *
- * @param response response to remove a header from
- * @param footer the footer to delete
- * @param content value to delete
- * @return #MHD_NO on error (i.e. invalid footer or content format).
+ * @param response response to add a footer to
+ * @param footer the footer to add
+ * @param content value to add
+ * @return #MHD_NO on error (i.e. invalid footer or content format),
+ *         or out of memory
  * @ingroup response
  */
 _MHD_EXTERN enum MHD_Bool
