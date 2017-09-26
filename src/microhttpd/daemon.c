@@ -2910,7 +2910,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
             }
           else
             {
+              MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
               daemon->at_limit = true;
+              MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
                         _("Hit process or system resource limit at %u connections, temporarily suspending accept(). Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n"),

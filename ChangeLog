@@ -1,3 +1,6 @@
+Tue Sep 26 14:00:58 CEST 2017
+	Fixing race involving setting "at_limit" flag. -CG
+
 Tue Sep 08 21:39:00 MSK 2017
 	Fixed build of examples when MHD build with non-pthread lib.
 	MHD_queue_response(): added check for using in correct thread.
@@ -19,7 +22,7 @@ Tue Jun 20 23:52:00 MSK 2017
 	Libgcrypt is now optional and required only for old GnuTLS versions. -EG
 
 Wed Jun 14 21:42:00 MSK 2017
-	Added support for debug assert() and new configure parameter 
+	Added support for debug assert() and new configure parameter
 	--enable-asserts for debug builds.
 	Removed non-functional Symbian support. -EG
 
@@ -37,7 +40,7 @@ Mon Jun 05 23:34:00 MSK 2017
 Mon Jun 05 22:20:00 MSK 2017
 	Internal refactoring:
 	used TCP sockets directly with GnuTLS (performance improvement),
-	moved some connection-related code from daemon.c to 
+	moved some connection-related code from daemon.c to
 	connection.c/connection_https.c,
 	removed hacks around sendfile() and implemented correct support of
 	sendfile(),
@@ -82,7 +85,7 @@ Thu May 11 14:24:00 MSK 2017
 	Do not add any "Connection" headers for "upgrade" connections. -EG
 
 Wed May 10 23:09:00 MSK 2017
-	Resume resuming connection before other processing in external polling 
+	Resume resuming connection before other processing in external polling
 	mode. -EG
 
 Tue May  9 23:16:00 MSK 2017
@@ -103,7 +106,7 @@ Mon May  8 19:30:00 MSK 2017
 	MHD_get_response_header(), match only headers (not footers). -EG
 
 Fri May  5 20:57:00 MSK 2017
-	Fixed null dereference when connection has "Upgrade" request and 
+	Fixed null dereference when connection has "Upgrade" request and
 	connection is not upgraded.  -JB/EG
 	Better handle Keep-Alive/Close. -EG
 
