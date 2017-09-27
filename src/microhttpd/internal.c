@@ -77,8 +77,6 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
       return "footers sent";
     case MHD_CONNECTION_CLOSED:
       return "closed";
-    case MHD_TLS_CONNECTION_INIT:
-      return "secure connection init";
     default:
       return "unrecognized connection state";
     }
