@@ -130,6 +130,7 @@ mhd_panic_std (void *cls,
 	       unsigned int line,
 	       const char *reason)
 {
+  (void)cls; /* Mute compiler warning. */
 #ifdef HAVE_MESSAGES
   fprintf (stderr,
            _("Fatal error in GNU libmicrohttpd %s:%u: %s\n"),
@@ -4404,6 +4405,8 @@ unescape_wrapper (void *cls,
                   struct MHD_Connection *connection,
                   char *val)
 {
+  (void)cls; /* Mute compiler warning. */
+  (void)connection; /* Mute compiler warning. */
   return MHD_http_unescape (val);
 }
 
@@ -4630,7 +4633,10 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CONNECTION_TIMEOUT:
           uv = va_arg (ap,
                        unsigned int);
-          if (TIME_T_MAX < uv)
+          /* Next comparison could be always false on some platforms and whole branch will
+           * be optimized out on those platforms. On others it will be compiled into real
+           * check. */
+          if (TIME_T_MAX < uv) /* Compiler may warn on some platforms, ignore warning. */
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
@@ -4687,7 +4693,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
               daemon->worker_pool_size = 0;
             }
-          else if (daemon->worker_pool_size >= (SIZE_MAX / sizeof (struct MHD_Daemon)))
+          /* Next comparison could be always false on some platforms and whole branch will
+           * be optimized out on those platforms. On others it will be compiled into real
+           * check. */
+          else if (daemon->worker_pool_size >= (SIZE_MAX / sizeof (struct MHD_Daemon))) /* Compiler may warn on some platforms, ignore warning. */
 	    {
 #ifdef HAVE_MESSAGES
 	      MHD_DLOG (daemon,
