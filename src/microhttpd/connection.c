@@ -322,6 +322,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 static int
 socket_flush_possible(struct MHD_Connection *connection)
 {
+  (void)connection; /* Mute compiler warning. */
 #if defined(TCP_CORK) || defined(TCP_PUSH)
   return MHD_YES;
 #else  /* !TCP_CORK && !TCP_PUSH */
@@ -341,13 +342,13 @@ static int
 socket_start_extra_buffering (struct MHD_Connection *connection)
 {
   int res = MHD_NO;
+  (void)connection; /* Mute compiler warning. */
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_NODELAY)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #endif /* TCP_NODELAY */
-  if (!connection)
-    return MHD_NO;
+  mhd_assert(NULL != connection);
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Buffer data before sending */
   res = (0 == setsockopt (connection->socket_fd,
@@ -406,8 +407,8 @@ socket_start_no_buffering (struct MHD_Connection *connection)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #endif /* TCP_CORK || TCP_NOPUSH */
 
-  if (NULL == connection)
-    return MHD_NO;
+  (void)connection; /* Mute compiler warning. */
+  mhd_assert(NULL != connection);
 #if defined(TCP_CORK)
   /* Allow partial packets */
   res &= (0 == setsockopt (connection->socket_fd,
@@ -489,8 +490,7 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
   MHD_SCKT_OPT_BOOL_ cork_val = 0;
   socklen_t param_size = sizeof (cork_val);
 #endif /* TCP_CORK */
-  if (!connection)
-    return MHD_NO;
+  mhd_assert(NULL != connection);
 #if defined(TCP_CORK)
   /* Allow partial packets */
   /* Disabling TCP_CORK will flush partial packet even if TCP_CORK wasn't enabled before
@@ -1070,7 +1070,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
                         "%X\r\n",
                         (unsigned int) ret);
   mhd_assert(cblen > 0);
-  mhd_assert(cblen < sizeof(cbuf));
+  mhd_assert((size_t)cblen < sizeof(cbuf));
   memcpy (&connection->write_buffer[sizeof (cbuf) - cblen],
           cbuf,
           cblen);
