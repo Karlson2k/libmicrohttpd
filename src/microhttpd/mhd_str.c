@@ -101,7 +101,7 @@ isasciidigit (char c)
   return (c >= '0') && (c <= '9');
 }
 
-
+#if 0 /* Disable unused functions. */
 /**
  * Check whether character is hexadecimal digit in US-ASCII
  *
@@ -128,6 +128,7 @@ isasciialnum (char c)
 {
   return isasciialpha (c) || isasciidigit (c);
 }
+#endif /* Disable unused functions. */
 
 
 /**
@@ -146,6 +147,7 @@ toasciilower (char c)
 }
 
 
+#if 0 /* Disable unused functions. */
 /**
  * Convert US-ASCII character to upper case.
  * If character is lower case letter in US-ASCII than it's converted to upper
@@ -176,6 +178,7 @@ todigitvalue (char c)
 
   return -1;
 }
+#endif /* Disable unused functions. */
 
 
 /**
