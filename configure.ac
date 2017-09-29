@@ -1195,12 +1195,36 @@ then
 fi
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
-mhd_have_magic_open='no'
-AC_CHECK_HEADERS([magic.h],
-  [ AC_CHECK_LIB([[magic]], [[magic_open]], [[mhd_have_magic_open='yes']]) ],[],
-  [AC_INCLUDES_DEFAULT])
-
-AM_CONDITIONAL([HAVE_MAGIC], [[test "x$mhd_have_magic_open" = "xyes"]])
+mhd_have_libmagic="no"
+SAVE_LIBS="$LIBS"
+LIBS="$LIBS -lmagic"
+AC_MSG_CHECKING([[for suitable libmagic]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+    [[
+#include <magic.h>
+    ]],
+    [[
+      char var_data[256];
+      const char *var_mime;
+      magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
+      (void)magic_load (var_magic, NULL);
+      var_data[0] = 0;
+      var_mime = magic_buffer (var_magic, var_data, 1);
+      magic_close (var_magic);
+    ]]
+   )
+  ],
+  [
+    AC_DEFINE([HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])
+    mhd_have_libmagic="yes"
+    AC_MSG_RESULT([[yes]])
+  ],
+  [AC_MSG_RESULT([[no]])
+  ]
+)
+LIBS="$SAVE_LIBS"
+AM_CONDITIONAL([HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE

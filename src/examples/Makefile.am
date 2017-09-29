@@ -38,12 +38,10 @@ endif
 if HAVE_POSTPROCESSOR
 noinst_PROGRAMS += \
   post_example
-if HAVE_MAGIC
 if HAVE_POSIX_THREADS
 noinst_PROGRAMS += demo
 if ENABLE_HTTPS
 noinst_PROGRAMS += demo_https
-endif
 endif
 endif
 endif
@@ -100,7 +98,10 @@ demo_CPPFLAGS = \
  $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
- $(PTHREAD_LIBS) -lmagic
+ $(PTHREAD_LIBS)
+if HAVE_LIBMAGIC
+demo_LDADD += -lmagic
+endif
 
 demo_https_SOURCES = \
  demo_https.c
@@ -110,7 +111,10 @@ demo_https_CPPFLAGS = \
  $(AM_CPPFLAGS) $(CPU_COUNT_DEF)
 demo_https_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
- $(PTHREAD_LIBS) -lmagic
+ $(PTHREAD_LIBS)
+if HAVE_LIBMAGIC
+demo_https_LDADD += -lmagic
+endif
 
 benchmark_SOURCES = \
  benchmark.c
