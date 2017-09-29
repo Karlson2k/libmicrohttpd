@@ -1398,6 +1398,8 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
        # Check for GnuTLS with gcrypt flags
        LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"
+       # A bit of hack: unset cache variable to force recheck
+       AS_UNSET([ac_cv_header_gnutls_gnutls_h])
        AC_CHECK_HEADERS([gnutls/gnutls.h],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
