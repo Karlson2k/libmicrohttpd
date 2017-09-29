@@ -493,6 +493,10 @@ process_upload_data (void *cls,
 {
   struct UploadContext *uc = cls;
   int i;
+  (void)kind;              /* Unused. Silent compiler warning. */
+  (void)content_type;      /* Unused. Silent compiler warning. */
+  (void)transfer_encoding; /* Unused. Silent compiler warning. */
+  (void)off;               /* Unused. Silent compiler warning. */
 
   if (0 == strcmp (key, "category"))
     return do_append (&uc->category, data, size);
@@ -613,6 +617,9 @@ response_completed_callback (void *cls,
 			     enum MHD_RequestTerminationCode toe)
 {
   struct UploadContext *uc = *con_cls;
+  (void)cls;         /* Unused. Silent compiler warning. */
+  (void)connection;  /* Unused. Silent compiler warning. */
+  (void)toe;         /* Unused. Silent compiler warning. */
 
   if (NULL == uc)
     return; /* this request wasn't an upload request */
@@ -689,6 +696,8 @@ generate_page (void *cls,
   int ret;
   int fd;
   struct stat buf;
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (url, "/"))
     {
@@ -813,6 +822,7 @@ generate_page (void *cls,
 }
 
 
+#ifndef MINGW
 /**
  * Function called if we get a SIGPIPE. Does nothing.
  *
@@ -828,7 +838,6 @@ catcher (int sig)
 /**
  * setup handlers to ignore SIGPIPE.
  */
-#ifndef MINGW
 static void
 ignore_sigpipe ()
 {

@@ -128,6 +128,10 @@ iterate_post (void *coninfo_cls,
 {
   struct connection_info_struct *con_info = coninfo_cls;
   FILE *fp;
+  (void)kind;               /* Unused. Silent compiler warning. */
+  (void)content_type;       /* Unused. Silent compiler warning. */
+  (void)transfer_encoding;  /* Unused. Silent compiler warning. */
+  (void)off;                /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (key, "file"))
     {
@@ -178,6 +182,9 @@ request_completed (void *cls,
                    enum MHD_RequestTerminationCode toe)
 {
   struct connection_info_struct *con_info = *con_cls;
+  (void)cls;         /* Unused. Silent compiler warning. */
+  (void)connection;  /* Unused. Silent compiler warning. */
+  (void)toe;         /* Unused. Silent compiler warning. */
 
   if (NULL == con_info)
     return;
@@ -209,6 +216,10 @@ answer_to_connection (void *cls,
                       size_t *upload_data_size,
                       void **con_cls)
 {
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)url;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
+
   if (NULL == *con_cls)
     {
       /* First call, setup data structures */

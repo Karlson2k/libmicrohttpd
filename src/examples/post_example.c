@@ -315,6 +315,7 @@ fill_v1_form (const void *cls,
   int ret;
   char *reply;
   struct MHD_Response *response;
+  (void)cls; /* Unused. Silent compiler warning. */
 
   reply = malloc (strlen (MAIN_PAGE) + strlen (session->value_1) + 1);
   if (NULL == reply)
@@ -358,6 +359,7 @@ fill_v1_v2_form (const void *cls,
   int ret;
   char *reply;
   struct MHD_Response *response;
+  (void)cls; /* Unused. Silent compiler warning. */
 
   reply = malloc (strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (session->value_2) + 1);
   if (NULL == reply)
@@ -401,6 +403,8 @@ not_found_page (const void *cls,
 {
   int ret;
   struct MHD_Response *response;
+  (void)cls;     /* Unused. Silent compiler warning. */
+  (void)session; /* Unused. Silent compiler warning. */
 
   /* unsupported HTTP method */
   response = MHD_create_response_from_buffer (strlen (NOT_FOUND_ERROR),
@@ -463,6 +467,10 @@ post_iterator (void *cls,
 {
   struct Request *request = cls;
   struct Session *session = request->session;
+  (void)kind;              /* Unused. Silent compiler warning. */
+  (void)filename;          /* Unused. Silent compiler warning. */
+  (void)content_type;      /* Unused. Silent compiler warning. */
+  (void)transfer_encoding; /* Unused. Silent compiler warning. */
 
   if (0 == strcmp ("DONE", key))
     {
@@ -548,6 +556,8 @@ create_response (void *cls,
   struct Session *session;
   int ret;
   unsigned int i;
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
 
   request = *ptr;
   if (NULL == request)
@@ -647,6 +657,9 @@ request_completed_callback (void *cls,
 			    enum MHD_RequestTerminationCode toe)
 {
   struct Request *request = *con_cls;
+  (void)cls;         /* Unused. Silent compiler warning. */
+  (void)connection;  /* Unused. Silent compiler warning. */
+  (void)toe;         /* Unused. Silent compiler warning. */
 
   if (NULL == request)
     return;

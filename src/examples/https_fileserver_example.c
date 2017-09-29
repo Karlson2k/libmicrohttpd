@@ -129,6 +129,10 @@ http_ahc (void *cls,
   FILE *file;
   int fd;
   struct stat buf;
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
+  (void)upload_data;       /* Unused. Silent compiler warning. */
+  (void)upload_data_size;  /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */

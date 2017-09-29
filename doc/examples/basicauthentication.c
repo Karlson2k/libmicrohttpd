@@ -28,6 +28,11 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   int fail;
   int ret;
   struct MHD_Response *response;
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)url;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
+  (void)upload_data;       /* Unused. Silent compiler warning. */
+  (void)upload_data_size;  /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
@@ -67,7 +72,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 
