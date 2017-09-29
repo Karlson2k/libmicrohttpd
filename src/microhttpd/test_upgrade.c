@@ -443,6 +443,7 @@ notify_completed_cb (void *cls,
                      void **con_cls,
                      enum MHD_RequestTerminationCode toe)
 {
+  (void)cls; (void)connection;  /* Unused. Silent compiler warning. */
   if ( (toe != MHD_REQUEST_TERMINATED_COMPLETED_OK) &&
        (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
        (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
@@ -468,6 +469,8 @@ log_cb (void *cls,
         struct MHD_Connection *connection)
 {
   pthread_t* ppth;
+  (void)cls; (void)connection;  /* Unused. Silent compiler warning. */
+
   if (0 != strcmp (uri,
                    "/"))
     abort ();
@@ -505,6 +508,7 @@ notify_connection_cb (void *cls,
                       enum MHD_ConnectionNotificationCode toe)
 {
   static int started;
+  (void)cls; (void)connection;  /* Unused. Silent compiler warning. */
 
   switch (toe)
   {
@@ -759,6 +763,7 @@ upgrade_cb (void *cls,
             MHD_socket sock,
             struct MHD_UpgradeResponseHandle *urh)
 {
+  (void)cls; (void)connection; (void)con_cls; (void)extra_in; /* Unused. Silent compiler warning. */
   usock = wr_create_from_plain_sckt (sock);
   if (0 != extra_in_size)
     abort ();
@@ -821,6 +826,8 @@ ahc_upgrade (void *cls,
 {
   struct MHD_Response *resp;
   int ret;
+  (void)cls;(void)url;(void)method;                        /* Unused. Silent compiler warning. */
+  (void)version;(void)upload_data;(void)upload_data_size;  /* Unused. Silent compiler warning. */
 
   if (NULL == *con_cls)
     abort ();
@@ -898,6 +905,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
 static void
 run_mhd_poll_loop (struct MHD_Daemon *daemon)
 {
+  (void)daemon; /* Unused. Silent compiler warning. */
   abort (); /* currently not implementable with existing MHD API */
 }
 #endif /* HAVE_POLL */

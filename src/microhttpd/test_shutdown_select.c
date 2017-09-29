@@ -286,6 +286,7 @@ main (int argc, char *const *argv)
 #endif /* MHD_WINSOCK_SOCKETS */
   bool test_poll;
   bool must_ignore;
+  (void)argc; /* Unused. Silent compiler warning. */
 
   test_poll = has_in_name(argv[0], "_poll");
   must_ignore = has_in_name(argv[0], "_ignore");
