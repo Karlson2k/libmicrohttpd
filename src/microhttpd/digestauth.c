@@ -190,7 +190,7 @@ digest_calc_response (const char ha1[HASH_MD5_HEX_LEN + 1],
   unsigned char ha2[MD5_DIGEST_SIZE];
   unsigned char resphash[MD5_DIGEST_SIZE];
   char ha2hex[HASH_MD5_HEX_LEN + 1];
-  (void)hentity; /* Silent compiler warning. */
+  (void)hentity; /* Unused. Silent compiler warning. */
 
   MD5Init (&md5);
   MD5Update (&md5,
