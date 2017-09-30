@@ -1726,8 +1726,7 @@ AC_SUBST(LDFLAGS)
 AC_SUBST([ac_configure_args])
 AC_SUBST([EMPTY_VAR], [[]])
 
-AC_CONFIG_FILES([
-libmicrohttpd.pc
+AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
 po/configure.acT:po/configure.ac.in
 Makefile
@@ -1743,6 +1742,17 @@ src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
 src/testzzuf/Makefile])
+AC_CONFIG_COMMANDS([po/configargs.stamp], [
+  $as_echo "$ac_configure_args" > "$ac_tmp/configargs.stamp" || AC_MSG_ERROR([[cannot create file $ac_tmp/configargs.stamp]])
+  AS_IF([[cmp -s "po/configargs.stamp" "$ac_tmp/configargs.stamp" >/dev/null 2>&1]],
+    [AC_MSG_NOTICE([[po/configargs.stamp is unchanged]])],
+    [
+      rm -f po/configargs.stamp
+      mv "$ac_tmp/configargs.stamp" po/configargs.stamp || AC_MSG_ERROR([[cannot create file $ac_tmp/configargs.stamp]])
+      AC_MSG_NOTICE([[po/configargs.stamp is updated]])
+    ]
+  )
+], [ac_configure_args="$ac_configure_args"])
 AC_OUTPUT
 
 # Finally: summary
