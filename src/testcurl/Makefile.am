@@ -70,9 +70,6 @@ if HAVE_POSTPROCESSOR
   test_post_loop11
 endif
 
-noinst_PROGRAMS = \
-  test_options
-
 if ENABLE_DAUTH
   check_PROGRAMS += \
 	test_digestauth test_digestauth_with_arguments
@@ -98,11 +95,6 @@ test_concurrent_stop_CFLAGS = \
 test_concurrent_stop_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS) @LIBCURL@
-
-test_options_SOURCES = \
-  test_options.c
-test_options_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_get_SOURCES = \
   test_get.c

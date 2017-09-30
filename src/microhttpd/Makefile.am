@@ -144,7 +144,8 @@ check_PROGRAMS = \
   test_str_to_value \
   test_str_token \
   test_http_reasons \
-  test_daemon
+  test_daemon \
+  test_options
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
@@ -278,3 +279,8 @@ test_str_token_SOURCES = \
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
   reason_phrase.c mhd_str.c mhd_str.h
+
+test_options_SOURCES = \
+  test_options.c
+test_options_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
