@@ -44,6 +44,15 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size,
           void **unused)
 {
+  (void)cls;
+  (void)connection;
+  (void)url;
+  (void)method;
+  (void)version;
+  (void)upload_data;
+  (void)upload_data_size;
+  (void)unused;
+
   return 0;
 }
 
@@ -118,6 +127,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   errorCount += test_wrap_loc ("ip addr option", &test_ip_addr_option);
 
