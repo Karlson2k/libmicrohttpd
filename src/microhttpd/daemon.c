@@ -2671,9 +2671,12 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 
   if (daemon->resuming)
-    prev = daemon->suspended_connections_tail;
+    {
+      prev = daemon->suspended_connections_tail;
+      /* During shutdown check for resuming is forced. */
+      mhd_assert((NULL != prev) || (daemon->shutdown));
+    }
 
-  mhd_assert(NULL != prev);
   daemon->resuming = false;
 
   while (NULL != (pos = prev))
