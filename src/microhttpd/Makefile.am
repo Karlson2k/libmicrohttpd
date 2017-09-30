@@ -144,6 +144,7 @@ check_PROGRAMS = \
   test_str_to_value \
   test_str_token \
   test_http_reasons \
+  test_start_stop \
   test_daemon \
   test_options
 
@@ -174,6 +175,11 @@ check_PROGRAMS += \
   test_shutdown_select_ignore \
   test_shutdown_poll_ignore
 endif
+
+test_start_stop_SOURCES = \
+  test_start_stop.c
+test_start_stop_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_daemon_SOURCES = \
   test_daemon.c

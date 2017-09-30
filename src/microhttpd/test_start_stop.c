@@ -23,9 +23,8 @@
  * @brief  test for #1901 (start+stop)
  * @author Christian Grothoff
  */
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
-#include <curl/curl.h>
 #include <microhttpd.h>
 
 #if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
