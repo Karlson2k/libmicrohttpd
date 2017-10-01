@@ -32,11 +32,17 @@
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
+#define MHD_UNSIGNED_TYPE_MAX_(type) ((type)-1)
+/* Assume 8 bits per byte, no padding bits. */
+#define MHD_SIGNED_TYPE_MAX_(type) \
+        ( (type)((( ((type)1) << (sizeof(type)*8 - 2)) - 1)*2 + 1) )
+#define MHD_TYPE_IS_SIGNED_(type) (((type)0)>((type)-1))
+
 #ifndef UINT_MAX
 #ifdef __UINT_MAX__
 #define UINT_MAX __UINT_MAX__
 #else  /* ! __UINT_MAX__ */
-#define UINT_MAX ((unsigned int) ~((unsigned int)0))
+#define UINT_MAX MHD_UNSIGNED_TYPE_MAX_(unsigned int)
 #endif /* ! __UINT_MAX__ */
 #endif /* !UINT_MAX */
 
@@ -44,12 +50,12 @@
 #ifdef __LONG_MAX__
 #define LONG_MAX __LONG_MAX__
 #else  /* ! __LONG_MAX__ */
-#define LONG_MAX ((long) ~(((uint64_t) 1) << (8 * sizeof(long) - 1)))
+#define LONG_MAX MHD_SIGNED_TYPE_MAX(long)
 #endif /* ! __LONG_MAX__ */
 #endif /* !OFF_T_MAX */
 
 #ifndef ULLONG_MAX
-#define ULLONG_MAX ((MHD_UNSIGNED_LONG_LONG) ~((MHD_UNSIGNED_LONG_LONG)0))
+#define ULLONG_MAX MHD_UNSIGNED_TYPE_MAX_(MHD_UNSIGNED_LONG_LONG)
 #endif /* !ULLONG_MAX */
 
 #ifndef INT32_MAX
@@ -80,22 +86,23 @@
 #ifdef __SIZE_MAX__
 #define SIZE_MAX __SIZE_MAX__
 #else  /* ! __SIZE_MAX__ */
-#define SIZE_MAX ((size_t) ~((size_t)0))
+#define SIZE_MAX MHD_UNSIGNED_TYPE_MAX_(size_t)
 #endif /* ! __SIZE_MAX__ */ 
 #endif /* !SIZE_MAX */
 
 #ifndef OFF_T_MAX
-#define OFF_T_MAX ((off_t) ~(((uint64_t) 1) << (8 * sizeof(off_t) - 1)))
+#define OFF_T_MAX MHD_SIGNED_TYPE_MAX_(off_t)
 #endif /* !OFF_T_MAX */
 
 #if defined(_LARGEFILE64_SOURCE) && !defined(OFF64_T_MAX)
-#define OFF64_T_MAX ((off64_t) ~(((uint64_t) 1) << (8 * sizeof(off64_t) - 1)))
+#define OFF64_T_MAX MHD_SIGNED_TYPE_MAX_(uint64_t)
 #endif /* _LARGEFILE64_SOURCE && !OFF64_T_MAX */
 
 #ifndef TIME_T_MAX
-/* Assume that time_t is signed type. */
-/* Even if time_t is unsigned, TIME_T_MAX will be safe limit */
-#define TIME_T_MAX ( (time_t) ~(((uint64_t) 1) << (8 * sizeof(time_t) - 1)) )
+#define TIME_T_MAX ((time_t)              \
+       ( MHD_TYPE_IS_SIGNED_(time_t) ?    \
+           MHD_SIGNED_TYPE_MAX_(time_t) : \
+           MHD_UNSIGNED_TYPE_MAX_(time_t)))
 #endif /* !TIME_T_MAX */
 
 #ifndef TIMEVAL_TV_SEC_MAX
