@@ -39,6 +39,11 @@
 #ifdef HAVE_LINUX_SENDFILE
 #include <sys/sendfile.h>
 #endif /* HAVE_LINUX_SENDFILE */
+#ifdef HAVE_FREEBSD_SENDFILE
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#endif /* HAVE_FREEBSD_SENDFILE */
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
 #endif /* HTTPS_SUPPORT */
@@ -219,7 +224,7 @@ send_param_adapter (struct MHD_Connection *connection,
 }
 
 
-#ifdef HAVE_LINUX_SENDFILE
+#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
 /**
  * Function for sending responses backed by file FD.
  *
@@ -234,13 +239,23 @@ sendfile_adapter (struct MHD_Connection *connection)
   uint64_t left;
   uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
+  const uint64_t max_off_t = (uint64_t)OFF_T_MAX;
+#else  /* HAVE_SENDFILE64 */
+  const uint64_t max_off_t = (uint64_t)OFF64_T_MAX;
+#endif /* HAVE_SENDFILE64 */
+#ifdef HAVE_LINUX_SENDFILE
+#ifndef HAVE_SENDFILE64
   off_t offset;
 #else  /* HAVE_SENDFILE64 */
   off64_t offset;
 #endif /* HAVE_SENDFILE64 */
+#endif /* HAVE_LINUX_SENDFILE */
+#ifdef HAVE_FREEBSD_SENDFILE
+  off_t sent_bytes;
+#endif
   const bool used_thr_p_c = (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION));
   const size_t chunk_size = used_thr_p_c ? 0x200000 : 0x20000;
-  size_t send_size;
+  size_t send_size = 0;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
 
   offsetu64 = connection->response_write_position + connection->response->fd_off;
@@ -248,23 +263,19 @@ sendfile_adapter (struct MHD_Connection *connection)
   /* Do not allow system to stick sending on single fast connection:
    * use 128KiB chunks (2MiB for thread-per-connection). */
   send_size = (left > chunk_size) ? chunk_size : (size_t) left;
-#ifndef HAVE_SENDFILE64
-  if ((uint64_t)OFF_T_MAX < offsetu64)
+  if (max_off_t < offsetu64)
     { /* Retry to send with standard 'send()'. */
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
+#ifdef HAVE_LINUX_SENDFILE
+#ifndef HAVE_SENDFILE64
   offset = (off_t) offsetu64;
   ret = sendfile (connection->socket_fd,
                   file_fd,
                   &offset,
                   send_size);
 #else  /* HAVE_SENDFILE64 */
-  if ((uint64_t)OFF64_T_MAX < offsetu64)
-    { /* Retry to send with standard 'send()'. */
-      connection->resp_sender = MHD_resp_sender_std;
-      return MHD_ERR_AGAIN_;
-    }
   offset = (off64_t) offsetu64;
   ret = sendfile64 (connection->socket_fd,
                     file_fd,
@@ -299,9 +310,37 @@ sendfile_adapter (struct MHD_Connection *connection)
   else if (send_size > (size_t)ret)
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
+#elif defined(HAVE_FREEBSD_SENDFILE)
+  if (0 != sendfile (file_fd,
+                     connection->socket_fd,
+                     (off_t) offsetu64,
+                     send_size,
+                     NULL,
+                     &sent_bytes,
+                     0))
+    {
+      const int err = MHD_socket_get_error_();
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
+          MHD_SCKT_ERR_IS_EINTR_(err) ||
+          EBUSY == err)
+        {
+          mhd_assert (SSIZE_MAX >= sent_bytes);
+          if (0 != sent_bytes)
+            return (ssize_t)sent_bytes;
+
+          return MHD_ERR_AGAIN_;
+        }
+      /* Some unrecoverable error. Possibly file FD is not suitable
+       * for sendfile(). Retry with standard send(). */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+  mhd_assert (0 < sent_bytes);
+  ret = (ssize_t)sent_bytes;
+#endif /* HAVE_FREEBSD_SENDFILE */
   return ret;
 }
-#endif /* HAVE_LINUX_SENDFILE */
+#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
 
 /**
@@ -933,13 +972,13 @@ try_ready_normal_body (struct MHD_Connection *connection)
        (response->data_size + response->data_start >
 	connection->response_write_position) )
     return MHD_YES; /* response already ready */
-#if defined(HAVE_LINUX_SENDFILE)
+#if defined(HAVE_LINUX_SENDFILE) || defined (HAVE_FREEBSD_SENDFILE)
   if (MHD_resp_sender_sendfile == connection->resp_sender)
     {
       /* will use sendfile, no need to bother response crc */
       return MHD_YES;
     }
-#endif
+#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
@@ -2875,15 +2914,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               /* mutex was already unlocked by try_ready_normal_body */
               return;
             }
-#if defined(HAVE_LINUX_SENDFILE)
+#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
           if (MHD_resp_sender_sendfile == connection->resp_sender)
             {
               ret = sendfile_adapter (connection);
             }
           else
-#else  /* ! HAVE_LINUX_SENDFILE */
+#else  /* ! (HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE) */
           if (1)
-#endif /* ! HAVE_LINUX_SENDFILE */
+#endif /* ! (HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE) */
             {
               data_write_offset = connection->response_write_position
                                   - response->data_start;
@@ -3819,13 +3858,13 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
-#if defined(HAVE_LINUX_SENDFILE)
+#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
   if ( (response->fd == -1) ||
        (0 != (connection->daemon->options & MHD_USE_TLS)) )
     connection->resp_sender = MHD_resp_sender_std;
   else
     connection->resp_sender = MHD_resp_sender_sendfile;
-#endif /* HAVE_LINUX_SENDFILE */
+#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
   if ( ( (NULL != connection->method) &&
          (MHD_str_equal_caseless_ (connection->method,

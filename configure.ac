@@ -1267,6 +1267,47 @@ ssize_t sendfile(int, int, off_t*, size_t);
   [AC_MSG_RESULT([[no]])
   ]
 )
+AS_VAR_IF([[found_sendfile]], [["no"]],
+  [
+   AC_MSG_CHECKING([[for FreeBSD-style sendfile(2)]])
+   AC_LINK_IFELSE(
+     [AC_LANG_PROGRAM(
+       [[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+
+static void empty_func(void)
+{
+/* Check for declaration */
+  (void)sendfile;
+}
+/* Declare again to check form match */
+int sendfile(int, int, off_t, size_t,
+             struct sf_hdtr*, off_t*, int);
+       ]],
+       [[
+         int fd1=0, fd2=1;
+         off_t o = 0;
+         size_t s = 5;
+         off_t r1;
+         int r2;
+         r2 = sendfile (fd1, fd2, o, s, (void*)0, &r1, 0);
+         if (r2)
+           empty_func();
+       ]]
+      )
+     ],
+     [
+       AC_DEFINE([HAVE_FREEBSD_SENDFILE], [1], [Define to 1 if you have FreeBSD-style sendfile(2).])
+       found_sendfile="yes, FreeBSD-style"
+       AC_MSG_RESULT([[yes]])
+     ],
+     [AC_MSG_RESULT([[no]])
+     ]
+   )
+  ]
+)
 
 # optional: have error messages ?
 AC_MSG_CHECKING([[whether to generate error messages]])
