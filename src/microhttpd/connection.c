@@ -239,6 +239,7 @@ sendfile_adapter (struct MHD_Connection *connection)
   off64_t offset;
 #endif /* HAVE_SENDFILE64 */
   const bool used_thr_p_c = (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+  const size_t chunk_size = used_thr_p_c ? 0x200000 : 0x20000;
   size_t send_size;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
 
@@ -246,10 +247,7 @@ sendfile_adapter (struct MHD_Connection *connection)
   left = connection->response->total_size - connection->response_write_position;
   /* Do not allow system to stick sending on single fast connection:
    * use 128KiB chunks (2MiB for thread-per-connection). */
-  if (!used_thr_p_c)
-    send_size = (left > 0x20000) ? 0x20000 : (size_t) left;
-  else
-    send_size = (left > 0x200000) ? 0x200000 : (size_t) left;
+  send_size = (left > chunk_size) ? chunk_size : (size_t) left;
 #ifndef HAVE_SENDFILE64
   if ((uint64_t)OFF_T_MAX < offsetu64)
     { /* Retry to send with standard 'send()'. */
