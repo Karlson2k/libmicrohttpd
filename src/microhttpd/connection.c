@@ -118,6 +118,54 @@
 
 
 /**
+ * sendfile() chuck size
+ */
+#define MHD_SENFILE_CHUNK_         (0x20000)
+
+/**
+ * sendfile() chuck size for thread-per-connection
+ */
+#define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
+
+#ifdef HAVE_FREEBSD_SENDFILE
+#ifdef SF_FLAGS
+/**
+ * FreeBSD sendfile() flags
+ */
+static int freebsd_sendfile_flags_;
+
+/**
+ * FreeBSD sendfile() flags for thread-per-connection
+ */
+static int freebsd_sendfile_flags_thd_p_c_;
+#endif /* SF_FLAGS */
+/**
+ * Initialises static variables
+ */
+void
+MHD_conn_init_static_ (void)
+{
+/* FreeBSD 11 and later allow to specify read-ahead size
+ * and handles SF_NODISKIO differently.
+ * SF_FLAGS defined only on FreeBSD 11 and later. */
+#ifdef SF_FLAGS
+  long sys_page_size = sysconf (_SC_PAGESIZE);
+  if (0 > sys_page_size)
+    { /* Failed to get page size. */
+      freebsd_sendfile_flags_ = SF_NODISKIO;
+      freebsd_sendfile_flags_thd_p_c_ = SF_NODISKIO;
+    }
+  else
+    {
+      freebsd_sendfile_flags_ =
+          SF_FLAGS((uint16_t)(MHD_SENFILE_CHUNK_ / sys_page_size), SF_NODISKIO);
+      freebsd_sendfile_flags_thd_p_c_ =
+          SF_FLAGS((uint16_t)(MHD_SENFILE_CHUNK_THR_P_C_ / sys_page_size), SF_NODISKIO);
+    }
+#endif /* SF_FLAGS */
+}
+#endif /* HAVE_FREEBSD_SENDFILE */
+/**
  * Callback for receiving data from the socket.
  *
  * @param connection the MHD connection structure
@@ -252,6 +300,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #endif /* HAVE_LINUX_SENDFILE */
 #ifdef HAVE_FREEBSD_SENDFILE
   off_t sent_bytes;
+  int flags = 0;
 #endif
   const bool used_thr_p_c = (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION));
   const size_t chunk_size = used_thr_p_c ? 0x200000 : 0x20000;
@@ -311,13 +360,17 @@ sendfile_adapter (struct MHD_Connection *connection)
         connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
 #elif defined(HAVE_FREEBSD_SENDFILE)
+#ifdef SF_FLAGS
+  flags = used_thr_p_c ?
+      freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
+#endif /* SF_FLAGS */
   if (0 != sendfile (file_fd,
                      connection->socket_fd,
                      (off_t) offsetu64,
                      send_size,
                      NULL,
                      &sent_bytes,
-                     0))
+                     flags))
     {
       const int err = MHD_socket_get_error_();
       if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
@@ -336,6 +389,7 @@ sendfile_adapter (struct MHD_Connection *connection)
       return MHD_ERR_AGAIN_;
     }
   mhd_assert (0 < sent_bytes);
+  mhd_assert (SSIZE_MAX >= sent_bytes);
   ret = (ssize_t)sent_bytes;
 #endif /* HAVE_FREEBSD_SENDFILE */
   return ret;
