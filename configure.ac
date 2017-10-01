@@ -1248,12 +1248,13 @@ static void empty_func(void)
 ssize_t sendfile(int, int, off_t*, size_t);
     ]],
     [[
-      int fd1, fd2;
+      int fd1=0, fd2=2;
       off_t o = 0;
       size_t s = 5;
       ssize_t r;
       r = sendfile (fd1, fd2, &o, s);
-      empty_func();  
+      if (r)
+        empty_func();
     ]]
    )
   ],
