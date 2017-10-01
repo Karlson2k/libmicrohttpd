@@ -229,7 +229,7 @@ send_param_adapter (struct MHD_Connection *connection,
 static ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
-  int ret;
+  ssize_t ret;
   const int file_fd = connection->response->fd;
   uint64_t left;
   uint64_t offsetu64;
