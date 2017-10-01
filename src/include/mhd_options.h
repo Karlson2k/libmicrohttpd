@@ -109,9 +109,9 @@
 #if !defined(MHD_FAVOR_FAST_CODE) && !defined(MHD_FAVOR_SMALL_CODE)
 /* Try to detect user preferences */
 /* Defined by GCC and many compatible compilers */
-#ifdef __OPTIMIZE_SIZE__
+#if defined(__OPTIMIZE_SIZE__)
 #define MHD_FAVOR_SMALL_CODE 1
-#elif __OPTIMIZE__
+#elif defined(__OPTIMIZE__)
 #define MHD_FAVOR_FAST_CODE 1
 #endif /* __OPTIMIZE__ */
 #endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
