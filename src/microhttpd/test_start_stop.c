@@ -44,6 +44,10 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size,
           void **unused)
 {
+  (void)cls;(void)connection;(void)url;          /* Unused. Silent compiler warning. */
+  (void)method;(void)version;(void)upload_data;  /* Unused. Silent compiler warning. */
+  (void)upload_data_size;(void)unused;           /* Unused. Silent compiler warning. */
+
   return MHD_NO;
 }
 
@@ -106,6 +110,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   errorCount += testInternalGet (0);
   errorCount += testMultithreadedGet (0);
