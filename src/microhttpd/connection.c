@@ -36,9 +36,9 @@
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
 #include "mhd_itc.h"
-#ifdef __linux__
+#ifdef HAVE_LINUX_SENDFILE
 #include <sys/sendfile.h>
-#endif
+#endif /* HAVE_LINUX_SENDFILE */
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
 #endif /* HTTPS_SUPPORT */
@@ -219,7 +219,7 @@ send_param_adapter (struct MHD_Connection *connection,
 }
 
 
-#ifdef __linux__
+#ifdef HAVE_LINUX_SENDFILE
 /**
  * Function for sending responses backed by file FD.
  *
@@ -303,7 +303,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #endif /* EPOLL_SUPPORT */
   return ret;
 }
-#endif /* __linux__ */
+#endif /* HAVE_LINUX_SENDFILE */
 
 
 /**
@@ -935,7 +935,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
        (response->data_size + response->data_start >
 	connection->response_write_position) )
     return MHD_YES; /* response already ready */
-#if LINUX
+#if defined(HAVE_LINUX_SENDFILE)
   if (MHD_resp_sender_sendfile == connection->resp_sender)
     {
       /* will use sendfile, no need to bother response crc */
@@ -2877,15 +2877,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               /* mutex was already unlocked by try_ready_normal_body */
               return;
             }
-#ifdef __linux__
+#if defined(HAVE_LINUX_SENDFILE)
           if (MHD_resp_sender_sendfile == connection->resp_sender)
             {
               ret = sendfile_adapter (connection);
             }
           else
-#else  /* ! __linux__ */
+#else  /* ! HAVE_LINUX_SENDFILE */
           if (1)
-#endif /* ! __linux__ */
+#endif /* ! HAVE_LINUX_SENDFILE */
             {
               data_write_offset = connection->response_write_position
                                   - response->data_start;
@@ -3821,13 +3821,13 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
-#if LINUX
+#if defined(HAVE_LINUX_SENDFILE)
   if ( (response->fd == -1) ||
        (0 != (connection->daemon->options & MHD_USE_TLS)) )
     connection->resp_sender = MHD_resp_sender_std;
   else
     connection->resp_sender = MHD_resp_sender_sendfile;
-#endif /* LINUX */
+#endif /* HAVE_LINUX_SENDFILE */
 
   if ( ( (NULL != connection->method) &&
          (MHD_str_equal_caseless_ (connection->method,

@@ -1229,7 +1229,43 @@ AM_CONDITIONAL([HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-AC_CHECK_FUNCS([lseek64 sendfile64 pread64 pread])
+AC_CHECK_FUNCS([lseek64 pread64 pread])
+
+# check for various sendfile functions
+found_sendfile="no"
+AC_MSG_CHECKING([[for Linux-style sendfile(2)]])
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+    [[
+#include <sys/sendfile.h>
+
+static void empty_func(void)
+{
+/* Check for declaration */
+  (void)sendfile;
+}
+/* Declare again to check form match */
+ssize_t sendfile(int, int, off_t*, size_t);
+    ]],
+    [[
+      int fd1, fd2;
+      off_t o = 0;
+      size_t s = 5;
+      ssize_t r;
+      r = sendfile (fd1, fd2, &o, s);
+      empty_func();  
+    ]]
+   )
+  ],
+  [
+    AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
+    found_sendfile="yes, linux-style"
+    AC_MSG_RESULT([[yes]])
+    AC_CHECK_FUNCS([sendfile64]) 
+  ],
+  [AC_MSG_RESULT([[no]])
+  ]
+)
 
 # optional: have error messages ?
 AC_MSG_CHECKING([[whether to generate error messages]])
@@ -1781,6 +1817,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   HTTPS support:     ${MSG_HTTPS}
   poll support:      ${enable_poll=no}
   epoll support:     ${enable_epoll=no}
+  sendfile used:     ${found_sendfile}
   build docs:        ${enable_doc}
   build examples:    ${enable_examples}
 ])

@@ -806,13 +806,13 @@ struct MHD_Connection
    */
   uint64_t response_write_position;
 
-#ifdef __linux__
+#if defined(HAVE_LINUX_SENDFILE)
   enum MHD_resp_sender_
   {
     MHD_resp_sender_std = 0,
     MHD_resp_sender_sendfile
   } resp_sender;
-#endif /* __linux__ */
+#endif /* HAVE_LINUX_SENDFILE */
 
   /**
    * Position in the 100 CONTINUE message that
