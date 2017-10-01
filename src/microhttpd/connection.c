@@ -256,22 +256,22 @@ sendfile_adapter (struct MHD_Connection *connection)
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
-    offset = (off_t) offsetu64;
-    ret = sendfile (connection->socket_fd,
-                    file_fd,
-                    &offset,
-                    send_size);
+  offset = (off_t) offsetu64;
+  ret = sendfile (connection->socket_fd,
+                  file_fd,
+                  &offset,
+                  send_size);
 #else  /* HAVE_SENDFILE64 */
   if ((uint64_t)OFF64_T_MAX < offsetu64)
     { /* Retry to send with standard 'send()'. */
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
-    offset = (off64_t) offsetu64;
-    ret = sendfile64 (connection->socket_fd,
-                      file_fd,
-                      &offset,
-                      send_size);
+  offset = (off64_t) offsetu64;
+  ret = sendfile64 (connection->socket_fd,
+                    file_fd,
+                    &offset,
+                    send_size);
 #endif /* HAVE_SENDFILE64 */
   if (0 > ret)
     {
