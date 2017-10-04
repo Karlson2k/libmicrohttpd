@@ -51,3 +51,6 @@ src/microhttpd/test_str_to_value
 src/microhttpd/test_upgrade
 src/microhttpd/test_upgrade_ssl
 src/testcurl/test_delete
+src/microhttpd/test_options
+src/microhttpd/test_start_stop
+src/microhttpd/test_str_token
