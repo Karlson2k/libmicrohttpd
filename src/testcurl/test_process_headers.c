@@ -125,6 +125,8 @@ ahc_echo (void *cls,
   response = MHD_create_response_from_buffer (strlen (url),
 					      (void *) url,
 					      MHD_RESPMEM_MUST_COPY);
+  if (NULL == response)
+    abort ();
   MHD_add_response_header (response, "MyHeader", "MyValue");
   hdr = MHD_get_response_header (response, "MyHeader");
   if (0 != strcmp ("MyValue", hdr))
