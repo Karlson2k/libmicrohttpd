@@ -201,7 +201,8 @@ typedef struct wr_socket_strc* wr_socket;
  * Create wr_socket with plain TCP underlying socket
  * @return created socket on success, WR_BAD otherwise
  */
-static wr_socket wr_create_plain_sckt(void)
+static wr_socket
+wr_create_plain_sckt(void)
 {
   wr_socket s = (wr_socket)malloc(sizeof(struct wr_socket_strc));
   if (WR_BAD == s)
@@ -219,7 +220,8 @@ static wr_socket wr_create_plain_sckt(void)
  * Create wr_socket with TLS TCP underlying socket
  * @return created socket on success, WR_BAD otherwise
  */
-static wr_socket wr_create_tls_sckt(void)
+static wr_socket
+wr_create_tls_sckt(void)
 {
 #ifdef HTTPS_SUPPORT
   wr_socket s = (wr_socket)malloc(sizeof(struct wr_socket_strc));
@@ -264,9 +266,11 @@ static wr_socket wr_create_tls_sckt(void)
  * @param plain_sk real TCP socket
  * @return created socket on success, WR_BAD otherwise
  */
-static wr_socket wr_create_from_plain_sckt(MHD_socket plain_sk)
+static wr_socket
+wr_create_from_plain_sckt(MHD_socket plain_sk)
 {
   wr_socket s = (wr_socket)malloc(sizeof(struct wr_socket_strc));
+
   if (WR_BAD == s)
     return WR_BAD;
   s->t = wr_plain;
@@ -282,32 +286,25 @@ static wr_socket wr_create_from_plain_sckt(MHD_socket plain_sk)
  * @param length of sturcture pointed by @a addr
  * @return zero on success, -1 otherwise.
  */
-static int wr_connect(wr_socket s, struct sockaddr * addr, int length)
+static int
+wr_connect(wr_socket s,
+           const struct sockaddr *addr,
+           int length)
 {
-  if (0 != connect(s->fd, addr, length))
+  if (0 != connect (s->fd, addr, length))
     return -1;
   if (wr_plain == s->t)
     return 0;
 #ifdef HTTPS_SUPPORT
   if (wr_tls == s->t)
     {
-      s->tls_connected = 0;
-      return 0;
       /* Do not try handshake here as
        * it require processing on MHD side and
        * when testing with "external" polling,
        * test will call MHD processing only
        * after return from wr_connect(). */
-      /*
-      int res = gnutls_handshake (s->tls_s);
-      if (GNUTLS_E_SUCCESS == res)
-        {
-          s->tls_connected = !0;
-          return 0;
-        }
-      if (GNUTLS_E_AGAIN == res)
-        return 0;
-       */
+      s->tls_connected = 0;
+      return 0;
     }
 #endif /* HTTPS_SUPPORT */
   return -1;
@@ -319,7 +316,7 @@ static bool wr_handshake(wr_socket s)
 {
   int res = gnutls_handshake (s->tls_s);
   if (GNUTLS_E_SUCCESS == res)
-    s->tls_connected = !0;
+    s->tls_connected = true;
   else if (GNUTLS_E_AGAIN == res)
     MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
   else
@@ -338,7 +335,10 @@ static bool wr_handshake(wr_socket s)
  *         -1 if failed. Use #MHD_socket_get_error_()
  *         to get socket error.
  */
-static ssize_t wr_send(wr_socket s, const void *buf, size_t len)
+static ssize_t
+wr_send (wr_socket s,
+         const void *buf,
+         size_t len)
 {
   if (wr_plain == s->t)
     return MHD_send_(s->fd, buf, len);
@@ -371,7 +371,10 @@ static ssize_t wr_send(wr_socket s, const void *buf, size_t len)
  *         -1 if failed. Use #MHD_socket_get_error_()
  *         to get socket error.
  */
-static ssize_t wr_recv(wr_socket s, void *buf, size_t len)
+static ssize_t
+wr_recv (wr_socket s,
+         void *buf,
+         size_t len)
 {
   if (wr_plain == s->t)
     return MHD_recv_ (s->fd, buf, len);
@@ -401,7 +404,7 @@ static ssize_t wr_recv(wr_socket s, void *buf, size_t len)
  * @return zero on succeed, -1 otherwise
  */
 static int
-wr_close(wr_socket s)
+wr_close (wr_socket s)
 {
   int ret = (MHD_socket_close_(s->fd)) ? 0 : -1;
 #ifdef HTTPS_SUPPORT
