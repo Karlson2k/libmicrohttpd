@@ -68,12 +68,15 @@ struct CipherDef
 };
 
 
-int curl_check_version (const char *req_version, ...);
-int curl_uses_nss_ssl ();
+int
+curl_check_version (const char *req_version, ...);
+
+int
+curl_uses_nss_ssl (void);
 
 
 FILE *
-setup_ca_cert ();
+setup_ca_cert (void);
 
 /**
  * perform cURL request for file
@@ -83,9 +86,11 @@ test_daemon_get (void * cls,
 		 const char *cipher_suite, int proto_version,
                  int port, int ver_peer);
 
-void print_test_result (int test_outcome, char *test_name);
+void
+print_test_result (int test_outcome, char *test_name);
 
-size_t copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
+size_t
+copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
 
 int
 http_ahc (void *cls, struct MHD_Connection *connection,
@@ -102,11 +107,15 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
 /**
  * compile test file url pointing to the current running directory path
  *
- * @param url - char buffer into which the url is compiled
+ * @param[out] url - char buffer into which the url is compiled
+ * @param url_len number of bytes available in @a url
  * @param port port to use for the test
  * @return -1 on error
  */
-int gen_test_file_url (char *url, int port);
+int
+gen_test_file_url (char *url,
+                   size_t url_len,
+                   int port);
 
 int
 send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
@@ -118,7 +127,9 @@ test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_ve
 int
 setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list arg_list);
 
-void teardown_testcase (struct MHD_Daemon *d);
+void
+teardown_testcase (struct MHD_Daemon *d);
+
 
 int
 setup_session (gnutls_session_t * session,

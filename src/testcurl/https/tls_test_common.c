@@ -84,7 +84,9 @@ test_daemon_get (void *cls,
   cbc.pos = 0;
 
   /* construct url - this might use doc_path */
-  gen_test_file_url (url, port);
+  gen_test_file_url (url,
+                     sizeof (url),
+                     port);
 
   c = curl_easy_init ();
 #if DEBUG_HTTPS_TEST
@@ -108,7 +110,7 @@ test_daemon_get (void *cls,
     curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
-  
+
   /* NOTE: use of CONNECTTIMEOUT without also
      setting NOSIGNAL results in really weird
      crashes on my system! */
@@ -258,12 +260,15 @@ send_curl_req (char *url, struct CBC * cbc, const char *cipher_suite,
 /**
  * compile test file url pointing to the current running directory path
  *
- * @param url - char buffer into which the url is compiled
+ * @param[out] url - char buffer into which the url is compiled
+ * @param url_len number of bytes available in url
  * @param port port to use for the test
  * @return -1 on error
  */
 int
-gen_test_file_url (char *url, int port)
+gen_test_file_url (char *url,
+                   size_t url_len,
+                   int port)
 {
   int ret = 0;
   char *doc_path;
@@ -279,46 +284,54 @@ gen_test_file_url (char *url, int port)
       fprintf (stderr, MHD_E_MEM);
       return -1;
     }
-  if (getcwd (doc_path, doc_path_len) == NULL)
+  if (NULL == getcwd (doc_path, doc_path_len))
     {
-      fprintf (stderr, "Error: failed to get working directory. %s\n",
+      fprintf (stderr,
+               "Error: failed to get working directory. %s\n",
                strerror (errno));
-      ret = -1;
+      free (doc_path);
+      return -1;
     }
 #ifdef WINDOWS
+  for (int i = 0; i < doc_path_len; i++)
   {
-    int i;
-    for (i = 0; i < doc_path_len; i++)
-    {
-      if (doc_path[i] == 0)
-        break;
-      if (doc_path[i] == '\\')
+    if (doc_path[i] == 0)
+      break;
+    if (doc_path[i] == '\\')
       {
         doc_path[i] = '/';
       }
-      if (doc_path[i] != ':')
-        continue;
-      if (i == 0)
-        break;
-      doc_path[i] = doc_path[i - 1];
-      doc_path[i - 1] = '/';
-    }
+    if (doc_path[i] != ':')
+      continue;
+    if (i == 0)
+      break;
+    doc_path[i] = doc_path[i - 1];
+    doc_path[i - 1] = '/';
   }
 #endif
-  /* construct url - this might use doc_path */
-  if (sprintf (url, "%s:%d%s/%s", "https://127.0.0.1", port,
-               doc_path, "urlpath") < 0)
+  /* construct url */
+  if (snprintf (url,
+                url_len,
+                "%s:%d%s/%s",
+                "https://127.0.0.1",
+                port,
+                doc_path,
+                "urlpath") >= url_len)
     ret = -1;
 
   free (doc_path);
   return ret;
 }
 
+
 /**
  * test HTTPS file transfer
  */
 int
-test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_version)
+test_https_transfer (void *cls,
+                     int port,
+                     const char *cipher_suite,
+                     int proto_version)
 {
   int len;
   int ret = 0;
@@ -334,13 +347,16 @@ test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_ve
   cbc.size = len;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url, port))
+  if (gen_test_file_url (url,
+                         sizeof (url),
+                         port))
     {
       ret = -1;
       goto cleanup;
     }
 
-  if (CURLE_OK != send_curl_req (url, &cbc, cipher_suite, proto_version))
+  if (CURLE_OK !=
+      send_curl_req (url, &cbc, cipher_suite, proto_version))
     {
       ret = -1;
       goto cleanup;
@@ -348,8 +364,8 @@ test_https_transfer (void *cls, int port, const char *cipher_suite, int proto_ve
 
   /* compare test file & daemon responce */
   if ( (len != strlen (test_data)) ||
-       (memcmp (cbc.buf, 
-		test_data, 
+       (memcmp (cbc.buf,
+		test_data,
 		len) != 0) )
     {
       fprintf (stderr, "Error: local file & received file differ.\n");
@@ -404,7 +420,7 @@ teardown_testcase (struct MHD_Daemon *d)
 int
 setup_session (gnutls_session_t * session,
                gnutls_datum_t * key,
-               gnutls_datum_t * cert, 
+               gnutls_datum_t * cert,
 	       gnutls_certificate_credentials_t * xcred)
 {
   int ret;
@@ -413,7 +429,7 @@ setup_session (gnutls_session_t * session,
   gnutls_certificate_allocate_credentials (xcred);
   key->size = strlen (srv_key_pem) + 1;
   key->data = malloc (key->size);
-  if (NULL == key->data) 
+  if (NULL == key->data)
      {
        gnutls_certificate_free_credentials (*xcred);
 	return -1;
@@ -424,7 +440,7 @@ setup_session (gnutls_session_t * session,
   if (NULL == cert->data)
     {
         gnutls_certificate_free_credentials (*xcred);
-	free (key->data); 
+	free (key->data);
 	return -1;
     }
   memcpy (cert->data, srv_self_signed_cert_pem, cert->size);
@@ -440,8 +456,8 @@ setup_session (gnutls_session_t * session,
        free (key->data);
        return -1;
     }
-  gnutls_credentials_set (*session, 
-			  GNUTLS_CRD_CERTIFICATE, 
+  gnutls_credentials_set (*session,
+			  GNUTLS_CRD_CERTIFICATE,
 			  *xcred);
   return 0;
 }

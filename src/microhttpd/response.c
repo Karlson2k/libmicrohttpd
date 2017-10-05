@@ -316,10 +316,10 @@ MHD_create_response_from_callback (uint64_t size,
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
   if (! MHD_mutex_init_ (&response->mutex))
-    {
-      free (response);
-      return NULL;
-    }
+  {
+    free (response);
+    return NULL;
+  }
   response->crc = crc;
   response->crfc = crfc;
   response->crc_cls = crc_cls;

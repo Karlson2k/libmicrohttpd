@@ -191,38 +191,44 @@ int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *TLS_daemon;
+  int port;
 
-  if (argc == 2)
+  if (argc != 2)
     {
-      /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
-      /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
-      TLS_daemon =
-        MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG |
-                          MHD_USE_TLS, atoi (argv[1]), NULL, NULL, &http_ahc,
-                          NULL, MHD_OPTION_CONNECTION_TIMEOUT, 256,
-                          MHD_OPTION_HTTPS_MEM_KEY, key_pem,
-                          MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
-                          MHD_OPTION_END);
+      printf ("%s PORT\n", argv[0]);
+      return 1;
     }
-  else
+  port = atoi (argv[1]);
+  if ( (1 > port) ||
+       (port > UINT16_MAX) )
     {
-      printf ("Usage: %s HTTP-PORT\n", argv[0]);
+      fprintf (stderr,
+               "Port must be a number between 1 and 65535\n");
       return 1;
     }
 
-  if (TLS_daemon == NULL)
+  /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
+  /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
+  TLS_daemon =
+    MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG |
+                      MHD_USE_TLS,
+                      (uint16_t) port,
+                      NULL, NULL,
+                      &http_ahc, NULL,
+                      MHD_OPTION_CONNECTION_TIMEOUT, 256,
+                      MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+                      MHD_OPTION_HTTPS_MEM_CERT, cert_pem,
+                      MHD_OPTION_END);
+  if (NULL == TLS_daemon)
     {
       fprintf (stderr, "Error: failed to start TLS_daemon\n");
       return 1;
     }
-  else
-    {
-      printf ("MHD daemon listening on port %d\n", atoi (argv[1]));
-    }
+  printf ("MHD daemon listening on port %u\n",
+          (unsigned int) port);
 
   (void) getc (stdin);
 
   MHD_stop_daemon (TLS_daemon);
-
   return 0;
 }

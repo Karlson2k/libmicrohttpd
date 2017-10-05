@@ -313,23 +313,28 @@ fill_v1_form (const void *cls,
 	      struct MHD_Connection *connection)
 {
   int ret;
+  size_t slen;
   char *reply;
   struct MHD_Response *response;
   (void)cls; /* Unused. Silent compiler warning. */
 
-  reply = malloc (strlen (MAIN_PAGE) + strlen (session->value_1) + 1);
+  slen = strlen (MAIN_PAGE) + strlen (session->value_1);
+  reply = malloc (slen + 1);
   if (NULL == reply)
     return MHD_NO;
   snprintf (reply,
-	    strlen (MAIN_PAGE) + strlen (session->value_1) + 1,
+	    slen + 1,
 	    MAIN_PAGE,
 	    session->value_1);
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (reply),
+  response = MHD_create_response_from_buffer (slen,
 					      (void *) reply,
 					      MHD_RESPMEM_MUST_FREE);
   if (NULL == response)
+  {
+    free (reply);
     return MHD_NO;
+  }
   add_session_cookie (session, response);
   MHD_add_response_header (response,
 			   MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -359,22 +364,27 @@ fill_v1_v2_form (const void *cls,
   int ret;
   char *reply;
   struct MHD_Response *response;
+  size_t slen;
   (void)cls; /* Unused. Silent compiler warning. */
 
-  reply = malloc (strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (session->value_2) + 1);
+  slen = strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (session->value_2);
+  reply = malloc (slen + 1);
   if (NULL == reply)
     return MHD_NO;
   snprintf (reply,
-	    strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (session->value_2) + 1,
+	    slen + 1,
 	    SECOND_PAGE,
 	    session->value_1,
             session->value_2);
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (reply),
+  response = MHD_create_response_from_buffer (slen,
 					      (void *) reply,
 					      MHD_RESPMEM_MUST_FREE);
   if (NULL == response)
+  {
+    free (reply);
     return MHD_NO;
+  }
   add_session_cookie (session, response);
   MHD_add_response_header (response,
 			   MHD_HTTP_HEADER_CONTENT_ENCODING,

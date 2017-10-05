@@ -69,15 +69,21 @@ callback(void *cls,
 {
   struct callback_closure *cbc = calloc(1, sizeof(struct callback_closure));
   struct MHD_Response *r;
+  int ret;
 
   r = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN, 1024,
 					 &called_twice, cbc,
 					 &free);
-  MHD_queue_response (connection,
-                      MHD_HTTP_OK,
-                      r);
+  if (NULL == r)
+  {
+    free (cbc);
+    return MHD_NO;
+  }
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            r);
   MHD_destroy_response (r);
-  return MHD_YES;
+  return ret;
 }
 
 

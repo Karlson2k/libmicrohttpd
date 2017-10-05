@@ -168,7 +168,9 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
 
   gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
-  if (gen_test_file_url (url, port))
+  if (gen_test_file_url (url,
+                         sizeof (url),
+                         port))
     {
       ret = -1;
       goto cleanup;

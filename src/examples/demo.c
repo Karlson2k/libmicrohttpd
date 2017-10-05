@@ -254,7 +254,7 @@ struct ResponseDataContext
  *
  * @param rdc where to store the list of files
  * @param dirname name of the directory to list
- * @return MHD_YES on success, MHD_NO on error
+ * @return #MHD_YES on success, #MHD_NO on error
  */
 static int
 list_directory (struct ResponseDataContext *rdc,
@@ -271,7 +271,7 @@ list_directory (struct ResponseDataContext *rdc,
     {
       if ('.' == de->d_name[0])
 	continue;
-      if (sizeof (fullname) <= (size_t)
+      if (sizeof (fullname) <= (unsigned int)
 	  snprintf (fullname, sizeof (fullname),
 		    "%s/%s",
 		    dirname, de->d_name))
@@ -555,7 +555,7 @@ process_upload_data (void *cls,
 		uc->category,
 		filename);
       for (i=strlen (fn)-1;i>=0;i--)
-	if (! isprint ((int) fn[i]))
+	if (! isprint ((unsigned char) fn[i]))
 	  fn[i] = '_';
       uc->fd = open (fn,
 		     O_CREAT | O_EXCL

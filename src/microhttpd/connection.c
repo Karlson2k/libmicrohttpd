@@ -1070,7 +1070,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
  * Prepare the response buffer of this connection for sending.
  * Assumes that the response mutex is already held.  If the
  * transmission is complete, this function may close the socket (and
- * return MHD_NO).
+ * return #MHD_NO).
  *
  * @param connection the connection
  * @return #MHD_NO if readying the response failed
@@ -1086,6 +1086,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   int cblen;
 
   response = connection->response;
+  if (NULL == response->crc)
+    return MHD_YES;
   if (0 == connection->write_buffer_size)
     {
       size = MHD_MIN (connection->daemon->pool_size,
@@ -3533,8 +3535,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                 socket_start_no_buffering (connection);
               continue;
             }
-          if (NULL != connection->response->crc)
-            MHD_mutex_unlock_chk_ (&connection->response->mutex);
+          MHD_mutex_unlock_chk_ (&connection->response->mutex);
           break;
         case MHD_CONNECTION_BODY_SENT:
           if (MHD_NO == build_header_response (connection))

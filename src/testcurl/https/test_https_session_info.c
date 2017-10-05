@@ -141,7 +141,9 @@ test_query_session ()
       aes256_sha = "rsa_aes_256_sha";
     }
 
-  gen_test_file_url (url, port);
+  gen_test_file_url (url,
+                     sizeof (url),
+                     port);
   c = curl_easy_init ();
 #if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1);

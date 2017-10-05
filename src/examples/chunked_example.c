@@ -32,6 +32,7 @@ struct ResponseContentCallbackParam
   size_t response_size;
 };
 
+
 static ssize_t
 callback (void *cls,
           uint64_t pos,
@@ -77,11 +78,13 @@ callback (void *cls,
   return size_to_copy;
 }
 
-void
-free_callback_param(void *cls)
+
+static void
+free_callback_param (void *cls)
 {
   free(cls);
 }
+
 
 static const char simple_response_text[] = "<html><head><title>Simple response</title></head>"
                                            "<body>Simple response text</body></html>";
@@ -93,10 +96,12 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data,
+          size_t *upload_data_size,
+          void **ptr)
 {
   static int aptr;
-  struct ResponseContentCallbackParam * callback_param;
+  struct ResponseContentCallbackParam *callback_param;
   struct MHD_Response *response;
   int ret;
   (void)cls;               /* Unused. Silent compiler warning. */
@@ -127,19 +132,34 @@ ahc_echo (void *cls,
                                                 &callback,
                                                 callback_param,
                                                 &free_callback_param);
+  if (NULL == response)
+  {
+    free (callback_param);
+    return MHD_NO;
+  }
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
 }
 
+
 int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
+  int port;
 
   if (argc != 2)
     {
       printf ("%s PORT\n", argv[0]);
+      return 1;
+    }
+  port = atoi (argv[1]);
+  if ( (1 > port) ||
+       (port > UINT16_MAX) )
+    {
+      fprintf (stderr,
+               "Port must be a number between 1 and 65535\n");
       return 1;
     }
   d = MHD_start_daemon (// MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
@@ -147,11 +167,12 @@ main (int argc, char *const *argv)
                         // MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL,
 			// MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, NULL,
+                        (uint16_t) port,
+                        NULL, NULL,
+                        &ahc_echo, NULL,
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
 			MHD_OPTION_END);
-  if (d == NULL)
+  if (NULL == d)
     return 1;
   (void) getc (stdin);
   MHD_stop_daemon (d);

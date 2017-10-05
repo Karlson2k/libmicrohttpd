@@ -54,8 +54,12 @@ struct CBC
   size_t size;
 };
 
+
 static size_t
-copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
+copyBuffer (void *ptr,
+            size_t size,
+            size_t nmemb,
+            void *ctx)
 {
   struct CBC *cbc = ctx;
 
@@ -66,34 +70,41 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
+
 /**
- * MHD content reader callback that returns
- * data in chunks.
+ * MHD content reader callback that returns data in chunks.
  */
 static ssize_t
-crc (void *cls, uint64_t pos, char *buf, size_t max)
+crc (void *cls,
+     uint64_t pos,
+     char *buf,
+     size_t max)
 {
   struct MHD_Response **responseptr = cls;
 
   if (pos == 128 * 10)
-    {
-      MHD_add_response_header (*responseptr, "Footer", "working");
-      return MHD_CONTENT_READER_END_OF_STREAM;
-    }
+  {
+    MHD_add_response_footer (*responseptr,
+                             "Footer",
+                             "working");
+    return MHD_CONTENT_READER_END_OF_STREAM;
+  }
   if (max < 128)
     abort ();                   /* should not happen in this testcase... */
   memset (buf, 'A' + (pos / 128), 128);
   return 128;
 }
 
+
 /**
- * Dummy function that does nothing.
+ * Dummy function that frees the "responseptr".
  */
 static void
 crcf (void *ptr)
 {
   free (ptr);
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -118,16 +129,26 @@ ahc_echo (void *cls,
       return MHD_YES;
     }
   responseptr = malloc (sizeof (struct MHD_Response *));
-  if (responseptr == NULL)
+  if (NULL == responseptr)
     return MHD_NO;
   response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
-                                                &crc, responseptr, &crcf);
+                                                &crc,
+                                                responseptr,
+                                                &crcf);
+  if (NULL == response)
+  {
+    free (responseptr);
+    return MHD_NO;
+  }
   *responseptr = response;
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
   MHD_destroy_response (response);
   return ret;
 }
+
 
 static int
 validate (struct CBC cbc, int ebase)

@@ -151,7 +151,9 @@ iterate_post (void *coninfo_cls,
           con_info->answercode = MHD_HTTP_FORBIDDEN;
           return MHD_YES;
         }
-
+      /* NOTE: This is technically a race with the 'fopen()' above,
+         but there is no easy fix, short of moving to open(O_EXCL)
+         instead of using fopen(). For the example, we do not care. */
       con_info->fp = fopen (filename, "ab");
       if (!con_info->fp)
         {

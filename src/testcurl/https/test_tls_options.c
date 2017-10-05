@@ -57,10 +57,13 @@ test_unmatching_ssl_version (void * cls, int port, const char *cipher_suite,
   cbc.pos = 0;
 
   char url[255];
-  if (gen_test_file_url (url, port))
+  if (gen_test_file_url (url,
+                         sizeof (url),
+                         port))
     {
       free (cbc.buf);
-      fprintf (stderr, "Internal error in gen_test_file_url\n");
+      fprintf (stderr,
+               "Internal error in gen_test_file_url\n");
       return -1;
     }
 
