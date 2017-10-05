@@ -169,7 +169,7 @@ MHD_del_response_header (struct MHD_Response *response,
     return MHD_NO;
   prev = NULL;
   pos = response->first_header;
-  while (pos != NULL)
+  while (NULL != pos)
     {
       if ((0 == strcmp (header,
                         pos->header)) &&
@@ -207,10 +207,11 @@ MHD_get_response_headers (struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
                           void *iterator_cls)
 {
-  struct MHD_HTTP_Header *pos;
   int numHeaders = 0;
 
-  for (pos = response->first_header; NULL != pos; pos = pos->next)
+  for (struct MHD_HTTP_Header *pos = response->first_header;
+       NULL != pos;
+       pos = pos->next)
     {
       numHeaders++;
       if ((NULL != iterator) &&
@@ -236,11 +237,11 @@ const char *
 MHD_get_response_header (struct MHD_Response *response,
 			 const char *key)
 {
-  struct MHD_HTTP_Header *pos;
-
   if (NULL == key)
     return NULL;
-  for (pos = response->first_header; NULL != pos; pos = pos->next)
+  for (struct MHD_HTTP_Header *pos = response->first_header;
+       NULL != pos;
+       pos = pos->next)
     {
       if ( MHD_str_equal_caseless_ (pos->header, key) )
         return pos->value;
@@ -253,6 +254,7 @@ MHD_get_response_header (struct MHD_Response *response,
  *
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Case-insensitive match used for header names and tokens.
+ *
  * @param response  the response to query
  * @param key       header name
  * @param token     the token to find
@@ -267,16 +269,22 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *token,
                                     size_t token_len)
 {
-  struct MHD_HTTP_Header *pos;
-
-  if (NULL == key || 0 == key[0] || NULL == token || 0 == token[0])
+  if ( (NULL == key) ||
+       ('\0' == key[0]) ||
+       (NULL == token) ||
+       ('\0' == token[0]) )
     return false;
 
-  for (pos = response->first_header; NULL != pos; pos = pos->next)
+  for (struct MHD_HTTP_Header *pos = response->first_header;
+       NULL != pos;
+       pos = pos->next)
     {
       if ( (pos->kind == MHD_HEADER_KIND) &&
-           MHD_str_equal_caseless_ (pos->header, key) &&
-           MHD_str_has_token_caseless_ (pos->value, token, token_len) )
+           MHD_str_equal_caseless_ (pos->header,
+                                    key) &&
+           MHD_str_has_token_caseless_ (pos->value,
+                                        token,
+                                        token_len) )
         return true;
     }
   return false;
