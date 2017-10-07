@@ -161,6 +161,12 @@ struct MHD_Action;
  * non-canonical methods, MHD will return #MHD_METHOD_UNKNOWN
  * and you can use #MHD_REQUEST_INFORMATION_HTTP_METHOD to get
  * the original string.
+ *
+ * However, applications must check for "#MHD_METHOD_UNKNOWN" *or* any
+ * enum-value above those in this list, as future versions of MHD may
+ * add additional methods (as per IANA registry), thus even if the API
+ * returns "unknown" today, it may return a method-specific header in
+ * the future!
  */
 enum MHD_Method
 {
@@ -171,19 +177,19 @@ enum MHD_Method
   MHD_METHOD_UNKNOWN = 0,
 
   /**
+   * "OPTIONS" method.
+   */
+  MHD_METHOD_OPTIONS = 1,
+
+  /**
    * "GET" method.
    */
-  MHD_METHOD_GET = 1,
+  MHD_METHOD_GET = 2,
 
   /**
    * "HEAD" method.
    */
-  MHD_METHOD_HEAD = 2,
-
-  /**
-   * "PUT" method.
-   */
-  MHD_METHOD_PUT = 3,
+  MHD_METHOD_HEAD = 3,
 
   /**
    * "POST" method.
@@ -191,16 +197,177 @@ enum MHD_Method
   MHD_METHOD_POST = 4,
 
   /**
-   * "OPTIONS" method.
+   * "PUT" method.
    */
-  MHD_METHOD_OPTIONS = 5,
+  MHD_METHOD_PUT = 5,
+
+  /**
+   * "DELETE" method.
+   */
+  MHD_METHOD_DELETE = 6,
 
   /**
    * "TRACE" method.
    */
-  MHD_METHOD_TRACE = 6,
+  MHD_METHOD_TRACE = 7,
 
-  // more?
+  /**
+   * "CONNECT" method.
+   */
+  MHD_METHOD_CONNECT = 8,
+  
+  /**
+   * "ACL" method.
+   */
+  MHD_METHOD_ACL = 9,
+  
+  /**
+   * "BASELINE-CONTROL" method.
+   */
+  MHD_METHOD_BASELINE_CONTROL = 10,
+  
+  /**
+   * "BIND" method.
+   */
+  MHD_METHOD_BIND = 11,
+  
+  /**
+   * "CHECKIN" method.
+   */
+  MHD_METHOD_CHECKIN = 12,
+  
+  /**
+   * "CHECKOUT" method.
+   */
+  MHD_METHOD_CHECKOUT = 13,
+  
+  /**
+   * "COPY" method.
+   */
+  MHD_METHOD_COPY = 14,
+  
+  /**
+   * "LABEL" method.
+   */
+  MHD_METHOD_LABEL = 15,
+  
+  /**
+   * "LINK" method.
+   */
+  MHD_METHOD_LINK = 16,
+  
+  /**
+   * "LOCK" method.
+   */
+  MHD_METHOD_LOCK = 17,
+  
+  /**
+   * "MERGE" method.
+   */
+  MHD_METHOD_MERGE = 18,
+  
+  /**
+   * "MKACTIVITY" method.
+   */
+  MHD_METHOD_MKACTIVITY = 19,
+  
+  /**
+   * "MKCOL" method.
+   */
+  MHD_METHOD_MKCOL = 20,
+  
+  /**
+   * "MKREDIRECTREF" method.
+   */
+  MHD_METHOD_MKREDIRECTREF = 21,
+  
+  /**
+   * "MKWORKSPACE" method.
+   */
+  MHD_METHOD_MKWORKSPACE = 22,
+  
+  /**
+   * "MOVE" method.
+   */
+  MHD_METHOD_MOVE = 23,
+  
+  /**
+   * "ORDERPATCH" method.
+   */
+  MHD_METHOD_ORDERPATCH = 24,
+  
+  /**
+   * "PATCH" method.
+   */
+  MHD_METHOD_PATH = 25,
+  
+  /**
+   * "PRI" method.
+   */
+  MHD_METHOD_PRI = 26,
+  
+  /**
+   * "PROPFIND" method.
+   */
+  MHD_METHOD_PROPFIND = 27,
+  
+  /**
+   * "PROPPATCH" method.
+   */
+  MHD_METHOD_PROPPATCH = 28,
+  
+  /**
+   * "REBIND" method.
+   */
+  MHD_METHOD_REBIND = 29,
+  
+  /**
+   * "REPORT" method.
+   */
+  MHD_METHOD_REPORT = 30,
+  
+  /**
+   * "SEARCH" method.
+   */
+  MHD_METHOD_SEARCH = 31,
+  
+  /**
+   * "UNBIND" method.
+   */
+  MHD_METHOD_UNBIND = 32,
+  
+  /**
+   * "UNCHECKOUT" method.
+   */
+  MHD_METHOD_UNCHECKOUT = 33,
+  
+  /**
+   * "UNLINK" method.
+   */
+  MHD_METHOD_UNLINK = 34,
+  
+  /**
+   * "UNLOCK" method.
+   */
+  MHD_METHOD_UNLOCK = 35,
+  
+  /**
+   * "UPDATE" method.
+   */
+  MHD_METHOD_UPDATE = 36,
+  
+  /**
+   * "UPDATEDIRECTREF" method.
+   */
+  MHD_METHOD_UPDATEDIRECTREF = 37,
+  
+  /**
+   * "VERSION-CONTROL" method.
+   */
+  MHD_METHOD_VERSION_CONTROL = 38
+
+  /* For more, check: 
+     https://www.iana.org/assignments/http-methods/http-methods.xhtml */
 
 };
 
@@ -824,12 +991,31 @@ MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
 			  void *apc_cls);
 
 
+/**
+ * Function called by MHD to allow the application to log
+ * the full @a uri of a @a request.
+ *
+ * @param cls client-defined closure
+ * @param uri the full URI from the HTTP request
+ * @param request the HTTP request handle (headers are
+ *         not yet available)
+ * @return value to set for the "request_context" of @a request
+ */
 typedef void *
 (MHD_EarlyUriLogCallback)(void *cls,
 			  const char *uri,
 			  struct MHD_Request *request);
 
 
+/**
+ * Register a callback to be called first for every request
+ * (before any parsing of the header).  Makes it easy to 
+ * log the full URL.
+ *
+ * @param daemon daemon for which to set the logger
+ * @param cb function to call
+ * @param cb_cls closure for @a cb
+ */
 _MHD_EXTERN void
 MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
 				 MHD_EarlyUriLogCallback cb,
@@ -1118,7 +1304,7 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_SEE_OTHER = 303,
   MHD_HTTP_NOT_MODIFIED = 304,
   MHD_HTTP_USE_PROXY = 305,
-  MHD_HTTP_SWITCH_PROXY = 306,
+  MHD_HTTP_SWITCH_PROXY = 306, /* IANA: unused */
   MHD_HTTP_TEMPORARY_REDIRECT = 307,
   MHD_HTTP_PERMANENT_REDIRECT = 308,
 
@@ -1157,17 +1343,17 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_UNPROCESSABLE_ENTITY = 422,
   MHD_HTTP_LOCKED = 423,
   MHD_HTTP_FAILED_DEPENDENCY = 424,
-  MHD_HTTP_UNORDERED_COLLECTION = 425,
+  MHD_HTTP_UNORDERED_COLLECTION = 425, /* IANA: unused */
   MHD_HTTP_UPGRADE_REQUIRED = 426,
 
   MHD_HTTP_PRECONDITION_REQUIRED = 428,
   MHD_HTTP_TOO_MANY_REQUESTS = 429,
   MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
 
-  MHD_HTTP_NO_RESPONSE = 444,
+  MHD_HTTP_NO_RESPONSE = 444, /* IANA: unused */
 
-  MHD_HTTP_RETRY_WITH = 449,
-  MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,
+  MHD_HTTP_RETRY_WITH = 449, /* IANA: unused */
+  MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,  /* IANA: unused */
   MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
 
   MHD_HTTP_INTERNAL_SERVER_ERROR = 500,
@@ -1179,7 +1365,7 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_VARIANT_ALSO_NEGOTIATES = 506,
   MHD_HTTP_INSUFFICIENT_STORAGE = 507,
   MHD_HTTP_LOOP_DETECTED = 508,
-  MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED = 509,
+  MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED = 509,  /* IANA: unused */
   MHD_HTTP_NOT_EXTENDED = 510,
   MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511
 
@@ -1273,17 +1459,21 @@ _MHD_EXTERN void
 MHD_response_option_v10_only (struct MHD_Response *response);
 
 
-/** * Signature of the callback used by MHD to notify the
+/** 
+ * Signature of the callback used by MHD to notify the
  * application about completed requests.
  *
  * @param cls client-defined closure
  * @param toe reason for request termination
+ * @param request_context request context value, as originally
+ *         returned by the #MHD_EarlyUriLogCallback
  * @see #MHD_option_request_completion()
  * @ingroup request
  */
 typedef void
 (*MHD_RequestTerminationCallback) (void *cls,
-				   enum MHD_RequestTerminationCode toe);
+				   enum MHD_RequestTerminationCode toe,
+				   void *request_context);
 
 
 /**
@@ -1930,6 +2120,12 @@ union MHD_RequestInformation
    * Connection via which we received the request.
    */
   struct MHD_Connection *connection;
+
+  /**
+   * Socket-specific client context.  Will also be given to
+   * the application in a #MHD_RequestTerminationCallback.
+   */
+  void *request_context;
 
   /**
    * The suspended status of a request.
