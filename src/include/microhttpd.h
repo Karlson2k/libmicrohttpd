@@ -3120,7 +3120,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection);
  *
  * @param ptr pointer to free.
  */
-void
+_MHD_EXTERN void
 MHD_free (void *ptr);
 
 
