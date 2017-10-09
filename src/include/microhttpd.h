@@ -3106,11 +3106,22 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  *
  * @param connection The MHD connection structure
  * @return NULL if no username could be found, a pointer
- * 			to the username if found
+ * 			to the username if found, free using #MHD_free().
  * @ingroup authentication
  */
 _MHD_EXTERN char *
 MHD_digest_auth_get_username (struct MHD_Connection *connection);
+
+
+/**
+ * Free the memory given by @a ptr. Calls "free(ptr)".  This function
+ * should be used to free the username returned by
+ * #MHD_digest_auth_get_username().
+ *
+ * @param ptr pointer to free.
+ */
+void
+MHD_free (void *ptr);
 
 
 /**
@@ -3160,9 +3171,9 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
  * Get the username and password from the basic authorization header sent by the client
  *
  * @param connection The MHD connection structure
- * @param password a pointer for the password
+ * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
- * 			to the username if found
+ * 			to the username if found, free using #MHD_free().
  * @ingroup authentication
  */
 _MHD_EXTERN char *

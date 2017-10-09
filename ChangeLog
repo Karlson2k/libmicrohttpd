@@ -1,3 +1,8 @@
+Mon Oct  9 22:38:07 CEST 2017
+	Add MHD_free() to allow proper free()-ing of username/password
+	data returned via MHD_digest_auth_get_username() or
+	MHD_basic_auth_get_username_password() on Windows. -CG
+
 Tue Sep 26 14:00:58 CEST 2017
 	Fixing race involving setting "at_limit" flag. -CG
 

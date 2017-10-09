@@ -2342,13 +2342,17 @@ client certificates is presented in the MHD tutorial.
 @node microhttpd-dauth basic
 @section Using Basic Authentication
 
+@deftypefun {void} MHD_free (void *ptr)
+Free the memory given at @code{ptr}.  Used to free data structures allocated by MHD. Calls @code{free(ptr)}.
+@end deftypefun
+
 @deftypefun {char *} MHD_basic_auth_get_username_password (struct MHD_Connection *connection, char** password)
 Get the username and password from the basic authorization header sent by the client.
 Return @code{NULL} if no username could be found, a pointer to the username if found.
-If returned value is not @code{NULL}, the value must be @code{free()}'ed.
+If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 
 @var{password} reference a buffer to store the password. It can be @code{NULL}.
-If returned value is not @code{NULL}, the value must be @code{free()}'ed.
+If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 @end deftypefun
 
 @deftypefun {int} MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection, const char *realm, struct MHD_Response *response)
@@ -2370,7 +2374,7 @@ client with a 401 HTTP status.
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @code{NULL} if the value is not found or header does not exist.
-If returned value is not @code{NULL}, the value must be @code{free()}'ed.
+If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 @end deftypefun
 
 @deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
