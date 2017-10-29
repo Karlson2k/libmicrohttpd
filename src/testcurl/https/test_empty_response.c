@@ -172,10 +172,16 @@ testInternalSelectGet ()
             {
 #ifdef MHD_POSIX_SOCKETS
               if (EINTR != errno)
-#endif /* MHD_POSIX_SOCKETS */
                 abort ();
+#else
+              if (WSAEINVAL != WSAGetLastError() || 0 != rs.fd_count || 0 != ws.fd_count || 0 != es.fd_count)
+                abort ();
+              Sleep (1000);
+#endif
             }
         }
+      else
+        sleep (1000);
       curl_multi_perform (multi, &running);
       if (running == 0)
         {

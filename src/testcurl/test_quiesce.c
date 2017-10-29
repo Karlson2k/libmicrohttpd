@@ -151,8 +151,14 @@ ServeOneRequest(void *param)
       tv.tv_usec = 1000;
       if (-1 == MHD_SYS_select_ (max + 1, &rs, &ws, &es, &tv))
         {
+#ifdef MHD_POSIX_SOCKETS
           if (EINTR != errno)
             abort ();
+#else
+          if (WSAEINVAL != WSAGetLastError() || 0 != rs.fd_count || 0 != ws.fd_count || 0 != es.fd_count)
+            abort ();
+          Sleep (1000);
+#endif
         }
       MHD_run (d);
     }
@@ -432,8 +438,14 @@ testExternalGet ()
           tv.tv_usec = 1000;
           if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
             {
+#ifdef MHD_POSIX_SOCKETS
               if (EINTR != errno)
                 abort ();
+#else
+              if (WSAEINVAL != WSAGetLastError() || 0 != rs.fd_count || 0 != ws.fd_count || 0 != es.fd_count)
+                abort ();
+              Sleep (1000);
+#endif
             }
           curl_multi_perform (multi, &running);
           if (0 == running)

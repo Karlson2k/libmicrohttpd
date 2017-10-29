@@ -416,11 +416,19 @@ testExternalGet (int port)
       tv.tv_usec = 1000 * (tt % 1000);
       if (-1 == select (max + 1, &rs, &ws, &es, &tv))
 	{
-	  if (EINTR == errno)
-	    continue;
-	  fprintf (stderr,
-		   "select failed: %s\n",
-		   strerror (errno));
+#ifdef MHD_POSIX_SOCKETS
+          if (EINTR == errno)
+            continue;
+          fprintf (stderr,
+                   "select failed: %s\n",
+                   strerror (errno));
+#else
+          if (WSAEINVAL == WSAGetLastError() && 0 == rs.fd_count && 0 == ws.fd_count && 0 == es.fd_count)
+            {
+              Sleep (1000);
+              continue;
+            }
+#endif
 	  ret |= 1024;
 	  break;
 	}
