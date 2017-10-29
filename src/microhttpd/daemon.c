@@ -4359,14 +4359,14 @@ close_connection (struct MHD_Connection *pos)
 
 
 /**
- * Thread that runs the select loop until the daemon
+ * Thread that runs the polling loop until the daemon
  * is explicitly shut down.
  *
  * @param cls `struct MHD_Deamon` to run select loop in a thread for
  * @return always 0 (on shutdown)
  */
 static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
-MHD_select_thread (void *cls)
+MHD_polling_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
 
@@ -5878,7 +5878,7 @@ MHD_start_daemon_va (unsigned int flags,
                                     (*pflags & MHD_USE_THREAD_PER_CONNECTION) ?
                                     "MHD-listen" : "MHD-single",
                                     daemon->thread_stack_size,
-                                    &MHD_select_thread,
+                                    &MHD_polling_thread,
                                     daemon) ) )
     {
 #ifdef HAVE_MESSAGES
@@ -5976,7 +5976,7 @@ MHD_start_daemon_va (unsigned int flags,
           if (! MHD_create_named_thread_ (&d->pid,
                                           "MHD-worker",
                                           daemon->thread_stack_size,
-                                          &MHD_select_thread,
+                                          &MHD_polling_thread,
                                           d))
             {
 #ifdef HAVE_MESSAGES
