@@ -2666,6 +2666,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   struct MHD_Connection *prev = NULL;
   int ret;
   const bool used_thr_p_c = (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+  assert (NULL == daemon->worker_pool);
 
   ret = MHD_NO;
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -5843,16 +5844,20 @@ MHD_start_daemon_va (unsigned int flags,
         MHD_socket_close_chk_ (listen_fd);
       goto free_and_fail;
     }
-  if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
-    {
+  if (0 == daemon->worker_pool_size)
+    { /* Initialise connection mutex only if this daemon will handle
+       * any connections by itself. */
+      if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
+        {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("MHD failed to initialize IP connection limit mutex\n"));
+          MHD_DLOG (daemon,
+                    _("MHD failed to initialize IP connection limit mutex\n"));
 #endif
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
-      if (MHD_INVALID_SOCKET != listen_fd)
-        MHD_socket_close_chk_ (listen_fd);
-      goto free_and_fail;
+          MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+          if (MHD_INVALID_SOCKET != listen_fd)
+            MHD_socket_close_chk_ (listen_fd);
+          goto free_and_fail;
+        }
     }
 
 #ifdef HTTPS_SUPPORT
@@ -5866,128 +5871,132 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       if (MHD_INVALID_SOCKET != listen_fd)
         MHD_socket_close_chk_ (listen_fd);
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+      if (0 == daemon->worker_pool_size)
+        MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
       MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       goto free_and_fail;
     }
 #endif /* HTTPS_SUPPORT */
-  if ( ( (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-	 (0 == daemon->worker_pool_size) ) &&
-       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) &&
-       (! MHD_create_named_thread_ (&daemon->pid,
-                                    (*pflags & MHD_USE_THREAD_PER_CONNECTION) ?
-                                    "MHD-listen" : "MHD-single",
-                                    daemon->thread_stack_size,
-                                    &MHD_polling_thread,
-                                    daemon) ) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Failed to create listen thread: %s\n"),
-		MHD_strerror_ (errno));
-#endif
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
-      if (MHD_INVALID_SOCKET != listen_fd)
-        MHD_socket_close_chk_ (listen_fd);
-      goto free_and_fail;
-    }
-  if ( (daemon->worker_pool_size > 0) &&
+  if ( (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {
-      /* Coarse-grained count of connections per thread (note error
-       * due to integer division). Also keep track of how many
-       * connections are leftover after an equal split. */
-      unsigned int conns_per_thread = daemon->connection_limit
-                                      / daemon->worker_pool_size;
-      unsigned int leftover_conns = daemon->connection_limit
-                                    % daemon->worker_pool_size;
-
-      i = 0; /* we need this in case fcntl or malloc fails */
-
-      /* Allocate memory for pooled objects */
-      daemon->worker_pool = malloc (sizeof (struct MHD_Daemon)
-                                    * daemon->worker_pool_size);
-      if (NULL == daemon->worker_pool)
-        goto thread_failed;
-
-      /* Start the workers in the pool */
-      for (i = 0; i < daemon->worker_pool_size; ++i)
+      if (0 == daemon->worker_pool_size)
         {
-          /* Create copy of the Daemon object for each worker */
-          struct MHD_Daemon *d = &daemon->worker_pool[i];
-
-          memcpy (d, daemon, sizeof (struct MHD_Daemon));
-          /* Adjust pooling params for worker daemons; note that memcpy()
-             has already copied MHD_USE_INTERNAL_POLLING_THREAD thread model into
-             the worker threads. */
-          d->master = daemon;
-          d->worker_pool_size = 0;
-          d->worker_pool = NULL;
-
-          if (0 != (*pflags & MHD_USE_ITC))
+          if (! MHD_create_named_thread_ (&daemon->pid,
+                (*pflags & MHD_USE_THREAD_PER_CONNECTION) ?
+                  "MHD-listen" : "MHD-single",
+                daemon->thread_stack_size,
+                &MHD_polling_thread,
+                daemon) )
             {
-              if (! MHD_itc_init_ (d->itc))
-                {
 #ifdef HAVE_MESSAGES
-                  MHD_DLOG (daemon,
-                            _("Failed to create worker inter-thread communication channel: %s\n"),
-                            MHD_itc_last_strerror_() );
+              MHD_DLOG (daemon,
+                        _("Failed to create listen thread: %s\n"),
+                        MHD_strerror_ (errno));
 #endif
-                  goto thread_failed;
-                }
-              if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-                   (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
-                                              NULL)) )
-                {
-#ifdef HAVE_MESSAGES
-                  MHD_DLOG (daemon,
-                            _("File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
-#endif
-                  MHD_itc_destroy_chk_ (d->itc);
-                  goto thread_failed;
-                }
+              MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+              MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+              if (MHD_INVALID_SOCKET != listen_fd)
+                MHD_socket_close_chk_ (listen_fd);
+              goto free_and_fail;
             }
-          else
-            MHD_itc_set_invalid_ (d->itc);
+        }
+      else /* 0 < daemon->worker_pool_size */
+        {
+          /* Coarse-grained count of connections per thread (note error
+           * due to integer division). Also keep track of how many
+           * connections are leftover after an equal split. */
+          unsigned int conns_per_thread = daemon->connection_limit
+                                          / daemon->worker_pool_size;
+          unsigned int leftover_conns = daemon->connection_limit
+                                        % daemon->worker_pool_size;
 
-          /* Divide available connections evenly amongst the threads.
-           * Thread indexes in [0, leftover_conns) each get one of the
-           * leftover connections. */
-          d->connection_limit = conns_per_thread;
-          if (i < leftover_conns)
-            ++d->connection_limit;
+          i = 0; /* we need this in case fcntl or malloc fails */
+
+          /* Allocate memory for pooled objects */
+          daemon->worker_pool = malloc (sizeof (struct MHD_Daemon)
+                                        * daemon->worker_pool_size);
+          if (NULL == daemon->worker_pool)
+            goto thread_failed;
+
+          /* Start the workers in the pool */
+          for (i = 0; i < daemon->worker_pool_size; ++i)
+            {
+              /* Create copy of the Daemon object for each worker */
+              struct MHD_Daemon *d = &daemon->worker_pool[i];
+
+              memcpy (d, daemon, sizeof (struct MHD_Daemon));
+              /* Adjust pooling params for worker daemons; note that memcpy()
+                 has already copied MHD_USE_INTERNAL_POLLING_THREAD thread model into
+                 the worker threads. */
+              d->master = daemon;
+              d->worker_pool_size = 0;
+              d->worker_pool = NULL;
+
+              if (0 != (*pflags & MHD_USE_ITC))
+                {
+                  if (! MHD_itc_init_ (d->itc))
+                    {
+#ifdef HAVE_MESSAGES
+                      MHD_DLOG (daemon,
+                                _("Failed to create worker inter-thread communication channel: %s\n"),
+                                MHD_itc_last_strerror_() );
+#endif
+                      goto thread_failed;
+                    }
+                  if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+                       (! MHD_SCKT_FD_FITS_FDSET_(MHD_itc_r_fd_ (d->itc),
+                                                  NULL)) )
+                    {
+#ifdef HAVE_MESSAGES
+                      MHD_DLOG (daemon,
+                                _("File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
+#endif
+                      MHD_itc_destroy_chk_ (d->itc);
+                      goto thread_failed;
+                    }
+                }
+              else
+                MHD_itc_set_invalid_ (d->itc);
+
+              /* Divide available connections evenly amongst the threads.
+               * Thread indexes in [0, leftover_conns) each get one of the
+               * leftover connections. */
+              d->connection_limit = conns_per_thread;
+              if (i < leftover_conns)
+                ++d->connection_limit;
 #ifdef EPOLL_SUPPORT
-	  if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
-	       (MHD_YES != setup_epoll_to_listen (d)) )
-	    goto thread_failed;
+              if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
+                   (MHD_YES != setup_epoll_to_listen (d)) )
+                goto thread_failed;
 #endif
-          /* Must init cleanup connection mutex for each worker */
-          if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
-            {
+              /* Must init cleanup connection mutex for each worker */
+              if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
+                {
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("MHD failed to initialize cleanup connection mutex\n"));
+                  MHD_DLOG (daemon,
+                            _("MHD failed to initialize cleanup connection mutex\n"));
 #endif
-              goto thread_failed;
-            }
+                  goto thread_failed;
+                }
 
-          /* Spawn the worker thread */
-          if (! MHD_create_named_thread_ (&d->pid,
-                                          "MHD-worker",
-                                          daemon->thread_stack_size,
-                                          &MHD_polling_thread,
-                                          d))
-            {
+              /* Spawn the worker thread */
+              if (! MHD_create_named_thread_ (&d->pid,
+                                              "MHD-worker",
+                                              daemon->thread_stack_size,
+                                              &MHD_polling_thread,
+                                              d))
+                {
 #ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _("Failed to create pool thread: %s\n"),
-			MHD_strerror_ (errno));
+                  MHD_DLOG (daemon,
+                            _("Failed to create pool thread: %s\n"),
+                            MHD_strerror_ (errno));
 #endif
-              /* Free memory for this worker; cleanup below handles
-               * all previously-created workers. */
-              MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
-              goto thread_failed;
+                  /* Free memory for this worker; cleanup below handles
+                   * all previously-created workers. */
+                  MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
+                  goto thread_failed;
+                }
             }
         }
     }
@@ -6008,7 +6017,6 @@ thread_failed:
     {
       if (MHD_INVALID_SOCKET != listen_fd)
         MHD_socket_close_chk_ (listen_fd);
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
       MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
       if (NULL != daemon->worker_pool)
         free (daemon->worker_pool);
@@ -6081,6 +6089,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *urhn;
   const bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
 
+  assert (NULL == daemon->worker_pool);
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
   for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
@@ -6223,7 +6232,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (NULL == daemon)
     return;
 
-  if (0 != (MHD_TEST_ALLOW_SUSPEND_RESUME & daemon->options))
+  if ( (0 != (MHD_TEST_ALLOW_SUSPEND_RESUME & daemon->options)) &&
+       (NULL == daemon->worker_pool) )
     resume_suspended_connections (daemon);
 
   daemon->shutdown = true;
@@ -6341,7 +6351,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
 #endif
   MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
-  MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+  if (NULL != daemon->worker_pool)
+    MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 
   free (daemon);
 }
