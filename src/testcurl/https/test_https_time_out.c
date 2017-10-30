@@ -54,7 +54,7 @@ test_tls_session_time_out (gnutls_session_t session, int port)
   struct sockaddr_in sa;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
-  if (sd == -1)
+  if (sd == MHD_INVALID_SOCKET)
     {
       fprintf (stderr, "Failed to create socket: %s\n", strerror (errno));
       return -1;
@@ -110,6 +110,7 @@ main (int argc, char *const *argv)
   gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
   int port;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;

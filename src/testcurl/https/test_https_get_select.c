@@ -36,8 +36,6 @@
 
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
-extern const char srv_signed_cert_pem[];
-extern const char srv_signed_key_pem[];
 
 static int oneone;
 
@@ -54,6 +52,7 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)upload_data;(void)upload_data_size;       /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -249,6 +248,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   if (0 != curl_global_init (CURL_GLOBAL_ALL))
     {

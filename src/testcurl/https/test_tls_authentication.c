@@ -34,11 +34,6 @@
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
 
-extern int curl_check_version (const char *req_version, ...);
-extern const char test_file_data[];
-
-extern const char ca_key_pem[];
-extern const char ca_cert_pem[];
 extern const char srv_signed_cert_pem[];
 extern const char srv_signed_key_pem[];
 
@@ -51,6 +46,7 @@ test_secure_get (void * cls, char *cipher_suite, int proto_version)
   int ret;
   struct MHD_Daemon *d;
   int port;
+  (void)cls;    /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -90,6 +86,7 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   char *aes256_sha = "AES256-SHA";
+  (void)argc; (void)argv;       /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);

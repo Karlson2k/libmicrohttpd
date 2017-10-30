@@ -131,6 +131,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   const char *aes256_sha_tlsv1   = "AES256-SHA";
   const char *des_cbc3_sha_tlsv1 = "DES-CBC3-SHA";
+  (void)argc;   /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);

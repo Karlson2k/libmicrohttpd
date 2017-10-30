@@ -47,6 +47,7 @@ test_unmatching_ssl_version (void * cls, int port, const char *cipher_suite,
                              int curl_req_ssl_version)
 {
   struct CBC cbc;
+  (void)cls;    /* Unused. Silent compiler warning. */
   if (NULL == (cbc.buf = malloc (sizeof (char) * 256)))
     {
       fprintf (stderr, "Error: failed to allocate: %s\n",
@@ -90,6 +91,7 @@ main (int argc, char *const *argv)
   int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS | MHD_USE_ERROR_LOG;
   int port;
+  (void)argc; (void)argv;       /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;

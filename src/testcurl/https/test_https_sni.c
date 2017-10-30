@@ -145,6 +145,7 @@ sni_callback (gnutls_session_t session,
   size_t name_len;
   struct Hosts *host;
   unsigned int type;
+  (void)req_ca_dn;(void)nreqs;(void)pk_algos;(void)pk_algos_length;   /* Unused. Silent compiler warning. */
 
   name_len = sizeof (name);
   if (GNUTLS_E_SUCCESS !=
@@ -255,6 +256,7 @@ main (int argc, char *const *argv)
   unsigned int error_count = 0;
   struct MHD_Daemon *d;
   int port;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -315,7 +317,7 @@ main (int argc, char *const *argv)
 
 #else
 
-int main ()
+int main (void)
 {
   fprintf (stderr,
            "SNI not supported by GnuTLS < 3.0\n");

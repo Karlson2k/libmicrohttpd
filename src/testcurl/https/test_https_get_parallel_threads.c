@@ -84,6 +84,7 @@ test_single_client (void *cls, int port, const char *cipher_suite,
   void *client_thread_ret;
   struct https_test_data client_args =
     { NULL, port, cipher_suite, curl_proto_version };
+  (void)cls;    /* Unused. Silent compiler warning. */
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
@@ -109,6 +110,7 @@ test_parallel_clients (void *cls, int port, const char *cipher_suite,
   pthread_t client_arr[client_count];
   struct https_test_data client_args =
     { NULL, port, cipher_suite, curl_proto_version };
+  (void)cls;    /* Unused. Silent compiler warning. */
 
   for (i = 0; i < client_count; ++i)
     {
@@ -139,6 +141,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   const char *ssl_version;
   int port;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;

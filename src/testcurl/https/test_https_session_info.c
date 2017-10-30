@@ -32,7 +32,6 @@
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
 
-extern int curl_check_version (const char *req_version, ...);
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
@@ -45,11 +44,13 @@ struct MHD_Daemon *d;
 static int
 query_session_ahc (void *cls, struct MHD_Connection *connection,
                    const char *url, const char *method,
-                   const char *upload_data, const char *version,
+                   const char *version, const char *upload_data,
                    size_t *upload_data_size, void **ptr)
 {
   struct MHD_Response *response;
   int ret;
+  (void)cls;(void)url;(void)method;(void)version;       /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;             /* Unused. Silent compiler warning. */
 
   if (NULL == *ptr)
     {
@@ -190,6 +191,7 @@ main (int argc, char *const *argv)
 #if LIBCURL_VERSION_NUM >= 0x072200
   unsigned int errorCount = 0;
   const char *ssl_version;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
