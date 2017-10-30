@@ -181,7 +181,7 @@ do_gets (void * param)
           _exit(99);
         }
     }
-  sleep (1);
+  (void)sleep (1);
   for (j=0;j<PAR;j++)
     {
       pthread_cancel(par[j]);
@@ -226,7 +226,7 @@ testMultithreadedGet (int port,
       port = (int)dinfo->port;
     }
   p = start_gets (port);
-  sleep (1);
+  (void)sleep (1);
   MHD_stop_daemon (d);
   pthread_join (p, NULL);
   return 0;
@@ -257,7 +257,7 @@ testMultithreadedPoolGet (int port,
       port = (int)dinfo->port;
     }
   p = start_gets (port);
-  sleep (1);
+  (void)sleep (1);
   MHD_stop_daemon (d);
   pthread_join (p, NULL);
   return 0;

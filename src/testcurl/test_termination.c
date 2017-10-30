@@ -130,7 +130,7 @@ main ()
       exit (1);
     }
   /* CPU used to go crazy here */
-  sleep (1);
+  (void)sleep (1);
 
   curl_easy_cleanup (curl);
   MHD_stop_daemon (daemon);

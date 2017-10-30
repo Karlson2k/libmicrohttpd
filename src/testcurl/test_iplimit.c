@@ -196,7 +196,7 @@ testMultithreadedGet ()
         return 32;
       }
 
-      sleep(2);
+      (void)sleep(2);
 
       for (i = 0; i < 2; ++i)
         {
@@ -310,7 +310,7 @@ testMultithreadedPoolGet ()
       for (i = 0; i < 3; ++i)
         curl_easy_cleanup (cenv[i]);
 
-      sleep(2);
+      (void)sleep(2);
 
       for (i = 0; i < 2; ++i)
         {

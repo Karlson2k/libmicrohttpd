@@ -607,7 +607,7 @@ readBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 static size_t
 slowReadBuffer(void *p, size_t size, size_t nmemb, void *opaque)
 {
-  sleep(1);
+  (void)sleep(1);
   return readBuffer(p, size, nmemb, opaque);
 }
 

@@ -180,9 +180,9 @@ testInternalGet ()
     }
   sprintf(url, "http://127.0.0.1:%d/", port);
   curl = fork_curl (url);
-  sleep (1);
+  (void)sleep (1);
   kill_curl (curl);
-  sleep (1);
+  (void)sleep (1);
   // fprintf (stderr, "Stopping daemon!\n");
   MHD_stop_daemon (d);
   if (ok != 0)
@@ -226,11 +226,11 @@ testMultithreadedGet ()
   sprintf(url, "http://127.0.0.1:%d/", port);
   //fprintf (stderr, "Forking cURL!\n");
   curl = fork_curl (url);
-  sleep (1);
+  (void)sleep (1);
   kill_curl (curl);
-  sleep (1);
+  (void)sleep (1);
   curl = fork_curl (url);
-  sleep (1);
+  (void)sleep (1);
   if (ok != 0)
     {
       kill_curl (curl);
@@ -238,7 +238,7 @@ testMultithreadedGet ()
       return 64;
     }
   kill_curl (curl);
-  sleep (1);
+  (void)sleep (1);
   //fprintf (stderr, "Stopping daemon!\n");
   MHD_stop_daemon (d);
   if (ok != 0)
@@ -281,9 +281,9 @@ testMultithreadedPoolGet ()
     }
   sprintf(url, "http://127.0.0.1:%d/", port);
   curl = fork_curl (url);
-  sleep (1);
+  (void)sleep (1);
   kill_curl (curl);
-  sleep (1);
+  (void)sleep (1);
   //fprintf (stderr, "Stopping daemon!\n");
   MHD_stop_daemon (d);
   if (ok != 0)

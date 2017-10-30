@@ -215,14 +215,14 @@ main(void)
     }
   /* wait for a request */
   while (0 == request_counter)
-    sleep (1);
+    (void)sleep (1);
 
   fprintf (stderr,
            "quiesce\n");
   MHD_quiesce_daemon (daemon);
 
   /* wait a second */
-  sleep (1);
+  (void)sleep (1);
 
   fprintf (stderr,
            "stopping daemon\n");

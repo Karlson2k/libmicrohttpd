@@ -84,7 +84,7 @@ test_tls_session_time_out (gnutls_session_t session, int port)
       return -1;
     }
 
-  sleep (TIME_OUT + 1);
+  (void)sleep (TIME_OUT + 1);
 
   /* check that server has closed the connection */
   /* TODO better RST trigger */
