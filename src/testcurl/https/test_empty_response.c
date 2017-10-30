@@ -181,7 +181,7 @@ testInternalSelectGet ()
             }
         }
       else
-        sleep (1000);
+        sleep (1);
       curl_multi_perform (multi, &running);
       if (running == 0)
         {
