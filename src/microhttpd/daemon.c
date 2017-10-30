@@ -6239,12 +6239,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   else
     fd = daemon->listen_fd;
 
-  if (MHD_INVALID_SOCKET != fd)
-    {
-      (void) shutdown (fd,
-                       SHUT_RDWR);
-    }
-
   if (NULL != daemon->worker_pool)
     { /* Master daemon with worker pool. */
       mhd_assert (1 < daemon->worker_pool_size);
@@ -6262,6 +6256,13 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           else
             mhd_assert (MHD_INVALID_SOCKET != fd);
         }
+#ifdef HAVE_LISTEN_SHUTDOWN
+      if (MHD_INVALID_SOCKET != fd)
+        {
+          (void) shutdown (fd,
+                           SHUT_RDWR);
+        }
+#endif /* HAVE_LISTEN_SHUTDOWN */
       for (i = 0; i < daemon->worker_pool_size; ++i)
         {
           MHD_stop_daemon (&daemon->worker_pool[i]);
@@ -6292,7 +6293,18 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
                     MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
                 }
               else
-                mhd_assert (MHD_INVALID_SOCKET != fd);
+                {
+#ifdef HAVE_LISTEN_SHUTDOWN
+                  if (MHD_INVALID_SOCKET != fd)
+                    {
+                      if (NULL == daemon->master)
+                        (void) shutdown (fd,
+                                         SHUT_RDWR);
+                    }
+                  else
+#endif /* HAVE_LISTEN_SHUTDOWN */
+                    mhd_assert (false); /* Should never happen */
+                }
 
               if (! MHD_join_thread_ (daemon->pid.handle))
                 {
@@ -6303,7 +6315,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         }
       else
         {
-          /* Internal threads are not used polling sockets. */
+          /* No internal threads are used for polling sockets. */
           close_all_connections (daemon);
         }
       if (MHD_ITC_IS_VALID_ (daemon->itc))
