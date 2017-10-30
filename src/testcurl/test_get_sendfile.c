@@ -87,6 +87,8 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   int fd;
+  (void)url;(void)version;                      /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -572,6 +574,7 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   const char *tmp;
   FILE *f;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
        (NULL == (tmp = getenv ("TMP"))) &&

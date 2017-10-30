@@ -65,6 +65,7 @@ completed_cb (void *cls,
 	      enum MHD_RequestTerminationCode toe)
 {
   struct MHD_PostProcessor *pp = *con_cls;
+  (void)cls;(void)connection;(void)toe;            /* Unused. Silent compiler warning. */
 
   if (NULL != pp)
     MHD_destroy_post_processor (pp);
@@ -100,6 +101,8 @@ post_iterator (void *cls,
                const char *value, uint64_t off, size_t size)
 {
   int *eok = cls;
+  (void)kind;(void)filename;(void)content_type; /* Unused. Silent compiler warning. */
+  (void)transfer_encoding;(void)off;            /* Unused. Silent compiler warning. */
 
 #if 0
   fprintf (stderr, "PI sees %s-%.*s\n", key, size, value);
@@ -127,6 +130,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   struct MHD_PostProcessor *pp;
   int ret;
+  (void)cls;(void)version;      /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("POST", method))
     {
@@ -571,6 +575,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
 #ifdef HAVE_GCRYPT_H

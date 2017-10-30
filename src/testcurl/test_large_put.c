@@ -127,6 +127,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   static size_t processed;
+  (void)version;        /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */

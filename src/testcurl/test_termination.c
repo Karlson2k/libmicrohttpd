@@ -57,6 +57,9 @@ connection_handler (void *cls,
                     void **ptr)
 {
   static int i;
+  (void)cls;(void)url;                          /* Unused. Silent compiler warning. */
+  (void)method;(void)version;(void)upload_data; /* Unused. Silent compiler warning. */
+  (void)upload_data_size;                       /* Unused. Silent compiler warning. */
 
   if (*ptr == NULL)
     {
@@ -82,11 +85,12 @@ connection_handler (void *cls,
 static size_t
 write_data (void *ptr, size_t size, size_t nmemb, void *stream)
 {
+  (void)ptr;(void)stream;       /* Unused. Silent compiler warning. */
   return size * nmemb;
 }
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
   int port;

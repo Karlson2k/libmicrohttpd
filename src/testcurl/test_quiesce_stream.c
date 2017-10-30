@@ -48,6 +48,7 @@ http_PanicCallback (void *cls,
                     unsigned int line,
                     const char *reason)
 {
+  (void)cls;    /* Unused. Silent compiler warning. */
   fprintf( stderr,
            "PANIC: exit process: %s at %s:%u\n",
            reason,
@@ -104,6 +105,7 @@ http_ContentReaderCallback (void *cls,
 {
   static const char alphabet[] = "\nABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   struct ContentReaderUserdata *userdata = cls;
+  (void)pos;(void)max;  /* Unused. Silent compiler warning. */
 
   if( userdata->bytes_written >= 1024)
     {
@@ -131,6 +133,9 @@ http_AccessHandlerCallback (void *cls,
                             void **con_cls )
 {
   int ret;
+  (void)cls;(void)url;                          /* Unused. Silent compiler warning. */
+  (void)method;(void)version;(void)upload_data; /* Unused. Silent compiler warning. */
+  (void)upload_data_size;                       /* Unused. Silent compiler warning. */
 
   /* Never respond on first call */
   if (NULL == *con_cls)

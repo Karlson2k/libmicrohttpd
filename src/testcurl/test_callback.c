@@ -38,6 +38,7 @@ static ssize_t
 called_twice(void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct callback_closure *cls2 = cls;
+  (void)pos;    /* Unused. Silent compiler warning. */
 
   if (cls2->called == 0)
     {
@@ -70,6 +71,9 @@ callback(void *cls,
   struct callback_closure *cbc = calloc(1, sizeof(struct callback_closure));
   struct MHD_Response *r;
   int ret;
+  (void)cls;(void)url;                          /* Unused. Silent compiler warning. */
+  (void)method;(void)version;(void)upload_data; /* Unused. Silent compiler warning. */
+  (void)upload_data_size;(void)con_cls;         /* Unused. Silent compiler warning. */
 
   r = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN, 1024,
 					 &called_twice, cbc,
@@ -93,6 +97,7 @@ discard_buffer (void *ptr,
                 size_t nmemb,
                 void *ctx)
 {
+  (void)ptr;(void)ctx;  /* Unused. Silent compiler warning. */
   return size * nmemb;
 }
 
@@ -118,6 +123,7 @@ main(int argc, char **argv)
   struct timeval tv;
   int extra;
   int port;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;

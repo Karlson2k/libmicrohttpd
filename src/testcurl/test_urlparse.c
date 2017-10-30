@@ -73,6 +73,7 @@ test_values (void *cls,
 	     const char *key,
 	     const char *value)
 {
+  (void)cls;(void)kind;         /* Unused. Silent compiler warning. */
   if ( (0 == strcmp (key, "a")) &&
        (0 == strcmp (value, "b")) )
     matches += 1;
@@ -98,6 +99,7 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)upload_data;(void)upload_data_size;       /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -197,6 +199,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;

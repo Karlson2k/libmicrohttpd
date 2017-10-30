@@ -88,6 +88,7 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)upload_data;(void)upload_data_size;       /* Unused. Silent compiler warning. */
 
   if (0 != strcasecmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -633,6 +634,8 @@ ahc_empty (void *cls,
   static int ptr;
   struct MHD_Response *response;
   int ret;
+  (void)cls;(void)url;(void)url;(void)version;  /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcasecmp ("GET", method))
     return MHD_NO;              /* unexpected method */
@@ -658,6 +661,7 @@ curlExcessFound(CURL *c, curl_infotype type, char *data, size_t size, void *cls)
 {
   static const char *excess_found = "Excess found";
   const size_t str_size = strlen (excess_found);
+  (void)c;      /* Unused. Silent compiler warning. */
 
   if (CURLINFO_TEXT == type
       && size >= str_size
@@ -744,6 +748,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;

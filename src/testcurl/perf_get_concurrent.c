@@ -134,6 +134,7 @@ copyBuffer (void *ptr,
 	    size_t size, size_t nmemb,
 	    void *ctx)
 {
+  (void)ptr;(void)ctx;          /* Unused. Silent compiler warning. */
   return size * nmemb;
 }
 
@@ -150,6 +151,8 @@ ahc_echo (void *cls,
   static int ptr;
   const char *me = cls;
   int ret;
+  (void)url;(void)version;                      /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -455,6 +458,7 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   int port = 1100;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;

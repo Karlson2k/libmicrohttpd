@@ -51,12 +51,13 @@ struct CBC
 
 
 static void 
-termination_cb (void *cls, 
-		struct MHD_Connection *connection, 
-		void **con_cls, 
+termination_cb (void *cls,
+		struct MHD_Connection *connection,
+		void **con_cls,
 		enum MHD_RequestTerminationCode toe)
 {
   int *test = cls;
+  (void)connection;(void)con_cls;       /* Unused. Silent compiler warning. */
 
   switch (toe)
     {
@@ -101,6 +102,7 @@ putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 static size_t
 putBuffer_fail (void *stream, size_t size, size_t nmemb, void *ptr)
 {
+  (void)stream;(void)size;(void)nmemb;(void)ptr;        /* Unused. Silent compiler warning. */
   return 0;
 }
 
@@ -130,6 +132,7 @@ ahc_echo (void *cls,
   int *done = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)unused;   /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
@@ -313,6 +316,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;

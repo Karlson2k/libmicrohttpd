@@ -83,6 +83,7 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)upload_data;(void)upload_data_size;       /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -107,6 +108,7 @@ static void
 request_completed (void *cls, struct MHD_Connection *connection,
 		   void **con_cls, enum MHD_RequestTerminationCode code)
 {
+  (void)connection;(void)con_cls;(void)code;    /* Unused. Silent compiler warning. */
   int *done = (int *)cls;
   *done = 1;
 }
@@ -524,6 +526,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;

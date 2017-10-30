@@ -90,6 +90,7 @@ ahc_echo (void *cls,
   int *done = cls;
   struct MHD_Response *response;
   int ret;
+  (void)version;(void)unused;   /* Unused. Silent compiler warning. */
 
   if (0 != strcasecmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
@@ -516,6 +517,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
 
   oneone = (NULL != strrchr (argv[0], (int) '/')) ?
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;

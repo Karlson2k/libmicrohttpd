@@ -386,6 +386,8 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc;   /* Unused. Silent compiler warning. */
+
 #ifndef _WIN32
   /* Solaris has no way to disable SIGPIPE on socket disconnect. */
   if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
