@@ -3880,6 +3880,11 @@ MHD_queue_response (struct MHD_Connection *connection,
 	 (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
     return MHD_NO;
   daemon = connection->daemon;
+
+  if (daemon->shutdown)
+    return MHD_YES; /* If daemon was shut down in parallel,
+                     * response will be aborted now or on later stage. */
+
   if ( (!connection->suspended) &&
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (!MHD_thread_ID_match_current_(connection->pid.ID)) )
