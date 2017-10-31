@@ -832,6 +832,7 @@ generate_page (void *cls,
 static void
 catcher (int sig)
 {
+  (void)sig;	/* Unused. Silent compiler warning. */
   /* do nothing */
 }
 

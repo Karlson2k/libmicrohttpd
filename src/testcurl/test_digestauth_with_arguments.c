@@ -165,7 +165,7 @@ testDigestAuth ()
   while (off < 8)
 	{
 	  len = read(fd, rnd, 8);
-	  if (len == -1)
+	  if (len == (size_t)-1)
 	    {
 		  fprintf(stderr, "Failed to read `%s': %s\n",
 		       "/dev/urandom",
