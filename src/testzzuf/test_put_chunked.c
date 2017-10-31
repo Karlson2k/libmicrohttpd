@@ -87,6 +87,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   int ret;
   int have;
+  (void)version;(void)unused;   /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */
@@ -358,6 +359,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
