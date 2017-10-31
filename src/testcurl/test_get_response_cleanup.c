@@ -95,6 +95,8 @@ kill_curl (pid_t pid)
 static ssize_t
 push_callback (void *cls, uint64_t pos, char *buf, size_t max)
 {
+  (void)cls;(void)pos;	/* Unused. Silent compiler warning. */
+
   if (max == 0)
     return 0;
   buf[0] = 'd';
@@ -125,6 +127,8 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
+  (void)url;(void)version;                      /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   //fprintf (stderr, "In CB: %s!\n", method);
   if (0 != strcmp (me, method))

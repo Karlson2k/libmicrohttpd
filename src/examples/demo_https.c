@@ -831,6 +831,7 @@ generate_page (void *cls,
 static void
 catcher (int sig)
 {
+  (void)sig;	/* Unused. Silent compiler warning. */
   /* do nothing */
 }
 
@@ -839,7 +840,7 @@ catcher (int sig)
  * setup handlers to ignore SIGPIPE.
  */
 static void
-ignore_sigpipe ()
+ignore_sigpipe (void)
 {
   struct sigaction oldsig;
   struct sigaction sig;

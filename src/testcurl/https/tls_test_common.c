@@ -27,8 +27,6 @@
 #include "tls_test_keys.h"
 
 
-int curl_check_version (const char *req_version, ...);
-
 FILE *
 setup_ca_cert ()
 {
@@ -278,13 +276,15 @@ gen_test_file_url (char *url,
   int ret = 0;
   char *doc_path;
   size_t doc_path_len;
-  size_t i;
   /* setup test file path, url */
 #ifdef PATH_MAX
   doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
 #else  /* ! PATH_MAX */
   doc_path_len = 4096;
 #endif /* ! PATH_MAX */
+#ifdef WINDOWS
+  size_t i;
+#endif /* ! WINDOWS */
   if (NULL == (doc_path = malloc (doc_path_len)))
     {
       fprintf (stderr, MHD_E_MEM);
