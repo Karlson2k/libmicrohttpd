@@ -208,8 +208,9 @@ MHD_get_response_headers (struct MHD_Response *response,
                           void *iterator_cls)
 {
   int numHeaders = 0;
+  struct MHD_HTTP_Header *pos;
 
-  for (struct MHD_HTTP_Header *pos = response->first_header;
+  for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)
     {
@@ -237,9 +238,11 @@ const char *
 MHD_get_response_header (struct MHD_Response *response,
 			 const char *key)
 {
+  struct MHD_HTTP_Header *pos;
+
   if (NULL == key)
     return NULL;
-  for (struct MHD_HTTP_Header *pos = response->first_header;
+  for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)
     {
@@ -269,13 +272,15 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *token,
                                     size_t token_len)
 {
+  struct MHD_HTTP_Header *pos;
+
   if ( (NULL == key) ||
        ('\0' == key[0]) ||
        (NULL == token) ||
        ('\0' == token[0]) )
     return false;
 
-  for (struct MHD_HTTP_Header *pos = response->first_header;
+  for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)
     {

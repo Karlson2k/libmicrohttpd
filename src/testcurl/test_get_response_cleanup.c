@@ -187,7 +187,7 @@ testInternalGet ()
   (void)sleep (1);
   kill_curl (curl);
   (void)sleep (1);
-  // fprintf (stderr, "Stopping daemon!\n");
+  /* fprintf (stderr, "Stopping daemon!\n"); */
   MHD_stop_daemon (d);
   if (ok != 0)
     return 2;
@@ -378,7 +378,7 @@ testExternalGet ()
         }
       MHD_run (d);
     }
-  // fprintf (stderr, "Stopping daemon!\n");
+  /* fprintf (stderr, "Stopping daemon!\n"); */
   MHD_stop_daemon (d);
   if (ok != 0)
     return 1024;

@@ -163,9 +163,9 @@ test_query_session ()
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
 
-  // NOTE: use of CONNECTTIMEOUT without also
-  //   setting NOSIGNAL results in really weird
-  //   crashes on my system!
+  /* NOTE: use of CONNECTTIMEOUT without also
+   * setting NOSIGNAL results in really weird
+   * crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {

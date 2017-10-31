@@ -139,9 +139,9 @@ testLongUrlGet ()
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-      // NOTE: use of CONNECTTIMEOUT without also
-      //   setting NOSIGNAL results in really weird
-      //   crashes on my system!
+      /* NOTE: use of CONNECTTIMEOUT without also
+       *   setting NOSIGNAL results in really weird
+       *   crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_easy_cleanup (c);
@@ -202,9 +202,9 @@ testLongHeaderGet ()
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-      // NOTE: use of CONNECTTIMEOUT without also
-      //   setting NOSIGNAL results in really weird
-      //   crashes on my system!
+      /* NOTE: use of CONNECTTIMEOUT without also
+       *   setting NOSIGNAL results in really weird
+       *   crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_slist_free_all (header);

@@ -186,9 +186,9 @@ testInternalPost ()
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
       curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
-      // NOTE: use of CONNECTTIMEOUT without also
-      //   setting NOSIGNAL results in really weird
-      //   crashes on my system!
+      /* NOTE: use of CONNECTTIMEOUT without also
+       *   setting NOSIGNAL results in really weird
+       *   crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_easy_cleanup (c);
@@ -238,9 +238,9 @@ testMultithreadedPost ()
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
       curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
-      // NOTE: use of CONNECTTIMEOUT without also
-      //   setting NOSIGNAL results in really weird
-      //   crashes on my system!
+      /* NOTE: use of CONNECTTIMEOUT without also
+       *   setting NOSIGNAL results in really weird
+       *   crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_easy_cleanup (c);
@@ -308,9 +308,9 @@ testExternalPost ()
       else
         curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
       curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT_MS, CURL_TIMEOUT);
-      // NOTE: use of CONNECTTIMEOUT without also
-      //   setting NOSIGNAL results in really weird
-      //   crashes on my system!
+      /* NOTE: use of CONNECTTIMEOUT without also
+       *   setting NOSIGNAL results in really weird
+       *   crashes on my system! */
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
 

@@ -171,9 +171,9 @@ testMultithreadedGet ()
           curl_easy_setopt (c, CURLOPT_FORBID_REUSE, 0L);
           curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
           curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-          // NOTE: use of CONNECTTIMEOUT without also
-          //   setting NOSIGNAL results in really weird
-          //   crashes on my system!
+          /* NOTE: use of CONNECTTIMEOUT without also
+           *   setting NOSIGNAL results in really weird
+           *   crashes on my system! */
           curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
           errornum = curl_easy_perform (c);
@@ -278,9 +278,9 @@ testMultithreadedPoolGet ()
           curl_easy_setopt (c, CURLOPT_FORBID_REUSE, 0L);
           curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
           curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-          // NOTE: use of CONNECTTIMEOUT without also
-          //   setting NOSIGNAL results in really weird
-          //   crashes on my system!
+          /* NOTE: use of CONNECTTIMEOUT without also
+           *   setting NOSIGNAL results in really weird
+           *   crashes on my system! */
           curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
 
           errornum = curl_easy_perform (c);

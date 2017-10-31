@@ -566,9 +566,10 @@ send_all (wr_socket sock,
 {
   size_t len = strlen (text);
   ssize_t ret;
+  size_t off;
 
   make_blocking (wr_fd (sock));
-  for (size_t off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += ret)
     {
       ret = wr_send (sock,
                        &text[off],
@@ -642,9 +643,10 @@ recv_all (wr_socket sock,
   size_t len = strlen (text);
   char buf[len];
   ssize_t ret;
+  size_t off;
 
   make_blocking (wr_fd (sock));
-  for (size_t off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += ret)
     {
       ret = wr_recv (sock,
                        &buf[off],

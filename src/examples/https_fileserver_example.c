@@ -43,7 +43,7 @@
 #define BUF_SIZE 1024
 #define MAX_URL_LEN 255
 
-// TODO remove if unused
+/* TODO remove if unused */
 #define CAFILE "ca.pem"
 #define CRLFILE "crl.pem"
 

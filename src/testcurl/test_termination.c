@@ -121,7 +121,7 @@ main (void)
     }
 
   CURL *curl = curl_easy_init ();
-  //curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  /* curl_easy_setopt(curl, CURLOPT_POST, 1L); */
   char url[255];
   sprintf (url, "http://127.0.0.1:%d", port);
   curl_easy_setopt (curl, CURLOPT_URL, url);
