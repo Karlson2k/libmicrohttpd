@@ -159,8 +159,13 @@ main (int argc, char *const *argv)
 
   errorCount +=
     test_secure_get (NULL, aes256_sha_tlsv1, CURL_SSLVERSION_TLSv1);
+#if GNUTLS_VERSION_NUMBER < 0x030600
+  /* '3DES' is disabled by default on GnuTLS > 3.6.0 */
   errorCount +=
     test_cipher_option (NULL, des_cbc3_sha_tlsv1, CURL_SSLVERSION_TLSv1);
+#else  /* GNUTLS_VERSION_NUMBER >= 0x030600 */
+  (void)des_cbc3_sha_tlsv1;
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030600 */
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
