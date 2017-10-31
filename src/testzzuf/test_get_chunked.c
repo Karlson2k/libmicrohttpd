@@ -99,6 +99,8 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   struct MHD_Response **responseptr;
   int ret;
+  (void)url;(void)version;                      /* Unused. Silent compiler warning. */
+  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
@@ -317,6 +319,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
+  (void)argc; (void)argv; /* Unused. Silent compiler warning. */
 
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
