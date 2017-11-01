@@ -1,3 +1,21 @@
+Wed Nov  1 20:43:00 MSK 2017
+	Mixed and muted many compiler warnings. Now it GCC's flags
+	-Wall -Wextra could be used for building.
+	Fixed compilation of examples without libmagic.
+	Better detection of libgnutls in configure.
+	Reworked launch of nested configure in "po" directory to
+	prevent useless reconfiguration.
+	Fixed some wrong asserts.
+	Enabled "test_options" test.
+	Use "test_start_stop" without libcurl.
+	Use chunks with sendfile() to prevent locking thread for
+	single connection with large file.
+	Added support for FreeBSD's sendfile with additional
+	optimisations for FreeBSD 11.
+	Refactoring and improvements for MHD_start_daemon_va() and
+	MHD_stop_daemon().
+	Fixed testing with GnuTLS >= 3.6.0. -EG
+
 Mon Oct  9 22:38:07 CEST 2017
 	Add MHD_free() to allow proper free()-ing of username/password
 	data returned via MHD_digest_auth_get_username() or
