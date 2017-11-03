@@ -128,8 +128,8 @@ send_tls_adapter (struct MHD_Connection *connection,
     }
 #ifdef EPOLL_SUPPORT
   /* Unlike non-TLS connections, do not reset "write-ready" if
-   * sent smaller amount than provided, as TLS connections may
-   * break data into smaller parts for sending. */
+   * sent amount smaller than provided amount, as TLS
+   * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
   return res;
 }
