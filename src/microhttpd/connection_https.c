@@ -77,9 +77,9 @@ recv_tls_adapter (struct MHD_Connection *connection,
     }
 
 #ifdef EPOLL_SUPPORT
-  /* If data not available to fill whole buffer - socket is not read ready anymore. */
-  if (i > (size_t)res)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+  /* Unlike non-TLS connections, do not reset "read-ready" if
+   * received amount smaller than provided amount, as TLS
+   * connections may receive data by fixed-size chunks. */
 #endif /* EPOLL_SUPPORT */
 
   /* Check whether TLS buffers still have some unread data. */
