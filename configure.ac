@@ -1312,6 +1312,53 @@ int sendfile(int, int, off_t, size_t,
   ]
 )
 
+AS_VAR_IF([[found_sendfile]], [["no"]],
+  [
+   AC_MSG_CHECKING([[for Solaris-style sendfile(3)]])
+   SAVE_LIBS="$LIBS"
+   LIBS="$LIBS -lsendfile"
+   AC_LINK_IFELSE(
+     [AC_LANG_PROGRAM(
+       [[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/sendfile.h>
+
+static void empty_func(void)
+{
+/* Check for declaration */
+  (void)sendfile;
+}
+/* Declare again to check form match */
+ssize_t sendfile(int out_fd, int in_fd,
+                 off_t *off, size_t len);
+       ]],
+       [[
+         int fd1=0, fd2=1;
+         off_t o = 0;
+         size_t l = 5;
+         ssize_t r;
+         r = sendfile (fd1, fd2, &o, l);
+         if (r)
+           empty_func();
+       ]]
+      )
+     ],
+     [
+       AC_DEFINE([HAVE_SOLARIS_SENDFILE], [1], [Define to 1 if you have Solaris-style sendfile(3).])
+       found_sendfile="yes, Solaris-style"
+       MHD_LIBDEPS="-lsendfile $MHD_LIBDEPS"
+       MHD_LIBDEPS_PKGCFG="-lsendfile $MHD_LIBDEPS_PKGCFG"
+       AC_MSG_RESULT([[yes]])
+       AC_CHECK_FUNCS([sendfile64]) 
+     ],
+     [AC_MSG_RESULT([[no]])
+     ]
+   )
+   LIBS="$SAVE_LIBS"
+  ]
+)
+
 # optional: have error messages ?
 AC_MSG_CHECKING([[whether to generate error messages]])
 AC_ARG_ENABLE([messages],
