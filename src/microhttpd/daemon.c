@@ -6423,7 +6423,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
       return (const union MHD_DaemonInfo *) &daemon->port;
     default:
       return NULL;
-    };
+    }
 }
 
 
