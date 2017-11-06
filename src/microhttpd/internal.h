@@ -806,13 +806,13 @@ struct MHD_Connection
    */
   uint64_t response_write_position;
 
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
+#if defined(MHD_LINUX_SOLARIS_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
   enum MHD_resp_sender_
   {
     MHD_resp_sender_std = 0,
     MHD_resp_sender_sendfile
   } resp_sender;
-#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
   /**
    * Position in the 100 CONTINUE message that

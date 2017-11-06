@@ -36,9 +36,9 @@
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
 #include "mhd_itc.h"
-#ifdef HAVE_LINUX_SENDFILE
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
 #include <sys/sendfile.h>
-#endif /* HAVE_LINUX_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE */
 #ifdef HAVE_FREEBSD_SENDFILE
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -272,7 +272,7 @@ send_param_adapter (struct MHD_Connection *connection,
 }
 
 
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
+#if defined(MHD_LINUX_SOLARIS_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
 /**
  * Function for sending responses backed by file FD.
  *
@@ -291,13 +291,13 @@ sendfile_adapter (struct MHD_Connection *connection)
 #else  /* HAVE_SENDFILE64 */
   const uint64_t max_off_t = (uint64_t)OFF64_T_MAX;
 #endif /* HAVE_SENDFILE64 */
-#ifdef HAVE_LINUX_SENDFILE
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
 #ifndef HAVE_SENDFILE64
   off_t offset;
 #else  /* HAVE_SENDFILE64 */
   off64_t offset;
 #endif /* HAVE_SENDFILE64 */
-#endif /* HAVE_LINUX_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE */
 #ifdef HAVE_FREEBSD_SENDFILE
   off_t sent_bytes;
   int flags = 0;
@@ -317,7 +317,7 @@ sendfile_adapter (struct MHD_Connection *connection)
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
-#ifdef HAVE_LINUX_SENDFILE
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
 #ifndef HAVE_SENDFILE64
   offset = (off_t) offsetu64;
   ret = sendfile (connection->socket_fd,
@@ -344,6 +344,7 @@ sendfile_adapter (struct MHD_Connection *connection)
         }
       if (MHD_SCKT_ERR_IS_EINTR_ (err))
         return MHD_ERR_AGAIN_;
+#ifdef HAVE_LINUX_SENDFILE
       if (MHD_SCKT_ERR_IS_(err,
                            MHD_SCKT_EBADF_))
         return MHD_ERR_BADF_;
@@ -354,6 +355,21 @@ sendfile_adapter (struct MHD_Connection *connection)
          http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
+#else  /* HAVE_SOLARIS_SENDFILE */
+      if ( (EAFNOSUPPORT == err) ||
+           (EINVAL == err) ||
+           (EOPNOTSUPP == err) )
+        { /* Retry with standard file reader. */
+          connection->resp_sender = MHD_resp_sender_std;
+          return MHD_ERR_AGAIN_;
+        }
+      if ( (ENOTCONN == err) ||
+           (EPIPE == err) )
+        {
+          return MHD_ERR_CONNRESET_;
+        }
+      return MHD_ERR_BADF_; /* Fail hard */
+#endif /* HAVE_SOLARIS_SENDFILE */
     }
 #ifdef EPOLL_SUPPORT
   else if (send_size > (size_t)ret)
@@ -394,7 +410,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #endif /* HAVE_FREEBSD_SENDFILE */
   return ret;
 }
-#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
 
 /**
@@ -1026,13 +1042,13 @@ try_ready_normal_body (struct MHD_Connection *connection)
        (response->data_size + response->data_start >
 	connection->response_write_position) )
     return MHD_YES; /* response already ready */
-#if defined(HAVE_LINUX_SENDFILE) || defined (HAVE_FREEBSD_SENDFILE)
+#if defined(MHD_LINUX_SOLARIS_SENDFILE) || defined (HAVE_FREEBSD_SENDFILE)
   if (MHD_resp_sender_sendfile == connection->resp_sender)
     {
       /* will use sendfile, no need to bother response crc */
       return MHD_YES;
     }
-#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
@@ -2970,15 +2986,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
               /* mutex was already unlocked by try_ready_normal_body */
               return;
             }
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
+#if defined(MHD_LINUX_SOLARIS_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
           if (MHD_resp_sender_sendfile == connection->resp_sender)
             {
               ret = sendfile_adapter (connection);
             }
           else
-#else  /* ! (HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE) */
+#else  /* ! (MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE) */
           if (1)
-#endif /* ! (HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE) */
+#endif /* ! (MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE) */
             {
               data_write_offset = connection->response_write_position
                                   - response->data_start;
@@ -3918,13 +3934,13 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
+#if defined(MHD_LINUX_SOLARIS_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE)
   if ( (response->fd == -1) ||
        (0 != (connection->daemon->options & MHD_USE_TLS)) )
     connection->resp_sender = MHD_resp_sender_std;
   else
     connection->resp_sender = MHD_resp_sender_sendfile;
-#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE || HAVE_FREEBSD_SENDFILE */
 
   if ( ( (NULL != connection->method) &&
          (MHD_str_equal_caseless_ (connection->method,
