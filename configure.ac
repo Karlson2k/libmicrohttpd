@@ -69,6 +69,9 @@ MHD_SYS_EXT
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
+# Workaround for libgcrypt
+AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
+
 PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
 PACKAGE_VERSION_MINOR='m4_argn(2, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
 PACKAGE_VERSION_SUBMINOR='m4_argn(3, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
