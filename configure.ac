@@ -1388,7 +1388,6 @@ AC_ARG_WITH([[gnutls]],
                 GNUTLS_CPPFLAGS="-I$with_gnutls/include"
                 GNUTLS_LDFLAGS="-L$with_gnutls/lib"
                 GNUTLS_LIBS="-lgnutls"
-                AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
                 have_gnutls=yes
               ])], [], [AC_INCLUDES_DEFAULT])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
@@ -1428,16 +1427,6 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
            have_gnutls=yes
            GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
            GNUTLS_LDFLAGS="$GNUTLS_LIBS"
-           AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
-           AC_LINK_IFELSE([
-             AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
-                    gnutls_datum_t data;
-                    gnutls_privkey_t key;
-                    gnutls_load_file("key.pem", &data);
-                    gnutls_privkey_import_x509_raw(key, &data, GNUTLS_X509_FMT_PEM, NULL, 0);
-                    gnutls_free(data.data);
-                  ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
-           AC_MSG_RESULT([[$have_gnutls_sni]])
           ],
           [
            AC_MSG_RESULT([[no]])
@@ -1459,7 +1448,6 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
         [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
             GNUTLS_LIBS="-lgnutls"
-            AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
       ])
@@ -1516,6 +1504,16 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG
      CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
      LDFLAGS="$GNUTLS_LIBS $LDFLAGS"
      LIBS="$LIBS $GNUTLS_LIBS"
+     AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
+     AC_LINK_IFELSE([
+       AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
+            gnutls_datum_t data;
+            gnutls_privkey_t key;
+            gnutls_load_file("key.pem", &data);
+            gnutls_privkey_import_x509_raw(key, &data, GNUTLS_X509_FMT_PEM, NULL, 0);
+            gnutls_free(data.data);
+          ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
+     AC_MSG_RESULT([[$have_gnutls_sni]])
      AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_grypt_required],
        [
         AC_COMPILE_IFELSE(
