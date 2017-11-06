@@ -1345,8 +1345,6 @@ AC_CHECK_PROG([have_socat],[socat], [yes], [no])
 AM_CONDITIONAL([HAVE_ZZUF], [test "x$have_zzuf" = "xyes"])
 AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
 
-GNUTLS_CPPFLAGS=""
-GNUTLS_LDFLAGS=""
 have_gnutls=no
 have_gnutls_sni=no
 have_gcrypt=no
@@ -1371,6 +1369,8 @@ AC_ARG_WITH([[gnutls]],
     case $with_gnutls in
       no)
         AC_MSG_RESULT([[GnuTLS disabled]])
+        AS_UNSET([GNUTLS_CPPFLAGS])
+        AS_UNSET([GNUTLS_LDFLAGS])
         ;;
       yes)
         AC_MSG_RESULT([[automatically, forced]])
@@ -1449,6 +1449,8 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        CFLAGS="$SAVE_CFLAGS"
        LDFLAGS="$SAVE_LDFLAGS"
        LIBS="$SAVE_LIBS"
+       AS_UNSET([GNUTLS_CPPFLAGS])
+       AS_UNSET([GNUTLS_LDFLAGS])
       ],
       [
        # check for GnuTLS at default paths
@@ -1538,6 +1540,10 @@ choke me now
      CFLAGS="$SAVE_CFLAGS"
      LDFLAGS="$SAVE_LDFLAGS"
      LIBS="$SAVE_LIBS"
+    ],
+    [
+     AS_UNSET([GNUTLS_CPPFLAGS])
+     AS_UNSET([GNUTLS_LDFLAGS])
     ]
   )
 
