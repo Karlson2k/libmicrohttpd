@@ -210,7 +210,6 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
 
   return !res;
 #elif defined(MHD_USE_W32_THREADS)
-  unsigned int thread_ID;
 #if SIZE_MAX != UINT_MAX
   if (stack_size > UINT_MAX)
     {
@@ -225,12 +224,11 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
                                      start_routine,
                                      arg,
                                      0,
-                                     &thread_ID);
+                                     (unsigned*)&thread->ID);
 
   if ((MHD_thread_handle_)-1 == thread->handle)
     return 0;
 
-  thread->ID = (MHD_thread_ID_)thread_ID;
   return !0;
 #endif
 }
