@@ -35,10 +35,6 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <sys/stat.h>
-#include <gnutls/gnutls.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
-#include <gcrypt.h>
-#endif
 
 #define BUF_SIZE 1024
 #define MAX_URL_LEN 255
@@ -207,8 +203,6 @@ main (int argc, char *const *argv)
       return 1;
     }
 
-  /* TODO check if this is truly necessary -  disallow usage of the blocking /dev/random */
-  /* gcry_control(GCRYCTL_ENABLE_QUICK_RANDOM, 0); */
   TLS_daemon =
     MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG |
                       MHD_USE_TLS,
