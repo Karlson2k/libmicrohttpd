@@ -1395,6 +1395,8 @@ AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
 have_gnutls=no
 have_gnutls_sni=no
 have_gcrypt=no
+AS_UNSET([GNUTLS_CPPFLAGS])
+AS_UNSET([GNUTLS_LDFLAGS])
 
 # optional: HTTPS support.  Enabled by default
 AC_ARG_ENABLE([https],
@@ -1417,7 +1419,9 @@ AC_ARG_WITH([[gnutls]],
       no)
         AC_MSG_RESULT([[GnuTLS disabled]])
         AS_UNSET([GNUTLS_CPPFLAGS])
+        AS_UNSET([GNUTLS_CFLAGS])
         AS_UNSET([GNUTLS_LDFLAGS])
+        AS_UNSET([GNUTLS_LIBS])
         ;;
       yes)
         AC_MSG_RESULT([[automatically, forced]])
@@ -1521,13 +1525,19 @@ choke me now
            have_gnutls=no
           ])
 
-       AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])])
+       AS_IF([test "x$have_gnutls" != "xyes"], 
+         [
+          AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])
+          AS_UNSET([GNUTLS_CPPFLAGS])
+          AS_UNSET([GNUTLS_CFLAGS])
+          AS_UNSET([GNUTLS_LDFLAGS])
+          AS_UNSET([GNUTLS_LIBS])
+         ]
+       )
        CPPFLAGS="$SAVE_CPPFLAGS"
        CFLAGS="$SAVE_CFLAGS"
        LDFLAGS="$SAVE_LDFLAGS"
        LIBS="$SAVE_LIBS"
-       AS_UNSET([GNUTLS_CPPFLAGS])
-       AS_UNSET([GNUTLS_LDFLAGS])
       ],
       [
        # check for GnuTLS at default paths
@@ -1651,10 +1661,6 @@ choke me now
      )
     ]
   )
-  AC_SUBST([GNUTLS_CPPFLAGS])
-  AC_SUBST([GNUTLS_CFLAGS])
-  AC_SUBST([GNUTLS_LDFLAGS])
-  AC_SUBST([GNUTLS_LIBS])
 
   AS_UNSET([[crypt_missing]])
   AS_IF([[test "x$have_gnutls" = "xyes"]],
@@ -1720,6 +1726,10 @@ AM_CONDITIONAL([HAVE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AM_CONDITIONAL([HAVE_GNUTLS_SNI], [[test "x$have_gnutls_sni" = "xyes"]])
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 AM_CONDITIONAL([HTTPS_REQUIRE_GRYPT], [[test "x$enable_https" = "xyes" && test "x$mhd_cv_grypt_required" = "xyes"]])
+AC_SUBST([GNUTLS_CPPFLAGS])
+AC_SUBST([GNUTLS_CFLAGS])
+AC_SUBST([GNUTLS_LDFLAGS])
+AC_SUBST([GNUTLS_LIBS])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
