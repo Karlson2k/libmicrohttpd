@@ -165,6 +165,7 @@ main (int argc, char *const *argv)
     test_cipher_option (NULL, des_cbc3_sha_tlsv1, CURL_SSLVERSION_TLSv1);
 #else  /* GNUTLS_VERSION_NUMBER >= 0x030600 */
   (void)des_cbc3_sha_tlsv1;
+  (void)test_cipher_option;
 #endif /* GNUTLS_VERSION_NUMBER >= 0x030600 */
   print_test_result (errorCount, argv[0]);
 
