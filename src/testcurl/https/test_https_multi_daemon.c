@@ -136,12 +136,8 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
-  if (0 != curl_global_init (CURL_GLOBAL_ALL))
-    {
-      fprintf (stderr, "Error (code: %u). l:%d f:%s\n", errorCount, __LINE__,
-               __FUNCTION__);
-      return 99;
-    }
+  if (!testsuite_curl_global_init ())
+    return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
     {
       fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");

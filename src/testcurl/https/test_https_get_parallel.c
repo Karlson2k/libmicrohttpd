@@ -150,11 +150,8 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   unsigned int iseed = (unsigned int) time (NULL);
   srand (iseed);
-  if (0 != curl_global_init (CURL_GLOBAL_ALL))
-    {
-      fprintf (stderr, "Error: %s\n", strerror (errno));
-      return 99;
-    }
+  if (!testsuite_curl_global_init ())
+    return 99;
 
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
     {

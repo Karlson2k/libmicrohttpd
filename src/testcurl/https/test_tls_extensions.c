@@ -238,11 +238,8 @@ main (int argc, char *const *argv)
       return -1;
     }
 
-  if (0 != curl_global_init (CURL_GLOBAL_ALL))
-    {
-      fprintf (stderr, "Error: %s\n", strerror (errno));
-      return -1;
-    }
+  if (!testsuite_curl_global_init ())
+    return 99;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
                         MHD_USE_ERROR_LOG, port,

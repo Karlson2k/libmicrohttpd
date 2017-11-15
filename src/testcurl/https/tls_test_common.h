@@ -149,4 +149,7 @@ test_wrap (const char *test_name, int
                              int proto_version), void * cls,
            int port,
            int daemon_flags, const char *cipher_suite, int proto_version, ...);
+
+int testsuite_curl_global_init (void);
+
 #endif /* TLS_TEST_COMMON_H_ */

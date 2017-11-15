@@ -157,11 +157,8 @@ main (int argc, char *const *argv)
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
   srand (iseed);
-  if (0 != curl_global_init (CURL_GLOBAL_ALL))
-    {
-      fprintf (stderr, "Error: %s\n", strerror (errno));
-      return 99;
-    }
+  if (!testsuite_curl_global_init ())
+    return 99;
   ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
   if (NULL == ssl_version)
     {

@@ -525,3 +525,22 @@ test_wrap (const char *test_name, int
   va_end (arg_list);
   return ret;
 }
+
+int testsuite_curl_global_init (void)
+{
+  CURLcode res;
+#if LIBCURL_VERSION_NUM >= 0x07380
+  if (CURLSSLSET_OK != curl_global_sslset(CURLSSLBACKEND_GNUTLS, NULL, NULL))
+    {
+      if (CURLSSLSET_TOO_LATE == curl_global_sslset(CURLSSLBACKEND_OPENSSL, NULL, NULL))
+        fprintf (stderr, "WARNING: libcurl was already initialised.\n");
+    }
+#endif /* LIBCURL_VERSION_NUM >= 0x07380 */
+  res = curl_global_init (CURL_GLOBAL_ALL);
+  if (CURLE_OK != res)
+    {
+      fprintf (stderr, "libcurl initialisation error: %s\n", curl_easy_strerror(res));
+      return 0;
+    }
+  return 1;
+}

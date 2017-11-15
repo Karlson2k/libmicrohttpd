@@ -250,11 +250,8 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void)argc;   /* Unused. Silent compiler warning. */
 
-  if (0 != curl_global_init (CURL_GLOBAL_ALL))
-    {
-      fprintf (stderr, "Error: %s\n", strerror (errno));
-      return 99;
-    }
+  if (!testsuite_curl_global_init ())
+    return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
     {
       fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
