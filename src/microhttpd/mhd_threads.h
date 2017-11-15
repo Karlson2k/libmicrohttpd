@@ -139,6 +139,20 @@
 #define MHD_thread_ID_match_current_(ID) (GetCurrentThreadId() == (ID))
 #endif
 
+#if defined(MHD_USE_POSIX_THREADS)
+/**
+ * Initialise thread ID.
+ * @param thread_handle_ID_ptr pointer to thread handle-ID
+ */
+#define MHD_thread_init_(thread_handle_ID_ptr) (void)0
+#elif defined(MHD_USE_W32_THREADS)
+/**
+ * Initialise thread ID.
+ * @param thread_handle_ID_ptr pointer to thread handle-ID
+ */
+#define MHD_thread_init_(thread_handle_ID_ptr) ((thread_handle_ID_ptr)->ID=GetCurrentThreadId())
+#endif
+
 /**
  * Signature of main function for a thread.
  *

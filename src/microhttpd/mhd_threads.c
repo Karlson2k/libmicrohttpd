@@ -224,7 +224,7 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
                                      start_routine,
                                      arg,
                                      0,
-                                     (unsigned*)&thread->ID);
+                                     NULL);
 
   if ((MHD_thread_handle_)-1 == thread->handle)
     return 0;

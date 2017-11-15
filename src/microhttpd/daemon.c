@@ -1715,6 +1715,7 @@ thread_main_handle_connection (void *data)
   const bool use_poll = 0;
 #endif /* ! HAVE_POLL */
   bool was_suspended = false;
+  MHD_thread_init_(&(con->pid));
 
   while ( (! daemon->shutdown) &&
 	  (MHD_CONNECTION_CLOSED != con->state) )
@@ -4370,6 +4371,7 @@ static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_polling_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
+  MHD_thread_init_(&(daemon->pid));
 
   while (! daemon->shutdown)
     {
