@@ -58,25 +58,21 @@ AC_DEFUN([MHD_SYS_EXT],[dnl
   dnl Check platform-specific extensions.
   dnl Use compiler-based test for determinig target.
 
-      MHD_CHECK_DEF_AND_ACCEPT([[_GNU_SOURCE]], [],
-        [[${mhd_mse_sys_ext_defines}]], [mhd_cv_macro_add__gnu_source="no"],
-        [mhd_cv_macro_add__gnu_source="yes"],
-        [mhd_cv_macro_add__gnu_source="no"],
-      )
   dnl Always add _GNU_SOURCE if headers allow.
-  AS_VAR_SET_IF([mhd_cv_macro_add__gnu_source],
-    [
-      AC_MSG_CHECKING([[whether to add _GNU_SOURCE macro]])
-      AC_MSG_RESULT([[(cached) ${mhd_cv_macro_try__gnu_source}]])
-    ],
-    [
-      MHD_CHECK_DEF_AND_ACCEPT([[_GNU_SOURCE]], [],
-        [[${mhd_mse_sys_ext_defines}]], [mhd_cv_macro_add__gnu_source="no"],
-        [mhd_cv_macro_add__gnu_source="yes"],
-        [mhd_cv_macro_add__gnu_source="no"],
-      )
-    ]
+  MHD_CHECK_DEF_AND_ACCEPT([[_GNU_SOURCE]], [],
+    [[${mhd_mse_sys_ext_defines}]], [mhd_cv_macro_add__gnu_source="no"],
+    [mhd_cv_macro_add__gnu_source="yes"],
+    [mhd_cv_macro_add__gnu_source="no"]
   )
+
+  1
+  _MHD_VAR_IF([var],[value],[do-one],[do-two])
+  2
+  _MHD_VAR_IF([var2],[value2],[do-one],[  ])
+  3
+  _MHD_VAR_IF([var3],[value3],[ ],[  ])
+  4
+  _MHD_VAR_IF([var4],[value4],[],[])
   AS_VAR_IF([mhd_cv_macro_add__gnu_source], ["yes"],
     [
       _MHD_SYS_EXT_VAR_ADD_FLAG([[mhd_mse_sys_ext_defines]], [[mhd_mse_sys_ext_flags]], [[_GNU_SOURCE]])
@@ -375,7 +371,7 @@ ${mhd_mse_sys_features_src}
   ])
   for mhd_mse_Flag in ${mhd_mse_xopen_flags} ${mhd_mse_sys_ext_flags}
   do
-    m4_ifnblank($1, [dnl
+    m4_ifnblank([$1], [dnl
       AS_VAR_APPEND([$1],[[" -D$mhd_mse_Flag"]])
     ], [dnl
       AS_CASE([[$mhd_mse_Flag]], [[*=*]],
@@ -405,19 +401,19 @@ ${mhd_mse_sys_features_src}
 # Internal macro, only to be used from MHD_SYS_EXT, _MHD_XOPEN_VAR_ADD
 
 m4_define([_MHD_SYS_EXT_VAR_ADD_FLAG], [dnl
-  m4_ifnblank($4,[dnl
-    m4_normalize($1)="[$]{m4_normalize($1)}[#define ]m4_normalize($3) m4_normalize($4)
+  m4_ifnblank([$4],[dnl
+    m4_normalize([$1])="[$]{m4_normalize([$1])}[#define ]m4_normalize([$3]) m4_normalize([$4])
 "
-    AS_IF([test "x[$]{m4_normalize($2)}" = "x"],
-      [m4_normalize($2)="m4_normalize($3)=m4_normalize($4)"],
-      [m4_normalize($2)="[$]{m4_normalize($2)} m4_normalize($3)=m4_normalize($4)"]
+    AS_IF([test "x[$]{m4_normalize([$2])}" = "x"],
+      [m4_normalize([$2])="m4_normalize([$3])=m4_normalize([$4])"],
+      [m4_normalize([$2])="[$]{m4_normalize([$2])} m4_normalize([$3])=m4_normalize([$4])"]
     )dnl
   ], [dnl
-    m4_normalize($1)="[$]{m4_normalize($1)}[#define ]m4_normalize($3) 1
+    m4_normalize([$1])="[$]{m4_normalize([$1])}[#define ]m4_normalize([$3]) 1
 "
-    AS_IF([test "x[$]{m4_normalize($2)}" = "x"],
-      [m4_normalize($2)="m4_normalize($3)=1"],
-      [m4_normalize($2)="[$]{m4_normalize($2)} m4_normalize($3)=1"]
+    AS_IF([test "x[$]{m4_normalize([$2])}" = "x"],
+      [m4_normalize([$2])="m4_normalize([$3])=1"],
+      [m4_normalize([$2])="[$]{m4_normalize([$2])} m4_normalize([$3])=1"]
     )dnl
   ])dnl
 ])
@@ -429,9 +425,8 @@ m4_define([_MHD_SYS_EXT_VAR_ADD_FLAG], [dnl
 # both IF-EQ and IF-NOT-EQ are empty.
 
 m4_define([_MHD_VAR_IF],[dnl
-m4_ifnblank($3$4,[dnl
-m4_ifblank($4,[AS_VAR_IF([$1],[$2],[$3])],[dnl
-AS_VAR_IF([$1],[$2],[$3],[$4])])])])
+m4_ifnblank([$3$4],[dnl
+AS_VAR_IF([$1],[$2],[$3],[$4])])])
 
 # SYNOPSIS
 #
@@ -683,10 +678,10 @@ AC_DEFUN([_MHD_CHECK_POSIX_FEATURES_SINGLE], [dnl
             [
               AS_VAR_IF([xopen_Var], ["allowed"],
                 [
-                  AS_VAR_SET([m4_normalize($4)], ["available, activated by extension macro, works with _XOPEN_SOURCE=m4_normalize($3)"])
+                  AS_VAR_SET([m4_normalize([$4])], ["available, activated by extension macro, works with _XOPEN_SOURCE=m4_normalize([$3])"])
                 ],
                 [
-                  AS_VAR_SET([m4_normalize($4)], ["available, activated by extension macro, does not work with _XOPEN_SOURCE=m4_normalize($3)"])
+                  AS_VAR_SET([m4_normalize([$4])], ["available, activated by extension macro, does not work with _XOPEN_SOURCE=m4_normalize([$3])"])
                 ]
               )
             ],
@@ -695,15 +690,15 @@ AC_DEFUN([_MHD_CHECK_POSIX_FEATURES_SINGLE], [dnl
                 [
                   AS_VAR_IF([xopen_Var], ["required"],
                     [
-                      AS_VAR_SET([m4_normalize($4)], ["available, activated by _XOPEN_SOURCE=m4_normalize($3), works with extension macro"])
+                      AS_VAR_SET([m4_normalize([$4])], ["available, activated by _XOPEN_SOURCE=m4_normalize([$3]), works with extension macro"])
                     ],
                     [
                       AS_VAR_IF([xopen_Var], ["allowed"],
                         [
-                          AS_VAR_SET([m4_normalize([$4])], ["available, works with _XOPEN_SOURCE=m4_normalize($3), works with extension macro"])
+                          AS_VAR_SET([m4_normalize([$4])], ["available, works with _XOPEN_SOURCE=m4_normalize([$3]), works with extension macro"])
                         ],
                         [
-                          AS_VAR_SET([m4_normalize($4)], ["available, works with extension macro, does not work with _XOPEN_SOURCE=m4_normalize($3)"])
+                          AS_VAR_SET([m4_normalize([$4])], ["available, works with extension macro, does not work with _XOPEN_SOURCE=m4_normalize([$3])"])
                         ]
                       )
                     ]
@@ -712,15 +707,15 @@ AC_DEFUN([_MHD_CHECK_POSIX_FEATURES_SINGLE], [dnl
                 [
                   AS_VAR_IF([xopen_Var], ["required"],
                     [
-                      AS_VAR_SET([m4_normalize($4)], ["available, activated by _XOPEN_SOURCE=m4_normalize($3), does not work with extension macro"])
+                      AS_VAR_SET([m4_normalize([$4])], ["available, activated by _XOPEN_SOURCE=m4_normalize([$3]), does not work with extension macro"])
                     ],
                     [
                       AS_VAR_IF([xopen_Var], ["allowed"],
                         [
-                          AS_VAR_SET([m4_normalize($4)], ["available, works with _XOPEN_SOURCE=m4_normalize($3), does not work with extension macro"])
+                          AS_VAR_SET([m4_normalize([$4])], ["available, works with _XOPEN_SOURCE=m4_normalize([$3]), does not work with extension macro"])
                         ],
                         [
-                          AS_VAR_SET([m4_normalize($4)], ["available, does not work with _XOPEN_SOURCE=m4_normalize($3), does not work with extension macro"])
+                          AS_VAR_SET([m4_normalize([$4])], ["available, does not work with _XOPEN_SOURCE=m4_normalize([$3]), does not work with extension macro"])
                         ]
                       )
                     ]
@@ -731,12 +726,12 @@ AC_DEFUN([_MHD_CHECK_POSIX_FEATURES_SINGLE], [dnl
           )
         ],
         [
-          AS_VAR_SET([m4_normalize($4)], ["available, works always"])
+          AS_VAR_SET([m4_normalize([$4])], ["available, works always"])
         ]
       )
     ],
     [
-      AS_VAR_SET([m4_normalize($4)], ["not available"])
+      AS_VAR_SET([m4_normalize([$4])], ["not available"])
     ]
   )
   AS_UNSET([dislb_Var])
@@ -778,7 +773,7 @@ $src_Var
     ])],
     [dnl
       _AS_ECHO_LOG([[Checked features work with undefined all extensions and without _XOPEN_SOURCE]])
-      AS_VAR_SET([m4_normalize($4)],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
+      AS_VAR_SET([m4_normalize([$4])],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
 
       dnl Check whether features will work extensions
       AC_COMPILE_IFELSE([AC_LANG_SOURCE([
@@ -787,16 +782,16 @@ $src_Var
         ])],
         [dnl
           _AS_ECHO_LOG([[Checked features work with extensions]])
-          AS_VAR_SET([m4_normalize($5)],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+          AS_VAR_SET([m4_normalize([$5])],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
           dnl Check whether features will work with _XOPEN_SOURCE
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $defs_Var
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
             ])],
             [dnl
-              _AS_ECHO_LOG([Checked features work with extensions and with _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($6)],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+              _AS_ECHO_LOG([Checked features work with extensions and with _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$6])],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
               dnl Check whether features could be disabled
               dnl Request oldest POSIX mode and strict ANSI mode
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([
@@ -807,64 +802,64 @@ $src_Var
                 ])],
                 [dnl
                   _AS_ECHO_LOG([[Checked features work with disabled extensions, with _POSIX_C_SOURCE=1 and _ANSI_SOURCE=1]])
-                  AS_VAR_SET([m4_normalize($7)],["no"]) # VAR-FEATURES-DISABLEABLE-YES_NO
+                  AS_VAR_SET([m4_normalize([$7])],["no"]) # VAR-FEATURES-DISABLEABLE-YES_NO
                 ],
                 [dnl
                   _AS_ECHO_LOG([[Checked features DO NOT work with disabled extensions, with _POSIX_C_SOURCE=1 and _ANSI_SOURCE=1]])
-                  AS_VAR_SET([m4_normalize($7)],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
+                  AS_VAR_SET([m4_normalize([$7])],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
                 ]
               )
             ],
             [dnl
-              _AS_ECHO_LOG([Checked features DO NOT work with extensions and with _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($6)],["not allowed"])  # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
-              AS_VAR_SET([m4_normalize($7)],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
+              _AS_ECHO_LOG([Checked features DO NOT work with extensions and with _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$6])],["not allowed"])  # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+              AS_VAR_SET([m4_normalize([$7])],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
             ]
           )
         ],
         [dnl
           _AS_ECHO_LOG([[Checked features DO NOT work with extensions]])
-          AS_VAR_SET([m4_normalize($7)],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
+          AS_VAR_SET([m4_normalize([$7])],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
           dnl Check whether features work with _XOPEN_SOURCE
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
             ])],
             [dnl
-              _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize($3)])
+              _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize([$3])])
               dnl Check default state (without enabling/disabling)
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $src_Var
                 ])],
                 [dnl
                   _AS_ECHO_LOG([[Checked features work by default]])
-                  AS_VAR_SET([m4_normalize($6)],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$6])],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
                 ],
                 [dnl
                   _AS_ECHO_LOG([[Checked features DO NOT by default]])
-                  AS_VAR_SET([m4_normalize($6)],["required"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$6])],["required"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
                 ]
               )
               dnl Check whether features work with _XOPEN_SOURCE and extensions
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $defs_Var
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
                 ])],
                 [dnl
                   _AS_ECHO_LOG([[Checked features work with _XOPEN_SOURCE and extensions]])
-                  AS_VAR_SET([m4_normalize($5)],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$5])],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
                 ],
                 [dnl
                   _AS_ECHO_LOG([[Checked features DO NOT work with _XOPEN_SOURCE and extensions]])
-                  AS_VAR_SET([m4_normalize($5)],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$5])],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
                 ]
               )
             ],
             [dnl
-              _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($5)],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
-              AS_VAR_SET([m4_normalize($6)],["not allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+              _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$5])],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+              AS_VAR_SET([m4_normalize([$6])],["not allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
             ]
           )
         ]
@@ -879,34 +874,34 @@ $src_Var
         ])],
         [dnl
           _AS_ECHO_LOG([[Checked features work with extensions]])
-          AS_VAR_SET([m4_normalize($4)],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
-          AS_VAR_SET([m4_normalize($7)],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
+          AS_VAR_SET([m4_normalize([$4])],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
+          AS_VAR_SET([m4_normalize([$7])],["yes"]) # VAR-FEATURES-DISABLEABLE-YES_NO
           dnl Check default state (without enabling/disabling)
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $src_Var
             ])],
             [dnl
               _AS_ECHO_LOG([[Checked features work by default]])
-              AS_VAR_SET([m4_normalize($5)],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+              AS_VAR_SET([m4_normalize([$5])],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
             ],
             [dnl
               _AS_ECHO_LOG([[Checked features DO NOT by default]])
-              AS_VAR_SET([m4_normalize($5)],["required"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+              AS_VAR_SET([m4_normalize([$5])],["required"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
             ]
           )
           dnl Check whether features work with extensions and _XOPEN_SOURCE
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $defs_Var
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
             ])],
             [dnl
-              _AS_ECHO_LOG([Checked features work with extensions and _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($6)],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+              _AS_ECHO_LOG([Checked features work with extensions and _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$6])],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
             ],
             [dnl
-              _AS_ECHO_LOG([Checked features DO NOT work with extensions and _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($6)],["not allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+              _AS_ECHO_LOG([Checked features DO NOT work with extensions and _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$6])],["not allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
             ]
           )
         ],
@@ -914,44 +909,44 @@ $src_Var
           _AS_ECHO_LOG([[Checked features DO NOT work with extensions]])
           dnl Check whether features work with _XOPEN_SOURCE
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
             ])],
             [dnl
-              _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($4)],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
+              _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$4])],["yes"]) # VAR-FEATURES-AVAILABLE-YES_NO
               dnl Check default state (without enabling/disabling)
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $src_Var
                 ])],
                 [dnl
                   _AS_ECHO_LOG([[Checked features work by default]])
-                  AS_VAR_SET([m4_normalize($6)],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$6])],["allowed"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
                 ],
                 [dnl
                   _AS_ECHO_LOG([[Checked features DO NOT by default]])
-                  AS_VAR_SET([m4_normalize($6)],["required"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
+                  AS_VAR_SET([m4_normalize([$6])],["required"]) # VAR-XOPEN-REQUIRED_NOT-ALLOWED_ALLOWED
                 ]
               )
               dnl Check whether features work with _XOPEN_SOURCE and extensions
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 $defs_Var
-[#define _XOPEN_SOURCE] m4_normalize($3)
+[#define _XOPEN_SOURCE] m4_normalize([$3])
 $src_Var
                 ])],
                 [dnl
-                  _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize($3) and extensions])
-                  AS_VAR_SET([m4_normalize($5)],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+                  _AS_ECHO_LOG([Checked features work with _XOPEN_SOURCE=m4_normalize([$3]) and extensions])
+                  AS_VAR_SET([m4_normalize([$5])],["allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
                 ],
                 [dnl
-                  _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize($3) and extensions])
-                  AS_VAR_SET([m4_normalize($5)],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
+                  _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize([$3]) and extensions])
+                  AS_VAR_SET([m4_normalize([$5])],["not allowed"]) # VAR-EXTENSIONS-REQUIRED_NOT-ALLOWED_ALLOWED
                 ]
               )
             ],
             [dnl
-              _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize($3)])
-              AS_VAR_SET([m4_normalize($4)],["no"]) # VAR-FEATURES-AVAILABLE-YES_NO
+              _AS_ECHO_LOG([Checked features DO NOT work with _XOPEN_SOURCE=m4_normalize([$3])])
+              AS_VAR_SET([m4_normalize([$4])],["no"]) # VAR-FEATURES-AVAILABLE-YES_NO
             ]
           )
         ]
@@ -1105,7 +1100,7 @@ AC_DEFUN([MHD_CHECK_BASIC_HEADERS], [dnl
   AC_COMPILE_IFELSE([dnl
     AC_LANG_PROGRAM([m4_n([$1])dnl
 _MHD_BASIC_INCLUDES
-    ], [[int i = 1; i++]])
+    ], [[int i = 1; i++; if(i) return i]])
   ], [$2], [$3])
 ])
 
@@ -1204,11 +1199,11 @@ choke me now;
 # Cache-check for defined symbols with printing results.
 
 AC_DEFUN([MHD_CHECK_DEFINED], [dnl
-  AS_VAR_PUSHDEF([mhd_cache_Var],[mhd_cv_macro_[]m4_tolower(m4_normalize($1))_defined])dnl
+  AS_VAR_PUSHDEF([mhd_cache_Var],[mhd_cv_macro_[]m4_tolower($1)_defined])dnl
   AC_CACHE_CHECK([dnl
-m4_ifnblank($5, [$5], [whether m4_normalize($1) is already defined])],
+m4_ifnblank([$5], [$5], [whether m4_normalize($1) is already defined])],
     [mhd_cache_Var], [dnl
-    _MHD_CHECK_DEFINED([m4_normalize($1)], [$2],
+    _MHD_CHECK_DEFINED([m4_normalize([$1])]), [$2],
       [mhd_cache_Var="yes"],
       [mhd_cache_Var="no"]
     )
@@ -1238,9 +1233,9 @@ MHD_CHECK_DEFINED([$1],[$2],[$4],[$5],[$3])])
 AC_DEFUN([MHD_CHECK_ACCEPT_DEFINE], [dnl
   AC_PREREQ([2.64])dnl for AS_VAR_PUSHDEF, AS_VAR_SET, m4_ifnblank
   AS_VAR_PUSHDEF([mhd_cache_Var],
-    [mhd_cv_define_[]m4_tolower($1)_accepted[]m4_ifnblank($2,[_[]$2])])dnl
+    [mhd_cv_define_][m4_tolower(m4_normilize([$1]))][_accepted][m4_ifnblank([$2],[_[]$2])])dnl
   AC_CACHE_CHECK([dnl
-m4_ifnblank([$6],[$6],[whether headers accept $1[]m4_ifnblank($2,[ with value $2])])],
+m4_ifnblank([$6],[$6],[whether headers accept $1]m4_ifnblank([$2],[ with value $2]))],
     [mhd_cache_Var], [dnl
     MHD_CHECK_BASIC_HEADERS([
 m4_n([$3])[#define ]$1 m4_default_nblank($2,[[1]])],
@@ -1262,8 +1257,8 @@ m4_n([$3])[#define ]$1 m4_default_nblank($2,[[1]])],
 # checks whether it can be defined.
 
 AC_DEFUN([MHD_CHECK_DEF_AND_ACCEPT], [dnl
-  MHD_CHECK_DEFINED([m4_normalize($1)], [$3], [$4], [dnl
-    MHD_CHECK_ACCEPT_DEFINE([m4_normalize($1)], [m4_normalize($2)], [$3], [$5], [$6])dnl
+  MHD_CHECK_DEFINED([m4_normalize([$1])], [$3], [$4], [dnl
+    MHD_CHECK_ACCEPT_DEFINE([m4_normalize([$1])], [m4_normalize([$2])], [$3], [$5], [$6])dnl
   ])dnl
 ])
 
