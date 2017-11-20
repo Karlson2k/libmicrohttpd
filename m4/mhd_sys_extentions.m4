@@ -1186,7 +1186,7 @@ m4_n([$2])dnl
 choke me now;
 #endif
         ]],[])
-    ], [m4_default_nblank($3)], [m4_default_nblank($4)]
+    ], [m4_default_nblank([$3])], [m4_default_nblank([$4])]
   )
 ])
 
@@ -1199,11 +1199,11 @@ choke me now;
 # Cache-check for defined symbols with printing results.
 
 AC_DEFUN([MHD_CHECK_DEFINED], [dnl
-  AS_VAR_PUSHDEF([mhd_cache_Var],[mhd_cv_macro_[]m4_tolower($1)_defined])dnl
+  AS_VAR_PUSHDEF([mhd_cache_Var],[mhd_cv_macro_[]m4_tolower(m4_normalize($1))_defined])dnl
   AC_CACHE_CHECK([dnl
 m4_ifnblank([$5], [$5], [whether m4_normalize($1) is already defined])],
     [mhd_cache_Var], [dnl
-    _MHD_CHECK_DEFINED([m4_normalize([$1])]), [$2],
+    _MHD_CHECK_DEFINED([m4_normalize($1)], [$2],
       [mhd_cache_Var="yes"],
       [mhd_cache_Var="no"]
     )
@@ -1233,9 +1233,9 @@ MHD_CHECK_DEFINED([$1],[$2],[$4],[$5],[$3])])
 AC_DEFUN([MHD_CHECK_ACCEPT_DEFINE], [dnl
   AC_PREREQ([2.64])dnl for AS_VAR_PUSHDEF, AS_VAR_SET, m4_ifnblank
   AS_VAR_PUSHDEF([mhd_cache_Var],
-    [mhd_cv_define_][m4_tolower(m4_normilize([$1]))][_accepted][m4_ifnblank([$2],[_[]$2])])dnl
+    [mhd_cv_define_[]m4_tolower(m4_normalize($1))[]_accepted[]m4_ifnblank([$2],[_[]$2])])dnl
   AC_CACHE_CHECK([dnl
-m4_ifnblank([$6],[$6],[whether headers accept $1]m4_ifnblank([$2],[ with value $2]))],
+m4_ifnblank([$6],[$6],[whether headers accept $1[]m4_ifnblank([$2],[[ with value ]$2])])],
     [mhd_cache_Var], [dnl
     MHD_CHECK_BASIC_HEADERS([
 m4_n([$3])[#define ]$1 m4_default_nblank($2,[[1]])],
@@ -1257,8 +1257,8 @@ m4_n([$3])[#define ]$1 m4_default_nblank($2,[[1]])],
 # checks whether it can be defined.
 
 AC_DEFUN([MHD_CHECK_DEF_AND_ACCEPT], [dnl
-  MHD_CHECK_DEFINED([m4_normalize([$1])], [$3], [$4], [dnl
-    MHD_CHECK_ACCEPT_DEFINE([m4_normalize([$1])], [m4_normalize([$2])], [$3], [$5], [$6])dnl
+  MHD_CHECK_DEFINED([m4_normalize($1)], [$3], [$4], [dnl
+    MHD_CHECK_ACCEPT_DEFINE([m4_normalize($1)], [m4_normalize($2)], [$3], [$5], [$6])dnl
   ])dnl
 ])
 
