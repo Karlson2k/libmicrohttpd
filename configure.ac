@@ -1570,14 +1570,13 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        # A bit of hack: unset cache variable to force recheck
        AS_UNSET([ac_cv_header_gnutls_gnutls_h])
        AC_CHECK_HEADERS([gnutls/gnutls.h],
-        [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+        [AS_UNSET([ac_cv_lib_gnutls_gnutls_priority_set]) # A bit of hack: unset cache variable to force recheck
+         AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
             GNUTLS_CPPFLAGS="$LIBGCRYPT_CFLAGS"
             GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
             GNUTLS_LDFLAGS="$LIBGCRYPT_LIBS"
             GNUTLS_LIBS="-lgnutls"
-            # A bit of hack: unset cache variable to force recheck
-            AS_UNSET([ac_cv_lib_gnutls_gnutls_load_file])
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
