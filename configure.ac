@@ -1576,6 +1576,8 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
             GNUTLS_LDFLAGS="$LIBGCRYPT_LIBS"
             GNUTLS_LIBS="-lgnutls"
+            # A bit of hack: unset cache variable to force recheck
+            AS_UNSET([ac_cv_lib_gnutls_gnutls_load_file])
             AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
@@ -1654,7 +1656,6 @@ choke me now
          # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
          CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
          AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-         # Check for GnuTLS with gcrypt flags
          CPPFLAGS="$SAVE_CPPFLAGS"
          CFLAGS="$SAVE_CFLAGS"
        ]
