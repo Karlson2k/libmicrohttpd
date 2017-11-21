@@ -288,7 +288,7 @@ ${mhd_mse_sys_features_src}
   ])
   AS_VAR_IF([[mhd_cv_headers_useful_features_present]], [["yes"]],
     [
-      AS_IF([[test "x${mhd_mse_xopen_defines}" = "x"]],
+      AS_IF([[test "x${mhd_mse_xopen_defines}" = "x"]], [[:]],
         [
           AC_CACHE_CHECK([[whether useful system-specific features works with ${mhd_mse_xopen_flags}]],
             [[mhd_cv_headers_useful_features_works_xopen]], [dnl
