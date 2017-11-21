@@ -51,8 +51,6 @@
 
 AC_DEFUN([MHD_SYS_EXT],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, AS_VAR_SET_IF, m4_ifnblank
-  m4_pattern_forbid([_?MHD_])dnl
-  m4_pattern_allow([MHD_config])dnl
   AC_LANG_PUSH([C])dnl Use C language for simplicity
   mhd_mse_sys_ext_defines=""
   mhd_mse_sys_ext_flags=""

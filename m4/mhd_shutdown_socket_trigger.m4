@@ -25,11 +25,6 @@ AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_REQUIRE([AC_CANONICAL_HOST])dnl
   AC_REQUIRE([AC_PROG_CC])dnl
   AC_REQUIRE([AX_PTHREAD])dnl
-  m4_pattern_allow([MHD_CST_SAVE_])dnl
-  m4_pattern_allow([MHD_socket])dnl
-  m4_pattern_allow([MHD_INVALID_SOCKET])dnl
-  m4_pattern_allow([MHD_POSIX_SOCKETS])dnl
-  m4_pattern_allow([MHD_WINSOCK_SOCKETS])dnl
   AC_CHECK_HEADERS([sys/time.h],[AC_CHECK_FUNCS([gettimeofday])],[], [AC_INCLUDES_DEFAULT])
   AC_CHECK_HEADERS([time.h],[AC_CHECK_FUNCS([[nanosleep]])],[], [AC_INCLUDES_DEFAULT])
   AC_CHECK_HEADERS([unistd.h],[AC_CHECK_FUNCS([usleep])],[], [AC_INCLUDES_DEFAULT])
