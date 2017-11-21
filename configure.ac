@@ -1570,7 +1570,8 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
        # A bit of hack: unset cache variable to force recheck
        AS_UNSET([ac_cv_header_gnutls_gnutls_h])
        AC_CHECK_HEADERS([gnutls/gnutls.h],
-        [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+        [AS_UNSET([ac_cv_lib_gnutls_gnutls_priority_set]) # A bit of hack: unset cache variable to force recheck
+         AC_CHECK_LIB([gnutls], [gnutls_priority_set],
           [
             GNUTLS_CPPFLAGS="$LIBGCRYPT_CFLAGS"
             GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
@@ -1654,7 +1655,6 @@ choke me now
          # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
          CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
          AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-         # Check for GnuTLS with gcrypt flags
          CPPFLAGS="$SAVE_CPPFLAGS"
          CFLAGS="$SAVE_CFLAGS"
        ]
