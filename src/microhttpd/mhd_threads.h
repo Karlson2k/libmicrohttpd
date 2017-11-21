@@ -112,7 +112,7 @@
     MHD_thread_handle_  handle; /**< To be used in other threads */
     MHD_thread_ID_      ID;     /**< To be used in thread itself */
   };
-  typedef union _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
+  typedef struct _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
 #  endif /* ! MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD */
 #elif defined(MHD_USE_W32_THREADS)
   struct _MHD_thread_handle_ID_
