@@ -313,7 +313,7 @@ ${mhd_mse_sys_features_src}
           test "x${mhd_cv_headers_useful_features_works_xopen}" = "xno" && \
           test "x${mhd_mse_xopen_defines}" != "x"]],
     [
-      AS_CASE([["${mhd_mse_xopen_features}"]], [*', activated by _XOPEN_SOURCE'*],
+      _MHD_VAR_CONTAIN([["mhd_mse_xopen_features"]], [[, activated by _XOPEN_SOURCE]],
         [
           AC_MSG_WARN([[_XOPEN_SOURCE macro is required to activate all headers symbols, however some useful system-specific features does not work with _XOPEN_SOURCE. ]dnl
           [_XOPEN_SOURCE macro will not be used.]])
@@ -406,6 +406,22 @@ m4_define([_MHD_VAR_IF],[dnl
 m4_ifnblank([$3$4],[dnl
 AS_VAR_IF([$1],[$2],[$3],[$4])])])
 
+#
+# _MHD_STRING_CONTAIN(VAR, MATCH, [IF-MATCH], [IF-NOT-MATCH])
+#
+
+m4_define([_MHD_VAR_CONTAIN],[dnl
+AS_IF([[`echo "${]$1[}" | grep -F ']$2[' >/dev/null 2>&1`]], [$3], [$4])
+])
+
+#
+# _MHD_STRING_CONTAIN_BRE(VAR, BRE, [IF-MATCH], [IF-NOT-MATCH])
+#
+
+m4_define([_MHD_VAR_CONTAIN_BRE],[dnl
+AS_IF([[`echo "${]$1[}" | grep ']$2[' >/dev/null 2>&1`]], [$3], [$4])
+])
+
 # SYNOPSIS
 #
 # _MHD_CHECK_POSIX2008(DEFINES_VAR, FLAGS_VAR,
@@ -476,14 +492,13 @@ int main()
       )
     ]
   )
-  AS_CASE([["${mhd_cv_headers_posix2008}"]],
-    [available*],
-      [
-        AS_CASE([["${mhd_cv_headers_posix2008}"]], [*', does not work with _XOPEN_SOURCE'*], [[:]],
-          [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[700]])]
-        )
-        $4
-      ],
+  _MHD_VAR_CONTAIN_BRE([[mhd_cv_headers_posix2008]], [[^available]],
+    [
+      _MHD_VAR_CONTAIN([[mhd_cv_headers_posix2008]], [[does not work with _XOPEN_SOURCE]], [[:]],
+        [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[700]])]
+      )
+      $4
+    ],
     [$5]
   )
 ])
@@ -736,10 +751,12 @@ AC_DEFUN([_MHD_CHECK_POSIX_FEATURES], [dnl
   AS_VAR_PUSHDEF([defs_Var], [mhd_cpsxf_tmp_defs_variable])dnl
   AS_VAR_SET([src_Var],["
 $1
-"])dnl To reduce 'configure' size
+"])
+  dnl To reduce 'configure' size
   AS_VAR_SET([defs_Var],["
 $2
-"])dnl To reduce 'configure' size
+"])
+  dnl To reduce 'configure' size
 
   dnl Some platforms enable most features when no
   dnl specific mode is requested by macro.
