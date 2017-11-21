@@ -311,7 +311,7 @@ ${mhd_mse_sys_features_src}
           test "x${mhd_cv_headers_useful_features_works_xopen}" = "xno" && \
           test "x${mhd_mse_xopen_defines}" != "x"]],
     [
-      _MHD_VAR_CONTAIN([["mhd_mse_xopen_features"]], [[, activated by _XOPEN_SOURCE]],
+      _MHD_VAR_CONTAIN([[mhd_mse_xopen_features]], [[, activated by _XOPEN_SOURCE]],
         [
           AC_MSG_WARN([[_XOPEN_SOURCE macro is required to activate all headers symbols, however some useful system-specific features does not work with _XOPEN_SOURCE. ]dnl
           [_XOPEN_SOURCE macro will not be used.]])
