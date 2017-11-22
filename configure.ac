@@ -1311,6 +1311,46 @@ int sendfile(int, int, off_t, size_t,
    )
   ]
 )
+AS_VAR_IF([[found_sendfile]], [["no"]],
+  [
+   AC_MSG_CHECKING([[for Darwin-style sendfile(2)]])
+   AC_LINK_IFELSE(
+     [AC_LANG_PROGRAM(
+       [[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+
+static void empty_func(void)
+{
+/* Check for declaration */
+  (void)sendfile;
+}
+/* Declare again to check form match */
+int sendfile(int, int, off_t, off_t*,
+             struct sf_hdtr *, int);
+       ]],
+       [[
+         int fd=0, s=1;
+         off_t o = 0;
+         off_t l = 5;
+         int r;
+         r = sendfile (fd, s, o, &l, (void*)0, 0);
+         if (r)
+           empty_func();
+       ]]
+      )
+     ],
+     [
+       AC_DEFINE([HAVE_DARWIN_SENDFILE], [1], [Define to 1 if you have Darwin-style sendfile(2).])
+       found_sendfile="yes, Darwin-style"
+       AC_MSG_RESULT([[yes]])
+     ],
+     [AC_MSG_RESULT([[no]])
+     ]
+   )
+  ]
+)
 
 AS_VAR_IF([[found_sendfile]], [["no"]],
   [
