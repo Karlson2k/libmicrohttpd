@@ -72,7 +72,7 @@
 #else  /* ! __UINT32_MAX__ */
 #define UINT32_MAX ((int32_t)0xFFFFFFFF)
 #endif /* ! __UINT32_MAX__ */
-#endif /* !UNT32_MAX */
+#endif /* !UINT32_MAX */
 
 #ifndef UINT64_MAX
 #ifdef __UINT64_MAX__
@@ -80,18 +80,48 @@
 #else  /* ! __UINT64_MAX__ */
 #define UINT64_MAX ((uint64_t)0xFFFFFFFFFFFFFFFF)
 #endif /* ! __UINT64_MAX__ */
-#endif /* !INT32_MAX */
+#endif /* !UINT64_MAX */
+
+#ifndef INT64_MAX
+#ifdef __INT64_MAX__
+#define INT64_MAX __INT64_MAX__
+#else  /* ! __INT64_MAX__ */
+#define INT64_MAX ((int64_t)0x7FFFFFFFFFFFFFFF)
+#endif /* ! __UINT64_MAX__ */
+#endif /* !INT64_MAX */
 
 #ifndef SIZE_MAX
 #ifdef __SIZE_MAX__
 #define SIZE_MAX __SIZE_MAX__
+#elif defined(UINTPTR_MAX)
+#define SIZE_MAX UINTPTR_MAX
 #else  /* ! __SIZE_MAX__ */
 #define SIZE_MAX MHD_UNSIGNED_TYPE_MAX_(size_t)
 #endif /* ! __SIZE_MAX__ */ 
 #endif /* !SIZE_MAX */
 
+#ifndef SSIZE_MAX
+#ifdef __SSIZE_MAX__
+#define SSIZE_MAX __SSIZE_MAX__
+#elif defined(PTRDIFF_MAX)
+#define SSIZE_MAX PTRDIFF_MAX
+#elif defined(INTPTR_MAX)
+#define SSIZE_MAX INTPTR_MAX
+#else
+#define SSIZE_MAN MHD_SIGNED_TYPE_MAX_(ssize_t)
+#endif
+#endif /* ! SSIZE_MAX */
+
 #ifndef OFF_T_MAX
+#ifdef OFF_MAX
+#define OFF_T_MAX OFF_MAX
+#elif defined(OFFT_MAX)
+#define OFF_T_MAX OFFT_MAX
+#elif defined(__APPLE__) && defined(__MACH__)
+#define OFF_T_MAX INT64_MAX
+#else
 #define OFF_T_MAX MHD_SIGNED_TYPE_MAX_(off_t)
+#endif
 #endif /* !OFF_T_MAX */
 
 #if defined(_LARGEFILE64_SOURCE) && !defined(OFF64_T_MAX)
