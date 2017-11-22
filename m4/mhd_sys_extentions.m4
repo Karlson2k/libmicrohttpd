@@ -408,16 +408,18 @@ AS_VAR_IF([$1],[$2],[$3],[$4])])])
 # _MHD_STRING_CONTAIN(VAR, MATCH, [IF-MATCH], [IF-NOT-MATCH])
 #
 
-m4_define([_MHD_VAR_CONTAIN],[dnl
-AS_IF([[`echo "${]$1[}" | grep -F ']$2[' >/dev/null 2>&1`]], [$3], [$4])
+AC_DEFUN([_MHD_VAR_CONTAIN],[dnl
+AC_REQUIRE([AC_PROG_FGREP])dnl
+AS_IF([[`echo "${]$1[}" | $FGREP ']$2[' >/dev/null 2>&1`]], [$3], [$4])
 ])
 
 #
 # _MHD_STRING_CONTAIN_BRE(VAR, BRE, [IF-MATCH], [IF-NOT-MATCH])
 #
 
-m4_define([_MHD_VAR_CONTAIN_BRE],[dnl
-AS_IF([[`echo "${]$1[}" | grep ']$2[' >/dev/null 2>&1`]], [$3], [$4])
+AC_DEFUN([_MHD_VAR_CONTAIN_BRE],[dnl
+AC_REQUIRE([AC_PROG_GREP])dnl
+AS_IF([[`echo "${]$1[}" | $GREP ']$2[' >/dev/null 2>&1`]], [$3], [$4])
 ])
 
 # SYNOPSIS
@@ -562,14 +564,13 @@ choke me now;
       )
     ]
   )
-  AS_CASE([["${mhd_cv_headers_posix2001}"]],
-    [available*],
-      [
-        AS_CASE([["${mhd_cv_headers_posix2001}"]], [*', does not work with _XOPEN_SOURCE'*], [[:]],
-          [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[600]])]
-        )
-        $4
-      ],
+  _MHD_VAR_CONTAIN_BRE([[mhd_cv_headers_posix2001]], [[^available]],
+    [
+      _MHD_VAR_CONTAIN([[mhd_cv_headers_posix2001]], [[does not work with _XOPEN_SOURCE]], [[:]],
+        [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[600]])]
+      )
+      $4
+    ],
     [$5]
   )
 ])
@@ -632,14 +633,13 @@ int main()
       )
     ]
   )
-  AS_CASE([["${mhd_cv_headers_susv2}"]],
-    [available*],
-      [
-        AS_CASE([["${mhd_cv_headers_susv2}"]], [*', does not work with _XOPEN_SOURCE'*], [[:]],
-          [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[500]])]
-        )
-        $4
-      ],
+  _MHD_VAR_CONTAIN_BRE([[mhd_cv_headers_susv2]], [[^available]],
+    [
+      _MHD_VAR_CONTAIN([[mhd_cv_headers_susv2]], [[does not work with _XOPEN_SOURCE]], [[:]],
+        [_MHD_SYS_EXT_VAR_ADD_FLAG([$1],[$2],[[_XOPEN_SOURCE]],[[500]])]
+      )
+      $4
+    ],
     [$5]
   )
 ])
