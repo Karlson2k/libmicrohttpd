@@ -43,4 +43,3 @@ po/configure.acT
 po/Makevars.template
 po/POTFILES
 po/configargs.stamp
-src/examples/timeout
