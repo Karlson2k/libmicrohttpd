@@ -529,7 +529,7 @@ test_wrap (const char *test_name, int
 int testsuite_curl_global_init (void)
 {
   CURLcode res;
-#if LIBCURL_VERSION_NUM >= 0x07380
+#if LIBCURL_VERSION_NUM >= 0x073800
   if (CURLSSLSET_OK != curl_global_sslset(CURLSSLBACKEND_GNUTLS, NULL, NULL))
     {
       if (CURLSSLSET_TOO_LATE == curl_global_sslset(CURLSSLBACKEND_OPENSSL, NULL, NULL))
