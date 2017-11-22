@@ -345,7 +345,7 @@ ${mhd_mse_sys_features_src}
     AH_TEMPLATE([[_TANDEM_SOURCE]], [Define to 1 if it is required by headers to expose additional symbols])dnl
     AH_TEMPLATE([[_ALL_SOURCE]], [Define to 1 if it is required by headers to expose additional symbols])dnl
   ])
-  for mhd_mse_Flag in ${mhd_mse_xopen_flags} ${mhd_mse_sys_ext_flags}
+  for mhd_mse_Flag in ${mhd_mse_sys_ext_flags} ${mhd_mse_xopen_flags}
   do
     m4_ifnblank([$1], [dnl
       AS_VAR_APPEND([$1],[[" -D$mhd_mse_Flag"]])
@@ -361,8 +361,8 @@ ${mhd_mse_sys_features_src}
   done
   AS_UNSET([[mhd_mse_Flag]])
   dnl Trim whitespaces
-  mhd_mse_result=`echo ${mhd_mse_xopen_flags} ${mhd_mse_sys_ext_flags}`
-  AC_MSG_RESULT([[$mhd_mse_result]])
+  mhd_mse_result=`echo ${mhd_mse_sys_ext_flags} ${mhd_mse_xopen_flags}`
+  AC_MSG_RESULT([[${mhd_mse_result}]])
   AS_UNSET([[mhd_mse_result]])
   AS_UNSET([[mhd_mse_xopen_flags]])
   AS_UNSET([[mhd_mse_sys_ext_flags]])
@@ -388,8 +388,8 @@ m4_define([_MHD_SYS_EXT_VAR_ADD_FLAG], [dnl
     ]m4_normalize([$1])[="[$]{]m4_normalize([$1])[}[#define ]m4_normalize($3) 1
 "
     AS_IF([test "x[$]{]m4_normalize([$2])[}" = "x"],
-      []m4_normalize([$2])[="]m4_normalize([$3])[=1"],
-      []m4_normalize([$2])[="[$]{]m4_normalize([$2])[} ]m4_normalize([$3])[=1"]
+      []m4_normalize([$2])[="]m4_normalize([$3])["],
+      []m4_normalize([$2])[="[$]{]m4_normalize([$2])[} ]m4_normalize([$3])["]
     )dnl
   ])dnl
 ])
@@ -1272,7 +1272,7 @@ m4_n([$3])dnl
 #error Value of _XOPEN_SOURCE is less than 500
 choke me now;
 #endif
-              ]],[[int i = 0; i++]])],
+              ]],[[int i = 0; i++; if(i) return i]])],
             [[mhd_cv_macro__xopen_source_def_fiveh="yes"]],
             [[mhd_cv_macro__xopen_source_def_fiveh="no"]]
           )dnl
