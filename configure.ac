@@ -1730,7 +1730,7 @@ choke me now
              MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
              AC_DEFINE([[MHD_HTTPS_REQUIRE_GRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
             ],
-            [[
+            [
              MSG_HTTPS="yes (using libgnutls)"
              AS_UNSET([LIBGCRYPT_CFLAGS])
              AS_UNSET([LIBGCRYPT_LIBS])
@@ -1738,7 +1738,7 @@ choke me now
              MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS"
              MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
              MHD_LIBDEPS="$GNUTLS_LIBS $MHD_LIBDEPS"
-            ]]
+            ]
           )
           AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
             [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
