@@ -1263,7 +1263,7 @@ ssize_t sendfile(int, int, off_t*, size_t);
   ],
   [
     AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
-    found_sendfile="yes, linux-style"
+    found_sendfile="yes, Linux-style"
     AC_MSG_RESULT([[yes]])
     AC_CHECK_FUNCS([sendfile64]) 
   ],
