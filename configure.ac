@@ -1711,6 +1711,12 @@ choke me now
         AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
         enable_https=no
         MSG_HTTPS="no (lacking $crypt_missing)"
+        AS_UNSET([LIBGCRYPT_CFLAGS])
+        AS_UNSET([LIBGCRYPT_LIBS])
+        AS_UNSET([GNUTLS_CPPFLAGS])
+        AS_UNSET([GNUTLS_CFLAGS])
+        AS_UNSET([GNUTLS_LDFLAGS])
+        AS_UNSET([GNUTLS_LIBS])
        ],
          [
           AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
@@ -1724,13 +1730,15 @@ choke me now
              MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
              AC_DEFINE([[MHD_HTTPS_REQUIRE_GRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
             ],
-            [[
+            [
              MSG_HTTPS="yes (using libgnutls)"
+             AS_UNSET([LIBGCRYPT_CFLAGS])
+             AS_UNSET([LIBGCRYPT_LIBS])
              MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $GNUTLS_CPPFLAGS"
              MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS"
              MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
              MHD_LIBDEPS="$GNUTLS_LIBS $MHD_LIBDEPS"
-            ]]
+            ]
           )
           AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
             [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
@@ -1754,6 +1762,12 @@ choke me now
      AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
      enable_https=no
      MSG_HTTPS="no (lacking $crypt_missing)"
+     AS_UNSET([LIBGCRYPT_CFLAGS])
+     AS_UNSET([LIBGCRYPT_LIBS])
+     AS_UNSET([GNUTLS_CPPFLAGS])
+     AS_UNSET([GNUTLS_CFLAGS])
+     AS_UNSET([GNUTLS_LDFLAGS])
+     AS_UNSET([GNUTLS_LIBS])
     ]
   )
 else
