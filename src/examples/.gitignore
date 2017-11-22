@@ -32,3 +32,4 @@
 /https_echo_client_example.c
 /authorization_example
 upgrade_example
+/timeout

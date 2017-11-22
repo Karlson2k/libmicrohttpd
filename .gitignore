@@ -42,15 +42,5 @@ Makefile
 po/configure.acT
 po/Makevars.template
 po/POTFILES
+po/configargs.stamp
 src/examples/timeout
-src/microhttpd/test_daemon.trs
-src/microhttpd/test_shutdown_poll
-src/microhttpd/test_shutdown_select
-src/microhttpd/test_str_compare
-src/microhttpd/test_str_to_value
-src/microhttpd/test_upgrade
-src/microhttpd/test_upgrade_ssl
-src/testcurl/test_delete
-src/microhttpd/test_options
-src/microhttpd/test_start_stop
-src/microhttpd/test_str_token
