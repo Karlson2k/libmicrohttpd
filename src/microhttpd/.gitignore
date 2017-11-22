@@ -43,3 +43,13 @@
 *.exe
 test_upgrade_tls
 test_http_reasons
+/test_daemon.trs
+/test_shutdown_poll_ignore
+/test_shutdown_select_ignore
+/test_str_compare
+/test_str_to_value
+/test_upgrade
+/test_upgrade_ssl
+/test_options
+/test_start_stop
+/test_str_token
