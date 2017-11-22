@@ -65,6 +65,12 @@
 #define _MHD_FD_SETSIZE_IS_DEFAULT 1
 #endif /* !FD_SETSIZE && !WinSock*/
 
+#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE) || \
+    defined(HAVE_DARWIN_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
+/* Have any supported sendfile() function. */
+#define _MHD_HAVE_SENDFILE
+#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE ||
+          HAVE_DARWIN_SENDFILE || HAVE_SOLARIS_SENDFILE */
 #if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
 #define MHD_LINUX_SOLARIS_SENDFILE 1
 #endif /* HAVE_LINUX_SENDFILE || HAVE_SOLARIS_SENDFILE */
