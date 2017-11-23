@@ -6623,6 +6623,13 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else
       return MHD_NO;
 #endif
+    case MHD_FEATURE_SENDFILE:
+#ifdef _MHD_HAVE_SENDFILE
+      return MHD_YES;
+#else
+      return MHD_NO;
+#endif
+
     }
   return MHD_NO;
 }

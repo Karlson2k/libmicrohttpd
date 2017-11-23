@@ -3477,7 +3477,14 @@ enum MHD_FEATURE
    * If SIGPIPE suppression is not supported, application must handle
    * SIGPIPE signal by itself.
    */
-  MHD_FEATURE_AUTOSUPPRESS_SIGPIPE = 20
+  MHD_FEATURE_AUTOSUPPRESS_SIGPIPE = 20,
+
+  /**
+   * Get whether MHD use system's sendfile() function to send
+   * file-FD based responses over non-TLS connections.
+   * @note Since v0.9.56
+   */
+  MHD_FEATURE_SENDFILE = 21
 };
 
 
