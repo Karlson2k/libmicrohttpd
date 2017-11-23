@@ -462,6 +462,7 @@ check_nonce_nc (struct MHD_Connection *connection,
  * @param connection The MHD connection structure
  * @return NULL if no username could be found, a pointer
  * 			to the username if found
+ * @warning Returned value must be freed by #MHD_free().
  * @ingroup authentication
  */
 char *

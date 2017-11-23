@@ -81,10 +81,11 @@ struct MemoryPool
  * Free the memory given by @a ptr. Calls "free(ptr)".  This function
  * should be used to free the username returned by
  * #MHD_digest_auth_get_username().
+ * @note Since v0.9.56
  *
  * @param ptr pointer to free.
  */
-void
+_MHD_EXTERN void
 MHD_free (void *ptr)
 {
   free (ptr);
