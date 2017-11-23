@@ -1,5 +1,27 @@
+Thu Nov 23 08:56:00 MSK 2017
+	Fixed receiving large requests in TLS mode with epoll.
+	Improved GnuTLS and libgcrypt detection in configure, do not ignore
+	flags in GNUTLS_{CFLAGS,LIBS} variables.
+	Added special trick for Solaris/Openindiana to find GnuTLS-3 with
+	right bitness.
+	Added support for Solaris sendfile(3) function.
+	Fixed dataraces with thread ID on W32 and pthread. Now check for
+	correct thread in MHD_queue_response() works correctly.
+	Fixed and silenced compiler warnings in tests and examples.
+	Removed usage of TLS flags in examples where TLS is not required.
+	Added support for MultiSSL in https tests with libcurl >= 7.56.0.
+	Improved detection of OFF_T_MAX, SIZE_MAX. Added macros for
+	SSIZE_MAX in mhd_limits.h. There are some platforms that really
+	require those macros.
+	Added support for Darwin's sendfile() function.
+	Updated .gitignore files.
+	Reworked mhd_sys_extentions.m4 with better support of modern
+	platforms, more reliable detection of required macros, and
+	detection of disabling of system-specific features by
+	_XOPEN_SOURCE macro. -EG
+
 Wed Nov  1 20:43:00 MSK 2017
-	Mixed and muted many compiler warnings. Now it GCC's flags
+	Mixed and muted many compiler warnings. Now GCC's flags
 	-Wall -Wextra could be used for building.
 	Fixed compilation of examples without libmagic.
 	Better detection of libgnutls in configure.
