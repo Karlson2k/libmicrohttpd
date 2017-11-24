@@ -22,14 +22,14 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.55],[libmicrohttpd@gnu.org])
+AC_INIT([GNU Libmicrohttpd],[0.9.56],[libmicrohttpd@gnu.org])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-LIB_VERSION_CURRENT=55
+LIB_VERSION_CURRENT=56
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=43
+LIB_VERSION_AGE=44
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -770,7 +770,7 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
 
 AC_CHECK_DECLS([getsockname],
   [
-   AC_CHECK_FUNCS([getsockname], 
+   AC_CHECK_FUNCS([getsockname],
      [
       AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhc_cv_getsockname_usable]],
         [
@@ -1273,7 +1273,7 @@ ssize_t sendfile(int, int, off_t*, size_t);
     AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
     found_sendfile="yes, Linux-style"
     AC_MSG_RESULT([[yes]])
-    AC_CHECK_FUNCS([sendfile64]) 
+    AC_CHECK_FUNCS([sendfile64])
   ],
   [AC_MSG_RESULT([[no]])
   ]
@@ -1398,7 +1398,7 @@ ssize_t sendfile(int out_fd, int in_fd,
        MHD_LIBDEPS="-lsendfile $MHD_LIBDEPS"
        MHD_LIBDEPS_PKGCFG="-lsendfile $MHD_LIBDEPS_PKGCFG"
        AC_MSG_RESULT([[yes]])
-       AC_CHECK_FUNCS([sendfile64]) 
+       AC_CHECK_FUNCS([sendfile64])
      ],
      [AC_MSG_RESULT([[no]])
      ]
@@ -1575,7 +1575,7 @@ choke me now
            have_gnutls=no
           ])
 
-       AS_IF([test "x$have_gnutls" != "xyes"], 
+       AS_IF([test "x$have_gnutls" != "xyes"],
          [
           AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])
           AS_UNSET([GNUTLS_CPPFLAGS])

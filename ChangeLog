@@ -1,3 +1,6 @@
+Fri Nov 24 20:14:02 CET 2017
+	Releasing GNU libmicrohttpd 0.9.56. -CG
+
 Thu Nov 23 17:40:00 MSK 2017
 	Added MHD_FEATURE_SENDFILE enum value and report. -EG
 

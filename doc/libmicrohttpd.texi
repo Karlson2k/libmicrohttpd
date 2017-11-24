@@ -2994,6 +2994,9 @@ functions @code{MHD_create_post_processor()},
 @code{MHD_post_process()}, @code{MHD_destroy_post_processor()}
 can be used.
 
+@item MHD_FEATURE_SENDFILE
+Get whether @code{sendfile()} is supported.
+
 @end table
 @end deftp
 
