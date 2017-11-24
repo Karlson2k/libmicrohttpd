@@ -1540,9 +1540,7 @@ choke me now
        SAVE_CFLAGS="$CFLAGS"
        SAVE_LDFLAGS="$LDFLAGS"
        SAVE_LIBS="$LIBS"
-       CPPFLAGS="$GNUTLS_CFLAGS $CPPFLAGS"
        CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-       LDFLAGS="$GNUTLS_LIBS $LDFLAGS"
        LIBS="$LIBS $GNUTLS_LIBS"
        AC_MSG_CHECKING([[whether GnuTLS is usable]])
        AC_LINK_IFELSE([
@@ -1557,7 +1555,9 @@ choke me now
           [
            AC_MSG_RESULT([[yes]])
            have_gnutls=yes
+           # GNUTLS_CFLAGS is actually CPPFLAGS
            GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
+           # GNUTLS_CFLAGS is combination of LDFLAGS and LIBS
            GNUTLS_LDFLAGS="$GNUTLS_LIBS"
           ],
           [
@@ -1639,9 +1639,9 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG
      SAVE_CFLAGS="$CFLAGS"
      SAVE_LDFLAGS="$LDFLAGS"
      SAVE_LIBS="$LIBS"
-     CPPFLAGS="$GNUTLS_CFLAGS $CPPFLAGS"
+     CPPFLAGS="$GNUTLS_CPPFLAGS $CPPFLAGS"
      CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-     LDFLAGS="$GNUTLS_LIBS $LDFLAGS"
+     LDFLAGS="$GNUTLS_LDFLAGS $LDFLAGS"
      LIBS="$LIBS $GNUTLS_LIBS"
      AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
      AC_LINK_IFELSE([
