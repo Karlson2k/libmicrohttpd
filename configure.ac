@@ -1617,7 +1617,6 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
             GNUTLS_LDFLAGS="$LIBGCRYPT_LIBS"
             GNUTLS_LIBS="-lgnutls"
-            AC_CHECK_LIB([gnutls], [gnutls_load_file], [AC_CHECK_LIB([gnutls], [gnutls_privkey_import_x509_raw], [have_gnutls_sni=yes])])
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
        CPPFLAGS="$SAVE_CPPFLAGS"
@@ -1645,9 +1644,18 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG
      LIBS="$LIBS $GNUTLS_LIBS"
      AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
      AC_LINK_IFELSE([
-       AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
+       AC_LANG_PROGRAM([[
+#include <gnutls/gnutls.h>
+#include <gnutls/abstract.h>
+          ]], [[
             gnutls_datum_t data;
-            gnutls_privkey_t key;
+            gnutls_privkey_t key = 0;
+#ifndef gnutls_load_file
+            (void)gnutls_load_file; /* Check for declaration. */
+#endif
+#ifndef gnutls_privkey_import_x509_raw
+            (void)gnutls_privkey_import_x509_raw; /* Check for declaration. */
+#endif
             gnutls_load_file("key.pem", &data);
             gnutls_privkey_import_x509_raw(key, &data, GNUTLS_X509_FMT_PEM, NULL, 0);
             gnutls_free(data.data);
