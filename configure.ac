@@ -372,7 +372,9 @@ AS_IF([[test "x$with_threads" = "xauto"]],
    [
     AC_MSG_CHECKING([[for W32 threads]])
     AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM([#include <windows.h>], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
+      [AC_LANG_PROGRAM([[
+#include <windows.h>
+         ]], [ HANDLE h = CreateThread(NULL, 0, NULL, NULL, 0, NULL);])]
       , [[mhd_have_w32_threads='yes']], [[mhd_have_w32_threads='no']]
       )
     AC_MSG_RESULT([[$mhd_have_w32_threads]])
@@ -676,7 +678,9 @@ if test "$enable_poll" != "no"; then
   else
     AC_MSG_CHECKING([for WSAPoll()])
     AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([[#include <winsock2.h>]], [[
+      AC_LANG_PROGRAM([[
+#include <winsock2.h>
+       ]], [[
 WSAPOLLFD fda[2];
 WSAPoll(fda, 2, 0);]])],
         [
@@ -713,7 +717,9 @@ fi
 if test "x$enable_epoll" = "xyes"; then
   AC_CACHE_CHECK([for epoll_create1()], [mhd_cv_have_epoll_create1], [
     AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[
+      AC_LANG_PROGRAM([[
+#include <sys/epoll.h>
+        ]], [[
 int fd;
 fd = epoll_create1(EPOLL_CLOEXEC);]])],
       [mhd_cv_have_epoll_create1=yes],
@@ -1080,7 +1086,9 @@ AC_CHECK_DECL([[clock_gettime]],
         ])
      ], [], [$MHD_LIBDEPS])
    LIBS="$SAVE_LIBS"
-  ], [], [[#include <time.h>]])
+  ], [], [[
+#include <time.h>
+  ]])
 
 AC_MSG_CHECKING([[for clock_get_time]])
 AC_LINK_IFELSE(
@@ -1544,7 +1552,9 @@ choke me now
        LIBS="$LIBS $GNUTLS_LIBS"
        AC_MSG_CHECKING([[whether GnuTLS is usable]])
        AC_LINK_IFELSE([
-         AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]], [[
+         AC_LANG_PROGRAM([[
+#include <gnutls/gnutls.h>
+          ]], [[
                 gnutls_session_t session;
                 gnutls_priority_t priorities;
                 gnutls_global_init();
