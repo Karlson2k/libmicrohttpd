@@ -2025,7 +2025,7 @@ AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Threading lib:     ${USE_THREADS}
   Use thread names:  ${enable_thread_names}
   Inter-thread comm: ${use_itc}
-  libcurl (testing): ${MSG_CURL}
+  Test with libcurl: ${MSG_CURL}
   Target directory:  ${prefix}
   Shutdown of listening socket
   trigger select:    ${mhd_cv_host_shtdwn_trgr_select}
