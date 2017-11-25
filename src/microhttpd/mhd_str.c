@@ -162,8 +162,10 @@ toasciiupper (char c)
 {
   return isasciilower (c) ? (c - 'a' + 'A') : c;
 }
+#endif /* Disable unused functions. */
 
 
+#if defined(MHD_FAVOR_SMALL_CODE) /* Used only in MHD_str_to_uvalue_n_() */
 /**
  * Convert US-ASCII decimal digit to its value.
  *
@@ -178,7 +180,7 @@ todigitvalue (char c)
 
   return -1;
 }
-#endif /* Disable unused functions. */
+#endif /* MHD_FAVOR_SMALL_CODE */
 
 
 /**

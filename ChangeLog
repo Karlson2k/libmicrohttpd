@@ -1,3 +1,6 @@
+Sat Nov 26 18:37:00 MSK 2017
+	Fixed build with optimisation for size. -EG
+
 Fri Nov 24 20:14:02 CET 2017
 	Releasing GNU libmicrohttpd 0.9.56. -CG
 
