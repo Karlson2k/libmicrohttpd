@@ -30,12 +30,12 @@
 #include "mhd_str.h"
 #include "mhd_compat.h"
 
-#if defined(_WIN32) && defined(MHD_W32_MUTEX_)
+#if defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
-#endif /* _WIN32 && MHD_W32_MUTEX_ */
+#endif /* MHD_W32_MUTEX_ */
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 /* 32 bit value is 4 bytes */

@@ -52,7 +52,7 @@
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #endif /* HTTPS_SUPPORT */
 
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
@@ -152,7 +152,7 @@ MHD_PanicCallback mhd_panic;
  */
 void *mhd_panic_cls;
 
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 /**
  * Track initialization of winsock
  */
@@ -1822,14 +1822,14 @@ thread_main_handle_connection (void *data)
           else
             {
               const time_t seconds_left = timeout - (now - con->last_activity);
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__CYGWIN__)
               tv.tv_sec = seconds_left;
-#else  /* _WIN32 */
+#else  /* _WIN32 && !__CYGWIN__ */
               if (seconds_left > TIMEVAL_TV_SEC_MAX)
                 tv.tv_sec = TIMEVAL_TV_SEC_MAX;
               else
                 tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) seconds_left;
-#endif /* _WIN32 */
+#endif /* _WIN32 && ! __CYGWIN__  */
             }
 	  tv.tv_usec = 0;
 	  tvp = &tv;
@@ -2073,7 +2073,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  * and if possible.
  */
 #define MHD_TLSLIB_NEED_PUSH_FUNC 1
-#endif /* !_WIN32 && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
+#endif /* !MHD_WINSOCK_SOCKETS && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
 
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
 /**
@@ -5489,7 +5489,7 @@ MHD_start_daemon_va (unsigned int flags,
       /* Apply the socket options according to listening_address_reuse. */
       if (0 == daemon->listening_address_reuse)
         {
-#ifndef _WIN32
+#ifdef MHD_WINSOCK_SOCKETS
           /* No user requirement, use "traditional" default SO_REUSEADDR
            * on non-W32 platforms, and do not fail if it doesn't work.
            * Don't use it on W32, because on W32 it will allow multiple
@@ -5505,12 +5505,12 @@ MHD_start_daemon_va (unsigned int flags,
                       MHD_socket_last_strerr_ ());
 #endif
           }
-#endif /* ! _WIN32 */
+#endif /* ! MHD_WINSOCK_SOCKETS */
         }
       else if (daemon->listening_address_reuse > 0)
         {
           /* User requested to allow reusing listening address:port. */
-#ifndef _WIN32
+#ifndef MHD_WINSOCK_SOCKETS
           /* Use SO_REUSEADDR on non-W32 platforms, and do not fail if
            * it doesn't work. */
           if (0 > setsockopt (listen_fd,
@@ -5524,20 +5524,20 @@ MHD_start_daemon_va (unsigned int flags,
                         MHD_socket_last_strerr_ ());
 #endif
             }
-#endif /* ! _WIN32 */
+#endif /* ! MHD_WINSOCK_SOCKETS */
           /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
            * Fail if SO_REUSEPORT is not defined or setsockopt fails.
            */
           /* SO_REUSEADDR on W32 has the same semantics
              as SO_REUSEPORT on BSD/Linux */
-#if defined(_WIN32) || defined(SO_REUSEPORT)
+#if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
           if (0 > setsockopt (listen_fd,
                               SOL_SOCKET,
-#ifndef _WIN32
+#ifndef MHD_WINSOCK_SOCKETS
                               SO_REUSEPORT,
-#else  /* _WIN32 */
+#else  /* MHD_WINSOCK_SOCKETS */
                               SO_REUSEADDR,
-#endif /* _WIN32 */
+#endif /* MHD_WINSOCK_SOCKETS */
                               (void *) &on,
                               sizeof (on)))
             {
@@ -5548,7 +5548,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto free_and_fail;
             }
-#else  /* !_WIN32 && !SO_REUSEPORT */
+#else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
           /* we're supposed to allow address:port re-use, but
              on this platform we cannot; fail hard */
 #ifdef HAVE_MESSAGES
@@ -5556,7 +5556,7 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Cannot allow listening address reuse: SO_REUSEPORT not defined\n"));
 #endif
           goto free_and_fail;
-#endif /* !_WIN32 && !SO_REUSEPORT */
+#endif /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
         }
       else /* if (daemon->listening_address_reuse < 0) */
         {
@@ -5566,7 +5566,7 @@ MHD_start_daemon_va (unsigned int flags,
            * Fail if MHD was compiled for W32 without SO_EXCLUSIVEADDRUSE
            * or setsockopt fails.
            */
-#if (defined(_WIN32) && defined(SO_EXCLUSIVEADDRUSE)) || \
+#if (defined(MHD_WINSOCK_SOCKETS) && defined(SO_EXCLUSIVEADDRUSE)) || \
     (defined(__sun) && defined(SO_EXCLBIND))
           if (0 > setsockopt (listen_fd,
                               SOL_SOCKET,
@@ -5585,13 +5585,13 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
               goto free_and_fail;
             }
-#elif defined(_WIN32) /* SO_EXCLUSIVEADDRUSE not defined on W32? */
+#elif defined(MHD_WINSOCK_SOCKETS) /* SO_EXCLUSIVEADDRUSE not defined on W32? */
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _("Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined\n"));
 #endif
           goto free_and_fail;
-#endif /* _WIN32 */
+#endif /* MHD_WINSOCK_SOCKETS */
         }
 
       /* check for user supplied sockaddr */
@@ -6698,13 +6698,13 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 void
 MHD_init(void)
 {
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
   WSADATA wsd;
-#endif /* _WIN32 */
+#endif /* _WIN32 && ! __CYGWIN__ */
   mhd_panic = &mhd_panic_std;
   mhd_panic_cls = NULL;
 
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
   if (0 != WSAStartup(MAKEWORD(2, 2), &wsd))
     MHD_PANIC (_("Failed to initialize winsock\n"));
   mhd_winsock_inited_ = 1;
@@ -6744,7 +6744,7 @@ MHD_fini(void)
 #ifdef HTTPS_SUPPORT
   gnutls_global_deinit ();
 #endif /* HTTPS_SUPPORT */
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
   if (mhd_winsock_inited_)
     WSACleanup();
 #endif

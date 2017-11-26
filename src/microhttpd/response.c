@@ -30,9 +30,9 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif /* HAVE_SYS_IOCTL_H */
-#ifdef _WIN32
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <windows.h>
-#endif /* _WIN32 */
+#endif /* _WIN32 && !__CYGWIN__ */
 
 #include "internal.h"
 #include "response.h"
@@ -45,12 +45,12 @@
 #include "mhd_compat.h"
 
 
-#if defined(_WIN32) && defined(MHD_W32_MUTEX_)
+#if defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
-#endif /* _WIN32 && MHD_W32_MUTEX_ */
+#endif /* MHD_W32_MUTEX_ */
 #if defined(_WIN32)
 #include <io.h> /* for lseek(), read() */
 #endif /* _WIN32 */
@@ -393,17 +393,17 @@ file_reader (void *cls,
              size_t max)
 {
   struct MHD_Response *response = cls;
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__CYGWIN__)
   ssize_t n;
-#else  /* _WIN32 */
+#else  /* _WIN32 && !__CYGWIN__ */
   const HANDLE fh = (HANDLE) _get_osfhandle (response->fd);
-#endif /* _WIN32 */
+#endif /* _WIN32 && !__CYGWIN__ */
   const int64_t offset64 = (int64_t)(pos + response->fd_off);
 
   if (offset64 < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* seek to required position is not possible */
 
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__CYGWIN__)
   if (max > SSIZE_MAX)
     max = SSIZE_MAX; /* Clamp to maximum return value. */
 
@@ -441,7 +441,7 @@ file_reader (void *cls,
   if (n < 0)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   return n;
-#else /* _WIN32 */
+#else /* _WIN32 && !__CYGWIN__ */
   if (INVALID_HANDLE_VALUE == fh)
     return MHD_CONTENT_READER_END_WITH_ERROR; /* Value of 'response->fd' is not valid. */
   else
@@ -460,7 +460,7 @@ file_reader (void *cls,
         return MHD_CONTENT_READER_END_OF_STREAM;
       return (ssize_t) resRead;
     }
-#endif /* _WIN32 */
+#endif /* _WIN32 && !__CYGWIN__ */
 }
 
 
