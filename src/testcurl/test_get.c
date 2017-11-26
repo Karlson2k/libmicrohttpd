@@ -119,14 +119,12 @@ testInternalGet (int poll_flag)
   struct CBC cbc;
   CURLcode errornum;
 
-  if (0 == global_port)
+  if ( (0 == global_port) &&
+       (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
     {
-      if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	{
-	  global_port = 1220;
-	  if (oneone)
-	    global_port += 20;
-	}
+      global_port = 1220;
+      if (oneone)
+        global_port += 20;
     }
 
   cbc.buf = buf;
@@ -188,14 +186,12 @@ testMultithreadedGet (int poll_flag)
   struct CBC cbc;
   CURLcode errornum;
 
-  if (0 == global_port)
+  if ( (0 == global_port) &&
+       (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
     {
-      if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	{
-	  global_port = 1221;
-	  if (oneone)
-	    global_port += 20;
-	}
+      global_port = 1221;
+      if (oneone)
+        global_port += 20;
     }
 
   cbc.buf = buf;
@@ -257,14 +253,12 @@ testMultithreadedPoolGet (int poll_flag)
   struct CBC cbc;
   CURLcode errornum;
 
-  if (0 == global_port)
+  if ( (0 == global_port) &&
+       (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
     {
-      if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	{
-	  global_port = 1222;
-	  if (oneone)
-	    global_port += 20;
-	}
+      global_port = 1222;
+      if (oneone)
+        global_port += 20;
     }
 
   cbc.buf = buf;
@@ -341,14 +335,12 @@ testExternalGet ()
   time_t start;
   struct timeval tv;
 
-  if (0 == global_port)
+  if ( (0 == global_port) &&
+       (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
     {
-      if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	{
-	  global_port = 1223;
-	  if (oneone)
-	    global_port += 20;
-	}
+      global_port = 1223;
+      if (oneone)
+        global_port += 20;
     }
 
   multi = NULL;
@@ -567,14 +559,12 @@ testStopRace (int poll_flag)
     MHD_socket fd;
     struct MHD_Daemon *d;
 
-    if (0 == global_port)
+    if ( (0 == global_port) &&
+         (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
       {
-	if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	  {
-	    global_port = 1224;
-	    if (oneone)
-	      global_port += 20;
-	  }
+        global_port = 1224;
+        if (oneone)
+          global_port += 20;
       }
 
     d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | poll_flag,
@@ -682,14 +672,12 @@ testEmptyGet (int poll_flag)
   CURLcode errornum;
   int excess_found = 0;
 
-  if (0 == global_port)
+  if ( (0 == global_port) &&
+       (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
     {
-      if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-	{
-	  global_port = 1225;
-	  if (oneone)
-	    global_port += 20;
-	}
+      global_port = 1225;
+      if (oneone)
+        global_port += 20;
     }
 
   cbc.buf = buf;
