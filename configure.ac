@@ -2022,28 +2022,27 @@ else
  MSG_CURL="yes"
 fi
 
-AC_MSG_NOTICE([libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
+AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
+  Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${host_os}
+  Shutdown of listening socket trigger select: ${mhd_cv_host_shtdwn_trgr_select}
+  Inter-thread comm: ${use_itc}
+  poll support:      ${enable_poll=no}
+  epoll support:     ${enable_epoll=no}
+  sendfile used:     ${found_sendfile}
+  HTTPS support:     ${MSG_HTTPS}
   Threading lib:     ${USE_THREADS}
   Use thread names:  ${enable_thread_names}
-  Inter-thread comm: ${use_itc}
-  Test with libcurl: ${MSG_CURL}
-  Target directory:  ${prefix}
-  Shutdown of listening socket
-  trigger select:    ${mhd_cv_host_shtdwn_trgr_select}
   Use debug asserts: ${enable_asserts}
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}
   Postproc:          ${enable_postprocessor}
-  HTTPS support:     ${MSG_HTTPS}
-  poll support:      ${enable_poll=no}
-  epoll support:     ${enable_epoll=no}
-  sendfile used:     ${found_sendfile}
-  build docs:        ${enable_doc}
-  build examples:    ${enable_examples}
+  Build docs:        ${enable_doc}
+  Build examples:    ${enable_examples}
+  Test with libcurl: ${MSG_CURL}
 ])
 
 if test "x$enable_https" = "xyes"
