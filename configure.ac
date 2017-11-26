@@ -1248,11 +1248,22 @@ AC_FUNC_FSEEKO
 AC_CHECK_FUNCS([lseek64 pread64 pread])
 
 # check for various sendfile functions
-found_sendfile="no"
-AC_MSG_CHECKING([[for Linux-style sendfile(2)]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[
+AC_ARG_ENABLE([sendfile],
+   [AS_HELP_STRING([--disable-sendfile],
+               [disable usage of sendfile() for HTTP connections [auto]])],
+   [],
+   [enable_sendfile="auto"])
+AS_CASE([$enable_sendfile],
+  [[auto | yes]],[[found_sendfile="no"]],
+  [[no]],[[found_sendfile="disabled"]],
+  [AC_MSG_ERROR([[unknown value specified: --enable-sendfile=$enable_sendfile]])]
+)
+AS_VAR_IF([[found_sendfile]], [["no"]],
+  [
+    AC_MSG_CHECKING([[for Linux-style sendfile(2)]])
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+        [[
 #include <sys/sendfile.h>
 
 static void empty_func(void)
@@ -1262,25 +1273,27 @@ static void empty_func(void)
 }
 /* Declare again to check form match */
 ssize_t sendfile(int, int, off_t*, size_t);
-    ]],
-    [[
-      int fd1=0, fd2=2;
-      off_t o = 0;
-      size_t s = 5;
-      ssize_t r;
-      r = sendfile (fd1, fd2, &o, s);
-      if (r)
-        empty_func();
-    ]]
-   )
-  ],
-  [
-    AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
-    found_sendfile="yes, Linux-style"
-    AC_MSG_RESULT([[yes]])
-    AC_CHECK_FUNCS([sendfile64])
-  ],
-  [AC_MSG_RESULT([[no]])
+        ]],
+        [[
+          int fd1=0, fd2=2;
+          off_t o = 0;
+          size_t s = 5;
+          ssize_t r;
+          r = sendfile (fd1, fd2, &o, s);
+          if (r)
+            empty_func();
+        ]]
+       )
+      ],
+      [
+        AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
+        found_sendfile="yes, Linux-style"
+        AC_MSG_RESULT([[yes]])
+        AC_CHECK_FUNCS([sendfile64])
+      ],
+      [AC_MSG_RESULT([[no]])
+      ]
+    )
   ]
 )
 AS_VAR_IF([[found_sendfile]], [["no"]],
@@ -1410,6 +1423,9 @@ ssize_t sendfile(int out_fd, int in_fd,
    )
    LIBS="$SAVE_LIBS"
   ]
+)
+AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
+  AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])
 )
 
 # optional: have error messages ?
