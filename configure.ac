@@ -346,6 +346,9 @@ gnu*)
 ;;
 esac
 
+AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
+                                  test "x${os_is_native_w32}" != "xyes"]])
+
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
    [], [with_threads='auto'])
