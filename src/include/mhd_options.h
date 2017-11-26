@@ -57,13 +57,13 @@
    headers. */
 #ifdef FD_SETSIZE
 /* FD_SETSIZE defined in command line or in MHD_config.h */
-#elif defined(_WIN32) && !defined(__CYGWIN__)
+#elif defined(_WIN32) || defined(__CYGWIN__)
 /* Platform with WinSock and without overridden FD_SETSIZE */
-#define FD_SETSIZE 2048 /* Override default small value */
-#else  /* !FD_SETSIZE && !WinSock*/
+#define FD_SETSIZE 2048 /* Override default small value (64) */
+#else  /* !FD_SETSIZE && !W32 */
 /* System default value of FD_SETSIZE is used */
 #define _MHD_FD_SETSIZE_IS_DEFAULT 1
-#endif /* !FD_SETSIZE && !WinSock*/
+#endif /* !FD_SETSIZE && !W32 */
 
 #if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE) || \
     defined(HAVE_DARWIN_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
@@ -82,7 +82,7 @@
 #define _LP64
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #else /* _WIN32_WINNT */
@@ -94,7 +94,7 @@
 /* Do not include unneeded parts of W32 headers. */
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* !WIN32_LEAN_AND_MEAN */
-#endif /* _WIN32 */
+#endif /* _WIN32 && ! __CYGWIN__ */
 
 #if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
 #define RESTRICT __restrict__
