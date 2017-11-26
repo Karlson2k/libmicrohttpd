@@ -5489,7 +5489,7 @@ MHD_start_daemon_va (unsigned int flags,
       /* Apply the socket options according to listening_address_reuse. */
       if (0 == daemon->listening_address_reuse)
         {
-#ifdef MHD_WINSOCK_SOCKETS
+#ifndef MHD_WINSOCK_SOCKETS
           /* No user requirement, use "traditional" default SO_REUSEADDR
            * on non-W32 platforms, and do not fail if it doesn't work.
            * Don't use it on W32, because on W32 it will allow multiple
