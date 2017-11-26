@@ -50,6 +50,8 @@
  */
 
 #ifdef INLINE_FUNC
+
+#if 0 /* Disable unused functions. */
 /**
  * Check whether character is lower case letter in US-ASCII
  *
@@ -61,6 +63,7 @@ isasciilower (char c)
 {
   return (c >= 'a') && (c <= 'z');
 }
+#endif /* Disable unused functions. */
 
 
 /**
@@ -76,6 +79,7 @@ isasciiupper (char c)
 }
 
 
+#if 0 /* Disable unused functions. */
 /**
  * Check whether character is letter in US-ASCII
  *
@@ -87,6 +91,7 @@ isasciialpha (char c)
 {
   return isasciilower (c) || isasciiupper (c);
 }
+#endif /* Disable unused functions. */
 
 
 /**
