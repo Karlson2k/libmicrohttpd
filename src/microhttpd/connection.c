@@ -1036,7 +1036,9 @@ connection_close_error (struct MHD_Connection *connection,
   if (NULL != emsg)
     MHD_DLOG (connection->daemon,
               emsg);
-#endif
+#else  /* ! HAVE_MESSAGES */
+  (void)emsg; /* Mute compiler warning. */
+#endif /* ! HAVE_MESSAGES */
   MHD_connection_close_ (connection,
                          MHD_REQUEST_TERMINATED_WITH_ERROR);
 }

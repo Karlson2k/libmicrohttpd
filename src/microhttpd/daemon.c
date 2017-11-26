@@ -137,6 +137,10 @@ mhd_panic_std (void *cls,
 	   file,
            line,
            reason);
+#else  /* ! HAVE_MESSAGES */
+  (void)file;   /* Mute compiler warning. */
+  (void)line;   /* Mute compiler warning. */
+  (void)reason; /* Mute compiler warning. */
 #endif
   abort ();
 }
@@ -5070,6 +5074,10 @@ static int
 setup_epoll_fd (struct MHD_Daemon *daemon)
 {
   int fd;
+
+#ifndef HAVE_MESSAGES
+  (void)daemon; /* Mute compiler warning. */
+#endif /* ! HAVE_MESSAGES */
 
 #ifdef USE_EPOLL_CREATE1
   fd = epoll_create1 (EPOLL_CLOEXEC);
