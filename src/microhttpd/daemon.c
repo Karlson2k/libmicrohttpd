@@ -175,7 +175,7 @@ static int mhd_winsock_inited_ = 0;
  * Do nothing - global initialisation is
  * performed by library constructor.
  */
-#define MHD_check_global_init_(x) (void)0
+#define MHD_check_global_init_() (void)0
 #else  /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 /**
  * Track global initialisation
