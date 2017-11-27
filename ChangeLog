@@ -1,3 +1,8 @@
+Mon Nov 27 22:58:38 CET 2017
+	Tolerate AF_UNIX when trying to determine our binding port
+	from socket.  Use `sockaddr_storage` instead of trying to
+	guess the sockaddr type before calling getsockname(). -CG
+
 Mon Nov 27 22:24:00 MSK 2017
 	Releasing GNU libmicrohttpd 0.9.57. -EG
 

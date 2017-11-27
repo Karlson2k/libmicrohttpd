@@ -5764,74 +5764,66 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (0 == daemon->port) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     { /* Get port number. */
-      struct sockaddr *realaddr;
-#ifdef MHD_POSIX_SOCKETS
-      socklen_t alloc_len;
-#endif /* MHD_POSIX_SOCKETS */
-#ifdef HAVE_INET6
-      if (0 != (*pflags & MHD_USE_IPv6))
-        {
-          memset (&servaddr6,
-                  0,
-                  sizeof (struct sockaddr_in6));
-          servaddr6.sin6_family = AF_INET6;
-#ifdef HAVE_SOCKADDR_IN_SIN_LEN
-          servaddr6.sin6_len = sizeof (struct sockaddr_in6);
-#endif /* HAVE_SOCKADDR_IN_SIN_LEN */
-          addrlen = (socklen_t) sizeof (struct sockaddr_in6);
-          realaddr = (struct sockaddr *) &servaddr6;
-        }
-      else
-#else  /* ! HAVE_INET6 */
-      if (1)
-#endif /* ! HAVE_INET6 */
-        {
-          memset (&servaddr4,
-                  0,
-                  sizeof (struct sockaddr_in));
-          servaddr4.sin_family = AF_INET;
-#ifdef HAVE_SOCKADDR_IN_SIN_LEN
-          servaddr4.sin_len = sizeof (struct sockaddr_in);
-#endif /* HAVE_SOCKADDR_IN_SIN_LEN */
-          addrlen = (socklen_t) sizeof (struct sockaddr_in);
-          realaddr = (struct sockaddr *) &servaddr4;
-        }
-#ifdef MHD_POSIX_SOCKETS
-      alloc_len = addrlen;
-#endif /* MHD_POSIX_SOCKETS */
-      if (0 != getsockname (listen_fd, realaddr, &addrlen))
-        {
+      struct sockaddr_storage servaddr;
+
+      memset (&servaddr,
+              0,
+              sizeof (struct sockaddr_storage));
+      addrlen = sizeof (servaddr);
+      if (0 != getsockname (listen_fd,
+                            (struct sockaddr *) &servaddr,
+                            &addrlen))
+      {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Failed to get listen port number: %s\n"),
-                MHD_socket_last_strerr_ ());
+        MHD_DLOG (daemon,
+                  _("Failed to get listen port number: %s\n"),
+                  MHD_socket_last_strerr_ ());
 #endif /* HAVE_MESSAGES */
         }
 #ifdef MHD_POSIX_SOCKETS
-      else if (alloc_len < addrlen)
+      else if (sizeof (servaddr) < addrlen)
         {
+          /* should be impossible with `struct sockaddr_storage` */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("Failed to get listen port number due to small buffer\n"));
+          MHD_DLOG (daemon,
+                    _("Failed to get listen port number (`struct sockaddr_storage` too small!?)\n"));
 #endif /* HAVE_MESSAGES */
         }
 #endif /* MHD_POSIX_SOCKETS */
       else
         {
+          switch (servaddr.ss_family)
+          {
+          case AF_INET:
+            {
+              struct sockaddr_in *s4 = (struct sockaddr_in *) &servaddr;
+
+              daemon->port = ntohs (s4->sin_port);
+              break;
+            }
 #ifdef HAVE_INET6
-          if (0 != (*pflags & MHD_USE_IPv6))
+          case AF_INET6:
             {
-              mhd_assert (AF_INET6 == servaddr6.sin6_family);
-              daemon->port = ntohs(servaddr6.sin6_port);
+              struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &servaddr;
+
+              daemon->port = ntohs(s6->sin6_port);
+              mhd_assert (0 != (*pflags & MHD_USE_IPv6));
+              break;
             }
-          else
-#else  /* ! HAVE_INET6 */
-          if (1)
-#endif /* ! HAVE_INET6 */
-            {
-              mhd_assert (AF_INET == servaddr4.sin_family);
-              daemon->port = ntohs(servaddr4.sin_port);
-            }
+#endif /* HAVE_INET6 */
+#ifdef AF_UNIX
+          case AF_UNIX:
+            daemon->port = 0; /* special value for UNIX domain sockets */
+            break;
+#endif
+          default:
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _("Unknown address family!\n"));
+#endif
+            daemon->port = 0; /* ugh */
+            break;
+          }
         }
     }
 
