@@ -149,12 +149,19 @@ mhd_panic_std (void *cls,
 /**
  * Handler for fatal errors.
  */
-MHD_PanicCallback mhd_panic;
+MHD_PanicCallback mhd_panic = NULL;
 
 /**
  * Closure argument for #mhd_panic.
  */
-void *mhd_panic_cls;
+void *mhd_panic_cls = NULL;
+
+/**
+ * Globally initialise library.
+ */
+void
+MHD_init(void);
+
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 /**
@@ -163,6 +170,40 @@ void *mhd_panic_cls;
 static int mhd_winsock_inited_ = 0;
 #endif
 
+#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
+/**
+ * Do nothing - global initialisation is
+ * performed by library constructor.
+ */
+#define MHD_try_global_init_(x) (void)0
+#else  /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
+/**
+ * Track global initialisation
+ */
+volatile int global_init_count = 0;
+#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
+/**
+ * Global initialisation mutex
+ */
+MHD_MUTEX_STATIC_DEFN_INIT_(global_init_mutex_);
+#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
+/**
+ * Check whether global initialisation was performed
+ * and call initialiser if necessary.
+ */
+void
+MHD_check_global_init_ (void)
+{
+#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
+  MHD_mutex_lock_chk_(&global_init_mutex_);
+#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
+  if (0 == global_init_count++)
+    MHD_init ();
+#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
+  MHD_mutex_unlock_chk_(&global_init_mutex_);
+#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
+}
+#endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 
 /**
  * Trace up to and return master daemon. If the supplied daemon
@@ -6709,8 +6750,9 @@ MHD_init(void)
 #if defined(_WIN32) && ! defined(__CYGWIN__)
   WSADATA wsd;
 #endif /* _WIN32 && ! __CYGWIN__ */
-  mhd_panic = &mhd_panic_std;
-  mhd_panic_cls = NULL;
+
+  if (NULL == mhd_panic)
+    mhd_panic = &mhd_panic_std;
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)
   if (0 != WSAStartup(MAKEWORD(2, 2), &wsd))
@@ -6759,6 +6801,8 @@ MHD_fini(void)
   MHD_monotonic_sec_counter_finish();
 }
 
+#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
 _SET_INIT_AND_DEINIT_FUNCS(MHD_init, MHD_fini);
+#endif /* _AUTOINIT_FUNCS_ARE_SUPPORTED */
 
 /* end of daemon.c */
