@@ -192,7 +192,7 @@ three processes on the same machine).
 
 
 @float Figure,fig:performance
-@image{performance_data,400pt,300pt,Data,.png}
+@image{libmicrohttpd_performance_data,400pt,300pt,Data,.png}
 @caption{Performance measurements for select vs. epoll (with thread-pool).}
 @end float
 

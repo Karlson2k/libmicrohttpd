@@ -33,5 +33,5 @@ microhttpd_TEXINFOS = \
 EXTRA_DIST = \
   $(man_MANS) \
   $(microhttpd_TEXINFOS) \
-  performance_data.png \
-  performance_data.eps
+  libmicrohttpd_performance_data.png \
+  libmicrohttpd_performance_data.eps
