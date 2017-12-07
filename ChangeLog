@@ -1,4 +1,7 @@
-Mon Nov 04 15:43:00 MSK 2017
+Mon Dec 07 16:01:00 MSK 2017
+	Fixed HTTPS tests on modern platforms. -EG
+
+Mon Dec 04 15:43:00 MSK 2017
 	Minor documentation installation fixes. -EG
 
 Mon Nov 27 22:58:38 CET 2017
