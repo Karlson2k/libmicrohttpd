@@ -1935,6 +1935,7 @@ AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
+AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
 AC_SUBST([CPU_COUNT])
 
 AC_MSG_CHECKING([[whether to enable debug asserts]])
