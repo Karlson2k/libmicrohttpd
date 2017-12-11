@@ -1216,19 +1216,15 @@ enum MHD_UpgrCbkState
   MHD_UPGR_STATE_TIMEOUT =
       MHD_UPGR_FLAG_ABORTED_BY_TIMEOUT,
   MHD_UPGR_STATE_TIMEOUT_NOTIFIED =
-      MHD_UPGR_FLAG_ABORTED_BY_TIMEOUT | MHD_UPGR_STATE_FLAG_NOTIFIED,
+      MHD_UPGR_STATE_TIMEOUT | MHD_UPGR_STATE_FLAG_NOTIFIED,
   MHD_UPGR_STATE_CLOSED_BY_APP =
       MHD_UPGR_FLAG_ABORTED_BY_APP,
   MHD_UPGR_STATE_CLOSED_BY_APP_NOTIFIED =
-      MHD_UPGR_FLAG_ABORTED_BY_APP | MHD_UPGR_STATE_FLAG_NOTIFIED,
-  MHD_UPGR_STATE_DISCONN_REMOTE =
-      MHD_UPGR_FLAG_ABORTED_BY_REMOTE,
-  MHD_UPGR_STATE_DISCONN_REMOTE_NOTIFIED =
-      MHD_UPGR_FLAG_ABORTED_BY_REMOTE | MHD_UPGR_STATE_FLAG_NOTIFIED,
-  MHD_UPGR_STATE_DISCONN_ERR =
-      MHD_UPGR_FLAG_ABORTED_BY_NET_ERR,
-  MHD_UPGR_STATE_DISCONN_ERR_NOTIFIED =
-      MHD_UPGR_FLAG_ABORTED_BY_NET_ERR | MHD_UPGR_STATE_FLAG_NOTIFIED,
+      MHD_UPGR_STATE_CLOSED_BY_APP | MHD_UPGR_STATE_FLAG_NOTIFIED,
+  MHD_UPGR_STATE_DISCONN =
+      MHD_UPGR_FLAG_ABORTED_BY_DISCONN,
+  MHD_UPGR_STATE_DISCONN =
+      MHD_UPGR_STATE_DISCONN | MHD_UPGR_STATE_FLAG_NOTIFIED,
   MHD_UPGR_STATE_INVALID
 };
 
@@ -1241,25 +1237,31 @@ struct MHD_UpgrHandleCbk
   struct MHD_Connection *connection;
   enum MHD_UpgrCbkState state;
 
-  MHD_mutex_ recv_mutex;
+  struct MHD_itc_ itc;
+
+  MHD_mutex_ data_buff_mutex;
+
+  bool need_reloop; /**< Already has more data to process in next iteration. */
+
   bool has_recv_data_in_conn_buffer;
   size_t conn_buffer_offset;
+
   bool recv_needed;
   bool recv_ready;
+  bool recv_instant; /**< In process of quick recv polling */
   int8_t *recv_buff;
   size_t recv_buff_size;
   size_t recv_buff_used;
   bool peer_closed_write;
-  MHD_UpgrTransferFinishedCbk recv_finished_cbk;
+  MHD_UpgrTransferResultCbk recv_result_cbk;
   void *recv_finished_cbk_cls;
 
-  MHD_mutex_ send_mutex;
   bool send_needed;
   bool send_ready;
   int8_t *send_buff;
   size_t send_buff_size;
   size_t send_buff_sent;
-  MHD_UpgrTransferFinishedCbk send_finished_cbk;
+  MHD_UpgrTransferResultCbk send_result_cbk;
   void *send_finished_cbk_cls;
 
   MHD_mutex_ termination_mutex;

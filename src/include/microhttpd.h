@@ -2964,7 +2964,7 @@ MHD_create_response_for_upgrade_cbk (MHD_UpgrStartCbk upgr_start_handler,
 #define MHD_UPGR_FLAG_ABORTED_BY_TIMEOUT           0x8
 #define MHD_UPGR_FLAG_ABORTED_BY_APP               0x10
 #define MHD_UPGR_FLAG_ABORTED_BY_DISCONN           0x18
-#define MHD_UPGR_FLAG_ABORTED_BY_REMOTE_CLOSURE    0x28
+#define MHD_UPGR_FLAG_ABORTED_BY_REMOTE_SHUTDOWN   0x28
 
 enum MHD_UpgrTransferResult
 {
@@ -2987,15 +2987,15 @@ enum MHD_UpgrTransferResult
       MHD_UPGR_TRNSF_RESULT_FLAG_RECV | MHD_UPGR_FLAG_ABORTED_BY_APP,
   MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_DISCONN =
       MHD_UPGR_TRNSF_RESULT_FLAG_RECV | MHD_UPGR_FLAG_ABORTED_BY_DISCONN,
-  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_CLOSURE =
-      MHD_UPGR_TRNSF_RESULT_FLAG_RECV | MHD_UPGR_FLAG_ABORTED_BY_REMOTE_CLOSURE
+  MHD_UPGR_TRNSF_RESULT_RECV_ABORTED_BY_REMOTE_SHUTDOWN =
+      MHD_UPGR_TRNSF_RESULT_FLAG_RECV | MHD_UPGR_FLAG_ABORTED_BY_REMOTE_SHUTDOWN
 };
 
-typedef void (*MHD_UpgrTransferFinishedCbk) (struct MHD_UpgrHandleCbk *uh, enum MHD_UpgrTransferResult result, size_t transfered, void *data, size_t data_size, void *cls);
+typedef void (*MHD_UpgrTransferResultCbk) (struct MHD_UpgrHandleCbk *uh, enum MHD_UpgrTransferResult result, size_t transfered, void *data, size_t data_size, void *cls);
 
-_MHD_EXTERN int MHD_upgr_send_all(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
+_MHD_EXTERN int MHD_upgr_send_all(struct MHD_UpgrHandleCbk *uh, const void *data, size_t data_size, MHD_UpgrTransferResultCbk result_cbk, void *cls);
 
-_MHD_EXTERN int MHD_upgr_recv_fill(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size, MHD_UpgrTransferFinishedCbk result_cbk, void *cls);
+_MHD_EXTERN int MHD_upgr_recv_fill(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size, MHD_UpgrTransferResultCbk result_cbk, void *cls);
 
 _MHD_EXTERN ssize_t MHD_upgr_recv(struct MHD_UpgrHandleCbk *uh, void *buffer, size_t buffer_size);
 
@@ -3003,7 +3003,7 @@ enum MHD_UpgrTerminationType
 {
   MHD_UPGR_TERMINATION_BY_TIMEOUT = MHD_UPGR_FLAG_ABORTED_BY_TIMEOUT,
   MHD_UPGR_TERMINATION_BY_APP = MHD_UPGR_FLAG_ABORTED_BY_APP,
-  MHD_UPGR_TERMINATION_BY_NET_ERR = MHD_UPGR_FLAG_ABORTED_BY_DISCONN /* Network error or hard disconnect by remote peer. */
+  MHD_UPGR_TERMINATION_BY_DISCONN = MHD_UPGR_FLAG_ABORTED_BY_DISCONN /* Network error or hard disconnect by remote peer. */
 };
 
 typedef void (*MHD_UpgrTerminationCbk) \

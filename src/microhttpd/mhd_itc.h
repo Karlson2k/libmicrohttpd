@@ -66,6 +66,13 @@
 #define MHD_itc_init_(itc) (-1 != ((itc).fd = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
 
 /**
+ * Copy ITC to another ITC
+ * @param itco the itc to copy from
+ * @param itcc the itc to copy to
+ */
+#define MHD_itc_copy_(itco, itcc) (void)((itcc).fd = (itco).fd)
+
+/**
  * Get description string of last errno for itc operations.
  */
 #define MHD_itc_last_strerror_() strerror(errno)
@@ -162,6 +169,14 @@ static const uint64_t _MHD_itc_wr_data = 1;
            (MHD_itc_destroy_((itc)), 0) ) \
          : (0) )
 #endif /* ! HAVE_PIPE2_FUNC */
+
+/**
+ * Copy ITC to another ITC
+ * @param itco the itc to copy from
+ * @param itcc the itc to copy to
+ */
+#define MHD_itc_copy_(itco, itcc) (void)((itcc).fd[0] = (itco).fd[0], \
+                                         (itcc).fd[1] = (itco).fd[1])
 
 /**
  * Get description string of last errno for itc operations.
@@ -262,6 +277,16 @@ static const uint64_t _MHD_itc_wr_data = 1;
          (MHD_itc_destroy_((itc)), 0) ) \
        : (0))
 #endif /* ! MHD_socket_pair_nblk_ */
+
+
+/**
+ * Copy ITC to another ITC
+ * @param itco the itc to copy from
+ * @param itcc the itc to copy to
+ */
+#define MHD_itc_copy_(itco, itcc) (void)((itcc).sk[0] = (itco).sk[0], \
+                                         (itcc).sk[1] = (itco).sk[1])
+
 
 /**
  * Get description string of last error for itc operations.
