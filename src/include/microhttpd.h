@@ -2227,8 +2227,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * to be platform's default.
  *
  * This function should only be called in when MHD is configured to
- * use external select with @code{select()} or with @code{epoll()}.
- * In the latter case, it will only add the single @code{epoll()} file
+ * use external select with 'select()' or with 'epoll'.
+ * In the latter case, it will only add the single 'epoll()' file
  * descriptor used by MHD to the sets.
  * It's necessary to use #MHD_get_timeout() in combination with
  * this function.
@@ -2266,8 +2266,8 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * larger/smaller than platform's default fd_sets.
  *
  * This function should only be called in when MHD is configured to
- * use external select with @code{select()} or with @code{epoll()}.
- * In the latter case, it will only add the single @code{epoll()} file
+ * use external select with 'select()' or with 'epoll'.
+ * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
  * It's necessary to use #MHD_get_timeout() in combination with
  * this function.
