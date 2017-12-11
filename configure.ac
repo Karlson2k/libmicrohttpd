@@ -2009,6 +2009,7 @@ po/configure.acT:po/configure.ac.in
 Makefile
 contrib/Makefile
 doc/Makefile
+doc/doxygen/libmicrohttpd.doxy
 doc/doxygen/Makefile
 doc/examples/Makefile
 m4/Makefile
