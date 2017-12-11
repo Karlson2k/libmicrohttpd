@@ -1,3 +1,8 @@
+Mon Dec 11 17:11:00 MSK 2017
+	Fixed tests on platforms with huge number of CPUs.
+	Doxygen configuration was updated.
+	Various doxygen fixes. -EG
+
 Mon Dec 07 21:08:00 MSK 2017
 	Releasing GNU libmicrohttpd 0.9.58. -EG
 
