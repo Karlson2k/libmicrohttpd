@@ -1223,7 +1223,7 @@ enum MHD_UpgrCbkState
       MHD_UPGR_STATE_CLOSED_BY_APP | MHD_UPGR_STATE_FLAG_NOTIFIED,
   MHD_UPGR_STATE_DISCONN =
       MHD_UPGR_FLAG_ABORTED_BY_DISCONN,
-  MHD_UPGR_STATE_DISCONN =
+  MHD_UPGR_STATE_DISCONN_NOTIFIED =
       MHD_UPGR_STATE_DISCONN | MHD_UPGR_STATE_FLAG_NOTIFIED,
   MHD_UPGR_STATE_INVALID
 };
@@ -1239,32 +1239,31 @@ struct MHD_UpgrHandleCbk
 
   struct MHD_itc_ itc;
 
-  MHD_mutex_ data_buff_mutex;
+  MHD_mutex_ data_and_cbk_mutex;
 
   bool need_reloop; /**< Already has more data to process in next iteration. */
 
   bool has_recv_data_in_conn_buffer;
   size_t conn_buffer_offset;
 
-  bool recv_needed;
-  bool recv_ready;
+  bool recv_needed; /* FIXME: replace with (NULL != recv_buff && NULL != recv_result_cbk) */
+  bool recv_ready;  /* FIXME: remove? */
   bool recv_instant; /**< In process of quick recv polling */
   int8_t *recv_buff;
   size_t recv_buff_size;
   size_t recv_buff_used;
   bool peer_closed_write;
   MHD_UpgrTransferResultCbk recv_result_cbk;
-  void *recv_finished_cbk_cls;
+  void *recv_result_cbk_cls;
 
-  bool send_needed;
-  bool send_ready;
+  bool send_needed; /* FIXME: replace with (NULL != send_buff && NULL != send_result_cbk) */
+  bool send_ready;  /* FIXME: remove? */
   int8_t *send_buff;
   size_t send_buff_size;
   size_t send_buff_sent;
   MHD_UpgrTransferResultCbk send_result_cbk;
-  void *send_finished_cbk_cls;
+  void *send_result_cbk_cls;
 
-  MHD_mutex_ termination_mutex;
   MHD_UpgrTerminationCbk termination_cbk;
   void *termintaion_cbk_cls;
 };
