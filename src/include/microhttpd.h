@@ -212,8 +212,8 @@ typedef SOCKET MHD_socket;
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
 #define _MHD_GCC_PRAG(x) _Pragma (#x)
-#if __clang_major__+0 >= 5 || \
-  (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))) || \
+#if (defined(__clang__) && (__clang_major__+0 >= 5 ||			\
+			    (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))))) || \
   __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
 /* clang >= 3.3 (or XCode's clang >= 5.0) or
    GCC >= 4.8 */
@@ -222,7 +222,7 @@ typedef SOCKET MHD_socket;
 #else /* older clang or GCC */
 /* clang < 3.3, XCode's clang < 5.0, 3.0 <= GCC < 4.8 */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
-#if (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)) /* FIXME: clang >= 2.9, earlier versions not tested */
+#if (defined(__clang__) && (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9))) /* FIXME: clang >= 2.9, earlier versions not tested */
 /* clang handles inline pragmas better than GCC */
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
 #endif /* clang >= 2.9 */

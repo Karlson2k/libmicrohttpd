@@ -1,3 +1,7 @@
+Thu Jan  4 12:24:33 CET 2018
+	Fix __clang_major__ related warnings for non-clang
+	compilers reported by Tim on the mailinglist. -CG
+
 Mon Dec 11 17:11:00 MSK 2017
 	Fixed tests on platforms with huge number of CPUs.
 	Doxygen configuration was updated.
