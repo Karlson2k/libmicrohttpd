@@ -2854,13 +2854,13 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
            CONNECTION_CLOSE_ERROR (connection,
                                    (MHD_CONNECTION_INIT == connection->state) ?
                                      NULL :
-                                     _("Socket is unexpectedly disconnected when reading request.\n"));
+                                     _("Socket disconnected while reading request.\n"));
            return;
         }
       CONNECTION_CLOSE_ERROR (connection,
                               (MHD_CONNECTION_INIT == connection->state) ?
                                 NULL :
-                                _("Connection socket is closed due to unexpected error when reading request.\n"));
+                                _("Connection socket is closed due to error when reading request.\n"));
       return;
     }
 
