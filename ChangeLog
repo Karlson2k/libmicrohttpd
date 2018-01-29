@@ -1,3 +1,7 @@
+Mon Jan 29 17:33:54 CET 2018
+	Fix deadlock when failing to prepare chunked response
+	(#5260). -CG/ghaderer
+
 Thu Jan  4 12:24:33 CET 2018
 	Fix __clang_major__ related warnings for non-clang
 	compilers reported by Tim on the mailinglist. -CG
