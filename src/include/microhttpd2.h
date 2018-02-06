@@ -145,6 +145,17 @@ enum MHD_StatusCode
    * supported by the selected backend.
    */
   MHD_TLS_CIPHERS_INVALID = 50002
+  
+  /**
+   * The application attempted to setup TLS paramters before
+   * enabling TLS.
+   */
+  MHD_TLS_BACKEND_UNINITIALIZED = 50003,
+
+  /**
+   * The selected TLS backend does not yet support this operation.
+   */
+  MHD_TLS_BACKEND_OPERATION_UNSUPPORTED = 50004,
 
 };
 
@@ -403,8 +414,9 @@ typedef struct MHD_Action *
  *
  * @param cb function to be called for incoming requests
  * @param cb_cls closure for @a cb
+ * @return NULL on error
  */
-struct MHD_Daemon *
+_MHD_EXTERN struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback cb,
 		   void *cb_cls);
 
@@ -621,7 +633,7 @@ enum MHD_AddressFamily
   /**
    * Pick "best" available method automatically.
    */
-  MHD_AF_AUTO,
+  MHD_AF_AUTO = 0,
 
   /**
    * Use IPv4.
@@ -672,7 +684,7 @@ MHD_daemon_bind_port (struct MHD_Daemon *daemon,
 _MHD_EXTERN void
 MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
 				const struct sockaddr *sa,
-				size_t sa_lem);
+				size_t sa_len);
 
 
 /**
@@ -683,8 +695,8 @@ MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
  * @param listen_backlog backlog to use
  */
 _MHD_EXTERN void
-MHD_daemon_listen_queue (struct MHD_Daemon *daemon,
-			 int listen_backlog);
+MHD_daemon_listen_backlog (struct MHD_Daemon *daemon,
+			   int listen_backlog);
 
 
 /**
@@ -810,7 +822,7 @@ MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
  * @param daemon which instance should be configured
  * @param tls_backend which TLS backend should be used,
  *    currently only "gnutls" is supported.  You can
- *    also specify "NULL" for best-available (which is the default).
+ *    also specify NULL for best-available (which is the default).
  * @param ciphers which ciphers should be used by TLS, default is
  *     "NORMAL"
  * @return status code, #MHD_SC_OK upon success
@@ -1054,8 +1066,6 @@ typedef void
  * @param daemon daemon to set callback for
  * @param ncc function to call to check the policy
  * @param ncc_cls closure for @a apc
- * @param ccc function to call upon completion, NULL for none
- * @param ccc_cls closure for @a ccc
  */
 _MHD_EXTERN void
 MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
@@ -1064,7 +1074,7 @@ MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
 
 
 /**
- * Maximum memory size per connection (followed by a `size_t`).
+ * Maximum memory size per connection.
  * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
  * Values above 128k are unlikely to result in much benefit, as half
  * of the memory will be typically used for IO, and TCP buffers are
@@ -1178,15 +1188,15 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
 
 
 /**
- * Size of the internal array holding the map of the nonce and
+ * Length of the internal array holding the map of the nonce and
  * the nonce counter.
  *
  * @param daemon daemon to configure
  * @param nc_length desired array length
  */
 _MHD_EXTERN void
-MHD_daemon_digest_auth_nc_size (struct MHD_Daemon *daemon,
-				size_t stack_limit_b);
+MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
+				  size_t nc_length);
 
 
 /* ********************* connection options ************** */
@@ -1201,7 +1211,7 @@ MHD_daemon_digest_auth_nc_size (struct MHD_Daemon *daemon,
  * @param connection connection to configure timeout for
  * @param timeout_s new timeout in seconds
  */
-struct MHD_ConnectionOption
+_MHD_EXTERN struct MHD_ConnectionOption
 MHD_connection_timeout (struct MHD_Connection *connection,
 			unsigned int timeout_s);
 
@@ -1443,7 +1453,7 @@ MHD_request_resume (struct MHD_Request *request);
  * as a response *is* an action.  As no memory is
  * allocated, this operation cannot fail.
  */
-struct MHD_Action *
+_MHD_EXTERN struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
 			  enum MHD_bool destroy_after_use);
 
@@ -1484,7 +1494,7 @@ typedef void
  * @param termination_cb function to call
  * @param termination_cb_cls closure for @e termination_cb
  */
-void
+_MHD_EXTERN void
 MHD_response_option_termination_callback (struct MHD_Response *response,
 					  MHD_RequestTerminationCallback termination_cb,
 					  void *termination_cb_cls);

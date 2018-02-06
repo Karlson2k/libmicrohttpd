@@ -2003,6 +2003,13 @@ AC_SUBST(LDFLAGS)
 AC_SUBST([ac_configure_args])
 AC_SUBST([EMPTY_VAR], [[]])
 
+# We define the paths here, because MinGW/GCC expands paths
+# passed through the command line ("-DDIR=..."). This would
+# lead to hard-coded paths ("C:\mingw\mingw\bin...") that do
+# not contain the actual installation.
+AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins])
+
+
 AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
 po/configure.acT:po/configure.ac.in

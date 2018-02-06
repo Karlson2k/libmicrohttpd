@@ -4456,8 +4456,8 @@ unescape_wrapper (void *cls,
                   struct MHD_Connection *connection,
                   char *val)
 {
-  (void)cls; /* Mute compiler warning. */
-  (void)connection; /* Mute compiler warning. */
+  (void) cls; /* Mute compiler warning. */
+  (void) connection; /* Mute compiler warning. */
   return MHD_http_unescape (val);
 }
 
@@ -5425,6 +5425,7 @@ MHD_start_daemon_va (unsigned int flags,
   MHD_DLOG (daemon,  _("Using debug build of libmicrohttpd.\n") );
 #endif /* HAVE_MESSAGES */
 #endif /* ! NDEBUG */
+  
   if ( (0 != (*pflags & MHD_USE_ITC)) &&
        (0 == daemon->worker_pool_size) )
     {
