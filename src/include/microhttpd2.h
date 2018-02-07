@@ -129,34 +129,181 @@ enum MHD_StatusCode
    */
   MHD_SC_DAEMON_STARTED = 10000,
 
+
+  /**
+   * MHD does not support the requested combination of
+   * EPOLL with thread-per-connection mode.
+   */
+  MHD_SC_SYSCALL_THREAD_COMBINATION_INVALID = 40000,
+
+  /**
+   * MHD does not support quiescing if ITC was disabled
+   * and threads are used.
+   */
+  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 40001,
+
   /**
    * This build of MHD does not support TLS, but the application
    * requested TLS.
    */
-  MHD_TLS_DISABLED = 50000,
+  MHD_SC_TLS_DISABLED = 50000,
 
   /**
    * The application requested an unsupported TLS backend to be used.
    */
-  MHD_TLS_BACKEND_UNSUPPORTED = 50001,
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 50001,
 
   /**
    * The application requested a TLS cipher suite which is not
    * supported by the selected backend.
    */
-  MHD_TLS_CIPHERS_INVALID = 50002
+  MHD_SC_TLS_CIPHERS_INVALID = 50002
   
   /**
    * The application attempted to setup TLS paramters before
    * enabling TLS.
    */
-  MHD_TLS_BACKEND_UNINITIALIZED = 50003,
+  MHD_SC_TLS_BACKEND_UNINITIALIZED = 50003,
 
   /**
    * The selected TLS backend does not yet support this operation.
    */
-  MHD_TLS_BACKEND_OPERATION_UNSUPPORTED = 50004,
+  MHD_SC_TLS_BACKEND_OPERATION_UNSUPPORTED = 50004,
 
+  /**
+   * Failed to setup ITC channel.
+   */
+  MHD_SC_ITC_INITIALIZATION_FAILED = 50005,
+
+  /**
+   * File descriptor for ITC channel too large.
+   */
+  MHD_SC_ITC_DESCRIPTOR_TOO_LARGE = 50006,
+
+  /**
+   * The specified value for the NC length is way too large
+   * for this platform (integer overflow on `size_t`).
+   */
+  MHD_SC_DIGEST_AUTH_NC_LENGTH_TOO_BIG = 50007,
+
+  /**
+   * We failed to allocate memory for the specified nonce
+   * counter array.  The option was not set.
+   */
+  MHD_SC_DIGEST_AUTH_NC_ALLOCATION_FAILURE = 50008,
+
+  /**
+   * This build of the library does not support
+   * digest authentication.
+   */
+  MHD_SC_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD = 50009,
+
+  /**
+   * IPv6 requested but not supported by this build.
+   */
+  MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD = 50010,
+
+  /**
+   * We failed to open the listen socket. Maybe the build
+   * supports IPv6, but your kernel does not?
+   */
+  MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET = 50011,  
+
+  /**
+   * Specified address family is not supported by this build.
+   */
+  MHD_SC_AF_NOT_SUPPORTED_BY_BUILD = 50012,
+
+  /**
+   * Failed to enable listen address reuse.
+   */
+  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED = 50013,
+
+  /**
+   * Enabling listen address reuse is not supported by this platform.
+   */
+  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED = 50014,
+  
+  /**
+   * Failed to disable listen address reuse.
+   */
+  MHD_SC_LISTEN_ADDRESS_REUSE_DISABLE_FAILED = 50015,
+
+  /**
+   * Disabling listen address reuse is not supported by this platform.
+   */
+  MHD_SC_LISTEN_ADDRESS_REUSE_DISABLE_NOT_SUPPORTED = 50016,
+
+  /**
+   * We failed to explicitly enable or disable dual stack for 
+   * the IPv6 listen socket.  The socket will be used in whatever
+   * the default is the OS gives us.
+   */
+  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_FAILED = 50017,
+
+  /**
+   * On this platform, MHD does not support explicitly configuring
+   * dual stack behavior.
+   */
+  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED = 50018,
+
+  /**
+   * We failed to bind the listen socket.
+   */
+  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 50019,
+
+  /**
+   * Failed to enable TCP FAST OPEN option.
+   */
+  MHD_SC_FAST_OPEN_FAILURE = 50020,
+
+  /**
+   * Failed to start listening on listen socket.
+   */
+  MHD_SC_LISTEN_FAILURE = 50021,
+
+  /**
+   * Failed to obtain our listen port via introspection.
+   */
+  MHD_SC_LISTEN_PORT_INTROSPECTION_FAILURE = 50022,
+
+  /**
+   * Failed to obtain our listen port via introspection
+   * due to unsupported address family being used.
+   */
+  MHD_SC_LISTEN_PORT_INTROSPECTION_UNKNOWN_AF = 50023,
+
+  /**
+   * We failed to set the listen socket to non-blocking.
+   */
+  MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE = 50024,
+
+  /**
+   * Listen socket value is too large (for use with select()).
+   */
+  MHD_SC_LISTEN_SOCKET_TOO_LARGE = 50025,
+
+  /**
+   * We failed to allocate memory for the thread pool.
+   */
+  MHD_SC_THREAD_POOL_MALLOC_FAILURE = 50026,
+
+  /**
+   * We failed to allocate mutex for thread pool worker.
+   */
+  MHD_SC_THREAD_POOL_CREATE_MUTEX_FAILURE = 50027,
+
+  /**
+   * We failed to initialize the main thread for listening.
+   */
+  MHD_SC_THREAD_MAIN_LAUNCH_FAILURE = 50030,
+
+  /**
+   * We failed to initialize the threads for the worker pool.
+   */
+  MHD_SC_THREAD_POOL_LAUNCH_FAILURE = 50031,
+
+  
 };
 
 
@@ -631,10 +778,17 @@ MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
 enum MHD_AddressFamily
 {
   /**
+   * Option not given, do not listen at all
+   * (unless listen socket or address specified by
+   * other means).
+   */
+  MHD_AF_NONE = 0,
+  
+  /**
    * Pick "best" available method automatically.
    */
-  MHD_AF_AUTO = 0,
-
+  MHD_AF_AUTO,
+  
   /**
    * Use IPv4.
    */
@@ -662,8 +816,7 @@ enum MHD_AddressFamily
  * is specified, MHD will simply not listen on any socket!
  *
  * @param daemon which instance to configure the TCP port for
- * @param af address family to use, i.e. #AF_INET or #AF_INET6,
- *           or #AF_UNSPEC for dual stack
+ * @param af address family to use
  * @param port port to use, 0 to bind to a random (free) port
  */
 _MHD_EXTERN void
@@ -1194,7 +1347,7 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
  * @param daemon daemon to configure
  * @param nc_length desired array length
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
 				  size_t nc_length);
 

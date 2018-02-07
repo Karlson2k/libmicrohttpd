@@ -755,6 +755,6 @@ MHD_socket_noninheritable_ (MHD_socket sock);
  * @return created socket or MHD_INVALID_SOCKET in case of errors
  */
 MHD_socket
-MHD_socket_create_listen_ (int use_ipv6);
+MHD_socket_create_listen_ (bool use_ipv6);
 
 #endif /* ! MHD_SOCKETS_H */

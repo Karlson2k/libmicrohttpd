@@ -1,3 +1,31 @@
+/*
+     This file is part of libmicrohttpd
+     Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 2.1 of the License, or (at your option) any later version.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
+
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library; if not, write to the Free Software
+     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+*/
+/**
+ * @file requests.c
+ * @brief  Methods for managing HTTP requests
+ * @author Daniel Pittman
+ * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
+ */
+
+
 /**
  * Get all of the headers from the request.
  *
@@ -9,11 +37,35 @@
  * @return number of entries iterated over
  * @ingroup request
  */
-_MHD_EXTERN unsigned int
+unsigned int
 MHD_request_get_values (struct MHD_Request *request,
 			enum MHD_ValueKind kind,
 			MHD_KeyValueIterator iterator,
-			void *iterator_cls);
+			void *iterator_cls)
+{
+  int ret;
+  struct MHD_HTTP_Header *pos;
+
+  if (NULL == request)
+    return -1;
+  ret = 0;
+  for (pos = request->headers_received;
+       NULL != pos;
+       pos = pos->next)
+    {
+      if (0 != (pos->kind & kind))
+	{
+	  ret++;
+	  if ( (NULL != iterator) &&
+	       (MHD_YES != iterator (iterator_cls,
+				     pos->kind,
+				     pos->header,
+				     pos->value)) )
+	    return ret;
+	}
+    }
+  return ret;
+}
 
 
 /**
@@ -41,11 +93,36 @@ MHD_request_get_values (struct MHD_Request *request,
  *         #MHD_YES on success
  * @ingroup request
  */
-_MHD_EXTERN enum MHD_Bool
+enum MHD_Bool
 MHD_request_set_value (struct MHD_Request *request,
 		       enum MHD_ValueKind kind,
 		       const char *key,
-		       const char *value);
+		       const char *value)
+{
+  struct MHD_HTTP_Header *pos;
+
+  pos = MHD_pool_allocate (request->pool,
+                           sizeof (struct MHD_HTTP_Header),
+                           MHD_YES);
+  if (NULL == pos)
+    return MHD_NO;
+  pos->header = (char *) key;
+  pos->value = (char *) value;
+  pos->kind = kind;
+  pos->next = NULL;
+  /* append 'pos' to the linked list of headers */
+  if (NULL == request->headers_received_tail)
+    {
+      request->headers_received = pos;
+      request->headers_received_tail = pos;
+    }
+  else
+    {
+      request->headers_received_tail->next = pos;
+      request->headers_received_tail = pos;
+    }
+  return MHD_YES;
+}
 
 
 /**
@@ -58,11 +135,31 @@ MHD_request_set_value (struct MHD_Request *request,
  * @return NULL if no such item was found
  * @ingroup request
  */
-_MHD_EXTERN const char *
+const char *
 MHD_request_lookup_value (struct MHD_Request *request,
 			  enum MHD_ValueKind kind,
-			  const char *key);
+			  const char *key)
+{
+  struct MHD_HTTP_Header *pos;
+
+  if (NULL == request)
+    return NULL;
+  for (pos = request->headers_received;
+       NULL != pos;
+       pos = pos->next)
+    {
+      if ((0 != (pos->kind & kind)) &&
+	  ( (key == pos->header) ||
+	    ( (NULL != pos->header) &&
+	      (NULL != key) &&
+	      (MHD_str_equal_caseless_(key,
+				       pos->header)))))
+	return pos->value;
+    }
+  return NULL;
+}
 
 
+/* end of request.c */
 
 

@@ -698,14 +698,40 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
  * @param daemon daemon to configure
  * @param nc_length desired array length
  */
-void
+enum MHD_StatusCode
 MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
 				  size_t nc_length)
 {
 #if ENABLE_DAUTH
+  if ( ( (size_t) (nc_length * sizeof (struct MHD_NonceNc))) /
+       sizeof (struct MHD_NonceNc) != nc_length)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		_("Specified value for NC_SIZE too large\n"));
+#endif
+      return MHD_DIGEST_AUTH_NC_LENGTH_TOO_BIG;
+    }
+  if (0 < nc_length)
+    {
+      if (NULL != daemon->nnc)
+	free (daemon->nnc);
+      daemon->nnc = malloc (daemon->nonce_nc_size *
+			    sizeof (struct MHD_NonceNc));
+      if (NULL == daemon->nnc)
+	{
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    _("Failed to allocate memory for nonce-nc map: %s\n"),
+		    MHD_strerror_ (errno));
+#endif
+	  return MHD_DIGEST_AUTH_NC_ALLOCATION_FAILURE;
+	}
+    }
   daemon->digest_nc_length = nc_length;
+  return MHD_SC_OK;
 #else
-  MHD_PANIC ("digest authentication not supported by this build");
+  return MHD_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD;
 #endif
 }
 
