@@ -751,10 +751,10 @@ MHD_socket_noninheritable_ (MHD_socket sock);
 /**
  * Create a listen socket, with noninheritable flag if possible.
  *
- * @param use_ipv6 if set to non-zero IPv6 is used
+ * @param pf protocol family to use
  * @return created socket or MHD_INVALID_SOCKET in case of errors
  */
 MHD_socket
-MHD_socket_create_listen_ (bool use_ipv6);
+MHD_socket_create_listen_ (int pf);
 
 #endif /* ! MHD_SOCKETS_H */
