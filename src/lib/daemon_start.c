@@ -19,7 +19,7 @@
 
 /**
  * @file lib/daemon.c
- * @brief main functions to start a daemon
+ * @brief functions to start a daemon
  * @author Christian Grothoff
  */
 #include "internal.h"
@@ -642,8 +642,8 @@ setup_thread_pool (struct MHD_Daemon *daemon)
   enum MHD_StatusCode sc;
 
   /* Allocate memory for pooled objects */
-  daemon->worker_pool = calloc (daemon->threading_model,
-				sizeof (struct MHD_Daemon));
+  daemon->worker_pool = MHD_calloc_ (daemon->threading_model,
+				     sizeof (struct MHD_Daemon));
   if (NULL == daemon->worker_pool)
     return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
   

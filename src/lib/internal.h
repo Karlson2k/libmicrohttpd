@@ -562,12 +562,6 @@ struct MHD_Request
   enum MHD_RequestEventLoopInfo event_loop_info;
 
   /**
-   * HTTP response code.  Only valid if response object
-   * is already set.
-   */
-  unsigned int responseCode;
-
-  /**
    * Did we ever call the "default_handler" on this request?  (this
    * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
    * handler when the request closes down).
@@ -594,16 +588,6 @@ struct MHD_Request
    * be set to #MHD_NO again (before the final call to the handler).
    */
   bool have_chunked_upload;
-
-  /**
-   * Is the request suspended?
-   */
-  bool suspended;
-
-  /**
-   * Is the request wanting to resume?
-   */
-  bool resuming;
 };
 
 
@@ -660,6 +644,15 @@ struct MHD_Connection
    */
   struct MHD_Request request;
 
+  /**
+   * Is the connection suspended?
+   */
+  bool suspended;
+
+  /**
+   * Is the connection wanting to resume?
+   */
+  bool resuming;
 
   /**
    * Set to `true` if the thread has been joined.
@@ -679,8 +672,7 @@ struct MHD_Connection
    */
   bool read_closed;
 
-
-    /**
+  /**
    * Length of the foreign address.
    */
   socklen_t addr_len;
@@ -998,12 +990,166 @@ struct MHD_Daemon
    */
   bool allow_address_reuse;
 
-  
+    
+};
+
+
+/**
+ * Action function implementing some action to be
+ * performed on a request.
+ *
+ * @param cls action-specfic closure
+ * @param request the request on which the action is to be performed
+ */
+typedef void
+(*ActionCallback) (void *cls,
+		   const struct MHD_Request *request);
+
+
+/**
+ * Actions are returned by the application to drive the request
+ * handling of MHD.
+ */
+struct MHD_Action
+{
+
+  /**
+   * Function to call for the action.
+   */
+  ActionCallback action;
+
+  /**
+   * Closure for @a action
+   */ 
+  void *action_cls;
   
 };
 
 
+/**
+ * Representation of an HTTP response.
+ */
+struct MHD_Response
+{
 
+  /**
+   * A response *is* an action. See also
+   * #MHD_action_from_response().   Hence this field
+   * must be the first field in a response!
+   */
+  struct MHD_Action action;
+  
+  /**
+   * Headers to send for the response.  Initially
+   * the linked list is created in inverse order;
+   * the order should be inverted before sending!
+   */
+  struct MHD_HTTP_Header *first_header;
+
+  /**
+   * Buffer pointing to data that we are supposed
+   * to send as a response.
+   */
+  char *data;
+
+  /**
+   * Closure to give to the content reader @e crc
+   * and content reader free callback @e crfc.
+   */
+  void *crc_cls;
+
+  /**
+   * How do we get more data?  NULL if we are
+   * given all of the data up front.
+   */
+  MHD_ContentReaderCallback crc;
+
+  /**
+   * NULL if data must not be freed, otherwise
+   * either user-specified callback or "&free".
+   */
+  MHD_ContentReaderFreeCallback crfc;
+
+  /**
+   * Function to call once MHD is finished with 
+   * the request, may be NULL.
+   */
+  MHD_RequestTerminationCallback termination_cb;
+
+  /**
+   * Closure for @e termination_cb.
+   */
+  void *termination_cb_cls;
+  
+#ifdef UPGRADE_SUPPORT
+  /**
+   * Application function to call once we are done sending the headers
+   * of the response; NULL unless this is a response created with
+   * #MHD_create_response_for_upgrade().
+   */
+  MHD_UpgradeHandler upgrade_handler;
+
+  /**
+   * Closure for @e uh.
+   */
+  void *upgrade_handler_cls;
+#endif /* UPGRADE_SUPPORT */
+
+  /**
+   * Mutex to synchronize access to @e data, @e size and
+   * @e reference_count.
+   */
+  MHD_mutex_ mutex;
+
+  /**
+   * Set to #MHD_SIZE_UNKNOWN if size is not known.
+   */
+  uint64_t total_size;
+
+  /**
+   * At what offset in the stream is the
+   * beginning of @e data located?
+   */
+  uint64_t data_start;
+
+  /**
+   * Offset to start reading from when using @e fd.
+   */
+  uint64_t fd_off;
+
+  /**
+   * Number of bytes ready in @e data (buffer may be larger
+   * than what is filled with payload).
+   */
+  size_t data_size;
+
+  /**
+   * Size of the data buffer @e data.
+   */
+  size_t data_buffer_size;
+
+  /**
+   * HTTP status code of the response.
+   */
+  enum MHD_HTTP_StatusCode status_code;
+  
+  /**
+   * Reference count for this response.  Free once the counter hits
+   * zero.
+   */
+  unsigned int reference_count;
+
+  /**
+   * File-descriptor if this response is FD-backed.
+   */
+  int fd;
+
+  /**
+   * Only respond in HTTP 1.0 mode.
+   */
+  bool v10_only;
+  
+};
 
 
 

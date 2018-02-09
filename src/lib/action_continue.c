@@ -18,37 +18,43 @@
 */
 
 /**
- * @file lib/init.h
- * @brief functions to initialize library
+ * @file lib/action_continue.c
+ * @brief implementation of MHD_action_continue()
  * @author Christian Grothoff
  */
 #include "internal.h"
 
 
-#ifndef INIT_H
-#define INIT_H
+/**
+ * The continue action is being run.  Continue
+ * handling the upload.
+ *
+ * @param cls NULL
+ * @param request the request to apply the action to
+ */
+static void
+cont_action (void *cls,
+	     struct MHD_Request *request)
+{
+  /* not sure yet, but this function body may 
+     just legitimately stay empty... */
+}
+
 
 /**
- * Globally initialise library.
+ * Action telling MHD to continue processing the upload.
+ *
+ * @return action operation, never NULL
  */
-void
-MHD_init(void);
+struct MHD_Action *
+MHD_action_continue (void)
+{
+  static MHD_Action acont = {
+    .action = &cont_action,
+    .action_cls = NULL
+  };
 
+  return &acont;
+}
 
-#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
-/**
- * Do nothing - global initialisation is
- * performed by library constructor.
- */
-#define MHD_check_global_init_() (void)0
-#else  /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
-/**
- * Check whether global initialisation was performed
- * and call initialiser if necessary.
- */
-void
-MHD_check_global_init_ (void);
-#endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
-
-
-#endif  /* INIT_H */
+/* end of action_continue.c */

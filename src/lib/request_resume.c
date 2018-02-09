@@ -18,37 +18,31 @@
 */
 
 /**
- * @file lib/init.h
- * @brief functions to initialize library
+ * @file lib/request_resume.c
+ * @brief implementation of MHD_request_resume()
  * @author Christian Grothoff
  */
 #include "internal.h"
 
 
-#ifndef INIT_H
-#define INIT_H
-
 /**
- * Globally initialise library.
+ * Resume handling of network data for suspended request.  It is
+ * safe to resume a suspended request at any time.  Calling this
+ * function on a request that was not previously suspended will
+ * result in undefined behavior.
+ *
+ * If you are using this function in ``external'' select mode, you must
+ * make sure to run #MHD_run() afterwards (before again calling
+ * #MHD_get_fdset(), as otherwise the change may not be reflected in
+ * the set returned by #MHD_get_fdset() and you may end up with a
+ * request that is stuck until the next network activity.
+ *
+ * @param request the request to resume
  */
 void
-MHD_init(void);
+MHD_request_resume (struct MHD_Request *request)
+{
+  abort (); // not implemented...
+}
 
-
-#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
-/**
- * Do nothing - global initialisation is
- * performed by library constructor.
- */
-#define MHD_check_global_init_() (void)0
-#else  /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
-/**
- * Check whether global initialisation was performed
- * and call initialiser if necessary.
- */
-void
-MHD_check_global_init_ (void);
-#endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
-
-
-#endif  /* INIT_H */
+/* end of request_resume.c */

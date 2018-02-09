@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006-2017 Christian Grothoff, Karlson2k (Evgeny Grin)
+     Copyright (C) 2006-2018 Christian Grothoff, Karlson2k (Evgeny Grin)
      (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
@@ -23,8 +23,9 @@
  * Note that we do not indicate which of the OLD APIs
  * simply need to be kept vs. deprecated.
  *
+ *
  * The goal is to provide a basis for discussion!
- * None of this is implemented yet.
+ * Little of this is implemented yet.
  *
  * Main goals:
  * - simplify application callbacks by splitting header/upload/post
@@ -64,7 +65,13 @@
  *   supported (include the descriptive string) by using an enum;
  * - simplify API for common-case of one-shot responses by
  *   eliminating need for destroy response in most cases;
+ *
+ * TODO:
+ * - varargs in upgrade is still there and ugly (and not even used!)
+ * - migrate event loop apis (get fdset, timeout, MHD_run(), etc.)
  */
+#ifndef MICROHTTPD2_H
+#define MICROHTTPD2_H
 
 
 /**
@@ -1018,8 +1025,8 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK upon success; TODO: define failure modes
  */
 _MHD_EXTERN enum MHD_StatusCode
-  MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
-			       const char *dh);
+MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
+			     const char *dh);
 
 
 /**
@@ -1356,17 +1363,16 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
 
 
 /**
- * Generate option to set a custom timeout for the given connection.
- * Specified as the number of seconds.  Use zero for no timeout.  If
- * timeout was set to zero (or unset) before, setting of a new value
- * by MHD_connection_set_option() will reset timeout timer.
+ * Set custom timeout for the given connection.
+ * Specified as the number of seconds.  Use zero for no timeout.  
+ * Calling this function will reset timeout timer.
  *
  * @param connection connection to configure timeout for
  * @param timeout_s new timeout in seconds
  */
-_MHD_EXTERN struct MHD_ConnectionOption
-MHD_connection_timeout (struct MHD_Connection *connection,
-			unsigned int timeout_s);
+_MHD_EXTERN void
+MHD_connection_set_timeout (struct MHD_Connection *connection,
+			    unsigned int timeout_s);
 
 
 /* **************** Request handling functions ***************** */
@@ -1792,6 +1798,9 @@ struct MHD_UpgradeResponseHandle;
  * It allows applications to perform 'special' actions on
  * the underlying socket from the upgrade.
  *
+ * FIXME: this API still uses the untyped, ugly varargs.
+ * Should we not modernize this one as well?
+ *
  * @param urh the handle identifying the connection to perform
  *            the upgrade @a action on.
  * @param operation which operation should be performed
@@ -1986,6 +1995,7 @@ MHD_response_get_header (struct MHD_Response *response,
 
 
 /* ************Upload and PostProcessor functions ********************** */
+
 
 /**
  * Action telling MHD to continue processing the upload.
@@ -2493,3 +2503,6 @@ MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
                                    info_type,    \
                                    return_value) \
 	MHD_daemon_get_information_sz((daemon), (info_type), (return_value), sizeof(union MHD_DaemonInformation));
+
+
+#endif

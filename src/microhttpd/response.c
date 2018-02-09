@@ -246,11 +246,12 @@ MHD_get_response_header (struct MHD_Response *response,
        NULL != pos;
        pos = pos->next)
     {
-      if ( MHD_str_equal_caseless_ (pos->header, key) )
+      if (MHD_str_equal_caseless_ (pos->header, key))
         return pos->value;
     }
   return NULL;
 }
+
 
 /**
  * Check whether response header contains particular token.
