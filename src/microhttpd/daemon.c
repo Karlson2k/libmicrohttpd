@@ -5526,7 +5526,17 @@ MHD_start_daemon_va (unsigned int flags,
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     {
       /* try to open listen socket */
-      listen_fd = MHD_socket_create_listen_(*pflags & MHD_USE_IPv6);
+      int domain;
+      
+#ifdef HAVE_INET6
+      domain = (*pflags & MHD_USE_IPv6) ? PF_INET6 : PF_INET;
+#else  /* ! HAVE_INET6 */
+      if (*pflags & MHD_USE_IPv6)
+	goto free_and_fail;
+      domain = PF_INET;
+#endif /* ! HAVE_INET6 */
+      
+      listen_fd = MHD_socket_create_listen_(domain);
       if (MHD_INVALID_SOCKET == listen_fd)
 	{
 #ifdef HAVE_MESSAGES
