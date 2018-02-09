@@ -177,11 +177,12 @@ static enum MHD_StatusCode
 open_listen_socket (struct MHD_Daemon *daemon)
 {
   enum MHD_StatusCode sc;
-  bool usev6;
   socklen_t addrlen;
   struct sockaddr_storage ss;
   const struct sockaddr *sa;
-
+  int pf;
+  bool use_v6;
+      
   if (MHD_INVALID_SOCKET != daemon->listen_fd)
     return MHD_SC_OK; /* application opened it for us! */
 
@@ -194,17 +195,21 @@ open_listen_socket (struct MHD_Daemon *daemon)
 	  abort ();
 	case MHD_AF_AUTO:
 #if HAVE_INET6
+	  pf = PF_INET6;
 	  use_v6 = true;
 #else
+	  pf = PF_INET;
 	  use_v6 = false;
 #endif
 	  break;
 	case MHD_AF_INET:
 	  use_v6 = false;
+	  pf = PF_INET;
 	  break;
 	case MHD_AF_INET6:
 	case MHD_AF_DUAL:
 #if HAVE_INET6
+	  pf = PF_INET6;
 	  use_v6 = true;
 	  break;
 #else
@@ -219,21 +224,24 @@ open_listen_socket (struct MHD_Daemon *daemon)
     }
   else if (0 != daemon->listen_sa_len)
     {
+      
       /* we have a listen address, get AF from there! */
       switch (daemon->listen_sa.ss_family)
       {
       case AF_INET:
+	pf = PF_INET;
 	use_v6 = false;
 	break;
 #ifdef AF_INET6
       case AF_INET6:
+	pf = PF_INET6;
 	use_v6 = true;
 	break;
 #endif
 #ifdef AF_UNIX
       case AF_UNIX:
-	// FIXME: not implemented
-	// (need to change MHD_socket_create_listen_() API!)
+	pf = PF_UNIX;
+	use_v6 = false;
 #endif
       default:
 	return MHD_SC_AF_NOT_SUPPORTED_BY_BUILD;
@@ -247,12 +255,13 @@ open_listen_socket (struct MHD_Daemon *daemon)
   
   /* try to open listen socket */
  try_open_listen_socket:
-  daemon->listen_socket = MHD_socket_create_listen_(use_v6);
+  daemon->listen_socket = MHD_socket_create_listen_(pf);
   if ( (MHD_INVALID_SOCKET == daemon->listen_socket) &&
        (MHD_AF_AUTO == daemon->address_family) &&
        (use_v6) )
     {
       use_v6 = false;
+      pf = PF_INET;
       goto try_open_listen_socket;
     }
   if (MHD_INVALID_SOCKET == daemon->listen_socket) 
